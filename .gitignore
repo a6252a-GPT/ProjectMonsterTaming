@@ -36,6 +36,7 @@
 
 # Visual Studio cache directory
 .vs/
+.vsconfig
 
 # Gradle cache directory
 .gradle/
@@ -104,3 +105,27 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Third-party role folders
+# Keep only role folder placeholders and Unity folder meta files in Git.
+/[Aa]ssets/[Tt]hird[Pp]arty/**
+!/[Aa]ssets/[Tt]hird[Pp]arty/
+!/[Aa]ssets/[Tt]hird[Pp]arty.meta
+!/[Aa]ssets/[Tt]hird[Pp]arty/00_Common/
+!/[Aa]ssets/[Tt]hird[Pp]arty/00_Common.meta
+!/[Aa]ssets/[Tt]hird[Pp]arty/00_Common/.gitkeep
+!/[Aa]ssets/[Tt]hird[Pp]arty/01_Core/
+!/[Aa]ssets/[Tt]hird[Pp]arty/01_Core.meta
+!/[Aa]ssets/[Tt]hird[Pp]arty/01_Core/.gitkeep
+!/[Aa]ssets/[Tt]hird[Pp]arty/02_Monster/
+!/[Aa]ssets/[Tt]hird[Pp]arty/02_Monster.meta
+!/[Aa]ssets/[Tt]hird[Pp]arty/02_Monster/.gitkeep
+!/[Aa]ssets/[Tt]hird[Pp]arty/03_LevelSystem/
+!/[Aa]ssets/[Tt]hird[Pp]arty/03_LevelSystem.meta
+!/[Aa]ssets/[Tt]hird[Pp]arty/03_LevelSystem/.gitkeep
+!/[Aa]ssets/[Tt]hird[Pp]arty/04_Integration/
+!/[Aa]ssets/[Tt]hird[Pp]arty/04_Integration.meta
+!/[Aa]ssets/[Tt]hird[Pp]arty/04_Integration/.gitkeep
+!/[Aa]ssets/[Tt]hird[Pp]arty/05_Segment/
+!/[Aa]ssets/[Tt]hird[Pp]arty/05_Segment.meta
+!/[Aa]ssets/[Tt]hird[Pp]arty/05_Segment/.gitkeep

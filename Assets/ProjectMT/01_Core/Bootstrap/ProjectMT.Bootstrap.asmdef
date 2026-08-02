@@ -1,0 +1,19 @@
+{
+  "name": "ProjectMT.Bootstrap",
+  "rootNamespace": "ProjectMT.Bootstrap",
+  "references": [
+    "ProjectMT.Core",
+    "ProjectMT.Shared",
+    "ProjectMT.Features",
+    "ProjectMT.Contents.Framework"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

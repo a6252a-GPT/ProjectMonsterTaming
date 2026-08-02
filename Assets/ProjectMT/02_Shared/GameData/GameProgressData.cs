@@ -1,0 +1,177 @@
+using System;
+using UnityEngine;
+
+namespace ProjectMT.Shared.GameData
+{
+    public enum ExpeditionRunMode // 원정대 진행 방식
+    {
+        Challenge,
+        Repeat
+    }
+
+    [Serializable]
+    public sealed class GameProgressData // 시드 사용자 진행 원본
+    {
+        [SerializeField] private int currentChallengeStage = 1; // 현재 도전 단계
+        [SerializeField] private int lastClearedStage; // 마지막 성공 단계
+        [SerializeField] private ExpeditionRunMode expeditionMode = ExpeditionRunMode.Challenge; // 저장된 실행 모드
+        [SerializeField] private int temporaryGold; // 시드 임시 재화
+        [SerializeField] private int vegetableRiotBestKills; // 야채 최고 처치
+        [SerializeField] private bool castleRaidFirstClear; // 군단의 역습 첫 승리
+
+        public int CurrentChallengeStage => currentChallengeStage;
+        public int LastClearedStage => lastClearedStage;
+        public ExpeditionRunMode ExpeditionMode => expeditionMode;
+        public int TemporaryGold => temporaryGold;
+        public int VegetableRiotBestKills => vegetableRiotBestKills;
+        public bool CastleRaidFirstClear => castleRaidFirstClear;
+
+        public static GameProgressData CreateDefault()
+        {
+            return new GameProgressData();
+        }
+
+        public GameProgressData Clone()
+        {
+            return new GameProgressData // 변경 전 후보 복사본
+            {
+                currentChallengeStage = currentChallengeStage,
+                lastClearedStage = lastClearedStage,
+                expeditionMode = expeditionMode,
+                temporaryGold = temporaryGold,
+                vegetableRiotBestKills = vegetableRiotBestKills,
+                castleRaidFirstClear = castleRaidFirstClear
+            };
+        }
+
+        internal bool TryApply(GameProgressChange change)
+        {
+            if (change == null)
+            {
+                return false;
+            }
+
+            if (change.HasExpeditionMode)
+            {
+                expeditionMode = change.ExpeditionMode;
+            }
+
+            if (change.ChallengeVictoryStage > 0)
+            {
+                if (change.ChallengeVictoryStage != currentChallengeStage)
+                {
+                    return false; // 현재 도전 단계만 승리 인정
+                }
+
+                lastClearedStage = Math.Max(lastClearedStage, change.ChallengeVictoryStage);
+                currentChallengeStage = Math.Max(currentChallengeStage, change.ChallengeVictoryStage + 1);
+            }
+
+            if (change.TemporaryGoldDelta != 0)
+            {
+                var nextGold = (long)temporaryGold + change.TemporaryGoldDelta; // int 범위 밖 연산 방지
+                if (nextGold < 0 || nextGold > int.MaxValue)
+                {
+                    return false;
+                }
+
+                temporaryGold = (int)nextGold;
+            }
+
+            if (change.VegetableRiotBestKills >= 0)
+            {
+                vegetableRiotBestKills = Math.Max(vegetableRiotBestKills, change.VegetableRiotBestKills);
+            }
+
+            if (change.MarkCastleRaidCleared)
+            {
+                castleRaidFirstClear = true;
+            }
+
+            Repair(); // 변경 후 불변식 재확인
+            return true;
+        }
+
+        internal void Repair()
+        {
+            currentChallengeStage = Math.Max(1, currentChallengeStage);
+            lastClearedStage = Math.Max(0, Math.Min(lastClearedStage, currentChallengeStage - 1));
+            temporaryGold = Math.Max(0, temporaryGold);
+            vegetableRiotBestKills = Math.Max(0, vegetableRiotBestKills);
+
+            if (lastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat)
+            {
+                expeditionMode = ExpeditionRunMode.Challenge; // 클리어 전 반복 모드 금지
+            }
+        }
+    }
+
+    public readonly struct GameProgressView // UI·전투용 읽기 전용 복사값
+    {
+        public GameProgressView(GameProgressData data)
+        {
+            CurrentChallengeStage = data.CurrentChallengeStage;
+            LastClearedStage = data.LastClearedStage;
+            ExpeditionMode = data.ExpeditionMode;
+            TemporaryGold = data.TemporaryGold;
+            VegetableRiotBestKills = data.VegetableRiotBestKills;
+            CastleRaidFirstClear = data.CastleRaidFirstClear;
+        }
+
+        public int CurrentChallengeStage { get; }
+        public int LastClearedStage { get; }
+        public ExpeditionRunMode ExpeditionMode { get; }
+        public int TemporaryGold { get; }
+        public int VegetableRiotBestKills { get; }
+        public bool CastleRaidFirstClear { get; }
+    }
+
+    public sealed class GameProgressChange // 한 번에 검증할 진행 변경 묶음
+    {
+        private GameProgressChange()
+        {
+            VegetableRiotBestKills = -1; // 최고기록 미변경 표식
+        }
+
+        internal bool HasExpeditionMode { get; private set; }
+        internal ExpeditionRunMode ExpeditionMode { get; private set; }
+        internal int ChallengeVictoryStage { get; private set; }
+        internal int TemporaryGoldDelta { get; private set; }
+        internal int VegetableRiotBestKills { get; private set; }
+        internal bool MarkCastleRaidCleared { get; private set; }
+
+        public static GameProgressChange SetExpeditionMode(ExpeditionRunMode mode)
+        {
+            return new GameProgressChange
+            {
+                HasExpeditionMode = true,
+                ExpeditionMode = mode
+            };
+        }
+
+        public static GameProgressChange RecordChallengeVictory(int stage) // 도전 승리 요청
+        {
+            return new GameProgressChange
+            {
+                ChallengeVictoryStage = stage
+            };
+        }
+
+        public static GameProgressChange RecordVegetableRiot(int killCount, int temporaryGoldReward) // 야채 결과 요청
+        {
+            return new GameProgressChange
+            {
+                VegetableRiotBestKills = Math.Max(0, killCount),
+                TemporaryGoldDelta = Math.Max(0, temporaryGoldReward)
+            };
+        }
+
+        public static GameProgressChange RecordCastleRaidClear() // 성 파괴 기록 요청
+        {
+            return new GameProgressChange
+            {
+                MarkCastleRaidCleared = true
+            };
+        }
+    }
+}

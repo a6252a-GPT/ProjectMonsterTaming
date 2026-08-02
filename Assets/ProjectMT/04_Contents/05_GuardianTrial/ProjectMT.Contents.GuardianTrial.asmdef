@@ -1,0 +1,19 @@
+{
+  "name": "ProjectMT.Contents.GuardianTrial",
+  "rootNamespace": "ProjectMT.Contents.GuardianTrial",
+  "references": [
+    "ProjectMT.Core",
+    "ProjectMT.Shared",
+    "ProjectMT.Contents.Framework",
+    "UnityEngine.UI"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

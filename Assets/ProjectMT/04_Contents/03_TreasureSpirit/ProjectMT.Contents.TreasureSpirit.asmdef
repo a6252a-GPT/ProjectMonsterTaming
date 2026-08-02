@@ -1,0 +1,19 @@
+{
+  "name": "ProjectMT.Contents.TreasureSpirit",
+  "rootNamespace": "ProjectMT.Contents.TreasureSpirit",
+  "references": [
+    "ProjectMT.Core",
+    "ProjectMT.Shared",
+    "ProjectMT.Contents.Framework",
+    "UnityEngine.UI"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

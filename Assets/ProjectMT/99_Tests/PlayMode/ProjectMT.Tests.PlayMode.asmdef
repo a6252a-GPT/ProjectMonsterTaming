@@ -1,0 +1,26 @@
+{
+  "name": "ProjectMT.Tests.PlayMode",
+  "rootNamespace": "ProjectMT.Tests.PlayMode",
+  "references": [
+    "ProjectMT.Core",
+    "ProjectMT.Shared",
+    "ProjectMT.Features",
+    "ProjectMT.Contents.Framework",
+    "ProjectMT.Contents.VegetableRiot",
+    "ProjectMT.Contents.CastleRaid",
+    "UnityEngine.UI",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

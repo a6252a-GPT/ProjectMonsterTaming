@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1e4e65517f6e3254f8d77198f9d5aacf, type: 3}
-  m_Name: ContentDefinition_VegetableRiot
+  m_Name: ContentDefinition_FoodRiot
   m_EditorClassIdentifier: ProjectMT.Contents.Framework::ProjectMT.Contents.Framework.ContentDefinition
   contentId:
-    value: vegetable_riot
+    value: food_riot
   openMode: 0
   sceneId:
     value: 

@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace ProjectMT.Shared.GameData
 {
@@ -16,14 +17,15 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private int lastClearedStage; // 마지막 성공 단계
         [SerializeField] private ExpeditionRunMode expeditionMode = ExpeditionRunMode.Challenge; // 저장된 실행 모드
         [SerializeField] private int temporaryGold; // 시드 임시 재화
-        [SerializeField] private int vegetableRiotBestKills; // 야채 최고 처치
+        [FormerlySerializedAs("vegetableRiotBestKills")]
+        [SerializeField] private int foodRiotBestKills; // 식량 대소동 최고 처치
         [SerializeField] private bool castleRaidFirstClear; // 군단의 역습 첫 승리
 
         public int CurrentChallengeStage => currentChallengeStage;
         public int LastClearedStage => lastClearedStage;
         public ExpeditionRunMode ExpeditionMode => expeditionMode;
         public int TemporaryGold => temporaryGold;
-        public int VegetableRiotBestKills => vegetableRiotBestKills;
+        public int FoodRiotBestKills => foodRiotBestKills;
         public bool CastleRaidFirstClear => castleRaidFirstClear;
 
         public static GameProgressData CreateDefault()
@@ -39,7 +41,7 @@ namespace ProjectMT.Shared.GameData
                 lastClearedStage = lastClearedStage,
                 expeditionMode = expeditionMode,
                 temporaryGold = temporaryGold,
-                vegetableRiotBestKills = vegetableRiotBestKills,
+                foodRiotBestKills = foodRiotBestKills,
                 castleRaidFirstClear = castleRaidFirstClear
             };
         }
@@ -78,9 +80,9 @@ namespace ProjectMT.Shared.GameData
                 temporaryGold = (int)nextGold;
             }
 
-            if (change.VegetableRiotBestKills >= 0)
+            if (change.FoodRiotBestKills >= 0)
             {
-                vegetableRiotBestKills = Math.Max(vegetableRiotBestKills, change.VegetableRiotBestKills);
+                foodRiotBestKills = Math.Max(foodRiotBestKills, change.FoodRiotBestKills);
             }
 
             if (change.MarkCastleRaidCleared)
@@ -97,7 +99,7 @@ namespace ProjectMT.Shared.GameData
             currentChallengeStage = Math.Max(1, currentChallengeStage);
             lastClearedStage = Math.Max(0, Math.Min(lastClearedStage, currentChallengeStage - 1));
             temporaryGold = Math.Max(0, temporaryGold);
-            vegetableRiotBestKills = Math.Max(0, vegetableRiotBestKills);
+            foodRiotBestKills = Math.Max(0, foodRiotBestKills);
 
             if (lastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat)
             {
@@ -114,7 +116,7 @@ namespace ProjectMT.Shared.GameData
             LastClearedStage = data.LastClearedStage;
             ExpeditionMode = data.ExpeditionMode;
             TemporaryGold = data.TemporaryGold;
-            VegetableRiotBestKills = data.VegetableRiotBestKills;
+            FoodRiotBestKills = data.FoodRiotBestKills;
             CastleRaidFirstClear = data.CastleRaidFirstClear;
         }
 
@@ -122,7 +124,7 @@ namespace ProjectMT.Shared.GameData
         public int LastClearedStage { get; }
         public ExpeditionRunMode ExpeditionMode { get; }
         public int TemporaryGold { get; }
-        public int VegetableRiotBestKills { get; }
+        public int FoodRiotBestKills { get; }
         public bool CastleRaidFirstClear { get; }
     }
 
@@ -130,14 +132,14 @@ namespace ProjectMT.Shared.GameData
     {
         private GameProgressChange()
         {
-            VegetableRiotBestKills = -1; // 최고기록 미변경 표식
+            FoodRiotBestKills = -1; // 최고기록 미변경 표식
         }
 
         internal bool HasExpeditionMode { get; private set; }
         internal ExpeditionRunMode ExpeditionMode { get; private set; }
         internal int ChallengeVictoryStage { get; private set; }
         internal int TemporaryGoldDelta { get; private set; }
-        internal int VegetableRiotBestKills { get; private set; }
+        internal int FoodRiotBestKills { get; private set; }
         internal bool MarkCastleRaidCleared { get; private set; }
 
         public static GameProgressChange SetExpeditionMode(ExpeditionRunMode mode)
@@ -157,11 +159,11 @@ namespace ProjectMT.Shared.GameData
             };
         }
 
-        public static GameProgressChange RecordVegetableRiot(int killCount, int temporaryGoldReward) // 야채 결과 요청
+        public static GameProgressChange RecordFoodRiot(int killCount, int temporaryGoldReward) // 식량 대소동 결과 요청
         {
             return new GameProgressChange
             {
-                VegetableRiotBestKills = Math.Max(0, killCount),
+                FoodRiotBestKills = Math.Max(0, killCount),
                 TemporaryGoldDelta = Math.Max(0, temporaryGoldReward)
             };
         }

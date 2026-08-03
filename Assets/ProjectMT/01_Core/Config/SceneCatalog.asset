@@ -23,5 +23,5 @@ MonoBehaviour:
     sceneKind: 1
   - sceneId:
       value: castle_raid
-    scenePath: Assets/ProjectMT/00_Scenes/06_CastleRaid.unity
+    scenePath: Assets/ProjectMT/00_Scenes/02_CastleRaid.unity
     sceneKind: 2

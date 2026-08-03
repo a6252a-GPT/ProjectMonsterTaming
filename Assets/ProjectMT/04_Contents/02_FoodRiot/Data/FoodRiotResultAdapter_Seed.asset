@@ -10,5 +10,5 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 447d700ea3a04eb4db376e750a045f53, type: 3}
-  m_Name: VegetableRiotResultAdapter_Seed
-  m_EditorClassIdentifier: ProjectMT.Contents.VegetableRiot::ProjectMT.Contents.VegetableRiot.VegetableRiotResultAdapter
+  m_Name: FoodRiotResultAdapter_Seed
+  m_EditorClassIdentifier: ProjectMT.Contents.FoodRiot::ProjectMT.Contents.FoodRiot.FoodRiotResultAdapter

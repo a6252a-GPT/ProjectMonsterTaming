@@ -6,7 +6,7 @@
     "ProjectMT.Shared",
     "ProjectMT.Features",
     "ProjectMT.Contents.Framework",
-    "ProjectMT.Contents.VegetableRiot",
+    "ProjectMT.Contents.FoodRiot",
     "ProjectMT.Contents.CastleRaid"
   ],
   "includePlatforms": [

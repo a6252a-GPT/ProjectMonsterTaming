@@ -9,10 +9,10 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace ProjectMT.Contents.VegetableRiot
+namespace ProjectMT.Contents.FoodRiot
 {
     [DisallowMultipleComponent]
-    public sealed class VegetableRiotController : MonoBehaviour, IContentController // 야채 대소동 진행·결과 총괄
+    public sealed class FoodRiotController : MonoBehaviour, IContentController // 식량 대소동 진행·결과 총괄
     {
         [Header("Runtime")]
         [SerializeField] private CombatWorld combatWorld; // 유닛 생성·정리 공간
@@ -31,7 +31,7 @@ namespace ProjectMT.Contents.VegetableRiot
         [SerializeField] private ContentClearOverlay clearOverlay; // 종료 결과 화면
 
         private ContentContext context; // 결과 반환 통로
-        private VegetableRiotStartData startData; // 이번 판 시작 정보
+        private FoodRiotStartData startData; // 이번 판 시작 정보
         private float timeRemaining; // 남은 제한 시간
         private int killCount; // 이번 판 처치 수
         private int spawnSequence; // 야채 고유 번호
@@ -42,15 +42,15 @@ namespace ProjectMT.Contents.VegetableRiot
         {
             Shutdown(); // 재초기화 전 이전 판 정리
             context = contentContext ?? throw new ArgumentNullException(nameof(contentContext));
-            startData = contentContext.StartData as VegetableRiotStartData;
+            startData = contentContext.StartData as FoodRiotStartData;
             if (startData == null || startData.Party == null)
             {
-                throw new ArgumentException("VegetableRiotStartData is required.", nameof(contentContext));
+                throw new ArgumentException("FoodRiotStartData is required.", nameof(contentContext));
             }
 
             if (combatWorld == null || followerPrefab == null || vegetablePrefab == null || commanderRoot == null)
             {
-                throw new InvalidOperationException("Vegetable Riot runtime references are missing.");
+                throw new InvalidOperationException("Food Riot runtime references are missing.");
             }
 
             combatWorld.Clear(); // 이전 판의 남은 유닛 제거
@@ -202,7 +202,7 @@ namespace ProjectMT.Contents.VegetableRiot
                 resultText.text = clearOverlay == null ? $"완료 · 처치 {killCount}" : string.Empty;
             }
 
-            var result = new VegetableRiotResult(killCount); // 최종 처치 수를 보상 계층에 전달
+            var result = new FoodRiotResult(killCount); // 최종 처치 수를 보상 계층에 전달
             if (clearOverlay != null &&
                 clearOverlay.TryShow($"처치 {killCount}마리", $"골드 +{killCount}", () => CompleteClear(result)))
             {
@@ -212,7 +212,7 @@ namespace ProjectMT.Contents.VegetableRiot
             CompleteClear(result);
         }
 
-        private void CompleteClear(VegetableRiotResult result)
+        private void CompleteClear(FoodRiotResult result)
         {
             context?.Exit.Complete(result);
         }

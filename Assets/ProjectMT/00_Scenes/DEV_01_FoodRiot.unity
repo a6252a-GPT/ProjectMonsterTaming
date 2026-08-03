@@ -147,7 +147,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5295995b7e54b8e4cb62e8d726483b2b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ProjectMT.Contents.VegetableRiot::ProjectMT.Contents.VegetableRiot.VegetableRiotDevBootstrap
+  m_EditorClassIdentifier: ProjectMT.Contents.FoodRiot::ProjectMT.Contents.FoodRiot.FoodRiotDevBootstrap
   controller: {fileID: 1744144521}
   startDataFactory: {fileID: 11400000, guid: 9cd6a8176f9c8db409b4baa847d2a2c8, type: 2}
 --- !u!4 &542566292
@@ -282,9 +282,13 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3133910026134740535, guid: af63ccc9a7dbb1e41b990ef12f5d5d33, type: 3}
+      propertyPath: m_EditorClassIdentifier
+      value: ProjectMT.Contents.FoodRiot::ProjectMT.Contents.FoodRiot.FoodRiotController
+      objectReference: {fileID: 0}
     - target: {fileID: 7238598723104609653, guid: af63ccc9a7dbb1e41b990ef12f5d5d33, type: 3}
       propertyPath: m_Name
-      value: WORK_VegetableRiotRuntime
+      value: WORK_FoodRiotRuntime
       objectReference: {fileID: 0}
     - target: {fileID: 7238598723104609653, guid: af63ccc9a7dbb1e41b990ef12f5d5d33, type: 3}
       propertyPath: m_IsActive
@@ -308,7 +312,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 473aa82130b9faa449ce75f31024676e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ProjectMT.Contents.VegetableRiot::ProjectMT.Contents.VegetableRiot.VegetableRiotController
+  m_EditorClassIdentifier: ProjectMT.Contents.FoodRiot::ProjectMT.Contents.FoodRiot.FoodRiotController
 --- !u!1 &1744144522 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6907106173313659742, guid: af63ccc9a7dbb1e41b990ef12f5d5d33, type: 3}

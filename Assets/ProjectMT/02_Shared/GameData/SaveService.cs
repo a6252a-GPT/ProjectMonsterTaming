@@ -17,6 +17,8 @@ namespace ProjectMT.Shared.GameData
     public sealed class SaveService // 진행 데이터 직렬화 담당
     {
         public const int CurrentDataVersion = 1;
+        private const string LegacyFoodRiotBestKillsJsonKey = "\"vegetableRiotBestKills\""; // 개명 전 저장 키
+        private const string FoodRiotBestKillsJsonKey = "\"foodRiotBestKills\""; // 현재 저장 키
 
         private readonly IAtomicFileStore fileStore; // 실제 파일 교체 계약
         private readonly string savePath; // 저장 파일 전체 경로
@@ -37,7 +39,7 @@ namespace ProjectMT.Shared.GameData
 
             try
             {
-                var json = Encoding.UTF8.GetString(bytes);
+                var json = MigrateLegacyFieldNames(Encoding.UTF8.GetString(bytes));
                 var envelope = JsonUtility.FromJson<SaveEnvelope>(json);
                 if (envelope == null || envelope.dataVersion != CurrentDataVersion || envelope.gameData == null)
                 {
@@ -72,6 +74,17 @@ namespace ProjectMT.Shared.GameData
             }
 
             await fileStore.ReplaceAsync(savePath, Encoding.UTF8.GetBytes(json)); // 검증된 내용만 교체
+        }
+
+        private static string MigrateLegacyFieldNames(string json)
+        {
+            if (string.IsNullOrEmpty(json) ||
+                json.IndexOf(FoodRiotBestKillsJsonKey, StringComparison.Ordinal) >= 0)
+            {
+                return json;
+            }
+
+            return json.Replace(LegacyFoodRiotBestKillsJsonKey, FoodRiotBestKillsJsonKey); // 기존 최고 기록 보존
         }
     }
 }

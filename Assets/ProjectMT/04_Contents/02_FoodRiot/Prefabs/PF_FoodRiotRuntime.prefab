@@ -1456,7 +1456,7 @@ GameObject:
   - component: {fileID: 2954941631038554414}
   - component: {fileID: 3133910026134740535}
   m_Layer: 0
-  m_Name: PF_VegetableRiotRuntime
+  m_Name: PF_FoodRiotRuntime
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1493,7 +1493,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 473aa82130b9faa449ce75f31024676e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ProjectMT.Contents.VegetableRiot::ProjectMT.Contents.VegetableRiot.VegetableRiotController
+  m_EditorClassIdentifier: ProjectMT.Contents.FoodRiot::ProjectMT.Contents.FoodRiot.FoodRiotController
   combatWorld: {fileID: 94598009866326299}
   followerPrefab: {fileID: 7766625452383920133, guid: b78d7e4f3540df34393217f6f4c5372b, type: 3}
   vegetablePrefab: {fileID: 7263633238650975986, guid: 21c1460b1b87b614ea3effbe70661232, type: 3}

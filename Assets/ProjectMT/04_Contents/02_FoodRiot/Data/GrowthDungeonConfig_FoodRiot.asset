@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 735c619ebf7fe914080e2dfc26096f34, type: 3}
-  m_Name: GrowthDungeonConfig_VegetableRiot
+  m_Name: GrowthDungeonConfig_FoodRiot
   m_EditorClassIdentifier: ProjectMT.Contents.Framework::ProjectMT.Contents.Framework.GrowthDungeonConfig
   contentId:
-    value: vegetable_riot
+    value: food_riot
   runtimePrefab: {fileID: 7238598723104609653, guid: af63ccc9a7dbb1e41b990ef12f5d5d33, type: 3}

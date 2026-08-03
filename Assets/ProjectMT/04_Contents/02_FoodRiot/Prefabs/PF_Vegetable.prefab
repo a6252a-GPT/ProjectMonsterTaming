@@ -267,4 +267,4 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b54abc095d8983c4199f1d333e50fb88, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ProjectMT.Contents.VegetableRiot::ProjectMT.Contents.VegetableRiot.VegetableMover
+  m_EditorClassIdentifier: ProjectMT.Contents.FoodRiot::ProjectMT.Contents.FoodRiot.VegetableMover

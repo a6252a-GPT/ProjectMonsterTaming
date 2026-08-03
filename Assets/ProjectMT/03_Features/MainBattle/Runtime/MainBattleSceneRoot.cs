@@ -13,11 +13,11 @@ namespace ProjectMT.Features.MainBattle
     public sealed class MainBattleSceneRoot : MonoBehaviour, ISceneRoot // 메인전투 씬 조립·수명 관리
     {
         [SerializeField] private SceneId sceneId = new SceneId("main_battle"); // 메인 씬 식별자
-        [SerializeField] private ContentId vegetableRiotContentId = new ContentId("vegetable_riot"); // Hosted 콘텐츠 ID
+        [SerializeField] private ContentId foodRiotContentId = new ContentId("food_riot"); // Hosted 콘텐츠 ID
         [SerializeField] private ContentId castleRaidContentId = new ContentId("castle_raid"); // 별도 씬 콘텐츠 ID
         [SerializeField] private ExpeditionController expedition; // 원정대 진행 담당
         [SerializeField] private MainBattleHostedContentRunner hostedRunner; // 성장 던전 전환 담당
-        [SerializeField] private Button vegetableRiotButton; // 야채 입장 버튼
+        [SerializeField] private Button foodRiotButton; // 식량 대소동 입장 버튼
         [SerializeField] private Button castleRaidButton; // 군단의 역습 입장 버튼
         [SerializeField] private TMP_Text statusText; // 현재 플레이 상태
 
@@ -46,7 +46,7 @@ namespace ProjectMT.Features.MainBattle
             }
 
             party = SeedBattlePartySnapshotFactory.Create(); // 현재 고정 두부 5기
-            vegetableRiotButton?.onClick.AddListener(OpenVegetableRiot);
+            foodRiotButton?.onClick.AddListener(OpenFoodRiot);
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
             expedition.Initialize(context.Progress, party);
             SetStatus("자동 전투");
@@ -55,7 +55,7 @@ namespace ProjectMT.Features.MainBattle
 
         public void Shutdown()
         {
-            vegetableRiotButton?.onClick.RemoveListener(OpenVegetableRiot);
+            foodRiotButton?.onClick.RemoveListener(OpenFoodRiot);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
             if (hostedRunner != null && hostedRunner.IsOpen)
             {
@@ -68,16 +68,16 @@ namespace ProjectMT.Features.MainBattle
             IsInitialized = false;
         }
 
-        private void OpenVegetableRiot()
+        private void OpenFoodRiot()
         {
             if (!TryOpenContent())
             {
                 return;
             }
 
-            if (context.ContentLauncher.StartHosted(vegetableRiotContentId, party, hostedRunner))
+            if (context.ContentLauncher.StartHosted(foodRiotContentId, party, hostedRunner))
             {
-                SetStatus("야채 대소동");
+                SetStatus("식량 대소동");
             }
         }
 
@@ -132,13 +132,13 @@ namespace ProjectMT.Features.MainBattle
         public void EditorConfigure(
             ExpeditionController expeditionController,
             MainBattleHostedContentRunner runner,
-            Button vegetableButton,
+            Button foodButton,
             Button castleButton,
             TMP_Text status)
         {
             expedition = expeditionController;
             hostedRunner = runner;
-            vegetableRiotButton = vegetableButton;
+            foodRiotButton = foodButton;
             castleRaidButton = castleButton;
             statusText = status;
         }

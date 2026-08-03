@@ -11,7 +11,7 @@ namespace ProjectMT.EditorTools
     internal static class ProjectMTPlayModeStartScene // 플레이 시작 씬을 Entry로 고정
     {
         internal const string EntryScenePath = "Assets/ProjectMT/00_Scenes/00_Entry.unity"; // 정식 진입 씬
-        private const string DevScenePrefix = "90_DEV_"; // 직접 실행 허용 개발 씬
+        private const string DevScenePrefix = "DEV_"; // 직접 실행 허용 개발 씬
         private const string TestScenePrefix = "InitTestScene"; // 테스트 러너 임시 씬
 
         static ProjectMTPlayModeStartScene()

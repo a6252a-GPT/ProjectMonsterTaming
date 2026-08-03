@@ -1,7 +1,11 @@
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using NUnit.Framework;
+using ProjectMT.Core.SaveIO;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Features.Expedition;
+using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
@@ -18,6 +22,19 @@ namespace ProjectMT.Tests.EditMode
         {
             Assert.That(new SceneId("main_battle"), Is.EqualTo(new SceneId("MAIN_BATTLE")));
             Assert.That(new SceneId(" ").IsValid, Is.False);
+        }
+
+        [Test]
+        public async Task SaveService_LoadsLegacyFoodRiotBestKillsKey() // 개명 전 저장 기록 호환
+        {
+            const string legacyJson =
+                "{\"dataVersion\":1,\"savedAtUtc\":\"2026-08-03T00:00:00.0000000Z\",\"gameData\":{\"vegetableRiotBestKills\":7}}";
+            var fileStore = new MemoryFileStore(Encoding.UTF8.GetBytes(legacyJson));
+            var saveService = new SaveService(fileStore, "memory://project-mt-save");
+
+            var data = await saveService.LoadAsync();
+
+            Assert.That(data.FoodRiotBestKills, Is.EqualTo(7));
         }
 
         [Test]
@@ -58,7 +75,7 @@ namespace ProjectMT.Tests.EditMode
             {
                 "Assets/ProjectMT/00_Scenes/00_Entry.unity",
                 "Assets/ProjectMT/00_Scenes/01_MainBattle.unity",
-                "Assets/ProjectMT/00_Scenes/06_CastleRaid.unity"
+                "Assets/ProjectMT/00_Scenes/02_CastleRaid.unity"
             };
 
             foreach (var scenePath in runtimeScenes)
@@ -67,7 +84,7 @@ namespace ProjectMT.Tests.EditMode
             }
 
             Assert.That(
-                AssetDatabase.LoadAssetAtPath<SceneAsset>("Assets/ProjectMT/00_Scenes/90_DEV_VegetableRiot.unity"),
+                AssetDatabase.LoadAssetAtPath<SceneAsset>("Assets/ProjectMT/00_Scenes/DEV_01_FoodRiot.unity"),
                 Is.Not.Null);
             Assert.That(AssetDatabase.IsValidFolder("Assets/Scenes"), Is.False);
             Assert.That(
@@ -136,7 +153,7 @@ namespace ProjectMT.Tests.EditMode
             var contentRoots = new[]
             {
                 "01_CastleRaid",
-                "02_VegetableRiot",
+                "02_FoodRiot",
                 "03_TreasureSpirit",
                 "04_GiantSpellbook",
                 "05_GuardianTrial"
@@ -165,7 +182,7 @@ namespace ProjectMT.Tests.EditMode
                      {
                          "Framework",
                          "CastleRaid",
-                         "VegetableRiot",
+                         "FoodRiot",
                          "TreasureSpirit",
                          "GiantSpellbook",
                          "GuardianTrial"
@@ -186,8 +203,8 @@ namespace ProjectMT.Tests.EditMode
                 "Assets/ProjectMT/01_Core/Bootstrap/Data/ProjectConfig.asset",
                 "Assets/ProjectMT/01_Core/Config/SceneCatalog.asset",
                 "Assets/ProjectMT/04_Contents/00_Framework/Data/ContentCatalog.asset",
-                "Assets/ProjectMT/04_Contents/02_VegetableRiot/Prefabs/PF_Vegetable.prefab",
-                "Assets/ProjectMT/04_Contents/02_VegetableRiot/Art/Materials/MAT_Vegetable.mat",
+                "Assets/ProjectMT/04_Contents/02_FoodRiot/Prefabs/PF_Vegetable.prefab",
+                "Assets/ProjectMT/04_Contents/02_FoodRiot/Art/Materials/MAT_Vegetable.mat",
                 "Assets/ProjectMT/04_Contents/03_TreasureSpirit/ProjectMT.Contents.TreasureSpirit.asmdef",
                 "Assets/ProjectMT/04_Contents/04_GiantSpellbook/ProjectMT.Contents.GiantSpellbook.asmdef",
                 "Assets/ProjectMT/04_Contents/05_GuardianTrial/ProjectMT.Contents.GuardianTrial.asmdef",
@@ -212,7 +229,7 @@ namespace ProjectMT.Tests.EditMode
             var appRoot = AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/ProjectMT/01_Core/Bootstrap/Prefabs/PF_AppRoot.prefab");
             var hostedRuntime = AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/ProjectMT/04_Contents/02_VegetableRiot/Prefabs/PF_VegetableRiotRuntime.prefab");
+                "Assets/ProjectMT/04_Contents/02_FoodRiot/Prefabs/PF_FoodRiotRuntime.prefab");
             var inputActions = AssetDatabase.LoadMainAssetAtPath(inputActionsPath);
 
             Assert.That(appRoot, Is.Not.Null);
@@ -321,7 +338,7 @@ namespace ProjectMT.Tests.EditMode
             var clearOverlayPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/ProjectMT/02_Shared/UI/Prefabs/PF_ContentClearOverlay.prefab");
             var hostedRuntime = AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/ProjectMT/04_Contents/02_VegetableRiot/Prefabs/PF_VegetableRiotRuntime.prefab");
+                "Assets/ProjectMT/04_Contents/02_FoodRiot/Prefabs/PF_FoodRiotRuntime.prefab");
 
             Assert.That(clearOverlayPrefab, Is.Not.Null);
             Assert.That(clearOverlayPrefab.GetComponent<ContentClearOverlay>(), Is.Not.Null);
@@ -329,7 +346,7 @@ namespace ProjectMT.Tests.EditMode
             Assert.That(hostedRuntime.GetComponentsInChildren<ContentClearOverlay>(true), Has.Length.EqualTo(1));
 
             var castleScene = EditorSceneManager.OpenScene(
-                "Assets/ProjectMT/00_Scenes/06_CastleRaid.unity",
+                "Assets/ProjectMT/00_Scenes/02_CastleRaid.unity",
                 OpenSceneMode.Additive);
             try
             {
@@ -348,6 +365,26 @@ namespace ProjectMT.Tests.EditMode
         {
             return root.GetComponentsInChildren<Component>(true)
                 .Count(component => component != null && component.GetType().FullName == fullTypeName);
+        }
+
+        private sealed class MemoryFileStore : IAtomicFileStore // 저장 마이그레이션 테스트용 메모리 파일
+        {
+            private readonly byte[] bytes;
+
+            public MemoryFileStore(byte[] bytes)
+            {
+                this.bytes = bytes;
+            }
+
+            public Task<byte[]> ReadAsync(string path)
+            {
+                return Task.FromResult(bytes);
+            }
+
+            public Task ReplaceAsync(string path, byte[] replacement)
+            {
+                return Task.CompletedTask;
+            }
         }
     }
 }

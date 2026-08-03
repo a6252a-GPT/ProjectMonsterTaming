@@ -1,6 +1,6 @@
 {
-  "name": "ProjectMT.Contents.VegetableRiot",
-  "rootNamespace": "ProjectMT.Contents.VegetableRiot",
+  "name": "ProjectMT.Contents.FoodRiot",
+  "rootNamespace": "ProjectMT.Contents.FoodRiot",
   "references": [
     "ProjectMT.Core",
     "ProjectMT.Shared",

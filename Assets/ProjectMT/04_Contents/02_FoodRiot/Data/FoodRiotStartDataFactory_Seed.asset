@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6c13f6ca0f4da04fa1c998a32339d57, type: 3}
-  m_Name: VegetableRiotStartDataFactory_Seed
-  m_EditorClassIdentifier: ProjectMT.Contents.VegetableRiot::ProjectMT.Contents.VegetableRiot.VegetableRiotStartDataFactory
+  m_Name: FoodRiotStartDataFactory_Seed
+  m_EditorClassIdentifier: ProjectMT.Contents.FoodRiot::ProjectMT.Contents.FoodRiot.FoodRiotStartDataFactory
   durationSeconds: 20
   activeVegetableCount: 8

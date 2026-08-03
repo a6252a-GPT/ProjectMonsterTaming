@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace ProjectMT.Contents.VegetableRiot
+namespace ProjectMT.Contents.FoodRiot
 {
     [DisallowMultipleComponent]
     public sealed class VegetableMover : MonoBehaviour // 야채의 단순 왕복 이동 담당

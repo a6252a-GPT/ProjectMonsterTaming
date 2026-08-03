@@ -2,11 +2,11 @@ using ProjectMT.Contents.Framework;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
 
-namespace ProjectMT.Contents.VegetableRiot
+namespace ProjectMT.Contents.FoodRiot
 {
-    public sealed class VegetableRiotStartData : IContentStartData // 야채 대소동 시작 조건
+    public sealed class FoodRiotStartData : IContentStartData // 식량 대소동 시작 조건
     {
-        public VegetableRiotStartData(BattlePartySnapshot party, float durationSeconds, int activeVegetableCount)
+        public FoodRiotStartData(BattlePartySnapshot party, float durationSeconds, int activeVegetableCount)
         {
             Party = party;
             DurationSeconds = Mathf.Max(1f, durationSeconds); // 최소 1초 보장
@@ -18,9 +18,9 @@ namespace ProjectMT.Contents.VegetableRiot
         public int ActiveVegetableCount { get; }
     }
 
-    public sealed class VegetableRiotResult : IContentResultData // 처치 수 결과 묶음
+    public sealed class FoodRiotResult : IContentResultData // 처치 수 결과 묶음
     {
-        public VegetableRiotResult(int killCount)
+        public FoodRiotResult(int killCount)
         {
             KillCount = Mathf.Max(0, killCount);
         }

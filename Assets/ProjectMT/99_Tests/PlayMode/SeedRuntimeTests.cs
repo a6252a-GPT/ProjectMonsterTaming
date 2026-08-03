@@ -2,7 +2,7 @@ using System.Collections;
 using System.Reflection;
 using NUnit.Framework;
 using ProjectMT.Contents.CastleRaid;
-using ProjectMT.Contents.VegetableRiot;
+using ProjectMT.Contents.FoodRiot;
 using ProjectMT.Features.Expedition;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Combat;
@@ -276,13 +276,13 @@ namespace ProjectMT.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator VegetableRiotDevBootstrap_IgnoresDestroyedControllerOnDestroy() // 파괴 순서 예외 방지
+        public IEnumerator FoodRiotDevBootstrap_IgnoresDestroyedControllerOnDestroy() // 파괴 순서 예외 방지
         {
-            var controllerRoot = new GameObject("VegetableRiotController");
-            var controller = controllerRoot.AddComponent<VegetableRiotController>();
-            var bootstrapRoot = new GameObject("VegetableRiotDevBootstrap");
+            var controllerRoot = new GameObject("FoodRiotController");
+            var controller = controllerRoot.AddComponent<FoodRiotController>();
+            var bootstrapRoot = new GameObject("FoodRiotDevBootstrap");
             bootstrapRoot.SetActive(false);
-            var bootstrap = bootstrapRoot.AddComponent<VegetableRiotDevBootstrap>();
+            var bootstrap = bootstrapRoot.AddComponent<FoodRiotDevBootstrap>();
             bootstrap.EditorConfigure(controller, null);
 
             Object.Destroy(controllerRoot);

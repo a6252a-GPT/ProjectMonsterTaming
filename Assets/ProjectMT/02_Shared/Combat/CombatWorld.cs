@@ -163,9 +163,9 @@ namespace ProjectMT.Shared.Combat
             poolScope?.Return(projectile);
         }
 
-        public void PlayClimax(Vector3 position)
+        public void PlayClimax(Vector3 position, CombatClimaxStrength strength)
         {
-            feedbackPlayer?.PlayClimax(position);
+            feedbackPlayer?.PlayClimax(position, strength);
         }
 
         public void SetPaused(bool paused)

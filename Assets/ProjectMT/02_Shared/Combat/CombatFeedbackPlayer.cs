@@ -15,6 +15,7 @@ namespace ProjectMT.Shared.Combat
 
         private int hitVfxThisFrame;
         private int impulsesThisFrame;
+        private float strongestImpulseThisFrame; // 같은 프레임의 더 강한 요청은 승격 허용
 
         public void PlayHit(UnitActor target, DamageReport report)
         {
@@ -33,25 +34,43 @@ namespace ProjectMT.Shared.Combat
             PlayImpulse(0.08f);
         }
 
-        public void PlayClimax(Vector3 position)
+        public void PlayClimax(Vector3 position, CombatClimaxStrength strength)
         {
+            var isStrong = strength == CombatClimaxStrength.Strong;
+            var color = isStrong
+                ? new Color(1f, 0.45f, 0.15f)
+                : new Color(1f, 0.78f, 0.25f);
+            var duration = isStrong ? 0.6f : 0.34f;
+            var size = isStrong ? 0.8f : 0.38f;
+            var impulse = isStrong ? 0.24f : 0.1f;
             if (poolScope != null && hitVfxPrefab != null)
             {
                 var instance = poolScope.Rent(hitVfxPrefab, position, Quaternion.identity);
-                instance?.GetComponent<SeedFeedbackVfx>()?.Play(poolScope, new Color(1f, 0.45f, 0.15f), 0.6f, 0.8f);
+                instance?.GetComponent<SeedFeedbackVfx>()?.Play(poolScope, color, duration, size);
             }
 
-            PlayImpulse(0.24f); // 클라이맥스는 강하게 흔듦
+            PlayImpulse(impulse);
         }
 
         private void PlayImpulse(float strength)
         {
-            if (cameraImpulse == null || impulsesThisFrame >= maxCameraImpulsesPerFrame)
+            strength = Mathf.Max(0f, strength);
+            if (cameraImpulse == null || strength <= 0f)
             {
                 return;
             }
 
-            impulsesThisFrame++;
+            if (impulsesThisFrame >= maxCameraImpulsesPerFrame && strength <= strongestImpulseThisFrame)
+            {
+                return;
+            }
+
+            if (impulsesThisFrame < maxCameraImpulsesPerFrame)
+            {
+                impulsesThisFrame++;
+            }
+
+            strongestImpulseThisFrame = Mathf.Max(strongestImpulseThisFrame, strength);
             cameraImpulse.Impulse(strength);
         }
 
@@ -59,6 +78,7 @@ namespace ProjectMT.Shared.Combat
         {
             hitVfxThisFrame = 0; // 다음 프레임 예산 복구
             impulsesThisFrame = 0; // 다음 프레임 예산 복구
+            strongestImpulseThisFrame = 0f;
         }
 
 #if UNITY_EDITOR

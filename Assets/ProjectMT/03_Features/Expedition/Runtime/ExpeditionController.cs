@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
@@ -40,6 +41,9 @@ namespace ProjectMT.Features.Expedition
         private bool running; // 전투 Tick 허용
         private bool settling; // 결과 저장 중
         private int operationVersion; // 늦은 비동기 결과 무효화
+        private readonly Dictionary<UnitActor, int> enemyWaveByActor = new Dictionary<UnitActor, int>(); // 적별 소속 웨이브
+        private readonly int[] aliveEnemiesByWave = new int[ExpeditionStageRules.WaveCount + 1]; // 웨이브별 생존 적
+        private readonly bool[] climaxPlayedByWave = new bool[ExpeditionStageRules.WaveCount + 1]; // 웨이브당 한 번만 재생
 
         public bool IsRunning => running;
         public bool IsSettling => settling;
@@ -82,6 +86,7 @@ namespace ProjectMT.Features.Expedition
             operationVersion++; // 진행 중 비동기 정산 취소
             running = false;
             settling = false;
+            ResetWaveTracking();
             combatWorld?.Clear();
             UpdateHud();
         }
@@ -96,6 +101,7 @@ namespace ProjectMT.Features.Expedition
                 modeButton.onClick.RemoveListener(ToggleMode);
             }
 
+            ResetWaveTracking();
             combatWorld?.Clear();
             progress = null;
             party = null;
@@ -141,6 +147,7 @@ namespace ProjectMT.Features.Expedition
         private void StartRun()
         {
             operationVersion++; // 이전 Run 콜백 무효화
+            ResetWaveTracking();
             combatWorld.Clear();
             combatWorld.SetPaused(false);
             running = true;
@@ -186,8 +193,55 @@ namespace ProjectMT.Features.Expedition
                                formationForward * (formationOffset.y + (wave - 1) * 1.15f);
                 var stats = profile.CreateEnemyStats(currentStage, i + wave * 10);
                 var request = new UnitSpawnRequest($"enemy_{currentStage}_{wave}_{i}", stats, UnitTeam.Enemy);
-                combatWorld.SpawnUnit(enemyUnitPrefab, request, position, Quaternion.Euler(0f, 180f, 0f));
+                var actor = combatWorld.SpawnUnit(enemyUnitPrefab, request, position, Quaternion.Euler(0f, 180f, 0f));
+                TrackWaveEnemy(actor, wave);
             }
+        }
+
+        private void TrackWaveEnemy(UnitActor actor, int wave)
+        {
+            if (actor == null || wave <= 0 || wave >= aliveEnemiesByWave.Length)
+            {
+                return;
+            }
+
+            enemyWaveByActor[actor] = wave;
+            aliveEnemiesByWave[wave]++;
+            actor.Died += HandleWaveEnemyDied;
+        }
+
+        private void HandleWaveEnemyDied(UnitActor actor)
+        {
+            if (actor == null || !enemyWaveByActor.TryGetValue(actor, out var wave))
+            {
+                return;
+            }
+
+            actor.Died -= HandleWaveEnemyDied;
+            enemyWaveByActor.Remove(actor);
+            aliveEnemiesByWave[wave] = Mathf.Max(0, aliveEnemiesByWave[wave] - 1);
+            if (!running || aliveEnemiesByWave[wave] != 0 || climaxPlayedByWave[wave])
+            {
+                return;
+            }
+
+            climaxPlayedByWave[wave] = true;
+            combatWorld?.PlayClimax(actor.transform.position, CombatClimaxStrength.Weak);
+        }
+
+        private void ResetWaveTracking()
+        {
+            foreach (var pair in enemyWaveByActor)
+            {
+                if (pair.Key != null)
+                {
+                    pair.Key.Died -= HandleWaveEnemyDied;
+                }
+            }
+
+            enemyWaveByActor.Clear();
+            Array.Clear(aliveEnemiesByWave, 0, aliveEnemiesByWave.Length);
+            Array.Clear(climaxPlayedByWave, 0, climaxPlayedByWave.Length);
         }
 
         private async void ToggleMode()
@@ -209,6 +263,7 @@ namespace ProjectMT.Features.Expedition
             var version = ++operationVersion; // 이전 모드 변경 결과 무효화
             running = false;
             settling = true;
+            ResetWaveTracking();
             combatWorld.Clear();
             SetResult("모드 변경 중...");
             var saved = await progress.TryApplyAndSaveAsync(GameProgressChange.SetExpeditionMode(nextMode));
@@ -234,7 +289,6 @@ namespace ProjectMT.Features.Expedition
             running = false;
             settling = true;
             combatWorld.SetPaused(true); // 결과 연출 동안 전투 정지
-            combatWorld.PlayClimax(transform.position);
             SetResult("승리");
             _ = ResolveVictoryAsync(++operationVersion); // 저장 후 새 Run 시작
         }

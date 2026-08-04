@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using ProjectMT.Contents.CastleRaid;
@@ -218,6 +220,107 @@ namespace ProjectMT.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator Expedition_ClimaxPlaysOnlyForEachWavesLastEnemy() // 웨이브별 마지막 적 약한 연출 검사
+        {
+            var poolRoot = new GameObject("PoolRoot");
+            var pool = poolRoot.AddComponent<ScenePoolScope>();
+            var vfxPrefab = new GameObject("ClimaxVfxPrefab");
+            vfxPrefab.SetActive(false);
+            vfxPrefab.AddComponent<SeedFeedbackVfx>();
+            var feedbackRoot = new GameObject("CombatFeedback");
+            var feedback = feedbackRoot.AddComponent<CombatFeedbackPlayer>();
+            feedback.EditorConfigure(pool, vfxPrefab, null);
+            var worldRoot = new GameObject("CombatWorld");
+            var world = worldRoot.AddComponent<CombatWorld>();
+            world.EditorConfigure(pool, feedback, null);
+            var expeditionRoot = new GameObject("ExpeditionController");
+            var expedition = expeditionRoot.AddComponent<ExpeditionController>();
+            SetPrivateField(expedition, "combatWorld", world);
+            SetPrivateField(expedition, "running", true);
+
+            var waveOneFirst = new GameObject("Wave1_First").AddComponent<UnitActor>();
+            var waveOneLast = new GameObject("Wave1_Last").AddComponent<UnitActor>();
+            var waveTwoLast = new GameObject("Wave2_Last").AddComponent<UnitActor>();
+            InvokePrivateMethod(expedition, "TrackWaveEnemy", waveOneFirst, 1);
+            InvokePrivateMethod(expedition, "TrackWaveEnemy", waveOneLast, 1);
+            InvokePrivateMethod(expedition, "TrackWaveEnemy", waveTwoLast, 2);
+
+            InvokePrivateMethod(expedition, "HandleWaveEnemyDied", waveOneFirst);
+            Assert.That(pool.ActiveCount, Is.Zero);
+            InvokePrivateMethod(expedition, "HandleWaveEnemyDied", waveOneLast);
+            Assert.That(pool.ActiveCount, Is.EqualTo(1));
+            Assert.That(GetActiveFeedbackSize(pool), Is.EqualTo(0.38f).Within(0.001f));
+
+            pool.ReturnAll();
+            InvokePrivateMethod(expedition, "HandleWaveEnemyDied", waveTwoLast);
+            Assert.That(pool.ActiveCount, Is.EqualTo(1));
+            Assert.That(GetActiveFeedbackSize(pool), Is.EqualTo(0.38f).Within(0.001f));
+
+            expedition.Shutdown();
+            Object.Destroy(waveOneFirst.gameObject);
+            Object.Destroy(waveOneLast.gameObject);
+            Object.Destroy(waveTwoLast.gameObject);
+            Object.Destroy(expeditionRoot);
+            Object.Destroy(worldRoot);
+            Object.Destroy(feedbackRoot);
+            Object.Destroy(poolRoot);
+            Object.Destroy(vfxPrefab);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CastleRaid_ClimaxPlaysOnlyForMainCastle() // 성벽 제외·최종 건물 강한 연출 검사
+        {
+            var poolRoot = new GameObject("PoolRoot");
+            var pool = poolRoot.AddComponent<ScenePoolScope>();
+            var vfxPrefab = new GameObject("ClimaxVfxPrefab");
+            vfxPrefab.SetActive(false);
+            vfxPrefab.AddComponent<SeedFeedbackVfx>();
+            var feedbackRoot = new GameObject("CombatFeedback");
+            var feedback = feedbackRoot.AddComponent<CombatFeedbackPlayer>();
+            feedback.EditorConfigure(pool, vfxPrefab, null);
+            var wallRoot = new GameObject("Wall");
+            var wall = wallRoot.AddComponent<CastleTarget>();
+            wall.EditorConfigure(CastleTargetKind.Wall, 1f, null, null);
+            var mainCastleRoot = new GameObject("MainCastle");
+            var mainCastle = mainCastleRoot.AddComponent<CastleTarget>();
+            mainCastle.EditorConfigure(CastleTargetKind.MainCastle, 1f, null, null);
+            var controllerRoot = new GameObject("CastleRaidController");
+            var controller = controllerRoot.AddComponent<CastleRaidController>();
+            controller.EditorConfigure(
+                pool,
+                feedback,
+                null,
+                null,
+                null,
+                null,
+                new[] { wall, mainCastle },
+                null,
+                null,
+                null,
+                null,
+                null);
+
+            SetPrivateField(controller, "<IsRunning>k__BackingField", true);
+            InvokePrivateMethod(controller, "HandleTargetDestroyed", wall);
+            Assert.That(pool.ActiveCount, Is.Zero);
+
+            SetPrivateField(controller, "<IsRunning>k__BackingField", true);
+            InvokePrivateMethod(controller, "HandleTargetDestroyed", mainCastle);
+            Assert.That(pool.ActiveCount, Is.EqualTo(1));
+            Assert.That(GetActiveFeedbackSize(pool), Is.EqualTo(0.8f).Within(0.001f));
+
+            controller.Shutdown();
+            Object.Destroy(controllerRoot);
+            Object.Destroy(mainCastleRoot);
+            Object.Destroy(wallRoot);
+            Object.Destroy(feedbackRoot);
+            Object.Destroy(poolRoot);
+            Object.Destroy(vfxPrefab);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator MainBattle_ContentClickDuringSettlementShowsFeedback() // 저장 중 중복 진입 안내 검사
         {
             var expeditionRoot = new GameObject("ExpeditionController");
@@ -297,6 +400,14 @@ namespace ProjectMT.Tests.PlayMode
         {
             return new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI))
                 .GetComponent<TMP_Text>();
+        }
+
+        private static float GetActiveFeedbackSize(ScenePoolScope pool) // 현재 클라이맥스 VFX 크기 읽기
+        {
+            var active = GetPrivateField<HashSet<GameObject>>(pool, "active");
+            var feedback = active.Single().GetComponent<SeedFeedbackVfx>();
+            Assert.That(feedback, Is.Not.Null);
+            return GetPrivateField<float>(feedback, "size");
         }
 
         private static IEnumerator InvokePrivateCoroutine(object target, string methodName) // 비공개 코루틴 실행 보조

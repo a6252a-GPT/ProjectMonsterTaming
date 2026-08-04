@@ -35,6 +35,7 @@ namespace ProjectMT.Tests.EditMode
             var data = await saveService.LoadAsync();
 
             Assert.That(data.FoodRiotBestKills, Is.EqualTo(7));
+            Assert.That(data.Commander.Level, Is.EqualTo(1));
         }
 
         [Test]
@@ -44,6 +45,40 @@ namespace ProjectMT.Tests.EditMode
 
             Assert.That(party.Units, Has.Length.EqualTo(5));
             Assert.That(party.TotalPower, Is.GreaterThan(0f));
+        }
+
+        [Test]
+        public void DefaultProgress_StartsCommanderAtLevelOne() // 군단장 최초 성장값
+        {
+            var progress = GameProgressData.CreateDefault();
+
+            Assert.That(progress.Commander.Level, Is.EqualTo(1));
+            Assert.That(progress.Commander.Experience, Is.Zero);
+
+            var calculationInput = new CommanderProgressView(12, 345L);
+            Assert.That(calculationInput.Level, Is.EqualTo(12));
+            Assert.That(calculationInput.Experience, Is.EqualTo(345L));
+        }
+
+        [Test]
+        public void LegionStatBonus_ExposesSixGrowthRates() // 군단 공용 능력치 6종
+        {
+            var bonus = new LegionStatBonus(0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f);
+
+            Assert.That(bonus.HealthRate, Is.EqualTo(0.1f));
+            Assert.That(bonus.AttackRate, Is.EqualTo(0.2f));
+            Assert.That(bonus.DefenseRate, Is.EqualTo(0.3f));
+            Assert.That(bonus.AttackSpeedRate, Is.EqualTo(0.4f));
+            Assert.That(bonus.MoveSpeedRate, Is.EqualTo(0.5f));
+            Assert.That(bonus.AttackRangeRate, Is.EqualTo(0.6f));
+        }
+
+        [Test]
+        public void UnitStatsSnapshot_HasDefenseValue() // 전투 Snapshot 방어력 자리
+        {
+            var stats = new UnitStatsSnapshot { defense = 12f };
+
+            Assert.That(stats.defense, Is.EqualTo(12f));
         }
 
         [TestCase(1, 4)]

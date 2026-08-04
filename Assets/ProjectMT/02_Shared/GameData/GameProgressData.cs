@@ -11,6 +11,53 @@ namespace ProjectMT.Shared.GameData
     }
 
     [Serializable]
+    public sealed class CommanderProgressData // 군단장 성장 저장 원본
+    {
+        [SerializeField] private int level = 1;
+        [SerializeField] private long experience;
+
+        public int Level => level;
+        public long Experience => experience;
+
+        public static CommanderProgressData CreateDefault()
+        {
+            return new CommanderProgressData();
+        }
+
+        public CommanderProgressData Clone()
+        {
+            return new CommanderProgressData
+            {
+                level = level,
+                experience = experience
+            };
+        }
+
+        internal void Repair()
+        {
+            level = Math.Max(1, level);
+            experience = Math.Max(0L, experience);
+        }
+    }
+
+    public readonly struct CommanderProgressView // 성장 기능에 전달할 읽기 전용 값
+    {
+        public CommanderProgressView(CommanderProgressData data)
+            : this(data?.Level ?? 1, data?.Experience ?? 0L)
+        {
+        }
+
+        public CommanderProgressView(int level, long experience) // 기능 계산·테스트용 입력
+        {
+            Level = Math.Max(1, level);
+            Experience = Math.Max(0L, experience);
+        }
+
+        public int Level { get; }
+        public long Experience { get; }
+    }
+
+    [Serializable]
     public sealed class GameProgressData // 시드 사용자 진행 원본
     {
         [SerializeField] private int currentChallengeStage = 1; // 현재 도전 단계
@@ -20,6 +67,7 @@ namespace ProjectMT.Shared.GameData
         [FormerlySerializedAs("vegetableRiotBestKills")]
         [SerializeField] private int foodRiotBestKills; // 식량 대소동 최고 처치
         [SerializeField] private bool castleRaidFirstClear; // 군단의 역습 첫 승리
+        [SerializeField] private CommanderProgressData commander = CommanderProgressData.CreateDefault(); // 군단장 성장값
 
         public int CurrentChallengeStage => currentChallengeStage;
         public int LastClearedStage => lastClearedStage;
@@ -27,6 +75,7 @@ namespace ProjectMT.Shared.GameData
         public int TemporaryGold => temporaryGold;
         public int FoodRiotBestKills => foodRiotBestKills;
         public bool CastleRaidFirstClear => castleRaidFirstClear;
+        public CommanderProgressView Commander => new CommanderProgressView(commander);
 
         public static GameProgressData CreateDefault()
         {
@@ -42,7 +91,8 @@ namespace ProjectMT.Shared.GameData
                 expeditionMode = expeditionMode,
                 temporaryGold = temporaryGold,
                 foodRiotBestKills = foodRiotBestKills,
-                castleRaidFirstClear = castleRaidFirstClear
+                castleRaidFirstClear = castleRaidFirstClear,
+                commander = commander?.Clone() ?? CommanderProgressData.CreateDefault()
             };
         }
 
@@ -100,6 +150,8 @@ namespace ProjectMT.Shared.GameData
             lastClearedStage = Math.Max(0, Math.Min(lastClearedStage, currentChallengeStage - 1));
             temporaryGold = Math.Max(0, temporaryGold);
             foodRiotBestKills = Math.Max(0, foodRiotBestKills);
+            commander ??= CommanderProgressData.CreateDefault();
+            commander.Repair();
 
             if (lastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat)
             {
@@ -118,6 +170,7 @@ namespace ProjectMT.Shared.GameData
             TemporaryGold = data.TemporaryGold;
             FoodRiotBestKills = data.FoodRiotBestKills;
             CastleRaidFirstClear = data.CastleRaidFirstClear;
+            Commander = data.Commander;
         }
 
         public int CurrentChallengeStage { get; }
@@ -126,6 +179,7 @@ namespace ProjectMT.Shared.GameData
         public int TemporaryGold { get; }
         public int FoodRiotBestKills { get; }
         public bool CastleRaidFirstClear { get; }
+        public CommanderProgressView Commander { get; }
     }
 
     public sealed class GameProgressChange // 한 번에 검증할 진행 변경 묶음

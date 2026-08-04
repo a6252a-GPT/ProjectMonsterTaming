@@ -332,7 +332,6 @@ namespace ProjectMT.Contents.CastleRaid
 
             if (target.TargetKind == CastleTargetKind.Wall)
             {
-                combatFeedback?.PlayClimax(target.transform.position);
                 if (!innerPathOpen && !verifyingInnerPath)
                 {
                     verifyingInnerPath = true;
@@ -344,7 +343,7 @@ namespace ProjectMT.Contents.CastleRaid
 
             if (target.TargetKind == CastleTargetKind.MainCastle)
             {
-                combatFeedback?.PlayClimax(target.transform.position);
+                combatFeedback?.PlayClimax(target.transform.position, CombatClimaxStrength.Strong);
                 SetStatus(clearOverlay == null ? "성 파괴 완료" : string.Empty);
                 IsRunning = false;
                 UpdateHud();

@@ -4,10 +4,45 @@ using UnityEngine;
 namespace ProjectMT.Shared.Unit
 {
     [Serializable]
+    public struct LegionStatBonus // 군단 전체에 더할 성장 보너스 비율
+    {
+        [SerializeField] private float healthRate;
+        [SerializeField] private float attackRate;
+        [SerializeField] private float defenseRate;
+        [SerializeField] private float attackSpeedRate;
+        [SerializeField] private float moveSpeedRate;
+        [SerializeField] private float attackRangeRate;
+
+        public LegionStatBonus(
+            float healthRate,
+            float attackRate,
+            float defenseRate,
+            float attackSpeedRate,
+            float moveSpeedRate,
+            float attackRangeRate)
+        {
+            this.healthRate = Mathf.Max(0f, healthRate);
+            this.attackRate = Mathf.Max(0f, attackRate);
+            this.defenseRate = Mathf.Max(0f, defenseRate);
+            this.attackSpeedRate = Mathf.Max(0f, attackSpeedRate);
+            this.moveSpeedRate = Mathf.Max(0f, moveSpeedRate);
+            this.attackRangeRate = Mathf.Max(0f, attackRangeRate);
+        }
+
+        public float HealthRate => healthRate;
+        public float AttackRate => attackRate;
+        public float DefenseRate => defenseRate;
+        public float AttackSpeedRate => attackSpeedRate;
+        public float MoveSpeedRate => moveSpeedRate;
+        public float AttackRangeRate => attackRangeRate;
+    }
+
+    [Serializable]
     public struct UnitStatsSnapshot // 해석이 끝난 전투 능력치
     {
         public float maxHealth;
         public float damage;
+        public float defense;
         public float moveSpeed;
         public float attackRange;
         public float attackInterval;

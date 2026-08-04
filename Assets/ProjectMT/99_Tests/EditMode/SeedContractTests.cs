@@ -2,16 +2,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using ProjectMT.Contents.Framework;
+using ProjectMT.Contents.FoodRiot;
 using ProjectMT.Core.SaveIO;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Features.Expedition;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
 
 namespace ProjectMT.Tests.EditMode
 {
@@ -396,6 +400,130 @@ namespace ProjectMT.Tests.EditMode
             }
         }
 
+        [TestCase(true, 1)]
+        [TestCase(false, 0)]
+        public void ContentFlow_PresentsRewardOnlyAfterSuccessfulSave(bool saveSucceeds, int expectedPresentationCount) // 저장 확정 순서 검사
+        {
+            var sequence = new System.Collections.Generic.List<string>();
+            var progress = new RecordingProgressService(saveSucceeds, sequence);
+            var presentation = new RecordingRewardPresentation(sequence);
+            var factory = ScriptableObject.CreateInstance<TestStartDataFactory>();
+            var adapter = ScriptableObject.CreateInstance<TestResultAdapter>();
+            var definition = ScriptableObject.CreateInstance<ContentDefinition>();
+            definition.EditorConfigure(
+                new ContentId("reward_test"),
+                ContentOpenMode.MainBattleHosted,
+                new SceneId(string.Empty),
+                factory,
+                adapter);
+            var catalog = ScriptableObject.CreateInstance<ContentCatalog>();
+            catalog.EditorSetDefinitions(new[] { definition });
+            var runner = new RecordingHostedRunner();
+            var flow = new ContentFlow(
+                catalog,
+                progress,
+                new RecordingSceneNavigator(),
+                new SceneId("main_battle"),
+                presentation);
+
+            Assert.That(
+                flow.StartHosted(new ContentId("reward_test"), SeedBattlePartySnapshotFactory.Create(), runner),
+                Is.True);
+            if (!saveSucceeds)
+            {
+                LogAssert.Expect(LogType.Error, "Content progress could not be saved. Content=reward_test");
+            }
+
+            runner.Context.Exit.Complete(new TestResult(7));
+
+            Assert.That(presentation.PlayCount, Is.EqualTo(expectedPresentationCount));
+            Assert.That(sequence.First(), Is.EqualTo("save"));
+            if (saveSucceeds)
+            {
+                Assert.That(sequence, Is.EqualTo(new[] { "save", "present" }));
+            }
+            else
+            {
+                Assert.That(sequence, Is.EqualTo(new[] { "save" }));
+            }
+
+            Assert.That(runner.CloseCount, Is.EqualTo(1));
+            Object.DestroyImmediate(catalog);
+            Object.DestroyImmediate(definition);
+            Object.DestroyImmediate(adapter);
+            Object.DestroyImmediate(factory);
+        }
+
+        [Test]
+        public void FoodRiotRewardPresentation_MatchesSavedSeedGold() // 식량 대소동 저장값·표시값 일치
+        {
+            var adapter = ScriptableObject.CreateInstance<FoodRiotResultAdapter>();
+
+            Assert.That(
+                adapter.TryCreateRewardPresentation(new FoodRiotResult(11), out var presentation),
+                Is.True);
+            Assert.That(presentation.Items.Count, Is.EqualTo(1));
+            Assert.That(presentation.Items[0].Kind, Is.EqualTo(RewardPresentationKind.Gold));
+            Assert.That(presentation.Items[0].Amount, Is.EqualTo(11));
+
+            Object.DestroyImmediate(adapter);
+        }
+
+        [Test]
+        public void FeedbackPresentationAssets_AreAuthoredAndWired() // 런타임 생성 루트가 아닌 정식 Prefab·Scene 연결 검사
+        {
+            var floatingNumber = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/ProjectMT/02_Shared/Combat/Prefabs/PF_FloatingNumber.prefab");
+            var rewardItem = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/ProjectMT/02_Shared/UI/Prefabs/PF_RewardAcquireItem.prefab");
+            var rewardOverlay = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/ProjectMT/02_Shared/UI/Prefabs/PF_RewardAcquireOverlay.prefab");
+            var appRoot = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/ProjectMT/01_Core/Bootstrap/Prefabs/PF_AppRoot.prefab");
+            var hostedRuntime = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/ProjectMT/04_Contents/02_FoodRiot/Prefabs/PF_FoodRiotRuntime.prefab");
+
+            Assert.That(floatingNumber?.GetComponent<ProjectMT.Shared.Combat.FloatingNumberView>(), Is.Not.Null);
+            Assert.That(floatingNumber.transform.localScale.x, Is.EqualTo(0.18f).Within(0.001f));
+            Assert.That(rewardItem?.GetComponent<RewardAcquireView>(), Is.Not.Null);
+            Assert.That(rewardOverlay?.GetComponent<RewardAcquirePresenter>(), Is.Not.Null);
+            Assert.That(appRoot?.GetComponentsInChildren<RewardAcquirePresenter>(true), Has.Length.EqualTo(1));
+            AssertCombatFeedbackExtensions(hostedRuntime);
+
+            foreach (var scenePath in new[]
+                     {
+                         "Assets/ProjectMT/00_Scenes/01_MainBattle.unity",
+                         "Assets/ProjectMT/00_Scenes/02_CastleRaid.unity"
+                     })
+            {
+                var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
+                try
+                {
+                    var feedbackRoots = scene.GetRootGameObjects()
+                        .SelectMany(root => root.GetComponentsInChildren<ProjectMT.Shared.Combat.CombatFeedbackPlayer>(true))
+                        .Select(feedback => feedback.gameObject)
+                        .ToArray();
+                    Assert.That(feedbackRoots, Is.Not.Empty, scenePath);
+                    foreach (var feedbackRoot in feedbackRoots)
+                    {
+                        AssertCombatFeedbackExtensions(feedbackRoot);
+                    }
+                }
+                finally
+                {
+                    EditorSceneManager.CloseScene(scene, true);
+                }
+            }
+        }
+
+        private static void AssertCombatFeedbackExtensions(GameObject root) // 전투 피드백 로컬 소유권 검사
+        {
+            Assert.That(root, Is.Not.Null);
+            var feedback = root.GetComponentsInChildren<ProjectMT.Shared.Combat.CombatFeedbackPlayer>(true).Single();
+            Assert.That(feedback.GetComponent<ProjectMT.Shared.Combat.FloatingNumberPresenter>(), Is.Not.Null);
+            Assert.That(feedback.GetComponent<ProjectMT.Shared.Audio.SfxPool>(), Is.Not.Null);
+        }
+
         private static int CountComponents(GameObject root, string fullTypeName) // 하위 오브젝트의 특정 컴포넌트 집계
         {
             return root.GetComponentsInChildren<Component>(true)
@@ -419,6 +547,132 @@ namespace ProjectMT.Tests.EditMode
             public Task ReplaceAsync(string path, byte[] replacement)
             {
                 return Task.CompletedTask;
+            }
+        }
+
+        private sealed class TestStartData : IContentStartData
+        {
+        }
+
+        private sealed class TestResult : IContentResultData
+        {
+            public TestResult(int reward)
+            {
+                Reward = reward;
+            }
+
+            public int Reward { get; }
+        }
+
+        private sealed class TestStartDataFactory : ContentStartDataFactory
+        {
+            public override IContentStartData Create(BattlePartySnapshot party)
+            {
+                return new TestStartData();
+            }
+        }
+
+        private sealed class TestResultAdapter : ContentResultAdapter
+        {
+            public override bool TryCreateProgressChange(IContentResultData result, out GameProgressChange change)
+            {
+                if (!(result is TestResult testResult))
+                {
+                    change = null;
+                    return false;
+                }
+
+                change = GameProgressChange.RecordFoodRiot(testResult.Reward, testResult.Reward);
+                return true;
+            }
+
+            public override bool TryCreateRewardPresentation(
+                IContentResultData result,
+                out RewardPresentationRequest presentation)
+            {
+                if (!(result is TestResult testResult))
+                {
+                    presentation = null;
+                    return false;
+                }
+
+                presentation = RewardPresentationRequest.Gold(testResult.Reward);
+                return true;
+            }
+        }
+
+        private sealed class RecordingHostedRunner : IHostedContentRunner
+        {
+            public ContentContext Context { get; private set; }
+            public int CloseCount { get; private set; }
+
+            public bool Open(ContentContext context)
+            {
+                Context = context;
+                return true;
+            }
+
+            public void Close()
+            {
+                CloseCount++;
+            }
+        }
+
+        private sealed class RecordingProgressService : IGameProgressService
+        {
+            private readonly bool saveSucceeds;
+            private readonly System.Collections.Generic.List<string> sequence;
+
+            public RecordingProgressService(bool saveSucceeds, System.Collections.Generic.List<string> sequence)
+            {
+                this.saveSucceeds = saveSucceeds;
+                this.sequence = sequence;
+            }
+
+            public GameProgressView View => new GameProgressView(GameProgressData.CreateDefault());
+            public bool IsLoaded => true;
+            public event System.Action Changed
+            {
+                add { }
+                remove { }
+            }
+
+            public Task<bool> TryApplyAndSaveAsync(GameProgressChange change)
+            {
+                sequence.Add("save");
+                return Task.FromResult(saveSucceeds);
+            }
+
+            public Task SaveCurrentAsync()
+            {
+                return Task.CompletedTask;
+            }
+        }
+
+        private sealed class RecordingRewardPresentation : IRewardPresentationPlayer
+        {
+            private readonly System.Collections.Generic.List<string> sequence;
+
+            public RecordingRewardPresentation(System.Collections.Generic.List<string> sequence)
+            {
+                this.sequence = sequence;
+            }
+
+            public int PlayCount { get; private set; }
+
+            public void PlayConfirmed(RewardPresentationRequest request)
+            {
+                PlayCount++;
+                sequence.Add("present");
+            }
+        }
+
+        private sealed class RecordingSceneNavigator : ISceneNavigator
+        {
+            public bool IsTransitioning => false;
+
+            public void Load(SceneId sceneId)
+            {
             }
         }
     }

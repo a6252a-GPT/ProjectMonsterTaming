@@ -7,8 +7,10 @@ using ProjectMT.Contents.CastleRaid;
 using ProjectMT.Contents.FoodRiot;
 using ProjectMT.Features.Expedition;
 using ProjectMT.Features.MainBattle;
+using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Pooling;
+using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
@@ -216,6 +218,96 @@ namespace ProjectMT.Tests.PlayMode
             }
 
             Object.Destroy(controllerRoot);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator SfxPool_PrewarmsOnlyConfiguredVoiceCount() // 모바일 Voice 사전 생성 상한 검사
+        {
+            var root = new GameObject("SfxPool");
+            root.SetActive(false);
+            var pool = root.AddComponent<SfxPool>();
+            pool.EditorConfigure(4, 2);
+            root.SetActive(true);
+
+            yield return null;
+
+            Assert.That(pool.VoiceCount, Is.EqualTo(2));
+            Assert.That(pool.MaxVoices, Is.EqualTo(4));
+            Assert.That(root.transform.childCount, Is.EqualTo(2));
+            Object.Destroy(root);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator FloatingNumbers_MergeSameTargetAndReturnToPool() // 다단 히트 합산·반환 검사
+        {
+            var poolRoot = new GameObject("FloatingNumberPool");
+            var pool = poolRoot.AddComponent<ScenePoolScope>();
+            var numberPrefab = new GameObject("FloatingNumberPrefab", typeof(TextMeshPro), typeof(FloatingNumberView));
+            numberPrefab.GetComponent<FloatingNumberView>().EditorConfigure(numberPrefab.GetComponent<TMP_Text>());
+            numberPrefab.SetActive(false);
+            var presenterRoot = new GameObject("FloatingNumberPresenter");
+            presenterRoot.SetActive(false);
+            var presenter = presenterRoot.AddComponent<FloatingNumberPresenter>();
+            presenter.EditorConfigure(pool, numberPrefab);
+            presenterRoot.SetActive(true);
+
+            presenter.Queue(Vector3.zero, 2f, FloatingNumberStyle.EnemyDamage, 1001);
+            presenter.Queue(Vector3.one, 3f, FloatingNumberStyle.EnemyDamage, 1001);
+            yield return new WaitForSecondsRealtime(0.12f);
+            yield return null;
+
+            Assert.That(presenter.ActiveNumberCount, Is.EqualTo(1));
+            Assert.That(pool.ActiveCount, Is.EqualTo(1));
+            var active = GetPrivateField<HashSet<GameObject>>(pool, "active").Single();
+            Assert.That(active.GetComponent<TMP_Text>().text, Is.EqualTo("5"));
+
+            yield return new WaitForSecondsRealtime(0.8f);
+            Assert.That(presenter.ActiveNumberCount, Is.Zero);
+            Assert.That(pool.ActiveCount, Is.Zero);
+
+            Object.Destroy(presenterRoot);
+            Object.Destroy(poolRoot);
+            Object.Destroy(numberPrefab);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator RewardAcquirePresenter_PlaysAndReturnsConfirmedItem() // 확정 보상 이동·반환 검사
+        {
+            var displayObject = new GameObject("RewardDisplay", typeof(RectTransform));
+            displayObject.SetActive(false);
+            var display = displayObject.GetComponent<RectTransform>();
+            var pool = displayObject.AddComponent<ScenePoolScope>();
+            var presenter = displayObject.AddComponent<RewardAcquirePresenter>();
+            var spawn = new GameObject("Spawn", typeof(RectTransform)).GetComponent<RectTransform>();
+            spawn.SetParent(display, false);
+            var target = new GameObject("Target", typeof(RectTransform)).GetComponent<RectTransform>();
+            target.SetParent(display, false);
+            target.anchoredPosition = new Vector2(300f, 180f);
+            var itemPrefab = new GameObject("RewardItem", typeof(RectTransform), typeof(CanvasGroup), typeof(RewardAcquireView));
+            var label = CreateText("RewardLabel");
+            label.transform.SetParent(itemPrefab.transform, false);
+            itemPrefab.GetComponent<RewardAcquireView>().EditorConfigure(label);
+            itemPrefab.SetActive(false);
+            presenter.EditorConfigure(pool, itemPrefab, display, spawn, target, null);
+            displayObject.SetActive(true);
+
+            presenter.PlayConfirmed(RewardPresentationRequest.Gold(7));
+            yield return null;
+
+            Assert.That(presenter.ActiveItemCount, Is.EqualTo(1));
+            Assert.That(pool.ActiveCount, Is.EqualTo(1));
+            var active = GetPrivateField<HashSet<GameObject>>(pool, "active").Single();
+            Assert.That(active.GetComponentInChildren<TMP_Text>().text, Does.Contain("골드 +7"));
+
+            yield return new WaitForSecondsRealtime(1f);
+            Assert.That(presenter.ActiveItemCount, Is.Zero);
+            Assert.That(pool.ActiveCount, Is.Zero);
+
+            Object.Destroy(displayObject);
+            Object.Destroy(itemPrefab);
             yield return null;
         }
 

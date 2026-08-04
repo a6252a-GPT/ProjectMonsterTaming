@@ -24,6 +24,7 @@ namespace ProjectMT.Contents.CastleRaid
         public CastleTarget Target => target;
 
         public event Action<CastleAssaultUnit> Died;
+        public event Action<CastleAssaultUnit, DamageReport> Damaged;
 
         private void Awake()
         {
@@ -113,6 +114,7 @@ namespace ProjectMT.Contents.CastleRaid
 
             controller = null;
             Died = null;
+            Damaged = null;
         }
 
         private void SetTarget(CastleTarget nextTarget)
@@ -174,6 +176,7 @@ namespace ProjectMT.Contents.CastleRaid
         private void HandleDamaged(DamageReport report)
         {
             visualFeedback?.PlayHit();
+            Damaged?.Invoke(this, report);
         }
 
         private void HandleDied(DamageReport report)

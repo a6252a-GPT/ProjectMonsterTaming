@@ -16,7 +16,8 @@ namespace ProjectMT.Shared.GameData
 
     public sealed class SaveService // 진행 데이터 직렬화 담당
     {
-        public const int CurrentDataVersion = 1;
+        public const int CurrentDataVersion = 2;
+        private const int PreviousDataVersion = 1;
         private const string LegacyFoodRiotBestKillsJsonKey = "\"vegetableRiotBestKills\""; // 개명 전 저장 키
         private const string FoodRiotBestKillsJsonKey = "\"foodRiotBestKills\""; // 현재 저장 키
 
@@ -34,27 +35,38 @@ namespace ProjectMT.Shared.GameData
             var bytes = await fileStore.ReadAsync(savePath);
             if (bytes == null || bytes.Length == 0)
             {
-                return GameProgressData.CreateDefault(); // 첫 실행 기본값
+                var created = GameProgressData.CreateDefault();
+                created.Repair();
+                await SaveAsync(created); // 첫 실행 프로필을 MainBattle 전에 확정
+                return created;
             }
 
+            SaveEnvelope envelope;
             try
             {
                 var json = MigrateLegacyFieldNames(Encoding.UTF8.GetString(bytes));
-                var envelope = JsonUtility.FromJson<SaveEnvelope>(json);
-                if (envelope == null || envelope.dataVersion != CurrentDataVersion || envelope.gameData == null)
-                {
-                    Debug.LogWarning("Save data is missing or uses an unsupported version. A seed default will be used.");
-                    return GameProgressData.CreateDefault(); // 미지원 저장은 시드 기본값
-                }
-
-                envelope.gameData.Repair();
-                return envelope.gameData;
+                envelope = JsonUtility.FromJson<SaveEnvelope>(json);
             }
             catch (Exception exception)
             {
                 Debug.LogWarning($"Save load failed. A seed default will be used. {exception.Message}");
                 return GameProgressData.CreateDefault(); // 손상 파일은 시드 기본값
             }
+
+            if (envelope == null || envelope.gameData == null ||
+                (envelope.dataVersion != PreviousDataVersion && envelope.dataVersion != CurrentDataVersion))
+            {
+                Debug.LogWarning("Save data is missing or uses an unsupported version. A seed default will be used.");
+                return GameProgressData.CreateDefault(); // 미지원 저장은 시드 기본값
+            }
+
+            envelope.gameData.Repair();
+            if (envelope.dataVersion == PreviousDataVersion)
+            {
+                await SaveAsync(envelope.gameData); // v1 진행값을 보존한 채 v2로 승격
+            }
+
+            return envelope.gameData;
         }
 
         public async Task SaveAsync(GameProgressData data)

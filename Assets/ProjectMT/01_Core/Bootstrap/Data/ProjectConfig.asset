@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Bootstrap::ProjectMT.Bootstrap.ProjectConfig
   sceneCatalog: {fileID: 11400000, guid: 62583908f1181834f8addc7da213dcc4, type: 2}
   contentCatalog: {fileID: 11400000, guid: 4a64c91c4617ea7499c208780aa0e2e0, type: 2}
+  monsterCatalog: {fileID: 11400000, guid: fe8b78d3f8fdc474f867c3d64664a095, type: 2}
   entrySceneId:
     value: entry
   mainBattleSceneId:

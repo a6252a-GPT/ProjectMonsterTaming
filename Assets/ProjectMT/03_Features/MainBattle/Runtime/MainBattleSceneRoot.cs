@@ -45,7 +45,11 @@ namespace ProjectMT.Features.MainBattle
                 throw new InvalidOperationException("MainBattle runtime references are missing.");
             }
 
-            party = SeedBattlePartySnapshotFactory.Create(); // 현재 고정 두부 5기
+            party = context.Party;
+            if (party == null || party.Units.Length == 0)
+            {
+                throw new InvalidOperationException("MainBattle party is missing.");
+            }
             foodRiotButton?.onClick.AddListener(OpenFoodRiot);
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
             expedition.Initialize(context.Progress, party);

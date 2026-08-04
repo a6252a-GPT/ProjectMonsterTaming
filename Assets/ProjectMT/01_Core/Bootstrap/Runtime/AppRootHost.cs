@@ -6,6 +6,8 @@ using ProjectMT.Core.SceneFlow;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.UI;
+using ProjectMT.Shared.Unit;
 using UnityEngine;
 
 namespace ProjectMT.Bootstrap
@@ -15,9 +17,11 @@ namespace ProjectMT.Bootstrap
     {
         [SerializeField] private ProjectConfig projectConfig; // 시작 설정 모음
         [SerializeField] private SceneLoader sceneLoader; // 정식 씬 전환 담당
+        [SerializeField] private RewardAcquirePresenter rewardPresenter; // 저장 확정 보상 연출
 
         private GameDataService gameDataService; // 진행 데이터 관리자
         private ContentFlow contentFlow; // 콘텐츠 실행 흐름
+        private BattlePartySnapshotBuilder partyBuilder; // 저장 편성 해석기
         private bool initialized; // 중복 초기화 방지
 
         public static AppRootHost Instance { get; private set; } // 전역 AppRoot 한 개
@@ -54,7 +58,8 @@ namespace ProjectMT.Bootstrap
                 return;
             }
 
-            if (projectConfig == null || projectConfig.SceneCatalog == null || projectConfig.ContentCatalog == null)
+            if (projectConfig == null || projectConfig.SceneCatalog == null ||
+                projectConfig.ContentCatalog == null || projectConfig.MonsterCatalog == null)
             {
                 throw new InvalidOperationException("ProjectConfig and its catalogs must be assigned.");
             }
@@ -73,13 +78,15 @@ namespace ProjectMT.Bootstrap
             var saveService = new SaveService(new AtomicFileStore(), savePath);
             gameDataService = new GameDataService(saveService);
             await gameDataService.LoadAsync(); // 씬 초기화 전 저장 로드
+            partyBuilder = new BattlePartySnapshotBuilder(projectConfig.MonsterCatalog);
 
             sceneLoader.Configure(projectConfig.SceneCatalog);
             contentFlow = new ContentFlow(
                 projectConfig.ContentCatalog,
                 gameDataService,
                 sceneLoader,
-                projectConfig.MainBattleSceneId);
+                projectConfig.MainBattleSceneId,
+                rewardPresenter);
             sceneLoader.ContextFactory = CreateSceneContext; // 씬별 권한 봉투 생성
             sceneLoader.SceneFailed += HandleSceneFailed;
 
@@ -96,7 +103,8 @@ namespace ProjectMT.Bootstrap
 
             if (sceneId == projectConfig.MainBattleSceneId)
             {
-                return new MainSceneContext(gameDataService, contentFlow); // 메인전투 권한 전달
+                var party = partyBuilder.Build(gameDataService.View);
+                return new MainSceneContext(gameDataService, contentFlow, party); // 실제 저장 부대 전달
             }
 
             return contentFlow.CreateSeparateSceneContext(sceneId); // 별도 콘텐츠 실행 봉투
@@ -157,6 +165,11 @@ namespace ProjectMT.Bootstrap
         {
             projectConfig = config;
             sceneLoader = loader;
+        }
+
+        public void EditorConfigureRewardPresenter(RewardAcquirePresenter presenter)
+        {
+            rewardPresenter = presenter;
         }
 #endif
     }

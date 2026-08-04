@@ -95,6 +95,7 @@ namespace ProjectMT.Contents.CastleRaid
                 }
 
                 target.Initialize(); // 씬에 고정된 목표물 재사용 초기화
+                target.Damaged += HandleTargetDamaged;
                 target.Destroyed += HandleTargetDestroyed;
             }
 
@@ -118,6 +119,7 @@ namespace ProjectMT.Contents.CastleRaid
                     continue;
                 }
 
+                targets[i].Damaged -= HandleTargetDamaged;
                 targets[i].Destroyed -= HandleTargetDestroyed;
                 targets[i].Shutdown();
             }
@@ -288,6 +290,7 @@ namespace ProjectMT.Contents.CastleRaid
 
             var deployedIndex = selectedUnitIndex; // 선택 해제 전에 번호 보관
             unit.Initialize(startData.Party.Units[deployedIndex], this);
+            unit.Damaged += HandleUnitDamaged;
             unit.Died += HandleUnitDied;
             activeUnits.Add(unit);
             deployedUnits[deployedIndex] = true;
@@ -300,6 +303,7 @@ namespace ProjectMT.Contents.CastleRaid
 
         private void HandleUnitDied(CastleAssaultUnit unit)
         {
+            unit.Damaged -= HandleUnitDamaged;
             unit.Died -= HandleUnitDied;
             StartCoroutine(ReturnDeadUnitAfterFeedback(unit)); // 사망 연출이 끝난 뒤 풀 반환
             if (AllDeployedUnitsDead() && deployedCount >= startData.DeploymentLimit) // 추가 배치도 불가능할 때만 패배
@@ -307,6 +311,30 @@ namespace ProjectMT.Contents.CastleRaid
                 SetStatus("습격 실패");
                 IsRunning = false;
                 context.Exit.Fail(new CastleRaidResult(false));
+            }
+        }
+
+        private void HandleTargetDamaged(CastleTarget target, DamageReport report)
+        {
+            if (target != null)
+            {
+                combatFeedback?.PlayDamage(
+                    report.Request.HitPoint,
+                    report.AppliedDamage,
+                    FloatingNumberStyle.EnemyDamage,
+                    target.GetInstanceID());
+            }
+        }
+
+        private void HandleUnitDamaged(CastleAssaultUnit unit, DamageReport report)
+        {
+            if (unit != null)
+            {
+                combatFeedback?.PlayDamage(
+                    report.Request.HitPoint,
+                    report.AppliedDamage,
+                    FloatingNumberStyle.PlayerDamage,
+                    unit.GetInstanceID());
             }
         }
 

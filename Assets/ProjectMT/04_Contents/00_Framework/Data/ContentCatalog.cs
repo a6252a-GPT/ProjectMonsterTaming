@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
 
@@ -15,6 +16,14 @@ namespace ProjectMT.Contents.Framework
     public abstract class ContentResultAdapter : ScriptableObject // 결과를 진행 변경으로 번역
     {
         public abstract bool TryCreateProgressChange(IContentResultData result, out GameProgressChange change);
+
+        public virtual bool TryCreateRewardPresentation(
+            IContentResultData result,
+            out RewardPresentationRequest presentation)
+        {
+            presentation = null;
+            return false; // 실제 보상이 있는 Adapter만 표시값 제공
+        }
     }
 
     public abstract class ContentStartDataFactory : ScriptableObject // 부대 사진으로 시작값 생성

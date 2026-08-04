@@ -68,6 +68,7 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private int foodRiotBestKills; // 식량 대소동 최고 처치
         [SerializeField] private bool castleRaidFirstClear; // 군단의 역습 첫 승리
         [SerializeField] private CommanderProgressData commander = CommanderProgressData.CreateDefault(); // 군단장 성장값
+        [SerializeField] private MonsterRosterData monsters = MonsterRosterData.CreateDefault(); // 보유·편성값
 
         public int CurrentChallengeStage => currentChallengeStage;
         public int LastClearedStage => lastClearedStage;
@@ -76,6 +77,7 @@ namespace ProjectMT.Shared.GameData
         public int FoodRiotBestKills => foodRiotBestKills;
         public bool CastleRaidFirstClear => castleRaidFirstClear;
         public CommanderProgressView Commander => new CommanderProgressView(commander);
+        public MonsterRosterView Monsters => monsters?.CreateView() ?? MonsterRosterData.CreateDefault().CreateView();
 
         public static GameProgressData CreateDefault()
         {
@@ -92,7 +94,8 @@ namespace ProjectMT.Shared.GameData
                 temporaryGold = temporaryGold,
                 foodRiotBestKills = foodRiotBestKills,
                 castleRaidFirstClear = castleRaidFirstClear,
-                commander = commander?.Clone() ?? CommanderProgressData.CreateDefault()
+                commander = commander?.Clone() ?? CommanderProgressData.CreateDefault(),
+                monsters = monsters?.Clone() ?? MonsterRosterData.CreateDefault()
             };
         }
 
@@ -152,6 +155,8 @@ namespace ProjectMT.Shared.GameData
             foodRiotBestKills = Math.Max(0, foodRiotBestKills);
             commander ??= CommanderProgressData.CreateDefault();
             commander.Repair();
+            monsters ??= MonsterRosterData.CreateDefault();
+            monsters.Repair();
 
             if (lastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat)
             {
@@ -171,6 +176,7 @@ namespace ProjectMT.Shared.GameData
             FoodRiotBestKills = data.FoodRiotBestKills;
             CastleRaidFirstClear = data.CastleRaidFirstClear;
             Commander = data.Commander;
+            Monsters = data.Monsters;
         }
 
         public int CurrentChallengeStage { get; }
@@ -180,6 +186,7 @@ namespace ProjectMT.Shared.GameData
         public int FoodRiotBestKills { get; }
         public bool CastleRaidFirstClear { get; }
         public CommanderProgressView Commander { get; }
+        public MonsterRosterView Monsters { get; }
     }
 
     public sealed class GameProgressChange // 한 번에 검증할 진행 변경 묶음

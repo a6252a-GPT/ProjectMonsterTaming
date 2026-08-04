@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
 
@@ -14,6 +15,7 @@ namespace ProjectMT.Contents.Framework
         private readonly IGameProgressService progress; // 결과 반영·저장
         private readonly ISceneNavigator sceneNavigator; // 별도 씬 이동
         private readonly SceneId mainBattleSceneId; // 별도 콘텐츠 복귀 대상
+        private readonly IRewardPresentationPlayer rewardPresentation; // 저장 성공 보상 표현
 
         private ActiveRun activeRun; // 동시에 한 판만 허용
 
@@ -21,12 +23,14 @@ namespace ProjectMT.Contents.Framework
             ContentCatalog catalog,
             IGameProgressService progress,
             ISceneNavigator sceneNavigator,
-            SceneId mainBattleSceneId)
+            SceneId mainBattleSceneId,
+            IRewardPresentationPlayer rewardPresentation = null)
         {
             this.catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             this.progress = progress ?? throw new ArgumentNullException(nameof(progress));
             this.sceneNavigator = sceneNavigator ?? throw new ArgumentNullException(nameof(sceneNavigator));
             this.mainBattleSceneId = mainBattleSceneId;
+            this.rewardPresentation = rewardPresentation;
         }
 
         public bool IsRunning => activeRun != null;
@@ -155,6 +159,18 @@ namespace ProjectMT.Contents.Framework
                 else if (!await progress.TryApplyAndSaveAsync(change))
                 {
                     Debug.LogError($"Content progress could not be saved. Content={run.Definition.ContentId}");
+                }
+                else if (run.Definition.ResultAdapter.TryCreateRewardPresentation(result, out var presentation) &&
+                         presentation != null && !presentation.IsEmpty)
+                {
+                    try
+                    {
+                        rewardPresentation?.PlayConfirmed(presentation); // 저장 성공 뒤에만 화면 연출 허용
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogException(exception); // 표현 실패가 콘텐츠 복귀를 막지 않음
+                    }
                 }
             }
 

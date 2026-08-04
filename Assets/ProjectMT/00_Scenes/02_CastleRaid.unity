@@ -1095,6 +1095,8 @@ GameObject:
   m_Component:
   - component: {fileID: 582794791}
   - component: {fileID: 582794790}
+  - component: {fileID: 582794792}
+  - component: {fileID: 582794793}
   m_Layer: 0
   m_Name: CombatFeedback
   m_TagString: Untagged
@@ -1117,6 +1119,12 @@ MonoBehaviour:
   poolScope: {fileID: 236593942}
   hitVfxPrefab: {fileID: 2470788992684002907, guid: 6e6074fa5f86bd848b05edbf171981d8, type: 3}
   cameraImpulse: {fileID: 123934999}
+  floatingNumbers: {fileID: 582794793}
+  sfxPool: {fileID: 582794792}
+  hitSfx: {fileID: 0}
+  deathSfx: {fileID: 0}
+  weakClimaxSfx: {fileID: 0}
+  strongClimaxSfx: {fileID: 0}
   maxHitVfxPerFrame: 6
   maxCameraImpulsesPerFrame: 1
 --- !u!4 &582794791
@@ -1134,6 +1142,42 @@ Transform:
   m_Children: []
   m_Father: {fileID: 600776360}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &582794792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 582794789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32fee0f5f426f5247860ae839e881ce6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxPool
+  maxVoices: 12
+  prewarmVoices: 6
+  outputGroup: {fileID: 0}
+--- !u!114 &582794793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 582794789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea8940659fdf6ce41945df3ca3925de4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Combat.FloatingNumberPresenter
+  poolScope: {fileID: 236593942}
+  numberPrefab: {fileID: 7488350022611422080, guid: 1ce0a036ab8369945a278635e8bf0174, type: 3}
+  worldCamera: {fileID: 123934998}
+  heightOffset: 1.15
+  mergeWindow: 0.08
+  maxNumbersPerFrame: 6
+  maxActiveNumbers: 24
+  displayDuration: 0.72
+  riseDistance: 0.85
 --- !u!1 &600776359
 GameObject:
   m_ObjectHideFlags: 0

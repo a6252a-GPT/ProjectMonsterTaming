@@ -36,6 +36,7 @@ namespace ProjectMT.Contents.CastleRaid
         public bool IsAlive => health != null && health.IsAlive;
 
         public event Action<CastleTarget> Destroyed;
+        public event Action<CastleTarget, DamageReport> Damaged;
 
         private void Awake()
         {
@@ -72,11 +73,13 @@ namespace ProjectMT.Contents.CastleRaid
 
             attackSlots?.ReleaseAll();
             Destroyed = null;
+            Damaged = null;
         }
 
         private void HandleDamaged(DamageReport report)
         {
             visualFeedback?.PlayHit();
+            Damaged?.Invoke(this, report);
         }
 
         private void HandleDied(DamageReport report)

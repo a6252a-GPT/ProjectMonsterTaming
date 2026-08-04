@@ -2957,6 +2957,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1933715672}
   - component: {fileID: 1933715673}
+  - component: {fileID: 1933715675}
+  - component: {fileID: 1933715674}
   m_Layer: 0
   m_Name: CombatFeedback
   m_TagString: Untagged
@@ -2994,8 +2996,50 @@ MonoBehaviour:
   poolScope: {fileID: 582384435}
   hitVfxPrefab: {fileID: 2470788992684002907, guid: 6e6074fa5f86bd848b05edbf171981d8, type: 3}
   cameraImpulse: {fileID: 660488058}
+  floatingNumbers: {fileID: 1933715674}
+  sfxPool: {fileID: 1933715675}
+  hitSfx: {fileID: 0}
+  deathSfx: {fileID: 0}
+  weakClimaxSfx: {fileID: 0}
+  strongClimaxSfx: {fileID: 0}
   maxHitVfxPerFrame: 6
   maxCameraImpulsesPerFrame: 1
+--- !u!114 &1933715674
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1933715671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea8940659fdf6ce41945df3ca3925de4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Combat.FloatingNumberPresenter
+  poolScope: {fileID: 582384435}
+  numberPrefab: {fileID: 7488350022611422080, guid: 1ce0a036ab8369945a278635e8bf0174, type: 3}
+  worldCamera: {fileID: 660488059}
+  heightOffset: 1.15
+  mergeWindow: 0.08
+  maxNumbersPerFrame: 6
+  maxActiveNumbers: 24
+  displayDuration: 0.72
+  riseDistance: 0.85
+--- !u!114 &1933715675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1933715671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32fee0f5f426f5247860ae839e881ce6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxPool
+  maxVoices: 12
+  prewarmVoices: 6
+  outputGroup: {fileID: 0}
 --- !u!1 &2005170567
 GameObject:
   m_ObjectHideFlags: 0

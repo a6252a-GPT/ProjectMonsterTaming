@@ -1,5 +1,6 @@
 using ProjectMT.Contents.Framework;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Reward;
 using UnityEngine;
 
 namespace ProjectMT.Contents.FoodRiot
@@ -16,6 +17,20 @@ namespace ProjectMT.Contents.FoodRiot
             }
 
             change = GameProgressChange.RecordFoodRiot(foodResult.KillCount, foodResult.KillCount); // 시드는 1마리당 골드 1
+            return true;
+        }
+
+        public override bool TryCreateRewardPresentation(
+            IContentResultData result,
+            out RewardPresentationRequest presentation)
+        {
+            if (!(result is FoodRiotResult foodResult) || foodResult.KillCount <= 0)
+            {
+                presentation = null;
+                return false;
+            }
+
+            presentation = RewardPresentationRequest.Gold(foodResult.KillCount); // 저장되는 시드 골드와 같은 값
             return true;
         }
     }

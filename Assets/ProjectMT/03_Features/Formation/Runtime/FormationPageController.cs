@@ -46,15 +46,11 @@ namespace ProjectMT.Features.Formation
         [SerializeField] private Transform previewAnchor;
         [SerializeField] private Camera worldCamera;
 
-        [Header("Korean Font")]
-        [SerializeField] private Font koreanFontSource;
-
         private readonly List<MonsterCardView> formationCards = new List<MonsterCardView>();
         private readonly List<MonsterCardView> ownedCards = new List<MonsterCardView>();
         private IGameProgressService progress;
         private MonsterCatalog catalog;
         private Func<BattlePartySnapshot> refreshParty;
-        private TMP_FontAsset runtimeFont;
         private GameObject previewInstance;
         private string selectedMonsterId;
         private MonsterPartyKind activeParty = MonsterPartyKind.Main;
@@ -70,7 +66,6 @@ namespace ProjectMT.Features.Formation
 
         private void Awake()
         {
-            ConfigureRuntimeFont();
             openButton?.onClick.AddListener(OpenPage);
             closeButton?.onClick.AddListener(ClosePage);
             mainTabButton?.onClick.AddListener(SelectMainTab);
@@ -105,10 +100,6 @@ namespace ProjectMT.Features.Formation
             reserveTabButton?.onClick.RemoveListener(SelectReserveTab);
             levelUpButton?.onClick.RemoveListener(HandleLevelUpClicked);
             formationButton?.onClick.RemoveListener(HandleFormationClicked);
-            if (runtimeFont != null)
-            {
-                Destroy(runtimeFont);
-            }
         }
 
         public void Configure(
@@ -515,7 +506,6 @@ namespace ProjectMT.Features.Formation
             {
                 var card = Instantiate(cardPrefab, parent);
                 card.name = $"MonsterCard_{cards.Count + 1}";
-                card.ApplyFont(runtimeFont);
                 cards.Add(card);
             }
         }
@@ -573,22 +563,6 @@ namespace ProjectMT.Features.Formation
             previewCamera.transform.LookAt(targetCenter);
             previewCamera.nearClipPlane = 0.05f;
             previewCamera.farClipPlane = Mathf.Max(20f, distance + radius * 4f);
-        }
-
-        private void ConfigureRuntimeFont()
-        {
-            if (koreanFontSource == null)
-            {
-                return;
-            }
-
-            runtimeFont = TMP_FontAsset.CreateFontAsset(koreanFontSource);
-            runtimeFont.name = "Runtime_Formation_Korean";
-            runtimeFont.atlasPopulationMode = AtlasPopulationMode.Dynamic;
-            foreach (var label in GetComponentsInChildren<TMP_Text>(true))
-            {
-                label.font = runtimeFont;
-            }
         }
 
         private void SetControlsInteractable(bool interactable)
@@ -771,8 +745,7 @@ namespace ProjectMT.Features.Formation
             Camera modelCamera,
             Light modelLight,
             Transform modelAnchor,
-            Camera mainWorldCamera,
-            Font fontSource)
+            Camera mainWorldCamera)
         {
             pageRoot = contentPage;
             openButton = opener;
@@ -798,7 +771,6 @@ namespace ProjectMT.Features.Formation
             previewLight = modelLight;
             previewAnchor = modelAnchor;
             worldCamera = mainWorldCamera;
-            koreanFontSource = fontSource;
         }
 #endif
     }

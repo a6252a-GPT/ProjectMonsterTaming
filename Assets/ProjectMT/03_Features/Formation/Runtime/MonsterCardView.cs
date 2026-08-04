@@ -94,19 +94,6 @@ namespace ProjectMT.Features.Formation
             }
         }
 
-        public void ApplyFont(TMP_FontAsset font)
-        {
-            if (font == null)
-            {
-                return;
-            }
-
-            foreach (var label in GetComponentsInChildren<TMP_Text>(true))
-            {
-                label.font = font;
-            }
-        }
-
         private void HandleClicked()
         {
             if (!string.IsNullOrEmpty(monsterId))

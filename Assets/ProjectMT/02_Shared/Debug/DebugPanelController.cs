@@ -17,18 +17,15 @@ namespace ProjectMT.Shared.Debugging
         [SerializeField] private Button drawMonsterButton; // 임시 무중복 몬스터 획득
         [SerializeField] private TMP_Text drawMonsterLabel;
         [SerializeField] private TMP_Text statusLabel; // 실행 결과 표시
-        [SerializeField] private Font debugFontSource; // 공용 TMP 에셋을 오염시키지 않는 원본 폰트
 
         private const float ConfirmDuration = 4f;
         private Func<Task<bool>> resetSaveAction; // AppRoot가 제공하는 초기화 권한
         private Func<Task<string>> drawMonsterAction; // AppRoot가 제공하는 획득·저장 권한
-        private TMP_FontAsset runtimeFont; // 실행 중에만 존재하는 한글 폰트
         private float confirmUntil;
         private bool isBusy;
 
         private void Awake()
         {
-            ConfigureRuntimeFont();
             toggleButton?.onClick.AddListener(TogglePanel);
             resetSaveButton?.onClick.AddListener(HandleResetSaveClicked);
             drawMonsterButton?.onClick.AddListener(HandleDrawMonsterClicked);
@@ -41,10 +38,6 @@ namespace ProjectMT.Shared.Debugging
             toggleButton?.onClick.RemoveListener(TogglePanel);
             resetSaveButton?.onClick.RemoveListener(HandleResetSaveClicked);
             drawMonsterButton?.onClick.RemoveListener(HandleDrawMonsterClicked);
-            if (runtimeFont != null)
-            {
-                Destroy(runtimeFont);
-            }
         }
 
         private void Update()
@@ -188,22 +181,6 @@ namespace ProjectMT.Shared.Debugging
             }
         }
 
-        private void ConfigureRuntimeFont()
-        {
-            if (debugFontSource == null)
-            {
-                return;
-            }
-
-            runtimeFont = TMP_FontAsset.CreateFontAsset(debugFontSource);
-            runtimeFont.name = "Runtime_Debug_Korean";
-            runtimeFont.atlasPopulationMode = AtlasPopulationMode.Dynamic;
-            foreach (var label in GetComponentsInChildren<TMP_Text>(true))
-            {
-                label.font = runtimeFont; // 프리팹 문구 전체에 메모리 폰트 사용
-            }
-        }
-
 #if UNITY_EDITOR
         public void EditorConfigure(
             GameObject toolsPanel,
@@ -212,7 +189,6 @@ namespace ProjectMT.Shared.Debugging
             Button resetButton,
             TMP_Text resetText,
             TMP_Text statusText,
-            Font fontSource,
             Button monsterDrawButton = null,
             TMP_Text monsterDrawText = null)
         {
@@ -224,7 +200,6 @@ namespace ProjectMT.Shared.Debugging
             drawMonsterButton = monsterDrawButton;
             drawMonsterLabel = monsterDrawText;
             statusLabel = statusText;
-            debugFontSource = fontSource;
             SetPanelOpen(false);
             ResetConfirmation();
             if (drawMonsterLabel != null)

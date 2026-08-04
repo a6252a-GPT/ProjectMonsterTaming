@@ -18,7 +18,8 @@ namespace ProjectMT.Shared.Unit
             UnitTeam team,
             bool canMove = true,
             bool canAttack = true,
-            float fixedDamagePerHit = 0f)
+            float fixedDamagePerHit = 0f,
+            Color visualTint = default)
         {
             UnitId = unitId ?? string.Empty;
             Stats = stats;
@@ -26,6 +27,7 @@ namespace ProjectMT.Shared.Unit
             CanMove = canMove;
             CanAttack = canAttack;
             FixedDamagePerHit = fixedDamagePerHit;
+            VisualTint = visualTint.a <= 0f ? Color.white : visualTint;
         }
 
         public string UnitId { get; }
@@ -34,6 +36,7 @@ namespace ProjectMT.Shared.Unit
         public bool CanMove { get; }
         public bool CanAttack { get; }
         public float FixedDamagePerHit { get; } // 콘텐츠 고정 피해값
+        public Color VisualTint { get; }
     }
 
     [DisallowMultipleComponent]
@@ -54,6 +57,7 @@ namespace ProjectMT.Shared.Unit
         private Vector3 followOffset; // 대형 내 위치
         private float followDetectionRange; // 추종 중 탐지 거리
         private float followLeashRange; // 기준점 복귀 거리
+        private bool isManuallyHeld; // 플레이어가 직접 옮기는 동안 자기 행동 정지
 
         public string UnitId { get; private set; }
         public UnitTeam Team { get; private set; }
@@ -61,6 +65,7 @@ namespace ProjectMT.Shared.Unit
         public UnitVisualFeedback VisualFeedback => visualFeedback;
         public UnitActor Target { get; private set; }
         public bool IsAlive => health != null && health.IsAlive;
+        public bool IsManuallyHeld => isManuallyHeld;
 
         public event Action<UnitActor> Died;
 
@@ -85,6 +90,7 @@ namespace ProjectMT.Shared.Unit
             stats = request.Stats;
             canMove = request.CanMove;
             canAttack = request.CanAttack;
+            visualFeedback?.SetTint(request.VisualTint); // 풀 재사용마다 현재 몬스터 색상 적용
             world = combatWorld;
             feedback = feedbackPlayer;
             attackCooldown = UnityEngine.Random.Range(0f, Mathf.Max(0.05f, stats.attackInterval * 0.35f)); // 동시 공격 분산
@@ -109,11 +115,35 @@ namespace ProjectMT.Shared.Unit
             followOffset = Vector3.zero;
         }
 
+        public bool BeginManualReposition()
+        {
+            if (!IsAlive || isManuallyHeld)
+            {
+                return false;
+            }
+
+            isManuallyHeld = true;
+            Target = null; // 잡힌 동안 자기 이동·공격·재탐색만 정지
+            return true;
+        }
+
+        public void EndManualReposition()
+        {
+            isManuallyHeld = false;
+            Target = null;
+            retargetCooldown = 0f; // 착지 직후 새 위치에서 다시 탐색
+        }
+
         public void Tick(float deltaTime)
         {
             if (!IsAlive || world == null)
             {
                 return;
+            }
+
+            if (isManuallyHeld)
+            {
+                return; // 체력·피격·적 타깃 등록은 유지하고 자기 행동만 멈춤
             }
 
             attackCooldown = Mathf.Max(0f, attackCooldown - deltaTime);
@@ -175,6 +205,7 @@ namespace ProjectMT.Shared.Unit
             feedback = null;
             Target = null;
             followAnchor = null;
+            isManuallyHeld = false;
             Died = null; // 풀 재사용 전 외부 구독 제거
         }
 

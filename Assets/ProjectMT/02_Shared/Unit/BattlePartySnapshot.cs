@@ -62,28 +62,48 @@ namespace ProjectMT.Shared.Unit
     {
         [SerializeField] private string unitId; // 유닛 고정 식별자
         [SerializeField] private UnitStatsSnapshot stats; // 계산 완료 능력치
+        [SerializeField] private Color visualTint = Color.white; // 전투 표시 색상
 
-        public BattleUnitSnapshot(string unitId, UnitStatsSnapshot stats)
+        public BattleUnitSnapshot(string unitId, UnitStatsSnapshot stats, Color visualTint = default)
         {
             this.unitId = unitId;
             this.stats = stats;
+            this.visualTint = visualTint.a <= 0f ? Color.white : visualTint;
         }
 
         public string UnitId => unitId;
         public UnitStatsSnapshot Stats => stats;
+        public Color VisualTint => visualTint.a <= 0f ? Color.white : visualTint;
     }
 
     [Serializable]
     public sealed class BattlePartySnapshot // 한 판에 전달할 부대 사진
     {
-        [SerializeField] private BattleUnitSnapshot[] units; // 투입 유닛 목록
+        [SerializeField] private BattleUnitSnapshot[] units; // 본부대 투입 목록
+        [SerializeField] private BattleUnitSnapshot[] reserveUnits; // 예비 투입 순서
         [SerializeField] private float totalPower; // 편성 전체 전투력
 
         public BattlePartySnapshot(BattleUnitSnapshot[] units)
+            : this(units, Array.Empty<BattleUnitSnapshot>())
+        {
+        }
+
+        public BattlePartySnapshot(BattleUnitSnapshot[] units, BattleUnitSnapshot[] reserveUnits)
         {
             this.units = units ?? Array.Empty<BattleUnitSnapshot>();
+            this.reserveUnits = reserveUnits ?? Array.Empty<BattleUnitSnapshot>();
             totalPower = 0f;
-            foreach (var unit in this.units)
+            AddPower(this.units);
+            AddPower(this.reserveUnits);
+        }
+
+        public BattleUnitSnapshot[] Units => units ?? Array.Empty<BattleUnitSnapshot>();
+        public BattleUnitSnapshot[] ReserveUnits => reserveUnits ?? Array.Empty<BattleUnitSnapshot>();
+        public float TotalPower => totalPower;
+
+        private void AddPower(BattleUnitSnapshot[] partyUnits)
+        {
+            foreach (var unit in partyUnits)
             {
                 if (unit != null)
                 {
@@ -91,9 +111,6 @@ namespace ProjectMT.Shared.Unit
                 }
             }
         }
-
-        public BattleUnitSnapshot[] Units => units;
-        public float TotalPower => totalPower;
     }
 
     public static class SeedBattlePartySnapshotFactory // 고정 두부 5기 시드 생성

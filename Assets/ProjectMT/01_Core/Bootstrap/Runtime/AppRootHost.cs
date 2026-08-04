@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using ProjectMT.Core.SaveIO;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Features.MainBattle;
+using ProjectMT.Shared.Debugging;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
@@ -22,6 +24,7 @@ namespace ProjectMT.Bootstrap
         private GameDataService gameDataService; // 진행 데이터 관리자
         private ContentFlow contentFlow; // 콘텐츠 실행 흐름
         private BattlePartySnapshotBuilder partyBuilder; // 저장 편성 해석기
+        private DebugPanelController debugPanel; // 개발 빌드 전용 도구 패널
         private bool initialized; // 중복 초기화 방지
 
         public static AppRootHost Instance { get; private set; } // 전역 AppRoot 한 개
@@ -91,8 +94,78 @@ namespace ProjectMT.Bootstrap
             sceneLoader.SceneFailed += HandleSceneFailed;
 
             initialized = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            CreateDebugPanel();
+#endif
             sceneLoader.InitializeCurrentScene(); // 현재 Entry부터 초기화
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void CreateDebugPanel()
+        {
+            if (debugPanel != null)
+            {
+                return;
+            }
+
+            var prefab = Resources.Load<DebugPanelController>("Debug/PF_DebugPanel");
+            if (prefab == null)
+            {
+                Debug.LogWarning("Debug panel prefab is missing: Resources/Debug/PF_DebugPanel");
+                return;
+            }
+
+            debugPanel = Instantiate(prefab, transform);
+            debugPanel.name = "DebugPanel";
+            debugPanel.Configure(ResetGameDataForDebugAsync, DrawMonsterForDebugAsync);
+        }
+
+        private async Task<bool> ResetGameDataForDebugAsync()
+        {
+            if (!initialized || gameDataService == null || contentFlow == null ||
+                contentFlow.IsRunning || sceneLoader == null || sceneLoader.IsTransitioning)
+            {
+                return false; // 콘텐츠 실행·씬 전환 중 초기화 금지
+            }
+
+            await gameDataService.ResetToDefaultAsync();
+            sceneLoader.Load(projectConfig.EntrySceneId); // 새 Snapshot으로 다시 진입
+            return true;
+        }
+
+        private async Task<string> DrawMonsterForDebugAsync()
+        {
+            if (!initialized || gameDataService == null || contentFlow == null ||
+                contentFlow.IsRunning || sceneLoader == null || sceneLoader.IsTransitioning)
+            {
+                return "현재 몬스터를 뽑을 수 없습니다";
+            }
+
+            var roster = gameDataService.View.Monsters;
+            var candidates = new List<MonsterDefinition>();
+            var definitions = projectConfig.MonsterCatalog.Definitions;
+            for (var index = 0; index < definitions.Count; index++)
+            {
+                var definition = definitions[index];
+                if (definition != null && !roster.Owns(definition.MonsterId))
+                {
+                    candidates.Add(definition);
+                }
+            }
+
+            if (candidates.Count == 0)
+            {
+                return "모든 카탈로그 몬스터를 보유 중입니다";
+            }
+
+            var selected = candidates[UnityEngine.Random.Range(0, candidates.Count)]; // 미보유 항목 균등 선택
+            var saved = await gameDataService.TryApplyAndSaveAsync(
+                GameProgressChange.AcquireMonster(selected.MonsterId));
+            return saved
+                ? $"{selected.DisplayName} 획득 완료"
+                : "획득 정보를 저장하지 못했습니다";
+        }
+#endif
 
         private ISceneContext CreateSceneContext(SceneId sceneId)
         {
@@ -103,8 +176,11 @@ namespace ProjectMT.Bootstrap
 
             if (sceneId == projectConfig.MainBattleSceneId)
             {
-                var party = partyBuilder.Build(gameDataService.View);
-                return new MainSceneContext(gameDataService, contentFlow, party); // 실제 저장 부대 전달
+                return new MainSceneContext(
+                    gameDataService,
+                    contentFlow,
+                    projectConfig.MonsterCatalog,
+                    () => partyBuilder.Build(gameDataService.View)); // 저장 확정 시 새 부대 사진 생성
             }
 
             return contentFlow.CreateSeparateSceneContext(sceneId); // 별도 콘텐츠 실행 봉투

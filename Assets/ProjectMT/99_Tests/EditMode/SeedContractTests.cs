@@ -484,7 +484,7 @@ namespace ProjectMT.Tests.EditMode
                 "Assets/ProjectMT/04_Contents/02_FoodRiot/Prefabs/PF_FoodRiotRuntime.prefab");
 
             Assert.That(floatingNumber?.GetComponent<ProjectMT.Shared.Combat.FloatingNumberView>(), Is.Not.Null);
-            Assert.That(floatingNumber.transform.localScale.x, Is.EqualTo(0.18f).Within(0.001f));
+            Assert.That(floatingNumber.transform.localScale.x, Is.EqualTo(1f).Within(0.001f));
             Assert.That(rewardItem?.GetComponent<RewardAcquireView>(), Is.Not.Null);
             Assert.That(rewardOverlay?.GetComponent<RewardAcquirePresenter>(), Is.Not.Null);
             Assert.That(appRoot?.GetComponentsInChildren<RewardAcquirePresenter>(true), Has.Length.EqualTo(1));

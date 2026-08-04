@@ -856,6 +856,8 @@ GameObject:
   - component: {fileID: 4674268360824931339}
   - component: {fileID: 2179439108453227152}
   - component: {fileID: 6785963044046922685}
+  - component: {fileID: 8089726690124816355}
+  - component: {fileID: 2477135250747652457}
   m_Layer: 0
   m_Name: Building_B
   m_TagString: Untagged
@@ -964,12 +966,48 @@ MonoBehaviour:
   maxHealth: 52
   health: {fileID: 2180296323669097358}
   attackSlots: {fileID: 2179439108453227152}
-  linkedObstacle: {fileID: 0}
+  linkedObstacle: {fileID: 8089726690124816355}
   visualFeedback: {fileID: 4674268360824931339}
   targetRenderers:
   - {fileID: 7939260500912214730}
   targetColliders:
   - {fileID: 8726727401143300613}
+--- !u!208 &8089726690124816355
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 547137078272820080}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.85, y: 0.9, z: 0.75}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0, z: 0}
+  m_TimeToStationary: 0.5
+--- !u!114 &2477135250747652457
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 547137078272820080}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 0
+  m_Area: 0
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 1
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &547154152950190714
 GameObject:
   m_ObjectHideFlags: 0
@@ -7232,6 +7270,8 @@ GameObject:
   - component: {fileID: 7343290020139409768}
   - component: {fileID: 5826086315176091789}
   - component: {fileID: 2253689295813561112}
+  - component: {fileID: 8624296671708027561}
+  - component: {fileID: 1099577147411933765}
   m_Layer: 0
   m_Name: Building_A
   m_TagString: Untagged
@@ -7340,12 +7380,48 @@ MonoBehaviour:
   maxHealth: 52
   health: {fileID: 5989169362788665685}
   attackSlots: {fileID: 5826086315176091789}
-  linkedObstacle: {fileID: 0}
+  linkedObstacle: {fileID: 8624296671708027561}
   visualFeedback: {fileID: 7343290020139409768}
   targetRenderers:
   - {fileID: 7997520636707401140}
   targetColliders:
   - {fileID: 8377867726561346138}
+--- !u!208 &8624296671708027561
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3926132419004751957}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.85, y: 0.9, z: 0.75}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0, z: 0}
+  m_TimeToStationary: 0.5
+--- !u!114 &1099577147411933765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3926132419004751957}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 0
+  m_Area: 0
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 1
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &3948970528579120291
 GameObject:
   m_ObjectHideFlags: 0

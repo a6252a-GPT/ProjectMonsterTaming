@@ -240,7 +240,7 @@ namespace ProjectMT.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator FloatingNumbers_MergeSameTargetAndReturnToPool() // 다단 히트 합산·반환 검사
+        public IEnumerator FloatingNumbers_MergeMoveOnCurveAndReturnToPool() // 합산·곡선 이동·반환 검사
         {
             var poolRoot = new GameObject("FloatingNumberPool");
             var pool = poolRoot.AddComponent<ScenePoolScope>();
@@ -262,6 +262,11 @@ namespace ProjectMT.Tests.PlayMode
             Assert.That(pool.ActiveCount, Is.EqualTo(1));
             var active = GetPrivateField<HashSet<GameObject>>(pool, "active").Single();
             Assert.That(active.GetComponent<TMP_Text>().text, Is.EqualTo("5"));
+            var curveStart = active.transform.position;
+
+            yield return new WaitForSecondsRealtime(0.18f);
+            Assert.That(active.transform.position.y, Is.GreaterThan(curveStart.y + 0.05f));
+            Assert.That(Mathf.Abs(active.transform.position.x - curveStart.x), Is.GreaterThan(0.05f));
 
             yield return new WaitForSecondsRealtime(0.8f);
             Assert.That(presenter.ActiveNumberCount, Is.Zero);
@@ -357,6 +362,93 @@ namespace ProjectMT.Tests.PlayMode
             Object.Destroy(feedbackRoot);
             Object.Destroy(poolRoot);
             Object.Destroy(vfxPrefab);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Expedition_DeploysReservesInOrderAtDeadUnitsPosition() // 사망 자리 예비 순차 투입
+        {
+            var poolRoot = new GameObject("ReservePool");
+            var pool = poolRoot.AddComponent<ScenePoolScope>();
+            var worldRoot = new GameObject("ReserveCombatWorld");
+            var world = worldRoot.AddComponent<CombatWorld>();
+            world.enabled = false;
+            world.EditorConfigure(pool, null, null);
+            var unitPrefab = new GameObject("ReserveUnitPrefab");
+            unitPrefab.AddComponent<UnitActor>();
+            unitPrefab.SetActive(false);
+            var spawnRoot = new GameObject("MainPartySlot1");
+            spawnRoot.transform.position = new Vector3(-2f, 0f, 1f);
+            var expeditionRoot = new GameObject("ReserveExpedition");
+            var expedition = expeditionRoot.AddComponent<ExpeditionController>();
+            expedition.EditorConfigure(
+                null,
+                world,
+                unitPrefab,
+                null,
+                new[] { spawnRoot.transform },
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
+            var stats = new UnitStatsSnapshot
+            {
+                maxHealth = 10f,
+                damage = 1f,
+                moveSpeed = 1f,
+                attackRange = 1f,
+                attackInterval = 1f
+            };
+            var party = new BattlePartySnapshot(
+                new[] { new BattleUnitSnapshot("main", stats) },
+                new[]
+                {
+                    new BattleUnitSnapshot("reserve_1", stats),
+                    new BattleUnitSnapshot("reserve_2", stats)
+                });
+            SetPrivateField(expedition, "party", party);
+            SetPrivateField(expedition, "activeRunParty", party);
+            SetPrivateField(expedition, "running", true);
+
+            InvokePrivateMethod(expedition, "SpawnParty");
+            var tracked = GetPrivateField<Dictionary<UnitActor, int>>(expedition, "playerSlotByActor");
+            var main = tracked.Keys.Single();
+            expedition.SetPartyForNextRun(new BattlePartySnapshot(
+                new[] { new BattleUnitSnapshot("next_main", stats) },
+                new[] { new BattleUnitSnapshot("next_reserve", stats) }));
+            var firstDeathPosition = new Vector3(2.5f, 0f, -1.5f);
+            main.transform.position = firstDeathPosition;
+            main.Health.ApplyDamage(new DamageRequest(null, 999f, firstDeathPosition));
+
+            Assert.That(world.CountAlive(UnitTeam.Player), Is.EqualTo(1));
+            var firstReserve = tracked.Keys.Single();
+            Assert.That(firstReserve.UnitId, Is.EqualTo("reserve_1"));
+            Assert.That(firstReserve.transform.position, Is.EqualTo(firstDeathPosition));
+
+            var secondDeathPosition = new Vector3(3.5f, 0f, -0.5f);
+            firstReserve.transform.position = secondDeathPosition;
+            firstReserve.Health.ApplyDamage(new DamageRequest(null, 999f, secondDeathPosition));
+
+            Assert.That(world.CountAlive(UnitTeam.Player), Is.EqualTo(1));
+            var secondReserve = tracked.Keys.Single();
+            Assert.That(secondReserve.UnitId, Is.EqualTo("reserve_2"));
+            Assert.That(secondReserve.transform.position, Is.EqualTo(secondDeathPosition));
+
+            secondReserve.Health.ApplyDamage(new DamageRequest(null, 999f, secondDeathPosition));
+            Assert.That(world.CountAlive(UnitTeam.Player), Is.Zero);
+            Assert.That(tracked, Is.Empty);
+            Assert.That(GetPrivateField<int>(expedition, "nextReserveIndex"), Is.EqualTo(2));
+
+            expedition.Shutdown();
+            Object.Destroy(expeditionRoot);
+            Object.Destroy(spawnRoot);
+            Object.Destroy(worldRoot);
+            Object.Destroy(poolRoot);
+            Object.Destroy(unitPrefab);
             yield return null;
         }
 
@@ -486,6 +578,97 @@ namespace ProjectMT.Tests.PlayMode
             yield return null;
 
             LogAssert.NoUnexpectedReceived();
+        }
+
+        [UnityTest]
+        public IEnumerator UnitActor_ManualHoldPausesSelfButRemainsTargetableAndDamageable() // 잡힌 중 피격·사망 유지
+        {
+            var worldRoot = new GameObject("ManualHoldWorld");
+            var world = worldRoot.AddComponent<CombatWorld>();
+            world.enabled = false;
+            var heldRoot = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var enemyRoot = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            heldRoot.name = "HeldPlayer";
+            enemyRoot.name = "EnemySeeker";
+            heldRoot.transform.position = Vector3.zero;
+            enemyRoot.transform.position = new Vector3(4f, 0f, 0f);
+            var held = heldRoot.AddComponent<UnitActor>();
+            var enemy = enemyRoot.AddComponent<UnitActor>();
+            var stats = new UnitStatsSnapshot
+            {
+                maxHealth = 10f,
+                damage = 1f,
+                moveSpeed = 3f,
+                attackRange = 0.5f,
+                attackInterval = 1f
+            };
+            held.Initialize(new UnitSpawnRequest("held", stats, UnitTeam.Player), world, null);
+            enemy.Initialize(new UnitSpawnRequest("enemy", stats, UnitTeam.Enemy), world, null);
+
+            Assert.That(held.BeginManualReposition(), Is.True);
+            var heldPosition = held.transform.position;
+            held.Tick(1f);
+            Assert.That(held.transform.position, Is.EqualTo(heldPosition));
+            Assert.That(world.FindNearestOpponent(enemy, float.PositiveInfinity), Is.SameAs(held));
+
+            Assert.That(held.Health.ApplyDamage(new DamageRequest(enemy, 3f, heldPosition)), Is.True);
+            Assert.That(held.Health.CurrentHealth, Is.EqualTo(7f));
+            var died = false;
+            held.Died += _ => died = true;
+            Assert.That(held.Health.ApplyDamage(new DamageRequest(enemy, 99f, heldPosition)), Is.True);
+            Assert.That(held.IsAlive, Is.False);
+            Assert.That(died, Is.True);
+
+            Object.Destroy(worldRoot);
+            Object.Destroy(heldRoot);
+            Object.Destroy(enemyRoot);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator UnitActor_ReinitializeReplacesMonsterTint() // 풀 재사용 색상 누수 방지
+        {
+            var root = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var renderer = root.GetComponent<Renderer>();
+            var shader = Shader.Find("Sprites/Default");
+            Assert.That(shader, Is.Not.Null);
+            var material = new Material(shader);
+            material.color = Color.white;
+            renderer.sharedMaterial = material;
+            root.AddComponent<UnitVisualFeedback>();
+            var actor = root.AddComponent<UnitActor>();
+            var stats = new UnitStatsSnapshot
+            {
+                maxHealth = 10f,
+                damage = 1f,
+                moveSpeed = 1f,
+                attackRange = 1f,
+                attackInterval = 1f
+            };
+            var tint = new Color(0.2f, 0.8f, 0.4f, 1f);
+
+            actor.Initialize(new UnitSpawnRequest(
+                "tinted",
+                stats,
+                UnitTeam.Player,
+                visualTint: tint), null, null);
+            var block = new MaterialPropertyBlock();
+            renderer.GetPropertyBlock(block);
+            var tintedColor = block.GetColor(Shader.PropertyToID("_Color"));
+            Assert.That(tintedColor.r, Is.EqualTo(tint.r).Within(0.01f));
+            Assert.That(tintedColor.g, Is.EqualTo(tint.g).Within(0.01f));
+            Assert.That(tintedColor.b, Is.EqualTo(tint.b).Within(0.01f));
+
+            actor.Initialize(new UnitSpawnRequest("white", stats, UnitTeam.Player), null, null);
+            renderer.GetPropertyBlock(block);
+            var resetColor = block.GetColor(Shader.PropertyToID("_Color"));
+            Assert.That(resetColor.r, Is.EqualTo(1f).Within(0.01f));
+            Assert.That(resetColor.g, Is.EqualTo(1f).Within(0.01f));
+            Assert.That(resetColor.b, Is.EqualTo(1f).Within(0.01f));
+
+            Object.Destroy(root);
+            Object.Destroy(material);
+            yield return null;
         }
 
         private static TMP_Text CreateText(string name) // 테스트용 TMP 글자 생성

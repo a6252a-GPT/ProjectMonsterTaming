@@ -34,6 +34,7 @@ namespace ProjectMT.Contents.CastleRaid
         public HealthComponent Health => health;
         public AttackSlotProvider AttackSlots => attackSlots;
         public bool IsAlive => health != null && health.IsAlive;
+        public bool BlocksNavigation => linkedObstacle != null; // 파괴 뒤 경로 갱신 필요 여부
 
         public event Action<CastleTarget> Destroyed;
         public event Action<CastleTarget, DamageReport> Damaged;

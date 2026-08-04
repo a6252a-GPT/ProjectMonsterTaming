@@ -55,7 +55,7 @@ namespace ProjectMT.Tests.EditMode
         }
 
         [Test]
-        public async Task MissingSave_CreatesVersionTwoProfileBeforeReturn()
+        public async Task MissingSave_CreatesCurrentVersionProfileBeforeReturn()
         {
             var store = new RecordingFileStore(null);
             var service = new SaveService(store, "memory://project-mt-save");
@@ -64,8 +64,34 @@ namespace ProjectMT.Tests.EditMode
             var saved = JsonUtility.FromJson<SaveEnvelope>(Encoding.UTF8.GetString(store.Bytes));
 
             Assert.That(store.ReplaceCount, Is.EqualTo(1));
-            Assert.That(saved.dataVersion, Is.EqualTo(2));
+            Assert.That(saved.dataVersion, Is.EqualTo(SaveService.CurrentDataVersion));
             Assert.That(loaded.Monsters.MainPartySlots[0], Is.EqualTo("tofu_01"));
+        }
+
+        [Test]
+        public async Task ResetToDefault_ReplacesMemoryAndSavedProgress()
+        {
+            const string progressedJson =
+                "{\"dataVersion\":3,\"gameData\":{" +
+                "\"currentChallengeStage\":5,\"lastClearedStage\":4,\"temporaryGold\":99," +
+                "\"foodRiotBestKills\":12,\"castleRaidFirstClear\":true}}";
+            var store = new RecordingFileStore(Encoding.UTF8.GetBytes(progressedJson));
+            var saveService = new SaveService(store, "memory://project-mt-save");
+            var gameData = new GameDataService(saveService);
+
+            await gameData.LoadAsync();
+            await gameData.ResetToDefaultAsync();
+            var saved = JsonUtility.FromJson<SaveEnvelope>(Encoding.UTF8.GetString(store.Bytes));
+
+            Assert.That(gameData.View.CurrentChallengeStage, Is.EqualTo(1));
+            Assert.That(gameData.View.LastClearedStage, Is.Zero);
+            Assert.That(gameData.View.TemporaryGold, Is.Zero);
+            Assert.That(gameData.View.FoodRiotBestKills, Is.Zero);
+            Assert.That(gameData.View.CastleRaidFirstClear, Is.False);
+            Assert.That(gameData.View.Monsters.OwnedMonsterIds, Is.EqualTo(new[] { "tofu_01" }));
+            Assert.That(saved.dataVersion, Is.EqualTo(SaveService.CurrentDataVersion));
+            Assert.That(saved.gameData.CurrentChallengeStage, Is.EqualTo(1));
+            Assert.That(store.ReplaceCount, Is.EqualTo(1));
         }
 
         [Test]
@@ -82,14 +108,16 @@ namespace ProjectMT.Tests.EditMode
             var loaded = await service.LoadAsync();
 
             Assert.That(loaded.Monsters.MainPartySlots[0], Is.EqualTo("tofu_01"));
-            Assert.That(loaded.Monsters.MainPartySlots[1], Is.Empty);
+            Assert.That(loaded.Monsters.MainPartySlots[1], Is.EqualTo("tofu_02"));
             Assert.That(loaded.Monsters.MainPartySlots[2], Is.Empty);
-            Assert.That(loaded.Monsters.MainPartySlots[3], Is.EqualTo("tofu_02"));
+            Assert.That(loaded.Monsters.MainPartySlots[3], Is.Empty);
+            Assert.That(loaded.Monsters.MainPartySlots[4], Is.Empty);
             Assert.That(loaded.Monsters.ReservePartySlots[0], Is.Empty);
+            Assert.That(loaded.Monsters.ReservePartySlots[1], Is.Empty);
         }
 
         [Test]
-        public void Catalog_ContainsOneMeleeAndOneRangedTofu()
+        public void Catalog_ContainsEightMixedRangeTofuVariants()
         {
             var catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>(CatalogPath);
             var melee = AssetDatabase.LoadAssetAtPath<MonsterDefinition>(MeleePath);
@@ -97,11 +125,33 @@ namespace ProjectMT.Tests.EditMode
 
             Assert.That(catalog, Is.Not.Null);
             Assert.That(catalog.TryValidate(out var error), Is.True, error);
-            Assert.That(catalog.Definitions, Has.Count.EqualTo(2));
+            Assert.That(catalog.Definitions, Has.Count.EqualTo(8));
             Assert.That(melee.MonsterId, Is.EqualTo("tofu_01"));
             Assert.That(melee.Ranged, Is.False);
             Assert.That(ranged.MonsterId, Is.EqualTo("tofu_02"));
             Assert.That(ranged.Ranged, Is.True);
+
+            var meleeCount = 0;
+            var rangedCount = 0;
+            for (var index = 1; index <= 8; index++)
+            {
+                var monsterId = $"tofu_{index:00}";
+                Assert.That(catalog.TryGet(monsterId, out var definition), Is.True, monsterId);
+                Assert.That(definition.MaxHealth, Is.GreaterThan(0f), monsterId);
+                Assert.That(definition.AttackPower, Is.GreaterThan(0f), monsterId);
+                Assert.That(definition.AttackSpeed, Is.GreaterThan(0f), monsterId);
+                Assert.That(definition.MoveSpeed, Is.GreaterThan(0f), monsterId);
+                Assert.That(definition.AttackRange, Is.GreaterThan(0f), monsterId);
+                Assert.That(definition.VisualTint.a, Is.EqualTo(1f).Within(0.001f), monsterId);
+
+                if (definition.Ranged)
+                    rangedCount++;
+                else
+                    meleeCount++;
+            }
+
+            Assert.That(meleeCount, Is.EqualTo(4));
+            Assert.That(rangedCount, Is.EqualTo(4));
         }
 
         [Test]
@@ -117,12 +167,42 @@ namespace ProjectMT.Tests.EditMode
 
             Assert.That(party.Units, Has.Length.EqualTo(1));
             Assert.That(party.Units[0].UnitId, Is.EqualTo("tofu_01"));
+            Assert.That(party.Units[0].VisualTint, Is.EqualTo(definition.VisualTint));
             Assert.That(stats.maxHealth, Is.EqualTo(definition.MaxHealth * 1.1f).Within(0.001f));
             Assert.That(stats.damage, Is.EqualTo(definition.AttackPower * 1.2f).Within(0.001f));
             Assert.That(stats.defense, Is.EqualTo(definition.Defense * 1.3f).Within(0.001f));
             Assert.That(stats.attackInterval, Is.EqualTo(1f / (definition.AttackSpeed * 1.4f)).Within(0.001f));
             Assert.That(stats.moveSpeed, Is.EqualTo(definition.MoveSpeed * 1.5f).Within(0.001f));
             Assert.That(stats.attackRange, Is.EqualTo(definition.AttackRange * 1.6f).Within(0.001f));
+        }
+
+        [Test]
+        public async Task Builder_PreservesMainAndReserveDeploymentOrder()
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>(CatalogPath);
+            var store = new RecordingFileStore(null);
+            var gameData = new GameDataService(new SaveService(store, "memory://project-mt-save"));
+            await gameData.LoadAsync();
+            Assert.That(await gameData.TryApplyAndSaveAsync(
+                GameProgressChange.AcquireMonster("tofu_02")), Is.True);
+            Assert.That(await gameData.TryApplyAndSaveAsync(
+                GameProgressChange.AcquireMonster("tofu_03")), Is.True);
+            Assert.That(await gameData.TryApplyAndSaveAsync(
+                GameProgressChange.AssignMonster("tofu_02", MonsterPartyKind.Reserve)), Is.True);
+            Assert.That(await gameData.TryApplyAndSaveAsync(
+                GameProgressChange.AssignMonster("tofu_03", MonsterPartyKind.Reserve)), Is.True);
+
+            var party = new BattlePartySnapshotBuilder(catalog).Build(gameData.View);
+
+            Assert.That(party.Units, Has.Length.EqualTo(1));
+            Assert.That(party.Units[0].UnitId, Is.EqualTo("tofu_01"));
+            Assert.That(party.ReserveUnits, Has.Length.EqualTo(2));
+            Assert.That(party.ReserveUnits[0].UnitId, Is.EqualTo("tofu_02"));
+            Assert.That(party.ReserveUnits[1].UnitId, Is.EqualTo("tofu_03"));
+            Assert.That(party.TotalPower, Is.EqualTo(
+                party.Units[0].Stats.EstimatePower() +
+                party.ReserveUnits[0].Stats.EstimatePower() +
+                party.ReserveUnits[1].Stats.EstimatePower()).Within(0.001f));
         }
 
         [Test]

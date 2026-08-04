@@ -7,6 +7,10 @@ namespace ProjectMT.Shared.Unit
     public sealed class MonsterDefinition : ScriptableObject // 몬스터 한 종류의 고정 전투 데이터
     {
         [SerializeField] private string monsterId;
+        [SerializeField] private string displayName;
+        [SerializeField] private Sprite portrait;
+        [SerializeField] private GameObject previewPrefab;
+        [SerializeField] private Color visualTint = Color.white; // 임시 카드·3D 모델 색상 배율
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float attackPower = 10f;
         [SerializeField] private float defense;
@@ -16,6 +20,10 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private bool ranged;
 
         public string MonsterId => monsterId;
+        public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? monsterId : displayName;
+        public Sprite Portrait => portrait;
+        public GameObject PreviewPrefab => previewPrefab;
+        public Color VisualTint => visualTint.a <= 0f ? Color.white : visualTint;
         public float MaxHealth => maxHealth;
         public float AttackPower => attackPower;
         public float Defense => defense;
@@ -62,6 +70,22 @@ namespace ProjectMT.Shared.Unit
             moveSpeed = movementSpeed;
             attackRange = range;
             ranged = isRanged;
+        }
+
+        public void EditorConfigurePresentation(string localizedName, Sprite portraitSprite, GameObject modelPrefab)
+        {
+            displayName = localizedName?.Trim();
+            portrait = portraitSprite;
+            previewPrefab = modelPrefab;
+        }
+
+        public void EditorConfigureVisualTint(Color tint)
+        {
+            visualTint = new Color(
+                Mathf.Max(0f, tint.r),
+                Mathf.Max(0f, tint.g),
+                Mathf.Max(0f, tint.b),
+                1f);
         }
 #endif
     }

@@ -25,11 +25,15 @@ namespace ProjectMT.Shared.Combat
         [SerializeField, Min(1)] private int maxActiveNumbers = 24; // 화면 동시 표시 상한
         [SerializeField, Min(0.1f)] private float displayDuration = 0.72f; // 숫자 유지 시간
         [SerializeField, Min(0f)] private float riseDistance = 0.85f; // 위로 이동할 거리
+        [SerializeField, Min(0f)] private float horizontalDrift = 0.52f; // 좌우 팬 이동 거리
+        [SerializeField, Min(0f)] private float arcHeight = 0.16f; // 곡선 상단 높이
+        [SerializeField, Range(0f, 15f)] private float startTilt = 7f; // 시작 기울기
 
         private readonly Dictionary<int, PendingNumber> pending = new Dictionary<int, PendingNumber>(); // 대상별 합산 요청
         private readonly List<int> readyKeys = new List<int>(); // 순회 중 Dictionary 변경 방지
         private int activeNumberCount; // 현재 풀에서 재생 중인 숫자
         private int uniqueKeySeed = int.MinValue; // 합산하지 않을 요청 식별자
+        private uint presentationSequence; // 반복 숫자의 좌우 방향 교대
 
         public int ActiveNumberCount => activeNumberCount;
         public int PendingNumberCount => pending.Count;
@@ -44,6 +48,7 @@ namespace ProjectMT.Shared.Combat
             pending.Clear();
             readyKeys.Clear();
             activeNumberCount = 0;
+            presentationSequence = 0u;
         }
 
         public void ShowDamage(UnitActor target, DamageReport report)
@@ -140,8 +145,20 @@ namespace ProjectMT.Shared.Combat
 
         private bool SpawnNumber(int key, PendingNumber request)
         {
-            var jitter = ((key * 397) & 1023) / 1023f - 0.5f; // 대상 간 겹침만 작게 분산
-            var position = request.Position + Vector3.up * heightOffset + Vector3.right * (jitter * 0.28f);
+            if (worldCamera == null)
+            {
+                worldCamera = Camera.main;
+            }
+
+            presentationSequence = unchecked(presentationSequence + 1u);
+            var side = (presentationSequence & 1u) == 0u ? -1f : 1f;
+            var hash = unchecked((uint)key * 747796405u + presentationSequence * 2891336453u);
+            var distanceVariation = Mathf.Lerp(0.78f, 1f, (hash & 255u) / 255f); // 기계적인 좌우 대칭 완화
+            var signedDrift = horizontalDrift * distanceVariation * side;
+            var cameraRight = worldCamera != null ? worldCamera.transform.right : Vector3.right;
+            var position = request.Position
+                + Vector3.up * heightOffset
+                + cameraRight * (signedDrift * 0.12f); // 시작점도 살짝 벌려 겹침 완화
             var instance = poolScope.Rent(numberPrefab, position, Quaternion.identity, poolScope.transform); // 활성 숫자도 PoolScope 아래 유지
             var view = instance == null ? null : instance.GetComponent<FloatingNumberView>();
             if (view == null)
@@ -155,11 +172,6 @@ namespace ProjectMT.Shared.Combat
                 return false;
             }
 
-            if (worldCamera == null)
-            {
-                worldCamera = Camera.main;
-            }
-
             activeNumberCount++;
             view.Play(
                 poolScope,
@@ -167,6 +179,9 @@ namespace ProjectMT.Shared.Combat
                 ResolveColor(request.Style),
                 displayDuration,
                 riseDistance,
+                signedDrift,
+                arcHeight,
+                startTilt * side,
                 request.Style == FloatingNumberStyle.Critical ? 1.25f : 1f,
                 worldCamera,
                 HandleViewReleased);

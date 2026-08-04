@@ -31,7 +31,8 @@ namespace ProjectMT.Features.Expedition
         [SerializeField] private TMP_Text resultText;
 
         private IGameProgressService progress; // 진행 조회·저장 계약
-        private BattlePartySnapshot party; // 이번 전투 부대 사진
+        private BattlePartySnapshot party; // 다음 Run에 사용할 최신 부대 사진
+        private BattlePartySnapshot activeRunParty; // 현재 Run 시작 때 고정한 부대 사진
         private ExpeditionRunMode currentMode; // 도전·반복 상태
         private int currentStage; // 현재 실행 단계
         private int currentWave; // 현재 표시 웨이브
@@ -42,11 +43,23 @@ namespace ProjectMT.Features.Expedition
         private bool settling; // 결과 저장 중
         private int operationVersion; // 늦은 비동기 결과 무효화
         private readonly Dictionary<UnitActor, int> enemyWaveByActor = new Dictionary<UnitActor, int>(); // 적별 소속 웨이브
+        private readonly Dictionary<UnitActor, int> playerSlotByActor = new Dictionary<UnitActor, int>(); // 아군별 본부대 자리
         private readonly int[] aliveEnemiesByWave = new int[ExpeditionStageRules.WaveCount + 1]; // 웨이브별 생존 적
         private readonly bool[] climaxPlayedByWave = new bool[ExpeditionStageRules.WaveCount + 1]; // 웨이브당 한 번만 재생
+        private int nextReserveIndex; // 다음에 투입할 예비 순서
 
         public bool IsRunning => running;
         public bool IsSettling => settling;
+
+        public void SetPartyForNextRun(BattlePartySnapshot partySnapshot)
+        {
+            if (partySnapshot == null || partySnapshot.Units.Length == 0)
+            {
+                throw new ArgumentException("A non-empty party is required.", nameof(partySnapshot));
+            }
+
+            party = partySnapshot; // 현재 소환 유닛은 유지하고 다음 StartRun부터 사용
+        }
 
         public void Initialize(IGameProgressService progressService, BattlePartySnapshot partySnapshot)
         {
@@ -87,6 +100,7 @@ namespace ProjectMT.Features.Expedition
             running = false;
             settling = false;
             ResetWaveTracking();
+            ResetPlayerTracking();
             combatWorld?.Clear();
             UpdateHud();
         }
@@ -102,9 +116,11 @@ namespace ProjectMT.Features.Expedition
             }
 
             ResetWaveTracking();
+            ResetPlayerTracking();
             combatWorld?.Clear();
             progress = null;
             party = null;
+            activeRunParty = null;
         }
 
         private void Update()
@@ -148,6 +164,8 @@ namespace ProjectMT.Features.Expedition
         {
             operationVersion++; // 이전 Run 콜백 무효화
             ResetWaveTracking();
+            ResetPlayerTracking();
+            activeRunParty = party; // 진행 중 편성 변경은 다음 Run부터 반영
             combatWorld.Clear();
             combatWorld.SetPaused(false);
             running = true;
@@ -156,6 +174,7 @@ namespace ProjectMT.Features.Expedition
             waveElapsed = 0f;
             challengeTimeRemaining = profile.ChallengeTimeLimitSeconds;
             waveTwoSpawned = false;
+            nextReserveIndex = 0;
             if (resultText != null)
             {
                 resultText.text = string.Empty;
@@ -168,15 +187,90 @@ namespace ProjectMT.Features.Expedition
 
         private void SpawnParty()
         {
-            var units = party.Units;
+            var units = activeRunParty.Units;
             for (var i = 0; i < units.Length && i < 5; i++) // 시드 본부대 최대 5기
             {
                 var position = playerSpawnPoints != null && i < playerSpawnPoints.Length && playerSpawnPoints[i] != null
                     ? playerSpawnPoints[i].position
                     : transform.position + new Vector3(i * 0.8f, 0f, 0f);
-                var request = new UnitSpawnRequest(units[i].UnitId, units[i].Stats, UnitTeam.Player);
-                combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity);
+                var request = new UnitSpawnRequest(
+                    units[i].UnitId,
+                    units[i].Stats,
+                    UnitTeam.Player,
+                    visualTint: units[i].VisualTint);
+                TrackPlayerUnit(combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity), i);
             }
+        }
+
+        private void TrackPlayerUnit(UnitActor actor, int slotIndex)
+        {
+            if (actor == null)
+            {
+                return;
+            }
+
+            playerSlotByActor[actor] = slotIndex;
+            actor.Died += HandlePlayerUnitDied;
+        }
+
+        private void HandlePlayerUnitDied(UnitActor actor)
+        {
+            if (actor == null || !playerSlotByActor.TryGetValue(actor, out var slotIndex))
+            {
+                return;
+            }
+
+            actor.Died -= HandlePlayerUnitDied;
+            playerSlotByActor.Remove(actor);
+            if (!running)
+            {
+                return;
+            }
+
+            TryDeployNextReserve(slotIndex, actor.transform.position); // 쓰러진 자리로 순차 대타 투입
+        }
+
+        private bool TryDeployNextReserve(int slotIndex, Vector3 position)
+        {
+            var reserves = activeRunParty?.ReserveUnits ?? Array.Empty<BattleUnitSnapshot>();
+            while (nextReserveIndex < reserves.Length)
+            {
+                var reserve = reserves[nextReserveIndex++];
+                if (reserve == null)
+                {
+                    continue;
+                }
+
+                var request = new UnitSpawnRequest(
+                    reserve.UnitId,
+                    reserve.Stats,
+                    UnitTeam.Player,
+                    visualTint: reserve.VisualTint);
+                var actor = combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity);
+                if (actor == null)
+                {
+                    continue;
+                }
+
+                TrackPlayerUnit(actor, slotIndex);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ResetPlayerTracking()
+        {
+            foreach (var pair in playerSlotByActor)
+            {
+                if (pair.Key != null)
+                {
+                    pair.Key.Died -= HandlePlayerUnitDied;
+                }
+            }
+
+            playerSlotByActor.Clear();
+            nextReserveIndex = 0;
         }
 
         private void SpawnWave(int wave)
@@ -264,6 +358,7 @@ namespace ProjectMT.Features.Expedition
             running = false;
             settling = true;
             ResetWaveTracking();
+            ResetPlayerTracking();
             combatWorld.Clear();
             SetResult("모드 변경 중...");
             var saved = await progress.TryApplyAndSaveAsync(GameProgressChange.SetExpeditionMode(nextMode));

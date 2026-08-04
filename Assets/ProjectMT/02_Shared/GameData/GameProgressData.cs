@@ -143,6 +143,47 @@ namespace ProjectMT.Shared.GameData
                 castleRaidFirstClear = true;
             }
 
+            if (change.HasAcquireMonster &&
+                (string.IsNullOrEmpty(change.AcquireMonsterId) ||
+                 !monsters.TryAcquire(change.AcquireMonsterId)))
+            {
+                return false;
+            }
+
+            if (change.HasFormationChange)
+            {
+                if (string.IsNullOrEmpty(change.FormationMonsterId) ||
+                    (!change.RemoveFromFormation &&
+                     change.TargetParty != MonsterPartyKind.Main &&
+                     change.TargetParty != MonsterPartyKind.Reserve))
+                {
+                    return false;
+                }
+
+                var formationChanged = change.RemoveFromFormation
+                    ? monsters.TryUnassign(change.FormationMonsterId)
+                    : monsters.TryAssign(change.FormationMonsterId, change.TargetParty);
+                if (!formationChanged)
+                {
+                    return false;
+                }
+            }
+
+            if (change.HasLevelUpMonster)
+            {
+                if (string.IsNullOrEmpty(change.LevelUpMonsterId) ||
+                    !monsters.TryGetOwned(change.LevelUpMonsterId, out var owned) ||
+                    owned.Level != change.ExpectedMonsterLevel ||
+                    !MonsterLevelRules.TryGetNextLevelCost(owned.Level, out var cost) ||
+                    temporaryGold < cost ||
+                    !monsters.TryLevelUp(change.LevelUpMonsterId, change.ExpectedMonsterLevel))
+                {
+                    return false;
+                }
+
+                temporaryGold -= cost; // 레벨 증가와 같은 후보 데이터에서 차감
+            }
+
             Repair(); // 변경 후 불변식 재확인
             return true;
         }
@@ -202,6 +243,15 @@ namespace ProjectMT.Shared.GameData
         internal int TemporaryGoldDelta { get; private set; }
         internal int FoodRiotBestKills { get; private set; }
         internal bool MarkCastleRaidCleared { get; private set; }
+        internal bool HasAcquireMonster { get; private set; }
+        internal string AcquireMonsterId { get; private set; }
+        internal bool HasFormationChange { get; private set; }
+        internal string FormationMonsterId { get; private set; }
+        internal MonsterPartyKind TargetParty { get; private set; }
+        internal bool RemoveFromFormation { get; private set; }
+        internal bool HasLevelUpMonster { get; private set; }
+        internal string LevelUpMonsterId { get; private set; }
+        internal int ExpectedMonsterLevel { get; private set; }
 
         public static GameProgressChange SetExpeditionMode(ExpeditionRunMode mode)
         {
@@ -234,6 +284,45 @@ namespace ProjectMT.Shared.GameData
             return new GameProgressChange
             {
                 MarkCastleRaidCleared = true
+            };
+        }
+
+        public static GameProgressChange AcquireMonster(string monsterId) // 첫 보유 추가 요청
+        {
+            return new GameProgressChange
+            {
+                HasAcquireMonster = true,
+                AcquireMonsterId = monsterId?.Trim()
+            };
+        }
+
+        public static GameProgressChange AssignMonster(string monsterId, MonsterPartyKind targetParty)
+        {
+            return new GameProgressChange
+            {
+                HasFormationChange = true,
+                FormationMonsterId = monsterId?.Trim(),
+                TargetParty = targetParty
+            };
+        }
+
+        public static GameProgressChange UnassignMonster(string monsterId)
+        {
+            return new GameProgressChange
+            {
+                HasFormationChange = true,
+                FormationMonsterId = monsterId?.Trim(),
+                RemoveFromFormation = true
+            };
+        }
+
+        public static GameProgressChange LevelUpMonster(string monsterId, int expectedLevel)
+        {
+            return new GameProgressChange
+            {
+                HasLevelUpMonster = true,
+                LevelUpMonsterId = monsterId?.Trim(),
+                ExpectedMonsterLevel = expectedLevel
             };
         }
     }

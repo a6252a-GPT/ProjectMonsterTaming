@@ -16,8 +16,8 @@ namespace ProjectMT.Shared.GameData
 
     public sealed class SaveService // 진행 데이터 직렬화 담당
     {
-        public const int CurrentDataVersion = 2;
-        private const int PreviousDataVersion = 1;
+        public const int CurrentDataVersion = 3;
+        private const int MinimumSupportedDataVersion = 1;
         private const string LegacyFoodRiotBestKillsJsonKey = "\"vegetableRiotBestKills\""; // 개명 전 저장 키
         private const string FoodRiotBestKillsJsonKey = "\"foodRiotBestKills\""; // 현재 저장 키
 
@@ -54,16 +54,17 @@ namespace ProjectMT.Shared.GameData
             }
 
             if (envelope == null || envelope.gameData == null ||
-                (envelope.dataVersion != PreviousDataVersion && envelope.dataVersion != CurrentDataVersion))
+                envelope.dataVersion < MinimumSupportedDataVersion ||
+                envelope.dataVersion > CurrentDataVersion)
             {
                 Debug.LogWarning("Save data is missing or uses an unsupported version. A seed default will be used.");
                 return GameProgressData.CreateDefault(); // 미지원 저장은 시드 기본값
             }
 
             envelope.gameData.Repair();
-            if (envelope.dataVersion == PreviousDataVersion)
+            if (envelope.dataVersion != CurrentDataVersion)
             {
-                await SaveAsync(envelope.gameData); // v1 진행값을 보존한 채 v2로 승격
+                await SaveAsync(envelope.gameData); // v1·v2 진행값을 보존한 채 v3로 승격
             }
 
             return envelope.gameData;

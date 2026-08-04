@@ -42,6 +42,7 @@ namespace ProjectMT.Contents.CastleRaid
             ResolveReferences();
             controller = raidController ?? throw new ArgumentNullException(nameof(raidController));
             stats = unit.Stats;
+            visualFeedback?.SetTint(unit.VisualTint); // 실제 편성 몬스터 색상 적용
             attackCooldown = UnityEngine.Random.Range(0f, Mathf.Max(0.05f, stats.attackInterval * 0.4f)); // 동시 공격 분산
             health.Initialize(stats.maxHealth);
             health.Damaged += HandleDamaged;
@@ -95,6 +96,31 @@ namespace ProjectMT.Contents.CastleRaid
         public void ApplyDefenderDamage(float damage, Vector3 hitPoint)
         {
             health?.ApplyDamage(new DamageRequest(null, damage, hitPoint));
+        }
+
+        public bool RefreshNavigationPath() // 길막 오브젝트 파괴 뒤 즉시 새 경로 요청
+        {
+            if (!IsAlive || controller == null || agent == null || !agent.isOnNavMesh)
+            {
+                return false;
+            }
+
+            var desiredTarget = controller.FindPriorityTarget(this);
+            if (desiredTarget != target)
+            {
+                SetTarget(desiredTarget);
+            }
+
+            if (target == null || !target.IsAlive)
+            {
+                StopMoving();
+                return false;
+            }
+
+            var destination = leasedSlot == null ? target.transform.position : leasedSlot.position;
+            agent.ResetPath(); // 제거 전 장애물을 사용한 기존 경로 폐기
+            agent.isStopped = false;
+            return agent.SetDestination(destination);
         }
 
         public void Shutdown()

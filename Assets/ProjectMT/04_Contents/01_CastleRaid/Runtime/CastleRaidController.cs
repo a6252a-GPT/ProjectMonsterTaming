@@ -55,6 +55,7 @@ namespace ProjectMT.Contents.CastleRaid
         private float defenderAttackCooldown; // 다음 수비대 공격까지 시간
         private bool innerPathOpen; // 본성 진입 가능 여부
         private bool verifyingInnerPath; // 경로 확인 중복 방지
+        private bool unitPathRefreshQueued; // 같은 프레임 파괴 경로 갱신 합치기
 
         public bool IsRunning { get; private set; }
         public int DeployedCount => deployedCount;
@@ -86,6 +87,7 @@ namespace ProjectMT.Contents.CastleRaid
             defenderAttackCooldown = defenderAttackInterval;
             innerPathOpen = false;
             verifyingInnerPath = false;
+            unitPathRefreshQueued = false;
             for (var i = 0; i < targets.Length; i++)
             {
                 var target = targets[i];
@@ -136,6 +138,7 @@ namespace ProjectMT.Contents.CastleRaid
             deployedUnits = null;
             selectedUnitIndex = -1;
             verifyingInnerPath = false;
+            unitPathRefreshQueued = false;
             IsRunning = false;
         }
 
@@ -358,6 +361,11 @@ namespace ProjectMT.Contents.CastleRaid
                 return;
             }
 
+            if (target.BlocksNavigation)
+            {
+                QueueUnitPathRefresh(); // 성벽·건물 제거 뒤 생존 유닛 경로 갱신
+            }
+
             if (target.TargetKind == CastleTargetKind.Wall)
             {
                 if (!innerPathOpen && !verifyingInnerPath)
@@ -383,6 +391,36 @@ namespace ProjectMT.Contents.CastleRaid
                 }
 
                 CompleteClear(result);
+            }
+        }
+
+        private void QueueUnitPathRefresh()
+        {
+            if (unitPathRefreshQueued)
+            {
+                return;
+            }
+
+            unitPathRefreshQueued = true;
+            StartCoroutine(RefreshUnitPathsAfterObstacleChange());
+        }
+
+        private IEnumerator RefreshUnitPathsAfterObstacleChange()
+        {
+            yield return null; // NavMeshObstacle carving 제거 반영 프레임 대기
+            unitPathRefreshQueued = false;
+            if (!IsRunning)
+            {
+                yield break;
+            }
+
+            for (var i = 0; i < activeUnits.Count; i++)
+            {
+                var unit = activeUnits[i];
+                if (unit != null && unit.IsAlive)
+                {
+                    unit.RefreshNavigationPath();
+                }
             }
         }
 

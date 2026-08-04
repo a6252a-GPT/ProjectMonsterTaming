@@ -14,6 +14,7 @@ namespace ProjectMT.Shared.Unit
 
         private MaterialPropertyBlock block; // Material 복제 없는 색상 변경
         private Color[] baseColors; // 렌더러별 원래 색
+        private Color visualTint = Color.white; // 몬스터 Definition 색상 배율
         private Vector3 baseScale; // 원래 크기
         private float pulseRemaining; // 남은 연출 시간
         private float pulseDuration; // 전체 연출 시간
@@ -63,6 +64,15 @@ namespace ProjectMT.Shared.Unit
             PlayPulse(new Color(1f, 0.85f, 0.25f), DeathPulseDurationSeconds, 0.22f);
         }
 
+        public void SetTint(Color tint)
+        {
+            visualTint = tint.a <= 0f ? Color.white : tint;
+            if (block != null && baseColors != null)
+            {
+                ResetVisual();
+            }
+        }
+
         private void PlayPulse(Color color, float duration, float strength)
         {
             pulseColor = color;
@@ -99,7 +109,7 @@ namespace ProjectMT.Shared.Unit
                     continue;
                 }
 
-                var color = baseColors[i] * multiplier;
+                var color = baseColors[i] * visualTint * multiplier;
                 color.a = baseColors[i].a;
                 block.Clear();
                 block.SetColor(BaseColorId, color);
@@ -112,18 +122,7 @@ namespace ProjectMT.Shared.Unit
         {
             pulseRemaining = 0f;
             transform.localScale = baseScale;
-            for (var i = 0; i < renderers.Length; i++)
-            {
-                if (renderers[i] == null)
-                {
-                    continue;
-                }
-
-                block.Clear();
-                block.SetColor(BaseColorId, baseColors[i]);
-                block.SetColor(ColorId, baseColors[i]);
-                renderers[i].SetPropertyBlock(block);
-            }
+            SetColor(Color.white);
         }
     }
 }

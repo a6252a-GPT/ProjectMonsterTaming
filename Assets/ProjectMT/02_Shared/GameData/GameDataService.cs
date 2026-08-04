@@ -88,5 +88,28 @@ namespace ProjectMT.Shared.GameData
                 gate.Release();
             }
         }
+
+        public async Task ResetToDefaultAsync() // 디버그 초기화도 저장 성공 뒤 확정
+        {
+            await gate.WaitAsync();
+            try
+            {
+                if (!IsLoaded)
+                {
+                    throw new InvalidOperationException("Game data must be loaded before reset.");
+                }
+
+                var reset = GameProgressData.CreateDefault();
+                reset.Repair();
+                await saveService.SaveAsync(reset); // 파일 초기화를 먼저 확정
+                current = reset; // 저장 성공한 기본값만 메모리에 반영
+            }
+            finally
+            {
+                gate.Release();
+            }
+
+            Changed?.Invoke();
+        }
     }
 }

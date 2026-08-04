@@ -1,3 +1,4 @@
+using System;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Shared.GameData;
@@ -10,15 +11,27 @@ namespace ProjectMT.Features.MainBattle
         public MainSceneContext(
             IGameProgressService progress,
             IContentLauncher contentLauncher,
-            BattlePartySnapshot party)
+            MonsterCatalog monsterCatalog,
+            Func<BattlePartySnapshot> partyFactory)
         {
-            Progress = progress;
-            ContentLauncher = contentLauncher;
-            Party = party;
+            Progress = progress ?? throw new ArgumentNullException(nameof(progress));
+            ContentLauncher = contentLauncher ?? throw new ArgumentNullException(nameof(contentLauncher));
+            MonsterCatalog = monsterCatalog ?? throw new ArgumentNullException(nameof(monsterCatalog));
+            this.partyFactory = partyFactory ?? throw new ArgumentNullException(nameof(partyFactory));
+            Party = this.partyFactory();
         }
+
+        private readonly Func<BattlePartySnapshot> partyFactory;
 
         public IGameProgressService Progress { get; } // 진행 조회·변경 권한
         public IContentLauncher ContentLauncher { get; } // 콘텐츠 입장 권한
-        public BattlePartySnapshot Party { get; } // 현재 저장에서 만든 전투 부대
+        public MonsterCatalog MonsterCatalog { get; } // 편성 화면 조회용 등록부
+        public BattlePartySnapshot Party { get; private set; } // 현재 저장에서 만든 전투 부대
+
+        public BattlePartySnapshot RefreshParty()
+        {
+            Party = partyFactory(); // 저장 확정 뒤 다음 전투용 사진만 교체
+            return Party;
+        }
     }
 }

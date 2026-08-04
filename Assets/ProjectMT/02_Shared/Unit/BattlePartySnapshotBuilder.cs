@@ -23,43 +23,60 @@ namespace ProjectMT.Shared.Unit
         public BattlePartySnapshot Build(GameProgressView progress, LegionStatBonus legionBonus = default)
         {
             var roster = progress.Monsters;
-            var units = new List<BattleUnitSnapshot>(MonsterRosterData.MainPartySlotCount);
+            var mainUnits = new List<BattleUnitSnapshot>(MonsterRosterData.MainPartySlotCount);
+            var reserveUnits = new List<BattleUnitSnapshot>(MonsterRosterData.ReservePartySlotCount);
             var addedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var slots = roster.MainPartySlots;
-            for (var index = 0; index < slots.Count; index++)
-            {
-                var monsterId = slots[index];
-                if (string.IsNullOrWhiteSpace(monsterId) || !roster.Owns(monsterId) ||
-                    !addedIds.Add(monsterId) || !catalog.TryGet(monsterId, out var definition))
-                {
-                    continue;
-                }
+            AppendPartyUnits(roster.MainPartySlots, roster, legionBonus, addedIds, mainUnits);
+            AppendPartyUnits(roster.ReservePartySlots, roster, legionBonus, addedIds, reserveUnits);
 
-                units.Add(new BattleUnitSnapshot(monsterId, ResolveStats(definition, legionBonus)));
-            }
-
-            if (units.Count == 0)
+            if (mainUnits.Count == 0)
             {
                 throw new InvalidOperationException("The saved main party has no valid owned monster.");
             }
 
-            return new BattlePartySnapshot(units.ToArray());
+            return new BattlePartySnapshot(mainUnits.ToArray(), reserveUnits.ToArray());
+        }
+
+        private void AppendPartyUnits(
+            IReadOnlyList<string> slots,
+            MonsterRosterView roster,
+            LegionStatBonus legionBonus,
+            HashSet<string> addedIds,
+            List<BattleUnitSnapshot> destination)
+        {
+            for (var index = 0; index < slots.Count; index++)
+            {
+                var monsterId = slots[index];
+                if (string.IsNullOrWhiteSpace(monsterId) || !roster.Owns(monsterId) ||
+                    !addedIds.Add(monsterId) || !catalog.TryGet(monsterId, out var definition) ||
+                    !roster.TryGetOwnedMonster(monsterId, out var owned))
+                {
+                    continue;
+                }
+
+                destination.Add(new BattleUnitSnapshot(
+                    monsterId,
+                    ResolveStats(definition, owned.Level, legionBonus),
+                    definition.VisualTint));
+            }
         }
 
         private static UnitStatsSnapshot ResolveStats(
             MonsterDefinition definition,
+            int level,
             LegionStatBonus legionBonus)
         {
+            var levelMultiplier = MonsterLevelRules.GetStatMultiplier(level);
             var attackSpeed = Mathf.Max(
                 0.01f,
-                definition.AttackSpeed * (1f + legionBonus.AttackSpeedRate));
+                definition.AttackSpeed * levelMultiplier * (1f + legionBonus.AttackSpeedRate));
             return new UnitStatsSnapshot
             {
-                maxHealth = definition.MaxHealth * (1f + legionBonus.HealthRate),
-                damage = definition.AttackPower * (1f + legionBonus.AttackRate),
-                defense = definition.Defense * (1f + legionBonus.DefenseRate),
-                moveSpeed = definition.MoveSpeed * (1f + legionBonus.MoveSpeedRate),
-                attackRange = definition.AttackRange * (1f + legionBonus.AttackRangeRate),
+                maxHealth = definition.MaxHealth * levelMultiplier * (1f + legionBonus.HealthRate),
+                damage = definition.AttackPower * levelMultiplier * (1f + legionBonus.AttackRate),
+                defense = definition.Defense * levelMultiplier * (1f + legionBonus.DefenseRate),
+                moveSpeed = definition.MoveSpeed * levelMultiplier * (1f + legionBonus.MoveSpeedRate),
+                attackRange = definition.AttackRange * levelMultiplier * (1f + legionBonus.AttackRangeRate),
                 attackInterval = 1f / attackSpeed,
                 projectileSpeed = definition.Ranged ? RangedProjectileSpeed : 0f,
                 ranged = definition.Ranged

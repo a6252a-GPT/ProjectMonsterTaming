@@ -122,7 +122,11 @@ namespace ProjectMT.Contents.FoodRiot
             for (var i = 0; i < partyUnits.Length && i < offsets.Length; i++)
             {
                 var spawnPosition = commanderRoot.transform.position + offsets[i];
-                var request = new UnitSpawnRequest(partyUnits[i].UnitId, partyUnits[i].Stats, UnitTeam.Player);
+                var request = new UnitSpawnRequest(
+                    partyUnits[i].UnitId,
+                    partyUnits[i].Stats,
+                    UnitTeam.Player,
+                    visualTint: partyUnits[i].VisualTint);
                 var actor = combatWorld.SpawnUnit(followerPrefab, request, spawnPosition, Quaternion.identity);
                 actor?.SetFollowAnchor(commanderRoot.transform, offsets[i], 6.5f, 8f);
             }

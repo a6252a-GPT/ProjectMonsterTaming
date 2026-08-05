@@ -16,7 +16,8 @@ namespace ProjectMT.Contents.FoodRiot
                 return false;
             }
 
-            change = GameProgressChange.RecordFoodRiot(foodResult.KillCount, foodResult.KillCount); // 시드는 1마리당 골드 1
+            var rewards = RewardBundle.FromGold(foodResult.KillCount); // 시드는 1마리당 골드 1
+            change = GameProgressChange.RecordFoodRiot(foodResult.KillCount, rewards);
             return true;
         }
 
@@ -30,7 +31,8 @@ namespace ProjectMT.Contents.FoodRiot
                 return false;
             }
 
-            presentation = RewardPresentationRequest.Gold(foodResult.KillCount); // 저장되는 시드 골드와 같은 값
+            presentation = RewardPresentationRequest.FromBundle(
+                RewardBundle.FromGold(foodResult.KillCount)); // 저장되는 시드 골드와 같은 값
             return true;
         }
     }

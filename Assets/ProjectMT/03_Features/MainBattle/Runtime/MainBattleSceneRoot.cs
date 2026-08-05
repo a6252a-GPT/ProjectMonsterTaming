@@ -55,7 +55,7 @@ namespace ProjectMT.Features.MainBattle
             }
             foodRiotButton?.onClick.AddListener(OpenFoodRiot);
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
-            expedition.Initialize(context.Progress, party);
+            expedition.Initialize(context.Progress, party, context.RewardPresentation);
             formationPage.PartyChanged += HandlePartyChanged;
             formationPage.Configure(context.Progress, context.MonsterCatalog, context.RefreshParty);
             ConfigureMonsterDrag();

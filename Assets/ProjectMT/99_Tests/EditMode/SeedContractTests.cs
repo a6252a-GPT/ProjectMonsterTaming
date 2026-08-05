@@ -400,13 +400,13 @@ namespace ProjectMT.Tests.EditMode
             }
         }
 
-        [TestCase(true, 1)]
-        [TestCase(false, 0)]
-        public void ContentFlow_PresentsRewardOnlyAfterSuccessfulSave(bool saveSucceeds, int expectedPresentationCount) // 저장 확정 순서 검사
+        [Test]
+        public void ContentFlow_SuccessMovesPlayingFinishingIdleAndPresentsAfterSave() // 저장 확정 수직 흐름 검사
         {
             var sequence = new System.Collections.Generic.List<string>();
-            var progress = new RecordingProgressService(saveSucceeds, sequence);
+            var progress = new RecordingProgressService(sequence, true);
             var presentation = new RecordingRewardPresentation(sequence);
+            var feedback = new RecordingFinishFeedback();
             var factory = ScriptableObject.CreateInstance<TestStartDataFactory>();
             var adapter = ScriptableObject.CreateInstance<TestResultAdapter>();
             var definition = ScriptableObject.CreateInstance<ContentDefinition>();
@@ -424,34 +424,142 @@ namespace ProjectMT.Tests.EditMode
                 progress,
                 new RecordingSceneNavigator(),
                 new SceneId("main_battle"),
-                presentation);
+                presentation,
+                feedback);
 
+            Assert.That(flow.Phase, Is.EqualTo(ContentFlowPhase.Idle));
             Assert.That(
                 flow.StartHosted(new ContentId("reward_test"), SeedBattlePartySnapshotFactory.Create(), runner),
                 Is.True);
-            if (!saveSucceeds)
-            {
-                LogAssert.Expect(LogType.Error, "Content progress could not be saved. Content=reward_test");
-            }
+            Assert.That(flow.Phase, Is.EqualTo(ContentFlowPhase.Playing));
 
             runner.Context.Exit.Complete(new TestResult(7));
 
-            Assert.That(presentation.PlayCount, Is.EqualTo(expectedPresentationCount));
-            Assert.That(sequence.First(), Is.EqualTo("save"));
-            if (saveSucceeds)
-            {
-                Assert.That(sequence, Is.EqualTo(new[] { "save", "present" }));
-            }
-            else
-            {
-                Assert.That(sequence, Is.EqualTo(new[] { "save" }));
-            }
-
+            Assert.That(flow.Phase, Is.EqualTo(ContentFlowPhase.Idle));
+            Assert.That(presentation.PlayCount, Is.EqualTo(1));
+            Assert.That(sequence, Is.EqualTo(new[] { "save", "present" }));
             Assert.That(runner.CloseCount, Is.EqualTo(1));
+            Assert.That(feedback.ShowSavingCount, Is.EqualTo(1));
+            Assert.That(feedback.HideCount, Is.EqualTo(1));
+            Assert.That(adapter.ProgressChangeCount, Is.EqualTo(1));
+            Assert.That(adapter.PresentationCount, Is.EqualTo(1));
             Object.DestroyImmediate(catalog);
             Object.DestroyImmediate(definition);
             Object.DestroyImmediate(adapter);
             Object.DestroyImmediate(factory);
+        }
+
+        [Test]
+        public void ContentFlow_SaveFailureKeepsFinishingAndRetryUsesSameResultOnce() // 실패 결과 보존·수동 재시도 검사
+        {
+            var sequence = new System.Collections.Generic.List<string>();
+            var progress = new RecordingProgressService(sequence, false, true);
+            var presentation = new RecordingRewardPresentation(sequence);
+            var feedback = new RecordingFinishFeedback();
+            var factory = ScriptableObject.CreateInstance<TestStartDataFactory>();
+            var adapter = ScriptableObject.CreateInstance<TestResultAdapter>();
+            var definition = ScriptableObject.CreateInstance<ContentDefinition>();
+            definition.EditorConfigure(
+                new ContentId("retry_test"),
+                ContentOpenMode.MainBattleHosted,
+                new SceneId(string.Empty),
+                factory,
+                adapter);
+            var catalog = ScriptableObject.CreateInstance<ContentCatalog>();
+            catalog.EditorSetDefinitions(new[] { definition });
+            var runner = new RecordingHostedRunner();
+            ContentFlow flow = null;
+            runner.Closing += () => Assert.That(flow.Phase, Is.EqualTo(ContentFlowPhase.Finishing));
+            flow = new ContentFlow(
+                catalog,
+                progress,
+                new RecordingSceneNavigator(),
+                new SceneId("main_battle"),
+                presentation,
+                feedback);
+
+            Assert.That(flow.StartHosted(new ContentId("retry_test"), SeedBattlePartySnapshotFactory.Create(), runner), Is.True);
+            LogAssert.Expect(LogType.Error, "Content progress could not be saved. Content=retry_test");
+            runner.Context.Exit.Complete(new TestResult(9));
+
+            Assert.That(flow.Phase, Is.EqualTo(ContentFlowPhase.Finishing));
+            Assert.That(flow.IsRunning, Is.True);
+            Assert.That(runner.CloseCount, Is.Zero);
+            Assert.That(presentation.PlayCount, Is.Zero);
+            Assert.That(feedback.ShowFailedCount, Is.EqualTo(1));
+            Assert.That(sequence, Is.EqualTo(new[] { "save" }));
+
+            feedback.Retry();
+
+            Assert.That(flow.Phase, Is.EqualTo(ContentFlowPhase.Idle));
+            Assert.That(flow.IsRunning, Is.False);
+            Assert.That(sequence, Is.EqualTo(new[] { "save", "save", "present" }));
+            Assert.That(runner.CloseCount, Is.EqualTo(1));
+            Assert.That(presentation.PlayCount, Is.EqualTo(1));
+            Assert.That(adapter.ProgressChangeCount, Is.EqualTo(1));
+            Assert.That(adapter.PresentationCount, Is.EqualTo(1));
+            Assert.That(feedback.ShowSavingCount, Is.EqualTo(2));
+            Assert.That(feedback.HideCount, Is.EqualTo(1));
+
+            feedback.Retry(); // 성공 뒤 남은 콜백 없음
+            Assert.That(sequence, Has.Count.EqualTo(3));
+            Object.DestroyImmediate(catalog);
+            Object.DestroyImmediate(definition);
+            Object.DestroyImmediate(adapter);
+            Object.DestroyImmediate(factory);
+        }
+
+        [Test]
+        public void ContentFlow_SeparateSceneFailureReturnsEnteringToIdle() // 별도 씬 진입 실패 잠금 해제 검사
+        {
+            var sequence = new System.Collections.Generic.List<string>();
+            var factory = ScriptableObject.CreateInstance<TestStartDataFactory>();
+            var definition = ScriptableObject.CreateInstance<ContentDefinition>();
+            var sceneId = new SceneId("separate_test_scene");
+            definition.EditorConfigure(
+                new ContentId("separate_test"),
+                ContentOpenMode.SeparateScene,
+                sceneId,
+                factory,
+                null);
+            var catalog = ScriptableObject.CreateInstance<ContentCatalog>();
+            catalog.EditorSetDefinitions(new[] { definition });
+            var flow = new ContentFlow(
+                catalog,
+                new RecordingProgressService(sequence, true),
+                new RecordingSceneNavigator(),
+                new SceneId("main_battle"),
+                null,
+                new RecordingFinishFeedback());
+
+            Assert.That(flow.StartSeparate(new ContentId("separate_test"), SeedBattlePartySnapshotFactory.Create()), Is.True);
+            Assert.That(flow.Phase, Is.EqualTo(ContentFlowPhase.Entering));
+            Assert.That(flow.NotifySceneLoadFailed(sceneId), Is.True);
+            Assert.That(flow.Phase, Is.EqualTo(ContentFlowPhase.Idle));
+            Assert.That(flow.IsRunning, Is.False);
+            Assert.That(flow.NotifySceneLoadFailed(sceneId), Is.False);
+
+            Object.DestroyImmediate(catalog);
+            Object.DestroyImmediate(definition);
+            Object.DestroyImmediate(factory);
+        }
+
+        [Test]
+        public void ContentFlow_RequiresFinishFeedback() // 저장 실패 복구 UI 필수 계약
+        {
+            var sequence = new System.Collections.Generic.List<string>();
+            var catalog = ScriptableObject.CreateInstance<ContentCatalog>();
+
+            var exception = Assert.Throws<System.ArgumentNullException>(() => new ContentFlow(
+                catalog,
+                new RecordingProgressService(sequence, true),
+                new RecordingSceneNavigator(),
+                new SceneId("main_battle"),
+                null,
+                null));
+
+            Assert.That(exception.ParamName, Is.EqualTo("finishFeedback"));
+            Object.DestroyImmediate(catalog);
         }
 
         [Test]
@@ -478,6 +586,8 @@ namespace ProjectMT.Tests.EditMode
                 "Assets/ProjectMT/02_Shared/UI/Prefabs/PF_RewardAcquireItem.prefab");
             var rewardOverlay = AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/ProjectMT/02_Shared/UI/Prefabs/PF_RewardAcquireOverlay.prefab");
+            var finishFeedback = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/ProjectMT/01_Core/Bootstrap/Prefabs/PF_ContentFinishFeedback.prefab");
             var appRoot = AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/ProjectMT/01_Core/Bootstrap/Prefabs/PF_AppRoot.prefab");
             var hostedRuntime = AssetDatabase.LoadAssetAtPath<GameObject>(
@@ -487,7 +597,13 @@ namespace ProjectMT.Tests.EditMode
             Assert.That(floatingNumber.transform.localScale.x, Is.EqualTo(1f).Within(0.001f));
             Assert.That(rewardItem?.GetComponent<RewardAcquireView>(), Is.Not.Null);
             Assert.That(rewardOverlay?.GetComponent<RewardAcquirePresenter>(), Is.Not.Null);
+            Assert.That(CountComponents(finishFeedback, "ProjectMT.Bootstrap.ContentFinishFeedbackPresenter"), Is.EqualTo(1));
             Assert.That(appRoot?.GetComponentsInChildren<RewardAcquirePresenter>(true), Has.Length.EqualTo(1));
+            Assert.That(CountComponents(appRoot, "ProjectMT.Bootstrap.ContentFinishFeedbackPresenter"), Is.EqualTo(1));
+            AssertSerializedReference(appRoot, "ProjectMT.Bootstrap.AppRootHost", "finishFeedbackPresenter");
+            AssertSerializedReference(finishFeedback, "ProjectMT.Bootstrap.ContentFinishFeedbackPresenter", "panelRoot");
+            AssertSerializedReference(finishFeedback, "ProjectMT.Bootstrap.ContentFinishFeedbackPresenter", "messageText");
+            AssertSerializedReference(finishFeedback, "ProjectMT.Bootstrap.ContentFinishFeedbackPresenter", "retryButton");
             AssertCombatFeedbackExtensions(hostedRuntime);
 
             foreach (var scenePath in new[]
@@ -528,6 +644,15 @@ namespace ProjectMT.Tests.EditMode
         {
             return root.GetComponentsInChildren<Component>(true)
                 .Count(component => component != null && component.GetType().FullName == fullTypeName);
+        }
+
+        private static void AssertSerializedReference(GameObject root, string fullTypeName, string propertyName) // 필수 Inspector 참조 검사
+        {
+            var component = root.GetComponentsInChildren<Component>(true)
+                .Single(item => item != null && item.GetType().FullName == fullTypeName);
+            var property = new SerializedObject(component).FindProperty(propertyName);
+            Assert.That(property, Is.Not.Null, $"Serialized property is missing. Type={fullTypeName}, Property={propertyName}");
+            Assert.That(property.objectReferenceValue, Is.Not.Null, $"Serialized reference is missing. Type={fullTypeName}, Property={propertyName}");
         }
 
         private sealed class MemoryFileStore : IAtomicFileStore // 저장 마이그레이션 테스트용 메모리 파일
@@ -574,15 +699,21 @@ namespace ProjectMT.Tests.EditMode
 
         private sealed class TestResultAdapter : ContentResultAdapter
         {
+            public int ProgressChangeCount { get; private set; }
+            public int PresentationCount { get; private set; }
+
             public override bool TryCreateProgressChange(IContentResultData result, out GameProgressChange change)
             {
+                ProgressChangeCount++;
                 if (!(result is TestResult testResult))
                 {
                     change = null;
                     return false;
                 }
 
-                change = GameProgressChange.RecordFoodRiot(testResult.Reward, testResult.Reward);
+                change = GameProgressChange.RecordFoodRiot(
+                    testResult.Reward,
+                    RewardBundle.FromGold(testResult.Reward));
                 return true;
             }
 
@@ -590,6 +721,7 @@ namespace ProjectMT.Tests.EditMode
                 IContentResultData result,
                 out RewardPresentationRequest presentation)
             {
+                PresentationCount++;
                 if (!(result is TestResult testResult))
                 {
                     presentation = null;
@@ -605,6 +737,7 @@ namespace ProjectMT.Tests.EditMode
         {
             public ContentContext Context { get; private set; }
             public int CloseCount { get; private set; }
+            public event System.Action Closing;
 
             public bool Open(ContentContext context)
             {
@@ -614,19 +747,20 @@ namespace ProjectMT.Tests.EditMode
 
             public void Close()
             {
+                Closing?.Invoke();
                 CloseCount++;
             }
         }
 
         private sealed class RecordingProgressService : IGameProgressService
         {
-            private readonly bool saveSucceeds;
+            private readonly System.Collections.Generic.Queue<bool> saveResults;
             private readonly System.Collections.Generic.List<string> sequence;
 
-            public RecordingProgressService(bool saveSucceeds, System.Collections.Generic.List<string> sequence)
+            public RecordingProgressService(System.Collections.Generic.List<string> sequence, params bool[] saveResults)
             {
-                this.saveSucceeds = saveSucceeds;
                 this.sequence = sequence;
+                this.saveResults = new System.Collections.Generic.Queue<bool>(saveResults);
             }
 
             public GameProgressView View => new GameProgressView(GameProgressData.CreateDefault());
@@ -640,12 +774,46 @@ namespace ProjectMT.Tests.EditMode
             public Task<bool> TryApplyAndSaveAsync(GameProgressChange change)
             {
                 sequence.Add("save");
-                return Task.FromResult(saveSucceeds);
+                return Task.FromResult(saveResults.Count > 0 && saveResults.Dequeue());
             }
 
             public Task SaveCurrentAsync()
             {
                 return Task.CompletedTask;
+            }
+        }
+
+        private sealed class RecordingFinishFeedback : IContentFinishFeedback
+        {
+            private System.Action retry;
+
+            public int ShowSavingCount { get; private set; }
+            public int ShowFailedCount { get; private set; }
+            public int HideCount { get; private set; }
+
+            public void ShowSaving()
+            {
+                ShowSavingCount++;
+                retry = null;
+            }
+
+            public void ShowSaveFailed(System.Action retryAction)
+            {
+                ShowFailedCount++;
+                retry = retryAction;
+            }
+
+            public void Hide()
+            {
+                HideCount++;
+                retry = null;
+            }
+
+            public void Retry()
+            {
+                var action = retry;
+                retry = null;
+                action?.Invoke();
             }
         }
 

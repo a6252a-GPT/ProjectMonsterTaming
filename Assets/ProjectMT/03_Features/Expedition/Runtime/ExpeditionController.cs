@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -31,6 +32,7 @@ namespace ProjectMT.Features.Expedition
         [SerializeField] private TMP_Text resultText;
 
         private IGameProgressService progress; // 진행 조회·저장 계약
+        private IRewardPresentationPlayer rewardPresentation; // 저장 확정 보상 표현
         private BattlePartySnapshot party; // 다음 Run에 사용할 최신 부대 사진
         private BattlePartySnapshot activeRunParty; // 현재 Run 시작 때 고정한 부대 사진
         private ExpeditionRunMode currentMode; // 도전·반복 상태
@@ -61,11 +63,15 @@ namespace ProjectMT.Features.Expedition
             party = partySnapshot; // 현재 소환 유닛은 유지하고 다음 StartRun부터 사용
         }
 
-        public void Initialize(IGameProgressService progressService, BattlePartySnapshot partySnapshot)
+        public void Initialize(
+            IGameProgressService progressService,
+            BattlePartySnapshot partySnapshot,
+            IRewardPresentationPlayer rewardPlayer = null)
         {
             Shutdown();
             progress = progressService ?? throw new ArgumentNullException(nameof(progressService));
             party = partySnapshot ?? throw new ArgumentNullException(nameof(partySnapshot));
+            rewardPresentation = rewardPlayer;
             if (modeButton != null)
             {
                 modeButton.onClick.AddListener(ToggleMode);
@@ -119,6 +125,7 @@ namespace ProjectMT.Features.Expedition
             ResetPlayerTracking();
             combatWorld?.Clear();
             progress = null;
+            rewardPresentation = null;
             party = null;
             activeRunParty = null;
         }
@@ -384,18 +391,74 @@ namespace ProjectMT.Features.Expedition
             running = false;
             settling = true;
             combatWorld.SetPaused(true); // 결과 연출 동안 전투 정지
-            SetResult("승리");
+            SetResult(currentMode == ExpeditionRunMode.Challenge ? "승리 정산 중..." : string.Empty);
             _ = ResolveVictoryAsync(++operationVersion); // 저장 후 새 Run 시작
         }
 
         private async Task ResolveVictoryAsync(int version)
         {
-            if (currentMode == ExpeditionRunMode.Challenge)
+            var settledMode = currentMode;
+            var settledStage = currentStage;
+            RewardBundle rewards;
+            GameProgressChange change;
+            switch (settledMode)
             {
-                await progress.TryApplyAndSaveAsync(GameProgressChange.RecordChallengeVictory(currentStage));
+                case ExpeditionRunMode.Challenge:
+                    rewards = ExpeditionFirstClearRewardRules.Create(settledStage);
+                    change = GameProgressChange.RecordExpeditionFirstClear(settledStage, rewards);
+                    break;
+                case ExpeditionRunMode.Repeat:
+                    rewards = ExpeditionRepeatClearRewardRules.Create(settledStage);
+                    change = GameProgressChange.RecordExpeditionRepeatClear(settledStage, rewards);
+                    break;
+                default:
+                    Debug.LogError($"지원하지 않는 원정대 모드입니다: {settledMode}");
+                    SetResult("원정대 모드 오류");
+                    settling = false;
+                    return;
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(profile.ResultDelaySeconds));
+            var saved = false;
+            try
+            {
+                saved = await progress.TryApplyAndSaveAsync(change);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+
+            if (this == null || version != operationVersion)
+            {
+                return;
+            }
+
+            if (saved)
+            {
+                try
+                {
+                    rewardPresentation?.PlayConfirmed(RewardPresentationRequest.FromBundle(rewards));
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception); // 표현 실패는 저장을 되돌리지 않음
+                }
+
+                if (settledMode == ExpeditionRunMode.Challenge)
+                {
+                    SetResult($"원정대 {settledStage} 승리 · 골드 +{rewards.Gold:N0}");
+                }
+            }
+            else
+            {
+                SetResult("보상 저장 실패");
+            }
+
+            if (settledMode == ExpeditionRunMode.Challenge || !saved)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(profile.ResultDelaySeconds));
+            }
+
             if (this == null || version != operationVersion)
             {
                 return;

@@ -63,6 +63,14 @@ namespace ProjectMT.Contents.Framework
         Cancel
     }
 
+    public enum ContentFlowPhase // 공통 콘텐츠 한 판의 수직 흐름
+    {
+        Idle,
+        Entering,
+        Playing,
+        Finishing
+    }
+
     public interface IContentStartData // 타입 시작 데이터 표식
     {
     }
@@ -96,6 +104,13 @@ namespace ProjectMT.Contents.Framework
         bool IsRunning { get; }
         bool StartHosted(ContentId contentId, BattlePartySnapshot party, IHostedContentRunner runner);
         bool StartSeparate(ContentId contentId, BattlePartySnapshot party);
+    }
+
+    public interface IContentFinishFeedback // 저장 중·실패 재시도 공통 표시
+    {
+        void ShowSaving();
+        void ShowSaveFailed(Action retry);
+        void Hide();
     }
 
     public readonly struct ContentRunInfo // 한 판의 고정 식별 정보

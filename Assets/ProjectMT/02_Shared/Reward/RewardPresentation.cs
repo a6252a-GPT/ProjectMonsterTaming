@@ -57,6 +57,13 @@ namespace ProjectMT.Shared.Reward
             return new RewardPresentationRequest(
                 new RewardPresentationItem(RewardPresentationKind.Gold, "골드", amount));
         }
+
+        public static RewardPresentationRequest FromBundle(RewardBundle bundle)
+        {
+            return bundle == null || bundle.IsEmpty
+                ? new RewardPresentationRequest()
+                : Gold(bundle.Gold);
+        }
     }
 
     public interface IRewardPresentationPlayer // 저장 성공 뒤 Bootstrap이 호출하는 표현 계약

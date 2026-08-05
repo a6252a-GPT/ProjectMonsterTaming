@@ -20,6 +20,7 @@ namespace ProjectMT.Bootstrap
         [SerializeField] private ProjectConfig projectConfig; // 시작 설정 모음
         [SerializeField] private SceneLoader sceneLoader; // 정식 씬 전환 담당
         [SerializeField] private RewardAcquirePresenter rewardPresenter; // 저장 확정 보상 연출
+        [SerializeField] private ContentFinishFeedbackPresenter finishFeedbackPresenter; // 콘텐츠 저장 재시도 표시
 
         private GameDataService gameDataService; // 진행 데이터 관리자
         private ContentFlow contentFlow; // 콘텐츠 실행 흐름
@@ -77,6 +78,11 @@ namespace ProjectMT.Bootstrap
                 throw new InvalidOperationException("SceneLoader is missing from AppRoot.");
             }
 
+            if (finishFeedbackPresenter == null)
+            {
+                throw new InvalidOperationException("ContentFinishFeedbackPresenter is missing from AppRoot.");
+            }
+
             var savePath = Path.Combine(Application.persistentDataPath, "ProjectMT_seed_save.json"); // 시드 저장 위치
             var saveService = new SaveService(new AtomicFileStore(), savePath);
             gameDataService = new GameDataService(saveService);
@@ -89,7 +95,8 @@ namespace ProjectMT.Bootstrap
                 gameDataService,
                 sceneLoader,
                 projectConfig.MainBattleSceneId,
-                rewardPresenter);
+                rewardPresenter,
+                finishFeedbackPresenter);
             sceneLoader.ContextFactory = CreateSceneContext; // 씬별 권한 봉투 생성
             sceneLoader.SceneFailed += HandleSceneFailed;
 
@@ -180,7 +187,8 @@ namespace ProjectMT.Bootstrap
                     gameDataService,
                     contentFlow,
                     projectConfig.MonsterCatalog,
-                    () => partyBuilder.Build(gameDataService.View)); // 저장 확정 시 새 부대 사진 생성
+                    () => partyBuilder.Build(gameDataService.View), // 저장 확정 시 새 부대 사진 생성
+                    rewardPresenter);
             }
 
             return contentFlow.CreateSeparateSceneContext(sceneId); // 별도 콘텐츠 실행 봉투
@@ -189,6 +197,7 @@ namespace ProjectMT.Bootstrap
         private void HandleSceneFailed(SceneId failedSceneId, string error)
         {
             Debug.LogError($"Scene flow failed. Scene={failedSceneId}, Error={error}");
+            contentFlow?.NotifySceneLoadFailed(failedSceneId); // 별도 콘텐츠 진입 실패 잠금 해제
             if (failedSceneId != projectConfig.EntrySceneId && !sceneLoader.IsTransitioning)
             {
                 sceneLoader.Load(projectConfig.EntrySceneId); // 실패 시 Entry로 복귀
@@ -246,6 +255,11 @@ namespace ProjectMT.Bootstrap
         public void EditorConfigureRewardPresenter(RewardAcquirePresenter presenter)
         {
             rewardPresenter = presenter;
+        }
+
+        public void EditorConfigureFinishFeedback(ContentFinishFeedbackPresenter presenter)
+        {
+            finishFeedbackPresenter = presenter;
         }
 #endif
     }

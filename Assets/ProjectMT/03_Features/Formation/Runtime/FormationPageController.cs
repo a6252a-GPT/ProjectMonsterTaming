@@ -418,7 +418,7 @@ namespace ProjectMT.Features.Formation
                 SetText(selectedNameLabel, "보유 몬스터 없음");
                 SetText(selectedLevelLabel, string.Empty);
                 SetText(selectedStatsLabel, string.Empty);
-                SetText(currencyLabel, $"보유 골드 {view.TemporaryGold:N0}");
+                SetText(currencyLabel, $"보유 골드 {view.Gold:N0}");
                 SetControlsInteractable(false);
                 ClearPreview();
                 return;
@@ -434,10 +434,10 @@ namespace ProjectMT.Features.Formation
                 $"공격속도  {definition.AttackSpeed * multiplier:0.##}\n" +
                 $"이동속도  {definition.MoveSpeed * multiplier:0.##}\n" +
                 $"사거리  {definition.AttackRange * multiplier:0.##}");
-            SetText(currencyLabel, $"보유 골드 {view.TemporaryGold:N0}");
+            SetText(currencyLabel, $"보유 골드 {view.Gold:N0}");
 
             var hasLevelCost = MonsterLevelRules.TryGetNextLevelCost(owned.Level, out var cost);
-            var canLevel = hasLevelCost && view.TemporaryGold >= cost;
+            var canLevel = hasLevelCost && view.Gold >= cost;
             SetText(levelUpButtonLabel, hasLevelCost ? $"레벨업  {cost:N0} 골드" : "최대 레벨");
             if (levelUpButton != null)
             {

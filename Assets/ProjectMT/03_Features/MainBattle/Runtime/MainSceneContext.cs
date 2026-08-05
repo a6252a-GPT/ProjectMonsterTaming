@@ -2,6 +2,7 @@ using System;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Unit;
 
 namespace ProjectMT.Features.MainBattle
@@ -12,12 +13,14 @@ namespace ProjectMT.Features.MainBattle
             IGameProgressService progress,
             IContentLauncher contentLauncher,
             MonsterCatalog monsterCatalog,
-            Func<BattlePartySnapshot> partyFactory)
+            Func<BattlePartySnapshot> partyFactory,
+            IRewardPresentationPlayer rewardPresentation)
         {
             Progress = progress ?? throw new ArgumentNullException(nameof(progress));
             ContentLauncher = contentLauncher ?? throw new ArgumentNullException(nameof(contentLauncher));
             MonsterCatalog = monsterCatalog ?? throw new ArgumentNullException(nameof(monsterCatalog));
             this.partyFactory = partyFactory ?? throw new ArgumentNullException(nameof(partyFactory));
+            RewardPresentation = rewardPresentation;
             Party = this.partyFactory();
         }
 
@@ -26,6 +29,7 @@ namespace ProjectMT.Features.MainBattle
         public IGameProgressService Progress { get; } // 진행 조회·변경 권한
         public IContentLauncher ContentLauncher { get; } // 콘텐츠 입장 권한
         public MonsterCatalog MonsterCatalog { get; } // 편성 화면 조회용 등록부
+        public IRewardPresentationPlayer RewardPresentation { get; } // 저장 확정 보상 표현
         public BattlePartySnapshot Party { get; private set; } // 현재 저장에서 만든 전투 부대
 
         public BattlePartySnapshot RefreshParty()

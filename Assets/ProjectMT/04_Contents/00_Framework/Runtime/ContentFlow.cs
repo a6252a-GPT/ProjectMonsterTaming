@@ -16,6 +16,7 @@ namespace ProjectMT.Contents.Framework
         private readonly ISceneNavigator sceneNavigator; // 별도 씬 이동
         private readonly SceneId mainBattleSceneId; // 별도 콘텐츠 복귀 대상
         private readonly IRewardPresentationPlayer rewardPresentation; // 저장 성공 보상 표현
+        private readonly IContentFinishFeedback finishFeedback; // 저장 중·실패 재시도 표시
 
         private ActiveRun activeRun; // 동시에 한 판만 허용
 
@@ -24,16 +25,19 @@ namespace ProjectMT.Contents.Framework
             IGameProgressService progress,
             ISceneNavigator sceneNavigator,
             SceneId mainBattleSceneId,
-            IRewardPresentationPlayer rewardPresentation = null)
+            IRewardPresentationPlayer rewardPresentation,
+            IContentFinishFeedback finishFeedback)
         {
             this.catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             this.progress = progress ?? throw new ArgumentNullException(nameof(progress));
             this.sceneNavigator = sceneNavigator ?? throw new ArgumentNullException(nameof(sceneNavigator));
             this.mainBattleSceneId = mainBattleSceneId;
             this.rewardPresentation = rewardPresentation;
+            this.finishFeedback = finishFeedback ?? throw new ArgumentNullException(nameof(finishFeedback));
         }
 
         public bool IsRunning => activeRun != null;
+        public ContentFlowPhase Phase { get; private set; } = ContentFlowPhase.Idle;
 
         public bool StartHosted(ContentId contentId, BattlePartySnapshot party, IHostedContentRunner runner)
         {
@@ -48,13 +52,16 @@ namespace ProjectMT.Contents.Framework
             }
 
             var run = CreateRun(definition, startData, runner);
+            Phase = ContentFlowPhase.Entering;
             activeRun = run; // Open 전에 중복 입장 차단
             if (runner.Open(run.Context))
             {
+                Phase = ContentFlowPhase.Playing;
                 return true;
             }
 
             activeRun = null; // Hosted 열기 실패 복구
+            Phase = ContentFlowPhase.Idle;
             return false;
         }
 
@@ -76,6 +83,7 @@ namespace ProjectMT.Contents.Framework
                 return false;
             }
 
+            Phase = ContentFlowPhase.Entering;
             activeRun = CreateRun(definition, startData, null); // 씬 이동 전 실행 등록
             sceneNavigator.Load(definition.SceneId);
             return true;
@@ -88,7 +96,23 @@ namespace ProjectMT.Contents.Framework
                 return null;
             }
 
+            Phase = ContentFlowPhase.Playing;
             return new ContentSceneContext(activeRun.Definition, activeRun.Context);
+        }
+
+        public bool NotifySceneLoadFailed(SceneId sceneId) // 별도 씬 진입 실패 잠금 해제
+        {
+            if (activeRun == null || Phase != ContentFlowPhase.Entering ||
+                activeRun.Definition.OpenMode != ContentOpenMode.SeparateScene ||
+                activeRun.Definition.SceneId != sceneId)
+            {
+                return false;
+            }
+
+            activeRun = null;
+            Phase = ContentFlowPhase.Idle;
+            HideFinishFeedback();
+            return true;
         }
 
         private ActiveRun CreateRun(ContentDefinition definition, IContentStartData startData, IHostedContentRunner runner)
@@ -150,28 +174,53 @@ namespace ProjectMT.Contents.Framework
                 return;
             }
 
-            if (outcome == ContentOutcome.Complete && run.Definition.ResultAdapter != null)
+            Phase = ContentFlowPhase.Finishing;
+            if (outcome != ContentOutcome.Complete || run.Definition.ResultAdapter == null)
             {
-                if (!run.Definition.ResultAdapter.TryCreateProgressChange(result, out var change)) // 플레이 사실을 진행 변경으로 번역
-                {
-                    Debug.LogError($"Content result was rejected. Content={run.Definition.ContentId}");
-                }
-                else if (!await progress.TryApplyAndSaveAsync(change))
-                {
-                    Debug.LogError($"Content progress could not be saved. Content={run.Definition.ContentId}");
-                }
-                else if (run.Definition.ResultAdapter.TryCreateRewardPresentation(result, out var presentation) &&
-                         presentation != null && !presentation.IsEmpty)
-                {
-                    try
-                    {
-                        rewardPresentation?.PlayConfirmed(presentation); // 저장 성공 뒤에만 화면 연출 허용
-                    }
-                    catch (Exception exception)
-                    {
-                        Debug.LogException(exception); // 표현 실패가 콘텐츠 복귀를 막지 않음
-                    }
-                }
+                FinishRun(run);
+                return;
+            }
+
+            if (!run.Definition.ResultAdapter.TryCreateProgressChange(result, out var change)) // 결과 번역은 한 번만 수행
+            {
+                Debug.LogError($"Content result was rejected. Content={run.Definition.ContentId}");
+                FinishRun(run);
+                return;
+            }
+
+            run.PendingChange = change;
+            if (run.Definition.ResultAdapter.TryCreateRewardPresentation(result, out var presentation) &&
+                presentation != null && !presentation.IsEmpty)
+            {
+                run.PendingPresentation = presentation; // 재시도 때 동일한 표시 요청 재사용
+            }
+
+            await TrySaveAndFinishAsync(run);
+        }
+
+        private async Task TrySaveAndFinishAsync(ActiveRun run)
+        {
+            if (run == null || !ReferenceEquals(activeRun, run) || Phase != ContentFlowPhase.Finishing ||
+                run.PendingChange == null || Interlocked.Exchange(ref run.SettlementInFlight, 1) != 0)
+            {
+                return;
+            }
+
+            run.CanRetry = false;
+            ShowSaving();
+
+            var saved = false;
+            try
+            {
+                saved = await progress.TryApplyAndSaveAsync(run.PendingChange);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref run.SettlementInFlight, 0);
             }
 
             if (!ReferenceEquals(activeRun, run))
@@ -179,7 +228,48 @@ namespace ProjectMT.Contents.Framework
                 return;
             }
 
-            activeRun = null; // 복귀 전에 실행 잠금 해제
+            if (!saved)
+            {
+                Debug.LogError($"Content progress could not be saved. Content={run.Definition.ContentId}");
+                run.CanRetry = true;
+                ShowSaveFailed(() => RetrySave(run));
+                return;
+            }
+
+            if (run.PendingPresentation != null)
+            {
+                try
+                {
+                    rewardPresentation?.PlayConfirmed(run.PendingPresentation); // 저장 성공 뒤에만 화면 연출 허용
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception); // 표현 실패가 콘텐츠 복귀를 막지 않음
+                }
+            }
+
+            FinishRun(run);
+        }
+
+        private void RetrySave(ActiveRun run)
+        {
+            if (run == null || !ReferenceEquals(activeRun, run) || Phase != ContentFlowPhase.Finishing || !run.CanRetry)
+            {
+                return;
+            }
+
+            run.CanRetry = false; // 연속 터치로 중복 저장 요청 금지
+            _ = TrySaveAndFinishAsync(run);
+        }
+
+        private void FinishRun(ActiveRun run)
+        {
+            if (!ReferenceEquals(activeRun, run))
+            {
+                return;
+            }
+
+            HideFinishFeedback();
             if (run.Runner != null)
             {
                 run.Runner.Close();
@@ -187,6 +277,45 @@ namespace ProjectMT.Contents.Framework
             else
             {
                 sceneNavigator.Load(mainBattleSceneId);
+            }
+
+            activeRun = null; // 종료·복귀 요청 뒤 실행 잠금 해제
+            Phase = ContentFlowPhase.Idle;
+        }
+
+        private void ShowSaving()
+        {
+            try
+            {
+                finishFeedback.ShowSaving();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception); // 표시 오류가 저장을 막지 않음
+            }
+        }
+
+        private void ShowSaveFailed(Action retry)
+        {
+            try
+            {
+                finishFeedback.ShowSaveFailed(retry);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+        }
+
+        private void HideFinishFeedback()
+        {
+            try
+            {
+                finishFeedback.Hide();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
             }
         }
 
@@ -201,7 +330,11 @@ namespace ProjectMT.Contents.Framework
             public ContentDefinition Definition { get; }
             public IHostedContentRunner Runner { get; }
             public ContentContext Context { get; set; }
+            public GameProgressChange PendingChange { get; set; } // 저장 성공까지 보존할 동일 변경
+            public RewardPresentationRequest PendingPresentation { get; set; } // 저장 성공 뒤 한 번 표시
             public int ExitAccepted; // 첫 결과 접수 표식
+            public int SettlementInFlight; // 동시 저장 재시도 차단
+            public bool CanRetry; // 실패 확인 뒤에만 재시도 허용
         }
 
         private sealed class ContentExitGate : IContentExit // 첫 종료 요청만 통과

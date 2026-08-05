@@ -46,7 +46,7 @@ namespace ProjectMT.Tests.EditMode
         }
 
         [Test]
-        public async Task VersionTwoSave_MigratesOwnedMonsterLevelsToVersionThree()
+        public async Task VersionTwoSave_MigratesOwnedMonsterLevelsAndGoldToCurrentVersion()
         {
             const string json =
                 "{\"dataVersion\":2,\"gameData\":{\"temporaryGold\":31,\"monsters\":{" +
@@ -62,7 +62,8 @@ namespace ProjectMT.Tests.EditMode
             Assert.That(loaded.Monsters.TryGetOwnedMonster("tofu_02", out var ranged), Is.True);
             Assert.That(starter.Level, Is.EqualTo(1));
             Assert.That(ranged.Level, Is.EqualTo(4));
-            Assert.That(migrated.dataVersion, Is.EqualTo(3));
+            Assert.That(loaded.Gold, Is.EqualTo(31));
+            Assert.That(migrated.dataVersion, Is.EqualTo(SaveService.CurrentDataVersion));
             Assert.That(store.ReplaceCount, Is.EqualTo(1));
         }
 
@@ -70,7 +71,7 @@ namespace ProjectMT.Tests.EditMode
         public async Task AcquireAndFormationChanges_SaveWithoutDuplicatesAndKeepMainParty()
         {
             var store = new MemoryFileStore(Encoding.UTF8.GetBytes(
-                "{\"dataVersion\":3,\"gameData\":{\"monsters\":{" +
+                "{\"dataVersion\":4,\"gameData\":{\"monsters\":{" +
                 "\"ownedMonsters\":[{\"monsterId\":\"tofu_01\",\"level\":1}]," +
                 "\"mainPartySlots\":[\"tofu_01\"],\"reservePartySlots\":[]}}}"));
             var gameData = new GameDataService(new SaveService(store, "memory://project-mt-save"));
@@ -99,7 +100,7 @@ namespace ProjectMT.Tests.EditMode
         public async Task LevelUp_SpendsGoldAndRaisesLevelAsOneSavedChange()
         {
             var store = new MemoryFileStore(Encoding.UTF8.GetBytes(
-                "{\"dataVersion\":3,\"gameData\":{\"temporaryGold\":21,\"monsters\":{" +
+                "{\"dataVersion\":4,\"gameData\":{\"gold\":21,\"monsters\":{" +
                 "\"ownedMonsters\":[{\"monsterId\":\"tofu_01\",\"level\":1}]," +
                 "\"mainPartySlots\":[\"tofu_01\"],\"reservePartySlots\":[]}}}"));
             var gameData = new GameDataService(new SaveService(store, "memory://project-mt-save"));
@@ -107,7 +108,7 @@ namespace ProjectMT.Tests.EditMode
 
             Assert.That(await gameData.TryApplyAndSaveAsync(
                 GameProgressChange.LevelUpMonster("tofu_01", 1)), Is.True);
-            Assert.That(gameData.View.TemporaryGold, Is.EqualTo(11));
+            Assert.That(gameData.View.Gold, Is.EqualTo(11));
             Assert.That(gameData.View.Monsters.TryGetOwnedMonster("tofu_01", out var levelTwo), Is.True);
             Assert.That(levelTwo.Level, Is.EqualTo(2));
 
@@ -115,13 +116,13 @@ namespace ProjectMT.Tests.EditMode
                 GameProgressChange.LevelUpMonster("tofu_01", 1)), Is.False);
             Assert.That(await gameData.TryApplyAndSaveAsync(
                 GameProgressChange.LevelUpMonster("tofu_01", 2)), Is.True);
-            Assert.That(gameData.View.TemporaryGold, Is.Zero);
+            Assert.That(gameData.View.Gold, Is.Zero);
             Assert.That(gameData.View.Monsters.TryGetOwnedMonster("tofu_01", out var levelThree), Is.True);
             Assert.That(levelThree.Level, Is.EqualTo(3));
 
             Assert.That(await gameData.TryApplyAndSaveAsync(
                 GameProgressChange.LevelUpMonster("tofu_01", 3)), Is.False);
-            Assert.That(gameData.View.TemporaryGold, Is.Zero);
+            Assert.That(gameData.View.Gold, Is.Zero);
             Assert.That(store.ReplaceCount, Is.EqualTo(2));
         }
 
@@ -133,7 +134,7 @@ namespace ProjectMT.Tests.EditMode
             Assert.That(catalog.TryGet("tofu_01", out var definition), Is.True);
 
             var store = new MemoryFileStore(Encoding.UTF8.GetBytes(
-                "{\"dataVersion\":3,\"gameData\":{\"monsters\":{" +
+                "{\"dataVersion\":4,\"gameData\":{\"monsters\":{" +
                 "\"ownedMonsters\":[{\"monsterId\":\"tofu_01\",\"level\":3}]," +
                 "\"mainPartySlots\":[\"tofu_01\"],\"reservePartySlots\":[]}}}"));
             var loaded = await new SaveService(store, "memory://project-mt-save").LoadAsync();

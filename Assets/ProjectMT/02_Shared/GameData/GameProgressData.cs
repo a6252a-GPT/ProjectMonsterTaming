@@ -1,4 +1,5 @@
 using System;
+using ProjectMT.Shared.Reward;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -63,7 +64,8 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private int currentChallengeStage = 1; // 현재 도전 단계
         [SerializeField] private int lastClearedStage; // 마지막 성공 단계
         [SerializeField] private ExpeditionRunMode expeditionMode = ExpeditionRunMode.Challenge; // 저장된 실행 모드
-        [SerializeField] private int temporaryGold; // 시드 임시 재화
+        [FormerlySerializedAs("temporaryGold")]
+        [SerializeField] private long gold; // 정식 골드 잔액
         [FormerlySerializedAs("vegetableRiotBestKills")]
         [SerializeField] private int foodRiotBestKills; // 식량 대소동 최고 처치
         [SerializeField] private bool castleRaidFirstClear; // 군단의 역습 첫 승리
@@ -73,7 +75,7 @@ namespace ProjectMT.Shared.GameData
         public int CurrentChallengeStage => currentChallengeStage;
         public int LastClearedStage => lastClearedStage;
         public ExpeditionRunMode ExpeditionMode => expeditionMode;
-        public int TemporaryGold => temporaryGold;
+        public long Gold => gold;
         public int FoodRiotBestKills => foodRiotBestKills;
         public bool CastleRaidFirstClear => castleRaidFirstClear;
         public CommanderProgressView Commander => new CommanderProgressView(commander);
@@ -91,7 +93,7 @@ namespace ProjectMT.Shared.GameData
                 currentChallengeStage = currentChallengeStage,
                 lastClearedStage = lastClearedStage,
                 expeditionMode = expeditionMode,
-                temporaryGold = temporaryGold,
+                gold = gold,
                 foodRiotBestKills = foodRiotBestKills,
                 castleRaidFirstClear = castleRaidFirstClear,
                 commander = commander?.Clone() ?? CommanderProgressData.CreateDefault(),
@@ -106,31 +108,34 @@ namespace ProjectMT.Shared.GameData
                 return false;
             }
 
+            if (change.HasExpeditionMode && !IsValidExpeditionMode(change.ExpeditionMode))
+            {
+                return false;
+            }
+
             if (change.HasExpeditionMode)
             {
                 expeditionMode = change.ExpeditionMode;
             }
 
-            if (change.ChallengeVictoryStage > 0)
+            if (change.HasExpeditionFirstClear && !TryApplyExpeditionFirstClear(change))
             {
-                if (change.ChallengeVictoryStage != currentChallengeStage)
-                {
-                    return false; // 현재 도전 단계만 승리 인정
-                }
-
-                lastClearedStage = Math.Max(lastClearedStage, change.ChallengeVictoryStage);
-                currentChallengeStage = Math.Max(currentChallengeStage, change.ChallengeVictoryStage + 1);
+                return false;
             }
 
-            if (change.TemporaryGoldDelta != 0)
+            if (change.HasExpeditionRepeatClear && !TryApplyExpeditionRepeatClear(change))
             {
-                var nextGold = (long)temporaryGold + change.TemporaryGoldDelta; // int 범위 밖 연산 방지
-                if (nextGold < 0 || nextGold > int.MaxValue)
+                return false;
+            }
+
+            if (change.Rewards != null && !change.Rewards.IsEmpty)
+            {
+                if (gold > long.MaxValue - change.Rewards.Gold)
                 {
                     return false;
                 }
 
-                temporaryGold = (int)nextGold;
+                gold += change.Rewards.Gold;
             }
 
             if (change.FoodRiotBestKills >= 0)
@@ -175,34 +180,63 @@ namespace ProjectMT.Shared.GameData
                     !monsters.TryGetOwned(change.LevelUpMonsterId, out var owned) ||
                     owned.Level != change.ExpectedMonsterLevel ||
                     !MonsterLevelRules.TryGetNextLevelCost(owned.Level, out var cost) ||
-                    temporaryGold < cost ||
+                    gold < cost ||
                     !monsters.TryLevelUp(change.LevelUpMonsterId, change.ExpectedMonsterLevel))
                 {
                     return false;
                 }
 
-                temporaryGold -= cost; // 레벨 증가와 같은 후보 데이터에서 차감
+                gold -= cost; // 레벨 증가와 같은 후보 데이터에서 차감
             }
 
             Repair(); // 변경 후 불변식 재확인
             return true;
         }
 
+        private bool TryApplyExpeditionFirstClear(GameProgressChange change)
+        {
+            if (expeditionMode != ExpeditionRunMode.Challenge ||
+                change.ExpeditionFirstClearStage != currentChallengeStage ||
+                change.Rewards == null || change.Rewards.IsEmpty)
+            {
+                return false;
+            }
+
+            lastClearedStage = Math.Max(lastClearedStage, change.ExpeditionFirstClearStage);
+            currentChallengeStage = Math.Max(currentChallengeStage, change.ExpeditionFirstClearStage + 1);
+            return true;
+        }
+
+        private bool TryApplyExpeditionRepeatClear(GameProgressChange change)
+        {
+            return expeditionMode == ExpeditionRunMode.Repeat &&
+                   lastClearedStage > 0 &&
+                   change.ExpeditionRepeatClearStage == lastClearedStage &&
+                   change.Rewards != null &&
+                   !change.Rewards.IsEmpty;
+        }
+
         internal void Repair()
         {
             currentChallengeStage = Math.Max(1, currentChallengeStage);
             lastClearedStage = Math.Max(0, Math.Min(lastClearedStage, currentChallengeStage - 1));
-            temporaryGold = Math.Max(0, temporaryGold);
+            gold = Math.Max(0L, gold);
             foodRiotBestKills = Math.Max(0, foodRiotBestKills);
             commander ??= CommanderProgressData.CreateDefault();
             commander.Repair();
             monsters ??= MonsterRosterData.CreateDefault();
             monsters.Repair();
 
-            if (lastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat)
+            if (!IsValidExpeditionMode(expeditionMode) ||
+                (lastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat))
             {
-                expeditionMode = ExpeditionRunMode.Challenge; // 클리어 전 반복 모드 금지
+                expeditionMode = ExpeditionRunMode.Challenge; // 손상값·클리어 전 반복 복구
             }
+        }
+
+        private static bool IsValidExpeditionMode(ExpeditionRunMode mode)
+        {
+            return mode == ExpeditionRunMode.Challenge || mode == ExpeditionRunMode.Repeat;
         }
     }
 
@@ -213,7 +247,7 @@ namespace ProjectMT.Shared.GameData
             CurrentChallengeStage = data.CurrentChallengeStage;
             LastClearedStage = data.LastClearedStage;
             ExpeditionMode = data.ExpeditionMode;
-            TemporaryGold = data.TemporaryGold;
+            Gold = data.Gold;
             FoodRiotBestKills = data.FoodRiotBestKills;
             CastleRaidFirstClear = data.CastleRaidFirstClear;
             Commander = data.Commander;
@@ -223,7 +257,7 @@ namespace ProjectMT.Shared.GameData
         public int CurrentChallengeStage { get; }
         public int LastClearedStage { get; }
         public ExpeditionRunMode ExpeditionMode { get; }
-        public int TemporaryGold { get; }
+        public long Gold { get; }
         public int FoodRiotBestKills { get; }
         public bool CastleRaidFirstClear { get; }
         public CommanderProgressView Commander { get; }
@@ -239,8 +273,11 @@ namespace ProjectMT.Shared.GameData
 
         internal bool HasExpeditionMode { get; private set; }
         internal ExpeditionRunMode ExpeditionMode { get; private set; }
-        internal int ChallengeVictoryStage { get; private set; }
-        internal int TemporaryGoldDelta { get; private set; }
+        internal bool HasExpeditionFirstClear { get; private set; }
+        internal int ExpeditionFirstClearStage { get; private set; }
+        internal bool HasExpeditionRepeatClear { get; private set; }
+        internal int ExpeditionRepeatClearStage { get; private set; }
+        internal RewardBundle Rewards { get; private set; }
         internal int FoodRiotBestKills { get; private set; }
         internal bool MarkCastleRaidCleared { get; private set; }
         internal bool HasAcquireMonster { get; private set; }
@@ -262,20 +299,36 @@ namespace ProjectMT.Shared.GameData
             };
         }
 
-        public static GameProgressChange RecordChallengeVictory(int stage) // 도전 승리 요청
+        public static GameProgressChange RecordExpeditionFirstClear(
+            int stage,
+            RewardBundle rewards) // 최초 진행과 보상을 함께 기록
         {
             return new GameProgressChange
             {
-                ChallengeVictoryStage = stage
+                HasExpeditionFirstClear = true,
+                ExpeditionFirstClearStage = stage,
+                Rewards = rewards
             };
         }
 
-        public static GameProgressChange RecordFoodRiot(int killCount, int temporaryGoldReward) // 식량 대소동 결과 요청
+        public static GameProgressChange RecordExpeditionRepeatClear(
+            int stage,
+            RewardBundle rewards) // 반복 보상만 기록
+        {
+            return new GameProgressChange
+            {
+                HasExpeditionRepeatClear = true,
+                ExpeditionRepeatClearStage = stage,
+                Rewards = rewards
+            };
+        }
+
+        public static GameProgressChange RecordFoodRiot(int killCount, RewardBundle rewards) // 식량 대소동 결과 요청
         {
             return new GameProgressChange
             {
                 FoodRiotBestKills = Math.Max(0, killCount),
-                TemporaryGoldDelta = Math.Max(0, temporaryGoldReward)
+                Rewards = rewards
             };
         }
 

@@ -46,7 +46,7 @@ namespace ProjectMT.Tests.EditMode
 
             Assert.That(loaded.CurrentChallengeStage, Is.EqualTo(4));
             Assert.That(loaded.LastClearedStage, Is.EqualTo(3));
-            Assert.That(loaded.TemporaryGold, Is.EqualTo(27));
+            Assert.That(loaded.Gold, Is.EqualTo(27));
             Assert.That(loaded.Commander.Level, Is.EqualTo(6));
             Assert.That(loaded.Commander.Experience, Is.EqualTo(4321));
             Assert.That(loaded.Monsters.MainPartySlots[0], Is.EqualTo("tofu_01"));
@@ -72,8 +72,8 @@ namespace ProjectMT.Tests.EditMode
         public async Task ResetToDefault_ReplacesMemoryAndSavedProgress()
         {
             const string progressedJson =
-                "{\"dataVersion\":3,\"gameData\":{" +
-                "\"currentChallengeStage\":5,\"lastClearedStage\":4,\"temporaryGold\":99," +
+                "{\"dataVersion\":4,\"gameData\":{" +
+                "\"currentChallengeStage\":5,\"lastClearedStage\":4,\"gold\":99," +
                 "\"foodRiotBestKills\":12,\"castleRaidFirstClear\":true}}";
             var store = new RecordingFileStore(Encoding.UTF8.GetBytes(progressedJson));
             var saveService = new SaveService(store, "memory://project-mt-save");
@@ -85,7 +85,7 @@ namespace ProjectMT.Tests.EditMode
 
             Assert.That(gameData.View.CurrentChallengeStage, Is.EqualTo(1));
             Assert.That(gameData.View.LastClearedStage, Is.Zero);
-            Assert.That(gameData.View.TemporaryGold, Is.Zero);
+            Assert.That(gameData.View.Gold, Is.Zero);
             Assert.That(gameData.View.FoodRiotBestKills, Is.Zero);
             Assert.That(gameData.View.CastleRaidFirstClear, Is.False);
             Assert.That(gameData.View.Monsters.OwnedMonsterIds, Is.EqualTo(new[] { "tofu_01" }));

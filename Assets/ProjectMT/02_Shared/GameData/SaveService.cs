@@ -16,10 +16,12 @@ namespace ProjectMT.Shared.GameData
 
     public sealed class SaveService // 진행 데이터 직렬화 담당
     {
-        public const int CurrentDataVersion = 3;
+        public const int CurrentDataVersion = 4;
         private const int MinimumSupportedDataVersion = 1;
         private const string LegacyFoodRiotBestKillsJsonKey = "\"vegetableRiotBestKills\""; // 개명 전 저장 키
         private const string FoodRiotBestKillsJsonKey = "\"foodRiotBestKills\""; // 현재 저장 키
+        private const string LegacyGoldJsonKey = "\"temporaryGold\""; // 시드 골드 저장 키
+        private const string GoldJsonKey = "\"gold\""; // 정식 골드 저장 키
 
         private readonly IAtomicFileStore fileStore; // 실제 파일 교체 계약
         private readonly string savePath; // 저장 파일 전체 경로
@@ -64,7 +66,7 @@ namespace ProjectMT.Shared.GameData
             envelope.gameData.Repair();
             if (envelope.dataVersion != CurrentDataVersion)
             {
-                await SaveAsync(envelope.gameData); // v1·v2 진행값을 보존한 채 v3로 승격
+                await SaveAsync(envelope.gameData); // 이전 진행값을 보존한 채 현재 형식으로 승격
             }
 
             return envelope.gameData;
@@ -91,13 +93,23 @@ namespace ProjectMT.Shared.GameData
 
         private static string MigrateLegacyFieldNames(string json)
         {
-            if (string.IsNullOrEmpty(json) ||
-                json.IndexOf(FoodRiotBestKillsJsonKey, StringComparison.Ordinal) >= 0)
+            if (string.IsNullOrEmpty(json))
             {
                 return json;
             }
 
-            return json.Replace(LegacyFoodRiotBestKillsJsonKey, FoodRiotBestKillsJsonKey); // 기존 최고 기록 보존
+            var migrated = json;
+            if (migrated.IndexOf(FoodRiotBestKillsJsonKey, StringComparison.Ordinal) < 0)
+            {
+                migrated = migrated.Replace(LegacyFoodRiotBestKillsJsonKey, FoodRiotBestKillsJsonKey); // 기존 최고 기록 보존
+            }
+
+            if (migrated.IndexOf(GoldJsonKey, StringComparison.Ordinal) < 0)
+            {
+                migrated = migrated.Replace(LegacyGoldJsonKey, GoldJsonKey); // 임시 골드를 정식 잔액으로 승격
+            }
+
+            return migrated;
         }
     }
 }

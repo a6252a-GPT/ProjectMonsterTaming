@@ -22,6 +22,7 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private Button castleRaidButton; // 군단의 역습 입장 버튼
         [SerializeField] private TMP_Text statusText; // 현재 플레이 상태
         [SerializeField] private FormationPageController formationPage; // 보유·편성 통합 화면
+        [SerializeField] private GachaSystem gachaSystem; // 몬스터 뽑기 (없어도 씬 동작에는 영향 없음)
 
         private MainSceneContext context; // 진행·콘텐츠 실행 권한
         private BattlePartySnapshot party; // 시드 부대 사진
@@ -58,6 +59,7 @@ namespace ProjectMT.Features.MainBattle
             expedition.Initialize(context.Progress, party);
             formationPage.PartyChanged += HandlePartyChanged;
             formationPage.Configure(context.Progress, context.MonsterCatalog, context.RefreshParty);
+            ConfigureGachaSystem();
             ConfigureMonsterDrag();
             SetStatus("자동 전투");
             IsInitialized = true;
@@ -68,6 +70,7 @@ namespace ProjectMT.Features.MainBattle
             monsterDrag?.Shutdown();
             foodRiotButton?.onClick.RemoveListener(OpenFoodRiot);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
+            ResolveGachaSystem()?.Shutdown();
             if (formationPage != null)
             {
                 formationPage.PartyChanged -= HandlePartyChanged;
@@ -84,6 +87,29 @@ namespace ProjectMT.Features.MainBattle
             party = null;
             monsterDrag = null;
             IsInitialized = false;
+        }
+
+        // GachaSystem은 비활성 MonsterShop에 두면 프리팹 오버라이드 참조가 Missing으로 깨질 수 있다.
+        // 인스펙터 참조가 비어 있어도 같은 오브젝트/씬(비활성 포함)에서 다시 찾아 연결한다.
+        private void ConfigureGachaSystem()
+        {
+            ResolveGachaSystem()?.Configure(context.Progress, context.MonsterCatalog);
+        }
+
+        private GachaSystem ResolveGachaSystem()
+        {
+            if (gachaSystem != null)
+            {
+                return gachaSystem;
+            }
+
+            gachaSystem = GetComponent<GachaSystem>();
+            if (gachaSystem == null)
+            {
+                gachaSystem = FindFirstObjectByType<GachaSystem>(FindObjectsInactive.Include);
+            }
+
+            return gachaSystem;
         }
 
         private void ConfigureMonsterDrag()
@@ -196,7 +222,8 @@ namespace ProjectMT.Features.MainBattle
             Button foodButton,
             Button castleButton,
             TMP_Text status,
-            FormationPageController formationController = null)
+            FormationPageController formationController = null,
+            GachaSystem gacha = null)
         {
             expedition = expeditionController;
             hostedRunner = runner;
@@ -204,6 +231,7 @@ namespace ProjectMT.Features.MainBattle
             castleRaidButton = castleButton;
             statusText = status;
             formationPage = formationController;
+            gachaSystem = gacha;
         }
 #endif
     }

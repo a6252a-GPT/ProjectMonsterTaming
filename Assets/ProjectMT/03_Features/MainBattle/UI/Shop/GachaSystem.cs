@@ -15,6 +15,7 @@ namespace ProjectMT.Features.MainBattle
     // 신규 획득이면 저장에 획득 등록, 중복이면 자동으로 돌파(또는 최대 돌파 시 전용 재화 적립)까지 처리한다.
     // 결과 텍스트·콘솔 로그 모두 "이름 / 등급 : X / 수량 : N" 형식으로 몬스터별 정보를 모아 표시하며,
     // 한 줄이 너무 길어지지 않도록 몬스터 ResultLineGroupSize개마다 줄바꿈 + 빈 줄을 넣는다.
+    // 콘솔 로그 첫 줄에는 보유 마리 수와 함께 최대 돌파 재화(전용 재화) 보유량도 같이 표시한다.
     [DisallowMultipleComponent]
     public sealed class GachaSystem : MonoBehaviour
     {
@@ -195,7 +196,8 @@ namespace ProjectMT.Features.MainBattle
             return builder.ToString();
         }
 
-        // 예: "보유 몬스터 : (두부1 : 일반 · 1돌파) , (두부2 : 고급) , (보라 두부 : 희귀)"
+        // 예: "보유 몬스터 (총 8마리) / 보유한 재화 : 2
+        //      (두부1 : 일반 · 1돌파) , (두부2 : 고급) , (보라 두부 : 희귀)"
         // (몬스터 3개마다 줄바꿈 + 빈 줄)
         private void LogOwnedRosterDebug()
         {
@@ -232,13 +234,16 @@ namespace ProjectMT.Features.MainBattle
                 items.Add(WrapWithParens(itemBuilder.ToString())); // 몬스터별 구분을 위해 앞뒤에 ( ) 를 붙인다
             }
 
-            // 콘솔 목록은 로그의 첫 줄바꿈 전까지만 미리보기로 보여주므로, 총 마리 수를 먼저 적어서
-            // 클릭해서 펼쳐보지 않아도 실제로 몇 마리를 보유 중인지 바로 알 수 있게 한다.
+            // 콘솔 목록은 로그의 첫 줄바꿈 전까지만 미리보기로 보여주므로, 총 마리 수·보유 재화를 먼저 적어서
+            // 클릭해서 펼쳐보지 않아도 실제로 몇 마리·재화를 보유 중인지 바로 알 수 있게 한다.
+            // 재화 = 최대 돌파(5돌파) 이후 중복 획득 시 적립되는 전용 재화 (몬스터 선택권 / 뽑기권 교환용).
             var builder = new StringBuilder("보유 몬스터 (총 ");
             builder.Append(owned.Count);
-            builder.Append("마리) : ");
+            builder.Append("마리) / 전용 재화(뽑기권 등 사용?) : ");
+            builder.Append($"{progress.View.AscensionCurrency}개");
+            builder.Append('\n');
             AppendGrouped(builder, items);
-            Debug.Log(builder.ToString());
+            Debug.Log(builder.ToString());           
         }
 
         // 몬스터별 데이터를 서로 구분하기 쉽도록 앞뒤에 괄호를 붙인다. 예: "(두부1 / 등급 : 일반 / 수량 : 1)"

@@ -5,7 +5,8 @@
     "ProjectMT.Core",
     "ProjectMT.Shared",
     "ProjectMT.Contents.Framework",
-    "UnityEngine.UI"
+    "UnityEngine.UI",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e4e65517f6e3254f8d77198f9d5aacf, type: 3}
+  m_Name: ContentDefinition_GuardiansTower
+  m_EditorClassIdentifier: ProjectMT.Contents.Framework::ProjectMT.Contents.Framework.ContentDefinition
+  contentId:
+    value: guardians_tower
+  openMode: 0
+  sceneId:
+    value: 
+  startDataFactory: {fileID: 11400000, guid: 146dc74446824a45977b5db268a62628, type: 2}
+  resultAdapter: {fileID: 11400000, guid: 61421f8b536d486d9f9829423d7d2d78, type: 2}

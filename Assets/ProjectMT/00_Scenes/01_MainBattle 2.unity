@@ -768,6 +768,8 @@ MonoBehaviour:
   slots:
   - config: {fileID: 11400000, guid: 60055a5c7380a9244a13a12878b43fcc, type: 2}
     instance: {fileID: 1744144521}
+  - config: {fileID: 11400000, guid: 9cf06f35116a440eba556d5bad9ef6c2, type: 2}
+    instance: {fileID: 8800000000000002}
 --- !u!4 &391906752
 Transform:
   m_ObjectHideFlags: 0
@@ -782,6 +784,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1744144522}
+  - {fileID: 8800000000000003}
   m_Father: {fileID: 542566293}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &447923045
@@ -1037,10 +1040,13 @@ MonoBehaviour:
     value: food_riot
   castleRaidContentId:
     value: castle_raid
+  guardiansTowerContentId:
+    value: guardians_tower
   expedition: {fileID: 2131226339}
   hostedRunner: {fileID: 542566291}
   foodRiotButton: {fileID: 559004535}
   castleRaidButton: {fileID: 690589382}
+  towerButton: {fileID: 2049484409}
   statusText: {fileID: 582794794}
   formationPage: {fileID: 1216157932}
   gachaSystem: {fileID: 657289346}
@@ -3458,6 +3464,73 @@ GameObject:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2954941631038554414, guid: af63ccc9a7dbb1e41b990ef12f5d5d33, type: 3}
   m_PrefabInstance: {fileID: 1744144520}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8800000000000001
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 391906752}
+    m_Modifications:
+    - target: {fileID: 2954941631038554414, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2954941631038554414, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2954941631038554414, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2954941631038554414, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2954941631038554414, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2954941631038554414, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2954941631038554414, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2954941631038554414, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2954941631038554414, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2954941631038554414, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7238598723104609653, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_Name
+      value: PF_GuardiansTowerRuntime
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+--- !u!1 &8800000000000002 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7238598723104609653, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+  m_PrefabInstance: {fileID: 8800000000000001}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8800000000000003 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2954941631038554414, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+  m_PrefabInstance: {fileID: 8800000000000001}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1778050943
 GameObject:

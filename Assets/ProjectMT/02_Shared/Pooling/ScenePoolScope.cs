@@ -49,7 +49,7 @@ namespace ProjectMT.Shared.Pooling
             return instance;
         }
 
-        public void Return(GameObject instance)
+        public void Return(GameObject instance, bool reparentToPool = true)
         {
             if (instance == null || !active.Remove(instance))
             {
@@ -64,7 +64,11 @@ namespace ProjectMT.Shared.Pooling
             }
 
             instance.SetActive(false);
-            instance.transform.SetParent(transform, false);
+            if (reparentToPool)
+            {
+                instance.transform.SetParent(transform, false);
+            }
+
             if (!available.TryGetValue(marker.SourcePrefab, out var queue))
             {
                 queue = new Queue<GameObject>();
@@ -74,7 +78,7 @@ namespace ProjectMT.Shared.Pooling
             queue.Enqueue(instance); // 원본 Prefab 대기열로 복귀
         }
 
-        public void ReturnAll()
+        public void ReturnAll(bool reparentToPool = true)
         {
             if (active.Count == 0)
             {
@@ -84,7 +88,7 @@ namespace ProjectMT.Shared.Pooling
             var buffer = new List<GameObject>(active); // 반환 중 컬렉션 변경 방지
             foreach (var instance in buffer)
             {
-                Return(instance);
+                Return(instance, reparentToPool);
             }
         }
     }

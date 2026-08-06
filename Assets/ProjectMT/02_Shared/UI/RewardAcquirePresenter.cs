@@ -26,7 +26,7 @@ namespace ProjectMT.Shared.UI
         private void OnDisable()
         {
             StopAllCoroutines();
-            poolScope?.ReturnAll();
+            poolScope?.ReturnAll(false); // 부모 비활성화 중 Transform 이동 금지 회피
             activeItemCount = 0;
         }
 

@@ -317,6 +317,50 @@ namespace ProjectMT.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator RewardAcquirePresenter_DisableOverlay_ReturnsItemWithoutReparenting() // 비활성화 중 부모 변경 방지
+        {
+            var overlayObject = new GameObject("RewardOverlay", typeof(RectTransform));
+            overlayObject.SetActive(false);
+            var pool = overlayObject.AddComponent<ScenePoolScope>();
+            var presenter = overlayObject.AddComponent<RewardAcquirePresenter>();
+            var display = new GameObject("DisplayRoot", typeof(RectTransform)).GetComponent<RectTransform>();
+            display.SetParent(overlayObject.transform, false);
+            var spawn = new GameObject("Spawn", typeof(RectTransform)).GetComponent<RectTransform>();
+            spawn.SetParent(display, false);
+            var target = new GameObject("Target", typeof(RectTransform)).GetComponent<RectTransform>();
+            target.SetParent(display, false);
+            var itemPrefab = new GameObject("RewardItem", typeof(RectTransform), typeof(CanvasGroup), typeof(RewardAcquireView));
+            var label = CreateText("RewardLabel");
+            label.transform.SetParent(itemPrefab.transform, false);
+            itemPrefab.GetComponent<RewardAcquireView>().EditorConfigure(label);
+            itemPrefab.SetActive(false);
+            presenter.EditorConfigure(pool, itemPrefab, display, spawn, target, null);
+            overlayObject.SetActive(true);
+
+            presenter.PlayConfirmed(RewardPresentationRequest.Gold(7));
+            yield return null;
+
+            var active = GetPrivateField<HashSet<GameObject>>(pool, "active").Single();
+            Assert.That(active.transform.parent, Is.EqualTo(display));
+            overlayObject.SetActive(false);
+
+            Assert.That(pool.ActiveCount, Is.Zero);
+            Assert.That(active.activeSelf, Is.False);
+            Assert.That(active.transform.parent, Is.EqualTo(display));
+
+            overlayObject.SetActive(true);
+            presenter.PlayConfirmed(RewardPresentationRequest.Gold(7));
+            yield return null;
+
+            var reused = GetPrivateField<HashSet<GameObject>>(pool, "active").Single();
+            Assert.That(reused, Is.SameAs(active));
+
+            Object.Destroy(overlayObject);
+            Object.Destroy(itemPrefab);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator Expedition_ClimaxPlaysOnlyForEachWavesLastEnemy() // 웨이브별 마지막 적 약한 연출 검사
         {
             var poolRoot = new GameObject("PoolRoot");

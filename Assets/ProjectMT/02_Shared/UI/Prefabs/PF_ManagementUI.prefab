@@ -666,7 +666,7 @@ GameObject:
   - component: {fileID: 2323606531693505005}
   - component: {fileID: 2548689161356961044}
   m_Layer: 0
-  m_Name: ManagementUI
+  m_Name: PF_ManagementUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -722,7 +722,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5f6a7b8c9d041e2f3a4b5c6d7e8f9a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.MainBattle.GachaSystem
-  rarityCatalog: {fileID: 11400000, guid: a5915096014f7f1428c2dc6f16b6fd88, type: 2}
+  rarityCatalog: {fileID: 11400000, guid: ba6d0a46bf29129428a639d5d92b16a2, type: 2}
   probability: {fileID: 11400000, guid: 24ab9652ea64fee4cac6fc001565fb64, type: 2}
   oneDrawButton: {fileID: 389064471318940547}
   tenDrawButton: {fileID: 8260126553101523285}

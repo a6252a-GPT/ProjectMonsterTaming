@@ -1951,6 +1951,7 @@ GameObject:
   m_Component:
   - component: {fileID: 671307638}
   - component: {fileID: 671307639}
+  - component: {fileID: 900010006}
   m_Layer: 0
   m_Name: ManagementUI
   m_TagString: Untagged
@@ -1996,6 +1997,38 @@ MonoBehaviour:
   commanderGrowthPage: {fileID: 482581964}
   shopPage: {fileID: 2060515254}
   shopCloseButton: {fileID: 2060515253}
+--- !u!114 &900010006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 671307637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f6a7b8c9d041e2f3a4b5c6d7e8f9a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.MainBattle.GachaSystem
+  rarityCatalog: {fileID: 11400000, guid: a5915096014f7f1428c2dc6f16b6fd88, type: 2}
+  probability: {fileID: 11400000, guid: 24ab9652ea64fee4cac6fc001565fb64, type: 2}
+  oneDrawButton: {fileID: 900010007}
+  tenDrawButton: {fileID: 900010008}
+  resultText: {fileID: 900010009}
+--- !u!114 &900010007 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 33354673382990389, guid: 98896d5a2ed471e40b7954b9dd72729a, type: 3}
+  m_PrefabInstance: {fileID: 2060515251}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &900010008 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8624849185654714595, guid: 98896d5a2ed471e40b7954b9dd72729a, type: 3}
+  m_PrefabInstance: {fileID: 2060515251}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &900010009 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2604265191142782605, guid: 98896d5a2ed471e40b7954b9dd72729a, type: 3}
+  m_PrefabInstance: {fileID: 2060515251}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &684203899
 GameObject:
   m_ObjectHideFlags: 0

@@ -18,7 +18,8 @@ namespace ProjectMT.Contents.GuardianTrial
             }
 
             var rewards = RewardBundle.FromGold(towerResult.KillCount); // 처치 1마리당 골드 1
-            change = GameProgressChange.RecordGuardiansTowerClear(towerResult.KillCount, rewards);
+            // 08.07 안건준 수정 - 실패한 판은 난이도를 올리지 않도록 Cleared 여부를 함께 전달한다.
+            change = GameProgressChange.RecordGuardiansTowerClear(towerResult.KillCount, towerResult.Cleared, rewards);
             return true;
         }
 

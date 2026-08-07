@@ -134,6 +134,7 @@ namespace ProjectMT.Shared.GameData
         [FormerlySerializedAs("vegetableRiotBestKills")]
         [SerializeField] private int foodRiotBestKills; // 식량 대소동 최고 처치
         [SerializeField] private int guardiansTowerBestKills; // 08.06 안건준 추가 - 수호자의 탑 최고 처치 (식량 대소동과 별도 집계)
+        [SerializeField] private int guardiansTowerDifficultyLevel; // 08.07 안건준 추가 - 수호자의 탑 난이도(클리어할 때마다 1씩 증가, 적 수·건물 체력 스케일링에 사용)
         [SerializeField] private bool castleRaidFirstClear; // 군단의 역습 첫 승리
         [SerializeField] private CommanderProgressData commander = CommanderProgressData.CreateDefault(); // 군단장 성장값
         [SerializeField] private MonsterRosterData monsters = MonsterRosterData.CreateDefault(); // 보유·편성값
@@ -146,6 +147,7 @@ namespace ProjectMT.Shared.GameData
         public long Gold => gold;
         public int FoodRiotBestKills => foodRiotBestKills;
         public int GuardiansTowerBestKills => guardiansTowerBestKills; // 08.06 안건준 추가
+        public int GuardiansTowerDifficultyLevel => guardiansTowerDifficultyLevel; // 08.07 안건준 추가
         public bool CastleRaidFirstClear => castleRaidFirstClear;
         public CommanderProgressView Commander => new CommanderProgressView(commander);
         public MonsterRosterView Monsters => monsters?.CreateView() ?? MonsterRosterData.CreateDefault().CreateView();
@@ -167,6 +169,7 @@ namespace ProjectMT.Shared.GameData
                 gold = gold,
                 foodRiotBestKills = foodRiotBestKills,
                 guardiansTowerBestKills = guardiansTowerBestKills, // 08.06 안건준 추가
+                guardiansTowerDifficultyLevel = guardiansTowerDifficultyLevel, // 08.07 안건준 추가
                 castleRaidFirstClear = castleRaidFirstClear,
                 commander = commander?.Clone() ?? CommanderProgressData.CreateDefault(),
                 monsters = monsters?.Clone() ?? MonsterRosterData.CreateDefault(),
@@ -220,6 +223,11 @@ namespace ProjectMT.Shared.GameData
             if (change.GuardiansTowerBestKills >= 0) // 08.06 안건준 추가
             {
                 guardiansTowerBestKills = Math.Max(guardiansTowerBestKills, change.GuardiansTowerBestKills);
+            }
+
+            if (change.IncrementGuardiansTowerDifficulty) // 08.07 안건준 추가 - 클리어할 때마다 난이도 1 증가
+            {
+                guardiansTowerDifficultyLevel = Math.Max(0, guardiansTowerDifficultyLevel + 1);
             }
 
             if (change.MarkCastleRaidCleared)
@@ -339,6 +347,7 @@ namespace ProjectMT.Shared.GameData
             gold = Math.Max(0L, gold);
             foodRiotBestKills = Math.Max(0, foodRiotBestKills);
             guardiansTowerBestKills = Math.Max(0, guardiansTowerBestKills); // 08.06 안건준 추가
+            guardiansTowerDifficultyLevel = Math.Max(0, guardiansTowerDifficultyLevel); // 08.07 안건준 추가
             commander ??= CommanderProgressData.CreateDefault();
             commander.Repair();
             monsters ??= MonsterRosterData.CreateDefault();
@@ -370,6 +379,7 @@ namespace ProjectMT.Shared.GameData
             Gold = data.Gold;
             FoodRiotBestKills = data.FoodRiotBestKills;
             GuardiansTowerBestKills = data.GuardiansTowerBestKills; // 08.06 안건준 추가
+            GuardiansTowerDifficultyLevel = data.GuardiansTowerDifficultyLevel; // 08.07 안건준 추가
             CastleRaidFirstClear = data.CastleRaidFirstClear;
             Commander = data.Commander;
             Monsters = data.Monsters;
@@ -383,6 +393,7 @@ namespace ProjectMT.Shared.GameData
         public long Gold { get; }
         public int FoodRiotBestKills { get; }
         public int GuardiansTowerBestKills { get; } // 08.06 안건준 추가
+        public int GuardiansTowerDifficultyLevel { get; } // 08.07 안건준 추가
         public bool CastleRaidFirstClear { get; }
         public CommanderProgressView Commander { get; }
         public MonsterRosterView Monsters { get; }
@@ -407,6 +418,7 @@ namespace ProjectMT.Shared.GameData
         internal RewardBundle Rewards { get; private set; }
         internal int FoodRiotBestKills { get; private set; }
         internal int GuardiansTowerBestKills { get; private set; } // 08.06 안건준 추가
+        internal bool IncrementGuardiansTowerDifficulty { get; private set; } // 08.07 안건준 추가
         internal bool MarkCastleRaidCleared { get; private set; }
         internal bool HasAcquireMonster { get; private set; }
         internal string AcquireMonsterId { get; private set; }
@@ -464,11 +476,15 @@ namespace ProjectMT.Shared.GameData
         }
 
         // 08.06 안건준 추가 - 수호자의 탑 결과 요청 (식량 대소동과 별도 최고기록 집계)
-        public static GameProgressChange RecordGuardiansTowerClear(int killCount, RewardBundle rewards)
+        // 08.07 안건준 추가 - 성공적으로 클리어했을 때만 난이도를 1 올려서 다음 판 적 수·건물 체력 스케일링에 사용한다.
+        // 08.07 안건준 수정 - 실패(전멸·시간초과)한 판까지 난이도가 오르면 테스트를 반복할수록 건물 체력이
+        // 끝없이 불어나 버려서, cleared가 true일 때만 난이도를 올리도록 수정했다.
+        public static GameProgressChange RecordGuardiansTowerClear(int killCount, bool cleared, RewardBundle rewards)
         {
             return new GameProgressChange
             {
                 GuardiansTowerBestKills = Math.Max(0, killCount),
+                IncrementGuardiansTowerDifficulty = cleared,
                 Rewards = rewards
             };
         }

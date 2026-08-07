@@ -9,7 +9,7 @@ namespace ProjectMT.Contents.GuardianTrial
     public sealed class GuardiansTowerStartDataFactory : ContentStartDataFactory
     {
         [SerializeField, Min(1f)] private float durationSeconds = 60f; // 제한 시간 1분
-        [SerializeField, Range(1, 20)] private int enemyCount = 8; // 시작할 때 한 번만 스폰할 적 수
+        [SerializeField, Range(1, 100)] private int enemyCount = 50; // 08.07 안건준 수정 - 시작할 때 한 번만 스폰할 적 수(8 -> 50)
 
         public override IContentStartData Create(BattlePartySnapshot party)
         {

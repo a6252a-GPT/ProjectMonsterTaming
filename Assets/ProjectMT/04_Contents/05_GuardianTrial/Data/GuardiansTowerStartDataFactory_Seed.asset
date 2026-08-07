@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: GuardiansTowerStartDataFactory_Seed
   m_EditorClassIdentifier: ProjectMT.Contents.GuardianTrial::ProjectMT.Contents.GuardianTrial.GuardiansTowerStartDataFactory
   durationSeconds: 60
-  enemyCount: 8
+  enemyCount: 50

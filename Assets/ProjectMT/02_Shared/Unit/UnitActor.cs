@@ -57,7 +57,18 @@ namespace ProjectMT.Shared.Unit
         private Vector3 followOffset; // 대형 내 위치
         private float followDetectionRange; // 추종 중 탐지 거리
         private float followLeashRange; // 기준점 복귀 거리
+        // 08.07 안건준 추가 - 군단장(추종 기준점)이 실제로 움직이고 있는지 프레임 간 이동 거리로 직접 판단한다.
+        // 이동 중에는 적 탐색·공격을 완전히 멈추고 대형 위치로만 이동해서, "따라가다가 적 보고 홱 돌아서
+        // 공격하려다가 다시 따라가느라 홱 돌아서는" 부들부들 떨림을 없앤다. 군단장이 멈추면 다시 주변 적을
+        // 찾아 공격한다. 추종 대상이 없으면(followAnchor == null) 기존 동작에 전혀 영향이 없다.
+        private Vector3 lastAnchorPosition;
+        private bool hasLastAnchorPosition;
+        private const float AnchorMovingSpeedThreshold = 0.05f; // 이 값보다 느리면 "멈춰있다"고 판단(초당 이동 거리)
         private bool isManuallyHeld; // 플레이어가 직접 옮기는 동안 자기 행동 정지
+        private IDamageable forcedTarget; // 08.07 안건준 추가 - 외부에서 강제로 지정한 우선 공격 대상(건물 등)
+        private float forcedTargetTimer; // 08.07 안건준 추가 - 강제 지정 유지 시간(초)
+        private float moveSpeedMultiplier = 1f; // 08.07 안건준 추가 - 콘텐츠 버프(예: 수호자의 탑 이동 속도 버프)로 인한 배율
+        private float damageMultiplier = 1f; // 08.07 안건준 추가 - 콘텐츠 버프(예: 수호자의 탑 4번 건물 파괴 시 아군 공격력 2배)로 인한 배율
 
         public string UnitId { get; private set; }
         public UnitTeam Team { get; private set; }
@@ -95,6 +106,8 @@ namespace ProjectMT.Shared.Unit
             feedback = feedbackPlayer;
             attackCooldown = UnityEngine.Random.Range(0f, Mathf.Max(0.05f, stats.attackInterval * 0.35f)); // 동시 공격 분산
             retargetCooldown = UnityEngine.Random.Range(0f, 0.2f);
+            moveSpeedMultiplier = 1f; // 08.07 안건준 추가 - 풀 재사용 전 이전 버프 배율 초기화
+            damageMultiplier = 1f; // 08.07 안건준 추가 - 풀 재사용 전 이전 공격력 버프 배율 초기화
             health.Initialize(stats.maxHealth, request.FixedDamagePerHit);
             health.Damaged += HandleDamaged;
             health.Died += HandleDied;
@@ -103,6 +116,11 @@ namespace ProjectMT.Shared.Unit
 
         public void SetFollowAnchor(Transform anchor, Vector3 offset, float detectionRange, float leashRange)
         {
+            if (!ReferenceEquals(followAnchor, anchor))
+            {
+                hasLastAnchorPosition = false; // 08.07 안건준 추가 - 추종 대상이 바뀌면 이동 여부를 새로 측정
+            }
+
             followAnchor = anchor;
             followOffset = offset;
             followDetectionRange = Mathf.Max(0.5f, detectionRange);
@@ -113,6 +131,44 @@ namespace ProjectMT.Shared.Unit
         {
             followAnchor = null;
             followOffset = Vector3.zero;
+            hasLastAnchorPosition = false; // 08.07 안건준 추가 - 다음 추종 대상 기준으로 새로 측정하도록 초기화
+        }
+
+        // 08.07 안건준 추가 - 콘텐츠 전용 스크립트가 일정 시간 동안 이 유닛의 공격을 특정 대상에 강제한다.
+        // 아무도 호출하지 않으면 forcedTarget이 항상 null이라 기존 자동 전투(FindNearestOpponent) 동작에는
+        // 전혀 영향이 없다. 유지 시간이 끝나거나 대상이 사라지면 자동으로 원래 탐색 방식으로 복귀한다.
+        // (예: 수호자의 탑에서 군단장이 방어 건물 근처로 오면 아군이 적보다 건물을 먼저 공격하게 함)
+        public void ForceTarget(IDamageable target, float holdSeconds)
+        {
+            if (target == null || !target.IsAlive)
+            {
+                return;
+            }
+
+            forcedTarget = target;
+            forcedTargetTimer = Mathf.Max(0f, holdSeconds);
+        }
+
+        // 08.07 안건준 추가 - 지금 이 유닛이 target을 강제 공격 대상으로 삼고 있는지 확인.
+        // 콘텐츠 쪽(예: 수호자의 탑 겹침 방지)에서 "공격 중인 대상에는 밀어내기를 적용하지 않는다"처럼
+        // 판단할 때 쓴다. 아무도 호출하지 않으면 기존 동작에 영향이 없다.
+        public bool IsForcedTargeting(IDamageable target)
+        {
+            return target != null && ReferenceEquals(forcedTarget, target);
+        }
+
+        // 08.07 안건준 추가 - 콘텐츠 전용 버프(예: 수호자의 탑 4번 건물의 적 이동 속도 버프)가 이동 속도를
+        // 일시적으로 배율 조정할 때 쓴다. 아무도 호출하지 않으면 항상 1배라 기존 동작에 영향이 없다.
+        public void SetMoveSpeedMultiplier(float multiplier)
+        {
+            moveSpeedMultiplier = Mathf.Max(0.01f, multiplier);
+        }
+
+        // 08.07 안건준 추가 - 콘텐츠 전용 버프(예: 수호자의 탑 4번 건물 파괴 시 아군 공격력 2배)가 공격력을
+        // 일시적으로 배율 조정할 때 쓴다. 아무도 호출하지 않으면 항상 1배라 기존 동작에 영향이 없다.
+        public void SetDamageMultiplier(float multiplier)
+        {
+            damageMultiplier = Mathf.Max(0.01f, multiplier);
         }
 
         public bool BeginManualReposition()
@@ -149,12 +205,26 @@ namespace ProjectMT.Shared.Unit
             attackCooldown = Mathf.Max(0f, attackCooldown - deltaTime);
             retargetCooldown -= deltaTime;
 
+            // 08.07 안건준 추가 - 강제 지정된 대상이 있으면 일반 추종/탐색 로직보다 우선한다.
+            if (forcedTarget != null)
+            {
+                forcedTargetTimer -= deltaTime;
+                if (forcedTargetTimer > 0f && forcedTarget.IsAlive)
+                {
+                    TickForcedTarget(deltaTime);
+                    return;
+                }
+
+                forcedTarget = null; // 유지 시간 종료 또는 대상 소멸 → 원래 자동 전투로 복귀
+            }
+
             if (followAnchor != null)
             {
                 var anchorPosition = followAnchor.position + followOffset;
-                if (PlanarDistance(transform.position, anchorPosition) > followLeashRange)
+                var anchorIsMoving = IsAnchorMoving(deltaTime); // 08.07 안건준 추가
+                if (anchorIsMoving || PlanarDistance(transform.position, anchorPosition) > followLeashRange)
                 {
-                    Target = null; // 멀어지면 전투보다 복귀 우선
+                    Target = null; // 08.07 안건준 수정 - 군단장이 이동 중이거나 대형에서 멀어졌으면 전투보다 복귀·추종 우선
                     MoveTowards(anchorPosition, deltaTime);
                     return;
                 }
@@ -188,7 +258,7 @@ namespace ProjectMT.Shared.Unit
             if (canAttack && attackCooldown <= 0f)
             {
                 attackCooldown = Mathf.Max(0.05f, stats.attackInterval);
-                world.Attack(this, Target, stats); // 근접·원거리 분기는 World 소유
+                world.Attack(this, Target, GetEffectiveStats()); // 근접·원거리 분기는 World 소유
             }
         }
 
@@ -200,13 +270,75 @@ namespace ProjectMT.Shared.Unit
                 health.Died -= HandleDied;
             }
 
+            // 08.07 안건준 추가 - 던전을 클리어/실패로 나가면 CombatWorld.Clear()가 즉시 이 유닛의 Shutdown()을 부르므로,
+            // 여기서도 배율을 1로 되돌려야 "이번 판에서 받은 공격력 버프"가 다음 판까지 새어나가지 않는다.
+            // (Initialize()에서도 1로 리셋하지만, 나가는 시점에 바로 해제되는 걸 보장하려고 이중으로 초기화한다.)
+            moveSpeedMultiplier = 1f;
+            damageMultiplier = 1f;
+
             world?.Unregister(this);
             world = null;
             feedback = null;
             Target = null;
             followAnchor = null;
+            hasLastAnchorPosition = false; // 08.07 안건준 추가 - 풀 재사용 전 이동 감지 상태 초기화
             isManuallyHeld = false;
+            forcedTarget = null; // 08.07 안건준 추가 - 풀 재사용 전 강제 지정 상태 초기화
+            forcedTargetTimer = 0f;
             Died = null; // 풀 재사용 전 외부 구독 제거
+        }
+
+        // 08.07 안건준 추가 - damageMultiplier가 적용된 능력치 사본을 반환한다(원본 stats는 그대로 유지).
+        // 배율이 항상 1이면 stats와 동일해서 기존 동작에 영향이 없다.
+        private UnitStatsSnapshot GetEffectiveStats()
+        {
+            if (damageMultiplier == 1f)
+            {
+                return stats;
+            }
+
+            var effective = stats;
+            effective.damage *= damageMultiplier;
+            return effective;
+        }
+
+        // 08.07 안건준 추가 - 강제 지정된 대상(IDamageable)을 향해 이동·공격한다.
+        // 일반 Target 탐색·추종 로직과는 별개로 동작하며, 유지 시간이 끝나면 자동으로 원래 로직에 넘어간다.
+        private void TickForcedTarget(float deltaTime)
+        {
+            Target = null; // 강제 지정 중에는 일반 Target 탐색 결과를 사용하지 않음
+            var distance = PlanarDistance(transform.position, forcedTarget.Position);
+            if (distance > Mathf.Max(0.2f, stats.attackRange))
+            {
+                MoveTowards(forcedTarget.Position, deltaTime);
+                return;
+            }
+
+            FaceTowards(forcedTarget.Position, deltaTime);
+            if (canAttack && attackCooldown <= 0f)
+            {
+                attackCooldown = Mathf.Max(0.05f, stats.attackInterval);
+                // 08.07 안건준 수정 - 건물(구조물) 공격도 world.AttackDamageable에 위임해서, 원거리 유닛이면
+                // 적을 공격할 때처럼 투사체(총알)가 날아가고, 근접이면 즉시 피해+숫자가 표시되도록 통일했다.
+                world?.AttackDamageable(this, forcedTarget, GetEffectiveStats());
+            }
+        }
+
+        // 08.07 안건준 추가 - 추종 기준점(군단장)의 프레임 간 이동 거리를 재서 "지금 걷고 있는지" 판단한다.
+        // 별도의 이동 컨트롤러 참조 없이, followAnchor의 위치 변화만으로 계산해서 어떤 콘텐츠에서도 그대로 쓸 수 있다.
+        private bool IsAnchorMoving(float deltaTime)
+        {
+            var currentAnchorPosition = followAnchor.position;
+            if (!hasLastAnchorPosition || deltaTime <= 0f)
+            {
+                lastAnchorPosition = currentAnchorPosition;
+                hasLastAnchorPosition = true;
+                return false;
+            }
+
+            var speed = PlanarDistance(currentAnchorPosition, lastAnchorPosition) / deltaTime;
+            lastAnchorPosition = currentAnchorPosition;
+            return speed > AnchorMovingSpeedThreshold;
         }
 
         private void MoveTowards(Vector3 destination, float deltaTime)
@@ -217,7 +349,7 @@ namespace ProjectMT.Shared.Unit
             }
 
             destination.y = transform.position.y;
-            transform.position = Vector3.MoveTowards(transform.position, destination, stats.moveSpeed * deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, destination, stats.moveSpeed * moveSpeedMultiplier * deltaTime); // 08.07 안건준 수정 - 버프 배율 반영
             FaceTowards(destination, deltaTime);
         }
 

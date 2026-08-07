@@ -28,7 +28,9 @@ namespace ProjectMT.Shared.UI
             confirmButton?.onClick.RemoveListener(Confirm);
         }
 
-        public bool TryShow(string summary, string reward, Action onConfirm)
+        // 08.07 안건준 추가 - title 매개변수를 추가해 "클리어"뿐 아니라 "실패" 같은 다른 제목도 표시할 수 있게 확장.
+        // 기존 호출부(식량 대소동, 성 습격 등)는 title을 생략하면 그대로 "클리어"가 나오므로 동작 변화가 없다.
+        public bool TryShow(string summary, string reward, Action onConfirm, string title = "클리어")
         {
             if (titleText == null || summaryText == null || rewardText == null || confirmButton == null ||
                 onConfirm == null)
@@ -37,7 +39,7 @@ namespace ProjectMT.Shared.UI
                 return false;
             }
 
-            titleText.text = "클리어";
+            titleText.text = string.IsNullOrWhiteSpace(title) ? "클리어" : title;
             summaryText.text = string.IsNullOrWhiteSpace(summary) ? "콘텐츠 완료" : summary;
             rewardText.text = string.IsNullOrWhiteSpace(reward) ? "보상 연동 예정" : reward;
             confirmAction = onConfirm;

@@ -1597,7 +1597,6 @@ RectTransform:
   - {fileID: 2049484407}
   - {fileID: 657289345}
   - {fileID: 1216157931}
-  - {fileID: 1331571980}
   m_Father: {fileID: 73198999}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -3077,41 +3076,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1285510611}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1331571979
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1331571980}
-  m_Layer: 0
-  m_Name: GuardiansTowerUI
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1331571980
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1331571979}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 606884528}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1564418028
 GameObject:
   m_ObjectHideFlags: 0
@@ -4345,62 +4309,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 391906752}
     m_Modifications:
-    - target: {fileID: 254811286, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: m_AnchorMax.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 254811286, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 588519530, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: m_AnchorMax.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 588519530, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 634101287, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: m_AnchorMax.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 634101287, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1993095285, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: m_AnchorMax.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1993095285, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 9300000000000102, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -13
-      objectReference: {fileID: 0}
-    - target: {fileID: 9300000000000202, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 13
-      objectReference: {fileID: 0}
-    - target: {fileID: 9300000000000302, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -13
-      objectReference: {fileID: 0}
-    - target: {fileID: 9300000000000402, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 13
-      objectReference: {fileID: 0}
-    - target: {fileID: 9300000000000500, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: edgeMarginX
-      value: 17
-      objectReference: {fileID: 0}
-    - target: {fileID: 1610558218934977712, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 60
-      objectReference: {fileID: 0}
     - target: {fileID: 2954941631038554414, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -4444,10 +4352,6 @@ PrefabInstance:
     - target: {fileID: 7238598723104609653, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
       propertyPath: m_Name
       value: PF_GuardiansTowerRuntime
-      objectReference: {fileID: 0}
-    - target: {fileID: 7238598723104609653, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

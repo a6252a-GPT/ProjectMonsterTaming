@@ -1072,6 +1072,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Formation.FormationPageController
   pageRoot: {fileID: 3039656977420370554}
   openButton: {fileID: 4023135428140570327}
+  showStandaloneOpenButton: 1
   closeButton: {fileID: 1291672810700016206}
   mainTabButton: {fileID: 7646420577892571211}
   reserveTabButton: {fileID: 8092820846503252350}
@@ -1087,7 +1088,7 @@ MonoBehaviour:
   formationButton: {fileID: 1202635333068886867}
   formationButtonLabel: {fileID: 2818869467195936802}
   formationSlotsRoot: {fileID: 0}
-  ownedGridRoot: {fileID: 2660512980126803919}
+  ownedRosterList: {fileID: 8962583945150628089}
   cardPrefab: {fileID: 6044450736823865826, guid: 744cee3804d54044b96c61b54f805bd8, type: 3}
   ownedCountLabel: {fileID: 1655192274994647505}
   capacityLabel: {fileID: 6922773763623029181}
@@ -4828,6 +4829,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!114 &8962583945150628089 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3133572515678753621, guid: 61d8d6132bcd4964fbb3e9abddebae7c, type: 3}
+  m_PrefabInstance: {fileID: 6277403275073885100}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f13e90f4312477e4b872a446abe72403, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Formation.MonsterRosterListView
 --- !u!1001 &6502414030952699081
 PrefabInstance:
   m_ObjectHideFlags: 0

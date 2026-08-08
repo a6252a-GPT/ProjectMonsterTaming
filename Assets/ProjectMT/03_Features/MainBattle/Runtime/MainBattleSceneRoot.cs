@@ -32,6 +32,7 @@ namespace ProjectMT.Features.MainBattle
         private BattlePartySnapshot party; // 시드 부대 사진
         private MainBattleMonsterDragController monsterDrag; // 메인전투 직접 재배치 입력
         private MainBattleManagementUiController managementUi; // 관리창 상호 배타 제어
+        private MainBattleHudProgressView hudProgressView; // 상단 계정·재화 표시
 
         public SceneId SceneId => sceneId;
         public bool IsInitialized { get; private set; }
@@ -68,6 +69,8 @@ namespace ProjectMT.Features.MainBattle
             formationPage.Configure(context.Progress, context.MonsterCatalog, context.RefreshParty);
             managementUi = GetComponentInChildren<MainBattleManagementUiController>(true);
             managementUi?.ConfigureFormationPage(formationPage);
+            hudProgressView = GetComponentInChildren<MainBattleHudProgressView>(true);
+            hudProgressView?.Configure(context.Progress);
             ResolveMonsterManagementPage()?.Configure(context.Progress, context.MonsterCatalog);
             if (monsterManagementPage != null)
             {
@@ -88,6 +91,7 @@ namespace ProjectMT.Features.MainBattle
             towerButton?.onClick.RemoveListener(OpenGuardiansTower); // 08.06 안건준 추가
             ResolveGachaSystem()?.Shutdown();
             ResolveShopPageView()?.Shutdown();
+            hudProgressView?.Shutdown();
             managementUi?.ConfigureFormationPage(null);
             if (formationPage != null)
             {
@@ -112,6 +116,7 @@ namespace ProjectMT.Features.MainBattle
             party = null;
             monsterDrag = null;
             managementUi = null;
+            hudProgressView = null;
             IsInitialized = false;
         }
 
@@ -226,6 +231,7 @@ namespace ProjectMT.Features.MainBattle
                 return;
             }
 
+            managementUi?.CloseAllPages(); // 복귀 시 성장 던전 창 재노출 방지
             party = context.RefreshParty();
             if (context.ContentLauncher.StartHosted(guardiansTowerContentId, party, hostedRunner))
             {
@@ -233,7 +239,7 @@ namespace ProjectMT.Features.MainBattle
             }
         }
 
-        private void OpenCastleRaid()
+        public void OpenCastleRaid()
         {
             if (!TryOpenContent())
             {

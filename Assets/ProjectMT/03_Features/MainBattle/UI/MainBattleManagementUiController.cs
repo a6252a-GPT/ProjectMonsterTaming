@@ -86,6 +86,27 @@ namespace ProjectMT.Features.MainBattle
             CloseManagementPages();
         }
 
+        public void OpenCommanderGrowthPage()
+        {
+            CloseAllPages();
+            commanderGrowthPage?.SetActive(true);
+            BringToFront();
+        }
+
+        public void OpenEquipmentPage()
+        {
+            CloseAllPages();
+            equipmentPage?.SetActive(true);
+            BringToFront();
+        }
+
+        public void OpenGrowthDungeonPage()
+        {
+            CloseAllPages();
+            growthDungeonPage?.SetActive(true);
+            BringToFront();
+        }
+
         public void ConfigureFormationPage(FormationPageController page)
         {
             if (formationPage == page)
@@ -130,7 +151,7 @@ namespace ProjectMT.Features.MainBattle
             }
         }
 
-        private void OpenShopPage()
+        public void OpenShopPage()
         {
             CloseAllPages();
             shopPage?.SetActive(true);
@@ -143,7 +164,7 @@ namespace ProjectMT.Features.MainBattle
             RestoreHudOrder();
         }
 
-        private void OpenMonsterManagementPage()
+        public void OpenMonsterManagementPage()
         {
             CloseAllPages();
             monsterManagementPage?.OpenPage();

@@ -18,6 +18,7 @@ namespace ProjectMT.Features.Formation
         [Header("Page")]
         [SerializeField] private GameObject pageRoot;
         [SerializeField] private Button openButton;
+        [SerializeField] private bool showStandaloneOpenButton = true;
         [SerializeField] private Button closeButton;
         [SerializeField] private Button mainTabButton;
         [SerializeField] private Button reserveTabButton;
@@ -37,7 +38,7 @@ namespace ProjectMT.Features.Formation
 
         [Header("Cards")]
         [SerializeField] private Transform formationSlotsRoot;
-        [SerializeField] private Transform ownedGridRoot;
+        [SerializeField] private MonsterRosterListView ownedRosterList;
         [SerializeField] private MonsterCardView cardPrefab;
         [SerializeField] private TMP_Text ownedCountLabel;
         [SerializeField] private TMP_Text capacityLabel;
@@ -53,7 +54,6 @@ namespace ProjectMT.Features.Formation
         [SerializeField] private Camera worldCamera;
 
         private readonly List<MonsterCardView> formationCards = new List<MonsterCardView>();
-        private readonly List<MonsterCardView> ownedCards = new List<MonsterCardView>();
         private readonly List<Transform> formationPreviewSlots = new List<Transform>();
         private readonly List<GameObject> formationPreviewInstances = new List<GameObject>();
         private IGameProgressService progress;
@@ -79,7 +79,6 @@ namespace ProjectMT.Features.Formation
             reserveTabButton?.onClick.AddListener(SelectReserveTab);
             levelUpButton?.onClick.AddListener(HandleLevelUpClicked);
             formationButton?.onClick.AddListener(HandleFormationClicked);
-            CacheAuthoredOwnedCards();
             CacheFormationPreviewSlots();
             CaptureTabColors();
             SetPageOpen(false);
@@ -166,6 +165,7 @@ namespace ProjectMT.Features.Formation
             SetPageOpen(true);
             SetStatus(string.Empty);
             RefreshView();
+            ownedRosterList?.ResetScrollPosition();
         }
 
         public void ClosePage()
@@ -179,7 +179,7 @@ namespace ProjectMT.Features.Formation
             pageRoot?.SetActive(open);
             if (openButton != null)
             {
-                openButton.gameObject.SetActive(!open);
+                openButton.gameObject.SetActive(showStandaloneOpenButton && !open);
             }
 
             if (previewCamera != null)
@@ -385,18 +385,18 @@ namespace ProjectMT.Features.Formation
 
         private void RefreshOwnedCards(MonsterRosterView roster)
         {
-            CacheAuthoredOwnedCards();
             var ownedMonsters = MonsterRosterCardSorter.CreateSorted(
                 roster,
                 cardPrefab != null ? cardPrefab.RarityCatalog : null);
-            SetText(ownedCountLabel, $"보유 {ownedMonsters.Count} / 20");
-            EnsureCardCount(ownedCards, ownedMonsters.Count, ownedGridRoot);
-            for (var index = 0; index < ownedCards.Count; index++)
+            SetText(ownedCountLabel, $"보유 {ownedMonsters.Count} / {MonsterRosterListView.MaxCardCount}");
+            var displayCount = ownedRosterList != null
+                ? ownedRosterList.EnsureCardCount(ownedMonsters.Count)
+                : 0;
+            var cards = ownedRosterList?.Cards;
+            for (var index = 0; index < displayCount; index++)
             {
-                var card = ownedCards[index];
-                var visible = index < ownedMonsters.Count;
-                card.gameObject.SetActive(visible);
-                if (!visible)
+                var card = cards?[index];
+                if (card == null)
                 {
                     continue;
                 }
@@ -416,6 +416,11 @@ namespace ProjectMT.Features.Formation
                     string.Equals(owned.MonsterId, selectedMonsterId, StringComparison.OrdinalIgnoreCase),
                     assignment,
                     HandleCardSelected);
+            }
+
+            if (ownedMonsters.Count > displayCount)
+            {
+                SetStatus($"현재 목록에는 앞의 {displayCount}마리만 표시됩니다.");
             }
         }
 
@@ -644,22 +649,6 @@ namespace ProjectMT.Features.Formation
                 target.z - bounds.center.z);
         }
 
-        private void CacheAuthoredOwnedCards()
-        {
-            if (ownedCards.Count > 0 || ownedGridRoot == null)
-            {
-                return;
-            }
-
-            foreach (var card in ownedGridRoot.GetComponentsInChildren<MonsterCardView>(true))
-            {
-                if (card != null && !ownedCards.Contains(card))
-                {
-                    ownedCards.Add(card);
-                }
-            }
-        }
-
         private void CacheFormationPreviewSlots()
         {
             if (formationPreviewSlots.Count > 0 || formationPreviewSlotsRoot == null)
@@ -787,10 +776,7 @@ namespace ProjectMT.Features.Formation
                 formationCards[index].SetInteractable(interactable);
             }
 
-            for (var index = 0; index < ownedCards.Count; index++)
-            {
-                ownedCards[index].SetInteractable(interactable);
-            }
+            ownedRosterList?.SetCardsInteractable(interactable);
         }
 
         private static void DisablePreviewGameplay(GameObject root)
@@ -911,6 +897,15 @@ namespace ProjectMT.Features.Formation
         }
 
 #if UNITY_EDITOR
+        public void EditorSetStandaloneOpenButtonVisible(bool visible)
+        {
+            showStandaloneOpenButton = visible;
+            if (openButton != null)
+            {
+                openButton.gameObject.SetActive(visible && !IsOpen);
+            }
+        }
+
         public void EditorConfigure(
             GameObject contentPage,
             Button opener,
@@ -954,7 +949,9 @@ namespace ProjectMT.Features.Formation
             formationButton = assignButton;
             formationButtonLabel = assignButtonText;
             formationSlotsRoot = slotsRoot;
-            ownedGridRoot = gridRoot;
+            ownedRosterList = gridRoot != null
+                ? gridRoot.GetComponentInParent<MonsterRosterListView>()
+                : null;
             cardPrefab = monsterCard;
             previewImage = modelImage;
             previewCamera = modelCamera;
@@ -1004,7 +1001,9 @@ namespace ProjectMT.Features.Formation
             formationButton = assignButton;
             formationButtonLabel = assignButtonText;
             formationSlotsRoot = null;
-            ownedGridRoot = gridRoot;
+            ownedRosterList = gridRoot != null
+                ? gridRoot.GetComponentInParent<MonsterRosterListView>()
+                : null;
             cardPrefab = monsterCard;
             ownedCountLabel = rosterCount;
             capacityLabel = slotCapacity;

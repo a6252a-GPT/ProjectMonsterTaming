@@ -197,6 +197,7 @@ namespace ProjectMT.Tests.EditMode
             var pageRect = pageRoot.GetComponent<RectTransform>();
             var managementRect = managementPrefab.GetComponent<RectTransform>();
             var roster = pageRoot.Find("FormationContent/MonsterList_Common");
+            var rosterView = roster.GetComponent<MonsterRosterListView>();
             var ownedTitle = roster.Find("Title").GetComponent("TextMeshProUGUI");
             var preview = pageRoot.Find("FormationContent/FormationBoardPanel/FormationPreviewRawImage")
                 .GetComponent<RawImage>();
@@ -214,6 +215,11 @@ namespace ProjectMT.Tests.EditMode
                 Is.EqualTo("보유 몬스터"));
             Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(roster.gameObject),
                 Is.EqualTo(FormationRosterPath));
+            Assert.That(rosterView, Is.Not.Null);
+            Assert.That(rosterView.GetComponentInChildren<ScrollRect>(true).vertical, Is.True);
+            Assert.That(rosterView.GetComponentInChildren<ScrollRect>(true).horizontal, Is.False);
+            Assert.That(rosterView.GetComponentInChildren<RectMask2D>(true), Is.Not.Null);
+            Assert.That(rosterView.GetComponentInChildren<GridLayoutGroup>(true).constraintCount, Is.EqualTo(4));
             Assert.That(roster.GetComponentsInChildren<MonsterCardView>(true), Has.Length.EqualTo(10));
             Assert.That(preview.texture, Is.Not.Null);
             Assert.That(previewCamera.targetTexture, Is.SameAs(preview.texture));
@@ -230,6 +236,7 @@ namespace ProjectMT.Tests.EditMode
             }
 
             var pageSerialized = new SerializedObject(pagePrefab.GetComponent<FormationPageController>());
+            Assert.That(pageSerialized.FindProperty("ownedRosterList").objectReferenceValue, Is.Not.Null);
             Assert.That(pageSerialized.FindProperty("cardPrefab").objectReferenceValue, Is.Not.Null);
             Assert.That(pageSerialized.FindProperty("previewCamera").objectReferenceValue, Is.Not.Null);
             Assert.That(pageSerialized.FindProperty("previewLight").objectReferenceValue, Is.Not.Null);
@@ -238,6 +245,10 @@ namespace ProjectMT.Tests.EditMode
             Assert.That(pageSerialized.FindProperty("activeSlotMaterial").objectReferenceValue, Is.Not.Null);
             Assert.That(pageSerialized.FindProperty("lockedSlotMaterial").objectReferenceValue, Is.Not.Null);
             Assert.That(pageSerialized.FindProperty("worldCamera").objectReferenceValue, Is.Null);
+
+            var managementSerialized = new SerializedObject(
+                managementPrefab.GetComponent<MonsterManagementPageController>());
+            Assert.That(managementSerialized.FindProperty("rosterList").objectReferenceValue, Is.Not.Null);
 
             var debugSerialized = new SerializedObject(debugPrefab.GetComponent<DebugPanelController>());
             Assert.That(debugSerialized.FindProperty("drawMonsterButton").objectReferenceValue, Is.Not.Null);
@@ -254,7 +265,8 @@ namespace ProjectMT.Tests.EditMode
                     sceneRoot ??= root.GetComponentInChildren<MainBattleSceneRoot>(true);
                     formationPage ??= root.GetComponentInChildren<FormationPageController>(true);
                     modeButton ??= root.transform
-                        .Find("01_MainGameplayRoot/04_UIRoot/MainBattleHUD/ModeButton")
+                        .Find("01_MainGameplayRoot/04_UIRoot/MainBattleHUD/PF_HudQuickMenu/" +
+                              "StatusLayer/TopCenterStatus/StageStatusRoot/ModeButton")
                         ?.GetComponent<RectTransform>();
                 }
 
@@ -268,14 +280,60 @@ namespace ProjectMT.Tests.EditMode
 
                 var openFormationButton = formationPage.transform.Find("OpenFormationButton")
                     .GetComponent<RectTransform>();
-                var minimumCenterDistance = (modeButton.rect.height + openFormationButton.rect.height) * 0.5f;
-                Assert.That(
-                    Mathf.Abs(modeButton.anchoredPosition.y - openFormationButton.anchoredPosition.y),
-                    Is.GreaterThanOrEqualTo(minimumCenterDistance));
+                Assert.That(openFormationButton.gameObject.activeSelf, Is.False);
+                Assert.That(scenePageSerialized.FindProperty("showStandaloneOpenButton").boolValue, Is.False);
+
+                var stageStatusRoot = modeButton.parent.GetComponent<RectTransform>();
+                var modeRight = modeButton.anchoredPosition.x +
+                                modeButton.rect.width * (1f - modeButton.pivot.x);
+                Assert.That(modeRight, Is.LessThanOrEqualTo(stageStatusRoot.rect.width * 0.5f));
             }
             finally
             {
                 EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        [Test]
+        public void SharedRosterList_SupportsOneHundredCardsInFourColumnVerticalScroll()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(FormationRosterPath);
+            var instance = Object.Instantiate(prefab);
+            try
+            {
+                var rosterView = instance.GetComponent<MonsterRosterListView>();
+                var scrollRect = instance.GetComponentInChildren<ScrollRect>(true);
+                var grid = instance.GetComponentInChildren<GridLayoutGroup>(true);
+
+                Assert.That(rosterView, Is.Not.Null);
+                Assert.That(rosterView.EnsureCardCount(100), Is.EqualTo(100));
+                Assert.That(rosterView.Cards, Has.Count.EqualTo(100));
+                Assert.That(rosterView.ContentRoot.childCount, Is.EqualTo(100));
+                Assert.That(scrollRect.vertical, Is.True);
+                Assert.That(scrollRect.horizontal, Is.False);
+                Assert.That(grid.constraint, Is.EqualTo(GridLayoutGroup.Constraint.FixedColumnCount));
+                Assert.That(grid.constraintCount, Is.EqualTo(4));
+
+                LayoutRebuilder.ForceRebuildLayoutImmediate(rosterView.ContentRoot);
+                Assert.That(rosterView.ContentRoot.rect.height,
+                    Is.GreaterThan(scrollRect.viewport.rect.height));
+
+                Assert.That(rosterView.EnsureCardCount(7), Is.EqualTo(7));
+                Assert.That(rosterView.Cards, Has.Count.EqualTo(100), "생성한 카드는 다시 사용할 수 있어야 합니다.");
+                var activeCount = 0;
+                foreach (var card in rosterView.Cards)
+                {
+                    if (card.gameObject.activeSelf)
+                    {
+                        activeCount++;
+                    }
+                }
+
+                Assert.That(activeCount, Is.EqualTo(7));
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
             }
         }
 
@@ -367,14 +425,15 @@ namespace ProjectMT.Tests.EditMode
                 controller.Configure(progress, catalog);
                 controller.OpenPage();
 
-                var cards = serialized.FindProperty("rosterCards");
+                var rosterList = controller.GetComponentInChildren<MonsterRosterListView>(true);
+                var cards = rosterList.Cards;
                 var monsterIdField = typeof(MonsterCardView).GetField(
                     "monsterId",
                     System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 var visibleOrder = new string[5];
                 for (var index = 0; index < visibleOrder.Length; index++)
                 {
-                    var card = (MonsterCardView)cards.GetArrayElementAtIndex(index).objectReferenceValue;
+                    var card = cards[index];
                     visibleOrder[index] = (string)monsterIdField?.GetValue(card);
                 }
 
@@ -397,6 +456,7 @@ namespace ProjectMT.Tests.EditMode
                          FormationPagePath,
                          LegacyFormationPagePath,
                          FormationRosterPath,
+                         ManagementPagePath,
                          DebugPanelPath
                      })
             {

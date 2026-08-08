@@ -14,7 +14,6 @@ namespace ProjectMT.Features.Formation
     public sealed class MonsterManagementPageController : MonoBehaviour // 몬스터 조회·성장 관리창
     {
         private const int PreviewLayer = 31; // 다른 전투 UI와 겹치지 않는 미리보기 전용 번호
-        private const int DisplayCapacity = 20;
         private const float BreakthroughMarkerOffsetY = -31f;
 
         [Header("Page")]
@@ -54,7 +53,7 @@ namespace ProjectMT.Features.Formation
         [Header("Roster")]
         [SerializeField] private TMP_Text rosterCountLabel;
         [SerializeField] private TMP_Text statusLabel;
-        [SerializeField] private MonsterCardView[] rosterCards = Array.Empty<MonsterCardView>();
+        [SerializeField] private MonsterRosterListView rosterList;
 
         [Header("Preview")]
         [SerializeField] private RawImage previewImage;
@@ -181,6 +180,7 @@ namespace ProjectMT.Features.Formation
             SetPageOpen(true, true);
             SetStatus(string.Empty);
             RefreshView();
+            rosterList?.ResetScrollPosition();
         }
 
         public void ClosePage()
@@ -359,18 +359,13 @@ namespace ProjectMT.Features.Formation
         private void RefreshRoster(MonsterRosterView roster)
         {
             var owned = MonsterRosterCardSorter.CreateSorted(roster, rarityCatalog);
-            SetText(rosterCountLabel, $"보유 {owned.Count} / {DisplayCapacity}");
-            for (var index = 0; index < rosterCards.Length; index++)
+            SetText(rosterCountLabel, $"보유 {owned.Count} / {MonsterRosterListView.MaxCardCount}");
+            var displayCount = rosterList != null ? rosterList.EnsureCardCount(owned.Count) : 0;
+            var cards = rosterList?.Cards;
+            for (var index = 0; index < displayCount; index++)
             {
-                var card = rosterCards[index];
+                var card = cards?[index];
                 if (card == null)
-                {
-                    continue;
-                }
-
-                var visible = index < owned.Count;
-                card.gameObject.SetActive(visible);
-                if (!visible)
                 {
                     continue;
                 }
@@ -390,9 +385,9 @@ namespace ProjectMT.Features.Formation
                     HandleCardSelected);
             }
 
-            if (owned.Count > rosterCards.Length)
+            if (owned.Count > displayCount)
             {
-                SetStatus($"현재 목록에는 앞의 {rosterCards.Length}마리만 표시됩니다.");
+                SetStatus($"현재 목록에는 앞의 {displayCount}마리만 표시됩니다.");
             }
         }
 
@@ -424,12 +419,12 @@ namespace ProjectMT.Features.Formation
             var nextMultiplier = hasNextLevel
                 ? MonsterLevelRules.GetStatMultiplier(owned.Level + 1)
                 : currentMultiplier;
-            SetStatComparison(healthStatLabel, "체력", definition.MaxHealth, currentMultiplier, nextMultiplier, "0.##");
-            SetStatComparison(attackSpeedStatLabel, "공격속도", definition.AttackSpeed, currentMultiplier, nextMultiplier, "0.##");
-            SetStatComparison(attackStatLabel, "공격력", definition.AttackPower, currentMultiplier, nextMultiplier, "0.##");
-            SetStatComparison(criticalStatLabel, "치명타", "0%", "0%");
-            SetStatComparison(defenseStatLabel, "방어력", definition.Defense, currentMultiplier, nextMultiplier, "0.##");
-            SetStatComparison(moveSpeedStatLabel, "이동속도", definition.MoveSpeed, currentMultiplier, nextMultiplier, "0.##");
+            SetStatComparison(healthStatLabel, definition.MaxHealth, currentMultiplier, nextMultiplier, "0.##");
+            SetStatComparison(attackSpeedStatLabel, definition.AttackSpeed, currentMultiplier, nextMultiplier, "0.##");
+            SetStatComparison(attackStatLabel, definition.AttackPower, currentMultiplier, nextMultiplier, "0.##");
+            SetStatComparison(criticalStatLabel, "0%", "0%");
+            SetStatComparison(defenseStatLabel, definition.Defense, currentMultiplier, nextMultiplier, "0.##");
+            SetStatComparison(moveSpeedStatLabel, definition.MoveSpeed, currentMultiplier, nextMultiplier, "0.##");
 
             SetText(nextLevelLabel, hasNextLevel ? $"Lv. {owned.Level} → Lv. {owned.Level + 1}" : "최대 레벨");
             SetText(goldCostLabel, hasNextLevel
@@ -695,10 +690,7 @@ namespace ProjectMT.Features.Formation
 
         private void SetCardsInteractable(bool interactable)
         {
-            for (var index = 0; index < rosterCards.Length; index++)
-            {
-                rosterCards[index]?.SetInteractable(interactable);
-            }
+            rosterList?.SetCardsInteractable(interactable);
         }
 
         private static void DisablePreviewGameplay(GameObject root)
@@ -798,7 +790,6 @@ namespace ProjectMT.Features.Formation
 
         private static void SetStatComparison(
             TMP_Text target,
-            string label,
             float baseValue,
             float currentMultiplier,
             float nextMultiplier,
@@ -806,14 +797,12 @@ namespace ProjectMT.Features.Formation
         {
             SetStatComparison(
                 target,
-                label,
                 (baseValue * currentMultiplier).ToString(format),
                 (baseValue * nextMultiplier).ToString(format));
         }
 
         private static void SetStatComparison(
             TMP_Text target,
-            string label,
             string currentValue,
             string nextValue)
         {
@@ -823,7 +812,6 @@ namespace ProjectMT.Features.Formation
             }
 
             SetText(target,
-                $"<color=#C9C3B8>{label}</color>\n" +
                 $"<color=#F1EBDD>{currentValue}</color> " +
                 $"<color=#D8C07A>→</color> " +
                 $"<color=#A6C46E>{nextValue}</color>");

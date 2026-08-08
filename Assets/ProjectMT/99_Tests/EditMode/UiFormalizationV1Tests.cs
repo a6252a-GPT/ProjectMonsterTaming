@@ -17,6 +17,8 @@ namespace ProjectMT.Tests.EditMode
         private const string WidePath = StandardRoot + "/PF_UIStandard_PopupWide.prefab";
         private const string ContentEntryPath = StandardRoot + "/PF_UIStandard_ContentEntry.prefab";
         private const string CompactDialogPath = StandardRoot + "/PF_UIStandard_CompactDialog.prefab";
+        private const string StatCardPath =
+            "Assets/ProjectMT/02_Shared/UI/Prefabs/PF_UIStatCard.prefab";
         private const string CardFramePath =
             "Assets/ThirdParty/08_UI/GUI Pro - Minimal Game Dark/GUI Pro-MinimalGame/Theme_Dark/Prefabs/Prefabs_Frame/CardFrame/CardFrame_04_BasePrefab_LightBg.prefab";
         private const string GrowthDungeonPath =
@@ -30,7 +32,7 @@ namespace ProjectMT.Tests.EditMode
         private const string CommanderPath =
             "Assets/ProjectMT/03_Features/Commander/Prefabs/PF_CommanderGrowthPage.prefab";
         private const string ManagementPath =
-            "Assets/ProjectMT/02_Shared/UI/Prefabs/PF_ManagementUI.prefab";
+            "Assets/ProjectMT/03_Features/MainBattle/Prefabs/PF_ManagementUI.prefab";
         private const string FinishFeedbackPath =
             "Assets/ProjectMT/01_Core/Bootstrap/Prefabs/PF_ContentFinishFeedback.prefab";
         private const string GachaResultItemPath =
@@ -105,15 +107,29 @@ namespace ProjectMT.Tests.EditMode
             Assert.That(scroll.viewport.GetComponent<RectMask2D>(), Is.Not.Null);
             var growthRows = commander.GetComponentsInChildren<RectTransform>(true)
                 .Where(x => x.name.StartsWith("GrowthRow_", StringComparison.Ordinal)).ToArray();
-            Assert.That(growthRows, Has.Length.EqualTo(7));
+            Assert.That(growthRows, Has.Length.EqualTo(10));
+            Assert.That(growthRows.Count(x =>
+                    x.name.StartsWith("GrowthRow_LockedPreview_DESIGN", StringComparison.Ordinal)),
+                Is.EqualTo(4));
             foreach (var row in growthRows)
             {
                 Assert.That(row.rect.height, Is.EqualTo(96f).Within(0.01f), row.name);
                 Assert.That(row.GetComponentInChildren<Button>(true).GetComponent<RectTransform>().rect.size,
                     Is.EqualTo(new Vector2(134f, 68f)), row.name);
+                Assert.That(row.Find("ButtonArea/Button_02_Gray")?.GetComponent<RectTransform>().rect.size,
+                    Is.EqualTo(new Vector2(134f, 68f)), $"{row.name} 비활성 버튼 크기");
                 Assert.That(row.Find("Text"), Is.Not.Null, row.name);
                 Assert.That(row.Find("Text_Value"), Is.Not.Null, row.name);
             }
+            var lockedRows = growthRows.Where(x =>
+                x.name.StartsWith("GrowthRow_LockedPreview_DESIGN", StringComparison.Ordinal)).ToArray();
+            foreach (var row in lockedRows)
+            {
+                Assert.That(row.Find("Lock")?.gameObject.activeSelf, Is.True, row.name);
+                Assert.That(row.GetComponentsInChildren<Button>(true).All(x => !x.interactable), Is.True,
+                    row.name);
+            }
+            Assert.That(scroll.content.rect.height, Is.EqualTo(1032f).Within(0.01f));
             AssertTitle(CommanderPath, "CommanderGrowthWindow/HeaderRoot/TitleText", 26f);
             AssertReferences(
                 FindBehaviour(commander, "GrowthCalculator"),
@@ -153,9 +169,15 @@ namespace ProjectMT.Tests.EditMode
                 x.name == "EnterButton_GUIPro" &&
                 AnimationUtility.CalculateTransformPath(x.transform, growthDungeon.transform)
                     .Contains("FoodRiotCardSlot"));
+            var guardiansTowerEnter = growthDungeonButtons.Single(x =>
+                x.name == "EnterButton_GUIPro" &&
+                AnimationUtility.CalculateTransformPath(x.transform, growthDungeon.transform)
+                    .Contains("AncientGuardianTreeCardSlot"));
             Assert.That(foodRiotEnter.interactable, Is.True);
+            Assert.That(guardiansTowerEnter.interactable, Is.True);
             foreach (var button in growthDungeonButtons.Where(x =>
-                         x.name != "CloseTouchArea_80x80" && x != foodRiotEnter))
+                         x.name != "CloseTouchArea_80x80" &&
+                         x != foodRiotEnter && x != guardiansTowerEnter))
                 Assert.That(button.interactable, Is.False,
                     AnimationUtility.CalculateTransformPath(button.transform, growthDungeon.transform));
 
@@ -178,6 +200,74 @@ namespace ProjectMT.Tests.EditMode
                          GrowthDungeonPath, ManagementPath
                      })
                 Assert.That(CountMissingScripts(AssetDatabase.LoadAssetAtPath<GameObject>(path)), Is.Zero, path);
+        }
+
+        [Test]
+        public void ProductionStatPanels_ReuseSharedThreeByTwoGrid()
+        {
+            var sharedCard = AssetDatabase.LoadAssetAtPath<GameObject>(StatCardPath);
+            Assert.That(sharedCard, Is.Not.Null);
+            Assert.That(sharedCard.GetComponent<RectTransform>().rect.size,
+                Is.EqualTo(new Vector2(132f, 100f)));
+            Assert.That(sharedCard.transform.Find("StatIcon"), Is.Not.Null);
+            Assert.That(sharedCard.transform.Find("Label")?.GetComponent("TextMeshProUGUI"), Is.Not.Null);
+            Assert.That(sharedCard.transform.Find("Value")?.GetComponent("TextMeshProUGUI"), Is.Not.Null);
+            Assert.That(sharedCard.GetComponentsInChildren<Button>(true), Is.Empty,
+                "능력치 카드는 표시 전용이어야 합니다.");
+
+            var prefabPaths = new[] { CommanderPath, MonsterPath, EquipmentPath };
+            var panelPaths = new[]
+            {
+                "CommanderGrowthWindow/GrowthContent/CommanderOverviewPanel/CommanderStats",
+                "ManagementContent/MonsterDetailPanel/GrowthContent_ACTIVE/StatsPanel",
+                "EquipmentContent/CommanderEquipmentPanel/CommanderStats"
+            };
+            var expectedLabels = new[]
+            {
+                new[] { "공격력", "체력", "방어력", "공격속도", "이동속도", "사거리" },
+                new[] { "공격력", "체력", "방어력", "공격속도", "이동속도", "치명타" },
+                new[] { "공격력", "체력", "방어력", "공격속도", "이동속도", "치명타" }
+            };
+
+            for (var prefabIndex = 0; prefabIndex < prefabPaths.Length; prefabIndex++)
+            {
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPaths[prefabIndex]);
+                var panel = prefab.transform.Find(panelPaths[prefabIndex]);
+                Assert.That(panel, Is.Not.Null, prefabPaths[prefabIndex]);
+                var statGrid = panel.Find("StatGrid");
+                Assert.That(statGrid, Is.Not.Null, prefabPaths[prefabIndex]);
+
+                var grid = statGrid.GetComponent<GridLayoutGroup>();
+                Assert.That(grid, Is.Not.Null, prefabPaths[prefabIndex]);
+                Assert.That(grid.constraint, Is.EqualTo(GridLayoutGroup.Constraint.FixedColumnCount));
+                Assert.That(grid.constraintCount, Is.EqualTo(3));
+                Assert.That(grid.cellSize, Is.EqualTo(new Vector2(132f, 100f)));
+                Assert.That(grid.spacing, Is.EqualTo(new Vector2(10f, 8f)));
+                Assert.That(statGrid.childCount, Is.EqualTo(6));
+
+                for (var cardIndex = 0; cardIndex < statGrid.childCount; cardIndex++)
+                {
+                    var card = statGrid.GetChild(cardIndex);
+                    Assert.That(PrefabUtility.IsAnyPrefabInstanceRoot(card.gameObject), Is.True,
+                        prefabPaths[prefabIndex] + " :: " + card.name);
+                    Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(card.gameObject),
+                        Is.EqualTo(StatCardPath), card.name);
+                    var label = new SerializedObject(card.Find("Label").GetComponent("TextMeshProUGUI"));
+                    Assert.That(label.FindProperty("m_text").stringValue,
+                        Is.EqualTo(expectedLabels[prefabIndex][cardIndex]), card.name);
+                }
+            }
+
+            AssertStatValueReferences(
+                AssetDatabase.LoadAssetAtPath<GameObject>(CommanderPath),
+                "CurrentStatsView",
+                "healthText", "attackText", "defenseText",
+                "attackRangeText", "attackSpeedText", "moveSpeedText");
+            AssertStatValueReferences(
+                AssetDatabase.LoadAssetAtPath<GameObject>(MonsterPath),
+                "MonsterManagementPageController",
+                "healthStatLabel", "attackSpeedStatLabel", "attackStatLabel",
+                "criticalStatLabel", "defenseStatLabel", "moveSpeedStatLabel");
         }
 
         [Test]
@@ -223,7 +313,7 @@ namespace ProjectMT.Tests.EditMode
         }
 
         [Test]
-        public void MainBattle_GrowthDungeonOwnsFoodRiotEntry()
+        public void MainBattle_GrowthDungeonOwnsHostedEntries()
         {
             var scene = EditorSceneManager.OpenScene(MainBattleScenePath, OpenSceneMode.Additive);
             try
@@ -233,8 +323,8 @@ namespace ProjectMT.Tests.EditMode
                     .FirstOrDefault(x => x != null && x.GetType().Name == "MainBattleSceneRoot");
                 Assert.That(sceneRoot, Is.Not.Null);
 
-                var foodRiotButton = new SerializedObject(sceneRoot)
-                    .FindProperty("foodRiotButton").objectReferenceValue as Button;
+                var serializedRoot = new SerializedObject(sceneRoot);
+                var foodRiotButton = serializedRoot.FindProperty("foodRiotButton").objectReferenceValue as Button;
                 Assert.That(foodRiotButton, Is.Not.Null);
                 var foodRiotPath = AnimationUtility.CalculateTransformPath(
                     foodRiotButton.transform, sceneRoot.transform);
@@ -242,10 +332,22 @@ namespace ProjectMT.Tests.EditMode
                 Assert.That(foodRiotPath, Does.Contain("FoodRiotCardSlot"));
                 Assert.That(foodRiotButton.name, Is.EqualTo("EnterButton_GUIPro"));
 
+                var guardiansTowerButton = serializedRoot.FindProperty("towerButton").objectReferenceValue as Button;
+                Assert.That(guardiansTowerButton, Is.Not.Null);
+                var guardiansTowerPath = AnimationUtility.CalculateTransformPath(
+                    guardiansTowerButton.transform, sceneRoot.transform);
+                Assert.That(guardiansTowerPath, Does.Contain("PF_GrowthDungeonPage"));
+                Assert.That(guardiansTowerPath, Does.Contain("AncientGuardianTreeCardSlot"));
+                Assert.That(guardiansTowerButton.name, Is.EqualTo("EnterButton_GUIPro"));
+                Assert.That(guardiansTowerButton, Is.Not.SameAs(foodRiotButton));
+
                 var legacyDirectButton = roots.SelectMany(x => x.GetComponentsInChildren<Button>(true))
                     .Single(x => x.name == "FoodRiotButton");
                 Assert.That(legacyDirectButton.gameObject.activeSelf, Is.False,
                     "기존 직행 버튼과 정식 성장 던전 버튼이 겹치면 안 됩니다.");
+                Assert.That(roots.SelectMany(x => x.GetComponentsInChildren<Transform>(true))
+                    .Any(x => x.name == "TowerButton"), Is.False,
+                    "수호수 던전은 별도 직행 버튼 없이 성장 던전 목록 안에서만 열어야 합니다.");
             }
             finally
             {
@@ -308,6 +410,24 @@ namespace ProjectMT.Tests.EditMode
                 var property = serialized.FindProperty(propertyName);
                 Assert.That(property, Is.Not.Null, propertyName);
                 Assert.That(property.objectReferenceValue, Is.Not.Null, propertyName);
+            }
+        }
+
+        private static void AssertStatValueReferences(
+            GameObject prefab,
+            string behaviourType,
+            params string[] propertyNames)
+        {
+            var behaviour = FindBehaviour(prefab, behaviourType);
+            Assert.That(behaviour, Is.Not.Null, behaviourType);
+            var serialized = new SerializedObject(behaviour);
+            foreach (var propertyName in propertyNames)
+            {
+                var target = serialized.FindProperty(propertyName).objectReferenceValue as Component;
+                Assert.That(target, Is.Not.Null, propertyName);
+                Assert.That(target.name, Is.EqualTo("Value"), propertyName);
+                Assert.That(AnimationUtility.CalculateTransformPath(target.transform, prefab.transform),
+                    Does.Contain("StatGrid/StatCard_"), propertyName);
             }
         }
 

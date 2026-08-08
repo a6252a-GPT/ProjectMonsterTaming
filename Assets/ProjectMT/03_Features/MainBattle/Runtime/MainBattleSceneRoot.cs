@@ -16,10 +16,12 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private SceneId sceneId = new SceneId("main_battle"); // 메인 씬 식별자
         [SerializeField] private ContentId foodRiotContentId = new ContentId("food_riot"); // Hosted 콘텐츠 ID
         [SerializeField] private ContentId castleRaidContentId = new ContentId("castle_raid"); // 별도 씬 콘텐츠 ID
+        [SerializeField] private ContentId guardiansTowerContentId = new ContentId("guardians_tower"); // 08.06 안건준 추가 - 수호자의 탑 Hosted 콘텐츠 ID (식량 대소동과 별도)
         [SerializeField] private ExpeditionController expedition; // 원정대 진행 담당
         [SerializeField] private MainBattleHostedContentRunner hostedRunner; // 성장 던전 전환 담당
         [SerializeField] private Button foodRiotButton; // 식량 대소동 입장 버튼
         [SerializeField] private Button castleRaidButton; // 군단의 역습 입장 버튼
+        [SerializeField] private Button towerButton; // 08.06 안건준 추가 - 수호자의 탑 입장 버튼
         [SerializeField] private TMP_Text statusText; // 현재 플레이 상태
         [SerializeField] private FormationPageController formationPage; // 보유·편성 통합 화면
         [SerializeField] private MonsterManagementPageController monsterManagementPage; // 몬스터 성장 관리창
@@ -59,6 +61,7 @@ namespace ProjectMT.Features.MainBattle
             }
             foodRiotButton?.onClick.AddListener(OpenFoodRiot);
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
+            towerButton?.onClick.AddListener(OpenGuardiansTower); // 08.06 안건준 추가
             expedition.Initialize(context.Progress, party, context.RewardPresentation);
             formationPage.PartyChanged += HandlePartyChanged;
             formationPage.OpenStateChanged += HandleFormationPageOpenStateChanged;
@@ -82,6 +85,7 @@ namespace ProjectMT.Features.MainBattle
             monsterDrag?.Shutdown();
             foodRiotButton?.onClick.RemoveListener(OpenFoodRiot);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
+            towerButton?.onClick.RemoveListener(OpenGuardiansTower); // 08.06 안건준 추가
             ResolveGachaSystem()?.Shutdown();
             ResolveShopPageView()?.Shutdown();
             managementUi?.ConfigureFormationPage(null);
@@ -213,6 +217,22 @@ namespace ProjectMT.Features.MainBattle
             }
         }
 
+        // 08.06 안건준 추가 - 수호자의 탑 입장. 식량 대소동(OpenFoodRiot)과 동일한 방식이지만
+        // 콘텐츠 ID·던전 Instance가 완전히 분리되어 있어 서로 겹치지 않는다.
+        private void OpenGuardiansTower()
+        {
+            if (!TryOpenContent())
+            {
+                return;
+            }
+
+            party = context.RefreshParty();
+            if (context.ContentLauncher.StartHosted(guardiansTowerContentId, party, hostedRunner))
+            {
+                SetStatus("수호자의 탑");
+            }
+        }
+
         private void OpenCastleRaid()
         {
             if (!TryOpenContent())
@@ -309,7 +329,8 @@ namespace ProjectMT.Features.MainBattle
             FormationPageController formationController = null,
             GachaSystem gacha = null,
             MonsterManagementPageController managementController = null,
-            ShopPageView shopView = null)
+            ShopPageView shopView = null,
+            Button guardiansTowerButton = null)
         {
             expedition = expeditionController;
             hostedRunner = runner;
@@ -320,6 +341,7 @@ namespace ProjectMT.Features.MainBattle
             gachaSystem = gacha;
             monsterManagementPage = managementController;
             shopPageView = shopView;
+            towerButton = guardiansTowerButton; // 08.06 안건준 추가
         }
 #endif
     }

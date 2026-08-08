@@ -1,5 +1,6 @@
 using System;
 using ProjectMT.Core.SceneFlow;
+using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
 
@@ -129,16 +130,21 @@ namespace ProjectMT.Contents.Framework
 
     public sealed class ContentContext // 시작값과 출구를 담은 봉투
     {
-        public ContentContext(ContentRunInfo runInfo, IContentStartData startData, IContentExit exit)
+        // 08.07 안건준 추가 - progress는 선택 값(옵션)이다. 기존 호출부(3개 인자)는 그대로 컴파일되며
+        // Progress는 null이 되어 대부분의 콘텐츠 컨트롤러 동작에 영향이 없다. 진행 데이터를 읽어야 하는
+        // 콘텐츠(예: 수호자의 탑 난이도 스케일링)만 선택적으로 사용한다.
+        public ContentContext(ContentRunInfo runInfo, IContentStartData startData, IContentExit exit, IGameProgressService progress = null)
         {
             RunInfo = runInfo;
             StartData = startData ?? throw new ArgumentNullException(nameof(startData));
             Exit = exit ?? throw new ArgumentNullException(nameof(exit));
+            Progress = progress;
         }
 
         public ContentRunInfo RunInfo { get; }
         public IContentStartData StartData { get; } // 콘텐츠별 읽기 전용 시작값
         public IContentExit Exit { get; } // 완료·실패·취소 반환 통로
+        public IGameProgressService Progress { get; } // 08.07 안건준 추가 - 진행 데이터 읽기 전용 접근(선택적)
     }
 
     public sealed class ContentSceneContext : ISceneContext // 별도 씬 콘텐츠 권한 봉투

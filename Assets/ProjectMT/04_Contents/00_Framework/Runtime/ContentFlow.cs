@@ -123,7 +123,7 @@ namespace ProjectMT.Contents.Framework
                 result => _ = HandleExitAsync(run, ContentOutcome.Complete, result),
                 result => _ = HandleExitAsync(run, ContentOutcome.Fail, result),
                 () => _ = HandleExitAsync(run, ContentOutcome.Cancel, null));
-            run.Context = new ContentContext(runInfo, startData, exit);
+            run.Context = new ContentContext(runInfo, startData, exit, progress); // 08.07 안건준 추가 - Progress 읽기 전용 전달
             return run;
         }
 

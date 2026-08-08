@@ -10,7 +10,7 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private string displayName;
         [SerializeField] private Sprite portrait;
         [SerializeField] private GameObject previewPrefab;
-        [SerializeField] private Color visualTint = Color.white; // 임시 카드·3D 모델 색상 배율
+        [SerializeField] private Color visualTint = Color.white; // 임시 3D 모델 표시 색상 배율
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float attackPower = 10f;
         [SerializeField] private float defense;

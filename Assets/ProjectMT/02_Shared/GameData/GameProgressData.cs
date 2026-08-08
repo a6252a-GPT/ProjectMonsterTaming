@@ -260,6 +260,13 @@ namespace ProjectMT.Shared.GameData
                 gold -= cost; // 레벨 증가와 같은 후보 데이터에서 차감
             }
 
+            if (change.HasAscendMonster &&
+                (string.IsNullOrEmpty(change.AscendMonsterId) ||
+                 !monsters.TryAscend(change.AscendMonsterId, change.ExpectedAscensionLevel)))
+            {
+                return false;
+            }
+
             if (change.HasGachaPull &&
                 !TryApplyGachaPull(change.GachaPullMonsterId, change.GachaPullRarity))
             {
@@ -293,7 +300,7 @@ namespace ProjectMT.Shared.GameData
                    !change.Rewards.IsEmpty;
         }
 
-        // 뽑기 한 번의 결과를 반영한다: 천장 카운터 갱신 + (신규 획득 / 돌파 / 전용 재화 적립) 중 하나.
+        // 뽑기 한 번의 결과를 반영한다: 천장 카운터 갱신 + (신규 획득 / 중복 재료 / 전용 재화) 중 하나.
         private bool TryApplyGachaPull(string monsterId, MonsterRarity rarity)
         {
             if (string.IsNullOrEmpty(monsterId))
@@ -309,19 +316,21 @@ namespace ProjectMT.Shared.GameData
                 return monsters.TryAcquire(monsterId); // 최초 획득 = 0돌파
             }
 
-            if (MonsterAscension.IsMaxAscension(existingOwned.AscensionLevel))
+            if (!MonsterAscension.IsMaxAscension(existingOwned.AscensionLevel) &&
+                monsters.TryAddAscensionMaterial(monsterId))
             {
-                var nextCurrency = (long)ascensionCurrency + 1; // 최대 돌파 이후 중복 → 전용 재화 전환
-                if (nextCurrency > int.MaxValue)
-                {
-                    return false;
-                }
-
-                ascensionCurrency = (int)nextCurrency;
-                return true;
+                return true; // 중복 획득은 수동 돌파에 쓸 재료로 보관
             }
 
-            return monsters.TryAscend(monsterId); // 중복 획득 → 돌파 1회 증가
+            // 이미 최대 돌파이거나 최대 돌파까지 필요한 재료를 모두 보유한 뒤의 초과 중복이다.
+            var nextCurrency = (long)ascensionCurrency + 1;
+            if (nextCurrency > int.MaxValue)
+            {
+                return false;
+            }
+
+            ascensionCurrency = (int)nextCurrency;
+            return true;
         }
 
         internal void Repair()
@@ -404,6 +413,9 @@ namespace ProjectMT.Shared.GameData
         internal bool HasLevelUpMonster { get; private set; }
         internal string LevelUpMonsterId { get; private set; }
         internal int ExpectedMonsterLevel { get; private set; }
+        internal bool HasAscendMonster { get; private set; }
+        internal string AscendMonsterId { get; private set; }
+        internal int ExpectedAscensionLevel { get; private set; }
         internal bool HasGachaPull { get; private set; }
         internal string GachaPullMonsterId { get; private set; }
         internal MonsterRarity GachaPullRarity { get; private set; }
@@ -497,7 +509,17 @@ namespace ProjectMT.Shared.GameData
             };
         }
 
-        // 뽑기 결과 한 건 반영 요청. 신규면 획득, 중복이면 돌파(또는 최대 돌파 시 전용 재화 적립),
+        public static GameProgressChange AscendMonster(string monsterId, int expectedAscensionLevel)
+        {
+            return new GameProgressChange
+            {
+                HasAscendMonster = true,
+                AscendMonsterId = monsterId?.Trim(),
+                ExpectedAscensionLevel = expectedAscensionLevel
+            };
+        }
+
+        // 뽑기 결과 한 건 반영 요청. 신규면 획득, 중복이면 돌파 재료(초과분은 전용 재화),
         // 그리고 천장 카운터까지 한 번에 갱신된다 (GameProgressData.TryApplyGachaPull 참고).
         public static GameProgressChange RecordGachaPull(string monsterId, MonsterRarity rarity)
         {

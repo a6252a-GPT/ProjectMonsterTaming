@@ -84,6 +84,17 @@ crashlytics-build.properties
 # TestRunner generated files
 InitTestScene*.unity*
 
+# Local QA captures, scratch files, and one-off tester assets
+/TestResults*.xml
+/[Ss]creenshots/
+/_[Tt]emp/
+/[Aa]ssets/[Ee]ditor/Codex*.cs
+/[Aa]ssets/[Ee]ditor/Codex*.cs.meta
+/[Aa]ssets/ProjectMT/00_Scenes/UItest.unity
+/[Aa]ssets/ProjectMT/00_Scenes/UItest.unity.meta
+/[Aa]ssets/ProjectMT/00_Scenes/test.unity
+/[Aa]ssets/ProjectMT/00_Scenes/test.unity.meta
+
 # Addressables default ignores, before user customizations
 /ServerData
 /[Aa]ssets/StreamingAssets/aa*

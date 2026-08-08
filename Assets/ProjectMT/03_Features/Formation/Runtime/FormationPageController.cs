@@ -13,6 +13,7 @@ namespace ProjectMT.Features.Formation
     public sealed class FormationPageController : MonoBehaviour // 보유 목록과 편성을 한 화면에서 관리
     {
         private const int PreviewLayer = 5; // Unity 기본 UI 레이어만 미리보기 카메라에 노출
+        private const float FormationPreviewTargetSize = 1.15f;
 
         [Header("Page")]
         [SerializeField] private GameObject pageRoot;
@@ -38,16 +39,23 @@ namespace ProjectMT.Features.Formation
         [SerializeField] private Transform formationSlotsRoot;
         [SerializeField] private Transform ownedGridRoot;
         [SerializeField] private MonsterCardView cardPrefab;
+        [SerializeField] private TMP_Text ownedCountLabel;
+        [SerializeField] private TMP_Text capacityLabel;
 
         [Header("Preview")]
         [SerializeField] private RawImage previewImage;
         [SerializeField] private Camera previewCamera;
         [SerializeField] private Light previewLight;
         [SerializeField] private Transform previewAnchor;
+        [SerializeField] private Transform formationPreviewSlotsRoot;
+        [SerializeField] private Material activeSlotMaterial;
+        [SerializeField] private Material lockedSlotMaterial;
         [SerializeField] private Camera worldCamera;
 
         private readonly List<MonsterCardView> formationCards = new List<MonsterCardView>();
         private readonly List<MonsterCardView> ownedCards = new List<MonsterCardView>();
+        private readonly List<Transform> formationPreviewSlots = new List<Transform>();
+        private readonly List<GameObject> formationPreviewInstances = new List<GameObject>();
         private IGameProgressService progress;
         private MonsterCatalog catalog;
         private Func<BattlePartySnapshot> refreshParty;
@@ -55,13 +63,12 @@ namespace ProjectMT.Features.Formation
         private string selectedMonsterId;
         private MonsterPartyKind activeParty = MonsterPartyKind.Main;
         private bool isBusy;
-        private bool worldCameraStateCaptured;
-        private bool worldCameraWasEnabled;
-        private int worldCameraCullingMask;
-        private CameraClearFlags worldCameraClearFlags;
-        private Color worldCameraBackgroundColor;
+        private Color mainTabActiveColor;
+        private Color reserveTabInactiveColor;
+        private bool tabColorsCaptured;
 
         public event Action<BattlePartySnapshot> PartyChanged;
+        public event Action<bool> OpenStateChanged;
         public bool IsOpen => pageRoot != null && pageRoot.activeSelf;
 
         private void Awake()
@@ -72,6 +79,9 @@ namespace ProjectMT.Features.Formation
             reserveTabButton?.onClick.AddListener(SelectReserveTab);
             levelUpButton?.onClick.AddListener(HandleLevelUpClicked);
             formationButton?.onClick.AddListener(HandleFormationClicked);
+            CacheAuthoredOwnedCards();
+            CacheFormationPreviewSlots();
+            CaptureTabColors();
             SetPageOpen(false);
         }
 
@@ -85,9 +95,9 @@ namespace ProjectMT.Features.Formation
 
         private void OnDisable()
         {
-            if (IsOpen || worldCameraStateCaptured)
+            if (IsOpen)
             {
-                SetPageOpen(false); // 상위 오브젝트 비활성화에도 월드 카메라 복구
+                SetPageOpen(false);
             }
         }
 
@@ -132,6 +142,7 @@ namespace ProjectMT.Features.Formation
 
             SetPageOpen(false);
             ClearPreview();
+            ClearFormationPreview();
             progress = null;
             catalog = null;
             refreshParty = null;
@@ -164,31 +175,13 @@ namespace ProjectMT.Features.Formation
 
         private void SetPageOpen(bool open)
         {
-            if (open)
+            var wasOpen = IsOpen;
+            pageRoot?.SetActive(open);
+            if (openButton != null)
             {
-                if (!worldCameraStateCaptured)
-                {
-                    worldCameraWasEnabled = worldCamera != null && worldCamera.enabled;
-                    if (worldCamera != null)
-                    {
-                        worldCameraCullingMask = worldCamera.cullingMask;
-                        worldCameraClearFlags = worldCamera.clearFlags;
-                        worldCameraBackgroundColor = worldCamera.backgroundColor;
-                    }
-
-                    worldCameraStateCaptured = true;
-                }
-
-                if (worldCamera != null)
-                {
-                    worldCamera.enabled = true;
-                    worldCamera.cullingMask = 0; // UI 출력은 유지하고 월드 드로우만 차단
-                    worldCamera.clearFlags = CameraClearFlags.SolidColor;
-                    worldCamera.backgroundColor = new Color(0.008f, 0.012f, 0.022f, 1f);
-                }
+                openButton.gameObject.SetActive(!open);
             }
 
-            pageRoot?.SetActive(open);
             if (previewCamera != null)
             {
                 previewCamera.enabled = open;
@@ -202,15 +195,12 @@ namespace ProjectMT.Features.Formation
             if (!open)
             {
                 ClearPreview();
-                if (worldCameraStateCaptured && worldCamera != null)
-                {
-                    worldCamera.cullingMask = worldCameraCullingMask;
-                    worldCamera.clearFlags = worldCameraClearFlags;
-                    worldCamera.backgroundColor = worldCameraBackgroundColor;
-                    worldCamera.enabled = worldCameraWasEnabled;
-                }
+                ClearFormationPreview();
+            }
 
-                worldCameraStateCaptured = false;
+            if (wasOpen != IsOpen)
+            {
+                OpenStateChanged?.Invoke(IsOpen);
             }
         }
 
@@ -333,16 +323,32 @@ namespace ProjectMT.Features.Formation
 
             var view = progress.View;
             var roster = view.Monsters;
-            UpdateTabState();
-            RefreshFormationCards(roster);
+            UpdateTabState(roster);
+            if (formationPreviewSlotsRoot != null)
+            {
+                RefreshFormationPreview(roster);
+            }
+            else
+            {
+                RefreshFormationCards(roster);
+            }
+
             RefreshOwnedCards(roster);
             RefreshSelectedDetails(view);
         }
 
-        private void UpdateTabState()
+        private void UpdateTabState(MonsterRosterView roster)
         {
-            SetText(mainTabLabel, activeParty == MonsterPartyKind.Main ? "● 메인 편성" : "메인 편성");
-            SetText(reserveTabLabel, activeParty == MonsterPartyKind.Reserve ? "● 예비 편성" : "예비 편성");
+            var mainSlots = roster.MainPartySlots;
+            var reserveSlots = roster.ReservePartySlots;
+            SetText(mainTabLabel, $"본부대 {mainSlots.Count} / 10");
+            SetText(reserveTabLabel, $"예비부대 {reserveSlots.Count} / 5");
+
+            var activeSlots = activeParty == MonsterPartyKind.Main ? mainSlots : reserveSlots;
+            var maximum = activeParty == MonsterPartyKind.Main ? 10 : 5;
+            SetText(capacityLabel, $"현재 {activeSlots.Count} / 최대 {maximum}");
+            SetTabVisual(mainTabButton, activeParty == MonsterPartyKind.Main);
+            SetTabVisual(reserveTabButton, activeParty == MonsterPartyKind.Reserve);
         }
 
         private void RefreshFormationCards(MonsterRosterView roster)
@@ -379,7 +385,11 @@ namespace ProjectMT.Features.Formation
 
         private void RefreshOwnedCards(MonsterRosterView roster)
         {
-            var ownedMonsters = roster.OwnedMonsters;
+            CacheAuthoredOwnedCards();
+            var ownedMonsters = MonsterRosterCardSorter.CreateSorted(
+                roster,
+                cardPrefab != null ? cardPrefab.RarityCatalog : null);
+            SetText(ownedCountLabel, $"보유 {ownedMonsters.Count} / 20");
             EnsureCardCount(ownedCards, ownedMonsters.Count, ownedGridRoot);
             for (var index = 0; index < ownedCards.Count; index++)
             {
@@ -406,6 +416,58 @@ namespace ProjectMT.Features.Formation
                     string.Equals(owned.MonsterId, selectedMonsterId, StringComparison.OrdinalIgnoreCase),
                     assignment,
                     HandleCardSelected);
+            }
+        }
+
+        private void RefreshFormationPreview(MonsterRosterView roster)
+        {
+            CacheFormationPreviewSlots();
+            ClearFormationPreview();
+            var slots = activeParty == MonsterPartyKind.Main ? roster.MainPartySlots : roster.ReservePartySlots;
+            var visibleSlotCount = activeParty == MonsterPartyKind.Main ? 10 : 5;
+
+            for (var index = 0; index < formationPreviewSlots.Count; index++)
+            {
+                var slotRoot = formationPreviewSlots[index];
+                var visible = index < visibleSlotCount;
+                slotRoot.gameObject.SetActive(visible);
+                if (!visible)
+                {
+                    continue;
+                }
+
+                var unlocked = index < slots.Count;
+                var ring = slotRoot.Find("GroundSlotRing")?.GetComponent<MeshRenderer>();
+                if (ring != null)
+                {
+                    ring.sharedMaterial = unlocked ? activeSlotMaterial : lockedSlotMaterial;
+                }
+
+                if (!unlocked || string.IsNullOrEmpty(slots[index]) ||
+                    !catalog.TryGet(slots[index], out var definition) || definition.PreviewPrefab == null)
+                {
+                    continue;
+                }
+
+                var anchor = slotRoot.Find("MonsterPreviewAnchor") ?? slotRoot;
+                var anchorWasActive = anchor.gameObject.activeSelf;
+                anchor.gameObject.SetActive(false); // Gameplay OnEnable 전에 Preview 전용 상태로 전환
+                try
+                {
+                    var instance = Instantiate(definition.PreviewPrefab, anchor);
+                    instance.name = $"FormationPreview_{index + 1:00}_{definition.MonsterId}";
+                    instance.transform.localPosition = Vector3.zero;
+                    instance.transform.localRotation = Quaternion.identity;
+                    SetLayerRecursively(instance, PreviewLayer);
+                    FitFormationPreviewModel(instance, anchor);
+                    DisablePreviewGameplay(instance);
+                    ApplyPreviewTint(instance, definition.VisualTint);
+                    formationPreviewInstances.Add(instance);
+                }
+                finally
+                {
+                    anchor.gameObject.SetActive(anchorWasActive);
+                }
             }
         }
 
@@ -533,6 +595,134 @@ namespace ProjectMT.Features.Formation
             {
                 Destroy(previewInstance);
                 previewInstance = null;
+            }
+        }
+
+        private void ClearFormationPreview()
+        {
+            for (var index = formationPreviewInstances.Count - 1; index >= 0; index--)
+            {
+                if (formationPreviewInstances[index] != null)
+                {
+                    Destroy(formationPreviewInstances[index]);
+                }
+            }
+
+            formationPreviewInstances.Clear();
+        }
+
+        private static void FitFormationPreviewModel(GameObject instance, Transform anchor)
+        {
+            var renderers = instance.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0)
+            {
+                return;
+            }
+
+            var bounds = renderers[0].bounds;
+            for (var index = 1; index < renderers.Length; index++)
+            {
+                bounds.Encapsulate(renderers[index].bounds);
+            }
+
+            var maximumSize = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z);
+            if (maximumSize > 0.001f)
+            {
+                var scale = FormationPreviewTargetSize / maximumSize;
+                instance.transform.localScale *= scale;
+                bounds = renderers[0].bounds;
+                for (var index = 1; index < renderers.Length; index++)
+                {
+                    bounds.Encapsulate(renderers[index].bounds);
+                }
+            }
+
+            var target = anchor.position;
+            instance.transform.position += new Vector3(
+                target.x - bounds.center.x,
+                target.y - bounds.min.y,
+                target.z - bounds.center.z);
+        }
+
+        private void CacheAuthoredOwnedCards()
+        {
+            if (ownedCards.Count > 0 || ownedGridRoot == null)
+            {
+                return;
+            }
+
+            foreach (var card in ownedGridRoot.GetComponentsInChildren<MonsterCardView>(true))
+            {
+                if (card != null && !ownedCards.Contains(card))
+                {
+                    ownedCards.Add(card);
+                }
+            }
+        }
+
+        private void CacheFormationPreviewSlots()
+        {
+            if (formationPreviewSlots.Count > 0 || formationPreviewSlotsRoot == null)
+            {
+                return;
+            }
+
+            foreach (Transform child in formationPreviewSlotsRoot)
+            {
+                if (child.name.StartsWith("FormationSlot_", StringComparison.Ordinal))
+                {
+                    formationPreviewSlots.Add(child);
+                }
+            }
+
+            formationPreviewSlots.Sort((left, right) => string.CompareOrdinal(left.name, right.name));
+        }
+
+        private void CaptureTabColors()
+        {
+            if (tabColorsCaptured || mainTabButton == null || reserveTabButton == null ||
+                mainTabButton.targetGraphic == null || reserveTabButton.targetGraphic == null)
+            {
+                return;
+            }
+
+            mainTabActiveColor = mainTabButton.targetGraphic.color;
+            reserveTabInactiveColor = reserveTabButton.targetGraphic.color;
+            tabColorsCaptured = true;
+        }
+
+        private void SetTabVisual(Button button, bool selected)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            CaptureTabColors();
+            if (tabColorsCaptured && button.targetGraphic != null)
+            {
+                button.targetGraphic.color = selected ? mainTabActiveColor : reserveTabInactiveColor;
+            }
+
+            var innerBorder = button.transform.Find("InnerBorder1");
+            if (innerBorder != null)
+            {
+                innerBorder.gameObject.SetActive(true);
+                var innerImage = innerBorder.GetComponent<Image>();
+                if (innerImage != null)
+                {
+                    innerImage.color = selected
+                        ? new Color32(0x73, 0x9A, 0xA5, 0xFF)
+                        : new Color32(0x31, 0x30, 0x31, 0xFF);
+                }
+            }
+
+            var label = button.GetComponentInChildren<TMP_Text>(true);
+            if (label != null)
+            {
+                label.color = selected
+                    ? Color.white
+                    : new Color32(0xB0, 0xAD, 0xAA, 0xFF);
             }
         }
 
@@ -770,6 +960,61 @@ namespace ProjectMT.Features.Formation
             previewCamera = modelCamera;
             previewLight = modelLight;
             previewAnchor = modelAnchor;
+            worldCamera = mainWorldCamera;
+        }
+
+
+        public void EditorConfigureFormal(
+            GameObject contentPage,
+            Button opener,
+            Button closer,
+            Button mainTab,
+            Button reserveTab,
+            TMP_Text mainTabText,
+            TMP_Text reserveTabText,
+            Button assignButton,
+            TMP_Text assignButtonText,
+            Transform gridRoot,
+            MonsterCardView monsterCard,
+            TMP_Text rosterCount,
+            TMP_Text slotCapacity,
+            RawImage modelImage,
+            Camera modelCamera,
+            Light modelLight,
+            Transform previewSlots,
+            Material activeRing,
+            Material lockedRing,
+            TMP_Text status,
+            Camera mainWorldCamera)
+        {
+            pageRoot = contentPage;
+            openButton = opener;
+            closeButton = closer;
+            mainTabButton = mainTab;
+            reserveTabButton = reserveTab;
+            mainTabLabel = mainTabText;
+            reserveTabLabel = reserveTabText;
+            selectedNameLabel = null;
+            selectedLevelLabel = null;
+            selectedStatsLabel = null;
+            currencyLabel = null;
+            statusLabel = status;
+            levelUpButton = null;
+            levelUpButtonLabel = null;
+            formationButton = assignButton;
+            formationButtonLabel = assignButtonText;
+            formationSlotsRoot = null;
+            ownedGridRoot = gridRoot;
+            cardPrefab = monsterCard;
+            ownedCountLabel = rosterCount;
+            capacityLabel = slotCapacity;
+            previewImage = modelImage;
+            previewCamera = modelCamera;
+            previewLight = modelLight;
+            previewAnchor = null;
+            formationPreviewSlotsRoot = previewSlots;
+            activeSlotMaterial = activeRing;
+            lockedSlotMaterial = lockedRing;
             worldCamera = mainWorldCamera;
         }
 #endif

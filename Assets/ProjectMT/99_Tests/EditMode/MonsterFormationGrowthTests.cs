@@ -22,8 +22,20 @@ namespace ProjectMT.Tests.EditMode
             "Assets/ProjectMT/02_Shared/Unit/Data/MonsterCatalog.asset";
         private const string FormationPagePath =
             "Assets/ProjectMT/03_Features/Formation/Prefabs/PF_FormationPage.prefab";
+        private const string LegacyFormationPagePath =
+            "Assets/ProjectMT/03_Features/Formation/Prefabs/Legacy/PF_FormationPage_Legacy.prefab";
+        private const string FormationRosterPath =
+            "Assets/ProjectMT/03_Features/Formation/Prefabs/PF_MonsterRosterList.prefab";
+        private const string ManagementPagePath =
+            "Assets/ProjectMT/03_Features/Formation/Prefabs/PF_MonsterManagementPage.prefab";
         private const string MonsterCardPath =
             "Assets/ProjectMT/03_Features/Formation/Prefabs/PF_MonsterCard.prefab";
+        private const string VerticalPopupPath =
+            "Assets/ProjectMT/02_Shared/UI/Prefabs/Standard/PF_UIStandard_PopupVertical.prefab";
+        private const string MediumPopupPath =
+            "Assets/ProjectMT/02_Shared/UI/Prefabs/Standard/PF_UIStandard_PopupMedium.prefab";
+        private const string WidePopupPath =
+            "Assets/ProjectMT/02_Shared/UI/Prefabs/Standard/PF_UIStandard_PopupWide.prefab";
         private const string PlaceholderPortraitPath =
             "Assets/ProjectMT/03_Features/Formation/Art/Portraits/Portrait_Placeholder.png";
         private const string DebugPanelPath =
@@ -71,7 +83,7 @@ namespace ProjectMT.Tests.EditMode
         public async Task AcquireAndFormationChanges_SaveWithoutDuplicatesAndKeepMainParty()
         {
             var store = new MemoryFileStore(Encoding.UTF8.GetBytes(
-                "{\"dataVersion\":4,\"gameData\":{\"monsters\":{" +
+                "{\"dataVersion\":5,\"gameData\":{\"monsters\":{" +
                 "\"ownedMonsters\":[{\"monsterId\":\"tofu_01\",\"level\":1}]," +
                 "\"mainPartySlots\":[\"tofu_01\"],\"reservePartySlots\":[]}}}"));
             var gameData = new GameDataService(new SaveService(store, "memory://project-mt-save"));
@@ -100,7 +112,7 @@ namespace ProjectMT.Tests.EditMode
         public async Task LevelUp_SpendsGoldAndRaisesLevelAsOneSavedChange()
         {
             var store = new MemoryFileStore(Encoding.UTF8.GetBytes(
-                "{\"dataVersion\":4,\"gameData\":{\"gold\":21,\"monsters\":{" +
+                "{\"dataVersion\":5,\"gameData\":{\"gold\":21,\"monsters\":{" +
                 "\"ownedMonsters\":[{\"monsterId\":\"tofu_01\",\"level\":1}]," +
                 "\"mainPartySlots\":[\"tofu_01\"],\"reservePartySlots\":[]}}}"));
             var gameData = new GameDataService(new SaveService(store, "memory://project-mt-save"));
@@ -134,7 +146,7 @@ namespace ProjectMT.Tests.EditMode
             Assert.That(catalog.TryGet("tofu_01", out var definition), Is.True);
 
             var store = new MemoryFileStore(Encoding.UTF8.GetBytes(
-                "{\"dataVersion\":4,\"gameData\":{\"monsters\":{" +
+                "{\"dataVersion\":5,\"gameData\":{\"monsters\":{" +
                 "\"ownedMonsters\":[{\"monsterId\":\"tofu_01\",\"level\":3}]," +
                 "\"mainPartySlots\":[\"tofu_01\"],\"reservePartySlots\":[]}}}"));
             var loaded = await new SaveService(store, "memory://project-mt-save").LoadAsync();
@@ -159,7 +171,9 @@ namespace ProjectMT.Tests.EditMode
         {
             var catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>(CatalogPath);
             var pagePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(FormationPagePath);
+            var legacyPagePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(LegacyFormationPagePath);
             var cardPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(MonsterCardPath);
+            var managementPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ManagementPagePath);
             var placeholder = AssetDatabase.LoadAssetAtPath<Sprite>(PlaceholderPortraitPath);
             var debugPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(DebugPanelPath);
 
@@ -175,33 +189,54 @@ namespace ProjectMT.Tests.EditMode
                     $"{monsterId}의 표시 색상이 다른 몬스터와 겹칩니다.");
             }
             Assert.That(pagePrefab.GetComponent<FormationPageController>(), Is.Not.Null);
+            Assert.That(legacyPagePrefab, Is.Not.Null);
+            Assert.That(legacyPagePrefab.activeSelf, Is.False);
             Assert.That(cardPrefab.GetComponent<MonsterCardView>(), Is.Not.Null);
 
-            var ownedPanel = pagePrefab.transform.Find("PageRoot/OwnedMonsterPanel");
-            var ownedTitle = ownedPanel.Find("Title").GetComponent("TextMeshProUGUI");
-            var viewport = ownedPanel.Find("Viewport").GetComponent<RectTransform>();
-            var content = viewport.Find("Content").GetComponent<RectTransform>();
-            var grid = content.GetComponent<GridLayoutGroup>();
-            var scroll = ownedPanel.GetComponent<ScrollRect>();
-            var preview = pagePrefab.transform.Find("PageRoot/SelectedMonsterPanel/MonsterPreview");
-            var aspect = preview.GetComponent<AspectRatioFitter>();
+            var pageRoot = pagePrefab.transform.Find("PageRoot");
+            var pageRect = pageRoot.GetComponent<RectTransform>();
+            var managementRect = managementPrefab.GetComponent<RectTransform>();
+            var roster = pageRoot.Find("FormationContent/MonsterList_Common");
+            var ownedTitle = roster.Find("Title").GetComponent("TextMeshProUGUI");
+            var preview = pageRoot.Find("FormationContent/FormationBoardPanel/FormationPreviewRawImage")
+                .GetComponent<RawImage>();
+            var stage = pageRoot.Find("FormationPreviewStage_Runtime");
+            var previewCamera = stage.Find("FormationPreviewCamera_Runtime").GetComponent<Camera>();
+            var slotsRoot = stage.Find("FormationSlots_CCW_FromLowerLeft");
 
+            Assert.That(pageRoot.gameObject.activeSelf, Is.False);
+            Assert.That(
+                pageRect.anchoredPosition.x + pageRect.rect.width * 0.5f,
+                Is.EqualTo(managementRect.anchoredPosition.x + managementRect.rect.width * 0.5f)
+                    .Within(0.001f));
             Assert.That(ownedTitle, Is.Not.Null);
             Assert.That(new SerializedObject(ownedTitle).FindProperty("m_text").stringValue,
-                Is.EqualTo("전체 보유 몬스터"));
-            Assert.That(grid.constraint, Is.EqualTo(GridLayoutGroup.Constraint.FixedColumnCount));
-            Assert.That(grid.constraintCount, Is.EqualTo(7));
-            Assert.That(scroll.horizontal, Is.False);
-            Assert.That(scroll.vertical, Is.True);
-            Assert.That(scroll.content, Is.SameAs(content));
-            Assert.That(scroll.viewport, Is.SameAs(viewport));
-            Assert.That(aspect.aspectMode, Is.EqualTo(AspectRatioFitter.AspectMode.HeightControlsWidth));
-            Assert.That(aspect.aspectRatio, Is.EqualTo(1f));
+                Is.EqualTo("보유 몬스터"));
+            Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(roster.gameObject),
+                Is.EqualTo(FormationRosterPath));
+            Assert.That(roster.GetComponentsInChildren<MonsterCardView>(true), Has.Length.EqualTo(10));
+            Assert.That(preview.texture, Is.Not.Null);
+            Assert.That(previewCamera.targetTexture, Is.SameAs(preview.texture));
+            Assert.That(previewCamera.clearFlags, Is.EqualTo(CameraClearFlags.SolidColor));
+            Assert.That(previewCamera.backgroundColor.a, Is.Zero.Within(0.001f));
+            Assert.That(slotsRoot.childCount, Is.EqualTo(10));
+            for (var index = 0; index < slotsRoot.childCount; index++)
+            {
+                var slot = slotsRoot.GetChild(index);
+                var anchor = slot.Find("MonsterPreviewAnchor");
+                Assert.That(anchor, Is.Not.Null, slot.name);
+                Assert.That(anchor.childCount, Is.Zero, slot.name);
+                Assert.That(slot.Find("GroundSlotRing"), Is.Not.Null, slot.name);
+            }
 
             var pageSerialized = new SerializedObject(pagePrefab.GetComponent<FormationPageController>());
             Assert.That(pageSerialized.FindProperty("cardPrefab").objectReferenceValue, Is.Not.Null);
             Assert.That(pageSerialized.FindProperty("previewCamera").objectReferenceValue, Is.Not.Null);
             Assert.That(pageSerialized.FindProperty("previewLight").objectReferenceValue, Is.Not.Null);
+            Assert.That(pageSerialized.FindProperty("formationButton").objectReferenceValue, Is.Not.Null);
+            Assert.That(pageSerialized.FindProperty("formationPreviewSlotsRoot").objectReferenceValue, Is.Not.Null);
+            Assert.That(pageSerialized.FindProperty("activeSlotMaterial").objectReferenceValue, Is.Not.Null);
+            Assert.That(pageSerialized.FindProperty("lockedSlotMaterial").objectReferenceValue, Is.Not.Null);
             Assert.That(pageSerialized.FindProperty("worldCamera").objectReferenceValue, Is.Null);
 
             var debugSerialized = new SerializedObject(debugPrefab.GetComponent<DebugPanelController>());
@@ -245,9 +280,125 @@ namespace ProjectMT.Tests.EditMode
         }
 
         [Test]
+        public void PopupStandards_ExpandLeftFromOneRightEdge()
+        {
+            var vertical = AssetDatabase.LoadAssetAtPath<GameObject>(VerticalPopupPath)
+                .GetComponent<RectTransform>();
+            var medium = AssetDatabase.LoadAssetAtPath<GameObject>(MediumPopupPath)
+                .GetComponent<RectTransform>();
+            var wide = AssetDatabase.LoadAssetAtPath<GameObject>(WidePopupPath)
+                .GetComponent<RectTransform>();
+
+            var verticalRight = vertical.anchoredPosition.x + vertical.rect.width * 0.5f;
+            var mediumRight = medium.anchoredPosition.x + medium.rect.width * 0.5f;
+            var wideRight = wide.anchoredPosition.x + wide.rect.width * 0.5f;
+
+            Assert.That(verticalRight, Is.EqualTo(mediumRight).Within(0.001f));
+            Assert.That(mediumRight, Is.EqualTo(wideRight).Within(0.001f));
+        }
+
+        [Test]
+        public void FormationPopup_DoesNotChangeWorldCameraRendering()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(FormationPagePath);
+            var instance = Object.Instantiate(prefab);
+            var cameraObject = new GameObject("FormationWorldCameraTest");
+            var camera = cameraObject.AddComponent<Camera>();
+            camera.enabled = false;
+            camera.cullingMask = 0x1234;
+            camera.clearFlags = CameraClearFlags.Skybox;
+            camera.backgroundColor = Color.magenta;
+
+            try
+            {
+                var controller = instance.GetComponent<FormationPageController>();
+                var serialized = new SerializedObject(controller);
+                serialized.FindProperty("worldCamera").objectReferenceValue = camera;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                var setPageOpen = typeof(FormationPageController).GetMethod(
+                    "SetPageOpen",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+                setPageOpen?.Invoke(controller, new object[] { true });
+                setPageOpen?.Invoke(controller, new object[] { false });
+
+                Assert.That(camera.enabled, Is.False);
+                Assert.That(camera.cullingMask, Is.EqualTo(0x1234));
+                Assert.That(camera.clearFlags, Is.EqualTo(CameraClearFlags.Skybox));
+                Assert.That(camera.backgroundColor, Is.EqualTo(Color.magenta));
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+                Object.DestroyImmediate(cameraObject);
+            }
+        }
+
+        [Test]
+        public async Task ManagementRoster_PrioritizesAssignedThenHigherRarity()
+        {
+            var store = new MemoryFileStore(Encoding.UTF8.GetBytes(
+                "{\"dataVersion\":5,\"gameData\":{\"monsters\":{" +
+                "\"ownedMonsters\":[" +
+                "{\"monsterId\":\"tofu_05\"}," +
+                "{\"monsterId\":\"tofu_02\"}," +
+                "{\"monsterId\":\"tofu_07\"}," +
+                "{\"monsterId\":\"tofu_01\"}," +
+                "{\"monsterId\":\"tofu_06\"}]," +
+                "\"mainPartySlots\":[\"tofu_01\",\"tofu_07\"]," +
+                "\"reservePartySlots\":[]}}}"));
+            var progress = new GameDataService(new SaveService(store, "memory://roster-sort"));
+            await progress.LoadAsync();
+            var catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>(CatalogPath);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ManagementPagePath);
+            var instance = Object.Instantiate(prefab);
+            try
+            {
+                instance.SetActive(false);
+                var controller = instance.GetComponent<MonsterManagementPageController>();
+                controller.GetType()
+                    .GetMethod(
+                        "Awake",
+                        System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                    ?.Invoke(controller, null);
+                var serialized = new SerializedObject(controller);
+                serialized.FindProperty("previewAnchor").objectReferenceValue = null;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                controller.Configure(progress, catalog);
+                controller.OpenPage();
+
+                var cards = serialized.FindProperty("rosterCards");
+                var monsterIdField = typeof(MonsterCardView).GetField(
+                    "monsterId",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                var visibleOrder = new string[5];
+                for (var index = 0; index < visibleOrder.Length; index++)
+                {
+                    var card = (MonsterCardView)cards.GetArrayElementAtIndex(index).objectReferenceValue;
+                    visibleOrder[index] = (string)monsterIdField?.GetValue(card);
+                }
+
+                CollectionAssert.AreEqual(
+                    new[] { "tofu_07", "tofu_01", "tofu_06", "tofu_05", "tofu_02" },
+                    visibleOrder);
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
+        [Test]
         public void FormationAssetsAndMainBattleScene_HaveNoMissingScripts()
         {
-            foreach (var prefabPath in new[] { MonsterCardPath, FormationPagePath, DebugPanelPath })
+            foreach (var prefabPath in new[]
+                     {
+                         MonsterCardPath,
+                         FormationPagePath,
+                         LegacyFormationPagePath,
+                         FormationRosterPath,
+                         DebugPanelPath
+                     })
             {
                 var root = PrefabUtility.LoadPrefabContents(prefabPath);
                 try

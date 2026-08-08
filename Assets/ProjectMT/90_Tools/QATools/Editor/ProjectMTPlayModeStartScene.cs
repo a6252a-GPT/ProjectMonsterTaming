@@ -8,14 +8,21 @@ using UnityEngine.SceneManagement;
 namespace ProjectMT.EditorTools
 {
     [InitializeOnLoad]
-    internal static class ProjectMTPlayModeStartScene // 플레이 시작 씬을 Entry로 고정
+    internal static class ProjectMTPlayModeStartScene // 필요할 때만 Entry 시작을 강제
     {
+        private static readonly bool ForceEntryStartEnabled = false; // 현재 씬 직접 실행 사용
         internal const string EntryScenePath = "Assets/ProjectMT/00_Scenes/00_Entry.unity"; // 정식 진입 씬
         private const string DevScenePrefix = "DEV_"; // 직접 실행 허용 개발 씬
         private const string TestScenePrefix = "InitTestScene"; // 테스트 러너 임시 씬
 
         static ProjectMTPlayModeStartScene()
         {
+            if (!ForceEntryStartEnabled)
+            {
+                EditorSceneManager.playModeStartScene = null; // 기존 강제 시작 설정 해제
+                return;
+            }
+
             EditorSceneManager.activeSceneChangedInEditMode += HandleActiveSceneChanged;
             EditorSceneManager.sceneSaved += HandleSceneSaved;
             EditorApplication.delayCall += ApplyForActiveScene; // 에디터 로드가 끝난 뒤 최초 적용

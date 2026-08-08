@@ -22,11 +22,14 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private Button castleRaidButton; // 군단의 역습 입장 버튼
         [SerializeField] private TMP_Text statusText; // 현재 플레이 상태
         [SerializeField] private FormationPageController formationPage; // 보유·편성 통합 화면
+        [SerializeField] private MonsterManagementPageController monsterManagementPage; // 몬스터 성장 관리창
         [SerializeField] private GachaSystem gachaSystem; // 몬스터 뽑기 (없어도 씬 동작에는 영향 없음)
+        [SerializeField] private ShopPageView shopPageView; // 상점 탭·재화 표시
 
         private MainSceneContext context; // 진행·콘텐츠 실행 권한
         private BattlePartySnapshot party; // 시드 부대 사진
         private MainBattleMonsterDragController monsterDrag; // 메인전투 직접 재배치 입력
+        private MainBattleManagementUiController managementUi; // 관리창 상호 배타 제어
 
         public SceneId SceneId => sceneId;
         public bool IsInitialized { get; private set; }
@@ -58,8 +61,17 @@ namespace ProjectMT.Features.MainBattle
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
             expedition.Initialize(context.Progress, party, context.RewardPresentation);
             formationPage.PartyChanged += HandlePartyChanged;
+            formationPage.OpenStateChanged += HandleFormationPageOpenStateChanged;
             formationPage.Configure(context.Progress, context.MonsterCatalog, context.RefreshParty);
+            managementUi = GetComponentInChildren<MainBattleManagementUiController>(true);
+            managementUi?.ConfigureFormationPage(formationPage);
+            ResolveMonsterManagementPage()?.Configure(context.Progress, context.MonsterCatalog);
+            if (monsterManagementPage != null)
+            {
+                monsterManagementPage.OpenStateChanged += HandleMonsterManagementPageOpenStateChanged;
+            }
             ConfigureGachaSystem();
+            ConfigureShopPageView();
             ConfigureMonsterDrag();
             SetStatus("자동 전투");
             IsInitialized = true;
@@ -71,10 +83,19 @@ namespace ProjectMT.Features.MainBattle
             foodRiotButton?.onClick.RemoveListener(OpenFoodRiot);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
             ResolveGachaSystem()?.Shutdown();
+            ResolveShopPageView()?.Shutdown();
+            managementUi?.ConfigureFormationPage(null);
             if (formationPage != null)
             {
                 formationPage.PartyChanged -= HandlePartyChanged;
+                formationPage.OpenStateChanged -= HandleFormationPageOpenStateChanged;
                 formationPage.Shutdown();
+            }
+
+            if (monsterManagementPage != null)
+            {
+                monsterManagementPage.OpenStateChanged -= HandleMonsterManagementPageOpenStateChanged;
+                monsterManagementPage.Shutdown();
             }
 
             if (hostedRunner != null && hostedRunner.IsOpen)
@@ -86,6 +107,7 @@ namespace ProjectMT.Features.MainBattle
             context = null;
             party = null;
             monsterDrag = null;
+            managementUi = null;
             IsInitialized = false;
         }
 
@@ -112,6 +134,44 @@ namespace ProjectMT.Features.MainBattle
             return gachaSystem;
         }
 
+        private void ConfigureShopPageView()
+        {
+            ResolveShopPageView()?.Configure(context.Progress);
+        }
+
+        private ShopPageView ResolveShopPageView()
+        {
+            if (shopPageView != null)
+            {
+                return shopPageView;
+            }
+
+            shopPageView = GetComponentInChildren<ShopPageView>(true);
+            if (shopPageView == null)
+            {
+                shopPageView = FindFirstObjectByType<ShopPageView>(FindObjectsInactive.Include);
+            }
+
+            return shopPageView;
+        }
+
+        private MonsterManagementPageController ResolveMonsterManagementPage()
+        {
+            if (monsterManagementPage != null)
+            {
+                return monsterManagementPage;
+            }
+
+            monsterManagementPage = GetComponentInChildren<MonsterManagementPageController>(true);
+            if (monsterManagementPage == null)
+            {
+                monsterManagementPage = FindFirstObjectByType<MonsterManagementPageController>(
+                    FindObjectsInactive.Include);
+            }
+
+            return monsterManagementPage;
+        }
+
         private void ConfigureMonsterDrag()
         {
             var worldCamera = transform.Find("01_MainGameplayRoot/02_CameraRoot/MainBattleCamera")?.GetComponent<Camera>();
@@ -133,7 +193,9 @@ namespace ProjectMT.Features.MainBattle
         private bool CanDragMonster()
         {
             return IsInitialized && context != null && expedition != null && expedition.IsRunning &&
-                   !context.ContentLauncher.IsRunning && (formationPage == null || !formationPage.IsOpen);
+                   !context.ContentLauncher.IsRunning && (formationPage == null || !formationPage.IsOpen) &&
+                   (monsterManagementPage == null || !monsterManagementPage.IsOpen) &&
+                   (managementUi == null || !managementUi.IsAnyPageOpen);
         }
 
         private void OpenFoodRiot()
@@ -143,6 +205,7 @@ namespace ProjectMT.Features.MainBattle
                 return;
             }
 
+            managementUi?.CloseAllPages(); // 입장 뒤 메인 복귀 시 던전 창 재노출 방지
             party = context.RefreshParty();
             if (context.ContentLauncher.StartHosted(foodRiotContentId, party, hostedRunner))
             {
@@ -184,6 +247,10 @@ namespace ProjectMT.Features.MainBattle
             {
                 SetStatus("편성 화면을 닫은 뒤 콘텐츠에 입장하세요.");
             }
+            else if (IsInitialized && monsterManagementPage != null && monsterManagementPage.IsOpen)
+            {
+                SetStatus("몬스터 관리 화면을 닫은 뒤 콘텐츠에 입장하세요.");
+            }
 
             return false;
         }
@@ -192,7 +259,24 @@ namespace ProjectMT.Features.MainBattle
         {
             return IsInitialized && context != null && party != null &&
                    !context.ContentLauncher.IsRunning && !expedition.IsSettling &&
-                   (formationPage == null || !formationPage.IsOpen); // 편성·콘텐츠·정산 중 중복 입장 금지
+                   (formationPage == null || !formationPage.IsOpen) &&
+                   (monsterManagementPage == null || !monsterManagementPage.IsOpen); // 관리·콘텐츠 중복 입력 금지
+        }
+
+        private void HandleFormationPageOpenStateChanged(bool open)
+        {
+            if (open)
+            {
+                monsterManagementPage?.ClosePage();
+            }
+        }
+
+        private void HandleMonsterManagementPageOpenStateChanged(bool open)
+        {
+            if (open)
+            {
+                formationPage?.ClosePage();
+            }
         }
 
         private void HandlePartyChanged(BattlePartySnapshot updatedParty)
@@ -223,7 +307,9 @@ namespace ProjectMT.Features.MainBattle
             Button castleButton,
             TMP_Text status,
             FormationPageController formationController = null,
-            GachaSystem gacha = null)
+            GachaSystem gacha = null,
+            MonsterManagementPageController managementController = null,
+            ShopPageView shopView = null)
         {
             expedition = expeditionController;
             hostedRunner = runner;
@@ -232,6 +318,8 @@ namespace ProjectMT.Features.MainBattle
             statusText = status;
             formationPage = formationController;
             gachaSystem = gacha;
+            monsterManagementPage = managementController;
+            shopPageView = shopView;
         }
 #endif
     }

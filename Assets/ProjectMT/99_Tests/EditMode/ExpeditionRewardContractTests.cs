@@ -16,7 +16,7 @@ namespace ProjectMT.Tests.EditMode
             "Assets/ProjectMT/02_Shared/Unit/Data/MonsterCatalog.asset";
 
         [Test]
-        public async Task VersionThreeTemporaryGold_MigratesToVersionFourGold()
+        public async Task VersionThreeTemporaryGold_MigratesToCurrentGold()
         {
             var store = CreateStore(
                 "{\"dataVersion\":3,\"gameData\":{" +
@@ -27,7 +27,7 @@ namespace ProjectMT.Tests.EditMode
             Assert.That(loaded.Gold, Is.EqualTo(77L));
             Assert.That(loaded.CurrentChallengeStage, Is.EqualTo(4));
             Assert.That(loaded.LastClearedStage, Is.EqualTo(3));
-            Assert.That(migrated.dataVersion, Is.EqualTo(4));
+            Assert.That(migrated.dataVersion, Is.EqualTo(SaveService.CurrentDataVersion));
             Assert.That(migrated.gameData.Gold, Is.EqualTo(77L));
             Assert.That(store.ReplaceCount, Is.EqualTo(1));
         }
@@ -36,7 +36,7 @@ namespace ProjectMT.Tests.EditMode
         public async Task ChallengeVictory_AdvancesAndGrantsFirstRewardOnlyOnce()
         {
             var store = CreateStore(
-                "{\"dataVersion\":4,\"gameData\":{\"currentChallengeStage\":1,\"expeditionMode\":0}}");
+                "{\"dataVersion\":5,\"gameData\":{\"currentChallengeStage\":1,\"expeditionMode\":0}}");
             var progress = new GameDataService(new SaveService(store, "memory://project-mt-save"));
             await progress.LoadAsync();
             var rewards = ExpeditionFirstClearRewardRules.Create(1);
@@ -58,7 +58,7 @@ namespace ProjectMT.Tests.EditMode
         public async Task RepeatVictory_GrantsRewardEverySavedRunWithoutAdvancingStage()
         {
             var store = CreateStore(
-                "{\"dataVersion\":4,\"gameData\":{" +
+                "{\"dataVersion\":5,\"gameData\":{" +
                 "\"currentChallengeStage\":2,\"lastClearedStage\":1,\"expeditionMode\":1}}");
             var progress = new GameDataService(new SaveService(store, "memory://project-mt-save"));
             await progress.LoadAsync();
@@ -79,7 +79,7 @@ namespace ProjectMT.Tests.EditMode
         public async Task InvalidExpeditionMode_IsRepairedAndCannotBeSavedAgain()
         {
             var store = CreateStore(
-                "{\"dataVersion\":4,\"gameData\":{" +
+                "{\"dataVersion\":5,\"gameData\":{" +
                 "\"currentChallengeStage\":2,\"lastClearedStage\":1,\"expeditionMode\":99}}");
             var progress = new GameDataService(new SaveService(store, "memory://project-mt-save"));
             await progress.LoadAsync();
@@ -95,7 +95,7 @@ namespace ProjectMT.Tests.EditMode
         public async Task FirstAndRepeatClearCommands_CannotCrossRunModes()
         {
             var repeatStore = CreateStore(
-                "{\"dataVersion\":4,\"gameData\":{" +
+                "{\"dataVersion\":5,\"gameData\":{" +
                 "\"currentChallengeStage\":2,\"lastClearedStage\":1,\"expeditionMode\":1}}");
             var repeatProgress = new GameDataService(
                 new SaveService(repeatStore, "memory://repeat-save"));
@@ -109,7 +109,7 @@ namespace ProjectMT.Tests.EditMode
             Assert.That(repeatStore.ReplaceCount, Is.Zero);
 
             var challengeStore = CreateStore(
-                "{\"dataVersion\":4,\"gameData\":{" +
+                "{\"dataVersion\":5,\"gameData\":{" +
                 "\"currentChallengeStage\":2,\"lastClearedStage\":1,\"expeditionMode\":0}}");
             var challengeProgress = new GameDataService(
                 new SaveService(challengeStore, "memory://challenge-save"));
@@ -127,7 +127,7 @@ namespace ProjectMT.Tests.EditMode
         public async Task VictoryLevelUpAndReload_PreserveProgressAndApplyHigherStats()
         {
             var store = CreateStore(
-                "{\"dataVersion\":4,\"gameData\":{\"currentChallengeStage\":1,\"expeditionMode\":0}}");
+                "{\"dataVersion\":5,\"gameData\":{\"currentChallengeStage\":1,\"expeditionMode\":0}}");
             var progress = new GameDataService(new SaveService(store, "memory://project-mt-save"));
             await progress.LoadAsync();
 

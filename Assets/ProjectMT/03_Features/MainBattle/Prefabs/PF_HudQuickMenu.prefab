@@ -9452,6 +9452,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8793755748329777017}
     m_Modifications:
+    - target: {fileID: 6618266622144335169, guid: 577595f4aa7d2461182d7ea1b5ded49a, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6652408945342293568, guid: 577595f4aa7d2461182d7ea1b5ded49a, type: 3}
       propertyPath: m_Name
       value: QuestTracker_GUIPro

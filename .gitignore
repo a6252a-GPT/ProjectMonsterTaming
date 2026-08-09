@@ -84,10 +84,12 @@ crashlytics-build.properties
 # TestRunner generated files
 InitTestScene*.unity*
 
-# Local QA captures, scratch files, and one-off tester assets
+# Local QA/test sources, captures, scratch files, and one-off tester assets
 /TestResults*.xml
 /[Ss]creenshots/
 /_[Tt]emp/
+/[Aa]ssets/ProjectMT/99_Tests/
+/[Aa]ssets/ProjectMT/99_Tests.meta
 /[Aa]ssets/[Ee]ditor/Codex*.cs
 /[Aa]ssets/[Ee]ditor/Codex*.cs.meta
 /[Aa]ssets/ProjectMT/00_Scenes/UItest.unity

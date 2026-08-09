@@ -1182,7 +1182,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     }
 
                     EditorUtility.SetDirty(draft);
-                    AssetDatabase.SaveAssets();
+                    AssetDatabase.SaveAssetIfDirty(draft);
                     CapturePersistentDraftIdentity();
                     return true;
                 }
@@ -1214,7 +1214,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 AssetDatabase.CreateAsset(draft, path);
                 ownsTransientDraft = false;
                 serializedDraft = new SerializedObject(draft);
-                AssetDatabase.SaveAssets();
+                AssetDatabase.SaveAssetIfDirty(draft);
                 AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
                 CapturePersistentDraftIdentity();
                 Selection.activeObject = draft;

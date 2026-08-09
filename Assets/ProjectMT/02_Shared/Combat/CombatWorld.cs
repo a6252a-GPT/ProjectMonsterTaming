@@ -66,6 +66,34 @@ namespace ProjectMT.Shared.Combat
             }
 
             var instance = poolScope.Rent(resolvedPrefab, position, rotation, transform); // 정식 Adapter 또는 기존 Prefab
+            var behaviours = instance == null ? null : instance.GetComponents<MonoBehaviour>();
+            if (behaviours != null)
+            {
+                for (var index = 0; index < behaviours.Length; index++)
+                {
+                    if (!(behaviours[index] is IUnitSpawnPreparation preparation))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        if (preparation.PrepareForSpawn(request))
+                        {
+                            continue;
+                        }
+                    }
+                    catch (System.Exception exception)
+                    {
+                        Debug.LogException(exception, behaviours[index]);
+                    }
+
+                    Debug.LogError($"Unit spawn preparation failed: {resolvedPrefab.name}", instance);
+                    poolScope.Return(instance);
+                    return null;
+                }
+            }
+
             var actor = instance == null ? null : instance.GetComponent<UnitActor>();
             if (actor == null)
             {

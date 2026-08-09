@@ -23,13 +23,14 @@ namespace ProjectMT.Shared.Unit
 
         private void Awake()
         {
-            if (renderers == null || renderers.Length == 0)
-            {
-                renderers = GetComponentsInChildren<Renderer>(true);
-            }
-
             block = new MaterialPropertyBlock();
             baseScale = transform.localScale;
+            RefreshRenderers();
+        }
+
+        public void RefreshRenderers() // 모듈러 외형 교체 뒤 피격 대상 다시 수집
+        {
+            renderers = GetComponentsInChildren<Renderer>(true);
             baseColors = new Color[renderers.Length];
             for (var i = 0; i < renderers.Length; i++)
             {
@@ -46,6 +47,11 @@ namespace ProjectMT.Shared.Unit
                 {
                     baseColors[i] = Color.white;
                 }
+            }
+
+            if (block != null)
+            {
+                ResetVisual();
             }
         }
 

@@ -2974,6 +2974,7 @@ MonoBehaviour:
   poolScope: {fileID: 582384435}
   feedbackPlayer: {fileID: 1933715673}
   projectilePrefab: {fileID: 8900597983205870692, guid: 7d0df7a31c4b87e4e867d3dc816c56ed, type: 3}
+  maxMonsterVfxPerFrame: 6
 --- !u!1001 &1744144520
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3480,7 +3481,8 @@ MonoBehaviour:
   profile: {fileID: 11400000, guid: 90df3189124e20e46907a1e10952ecfa, type: 2}
   combatWorld: {fileID: 1681861047}
   playerUnitPrefab: {fileID: 7766625452383920133, guid: b78d7e4f3540df34393217f6f4c5372b, type: 3}
-  enemyUnitPrefab: {fileID: 7854124408188171483, guid: 87cd73f1392ae7140aa6282eab5d8628, type: 3}
+  enemyAppearanceSet: {fileID: 11400000, guid: 36618e48dd3084a4282d688977b340c0, type: 2}
+  enemyUnitPrefab: {fileID: 0}
   playerSpawnPoints:
   - {fileID: 761992375}
   - {fileID: 1036320972}

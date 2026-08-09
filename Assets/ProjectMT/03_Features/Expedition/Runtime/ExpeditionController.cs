@@ -18,7 +18,8 @@ namespace ProjectMT.Features.Expedition
         [SerializeField] private ExpeditionSeedProfile profile; // 시드 밸런스 원본
         [SerializeField] private CombatWorld combatWorld; // 공용 전투 영역
         [SerializeField] private GameObject playerUnitPrefab; // 아군 원본
-        [SerializeField] private GameObject enemyUnitPrefab; // 적 원본
+        [SerializeField] private EnemyStageAppearanceSet enemyAppearanceSet; // 단계별 모듈러 적 원본
+        [SerializeField, HideInInspector] private GameObject enemyUnitPrefab; // 기존 테스트용 단일 적 Fallback
         [SerializeField] private Transform[] playerSpawnPoints; // 아군 시작 위치
         [SerializeField] private Transform enemySpawnAnchor; // 적 진형 기준점
 
@@ -314,10 +315,34 @@ namespace ProjectMT.Features.Expedition
                 var position = anchor +
                                formationRight * formationOffset.x +
                                formationForward * (formationOffset.y + (wave - 1) * 1.15f);
-                var stats = profile.CreateEnemyStats(currentStage, i + wave * 10);
-                var request = new UnitSpawnRequest($"enemy_{currentStage}_{wave}_{i}", stats, UnitTeam.Enemy);
-                var actor = combatWorld.SpawnUnit(enemyUnitPrefab, request, position, Quaternion.Euler(0f, 180f, 0f));
+                var unitIndex = i + wave * 10;
+                var ranged = enemyAppearanceSet != null
+                    ? enemyAppearanceSet.IsRangedSlot(currentStage, unitIndex)
+                    : unitIndex % 4 == 3;
+                var enemyPrefab = enemyAppearanceSet == null
+                    ? enemyUnitPrefab
+                    : enemyAppearanceSet.ResolvePrefab(currentStage, ranged);
+                var stats = profile.CreateEnemyStats(currentStage, ranged);
+                var request = new UnitSpawnRequest(
+                    $"enemy_{currentStage}_{wave}_{i}",
+                    stats,
+                    UnitTeam.Enemy,
+                    appearanceSeed: CreateEnemyAppearanceSeed(currentStage, wave, i, operationVersion));
+                var actor = combatWorld.SpawnUnit(enemyPrefab, request, position, Quaternion.Euler(0f, 180f, 0f));
                 TrackWaveEnemy(actor, wave);
+            }
+        }
+
+        private static int CreateEnemyAppearanceSeed(int stage, int wave, int index, int runVersion)
+        {
+            unchecked
+            {
+                var seed = 17;
+                seed = seed * 31 + stage;
+                seed = seed * 31 + wave;
+                seed = seed * 31 + index;
+                seed = seed * 31 + runVersion;
+                return seed == 0 ? 1 : seed;
             }
         }
 

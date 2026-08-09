@@ -202,7 +202,19 @@ namespace ProjectMT.EditorTools.MonsterMaker
             definition.EditorConfigureFormalRuntime("monster/" + draft.MonsterId, runtime);
 
             MarkDirty(body, motion, combat, action, ascension, ability2, ability4, feedback, runtime, definition);
-            AssetDatabase.SaveAssets();
+            SaveAssetsIfDirty(
+                body,
+                motion,
+                combat,
+                action,
+                ascension,
+                ability2,
+                ability4,
+                feedback,
+                runtime,
+                controller,
+                adapter,
+                definition);
             AssetDatabase.ImportAsset(paths[8], ImportAssetOptions.ForceUpdate);
             AssetDatabase.ImportAsset(paths[7], ImportAssetOptions.ForceUpdate);
 
@@ -214,7 +226,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             RegisterLast(catalog, rarityCatalog, definition, draft);
-            AssetDatabase.SaveAssets();
+            SaveAssetsIfDirty(catalog, rarityCatalog);
             AssetDatabase.Refresh();
 
             if (!catalog.TryGet(draft.MonsterId, out var registered) || registered != definition)
@@ -971,6 +983,17 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 if (objects[index] != null)
                 {
                     EditorUtility.SetDirty(objects[index]);
+                }
+            }
+        }
+
+        private static void SaveAssetsIfDirty(params UnityEngine.Object[] objects)
+        {
+            for (var index = 0; index < objects.Length; index++)
+            {
+                if (objects[index] != null)
+                {
+                    AssetDatabase.SaveAssetIfDirty(objects[index]);
                 }
             }
         }

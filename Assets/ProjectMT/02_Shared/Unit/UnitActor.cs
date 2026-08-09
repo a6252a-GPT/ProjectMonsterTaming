@@ -20,7 +20,8 @@ namespace ProjectMT.Shared.Unit
             bool canAttack = true,
             float fixedDamagePerHit = 0f,
             Color visualTint = default,
-            MonsterRuntimeAssetSet runtimeAssetSet = null)
+            MonsterRuntimeAssetSet runtimeAssetSet = null,
+            int appearanceSeed = 0)
         {
             UnitId = unitId ?? string.Empty;
             Stats = stats;
@@ -30,6 +31,7 @@ namespace ProjectMT.Shared.Unit
             FixedDamagePerHit = fixedDamagePerHit;
             VisualTint = visualTint.a <= 0f ? Color.white : visualTint;
             RuntimeAssetSet = runtimeAssetSet;
+            AppearanceSeed = appearanceSeed;
         }
 
         public string UnitId { get; }
@@ -40,6 +42,7 @@ namespace ProjectMT.Shared.Unit
         public float FixedDamagePerHit { get; } // 콘텐츠 고정 피해값
         public Color VisualTint { get; }
         public MonsterRuntimeAssetSet RuntimeAssetSet { get; }
+        public int AppearanceSeed { get; }
     }
 
     [DisallowMultipleComponent]

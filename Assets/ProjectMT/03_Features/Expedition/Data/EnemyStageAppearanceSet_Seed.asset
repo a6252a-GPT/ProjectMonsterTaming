@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1800c25437e56f346ac73284eee0ea97, type: 3}
+  m_Name: EnemyStageAppearanceSet_Seed
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Expedition.EnemyStageAppearanceSet
+  peasantPrefab: {fileID: 9062414073023458585, guid: 23a92f32bd895e74299a9228ebb41615, type: 3}
+  knightTier1Prefab: {fileID: 4394103326726674520, guid: b4976709e2126a543930fc714dbf2d3f, type: 3}
+  knightTier2Prefab: {fileID: 3444096644756631153, guid: 25c058a75ed55fe42ab71b11a9bba202, type: 3}
+  knightTier3Prefab: {fileID: 9126498133870226212, guid: 24a9786343680f643b998d278864a4f1, type: 3}
+  mageTier1Prefab: {fileID: 1794485642791220319, guid: ecae6c2e983552b499c4902b49a9cd6b, type: 3}
+  mageTier2Prefab: {fileID: 3371738317126103677, guid: de4b040cfb5ed7540952ad25760cb67c, type: 3}
+  mageTier3Prefab: {fileID: 7073384584022453730, guid: 6e60787e57e14144ab7a7f5a2985c019, type: 3}

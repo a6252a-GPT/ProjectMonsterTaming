@@ -1,7 +1,6 @@
 using System;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
 
 public sealed class VfxPrefabPreviewWindow : EditorWindow
 {
@@ -1279,18 +1278,7 @@ public sealed class VfxPrefabPreviewWindow : EditorWindow
             return;
 
         previewUtility = new PreviewRenderUtility();
-        previewUtility.camera.cameraType = CameraType.Preview;
-        previewUtility.camera.clearFlags = CameraClearFlags.SolidColor;
-        previewUtility.camera.nearClipPlane = 0.01f;
-        previewUtility.camera.farClipPlane = 5000f;
-        previewUtility.camera.fieldOfView = 45f;
-        previewUtility.camera.cullingMask = ~0;
-
-        UniversalAdditionalCameraData cameraData = previewUtility.camera.GetComponent<UniversalAdditionalCameraData>();
-        if (cameraData == null)
-            cameraData = previewUtility.camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
-
-        cameraData.renderPostProcessing = false;
+        PrefabPreviewStage.ConfigureUniversalCamera(previewUtility.camera);
         ApplyPreviewEnvironment();
     }
 
@@ -1330,10 +1318,7 @@ public sealed class VfxPrefabPreviewWindow : EditorWindow
 
     private static void ConfigurePreviewLight(Light light, float intensity, Quaternion rotation, Color color)
     {
-        light.type = LightType.Directional;
-        light.intensity = intensity;
-        light.color = color;
-        light.transform.rotation = rotation;
+        PrefabPreviewStage.ConfigureLight(light, intensity, rotation, color);
     }
 
     private void RebuildPreviewFloor()

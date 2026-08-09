@@ -11,21 +11,16 @@ namespace ProjectMT.Shared.Unit
         [Header("자동 동기화")]
         [SerializeField] private MonsterCatalog sourceCatalog; // 기준 몬스터 목록
 
-        [Header("일반 ~ 영웅 (패시브 1개 고정)")]
+        [Header("일반 ~ 영웅 (패시브 1칸, 스킬 구현 전 비움 허용)")]
         [SerializeField] private List<MonsterCommonRarityEntry> commonToEpicEntries = new List<MonsterCommonRarityEntry>();
 
-        [Header("전설 · 신화 (패시브 1개 + 액티브 1개 고정)")]
+        [Header("전설 · 신화 (패시브·액티브 각 1칸, 스킬 구현 전 비움 허용)")]
         [SerializeField] private List<MonsterLegendaryRarityEntry> legendaryMythicEntries = new List<MonsterLegendaryRarityEntry>();
 
         public IReadOnlyList<MonsterCommonRarityEntry> CommonToEpicEntries => commonToEpicEntries;
         public IReadOnlyList<MonsterLegendaryRarityEntry> LegendaryMythicEntries => legendaryMythicEntries;
 
 #if UNITY_EDITOR
-        private void OnEnable()
-        {
-            SyncWithSourceCatalog(); // 에셋 로드 시 목록 동기화
-        }
-
         private void OnValidate()
         {
             SyncWithSourceCatalog(); // 기준 카탈로그 변경 시 동기화
@@ -147,6 +142,23 @@ namespace ProjectMT.Shared.Unit
 
         public bool TryValidate(out string error)
         {
+            if (sourceCatalog == null)
+            {
+                error = "Monster Rarity Catalog requires a source MonsterCatalog.";
+                return false;
+            }
+
+            if (commonToEpicEntries == null || legendaryMythicEntries == null)
+            {
+                error = "Monster Rarity Catalog entry lists are missing.";
+                return false;
+            }
+
+            if (!sourceCatalog.TryValidate(out error))
+            {
+                return false;
+            }
+
             var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             for (var index = 0; index < commonToEpicEntries.Count; index++)
             {
@@ -186,6 +198,69 @@ namespace ProjectMT.Shared.Unit
                 if (!ids.Add(entry.Monster.MonsterId))
                 {
                     error = $"Monster ID is duplicated in rarity catalog. Monster={entry.Monster.MonsterId}";
+                    return false;
+                }
+            }
+
+            var sourceIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var definitions = sourceCatalog.Definitions;
+            for (var index = 0; index < definitions.Count; index++)
+            {
+                if (definitions[index] != null)
+                {
+                    sourceIds.Add(definitions[index].MonsterId);
+                }
+            }
+
+            if (!ids.SetEquals(sourceIds))
+            {
+                var missing = new List<string>();
+                var stale = new List<string>();
+                foreach (var sourceId in sourceIds)
+                {
+                    if (!ids.Contains(sourceId))
+                    {
+                        missing.Add(sourceId);
+                    }
+                }
+
+                foreach (var rarityId in ids)
+                {
+                    if (!sourceIds.Contains(rarityId))
+                    {
+                        stale.Add(rarityId);
+                    }
+                }
+
+                error = $"Monster Rarity Catalog must exactly match its source Catalog. " +
+                        $"Missing=[{string.Join(", ", missing)}], Stale=[{string.Join(", ", stale)}]";
+                return false;
+            }
+
+            error = null;
+            return true;
+        }
+
+        // 실제 스킬 도메인이 연결되는 시점에 사용하는 엄격 검사. 현재 제작 등록은 구조 검사만 통과시키고 누락 스킬은 경고로 남긴다.
+        public bool TryValidateSkillReferences(out string error)
+        {
+            if (!TryValidate(out error))
+            {
+                return false;
+            }
+
+            for (var index = 0; index < commonToEpicEntries.Count; index++)
+            {
+                if (!commonToEpicEntries[index].TryValidateSkillReferences(out error))
+                {
+                    return false;
+                }
+            }
+
+            for (var index = 0; index < legendaryMythicEntries.Count; index++)
+            {
+                if (!legendaryMythicEntries[index].TryValidateSkillReferences(out error))
+                {
                     return false;
                 }
             }

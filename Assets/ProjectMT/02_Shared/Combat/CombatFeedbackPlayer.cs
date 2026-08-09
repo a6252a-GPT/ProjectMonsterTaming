@@ -82,6 +82,11 @@ namespace ProjectMT.Shared.Combat
             sfxPool?.Play(hitSfx, position);
         }
 
+        public bool PlayMonsterCue(SfxCue cue, Vector3 position)
+        {
+            return sfxPool != null && sfxPool.Play(cue, position);
+        }
+
         private void PlayImpulse(float strength)
         {
             strength = Mathf.Max(0f, strength);

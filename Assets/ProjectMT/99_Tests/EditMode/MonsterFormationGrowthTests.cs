@@ -177,7 +177,7 @@ namespace ProjectMT.Tests.EditMode
             var placeholder = AssetDatabase.LoadAssetAtPath<Sprite>(PlaceholderPortraitPath);
             var debugPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(DebugPanelPath);
 
-            Assert.That(catalog.Definitions, Has.Count.EqualTo(8));
+            Assert.That(catalog.Definitions, Has.Count.GreaterThanOrEqualTo(8));
             var visualTints = new HashSet<Color32>();
             for (var index = 1; index <= 8; index++)
             {

@@ -224,7 +224,8 @@ namespace ProjectMT.Features.Expedition
                     units[i].UnitId,
                     units[i].Stats,
                     UnitTeam.Player,
-                    visualTint: units[i].VisualTint);
+                    visualTint: units[i].VisualTint,
+                    runtimeAssetSet: units[i].RuntimeAssetSet);
                 TrackPlayerUnit(combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity), i);
             }
         }
@@ -272,7 +273,8 @@ namespace ProjectMT.Features.Expedition
                     reserve.UnitId,
                     reserve.Stats,
                     UnitTeam.Player,
-                    visualTint: reserve.VisualTint);
+                    visualTint: reserve.VisualTint,
+                    runtimeAssetSet: reserve.RuntimeAssetSet);
                 var actor = combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity);
                 if (actor == null)
                 {

@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9063022393fce349b94c80b48a17738, type: 3}
+  m_Name: MR_spike_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterRuntimeAssetSet
+  visualAdapterPrefab: {fileID: 6959060235660481435, guid: 7b1b752814782e24a85a3f05363652ca, type: 3}
+  animatorController: {fileID: 9100000, guid: 55739ba60f619784f94794e6fd0bbf50, type: 2}
+  bodyProfile: {fileID: 11400000, guid: 1e5544d5e10d3cf489f15dfbae1ded0b, type: 2}
+  motionProfile: {fileID: 11400000, guid: a60820fdc3d7b73488264ce134229002, type: 2}
+  combatProfile: {fileID: 11400000, guid: eb01d3b471450e947926d4da4a65406d, type: 2}
+  ascensionProfile: {fileID: 11400000, guid: 66252ab4b56e73a4086c09cad6804f59, type: 2}
+  feedbackProfile: {fileID: 11400000, guid: 2c722bfc2d868d94bb8e78dfa3fcda5d, type: 2}

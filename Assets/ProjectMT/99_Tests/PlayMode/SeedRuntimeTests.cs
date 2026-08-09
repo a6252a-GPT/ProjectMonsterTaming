@@ -561,7 +561,7 @@ namespace ProjectMT.Tests.PlayMode
             sceneRoot.EditorConfigure(expedition, null, null, null, status);
             SetPrivateField(sceneRoot, "<IsInitialized>k__BackingField", true);
 
-            InvokePrivateMethod(sceneRoot, "OpenCastleRaid");
+            sceneRoot.OpenCastleRaid();
 
             Assert.That(status.text, Is.EqualTo("전투 결과 정산 중입니다. 잠시 후 다시 시도하세요."));
 

@@ -34,7 +34,7 @@ namespace ProjectMT.Shared.Unit
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? skillId : displayName;
     }
 
-    // 일반~영웅 등급 몬스터 한 종류. 패시브 스킬 1개만 고정으로 가진다 (액티브 칸 자체가 없음).
+    // 일반~영웅 등급 몬스터 한 종류. 패시브 칸은 스킬 시스템 구현 전까지 비워둘 수 있다.
     [Serializable]
     public sealed class MonsterCommonRarityEntry
     {
@@ -62,6 +62,17 @@ namespace ProjectMT.Shared.Unit
                 return false;
             }
 
+            error = null;
+            return true;
+        }
+
+        public bool TryValidateSkillReferences(out string error)
+        {
+            if (!TryValidate(out error))
+            {
+                return false;
+            }
+
             if (passiveSkill == null)
             {
                 error = $"Monster Rarity Entry has no passive skill. Monster={monster.MonsterId}";
@@ -81,7 +92,7 @@ namespace ProjectMT.Shared.Unit
 #endif
     }
 
-    // 전설·신화 등급 몬스터 한 종류. 패시브 1개 + 액티브 1개를 고정으로 가진다 (두 칸 모두 항상 존재).
+    // 전설·신화 등급 몬스터 한 종류. 두 스킬 칸은 스킬 시스템 구현 전까지 비워둘 수 있다.
     [Serializable]
     public sealed class MonsterLegendaryRarityEntry
     {
@@ -106,6 +117,17 @@ namespace ProjectMT.Shared.Unit
             if (rarity != MonsterRarity.Legendary && rarity != MonsterRarity.Mythic)
             {
                 error = $"일반~영웅 등급은 이 목록이 아니라 일반~영웅 목록에 넣어야 합니다. Monster={monster.MonsterId}";
+                return false;
+            }
+
+            error = null;
+            return true;
+        }
+
+        public bool TryValidateSkillReferences(out string error)
+        {
+            if (!TryValidate(out error))
+            {
                 return false;
             }
 

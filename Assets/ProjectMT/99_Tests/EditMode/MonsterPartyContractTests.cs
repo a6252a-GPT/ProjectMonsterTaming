@@ -117,7 +117,7 @@ namespace ProjectMT.Tests.EditMode
         }
 
         [Test]
-        public void Catalog_ContainsEightMixedRangeTofuVariants()
+        public void Catalog_KeepsEightMixedRangeTofuVariantsAlongsideFormalMonsters()
         {
             var catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>(CatalogPath);
             var melee = AssetDatabase.LoadAssetAtPath<MonsterDefinition>(MeleePath);
@@ -125,7 +125,7 @@ namespace ProjectMT.Tests.EditMode
 
             Assert.That(catalog, Is.Not.Null);
             Assert.That(catalog.TryValidate(out var error), Is.True, error);
-            Assert.That(catalog.Definitions, Has.Count.EqualTo(8));
+            Assert.That(catalog.Definitions, Has.Count.GreaterThanOrEqualTo(8));
             Assert.That(melee.MonsterId, Is.EqualTo("tofu_01"));
             Assert.That(melee.Ranged, Is.False);
             Assert.That(ranged.MonsterId, Is.EqualTo("tofu_02"));

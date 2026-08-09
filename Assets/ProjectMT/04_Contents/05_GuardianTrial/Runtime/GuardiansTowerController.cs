@@ -291,7 +291,8 @@ namespace ProjectMT.Contents.GuardianTrial
                     partyUnits[i].UnitId,
                     stats,
                     UnitTeam.Player,
-                    visualTint: partyUnits[i].VisualTint);
+                    visualTint: partyUnits[i].VisualTint,
+                    runtimeAssetSet: partyUnits[i].RuntimeAssetSet);
                 var actor = combatWorld.SpawnUnit(followerPrefab, request, spawnPosition, Quaternion.identity);
                 if (actor == null)
                 {

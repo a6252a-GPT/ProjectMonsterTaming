@@ -12,8 +12,14 @@ namespace ProjectMT.Shared.Combat
         [SerializeField] private ScenePoolScope poolScope; // 전투 객체 재사용 창고
         [SerializeField] private CombatFeedbackPlayer feedbackPlayer; // 공용 전투 연출
         [SerializeField] private GameObject projectilePrefab; // 원거리 공격 투사체
+        [SerializeField, Min(1)] private int maxMonsterVfxPerFrame = 6; // 전용 Marker VFX 예산
 
         private readonly List<UnitActor> units = new List<UnitActor>(); // 현재 등록 유닛
+        private readonly MeleeAttackExecutor meleeExecutor = new MeleeAttackExecutor();
+        private readonly ProjectileAttackExecutor projectileExecutor = new ProjectileAttackExecutor();
+        private readonly SpecialActionExecutor specialExecutor = new SpecialActionExecutor();
+        private int monsterVfxFrame = -1;
+        private int monsterVfxCount;
 
         public ICombatFeedbackPlayer Feedback => feedbackPlayer;
         public bool IsPaused { get; private set; }
@@ -50,16 +56,20 @@ namespace ProjectMT.Shared.Combat
 
         public UnitActor SpawnUnit(GameObject prefab, UnitSpawnRequest request, Vector3 position, Quaternion rotation)
         {
-            if (poolScope == null || prefab == null)
+            var resolvedPrefab = request.RuntimeAssetSet != null &&
+                                 request.RuntimeAssetSet.VisualAdapterPrefab != null
+                ? request.RuntimeAssetSet.VisualAdapterPrefab
+                : prefab;
+            if (poolScope == null || resolvedPrefab == null)
             {
                 return null;
             }
 
-            var instance = poolScope.Rent(prefab, position, rotation, transform); // 풀에서 유닛 대여
+            var instance = poolScope.Rent(resolvedPrefab, position, rotation, transform); // 정식 Adapter 또는 기존 Prefab
             var actor = instance == null ? null : instance.GetComponent<UnitActor>();
             if (actor == null)
             {
-                Debug.LogError($"Unit prefab has no UnitActor: {prefab.name}");
+                Debug.LogError($"Unit prefab has no UnitActor: {resolvedPrefab.name}");
                 if (instance != null)
                 {
                     poolScope.Return(instance);
@@ -159,6 +169,192 @@ namespace ProjectMT.Shared.Combat
             target.Health.ApplyDamage(new DamageRequest(source, stats.damage, target.transform.position + Vector3.up * 0.4f)); // 투사체 실패 시 즉시 피해
         }
 
+        public bool ExecuteMonsterAction(
+            UnitActor source,
+            IDamageable target,
+            UnitStatsSnapshot stats,
+            MonsterRuntimeAssetSet assetSet,
+            MonsterAttackMarker marker,
+            MonsterAnimationDriver animationDriver)
+        {
+            if (source == null || target == null || assetSet?.CombatProfile == null || marker == null)
+            {
+                return false;
+            }
+
+            var context = new MonsterActionExecutionContext(
+                this,
+                source,
+                target,
+                stats,
+                assetSet,
+                marker,
+                animationDriver);
+            var executed = assetSet.CombatProfile.CombatType switch
+            {
+                MonsterCombatType.Melee => meleeExecutor.Execute(context),
+                MonsterCombatType.Ranged => projectileExecutor.Execute(context),
+                MonsterCombatType.Special => specialExecutor.Execute(context),
+                _ => false
+            };
+
+            var feedback = marker.FeedbackOverride;
+            if (feedback == null)
+            {
+                feedback = assetSet.CombatProfile.CombatType == MonsterCombatType.Special
+                    ? assetSet.FeedbackProfile?.Special
+                    : assetSet.FeedbackProfile?.AttackMarker;
+            }
+
+            PlayMonsterFeedback(
+                feedback,
+                animationDriver,
+                marker.SocketOverride,
+                assetSet.BodyProfile?.VfxScale ?? 1f);
+            return executed;
+        }
+
+        public bool ApplyMonsterDamage(UnitActor source, IDamageable target, float amount)
+        {
+            if (source == null || target == null || !source.IsAlive || !target.IsAlive || amount <= 0f)
+            {
+                return false;
+            }
+
+            var appliedDamage = target.ReceiveDamage(source, amount);
+            if (appliedDamage <= 0f)
+            {
+                return false;
+            }
+
+            var component = target as Component;
+            if (component == null || component.GetComponent<UnitActor>() == null)
+            {
+                feedbackPlayer?.PlayDamage(
+                    target.Position,
+                    appliedDamage,
+                    FloatingNumberStyle.EnemyDamage,
+                    target.GetHashCode());
+            }
+
+            return true;
+        }
+
+        public void CollectUnits(
+            UnitTeam team,
+            Vector3 center,
+            float radius,
+            int maxCount,
+            List<UnitActor> destination)
+        {
+            if (destination == null)
+            {
+                return;
+            }
+
+            destination.Clear();
+            var radiusSquared = Mathf.Max(0f, radius) * Mathf.Max(0f, radius);
+            maxCount = Mathf.Max(1, maxCount);
+            for (var unitIndex = 0; unitIndex < units.Count; unitIndex++)
+            {
+                var candidate = units[unitIndex];
+                if (candidate == null || !candidate.IsAlive || candidate.Team != team)
+                {
+                    continue;
+                }
+
+                var offset = candidate.transform.position - center;
+                offset.y = 0f;
+                var distanceSquared = offset.sqrMagnitude;
+                if (distanceSquared > radiusSquared)
+                {
+                    continue;
+                }
+
+                var insertIndex = 0;
+                while (insertIndex < destination.Count)
+                {
+                    var existingOffset = destination[insertIndex].transform.position - center;
+                    existingOffset.y = 0f;
+                    if (distanceSquared < existingOffset.sqrMagnitude)
+                    {
+                        break;
+                    }
+
+                    insertIndex++;
+                }
+
+                destination.Insert(insertIndex, candidate);
+                if (destination.Count > maxCount)
+                {
+                    destination.RemoveAt(destination.Count - 1);
+                }
+            }
+        }
+
+        public GameObject RentMonsterObject(
+            GameObject prefab,
+            Vector3 position,
+            Quaternion rotation,
+            Transform parent = null)
+        {
+            return poolScope?.Rent(prefab, position, rotation, parent ?? transform);
+        }
+
+        public void ReturnMonsterObject(GameObject instance)
+        {
+            poolScope?.Return(instance);
+        }
+
+        public void PlayMonsterFeedback(
+            MonsterFeedbackCue cue,
+            MonsterAnimationDriver animationDriver,
+            string socketOverride,
+            float bodyVfxScale = 1f)
+        {
+            if (cue == null || !cue.HasAnyFeedback)
+            {
+                return;
+            }
+
+            var socket = animationDriver != null
+                ? animationDriver.ResolveSocket(socketOverride)
+                : null;
+            var position = socket != null ? socket.position : transform.position;
+            var rotation = socket != null ? socket.rotation : Quaternion.identity;
+            position += rotation * cue.LocalPosition;
+            rotation *= cue.LocalRotation;
+            feedbackPlayer?.PlayMonsterCue(cue.Sfx, position);
+
+            if (cue.VfxPrefab == null)
+            {
+                return;
+            }
+
+            var frame = Time.frameCount;
+            if (monsterVfxFrame != frame)
+            {
+                monsterVfxFrame = frame;
+                monsterVfxCount = 0;
+            }
+
+            if (monsterVfxCount >= Mathf.Max(1, maxMonsterVfxPerFrame))
+            {
+                return;
+            }
+
+            monsterVfxCount++;
+            var instance = RentMonsterObject(cue.VfxPrefab, position, rotation);
+            if (instance == null)
+            {
+                return;
+            }
+
+            var scale = cue.Scale * Mathf.Max(0.01f, bodyVfxScale);
+            instance.transform.localScale = cue.VfxPrefab.transform.localScale * scale;
+            StartCoroutine(ReturnMonsterObjectAfter(instance, cue.VfxLifetime));
+        }
+
         // 08.07 안건준 추가 - UnitActor가 아닌 대상(예: 수호자의 탑 방어 건물 같은 IDamageable)을 공격할 때 쓰는 진입점.
         // 원거리 유닛이면 기존과 동일하게 투사체를 쏘고 도착 시 피해+숫자를 표시하며, 근접이면 즉시 피해+숫자를 표시한다.
         // 기존 Attack(UnitActor, UnitActor, ...)와 ProjectileActor.Launch()는 전혀 건드리지 않아 일반 전투에는 영향이 없다.
@@ -194,11 +390,11 @@ namespace ProjectMT.Shared.Combat
             }
         }
 
-        public void NotifyDeath(UnitActor unit)
+        public void NotifyDeath(UnitActor unit, float delay = 0.38f)
         {
             if (unit != null)
             {
-                StartCoroutine(ReturnDeadUnit(unit, 0.38f)); // 사망 연출 뒤 풀 반환
+                StartCoroutine(ReturnDeadUnit(unit, Mathf.Max(0.05f, delay))); // Death Clip 뒤 풀 반환
             }
         }
 
@@ -248,6 +444,12 @@ namespace ProjectMT.Shared.Combat
             units.Remove(unit);
             unit.Shutdown();
             poolScope?.Return(unit.gameObject);
+        }
+
+        private IEnumerator ReturnMonsterObjectAfter(GameObject instance, float delay)
+        {
+            yield return new WaitForSeconds(Mathf.Max(0.01f, delay));
+            ReturnMonsterObject(instance);
         }
 
 #if UNITY_EDITOR

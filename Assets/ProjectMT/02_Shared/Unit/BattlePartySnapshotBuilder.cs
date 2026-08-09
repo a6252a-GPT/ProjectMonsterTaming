@@ -56,31 +56,61 @@ namespace ProjectMT.Shared.Unit
 
                 destination.Add(new BattleUnitSnapshot(
                     monsterId,
-                    ResolveStats(definition, owned.Level, legionBonus),
-                    definition.VisualTint));
+                    ResolveStats(definition, owned.Level, owned.AscensionLevel, legionBonus),
+                    definition.VisualTint,
+                    definition.RuntimeAssetKey,
+                    definition.RuntimeAssetSet,
+                    ResolveUnlockedAbilityIds(definition, owned.AscensionLevel)));
             }
         }
 
         private static UnitStatsSnapshot ResolveStats(
             MonsterDefinition definition,
             int level,
+            int ascensionLevel,
             LegionStatBonus legionBonus)
         {
             var levelMultiplier = MonsterLevelRules.GetStatMultiplier(level);
+            var ascensionModifier = definition.RuntimeAssetSet?.AscensionProfile != null
+                ? definition.RuntimeAssetSet.AscensionProfile.ResolveStatModifier(ascensionLevel)
+                : default;
             var attackSpeed = Mathf.Max(
                 0.01f,
-                definition.AttackSpeed * levelMultiplier * (1f + legionBonus.AttackSpeedRate));
+                definition.AttackSpeed * levelMultiplier * (1f + ascensionModifier.AttackSpeedRate) *
+                (1f + legionBonus.AttackSpeedRate));
+            var projectileSpeed = RangedProjectileSpeed;
+            var action = definition.RuntimeAssetSet?.CombatProfile?.Action as ProjectileActionDefinition;
+            if (action != null)
+            {
+                projectileSpeed = action.Speed;
+            }
+
             return new UnitStatsSnapshot
             {
-                maxHealth = definition.MaxHealth * levelMultiplier * (1f + legionBonus.HealthRate),
-                damage = definition.AttackPower * levelMultiplier * (1f + legionBonus.AttackRate),
-                defense = definition.Defense * levelMultiplier * (1f + legionBonus.DefenseRate),
-                moveSpeed = definition.MoveSpeed * levelMultiplier * (1f + legionBonus.MoveSpeedRate),
-                attackRange = definition.AttackRange * levelMultiplier * (1f + legionBonus.AttackRangeRate),
+                maxHealth = definition.MaxHealth * levelMultiplier * (1f + ascensionModifier.HealthRate) *
+                            (1f + legionBonus.HealthRate),
+                damage = definition.AttackPower * levelMultiplier * (1f + ascensionModifier.AttackRate) *
+                         (1f + legionBonus.AttackRate),
+                defense = definition.Defense * levelMultiplier * (1f + ascensionModifier.DefenseRate) *
+                          (1f + legionBonus.DefenseRate),
+                moveSpeed = definition.MoveSpeed * levelMultiplier * (1f + ascensionModifier.MoveSpeedRate) *
+                            (1f + legionBonus.MoveSpeedRate),
+                attackRange = definition.AttackRange * levelMultiplier * (1f + ascensionModifier.AttackRangeRate) *
+                              (1f + legionBonus.AttackRangeRate),
                 attackInterval = 1f / attackSpeed,
-                projectileSpeed = definition.Ranged ? RangedProjectileSpeed : 0f,
+                projectileSpeed = definition.Ranged ? projectileSpeed : 0f,
                 ranged = definition.Ranged
             };
+        }
+
+        private static string[] ResolveUnlockedAbilityIds(
+            MonsterDefinition definition,
+            int ascensionLevel)
+        {
+            var ascension = definition.RuntimeAssetSet?.AscensionProfile;
+            return ascension == null
+                ? Array.Empty<string>()
+                : ascension.ResolveUnlockedAbilityIds(ascensionLevel);
         }
     }
 }

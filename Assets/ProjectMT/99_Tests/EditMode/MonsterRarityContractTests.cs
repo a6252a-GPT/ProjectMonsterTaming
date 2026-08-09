@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using ProjectMT.Shared.Gacha;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
+using UnityEngine;
 
 namespace ProjectMT.Tests.EditMode
 {
@@ -11,6 +13,8 @@ namespace ProjectMT.Tests.EditMode
     {
         private const string RarityCatalogPath =
             "Assets/ProjectMT/02_Shared/Unit/Data/MonsterRarityCatalog.asset";
+        private const string MonsterCatalogPath =
+            "Assets/ProjectMT/02_Shared/Unit/Data/MonsterCatalog.asset";
         private const string GachaProbabilityPath =
             "Assets/ProjectMT/02_Shared/Unit/Data/GachaProbability.asset";
 
@@ -36,11 +40,40 @@ namespace ProjectMT.Tests.EditMode
             var catalog = AssetDatabase.LoadAssetAtPath<MonsterRarityCatalog>(RarityCatalogPath);
 
             Assert.That(catalog, Is.Not.Null);
-            Assert.That(catalog.GetMonstersOfRarity(MonsterRarity.Common), Has.Count.EqualTo(4));
-            Assert.That(catalog.GetMonstersOfRarity(MonsterRarity.Rare), Has.Count.EqualTo(1));
-            Assert.That(catalog.GetMonstersOfRarity(MonsterRarity.Epic), Has.Count.EqualTo(1));
-            Assert.That(catalog.GetMonstersOfRarity(MonsterRarity.Legendary), Has.Count.EqualTo(1));
-            Assert.That(catalog.GetMonstersOfRarity(MonsterRarity.Mythic), Has.Count.EqualTo(1));
+            Assert.That(catalog.TryValidate(out var structureError), Is.True, structureError);
+            Assert.That(catalog.TryValidateSkillReferences(out var skillError), Is.False);
+            StringAssert.Contains("passive skill", skillError);
+            Assert.That(catalog.GetMonstersOfRarity(MonsterRarity.Common), Has.Count.GreaterThanOrEqualTo(4));
+            Assert.That(catalog.GetMonstersOfRarity(MonsterRarity.Rare), Has.Count.GreaterThanOrEqualTo(1));
+            Assert.That(catalog.GetMonstersOfRarity(MonsterRarity.Epic), Has.Count.GreaterThanOrEqualTo(1));
+            Assert.That(catalog.GetMonstersOfRarity(MonsterRarity.Legendary), Has.Count.GreaterThanOrEqualTo(1));
+            Assert.That(catalog.GetMonstersOfRarity(MonsterRarity.Mythic), Has.Count.GreaterThanOrEqualTo(1));
+        }
+
+        [Test]
+        public void RarityCatalog_RequiresAnExactSourceSetWithoutLoadTimeMutation()
+        {
+            var source = AssetDatabase.LoadAssetAtPath<MonsterCatalog>(MonsterCatalogPath);
+            var catalog = ScriptableObject.CreateInstance<MonsterRarityCatalog>();
+            try
+            {
+                typeof(MonsterRarityCatalog)
+                    .GetField("sourceCatalog", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.SetValue(catalog, source);
+
+                Assert.That(catalog.TryValidate(out var error), Is.False);
+                StringAssert.Contains("Missing=", error);
+                Assert.That(
+                    typeof(MonsterRarityCatalog).GetMethod(
+                        "OnEnable",
+                        BindingFlags.Instance | BindingFlags.NonPublic),
+                    Is.Null,
+                    "Catalog 로드만으로 목록을 몰래 변경하면 안 됩니다.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(catalog);
+            }
         }
 
         [Test]

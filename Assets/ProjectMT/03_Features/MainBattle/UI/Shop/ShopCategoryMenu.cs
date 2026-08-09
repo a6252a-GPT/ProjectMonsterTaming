@@ -30,7 +30,12 @@ namespace ProjectMT.Features.MainBattle
             contentButton?.onClick.RemoveListener(ShowContentShop);
         }
 
-        private void ShowDiamondShop()
+        public void ShowMonsterShop()
+        {
+            ShowOnly(monsterShop);
+        }
+
+        public void ShowDiamondShop()
         {
             ShowOnly(diamondShop);
         }

@@ -30,6 +30,8 @@ namespace ProjectMT.Features.Expedition
         [SerializeField] private TMP_Text countText;
         [SerializeField] private TMP_Text timerText;
         [SerializeField] private TMP_Text resultText;
+        [SerializeField] private RectTransform progressFill;
+        [SerializeField, Min(1f)] private float progressFillMaxWidth = 360f;
 
         private IGameProgressService progress; // 진행 조회·저장 계약
         private IRewardPresentationPlayer rewardPresentation; // 저장 확정 보상 표현
@@ -49,6 +51,18 @@ namespace ProjectMT.Features.Expedition
         private readonly int[] aliveEnemiesByWave = new int[ExpeditionStageRules.WaveCount + 1]; // 웨이브별 생존 적
         private readonly bool[] climaxPlayedByWave = new bool[ExpeditionStageRules.WaveCount + 1]; // 웨이브당 한 번만 재생
         private int nextReserveIndex; // 다음에 투입할 예비 순서
+        private int runEnemyTotalCount; // 현재 Run 전체 적 수
+        private int defeatedEnemyCount; // 현재 Run 처치 적 수
+        private bool hudCacheValid; // HUD 중복 할당 방지
+        private ExpeditionRunMode displayedMode;
+        private int displayedStage;
+        private int displayedWave;
+        private int displayedAllyCount;
+        private int displayedEnemyCount;
+        private int displayedTimerSeconds;
+        private int displayedDefeatedEnemyCount;
+        private int displayedRunEnemyTotalCount;
+        private bool displayedModeInteractable;
 
         public bool IsRunning => running;
         public bool IsSettling => settling;
@@ -69,6 +83,7 @@ namespace ProjectMT.Features.Expedition
             IRewardPresentationPlayer rewardPlayer = null)
         {
             Shutdown();
+            InvalidateHudCache();
             progress = progressService ?? throw new ArgumentNullException(nameof(progressService));
             party = partySnapshot ?? throw new ArgumentNullException(nameof(partySnapshot));
             rewardPresentation = rewardPlayer;
@@ -128,6 +143,7 @@ namespace ProjectMT.Features.Expedition
             rewardPresentation = null;
             party = null;
             activeRunParty = null;
+            InvalidateHudCache();
         }
 
         private void Update()
@@ -182,6 +198,10 @@ namespace ProjectMT.Features.Expedition
             challengeTimeRemaining = profile.ChallengeTimeLimitSeconds;
             waveTwoSpawned = false;
             nextReserveIndex = 0;
+            runEnemyTotalCount = ExpeditionStageRules.GetEnemiesPerWave(currentStage) *
+                                 ExpeditionStageRules.WaveCount;
+            defeatedEnemyCount = 0;
+            InvalidateHudCache();
             if (resultText != null)
             {
                 resultText.text = string.Empty;
@@ -321,6 +341,7 @@ namespace ProjectMT.Features.Expedition
             actor.Died -= HandleWaveEnemyDied;
             enemyWaveByActor.Remove(actor);
             aliveEnemiesByWave[wave] = Mathf.Max(0, aliveEnemiesByWave[wave] - 1);
+            defeatedEnemyCount = Mathf.Min(runEnemyTotalCount, defeatedEnemyCount + 1);
             if (!running || aliveEnemiesByWave[wave] != 0 || climaxPlayedByWave[wave])
             {
                 return;
@@ -343,6 +364,8 @@ namespace ProjectMT.Features.Expedition
             enemyWaveByActor.Clear();
             Array.Clear(aliveEnemiesByWave, 0, aliveEnemiesByWave.Length);
             Array.Clear(climaxPlayedByWave, 0, climaxPlayedByWave.Length);
+            runEnemyTotalCount = 0;
+            defeatedEnemyCount = 0;
         }
 
         private async void ToggleMode()
@@ -501,38 +524,74 @@ namespace ProjectMT.Features.Expedition
 
         private void UpdateHud()
         {
-            if (modeText != null)
+            var modeChanged = !hudCacheValid || displayedMode != currentMode;
+            if (modeText != null && modeChanged)
             {
                 modeText.text = currentMode == ExpeditionRunMode.Challenge ? "도전" : "반복";
             }
 
-            if (stageText != null)
+            if (stageText != null && (!hudCacheValid || displayedStage != currentStage))
             {
                 stageText.text = $"원정대 {currentStage}";
             }
 
-            if (waveText != null)
+            if (waveText != null && (!hudCacheValid || displayedWave != currentWave))
             {
                 waveText.text = $"웨이브 {currentWave}/{ExpeditionStageRules.WaveCount}";
             }
 
-            if (countText != null && combatWorld != null)
+            var allyCount = combatWorld == null ? 0 : combatWorld.CountAlive(UnitTeam.Player);
+            var enemyCount = combatWorld == null ? 0 : combatWorld.CountAlive(UnitTeam.Enemy);
+            if (countText != null && (!hudCacheValid || displayedAllyCount != allyCount ||
+                                      displayedEnemyCount != enemyCount))
             {
-                countText.text = $"아군 {combatWorld.CountAlive(UnitTeam.Player)}  적군 {combatWorld.CountAlive(UnitTeam.Enemy)}";
+                countText.text = $"아군 {allyCount}  적군 {enemyCount}";
             }
 
-            if (timerText != null)
+            var timerSeconds = currentMode == ExpeditionRunMode.Challenge
+                ? Mathf.CeilToInt(challengeTimeRemaining)
+                : -1;
+            if (timerText != null && (modeChanged || displayedTimerSeconds != timerSeconds))
             {
                 timerText.text = currentMode == ExpeditionRunMode.Challenge
-                    ? $"남은 시간 {Mathf.CeilToInt(challengeTimeRemaining)}초"
+                    ? $"남은 시간 {timerSeconds}초"
                     : "시간 제한 없음";
             }
 
-            if (modeButton != null)
+            var modeInteractable = !settling &&
+                (currentMode == ExpeditionRunMode.Repeat || progress == null || progress.View.LastClearedStage > 0);
+            if (modeButton != null && (!hudCacheValid || displayedModeInteractable != modeInteractable))
             {
-                modeButton.interactable = !settling &&
-                    (currentMode == ExpeditionRunMode.Repeat || progress == null || progress.View.LastClearedStage > 0);
+                modeButton.interactable = modeInteractable;
             }
+
+            if (progressFill != null && (!hudCacheValid ||
+                                          displayedDefeatedEnemyCount != defeatedEnemyCount ||
+                                          displayedRunEnemyTotalCount != runEnemyTotalCount))
+            {
+                var progressRatio = runEnemyTotalCount <= 0
+                    ? 0f
+                    : Mathf.Clamp01((float)defeatedEnemyCount / runEnemyTotalCount);
+                var size = progressFill.sizeDelta;
+                size.x = progressFillMaxWidth * progressRatio;
+                progressFill.sizeDelta = size;
+            }
+
+            displayedMode = currentMode;
+            displayedStage = currentStage;
+            displayedWave = currentWave;
+            displayedAllyCount = allyCount;
+            displayedEnemyCount = enemyCount;
+            displayedTimerSeconds = timerSeconds;
+            displayedDefeatedEnemyCount = defeatedEnemyCount;
+            displayedRunEnemyTotalCount = runEnemyTotalCount;
+            displayedModeInteractable = modeInteractable;
+            hudCacheValid = true;
+        }
+
+        private void InvalidateHudCache()
+        {
+            hudCacheValid = false;
         }
 
         private void SetResult(string message)
@@ -559,7 +618,9 @@ namespace ProjectMT.Features.Expedition
             TMP_Text wave,
             TMP_Text count,
             TMP_Text timer,
-            TMP_Text result)
+            TMP_Text result,
+            RectTransform progress = null,
+            float progressWidth = 360f)
         {
             profile = seedProfile;
             combatWorld = world;
@@ -574,6 +635,9 @@ namespace ProjectMT.Features.Expedition
             countText = count;
             timerText = timer;
             resultText = result;
+            progressFill = progress;
+            progressFillMaxWidth = Mathf.Max(1f, progressWidth);
+            InvalidateHudCache();
         }
 #endif
     }

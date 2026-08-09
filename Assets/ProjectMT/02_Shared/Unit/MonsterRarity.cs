@@ -3,15 +3,14 @@ using UnityEngine;
 
 namespace ProjectMT.Shared.Unit
 {
-    // 몬스터 등급 6단계. 숫자가 클수록 상위 등급 (Rare >= Uncommon 같은 비교에 사용).
+    // 몬스터 등급 5단계. 숫자가 클수록 상위 등급 비교에 사용한다.
     public enum MonsterRarity
     {
-        Common,
-        Uncommon,
-        Rare,
-        Epic,
-        Legendary,
-        Mythic
+        Common = 0,
+        Rare = 1,
+        Epic = 2,
+        Legendary = 3,
+        Mythic = 4
     }
 
     // 패시브 스킬 자리표시자. 실제 스킬 내용은 아직 미정이라
@@ -40,7 +39,7 @@ namespace ProjectMT.Shared.Unit
     public sealed class MonsterCommonRarityEntry
     {
         [SerializeField] private MonsterDefinition monster;
-        [SerializeField] private MonsterRarity rarity = MonsterRarity.Common; // Common/Uncommon/Rare/Epic 중 하나
+        [SerializeField] private MonsterRarity rarity = MonsterRarity.Common; // Common/Rare/Epic 중 하나
         [SerializeField] private MonsterPassiveSkill passiveSkill; // 고정 패시브 1개
 
         public MonsterDefinition Monster => monster;
@@ -55,9 +54,11 @@ namespace ProjectMT.Shared.Unit
                 return false;
             }
 
-            if (rarity == MonsterRarity.Legendary || rarity == MonsterRarity.Mythic)
+            if (rarity != MonsterRarity.Common &&
+                rarity != MonsterRarity.Rare &&
+                rarity != MonsterRarity.Epic)
             {
-                error = $"전설·신화 등급은 이 목록이 아니라 전설·신화 목록에 넣어야 합니다. Monster={monster.MonsterId}";
+                error = $"일반·희귀·영웅 등급만 일반~영웅 목록에 넣을 수 있습니다. Monster={monster.MonsterId}";
                 return false;
             }
 

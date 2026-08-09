@@ -72,7 +72,7 @@ namespace ProjectMT.Tests.EditMode
         public async Task ResetToDefault_ReplacesMemoryAndSavedProgress()
         {
             const string progressedJson =
-                "{\"dataVersion\":4,\"gameData\":{" +
+                "{\"dataVersion\":5,\"gameData\":{" +
                 "\"currentChallengeStage\":5,\"lastClearedStage\":4,\"gold\":99," +
                 "\"foodRiotBestKills\":12,\"castleRaidFirstClear\":true}}";
             var store = new RecordingFileStore(Encoding.UTF8.GetBytes(progressedJson));

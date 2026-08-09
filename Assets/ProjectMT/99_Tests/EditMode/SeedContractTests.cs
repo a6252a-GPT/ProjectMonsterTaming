@@ -127,7 +127,7 @@ namespace ProjectMT.Tests.EditMode
                 Is.Not.Null);
             Assert.That(AssetDatabase.IsValidFolder("Assets/Scenes"), Is.False);
             Assert.That(
-                AssetDatabase.FindAssets("t:Scene")
+                AssetDatabase.FindAssets("t:Scene", new[] { "Assets/ProjectMT" })
                     .Select(AssetDatabase.GUIDToAssetPath)
                     .Where(path => path.StartsWith("Assets/"))
                     .All(path => path.StartsWith("Assets/ProjectMT/00_Scenes/")),

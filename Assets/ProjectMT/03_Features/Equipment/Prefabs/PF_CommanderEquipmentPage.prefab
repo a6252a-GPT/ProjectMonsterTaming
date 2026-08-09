@@ -11611,6 +11611,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1872389174170845525}
+  - component: {fileID: 351997775726031296}
   m_Layer: 0
   m_Name: EquipmentContent
   m_TagString: Untagged
@@ -11640,6 +11641,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -6}
   m_SizeDelta: {x: 1152, y: 820}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &351997775726031296
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1253405197040331478}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d919c298ed947c59584972ba7178ee9, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Equipment.EquipmentPageController
+  equippedLabelFont: {fileID: 11400000, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}
 --- !u!1 &1257146705575622521
 GameObject:
   m_ObjectHideFlags: 0

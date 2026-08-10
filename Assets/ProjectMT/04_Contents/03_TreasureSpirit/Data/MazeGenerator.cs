@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace ProjectMT.Contents.GrowthDungeon
 {
@@ -51,6 +52,9 @@ namespace ProjectMT.Contents.GrowthDungeon
             grid[width - 2, height - 1] = 0;
 
             Build3DMaze();
+
+            // ===== 런타임 NavMesh 베이크 추가 =====
+            BakeNavMeshRuntime();
 
             // 보물상자 5개 생성
             SpawnTreasureChests(5);
@@ -213,6 +217,42 @@ namespace ProjectMT.Contents.GrowthDungeon
                     Debug.LogWarning("PrisonPrefab 안에 MazeExitArea가 없습니다.");
                 }
             }
+        }
+
+        private void BakeNavMeshRuntime()
+        {
+            // 런타임 NavMesh 데이터 동적 생성
+            NavMeshData navMeshData = new NavMeshData();
+            NavMesh.AddNavMeshData(navMeshData);
+
+            NavMeshBuildSettings buildSettings = NavMesh.GetSettingsByID(0);
+            List<NavMeshBuildSource> sources = new List<NavMeshBuildSource>();
+
+            // 현재 MazeGenerator 하위의 모든 콜라이더를 NavMesh 소스로 수집
+            NavMeshBuilder.CollectSources(
+                transform,
+                LayerMask.GetMask("Default"),
+                NavMeshCollectGeometry.PhysicsColliders,
+                0,
+                new List<NavMeshBuildMarkup>(),
+                sources
+            );
+
+            // Bounds 계산 (미로 전체 크기)
+            Bounds worldBounds = new Bounds(
+                transform.position + new Vector3(width * cellSize * 0.5f, 0, height * cellSize * 0.5f),
+                new Vector3(width * cellSize, wallHeight * 2f, height * cellSize)
+            );
+
+            // 실제 NavMesh 빌드
+            NavMeshBuilder.UpdateNavMeshData(
+                navMeshData,
+                buildSettings,
+                sources,
+                worldBounds
+            );
+
+            Debug.Log("🌐 런타임 NavMesh 베이크 완료!");
         }
 
         private void SpawnTreasureChests(int count)

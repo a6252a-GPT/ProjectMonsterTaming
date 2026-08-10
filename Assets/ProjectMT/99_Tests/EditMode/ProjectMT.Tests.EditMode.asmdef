@@ -1,0 +1,26 @@
+{
+  "name": "ProjectMT.Tests.EditMode",
+  "rootNamespace": "ProjectMT.Tests.EditMode",
+  "references": [
+    "ProjectMT.Core",
+    "ProjectMT.Shared",
+    "ProjectMT.Features",
+    "ProjectMT.Contents.Framework",
+    "ProjectMT.Contents.FoodRiot",
+    "ProjectMT.Contents.CastleRaid"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

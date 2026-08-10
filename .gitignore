@@ -88,8 +88,18 @@ InitTestScene*.unity*
 /TestResults*.xml
 /[Ss]creenshots/
 /_[Tt]emp/
-/[Aa]ssets/ProjectMT/99_Tests/
-/[Aa]ssets/ProjectMT/99_Tests.meta
+# Test source files stay local, but shared asmdef boundaries prevent stale local tests
+# from falling into Assembly-CSharp on another teammate's checkout.
+/[Aa]ssets/ProjectMT/99_Tests/**
+!/[Aa]ssets/ProjectMT/99_Tests.meta
+!/[Aa]ssets/ProjectMT/99_Tests/EditMode/
+!/[Aa]ssets/ProjectMT/99_Tests/EditMode.meta
+!/[Aa]ssets/ProjectMT/99_Tests/EditMode/ProjectMT.Tests.EditMode.asmdef
+!/[Aa]ssets/ProjectMT/99_Tests/EditMode/ProjectMT.Tests.EditMode.asmdef.meta
+!/[Aa]ssets/ProjectMT/99_Tests/PlayMode/
+!/[Aa]ssets/ProjectMT/99_Tests/PlayMode.meta
+!/[Aa]ssets/ProjectMT/99_Tests/PlayMode/ProjectMT.Tests.PlayMode.asmdef
+!/[Aa]ssets/ProjectMT/99_Tests/PlayMode/ProjectMT.Tests.PlayMode.asmdef.meta
 /[Aa]ssets/[Ee]ditor/Codex*.cs
 /[Aa]ssets/[Ee]ditor/Codex*.cs.meta
 /[Aa]ssets/ProjectMT/00_Scenes/UItest.unity

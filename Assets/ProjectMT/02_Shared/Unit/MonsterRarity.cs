@@ -3,15 +3,14 @@ using UnityEngine;
 
 namespace ProjectMT.Shared.Unit
 {
-    // 몬스터 등급 6단계. 숫자가 클수록 상위 등급 (Rare >= Uncommon 같은 비교에 사용).
+    // 몬스터 등급 5단계. 숫자가 클수록 상위 등급 비교에 사용한다.
     public enum MonsterRarity
     {
-        Common,
-        Uncommon,
-        Rare,
-        Epic,
-        Legendary,
-        Mythic
+        Common = 0,
+        Rare = 1,
+        Epic = 2,
+        Legendary = 3,
+        Mythic = 4
     }
 
     // 패시브 스킬 자리표시자. 실제 스킬 내용은 아직 미정이라
@@ -35,12 +34,12 @@ namespace ProjectMT.Shared.Unit
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? skillId : displayName;
     }
 
-    // 일반~영웅 등급 몬스터 한 종류. 패시브 스킬 1개만 고정으로 가진다 (액티브 칸 자체가 없음).
+    // 일반~영웅 등급 몬스터 한 종류. 패시브 칸은 스킬 시스템 구현 전까지 비워둘 수 있다.
     [Serializable]
     public sealed class MonsterCommonRarityEntry
     {
         [SerializeField] private MonsterDefinition monster;
-        [SerializeField] private MonsterRarity rarity = MonsterRarity.Common; // Common/Uncommon/Rare/Epic 중 하나
+        [SerializeField] private MonsterRarity rarity = MonsterRarity.Common; // Common/Rare/Epic 중 하나
         [SerializeField] private MonsterPassiveSkill passiveSkill; // 고정 패시브 1개
 
         public MonsterDefinition Monster => monster;
@@ -55,9 +54,22 @@ namespace ProjectMT.Shared.Unit
                 return false;
             }
 
-            if (rarity == MonsterRarity.Legendary || rarity == MonsterRarity.Mythic)
+            if (rarity != MonsterRarity.Common &&
+                rarity != MonsterRarity.Rare &&
+                rarity != MonsterRarity.Epic)
             {
-                error = $"전설·신화 등급은 이 목록이 아니라 전설·신화 목록에 넣어야 합니다. Monster={monster.MonsterId}";
+                error = $"일반·희귀·영웅 등급만 일반~영웅 목록에 넣을 수 있습니다. Monster={monster.MonsterId}";
+                return false;
+            }
+
+            error = null;
+            return true;
+        }
+
+        public bool TryValidateSkillReferences(out string error)
+        {
+            if (!TryValidate(out error))
+            {
                 return false;
             }
 
@@ -80,7 +92,7 @@ namespace ProjectMT.Shared.Unit
 #endif
     }
 
-    // 전설·신화 등급 몬스터 한 종류. 패시브 1개 + 액티브 1개를 고정으로 가진다 (두 칸 모두 항상 존재).
+    // 전설·신화 등급 몬스터 한 종류. 두 스킬 칸은 스킬 시스템 구현 전까지 비워둘 수 있다.
     [Serializable]
     public sealed class MonsterLegendaryRarityEntry
     {
@@ -105,6 +117,17 @@ namespace ProjectMT.Shared.Unit
             if (rarity != MonsterRarity.Legendary && rarity != MonsterRarity.Mythic)
             {
                 error = $"일반~영웅 등급은 이 목록이 아니라 일반~영웅 목록에 넣어야 합니다. Monster={monster.MonsterId}";
+                return false;
+            }
+
+            error = null;
+            return true;
+        }
+
+        public bool TryValidateSkillReferences(out string error)
+        {
+            if (!TryValidate(out error))
+            {
                 return false;
             }
 

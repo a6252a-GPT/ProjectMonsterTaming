@@ -20,8 +20,13 @@ namespace ProjectMT.Features.Expedition
 
         public UnitStatsSnapshot CreateEnemyStats(int stage, int unitIndex)
         {
-            var stageOffset = Mathf.Max(0, stage - 1);
             var ranged = unitIndex % 4 == 3; // 네 번째마다 원거리 배치
+            return CreateEnemyStats(stage, ranged);
+        }
+
+        public UnitStatsSnapshot CreateEnemyStats(int stage, bool ranged)
+        {
+            var stageOffset = Mathf.Max(0, stage - 1);
             return new UnitStatsSnapshot
             {
                 maxHealth = enemyBaseHealth * (1f + enemyHealthGrowthPerStage * stageOffset),

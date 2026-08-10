@@ -10,7 +10,7 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private string displayName;
         [SerializeField] private Sprite portrait;
         [SerializeField] private GameObject previewPrefab;
-        [SerializeField] private Color visualTint = Color.white; // 임시 카드·3D 모델 색상 배율
+        [SerializeField] private Color visualTint = Color.white; // 임시 3D 모델 표시 색상 배율
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float attackPower = 10f;
         [SerializeField] private float defense;
@@ -18,9 +18,12 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private float moveSpeed = 2.5f;
         [SerializeField] private float attackRange = 1f;
         [SerializeField] private bool ranged;
+        [SerializeField] private string runtimeAssetKey; // 정식 실행 자산 조회 키
+        [SerializeField] private MonsterRuntimeAssetSet runtimeAssetSet; // 첫 Provider가 해석할 직접 참조
 
         public string MonsterId => monsterId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? monsterId : displayName;
+        public bool HasExplicitDisplayName => !string.IsNullOrWhiteSpace(displayName);
         public Sprite Portrait => portrait;
         public GameObject PreviewPrefab => previewPrefab;
         public Color VisualTint => visualTint.a <= 0f ? Color.white : visualTint;
@@ -30,7 +33,15 @@ namespace ProjectMT.Shared.Unit
         public float AttackSpeed => attackSpeed;
         public float MoveSpeed => moveSpeed;
         public float AttackRange => attackRange;
-        public bool Ranged => ranged;
+        public bool Ranged => runtimeAssetSet != null && runtimeAssetSet.CombatProfile != null
+            ? runtimeAssetSet.CombatProfile.CombatType == MonsterCombatType.Ranged
+            : ranged;
+        public MonsterCombatType CombatType => runtimeAssetSet != null && runtimeAssetSet.CombatProfile != null
+            ? runtimeAssetSet.CombatProfile.CombatType
+            : ranged ? MonsterCombatType.Ranged : MonsterCombatType.Melee;
+        public string RuntimeAssetKey => runtimeAssetKey ?? string.Empty;
+        public MonsterRuntimeAssetSet RuntimeAssetSet => runtimeAssetSet;
+        public bool UsesFormalRuntime => runtimeAssetSet != null;
 
         public bool TryValidate(out string error)
         {
@@ -45,6 +56,20 @@ namespace ProjectMT.Shared.Unit
             {
                 error = $"Monster stats are invalid. Monster={monsterId}";
                 return false;
+            }
+
+            if (runtimeAssetSet != null)
+            {
+                if (string.IsNullOrWhiteSpace(runtimeAssetKey))
+                {
+                    error = $"Formal Monster Runtime Asset Key is blank. Monster={monsterId}";
+                    return false;
+                }
+
+                if (!runtimeAssetSet.TryValidate(out error))
+                {
+                    return false;
+                }
             }
 
             error = null;
@@ -86,6 +111,12 @@ namespace ProjectMT.Shared.Unit
                 Mathf.Max(0f, tint.g),
                 Mathf.Max(0f, tint.b),
                 1f);
+        }
+
+        public void EditorConfigureFormalRuntime(string assetKey, MonsterRuntimeAssetSet assetSet)
+        {
+            runtimeAssetKey = assetKey?.Trim();
+            runtimeAssetSet = assetSet;
         }
 #endif
     }

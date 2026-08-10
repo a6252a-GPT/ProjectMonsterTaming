@@ -24,7 +24,7 @@ namespace ProjectMT.Shared.Editor
             property.isExpanded = EditorGUI.Foldout(
                 foldoutRect,
                 property.isExpanded,
-                MonsterRarityDrawerUtility.BuildHeaderLabel(monsterProp, (MonsterRarity)rarityProp.enumValueIndex),
+                MonsterRarityDrawerUtility.BuildHeaderLabel(monsterProp, (MonsterRarity)rarityProp.intValue),
                 true);
             y += lineHeight + spacing;
 
@@ -78,7 +78,7 @@ namespace ProjectMT.Shared.Editor
             property.isExpanded = EditorGUI.Foldout(
                 foldoutRect,
                 property.isExpanded,
-                MonsterRarityDrawerUtility.BuildHeaderLabel(monsterProp, (MonsterRarity)rarityProp.enumValueIndex),
+                MonsterRarityDrawerUtility.BuildHeaderLabel(monsterProp, (MonsterRarity)rarityProp.intValue),
                 true);
             y += lineHeight + spacing;
 
@@ -152,7 +152,6 @@ namespace ProjectMT.Shared.Editor
             switch (rarity)
             {
                 case MonsterRarity.Common: return "일반";
-                case MonsterRarity.Uncommon: return "고급";
                 case MonsterRarity.Rare: return "희귀";
                 case MonsterRarity.Epic: return "영웅";
                 case MonsterRarity.Legendary: return "전설";

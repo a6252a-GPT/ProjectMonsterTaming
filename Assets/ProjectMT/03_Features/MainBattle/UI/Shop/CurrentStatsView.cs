@@ -14,6 +14,9 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private TMP_Text levelText; // "LV. 1 (0%)" 표기용 (비워두면 무시)
         [SerializeField] private TMP_Text combatPowerText; // "전투력 :" 표기용 (비워두면 무시)
 
+        [Header("표시 형식")]
+        [SerializeField] private bool valueOnly; // 라벨이 분리된 카드에서는 값만 표시
+
         [Header("능력치 6종")]
         [SerializeField] private TMP_Text healthText; // 체력 표시
         [SerializeField] private TMP_Text attackText; // 공격력 표시
@@ -82,11 +85,11 @@ namespace ProjectMT.Features.MainBattle
             levelText.text = $"LV. {level} ({progressPercent:0}%)";
         }
 
-        private static void SetStatText(TMP_Text text, string label, float value)
+        private void SetStatText(TMP_Text text, string label, float value)
         {
             if (text != null)
             {
-                text.text = $"{label} : {value:0.00}"; // 소수점 2자리까지 표시
+                text.text = valueOnly ? $"{value:0.00}" : $"{label} : {value:0.00}"; // 카드형은 값만 표시
             }
         }
     }

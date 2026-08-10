@@ -63,17 +63,32 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private string unitId; // 유닛 고정 식별자
         [SerializeField] private UnitStatsSnapshot stats; // 계산 완료 능력치
         [SerializeField] private Color visualTint = Color.white; // 전투 표시 색상
+        [SerializeField] private string runtimeAssetKey; // 정식 Monster 실행 자산 키
+        [SerializeField] private MonsterRuntimeAssetSet runtimeAssetSet; // 현재 Provider 해석 결과
+        [SerializeField] private string[] unlockedAbilityIds; // 현재 돌파에서 해금된 2·4 Ability
 
-        public BattleUnitSnapshot(string unitId, UnitStatsSnapshot stats, Color visualTint = default)
+        public BattleUnitSnapshot(
+            string unitId,
+            UnitStatsSnapshot stats,
+            Color visualTint = default,
+            string runtimeAssetKey = null,
+            MonsterRuntimeAssetSet runtimeAssetSet = null,
+            string[] unlockedAbilityIds = null)
         {
             this.unitId = unitId;
             this.stats = stats;
             this.visualTint = visualTint.a <= 0f ? Color.white : visualTint;
+            this.runtimeAssetKey = runtimeAssetKey ?? string.Empty;
+            this.runtimeAssetSet = runtimeAssetSet;
+            this.unlockedAbilityIds = unlockedAbilityIds ?? Array.Empty<string>();
         }
 
         public string UnitId => unitId;
         public UnitStatsSnapshot Stats => stats;
         public Color VisualTint => visualTint.a <= 0f ? Color.white : visualTint;
+        public string RuntimeAssetKey => runtimeAssetKey ?? string.Empty;
+        public MonsterRuntimeAssetSet RuntimeAssetSet => runtimeAssetSet;
+        public string[] UnlockedAbilityIds => unlockedAbilityIds ?? Array.Empty<string>();
     }
 
     [Serializable]

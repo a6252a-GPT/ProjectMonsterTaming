@@ -10,7 +10,10 @@ namespace ProjectMT.Bootstrap
     public sealed class ContentFinishFeedbackPresenter : MonoBehaviour, IContentFinishFeedback // 저장 실패 공통 재시도 UI
     {
         [SerializeField] private GameObject panelRoot; // 입력을 막는 중앙 안내 패널
+        [SerializeField] private TMP_Text titleText; // 저장 상태 제목
         [SerializeField] private TMP_Text messageText; // 저장 상태 문구
+        [SerializeField] private GameObject savingVisual; // 저장 중 표시
+        [SerializeField] private GameObject failedVisual; // 저장 실패 표시
         [SerializeField] private Button retryButton; // 실패 뒤에만 표시
 
         private Action retry; // 현재 실패 건의 단일 재시도
@@ -29,6 +32,7 @@ namespace ProjectMT.Bootstrap
         public void ShowSaving()
         {
             retry = null;
+            SetPresentation(true);
             SetMessage("진행 정보를 저장하는 중입니다.");
             if (retryButton != null)
             {
@@ -41,6 +45,7 @@ namespace ProjectMT.Bootstrap
         public void ShowSaveFailed(Action retryAction)
         {
             retry = retryAction;
+            SetPresentation(false);
             SetMessage("진행 정보를 저장하지 못했습니다.");
             if (retryButton != null)
             {
@@ -77,12 +82,30 @@ namespace ProjectMT.Bootstrap
             }
         }
 
+        private void SetPresentation(bool isSaving)
+        {
+            if (titleText != null)
+            {
+                titleText.text = isSaving ? "진행 정보 저장" : "저장 실패";
+            }
+
+            savingVisual?.SetActive(isSaving);
+            failedVisual?.SetActive(!isSaving);
+        }
+
 #if UNITY_EDITOR
         public void EditorConfigure(GameObject root, TMP_Text message, Button button)
         {
             panelRoot = root;
             messageText = message;
             retryButton = button;
+        }
+
+        public void EditorConfigurePresentation(TMP_Text title, GameObject savingState, GameObject failedState)
+        {
+            titleText = title;
+            savingVisual = savingState;
+            failedVisual = failedState;
         }
 #endif
     }

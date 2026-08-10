@@ -14,26 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Gacha.GachaProbability
   rarityRates:
   - rarity: 0
-    dropRatePercent: 40
+    dropRatePercent: 68
     ceilingPulls: 0
     rareGuaranteeInterval: 0
   - rarity: 1
-    dropRatePercent: 28
-    ceilingPulls: 0
-    rareGuaranteeInterval: 0
-  - rarity: 2
     dropRatePercent: 20
     ceilingPulls: 0
     rareGuaranteeInterval: 10
-  - rarity: 3
+  - rarity: 2
     dropRatePercent: 8
     ceilingPulls: 30
     rareGuaranteeInterval: 0
-  - rarity: 4
+  - rarity: 3
     dropRatePercent: 3
     ceilingPulls: 100
     rareGuaranteeInterval: 0
-  - rarity: 5
+  - rarity: 4
     dropRatePercent: 1
     ceilingPulls: 300
     rareGuaranteeInterval: 0

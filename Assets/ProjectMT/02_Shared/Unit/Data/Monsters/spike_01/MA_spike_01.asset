@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-8107664607184826144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8317015911825149a70b8eb35ad1dfd, type: 3}
+  m_Name: Ability_spike_01_A2
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterAbilityDefinition
+  abilityId: spike_01_a2
+  displayName: "\uB3CC\uD30C 2 \uD328\uC2DC\uBE0C (\uD6A8\uACFC \uBBF8\uAE30\uD68D)"
+  mode: 0
+  triggerPolicyId: 
+--- !u!114 &-746761052440936645
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8317015911825149a70b8eb35ad1dfd, type: 3}
+  m_Name: Ability_spike_01_A4
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterAbilityDefinition
+  abilityId: spike_01_a4
+  displayName: "\uB3CC\uD30C 4 \uD328\uC2DC\uBE0C (\uD6A8\uACFC \uBBF8\uAE30\uD68D)"
+  mode: 0
+  triggerPolicyId: 
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b671fbf87b6f56b4884fd4f963d98932, type: 3}
+  m_Name: MA_spike_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterAscensionProfile
+  milestone1:
+    healthRate: 0.05
+    attackRate: 0
+    defenseRate: 0
+    attackSpeedRate: 0
+    moveSpeedRate: 0
+    attackRangeRate: 0
+  milestone2: {fileID: -8107664607184826144}
+  milestone3:
+    healthRate: 0
+    attackRate: 0.05
+    defenseRate: 0
+    attackSpeedRate: 0
+    moveSpeedRate: 0
+    attackRangeRate: 0
+  milestone4: {fileID: -746761052440936645}
+  milestone5:
+    healthRate: 0
+    attackRate: 0
+    defenseRate: 0.05
+    attackSpeedRate: 0
+    moveSpeedRate: 0
+    attackRangeRate: 0

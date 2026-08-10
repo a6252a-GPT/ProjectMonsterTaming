@@ -12,9 +12,10 @@ namespace ProjectMT.Features.MainBattle
 {
     // 몬스터 뽑기 - MonsterShop 하위 OneButton(1회)/TwoButton(10회)을 눌러
     // MonsterCatalog에 등록된 몬스터를 등급 확률(GachaProbability)에 따라 뽑는다.
-    // 신규 획득이면 저장에 획득 등록, 중복이면 자동으로 돌파(또는 최대 돌파 시 전용 재화 적립)까지 처리한다.
+    // 신규 획득이면 보유 등록, 중복이면 수동 돌파 재료(초과분은 전용 재화)로 저장한다.
     // 결과 텍스트·콘솔 로그 모두 "이름 / 등급 : X / 수량 : N" 형식으로 몬스터별 정보를 모아 표시하며,
     // 한 줄이 너무 길어지지 않도록 몬스터 ResultLineGroupSize개마다 줄바꿈 + 빈 줄을 넣는다.
+    // 콘솔 로그 첫 줄에는 보유 마리 수와 함께 최대 돌파 재화(전용 재화) 보유량도 같이 표시한다.
     [DisallowMultipleComponent]
     public sealed class GachaSystem : MonoBehaviour
     {
@@ -24,6 +25,7 @@ namespace ProjectMT.Features.MainBattle
         // 이번 뽑기 묶음에서 한 몬스터가 몇 번 나왔는지, 그중 신규 획득이 있었는지 누적한다.
         private sealed class PullSummary
         {
+            public MonsterDefinition Definition;
             public string DisplayName;
             public MonsterRarity Rarity;
             public int Count;
@@ -41,35 +43,60 @@ namespace ProjectMT.Features.MainBattle
         [Header("결과 표시")]
         [SerializeField] private TMP_Text resultText;
 
+        [Header("확률·천장 표시")]
+        [SerializeField] private TMP_Text probabilityText;
+        [SerializeField] private TMP_Text pityText;
+
+        [Header("결과 카드 Overlay")]
+        [SerializeField] private GameObject resultOverlay;
+        [SerializeField] private RectTransform resultItemsRoot;
+        [SerializeField] private GachaResultItemView resultItemPrefab;
+        [SerializeField] private TMP_Text resultTitleText;
+        [SerializeField] private Button resultCloseButton;
+
         private IGameProgressService progress; // MainBattleSceneRoot.Initialize()에서 주입
         private MonsterCatalog monsterCatalog;
         private bool isDrawing; // 뽑기 진행 중 중복 클릭 방지
+        private readonly List<GachaResultItemView> spawnedResultItems = new List<GachaResultItemView>();
 
         private void Awake()
         {
             oneDrawButton?.onClick.AddListener(HandleOneDrawClicked);
             tenDrawButton?.onClick.AddListener(HandleTenDrawClicked);
+            resultCloseButton?.onClick.AddListener(HideResults);
         }
 
         private void OnDestroy()
         {
             oneDrawButton?.onClick.RemoveListener(HandleOneDrawClicked);
             tenDrawButton?.onClick.RemoveListener(HandleTenDrawClicked);
+            resultCloseButton?.onClick.RemoveListener(HideResults);
+            UnsubscribeProgress();
+            ClearResultItems();
         }
 
         // MainBattleSceneRoot가 씬 진입 시 호출. 저장 서비스·카탈로그 참조를 받아서 뽑기를 활성화한다.
         public void Configure(IGameProgressService progressService, MonsterCatalog catalog)
         {
+            UnsubscribeProgress();
             progress = progressService;
             monsterCatalog = catalog;
+            if (progress != null)
+            {
+                progress.Changed += RefreshGachaInfo;
+            }
+
             SetResult(string.Empty);
+            HideResults();
+            RefreshGachaInfo();
         }
 
         // MainBattleSceneRoot.Shutdown()에서 호출. 씬 종료 후 잘못된 참조로 접근하지 않도록 정리.
         public void Shutdown()
         {
-            progress = null;
+            UnsubscribeProgress();
             monsterCatalog = null;
+            HideResults();
         }
 
         private async void HandleOneDrawClicked()
@@ -97,6 +124,7 @@ namespace ProjectMT.Features.MainBattle
 
             isDrawing = true;
             SetButtonsInteractable(false);
+            HideResults();
             try
             {
                 // monsterId 순서를 유지한 채 개수·신규 여부를 모은다.
@@ -116,6 +144,7 @@ namespace ProjectMT.Features.MainBattle
                     {
                         summary = new PullSummary
                         {
+                            Definition = pull.definition,
                             DisplayName = pull.definition.DisplayName,
                             Rarity = pull.rarity,
                             Count = 0,
@@ -138,14 +167,83 @@ namespace ProjectMT.Features.MainBattle
                     return;
                 }
 
-                SetResult(BuildResultText(order, summaries));
-                LogOwnedRosterDebug(); // 보유 몬스터 이름·등급·돌파를 콘솔에 출력
+                var detailText = BuildResultText(order, summaries);
+                SetResult(resultOverlay != null
+                    ? BuildResultHeadline(drawCount, order, summaries)
+                    : detailText);
+                ShowResults(drawCount, order, summaries);
+                LogOwnedRosterDebug(); // 보유 몬스터 이름·등급·돌파·재료를 콘솔에 출력
             }
             finally
             {
                 isDrawing = false;
                 SetButtonsInteractable(true);
             }
+        }
+
+        private void ShowResults(
+            int drawCount,
+            List<string> order,
+            Dictionary<string, PullSummary> summaries)
+        {
+            if (resultOverlay == null || resultItemsRoot == null || resultItemPrefab == null || progress == null)
+            {
+                return; // 구형 Prefab에서는 결과 문자열 표시를 그대로 사용
+            }
+
+            ClearResultItems();
+            var roster = progress.View.Monsters;
+            var presentationOrder = new List<string>(order);
+            presentationOrder.Sort((left, right) =>
+            {
+                var rarityOrder = summaries[right].Rarity.CompareTo(summaries[left].Rarity);
+                return rarityOrder != 0 ? rarityOrder : order.IndexOf(left).CompareTo(order.IndexOf(right));
+            });
+
+            for (var index = 0; index < presentationOrder.Count; index++)
+            {
+                var monsterId = presentationOrder[index];
+                var summary = summaries[monsterId];
+                if (summary.Definition == null || !roster.TryGetOwnedMonster(monsterId, out var owned))
+                {
+                    continue;
+                }
+
+                var item = Instantiate(resultItemPrefab, resultItemsRoot);
+                item.name = $"Result_{index + 1:00}_{monsterId}";
+                item.Bind(summary.Definition, owned, summary.Rarity, summary.Count, summary.IsNew);
+                spawnedResultItems.Add(item);
+            }
+
+            if (resultTitleText != null)
+            {
+                var highestRarity = summaries[presentationOrder[0]].Rarity;
+                var drawLabel = drawCount == 1 ? "1회 소환 결과" : "10회 소환 결과";
+                resultTitleText.text = $"{drawLabel} · 최고 {RarityLabel(highestRarity)}";
+            }
+
+            resultOverlay.SetActive(true);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(resultItemsRoot);
+        }
+
+        private void HideResults()
+        {
+            resultOverlay?.SetActive(false);
+            ClearResultItems();
+        }
+
+        private void ClearResultItems()
+        {
+            for (var index = spawnedResultItems.Count - 1; index >= 0; index--)
+            {
+                if (spawnedResultItems[index] != null)
+                {
+                    spawnedResultItems[index].gameObject.SetActive(false);
+                    Destroy(spawnedResultItems[index].gameObject);
+                }
+            }
+
+            spawnedResultItems.Clear();
         }
 
         private async Task<(MonsterDefinition definition, bool wasNew, MonsterRarity rarity)> DrawOnceAsync()
@@ -168,7 +266,7 @@ namespace ProjectMT.Features.MainBattle
             return (definition, !wasOwned, rarity);
         }
 
-        // 예: "(New 두부1 / 등급 : 일반 / 수량 : 3) , (두부2 / 등급 : 고급 / 수량 : 1)"
+        // 예: "(New 두부1 / 등급 : 일반 / 수량 : 3) , (보라 두부 / 등급 : 희귀 / 수량 : 1)"
         // 몬스터 3개마다 줄바꿈 + 빈 줄을 넣어서 한 줄이 너무 길어 잘리지 않도록 한다.
         private static string BuildResultText(List<string> order, Dictionary<string, PullSummary> summaries)
         {
@@ -195,7 +293,8 @@ namespace ProjectMT.Features.MainBattle
             return builder.ToString();
         }
 
-        // 예: "보유 몬스터 : (두부1 : 일반 · 1돌파) , (두부2 : 고급) , (보라 두부 : 희귀)"
+        // 예: "보유 몬스터 (총 8마리) / 전용 재화 : 2개
+        //      (두부1 : 일반 · 1돌파) , (두부2 : 고급) , (보라 두부 : 희귀)"
         // (몬스터 3개마다 줄바꿈 + 빈 줄)
         private void LogOwnedRosterDebug()
         {
@@ -229,14 +328,23 @@ namespace ProjectMT.Features.MainBattle
                     itemBuilder.Append("돌파");
                 }
 
+                if (entry.AscensionMaterialCount > 0)
+                {
+                    itemBuilder.Append(" · 돌파 재료 ");
+                    itemBuilder.Append(entry.AscensionMaterialCount);
+                }
+
                 items.Add(WrapWithParens(itemBuilder.ToString())); // 몬스터별 구분을 위해 앞뒤에 ( ) 를 붙인다
             }
 
-            // 콘솔 목록은 로그의 첫 줄바꿈 전까지만 미리보기로 보여주므로, 총 마리 수를 먼저 적어서
-            // 클릭해서 펼쳐보지 않아도 실제로 몇 마리를 보유 중인지 바로 알 수 있게 한다.
+            // 콘솔 목록은 로그의 첫 줄바꿈 전까지만 미리보기로 보여주므로, 총 마리 수·보유 재화를 먼저 적어서
+            // 클릭해서 펼쳐보지 않아도 실제로 몇 마리·재화를 보유 중인지 바로 알 수 있게 한다.
+            // 재화 = 최대 돌파(5돌파) 이후 중복 획득 시 적립되는 전용 재화 (몬스터 선택권 / 뽑기권 교환용).
             var builder = new StringBuilder("보유 몬스터 (총 ");
             builder.Append(owned.Count);
-            builder.Append("마리) : ");
+            builder.Append("마리) / 전용 재화(뽑기권 등 사용?) : ");
+            builder.Append($"{progress.View.AscensionCurrency}개");
+            builder.Append('\n');
             AppendGrouped(builder, items);
             Debug.Log(builder.ToString());
         }
@@ -293,12 +401,132 @@ namespace ProjectMT.Features.MainBattle
             return progress != null && monsterCatalog != null && rarityCatalog != null && probability != null;
         }
 
+        private void RefreshGachaInfo()
+        {
+            if (probabilityText != null)
+            {
+                probabilityText.text = BuildProbabilityText();
+            }
+
+            if (pityText != null)
+            {
+                pityText.text = BuildPityText();
+            }
+        }
+
+        private string BuildProbabilityText()
+        {
+            if (probability == null || probability.RarityRates == null)
+            {
+                return "확률 정보를 불러올 수 없습니다";
+            }
+
+            var builder = new StringBuilder();
+            for (var index = 0; index < probability.RarityRates.Count; index++)
+            {
+                var rate = probability.RarityRates[index];
+                if (rate == null)
+                {
+                    continue;
+                }
+
+                if (builder.Length > 0)
+                {
+                    builder.Append("   ");
+                }
+
+                builder.Append(RarityLabel(rate.Rarity));
+                builder.Append(' ');
+                builder.Append(rate.DropRatePercent.ToString("0.##"));
+                builder.Append('%');
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildResultHeadline(
+            int requestedDrawCount,
+            List<string> order,
+            Dictionary<string, PullSummary> summaries)
+        {
+            var completedDraws = 0;
+            var highestRarity = MonsterRarity.Common;
+            for (var index = 0; index < order.Count; index++)
+            {
+                var summary = summaries[order[index]];
+                completedDraws += summary.Count;
+                if (summary.Rarity > highestRarity)
+                {
+                    highestRarity = summary.Rarity;
+                }
+            }
+
+            var drawLabel = requestedDrawCount == completedDraws
+                ? $"{completedDraws}회 소환 완료"
+                : $"{completedDraws}/{requestedDrawCount}회 소환 완료";
+            return $"{drawLabel} · 최고 {RarityLabel(highestRarity)} · {order.Count}종";
+        }
+
+        private string BuildPityText()
+        {
+            if (progress == null)
+            {
+                return "천장 정보를 불러오는 중입니다";
+            }
+
+            var pity = progress.View.GachaPity;
+            return $"희귀 보정 {pity.PullsSinceRareOrBetter}/{GetRareGuarantee()}   " +
+                   $"영웅 {pity.PullsSinceEpicOrBetter}/{GetCeiling(MonsterRarity.Epic)}   " +
+                   $"전설 {pity.PullsSinceLegendaryOrBetter}/{GetCeiling(MonsterRarity.Legendary)}   " +
+                   $"신화 {pity.PullsSinceMythicOrBetter}/{GetCeiling(MonsterRarity.Mythic)}";
+        }
+
+        private int GetRareGuarantee()
+        {
+            var rate = FindRate(MonsterRarity.Rare);
+            return rate == null || rate.RareGuaranteeInterval <= 0 ? 0 : rate.RareGuaranteeInterval;
+        }
+
+        private int GetCeiling(MonsterRarity rarity)
+        {
+            var rate = FindRate(rarity);
+            return rate == null || rate.CeilingPulls <= 0 ? 0 : rate.CeilingPulls;
+        }
+
+        private GachaRarityRate FindRate(MonsterRarity rarity)
+        {
+            if (probability == null || probability.RarityRates == null)
+            {
+                return null;
+            }
+
+            for (var index = 0; index < probability.RarityRates.Count; index++)
+            {
+                var rate = probability.RarityRates[index];
+                if (rate != null && rate.Rarity == rarity)
+                {
+                    return rate;
+                }
+            }
+
+            return null;
+        }
+
+        private void UnsubscribeProgress()
+        {
+            if (progress != null)
+            {
+                progress.Changed -= RefreshGachaInfo;
+            }
+
+            progress = null;
+        }
+
         private static string RarityLabel(MonsterRarity rarity)
         {
             switch (rarity)
             {
                 case MonsterRarity.Common: return "일반";
-                case MonsterRarity.Uncommon: return "고급";
                 case MonsterRarity.Rare: return "희귀";
                 case MonsterRarity.Epic: return "영웅";
                 case MonsterRarity.Legendary: return "전설";
@@ -341,6 +569,24 @@ namespace ProjectMT.Features.MainBattle
             oneDrawButton = oneButton;
             tenDrawButton = tenButton;
             resultText = result;
+        }
+
+        public void EditorConfigurePresentation(
+            TMP_Text rates,
+            TMP_Text pity,
+            GameObject overlay,
+            RectTransform itemsRoot,
+            GachaResultItemView itemPrefab,
+            TMP_Text overlayTitle,
+            Button overlayCloseButton)
+        {
+            probabilityText = rates;
+            pityText = pity;
+            resultOverlay = overlay;
+            resultItemsRoot = itemsRoot;
+            resultItemPrefab = itemPrefab;
+            resultTitleText = overlayTitle;
+            resultCloseButton = overlayCloseButton;
         }
 #endif
     }

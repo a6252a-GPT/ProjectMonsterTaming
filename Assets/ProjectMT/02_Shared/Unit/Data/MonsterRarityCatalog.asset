@@ -21,23 +21,29 @@ MonoBehaviour:
     rarity: 0
     passiveSkill: {fileID: 0}
   - monster: {fileID: 11400000, guid: f68bfa841013ca8488b21eb35bf04b6c, type: 2}
-    rarity: 1
+    rarity: 0
     passiveSkill: {fileID: 0}
   - monster: {fileID: 11400000, guid: 642b812600556c54d9fe53a1bcadadb3, type: 2}
-    rarity: 1
+    rarity: 0
     passiveSkill: {fileID: 0}
   - monster: {fileID: 11400000, guid: 6d48621e704b39f46869f93d582e6707, type: 2}
-    rarity: 2
+    rarity: 1
     passiveSkill: {fileID: 0}
   - monster: {fileID: 11400000, guid: c4ca8622578638a48b3347a8188fd59c, type: 2}
-    rarity: 3
+    rarity: 2
+    passiveSkill: {fileID: 0}
+  - monster: {fileID: 11400000, guid: 67cb9560caba5d348af985604ecd1943, type: 2}
+    rarity: 0
+    passiveSkill: {fileID: 0}
+  - monster: {fileID: 11400000, guid: c42578432c454694293379b550c7b6cc, type: 2}
+    rarity: 0
     passiveSkill: {fileID: 0}
   legendaryMythicEntries:
   - monster: {fileID: 11400000, guid: 528ed8452b3176948988489f5ed5f4ed, type: 2}
-    rarity: 4
+    rarity: 3
     passiveSkill: {fileID: 0}
     activeSkill: {fileID: 0}
   - monster: {fileID: 11400000, guid: 0d92518d07070be498652f0a9e23b137, type: 2}
-    rarity: 5
+    rarity: 4
     passiveSkill: {fileID: 0}
     activeSkill: {fileID: 0}

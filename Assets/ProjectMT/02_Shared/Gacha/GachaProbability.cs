@@ -68,14 +68,13 @@ namespace ProjectMT.Shared.Gacha
 
         public IReadOnlyList<GachaRarityRate> RarityRates => rarityRates;
 
-        // 기획서 기본값 (일반40/고급28/희귀20/영웅8/전설3/신화1, 희귀 10뽑 확정, 영웅30/전설100/신화300 천장).
+        // 기획서 기본값 (일반68/희귀20/영웅8/전설3/신화1, 희귀 10뽑 확정, 영웅30/전설100/신화300 천장).
         // 에셋을 새로 만들 때 자동으로 채워지고, 인스펙터에서 값만 조정하면 된다.
         private void Reset()
         {
             rarityRates = new List<GachaRarityRate>
             {
-                new GachaRarityRate(MonsterRarity.Common, 40f, ceilingPulls: 0, rareGuaranteeInterval: 0),
-                new GachaRarityRate(MonsterRarity.Uncommon, 28f, ceilingPulls: 0, rareGuaranteeInterval: 0),
+                new GachaRarityRate(MonsterRarity.Common, 68f, ceilingPulls: 0, rareGuaranteeInterval: 0),
                 new GachaRarityRate(MonsterRarity.Rare, 20f, ceilingPulls: 0, rareGuaranteeInterval: 10),
                 new GachaRarityRate(MonsterRarity.Epic, 8f, ceilingPulls: 30, rareGuaranteeInterval: 0),
                 new GachaRarityRate(MonsterRarity.Legendary, 3f, ceilingPulls: 100, rareGuaranteeInterval: 0),

@@ -16,22 +16,33 @@ namespace ProjectMT.Shared.GameData
     {
         [SerializeField] private string monsterId;
         [SerializeField] private int level = 1;
-        [SerializeField] private int ascensionLevel; // 뽑기 중복 획득 돌파 횟수 (0~MonsterAscension.MaxAscensionLevel)
+        [SerializeField] private int ascensionLevel; // 직접 완료한 돌파 횟수 (0~5)
+        [SerializeField] private int ascensionMaterialCount; // 같은 몬스터 중복 획득 재료
 
-        public OwnedMonsterData(string id, int initialLevel = 1, int initialAscensionLevel = 0)
+        public OwnedMonsterData(
+            string id,
+            int initialLevel = 1,
+            int initialAscensionLevel = 0,
+            int initialAscensionMaterialCount = 0)
         {
             monsterId = id?.Trim();
             level = Math.Max(1, initialLevel);
-            ascensionLevel = Math.Max(0, initialAscensionLevel);
+            ascensionLevel = Math.Max(
+                0,
+                Math.Min(initialAscensionLevel, MonsterAscension.MaxAscensionLevel));
+            ascensionMaterialCount = Math.Max(
+                0,
+                Math.Min(initialAscensionMaterialCount, GetRemainingAscensionCount()));
         }
 
         public string MonsterId => monsterId;
         public int Level => level;
         public int AscensionLevel => ascensionLevel;
+        public int AscensionMaterialCount => ascensionMaterialCount;
 
         public OwnedMonsterData Clone()
         {
-            return new OwnedMonsterData(monsterId, level, ascensionLevel);
+            return new OwnedMonsterData(monsterId, level, ascensionLevel, ascensionMaterialCount);
         }
 
         internal bool Repair()
@@ -39,6 +50,9 @@ namespace ProjectMT.Shared.GameData
             monsterId = monsterId?.Trim();
             level = Math.Max(1, level);
             ascensionLevel = Math.Max(0, Math.Min(ascensionLevel, MonsterAscension.MaxAscensionLevel));
+            ascensionMaterialCount = Math.Max(
+                0,
+                Math.Min(ascensionMaterialCount, GetRemainingAscensionCount()));
             return !string.IsNullOrEmpty(monsterId);
         }
 
@@ -53,17 +67,34 @@ namespace ProjectMT.Shared.GameData
             return true;
         }
 
-        // 뽑기에서 중복 획득했을 때 돌파 1회 증가. 이미 최대 돌파면 false를 돌려주고,
-        // 이 경우 호출한 쪽(GameProgressData)이 전용 재화로 대신 적립한다.
-        internal bool TryAscend()
+        internal bool TryAddAscensionMaterial()
         {
-            if (MonsterAscension.IsMaxAscension(ascensionLevel))
+            if (ascensionMaterialCount >= GetRemainingAscensionCount())
             {
                 return false;
             }
 
+            ascensionMaterialCount++;
+            return true;
+        }
+
+        internal bool TryAscend(int expectedAscensionLevel)
+        {
+            if (ascensionLevel != expectedAscensionLevel ||
+                MonsterAscension.IsMaxAscension(ascensionLevel) ||
+                ascensionMaterialCount <= 0)
+            {
+                return false;
+            }
+
+            ascensionMaterialCount--;
             ascensionLevel++;
             return true;
+        }
+
+        private int GetRemainingAscensionCount()
+        {
+            return Math.Max(0, MonsterAscension.MaxAscensionLevel - ascensionLevel);
         }
     }
 
@@ -237,11 +268,17 @@ namespace ProjectMT.Shared.GameData
             return index >= 0 && ownedMonsters[index].TryLevelUp(expectedLevel);
         }
 
-        // 뽑기 중복 획득 시 돌파 1회 증가. 보유하지 않았거나 이미 최대 돌파면 false.
-        internal bool TryAscend(string monsterId)
+        // 최대 돌파까지 필요한 수만 중복 재료로 보관한다. 초과분은 호출자가 전용 재화로 바꾼다.
+        internal bool TryAddAscensionMaterial(string monsterId)
         {
             var index = FindOwnedIndex(monsterId);
-            return index >= 0 && ownedMonsters[index].TryAscend();
+            return index >= 0 && ownedMonsters[index].TryAddAscensionMaterial();
+        }
+
+        internal bool TryAscend(string monsterId, int expectedAscensionLevel)
+        {
+            var index = FindOwnedIndex(monsterId);
+            return index >= 0 && ownedMonsters[index].TryAscend(expectedAscensionLevel);
         }
 
         internal bool TryGetOwned(string monsterId, out OwnedMonsterData owned)
@@ -383,11 +420,13 @@ namespace ProjectMT.Shared.GameData
             MonsterId = data?.MonsterId ?? string.Empty;
             Level = Math.Max(1, data?.Level ?? 1);
             AscensionLevel = Math.Max(0, data?.AscensionLevel ?? 0);
+            AscensionMaterialCount = Math.Max(0, data?.AscensionMaterialCount ?? 0);
         }
 
         public string MonsterId { get; }
         public int Level { get; }
-        public int AscensionLevel { get; } // 돌파 횟수 (뽑기 중복 획득 누적)
+        public int AscensionLevel { get; } // 직접 완료한 돌파 횟수
+        public int AscensionMaterialCount { get; } // 보유한 중복 돌파 재료
     }
 
     public readonly struct MonsterRosterView // 외부에 전달할 보유·편성 복사값

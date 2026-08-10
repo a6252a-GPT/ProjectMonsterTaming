@@ -19,7 +19,9 @@ namespace ProjectMT.Shared.Unit
             bool canMove = true,
             bool canAttack = true,
             float fixedDamagePerHit = 0f,
-            Color visualTint = default)
+            Color visualTint = default,
+            MonsterRuntimeAssetSet runtimeAssetSet = null,
+            int appearanceSeed = 0)
         {
             UnitId = unitId ?? string.Empty;
             Stats = stats;
@@ -28,6 +30,8 @@ namespace ProjectMT.Shared.Unit
             CanAttack = canAttack;
             FixedDamagePerHit = fixedDamagePerHit;
             VisualTint = visualTint.a <= 0f ? Color.white : visualTint;
+            RuntimeAssetSet = runtimeAssetSet;
+            AppearanceSeed = appearanceSeed;
         }
 
         public string UnitId { get; }
@@ -37,6 +41,8 @@ namespace ProjectMT.Shared.Unit
         public bool CanAttack { get; }
         public float FixedDamagePerHit { get; } // 콘텐츠 고정 피해값
         public Color VisualTint { get; }
+        public MonsterRuntimeAssetSet RuntimeAssetSet { get; }
+        public int AppearanceSeed { get; }
     }
 
     [DisallowMultipleComponent]
@@ -45,6 +51,7 @@ namespace ProjectMT.Shared.Unit
     {
         [SerializeField] private HealthComponent health; // 체력 부품
         [SerializeField] private UnitVisualFeedback visualFeedback; // 피격 시각 연출
+        [SerializeField] private MonsterAnimationDriver animationDriver; // 정식 Monster 동작 재생기
 
         private CombatWorld world; // 현재 전투 영역
         private ICombatFeedbackPlayer feedback; // 공용 연출 계약
@@ -57,7 +64,25 @@ namespace ProjectMT.Shared.Unit
         private Vector3 followOffset; // 대형 내 위치
         private float followDetectionRange; // 추종 중 탐지 거리
         private float followLeashRange; // 기준점 복귀 거리
+        // 08.07 안건준 추가 - 군단장(추종 기준점)이 실제로 움직이고 있는지 프레임 간 이동 거리로 직접 판단한다.
+        // 이동 중에는 적 탐색·공격을 완전히 멈추고 대형 위치로만 이동해서, "따라가다가 적 보고 홱 돌아서
+        // 공격하려다가 다시 따라가느라 홱 돌아서는" 부들부들 떨림을 없앤다. 군단장이 멈추면 다시 주변 적을
+        // 찾아 공격한다. 추종 대상이 없으면(followAnchor == null) 기존 동작에 전혀 영향이 없다.
+        private Vector3 lastAnchorPosition;
+        private bool hasLastAnchorPosition;
+        private const float AnchorMovingSpeedThreshold = 0.05f; // 이 값보다 느리면 "멈춰있다"고 판단(초당 이동 거리)
         private bool isManuallyHeld; // 플레이어가 직접 옮기는 동안 자기 행동 정지
+        private IDamageable forcedTarget; // 08.07 안건준 추가 - 외부에서 강제로 지정한 우선 공격 대상(건물 등)
+        private float forcedTargetTimer; // 08.07 안건준 추가 - 강제 지정 유지 시간(초)
+        private float moveSpeedMultiplier = 1f; // 08.07 안건준 추가 - 콘텐츠 버프(예: 수호자의 탑 이동 속도 버프)로 인한 배율
+        private float damageMultiplier = 1f; // 08.07 안건준 추가 - 콘텐츠 버프(예: 수호자의 탑 4번 건물 파괴 시 아군 공격력 2배)로 인한 배율
+        private readonly System.Collections.Generic.List<ActiveMonsterBuff> monsterBuffs =
+            new System.Collections.Generic.List<ActiveMonsterBuff>();
+        private MonsterStatModifier activeMonsterBuffModifier;
+        private MonsterRuntimeAssetSet runtimeAssetSet;
+        private IDamageable actionTarget;
+        private bool attackActionRunning;
+        private int nextActionSequenceId;
 
         public string UnitId { get; private set; }
         public UnitTeam Team { get; private set; }
@@ -66,6 +91,8 @@ namespace ProjectMT.Shared.Unit
         public UnitActor Target { get; private set; }
         public bool IsAlive => health != null && health.IsAlive;
         public bool IsManuallyHeld => isManuallyHeld;
+        public MonsterRuntimeAssetSet RuntimeAssetSet => runtimeAssetSet;
+        public MonsterAnimationDriver AnimationDriver => animationDriver;
 
         public event Action<UnitActor> Died;
 
@@ -80,6 +107,11 @@ namespace ProjectMT.Shared.Unit
             {
                 visualFeedback = GetComponent<UnitVisualFeedback>();
             }
+
+            if (animationDriver == null)
+            {
+                animationDriver = GetComponent<MonsterAnimationDriver>();
+            }
         }
 
         public void Initialize(UnitSpawnRequest request, CombatWorld combatWorld, ICombatFeedbackPlayer feedbackPlayer)
@@ -93,16 +125,37 @@ namespace ProjectMT.Shared.Unit
             visualFeedback?.SetTint(request.VisualTint); // 풀 재사용마다 현재 몬스터 색상 적용
             world = combatWorld;
             feedback = feedbackPlayer;
+            runtimeAssetSet = request.RuntimeAssetSet;
+            if (runtimeAssetSet != null && (animationDriver == null || !animationDriver.Initialize(runtimeAssetSet)))
+            {
+                Debug.LogError($"Formal Monster has no valid MonsterAnimationDriver. Unit={request.UnitId}", this);
+                runtimeAssetSet = null; // 잘못된 Adapter에서도 기존 즉시 공격으로 안전하게 복귀
+            }
             attackCooldown = UnityEngine.Random.Range(0f, Mathf.Max(0.05f, stats.attackInterval * 0.35f)); // 동시 공격 분산
             retargetCooldown = UnityEngine.Random.Range(0f, 0.2f);
+            moveSpeedMultiplier = 1f; // 08.07 안건준 추가 - 풀 재사용 전 이전 버프 배율 초기화
+            damageMultiplier = 1f; // 08.07 안건준 추가 - 풀 재사용 전 이전 공격력 버프 배율 초기화
             health.Initialize(stats.maxHealth, request.FixedDamagePerHit);
             health.Damaged += HandleDamaged;
             health.Died += HandleDied;
             world?.Register(this);
+            if (runtimeAssetSet != null)
+            {
+                world?.PlayMonsterFeedback(
+                    runtimeAssetSet.FeedbackProfile?.Spawn,
+                    animationDriver,
+                    null,
+                    runtimeAssetSet.BodyProfile?.VfxScale ?? 1f);
+            }
         }
 
         public void SetFollowAnchor(Transform anchor, Vector3 offset, float detectionRange, float leashRange)
         {
+            if (!ReferenceEquals(followAnchor, anchor))
+            {
+                hasLastAnchorPosition = false; // 08.07 안건준 추가 - 추종 대상이 바뀌면 이동 여부를 새로 측정
+            }
+
             followAnchor = anchor;
             followOffset = offset;
             followDetectionRange = Mathf.Max(0.5f, detectionRange);
@@ -113,6 +166,44 @@ namespace ProjectMT.Shared.Unit
         {
             followAnchor = null;
             followOffset = Vector3.zero;
+            hasLastAnchorPosition = false; // 08.07 안건준 추가 - 다음 추종 대상 기준으로 새로 측정하도록 초기화
+        }
+
+        // 08.07 안건준 추가 - 콘텐츠 전용 스크립트가 일정 시간 동안 이 유닛의 공격을 특정 대상에 강제한다.
+        // 아무도 호출하지 않으면 forcedTarget이 항상 null이라 기존 자동 전투(FindNearestOpponent) 동작에는
+        // 전혀 영향이 없다. 유지 시간이 끝나거나 대상이 사라지면 자동으로 원래 탐색 방식으로 복귀한다.
+        // (예: 수호자의 탑에서 군단장이 방어 건물 근처로 오면 아군이 적보다 건물을 먼저 공격하게 함)
+        public void ForceTarget(IDamageable target, float holdSeconds)
+        {
+            if (target == null || !target.IsAlive)
+            {
+                return;
+            }
+
+            forcedTarget = target;
+            forcedTargetTimer = Mathf.Max(0f, holdSeconds);
+        }
+
+        // 08.07 안건준 추가 - 지금 이 유닛이 target을 강제 공격 대상으로 삼고 있는지 확인.
+        // 콘텐츠 쪽(예: 수호자의 탑 겹침 방지)에서 "공격 중인 대상에는 밀어내기를 적용하지 않는다"처럼
+        // 판단할 때 쓴다. 아무도 호출하지 않으면 기존 동작에 영향이 없다.
+        public bool IsForcedTargeting(IDamageable target)
+        {
+            return target != null && ReferenceEquals(forcedTarget, target);
+        }
+
+        // 08.07 안건준 추가 - 콘텐츠 전용 버프(예: 수호자의 탑 4번 건물의 적 이동 속도 버프)가 이동 속도를
+        // 일시적으로 배율 조정할 때 쓴다. 아무도 호출하지 않으면 항상 1배라 기존 동작에 영향이 없다.
+        public void SetMoveSpeedMultiplier(float multiplier)
+        {
+            moveSpeedMultiplier = Mathf.Max(0.01f, multiplier);
+        }
+
+        // 08.07 안건준 추가 - 콘텐츠 전용 버프(예: 수호자의 탑 4번 건물 파괴 시 아군 공격력 2배)가 공격력을
+        // 일시적으로 배율 조정할 때 쓴다. 아무도 호출하지 않으면 항상 1배라 기존 동작에 영향이 없다.
+        public void SetDamageMultiplier(float multiplier)
+        {
+            damageMultiplier = Mathf.Max(0.01f, multiplier);
         }
 
         public bool BeginManualReposition()
@@ -141,20 +232,43 @@ namespace ProjectMT.Shared.Unit
                 return;
             }
 
+            TickMonsterBuffs(deltaTime);
+
             if (isManuallyHeld)
             {
+                animationDriver?.PlayIdle();
                 return; // 체력·피격·적 타깃 등록은 유지하고 자기 행동만 멈춤
             }
 
             attackCooldown = Mathf.Max(0f, attackCooldown - deltaTime);
             retargetCooldown -= deltaTime;
 
+            if (attackActionRunning)
+            {
+                TickAttackAction(deltaTime);
+                return;
+            }
+
+            // 08.07 안건준 추가 - 강제 지정된 대상이 있으면 일반 추종/탐색 로직보다 우선한다.
+            if (forcedTarget != null)
+            {
+                forcedTargetTimer -= deltaTime;
+                if (forcedTargetTimer > 0f && forcedTarget.IsAlive)
+                {
+                    TickForcedTarget(deltaTime);
+                    return;
+                }
+
+                forcedTarget = null; // 유지 시간 종료 또는 대상 소멸 → 원래 자동 전투로 복귀
+            }
+
             if (followAnchor != null)
             {
                 var anchorPosition = followAnchor.position + followOffset;
-                if (PlanarDistance(transform.position, anchorPosition) > followLeashRange)
+                var anchorIsMoving = IsAnchorMoving(deltaTime); // 08.07 안건준 추가
+                if (anchorIsMoving || PlanarDistance(transform.position, anchorPosition) > followLeashRange)
                 {
-                    Target = null; // 멀어지면 전투보다 복귀 우선
+                    Target = null; // 08.07 안건준 수정 - 군단장이 이동 중이거나 대형에서 멀어졌으면 전투보다 복귀·추종 우선
                     MoveTowards(anchorPosition, deltaTime);
                     return;
                 }
@@ -173,12 +287,16 @@ namespace ProjectMT.Shared.Unit
                 {
                     MoveTowards(followAnchor.position + followOffset, deltaTime);
                 }
+                else
+                {
+                    animationDriver?.PlayIdle();
+                }
 
                 return;
             }
 
             var distance = PlanarDistance(transform.position, Target.transform.position);
-            if (distance > Mathf.Max(0.2f, stats.attackRange))
+            if (distance > Mathf.Max(0.2f, GetEffectiveStats().attackRange))
             {
                 MoveTowards(Target.transform.position, deltaTime);
                 return;
@@ -187,8 +305,11 @@ namespace ProjectMT.Shared.Unit
             FaceTowards(Target.transform.position, deltaTime);
             if (canAttack && attackCooldown <= 0f)
             {
-                attackCooldown = Mathf.Max(0.05f, stats.attackInterval);
-                world.Attack(this, Target, stats); // 근접·원거리 분기는 World 소유
+                StartAttack(Target.Health); // 정식은 Animation Marker, 두부는 기존 즉시 공격
+            }
+            else
+            {
+                animationDriver?.PlayIdle();
             }
         }
 
@@ -200,25 +321,271 @@ namespace ProjectMT.Shared.Unit
                 health.Died -= HandleDied;
             }
 
+            // 08.07 안건준 추가 - 던전을 클리어/실패로 나가면 CombatWorld.Clear()가 즉시 이 유닛의 Shutdown()을 부르므로,
+            // 여기서도 배율을 1로 되돌려야 "이번 판에서 받은 공격력 버프"가 다음 판까지 새어나가지 않는다.
+            // (Initialize()에서도 1로 리셋하지만, 나가는 시점에 바로 해제되는 걸 보장하려고 이중으로 초기화한다.)
+            moveSpeedMultiplier = 1f;
+            damageMultiplier = 1f;
+            monsterBuffs.Clear();
+            activeMonsterBuffModifier = default;
+            animationDriver?.Shutdown();
+            runtimeAssetSet = null;
+            actionTarget = null;
+            attackActionRunning = false;
+            nextActionSequenceId = 0;
+
             world?.Unregister(this);
             world = null;
             feedback = null;
             Target = null;
             followAnchor = null;
+            hasLastAnchorPosition = false; // 08.07 안건준 추가 - 풀 재사용 전 이동 감지 상태 초기화
             isManuallyHeld = false;
+            forcedTarget = null; // 08.07 안건준 추가 - 풀 재사용 전 강제 지정 상태 초기화
+            forcedTargetTimer = 0f;
             Died = null; // 풀 재사용 전 외부 구독 제거
         }
 
-        private void MoveTowards(Vector3 destination, float deltaTime)
+        // 08.07 안건준 추가 - damageMultiplier가 적용된 능력치 사본을 반환한다(원본 stats는 그대로 유지).
+        // 배율이 항상 1이면 stats와 동일해서 기존 동작에 영향이 없다.
+        private UnitStatsSnapshot GetEffectiveStats()
         {
-            if (!canMove || stats.moveSpeed <= 0f)
+            var effective = stats;
+            effective.maxHealth *= Mathf.Max(0.01f, 1f + activeMonsterBuffModifier.HealthRate);
+            effective.damage *= damageMultiplier *
+                                Mathf.Max(0.01f, 1f + activeMonsterBuffModifier.AttackRate);
+            effective.defense *= Mathf.Max(0.01f, 1f + activeMonsterBuffModifier.DefenseRate);
+            effective.moveSpeed *= moveSpeedMultiplier *
+                                   Mathf.Max(0.01f, 1f + activeMonsterBuffModifier.MoveSpeedRate);
+            effective.attackRange *= Mathf.Max(0.01f, 1f + activeMonsterBuffModifier.AttackRangeRate);
+            effective.attackInterval /= Mathf.Max(0.01f, 1f + activeMonsterBuffModifier.AttackSpeedRate);
+            return effective;
+        }
+
+        public void ApplyMonsterBuff(
+            string effectId,
+            MonsterStatModifier modifier,
+            float duration,
+            MonsterBuffStackPolicy stackPolicy)
+        {
+            if (string.IsNullOrWhiteSpace(effectId) || modifier.IsEmpty || duration <= 0f || !IsAlive)
             {
                 return;
             }
 
+            ActiveMonsterBuff existing = null;
+            for (var index = 0; index < monsterBuffs.Count; index++)
+            {
+                if (string.Equals(monsterBuffs[index].EffectId, effectId, StringComparison.OrdinalIgnoreCase))
+                {
+                    existing = monsterBuffs[index];
+                    break;
+                }
+            }
+
+            if (existing == null)
+            {
+                monsterBuffs.Add(new ActiveMonsterBuff(effectId, modifier, duration));
+            }
+            else if (stackPolicy == MonsterBuffStackPolicy.RefreshDuration)
+            {
+                existing.Modifier = modifier;
+                existing.RemainingTime = duration;
+            }
+            else if (GetModifierStrength(modifier) > GetModifierStrength(existing.Modifier))
+            {
+                existing.Modifier = modifier;
+                existing.RemainingTime = duration;
+            }
+            else
+            {
+                existing.RemainingTime = Mathf.Max(existing.RemainingTime, duration);
+            }
+
+            RebuildMonsterBuffModifier();
+        }
+
+        private void StartAttack(IDamageable target)
+        {
+            if (target == null || !target.IsAlive || world == null)
+            {
+                return;
+            }
+
+            var effectiveStats = GetEffectiveStats();
+            attackCooldown = Mathf.Max(0.05f, effectiveStats.attackInterval);
+            if (runtimeAssetSet != null && animationDriver != null && animationDriver.IsReady)
+            {
+                actionTarget = target; // normalizedTime 0 Marker도 같은 고정 타깃 사용
+                attackActionRunning = true;
+                if (animationDriver.TryBeginAttack(
+                        effectiveStats.attackInterval,
+                        ++nextActionSequenceId,
+                        HandleAttackMarker))
+                {
+                    var startFeedback = animationDriver.CurrentAttackStartFeedback ??
+                                        runtimeAssetSet.FeedbackProfile?.AttackStart;
+                    world.PlayMonsterFeedback(
+                        startFeedback,
+                        animationDriver,
+                        null,
+                        runtimeAssetSet.BodyProfile?.VfxScale ?? 1f);
+                    return;
+                }
+
+                actionTarget = null;
+                attackActionRunning = false;
+            }
+
+            var component = target as Component;
+            var targetActor = component != null ? component.GetComponent<UnitActor>() : null;
+            if (targetActor != null)
+            {
+                world.Attack(this, targetActor, effectiveStats); // 기존 두부 경로
+            }
+            else
+            {
+                world.AttackDamageable(this, target, effectiveStats);
+            }
+        }
+
+        private void TickAttackAction(float deltaTime)
+        {
+            if (actionTarget != null && actionTarget.IsAlive)
+            {
+                FaceTowards(actionTarget.Position, deltaTime);
+            }
+
+            if (animationDriver == null || animationDriver.TickAttack(deltaTime, HandleAttackMarker))
+            {
+                attackActionRunning = false;
+                actionTarget = null;
+                animationDriver?.PlayIdle(true);
+            }
+        }
+
+        private void HandleAttackMarker(int markerIndex, MonsterAttackMarker marker)
+        {
+            if (!attackActionRunning)
+            {
+                return;
+            }
+
+            if (actionTarget == null || !actionTarget.IsAlive || runtimeAssetSet == null)
+            {
+                return;
+            }
+
+            world?.ExecuteMonsterAction(
+                this,
+                actionTarget,
+                GetEffectiveStats(),
+                runtimeAssetSet,
+                marker,
+                animationDriver);
+        }
+
+        private void TickMonsterBuffs(float deltaTime)
+        {
+            var changed = false;
+            for (var index = monsterBuffs.Count - 1; index >= 0; index--)
+            {
+                var buff = monsterBuffs[index];
+                buff.RemainingTime -= Mathf.Max(0f, deltaTime);
+                if (buff.RemainingTime > 0f)
+                {
+                    continue;
+                }
+
+                monsterBuffs.RemoveAt(index);
+                changed = true;
+            }
+
+            if (changed)
+            {
+                RebuildMonsterBuffModifier();
+            }
+        }
+
+        private void RebuildMonsterBuffModifier()
+        {
+            activeMonsterBuffModifier = default;
+            for (var index = 0; index < monsterBuffs.Count; index++)
+            {
+                activeMonsterBuffModifier += monsterBuffs[index].Modifier;
+            }
+
+            if (health != null && health.IsAlive)
+            {
+                var maxHealth = stats.maxHealth *
+                                Mathf.Max(0.01f, 1f + activeMonsterBuffModifier.HealthRate);
+                health.SetMaxHealth(maxHealth, true);
+            }
+        }
+
+        private static float GetModifierStrength(MonsterStatModifier modifier)
+        {
+            return Mathf.Abs(modifier.HealthRate) +
+                   Mathf.Abs(modifier.AttackRate) +
+                   Mathf.Abs(modifier.DefenseRate) +
+                   Mathf.Abs(modifier.AttackSpeedRate) +
+                   Mathf.Abs(modifier.MoveSpeedRate) +
+                   Mathf.Abs(modifier.AttackRangeRate);
+        }
+
+        // 08.07 안건준 추가 - 강제 지정된 대상(IDamageable)을 향해 이동·공격한다.
+        // 일반 Target 탐색·추종 로직과는 별개로 동작하며, 유지 시간이 끝나면 자동으로 원래 로직에 넘어간다.
+        private void TickForcedTarget(float deltaTime)
+        {
+            Target = null; // 강제 지정 중에는 일반 Target 탐색 결과를 사용하지 않음
+            var distance = PlanarDistance(transform.position, forcedTarget.Position);
+            if (distance > Mathf.Max(0.2f, GetEffectiveStats().attackRange))
+            {
+                MoveTowards(forcedTarget.Position, deltaTime);
+                return;
+            }
+
+            FaceTowards(forcedTarget.Position, deltaTime);
+            if (canAttack && attackCooldown <= 0f)
+            {
+                StartAttack(forcedTarget); // 정식은 같은 Marker 경로, 두부는 기존 구조물 공격
+            }
+            else
+            {
+                animationDriver?.PlayIdle();
+            }
+        }
+
+        // 08.07 안건준 추가 - 추종 기준점(군단장)의 프레임 간 이동 거리를 재서 "지금 걷고 있는지" 판단한다.
+        // 별도의 이동 컨트롤러 참조 없이, followAnchor의 위치 변화만으로 계산해서 어떤 콘텐츠에서도 그대로 쓸 수 있다.
+        private bool IsAnchorMoving(float deltaTime)
+        {
+            var currentAnchorPosition = followAnchor.position;
+            if (!hasLastAnchorPosition || deltaTime <= 0f)
+            {
+                lastAnchorPosition = currentAnchorPosition;
+                hasLastAnchorPosition = true;
+                return false;
+            }
+
+            var speed = PlanarDistance(currentAnchorPosition, lastAnchorPosition) / deltaTime;
+            lastAnchorPosition = currentAnchorPosition;
+            return speed > AnchorMovingSpeedThreshold;
+        }
+
+        private void MoveTowards(Vector3 destination, float deltaTime)
+        {
+            var effectiveStats = GetEffectiveStats();
+            if (!canMove || effectiveStats.moveSpeed <= 0f)
+            {
+                animationDriver?.PlayIdle();
+                return;
+            }
+
             destination.y = transform.position.y;
-            transform.position = Vector3.MoveTowards(transform.position, destination, stats.moveSpeed * deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, destination, effectiveStats.moveSpeed * deltaTime);
             FaceTowards(destination, deltaTime);
+            animationDriver?.PlayMove();
         }
 
         private void FaceTowards(Vector3 destination, float deltaTime)
@@ -237,13 +604,33 @@ namespace ProjectMT.Shared.Unit
         private void HandleDamaged(DamageReport report)
         {
             feedback?.PlayHit(this, report);
+            if (runtimeAssetSet != null)
+            {
+                world?.PlayMonsterFeedback(
+                    runtimeAssetSet.FeedbackProfile?.HitReceived,
+                    animationDriver,
+                    runtimeAssetSet.BodyProfile?.HitCenterPath,
+                    runtimeAssetSet.BodyProfile?.VfxScale ?? 1f);
+            }
         }
 
         private void HandleDied(DamageReport report)
         {
             feedback?.PlayDeath(this, report);
+            attackActionRunning = false;
+            actionTarget = null;
+            var returnDelay = animationDriver?.PlayDeath() ?? 0.38f;
+            if (runtimeAssetSet != null)
+            {
+                world?.PlayMonsterFeedback(
+                    runtimeAssetSet.FeedbackProfile?.Death,
+                    animationDriver,
+                    runtimeAssetSet.BodyProfile?.HitCenterPath,
+                    runtimeAssetSet.BodyProfile?.VfxScale ?? 1f);
+            }
+
             Died?.Invoke(this);
-            world?.NotifyDeath(this); // 연출 뒤 풀 반환 요청
+            world?.NotifyDeath(this, returnDelay); // Death Clip 종료 뒤 풀 반환
         }
 
         private static float PlanarDistance(Vector3 left, Vector3 right)
@@ -251,6 +638,20 @@ namespace ProjectMT.Shared.Unit
             left.y = 0f;
             right.y = 0f;
             return Vector3.Distance(left, right);
+        }
+
+        private sealed class ActiveMonsterBuff
+        {
+            public ActiveMonsterBuff(string effectId, MonsterStatModifier modifier, float remainingTime)
+            {
+                EffectId = effectId;
+                Modifier = modifier;
+                RemainingTime = remainingTime;
+            }
+
+            public string EffectId { get; }
+            public MonsterStatModifier Modifier { get; set; }
+            public float RemainingTime { get; set; }
         }
     }
 }

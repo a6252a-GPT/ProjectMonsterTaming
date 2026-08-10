@@ -1,19 +1,11 @@
+using ProjectMT.Shared.Equipment;
 using UnityEngine;
 
 namespace ProjectMT.Features.Equipment
 {
-    // 08.09 안건준 추가 - 장비 부위 6종. 부위별 드랍 확률은 전부 동일(1/6)하다.
-    public enum EquipmentPart
-    {
-        Weapon, // 무기 - 공격력
-        Helmet, // 투구 - 최대 체력
-        Armor, // 갑옷 - 방어력
-        Glove, // 장갑 - 공격속도
-        Boots, // 신발 - 이동속도
-        Ring // 반지(악세서리) - 치명타
-    }
-
-    // 08.09 안건준 추가 - 장비 부위 관련 고정 정보(표시 이름 등)를 한 곳에서 관리한다.
+    // 08.10 안건준 수정 - 장비 부위 enum은 저장 데이터가 참조할 수 있도록 Shared 어셈블리로 옮겼다
+    // (ProjectMT.Shared.Equipment.EquipmentPart). 표시 이름·드랍 확률 등 기획 정보만 이 클래스에서 관리한다.
+    // 08.10 안건준 수정 - 문서("17_능력치_성장_장비_계산_규칙") 기준으로 신발→하의, 반지(악세서리)→장신구로 표시명 변경.
     public static class EquipmentPartInfo
     {
         public const int PartCount = 6;
@@ -26,8 +18,8 @@ namespace ProjectMT.Features.Equipment
                 case EquipmentPart.Helmet: return "투구";
                 case EquipmentPart.Armor: return "갑옷";
                 case EquipmentPart.Glove: return "장갑";
-                case EquipmentPart.Boots: return "신발";
-                case EquipmentPart.Ring: return "반지";
+                case EquipmentPart.Boots: return "하의";
+                case EquipmentPart.Ring: return "장신구";
                 default: return part.ToString();
             }
         }

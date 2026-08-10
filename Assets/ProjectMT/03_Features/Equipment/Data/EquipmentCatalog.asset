@@ -30,10 +30,10 @@ MonoBehaviour:
     part: 3
     icon: {fileID: 0}
   - id: boots_basic
-    displayName: 신발
+    displayName: 하의
     part: 4
     icon: {fileID: 0}
   - id: ring_basic
-    displayName: 반지
+    displayName: 장신구
     part: 5
     icon: {fileID: 0}

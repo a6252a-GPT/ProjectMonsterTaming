@@ -1,58 +1,55 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using ProjectMT.Shared.Equipment;
+using ProjectMT.Shared.GameData;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ProjectMT.Features.Equipment
 {
-    // 08.09 안건준 추가 - 장비창(PF_CommanderEquipmentPage) 전체를 실제 장비 데이터와 연결하는 컨트롤러.
-    //
-    // 이 스크립트 하나가 EquipmentContent 아래에 있는
-    //  1) 보유 장비 목록(OwnedEquipmentPanel: InventorySlot_01~15, 필터·정렬·수량 표시)
-    //  2) 장착 버튼(EquipButton), 선택 장비 상세 정보(SelectedItemName/Stat)
-    //  3) 군단장 장착 슬롯 6개(WeaponSlot 등)와 능력치 카드(StatGrid), 총전투력(CommanderSummary)
-    // 를 모두 코드에서 이름으로 찾아 연결한다(팀원이 만든 프리팹 구조를 그대로 유지하면서
-    // 인스펙터에 미리 참조를 걸어두지 않아도 되도록, transform 이름 기반으로 자동 탐색한다).
-    //
-    // 기존 프리팹/씬 파일은 건드리지 않고 이 컴포넌트 하나만 EquipmentContent에 추가해서 동작한다.
+    // 장비창(PF_CommanderEquipmentPage) 전체를 실제 장비 데이터와 연결하는 컨트롤러.
+    // - 부위+등급으로 중첩(스택)하지 않는다. 랜덤 옵션 때문에 아이템마다 능력치가 달라서 보유 장비는
+    //   전부 개별 인스턴스로 취급한다.
+    // - 보유 수량은 최대 100개까지 가능하지만 슬롯은 20개뿐이라 페이지 넘김 UI가 필요하다.
+    // - 데이터는 세션 한정이 아니라 GameProgressData(저장 파일)에 영구 저장된다.
     [DisallowMultipleComponent]
     public sealed class EquipmentPageController : MonoBehaviour
     {
-        private const int InventorySlotCount = 15;
+        // 한 페이지에 보이는 인벤토리 슬롯 수. 실제 프리팹의 슬롯 개수와 반드시 일치해야 한다.
+        private const int InventorySlotCount = 20;
         private const string EquipButtonEquipText = "장착";
         private const string EquipButtonUnequipText = "해제";
 
-        // 인벤토리 슬롯 1개에 대한 런타임 바인딩 정보. InventorySlot_01~15 각각에 대해 하나씩 만든다.
+        // 인벤토리 슬롯 1개에 대한 런타임 바인딩 정보. InventorySlot_01~20 각각에 대해 하나씩 만든다.
         private sealed class SlotView
         {
             public Transform Root;
             public Image ItemIcon;
             public Transform NormalArea;
-            public GameObject AddIndicator; // 08.09 안건준 추가 - 비어있을 때 표시하는 "+" 표시(Add_1)
-            public GameObject TextLevel; // 08.09 안건준 추가 - 슬롯이 비어있을 때는 숨겨야 하는 목업 레벨 텍스트(값은 건드리지 않음)
+            public GameObject AddIndicator; // 비어있을 때 표시하는 "+" 표시(Add_1)
+            public GameObject TextLevel; // 슬롯이 비어있을 때는 숨겨야 하는 목업 레벨 텍스트(값은 건드리지 않음)
             public GameObject CheckObject;
-            public TMP_Text StackCountText;
-            public TMP_Text EquippedLabelText; // 08.09 안건준 추가 - 장착 중인 스택을 인벤토리에서도 구분할 수 있도록 아이콘 위에 "[장착]" 표시
+            public TMP_Text EquippedLabelText; // 장착 중인 아이템을 인벤토리에서도 구분할 수 있도록 아이콘 아래 "[장착]" 표시
             public Button ClickButton;
-            public EquipmentStack BoundStack; // 이 슬롯이 현재 표시 중인 스택 (없으면 null → 빈 슬롯)
+            public string BoundInstanceId; // 이 슬롯이 현재 표시 중인 인스턴스 ID (없으면 null → 빈 슬롯)
         }
+
+        [SerializeField] private EquipmentCatalog catalog;
 
         private readonly List<SlotView> slots = new List<SlotView>();
         private readonly Dictionary<EquipmentPart, Transform> commanderSlots = new Dictionary<EquipmentPart, Transform>();
         private readonly Dictionary<EquipmentPart, Transform> filterTabs = new Dictionary<EquipmentPart, Transform>();
 
-        // 08.09 안건준 추가 - 부위별 대표 아이콘 스프라이트. 군단장 장착 슬롯(WeaponSlot 등)은
-        // 부위마다 고정이라 항상 올바른 아이콘이 미리 박혀 있으므로, 그 스프라이트를 그대로 재사용해서
-        // 인벤토리 슬롯도 "실제로 담긴 부위"에 맞는 아이콘을 보여주도록 한다.
-        // (기존에는 슬롯 위치마다 목업 때 박혀 있던 서로 다른 아이콘을 색상만 바꿔서 재사용했기 때문에
-        //  무기를 장착해도 장갑 아이콘이 뜨는 등 부위와 아이콘이 어긋나는 문제가 있었다.)
+        // 부위별 대표 아이콘 스프라이트. 군단장 장착 슬롯(WeaponSlot 등)은 부위마다 고정이라 항상 올바른
+        // 아이콘이 미리 박혀 있으므로, 그 스프라이트를 그대로 재사용해서 인벤토리 슬롯도 실제 부위에 맞는
+        // 아이콘을 보여주도록 한다.
         private readonly Dictionary<EquipmentPart, Sprite> partIconSprites = new Dictionary<EquipmentPart, Sprite>();
 
-        // 08.09 안건준 추가 - 요청사항: 테두리 색은 런타임 tint로 흉내내지 말고, 목업에 이미 있는
-        // 등급별 완성 프레임(ItemFrame_01_Normal_Green/Blue/Yellow/Plum/Red)을 "기존에 꺼 그대로" 재사용한다.
-        // 각 슬롯의 NormalArea 밑에 있는 프레임 오브젝트를 실제 등급에 맞는 것으로 통째로 교체하는 방식.
+        // 테두리 색은 런타임 tint가 아니라, 목업에 있는 등급별 완성 프레임
+        // (ItemFrame_01_Normal_Green/Blue/Yellow/Plum/Red)을 그대로 재사용한다.
         private static readonly Dictionary<EquipmentGrade, string> FrameVariantSuffixByGrade = new Dictionary<EquipmentGrade, string>
         {
             { EquipmentGrade.Common, "Green" },
@@ -74,14 +71,24 @@ namespace ProjectMT.Features.Equipment
         private Transform statGrid;
         private TMP_Text commanderSummaryText;
         private Transform selectedItemName;
-        private Transform selectedItemStat;
+        private Transform selectedItemStat; // "기본옵션"(핵심 능력치) 전용 텍스트
+        private Transform selectedItemRandomOptionStat; // "추가 랜덤 옵션" 전용 텍스트
         private Transform equipButtonRoot;
         private Button equipButton;
         private TMP_Text equipButtonText;
 
+        // 보유 수량이 슬롯 수보다 많을 수 있어 페이지 넘김 UI가 필요하다.
+        private Button prevPageButton;
+        private Button nextPageButton;
+        private TMP_Text pageLabelText;
+        private int currentPage;
+
+        // 버튼 대신 스크롤뷰를 드래그하거나 마우스 휠을 굴려도 페이지를 넘길 수 있게 한다.
+        private EquipmentInventorySwipeHandler inventorySwipeHandler;
+
         private EquipmentPart? currentFilter; // null = 전체
         private bool sortGradeDescending = true;
-        private string selectedKey; // 현재 상세 영역에 표시 중인 장비 종류 Key
+        private string selectedInstanceId; // 현재 상세 영역에 표시 중인 장비 인스턴스 ID
 
         private void Awake()
         {
@@ -89,20 +96,33 @@ namespace ProjectMT.Features.Equipment
             BuildFilterButtons();
             BuildSortButton();
             BuildInventorySlots();
+            BuildPagingControls();
+            BuildInventoryScrollSwipe();
             BuildEquipButton();
         }
 
         private void OnEnable()
         {
-            EquipmentInventoryRuntime.InventoryChanged += HandleInventoryChanged;
-            EquipmentInventoryRuntime.EquippedChanged += HandleEquippedChanged;
+            EquipmentInventoryRuntime.Changed += HandleInventoryChanged;
             RefreshAll();
         }
 
         private void OnDisable()
         {
-            EquipmentInventoryRuntime.InventoryChanged -= HandleInventoryChanged;
-            EquipmentInventoryRuntime.EquippedChanged -= HandleEquippedChanged;
+            EquipmentInventoryRuntime.Changed -= HandleInventoryChanged;
+
+            if (inventorySwipeHandler != null)
+            {
+                inventorySwipeHandler.PageDeltaRequested -= HandleSwipePageDeltaRequested;
+            }
+        }
+
+        // MainBattleSceneRoot가 씬 조립 시점에 진행 데이터 서비스를 주입한다. 실제 보유/장착 데이터는
+        // EquipmentInventoryRuntime(정적 파사드)이 들고 있으므로, 여기서는 그 파사드에 서비스와
+        // 카탈로그를 연결해주기만 하면 된다.
+        public void Configure(IGameProgressService progress)
+        {
+            EquipmentInventoryRuntime.Configure(progress, ResolveCatalog());
         }
 
         // ---------------------------------------------------------------
@@ -117,6 +137,8 @@ namespace ProjectMT.Features.Equipment
             commanderSummaryText = FindDeep(transform, "CommanderSummary")?.GetComponent<TMP_Text>();
             selectedItemName = FindDeep(transform, "SelectedItemName");
             selectedItemStat = FindDeep(transform, "SelectedItemStat");
+            // 추가 랜덤옵션 전용 칸: 새 이름(SelectedItemNext) 우선, 예전 이름도 후보로 유지한다.
+            selectedItemRandomOptionStat = FindDeepAny(transform, "SelectedItemNext", "SelectedItemRandomOptionStat");
             equipButtonRoot = FindDeep(transform, "EquipButton");
 
             commanderSlots[EquipmentPart.Weapon] = FindDeep(transform, "WeaponSlot");
@@ -130,8 +152,26 @@ namespace ProjectMT.Features.Equipment
             CacheFrameVariantTemplates();
         }
 
-        // 08.09 안건준 추가 - 군단장 장착 슬롯 6개는 부위별로 고정된 오브젝트라 항상 올바른 아이콘
-        // 스프라이트를 갖고 있다. 그 스프라이트를 부위별 대표 아이콘으로 캐시해서 인벤토리 슬롯에도 그대로 쓴다.
+        private EquipmentCatalog ResolveCatalog()
+        {
+            if (catalog != null)
+            {
+                return catalog;
+            }
+
+#if UNITY_EDITOR
+            var guids = UnityEditor.AssetDatabase.FindAssets("t:EquipmentCatalog");
+            if (guids.Length > 0)
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
+                catalog = UnityEditor.AssetDatabase.LoadAssetAtPath<EquipmentCatalog>(path);
+            }
+#endif
+            return catalog;
+        }
+
+        // 군단장 장착 슬롯 6개는 부위별로 고정된 오브젝트라 항상 올바른 아이콘 스프라이트를 갖고 있다.
+        // 그 스프라이트를 부위별 대표 아이콘으로 캐시해서 인벤토리 슬롯에도 그대로 쓴다.
         private void CachePartIconSprites()
         {
             foreach (var pair in commanderSlots)
@@ -144,8 +184,7 @@ namespace ProjectMT.Features.Equipment
             }
         }
 
-        // 08.09 안건준 추가 - 목업 곳곳(인벤토리 슬롯들)에 흩어져 있는 등급별 프레임
-        // (ItemFrame_01_Normal_Green/Blue/Yellow/Plum/Red)을 이름별로 하나씩 찾아서,
+        // 목업 곳곳(인벤토리 슬롯들)에 흩어져 있는 등급별 프레임을 이름별로 하나씩 찾아서,
         // 눈에 보이지 않는 보관용 오브젝트 아래에 복제해둔다. 이후 슬롯에 실제 등급을 표시할 때
         // 이 복제본을 다시 복제해서 끼워 넣는 방식으로 "기존 프레임 그대로"의 테두리를 재사용한다.
         private void CacheFrameVariantTemplates()
@@ -231,10 +270,25 @@ namespace ProjectMT.Features.Equipment
             return null;
         }
 
+        // 하이어라키 이름이 바뀔 수 있어 여러 후보를 순서대로 시도한다(먼저 찾은 이름이 우선한다).
+        private static Transform FindDeepAny(Transform root, params string[] candidateNames)
+        {
+            for (var i = 0; i < candidateNames.Length; i++)
+            {
+                var found = FindDeep(root, candidateNames[i]);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
         // ---------------------------------------------------------------
         // 부위 필터 탭 - 필터 UI 목업에는 Button이 연결돼 있지 않아 런타임에 추가한다.
         // 목업 탭(전체/무기/방패/방어구/장신구/신발) 5분류를 우리 6부위에 맞춰 대응시킨다.
-        // 장갑(Glove)은 전용 탭이 없어 "전체"에서만 표시된다 (팀 확인 필요 - 요약에 안내).
+        // 장갑(Glove)은 전용 탭이 없어 "전체"에서만 표시된다.
         // ---------------------------------------------------------------
 
         private void BuildFilterButtons()
@@ -269,6 +323,7 @@ namespace ProjectMT.Features.Equipment
         private void SetFilter(EquipmentPart? part)
         {
             currentFilter = part;
+            currentPage = 0;
             RefreshFilterHighlight();
             RefreshInventoryList();
         }
@@ -312,6 +367,7 @@ namespace ProjectMT.Features.Equipment
         private void ToggleSort()
         {
             sortGradeDescending = !sortGradeDescending;
+            currentPage = 0;
             RefreshSortLabelText();
             RefreshInventoryList();
         }
@@ -325,31 +381,33 @@ namespace ProjectMT.Features.Equipment
         }
 
         // ---------------------------------------------------------------
-        // 인벤토리 슬롯 15개
+        // 인벤토리 슬롯 20개 + 페이지 넘김
         // ---------------------------------------------------------------
 
         private void BuildInventorySlots()
         {
             for (var i = 1; i <= InventorySlotCount; i++)
             {
-                var slotName = $"InventorySlot_{i:00}";
-                var slotRoot = FindDeep(transform, slotName);
+                // 스크롤뷰 안 슬롯은 이름 끝에 "_1"이 붙는다(InventorySlot_01_1~20_1). 옛 이름(_1 없음)도
+                // 계속 지원하도록 새 이름을 먼저 찾고, 없으면 옛 이름으로 찾는다.
+                var slotRoot = FindDeepAny(transform, $"InventorySlot_{i:00}_1", $"InventorySlot_{i:00}");
                 if (slotRoot == null)
                 {
                     continue;
                 }
 
+                // 슬롯마다 내부 구조(중첩 깊이)가 조금씩 달라 고정 상대 경로로는 못 찾을 수 있으므로,
+                // slotRoot 하위 전체를 이름으로 재귀 탐색해서 중첩 depth와 무관하게 찾는다.
                 var view = new SlotView
                 {
                     Root = slotRoot,
-                    ItemIcon = slotRoot.Find("ItemFrame_01/Item")?.GetComponent<Image>(),
-                    NormalArea = slotRoot.Find("ItemFrame_01/NormalArea"),
-                    AddIndicator = slotRoot.Find("ItemFrame_01/Add_1")?.gameObject,
-                    TextLevel = slotRoot.Find("Text_Level")?.gameObject,
-                    CheckObject = slotRoot.Find("Check")?.gameObject
+                    ItemIcon = FindDeep(slotRoot, "Item")?.GetComponent<Image>(),
+                    NormalArea = FindDeep(slotRoot, "NormalArea"),
+                    AddIndicator = FindDeep(slotRoot, "Add_1")?.gameObject,
+                    TextLevel = FindDeep(slotRoot, "Text_Level")?.gameObject,
+                    CheckObject = FindDeep(slotRoot, "Check")?.gameObject
                 };
 
-                view.StackCountText = CreateStackCountLabel(slotRoot);
                 view.EquippedLabelText = CreateEquippedLabel(slotRoot);
                 view.ClickButton = EnsureButton(slotRoot);
                 var capturedView = view;
@@ -359,31 +417,179 @@ namespace ProjectMT.Features.Equipment
             }
         }
 
-        // 08.09 안건준 추가 - 요청사항: 중첩 수량(+N)은 기존 Text_Level(임시 Lv 표기, 데이터 연결 금지)을
-        // 재사용하지 않고 새 텍스트 오브젝트를 만들어 표시한다.
-        private static TMP_Text CreateStackCountLabel(Transform slotRoot)
+        // 페이지 표시는 독립된 "PageText"(1 / N 표시용 텍스트메시프로) 오브젝트를 최우선으로 사용한다.
+        // 옛 방식(InventoryPagingBar 안의 PrevPageButton/NextPageButton/PageLabel)이 남아있으면 버튼
+        // 기능도 계속 연결하고, 둘 다 없으면 런타임에 임시로 만든다.
+        private void BuildPagingControls()
         {
-            var labelObject = new GameObject("StackCountLabel", typeof(RectTransform));
-            labelObject.transform.SetParent(slotRoot, false);
-            var rect = labelObject.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(1f, 0f);
-            rect.anchorMax = new Vector2(1f, 0f);
-            rect.pivot = new Vector2(1f, 0f);
-            rect.anchoredPosition = new Vector2(-6f, 6f);
-            rect.sizeDelta = new Vector2(60f, 28f);
+            pageLabelText = FindDeep(transform, "PageText")?.GetComponent<TMP_Text>();
 
-            var text = labelObject.AddComponent<TextMeshProUGUI>();
-            text.fontSize = 20f;
-            text.fontStyle = FontStyles.Bold;
-            text.alignment = TextAlignmentOptions.BottomRight;
+            var bar = FindDeep(transform, "InventoryPagingBar");
+            if (bar == null)
+            {
+                if (pageLabelText == null)
+                {
+                    BuildPagingControlsRuntimeFallback();
+                }
+
+                return;
+            }
+
+            var prevTransform = FindDeep(bar, "PrevPageButton");
+            var nextTransform = FindDeep(bar, "NextPageButton");
+            if (pageLabelText == null)
+            {
+                pageLabelText = FindDeep(bar, "PageLabel")?.GetComponent<TMP_Text>();
+            }
+
+            if (prevTransform != null)
+            {
+                prevPageButton = EnsureButton(prevTransform);
+                prevPageButton.onClick.AddListener(() => SetPage(currentPage - 1));
+            }
+
+            if (nextTransform != null)
+            {
+                nextPageButton = EnsureButton(nextTransform);
+                nextPageButton.onClick.AddListener(() => SetPage(currentPage + 1));
+            }
+        }
+
+        private void BuildPagingControlsRuntimeFallback()
+        {
+            var barObject = new GameObject("InventoryPagingBar", typeof(RectTransform));
+            barObject.transform.SetParent(transform, false);
+            var barRect = barObject.GetComponent<RectTransform>();
+            barRect.anchorMin = new Vector2(0.5f, 0f);
+            barRect.anchorMax = new Vector2(0.5f, 0f);
+            barRect.pivot = new Vector2(0.5f, 0f);
+            barRect.anchoredPosition = new Vector2(273f, 118f);
+            barRect.sizeDelta = new Vector2(260f, 40f);
+
+            prevPageButton = CreatePagingButton(barObject.transform, "PrevPageButton", "<", new Vector2(-100f, 0f));
+            nextPageButton = CreatePagingButton(barObject.transform, "NextPageButton", ">", new Vector2(100f, 0f));
+            pageLabelText = CreatePagingLabel(barObject.transform);
+
+            prevPageButton.onClick.AddListener(() => SetPage(currentPage - 1));
+            nextPageButton.onClick.AddListener(() => SetPage(currentPage + 1));
+        }
+
+        private static Button CreatePagingButton(Transform parent, string name, string label, Vector2 anchoredPosition)
+        {
+            var buttonObject = new GameObject(name, typeof(RectTransform));
+            buttonObject.transform.SetParent(parent, false);
+            var rect = buttonObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = new Vector2(48f, 36f);
+
+            var image = buttonObject.AddComponent<Image>();
+            image.color = new Color(0f, 0f, 0f, 0.45f);
+
+            var button = buttonObject.AddComponent<Button>();
+
+            var textObject = new GameObject("Label", typeof(RectTransform));
+            textObject.transform.SetParent(buttonObject.transform, false);
+            var textRect = textObject.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
+
+            var text = textObject.AddComponent<TextMeshProUGUI>();
+            text.text = label;
+            text.fontSize = 22f;
+            text.alignment = TextAlignmentOptions.Center;
             text.color = Color.white;
             text.raycastTarget = false;
-            text.text = string.Empty;
+
+            return button;
+        }
+
+        private static TMP_Text CreatePagingLabel(Transform parent)
+        {
+            var labelObject = new GameObject("PageLabel", typeof(RectTransform));
+            labelObject.transform.SetParent(parent, false);
+            var rect = labelObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(140f, 36f);
+
+            var text = labelObject.AddComponent<TextMeshProUGUI>();
+            text.fontSize = 22f;
+            text.alignment = TextAlignmentOptions.Center;
+            text.color = Color.white;
+            text.raycastTarget = false;
+            text.text = "1 / 1";
             return text;
         }
 
-        // 08.09 안건준 추가 - 요청사항: 인벤토리에서도 어떤 스택이 지금 장착 중인지 구분할 수 있도록,
-        // 아이콘 그림 아래쪽에 "[장착]" 글자를 새 텍스트 오브젝트로 표시한다.
+        private void SetPage(int page)
+        {
+            currentPage = Mathf.Max(0, page);
+            RefreshInventoryList();
+        }
+
+        // 인벤토리 스크롤뷰를 찾아서 드래그 및 마우스 휠 입력을 페이지 전환으로 연결한다. 오브젝트
+        // 이름이 다를 수 있어 후보를 순서대로 시도하고, 없으면 조용히 건너뛴다(버튼 페이지 넘김은
+        // 그대로 동작).
+        private static readonly string[] InventoryScrollViewNameCandidates =
+        {
+            "InventorySlotScroll View",
+            "InventorySlotScrollView",
+            "PF_InventoryScroll View",
+            "PF_InventoryScrollView",
+            "InventoryScrollView",
+            "InventoryScroll View"
+        };
+
+        private void BuildInventoryScrollSwipe()
+        {
+            Transform scrollViewTransform = null;
+            for (var i = 0; i < InventoryScrollViewNameCandidates.Length; i++)
+            {
+                scrollViewTransform = FindDeep(transform, InventoryScrollViewNameCandidates[i]);
+                if (scrollViewTransform != null)
+                {
+                    break;
+                }
+            }
+
+            if (scrollViewTransform == null)
+            {
+                return;
+            }
+
+            inventorySwipeHandler = scrollViewTransform.GetComponent<EquipmentInventorySwipeHandler>();
+            if (inventorySwipeHandler == null)
+            {
+                inventorySwipeHandler = scrollViewTransform.gameObject.AddComponent<EquipmentInventorySwipeHandler>();
+            }
+
+            inventorySwipeHandler.PageDeltaRequested += HandleSwipePageDeltaRequested;
+
+            // 스크롤로 페이지를 넘기므로 기존 이전/다음 버튼은 숨긴다(페이지 라벨은 계속 표시).
+            if (prevPageButton != null)
+            {
+                prevPageButton.gameObject.SetActive(false);
+            }
+
+            if (nextPageButton != null)
+            {
+                nextPageButton.gameObject.SetActive(false);
+            }
+        }
+
+        private void HandleSwipePageDeltaRequested(int delta)
+        {
+            SetPage(currentPage + delta);
+        }
+
+        // 인벤토리에서도 장착 중인 아이템을 구분할 수 있도록 아이콘 아래에 "[장착]" 텍스트를 표시한다.
         private TMP_Text CreateEquippedLabel(Transform slotRoot)
         {
             var labelObject = new GameObject("EquippedLabel", typeof(RectTransform));
@@ -426,12 +632,12 @@ namespace ProjectMT.Features.Equipment
 
         private void HandleSlotClicked(SlotView view)
         {
-            if (view.BoundStack == null)
+            if (string.IsNullOrEmpty(view.BoundInstanceId))
             {
                 return; // 빈 슬롯
             }
 
-            selectedKey = view.BoundStack.Key;
+            selectedInstanceId = view.BoundInstanceId;
             RefreshSelection();
         }
 
@@ -451,21 +657,21 @@ namespace ProjectMT.Features.Equipment
             equipButton.onClick.AddListener(HandleEquipButtonClicked);
         }
 
-        private void HandleEquipButtonClicked()
+        private async void HandleEquipButtonClicked()
         {
-            if (string.IsNullOrEmpty(selectedKey) ||
-                !EquipmentInventoryRuntime.TryGetStack(selectedKey, out var stack))
+            if (string.IsNullOrEmpty(selectedInstanceId) ||
+                !EquipmentInventoryRuntime.TryGetItem(selectedInstanceId, out var item))
             {
                 return;
             }
 
-            if (stack.IsEquipped)
+            if (item.IsEquipped)
             {
-                EquipmentInventoryRuntime.TryUnequip(stack.Definition.Part);
+                await EquipmentInventoryRuntime.TryUnequipAsync(item.Part);
             }
             else
             {
-                EquipmentInventoryRuntime.TryEquip(selectedKey);
+                await EquipmentInventoryRuntime.TryEquipAsync(selectedInstanceId);
             }
         }
 
@@ -474,7 +680,6 @@ namespace ProjectMT.Features.Equipment
         // ---------------------------------------------------------------
 
         private void HandleInventoryChanged() => RefreshAll();
-        private void HandleEquippedChanged(EquipmentPart part) => RefreshAll();
 
         private void RefreshAll()
         {
@@ -485,22 +690,27 @@ namespace ProjectMT.Features.Equipment
 
         private void RefreshInventoryList()
         {
-            var query = EquipmentInventoryRuntime.Stacks.AsEnumerable();
+            IEnumerable<EquipmentItemView> query = EquipmentInventoryRuntime.GetItems();
             if (currentFilter.HasValue)
             {
-                query = query.Where(s => s.Definition.Part == currentFilter.Value);
+                query = query.Where(item => item.Part == currentFilter.Value);
             }
 
             var ordered = sortGradeDescending
-                ? query.OrderByDescending(s => (int)s.Definition.Grade).ThenBy(s => s.Definition.Part)
-                : query.OrderBy(s => (int)s.Definition.Grade).ThenBy(s => s.Definition.Part);
+                ? query.OrderByDescending(item => (int)item.Grade).ThenBy(item => item.Part)
+                : query.OrderBy(item => (int)item.Grade).ThenBy(item => item.Part);
             var list = ordered.ToList();
+
+            var totalPages = Mathf.Max(1, Mathf.CeilToInt(list.Count / (float)InventorySlotCount));
+            currentPage = Mathf.Clamp(currentPage, 0, totalPages - 1);
+            var pageStart = currentPage * InventorySlotCount;
 
             for (var i = 0; i < slots.Count; i++)
             {
-                if (i < list.Count)
+                var listIndex = pageStart + i;
+                if (listIndex < list.Count)
                 {
-                    BindSlot(slots[i], list[i]);
+                    BindSlot(slots[i], list[listIndex]);
                 }
                 else
                 {
@@ -508,26 +718,41 @@ namespace ProjectMT.Features.Equipment
                 }
             }
 
-            // 선택된 장비가 더 이상 보유 목록에 없으면(수량 0 등) 선택 해제.
-            if (!string.IsNullOrEmpty(selectedKey) && !EquipmentInventoryRuntime.TryGetStack(selectedKey, out _))
+            // 선택된 장비가 더 이상 보유 목록에 없으면 선택 해제.
+            if (!string.IsNullOrEmpty(selectedInstanceId) && !EquipmentInventoryRuntime.TryGetItem(selectedInstanceId, out _))
             {
-                selectedKey = null;
+                selectedInstanceId = null;
             }
 
             RefreshCapacityText();
+            RefreshPagingControls(totalPages);
             RefreshSelection();
         }
 
-        // 08.09 안건준 수정 - 슬롯 오브젝트 자체는 항상 켜둔 채로("+" 표시가 기본으로 보이도록),
-        // 아이템이 있을 때만 아이콘 영역(NormalArea/Item)을 켜고 "+" 표시(Add_1)를 끄는 방식으로 변경했다.
-        // 아이콘도 부위별 대표 스프라이트(partIconSprites)로 바꿔서, 실제 담긴 부위와 다른 아이콘이
-        // 보이던 문제(예: 무기를 장착했는데 장갑 아이콘처럼 보이는 문제)를 해결한다.
-        // 08.09 안건준 수정 - 요청사항: 아이템 아이콘은 원래 색(고유 아트) 그대로 보여야 하므로 더 이상
-        // 등급색으로 물들이지 않는다. 테두리는 런타임 tint가 아니라, 목업에 있던 등급별 완성 프레임
-        // (ApplyFrameVariant)을 그대로 갖다 끼워서 표시한다.
-        private void BindSlot(SlotView view, EquipmentStack stack)
+        private void RefreshPagingControls(int totalPages)
         {
-            view.BoundStack = stack;
+            if (pageLabelText != null)
+            {
+                pageLabelText.text = $"{currentPage + 1} / {totalPages}";
+            }
+
+            if (prevPageButton != null)
+            {
+                prevPageButton.interactable = currentPage > 0;
+            }
+
+            if (nextPageButton != null)
+            {
+                nextPageButton.interactable = currentPage < totalPages - 1;
+            }
+        }
+
+        // 슬롯 오브젝트 자체는 항상 켜둔 채로("+" 표시가 기본으로 보이도록), 아이템이 있을 때만 아이콘
+        // 영역(NormalArea/Item)을 켜고 "+" 표시(Add_1)를 끈다. 아이콘은 원래 색(고유 아트) 그대로 보여야
+        // 하므로 등급색으로 물들이지 않고, 테두리는 목업에 있던 등급별 완성 프레임을 그대로 갖다 끼운다.
+        private void BindSlot(SlotView view, EquipmentItemView item)
+        {
+            view.BoundInstanceId = item.InstanceId;
 
             if (view.AddIndicator != null)
             {
@@ -542,45 +767,38 @@ namespace ProjectMT.Features.Equipment
             if (view.ItemIcon != null)
             {
                 view.ItemIcon.gameObject.SetActive(true);
-                if (partIconSprites.TryGetValue(stack.Definition.Part, out var partSprite) && partSprite != null)
+                if (partIconSprites.TryGetValue(item.Part, out var partSprite) && partSprite != null)
                 {
-                    view.ItemIcon.sprite = partSprite; // 부위에 맞는 아이콘으로 교체 (기존엔 슬롯 위치의 목업 아이콘이 그대로 남아있었음)
+                    view.ItemIcon.sprite = partSprite;
                 }
 
                 view.ItemIcon.color = Color.white; // 아이콘 고유 색은 그대로 유지
             }
 
-            ApplyFrameVariant(view.NormalArea, stack.Definition.Grade); // 등급에 맞는 기존 프레임(테두리)으로 교체
+            ApplyFrameVariant(view.NormalArea, item.Grade); // 등급에 맞는 기존 프레임(테두리)으로 교체
 
-            // 08.09 안건준 수정 - 요청사항: Lv 표시는 나중에 실제 레벨 시스템이 붙으면 다시 켤 것이므로,
-            // 지금은 항상 비활성화한다(목업 값 그대로 노출되는 것을 방지).
+            // Lv 표시는 나중에 실제 레벨 시스템이 붙으면 다시 켤 것이므로, 지금은 항상 비활성화한다.
             if (view.TextLevel != null)
             {
                 view.TextLevel.SetActive(false);
             }
 
-            if (view.StackCountText != null)
-            {
-                view.StackCountText.text = stack.TotalQuantity > 1 ? $"+{stack.TotalQuantity - 1}" : string.Empty;
-            }
-
-            // 08.09 안건준 추가 - 요청사항: 인벤토리에서도 어떤 스택이 지금 장착 중인지 아이콘 아래에 표시한다.
             if (view.EquippedLabelText != null)
             {
-                view.EquippedLabelText.text = stack.IsEquipped ? "[장착]" : string.Empty;
+                view.EquippedLabelText.text = item.IsEquipped ? "[장착]" : string.Empty;
             }
 
             if (view.CheckObject != null)
             {
-                view.CheckObject.SetActive(stack.Key == selectedKey);
+                view.CheckObject.SetActive(item.InstanceId == selectedInstanceId);
             }
         }
 
-        // 08.09 안건준 수정 - 요청사항: 보유하지 않은 슬롯도 "+" 슬롯 형태로 항상 보이고,
-        // 새로 얻은 장비가 그 위에 채워지는 방식으로 동작해야 하므로 슬롯 자체를 끄지 않는다.
+        // 보유하지 않은 슬롯도 "+" 슬롯 형태로 항상 보이고, 새로 얻은 장비가 그 위에 채워지는 방식으로
+        // 동작해야 하므로 슬롯 자체를 끄지 않는다.
         private void ClearSlot(SlotView view)
         {
-            view.BoundStack = null;
+            view.BoundInstanceId = null;
 
             if (view.NormalArea != null)
             {
@@ -600,11 +818,6 @@ namespace ProjectMT.Features.Equipment
             if (view.TextLevel != null)
             {
                 view.TextLevel.SetActive(false);
-            }
-
-            if (view.StackCountText != null)
-            {
-                view.StackCountText.text = string.Empty;
             }
 
             if (view.EquippedLabelText != null)
@@ -633,28 +846,45 @@ namespace ProjectMT.Features.Equipment
                 var view = slots[i];
                 if (view.CheckObject != null)
                 {
-                    view.CheckObject.SetActive(view.BoundStack != null && view.BoundStack.Key == selectedKey);
+                    view.CheckObject.SetActive(view.BoundInstanceId != null && view.BoundInstanceId == selectedInstanceId);
                 }
             }
 
-            EquipmentStack selectedStack = null;
-            if (!string.IsNullOrEmpty(selectedKey))
-            {
-                EquipmentInventoryRuntime.TryGetStack(selectedKey, out selectedStack);
-            }
+            EquipmentItemView selectedItem = default;
+            var hasSelection = !string.IsNullOrEmpty(selectedInstanceId) &&
+                                EquipmentInventoryRuntime.TryGetItem(selectedInstanceId, out selectedItem);
 
             var nameText = selectedItemName?.GetComponent<TMP_Text>();
-            var statText = selectedItemStat?.GetComponent<TMP_Text>();
-            if (selectedStack != null)
+            var coreStatText = selectedItemStat?.GetComponent<TMP_Text>();
+            var optionStatText = selectedItemRandomOptionStat?.GetComponent<TMP_Text>();
+            if (hasSelection && selectedItem.Definition != null)
             {
                 if (nameText != null)
                 {
-                    nameText.text = $"{selectedStack.Definition.DisplayName} (보유 {selectedStack.TotalQuantity}개)";
+                    nameText.text = selectedItem.Definition.DisplayName;
                 }
 
-                if (statText != null)
+                var randomOptionText = BuildRandomOptionText(selectedItem);
+                if (optionStatText != null)
                 {
-                    statText.text = selectedStack.Definition.GetStatSummary();
+                    // 기본옵션(핵심 능력치)과 추가 랜덤 옵션을 서로 다른 텍스트 칸에 나눠서 표시한다.
+                    if (coreStatText != null)
+                    {
+                        coreStatText.text = selectedItem.Definition.GetCoreStatSummary();
+                    }
+
+                    optionStatText.text = randomOptionText;
+                }
+                else if (coreStatText != null)
+                {
+                    // Tools > ProjectMT > 장비창 메뉴를 아직 실행하지 않아 전용 칸이 없는 경우의 임시 대체.
+                    var combined = selectedItem.Definition.GetCoreStatSummary();
+                    if (!string.IsNullOrEmpty(randomOptionText))
+                    {
+                        combined += "\n[랜덤 옵션]\n" + randomOptionText;
+                    }
+
+                    coreStatText.text = combined;
                 }
             }
             else
@@ -664,32 +894,60 @@ namespace ProjectMT.Features.Equipment
                     nameText.text = "장비를 선택하세요";
                 }
 
-                if (statText != null)
+                if (coreStatText != null)
                 {
-                    statText.text = string.Empty;
+                    coreStatText.text = string.Empty;
+                }
+
+                if (optionStatText != null)
+                {
+                    optionStatText.text = string.Empty;
                 }
             }
 
             if (equipButton != null)
             {
-                equipButton.interactable = selectedStack != null;
+                equipButton.interactable = hasSelection;
             }
 
             if (equipButtonText != null)
             {
-                equipButtonText.text = selectedStack != null && selectedStack.IsEquipped
+                equipButtonText.text = hasSelection && selectedItem.IsEquipped
                     ? EquipButtonUnequipText
                     : EquipButtonEquipText;
             }
+        }
+
+        // "추가 랜덤 옵션" 전용 텍스트 칸에 넣을 내용만 만든다(핵심 능력치는 별도로
+        // selectedItem.Definition.GetCoreStatSummary()가 표시).
+        private static string BuildRandomOptionText(EquipmentItemView item)
+        {
+            var options = item.Instance?.RandomOptions;
+            if (options == null || options.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder();
+            for (var i = 0; i < options.Count; i++)
+            {
+                if (i > 0)
+                {
+                    builder.Append('\n');
+                }
+
+                builder.Append(EquipmentOptionInfo.FormatOption(options[i].Type, options[i].Value));
+            }
+
+            return builder.ToString();
         }
 
         // ---------------------------------------------------------------
         // 군단장 장착 슬롯 6개 (WeaponSlot 등) - 장착 중인 장비 아이콘을 표시한다.
         // ---------------------------------------------------------------
 
-        // 08.09 안건준 수정 - 요청사항: 미장착 상태는 색만 회색으로 바꾸는 게 아니라, 인벤토리의
-        // 빈 슬롯("+")과 완전히 같은 모습으로 보여야 한다. 군단장 슬롯에도 인벤토리와 동일한 구조로
-        // Add_1("+" 표시)이 이미 있으므로, 그걸 그대로 켜고/끄는 방식으로 인벤토리 빈 슬롯과 똑같이 맞춘다.
+        // 미장착 상태는 인벤토리의 빈 슬롯("+")과 완전히 같은 모습으로 보여야 한다. 군단장 슬롯에도
+        // 인벤토리와 동일한 구조로 Add_1("+" 표시)이 이미 있으므로, 그걸 그대로 켜고/끄는 방식으로 맞춘다.
         private void RefreshCommanderSlots()
         {
             foreach (var pair in commanderSlots)
@@ -706,8 +964,7 @@ namespace ProjectMT.Features.Equipment
                     continue;
                 }
 
-                // 08.09 안건준 수정 - 요청사항: Lv 표시는 나중에 실제 레벨 시스템이 붙으면 다시 켤 것이므로,
-                // 지금은 장착 여부와 관계없이 항상 비활성화한다(목업 값 그대로 노출되는 것을 방지).
+                // Lv 표시는 나중에 실제 레벨 시스템이 붙으면 다시 켤 것이므로, 지금은 항상 비활성화한다.
                 var commanderLevelText = slotTransform.Find("Text_Level")?.gameObject;
                 if (commanderLevelText != null)
                 {
@@ -722,8 +979,7 @@ namespace ProjectMT.Features.Equipment
                     continue;
                 }
 
-                var equipped = EquipmentInventoryRuntime.GetEquippedStack(pair.Key);
-                if (equipped != null)
+                if (EquipmentInventoryRuntime.TryGetEquipped(pair.Key, out var equipped))
                 {
                     if (addIndicator != null)
                     {
@@ -736,9 +992,9 @@ namespace ProjectMT.Features.Equipment
                     }
 
                     icon.gameObject.SetActive(true);
-                    icon.color = Color.white; // 08.09 안건준 수정 - 아이콘은 고유 색 그대로 유지
+                    icon.color = Color.white; // 아이콘은 고유 색 그대로 유지
 
-                    ApplyFrameVariant(normalArea, equipped.Definition.Grade); // 등급에 맞는 기존 프레임(테두리)으로 교체
+                    ApplyFrameVariant(normalArea, equipped.Grade); // 등급에 맞는 기존 프레임(테두리)으로 교체
                 }
                 else
                 {
@@ -794,6 +1050,9 @@ namespace ProjectMT.Features.Equipment
             }
         }
 
+        // StatGrid 카드는 6개(공격력/체력/방어력/공격속도/이동속도/치명타)뿐이라 나머지 7개 능력치
+        // (치피/스킬·보스·일반 몬스터 피해/쿨감/방관/피해감소)는 아직 표시할 카드가 없다. 카드가
+        // 추가되면 이 매핑에 항목을 늘리면 된다.
         private static EquipmentStatType ResolveStatType(string labelText)
         {
             if (labelText.Contains("공격속도")) return EquipmentStatType.AttackSpeed;

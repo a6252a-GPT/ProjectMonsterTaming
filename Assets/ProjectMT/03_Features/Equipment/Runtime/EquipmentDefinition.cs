@@ -1,9 +1,14 @@
+using System.Collections.Generic;
+using System.Linq;
+using ProjectMT.Shared.Equipment;
 using UnityEngine;
 
 namespace ProjectMT.Features.Equipment
 {
-    // 08.09 안건준 추가 - 카탈로그가 만들어내는 "장비 종류" 최종 정보 (부위 베이스 아이템 × 등급 1개 조합).
-    // 동일 부위+등급이면 항상 동일한 Key를 가지므로, 보유 스택 합산 기준으로 그대로 사용한다.
+    // "부위 + 등급" 조합이 결정하는 고정 정보(아이콘, 표시 이름, 핵심 능력치).
+    // 부위별로 능력치가 1~3개로 갈리기 때문에 StatType/StatValue 단일 값이 아니라 CoreStatContributions
+    // 목록을 갖는다. 랜덤 추가 옵션은 부위+등급과 무관하게 인스턴스마다 다르므로 여기에는 포함되지
+    // 않는다(EquipmentInstanceData.RandomOptions 참고).
     public sealed class EquipmentDefinition
     {
         public EquipmentDefinition(
@@ -17,30 +22,33 @@ namespace ProjectMT.Features.Equipment
             Part = part;
             Grade = grade;
             Icon = icon;
-            StatType = EquipmentGradeStatTable.GetStatType(part);
-            StatValue = EquipmentGradeStatTable.GetStatValue(part, grade);
+            CoreStatContributions = EquipmentGradeStatTable.GetCoreStatContributions(part, grade);
             // 예: "일반 무기" - 문서 규칙상 장비 종류 키는 부위+등급 조합이므로 이름도 등급+부위로 통일한다.
             DisplayName = $"{EquipmentGradeInfo.GetDisplayName(grade)} {baseDisplayName}";
         }
 
-        // 장비 종류 키. 문서 규칙: "부위 + 등급" 조합으로만 구분한다 (베이스 아이템이 여러 개여도 동일 부위·등급이면 같은 키).
+        // 부위+등급 조합 키. 더 이상 보유 중첩 기준으로 쓰이지 않지만(인스턴스마다 개별 보관),
+        // 카탈로그에서 "이 부위+등급의 고정 정보"를 가리키는 식별자로는 계속 쓰인다.
         public string Key => $"{Part}_{Grade}";
 
         public string BaseItemId { get; }
         public string DisplayName { get; }
         public EquipmentPart Part { get; }
         public EquipmentGrade Grade { get; }
-        public EquipmentStatType StatType { get; }
-        public float StatValue { get; }
         public Sprite Icon { get; }
+        public IReadOnlyList<EquipmentStatContribution> CoreStatContributions { get; }
 
-        public string GetStatSummary()
+        // 상세 정보 영역에 표시할 핵심 능력치 요약. 여러 능력치면 줄바꿈으로 나열한다.
+        public string GetCoreStatSummary()
         {
-            var statName = EquipmentGradeStatTable.GetStatDisplayName(StatType);
-            var valueText = StatType == EquipmentStatType.AttackSpeed || StatType == EquipmentStatType.MoveSpeed
-                ? $"+{StatValue:0.0}"
-                : $"+{StatValue:0}";
-            return $"{statName} {valueText}";
+            return string.Join("\n", CoreStatContributions.Select(FormatContribution));
+        }
+
+        // 기본옵션(핵심 능력치)도 추가 랜덤 옵션과 동일하게 전부 "%"로 표시한다(절대값/상대값 구분 없이 항상 "%").
+        private static string FormatContribution(EquipmentStatContribution contribution)
+        {
+            var statName = EquipmentGradeStatTable.GetStatDisplayName(contribution.StatType);
+            return $"{statName} +{contribution.Value:0.0}%";
         }
     }
 }

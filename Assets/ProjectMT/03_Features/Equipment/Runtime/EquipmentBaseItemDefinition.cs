@@ -1,4 +1,5 @@
 using System;
+using ProjectMT.Shared.Equipment;
 using UnityEngine;
 
 namespace ProjectMT.Features.Equipment

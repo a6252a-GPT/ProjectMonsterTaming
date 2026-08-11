@@ -9,6 +9,7 @@ using ProjectMT.Features.Equipment;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Debugging;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Stats;
 using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
@@ -146,7 +147,8 @@ namespace ProjectMT.Bootstrap
             debugPanel.Configure(
                 ResetGameDataForDebugAsync,
                 DrawMonsterForDebugAsync,
-                AcquireEquipmentForDebugAsync);
+                AcquireEquipmentForDebugAsync,
+                AcquireAllItemsForDebugAsync);
         }
 
         private async Task<bool> ResetGameDataForDebugAsync()
@@ -214,6 +216,45 @@ namespace ProjectMT.Bootstrap
 
             var acquired = gameDataService.View.Equipment.Instances.Count - before;
             return acquired > 0 ? $"장비 {acquired}개 획득 완료" : "장비 보유 한도입니다";
+        }
+
+        private async Task<string> AcquireAllItemsForDebugAsync()
+        {
+            if (!initialized || gameDataService == null || contentFlow == null ||
+                contentFlow.IsRunning || sceneLoader == null || sceneLoader.IsTransitioning)
+            {
+                return "현재 아이템을 받을 수 없습니다";
+            }
+
+            var catalog = projectConfig.ItemCatalog;
+            if (catalog == null || !catalog.TryValidateRuntimeCatalog(out _))
+            {
+                return "아이템 카탈로그가 올바르지 않습니다";
+            }
+
+            var definitions = catalog.Definitions;
+            if (definitions == null || definitions.Count == 0)
+            {
+                return "지급할 아이템이 없습니다";
+            }
+
+            var rewards = new ItemAmount[definitions.Count];
+            for (var index = 0; index < definitions.Count; index++)
+            {
+                var definition = definitions[index];
+                if (definition == null || string.IsNullOrWhiteSpace(definition.ItemId))
+                {
+                    return "아이템 카탈로그가 올바르지 않습니다";
+                }
+
+                rewards[index] = new ItemAmount(definition.ItemId, 1L);
+            }
+
+            var saved = await gameDataService.TryApplyAndSaveAsync(
+                GameProgressChange.GrantItems(rewards));
+            return saved
+                ? $"{rewards.Length}종 아이템 1개씩 획득 완료"
+                : "아이템 획득 정보를 저장하지 못했습니다";
         }
 #endif
 

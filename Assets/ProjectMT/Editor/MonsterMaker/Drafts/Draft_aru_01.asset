@@ -129,7 +129,7 @@ MonoBehaviour:
     attackSpeedRate: 0
     moveSpeedRate: 0
     attackRangeRate: 0
-  ascensionConfigured: 0
+  ascensionConfigured: 1
   ascension1:
     healthRate: 0
     attackRate: 0

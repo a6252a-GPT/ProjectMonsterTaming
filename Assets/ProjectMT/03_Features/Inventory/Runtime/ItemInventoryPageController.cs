@@ -314,7 +314,7 @@ namespace ProjectMT.Features.Inventory
 
             if (resetQuantity && quantitySlider != null)
             {
-                quantitySlider.SetValueWithoutNotify(0f);
+                quantitySlider.SetValueWithoutNotify(quantitySlider.minValue); // 프리팹 범위의 최소 수량으로 초기화
             }
 
             ConfigureActions(entry);
@@ -416,7 +416,7 @@ namespace ProjectMT.Features.Inventory
                 return 1L;
             }
 
-            var scaled = (entry.Quantity - 1L) * (double)Mathf.Clamp01(quantitySlider.value);
+            var scaled = (entry.Quantity - 1L) * (double)quantitySlider.normalizedValue;
             return Math.Min(entry.Quantity, 1L + (long)Math.Round(scaled, MidpointRounding.AwayFromZero));
         }
 

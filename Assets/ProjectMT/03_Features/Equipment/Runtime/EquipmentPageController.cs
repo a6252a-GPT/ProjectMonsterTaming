@@ -13,19 +13,20 @@ namespace ProjectMT.Features.Equipment
     // 장비창(PF_CommanderEquipmentPage) 전체를 실제 장비 데이터와 연결하는 컨트롤러.
     // - 부위+등급으로 중첩(스택)하지 않는다. 랜덤 옵션 때문에 아이템마다 능력치가 달라서 보유 장비는
     //   전부 개별 인스턴스로 취급한다.
-    // - 보유 수량은 최대 100개까지 가능하지만 슬롯은 20개뿐이라 페이지 넘김 UI가 필요하다.
+    // - 보유 수량만큼 슬롯을 최대 100개까지 생성·재사용하고 하나의 세로 목록에서 연속 스크롤한다.
     // - 데이터는 세션 한정이 아니라 GameProgressData(저장 파일)에 영구 저장된다.
     [DisallowMultipleComponent]
     public sealed class EquipmentPageController : MonoBehaviour
     {
-        // 한 페이지에 보이는 인벤토리 슬롯 수. 실제 프리팹의 슬롯 개수와 반드시 일치해야 한다.
-        private const int InventorySlotCount = 20;
+        private const int AuthoredInventorySlotCount = 20; // 프리팹에 미리 둔 재사용 슬롯 수
+        private const int MaxInventorySlotCount = EquipmentInventoryRuntime.MaxTotalQuantity;
         private const string EquipButtonEquipText = "장착";
         private const string EquipButtonUnequipText = "해제";
 
         // 인벤토리 슬롯 1개에 대한 런타임 바인딩 정보. InventorySlot_01~20 각각에 대해 하나씩 만든다.
         private sealed class SlotView
         {
+            public GameObject LayoutRoot;
             public Transform Root;
             public Image ItemIcon;
             public Transform NormalArea;
@@ -76,15 +77,9 @@ namespace ProjectMT.Features.Equipment
         private Transform equipButtonRoot;
         private Button equipButton;
         private TMP_Text equipButtonText;
-
-        // 보유 수량이 슬롯 수보다 많을 수 있어 페이지 넘김 UI가 필요하다.
-        private Button prevPageButton;
-        private Button nextPageButton;
-        private TMP_Text pageLabelText;
-        private int currentPage;
-
-        // 버튼 대신 스크롤뷰를 드래그하거나 마우스 휠을 굴려도 페이지를 넘길 수 있게 한다.
-        private EquipmentInventorySwipeHandler inventorySwipeHandler;
+        private ScrollRect inventoryScrollRect;
+        private RectTransform inventoryContentRoot;
+        private GameObject inventorySlotCellTemplate;
 
         private EquipmentPart? currentFilter; // null = 전체
         private bool sortGradeDescending = true;
@@ -96,8 +91,6 @@ namespace ProjectMT.Features.Equipment
             BuildFilterButtons();
             BuildSortButton();
             BuildInventorySlots();
-            BuildPagingControls();
-            BuildInventoryScrollSwipe();
             BuildEquipButton();
         }
 
@@ -105,16 +98,12 @@ namespace ProjectMT.Features.Equipment
         {
             EquipmentInventoryRuntime.Changed += HandleInventoryChanged;
             RefreshAll();
+            ResetInventoryScrollPosition();
         }
 
         private void OnDisable()
         {
             EquipmentInventoryRuntime.Changed -= HandleInventoryChanged;
-
-            if (inventorySwipeHandler != null)
-            {
-                inventorySwipeHandler.PageDeltaRequested -= HandleSwipePageDeltaRequested;
-            }
         }
 
         // MainBattleSceneRoot가 씬 조립 시점에 진행 데이터 서비스를 주입한다. 실제 보유/장착 데이터는
@@ -323,9 +312,9 @@ namespace ProjectMT.Features.Equipment
         private void SetFilter(EquipmentPart? part)
         {
             currentFilter = part;
-            currentPage = 0;
             RefreshFilterHighlight();
             RefreshInventoryList();
+            ResetInventoryScrollPosition();
         }
 
         // 각 탭의 "Focus" 하위 오브젝트를 선택 상태 표시로 사용한다(활성=선택됨).
@@ -367,9 +356,9 @@ namespace ProjectMT.Features.Equipment
         private void ToggleSort()
         {
             sortGradeDescending = !sortGradeDescending;
-            currentPage = 0;
             RefreshSortLabelText();
             RefreshInventoryList();
+            ResetInventoryScrollPosition();
         }
 
         private void RefreshSortLabelText()
@@ -381,162 +370,9 @@ namespace ProjectMT.Features.Equipment
         }
 
         // ---------------------------------------------------------------
-        // 인벤토리 슬롯 20개 + 페이지 넘김
+        // 인벤토리 연속 스크롤 + 재사용 슬롯 풀
         // ---------------------------------------------------------------
 
-        private void BuildInventorySlots()
-        {
-            for (var i = 1; i <= InventorySlotCount; i++)
-            {
-                // 스크롤뷰 안 슬롯은 이름 끝에 "_1"이 붙는다(InventorySlot_01_1~20_1). 옛 이름(_1 없음)도
-                // 계속 지원하도록 새 이름을 먼저 찾고, 없으면 옛 이름으로 찾는다.
-                var slotRoot = FindDeepAny(transform, $"InventorySlot_{i:00}_1", $"InventorySlot_{i:00}");
-                if (slotRoot == null)
-                {
-                    continue;
-                }
-
-                // 슬롯마다 내부 구조(중첩 깊이)가 조금씩 달라 고정 상대 경로로는 못 찾을 수 있으므로,
-                // slotRoot 하위 전체를 이름으로 재귀 탐색해서 중첩 depth와 무관하게 찾는다.
-                var view = new SlotView
-                {
-                    Root = slotRoot,
-                    ItemIcon = FindDeep(slotRoot, "Item")?.GetComponent<Image>(),
-                    NormalArea = FindDeep(slotRoot, "NormalArea"),
-                    AddIndicator = FindDeep(slotRoot, "Add_1")?.gameObject,
-                    TextLevel = FindDeep(slotRoot, "Text_Level")?.gameObject,
-                    CheckObject = FindDeep(slotRoot, "Check")?.gameObject
-                };
-
-                view.EquippedLabelText = CreateEquippedLabel(slotRoot);
-                view.ClickButton = EnsureButton(slotRoot);
-                var capturedView = view;
-                view.ClickButton.onClick.AddListener(() => HandleSlotClicked(capturedView));
-
-                slots.Add(view);
-            }
-        }
-
-        // 페이지 표시는 독립된 "PageText"(1 / N 표시용 텍스트메시프로) 오브젝트를 최우선으로 사용한다.
-        // 옛 방식(InventoryPagingBar 안의 PrevPageButton/NextPageButton/PageLabel)이 남아있으면 버튼
-        // 기능도 계속 연결하고, 둘 다 없으면 런타임에 임시로 만든다.
-        private void BuildPagingControls()
-        {
-            pageLabelText = FindDeep(transform, "PageText")?.GetComponent<TMP_Text>();
-
-            var bar = FindDeep(transform, "InventoryPagingBar");
-            if (bar == null)
-            {
-                if (pageLabelText == null)
-                {
-                    BuildPagingControlsRuntimeFallback();
-                }
-
-                return;
-            }
-
-            var prevTransform = FindDeep(bar, "PrevPageButton");
-            var nextTransform = FindDeep(bar, "NextPageButton");
-            if (pageLabelText == null)
-            {
-                pageLabelText = FindDeep(bar, "PageLabel")?.GetComponent<TMP_Text>();
-            }
-
-            if (prevTransform != null)
-            {
-                prevPageButton = EnsureButton(prevTransform);
-                prevPageButton.onClick.AddListener(() => SetPage(currentPage - 1));
-            }
-
-            if (nextTransform != null)
-            {
-                nextPageButton = EnsureButton(nextTransform);
-                nextPageButton.onClick.AddListener(() => SetPage(currentPage + 1));
-            }
-        }
-
-        private void BuildPagingControlsRuntimeFallback()
-        {
-            var barObject = new GameObject("InventoryPagingBar", typeof(RectTransform));
-            barObject.transform.SetParent(transform, false);
-            var barRect = barObject.GetComponent<RectTransform>();
-            barRect.anchorMin = new Vector2(0.5f, 0f);
-            barRect.anchorMax = new Vector2(0.5f, 0f);
-            barRect.pivot = new Vector2(0.5f, 0f);
-            barRect.anchoredPosition = new Vector2(273f, 118f);
-            barRect.sizeDelta = new Vector2(260f, 40f);
-
-            prevPageButton = CreatePagingButton(barObject.transform, "PrevPageButton", "<", new Vector2(-100f, 0f));
-            nextPageButton = CreatePagingButton(barObject.transform, "NextPageButton", ">", new Vector2(100f, 0f));
-            pageLabelText = CreatePagingLabel(barObject.transform);
-
-            prevPageButton.onClick.AddListener(() => SetPage(currentPage - 1));
-            nextPageButton.onClick.AddListener(() => SetPage(currentPage + 1));
-        }
-
-        private static Button CreatePagingButton(Transform parent, string name, string label, Vector2 anchoredPosition)
-        {
-            var buttonObject = new GameObject(name, typeof(RectTransform));
-            buttonObject.transform.SetParent(parent, false);
-            var rect = buttonObject.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = new Vector2(48f, 36f);
-
-            var image = buttonObject.AddComponent<Image>();
-            image.color = new Color(0f, 0f, 0f, 0.45f);
-
-            var button = buttonObject.AddComponent<Button>();
-
-            var textObject = new GameObject("Label", typeof(RectTransform));
-            textObject.transform.SetParent(buttonObject.transform, false);
-            var textRect = textObject.GetComponent<RectTransform>();
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = Vector2.zero;
-            textRect.offsetMax = Vector2.zero;
-
-            var text = textObject.AddComponent<TextMeshProUGUI>();
-            text.text = label;
-            text.fontSize = 22f;
-            text.alignment = TextAlignmentOptions.Center;
-            text.color = Color.white;
-            text.raycastTarget = false;
-
-            return button;
-        }
-
-        private static TMP_Text CreatePagingLabel(Transform parent)
-        {
-            var labelObject = new GameObject("PageLabel", typeof(RectTransform));
-            labelObject.transform.SetParent(parent, false);
-            var rect = labelObject.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = new Vector2(140f, 36f);
-
-            var text = labelObject.AddComponent<TextMeshProUGUI>();
-            text.fontSize = 22f;
-            text.alignment = TextAlignmentOptions.Center;
-            text.color = Color.white;
-            text.raycastTarget = false;
-            text.text = "1 / 1";
-            return text;
-        }
-
-        private void SetPage(int page)
-        {
-            currentPage = Mathf.Max(0, page);
-            RefreshInventoryList();
-        }
-
-        // 인벤토리 스크롤뷰를 찾아서 드래그 및 마우스 휠 입력을 페이지 전환으로 연결한다. 오브젝트
-        // 이름이 다를 수 있어 후보를 순서대로 시도하고, 없으면 조용히 건너뛴다(버튼 페이지 넘김은
-        // 그대로 동작).
         private static readonly string[] InventoryScrollViewNameCandidates =
         {
             "InventorySlotScroll View",
@@ -547,7 +383,10 @@ namespace ProjectMT.Features.Equipment
             "InventoryScroll View"
         };
 
-        private void BuildInventoryScrollSwipe()
+        private static readonly Regex InventorySlotNamePattern =
+            new Regex(@"^InventorySlot_\d{2,3}(?:_1)?$");
+
+        private void BuildInventorySlots()
         {
             Transform scrollViewTransform = null;
             for (var i = 0; i < InventoryScrollViewNameCandidates.Length; i++)
@@ -564,34 +403,125 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            inventorySwipeHandler = scrollViewTransform.GetComponent<EquipmentInventorySwipeHandler>();
-            if (inventorySwipeHandler == null)
+            inventoryScrollRect = scrollViewTransform.GetComponent<ScrollRect>();
+            inventoryContentRoot = inventoryScrollRect != null ? inventoryScrollRect.content : null;
+            if (inventoryContentRoot == null)
             {
-                inventorySwipeHandler = scrollViewTransform.gameObject.AddComponent<EquipmentInventorySwipeHandler>();
+                return;
             }
 
-            inventorySwipeHandler.PageDeltaRequested += HandleSwipePageDeltaRequested;
-
-            // 스크롤로 페이지를 넘기므로 기존 이전/다음 버튼은 숨긴다(페이지 라벨은 계속 표시).
-            if (prevPageButton != null)
+            for (var i = 1; i <= AuthoredInventorySlotCount; i++)
             {
-                prevPageButton.gameObject.SetActive(false);
+                var slotRoot = FindDeepAny(transform, $"InventorySlot_{i:00}_1", $"InventorySlot_{i:00}");
+                if (slotRoot != null)
+                {
+                    AddSlotView(slotRoot, false);
+                }
             }
 
-            if (nextPageButton != null)
+            if (slots.Count > 0)
             {
-                nextPageButton.gameObject.SetActive(false);
+                inventorySlotCellTemplate = slots[0].LayoutRoot;
             }
         }
 
-        private void HandleSwipePageDeltaRequested(int delta)
+        private void AddSlotView(Transform slotRoot, bool resetClickListeners)
         {
-            SetPage(currentPage + delta);
+            var layoutRoot = slotRoot.gameObject;
+            if (slotRoot.parent != null && slotRoot.parent.parent == inventoryContentRoot)
+            {
+                layoutRoot = slotRoot.parent.gameObject;
+            }
+
+            var view = new SlotView
+            {
+                LayoutRoot = layoutRoot,
+                Root = slotRoot,
+                ItemIcon = FindDeep(slotRoot, "Item")?.GetComponent<Image>(),
+                NormalArea = FindDeep(slotRoot, "NormalArea"),
+                AddIndicator = FindDeep(slotRoot, "Add_1")?.gameObject,
+                TextLevel = FindDeep(slotRoot, "Text_Level")?.gameObject,
+                CheckObject = FindDeep(slotRoot, "Check")?.gameObject
+            };
+
+            view.EquippedLabelText = CreateEquippedLabel(slotRoot);
+            view.ClickButton = EnsureButton(slotRoot);
+            if (resetClickListeners)
+            {
+                view.ClickButton.onClick.RemoveAllListeners();
+            }
+
+            var capturedView = view;
+            view.ClickButton.onClick.AddListener(() => HandleSlotClicked(capturedView));
+            slots.Add(view);
+        }
+
+        private int EnsureInventorySlotCount(int requestedCount)
+        {
+            var visibleCount = Mathf.Clamp(requestedCount, 0, MaxInventorySlotCount);
+            while (slots.Count < visibleCount && inventorySlotCellTemplate != null && inventoryContentRoot != null)
+            {
+                var slotNumber = slots.Count + 1;
+                var cell = Instantiate(inventorySlotCellTemplate, inventoryContentRoot);
+                cell.name = $"InventorySlotCell_{slotNumber:000}";
+                cell.SetActive(true);
+
+                var slotRoot = cell.GetComponentsInChildren<Transform>(true)
+                    .FirstOrDefault(candidate => InventorySlotNamePattern.IsMatch(candidate.name));
+                if (slotRoot == null)
+                {
+                    Destroy(cell);
+                    break;
+                }
+
+                slotRoot.name = $"InventorySlot_{slotNumber:00}_1";
+                AddSlotView(slotRoot, true);
+            }
+
+            var availableCount = Mathf.Min(visibleCount, slots.Count);
+            for (var i = 0; i < slots.Count; i++)
+            {
+                if (slots[i].LayoutRoot != null)
+                {
+                    slots[i].LayoutRoot.SetActive(i < availableCount);
+                }
+            }
+
+            return availableCount;
+        }
+
+        private void RebuildInventoryLayout()
+        {
+            if (inventoryContentRoot == null)
+            {
+                return;
+            }
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(inventoryContentRoot);
+            Canvas.ForceUpdateCanvases();
+        }
+
+        private void ResetInventoryScrollPosition()
+        {
+            if (inventoryScrollRect == null)
+            {
+                return;
+            }
+
+            Canvas.ForceUpdateCanvases();
+            inventoryScrollRect.StopMovement();
+            inventoryScrollRect.verticalNormalizedPosition = 1f;
         }
 
         // 인벤토리에서도 장착 중인 아이템을 구분할 수 있도록 아이콘 아래에 "[장착]" 텍스트를 표시한다.
         private TMP_Text CreateEquippedLabel(Transform slotRoot)
         {
+            var existing = FindDeep(slotRoot, "EquippedLabel")?.GetComponent<TMP_Text>();
+            if (existing != null)
+            {
+                return existing;
+            }
+
             var labelObject = new GameObject("EquippedLabel", typeof(RectTransform));
             labelObject.transform.SetParent(slotRoot, false);
             var rect = labelObject.GetComponent<RectTransform>();
@@ -700,17 +630,13 @@ namespace ProjectMT.Features.Equipment
                 ? query.OrderByDescending(item => (int)item.Grade).ThenBy(item => item.Part)
                 : query.OrderBy(item => (int)item.Grade).ThenBy(item => item.Part);
             var list = ordered.ToList();
-
-            var totalPages = Mathf.Max(1, Mathf.CeilToInt(list.Count / (float)InventorySlotCount));
-            currentPage = Mathf.Clamp(currentPage, 0, totalPages - 1);
-            var pageStart = currentPage * InventorySlotCount;
+            var visibleSlotCount = EnsureInventorySlotCount(list.Count);
 
             for (var i = 0; i < slots.Count; i++)
             {
-                var listIndex = pageStart + i;
-                if (listIndex < list.Count)
+                if (i < visibleSlotCount)
                 {
-                    BindSlot(slots[i], list[listIndex]);
+                    BindSlot(slots[i], list[i]);
                 }
                 else
                 {
@@ -725,26 +651,8 @@ namespace ProjectMT.Features.Equipment
             }
 
             RefreshCapacityText();
-            RefreshPagingControls(totalPages);
+            RebuildInventoryLayout();
             RefreshSelection();
-        }
-
-        private void RefreshPagingControls(int totalPages)
-        {
-            if (pageLabelText != null)
-            {
-                pageLabelText.text = $"{currentPage + 1} / {totalPages}";
-            }
-
-            if (prevPageButton != null)
-            {
-                prevPageButton.interactable = currentPage > 0;
-            }
-
-            if (nextPageButton != null)
-            {
-                nextPageButton.interactable = currentPage < totalPages - 1;
-            }
         }
 
         // 슬롯 오브젝트 자체는 항상 켜둔 채로("+" 표시가 기본으로 보이도록), 아이템이 있을 때만 아이콘
@@ -794,8 +702,7 @@ namespace ProjectMT.Features.Equipment
             }
         }
 
-        // 보유하지 않은 슬롯도 "+" 슬롯 형태로 항상 보이고, 새로 얻은 장비가 그 위에 채워지는 방식으로
-        // 동작해야 하므로 슬롯 자체를 끄지 않는다.
+        // 재사용 풀에서 비활성화하기 전에 슬롯 내부 표시와 선택 상태를 초기화한다.
         private void ClearSlot(SlotView view)
         {
             view.BoundInstanceId = null;

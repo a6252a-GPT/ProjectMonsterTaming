@@ -33,6 +33,8 @@ namespace ProjectMT.Features.MainBattle
         private MainSceneContext context; // 진행·콘텐츠 실행 권한
         private BattlePartySnapshot party; // 시드 부대 사진
         private MainBattleMonsterDragController monsterDrag; // 메인전투 직접 재배치 입력
+        private MainBattleSpatialController spatialController; // 전투 간격·군단장 추종
+        private MainBattleFormationPlacementController placementController; // 본부대 시작 위치 편집
         private MainBattleManagementUiController managementUi; // 관리창 상호 배타 제어
         private MainBattleHudProgressView hudProgressView; // 상단 계정·재화 표시
 
@@ -65,9 +67,23 @@ namespace ProjectMT.Features.MainBattle
             foodRiotButton?.onClick.AddListener(OpenFoodRiot);
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
             towerButton?.onClick.AddListener(OpenGuardiansTower); // 08.06 안건준 추가
-            expedition.Initialize(context.Progress, party, context.RewardPresentation);
+            var runtimeRoot = transform.Find("01_MainGameplayRoot/01_RuntimeRoot");
+            var commander = runtimeRoot?.Find("CommanderVisual");
+            var enemySpawnAnchor = runtimeRoot?.Find("EnemySpawnAnchor");
+            var formationGround = transform.Find("01_MainGameplayRoot/00_WorldRoot/Ground")?.GetComponent<Collider>();
+            if (commander == null || enemySpawnAnchor == null || formationGround == null)
+            {
+                throw new InvalidOperationException("MainBattle formation frame references are missing.");
+            }
+
+            expedition.Initialize(
+                context.Progress,
+                party,
+                context.RewardPresentation,
+                formationGround);
             formationPage.PartyChanged += HandlePartyChanged;
             formationPage.OpenStateChanged += HandleFormationPageOpenStateChanged;
+            formationPage.PositionFormationRequested += HandlePositionFormationRequested;
             formationPage.Configure(context.Progress, context.MonsterCatalog, context.RefreshParty);
             managementUi = GetComponentInChildren<MainBattleManagementUiController>(true);
             managementUi?.ConfigureFormationPage(formationPage);
@@ -82,12 +98,21 @@ namespace ProjectMT.Features.MainBattle
             ConfigureShopPageView();
             ConfigureEquipmentPage();
             ConfigureMonsterDrag();
+            ConfigureSpatialMovement();
+            ConfigureFormationPlacement();
             SetStatus("자동 전투");
             IsInitialized = true;
         }
 
         public void Shutdown()
         {
+            if (placementController != null)
+            {
+                placementController.Completed -= HandlePlacementCompleted;
+                placementController.Shutdown();
+            }
+
+            spatialController?.Shutdown();
             monsterDrag?.Shutdown();
             foodRiotButton?.onClick.RemoveListener(OpenFoodRiot);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
@@ -100,6 +125,7 @@ namespace ProjectMT.Features.MainBattle
             {
                 formationPage.PartyChanged -= HandlePartyChanged;
                 formationPage.OpenStateChanged -= HandleFormationPageOpenStateChanged;
+                formationPage.PositionFormationRequested -= HandlePositionFormationRequested;
                 formationPage.Shutdown();
             }
 
@@ -118,6 +144,8 @@ namespace ProjectMT.Features.MainBattle
             context = null;
             party = null;
             monsterDrag = null;
+            spatialController = null;
+            placementController = null;
             managementUi = null;
             hudProgressView = null;
             IsInitialized = false;
@@ -225,9 +253,64 @@ namespace ProjectMT.Features.MainBattle
             monsterDrag.Configure(worldCamera, ground, CanDragMonster);
         }
 
+        private void ConfigureSpatialMovement()
+        {
+            var runtimeRoot = transform.Find("01_MainGameplayRoot/01_RuntimeRoot");
+            var ground = transform.Find("01_MainGameplayRoot/00_WorldRoot/Ground")?.GetComponent<Collider>();
+            var commander = runtimeRoot?.Find("CommanderVisual");
+            var enemySpawnAnchor = runtimeRoot?.Find("EnemySpawnAnchor");
+            if (ground == null || commander == null || enemySpawnAnchor == null)
+            {
+                throw new InvalidOperationException("MainBattle spatial references are missing.");
+            }
+
+            spatialController = expedition.GetComponent<MainBattleSpatialController>();
+            if (spatialController == null)
+            {
+                spatialController = expedition.gameObject.AddComponent<MainBattleSpatialController>();
+            }
+
+            spatialController.Configure(expedition, ground, commander, enemySpawnAnchor);
+        }
+
+        private void ConfigureFormationPlacement()
+        {
+            var gameplayRoot = transform.Find("01_MainGameplayRoot");
+            var runtimeRoot = gameplayRoot?.Find("01_RuntimeRoot");
+            var worldCamera = gameplayRoot?.Find("02_CameraRoot/MainBattleCamera")?.GetComponent<Camera>();
+            var ground = gameplayRoot?.Find("00_WorldRoot/Ground")?.GetComponent<Collider>();
+            var commander = runtimeRoot?.Find("CommanderVisual");
+            var enemySpawnAnchor = runtimeRoot?.Find("EnemySpawnAnchor");
+            var uiRoot = gameplayRoot?.Find("04_UIRoot");
+            var hudRoot = uiRoot?.Find("MainBattleHUD")?.gameObject;
+            if (worldCamera == null || ground == null || commander == null || enemySpawnAnchor == null ||
+                uiRoot == null || hudRoot == null)
+            {
+                throw new InvalidOperationException("MainBattle formation placement references are missing.");
+            }
+
+            placementController = expedition.GetComponent<MainBattleFormationPlacementController>();
+            if (placementController == null)
+            {
+                placementController = expedition.gameObject.AddComponent<MainBattleFormationPlacementController>();
+            }
+
+            placementController.Completed += HandlePlacementCompleted;
+            placementController.Configure(
+                context.Progress,
+                expedition,
+                monsterDrag,
+                worldCamera,
+                ground,
+                commander,
+                uiRoot,
+                hudRoot);
+        }
+
         private bool CanDragMonster()
         {
             return IsInitialized && context != null && expedition != null && expedition.IsRunning &&
+                   (placementController == null || !placementController.IsActive) &&
                    !context.ContentLauncher.IsRunning && (formationPage == null || !formationPage.IsOpen) &&
                    (monsterManagementPage == null || !monsterManagementPage.IsOpen) &&
                    (managementUi == null || !managementUi.IsAnyPageOpen);
@@ -311,6 +394,7 @@ namespace ProjectMT.Features.MainBattle
         {
             return IsInitialized && context != null && party != null &&
                    !context.ContentLauncher.IsRunning && !expedition.IsSettling &&
+                   (placementController == null || !placementController.IsActive) &&
                    (formationPage == null || !formationPage.IsOpen) &&
                    (monsterManagementPage == null || !monsterManagementPage.IsOpen); // 관리·콘텐츠 중복 입력 금지
         }
@@ -329,6 +413,44 @@ namespace ProjectMT.Features.MainBattle
             {
                 formationPage?.ClosePage();
             }
+        }
+
+        private void HandlePositionFormationRequested()
+        {
+            if (!IsInitialized || context == null || expedition == null || placementController == null ||
+                !expedition.IsRunning || expedition.IsSettling || context.ContentLauncher.IsRunning)
+            {
+                SetStatus("현재는 위치 편성을 시작할 수 없습니다");
+                return;
+            }
+
+            formationPage?.ClosePage();
+            monsterManagementPage?.ClosePage();
+            managementUi?.CloseAllPages();
+            spatialController?.ResetToStart();
+            if (!placementController.Begin())
+            {
+                if (!expedition.IsRunning)
+                {
+                    expedition.StartFromSavedMode();
+                }
+
+                ConfigureMonsterDrag();
+                SetStatus("위치 편성을 시작하지 못했습니다");
+            }
+        }
+
+        private void HandlePlacementCompleted()
+        {
+            if (!IsInitialized || expedition == null)
+            {
+                return;
+            }
+
+            expedition.EndFormationPlacement();
+            ConfigureMonsterDrag();
+            expedition.StartFromSavedMode();
+            SetStatus("자동 전투");
         }
 
         private void HandlePartyChanged(BattlePartySnapshot updatedParty)

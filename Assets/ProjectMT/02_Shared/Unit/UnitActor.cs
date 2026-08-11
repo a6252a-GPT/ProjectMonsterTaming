@@ -633,6 +633,18 @@ namespace ProjectMT.Shared.Unit
             world?.NotifyDeath(this, returnDelay); // Death Clip 종료 뒤 풀 반환
         }
 
+#if UNITY_EDITOR
+        public void EditorConfigureReferences(
+            HealthComponent healthComponent,
+            UnitVisualFeedback feedbackComponent,
+            MonsterAnimationDriver driver = null)
+        {
+            health = healthComponent;
+            visualFeedback = feedbackComponent;
+            animationDriver = driver;
+        }
+#endif
+
         private static float PlanarDistance(Vector3 left, Vector3 right)
         {
             left.y = 0f;

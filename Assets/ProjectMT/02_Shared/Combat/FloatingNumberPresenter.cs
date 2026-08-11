@@ -16,18 +16,26 @@ namespace ProjectMT.Shared.Combat
     [DisallowMultipleComponent]
     public sealed class FloatingNumberPresenter : MonoBehaviour // 피해 숫자 합산·예산·풀 재생
     {
+        public const float DefaultHeightOffset = 1.15f;
+        public const float DefaultMergeWindow = 0.08f;
+        public const float DefaultDisplayDuration = 0.72f;
+        public const float DefaultRiseDistance = 0.85f;
+        public const float DefaultHorizontalDrift = 0.52f;
+        public const float DefaultArcHeight = 0.16f;
+        public const float DefaultStartTilt = 7f;
+
         [SerializeField] private ScenePoolScope poolScope; // 현재 전투 수명 풀
         [SerializeField] private GameObject numberPrefab; // 정식 월드 TMP Prefab
         [SerializeField] private Camera worldCamera; // 비어 있으면 현재 MainCamera 사용
-        [SerializeField, Min(0f)] private float heightOffset = 1.15f; // 대상 위 표시 높이
-        [SerializeField, Min(0f)] private float mergeWindow = 0.08f; // 같은 대상 다단 히트 합산 시간
+        [SerializeField, Min(0f)] private float heightOffset = DefaultHeightOffset; // 대상 위 표시 높이
+        [SerializeField, Min(0f)] private float mergeWindow = DefaultMergeWindow; // 같은 대상 다단 히트 합산 시간
         [SerializeField, Min(1)] private int maxNumbersPerFrame = 6; // 한 프레임 생성 상한
         [SerializeField, Min(1)] private int maxActiveNumbers = 24; // 화면 동시 표시 상한
-        [SerializeField, Min(0.1f)] private float displayDuration = 0.72f; // 숫자 유지 시간
-        [SerializeField, Min(0f)] private float riseDistance = 0.85f; // 위로 이동할 거리
-        [SerializeField, Min(0f)] private float horizontalDrift = 0.52f; // 좌우 팬 이동 거리
-        [SerializeField, Min(0f)] private float arcHeight = 0.16f; // 곡선 상단 높이
-        [SerializeField, Range(0f, 15f)] private float startTilt = 7f; // 시작 기울기
+        [SerializeField, Min(0.1f)] private float displayDuration = DefaultDisplayDuration; // 숫자 유지 시간
+        [SerializeField, Min(0f)] private float riseDistance = DefaultRiseDistance; // 위로 이동할 거리
+        [SerializeField, Min(0f)] private float horizontalDrift = DefaultHorizontalDrift; // 좌우 팬 이동 거리
+        [SerializeField, Min(0f)] private float arcHeight = DefaultArcHeight; // 곡선 상단 높이
+        [SerializeField, Range(0f, 15f)] private float startTilt = DefaultStartTilt; // 시작 기울기
 
         private readonly Dictionary<int, PendingNumber> pending = new Dictionary<int, PendingNumber>(); // 대상별 합산 요청
         private readonly List<int> readyKeys = new List<int>(); // 순회 중 Dictionary 변경 방지
@@ -151,10 +159,8 @@ namespace ProjectMT.Shared.Combat
             }
 
             presentationSequence = unchecked(presentationSequence + 1u);
-            var side = (presentationSequence & 1u) == 0u ? -1f : 1f;
-            var hash = unchecked((uint)key * 747796405u + presentationSequence * 2891336453u);
-            var distanceVariation = Mathf.Lerp(0.78f, 1f, (hash & 255u) / 255f); // 기계적인 좌우 대칭 완화
-            var signedDrift = horizontalDrift * distanceVariation * side;
+            var signedDrift = ResolveHorizontalDrift(key, presentationSequence, horizontalDrift);
+            var side = signedDrift < 0f ? -1f : 1f;
             var cameraRight = worldCamera != null ? worldCamera.transform.right : Vector3.right;
             var position = request.Position
                 + Vector3.up * heightOffset
@@ -193,13 +199,13 @@ namespace ProjectMT.Shared.Combat
             activeNumberCount = Mathf.Max(0, activeNumberCount - 1);
         }
 
-        private static string FormatValue(float amount, FloatingNumberStyle style)
+        public static string FormatValue(float amount, FloatingNumberStyle style)
         {
             var value = Mathf.Max(1, Mathf.RoundToInt(amount));
             return style == FloatingNumberStyle.Heal ? $"+{value:N0}" : value.ToString("N0");
         }
 
-        private static Color ResolveColor(FloatingNumberStyle style)
+        public static Color ResolveColor(FloatingNumberStyle style)
         {
             switch (style)
             {
@@ -212,6 +218,14 @@ namespace ProjectMT.Shared.Combat
                 default:
                     return new Color(1f, 0.9f, 0.35f, 1f);
             }
+        }
+
+        public static float ResolveHorizontalDrift(int key, uint sequence, float maximumDrift)
+        {
+            var side = (sequence & 1u) == 0u ? -1f : 1f;
+            var hash = unchecked((uint)key * 747796405u + sequence * 2891336453u);
+            var distanceVariation = Mathf.Lerp(0.78f, 1f, (hash & 255u) / 255f); // 기계적인 좌우 대칭 완화
+            return Mathf.Max(0f, maximumDrift) * distanceVariation * side;
         }
 
 #if UNITY_EDITOR

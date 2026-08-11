@@ -16,7 +16,7 @@ namespace ProjectMT.Shared.GameData
 
     public sealed class SaveService // 진행 데이터 직렬화 담당
     {
-        public const int CurrentDataVersion = 6; // 08.10 안건준 추가 - 장비 보유·장착 저장 추가
+        public const int CurrentDataVersion = 9; // 메인전투 배치와 장비 보유·장착 저장 통합
         private const int MinimumSupportedDataVersion = 1;
         private const string LegacyFoodRiotBestKillsJsonKey = "\"vegetableRiotBestKills\""; // 개명 전 저장 키
         private const string FoodRiotBestKillsJsonKey = "\"foodRiotBestKills\""; // 현재 저장 키

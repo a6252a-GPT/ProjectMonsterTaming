@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -44,6 +45,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public const string DataRoot = "Assets/ProjectMT/02_Shared/Unit/Data/Monsters";
         public const string ArtRoot = "Assets/ProjectMT/05_Art/Monsters";
         public const string DraftRoot = "Assets/ProjectMT/Editor/MonsterMaker/Drafts";
+        public const string DefaultProjectilePrefabPath =
+            "Assets/ProjectMT/02_Shared/Combat/Prefabs/PF_SeedProjectile.prefab";
 
         public static MonsterMakerWriteResult BuildAndRegister(
             MonsterMakerDraft draft,
@@ -88,6 +91,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 var combat = GetOrCreateAsset<MonsterCombatProfile>(paths[3], "MC_" + draft.MonsterId);
                 var ascension = GetOrCreateAsset<MonsterAscensionProfile>(paths[4], "MA_" + draft.MonsterId);
                 var feedback = GetOrCreateAsset<MonsterFeedbackProfile>(paths[5], "MF_" + draft.MonsterId);
+                var generatedSfx = new MonsterMakerGeneratedSfxWriter(feedback, paths[5], draft.MonsterId);
 
             body.EditorConfigure(
                 draft.VisualScale,
@@ -115,7 +119,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 draft.DeathSpeed,
                 0.08f,
                 false,
-                CreateFeedbackCue(draft.DeathFeedback));
+                CreateFeedbackCue(draft.DeathFeedback, generatedSfx, "Death"));
             var attacks = new MonsterAttackMotion[draft.Attacks.Count];
             for (var attackIndex = 0; attackIndex < draft.Attacks.Count; attackIndex++)
             {
@@ -128,7 +132,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     marker.EditorConfigure(
                         markerDraft.NormalizedTime,
                         markerDraft.PowerRatio,
-                        CreateFeedbackCue(markerDraft.Feedback),
+                        CreateFeedbackCue(
+                            markerDraft.Feedback,
+                            generatedSfx,
+                            $"Attack_{source.MotionId}_Hit_{markerIndex + 1:00}"),
                         markerDraft.SocketOverride);
                     markers[markerIndex] = marker;
                 }
@@ -141,27 +148,38 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     source.CrossFadeDuration,
                     source.Weight,
                     source.PreventImmediateRepeat,
-                    markers);
+                    markers,
+                    CreateFeedbackCue(
+                        source.AttackStartFeedback,
+                        generatedSfx,
+                        $"Attack_{source.MotionId}_Start"));
                 attacks[attackIndex] = attack;
             }
 
             motion.EditorConfigure(idle, move, attacks, death);
-            var action = ConfigureCombatAction(combat, paths[3], draft);
+            var action = ConfigureCombatAction(combat, paths[3], draft, generatedSfx);
             combat.EditorConfigure(draft.CombatType, action);
 
-            var ability2 = GetOrCreateAbility(ascension, paths[4], "Ability_" + draft.MonsterId + "_A2");
-            ability2.EditorConfigure(
-                draft.Ascension2.AbilityId,
-                draft.Ascension2.DisplayName,
-                draft.Ascension2.Mode,
-                draft.Ascension2.TriggerPolicyId);
-            var ability4 = GetOrCreateAbility(ascension, paths[4], "Ability_" + draft.MonsterId + "_A4");
-            ability4.EditorConfigure(
-                draft.Ascension4.AbilityId,
-                draft.Ascension4.DisplayName,
-                draft.Ascension4.Mode,
-                draft.Ascension4.TriggerPolicyId);
+            MonsterAbilityDefinition ability2 = null;
+            MonsterAbilityDefinition ability4 = null;
+            if (draft.AscensionConfigured)
+            {
+                ability2 = GetOrCreateAbility(ascension, paths[4], "Ability_" + draft.MonsterId + "_A2");
+                ability2.EditorConfigure(
+                    draft.Ascension2.AbilityId,
+                    draft.Ascension2.DisplayName,
+                    draft.Ascension2.Mode,
+                    draft.Ascension2.TriggerPolicyId);
+                ability4 = GetOrCreateAbility(ascension, paths[4], "Ability_" + draft.MonsterId + "_A4");
+                ability4.EditorConfigure(
+                    draft.Ascension4.AbilityId,
+                    draft.Ascension4.DisplayName,
+                    draft.Ascension4.Mode,
+                    draft.Ascension4.TriggerPolicyId);
+            }
+
             ascension.EditorConfigure(
+                draft.AscensionConfigured,
                 draft.Ascension1,
                 ability2,
                 draft.Ascension3,
@@ -169,12 +187,13 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 draft.Ascension5);
 
             feedback.EditorConfigure(
-                CreateFeedbackCue(draft.SpawnFeedback),
-                CreateFeedbackCue(draft.AttackStartFeedback),
-                CreateFeedbackCue(draft.AttackMarkerFeedback),
-                CreateFeedbackCue(draft.HitFeedback),
-                CreateFeedbackCue(draft.DeathFeedback),
-                CreateFeedbackCue(draft.SpecialFeedback));
+                CreateFeedbackCue(draft.SpawnFeedback, generatedSfx, "Spawn"),
+                CreateFeedbackCue(draft.AttackStartFeedback, generatedSfx, "AttackStart_Default"),
+                CreateFeedbackCue(draft.AttackMarkerFeedback, generatedSfx, "AttackHit_Default"),
+                CreateFeedbackCue(draft.HitFeedback, generatedSfx, "HitReceived"),
+                CreateFeedbackCue(draft.DeathFeedback, generatedSfx, "Death"),
+                CreateFeedbackCue(draft.SpecialFeedback, generatedSfx, "Special"));
+            generatedSfx.RemoveUnused();
 
             var controller = ConfigureAnimatorController(paths[7], motion);
             var adapter = ConfigureVisualAdapter(paths[8], draft, controller);
@@ -215,6 +234,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 controller,
                 adapter,
                 definition);
+            generatedSfx.SaveIfDirty();
             AssetDatabase.ImportAsset(paths[8], ImportAssetOptions.ForceUpdate);
             AssetDatabase.ImportAsset(paths[7], ImportAssetOptions.ForceUpdate);
 
@@ -348,7 +368,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private static MonsterActionDefinition ConfigureCombatAction(
             MonsterCombatProfile combat,
             string combatPath,
-            MonsterMakerDraft draft)
+            MonsterMakerDraft draft,
+            MonsterMakerGeneratedSfxWriter generatedSfx)
         {
             var desiredType = draft.CombatType switch
             {
@@ -383,9 +404,21 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         draft.MeleeAreaCenter);
                     break;
                 case ProjectileActionDefinition projectile:
+                    var projectileVisual = draft.RangedDeliveryMode == MonsterRangedDeliveryMode.Projectile
+                        ? draft.ProjectilePrefab
+                        : null;
+                    if (draft.RangedDeliveryMode == MonsterRangedDeliveryMode.Projectile &&
+                        projectileVisual == null)
+                    {
+                        projectileVisual = AssetDatabase.LoadAssetAtPath<GameObject>(DefaultProjectilePrefabPath);
+                    }
                     projectile.EditorConfigure(
+                        draft.RangedDeliveryMode,
                         draft.ProjectileMode,
-                        draft.ProjectilePrefab,
+                        projectileVisual,
+                        draft.RangedDeliveryMode == MonsterRangedDeliveryMode.Projectile
+                            ? generatedSfx.Resolve(draft.ProjectileLaunchSound, "ProjectileLaunch")
+                            : null,
                         draft.ProjectileSpeed,
                         draft.ProjectileLifetime,
                         draft.ProjectileHitRadius,
@@ -570,7 +603,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
             return AssetDatabase.LoadAssetAtPath<GameObject>(path);
         }
 
-        private static MonsterFeedbackCue CreateFeedbackCue(MonsterMakerFeedbackDraft draft)
+        private static MonsterFeedbackCue CreateFeedbackCue(
+            MonsterMakerFeedbackDraft draft,
+            MonsterMakerGeneratedSfxWriter generatedSfx,
+            string roleId)
         {
             if (draft?.HasAny != true)
             {
@@ -579,13 +615,136 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             var cue = new MonsterFeedbackCue();
             cue.EditorConfigure(
-                draft.Sfx,
+                generatedSfx.Resolve(draft, roleId),
                 draft.VfxPrefab,
                 draft.VfxLifetime,
                 draft.LocalPosition,
                 draft.LocalEulerAngles,
                 draft.Scale);
             return cue;
+        }
+
+        private sealed class MonsterMakerGeneratedSfxWriter // AudioClip 입력을 역할별 Cue 서브에셋으로 관리
+        {
+            private const string GeneratedPrefix = "__MonsterMakerSfx_";
+            private static readonly Vector2 DefaultVolume = new Vector2(0.9f, 1f);
+            private static readonly Vector2 DefaultPitch = new Vector2(0.98f, 1.02f);
+            private const float DefaultSpatialBlend = 1f;
+            private const float DefaultDuplicateCooldown = 0.05f;
+
+            private readonly MonsterFeedbackProfile owner;
+            private readonly string assetPath;
+            private readonly string monsterId;
+            private readonly Dictionary<string, SfxCue> existing;
+            private readonly HashSet<string> usedNames = new HashSet<string>(StringComparer.Ordinal);
+            private readonly HashSet<SfxCue> usedCues = new HashSet<SfxCue>();
+
+            public MonsterMakerGeneratedSfxWriter(
+                MonsterFeedbackProfile feedbackProfile,
+                string feedbackPath,
+                string sourceMonsterId)
+            {
+                owner = feedbackProfile;
+                assetPath = feedbackPath;
+                monsterId = sourceMonsterId;
+                existing = AssetDatabase.LoadAllAssetsAtPath(assetPath)
+                    .OfType<SfxCue>()
+                    .Where(candidate => candidate.name.StartsWith(GeneratedPrefix, StringComparison.Ordinal))
+                    .GroupBy(candidate => candidate.name, StringComparer.Ordinal)
+                    .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+            }
+
+            public SfxCue Resolve(MonsterMakerFeedbackDraft draft, string roleId)
+            {
+                if (draft == null || draft.Sound == null)
+                {
+                    RegisterLegacyGeneratedCue(draft?.Sfx);
+                    return draft?.Sfx;
+                }
+
+                return Resolve(draft.Sound, roleId);
+            }
+
+            public SfxCue Resolve(AudioClip sound, string roleId)
+            {
+                if (sound == null)
+                {
+                    return null;
+                }
+
+                var objectName = BuildObjectName(roleId);
+                usedNames.Add(objectName);
+                if (!existing.TryGetValue(objectName, out var cue) || cue == null)
+                {
+                    cue = ScriptableObject.CreateInstance<SfxCue>();
+                    cue.name = objectName;
+                    cue.hideFlags = HideFlags.HideInHierarchy;
+                    AssetDatabase.AddObjectToAsset(cue, owner);
+                    existing[objectName] = cue;
+                }
+
+                cue.EditorConfigure(
+                    new[] { sound },
+                    DefaultVolume,
+                    DefaultPitch,
+                    DefaultSpatialBlend,
+                    DefaultDuplicateCooldown,
+                    SfxPriority.Normal);
+                EditorUtility.SetDirty(cue);
+                EditorUtility.SetDirty(owner);
+                usedCues.Add(cue);
+                return cue;
+            }
+
+            public void RemoveUnused()
+            {
+                var generated = AssetDatabase.LoadAllAssetsAtPath(assetPath)
+                    .OfType<SfxCue>()
+                    .Where(candidate => candidate.name.StartsWith(GeneratedPrefix, StringComparison.Ordinal))
+                    .ToArray();
+                for (var index = 0; index < generated.Length; index++)
+                {
+                    if (!usedNames.Contains(generated[index].name))
+                    {
+                        UnityEngine.Object.DestroyImmediate(generated[index], true);
+                        EditorUtility.SetDirty(owner);
+                    }
+                }
+            }
+
+            public void SaveIfDirty()
+            {
+                foreach (var cue in usedCues)
+                {
+                    if (cue != null)
+                    {
+                        AssetDatabase.SaveAssetIfDirty(cue);
+                    }
+                }
+            }
+
+            private void RegisterLegacyGeneratedCue(SfxCue cue)
+            {
+                if (cue == null ||
+                    !string.Equals(AssetDatabase.GetAssetPath(cue), assetPath, StringComparison.OrdinalIgnoreCase) ||
+                    !cue.name.StartsWith(GeneratedPrefix, StringComparison.Ordinal))
+                {
+                    return;
+                }
+
+                usedNames.Add(cue.name);
+                usedCues.Add(cue);
+            }
+
+            private string BuildObjectName(string roleId)
+            {
+                var rawName = $"{GeneratedPrefix}{monsterId}_{roleId}";
+                return new string(rawName
+                    .Select(character => char.IsLetterOrDigit(character) || character == '_' || character == '-'
+                        ? character
+                        : '_')
+                    .ToArray());
+            }
         }
 
         private static void RegisterLast(

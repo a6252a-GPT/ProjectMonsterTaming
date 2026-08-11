@@ -55,11 +55,20 @@ MonoBehaviour:
     crossFadeDuration: 0.06
     weight: 1
     preventImmediateRepeat: 0
+    attackStartFeedback:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
     markers:
-    - normalizedTime: 0.5
+    - normalizedTime: 0.481
       powerRatio: 1
       socketOverride: 
       feedback:
+        sound: {fileID: 0}
         sfx: {fileID: 11400000, guid: abb5f609150fe6740b7749f03d1c4422, type: 2}
         vfxPrefab: {fileID: 0}
         vfxLifetime: 1
@@ -126,6 +135,7 @@ MonoBehaviour:
     moveSpeedRate: 0
     attackRangeRate: 0
   spawnFeedback:
+    sound: {fileID: 0}
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -133,6 +143,7 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   attackStartFeedback:
+    sound: {fileID: 0}
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -140,6 +151,7 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   attackMarkerFeedback:
+    sound: {fileID: 0}
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -147,6 +159,7 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   hitFeedback:
+    sound: {fileID: 0}
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -154,6 +167,7 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   deathFeedback:
+    sound: {fileID: 0}
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -161,6 +175,7 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   specialFeedback:
+    sound: {fileID: 0}
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1

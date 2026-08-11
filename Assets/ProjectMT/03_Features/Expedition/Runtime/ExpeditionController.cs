@@ -47,6 +47,10 @@ namespace ProjectMT.Features.Expedition
         private bool running; // 전투 Tick 허용
         private bool settling; // 결과 저장 중
         private int operationVersion; // 늦은 비동기 결과 무효화
+        private int runSequence; // 공간 제어용 Run 변경 번호
+        private Vector3 formationOrigin; // 맵 중심 기준 배치 원점
+        private bool formationFrameConfigured;
+        private bool formationPlacementActive;
         private readonly Dictionary<UnitActor, int> enemyWaveByActor = new Dictionary<UnitActor, int>(); // 적별 소속 웨이브
         private readonly Dictionary<UnitActor, int> playerSlotByActor = new Dictionary<UnitActor, int>(); // 아군별 본부대 자리
         private readonly int[] aliveEnemiesByWave = new int[ExpeditionStageRules.WaveCount + 1]; // 웨이브별 생존 적
@@ -67,6 +71,8 @@ namespace ProjectMT.Features.Expedition
 
         public bool IsRunning => running;
         public bool IsSettling => settling;
+        public int RunSequence => runSequence;
+        public bool IsFormationPlacementActive => formationPlacementActive;
 
         public void SetPartyForNextRun(BattlePartySnapshot partySnapshot)
         {
@@ -78,16 +84,54 @@ namespace ProjectMT.Features.Expedition
             party = partySnapshot; // 현재 소환 유닛은 유지하고 다음 StartRun부터 사용
         }
 
+        public void CollectActiveUnits(List<UnitActor> destination)
+        {
+            if (destination == null)
+            {
+                return;
+            }
+
+            destination.Clear();
+            foreach (var pair in playerSlotByActor)
+            {
+                if (pair.Key != null && pair.Key.IsAlive)
+                {
+                    destination.Add(pair.Key);
+                }
+            }
+
+            foreach (var pair in enemyWaveByActor)
+            {
+                if (pair.Key != null && pair.Key.IsAlive)
+                {
+                    destination.Add(pair.Key);
+                }
+            }
+        }
+
+        public bool TryGetPlayerSlot(UnitActor actor, out int slotIndex)
+        {
+            if (actor != null && playerSlotByActor.TryGetValue(actor, out slotIndex))
+            {
+                return true;
+            }
+
+            slotIndex = -1;
+            return false;
+        }
+
         public void Initialize(
             IGameProgressService progressService,
             BattlePartySnapshot partySnapshot,
-            IRewardPresentationPlayer rewardPlayer = null)
+            IRewardPresentationPlayer rewardPlayer = null,
+            Collider formationGround = null)
         {
             Shutdown();
             InvalidateHudCache();
             progress = progressService ?? throw new ArgumentNullException(nameof(progressService));
             party = partySnapshot ?? throw new ArgumentNullException(nameof(partySnapshot));
             rewardPresentation = rewardPlayer;
+            ConfigureFormationFrame(formationGround);
             if (modeButton != null)
             {
                 modeButton.onClick.AddListener(ToggleMode);
@@ -121,10 +165,31 @@ namespace ProjectMT.Features.Expedition
             operationVersion++; // 진행 중 비동기 정산 취소
             running = false;
             settling = false;
+            formationPlacementActive = false;
             ResetWaveTracking();
             ResetPlayerTracking();
             combatWorld?.Clear();
             UpdateHud();
+        }
+
+        public bool BeginFormationPlacement()
+        {
+            if (progress == null || party == null || combatWorld == null || settling)
+            {
+                return false;
+            }
+
+            StopWithoutResult();
+            activeRunParty = party;
+            formationPlacementActive = true;
+            combatWorld.SetPaused(true);
+            SpawnParty(true);
+            return playerSlotByActor.Count > 0;
+        }
+
+        public void EndFormationPlacement()
+        {
+            StopWithoutResult();
         }
 
         public void Shutdown()
@@ -132,6 +197,7 @@ namespace ProjectMT.Features.Expedition
             operationVersion++;
             running = false;
             settling = false;
+            formationPlacementActive = false;
             if (modeButton != null)
             {
                 modeButton.onClick.RemoveListener(ToggleMode);
@@ -144,6 +210,7 @@ namespace ProjectMT.Features.Expedition
             rewardPresentation = null;
             party = null;
             activeRunParty = null;
+            formationFrameConfigured = false;
             InvalidateHudCache();
         }
 
@@ -187,11 +254,13 @@ namespace ProjectMT.Features.Expedition
         private void StartRun()
         {
             operationVersion++; // 이전 Run 콜백 무효화
+            runSequence++;
             ResetWaveTracking();
             ResetPlayerTracking();
             activeRunParty = party; // 진행 중 편성 변경은 다음 Run부터 반영
             combatWorld.Clear();
             combatWorld.SetPaused(false);
+            formationPlacementActive = false;
             running = true;
             settling = false;
             currentWave = 1;
@@ -208,27 +277,58 @@ namespace ProjectMT.Features.Expedition
                 resultText.text = string.Empty;
             }
 
-            SpawnParty();
+            SpawnParty(false);
             SpawnWave(1);
             UpdateHud();
         }
 
-        private void SpawnParty()
+        private void SpawnParty(bool placementMode)
         {
             var units = activeRunParty.Units;
             for (var i = 0; i < units.Length && i < 5; i++) // 시드 본부대 최대 5기
             {
-                var position = playerSpawnPoints != null && i < playerSpawnPoints.Length && playerSpawnPoints[i] != null
-                    ? playerSpawnPoints[i].position
-                    : transform.position + new Vector3(i * 0.8f, 0f, 0f);
+                var position = ResolvePlayerSpawnPosition(i);
                 var request = new UnitSpawnRequest(
                     units[i].UnitId,
                     units[i].Stats,
                     UnitTeam.Player,
+                    canMove: !placementMode,
+                    canAttack: !placementMode,
                     visualTint: units[i].VisualTint,
                     runtimeAssetSet: units[i].RuntimeAssetSet);
                 TrackPlayerUnit(combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity), i);
             }
+        }
+
+        private Vector3 ResolvePlayerSpawnPosition(int slotIndex)
+        {
+            if (formationFrameConfigured && progress != null &&
+                progress.View.MainBattleFormation.TryGetSlotOffset(slotIndex, out var offset))
+            {
+                var spawnY = playerSpawnPoints != null && slotIndex < playerSpawnPoints.Length &&
+                             playerSpawnPoints[slotIndex] != null
+                    ? playerSpawnPoints[slotIndex].position.y
+                    : transform.position.y;
+                return new Vector3(formationOrigin.x + offset.x, spawnY, formationOrigin.z + offset.y);
+            }
+
+            return playerSpawnPoints != null && slotIndex < playerSpawnPoints.Length &&
+                   playerSpawnPoints[slotIndex] != null
+                ? playerSpawnPoints[slotIndex].position
+                : transform.position + new Vector3(slotIndex * 0.8f, 0f, 0f);
+        }
+
+        private void ConfigureFormationFrame(Collider formationGround)
+        {
+            formationFrameConfigured = false;
+            if (formationGround == null)
+            {
+                return;
+            }
+
+            var bounds = formationGround.bounds;
+            formationOrigin = new Vector3(bounds.center.x, 0f, bounds.center.z);
+            formationFrameConfigured = true;
         }
 
         private void TrackPlayerUnit(UnitActor actor, int slotIndex)
@@ -337,12 +437,18 @@ namespace ProjectMT.Features.Expedition
         {
             unchecked
             {
-                var seed = 17;
-                seed = seed * 31 + stage;
-                seed = seed * 31 + wave;
-                seed = seed * 31 + index;
-                seed = seed * 31 + runVersion;
-                return seed == 0 ? 1 : seed;
+                var seed = 2166136261u;
+                seed = (seed ^ (uint)stage) * 16777619u;
+                seed = (seed ^ (uint)wave) * 16777619u;
+                seed = (seed ^ (uint)index) * 16777619u;
+                seed = (seed ^ (uint)runVersion) * 16777619u;
+                seed ^= seed >> 16;
+                seed *= 0x7FEB352Du;
+                seed ^= seed >> 15;
+                seed *= 0x846CA68Bu;
+                seed ^= seed >> 16; // 인접 슬롯 시드 동조 방지
+                var positiveSeed = (int)(seed & int.MaxValue);
+                return positiveSeed == 0 ? 1 : positiveSeed;
             }
         }
 

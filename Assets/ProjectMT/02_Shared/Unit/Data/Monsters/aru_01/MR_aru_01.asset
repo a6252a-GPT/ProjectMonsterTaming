@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9063022393fce349b94c80b48a17738, type: 3}
+  m_Name: MR_aru_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterRuntimeAssetSet
+  visualAdapterPrefab: {fileID: 6990944247052285415, guid: 946b3556340716d45b9c14fd9e9cc82e, type: 3}
+  animatorController: {fileID: 9100000, guid: 413db8e799f620440ab4b8514f514175, type: 2}
+  bodyProfile: {fileID: 11400000, guid: 36c569836362962449e59f4e262ce239, type: 2}
+  motionProfile: {fileID: 11400000, guid: d20f2939d05a4aa4db5f2976eb366f41, type: 2}
+  combatProfile: {fileID: 11400000, guid: 4c1b4825bdc6fb24da9835ef4f6b7c49, type: 2}
+  ascensionProfile: {fileID: 11400000, guid: bd9ec832a288c624b899a81b95a6c87b, type: 2}
+  feedbackProfile: {fileID: 11400000, guid: 1baa4726a0afdcf40bc80b4c9a256dbf, type: 2}

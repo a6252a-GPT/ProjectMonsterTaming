@@ -1,0 +1,99 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f20f689cfbc13cd4c9b86bb83379c2a3, type: 3}
+  m_Name: MM_lucy_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterMotionProfile
+  idle:
+    clip: {fileID: 7400000, guid: 27164d3932ee64c49a5215c417da0206, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.08
+    loop: 1
+    startFeedback:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+  move:
+    clip: {fileID: 7400000, guid: 984f4539e99e0c74590661195af335bd, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.08
+    loop: 1
+    startFeedback:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+  attacks:
+  - motionId: attack01
+    clip: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.06
+    weight: 1
+    preventImmediateRepeat: 1
+    markers:
+    - normalizedTime: 0.42
+      powerRatio: 1
+      feedbackOverride:
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      socketOverride: 
+    attackStartOverride:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+  - motionId: attack02
+    clip: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.06
+    weight: 1
+    preventImmediateRepeat: 1
+    markers:
+    - normalizedTime: 0.52
+      powerRatio: 1
+      feedbackOverride:
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      socketOverride: 
+    attackStartOverride:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+  death:
+    clip: {fileID: 7400000, guid: 7eb365b59b49b5d4fa4ed0da8d2b8804, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.08
+    loop: 0
+    startFeedback:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1

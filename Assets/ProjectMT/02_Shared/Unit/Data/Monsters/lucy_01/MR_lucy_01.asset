@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9063022393fce349b94c80b48a17738, type: 3}
+  m_Name: MR_lucy_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterRuntimeAssetSet
+  visualAdapterPrefab: {fileID: 1616277818902511097, guid: 28f5b5c89b7560c4284cc418b24dfc4b, type: 3}
+  animatorController: {fileID: 9100000, guid: 2b842631c93a49a49932d5e324107ac8, type: 2}
+  bodyProfile: {fileID: 11400000, guid: 3b1c79d9c3091e14da29c6a05d5702be, type: 2}
+  motionProfile: {fileID: 11400000, guid: 43e76e107d36f814a9c37c739bb7ca90, type: 2}
+  combatProfile: {fileID: 11400000, guid: 45c9ad6fc29a5294089dc26efd5caa68, type: 2}
+  ascensionProfile: {fileID: 11400000, guid: 109bb97bd342ab24c8ec32003d09174c, type: 2}
+  feedbackProfile: {fileID: 11400000, guid: cc69e8ed3011177429beb8ecda78f0bc, type: 2}

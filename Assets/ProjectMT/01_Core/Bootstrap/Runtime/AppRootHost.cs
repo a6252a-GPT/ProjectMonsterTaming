@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ProjectMT.Core.SaveIO;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Features.Equipment;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Debugging;
 using ProjectMT.Shared.GameData;
@@ -124,7 +125,10 @@ namespace ProjectMT.Bootstrap
 
             debugPanel = Instantiate(prefab, transform);
             debugPanel.name = "DebugPanel";
-            debugPanel.Configure(ResetGameDataForDebugAsync, DrawMonsterForDebugAsync);
+            debugPanel.Configure(
+                ResetGameDataForDebugAsync,
+                DrawMonsterForDebugAsync,
+                AcquireEquipmentForDebugAsync);
         }
 
         private async Task<bool> ResetGameDataForDebugAsync()
@@ -171,6 +175,27 @@ namespace ProjectMT.Bootstrap
             return saved
                 ? $"{selected.DisplayName} 획득 완료"
                 : "획득 정보를 저장하지 못했습니다";
+        }
+
+        private async Task<string> AcquireEquipmentForDebugAsync()
+        {
+            if (!initialized || gameDataService == null || contentFlow == null ||
+                contentFlow.IsRunning || sceneLoader == null || sceneLoader.IsTransitioning)
+            {
+                return "현재 장비를 받을 수 없습니다";
+            }
+
+            var before = gameDataService.View.Equipment.Instances.Count;
+            var drops = EquipmentDropRoller.RollDrop();
+            var saved = await gameDataService.TryApplyAndSaveAsync(
+                GameProgressChange.AcquireEquipment(drops));
+            if (!saved)
+            {
+                return "장비 획득 정보를 저장하지 못했습니다";
+            }
+
+            var acquired = gameDataService.View.Equipment.Instances.Count - before;
+            return acquired > 0 ? $"장비 {acquired}개 획득 완료" : "장비 보유 한도입니다";
         }
 #endif
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
@@ -17,12 +18,29 @@ namespace ProjectMT.Contents.Framework
     {
         public abstract bool TryCreateProgressChange(IContentResultData result, out GameProgressChange change);
 
+        public virtual bool TryCreateProgressChange(
+            IContentResultData result,
+            GameProgressView progress,
+            out GameProgressChange change)
+        {
+            return TryCreateProgressChange(result, out change); // 기존 Adapter 호환
+        }
+
         public virtual bool TryCreateRewardPresentation(
             IContentResultData result,
             out RewardPresentationRequest presentation)
         {
             presentation = null;
             return false; // 실제 보상이 있는 Adapter만 표시값 제공
+        }
+
+        public virtual bool TryCreateRewardPresentation(
+            IContentResultData result,
+            GameProgressView progress,
+            ItemCatalog itemCatalog,
+            out RewardPresentationRequest presentation)
+        {
+            return TryCreateRewardPresentation(result, out presentation); // 기존 Adapter 호환
         }
     }
 

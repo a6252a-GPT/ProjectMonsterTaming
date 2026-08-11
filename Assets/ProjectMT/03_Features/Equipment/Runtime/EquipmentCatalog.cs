@@ -45,16 +45,29 @@ namespace ProjectMT.Features.Equipment
         // 부위 + 등급 조합으로 최종 장비 정의를 만든다. 드랍/장착 등 모든 로직이 이 메서드를 거친다.
         public EquipmentDefinition GetDefinitionForPart(EquipmentPart part, EquipmentGrade grade)
         {
+            return GetDefinitionForPart(part, grade, EquipmentBalanceConfig.RuntimeDefault);
+        }
+
+        public EquipmentDefinition GetDefinitionForPart(
+            EquipmentPart part,
+            EquipmentGrade grade,
+            EquipmentBalanceConfig balance)
+        {
             var baseItem = FindBaseItemForPart(part);
             var baseName = baseItem != null ? baseItem.DisplayName : EquipmentPartInfo.GetDisplayName(part);
             var baseId = baseItem != null ? baseItem.Id : part.ToString();
             var icon = baseItem != null ? baseItem.Icon : null;
-            return new EquipmentDefinition(baseId, baseName, part, grade, icon);
+            return new EquipmentDefinition(baseId, baseName, part, grade, icon, balance);
         }
 
         // 등급 키(예: "Weapon_Common")로 장비 정의를 만든다. 저장/로드 없이 세션 내에서만 쓰이지만,
         // 추후 저장 데이터를 붙일 때도 그대로 재사용할 수 있다.
         public EquipmentDefinition GetDefinitionByKey(string key)
+        {
+            return GetDefinitionByKey(key, EquipmentBalanceConfig.RuntimeDefault);
+        }
+
+        public EquipmentDefinition GetDefinitionByKey(string key, EquipmentBalanceConfig balance)
         {
             foreach (EquipmentPart part in System.Enum.GetValues(typeof(EquipmentPart)))
             {
@@ -62,7 +75,7 @@ namespace ProjectMT.Features.Equipment
                 {
                     if ($"{part}_{grade}" == key)
                     {
-                        return GetDefinitionForPart(part, grade);
+                        return GetDefinitionForPart(part, grade, balance);
                     }
                 }
             }
@@ -73,6 +86,11 @@ namespace ProjectMT.Features.Equipment
         // 현재 카탈로그가 만들어낼 수 있는 모든 장비 종류(부위 6 × 등급 5 = 최대 30개)를 나열한다.
         public IEnumerable<EquipmentDefinition> GetAllDefinitions()
         {
+            return GetAllDefinitions(EquipmentBalanceConfig.RuntimeDefault);
+        }
+
+        public IEnumerable<EquipmentDefinition> GetAllDefinitions(EquipmentBalanceConfig balance)
+        {
             foreach (EquipmentPart part in System.Enum.GetValues(typeof(EquipmentPart)))
             {
                 if (FindBaseItemForPart(part) == null)
@@ -82,7 +100,7 @@ namespace ProjectMT.Features.Equipment
 
                 foreach (EquipmentGrade grade in System.Enum.GetValues(typeof(EquipmentGrade)))
                 {
-                    yield return GetDefinitionForPart(part, grade);
+                    yield return GetDefinitionForPart(part, grade, balance);
                 }
             }
         }

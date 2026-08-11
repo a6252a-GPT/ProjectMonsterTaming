@@ -48,11 +48,21 @@ namespace ProjectMT.Shared.Unit
         public float attackInterval;
         public float projectileSpeed;
         public bool ranged;
+        public float criticalRate;
+        public float criticalDamageMultiplier;
+        public float skillDamageRate;
+        public float bossDamageRate;
+        public float normalMonsterDamageRate;
+        public float skillCooldownReductionRate;
+        public float defensePenetrationRate;
+        public float damageReductionRate;
 
         public float EstimatePower() // 시드 총전투력 추정
         {
             var durability = Mathf.Max(1f, maxHealth) * 0.4f;
-            var offense = Mathf.Max(0f, damage) / Mathf.Max(0.1f, attackInterval) * 4f;
+            var criticalMultiplier = 1f + Mathf.Clamp01(criticalRate) *
+                (Mathf.Max(1f, criticalDamageMultiplier) - 1f);
+            var offense = Mathf.Max(0f, damage) / Mathf.Max(0.1f, attackInterval) * criticalMultiplier * 4f;
             return durability + offense;
         }
     }
@@ -140,7 +150,8 @@ namespace ProjectMT.Shared.Unit
                 attackRange = 1.05f,
                 attackInterval = 0.8f,
                 projectileSpeed = 0f,
-                ranged = false
+                ranged = false,
+                criticalDamageMultiplier = 1.5f
             };
             var ranged = new UnitStatsSnapshot
             {
@@ -150,7 +161,8 @@ namespace ProjectMT.Shared.Unit
                 attackRange = 4.5f,
                 attackInterval = 1f,
                 projectileSpeed = 9f,
-                ranged = true
+                ranged = true,
+                criticalDamageMultiplier = 1.5f
             };
 
             return new BattlePartySnapshot(new[]

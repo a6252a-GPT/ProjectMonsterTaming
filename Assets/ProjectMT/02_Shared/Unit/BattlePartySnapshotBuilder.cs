@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Stats;
 using UnityEngine;
 
 namespace ProjectMT.Shared.Unit
@@ -10,24 +11,38 @@ namespace ProjectMT.Shared.Unit
         private const float RangedProjectileSpeed = 9f; // 현재 공용 원거리 투사체 속도
 
         private readonly MonsterCatalog catalog;
+        private readonly CombatStatConfig statConfig;
 
         public BattlePartySnapshotBuilder(MonsterCatalog monsterCatalog)
+            : this(monsterCatalog, CombatStatConfig.RuntimeDefault)
+        {
+        }
+
+        public BattlePartySnapshotBuilder(MonsterCatalog monsterCatalog, CombatStatConfig combatStatConfig)
         {
             catalog = monsterCatalog ?? throw new ArgumentNullException(nameof(monsterCatalog));
+            statConfig = combatStatConfig ?? throw new ArgumentNullException(nameof(combatStatConfig));
             if (!catalog.TryValidate(out var error))
+            {
+                throw new InvalidOperationException(error);
+            }
+
+            if (!statConfig.TryValidate(out error))
             {
                 throw new InvalidOperationException(error);
             }
         }
 
-        public BattlePartySnapshot Build(GameProgressView progress, LegionStatBonus legionBonus = default)
+        public BattlePartySnapshot Build(
+            GameProgressView progress,
+            IReadOnlyList<StatModifier> legionModifiers = null)
         {
             var roster = progress.Monsters;
             var mainUnits = new List<BattleUnitSnapshot>(MonsterRosterData.MainPartySlotCount);
             var reserveUnits = new List<BattleUnitSnapshot>(MonsterRosterData.ReservePartySlotCount);
             var addedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            AppendPartyUnits(roster.MainPartySlots, roster, legionBonus, addedIds, mainUnits);
-            AppendPartyUnits(roster.ReservePartySlots, roster, legionBonus, addedIds, reserveUnits);
+            AppendPartyUnits(roster.MainPartySlots, roster, legionModifiers, addedIds, mainUnits);
+            AppendPartyUnits(roster.ReservePartySlots, roster, legionModifiers, addedIds, reserveUnits);
 
             if (mainUnits.Count == 0)
             {
@@ -40,7 +55,7 @@ namespace ProjectMT.Shared.Unit
         private void AppendPartyUnits(
             IReadOnlyList<string> slots,
             MonsterRosterView roster,
-            LegionStatBonus legionBonus,
+            IReadOnlyList<StatModifier> legionModifiers,
             HashSet<string> addedIds,
             List<BattleUnitSnapshot> destination)
         {
@@ -56,7 +71,7 @@ namespace ProjectMT.Shared.Unit
 
                 destination.Add(new BattleUnitSnapshot(
                     monsterId,
-                    ResolveStats(definition, owned.Level, owned.AscensionLevel, legionBonus),
+                    ResolveStats(definition, owned.Level, owned.AscensionLevel, legionModifiers),
                     definition.VisualTint,
                     definition.RuntimeAssetKey,
                     definition.RuntimeAssetSet,
@@ -64,20 +79,16 @@ namespace ProjectMT.Shared.Unit
             }
         }
 
-        private static UnitStatsSnapshot ResolveStats(
+        private UnitStatsSnapshot ResolveStats(
             MonsterDefinition definition,
             int level,
             int ascensionLevel,
-            LegionStatBonus legionBonus)
+            IReadOnlyList<StatModifier> legionModifiers)
         {
             var levelMultiplier = MonsterLevelRules.GetStatMultiplier(level);
             var ascensionModifier = definition.RuntimeAssetSet?.AscensionProfile != null
                 ? definition.RuntimeAssetSet.AscensionProfile.ResolveStatModifier(ascensionLevel)
                 : default;
-            var attackSpeed = Mathf.Max(
-                0.01f,
-                definition.AttackSpeed * levelMultiplier * (1f + ascensionModifier.AttackSpeedRate) *
-                (1f + legionBonus.AttackSpeedRate));
             var projectileSpeed = RangedProjectileSpeed;
             var action = definition.RuntimeAssetSet?.CombatProfile?.Action as ProjectileActionDefinition;
             if (action != null)
@@ -85,22 +96,55 @@ namespace ProjectMT.Shared.Unit
                 projectileSpeed = action.Speed;
             }
 
-            return new UnitStatsSnapshot
+            var baseStats = new UnitStatsSnapshot
             {
-                maxHealth = definition.MaxHealth * levelMultiplier * (1f + ascensionModifier.HealthRate) *
-                            (1f + legionBonus.HealthRate),
-                damage = definition.AttackPower * levelMultiplier * (1f + ascensionModifier.AttackRate) *
-                         (1f + legionBonus.AttackRate),
-                defense = definition.Defense * levelMultiplier * (1f + ascensionModifier.DefenseRate) *
-                          (1f + legionBonus.DefenseRate),
-                moveSpeed = definition.MoveSpeed * levelMultiplier * (1f + ascensionModifier.MoveSpeedRate) *
-                            (1f + legionBonus.MoveSpeedRate),
-                attackRange = definition.AttackRange * levelMultiplier * (1f + ascensionModifier.AttackRangeRate) *
-                              (1f + legionBonus.AttackRangeRate),
-                attackInterval = 1f / attackSpeed,
+                maxHealth = definition.MaxHealth * levelMultiplier,
+                damage = definition.AttackPower * levelMultiplier,
+                defense = definition.Defense * levelMultiplier,
+                moveSpeed = definition.MoveSpeed,
+                attackRange = definition.AttackRange,
+                attackInterval = 1f / Mathf.Max(0.01f, definition.AttackSpeed),
                 projectileSpeed = definition.Ranged ? projectileSpeed : 0f,
-                ranged = definition.Ranged
+                ranged = definition.Ranged,
+                criticalRate = statConfig.BaseCriticalRate,
+                criticalDamageMultiplier = statConfig.BaseCriticalDamageMultiplier
             };
+
+            var modifiers = new List<StatModifier>((legionModifiers?.Count ?? 0) + 6);
+            if (legionModifiers != null)
+            {
+                for (var index = 0; index < legionModifiers.Count; index++)
+                {
+                    modifiers.Add(legionModifiers[index]);
+                }
+            }
+
+            AppendAscensionModifiers(ascensionModifier, modifiers);
+            return StatResolver.Resolve(baseStats, modifiers, statConfig);
+        }
+
+        private static void AppendAscensionModifiers(
+            MonsterStatModifier modifier,
+            List<StatModifier> destination)
+        {
+            AddRate(destination, StatId.MaxHealth, modifier.HealthRate, "ascension");
+            AddRate(destination, StatId.AttackPower, modifier.AttackRate, "ascension");
+            AddRate(destination, StatId.Defense, modifier.DefenseRate, "ascension");
+            AddRate(destination, StatId.AttackSpeed, modifier.AttackSpeedRate, "ascension");
+            AddRate(destination, StatId.MoveSpeed, modifier.MoveSpeedRate, "ascension");
+            AddRate(destination, StatId.AttackRange, modifier.AttackRangeRate, "ascension");
+        }
+
+        private static void AddRate(
+            List<StatModifier> destination,
+            StatId statId,
+            float value,
+            string sourceId)
+        {
+            if (!Mathf.Approximately(value, 0f))
+            {
+                destination.Add(new StatModifier(statId, StatOperation.AdditiveRate, value, sourceId));
+            }
         }
 
         private static string[] ResolveUnlockedAbilityIds(

@@ -61,7 +61,7 @@ namespace ProjectMT.Features.MainBattle
             var view = progress.View;
             SetText(commanderMetaText, $"Lv. {view.Commander.Level} · 다음 도전 {view.CurrentChallengeStage}");
             SetText(goldValueText, $"{view.Gold:N0}");
-            SetText(diamondValueText, "—"); // 보석 저장 계약은 아직 미구현
+            SetText(diamondValueText, $"{view.Diamond:N0}");
             SetText(ascensionValueText, $"{view.AscensionCurrency:N0}");
         }
 

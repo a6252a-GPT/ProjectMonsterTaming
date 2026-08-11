@@ -38,11 +38,20 @@ namespace ProjectMT.Features.Equipment
 
         private static IGameProgressService progress;
         private static EquipmentCatalog catalog;
+        private static EquipmentBalanceConfig balance;
 
         // 인벤토리·장착 상태가 바뀔 때(획득/장착/해제/로드 완료 등) 알림. UI가 구독해 새로 그린다.
         public static event Action Changed;
 
         public static void Configure(IGameProgressService progressService, EquipmentCatalog equipmentCatalog)
+        {
+            Configure(progressService, equipmentCatalog, EquipmentBalanceConfig.RuntimeDefault);
+        }
+
+        public static void Configure(
+            IGameProgressService progressService,
+            EquipmentCatalog equipmentCatalog,
+            EquipmentBalanceConfig equipmentBalance)
         {
             if (progress != null)
             {
@@ -51,6 +60,7 @@ namespace ProjectMT.Features.Equipment
 
             progress = progressService;
             catalog = equipmentCatalog;
+            balance = equipmentBalance;
 
             if (progress != null)
             {
@@ -60,7 +70,7 @@ namespace ProjectMT.Features.Equipment
             Changed?.Invoke();
         }
 
-        private static bool IsReady => progress != null && progress.IsLoaded && catalog != null;
+        private static bool IsReady => progress != null && progress.IsLoaded && catalog != null && balance != null;
 
         private static void HandleProgressChanged() => Changed?.Invoke();
 
@@ -82,7 +92,7 @@ namespace ProjectMT.Features.Equipment
                     continue;
                 }
 
-                var definition = catalog.GetDefinitionForPart(instance.Part, instance.Grade);
+                var definition = catalog.GetDefinitionForPart(instance.Part, instance.Grade, balance);
                 var equippedId = equipmentView.GetEquippedInstanceId(instance.Part);
                 result.Add(new EquipmentItemView(instance, definition, equippedId == instance.InstanceId));
             }
@@ -115,7 +125,7 @@ namespace ProjectMT.Features.Equipment
         {
             if (IsReady && progress.View.Equipment.TryGetEquipped(part, out var instance))
             {
-                var definition = catalog.GetDefinitionForPart(instance.Part, instance.Grade);
+                var definition = catalog.GetDefinitionForPart(instance.Part, instance.Grade, balance);
                 item = new EquipmentItemView(instance, definition, true);
                 return true;
             }

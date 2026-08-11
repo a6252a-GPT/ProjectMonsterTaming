@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using ProjectMT.Shared.Equipment;
+using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Reward;
+using ProjectMT.Shared.Stats;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -41,6 +43,51 @@ namespace ProjectMT.Shared.GameData
         {
             level = Math.Max(1, level);
             experience = Math.Max(0L, experience);
+        }
+
+        internal void Repair(CommanderGrowthConfig config)
+        {
+            Repair();
+            if (config == null)
+            {
+                return;
+            }
+
+            level = Math.Min(level, config.MaxLevel);
+            if (level >= config.MaxLevel)
+            {
+                experience = 0L;
+            }
+        }
+
+        internal void GrantExperience(long amount, CommanderGrowthConfig config)
+        {
+            if (amount <= 0L || config == null)
+            {
+                return;
+            }
+
+            if (level >= config.MaxLevel)
+            {
+                return;
+            }
+
+            experience = experience > long.MaxValue - amount
+                ? long.MaxValue
+                : experience + amount;
+        }
+
+        internal bool TryLevelUp(int expectedLevel, CommanderGrowthConfig config)
+        {
+            if (config == null || level != expectedLevel ||
+                !config.TryResolveLevelUp(level, experience, out var nextLevel, out var remainingExperience))
+            {
+                return false;
+            }
+
+            level = nextLevel;
+            experience = remainingExperience;
+            return true;
         }
     }
 
@@ -132,7 +179,7 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private int lastClearedStage; // 마지막 성공 단계
         [SerializeField] private ExpeditionRunMode expeditionMode = ExpeditionRunMode.Challenge; // 저장된 실행 모드
         [FormerlySerializedAs("temporaryGold")]
-        [SerializeField] private long gold; // 정식 골드 잔액
+        [SerializeField] private long gold; // v10 이하 잔액의 동결 백업
         [FormerlySerializedAs("vegetableRiotBestKills")]
         [SerializeField] private int foodRiotBestKills; // 식량 대소동 최고 처치
         [SerializeField] private int guardiansTowerBestKills; // 08.06 안건준 추가 - 수호자의 탑 최고 처치 (식량 대소동과 별도 집계)
@@ -141,14 +188,20 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private CommanderProgressData commander = CommanderProgressData.CreateDefault(); // 군단장 성장값
         [SerializeField] private MonsterRosterData monsters = MonsterRosterData.CreateDefault(); // 보유·편성값
         [SerializeField] private MainBattleFormationData mainBattleFormation = MainBattleFormationData.CreateDefault(); // 본부대 시작 위치
-        [SerializeField] private int ascensionCurrency; // 돌파석 - 최대 돌파 이후 중복 뽑기 시 적립되는 전용 재화
+        [SerializeField] private int ascensionCurrency; // v10 이하 잔액의 동결 백업
         [SerializeField] private GachaPityData gachaPity = GachaPityData.CreateDefault(); // 뽑기 천장 누적 카운터
         [SerializeField] private EquipmentSaveData equipment = EquipmentSaveData.CreateDefault(); // 08.10 안건준 추가 - 장비 보유·장착 저장
+        [SerializeField] private ItemInventoryData items = ItemInventoryData.CreateDefault(); // 일반 아이템 보유 수량
+        [SerializeField] private bool coreBalanceMigrationCompleted = true; // v11 이관 재실행 방지
+        [NonSerialized] private ItemInventoryView? itemViewCache; // 변경 전까지 목록 복사 재사용
 
         public int CurrentChallengeStage => currentChallengeStage;
         public int LastClearedStage => lastClearedStage;
         public ExpeditionRunMode ExpeditionMode => expeditionMode;
-        public long Gold => gold;
+        public long Gold => coreBalanceMigrationCompleted
+            ? (items ?? ItemInventoryData.CreateDefault()).GetQuantity(ItemIds.Gold)
+            : Math.Max(0L, gold);
+        public long Diamond => (items ?? ItemInventoryData.CreateDefault()).GetQuantity(ItemIds.Diamond);
         public int FoodRiotBestKills => foodRiotBestKills;
         public int GuardiansTowerBestKills => guardiansTowerBestKills; // 08.06 안건준 추가
         public int GuardiansTowerDifficultyLevel => guardiansTowerDifficultyLevel; // 08.07 안건준 추가
@@ -157,9 +210,19 @@ namespace ProjectMT.Shared.GameData
         public MonsterRosterView Monsters => monsters?.CreateView() ?? MonsterRosterData.CreateDefault().CreateView();
         public MainBattleFormationView MainBattleFormation =>
             (mainBattleFormation ?? MainBattleFormationData.CreateDefault()).CreateView();
-        public int AscensionCurrency => ascensionCurrency;
+        public long AscensionCurrency => coreBalanceMigrationCompleted
+            ? (items ?? ItemInventoryData.CreateDefault()).GetQuantity(ItemIds.AscensionStone)
+            : Math.Max(0, ascensionCurrency);
         public GachaPityView GachaPity => new GachaPityView(gachaPity);
         public EquipmentSaveDataView Equipment => (equipment ?? EquipmentSaveData.CreateDefault()).CreateView(); // 08.10 안건준 추가
+        public ItemInventoryView Items
+        {
+            get
+            {
+                itemViewCache ??= (items ?? ItemInventoryData.CreateDefault()).CreateView();
+                return itemViewCache.Value;
+            }
+        }
 
         public static GameProgressData CreateDefault()
         {
@@ -183,13 +246,24 @@ namespace ProjectMT.Shared.GameData
                 mainBattleFormation = mainBattleFormation?.Clone() ?? MainBattleFormationData.CreateDefault(),
                 ascensionCurrency = ascensionCurrency,
                 gachaPity = gachaPity?.Clone() ?? GachaPityData.CreateDefault(),
-                equipment = equipment?.Clone() ?? EquipmentSaveData.CreateDefault() // 08.10 안건준 추가
+                equipment = equipment?.Clone() ?? EquipmentSaveData.CreateDefault(), // 08.10 안건준 추가
+                items = items?.Clone() ?? ItemInventoryData.CreateDefault(),
+                coreBalanceMigrationCompleted = coreBalanceMigrationCompleted
             };
         }
 
-        internal bool TryApply(GameProgressChange change)
+        internal bool TryApply(
+            GameProgressChange change,
+            CommanderGrowthConfig commanderGrowthConfig = null,
+            ItemCatalog itemCatalog = null)
         {
             if (change == null)
+            {
+                return false;
+            }
+
+            if (change.HasStandaloneItemGrant &&
+                (change.Rewards == null || change.Rewards.IsEmpty))
             {
                 return false;
             }
@@ -197,6 +271,12 @@ namespace ProjectMT.Shared.GameData
             if (change.HasExpeditionMode && !IsValidExpeditionMode(change.ExpeditionMode))
             {
                 return false;
+            }
+
+            if (change.MarkCastleRaidCleared && castleRaidFirstClear &&
+                change.Rewards != null && !change.Rewards.IsEmpty)
+            {
+                return false; // 최초 보상 중복 지급 차단
             }
 
             if (change.HasExpeditionMode)
@@ -214,14 +294,9 @@ namespace ProjectMT.Shared.GameData
                 return false;
             }
 
-            if (change.Rewards != null && !change.Rewards.IsEmpty)
+            if (!TryApplyRewards(change.Rewards, commanderGrowthConfig, itemCatalog))
             {
-                if (gold > long.MaxValue - change.Rewards.Gold)
-                {
-                    return false;
-                }
-
-                gold += change.Rewards.Gold;
+                return false;
             }
 
             if (change.FoodRiotBestKills >= 0)
@@ -242,6 +317,21 @@ namespace ProjectMT.Shared.GameData
             if (change.MarkCastleRaidCleared)
             {
                 castleRaidFirstClear = true;
+            }
+
+            if (change.CommanderExperience > 0L)
+            {
+                commander ??= CommanderProgressData.CreateDefault();
+                commander.GrantExperience(change.CommanderExperience, commanderGrowthConfig);
+            }
+
+            if (change.HasLevelUpCommander)
+            {
+                commander ??= CommanderProgressData.CreateDefault();
+                if (!commander.TryLevelUp(change.ExpectedCommanderLevel, commanderGrowthConfig))
+                {
+                    return false;
+                }
             }
 
             if (change.HasAcquireMonster &&
@@ -283,13 +373,17 @@ namespace ProjectMT.Shared.GameData
                     !monsters.TryGetOwned(change.LevelUpMonsterId, out var owned) ||
                     owned.Level != change.ExpectedMonsterLevel ||
                     !MonsterLevelRules.TryGetNextLevelCost(owned.Level, out var cost) ||
-                    gold < cost ||
+                    !ItemInventoryTransactions.TrySpend(
+                        items,
+                        new[] { new ItemAmount(ItemIds.Gold, cost) },
+                        itemCatalog,
+                        out var spentItems) ||
                     !monsters.TryLevelUp(change.LevelUpMonsterId, change.ExpectedMonsterLevel))
                 {
                     return false;
                 }
 
-                gold -= cost; // 레벨 증가와 같은 후보 데이터에서 차감
+                items = spentItems; // 레벨 증가와 같은 후보 데이터에서 차감
             }
 
             if (change.HasAscendMonster &&
@@ -325,7 +419,90 @@ namespace ProjectMT.Shared.GameData
                 return false;
             }
 
-            Repair(); // 변경 후 불변식 재확인
+            if (change.HasDiscardItem)
+            {
+                if (!ItemInventoryTransactions.TryDiscard(
+                        items,
+                        itemCatalog,
+                        change.ItemId,
+                        change.ItemQuantity,
+                        change.ExpectedItemQuantity,
+                        out var discardedItems))
+                {
+                    return false;
+                }
+
+                items = discardedItems;
+            }
+
+            if (change.HasUseItem)
+            {
+                if (!ItemInventoryTransactions.TryUse(
+                        items,
+                        itemCatalog,
+                        change.ItemId,
+                        change.ItemQuantity,
+                        change.ExpectedItemQuantity,
+                        out var consumedItems,
+                        out var useResult))
+                {
+                    return false;
+                }
+
+                items = consumedItems;
+                if (!TryApplyRewards(useResult.Rewards, commanderGrowthConfig, itemCatalog))
+                {
+                    return false;
+                }
+            }
+
+            Repair(commanderGrowthConfig); // 변경 후 불변식 재확인
+            return true;
+        }
+
+        private bool TryApplyRewards(
+            RewardBundle rewards,
+            CommanderGrowthConfig commanderGrowthConfig,
+            ItemCatalog itemCatalog)
+        {
+            if (rewards == null || rewards.IsEmpty)
+            {
+                return true;
+            }
+
+            var candidateItems = items ?? ItemInventoryData.CreateDefault();
+            if (rewards.Gold > 0L)
+            {
+                if (!ItemInventoryTransactions.TryGrantCoreBalance(
+                        candidateItems,
+                        ItemIds.Gold,
+                        rewards.Gold,
+                        out var withGold))
+                {
+                    return false;
+                }
+
+                candidateItems = withGold;
+            }
+
+            if (rewards.Items.Count > 0)
+            {
+                if (!ItemInventoryTransactions.TryGrant(
+                        candidateItems,
+                        rewards.Items,
+                        itemCatalog,
+                        out var withItems))
+                {
+                    return false;
+                }
+
+                candidateItems = withItems;
+            }
+
+            commander ??= CommanderProgressData.CreateDefault();
+            commander.GrantExperience(rewards.CommanderExperience, commanderGrowthConfig);
+            items = candidateItems;
+
             return true;
         }
 
@@ -375,13 +552,16 @@ namespace ProjectMT.Shared.GameData
             }
 
             // 이미 최대 돌파이거나 최대 돌파까지 필요한 재료를 모두 보유한 뒤의 초과 중복이다.
-            var nextCurrency = (long)ascensionCurrency + 1;
-            if (nextCurrency > int.MaxValue)
+            if (!ItemInventoryTransactions.TryGrantCoreBalance(
+                    items,
+                    ItemIds.AscensionStone,
+                    1L,
+                    out var ascensionItems))
             {
                 return false;
             }
 
-            ascensionCurrency = (int)nextCurrency;
+            items = ascensionItems;
             return true;
         }
 
@@ -404,12 +584,40 @@ namespace ProjectMT.Shared.GameData
             gachaPity.Repair();
             equipment ??= EquipmentSaveData.CreateDefault(); // 08.10 안건준 추가
             equipment.Repair();
+            items ??= ItemInventoryData.CreateDefault();
+            items.Repair();
+            itemViewCache = null;
 
             if (!IsValidExpeditionMode(expeditionMode) ||
                 (lastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat))
             {
                 expeditionMode = ExpeditionRunMode.Challenge; // 손상값·클리어 전 반복 복구
             }
+        }
+
+        internal void Repair(CommanderGrowthConfig commanderGrowthConfig)
+        {
+            Repair();
+            commander.Repair(commanderGrowthConfig);
+        }
+
+        internal void MigrateFromVersion(int sourceDataVersion)
+        {
+            if (sourceDataVersion <= 9)
+            {
+                items ??= ItemInventoryData.CreateDefault(); // v9 이전 저장에는 일반 아이템 필드가 없음
+            }
+
+            if (sourceDataVersion <= 10)
+            {
+                items ??= ItemInventoryData.CreateDefault();
+                items.Repair();
+                items.MergeLegacyCoreBalance(ItemIds.Gold, Math.Max(0L, gold));
+                items.MergeLegacyCoreBalance(ItemIds.AscensionStone, Math.Max(0, ascensionCurrency));
+                coreBalanceMigrationCompleted = true; // 백업값은 보존하고 원본 권한만 ItemInventory로 이동
+            }
+
+            Repair();
         }
 
         private static bool IsValidExpeditionMode(ExpeditionRunMode mode)
@@ -426,6 +634,7 @@ namespace ProjectMT.Shared.GameData
             LastClearedStage = data.LastClearedStage;
             ExpeditionMode = data.ExpeditionMode;
             Gold = data.Gold;
+            Diamond = data.Diamond;
             FoodRiotBestKills = data.FoodRiotBestKills;
             GuardiansTowerBestKills = data.GuardiansTowerBestKills; // 08.06 안건준 추가
             GuardiansTowerDifficultyLevel = data.GuardiansTowerDifficultyLevel; // 08.07 안건준 추가
@@ -436,12 +645,14 @@ namespace ProjectMT.Shared.GameData
             AscensionCurrency = data.AscensionCurrency;
             GachaPity = data.GachaPity;
             Equipment = data.Equipment; // 08.10 안건준 추가
+            Items = data.Items;
         }
 
         public int CurrentChallengeStage { get; }
         public int LastClearedStage { get; }
         public ExpeditionRunMode ExpeditionMode { get; }
         public long Gold { get; }
+        public long Diamond { get; }
         public int FoodRiotBestKills { get; }
         public int GuardiansTowerBestKills { get; } // 08.06 안건준 추가
         public int GuardiansTowerDifficultyLevel { get; } // 08.07 안건준 추가
@@ -449,9 +660,10 @@ namespace ProjectMT.Shared.GameData
         public CommanderProgressView Commander { get; }
         public MonsterRosterView Monsters { get; }
         public MainBattleFormationView MainBattleFormation { get; }
-        public int AscensionCurrency { get; } // 돌파석 보유량
+        public long AscensionCurrency { get; } // 돌파석 보유량
         public GachaPityView GachaPity { get; } // 뽑기 천장 누적 카운터
         public EquipmentSaveDataView Equipment { get; } // 08.10 안건준 추가 - 장비 보유·장착 상태
+        public ItemInventoryView Items { get; } // 일반 아이템 보유 수량
     }
 
     public sealed class GameProgressChange // 한 번에 검증할 진행 변경 묶음
@@ -496,6 +708,15 @@ namespace ProjectMT.Shared.GameData
         internal string EquipItemInstanceId { get; private set; }
         internal bool HasUnequipItem { get; private set; }
         internal EquipmentPart UnequipItemPart { get; private set; }
+        internal bool HasStandaloneItemGrant { get; private set; }
+        internal bool HasDiscardItem { get; private set; }
+        internal bool HasUseItem { get; private set; }
+        internal string ItemId { get; private set; }
+        internal long ItemQuantity { get; private set; }
+        internal long ExpectedItemQuantity { get; private set; }
+        internal long CommanderExperience { get; private set; }
+        internal bool HasLevelUpCommander { get; private set; }
+        internal int ExpectedCommanderLevel { get; private set; }
 
         public static GameProgressChange SetExpeditionMode(ExpeditionRunMode mode)
         {
@@ -555,9 +776,63 @@ namespace ProjectMT.Shared.GameData
 
         public static GameProgressChange RecordCastleRaidClear() // 성 파괴 기록 요청
         {
+            return RecordCastleRaidClear(RewardBundle.Empty);
+        }
+
+        public static GameProgressChange RecordCastleRaidClear(RewardBundle rewards)
+        {
             return new GameProgressChange
             {
-                MarkCastleRaidCleared = true
+                MarkCastleRaidCleared = true,
+                Rewards = rewards ?? RewardBundle.Empty
+            };
+        }
+
+        public static GameProgressChange GrantCommanderExperience(long amount)
+        {
+            return new GameProgressChange
+            {
+                CommanderExperience = Math.Max(0L, amount)
+            };
+        }
+
+        public static GameProgressChange GrantItems(params ItemAmount[] itemRewards)
+        {
+            return new GameProgressChange
+            {
+                HasStandaloneItemGrant = true,
+                Rewards = RewardBundle.FromItems(itemRewards)
+            };
+        }
+
+        public static GameProgressChange DiscardItem(string itemId, long quantity, long expectedQuantity)
+        {
+            return new GameProgressChange
+            {
+                HasDiscardItem = true,
+                ItemId = itemId?.Trim(),
+                ItemQuantity = quantity,
+                ExpectedItemQuantity = expectedQuantity
+            };
+        }
+
+        public static GameProgressChange UseItem(string itemId, long quantity, long expectedQuantity)
+        {
+            return new GameProgressChange
+            {
+                HasUseItem = true,
+                ItemId = itemId?.Trim(),
+                ItemQuantity = quantity,
+                ExpectedItemQuantity = expectedQuantity
+            };
+        }
+
+        public static GameProgressChange LevelUpCommander(int expectedLevel)
+        {
+            return new GameProgressChange
+            {
+                HasLevelUpCommander = true,
+                ExpectedCommanderLevel = expectedLevel
             };
         }
 

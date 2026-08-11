@@ -17,12 +17,23 @@ namespace ProjectMT.Features.Equipment
             EquipmentPart part,
             EquipmentGrade grade,
             Sprite icon)
+            : this(baseItemId, baseDisplayName, part, grade, icon, EquipmentBalanceConfig.RuntimeDefault)
+        {
+        }
+
+        public EquipmentDefinition(
+            string baseItemId,
+            string baseDisplayName,
+            EquipmentPart part,
+            EquipmentGrade grade,
+            Sprite icon,
+            EquipmentBalanceConfig balance)
         {
             BaseItemId = baseItemId;
             Part = part;
             Grade = grade;
             Icon = icon;
-            CoreStatContributions = EquipmentGradeStatTable.GetCoreStatContributions(part, grade);
+            CoreStatContributions = EquipmentGradeStatTable.GetCoreStatContributions(part, grade, balance);
             // 예: "일반 무기" - 문서 규칙상 장비 종류 키는 부위+등급 조합이므로 이름도 등급+부위로 통일한다.
             DisplayName = $"{EquipmentGradeInfo.GetDisplayName(grade)} {baseDisplayName}";
         }

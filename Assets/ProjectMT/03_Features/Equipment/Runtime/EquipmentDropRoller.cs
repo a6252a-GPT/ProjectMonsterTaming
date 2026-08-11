@@ -13,13 +13,25 @@ namespace ProjectMT.Features.Equipment
 
         public static List<EquipmentInstanceData> RollDrop(Random random = null)
         {
+            return RollDrop(EquipmentBalanceConfig.RuntimeDefault, random);
+        }
+
+        public static List<EquipmentInstanceData> RollDrop(
+            EquipmentBalanceConfig balance,
+            Random random = null)
+        {
+            if (balance == null)
+            {
+                throw new ArgumentNullException(nameof(balance));
+            }
+
             var rng = random ?? new Random();
             var results = new List<EquipmentInstanceData>(DropCount);
             for (var i = 0; i < DropCount; i++)
             {
                 var part = EquipmentPartInfo.RollUniform((float)rng.NextDouble());
-                var grade = EquipmentGradeInfo.RollWeighted((float)(rng.NextDouble() * 100.0));
-                var randomOptions = EquipmentRandomOptionRoller.Roll(grade, rng);
+                var grade = EquipmentGradeInfo.RollWeighted((float)(rng.NextDouble() * 100.0), balance);
+                var randomOptions = EquipmentRandomOptionRoller.Roll(grade, balance, rng);
                 results.Add(new EquipmentInstanceData(Guid.NewGuid().ToString("N"), part, grade, randomOptions));
             }
 

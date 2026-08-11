@@ -29,23 +29,17 @@ namespace ProjectMT.Features.Equipment
         // 나머지는 %p(치확·치피·쿨감·방관·피해감소) 또는 % 절대값(스킬/보스/일반 몬스터 피해).
         public static float GetBaseValue(EquipmentOptionType type)
         {
-            switch (type)
+            return GetBaseValue(type, EquipmentBalanceConfig.RuntimeDefault);
+        }
+
+        public static float GetBaseValue(EquipmentOptionType type, EquipmentBalanceConfig balance)
+        {
+            if (balance == null)
             {
-                case EquipmentOptionType.AttackPower: return 2f;
-                case EquipmentOptionType.Defense: return 2f;
-                case EquipmentOptionType.MaxHealth: return 2f;
-                case EquipmentOptionType.AttackSpeed: return 1f;
-                case EquipmentOptionType.MoveSpeed: return 0.5f;
-                case EquipmentOptionType.CriticalRate: return 1f;
-                case EquipmentOptionType.CriticalDamage: return 5f;
-                case EquipmentOptionType.SkillDamage: return 2f;
-                case EquipmentOptionType.BossDamage: return 2f;
-                case EquipmentOptionType.NormalMonsterDamage: return 2f;
-                case EquipmentOptionType.SkillCooldownReduction: return 1f;
-                case EquipmentOptionType.DefensePenetration: return 2f;
-                case EquipmentOptionType.DamageReduction: return 1f;
-                default: return 0f;
+                throw new System.ArgumentNullException(nameof(balance));
             }
+
+            return balance.GetOptionBaseValuePercent(type);
         }
 
         public static string GetDisplayName(EquipmentOptionType type)

@@ -1,6 +1,7 @@
 using System;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Features.Commander;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.Expedition;
 using ProjectMT.Features.Formation;
@@ -18,11 +19,13 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private ContentId foodRiotContentId = new ContentId("food_riot"); // Hosted 콘텐츠 ID
         [SerializeField] private ContentId castleRaidContentId = new ContentId("castle_raid"); // 별도 씬 콘텐츠 ID
         [SerializeField] private ContentId guardiansTowerContentId = new ContentId("guardians_tower"); // 08.06 안건준 추가 - 수호자의 탑 Hosted 콘텐츠 ID (식량 대소동과 별도)
+        [SerializeField] private ContentId giantSpellbookContentId = new ContentId("giant_spellbook"); // 거대마도서 Hosted 연결부
         [SerializeField] private ExpeditionController expedition; // 원정대 진행 담당
         [SerializeField] private MainBattleHostedContentRunner hostedRunner; // 성장 던전 전환 담당
         [SerializeField] private Button foodRiotButton; // 식량 대소동 입장 버튼
         [SerializeField] private Button castleRaidButton; // 군단의 역습 입장 버튼
         [SerializeField] private Button towerButton; // 08.06 안건준 추가 - 수호자의 탑 입장 버튼
+        [SerializeField] private Button giantSpellbookButton; // 거대마도서 입장 버튼
         [SerializeField] private TMP_Text statusText; // 현재 플레이 상태
         [SerializeField] private FormationPageController formationPage; // 보유·편성 통합 화면
         [SerializeField] private MonsterManagementPageController monsterManagementPage; // 몬스터 성장 관리창
@@ -67,6 +70,7 @@ namespace ProjectMT.Features.MainBattle
             foodRiotButton?.onClick.AddListener(OpenFoodRiot);
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
             towerButton?.onClick.AddListener(OpenGuardiansTower); // 08.06 안건준 추가
+            giantSpellbookButton?.onClick.AddListener(OpenGiantSpellbook);
             var runtimeRoot = transform.Find("01_MainGameplayRoot/01_RuntimeRoot");
             var commander = runtimeRoot?.Find("CommanderVisual");
             var enemySpawnAnchor = runtimeRoot?.Find("EnemySpawnAnchor");
@@ -97,6 +101,7 @@ namespace ProjectMT.Features.MainBattle
             ConfigureGachaSystem();
             ConfigureShopPageView();
             ConfigureEquipmentPage();
+            ConfigureCommanderGrowthPage();
             ConfigureMonsterDrag();
             ConfigureSpatialMovement();
             ConfigureFormationPlacement();
@@ -117,6 +122,7 @@ namespace ProjectMT.Features.MainBattle
             foodRiotButton?.onClick.RemoveListener(OpenFoodRiot);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
             towerButton?.onClick.RemoveListener(OpenGuardiansTower); // 08.06 안건준 추가
+            giantSpellbookButton?.onClick.RemoveListener(OpenGiantSpellbook);
             ResolveGachaSystem()?.Shutdown();
             ResolveShopPageView()?.Shutdown();
             hudProgressView?.Shutdown();
@@ -216,6 +222,17 @@ namespace ProjectMT.Features.MainBattle
             }
 
             return equipmentPage;
+        }
+
+        private void ConfigureCommanderGrowthPage()
+        {
+            if (context.CommanderGrowthConfig == null)
+            {
+                return;
+            }
+
+            var page = GetComponentInChildren<CommanderGrowthPageView>(true);
+            page?.Configure(context.Progress, context.CommanderGrowthConfig);
         }
 
         private MonsterManagementPageController ResolveMonsterManagementPage()
@@ -345,6 +362,21 @@ namespace ProjectMT.Features.MainBattle
             if (context.ContentLauncher.StartHosted(guardiansTowerContentId, party, hostedRunner))
             {
                 SetStatus("수호자의 탑");
+            }
+        }
+
+        private void OpenGiantSpellbook()
+        {
+            if (!TryOpenContent())
+            {
+                return;
+            }
+
+            managementUi?.CloseAllPages();
+            party = context.RefreshParty();
+            if (context.ContentLauncher.StartHosted(giantSpellbookContentId, party, hostedRunner))
+            {
+                SetStatus("거대마도서");
             }
         }
 
@@ -484,7 +516,8 @@ namespace ProjectMT.Features.MainBattle
             GachaSystem gacha = null,
             MonsterManagementPageController managementController = null,
             ShopPageView shopView = null,
-            Button guardiansTowerButton = null)
+            Button guardiansTowerButton = null,
+            Button giantSpellbookEntryButton = null)
         {
             expedition = expeditionController;
             hostedRunner = runner;
@@ -496,6 +529,7 @@ namespace ProjectMT.Features.MainBattle
             monsterManagementPage = managementController;
             shopPageView = shopView;
             towerButton = guardiansTowerButton; // 08.06 안건준 추가
+            giantSpellbookButton = giantSpellbookEntryButton;
         }
 #endif
     }

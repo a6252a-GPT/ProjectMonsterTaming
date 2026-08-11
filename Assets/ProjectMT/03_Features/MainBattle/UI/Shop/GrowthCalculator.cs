@@ -1,5 +1,4 @@
 using System;
-using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -15,10 +14,6 @@ namespace ProjectMT.Features.MainBattle
 
         [Header("강화당 증가량 (밸런싱 전 임시값)")]
         [SerializeField] private float growthRatePerLevel = 0.1f; // 레벨 1당 증가하는 보너스 비율 (임시 0.1)
-
-        [Header("군단장 레벨/경험치 표시")]
-        [SerializeField] private TMP_Text commanderLevelText; // UpgradePanel의 LevelText (군단장 LV. / 경험치%)
-        [SerializeField] private long experienceForFullPercent = 1000; // 경험치 원본 숫자 → 100%로 환산할 때 분모  (임시값)
 
         [Header("체력")]
         [SerializeField] private Button healthButton; // 체력 강화 버튼
@@ -51,12 +46,7 @@ namespace ProjectMT.Features.MainBattle
         private int moveSpeedLevel = 1; // 이동 속도 현재 강화 레벨
         private int attackRangeLevel = 1; // 사거리 현재 강화 레벨
 
-        private CommanderProgressView commanderProgress = new CommanderProgressView(1, 0L); // 군단장 레벨/경험치 원본
-        private bool commanderInitialized; // Initialize 호출 여부
-
         public LegionStatBonus CurrentBonus { get; private set; } // 최신 계산된 강화 보너스 6종
-        public int CommanderLevel => commanderProgress.Level; // 현재 군단장 레벨
-        public float CommanderExperiencePercent => ConvertExperienceToPercent(commanderProgress.Experience); // 0~100% 환산값
 
         public event Action<LegionStatBonus> BonusChanged; // 강화 결과가 필요한 다른 시스템(전투 반영 등)이 구독
 
@@ -73,15 +63,8 @@ namespace ProjectMT.Features.MainBattle
 
         private void Start()
         {
-            if (!commanderInitialized)
-            {
-                // 아직 외부에서 Initialize를 안 불렀으면 기본값(Lv.1 / Exp.0)으로 표시
-                ApplyCommanderProgress(new CommanderProgressView(1, 0L));
-            }
-
             RecalculateBonus(); // 시작 시 기본값(LV.1 기준)으로 LegionStatBonus 계산
             RefreshAllLevelTexts(); // 모든 레벨 텍스트를 "LV. 1"로 표기
-            RefreshCommanderLevelText(); // 군단장 LV / 경험치% 표기
         }
 
         private void OnDestroy()
@@ -100,45 +83,6 @@ namespace ProjectMT.Features.MainBattle
             // Inspector에서 잘못된 값(0 이하 최대강화, 음수 증가량) 입력 방지
             maxGrowthLevel = Mathf.Max(1, maxGrowthLevel);
             growthRatePerLevel = Mathf.Max(0f, growthRatePerLevel);
-            experienceForFullPercent = Math.Max(1L, experienceForFullPercent); // 0 나누기 방지
-        }
-
-        // CommanderProgressView에서 Level/Experience 원본만 받아 UI에 반영한다.
-        // Experience는 long 숫자이므로 여기서 0~100%로 환산한다.
-        public void Initialize(CommanderProgressView progress)
-        {
-            ApplyCommanderProgress(progress);
-            RefreshCommanderLevelText();
-        }
-
-        private void ApplyCommanderProgress(CommanderProgressView progress)
-        {
-            commanderProgress = progress;
-            commanderInitialized = true;
-        }
-
-        // 경험치 원본 숫자 → 0~100% 환산
-        // 예: experienceForFullPercent=1000 이고 Experience=250 이면 25%
-        public float ConvertExperienceToPercent(long experience)
-        {
-            if (experienceForFullPercent <= 0L)
-            {
-                return 0f;
-            }
-
-            var percent = (float)experience / experienceForFullPercent * 100f;
-            return Mathf.Clamp(percent, 0f, 100f);
-        }
-
-        private void RefreshCommanderLevelText()
-        {
-            if (commanderLevelText == null)
-            {
-                return;
-            }
-
-            var percent = ConvertExperienceToPercent(commanderProgress.Experience);
-            commanderLevelText.text = $"군단장 LV. {commanderProgress.Level} ({percent:0}%)";
         }
 
         // 버튼 6개 각각의 클릭 콜백 - 공통 Grow 로직에 해당 스탯 레벨/텍스트만 전달

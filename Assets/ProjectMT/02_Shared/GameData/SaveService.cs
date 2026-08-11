@@ -16,7 +16,7 @@ namespace ProjectMT.Shared.GameData
 
     public sealed class SaveService // 진행 데이터 직렬화 담당
     {
-        public const int CurrentDataVersion = 9; // 메인전투 배치와 장비 보유·장착 저장 통합
+        public const int CurrentDataVersion = 11; // 골드·돌파석을 일반 아이템 원본으로 통합
         private const int MinimumSupportedDataVersion = 1;
         private const string LegacyFoodRiotBestKillsJsonKey = "\"vegetableRiotBestKills\""; // 개명 전 저장 키
         private const string FoodRiotBestKillsJsonKey = "\"foodRiotBestKills\""; // 현재 저장 키
@@ -63,7 +63,7 @@ namespace ProjectMT.Shared.GameData
                 return GameProgressData.CreateDefault(); // 미지원 저장은 시드 기본값
             }
 
-            envelope.gameData.Repair();
+            envelope.gameData.MigrateFromVersion(envelope.dataVersion); // 버전별 누락 필드를 먼저 복구
             if (envelope.dataVersion != CurrentDataVersion)
             {
                 await SaveAsync(envelope.gameData); // 이전 진행값을 보존한 채 현재 형식으로 승격

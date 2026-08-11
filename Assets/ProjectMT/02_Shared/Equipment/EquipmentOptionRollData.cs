@@ -24,5 +24,13 @@ namespace ProjectMT.Shared.Equipment
         {
             return new EquipmentOptionRollData(type, value);
         }
+
+        internal bool Repair()
+        {
+            return Enum.IsDefined(typeof(EquipmentOptionType), type) &&
+                   !float.IsNaN(value) &&
+                   !float.IsInfinity(value) &&
+                   value > 0f;
+        }
     }
 }

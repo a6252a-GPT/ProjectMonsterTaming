@@ -75,12 +75,6 @@ namespace ProjectMT.Features.Equipment
                 }
             };
 
-        // 문서 4.2 고정표: 장갑(치확·치피, %p) / 장신구(공속·이속, 기본 스탯 대비 %).
-        private static readonly float[] GloveCriticalRateByGrade = { 1f, 2f, 3f, 4f, 5f };
-        private static readonly float[] GloveCriticalDamageByGrade = { 5f, 10f, 15f, 20f, 25f };
-        private static readonly float[] RingAttackSpeedByGrade = { 2f, 4f, 6f, 8f, 10f };
-        private static readonly float[] RingMoveSpeedByGrade = { 1f, 2f, 3f, 4f, 5f };
-
         public static string GetStatDisplayName(EquipmentStatType statType)
         {
             switch (statType)
@@ -103,14 +97,28 @@ namespace ProjectMT.Features.Equipment
         }
 
         // 부위 + 등급 하나가 제공하는 "핵심 능력치" 목록(1~2개)을 계산한다.
-        public static List<EquipmentStatContribution> GetCoreStatContributions(EquipmentPart part, EquipmentGrade grade)
+        public static List<EquipmentStatContribution> GetCoreStatContributions(
+            EquipmentPart part,
+            EquipmentGrade grade)
         {
+            return GetCoreStatContributions(part, grade, EquipmentBalanceConfig.RuntimeDefault);
+        }
+
+        public static List<EquipmentStatContribution> GetCoreStatContributions(
+            EquipmentPart part,
+            EquipmentGrade grade,
+            EquipmentBalanceConfig balance)
+        {
+            if (balance == null)
+            {
+                throw new System.ArgumentNullException(nameof(balance));
+            }
+
             var result = new List<EquipmentStatContribution>();
-            var gradeIndex = (int)grade;
 
             if (CoreRatioByPart.TryGetValue(part, out var ratios))
             {
-                var budgetPercent = EquipmentGradeInfo.GetCoreStatBudgetPercent(grade);
+                var budgetPercent = balance.GetCoreStatBudgetPercent(grade);
                 foreach (var (stat, ratio) in ratios)
                 {
                     result.Add(new EquipmentStatContribution(stat, budgetPercent * ratio, isRelativeToBase: true));
@@ -122,27 +130,22 @@ namespace ProjectMT.Features.Equipment
             if (part == EquipmentPart.Glove)
             {
                 result.Add(new EquipmentStatContribution(
-                    EquipmentStatType.CriticalRate, GetByIndex(gradeIndex, GloveCriticalRateByGrade), isRelativeToBase: false));
+                    EquipmentStatType.CriticalRate, balance.GetGloveCriticalRatePercent(grade), isRelativeToBase: false));
                 result.Add(new EquipmentStatContribution(
-                    EquipmentStatType.CriticalDamage, GetByIndex(gradeIndex, GloveCriticalDamageByGrade), isRelativeToBase: false));
+                    EquipmentStatType.CriticalDamage, balance.GetGloveCriticalDamagePercent(grade), isRelativeToBase: false));
                 return result;
             }
 
             if (part == EquipmentPart.Ring)
             {
                 result.Add(new EquipmentStatContribution(
-                    EquipmentStatType.AttackSpeed, GetByIndex(gradeIndex, RingAttackSpeedByGrade), isRelativeToBase: true));
+                    EquipmentStatType.AttackSpeed, balance.GetRingAttackSpeedPercent(grade), isRelativeToBase: true));
                 result.Add(new EquipmentStatContribution(
-                    EquipmentStatType.MoveSpeed, GetByIndex(gradeIndex, RingMoveSpeedByGrade), isRelativeToBase: true));
+                    EquipmentStatType.MoveSpeed, balance.GetRingMoveSpeedPercent(grade), isRelativeToBase: true));
                 return result;
             }
 
             return result;
-        }
-
-        private static float GetByIndex(int index, float[] table)
-        {
-            return index >= 0 && index < table.Length ? table[index] : table[0];
         }
     }
 }

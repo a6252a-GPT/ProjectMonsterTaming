@@ -9,6 +9,7 @@ using ProjectMT.Features.Equipment;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Debugging;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Stats;
 using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
@@ -26,6 +27,7 @@ namespace ProjectMT.Bootstrap
         private GameDataService gameDataService; // 진행 데이터 관리자
         private ContentFlow contentFlow; // 콘텐츠 실행 흐름
         private BattlePartySnapshotBuilder partyBuilder; // 저장 편성 해석기
+        private CommanderGrowthConfig commanderGrowthConfig; // 군단장 경험치·레벨 규칙
         private DebugPanelController debugPanel; // 개발 빌드 전용 도구 패널
         private bool initialized; // 중복 초기화 방지
 
@@ -64,9 +66,15 @@ namespace ProjectMT.Bootstrap
             }
 
             if (projectConfig == null || projectConfig.SceneCatalog == null ||
-                projectConfig.ContentCatalog == null || projectConfig.MonsterCatalog == null)
+                projectConfig.ContentCatalog == null || projectConfig.MonsterCatalog == null ||
+                projectConfig.ItemCatalog == null)
             {
                 throw new InvalidOperationException("ProjectConfig and its catalogs must be assigned.");
+            }
+
+            if (!projectConfig.ItemCatalog.TryValidateRuntimeCatalog(out var itemCatalogError))
+            {
+                throw new InvalidOperationException($"ItemCatalog is invalid. {itemCatalogError}");
             }
 
             if (sceneLoader == null)
@@ -86,7 +94,16 @@ namespace ProjectMT.Bootstrap
 
             var savePath = Path.Combine(Application.persistentDataPath, "ProjectMT_seed_save.json"); // 시드 저장 위치
             var saveService = new SaveService(new AtomicFileStore(), savePath);
-            gameDataService = new GameDataService(saveService);
+            commanderGrowthConfig = projectConfig.CommanderGrowthConfig;
+            if (commanderGrowthConfig == null || !commanderGrowthConfig.TryValidate(out _))
+            {
+                commanderGrowthConfig = CommanderGrowthConfig.RuntimeDefault; // 미할당·손상 설정 안전 복구
+            }
+
+            gameDataService = new GameDataService(
+                saveService,
+                commanderGrowthConfig,
+                projectConfig.ItemCatalog);
             await gameDataService.LoadAsync(); // 씬 초기화 전 저장 로드
             partyBuilder = new BattlePartySnapshotBuilder(projectConfig.MonsterCatalog);
 
@@ -96,6 +113,7 @@ namespace ProjectMT.Bootstrap
                 gameDataService,
                 sceneLoader,
                 projectConfig.MainBattleSceneId,
+                projectConfig.ItemCatalog,
                 rewardPresenter,
                 finishFeedbackPresenter);
             sceneLoader.ContextFactory = CreateSceneContext; // 씬별 권한 봉투 생성
@@ -212,6 +230,9 @@ namespace ProjectMT.Bootstrap
                     gameDataService,
                     contentFlow,
                     projectConfig.MonsterCatalog,
+                    projectConfig.ItemCatalog,
+                    commanderGrowthConfig,
+                    projectConfig.EquipmentBalanceConfig,
                     () => partyBuilder.Build(gameDataService.View), // 저장 확정 시 새 부대 사진 생성
                     rewardPresenter);
             }

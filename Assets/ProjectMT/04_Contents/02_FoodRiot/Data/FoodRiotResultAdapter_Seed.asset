@@ -12,3 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 447d700ea3a04eb4db376e750a045f53, type: 3}
   m_Name: FoodRiotResultAdapter_Seed
   m_EditorClassIdentifier: ProjectMT.Contents.FoodRiot::ProjectMT.Contents.FoodRiot.FoodRiotResultAdapter
+  rewardPerKill: {fileID: 11400000, guid: e9b570b552c0a8245892ee7638523ecc, type: 2}

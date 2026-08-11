@@ -25,21 +25,27 @@ namespace ProjectMT.Shared.Equipment
 
         public EquipmentSaveData Clone()
         {
+            var sourceInstances = instances ?? new List<EquipmentInstanceData>();
             var clone = new EquipmentSaveData
             {
-                instances = new List<EquipmentInstanceData>(instances.Count),
+                instances = new List<EquipmentInstanceData>(sourceInstances.Count),
                 equippedInstanceIds = new string[PartCount]
             };
 
-            for (var i = 0; i < instances.Count; i++)
+            for (var i = 0; i < sourceInstances.Count; i++)
             {
-                if (instances[i] != null)
+                if (sourceInstances[i] != null)
                 {
-                    clone.instances.Add(instances[i].Clone());
+                    clone.instances.Add(sourceInstances[i].Clone());
                 }
             }
 
-            Array.Copy(equippedInstanceIds, clone.equippedInstanceIds, PartCount);
+            if (equippedInstanceIds != null)
+            {
+                Array.Copy(equippedInstanceIds, clone.equippedInstanceIds,
+                    Math.Min(equippedInstanceIds.Length, PartCount));
+            }
+
             return clone;
         }
 
@@ -47,6 +53,9 @@ namespace ProjectMT.Shared.Equipment
         {
             instances ??= new List<EquipmentInstanceData>();
             instances.RemoveAll(instance => instance == null || !instance.Repair());
+
+            var ownedIds = new HashSet<string>(StringComparer.Ordinal);
+            instances.RemoveAll(instance => !ownedIds.Add(instance.InstanceId));
 
             if (instances.Count > MaxTotalQuantity)
             {
@@ -96,9 +105,10 @@ namespace ProjectMT.Shared.Equipment
                     break;
                 }
 
-                if (newInstances[i] != null)
+                var candidate = newInstances[i]?.Clone();
+                if (candidate != null && candidate.IsValidForAcquire() && FindIndex(candidate.InstanceId) < 0)
                 {
-                    instances.Add(newInstances[i]);
+                    instances.Add(candidate);
                 }
             }
         }
@@ -111,13 +121,24 @@ namespace ProjectMT.Shared.Equipment
                 return false;
             }
 
-            equippedInstanceIds[(int)instances[index].Part] = instances[index].InstanceId;
+            var partIndex = (int)instances[index].Part;
+            if (partIndex < 0 || partIndex >= PartCount)
+            {
+                return false;
+            }
+
+            equippedInstanceIds[partIndex] = instances[index].InstanceId;
             return true;
         }
 
         internal bool TryUnequip(EquipmentPart part)
         {
             var partIndex = (int)part;
+            if (partIndex < 0 || partIndex >= PartCount)
+            {
+                return false;
+            }
+
             if (string.IsNullOrEmpty(equippedInstanceIds[partIndex]))
             {
                 return false;
@@ -166,7 +187,7 @@ namespace ProjectMT.Shared.Equipment
             instances = new EquipmentInstanceData[source.Count];
             for (var i = 0; i < source.Count; i++)
             {
-                instances[i] = source[i];
+                instances[i] = source[i]?.Clone();
             }
 
             var ids = data.EquippedInstanceIds;

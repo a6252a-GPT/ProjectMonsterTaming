@@ -12,3 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 578e3e22d78eca2478f7321fa41a59ba, type: 3}
   m_Name: CastleRaidResultAdapter_Seed
   m_EditorClassIdentifier: ProjectMT.Contents.CastleRaid::ProjectMT.Contents.CastleRaid.CastleRaidResultAdapter
+  firstClearReward: {fileID: 11400000, guid: c51d8da8f75812e45bd4a28c09396004, type: 2}

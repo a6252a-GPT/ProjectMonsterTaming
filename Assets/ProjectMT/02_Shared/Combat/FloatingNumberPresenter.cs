@@ -66,9 +66,11 @@ namespace ProjectMT.Shared.Combat
                 return;
             }
 
-            var style = target.Team == UnitTeam.Player
-                ? FloatingNumberStyle.PlayerDamage
-                : FloatingNumberStyle.EnemyDamage;
+            var style = report.Request.IsCritical
+                ? FloatingNumberStyle.Critical
+                : target.Team == UnitTeam.Player
+                    ? FloatingNumberStyle.PlayerDamage
+                    : FloatingNumberStyle.EnemyDamage;
             Queue(report.Request.HitPoint, report.AppliedDamage, style, target.GetInstanceID());
         }
 

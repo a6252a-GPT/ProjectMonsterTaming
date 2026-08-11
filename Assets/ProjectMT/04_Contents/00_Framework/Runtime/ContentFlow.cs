@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
@@ -15,6 +16,7 @@ namespace ProjectMT.Contents.Framework
         private readonly IGameProgressService progress; // 결과 반영·저장
         private readonly ISceneNavigator sceneNavigator; // 별도 씬 이동
         private readonly SceneId mainBattleSceneId; // 별도 콘텐츠 복귀 대상
+        private readonly ItemCatalog itemCatalog; // 보상 표시 이름 해석
         private readonly IRewardPresentationPlayer rewardPresentation; // 저장 성공 보상 표현
         private readonly IContentFinishFeedback finishFeedback; // 저장 중·실패 재시도 표시
 
@@ -27,11 +29,31 @@ namespace ProjectMT.Contents.Framework
             SceneId mainBattleSceneId,
             IRewardPresentationPlayer rewardPresentation,
             IContentFinishFeedback finishFeedback)
+            : this(
+                catalog,
+                progress,
+                sceneNavigator,
+                mainBattleSceneId,
+                null,
+                rewardPresentation,
+                finishFeedback)
+        {
+        }
+
+        public ContentFlow(
+            ContentCatalog catalog,
+            IGameProgressService progress,
+            ISceneNavigator sceneNavigator,
+            SceneId mainBattleSceneId,
+            ItemCatalog itemCatalog,
+            IRewardPresentationPlayer rewardPresentation,
+            IContentFinishFeedback finishFeedback)
         {
             this.catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             this.progress = progress ?? throw new ArgumentNullException(nameof(progress));
             this.sceneNavigator = sceneNavigator ?? throw new ArgumentNullException(nameof(sceneNavigator));
             this.mainBattleSceneId = mainBattleSceneId;
+            this.itemCatalog = itemCatalog;
             this.rewardPresentation = rewardPresentation;
             this.finishFeedback = finishFeedback ?? throw new ArgumentNullException(nameof(finishFeedback));
         }
@@ -181,7 +203,8 @@ namespace ProjectMT.Contents.Framework
                 return;
             }
 
-            if (!run.Definition.ResultAdapter.TryCreateProgressChange(result, out var change)) // 결과 번역은 한 번만 수행
+            var settlementView = progress.View; // 지급·표시에 같은 확정 전 상태 사용
+            if (!run.Definition.ResultAdapter.TryCreateProgressChange(result, settlementView, out var change))
             {
                 Debug.LogError($"Content result was rejected. Content={run.Definition.ContentId}");
                 FinishRun(run);
@@ -189,7 +212,11 @@ namespace ProjectMT.Contents.Framework
             }
 
             run.PendingChange = change;
-            if (run.Definition.ResultAdapter.TryCreateRewardPresentation(result, out var presentation) &&
+            if (run.Definition.ResultAdapter.TryCreateRewardPresentation(
+                    result,
+                    settlementView,
+                    itemCatalog,
+                    out var presentation) &&
                 presentation != null && !presentation.IsEmpty)
             {
                 run.PendingPresentation = presentation; // 재시도 때 동일한 표시 요청 재사용

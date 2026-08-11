@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f39511215c9933449ecded417cba0a7, type: 3}
+  m_Name: Item_Material_EquipmentSlotUpgradeStone
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Items.ItemDefinition
+  itemId: material_equipment_slot_upgrade_stone
+  displayName: "\uC7A5\uBE44 \uC2AC\uB86F \uAC15\uD654\uC11D"
+  description: "\uC7A5\uBE44 \uC544\uC774\uD15C\uC774 \uC544\uB2C8\uB77C \uC7A5\uBE44
+    \uBD80\uC704 \uC2AC\uB86F \uC790\uCCB4\uB97C \uC601\uAD6C \uAC15\uD654\uD558\uB294
+    \uC7AC\uB8CC."
+  icon: {fileID: 0}
+  category: 4
+  maxQuantity: 9223372036854775807
+  discardable: 0
+  allowMultiUse: 0
+  useEffect: {fileID: 0}
+  sortOrder: 300

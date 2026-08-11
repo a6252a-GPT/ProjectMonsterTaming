@@ -30,6 +30,10 @@ namespace ProjectMT.Features.MainBattle
         private Camera worldCamera;
         private Collider groundCollider;
         private Func<bool> canInteract;
+        private Func<UnitActor, bool> canSelectUnit;
+        private Func<UnitActor, Vector3, bool> canDropAt;
+        private Action<UnitActor, Vector3, bool> dragPreviewChanged;
+        private Action<UnitActor, Vector3, bool> dragReleased;
         private bool configured;
 
         private int activePointerId = NoPointerId;
@@ -44,6 +48,7 @@ namespace ProjectMT.Features.MainBattle
 
         public UnitActor HeldUnit => dropRoutine == null ? activeUnit : null;
         public bool IsHolding => HeldUnit != null && HeldUnit.IsManuallyHeld;
+        public bool IsInteracting => activeUnit != null || dropRoutine != null;
 
         public void Configure(Camera camera, Collider ground, Func<bool> interactionGate)
         {
@@ -51,8 +56,28 @@ namespace ProjectMT.Features.MainBattle
             worldCamera = camera != null ? camera : throw new ArgumentNullException(nameof(camera));
             groundCollider = ground != null ? ground : throw new ArgumentNullException(nameof(ground));
             canInteract = interactionGate;
+            canSelectUnit = null;
+            canDropAt = null;
+            dragPreviewChanged = null;
+            dragReleased = null;
             configured = true;
             enabled = true;
+        }
+
+        public void ConfigurePlacement(
+            Camera camera,
+            Collider ground,
+            Func<bool> interactionGate,
+            Func<UnitActor, bool> selectionGate,
+            Func<UnitActor, Vector3, bool> dropValidator,
+            Action<UnitActor, Vector3, bool> previewChanged,
+            Action<UnitActor, Vector3, bool> released)
+        {
+            Configure(camera, ground, interactionGate);
+            canSelectUnit = selectionGate;
+            canDropAt = dropValidator;
+            dragPreviewChanged = previewChanged;
+            dragReleased = released;
         }
 
         public void Shutdown()
@@ -60,6 +85,10 @@ namespace ProjectMT.Features.MainBattle
             CancelInteraction();
             configured = false;
             canInteract = null;
+            canSelectUnit = null;
+            canDropAt = null;
+            dragPreviewChanged = null;
+            dragReleased = null;
             worldCamera = null;
             groundCollider = null;
             enabled = false;
@@ -213,6 +242,7 @@ namespace ProjectMT.Features.MainBattle
             foreach (var unit in units)
             {
                 if (unit == null || !unit.IsAlive || unit.IsManuallyHeld || unit.Team != UnitTeam.Player ||
+                    (canSelectUnit != null && !canSelectUnit(unit)) ||
                     !TryGetScreenRect(unit, out var screenRect) || !screenRect.Contains(screenPosition))
                 {
                     continue;
@@ -286,12 +316,15 @@ namespace ProjectMT.Features.MainBattle
             lastGroundPosition = originalPosition;
             restingRotation = unit.transform.rotation;
             activeUnit.Died += HandleActiveUnitDied;
-            currentGroundValid = TryProjectGround(screenPosition, out var groundPosition);
-            if (currentGroundValid)
+            var projected = TryProjectGround(screenPosition, out var groundPosition);
+            if (projected)
             {
                 groundPosition.y = originalPosition.y;
                 lastGroundPosition = groundPosition;
             }
+
+            currentGroundValid = projected && (canDropAt == null || canDropAt(activeUnit, lastGroundPosition));
+            dragPreviewChanged?.Invoke(activeUnit, lastGroundPosition, currentGroundValid);
         }
 
         private void UpdateHeldUnit(Vector2 screenPosition)
@@ -301,12 +334,15 @@ namespace ProjectMT.Features.MainBattle
                 return;
             }
 
-            currentGroundValid = TryProjectGround(screenPosition, out var groundPosition);
-            if (currentGroundValid)
+            var projected = TryProjectGround(screenPosition, out var groundPosition);
+            if (projected)
             {
                 groundPosition.y = originalPosition.y;
                 lastGroundPosition = groundPosition;
             }
+
+            currentGroundValid = projected && (canDropAt == null || canDropAt(activeUnit, lastGroundPosition));
+            dragPreviewChanged?.Invoke(activeUnit, lastGroundPosition, currentGroundValid);
 
             var phase = Time.unscaledTime * wiggleSpeed;
             var bob = Mathf.Abs(Mathf.Sin(phase * 0.5f)) * 0.08f;
@@ -340,7 +376,9 @@ namespace ProjectMT.Features.MainBattle
                 return;
             }
 
+            var unit = activeUnit;
             var target = validGround ? lastGroundPosition : originalPosition;
+            dragReleased?.Invoke(unit, target, validGround);
             ResetPointerState();
             BeginDrop(target);
         }
@@ -458,6 +496,11 @@ namespace ProjectMT.Features.MainBattle
                 activeUnit = null;
             }
 
+        }
+
+        public void CancelCurrentInteraction()
+        {
+            CancelInteraction();
         }
 
         private void OnDisable()

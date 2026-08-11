@@ -18,7 +18,7 @@ namespace ProjectMT.Shared.Combat
         private Vector3 cameraRight = Vector3.right; // 화면 기준 좌우 방향
         private Vector3 baseScale; // Prefab 기준 크기
         private Color baseColor; // 스타일 색상
-        private float startedAt; // unscaled 시작 시각
+        private float elapsed; // Runtime·Editor 공용 누적 시각
         private float duration; // 전체 표시 시간
         private float riseDistance; // 위로 이동할 거리
         private float horizontalDistance; // 좌우 팬 이동 거리
@@ -26,25 +26,29 @@ namespace ProjectMT.Shared.Combat
         private float initialTilt; // 시작 기울기
         private float scaleMultiplier; // 치명타 등 크기 강조
         private bool playing; // 풀 복귀 중복 방지
+        private bool baseStateReady; // Editor Preview 직접 재생 초기값
+
+        public bool IsPlaying => playing;
 
         private void Awake()
         {
-            if (valueText == null)
-            {
-                valueText = GetComponent<TMP_Text>();
-            }
-
-            baseScale = transform.localScale;
+            EnsureBaseState();
         }
 
         private void Update()
         {
+            Tick(Time.unscaledDeltaTime);
+        }
+
+        public bool Tick(float deltaTime) // Runtime과 Maker Preview가 같은 숫자 이동 곡선 사용
+        {
             if (!playing)
             {
-                return;
+                return false;
             }
 
-            var ratio = Mathf.Clamp01((Time.unscaledTime - startedAt) / duration);
+            elapsed += Mathf.Max(0f, deltaTime);
+            var ratio = Mathf.Clamp01(elapsed / duration);
             var riseRatio = 1f - Mathf.Pow(1f - ratio, 3f); // 빠르게 뜨고 부드럽게 감속
             var fanRatio = Mathf.Sin(ratio * Mathf.PI * 0.5f); // 좌우로 완만하게 펼침
             var arcOffset = Mathf.Sin(ratio * Mathf.PI) * arcHeight;
@@ -67,6 +71,8 @@ namespace ProjectMT.Shared.Combat
             {
                 ReturnToPool();
             }
+
+            return playing;
         }
 
         private void OnDisable()
@@ -75,6 +81,7 @@ namespace ProjectMT.Shared.Combat
             ownerPool = null;
             facingCamera = null;
             cameraRight = Vector3.right;
+            elapsed = 0f;
             transform.localScale = baseScale;
             var callback = released;
             released = null;
@@ -94,17 +101,14 @@ namespace ProjectMT.Shared.Combat
             Camera camera,
             Action onReleased)
         {
-            if (valueText == null)
-            {
-                valueText = GetComponent<TMP_Text>();
-            }
+            EnsureBaseState();
 
             ownerPool = pool;
             released = onReleased;
             facingCamera = camera;
             cameraRight = facingCamera != null ? facingCamera.transform.right : Vector3.right;
             startPosition = transform.position;
-            startedAt = Time.unscaledTime;
+            elapsed = 0f;
             duration = Mathf.Max(0.1f, playDuration);
             riseDistance = Mathf.Max(0f, verticalDistance);
             horizontalDistance = sideDistance;
@@ -157,6 +161,22 @@ namespace ProjectMT.Shared.Combat
             }
 
             return Mathf.Lerp(1f, 0.94f, Mathf.SmoothStep(0f, 1f, (ratio - 0.4f) / 0.6f));
+        }
+
+        private void EnsureBaseState()
+        {
+            if (valueText == null)
+            {
+                valueText = GetComponent<TMP_Text>();
+            }
+
+            if (baseStateReady)
+            {
+                return;
+            }
+
+            baseScale = transform.localScale;
+            baseStateReady = true;
         }
 
 #if UNITY_EDITOR

@@ -142,7 +142,7 @@ internal sealed class PrefabPreviewStage : IDisposable
         framingScale = Mathf.Clamp(scale, 0.01f, 100f);
     }
 
-    public void RecalculateBounds()
+    public void RecalculateBounds(bool includeAuxiliaries = false)
     {
         if (previewRoot == null)
         {
@@ -151,9 +151,33 @@ internal sealed class PrefabPreviewStage : IDisposable
             return;
         }
 
-        var renderers = previewRoot.GetComponentsInChildren<Renderer>(true);
         var hasBounds = false;
         var bounds = new Bounds(previewRoot.transform.position, Vector3.one);
+        EncapsulateRenderers(previewRoot, ref hasBounds, ref bounds);
+        if (includeAuxiliaries)
+        {
+            for (var index = 0; index < auxiliaries.Count; index++)
+            {
+                EncapsulateRenderers(auxiliaries[index], ref hasBounds, ref bounds);
+            }
+        }
+
+        frameCenter = hasBounds ? bounds.center : previewRoot.transform.position + Vector3.up * 0.5f;
+        frameRadius = hasBounds ? Mathf.Max(0.35f, bounds.extents.magnitude) : 1f;
+        if (floor != null)
+        {
+            RebuildFloor();
+        }
+    }
+
+    private static void EncapsulateRenderers(GameObject root, ref bool hasBounds, ref Bounds bounds)
+    {
+        if (root == null)
+        {
+            return;
+        }
+
+        var renderers = root.GetComponentsInChildren<Renderer>(true);
         for (var index = 0; index < renderers.Length; index++)
         {
             var renderer = renderers[index];
@@ -172,9 +196,6 @@ internal sealed class PrefabPreviewStage : IDisposable
                 bounds.Encapsulate(renderer.bounds);
             }
         }
-
-        frameCenter = hasBounds ? bounds.center : previewRoot.transform.position + Vector3.up * 0.5f;
-        frameRadius = hasBounds ? Mathf.Max(0.35f, bounds.extents.magnitude) : 1f;
     }
 
     public Texture Render(Rect rect)

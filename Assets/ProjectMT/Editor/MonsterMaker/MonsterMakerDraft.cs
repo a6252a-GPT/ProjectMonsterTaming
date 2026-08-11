@@ -9,20 +9,23 @@ namespace ProjectMT.EditorTools.MonsterMaker
     [Serializable]
     public sealed class MonsterMakerFeedbackDraft // 한 애니메이션 시점에 붙이는 선택 사운드·VFX 입력
     {
-        [SerializeField] private SfxCue sfx;
+        [SerializeField] private AudioClip sound;
+        [SerializeField, HideInInspector] private SfxCue sfx; // 기존 Draft 수동 Cue 호환
         [SerializeField] private GameObject vfxPrefab;
         [SerializeField, Min(0.01f)] private float vfxLifetime = 1f;
         [SerializeField] private Vector3 localPosition;
         [SerializeField] private Vector3 localEulerAngles;
         [SerializeField, Min(0.01f)] private float scale = 1f;
 
+        public AudioClip Sound => sound;
         public SfxCue Sfx => sfx;
         public GameObject VfxPrefab => vfxPrefab;
         public float VfxLifetime => Mathf.Max(0.01f, vfxLifetime);
         public Vector3 LocalPosition => localPosition;
         public Vector3 LocalEulerAngles => localEulerAngles;
         public float Scale => Mathf.Max(0.01f, scale);
-        public bool HasAny => sfx != null || vfxPrefab != null;
+        public bool HasSound => sound != null || sfx != null;
+        public bool HasAny => HasSound || vfxPrefab != null;
     }
 
     [Serializable]
@@ -48,6 +51,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField, Min(0f)] private float crossFadeDuration = 0.06f;
         [SerializeField, Min(0f)] private float weight = 1f;
         [SerializeField] private bool preventImmediateRepeat;
+        [SerializeField] private MonsterMakerFeedbackDraft attackStartFeedback = new MonsterMakerFeedbackDraft();
         [SerializeField] private List<MonsterMakerMarkerDraft> markers = new List<MonsterMakerMarkerDraft>
         {
             new MonsterMakerMarkerDraft()
@@ -59,6 +63,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public float CrossFadeDuration => Mathf.Max(0f, crossFadeDuration);
         public float Weight => Mathf.Max(0f, weight);
         public bool PreventImmediateRepeat => preventImmediateRepeat;
+        public MonsterMakerFeedbackDraft AttackStartFeedback => attackStartFeedback;
         public IReadOnlyList<MonsterMakerMarkerDraft> Markers => markers ??
             (IReadOnlyList<MonsterMakerMarkerDraft>)Array.Empty<MonsterMakerMarkerDraft>();
     }
@@ -129,8 +134,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private MonsterMeleeAreaCenter meleeAreaCenter = MonsterMeleeAreaCenter.PrimaryTarget;
         [SerializeField, Min(0.01f)] private float meleeAreaRadius = 1.5f;
         [SerializeField, Min(1)] private int meleeMaxTargets = 4;
+        [SerializeField] private MonsterRangedDeliveryMode rangedDeliveryMode = MonsterRangedDeliveryMode.Projectile;
         [SerializeField] private MonsterProjectileAttackMode projectileMode = MonsterProjectileAttackMode.Single;
         [SerializeField] private GameObject projectilePrefab;
+        [SerializeField] private AudioClip projectileLaunchSound;
         [SerializeField, Min(0.01f)] private float projectileSpeed = 9f;
         [SerializeField, Min(0.01f)] private float projectileLifetime = 3f;
         [SerializeField, Min(0.01f)] private float projectileHitRadius = 0.25f;
@@ -145,6 +152,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private MonsterBuffStackPolicy specialStackPolicy = MonsterBuffStackPolicy.RefreshDuration;
         [SerializeField] private MonsterStatModifier specialModifier;
 
+        [SerializeField] private bool ascensionConfigured;
         [SerializeField] private MonsterStatModifier ascension1;
         [SerializeField] private MonsterMakerAbilityDraft ascension2 = new MonsterMakerAbilityDraft();
         [SerializeField] private MonsterStatModifier ascension3;
@@ -201,8 +209,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public MonsterMeleeAreaCenter MeleeAreaCenter => meleeAreaCenter;
         public float MeleeAreaRadius => meleeAreaRadius;
         public int MeleeMaxTargets => meleeMaxTargets;
+        public MonsterRangedDeliveryMode RangedDeliveryMode => rangedDeliveryMode;
         public MonsterProjectileAttackMode ProjectileMode => projectileMode;
         public GameObject ProjectilePrefab => projectilePrefab;
+        public AudioClip ProjectileLaunchSound => projectileLaunchSound;
         public float ProjectileSpeed => projectileSpeed;
         public float ProjectileLifetime => projectileLifetime;
         public float ProjectileHitRadius => projectileHitRadius;
@@ -216,6 +226,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public float SpecialDuration => specialDuration;
         public MonsterBuffStackPolicy SpecialStackPolicy => specialStackPolicy;
         public MonsterStatModifier SpecialModifier => specialModifier;
+        public bool AscensionConfigured => ascensionConfigured;
         public MonsterStatModifier Ascension1 => ascension1;
         public MonsterMakerAbilityDraft Ascension2 => ascension2;
         public MonsterStatModifier Ascension3 => ascension3;

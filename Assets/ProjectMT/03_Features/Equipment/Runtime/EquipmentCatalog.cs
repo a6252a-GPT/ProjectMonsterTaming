@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ProjectMT.Shared.Equipment;
 using UnityEngine;
 
 namespace ProjectMT.Features.Equipment
@@ -22,8 +23,8 @@ namespace ProjectMT.Features.Equipment
                 new EquipmentBaseItemDefinition("helmet_basic", "투구", EquipmentPart.Helmet),
                 new EquipmentBaseItemDefinition("armor_basic", "갑옷", EquipmentPart.Armor),
                 new EquipmentBaseItemDefinition("glove_basic", "장갑", EquipmentPart.Glove),
-                new EquipmentBaseItemDefinition("boots_basic", "신발", EquipmentPart.Boots),
-                new EquipmentBaseItemDefinition("ring_basic", "반지", EquipmentPart.Ring)
+                new EquipmentBaseItemDefinition("boots_basic", "하의", EquipmentPart.Boots),
+                new EquipmentBaseItemDefinition("ring_basic", "장신구", EquipmentPart.Ring)
             };
         }
 

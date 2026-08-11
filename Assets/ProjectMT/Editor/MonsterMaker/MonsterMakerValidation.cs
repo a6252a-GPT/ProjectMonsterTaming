@@ -186,22 +186,24 @@ namespace ProjectMT.EditorTools.MonsterMaker
             for (var attackIndex = 0; attackIndex < draft.Attacks.Count; attackIndex++)
             {
                 var attack = draft.Attacks[attackIndex];
-                if (attack == null || attack.Clip == null || string.IsNullOrWhiteSpace(attack.MotionId))
+                if (attack == null || attack.Clip == null)
                 {
                     report.Add(
                         MonsterMakerIssueSeverity.Error,
                         "MAKER-ATTACK",
-                        $"Attack {attackIndex + 1}의 ID와 Clip을 지정하세요.",
+                        $"Attack {attackIndex + 1}의 Clip을 지정하세요.",
                         draft);
                     continue;
                 }
 
-                if (!UsesSafeId(attack.MotionId) || !ids.Add(attack.MotionId))
+                if (string.IsNullOrWhiteSpace(attack.MotionId) ||
+                    !UsesSafeId(attack.MotionId) ||
+                    !ids.Add(attack.MotionId))
                 {
                     report.Add(
                         MonsterMakerIssueSeverity.Error,
                         "MAKER-ATTACK-ID",
-                        $"Attack Motion ID가 중복되었거나 허용 문자가 아닙니다: {attack.MotionId}",
+                        $"자동 Attack Motion ID가 비었거나 중복되었습니다. 해당 공격을 삭제 후 다시 추가하세요: {attack.MotionId}",
                         attack.Clip);
                 }
 
@@ -278,24 +280,40 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
                     break;
                 case MonsterCombatType.Ranged:
-                    if (draft.ProjectilePrefab == null ||
-                        draft.ProjectilePrefab.GetComponent<MonsterProjectileActor>() == null ||
-                        draft.ProjectileSpeed <= 0f || draft.ProjectileLifetime <= 0f)
+                    if (draft.RangedDeliveryMode == MonsterRangedDeliveryMode.Projectile)
                     {
-                        report.Add(
-                            MonsterMakerIssueSeverity.Error,
-                            "MAKER-PROJECTILE",
-                            "원거리는 MonsterProjectileActor가 있는 Projectile Prefab과 속도·수명이 필요합니다.",
-                            draft.ProjectilePrefab);
-                    }
+                        var projectileVisual = draft.ProjectilePrefab;
+                        if (projectileVisual == null)
+                        {
+                            projectileVisual = AssetDatabase.LoadAssetAtPath<GameObject>(
+                                MonsterMakerAssetWriter.DefaultProjectilePrefabPath);
+                        }
+                        if (projectileVisual == null ||
+                            draft.ProjectileSpeed <= 0f || draft.ProjectileLifetime <= 0f)
+                        {
+                            report.Add(
+                                MonsterMakerIssueSeverity.Error,
+                                "MAKER-PROJECTILE",
+                                "투사체형 원거리는 투사체 VFX 또는 공용 임시 구슬과 양수 속도·수명이 필요합니다.",
+                                draft.ProjectilePrefab);
+                        }
 
-                    if (draft.ProjectileMode == MonsterProjectileAttackMode.Piercing &&
-                        (draft.ProjectileHitRadius <= 0f || draft.ProjectileMaxPiercingTargets < 1))
+                        if (draft.ProjectileMode == MonsterProjectileAttackMode.Piercing &&
+                            (draft.ProjectileHitRadius <= 0f || draft.ProjectileMaxPiercingTargets < 1))
+                        {
+                            report.Add(
+                                MonsterMakerIssueSeverity.Error,
+                                "MAKER-PROJECTILE-PIERCING",
+                                "관통 투사체는 양수 피격 반경과 1 이상의 최대 관통 대상 수가 필요합니다.",
+                                draft);
+                        }
+                    }
+                    else if (draft.ProjectileMode == MonsterProjectileAttackMode.Piercing)
                     {
                         report.Add(
                             MonsterMakerIssueSeverity.Error,
-                            "MAKER-PROJECTILE-PIERCING",
-                            "관통 투사체는 양수 피격 반경과 1 이상의 최대 관통 대상 수가 필요합니다.",
+                            "MAKER-INSTANT-PIERCING",
+                            "즉발형 관통·빔은 아직 지원하지 않습니다. 단일 또는 범위를 선택하세요.",
                             draft);
                     }
 
@@ -305,7 +323,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         report.Add(
                             MonsterMakerIssueSeverity.Error,
                             "MAKER-PROJECTILE-AREA",
-                            "범위 투사체는 양수 폭발 반경과 1 이상의 최대 피격 대상 수가 필요합니다.",
+                            "범위형 원거리는 양수 범위 반경과 1 이상의 최대 피격 대상 수가 필요합니다.",
                             draft);
                     }
 
@@ -327,6 +345,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private static void ValidateAscension(MonsterMakerDraft draft, MonsterMakerValidationReport report)
         {
+            if (!draft.AscensionConfigured)
+            {
+                return;
+            }
+
             if (draft.Ascension1.IsEmpty || draft.Ascension3.IsEmpty || draft.Ascension5.IsEmpty ||
                 draft.Ascension1.HasNegativeRate || draft.Ascension3.HasNegativeRate || draft.Ascension5.HasNegativeRate)
             {
@@ -358,6 +381,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     continue;
                 }
 
+                ValidateFeedbackCue(
+                    attack.AttackStartFeedback,
+                    $"{attack.MotionId} 공격 동작",
+                    report,
+                    draft);
                 for (var markerIndex = 0; markerIndex < attack.Markers.Count; markerIndex++)
                 {
                     ValidateFeedbackCue(
@@ -380,7 +408,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 report.Add(
                     MonsterMakerIssueSeverity.Error,
                     "MAKER-SFX-EMPTY",
-                    $"{role}에 지정한 SFX Cue에 재생 가능한 AudioClip이 없습니다: {feedback.Sfx.name}",
+                    $"{role}의 기존 SFX Cue에 재생 가능한 AudioClip이 없습니다: {feedback.Sfx.name}",
                     context);
             }
         }

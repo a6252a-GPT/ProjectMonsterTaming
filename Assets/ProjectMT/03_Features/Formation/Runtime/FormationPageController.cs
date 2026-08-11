@@ -35,6 +35,7 @@ namespace ProjectMT.Features.Formation
         [SerializeField] private TMP_Text levelUpButtonLabel;
         [SerializeField] private Button formationButton;
         [SerializeField] private TMP_Text formationButtonLabel;
+        [SerializeField] private Button positionFormationButton;
 
         [Header("Cards")]
         [SerializeField] private Transform formationSlotsRoot;
@@ -69,6 +70,7 @@ namespace ProjectMT.Features.Formation
 
         public event Action<BattlePartySnapshot> PartyChanged;
         public event Action<bool> OpenStateChanged;
+        public event Action PositionFormationRequested;
         public bool IsOpen => pageRoot != null && pageRoot.activeSelf;
 
         private void Awake()
@@ -79,6 +81,7 @@ namespace ProjectMT.Features.Formation
             reserveTabButton?.onClick.AddListener(SelectReserveTab);
             levelUpButton?.onClick.AddListener(HandleLevelUpClicked);
             formationButton?.onClick.AddListener(HandleFormationClicked);
+            positionFormationButton?.onClick.AddListener(HandlePositionFormationClicked);
             CacheFormationPreviewSlots();
             CaptureTabColors();
             SetPageOpen(false);
@@ -109,6 +112,7 @@ namespace ProjectMT.Features.Formation
             reserveTabButton?.onClick.RemoveListener(SelectReserveTab);
             levelUpButton?.onClick.RemoveListener(HandleLevelUpClicked);
             formationButton?.onClick.RemoveListener(HandleFormationClicked);
+            positionFormationButton?.onClick.RemoveListener(HandlePositionFormationClicked);
         }
 
         public void Configure(
@@ -148,6 +152,7 @@ namespace ProjectMT.Features.Formation
             selectedMonsterId = null;
             isBusy = false;
             PartyChanged = null;
+            PositionFormationRequested = null;
         }
 
         public void OpenPage()
@@ -265,6 +270,14 @@ namespace ProjectMT.Features.Formation
             await ApplyAndSaveAsync(change, successMessage);
         }
 
+        private void HandlePositionFormationClicked()
+        {
+            if (!isBusy && progress != null && IsOpen && activeParty == MonsterPartyKind.Main)
+            {
+                PositionFormationRequested?.Invoke();
+            }
+        }
+
         private async Task ApplyAndSaveAsync(GameProgressChange change, string successMessage)
         {
             isBusy = true;
@@ -349,6 +362,11 @@ namespace ProjectMT.Features.Formation
             SetText(capacityLabel, $"현재 {activeSlots.Count} / 최대 {maximum}");
             SetTabVisual(mainTabButton, activeParty == MonsterPartyKind.Main);
             SetTabVisual(reserveTabButton, activeParty == MonsterPartyKind.Reserve);
+            if (positionFormationButton != null)
+            {
+                positionFormationButton.gameObject.SetActive(activeParty == MonsterPartyKind.Main);
+                positionFormationButton.interactable = !isBusy;
+            }
         }
 
         private void RefreshFormationCards(MonsterRosterView roster)
@@ -754,6 +772,11 @@ namespace ProjectMT.Features.Formation
             if (formationButton != null)
             {
                 formationButton.interactable = interactable;
+            }
+
+            if (positionFormationButton != null)
+            {
+                positionFormationButton.interactable = interactable;
             }
 
             if (mainTabButton != null)

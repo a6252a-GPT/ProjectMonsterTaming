@@ -16,6 +16,9 @@ namespace ProjectMT.Shared.Combat
         private float duration; // 전체 재생 시간
         private float elapsed; // 누적 재생 시간
         private float size; // 최종 크기
+        private bool playing; // Preview 수동 Tick과 Runtime Update 공용 상태
+
+        public bool IsPlaying => playing;
 
         public void Play(ScenePoolScope pool, Color color, float playDuration, float targetSize)
         {
@@ -28,6 +31,7 @@ namespace ProjectMT.Shared.Combat
             duration = Mathf.Max(0.05f, playDuration);
             elapsed = 0f;
             size = Mathf.Max(0.05f, targetSize);
+            playing = true;
             transform.localScale = Vector3.one * 0.05f;
             if (targetRenderer == null)
             {
@@ -45,15 +49,41 @@ namespace ProjectMT.Shared.Combat
 
         private void Update()
         {
-            elapsed += Time.deltaTime;
+            Tick(Time.deltaTime);
+        }
+
+        public bool Tick(float deltaTime) // Runtime과 Maker Preview가 같은 타격 VFX 곡선 사용
+        {
+            if (!playing)
+            {
+                return false;
+            }
+
+            elapsed += Mathf.Max(0f, deltaTime);
             var ratio = Mathf.Clamp01(elapsed / duration);
             transform.localScale = Vector3.one * Mathf.Lerp(0.05f, size, 1f - Mathf.Pow(1f - ratio, 2f));
             if (ratio >= 1f)
             {
                 var pool = owner;
                 owner = null;
-                pool?.Return(gameObject); // 재생 완료 후 재사용
+                playing = false;
+                if (pool != null)
+                {
+                    pool.Return(gameObject); // 재생 완료 후 재사용
+                }
+                else
+                {
+                    gameObject.SetActive(false); // 격리 Preview는 호출자가 정리
+                }
             }
+
+            return playing;
+        }
+
+        private void OnDisable()
+        {
+            playing = false;
+            owner = null;
         }
     }
 }

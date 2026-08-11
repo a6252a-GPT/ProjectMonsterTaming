@@ -55,11 +55,20 @@ MonoBehaviour:
     crossFadeDuration: 0.06
     weight: 1
     preventImmediateRepeat: 0
+    attackStartFeedback:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
     markers:
     - normalizedTime: 0.4
       powerRatio: 1
       socketOverride: 
       feedback:
+        sound: {fileID: 0}
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 0}
         vfxLifetime: 1
@@ -68,13 +77,15 @@ MonoBehaviour:
         scale: 1
   deathClip: {fileID: 7400000, guid: 814757d466beeb741bbfbd29a91a9e4f, type: 3}
   deathSpeed: 1
-  combatType: 0
+  combatType: 1
   meleeMode: 0
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5
   meleeMaxTargets: 1
+  rangedDeliveryMode: 0
   projectileMode: 0
   projectilePrefab: {fileID: 0}
+  projectileLaunchSound: {fileID: 0}
   projectileSpeed: 9
   projectileLifetime: 3
   projectileHitRadius: 0.25
@@ -94,6 +105,7 @@ MonoBehaviour:
     attackSpeedRate: 0
     moveSpeedRate: 0
     attackRangeRate: 0
+  ascensionConfigured: 0
   ascension1:
     healthRate: 0.05
     attackRate: 0
@@ -126,6 +138,7 @@ MonoBehaviour:
     moveSpeedRate: 0
     attackRangeRate: 0
   spawnFeedback:
+    sound: {fileID: 0}
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -133,6 +146,7 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   attackStartFeedback:
+    sound: {fileID: 0}
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -140,6 +154,7 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   attackMarkerFeedback:
+    sound: {fileID: 0}
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -147,6 +162,7 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   hitFeedback:
+    sound: {fileID: 0}
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -154,6 +170,7 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   deathFeedback:
+    sound: {fileID: 0}
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -161,6 +178,7 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   specialFeedback:
+    sound: {fileID: 0}
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1

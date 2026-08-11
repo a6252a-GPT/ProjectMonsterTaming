@@ -32,6 +32,8 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private GachaSystem gachaSystem; // 몬스터 뽑기 (없어도 씬 동작에는 영향 없음)
         [SerializeField] private ShopPageView shopPageView; // 상점 탭·재화 표시
         [SerializeField] private EquipmentPageController equipmentPage; // 08.10 안건준 추가 - 장비창(없어도 씬 동작에는 영향 없음)
+        [SerializeField] private EquipmentSlotUpgradePanelController equipmentSlotUpgradePanel; // 장비 슬롯 강화 패널(없어도 씬 동작에는 영향 없음)
+        [SerializeField] private EquipmentSlotUpgradeEntryPoint equipmentSlotUpgradeEntryPoint; // "UpgradeSlotButton" 진입점(없어도 씬 동작에는 영향 없음)
 
         private MainSceneContext context; // 진행·콘텐츠 실행 권한
         private BattlePartySnapshot party; // 시드 부대 사진
@@ -102,6 +104,7 @@ namespace ProjectMT.Features.MainBattle
             ConfigureShopPageView();
             ConfigureEquipmentPage();
             ConfigureCommanderGrowthPage();
+            ConfigureEquipmentSlotUpgrade();
             ConfigureMonsterDrag();
             ConfigureSpatialMovement();
             ConfigureFormationPlacement();
@@ -233,6 +236,46 @@ namespace ProjectMT.Features.MainBattle
 
             var page = GetComponentInChildren<CommanderGrowthPageView>(true);
             page?.Configure(context.Progress, context.CommanderGrowthConfig);
+        }
+
+        // 장비 슬롯 강화 패널과 그 진입점("UpgradeSlotButton")을 씬에서 찾아 서로 연결한다.
+        private void ConfigureEquipmentSlotUpgrade()
+        {
+            var panel = ResolveEquipmentSlotUpgradePanel();
+            panel?.Configure(context.Progress);
+            ResolveEquipmentSlotUpgradeEntryPoint()?.Configure(panel);
+        }
+
+        private EquipmentSlotUpgradePanelController ResolveEquipmentSlotUpgradePanel()
+        {
+            if (equipmentSlotUpgradePanel != null)
+            {
+                return equipmentSlotUpgradePanel;
+            }
+
+            equipmentSlotUpgradePanel = GetComponentInChildren<EquipmentSlotUpgradePanelController>(true);
+            if (equipmentSlotUpgradePanel == null)
+            {
+                equipmentSlotUpgradePanel = FindFirstObjectByType<EquipmentSlotUpgradePanelController>(FindObjectsInactive.Include);
+            }
+
+            return equipmentSlotUpgradePanel;
+        }
+
+        private EquipmentSlotUpgradeEntryPoint ResolveEquipmentSlotUpgradeEntryPoint()
+        {
+            if (equipmentSlotUpgradeEntryPoint != null)
+            {
+                return equipmentSlotUpgradeEntryPoint;
+            }
+
+            equipmentSlotUpgradeEntryPoint = GetComponentInChildren<EquipmentSlotUpgradeEntryPoint>(true);
+            if (equipmentSlotUpgradeEntryPoint == null)
+            {
+                equipmentSlotUpgradeEntryPoint = FindFirstObjectByType<EquipmentSlotUpgradeEntryPoint>(FindObjectsInactive.Include);
+            }
+
+            return equipmentSlotUpgradeEntryPoint;
         }
 
         private MonsterManagementPageController ResolveMonsterManagementPage()

@@ -14,9 +14,11 @@ namespace ProjectMT.Shared.Combat
         private UnitActor source;
         private IDamageable primaryTarget;
         private ProjectileActionDefinition action;
+        private MonsterFeedbackCue impactFeedback;
         private Vector3 targetPosition;
         private Vector3 direction;
         private float damage;
+        private float impactVfxScale = 1f;
         private float remainingLifetime;
         private bool running;
 
@@ -26,13 +28,17 @@ namespace ProjectMT.Shared.Combat
             IDamageable target,
             ProjectileActionDefinition definition,
             float amount,
-            Vector3 initialTargetPosition)
+            Vector3 initialTargetPosition,
+            MonsterFeedbackCue feedback = null,
+            float vfxScale = 1f)
         {
             world = combatWorld;
             source = owner;
             primaryTarget = target;
             action = definition;
+            impactFeedback = feedback;
             damage = Mathf.Max(0f, amount);
+            impactVfxScale = Mathf.Max(0.01f, vfxScale);
             targetPosition = initialTargetPosition;
             direction = targetPosition == transform.position
                 ? transform.forward
@@ -87,11 +93,14 @@ namespace ProjectMT.Shared.Combat
 
             if (action.Mode == MonsterProjectileAttackMode.Area)
             {
-                ApplyAreaImpact(targetPosition);
+                if (ApplyAreaImpact(targetPosition))
+                {
+                    PlayImpactFeedback(targetPosition);
+                }
             }
-            else
+            else if (world.ApplyMonsterDamage(source, primaryTarget, damage))
             {
-                world.ApplyMonsterDamage(source, primaryTarget, damage);
+                PlayImpactFeedback(targetPosition);
             }
 
             ReturnToPool();
@@ -115,7 +124,11 @@ namespace ProjectMT.Shared.Combat
                     continue;
                 }
 
-                world.ApplyMonsterDamage(source, target.Health, damage);
+                if (world.ApplyMonsterDamage(source, target.Health, damage))
+                {
+                    PlayImpactFeedback(target.transform.position + Vector3.up * 0.4f);
+                }
+
                 if (hitTargetIds.Count >= action.MaxPiercingTargets)
                 {
                     ReturnToPool();
@@ -124,7 +137,7 @@ namespace ProjectMT.Shared.Combat
             }
         }
 
-        private void ApplyAreaImpact(Vector3 center)
+        private bool ApplyAreaImpact(Vector3 center)
         {
             var opponentTeam = source.Team == UnitTeam.Player ? UnitTeam.Enemy : UnitTeam.Player;
             world.CollectUnits(
@@ -133,17 +146,29 @@ namespace ProjectMT.Shared.Combat
                 action.ImpactRadius,
                 action.MaxImpactTargets,
                 nearbyTargets);
+            var applied = false;
             for (var index = 0; index < nearbyTargets.Count; index++)
             {
-                world.ApplyMonsterDamage(source, nearbyTargets[index].Health, damage);
+                applied |= world.ApplyMonsterDamage(source, nearbyTargets[index].Health, damage);
             }
 
             var component = primaryTarget as Component;
             if (component != null && component.GetComponent<UnitActor>() == null &&
                 nearbyTargets.Count < action.MaxImpactTargets)
             {
-                world.ApplyMonsterDamage(source, primaryTarget, damage);
+                applied |= world.ApplyMonsterDamage(source, primaryTarget, damage);
             }
+
+            return applied;
+        }
+
+        private void PlayImpactFeedback(Vector3 position)
+        {
+            world?.PlayMonsterFeedbackAt(
+                impactFeedback,
+                position,
+                Quaternion.identity,
+                impactVfxScale);
         }
 
         private void OnDisable()
@@ -153,6 +178,8 @@ namespace ProjectMT.Shared.Combat
             source = null;
             primaryTarget = null;
             action = null;
+            impactFeedback = null;
+            impactVfxScale = 1f;
             nearbyTargets.Clear();
             hitTargetIds.Clear();
         }

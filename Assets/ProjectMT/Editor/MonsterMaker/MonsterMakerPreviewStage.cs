@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ProjectMT.Features.Expedition;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
@@ -9,8 +10,24 @@ namespace ProjectMT.EditorTools.MonsterMaker
 {
     internal sealed class MonsterMakerPreviewStage : IDisposable // 수동 Clip·Marker와 Runtime 평가기를 함께 사용
     {
+        private const string CombatTargetPrefabPath =
+            "Assets/ProjectMT/03_Features/Expedition/Prefabs/PF_Enemy_Peasant.prefab";
+        private const string FloatingNumberPrefabPath =
+            "Assets/ProjectMT/02_Shared/Combat/Prefabs/PF_FloatingNumber.prefab";
+        private const string HitVfxPrefabPath =
+            "Assets/ProjectMT/02_Shared/Combat/Prefabs/PF_SeedHitVfx.prefab";
+        private const float CombatTargetMaxHealth = 1000000f;
+        private const float CombatTargetMinimumDistance = 1.6f;
+        private const float RangedCombatTargetMinimumDistance = 3f;
+        private const float CombatTargetVisualGap = 0.45f;
+        private const int CombatTargetAppearanceSeed = 91073;
+
         private readonly PrefabPreviewStage stage = new PrefabPreviewStage();
         private readonly List<PreviewVfx> activeVfx = new List<PreviewVfx>();
+        private readonly List<PreviewFloatingNumber> activeFloatingNumbers = new List<PreviewFloatingNumber>();
+        private readonly List<PreviewHitVfx> activeHitVfx = new List<PreviewHitVfx>();
+        private readonly List<PreviewProjectile> activeProjectiles = new List<PreviewProjectile>();
+        private readonly PreviewCombatFeedbackPlayer combatFeedbackPlayer;
         private MonsterMakerDraft draft;
         private AnimationClip currentClip;
         private MonsterMakerAttackDraft currentAttack;
@@ -18,7 +35,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private MonsterAttackMarker[] markerBuffer = Array.Empty<MonsterAttackMarker>();
         private MonsterMakerMarkerDraft[] markerDraftBuffer = Array.Empty<MonsterMakerMarkerDraft>();
         private GameObject dummyTarget;
-        private Material dummyMaterial;
+        private UnitActor dummyTargetActor;
+        private HealthComponent dummyTargetHealth;
+        private UnitVisualFeedback dummyTargetVisualFeedback;
+        private Animator[] dummyTargetAnimators = Array.Empty<Animator>();
+        private PendingFloatingNumber pendingFloatingNumber;
         private Transform previewMotionRoot;
         private Vector3 previewBasePosition;
         private Quaternion previewBaseRotation = Quaternion.identity;
@@ -31,10 +52,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private int lastRandomAttackIndex = -1;
         private bool loop;
         private bool playing;
+        private float previewClock;
+        private float lastAppliedDamage;
+        private int previewHitCount;
+        private uint floatingNumberSequence;
+        private string combatStatus = "표준 적 준비 전";
 
         public MonsterMakerPreviewStage()
         {
-            stage.SetView(145f, 10f);
+            combatFeedbackPlayer = new PreviewCombatFeedbackPlayer(this);
+            stage.SetView(115f, 10f, 1.2f); // 공격자와 표준 적이 겹치지 않는 타격 확인용 기본 시점
         }
 
         public Texture Render(Rect rect) => stage.Render(rect);
@@ -44,10 +71,25 @@ namespace ProjectMT.EditorTools.MonsterMaker
             : Mathf.Clamp01(playbackTime / currentClip.length);
         public string CurrentClipName => currentClip == null ? "선택 없음" : currentClip.name;
         public int EnvironmentIndex => stage.EnvironmentIndex;
+        public bool HasCombatTarget => dummyTargetActor != null && dummyTargetHealth != null;
+        public string CombatTargetLabel => HasCombatTarget ? "표준 적 · 농부" : "표준 적 없음";
+        public float CombatTargetCurrentHealth => dummyTargetHealth?.CurrentHealth ?? 0f;
+        public float CombatTargetMaximumHealth => dummyTargetHealth?.MaxHealth ?? 0f;
+        public float CombatTargetDistance => dummyTarget == null || stage.PreviewRoot == null
+            ? 0f
+            : Vector3.Distance(stage.PreviewRoot.transform.position, dummyTarget.transform.position);
+        public float LastAppliedDamage => lastAppliedDamage;
+        public int PreviewHitCount => previewHitCount;
+        public int ActiveFloatingNumberCount => activeFloatingNumbers.Count + (pendingFloatingNumber.Active ? 1 : 0);
+        public int ActiveHitVfxCount => activeHitVfx.Count;
+        public int ActiveMarkerVfxCount => activeVfx.Count;
+        public int ActiveProjectileCount => activeProjectiles.Count;
+        public string CombatStatus => combatStatus;
 
         public void SetDraft(MonsterMakerDraft source)
         {
             StopFeedback();
+            DestroyCombatTarget();
             draft = source;
             currentClip = null;
             currentAttack = null;
@@ -58,6 +100,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
             markerBuffer = Array.Empty<MonsterAttackMarker>();
             markerDraftBuffer = Array.Empty<MonsterMakerMarkerDraft>();
             lastRandomAttackIndex = -1;
+            previewClock = 0f;
+            lastAppliedDamage = 0f;
+            previewHitCount = 0;
+            floatingNumberSequence = 0u;
+            combatStatus = "표준 적 준비 전";
             stage.SetFramingScale(source?.PreviewScale ?? 1f);
             var template = CreatePreviewAdapterTemplate(source);
             try
@@ -94,7 +141,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             RebuildDummyTarget();
-            stage.RecalculateBounds();
+            stage.RecalculateBounds(true);
             lastTickTime = EditorApplication.timeSinceStartup;
         }
 
@@ -165,7 +212,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     1f / Mathf.Max(0.01f, draft.AttackSpeed)),
                 false,
                 currentAttack,
-                draft.AttackStartFeedback,
+                ResolveAttackStartFeedback(currentAttack),
                 draft.AttackOriginPath);
         }
 
@@ -276,6 +323,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 return;
             }
 
+            if (currentAttack != null)
+            {
+                StopFeedback();
+                ResetCombatTarget();
+            }
+
             playbackTime = 0f;
             previousNormalizedTime = -0.0001f;
             nextMarkerIndex = 0;
@@ -309,42 +362,50 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var now = EditorApplication.timeSinceStartup;
             var deltaTime = Mathf.Clamp((float)(now - lastTickTime), 0f, 0.1f);
             lastTickTime = now;
+            return Tick(deltaTime);
+        }
+
+        private bool Tick(float deltaTime)
+        {
+            deltaTime = Mathf.Clamp(deltaTime, 0f, 0.1f);
+            previewClock += deltaTime;
             TickVfx(deltaTime);
-            if (!playing || currentClip == null)
+            var animationChanged = playing && currentClip != null;
+            if (animationChanged)
             {
-                return activeVfx.Count > 0;
+                playbackTime += deltaTime * playbackSpeed;
+                var finished = playbackTime >= currentClip.length;
+                if (finished && loop)
+                {
+                    playbackTime %= Mathf.Max(0.01f, currentClip.length);
+                    previousNormalizedTime = -0.0001f;
+                    nextMarkerIndex = 0;
+                }
+                else if (finished)
+                {
+                    playbackTime = currentClip.length;
+                    playing = false;
+                }
+
+                var normalizedTime = NormalizedTime;
+                MonsterAttackMarkerEvaluator.EvaluatePassed(
+                    markerBuffer,
+                    previousNormalizedTime,
+                    normalizedTime,
+                    ref nextMarkerIndex,
+                    HandleMarkerPassed);
+                previousNormalizedTime = normalizedTime;
+                SampleCurrentPose();
             }
 
-            playbackTime += deltaTime * playbackSpeed;
-            var finished = playbackTime >= currentClip.length;
-            if (finished && loop)
-            {
-                playbackTime %= Mathf.Max(0.01f, currentClip.length);
-                previousNormalizedTime = -0.0001f;
-                nextMarkerIndex = 0;
-            }
-            else if (finished)
-            {
-                playbackTime = currentClip.length;
-                playing = false;
-            }
-
-            var normalizedTime = NormalizedTime;
-            MonsterAttackMarkerEvaluator.EvaluatePassed(
-                markerBuffer,
-                previousNormalizedTime,
-                normalizedTime,
-                ref nextMarkerIndex,
-                HandleMarkerPassed);
-            previousNormalizedTime = normalizedTime;
-            SampleCurrentPose();
-            return true;
+            var combatChanged = TickCombatPresentation(deltaTime);
+            return animationChanged || combatChanged || activeVfx.Count > 0;
         }
 
         public void Dispose()
         {
             StopFeedback();
-            DestroyDummyMaterial();
+            DestroyCombatTarget();
             stage.Dispose();
         }
 
@@ -362,6 +423,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             StopFeedback();
+            if (attack != null)
+            {
+                ResetCombatTarget();
+            }
             currentClip = clip;
             currentAttack = attack;
             playbackSpeed = Mathf.Max(0.01f, speed);
@@ -405,20 +470,49 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             var markerDraft = markerDraftBuffer[index];
+            var damage = Mathf.Max(0f, draft.AttackPower) * Mathf.Max(0f, marker.PowerRatio);
             var feedback = markerDraft.Feedback?.HasAny == true
                 ? markerDraft.Feedback
                 : draft.AttackMarkerFeedback;
-            PlayFeedback(feedback, markerDraft.SocketOverride);
+            if (draft.CombatType == MonsterCombatType.Ranged &&
+                draft.RangedDeliveryMode == MonsterRangedDeliveryMode.Projectile)
+            {
+                PlaySound(draft.ProjectileLaunchSound);
+                SpawnPreviewProjectile(markerDraft, damage, feedback);
+                return;
+            }
+
+            if (ApplyPreviewDamage(damage))
+            {
+                PlayFeedback(feedback, markerDraft.SocketOverride);
+            }
         }
 
         private void PlayFeedback(MonsterMakerFeedbackDraft feedback, string socketPath)
+        {
+            if (feedback == null || stage.PreviewRoot == null)
+            {
+                return;
+            }
+
+            var socket = ResolvePreviewSocket(socketPath);
+            var position = socket == null ? stage.PreviewRoot.transform.position : socket.position;
+            var rotation = socket == null ? Quaternion.identity : socket.rotation;
+            PlayFeedbackAt(feedback, position, rotation);
+        }
+
+        private void PlayFeedbackAt(
+            MonsterMakerFeedbackDraft feedback,
+            Vector3 position,
+            Quaternion rotation)
         {
             if (feedback == null)
             {
                 return;
             }
 
-            if (feedback.Sfx != null && feedback.Sfx.TrySelectClip(out var clip))
+            PlaySound(feedback.Sound);
+            if (feedback.Sound == null && feedback.Sfx != null && feedback.Sfx.TrySelectClip(out var clip))
             {
                 SfxEditorAudioPreview.Play(clip, 0, false, feedback.Sfx.SelectVolume());
             }
@@ -430,14 +524,381 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             var instance = UnityEngine.Object.Instantiate(feedback.VfxPrefab);
             instance.name = "[Monster Marker VFX] " + feedback.VfxPrefab.name;
-            var socket = ResolvePreviewSocket(socketPath);
-            var position = socket.TransformPoint(feedback.LocalPosition);
-            var rotation = socket.rotation * Quaternion.Euler(feedback.LocalEulerAngles);
+            position += rotation * feedback.LocalPosition;
+            rotation *= Quaternion.Euler(feedback.LocalEulerAngles);
             instance.transform.SetPositionAndRotation(position, rotation);
             instance.transform.localScale = instance.transform.localScale *
                                             feedback.Scale * Mathf.Max(0.01f, draft.VfxScale);
             stage.AddAuxiliary(instance);
             activeVfx.Add(new PreviewVfx(instance, feedback.VfxLifetime));
+        }
+
+        private static void PlaySound(AudioClip sound)
+        {
+            if (sound != null)
+            {
+                SfxEditorAudioPreview.Play(sound, 0, false, 1f);
+            }
+        }
+
+        private MonsterMakerFeedbackDraft ResolveAttackStartFeedback(MonsterMakerAttackDraft attack)
+        {
+            return attack?.AttackStartFeedback?.HasAny == true
+                ? attack.AttackStartFeedback
+                : draft?.AttackStartFeedback;
+        }
+
+        private void SpawnPreviewProjectile(
+            MonsterMakerMarkerDraft markerDraft,
+            float damage,
+            MonsterMakerFeedbackDraft impactFeedback)
+        {
+            var projectileVisual = draft?.ProjectilePrefab;
+            if (projectileVisual == null)
+            {
+                projectileVisual = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    MonsterMakerAssetWriter.DefaultProjectilePrefabPath);
+            }
+            if (!HasCombatTarget || projectileVisual == null || damage <= 0f)
+            {
+                combatStatus = damage <= 0f ? "공격력 0 · 피해 없음" : "원거리 투사체 또는 표준 적 없음";
+                return;
+            }
+
+            var socket = ResolvePreviewSocket(markerDraft?.SocketOverride);
+            var origin = socket == null ? stage.PreviewRoot.transform.position : socket.position;
+            var targetPosition = ResolveCombatTargetHitPoint();
+            var direction = targetPosition - origin;
+            var rotation = direction.sqrMagnitude < 0.0001f
+                ? Quaternion.identity
+                : Quaternion.LookRotation(direction.normalized, Vector3.up);
+            var instance = UnityEngine.Object.Instantiate(projectileVisual);
+            instance.name = "[Monster Preview Projectile] " + projectileVisual.name;
+            instance.transform.SetPositionAndRotation(origin, rotation);
+            var runtimeActor = instance.GetComponent<MonsterProjectileActor>();
+            if (runtimeActor != null)
+            {
+                runtimeActor.enabled = false; // Preview가 Editor delta로 같은 이동을 진행
+            }
+
+            stage.AddAuxiliary(instance);
+            activeProjectiles.Add(new PreviewProjectile(
+                instance,
+                damage,
+                Mathf.Max(0.01f, draft.ProjectileSpeed),
+                Mathf.Max(0.01f, draft.ProjectileLifetime),
+                impactFeedback));
+            combatStatus = "투사체 이동 중";
+        }
+
+        private bool ApplyPreviewDamage(float damage)
+        {
+            if (!HasCombatTarget)
+            {
+                combatStatus = "표준 적을 준비하지 못했습니다";
+                return false;
+            }
+
+            if (damage <= 0f)
+            {
+                combatStatus = "공격력 0 · 피해 없음";
+                return false;
+            }
+
+            if (!dummyTargetHealth.IsAlive)
+            {
+                ResetCombatTarget();
+            }
+
+            var hitPoint = ResolveCombatTargetHitPoint();
+            if (!dummyTargetHealth.ApplyDamage(new DamageRequest(null, damage, hitPoint)))
+            {
+                combatStatus = "피해 적용 실패";
+                return false;
+            }
+
+            return true;
+        }
+
+        private Vector3 ResolveCombatTargetHitPoint()
+        {
+            if (dummyTarget == null)
+            {
+                return Vector3.zero;
+            }
+
+            return TryResolveRenderBounds(dummyTarget, out var bounds)
+                ? bounds.center + Vector3.up * 0.05f
+                : dummyTarget.transform.position + Vector3.up * 0.8f;
+        }
+
+        private void HandlePreviewHit(UnitActor target, DamageReport report)
+        {
+            target?.VisualFeedback?.PlayHit();
+            lastAppliedDamage = report.AppliedDamage;
+            previewHitCount++;
+            combatStatus = $"타격 {previewHitCount}회 · 피해 {Mathf.RoundToInt(report.AppliedDamage):N0}";
+            QueueFloatingNumber(
+                report.Request.HitPoint,
+                report.AppliedDamage,
+                FloatingNumberStyle.EnemyDamage,
+                target == null ? 0 : target.GetInstanceID());
+            SpawnPreviewHitVfx(report.Request.HitPoint);
+        }
+
+        private void HandlePreviewDeath(UnitActor target, DamageReport report)
+        {
+            target?.VisualFeedback?.PlayDeath();
+            combatStatus = $"표준 적 처치 · 피해 {Mathf.RoundToInt(report.AppliedDamage):N0}";
+        }
+
+        private void QueueFloatingNumber(
+            Vector3 position,
+            float amount,
+            FloatingNumberStyle style,
+            int mergeKey)
+        {
+            if (amount <= 0f)
+            {
+                return;
+            }
+
+            if (mergeKey == 0)
+            {
+                mergeKey = dummyTarget == null ? 1 : dummyTarget.GetInstanceID();
+            }
+
+            if (pendingFloatingNumber.Active && pendingFloatingNumber.MergeKey == mergeKey)
+            {
+                pendingFloatingNumber.Amount += amount;
+                pendingFloatingNumber.Position = position;
+                pendingFloatingNumber.ReleaseAt = previewClock + FloatingNumberPresenter.DefaultMergeWindow;
+                if (style == FloatingNumberStyle.Critical ||
+                    pendingFloatingNumber.Style != FloatingNumberStyle.Critical)
+                {
+                    pendingFloatingNumber.Style = style;
+                }
+
+                return;
+            }
+
+            pendingFloatingNumber = new PendingFloatingNumber
+            {
+                Active = true,
+                MergeKey = mergeKey,
+                Position = position,
+                Amount = amount,
+                Style = style,
+                ReleaseAt = previewClock + FloatingNumberPresenter.DefaultMergeWindow
+            };
+        }
+
+        private void FlushFloatingNumber()
+        {
+            if (!pendingFloatingNumber.Active || pendingFloatingNumber.ReleaseAt > previewClock)
+            {
+                return;
+            }
+
+            var request = pendingFloatingNumber;
+            pendingFloatingNumber = default;
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(FloatingNumberPrefabPath);
+            if (prefab == null)
+            {
+                combatStatus = "데미지 플로팅 Prefab을 찾지 못했습니다";
+                return;
+            }
+
+            var instance = UnityEngine.Object.Instantiate(prefab);
+            var view = instance.GetComponent<FloatingNumberView>();
+            if (view == null)
+            {
+                UnityEngine.Object.DestroyImmediate(instance);
+                combatStatus = "데미지 플로팅 View를 찾지 못했습니다";
+                return;
+            }
+
+            floatingNumberSequence = unchecked(floatingNumberSequence + 1u);
+            var signedDrift = FloatingNumberPresenter.ResolveHorizontalDrift(
+                request.MergeKey,
+                floatingNumberSequence,
+                FloatingNumberPresenter.DefaultHorizontalDrift);
+            var side = signedDrift < 0f ? -1f : 1f;
+            var cameraRight = stage.Camera == null ? Vector3.right : stage.Camera.transform.right;
+            instance.name = "[Monster Preview Damage] " +
+                            FloatingNumberPresenter.FormatValue(request.Amount, request.Style);
+            instance.transform.position = request.Position
+                                          + Vector3.up * FloatingNumberPresenter.DefaultHeightOffset
+                                          + cameraRight * (signedDrift * 0.12f);
+            instance.SetActive(true); // Runtime Pool.Rent와 동일하게 비활성 Prefab을 재생 상태로 전환
+            view.Play(
+                null,
+                FloatingNumberPresenter.FormatValue(request.Amount, request.Style),
+                FloatingNumberPresenter.ResolveColor(request.Style),
+                FloatingNumberPresenter.DefaultDisplayDuration,
+                FloatingNumberPresenter.DefaultRiseDistance,
+                signedDrift,
+                FloatingNumberPresenter.DefaultArcHeight,
+                FloatingNumberPresenter.DefaultStartTilt * side,
+                request.Style == FloatingNumberStyle.Critical ? 1.25f : 1f,
+                stage.Camera,
+                null);
+            view.GetComponent<TMPro.TMP_Text>()?.ForceMeshUpdate(true, true); // 격리 Scene에 넣기 전에 Mesh를 먼저 생성
+            stage.AddAuxiliary(instance);
+            activeFloatingNumbers.Add(new PreviewFloatingNumber(instance, view));
+        }
+
+        private void SpawnPreviewHitVfx(Vector3 position)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HitVfxPrefabPath);
+            if (prefab == null)
+            {
+                return;
+            }
+
+            var instance = UnityEngine.Object.Instantiate(prefab);
+            var view = instance.GetComponent<SeedFeedbackVfx>();
+            if (view == null)
+            {
+                UnityEngine.Object.DestroyImmediate(instance);
+                return;
+            }
+
+            instance.name = "[Monster Preview Hit VFX]";
+            instance.transform.SetPositionAndRotation(position, Quaternion.identity);
+            stage.AddAuxiliary(instance);
+            view.Play(null, new Color(1f, 0.88f, 0.35f), 0.22f, 0.25f);
+            activeHitVfx.Add(new PreviewHitVfx(instance, view));
+        }
+
+        private bool TickCombatPresentation(float deltaTime)
+        {
+            for (var index = 0; index < dummyTargetAnimators.Length; index++)
+            {
+                var animator = dummyTargetAnimators[index];
+                if (animator != null && animator.enabled && animator.gameObject.activeInHierarchy &&
+                    animator.runtimeAnimatorController != null)
+                {
+                    animator.Update(deltaTime);
+                }
+            }
+
+            TickPreviewProjectiles(deltaTime);
+            FlushFloatingNumber();
+            var targetPulseActive = dummyTargetVisualFeedback?.Tick(deltaTime) ?? false;
+
+            for (var index = activeFloatingNumbers.Count - 1; index >= 0; index--)
+            {
+                var item = activeFloatingNumbers[index];
+                var isPlaying = item.Instance != null && item.View != null && item.View.Tick(deltaTime);
+                if (!isPlaying)
+                {
+                    if (item.Instance != null)
+                    {
+                        stage.RemoveAuxiliary(item.Instance);
+                    }
+
+                    activeFloatingNumbers.RemoveAt(index);
+                    continue;
+                }
+
+                ApplyPreviewTextOrientation(item.Instance);
+                item.View.GetComponent<TMPro.TMP_Text>()?.ForceMeshUpdate(true, true); // Editor Preview에는 TMP UpdateManager가 없음
+            }
+
+            for (var index = activeHitVfx.Count - 1; index >= 0; index--)
+            {
+                var item = activeHitVfx[index];
+                if (item.Instance == null || item.View == null || !item.View.Tick(deltaTime))
+                {
+                    if (item.Instance != null)
+                    {
+                        stage.RemoveAuxiliary(item.Instance);
+                    }
+
+                    activeHitVfx.RemoveAt(index);
+                }
+            }
+
+            return targetPulseActive || pendingFloatingNumber.Active || activeFloatingNumbers.Count > 0 ||
+                   activeHitVfx.Count > 0 || activeProjectiles.Count > 0;
+        }
+
+        private static void ApplyPreviewTextOrientation(GameObject instance)
+        {
+            if (instance == null)
+            {
+                return;
+            }
+
+            // PreviewRenderUtility의 TMP 양면 렌더 방향을 읽기 가능한 정면으로 맞춥니다.
+            instance.transform.rotation *= Quaternion.Euler(0f, 180f, 0f);
+            var scale = instance.transform.localScale;
+            scale.x = -Mathf.Abs(scale.x);
+            instance.transform.localScale = scale;
+        }
+
+        private void TickPreviewProjectiles(float deltaTime)
+        {
+            for (var index = activeProjectiles.Count - 1; index >= 0; index--)
+            {
+                var projectile = activeProjectiles[index];
+                if (projectile.Instance == null || !HasCombatTarget)
+                {
+                    RemovePreviewProjectile(index, projectile);
+                    continue;
+                }
+
+                projectile.Elapsed += deltaTime;
+                if (projectile.Elapsed >= projectile.Lifetime)
+                {
+                    combatStatus = "투사체 수명 종료 · 피해 없음";
+                    RemovePreviewProjectile(index, projectile);
+                    continue;
+                }
+
+                var targetPosition = ResolveCombatTargetHitPoint();
+                projectile.Instance.transform.position = Vector3.MoveTowards(
+                    projectile.Instance.transform.position,
+                    targetPosition,
+                    projectile.Speed * deltaTime);
+                var direction = targetPosition - projectile.Instance.transform.position;
+                if (direction.sqrMagnitude > 0.0001f)
+                {
+                    projectile.Instance.transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+                }
+
+                var particles = projectile.Instance.GetComponentsInChildren<ParticleSystem>(true);
+                for (var particleIndex = 0; particleIndex < particles.Length; particleIndex++)
+                {
+                    particles[particleIndex].Simulate(projectile.Elapsed, true, true);
+                }
+
+                if ((projectile.Instance.transform.position - targetPosition).sqrMagnitude > 0.04f)
+                {
+                    continue;
+                }
+
+                if (ApplyPreviewDamage(projectile.Damage))
+                {
+                    PlayFeedbackAt(
+                        projectile.ImpactFeedback,
+                        targetPosition,
+                        Quaternion.identity);
+                }
+
+                RemovePreviewProjectile(index, projectile);
+            }
+        }
+
+        private void RemovePreviewProjectile(int index, PreviewProjectile projectile)
+        {
+            if (projectile.Instance != null)
+            {
+                stage.RemoveAuxiliary(projectile.Instance);
+            }
+
+            activeProjectiles.RemoveAt(index);
         }
 
         private Transform ResolvePreviewSocket(string path)
@@ -541,38 +1002,161 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void RebuildDummyTarget()
         {
-            if (dummyTarget != null)
-            {
-                stage.RemoveAuxiliary(dummyTarget);
-                dummyTarget = null;
-            }
-
-            DestroyDummyMaterial();
+            DestroyCombatTarget();
 
             if (draft?.VendorPrefab == null || stage.PreviewRoot == null)
             {
+                combatStatus = "몬스터 모델을 지정하면 표준 적이 나타납니다";
                 return;
             }
 
-            dummyTarget = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            dummyTarget.name = "[Monster Preview Target]";
-            var collider = dummyTarget.GetComponent<Collider>();
-            if (collider != null)
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CombatTargetPrefabPath);
+            if (prefab == null)
             {
-                UnityEngine.Object.DestroyImmediate(collider);
+                combatStatus = "표준 적 Prefab을 찾지 못했습니다";
+                return;
             }
 
-            dummyTarget.transform.position = stage.PreviewRoot.transform.TransformPoint(
-                new Vector3(0.62f, Mathf.Max(0.2f, draft.HitCenterLocalPosition.y), draft.AttackRange));
-            dummyTarget.transform.localScale = new Vector3(0.2f, 0.42f, 0.2f);
-            var renderer = dummyTarget.GetComponent<Renderer>();
-            if (renderer != null)
+            dummyTarget = UnityEngine.Object.Instantiate(prefab);
+            dummyTarget.name = "[Monster Preview Target] PF_Enemy_Peasant";
+            var previewForward = stage.PreviewRoot.transform.forward;
+            dummyTarget.transform.SetPositionAndRotation(
+                stage.PreviewRoot.transform.position,
+                Quaternion.LookRotation(-previewForward, stage.PreviewRoot.transform.up));
+
+            var appearance = dummyTarget.GetComponent<ModularEnemyAppearance>();
+            var appearanceReady = appearance != null && appearance.PrepareForSpawn(new UnitSpawnRequest(
+                "monster_maker_target",
+                default,
+                UnitTeam.Enemy,
+                false,
+                false,
+                appearanceSeed: CombatTargetAppearanceSeed));
+            if (!appearanceReady)
             {
-                dummyMaterial = PrefabPreviewStage.CreateFloorMaterial(new Color(0.72f, 0.18f, 0.13f, 1f));
-                renderer.sharedMaterial = dummyMaterial;
+                UnityEngine.Object.DestroyImmediate(dummyTarget);
+                dummyTarget = null;
+                combatStatus = "표준 적 외형 조립에 실패했습니다";
+                return;
             }
 
+            var attackerExtent = ResolveDirectionalExtent(
+                stage.PreviewRoot,
+                stage.PreviewRoot.transform.position,
+                previewForward);
+            var targetExtent = ResolveDirectionalExtent(
+                dummyTarget,
+                dummyTarget.transform.position,
+                -previewForward);
+            var minimumDistance = draft.CombatType == MonsterCombatType.Ranged
+                ? RangedCombatTargetMinimumDistance
+                : CombatTargetMinimumDistance;
+            var targetDistance = Mathf.Max(
+                minimumDistance,
+                draft.AttackRange,
+                attackerExtent + targetExtent + CombatTargetVisualGap);
+            dummyTarget.transform.position = stage.PreviewRoot.transform.position + previewForward * targetDistance;
+
+            dummyTargetHealth = dummyTarget.GetComponent<HealthComponent>();
+            dummyTargetVisualFeedback = dummyTarget.GetComponent<UnitVisualFeedback>();
+            dummyTargetActor = dummyTarget.GetComponent<UnitActor>();
+            if (dummyTargetHealth == null || dummyTargetVisualFeedback == null || dummyTargetActor == null)
+            {
+                UnityEngine.Object.DestroyImmediate(dummyTarget);
+                dummyTarget = null;
+                dummyTargetHealth = null;
+                dummyTargetVisualFeedback = null;
+                dummyTargetActor = null;
+                combatStatus = "표준 적 전투 부품이 불완전합니다";
+                return;
+            }
+
+            dummyTargetVisualFeedback.RefreshRenderers();
+            dummyTargetActor.EditorConfigureReferences(dummyTargetHealth, dummyTargetVisualFeedback);
+            var targetStats = new UnitStatsSnapshot
+            {
+                maxHealth = CombatTargetMaxHealth,
+                attackInterval = 1f
+            };
+            dummyTargetActor.Initialize(
+                new UnitSpawnRequest(
+                    "monster_maker_target",
+                    targetStats,
+                    UnitTeam.Enemy,
+                    false,
+                    false,
+                    appearanceSeed: CombatTargetAppearanceSeed),
+                null,
+                combatFeedbackPlayer);
+            dummyTargetAnimators = dummyTarget.GetComponentsInChildren<Animator>(true);
             stage.AddAuxiliary(dummyTarget);
+            combatStatus = "공격 버튼을 눌러 실제 타격을 확인하세요";
+        }
+
+        private static float ResolveDirectionalExtent(
+            GameObject root,
+            Vector3 origin,
+            Vector3 direction)
+        {
+            if (root == null || direction.sqrMagnitude < 0.0001f)
+            {
+                return 0f;
+            }
+
+            var normalizedDirection = direction.normalized;
+            var absoluteDirection = new Vector3(
+                Mathf.Abs(normalizedDirection.x),
+                Mathf.Abs(normalizedDirection.y),
+                Mathf.Abs(normalizedDirection.z));
+            var extent = 0f;
+            var renderers = root.GetComponentsInChildren<Renderer>(true);
+            for (var index = 0; index < renderers.Length; index++)
+            {
+                var renderer = renderers[index];
+                if (renderer == null || !renderer.enabled)
+                {
+                    continue;
+                }
+
+                var bounds = renderer.bounds;
+                var centerProjection = Vector3.Dot(bounds.center - origin, normalizedDirection);
+                var radiusProjection = Vector3.Dot(bounds.extents, absoluteDirection);
+                extent = Mathf.Max(extent, centerProjection + radiusProjection);
+            }
+
+            return extent;
+        }
+
+        private static bool TryResolveRenderBounds(GameObject root, out Bounds bounds)
+        {
+            bounds = default;
+            if (root == null)
+            {
+                return false;
+            }
+
+            var hasBounds = false;
+            var renderers = root.GetComponentsInChildren<Renderer>(true);
+            for (var index = 0; index < renderers.Length; index++)
+            {
+                var renderer = renderers[index];
+                if (renderer == null || !renderer.enabled)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            return hasBounds;
         }
 
         private void StopFeedback()
@@ -587,17 +1171,73 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             activeVfx.Clear();
+            ClearCombatPresentation();
         }
 
-        private void DestroyDummyMaterial()
+        private void ResetCombatTarget()
         {
-            if (dummyMaterial == null)
+            ClearCombatPresentation();
+            lastAppliedDamage = 0f;
+            previewHitCount = 0;
+            if (!HasCombatTarget)
             {
                 return;
             }
 
-            UnityEngine.Object.DestroyImmediate(dummyMaterial);
-            dummyMaterial = null;
+            dummyTargetHealth.Initialize(CombatTargetMaxHealth);
+            dummyTargetVisualFeedback.RefreshRenderers();
+            combatStatus = "공격 재생 중 · Marker 대기";
+        }
+
+        private void ClearCombatPresentation()
+        {
+            pendingFloatingNumber = default;
+            for (var index = activeFloatingNumbers.Count - 1; index >= 0; index--)
+            {
+                if (activeFloatingNumbers[index].Instance != null)
+                {
+                    stage.RemoveAuxiliary(activeFloatingNumbers[index].Instance);
+                }
+            }
+
+            activeFloatingNumbers.Clear();
+            for (var index = activeHitVfx.Count - 1; index >= 0; index--)
+            {
+                if (activeHitVfx[index].Instance != null)
+                {
+                    stage.RemoveAuxiliary(activeHitVfx[index].Instance);
+                }
+            }
+
+            activeHitVfx.Clear();
+            for (var index = activeProjectiles.Count - 1; index >= 0; index--)
+            {
+                if (activeProjectiles[index].Instance != null)
+                {
+                    stage.RemoveAuxiliary(activeProjectiles[index].Instance);
+                }
+            }
+
+            activeProjectiles.Clear();
+        }
+
+        private void DestroyCombatTarget()
+        {
+            if (dummyTargetActor != null)
+            {
+                dummyTargetActor.Shutdown();
+            }
+
+            if (dummyTarget != null)
+            {
+                stage.RemoveAuxiliary(dummyTarget);
+            }
+
+            dummyTarget = null;
+            dummyTargetActor = null;
+            dummyTargetHealth = null;
+            dummyTargetVisualFeedback = null;
+            dummyTargetAnimators = Array.Empty<Animator>();
         }
 
         private sealed class PreviewVfx
@@ -611,6 +1251,93 @@ namespace ProjectMT.EditorTools.MonsterMaker
             public GameObject Instance { get; }
             public float Lifetime { get; }
             public float Elapsed { get; set; }
+        }
+
+        private sealed class PreviewFloatingNumber
+        {
+            public PreviewFloatingNumber(GameObject instance, FloatingNumberView view)
+            {
+                Instance = instance;
+                View = view;
+            }
+
+            public GameObject Instance { get; }
+            public FloatingNumberView View { get; }
+        }
+
+        private sealed class PreviewHitVfx
+        {
+            public PreviewHitVfx(GameObject instance, SeedFeedbackVfx view)
+            {
+                Instance = instance;
+                View = view;
+            }
+
+            public GameObject Instance { get; }
+            public SeedFeedbackVfx View { get; }
+        }
+
+        private sealed class PreviewProjectile
+        {
+            public PreviewProjectile(
+                GameObject instance,
+                float damage,
+                float speed,
+                float lifetime,
+                MonsterMakerFeedbackDraft impactFeedback)
+            {
+                Instance = instance;
+                Damage = damage;
+                Speed = speed;
+                Lifetime = lifetime;
+                ImpactFeedback = impactFeedback;
+            }
+
+            public GameObject Instance { get; }
+            public float Damage { get; }
+            public float Speed { get; }
+            public float Lifetime { get; }
+            public MonsterMakerFeedbackDraft ImpactFeedback { get; }
+            public float Elapsed { get; set; }
+        }
+
+        private struct PendingFloatingNumber
+        {
+            public bool Active;
+            public int MergeKey;
+            public Vector3 Position;
+            public float Amount;
+            public FloatingNumberStyle Style;
+            public float ReleaseAt;
+        }
+
+        private sealed class PreviewCombatFeedbackPlayer : ICombatFeedbackPlayer
+        {
+            private readonly MonsterMakerPreviewStage owner;
+
+            public PreviewCombatFeedbackPlayer(MonsterMakerPreviewStage owner)
+            {
+                this.owner = owner;
+            }
+
+            public void PlayHit(UnitActor target, DamageReport report)
+            {
+                owner.HandlePreviewHit(target, report);
+            }
+
+            public void PlayDeath(UnitActor target, DamageReport report)
+            {
+                owner.HandlePreviewDeath(target, report);
+            }
+
+            public void PlayClimax(Vector3 position, CombatClimaxStrength strength)
+            {
+            }
+
+            public void PlayDamage(Vector3 position, float amount, FloatingNumberStyle style, int mergeKey)
+            {
+                owner.QueueFloatingNumber(position, amount, style, mergeKey);
+            }
         }
     }
 }

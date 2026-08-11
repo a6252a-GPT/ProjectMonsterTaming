@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using ProjectMT.Shared.Audio;
 using UnityEditor;
 using UnityEngine;
 
@@ -30,7 +31,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private static readonly string[] RarityLabels = { "일반", "희귀", "영웅", "전설", "신화" };
         private static readonly string[] CombatTypeLabels = { "근거리", "원거리", "특수" };
         private static readonly string[] MeleeModeLabels = { "단일", "범위" };
-        private static readonly string[] ProjectileModeLabels = { "단일", "관통", "범위" };
+        private static readonly string[] RangedDeliveryLabels = { "투사체", "즉발 마법" };
+        private static readonly string[] RangedHitModeLabels = { "단일", "관통", "범위" };
+        private static readonly string[] InstantHitModeLabels = { "단일", "범위" };
         private static readonly string[] TargetTeamLabels = { "아군", "적" };
         private static readonly string[] AbilityModeLabels = { "패시브", "자동 액티브" };
 
@@ -442,6 +445,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 if (texture != null)
                 {
                     GUI.DrawTexture(previewRect, texture, ScaleMode.StretchToFill, false);
+                    DrawCombatPreviewOverlay(previewRect);
                 }
                 else
                 {
@@ -483,9 +487,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     var attackCount = draft.Attacks.Count;
                     for (var index = 0; index < attackCount; index++)
                     {
-                        var label = string.IsNullOrWhiteSpace(draft.Attacks[index]?.MotionId)
+                        var attack = draft.Attacks[index];
+                        var label = attack?.Clip == null
                             ? $"공격 {index + 1:00}"
-                            : $"공격 {index + 1:00} · {draft.Attacks[index].MotionId}";
+                            : $"공격 {index + 1:00} · {attack.Clip.name}";
                         var selectedIndex = index;
                         if (GUILayout.Button(label, compactButtonStyle, GUILayout.Height(28f)))
                         {
@@ -493,10 +498,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         }
                     }
 
-                    if (GUILayout.Button("무작위 공격 시험", compactButtonStyle, GUILayout.Height(26f)))
+                    if (attackCount > 1 &&
+                        GUILayout.Button("무작위 공격 시험", compactButtonStyle, GUILayout.Height(26f)))
                     {
                         preview.PlayRandomAttack();
                     }
+
+                    EditorGUILayout.HelpBox(
+                        "공격 버튼은 중앙의 표준 적에게 실제 피해를 적용합니다. Marker 순간의 피격 펄스·공용 타격 VFX·게임용 데미지 플로팅을 보며 시점을 맞추세요.",
+                        MessageType.Info);
 
                     if (GUILayout.Button("사망 (Death)", compactButtonStyle, GUILayout.Height(28f)))
                     {
@@ -523,16 +533,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     if (GUILayout.Button("검증", compactButtonStyle, GUILayout.Height(32f)))
                     {
                         ValidateDraft();
-                    }
-
-                    if (GUILayout.Button("Draft 저장", compactButtonStyle, GUILayout.Height(28f)))
-                    {
-                        SaveDraft();
-                    }
-
-                    if (GUILayout.Button("기존 항목 열기", compactButtonStyle, GUILayout.Height(28f)))
-                    {
-                        EditorGUIUtility.ShowObjectPicker<Shared.Unit.MonsterDefinition>(null, false, string.Empty, DefinitionPickerId);
                     }
 
                     GUILayout.Space(8f);
@@ -597,23 +597,23 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 DrawUsageStep(
                     "3",
                     "크기·능력치·공격 방식을 정합니다",
-                    "모델 크기·위치·바닥·정면·공격 기준점·피격 기준점을 중앙 화면으로 확인하며 맞춥니다. 체력·공격·방어·공속·이속·사거리를 입력하고 근거리·원거리·특수 중 하나를 고른 뒤 화면에 나타난 세부 값만 채웁니다.");
+                    "모델 크기·위치·바닥·정면·공격 기준점·피격 기준점을 중앙 화면으로 확인하며 맞춥니다. 체력·공격·방어·공속·이속·사거리를 입력합니다. 원거리는 투사체 또는 즉발 마법을 고른 뒤 화면에 나타난 세부 값만 채웁니다. 즉발 마법은 현재 단일·범위만 사용합니다.");
                 DrawUsageStep(
                     "4",
                     "전용 Animation을 직접 지정합니다",
                     "대기·이동·공격 1개 이상·사망에 해당 몬스터 팩의 전용 애니메이션 클립을 넣습니다. 이 도구는 클립을 검색하거나 역할을 자동 배치하지 않으며 In Place도 자동 추천하지 않습니다. 대기·이동은 반복, 공격·사망은 비반복이 맞는지 눈으로 확인하세요.");
                 DrawUsageStep(
                     "5",
-                    "실제 타격 Marker를 맞춥니다",
-                    "공격 목록에서 공격 ID를 넣고, 손·발·입·무기가 닿는 순간을 타격 시점 0~1 값으로 직접 입력합니다. 타격 시점이 여러 개면 피해 비율 합계가 1이 되게 맞춥니다. 자동 타격 시점 선택은 하지 않습니다.");
+                    "실제 타격·발사 Marker를 맞춥니다",
+                    "근거리·즉발은 손·발·입·마법이 맞는 순간, 투사체는 실제로 발사되는 순간을 0~1 값으로 직접 입력합니다. 공격 ID는 도구가 내부에서 자동 관리합니다. 투사체는 Marker에서 출발하고 실제 도착 뒤에 피해·명중 사운드·VFX·데미지 플로팅이 나옵니다. 시점이 여러 개면 피해 비율 합계가 1이 되게 맞춥니다.");
                 DrawUsageStep(
                     "6",
-                    "돌파와 선택 사운드·VFX를 연결합니다",
-                    "1·3·5돌파에는 능력치 보정, 2·4돌파에는 스킬 ID와 필요한 자동 발동 조건을 입력합니다. SFX는 사운드이며 독립 기능이 아닙니다. 공격 타격 시점 또는 사망 애니메이션 아래에서 필요한 경우에만 사운드와 VFX를 연결합니다. 둘 다 비어 있어도 정상입니다.");
+                    "필요한 선택 사운드·VFX를 연결합니다",
+                    "돌파가 기획되지 않은 Monster는 [돌파 옵션 사용]을 끈 채 비워 둡니다. 공격 동작 사운드는 애니메이션 시작, 투사체 발사 사운드는 Marker 발사, 타격·명중 사운드는 실제 피해 순간에 재생됩니다. 투사체 VFX가 있으면 넣고 없으면 비워 두면 공용 임시 구슬이 나옵니다. 제작자는 AudioClip만 넣으면 되고 SFX Cue는 편입 때 자동 생성됩니다.");
                 DrawUsageStep(
                     "7",
                     "오른쪽 버튼으로 모두 확인합니다",
-                    "대기·이동·각 공격·무작위 공격·사망을 차례로 누릅니다. 연결한 사운드와 VFX는 해당 애니메이션이 재생될 때만 함께 확인합니다. 중앙에서는 우클릭 회전, 휠 확대, 환경·정면·측면·사선, 재생 위치를 사용하고 [재생/정지]·[처음부터]로 타격 순간을 반복 확인합니다.");
+                    "대기·이동·각 공격·무작위 공격·사망을 차례로 누릅니다. 공격 시작, 투사체 발사, 실제 명중 사운드가 각각 맞는 순간에 들리는지 구분합니다. 투사체는 표준 적에게 도착하기 전 피해 숫자가 나오면 안 됩니다. 중앙에서는 우클릭 회전, 휠 확대, 환경·정면·측면·사선, 재생 위치와 [재생/정지]·[처음부터]를 사용합니다.");
                 DrawUsageStep(
                     "8",
                     "검증 결과를 읽고 고칩니다",
@@ -621,7 +621,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 DrawUsageStep(
                     "9",
                     "게임에 편입하고 실제 전투를 봅니다",
-                    "오류가 0이면 [몬스터 생성 및 게임 편입]을 누릅니다. 같은 ID는 복제하지 않고 기존 에셋 GUID를 유지해 갱신합니다. 완료 뒤에는 반드시 00_Entry → 01_MainBattle에서 이동·타격 시점·피해·사망과 연결한 사운드·VFX를 다시 확인하세요.");
+                    "오류가 0이면 [몬스터 생성 및 게임 편입]을 누릅니다. 지정한 AudioClip은 공격 시작·발사·명중 등 역할별 SFX Cue로 자동 생성·갱신되고, 같은 ID는 기존 에셋 GUID를 유지합니다. 완료 뒤에는 반드시 00_Entry → 01_MainBattle에서 이동·발사체·각 사운드·피해·사망을 다시 확인하세요.");
 
                 GUILayout.Label(
                     "중요: 카드 초상화와 3D 모델은 서로 다른 자산입니다. Vendor 원본은 수정하지 않으며, Maker Preview 통과가 실제 전투 검증 완료를 뜻하지 않습니다.",
@@ -655,7 +655,36 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             EditorGUILayout.LabelField("0 ─────────────── 타격 Marker ─────────────── 1", EditorStyles.centeredGreyMiniLabel);
-            EditorGUILayout.LabelField("우클릭 회전 · 휠 줌 · Clip과 Marker는 자동 지정하지 않음", EditorStyles.centeredGreyMiniLabel);
+            EditorGUILayout.LabelField("공격 버튼 = 실제 적 피해·플로팅·피격 피드백 · Marker는 수동 지정", EditorStyles.centeredGreyMiniLabel);
+        }
+
+        private void DrawCombatPreviewOverlay(Rect previewRect)
+        {
+            const float overlayWidth = 255f;
+            const float overlayHeight = 49f;
+            var overlayRect = new Rect(
+                previewRect.x + 10f,
+                previewRect.y + 10f,
+                Mathf.Min(overlayWidth, previewRect.width - 20f),
+                overlayHeight);
+            if (overlayRect.width <= 60f)
+            {
+                return;
+            }
+
+            EditorGUI.DrawRect(overlayRect, new Color(0.035f, 0.045f, 0.06f, 0.9f));
+            EditorGUI.DrawRect(new Rect(overlayRect.x, overlayRect.y, 3f, overlayRect.height), AccentColor);
+            var hp = preview.CombatTargetMaximumHealth <= 0f
+                ? "준비 안 됨"
+                : $"HP {preview.CombatTargetCurrentHealth:N0} / {preview.CombatTargetMaximumHealth:N0}";
+            GUI.Label(
+                new Rect(overlayRect.x + 9f, overlayRect.y + 4f, overlayRect.width - 13f, 18f),
+                $"실전 타격 시험 · {preview.CombatTargetLabel}",
+                headerMetaStyle);
+            GUI.Label(
+                new Rect(overlayRect.x + 9f, overlayRect.y + 23f, overlayRect.width - 13f, 20f),
+                preview.PreviewHitCount > 0 ? $"{hp} · 최근 피해 {preview.LastAppliedDamage:N0}" : preview.CombatStatus,
+                headerMetaStyle);
         }
 
         private void DrawValidationIssues()
@@ -738,7 +767,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
             DrawProperty("deathClip", "사망 애니메이션");
             DrawOptionalAnimationFeedback(
                 serializedDraft.FindProperty("deathFeedback"),
-                "사망 애니메이션 시작");
+                "사망 애니메이션 시작",
+                "사망 사운드",
+                "사망 사운드는 사망 애니메이션을 시작할 때 재생됩니다. AudioClip만 지정하면 게임 편입 때 SFX Cue를 자동 생성합니다.");
         }
 
         private void DrawAttackList()
@@ -769,13 +800,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private bool DrawAttack(SerializedProperty attack, int attackIndex, bool canRemove)
         {
-            var motionId = attack.FindPropertyRelative("motionId");
             var clip = attack.FindPropertyRelative("clip");
             var clipName = clip.objectReferenceValue == null ? "미지정" : clip.objectReferenceValue.name;
-            var id = string.IsNullOrWhiteSpace(motionId.stringValue) ? $"공격 {attackIndex + 1:00}" : motionId.stringValue;
             attack.isExpanded = EditorGUILayout.Foldout(
                 attack.isExpanded,
-                $"공격 {attackIndex + 1:00} · {id} · {clipName}",
+                $"공격 {attackIndex + 1:00} · {clipName}",
                 true);
             if (!attack.isExpanded)
             {
@@ -784,10 +813,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                DrawRelativeProperty(attack, "motionId", "공격 ID");
                 DrawRelativeProperty(attack, "clip", "공격 애니메이션");
+                DrawOptionalAnimationFeedback(
+                    attack.FindPropertyRelative("attackStartFeedback"),
+                    "공격 동작 시작",
+                    "공격 동작 사운드",
+                    "공격 동작 사운드는 공격 애니메이션을 시작할 때 재생됩니다. AudioClip만 지정하면 게임 편입 때 SFX Cue를 자동 생성합니다.");
                 DrawAttackMarkers(attack.FindPropertyRelative("markers"));
-                using (new EditorGUI.DisabledScope(!canRemove))
+                if (canRemove)
                 {
                     if (GUILayout.Button("이 공격 삭제", compactButtonStyle, GUILayout.Height(22f)))
                     {
@@ -801,24 +834,34 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawAttackMarkers(SerializedProperty markers)
         {
+            var isProjectile = draft != null &&
+                               draft.CombatType == Shared.Unit.MonsterCombatType.Ranged &&
+                               draft.RangedDeliveryMode == Shared.Unit.MonsterRangedDeliveryMode.Projectile;
+            var timingName = isProjectile ? "발사" : "타격";
             GUILayout.Space(3f);
-            GUILayout.Label("타격 시점", EditorStyles.boldLabel);
+            GUILayout.Label(timingName + " 시점", EditorStyles.boldLabel);
             for (var markerIndex = 0; markerIndex < markers.arraySize; markerIndex++)
             {
                 var marker = markers.GetArrayElementAtIndex(markerIndex);
                 using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
                 {
-                    GUILayout.Label($"타격 {markerIndex + 1}", EditorStyles.miniBoldLabel);
-                    DrawRelativeProperty(marker, "normalizedTime", "타격 시점 (0~1)");
+                    GUILayout.Label($"{timingName} {markerIndex + 1}", EditorStyles.miniBoldLabel);
+                    DrawRelativeProperty(marker, "normalizedTime", timingName + " 시점 (0~1)");
                     if (markers.arraySize > 1)
                     {
                         DrawRelativeProperty(marker, "powerRatio", "피해 비율");
                     }
 
-                    DrawOptionalAnimationFeedback(marker.FindPropertyRelative("feedback"), "타격 순간");
-                    using (new EditorGUI.DisabledScope(markers.arraySize <= 1))
+                    DrawOptionalAnimationFeedback(
+                        marker.FindPropertyRelative("feedback"),
+                        isProjectile ? "투사체 명중" : "타격 순간",
+                        isProjectile ? "명중 사운드" : "타격 사운드",
+                        isProjectile
+                            ? "명중 사운드는 Marker에서 발사된 투사체가 실제 대상에 도착할 때 재생됩니다. AudioClip만 지정하면 게임 편입 때 SFX Cue를 자동 생성합니다."
+                            : "타격 사운드는 이 Marker의 피해와 함께 재생됩니다. AudioClip만 지정하면 게임 편입 때 SFX Cue를 자동 생성합니다.");
+                    if (markers.arraySize > 1)
                     {
-                        if (GUILayout.Button("이 타격 시점 삭제", compactButtonStyle, GUILayout.Height(20f)))
+                        if (GUILayout.Button($"이 {timingName} 시점 삭제", compactButtonStyle, GUILayout.Height(20f)))
                         {
                             markers.DeleteArrayElementAtIndex(markerIndex);
                             break;
@@ -827,22 +870,30 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 }
             }
 
-            if (GUILayout.Button("타격 시점 추가", compactButtonStyle, GUILayout.Height(22f)))
+            if (GUILayout.Button(timingName + " 시점 추가", compactButtonStyle, GUILayout.Height(22f)))
             {
                 AddMarker(markers);
             }
         }
 
-        private void DrawOptionalAnimationFeedback(SerializedProperty feedback, string timingLabel)
+        private void DrawOptionalAnimationFeedback(
+            SerializedProperty feedback,
+            string timingLabel,
+            string soundLabel,
+            string helpText)
         {
             if (feedback == null)
             {
                 return;
             }
 
-            var sound = feedback.FindPropertyRelative("sfx");
+            var sound = feedback.FindPropertyRelative("sound");
+            var legacyCue = feedback.FindPropertyRelative("sfx");
             var vfx = feedback.FindPropertyRelative("vfxPrefab");
-            var hasSound = sound.objectReferenceValue != null;
+            var assignedSound = sound?.objectReferenceValue as AudioClip;
+            var legacy = legacyCue?.objectReferenceValue as SfxCue;
+            var displayedSound = assignedSound != null ? assignedSound : ResolveFirstAudioClip(legacy);
+            var hasSound = displayedSound != null || legacy != null;
             var hasVfx = vfx.objectReferenceValue != null;
             var state = hasSound || hasVfx
                 ? $"{(hasSound ? "사운드" : string.Empty)}{(hasSound && hasVfx ? " + " : string.Empty)}{(hasVfx ? "VFX" : string.Empty)} 연결됨"
@@ -857,7 +908,19 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             EditorGUI.indentLevel++;
-            EditorGUILayout.PropertyField(sound, new GUIContent("사운드 (선택)"));
+            EditorGUI.BeginChangeCheck();
+            var selectedSound = EditorGUILayout.ObjectField(
+                new GUIContent(soundLabel + " (선택)"),
+                displayedSound,
+                typeof(AudioClip),
+                false) as AudioClip;
+            if (EditorGUI.EndChangeCheck())
+            {
+                sound.objectReferenceValue = selectedSound;
+                legacyCue.objectReferenceValue = null;
+                hasSound = selectedSound != null;
+            }
+
             EditorGUILayout.PropertyField(vfx, new GUIContent("VFX (선택)"));
             if (hasVfx)
             {
@@ -868,9 +931,29 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             EditorGUILayout.HelpBox(
-                "SFX는 사운드입니다. 사운드와 VFX는 이 애니메이션 시점에만 재생되며, 둘 다 비어 있어도 정상입니다.",
+                helpText + " 사운드와 VFX는 둘 다 비어 있어도 정상입니다.",
                 MessageType.None);
             EditorGUI.indentLevel--;
+        }
+
+        private static AudioClip ResolveFirstAudioClip(SfxCue cue)
+        {
+            if (cue == null)
+            {
+                return null;
+            }
+
+            var serializedCue = new SerializedObject(cue);
+            var clips = serializedCue.FindProperty("clips");
+            for (var index = 0; clips != null && index < clips.arraySize; index++)
+            {
+                if (clips.GetArrayElementAtIndex(index).objectReferenceValue is AudioClip clip)
+                {
+                    return clip;
+                }
+            }
+
+            return null;
         }
 
         private void DrawCombatSection()
@@ -894,20 +977,32 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     }
                     break;
                 case Shared.Unit.MonsterCombatType.Ranged:
-                    var projectileMode = (Shared.Unit.MonsterProjectileAttackMode)DrawEnumProperty(
-                        "projectileMode",
-                        "원거리 방식",
-                        ProjectileModeLabels);
-                    DrawProperty("projectilePrefab", "투사체 프리팹");
-                    DrawProperty("projectileSpeed", "투사체 속도");
+                    var deliveryMode = (Shared.Unit.MonsterRangedDeliveryMode)DrawEnumProperty(
+                        "rangedDeliveryMode",
+                        "전달 방식",
+                        RangedDeliveryLabels);
+                    var projectileMode = DrawRangedHitMode(deliveryMode);
+                    if (deliveryMode == Shared.Unit.MonsterRangedDeliveryMode.Projectile)
+                    {
+                        DrawProperty("projectilePrefab", "투사체 VFX (선택)");
+                        DrawProperty("projectileLaunchSound", "투사체 발사 사운드 (선택)");
+                        DrawProperty("projectileSpeed", "투사체 속도");
+                        EditorGUILayout.HelpBox(
+                            "투사체 VFX를 비우면 공용 임시 원형 구슬을 자동 사용합니다. VFX를 지정하면 임시 구슬은 나오지 않습니다.",
+                            MessageType.None);
+                    }
+
                     if (projectileMode == Shared.Unit.MonsterProjectileAttackMode.Piercing)
                     {
                         DrawProperty("projectileMaxPiercingTargets", "최대 관통 수");
                     }
                     else if (projectileMode == Shared.Unit.MonsterProjectileAttackMode.Area)
                     {
-                        DrawProperty("projectileImpactRadius", "폭발 반경");
-                        DrawProperty("projectileMaxImpactTargets", "최대 폭발 대상 수");
+                        var areaLabel = deliveryMode == Shared.Unit.MonsterRangedDeliveryMode.Projectile
+                            ? "폭발"
+                            : "범위";
+                        DrawProperty("projectileImpactRadius", areaLabel + " 반경");
+                        DrawProperty("projectileMaxImpactTargets", "최대 대상 수");
                     }
                     break;
                 case Shared.Unit.MonsterCombatType.Special:
@@ -925,6 +1020,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private void DrawAscensionSection()
         {
             DrawSectionHeader("6. 돌파 옵션");
+            var configured = serializedDraft.FindProperty("ascensionConfigured");
+            EditorGUILayout.PropertyField(configured, new GUIContent("돌파 옵션 사용"));
+            if (!configured.boolValue)
+            {
+                EditorGUILayout.HelpBox(
+                    "미설정 상태입니다. 게임 편입은 가능하며 돌파 능력치와 스킬은 적용되지 않습니다.",
+                    MessageType.None);
+                return;
+            }
+
             DrawStatModifier(serializedDraft.FindProperty("ascension1"), "1돌파 능력치");
             DrawAbility(serializedDraft.FindProperty("ascension2"), "2돌파 스킬");
             DrawStatModifier(serializedDraft.FindProperty("ascension3"), "3돌파 능력치");
@@ -1012,19 +1117,67 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private static void AddAttack(SerializedProperty attacks)
         {
+            var motionId = BuildNextAttackMotionId(attacks);
             var index = attacks.arraySize;
             attacks.InsertArrayElementAtIndex(index);
             var attack = attacks.GetArrayElementAtIndex(index);
-            attack.FindPropertyRelative("motionId").stringValue = $"attack{index + 1:00}";
+            attack.FindPropertyRelative("motionId").stringValue = motionId;
             attack.FindPropertyRelative("clip").objectReferenceValue = null;
             attack.FindPropertyRelative("playbackSpeed").floatValue = 1f;
             attack.FindPropertyRelative("crossFadeDuration").floatValue = 0.06f;
             attack.FindPropertyRelative("weight").floatValue = 1f;
             attack.FindPropertyRelative("preventImmediateRepeat").boolValue = false;
+            ResetFeedback(attack.FindPropertyRelative("attackStartFeedback"));
             var markers = attack.FindPropertyRelative("markers");
             markers.arraySize = 1;
             ResetMarker(markers.GetArrayElementAtIndex(0));
             attack.isExpanded = true;
+        }
+
+        private static string BuildNextAttackMotionId(SerializedProperty attacks)
+        {
+            for (var number = 1; ; number++)
+            {
+                var candidate = $"attack{number:00}";
+                var alreadyUsed = false;
+                for (var index = 0; index < attacks.arraySize; index++)
+                {
+                    var existing = attacks.GetArrayElementAtIndex(index)
+                        .FindPropertyRelative("motionId")
+                        .stringValue;
+                    if (string.Equals(existing, candidate, StringComparison.OrdinalIgnoreCase))
+                    {
+                        alreadyUsed = true;
+                        break;
+                    }
+                }
+
+                if (!alreadyUsed)
+                {
+                    return candidate;
+                }
+            }
+        }
+
+        private Shared.Unit.MonsterProjectileAttackMode DrawRangedHitMode(
+            Shared.Unit.MonsterRangedDeliveryMode deliveryMode)
+        {
+            if (deliveryMode == Shared.Unit.MonsterRangedDeliveryMode.Projectile)
+            {
+                return (Shared.Unit.MonsterProjectileAttackMode)DrawEnumProperty(
+                    "projectileMode",
+                    "타격 방식",
+                    RangedHitModeLabels);
+            }
+
+            var property = serializedDraft.FindProperty("projectileMode");
+            var current = property.enumValueIndex == (int)Shared.Unit.MonsterProjectileAttackMode.Area ? 1 : 0;
+            var selected = EditorGUILayout.Popup("타격 방식", current, InstantHitModeLabels);
+            var resolved = selected == 0
+                ? Shared.Unit.MonsterProjectileAttackMode.Single
+                : Shared.Unit.MonsterProjectileAttackMode.Area;
+            property.enumValueIndex = (int)resolved;
+            return resolved;
         }
 
         private static void AddMarker(SerializedProperty markers)
@@ -1044,6 +1197,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private static void ResetFeedback(SerializedProperty feedback)
         {
+            feedback.FindPropertyRelative("sound").objectReferenceValue = null;
             feedback.FindPropertyRelative("sfx").objectReferenceValue = null;
             feedback.FindPropertyRelative("vfxPrefab").objectReferenceValue = null;
             feedback.FindPropertyRelative("vfxLifetime").floatValue = 1f;

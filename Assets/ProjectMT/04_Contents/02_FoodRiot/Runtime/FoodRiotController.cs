@@ -56,6 +56,7 @@ namespace ProjectMT.Contents.FoodRiot
             combatWorld.Clear(); // 이전 판의 남은 유닛 제거
             clearOverlay?.Hide();
             commanderRoot.SetActive(true);
+            commanderMove?.ResetToInitialPosition(); // 재입장도 최초 위치에서 시작
             commanderMove?.SetInputEnabled(true);
             exitButton?.onClick.AddListener(Cancel);
             timeRemaining = startData.DurationSeconds;

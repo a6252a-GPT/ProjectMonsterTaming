@@ -138,6 +138,7 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private bool castleRaidFirstClear; // 군단의 역습 첫 승리
         [SerializeField] private CommanderProgressData commander = CommanderProgressData.CreateDefault(); // 군단장 성장값
         [SerializeField] private MonsterRosterData monsters = MonsterRosterData.CreateDefault(); // 보유·편성값
+        [SerializeField] private MainBattleFormationData mainBattleFormation = MainBattleFormationData.CreateDefault(); // 본부대 시작 위치
         [SerializeField] private int ascensionCurrency; // 돌파석 - 최대 돌파 이후 중복 뽑기 시 적립되는 전용 재화
         [SerializeField] private GachaPityData gachaPity = GachaPityData.CreateDefault(); // 뽑기 천장 누적 카운터
 
@@ -151,6 +152,8 @@ namespace ProjectMT.Shared.GameData
         public bool CastleRaidFirstClear => castleRaidFirstClear;
         public CommanderProgressView Commander => new CommanderProgressView(commander);
         public MonsterRosterView Monsters => monsters?.CreateView() ?? MonsterRosterData.CreateDefault().CreateView();
+        public MainBattleFormationView MainBattleFormation =>
+            (mainBattleFormation ?? MainBattleFormationData.CreateDefault()).CreateView();
         public int AscensionCurrency => ascensionCurrency;
         public GachaPityView GachaPity => new GachaPityView(gachaPity);
 
@@ -173,6 +176,7 @@ namespace ProjectMT.Shared.GameData
                 castleRaidFirstClear = castleRaidFirstClear,
                 commander = commander?.Clone() ?? CommanderProgressData.CreateDefault(),
                 monsters = monsters?.Clone() ?? MonsterRosterData.CreateDefault(),
+                mainBattleFormation = mainBattleFormation?.Clone() ?? MainBattleFormationData.CreateDefault(),
                 ascensionCurrency = ascensionCurrency,
                 gachaPity = gachaPity?.Clone() ?? GachaPityData.CreateDefault()
             };
@@ -259,6 +263,13 @@ namespace ProjectMT.Shared.GameData
                 {
                     return false;
                 }
+            }
+
+            if (change.HasMainBattleFormation &&
+                (change.MainBattleFormationOffsets == null ||
+                 !mainBattleFormation.TrySet(change.MainBattleFormationOffsets)))
+            {
+                return false;
             }
 
             if (change.HasLevelUpMonster)
@@ -361,6 +372,8 @@ namespace ProjectMT.Shared.GameData
             commander.Repair();
             monsters ??= MonsterRosterData.CreateDefault();
             monsters.Repair();
+            mainBattleFormation ??= MainBattleFormationData.CreateDefault();
+            mainBattleFormation.Repair();
             ascensionCurrency = Math.Max(0, ascensionCurrency);
             gachaPity ??= GachaPityData.CreateDefault();
             gachaPity.Repair();
@@ -392,6 +405,7 @@ namespace ProjectMT.Shared.GameData
             CastleRaidFirstClear = data.CastleRaidFirstClear;
             Commander = data.Commander;
             Monsters = data.Monsters;
+            MainBattleFormation = data.MainBattleFormation;
             AscensionCurrency = data.AscensionCurrency;
             GachaPity = data.GachaPity;
         }
@@ -406,6 +420,7 @@ namespace ProjectMT.Shared.GameData
         public bool CastleRaidFirstClear { get; }
         public CommanderProgressView Commander { get; }
         public MonsterRosterView Monsters { get; }
+        public MainBattleFormationView MainBattleFormation { get; }
         public int AscensionCurrency { get; } // 돌파석 보유량
         public GachaPityView GachaPity { get; } // 뽑기 천장 누적 카운터
     }
@@ -435,6 +450,8 @@ namespace ProjectMT.Shared.GameData
         internal string FormationMonsterId { get; private set; }
         internal MonsterPartyKind TargetParty { get; private set; }
         internal bool RemoveFromFormation { get; private set; }
+        internal bool HasMainBattleFormation { get; private set; }
+        internal Vector2[] MainBattleFormationOffsets { get; private set; }
         internal bool HasLevelUpMonster { get; private set; }
         internal string LevelUpMonsterId { get; private set; }
         internal int ExpectedMonsterLevel { get; private set; }
@@ -535,6 +552,22 @@ namespace ProjectMT.Shared.GameData
                 HasFormationChange = true,
                 FormationMonsterId = monsterId?.Trim(),
                 RemoveFromFormation = true
+            };
+        }
+
+        public static GameProgressChange SetMainBattleFormation(Vector2[] slotOffsets)
+        {
+            Vector2[] copy = null;
+            if (slotOffsets != null)
+            {
+                copy = new Vector2[slotOffsets.Length];
+                Array.Copy(slotOffsets, copy, slotOffsets.Length);
+            }
+
+            return new GameProgressChange
+            {
+                HasMainBattleFormation = true,
+                MainBattleFormationOffsets = copy
             };
         }
 

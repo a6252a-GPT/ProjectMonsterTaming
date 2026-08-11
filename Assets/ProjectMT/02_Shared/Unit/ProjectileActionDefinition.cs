@@ -1,7 +1,14 @@
+using ProjectMT.Shared.Audio;
 using UnityEngine;
 
 namespace ProjectMT.Shared.Unit
 {
+    public enum MonsterRangedDeliveryMode // 원거리 피해가 도착하는 방식
+    {
+        Projectile,
+        Instant
+    }
+
     public enum MonsterProjectileAttackMode
     {
         Single,
@@ -10,10 +17,12 @@ namespace ProjectMT.Shared.Unit
     }
 
     [CreateAssetMenu(menuName = "ProjectMT/Unit/Monster Action/Projectile", fileName = "ProjectileAction")]
-    public sealed class ProjectileActionDefinition : MonsterActionDefinition // 원거리 세 방식 실행 데이터
+    public sealed class ProjectileActionDefinition : MonsterActionDefinition // 기존 자산 호환 원거리 전달·타격 데이터
     {
+        [SerializeField] private MonsterRangedDeliveryMode deliveryMode;
         [SerializeField] private MonsterProjectileAttackMode mode;
         [SerializeField] private GameObject projectilePrefab;
+        [SerializeField] private SfxCue launchSfx;
         [SerializeField, Min(0.01f)] private float speed = 9f;
         [SerializeField, Min(0.01f)] private float lifetime = 3f;
         [SerializeField, Min(0.01f)] private float hitRadius = 0.25f;
@@ -22,8 +31,10 @@ namespace ProjectMT.Shared.Unit
         [SerializeField, Min(1)] private int maxImpactTargets = 4;
 
         public override MonsterCombatType CombatType => MonsterCombatType.Ranged;
+        public MonsterRangedDeliveryMode DeliveryMode => deliveryMode;
         public MonsterProjectileAttackMode Mode => mode;
         public GameObject ProjectilePrefab => projectilePrefab;
+        public SfxCue LaunchSfx => launchSfx;
         public float Speed => Mathf.Max(0.01f, speed);
         public float Lifetime => Mathf.Max(0.01f, lifetime);
         public float HitRadius => Mathf.Max(0.01f, hitRadius);
@@ -33,15 +44,34 @@ namespace ProjectMT.Shared.Unit
 
         public override bool TryValidate(out string error)
         {
+            if (deliveryMode == MonsterRangedDeliveryMode.Instant)
+            {
+                if (mode == MonsterProjectileAttackMode.Piercing)
+                {
+                    error = $"Instant ranged attacks do not support Piercing yet. Action={name}";
+                    return false;
+                }
+
+                if (mode == MonsterProjectileAttackMode.Area &&
+                    (impactRadius <= 0f || maxImpactTargets < 1))
+                {
+                    error = $"Instant Area settings are invalid. Action={name}";
+                    return false;
+                }
+
+                error = null;
+                return true;
+            }
+
             if (projectilePrefab == null || speed <= 0f || lifetime <= 0f)
             {
-                error = $"Projectile reference, speed and lifetime are required. Action={name}";
+                error = $"Projectile visual, speed and lifetime are required. Action={name}";
                 return false;
             }
 
-            if (projectilePrefab.GetComponent<ProjectMT.Shared.Combat.MonsterProjectileActor>() == null)
+            if (launchSfx != null && !launchSfx.HasPlayableClip)
             {
-                error = $"Formal Projectile prefab requires MonsterProjectileActor. Action={name}";
+                error = $"Projectile launch SFX has no playable AudioClip. Action={name}";
                 return false;
             }
 
@@ -65,6 +95,30 @@ namespace ProjectMT.Shared.Unit
 
 #if UNITY_EDITOR
         public void EditorConfigure(
+            MonsterRangedDeliveryMode delivery,
+            MonsterProjectileAttackMode attackMode,
+            GameObject prefab,
+            SfxCue projectileLaunchSfx,
+            float projectileSpeed,
+            float projectileLifetime,
+            float collisionRadius,
+            int piercingTargets,
+            float areaRadius,
+            int areaTargets)
+        {
+            deliveryMode = delivery;
+            mode = attackMode;
+            projectilePrefab = delivery == MonsterRangedDeliveryMode.Projectile ? prefab : null;
+            launchSfx = delivery == MonsterRangedDeliveryMode.Projectile ? projectileLaunchSfx : null;
+            speed = projectileSpeed;
+            lifetime = projectileLifetime;
+            hitRadius = collisionRadius;
+            maxPiercingTargets = piercingTargets;
+            impactRadius = areaRadius;
+            maxImpactTargets = areaTargets;
+        }
+
+        public void EditorConfigure(
             MonsterProjectileAttackMode attackMode,
             GameObject prefab,
             float projectileSpeed,
@@ -74,14 +128,17 @@ namespace ProjectMT.Shared.Unit
             float areaRadius,
             int areaTargets)
         {
-            mode = attackMode;
-            projectilePrefab = prefab;
-            speed = projectileSpeed;
-            lifetime = projectileLifetime;
-            hitRadius = collisionRadius;
-            maxPiercingTargets = piercingTargets;
-            impactRadius = areaRadius;
-            maxImpactTargets = areaTargets;
+            EditorConfigure(
+                MonsterRangedDeliveryMode.Projectile,
+                attackMode,
+                prefab,
+                null,
+                projectileSpeed,
+                projectileLifetime,
+                collisionRadius,
+                piercingTargets,
+                areaRadius,
+                areaTargets);
         }
 #endif
     }

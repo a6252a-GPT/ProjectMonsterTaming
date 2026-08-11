@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Pooling;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
@@ -234,11 +235,15 @@ namespace ProjectMT.Shared.Combat
                     : assetSet.FeedbackProfile?.AttackMarker;
             }
 
-            PlayMonsterFeedback(
-                feedback,
-                animationDriver,
-                marker.SocketOverride,
-                assetSet.BodyProfile?.VfxScale ?? 1f);
+            if (assetSet.CombatProfile.CombatType != MonsterCombatType.Ranged)
+            {
+                PlayMonsterFeedback(
+                    feedback,
+                    animationDriver,
+                    marker.SocketOverride,
+                    assetSet.BodyProfile?.VfxScale ?? 1f);
+            }
+
             return executed;
         }
 
@@ -350,9 +355,23 @@ namespace ProjectMT.Shared.Combat
                 : null;
             var position = socket != null ? socket.position : transform.position;
             var rotation = socket != null ? socket.rotation : Quaternion.identity;
+            PlayMonsterFeedbackAt(cue, position, rotation, bodyVfxScale);
+        }
+
+        public void PlayMonsterFeedbackAt(
+            MonsterFeedbackCue cue,
+            Vector3 position,
+            Quaternion rotation,
+            float vfxScale = 1f)
+        {
+            if (cue == null || !cue.HasAnyFeedback)
+            {
+                return;
+            }
+
             position += rotation * cue.LocalPosition;
             rotation *= cue.LocalRotation;
-            feedbackPlayer?.PlayMonsterCue(cue.Sfx, position);
+            PlayMonsterSfx(cue.Sfx, position);
 
             if (cue.VfxPrefab == null)
             {
@@ -378,9 +397,14 @@ namespace ProjectMT.Shared.Combat
                 return;
             }
 
-            var scale = cue.Scale * Mathf.Max(0.01f, bodyVfxScale);
+            var scale = cue.Scale * Mathf.Max(0.01f, vfxScale);
             instance.transform.localScale = cue.VfxPrefab.transform.localScale * scale;
             StartCoroutine(ReturnMonsterObjectAfter(instance, cue.VfxLifetime));
+        }
+
+        public void PlayMonsterSfx(SfxCue cue, Vector3 position)
+        {
+            feedbackPlayer?.PlayMonsterCue(cue, position);
         }
 
         // 08.07 안건준 추가 - UnitActor가 아닌 대상(예: 수호자의 탑 방어 건물 같은 IDamageable)을 공격할 때 쓰는 진입점.

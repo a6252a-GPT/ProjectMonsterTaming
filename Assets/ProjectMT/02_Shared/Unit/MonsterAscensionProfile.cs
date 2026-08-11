@@ -5,12 +5,14 @@ namespace ProjectMT.Shared.Unit
     [CreateAssetMenu(menuName = "ProjectMT/Unit/Monster Ascension Profile", fileName = "MA_Monster")]
     public sealed class MonsterAscensionProfile : ScriptableObject // 1·3·5 Stat, 2·4 Ability 고정 슬롯
     {
+        [SerializeField] private bool configured;
         [SerializeField] private MonsterStatModifier milestone1;
         [SerializeField] private MonsterAbilityDefinition milestone2;
         [SerializeField] private MonsterStatModifier milestone3;
         [SerializeField] private MonsterAbilityDefinition milestone4;
         [SerializeField] private MonsterStatModifier milestone5;
 
+        public bool IsConfigured => configured;
         public MonsterStatModifier Milestone1 => milestone1;
         public MonsterAbilityDefinition Milestone2 => milestone2;
         public MonsterStatModifier Milestone3 => milestone3;
@@ -19,6 +21,11 @@ namespace ProjectMT.Shared.Unit
 
         public MonsterStatModifier ResolveStatModifier(int ascensionLevel)
         {
+            if (!configured)
+            {
+                return default;
+            }
+
             var result = default(MonsterStatModifier);
             if (ascensionLevel >= 1)
             {
@@ -40,6 +47,11 @@ namespace ProjectMT.Shared.Unit
 
         public string[] ResolveUnlockedAbilityIds(int ascensionLevel)
         {
+            if (!configured)
+            {
+                return System.Array.Empty<string>();
+            }
+
             if (ascensionLevel >= 4)
             {
                 return new[] { milestone2.AbilityId, milestone4.AbilityId };
@@ -55,6 +67,12 @@ namespace ProjectMT.Shared.Unit
 
         public bool TryValidate(out string error)
         {
+            if (!configured)
+            {
+                error = null;
+                return true;
+            }
+
             if (milestone1.IsEmpty || milestone3.IsEmpty || milestone5.IsEmpty ||
                 milestone1.HasNegativeRate || milestone3.HasNegativeRate || milestone5.HasNegativeRate)
             {
@@ -85,6 +103,28 @@ namespace ProjectMT.Shared.Unit
             MonsterAbilityDefinition fourth,
             MonsterStatModifier fifth)
         {
+            EditorConfigure(true, first, second, third, fourth, fifth);
+        }
+
+        public void EditorConfigure(
+            bool isConfigured,
+            MonsterStatModifier first,
+            MonsterAbilityDefinition second,
+            MonsterStatModifier third,
+            MonsterAbilityDefinition fourth,
+            MonsterStatModifier fifth)
+        {
+            configured = isConfigured;
+            if (!configured)
+            {
+                milestone1 = default;
+                milestone2 = null;
+                milestone3 = default;
+                milestone4 = null;
+                milestone5 = default;
+                return;
+            }
+
             milestone1 = first;
             milestone2 = second;
             milestone3 = third;

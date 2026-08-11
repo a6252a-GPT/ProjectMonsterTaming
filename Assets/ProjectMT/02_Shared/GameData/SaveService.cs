@@ -16,7 +16,7 @@ namespace ProjectMT.Shared.GameData
 
     public sealed class SaveService // 진행 데이터 직렬화 담당
     {
-        public const int CurrentDataVersion = 5; // 몬스터별 중복 돌파 재료 저장 추가
+        public const int CurrentDataVersion = 8; // 메인전투 12×12 맵 배치 좌표로 전환
         private const int MinimumSupportedDataVersion = 1;
         private const string LegacyFoodRiotBestKillsJsonKey = "\"vegetableRiotBestKills\""; // 개명 전 저장 키
         private const string FoodRiotBestKillsJsonKey = "\"foodRiotBestKills\""; // 현재 저장 키

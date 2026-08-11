@@ -98,6 +98,13 @@ namespace ProjectMT.Features.Equipment
 
             foreach (EquipmentPart part in Enum.GetValues(typeof(EquipmentPart)))
             {
+                // 부위 슬롯 영구 강화 보너스. 장비 장착 여부와 무관하게 적용한다.
+                var slotLevel = EquipmentSlotUpgradeRuntime.GetLevel(part);
+                if (slotLevel > 0)
+                {
+                    Accumulate(EquipmentSlotUpgradeCalculator.GetBonusContributions(part, slotLevel), percentBonus, flatBonus);
+                }
+
                 if (!EquipmentInventoryRuntime.TryGetEquipped(part, out var item) || item.Definition == null)
                 {
                     continue;

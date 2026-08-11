@@ -58240,6 +58240,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6192378839832561049}
+  - component: {fileID: 2185654650811666327}
   m_Layer: 0
   m_Name: PF_CommanderEquipmentPage
   m_TagString: Untagged
@@ -58270,6 +58271,18 @@ RectTransform:
   m_AnchoredPosition: {x: 280, y: 0}
   m_SizeDelta: {x: 1240, y: 960}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2185654650811666327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6701580364318918323}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3480040548254d35a5ad05bd6a17d089, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Equipment.EquipmentSlotUpgradeEntryPoint
 --- !u!1 &6707691916550919811
 GameObject:
   m_ObjectHideFlags: 0

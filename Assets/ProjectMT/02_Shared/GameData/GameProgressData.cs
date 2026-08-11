@@ -144,6 +144,8 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private int ascensionCurrency; // 돌파석 - 최대 돌파 이후 중복 뽑기 시 적립되는 전용 재화
         [SerializeField] private GachaPityData gachaPity = GachaPityData.CreateDefault(); // 뽑기 천장 누적 카운터
         [SerializeField] private EquipmentSaveData equipment = EquipmentSaveData.CreateDefault(); // 08.10 안건준 추가 - 장비 보유·장착 저장
+        [SerializeField] private EquipmentSlotUpgradeData equipmentSlotUpgrade = EquipmentSlotUpgradeData.CreateDefault(); // 부위 슬롯 영구 강화 레벨(장비 보유·장착과 별도 저장)
+        [SerializeField] private int equipmentSlotEnhancementStone; // 장비 슬롯 강화 전용 재화(스킬 강화석과 분리)
 
         public int CurrentChallengeStage => currentChallengeStage;
         public int LastClearedStage => lastClearedStage;
@@ -160,6 +162,9 @@ namespace ProjectMT.Shared.GameData
         public int AscensionCurrency => ascensionCurrency;
         public GachaPityView GachaPity => new GachaPityView(gachaPity);
         public EquipmentSaveDataView Equipment => (equipment ?? EquipmentSaveData.CreateDefault()).CreateView(); // 08.10 안건준 추가
+        public EquipmentSlotUpgradeView EquipmentSlotUpgrade =>
+            (equipmentSlotUpgrade ?? EquipmentSlotUpgradeData.CreateDefault()).CreateView();
+        public int EquipmentSlotEnhancementStone => equipmentSlotEnhancementStone;
 
         public static GameProgressData CreateDefault()
         {
@@ -183,7 +188,9 @@ namespace ProjectMT.Shared.GameData
                 mainBattleFormation = mainBattleFormation?.Clone() ?? MainBattleFormationData.CreateDefault(),
                 ascensionCurrency = ascensionCurrency,
                 gachaPity = gachaPity?.Clone() ?? GachaPityData.CreateDefault(),
-                equipment = equipment?.Clone() ?? EquipmentSaveData.CreateDefault() // 08.10 안건준 추가
+                equipment = equipment?.Clone() ?? EquipmentSaveData.CreateDefault(), // 08.10 안건준 추가
+                equipmentSlotUpgrade = equipmentSlotUpgrade?.Clone() ?? EquipmentSlotUpgradeData.CreateDefault(),
+                equipmentSlotEnhancementStone = equipmentSlotEnhancementStone
             };
         }
 
@@ -325,6 +332,35 @@ namespace ProjectMT.Shared.GameData
                 return false;
             }
 
+            // 장비 부위 슬롯 영구 강화(+1): 비용 확인 → 재화 차감 → 레벨 증가 순서로 처리한다.
+            if (change.HasUpgradeEquipmentSlot)
+            {
+                equipmentSlotUpgrade ??= EquipmentSlotUpgradeData.CreateDefault();
+                var currentLevel = equipmentSlotUpgrade.GetLevel(change.UpgradeEquipmentSlotPart);
+                if (currentLevel != change.ExpectedEquipmentSlotLevel)
+                {
+                    return false; // 요청 시점과 처리 시점 사이에 레벨이 달라짐(중복 클릭 등)
+                }
+
+                if (EquipmentSlotUpgradeCostRules.ChargeCurrencyOnUpgrade)
+                {
+                    var goldCost = EquipmentSlotUpgradeCostRules.GetNextGoldCost(currentLevel);
+                    var stoneCost = EquipmentSlotUpgradeCostRules.GetNextStoneCost(currentLevel);
+                    if (gold < goldCost || equipmentSlotEnhancementStone < stoneCost)
+                    {
+                        return false; // 재화 부족
+                    }
+
+                    gold -= goldCost;
+                    equipmentSlotEnhancementStone -= stoneCost;
+                }
+
+                if (!equipmentSlotUpgrade.TryLevelUp(change.UpgradeEquipmentSlotPart, change.ExpectedEquipmentSlotLevel))
+                {
+                    return false;
+                }
+            }
+
             Repair(); // 변경 후 불변식 재확인
             return true;
         }
@@ -404,6 +440,9 @@ namespace ProjectMT.Shared.GameData
             gachaPity.Repair();
             equipment ??= EquipmentSaveData.CreateDefault(); // 08.10 안건준 추가
             equipment.Repair();
+            equipmentSlotUpgrade ??= EquipmentSlotUpgradeData.CreateDefault();
+            equipmentSlotUpgrade.Repair();
+            equipmentSlotEnhancementStone = Math.Max(0, equipmentSlotEnhancementStone);
 
             if (!IsValidExpeditionMode(expeditionMode) ||
                 (lastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat))
@@ -436,6 +475,8 @@ namespace ProjectMT.Shared.GameData
             AscensionCurrency = data.AscensionCurrency;
             GachaPity = data.GachaPity;
             Equipment = data.Equipment; // 08.10 안건준 추가
+            EquipmentSlotUpgrade = data.EquipmentSlotUpgrade;
+            EquipmentSlotEnhancementStone = data.EquipmentSlotEnhancementStone;
         }
 
         public int CurrentChallengeStage { get; }
@@ -452,6 +493,8 @@ namespace ProjectMT.Shared.GameData
         public int AscensionCurrency { get; } // 돌파석 보유량
         public GachaPityView GachaPity { get; } // 뽑기 천장 누적 카운터
         public EquipmentSaveDataView Equipment { get; } // 08.10 안건준 추가 - 장비 보유·장착 상태
+        public EquipmentSlotUpgradeView EquipmentSlotUpgrade { get; } // 부위 슬롯 영구 강화 레벨
+        public int EquipmentSlotEnhancementStone { get; } // 장비 슬롯 강화석 보유량
     }
 
     public sealed class GameProgressChange // 한 번에 검증할 진행 변경 묶음
@@ -496,6 +539,9 @@ namespace ProjectMT.Shared.GameData
         internal string EquipItemInstanceId { get; private set; }
         internal bool HasUnequipItem { get; private set; }
         internal EquipmentPart UnequipItemPart { get; private set; }
+        internal bool HasUpgradeEquipmentSlot { get; private set; }
+        internal EquipmentPart UpgradeEquipmentSlotPart { get; private set; }
+        internal int ExpectedEquipmentSlotLevel { get; private set; }
 
         public static GameProgressChange SetExpeditionMode(ExpeditionRunMode mode)
         {
@@ -664,6 +710,17 @@ namespace ProjectMT.Shared.GameData
             {
                 HasUnequipItem = true,
                 UnequipItemPart = part
+            };
+        }
+
+        // 장비 부위 슬롯을 +1 강화한다.
+        public static GameProgressChange UpgradeEquipmentSlot(EquipmentPart part, int expectedLevel)
+        {
+            return new GameProgressChange
+            {
+                HasUpgradeEquipmentSlot = true,
+                UpgradeEquipmentSlotPart = part,
+                ExpectedEquipmentSlotLevel = expectedLevel
             };
         }
     }

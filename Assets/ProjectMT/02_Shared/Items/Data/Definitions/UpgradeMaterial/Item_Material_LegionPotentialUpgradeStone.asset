@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: "\uC7A0\uC7AC\uB2A5\uB825 \uAC15\uD654\uC11D"
   description: "\uAD70\uB2E8 \uACF5\uC6A9 \uC7A0\uC7AC\uB2A5\uB825 \uC7AC\uC124\uC815\uACFC
     \uC131\uC7A5\uC5D0 \uC0AC\uC6A9\uD558\uB294 \uC804\uC6A9 \uC7AC\uB8CC."
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 2e8fba0af7b1b4b94a3113a8f7540d23, type: 3}
   category: 4
   maxQuantity: 9223372036854775807
   discardable: 0

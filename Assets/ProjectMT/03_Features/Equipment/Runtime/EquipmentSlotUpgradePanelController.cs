@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
@@ -49,6 +50,8 @@ namespace ProjectMT.Features.Equipment
         private EquipmentPart currentPart = EquipmentPart.Weapon;
         private bool hasSelectedPart;
 
+        public event Action<bool> OpenStateChanged;
+
         private void Awake()
         {
             CacheReferences();
@@ -89,12 +92,24 @@ namespace ProjectMT.Features.Equipment
 
         public void Open()
         {
+            if (gameObject.activeSelf)
+            {
+                return;
+            }
+
             gameObject.SetActive(true);
+            OpenStateChanged?.Invoke(true);
         }
 
         public void Close()
         {
+            if (!gameObject.activeSelf)
+            {
+                return;
+            }
+
             gameObject.SetActive(false);
+            OpenStateChanged?.Invoke(false);
         }
 
         public void SelectPart(EquipmentPart part)

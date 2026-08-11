@@ -17,7 +17,7 @@ MonoBehaviour:
   description: "\uC7A5\uBE44 \uC544\uC774\uD15C\uC774 \uC544\uB2C8\uB77C \uC7A5\uBE44
     \uBD80\uC704 \uC2AC\uB86F \uC790\uCCB4\uB97C \uC601\uAD6C \uAC15\uD654\uD558\uB294
     \uC7AC\uB8CC."
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 25566ec6eb1e848b190f27468108845e, type: 3}
   category: 4
   maxQuantity: 9223372036854775807
   discardable: 0

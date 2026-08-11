@@ -5,6 +5,7 @@ using ProjectMT.Features.Commander;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.Expedition;
 using ProjectMT.Features.Formation;
+using ProjectMT.Features.Inventory;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -33,7 +34,7 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private ShopPageView shopPageView; // 상점 탭·재화 표시
         [SerializeField] private EquipmentPageController equipmentPage; // 08.10 안건준 추가 - 장비창(없어도 씬 동작에는 영향 없음)
         [SerializeField] private EquipmentSlotUpgradePanelController equipmentSlotUpgradePanel; // 장비 슬롯 강화 패널(없어도 씬 동작에는 영향 없음)
-        [SerializeField] private EquipmentSlotUpgradeEntryPoint equipmentSlotUpgradeEntryPoint; // "UpgradeSlotButton" 진입점(없어도 씬 동작에는 영향 없음)
+        [SerializeField] private ItemInventoryPageController itemInventoryPage; // 일반 아이템 인벤토리
 
         private MainSceneContext context; // 진행·콘텐츠 실행 권한
         private BattlePartySnapshot party; // 시드 부대 사진
@@ -105,6 +106,7 @@ namespace ProjectMT.Features.MainBattle
             ConfigureEquipmentPage();
             ConfigureCommanderGrowthPage();
             ConfigureEquipmentSlotUpgrade();
+            ConfigureItemInventory();
             ConfigureMonsterDrag();
             ConfigureSpatialMovement();
             ConfigureFormationPlacement();
@@ -130,6 +132,9 @@ namespace ProjectMT.Features.MainBattle
             ResolveShopPageView()?.Shutdown();
             hudProgressView?.Shutdown();
             managementUi?.ConfigureFormationPage(null);
+            managementUi?.ConfigureEquipmentSlotUpgradePage(null);
+            managementUi?.ConfigureInventoryPage(null);
+            ResolveItemInventoryPage()?.Shutdown();
             if (formationPage != null)
             {
                 formationPage.PartyChanged -= HandlePartyChanged;
@@ -238,12 +243,12 @@ namespace ProjectMT.Features.MainBattle
             page?.Configure(context.Progress, context.CommanderGrowthConfig);
         }
 
-        // 장비 슬롯 강화 패널과 그 진입점("UpgradeSlotButton")을 씬에서 찾아 서로 연결한다.
+        // 장비 슬롯 강화 패널을 진행 데이터 및 메인 관리 UI에 연결한다.
         private void ConfigureEquipmentSlotUpgrade()
         {
             var panel = ResolveEquipmentSlotUpgradePanel();
             panel?.Configure(context.Progress);
-            ResolveEquipmentSlotUpgradeEntryPoint()?.Configure(panel);
+            managementUi?.ConfigureEquipmentSlotUpgradePage(panel);
         }
 
         private EquipmentSlotUpgradePanelController ResolveEquipmentSlotUpgradePanel()
@@ -262,20 +267,27 @@ namespace ProjectMT.Features.MainBattle
             return equipmentSlotUpgradePanel;
         }
 
-        private EquipmentSlotUpgradeEntryPoint ResolveEquipmentSlotUpgradeEntryPoint()
+        private void ConfigureItemInventory()
         {
-            if (equipmentSlotUpgradeEntryPoint != null)
+            var page = ResolveItemInventoryPage();
+            page?.Configure(context.Progress, context.ItemCatalog);
+            managementUi?.ConfigureInventoryPage(page);
+        }
+
+        private ItemInventoryPageController ResolveItemInventoryPage()
+        {
+            if (itemInventoryPage != null)
             {
-                return equipmentSlotUpgradeEntryPoint;
+                return itemInventoryPage;
             }
 
-            equipmentSlotUpgradeEntryPoint = GetComponentInChildren<EquipmentSlotUpgradeEntryPoint>(true);
-            if (equipmentSlotUpgradeEntryPoint == null)
+            itemInventoryPage = GetComponentInChildren<ItemInventoryPageController>(true);
+            if (itemInventoryPage == null)
             {
-                equipmentSlotUpgradeEntryPoint = FindFirstObjectByType<EquipmentSlotUpgradeEntryPoint>(FindObjectsInactive.Include);
+                itemInventoryPage = FindFirstObjectByType<ItemInventoryPageController>(FindObjectsInactive.Include);
             }
 
-            return equipmentSlotUpgradeEntryPoint;
+            return itemInventoryPage;
         }
 
         private MonsterManagementPageController ResolveMonsterManagementPage()

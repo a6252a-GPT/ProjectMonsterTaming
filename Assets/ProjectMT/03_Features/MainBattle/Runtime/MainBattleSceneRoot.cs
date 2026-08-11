@@ -1,6 +1,7 @@
 using System;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Features.Equipment;
 using ProjectMT.Features.Expedition;
 using ProjectMT.Features.Formation;
 using ProjectMT.Shared.Unit;
@@ -27,6 +28,7 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private MonsterManagementPageController monsterManagementPage; // 몬스터 성장 관리창
         [SerializeField] private GachaSystem gachaSystem; // 몬스터 뽑기 (없어도 씬 동작에는 영향 없음)
         [SerializeField] private ShopPageView shopPageView; // 상점 탭·재화 표시
+        [SerializeField] private EquipmentPageController equipmentPage; // 08.10 안건준 추가 - 장비창(없어도 씬 동작에는 영향 없음)
 
         private MainSceneContext context; // 진행·콘텐츠 실행 권한
         private BattlePartySnapshot party; // 시드 부대 사진
@@ -94,6 +96,7 @@ namespace ProjectMT.Features.MainBattle
             }
             ConfigureGachaSystem();
             ConfigureShopPageView();
+            ConfigureEquipmentPage();
             ConfigureMonsterDrag();
             ConfigureSpatialMovement();
             ConfigureFormationPlacement();
@@ -190,6 +193,29 @@ namespace ProjectMT.Features.MainBattle
             }
 
             return shopPageView;
+        }
+
+        // 08.10 안건준 추가 - GachaSystem과 마찬가지로 인스펙터 참조가 비어 있어도 씬(비활성 포함)에서
+        // 다시 찾아 연결한다.
+        private void ConfigureEquipmentPage()
+        {
+            ResolveEquipmentPage()?.Configure(context.Progress);
+        }
+
+        private EquipmentPageController ResolveEquipmentPage()
+        {
+            if (equipmentPage != null)
+            {
+                return equipmentPage;
+            }
+
+            equipmentPage = GetComponentInChildren<EquipmentPageController>(true);
+            if (equipmentPage == null)
+            {
+                equipmentPage = FindFirstObjectByType<EquipmentPageController>(FindObjectsInactive.Include);
+            }
+
+            return equipmentPage;
         }
 
         private MonsterManagementPageController ResolveMonsterManagementPage()

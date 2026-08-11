@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
@@ -141,6 +143,7 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private MainBattleFormationData mainBattleFormation = MainBattleFormationData.CreateDefault(); // 본부대 시작 위치
         [SerializeField] private int ascensionCurrency; // 돌파석 - 최대 돌파 이후 중복 뽑기 시 적립되는 전용 재화
         [SerializeField] private GachaPityData gachaPity = GachaPityData.CreateDefault(); // 뽑기 천장 누적 카운터
+        [SerializeField] private EquipmentSaveData equipment = EquipmentSaveData.CreateDefault(); // 08.10 안건준 추가 - 장비 보유·장착 저장
 
         public int CurrentChallengeStage => currentChallengeStage;
         public int LastClearedStage => lastClearedStage;
@@ -156,6 +159,7 @@ namespace ProjectMT.Shared.GameData
             (mainBattleFormation ?? MainBattleFormationData.CreateDefault()).CreateView();
         public int AscensionCurrency => ascensionCurrency;
         public GachaPityView GachaPity => new GachaPityView(gachaPity);
+        public EquipmentSaveDataView Equipment => (equipment ?? EquipmentSaveData.CreateDefault()).CreateView(); // 08.10 안건준 추가
 
         public static GameProgressData CreateDefault()
         {
@@ -178,7 +182,8 @@ namespace ProjectMT.Shared.GameData
                 monsters = monsters?.Clone() ?? MonsterRosterData.CreateDefault(),
                 mainBattleFormation = mainBattleFormation?.Clone() ?? MainBattleFormationData.CreateDefault(),
                 ascensionCurrency = ascensionCurrency,
-                gachaPity = gachaPity?.Clone() ?? GachaPityData.CreateDefault()
+                gachaPity = gachaPity?.Clone() ?? GachaPityData.CreateDefault(),
+                equipment = equipment?.Clone() ?? EquipmentSaveData.CreateDefault() // 08.10 안건준 추가
             };
         }
 
@@ -300,6 +305,26 @@ namespace ProjectMT.Shared.GameData
                 return false;
             }
 
+            // 08.10 안건준 추가 - 장비 획득/장착/해제
+            if (change.HasAcquireEquipment)
+            {
+                equipment ??= EquipmentSaveData.CreateDefault();
+                equipment.Acquire(change.AcquireEquipmentInstances);
+            }
+
+            if (change.HasEquipItem &&
+                (string.IsNullOrEmpty(change.EquipItemInstanceId) ||
+                 !(equipment ??= EquipmentSaveData.CreateDefault()).TryEquip(change.EquipItemInstanceId)))
+            {
+                return false;
+            }
+
+            if (change.HasUnequipItem &&
+                !(equipment ??= EquipmentSaveData.CreateDefault()).TryUnequip(change.UnequipItemPart))
+            {
+                return false;
+            }
+
             Repair(); // 변경 후 불변식 재확인
             return true;
         }
@@ -377,6 +402,8 @@ namespace ProjectMT.Shared.GameData
             ascensionCurrency = Math.Max(0, ascensionCurrency);
             gachaPity ??= GachaPityData.CreateDefault();
             gachaPity.Repair();
+            equipment ??= EquipmentSaveData.CreateDefault(); // 08.10 안건준 추가
+            equipment.Repair();
 
             if (!IsValidExpeditionMode(expeditionMode) ||
                 (lastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat))
@@ -408,6 +435,7 @@ namespace ProjectMT.Shared.GameData
             MainBattleFormation = data.MainBattleFormation;
             AscensionCurrency = data.AscensionCurrency;
             GachaPity = data.GachaPity;
+            Equipment = data.Equipment; // 08.10 안건준 추가
         }
 
         public int CurrentChallengeStage { get; }
@@ -423,6 +451,7 @@ namespace ProjectMT.Shared.GameData
         public MainBattleFormationView MainBattleFormation { get; }
         public int AscensionCurrency { get; } // 돌파석 보유량
         public GachaPityView GachaPity { get; } // 뽑기 천장 누적 카운터
+        public EquipmentSaveDataView Equipment { get; } // 08.10 안건준 추가 - 장비 보유·장착 상태
     }
 
     public sealed class GameProgressChange // 한 번에 검증할 진행 변경 묶음
@@ -461,6 +490,12 @@ namespace ProjectMT.Shared.GameData
         internal bool HasGachaPull { get; private set; }
         internal string GachaPullMonsterId { get; private set; }
         internal MonsterRarity GachaPullRarity { get; private set; }
+        internal bool HasAcquireEquipment { get; private set; } // 08.10 안건준 추가
+        internal List<EquipmentInstanceData> AcquireEquipmentInstances { get; private set; }
+        internal bool HasEquipItem { get; private set; }
+        internal string EquipItemInstanceId { get; private set; }
+        internal bool HasUnequipItem { get; private set; }
+        internal EquipmentPart UnequipItemPart { get; private set; }
 
         public static GameProgressChange SetExpeditionMode(ExpeditionRunMode mode)
         {
@@ -600,6 +635,35 @@ namespace ProjectMT.Shared.GameData
                 HasGachaPull = true,
                 GachaPullMonsterId = monsterId?.Trim(),
                 GachaPullRarity = rarity
+            };
+        }
+
+        // 08.10 안건준 추가 - 장비 드랍 결과(최대 6개)를 인벤토리에 추가 요청.
+        public static GameProgressChange AcquireEquipment(List<EquipmentInstanceData> instances)
+        {
+            return new GameProgressChange
+            {
+                HasAcquireEquipment = true,
+                AcquireEquipmentInstances = instances ?? new List<EquipmentInstanceData>()
+            };
+        }
+
+        // 지정한 인스턴스를 장착한다. 같은 부위에 이미 장착 중인 장비가 있으면 자동으로 교체된다.
+        public static GameProgressChange EquipItem(string instanceId)
+        {
+            return new GameProgressChange
+            {
+                HasEquipItem = true,
+                EquipItemInstanceId = instanceId?.Trim()
+            };
+        }
+
+        public static GameProgressChange UnequipItem(EquipmentPart part)
+        {
+            return new GameProgressChange
+            {
+                HasUnequipItem = true,
+                UnequipItemPart = part
             };
         }
     }

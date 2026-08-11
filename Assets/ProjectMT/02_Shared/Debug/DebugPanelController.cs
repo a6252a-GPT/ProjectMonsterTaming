@@ -16,11 +16,14 @@ namespace ProjectMT.Shared.Debugging
         [SerializeField] private TMP_Text resetSaveLabel; // 확인 단계 표시
         [SerializeField] private Button drawMonsterButton; // 임시 무중복 몬스터 획득
         [SerializeField] private TMP_Text drawMonsterLabel;
+        [SerializeField] private Button acquireEquipmentButton; // 임시 장비 획득
+        [SerializeField] private TMP_Text acquireEquipmentLabel;
         [SerializeField] private TMP_Text statusLabel; // 실행 결과 표시
 
         private const float ConfirmDuration = 4f;
         private Func<Task<bool>> resetSaveAction; // AppRoot가 제공하는 초기화 권한
         private Func<Task<string>> drawMonsterAction; // AppRoot가 제공하는 획득·저장 권한
+        private Func<Task<string>> acquireEquipmentAction; // AppRoot가 제공하는 장비 획득 권한
         private float confirmUntil;
         private bool isBusy;
 
@@ -29,6 +32,7 @@ namespace ProjectMT.Shared.Debugging
             toggleButton?.onClick.AddListener(TogglePanel);
             resetSaveButton?.onClick.AddListener(HandleResetSaveClicked);
             drawMonsterButton?.onClick.AddListener(HandleDrawMonsterClicked);
+            acquireEquipmentButton?.onClick.AddListener(HandleAcquireEquipmentClicked);
             SetPanelOpen(false);
             ResetConfirmation();
         }
@@ -38,6 +42,7 @@ namespace ProjectMT.Shared.Debugging
             toggleButton?.onClick.RemoveListener(TogglePanel);
             resetSaveButton?.onClick.RemoveListener(HandleResetSaveClicked);
             drawMonsterButton?.onClick.RemoveListener(HandleDrawMonsterClicked);
+            acquireEquipmentButton?.onClick.RemoveListener(HandleAcquireEquipmentClicked);
         }
 
         private void Update()
@@ -48,13 +53,22 @@ namespace ProjectMT.Shared.Debugging
             }
         }
 
-        public void Configure(Func<Task<bool>> resetAction, Func<Task<string>> monsterDrawAction = null)
+        public void Configure(
+            Func<Task<bool>> resetAction,
+            Func<Task<string>> monsterDrawAction = null,
+            Func<Task<string>> equipmentAcquireAction = null)
         {
             resetSaveAction = resetAction;
             drawMonsterAction = monsterDrawAction;
+            acquireEquipmentAction = equipmentAcquireAction;
             if (drawMonsterButton != null)
             {
                 drawMonsterButton.interactable = monsterDrawAction != null;
+            }
+
+            if (acquireEquipmentButton != null)
+            {
+                acquireEquipmentButton.interactable = equipmentAcquireAction != null;
             }
         }
 
@@ -142,6 +156,34 @@ namespace ProjectMT.Shared.Debugging
             }
         }
 
+        private async void HandleAcquireEquipmentClicked()
+        {
+            if (isBusy || acquireEquipmentAction == null)
+            {
+                return;
+            }
+
+            isBusy = true;
+            ResetConfirmation(false);
+            SetActionButtonsInteractable(false);
+            SetStatus("장비 확인 중...");
+            try
+            {
+                var result = await acquireEquipmentAction();
+                SetStatus(string.IsNullOrWhiteSpace(result) ? "현재 장비를 받을 수 없습니다" : result);
+            }
+            catch (Exception exception)
+            {
+                UnityEngine.Debug.LogException(exception);
+                SetStatus("장비 획득 실패");
+            }
+            finally
+            {
+                isBusy = false;
+                SetActionButtonsInteractable(true);
+            }
+        }
+
         private void ResetConfirmation(bool clearStatus = true)
         {
             confirmUntil = 0f;
@@ -179,6 +221,11 @@ namespace ProjectMT.Shared.Debugging
             {
                 drawMonsterButton.interactable = interactable && drawMonsterAction != null;
             }
+
+            if (acquireEquipmentButton != null)
+            {
+                acquireEquipmentButton.interactable = interactable && acquireEquipmentAction != null;
+            }
         }
 
 #if UNITY_EDITOR
@@ -190,7 +237,9 @@ namespace ProjectMT.Shared.Debugging
             TMP_Text resetText,
             TMP_Text statusText,
             Button monsterDrawButton = null,
-            TMP_Text monsterDrawText = null)
+            TMP_Text monsterDrawText = null,
+            Button equipmentAcquireButton = null,
+            TMP_Text equipmentAcquireText = null)
         {
             panelRoot = toolsPanel;
             toggleButton = toggle;
@@ -199,12 +248,19 @@ namespace ProjectMT.Shared.Debugging
             resetSaveLabel = resetText;
             drawMonsterButton = monsterDrawButton;
             drawMonsterLabel = monsterDrawText;
+            acquireEquipmentButton = equipmentAcquireButton;
+            acquireEquipmentLabel = equipmentAcquireText;
             statusLabel = statusText;
             SetPanelOpen(false);
             ResetConfirmation();
             if (drawMonsterLabel != null)
             {
                 drawMonsterLabel.text = "몬스터 뽑기 (중복 없음)";
+            }
+
+            if (acquireEquipmentLabel != null)
+            {
+                acquireEquipmentLabel.text = "장비 6개 획득";
             }
         }
 #endif

@@ -1,20 +1,11 @@
+using ProjectMT.Shared.Equipment;
 using UnityEngine;
 
 namespace ProjectMT.Features.Equipment
 {
-    // 08.09 안건준 추가 - 장비 등급 5종. 몬스터 등급과 동일하게 Uncommon 없이 5단계만 사용한다.
-    public enum EquipmentGrade
-    {
-        Common, // 일반
-        Rare, // 희귀
-        Epic, // 영웅
-        Legendary, // 전설
-        Mythic // 신화
-    }
-
-    // 08.09 안건준 추가/수정 - 장비 등급별 표시 이름·색상·드랍 확률(%)을 한 곳에서 관리한다.
-    // 색상 규칙(요청 사항): 일반-초록색, 희귀-파란색, 영웅-노란색, 전설-보라색, 신화-빨간색
-    // (일반 등급은 처음엔 흰색이었으나, 배경과 구분이 잘 안 돼서 초록색으로 변경했다.)
+    // 08.10 안건준 수정 - 장비 등급 enum은 저장 데이터가 참조할 수 있도록 Shared 어셈블리로 옮겼다
+    // (ProjectMT.Shared.Equipment.EquipmentGrade). 표시 이름·색상·드랍 확률·옵션 배율 등 기획 정보만 여기서 관리한다.
+    // 색상 규칙(요청 사항): 일반-초록색, 희귀-파란색, 영웅-노란색, 전설-보라색, 신화-빨간색.
     public static class EquipmentGradeInfo
     {
         // 등급 순서대로 정렬된 배열. 인덱스는 EquipmentGrade의 순서와 일치한다.
@@ -26,6 +17,15 @@ namespace ProjectMT.Features.Equipment
 
         // 등급별 드랍 확률(%). 합계 100.
         private static readonly float[] DropWeights = { 68f, 20f, 8f, 3f, 1f };
+
+        // 08.10 안건준 추가 - 문서 4.1 기준: 부위 고정(핵심) 능력치에 배정되는 "군단장 기본 스탯 대비 비율(%)" 예산.
+        private static readonly float[] CoreStatBudgetPercent = { 3f, 5f, 8f, 12f, 18f };
+
+        // 08.10 안건준 추가 - 문서 4.3 기준: 랜덤 추가 옵션 수치에 곱해지는 등급 배율.
+        private static readonly float[] RandomOptionGradeMultiplier = { 1.0f, 1.5f, 2.2f, 3.2f, 4.5f };
+
+        // 08.10 안건준 추가 - 문서 4.3 기준: 등급별 랜덤 추가 옵션 개수.
+        private static readonly int[] RandomOptionCount = { 1, 1, 2, 3, 4 };
 
         public static string GetDisplayName(EquipmentGrade grade)
         {
@@ -57,6 +57,24 @@ namespace ProjectMT.Features.Equipment
         {
             var index = (int)grade;
             return index >= 0 && index < DropWeights.Length ? DropWeights[index] : 0f;
+        }
+
+        public static float GetCoreStatBudgetPercent(EquipmentGrade grade)
+        {
+            var index = (int)grade;
+            return index >= 0 && index < CoreStatBudgetPercent.Length ? CoreStatBudgetPercent[index] : 0f;
+        }
+
+        public static float GetRandomOptionGradeMultiplier(EquipmentGrade grade)
+        {
+            var index = (int)grade;
+            return index >= 0 && index < RandomOptionGradeMultiplier.Length ? RandomOptionGradeMultiplier[index] : 1f;
+        }
+
+        public static int GetRandomOptionCount(EquipmentGrade grade)
+        {
+            var index = (int)grade;
+            return index >= 0 && index < RandomOptionCount.Length ? RandomOptionCount[index] : 0;
         }
 
         // 등급 확률표(68/20/8/3/1)를 기준으로 0~100 난수(roll100)에 해당하는 등급을 뽑는다.

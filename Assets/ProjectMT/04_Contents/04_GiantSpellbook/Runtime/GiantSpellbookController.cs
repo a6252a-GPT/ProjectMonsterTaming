@@ -56,8 +56,10 @@ namespace ProjectMT.Contents.GiantSpellbook
 
         private bool isBroken; // 현재 보스가 브레이크 상태인지
         private float breakRemainingTime; // 브레이크 종료까지 남은 시간
+        [SerializeField] private GiantSpellbookHudPresenter hudPresenter; // DEV Prefab Instance에 구성한 HUD 표시 담당
 
         public bool IsRunning { get; private set; }
+        public event Action<GiantSpellbookHudState> HudStateChanged;
 
         public void Initialize(ContentContext contentContext)
         {
@@ -93,6 +95,8 @@ namespace ProjectMT.Contents.GiantSpellbook
             IsRunning = true;
             SpawnFollowers(); // 팀원이 내부 규칙을 붙이기 전 편성 연결만 확인
             SpawnExampleEnemy(); // 공용 전투 연결을 확인할 임시 적 한 기
+            hudPresenter?.Bind(this);
+            PublishHudState();
         }
 
         private void Update()
@@ -125,6 +129,7 @@ namespace ProjectMT.Contents.GiantSpellbook
             }
 
             ResetBreakState();
+            ReleaseHud();
             combatWorld?.Clear();
             if (commanderRoot != null)
             {
@@ -197,12 +202,14 @@ namespace ProjectMT.Contents.GiantSpellbook
                 "giant_spellbook_example_enemy",
                 stats,
                 UnitTeam.Enemy,
+                canMove: false, // 고정형 보스이므로 공용 추적 이동을 사용하지 않는다.
+                canAttack: false, // 공격은 추후 보스 전용 패턴에서 실행한다.
                 visualTint: new Color(1f, 0.65f, 0.65f));
             bossActor = combatWorld.SpawnUnit(
-            exampleEnemyPrefab,
-            request,
-            exampleEnemySpawn.position,
-            Quaternion.identity);
+                exampleEnemyPrefab,
+                request,
+                exampleEnemySpawn.position,
+                Quaternion.identity);
 
             if (bossActor == null)
             {
@@ -217,8 +224,21 @@ namespace ProjectMT.Contents.GiantSpellbook
         // 보스가 피해를 받을 때마다 브레이크 게이지를 증가시킨다.
         private void HandleBossDamaged(DamageReport report)
         {
-            // 콘텐츠 종료·보스 사망·브레이크 상태에서는 게이지를 올리지 않는다.
-            if (!IsRunning || report.Killed || isBroken)
+            // 콘텐츠가 종료된 뒤 들어온 피해 이벤트는 처리하지 않는다.
+            if (!IsRunning)
+            {
+                return;
+            }
+
+            // 브레이크 중에는 게이지를 추가로 올리지 않고, 감소한 체력만 HUD에 반영한다.
+            if (isBroken)
+            {
+                PublishHudState();
+                return;
+            }
+
+            // 사망 피해는 Died 이벤트의 Complete()에서 종료 처리한다.
+            if (report.Killed)
             {
                 return;
             }
@@ -234,7 +254,10 @@ namespace ProjectMT.Contents.GiantSpellbook
             if (currentBreakGauge >= maxBreakGauge)
             {
                 StartBreak();
+                return;
             }
+
+            PublishHudState();
         }
 
         // 게이지가 가득 차면 브레이크를 시작하고 아군 공격력을 증가시킨다.
@@ -260,6 +283,7 @@ namespace ProjectMT.Contents.GiantSpellbook
             Debug.Log(
                 $"BREAK started! Duration={breakDuration}, Damage x{breakDamageMultiplier}",
                 this);
+            PublishHudState();
         }
 
         // 브레이크 시간이 끝나면 공격력을 복구하고 게이지를 초기화한다.
@@ -284,6 +308,7 @@ namespace ProjectMT.Contents.GiantSpellbook
             }
 
             Debug.Log("BREAK ended. Gauge reset.", this);
+            PublishHudState();
         }
 
         // 콘텐츠 종료 시 브레이크 배율과 실행값을 안전하게 초기화한다.
@@ -338,6 +363,7 @@ namespace ProjectMT.Contents.GiantSpellbook
             }
 
             ResetBreakState();
+            ReleaseHud();
             combatWorld?.Clear();
 
             // 콘텐츠 내부에서는 저장하지 않고, 이번 판의 결과만 공용 출구로 전달
@@ -362,10 +388,37 @@ namespace ProjectMT.Contents.GiantSpellbook
                 bossActor = null;
             }
             ResetBreakState();
+            ReleaseHud();
             combatWorld.Clear();
             // Cancel은 실패나 클리어가 아니므로 ResultAdapter와 보상 저장을 거치지 않는다.
             // MainBattle Hosted 실행에서는 ContentFlow가 Runtime을 닫고 기존 MainGameplayRoot를 다시 활성화한다.
             context.Exit.Cancel();
+        }
+
+        private void ReleaseHud()
+        {
+            if (hudPresenter == null)
+            {
+                return;
+            }
+
+            hudPresenter.Unbind();
+            hudPresenter.SetVisible(false);
+        }
+
+        private void PublishHudState()
+        {
+            if (bossActor == null)
+            {
+                return;
+            }
+
+            HudStateChanged?.Invoke(new GiantSpellbookHudState(
+                bossActor.Health.CurrentHealth,
+                bossActor.Health.MaxHealth,
+                RemainingBreakGauge,
+                maxBreakGauge,
+                isBroken));
         }
 
 #if UNITY_EDITOR

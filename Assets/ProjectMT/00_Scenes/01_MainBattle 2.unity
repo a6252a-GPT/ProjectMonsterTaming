@@ -41987,6 +41987,14 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 282869898, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 280
+      objectReference: {fileID: 0}
+    - target: {fileID: 552834535, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 280
+      objectReference: {fileID: 0}
     - target: {fileID: 588519530, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -42002,6 +42010,14 @@ PrefabInstance:
     - target: {fileID: 634101287, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 731367856, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 280
+      objectReference: {fileID: 0}
+    - target: {fileID: 878414501, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 280
       objectReference: {fileID: 0}
     - target: {fileID: 1993095285, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
       propertyPath: m_AnchorMax.x
@@ -43582,6 +43598,30 @@ PrefabInstance:
     - target: {fileID: 142573864645709557, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
       propertyPath: serializeData2.initData.clothSetupDataList.Array.data[0].transformLocalRotations.Array.data[13].value.w
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1318251026788904503, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_isOrthographic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1318251026788904503, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 2334897706883836998, guid: 3718a141c8028064eb11791445f163c4, type: 2}
+    - target: {fileID: 1318251026788904503, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 1318251026788904503, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1318251026788904503, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1838704925785149664, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: worldHalfExtents.x
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 2092840830385420100, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
       propertyPath: serializeData2.initData.clothType
@@ -45346,6 +45386,26 @@ PrefabInstance:
     - target: {fileID: 2092840830385420100, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
       propertyPath: serializeData2.initData.clothSetupDataList.Array.data[0].transformLocalRotations.Array.data[15].value.w
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2195480856655362314, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    - target: {fileID: 2195480856655362314, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_isOrthographic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2195480856655362314, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    - target: {fileID: 2195480856655362314, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2195480856655362314, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2269030279453054396, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
       propertyPath: serializeData2.initData.localHash
@@ -56315,6 +56375,10 @@ PrefabInstance:
       propertyPath: serializeData2.initData.clothSetupDataList.Array.data[0].transformLocalRotations.Array.data[13].value.z
       value: -0
       objectReference: {fileID: 0}
+    - target: {fileID: 4847173192703801580, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5368047885068128031, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
       propertyPath: serializeData2.initData.localHash
       value: 229237
@@ -65579,6 +65643,26 @@ PrefabInstance:
       propertyPath: serializeData2.initData.clothSetupDataList.Array.data[0].transformLocalRotations.Array.data[12].value.w
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6109314740884396936, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_isOrthographic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6109314740884396936, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 2334897706883836998, guid: 3718a141c8028064eb11791445f163c4, type: 2}
+    - target: {fileID: 6109314740884396936, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 6109314740884396936, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6109314740884396936, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6833132839154116943, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
       propertyPath: serializeData2.initData.localHash
       value: 210728
@@ -74779,6 +74863,42 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7248027989516991084, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    - target: {fileID: 7248027989516991084, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_isOrthographic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7248027989516991084, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    - target: {fileID: 7248027989516991084, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7597622095644745408, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_isOrthographic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7597622095644745408, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 2334897706883836998, guid: 3718a141c8028064eb11791445f163c4, type: 2}
+    - target: {fileID: 7597622095644745408, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 7597622095644745408, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7597622095644745408, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7794657841028525538, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
       propertyPath: serializeData2.initData.clothType
       value: 1
@@ -76810,6 +76930,26 @@ PrefabInstance:
     - target: {fileID: 7794657841028525538, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
       propertyPath: serializeData2.initData.clothSetupDataList.Array.data[0].transformLocalRotations.Array.data[18].value.w
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993524017514844480, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_isOrthographic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993524017514844480, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 2334897706883836998, guid: 3718a141c8028064eb11791445f163c4, type: 2}
+    - target: {fileID: 8993524017514844480, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993524017514844480, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8993524017514844480, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
+      propertyPath: m_ActiveFontFeatures.Array.size
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9050933849272299720, guid: 8a4d2270450f497bb244db87a28f0d6b, type: 3}
       propertyPath: serializeData2.initData.clothType

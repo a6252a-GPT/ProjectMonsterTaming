@@ -57,6 +57,7 @@ namespace ProjectMT.Contents.GuardianTrial
         // x=좌우 반쪽 크기, y=앞뒤 반쪽 크기. 값을 키울수록 빨간 네모처럼 더 넓은 테두리에서 스폰된다.
         [SerializeField] private Vector2 enemyAreaHalfExtents = new Vector2(12f, 9f); // 스폰 테두리 반쪽 크기 (기존 8,6 → 12,9)
         [SerializeField] private GuardiansTowerStructure[] structures = new GuardiansTowerStructure[0]; // 네 모서리 방어 건물
+        [SerializeField] private GuardiansTowerOffscreenIndicator offscreenIndicator; // 화면 밖 방어 건물 방향 표시(선택)
 
         [Header("Follower Tuning")]
         // 08.07 안건준 추가 - 이동 범위가 넓어져 추종 몬스터가 늦게 따라오는 문제 보정 (수호자의 탑 전용 값)
@@ -152,6 +153,7 @@ namespace ProjectMT.Contents.GuardianTrial
             // 08.07 안건준 수정 - 4번 건물 파괴 시 아군 공격력 버프 적용 콜백(ApplyAllyAttackBuff)을 함께 전달
             structureBuffs = new GuardiansTowerStructureBuffs(structures, ShowCenterNotification, ApplyAllyAttackBuff);
             structureBuffs.Reset();
+            offscreenIndicator?.Initialize(structures);
             for (var i = 0; i < enemyTotalCount; i++)
             {
                 SpawnEnemy(i); // 시작할 때 한 번만 스폰 (재보충 없음)
@@ -168,6 +170,7 @@ namespace ProjectMT.Contents.GuardianTrial
             ShutdownStructures();
             structureBuffs?.Shutdown();
             structureBuffs = null;
+            offscreenIndicator?.Shutdown();
             followers.Clear();
             if (notificationClearRoutine != null)
             {

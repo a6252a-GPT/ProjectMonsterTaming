@@ -31,6 +31,9 @@ namespace ProjectMT.Features.Equipment
         private const string EmptySlotBackgroundName = "EmptySlotGrayBg";
         private static readonly Color EmptySlotTintColor = new Color(0.5f, 0.5f, 0.5f, 1f);
 
+        // 색이 있는 픽셀로 볼지 판단하는 채도 임계값(오차 보정용).
+        private const float ChromaticThreshold = 0.01f;
+
         private readonly Dictionary<EquipmentPart, Button> selectButtons = new Dictionary<EquipmentPart, Button>();
         private readonly Dictionary<EquipmentPart, GameObject> slotDisplays = new Dictionary<EquipmentPart, GameObject>();
         private readonly Dictionary<EquipmentPart, TMP_Text> levelTexts = new Dictionary<EquipmentPart, TMP_Text>();
@@ -238,7 +241,8 @@ namespace ProjectMT.Features.Equipment
             StretchToFillParent(instance.GetComponent<RectTransform>());
         }
 
-        // 장비가 없을 때 normalArea 밑에 끼워 넣는 회색 배경.
+        // 장비가 없을 때 normalArea 밑에 끼워 넣는 회색 프레임.
+        // 기본 등급 프레임을 그대로 복제해 모양(테두리 등)은 유지하고, 등급색이 들어간 부분만 회색으로 바꾼다.
         private void ApplyEmptyBackground(Transform normalArea)
         {
             if (normalArea == null)
@@ -257,10 +261,32 @@ namespace ProjectMT.Features.Equipment
                 Destroy(current.gameObject);
             }
 
-            var backgroundObject = new GameObject(EmptySlotBackgroundName, typeof(RectTransform), typeof(Image));
-            backgroundObject.transform.SetParent(normalArea, false);
-            StretchToFillParent(backgroundObject.GetComponent<RectTransform>());
-            backgroundObject.GetComponent<Image>().color = EmptySlotTintColor;
+            if (!frameVariantTemplates.TryGetValue(FrameVariantSuffixByGrade[EquipmentGrade.Common], out var template) || template == null)
+            {
+                return;
+            }
+
+            var instance = Instantiate(template, normalArea);
+            instance.name = EmptySlotBackgroundName;
+            instance.SetActive(true);
+            StretchToFillParent(instance.GetComponent<RectTransform>());
+            GrayOutChromaticImages(instance.transform);
+        }
+
+        // 프레임 하위 이미지 중 채도가 있는(등급색이 칠해진) 것만 무채색으로 바꾸고,
+        // 이미 무채색인 테두리·음영 부분은 원래 모습 그대로 둔다.
+        private static void GrayOutChromaticImages(Transform root)
+        {
+            var images = root.GetComponentsInChildren<Image>(true);
+            for (var i = 0; i < images.Length; i++)
+            {
+                var color = images[i].color;
+                var isChromatic = Mathf.Max(color.r, Mathf.Max(color.g, color.b)) - Mathf.Min(color.r, Mathf.Min(color.g, color.b)) > ChromaticThreshold;
+                if (isChromatic)
+                {
+                    images[i].color = new Color(EmptySlotTintColor.r, EmptySlotTintColor.g, EmptySlotTintColor.b, color.a);
+                }
+            }
         }
 
         private static void StretchToFillParent(RectTransform rect)

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Features.Expedition;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Input;
 using ProjectMT.Shared.UI;
@@ -17,8 +18,8 @@ namespace ProjectMT.Contents.GuardianTrial
     // 차이점: 적은 시작할 때 한 번만 스폰(재보충 없음), 제한 시간 1분, 방어 건물 4개 관리, 상단 처치/남은 게이지 표시.
     // 08.07 안건준 수정 - (1)재입장 시 항상 처음 위치에서 시작 (2)군단장이 건물 근처에 오면 아군이 건물을
     // 우선 공격 (3)건물별 버프·파괴 알림 (4)난이도에 따른 적 체력·공격력·방어력·건물 체력 스케일링(레벨당 +10%,
-    // 적 "수"는 더 이상 난이도로 늘지 않음) (5)적을 여러 구역에 나눠서 스폰 (6)적 프리팹을 여러 종류 중
-    // 랜덤 선택할 수 있는 구조 추가.
+    // 적 "수"는 더 이상 난이도로 늘지 않음) (5)적을 여러 구역에 나눠서 스폰
+    // 적 생성: 메인 전투(원정대)와 동일한 SO(ExpeditionSeedProfile / EnemyStageAppearanceSet)로 스탯·외형을 뽑는다.
     [DisallowMultipleComponent]
     public sealed class GuardiansTowerController : MonoBehaviour, IContentController
     {
@@ -27,6 +28,7 @@ namespace ProjectMT.Contents.GuardianTrial
         private const int MaxEnemyCount = 100;
         // 08.07 안건준 수정 - 난이도 1당 "적 체력/공격력/방어력"과 "건물 체력"이 전부 +10%씩 오르도록 통일.
         private const float DifficultyStatGrowthPerLevel = 0.10f;
+        private const int EnemyStatBaseStage = 1; // 기본 스탯 조회용 고정 스테이지(원정대 자체 성장곡선은 쓰지 않고, 수호수 난이도 배율만 적용)
         private const float StructureAggroHoldSeconds = 0.35f; // 군단장이 범위 밖으로 나가면 이 시간 안에 자연히 원래 대상으로 복귀
         private const float NotificationDisplaySeconds = 2f; // 08.07 안건준 추가 - 알림 문구 1개당 표시 시간(큐 처리 간격)
         // 08.07 안건준 수정 - 4번 건물(Spawn) 버프의 "살아있는 동안 초당 소환" 방식은 폐지했다.
@@ -40,10 +42,10 @@ namespace ProjectMT.Contents.GuardianTrial
         [Header("Runtime")]
         [SerializeField] private CombatWorld combatWorld; // 유닛 생성·정리 공간
         [SerializeField] private GameObject followerPrefab; // 아군 추종자 원본
-        [SerializeField] private GameObject enemyPrefab; // 침입하는 적 원본 (수호자의 탑 전용, 기본값/하위 호환용)
-        // 08.07 안건준 추가 - 적 종류가 여러 개면 이 목록에서 매 스폰마다 랜덤으로 하나를 고른다.
-        // 비워두면 기존처럼 enemyPrefab 하나만 사용한다(현재 프로젝트에는 적 몬스터 변형이 없어 비워둔 상태).
-        [SerializeField] private GameObject[] enemyPrefabVariants = new GameObject[0];
+        // 적 생성: 메인 전투(원정대)와 동일한 SO를 그대로 사용해 스탯/외형을 뽑는다.
+        [SerializeField] private ExpeditionSeedProfile enemySeedProfile; // 메인 전투와 동일 적 기본 스탯 SO
+        [SerializeField] private EnemyStageAppearanceSet enemyAppearanceSet; // 메인 전투와 동일 적 외형 SO
+        [SerializeField] private GameObject enemyPrefab; // 위 SO가 비어 있을 때만 쓰는 Fallback 프리팹
         [SerializeField] private GameObject commanderRoot; // 직접 조작 군단장
         [SerializeField] private CommanderMoveController commanderMove; // 군단장 이동 입력
         [SerializeField] private Transform enemyAreaCenter; // 적 스폰 구역 중심(보통 맵 정중앙, 군단장 시작 위치와 동일)
@@ -54,6 +56,7 @@ namespace ProjectMT.Contents.GuardianTrial
         // x=좌우 반쪽 크기, y=앞뒤 반쪽 크기. 값을 키울수록 빨간 네모처럼 더 넓은 테두리에서 스폰된다.
         [SerializeField] private Vector2 enemyAreaHalfExtents = new Vector2(12f, 9f); // 스폰 테두리 반쪽 크기 (기존 8,6 → 12,9)
         [SerializeField] private GuardiansTowerStructure[] structures = new GuardiansTowerStructure[0]; // 네 모서리 방어 건물
+        [SerializeField] private GuardiansTowerOffscreenIndicator offscreenIndicator; // 화면 밖 방어 건물 방향 표시(선택)
 
         [Header("Follower Tuning")]
         // 08.07 안건준 추가 - 이동 범위가 넓어져 추종 몬스터가 늦게 따라오는 문제 보정 (수호자의 탑 전용 값)
@@ -75,6 +78,7 @@ namespace ProjectMT.Contents.GuardianTrial
         [SerializeField] private Image enemyGaugeFillImage; // Type=Filled 상단 게이지
         [SerializeField] private Button exitButton; // 콘텐츠 나가기 버튼
         [SerializeField] private ContentClearOverlay clearOverlay; // 종료 결과 화면
+        [SerializeField] private TMP_Text difficultyLevelText; // 수호수 난이도 표시("난이도 N")
 
         private ContentContext context; // 결과 반환 통로
         private GuardiansTowerStartData startData; // 이번 판 시작 정보
@@ -89,6 +93,8 @@ namespace ProjectMT.Contents.GuardianTrial
         private readonly Queue<string> notificationQueue = new Queue<string>();
         private float reinforcementTimer; // 08.07 안건준 추가 - 버프와 무관한 상시 증원 주기 타이머
         private float enemyStatMultiplier = 1f; // 08.07 안건준 추가 - 난이도에 따른 적 체력/공격력/방어력 배율(스폰마다 적용)
+        private int enemyStage = 1; // 적 외형 선택용 단계(난이도 기준)
+        private int enemySpawnRunVersion; // 외형 시드 분산용(원정대 operationVersion과 같은 역할)
 
         public bool IsRunning { get; private set; }
 
@@ -102,7 +108,9 @@ namespace ProjectMT.Contents.GuardianTrial
                 throw new ArgumentException("GuardiansTowerStartData is required.", nameof(contentContext));
             }
 
-            if (combatWorld == null || followerPrefab == null || enemyPrefab == null || commanderRoot == null)
+            var hasMainEnemySetup = enemySeedProfile != null && enemyAppearanceSet != null;
+            if (combatWorld == null || followerPrefab == null || commanderRoot == null ||
+                (!hasMainEnemySetup && enemyPrefab == null))
             {
                 throw new InvalidOperationException("Guardians Tower runtime references are missing.");
             }
@@ -117,13 +125,20 @@ namespace ProjectMT.Contents.GuardianTrial
             killCount = 0;
             reinforcementTimer = 0f; // 08.07 안건준 추가 - 재입장마다 증원 타이머 초기화
             followers.Clear();
+            enemySpawnRunVersion++;
 
             // 08.07 안건준 수정 - 난이도 스케일링: 클리어할 때마다 1씩 오르는 난이도 값을 읽어
             // 적 체력·공격력·방어력, 건물 체력을 전부 레벨당 +10% 적용한다. (적 "수"는 더 이상 난이도로 늘지 않음)
             var difficultyLevel = Mathf.Max(0, context.Progress?.View.GuardiansTowerDifficultyLevel ?? 0);
             var difficultyMultiplier = 1f + DifficultyStatGrowthPerLevel * difficultyLevel;
             enemyStatMultiplier = difficultyMultiplier; // SpawnEnemy에서 매 스폰마다 사용
+            enemyStage = Mathf.Max(1, difficultyLevel); // 난이도가 오를수록 메인과 같은 방식으로 더 강한 외형을 선택
             var structureHealthMultiplier = difficultyMultiplier;
+            if (difficultyLevelText != null)
+            {
+                difficultyLevelText.text = $"난이도 {difficultyLevel + 1}"; // 저장된 난이도(0부터)를 1부터 표시
+            }
+
             enemyTotalCount = Mathf.Clamp(startData.EnemyCount, 1, MaxEnemyCount); // 08.07 안건준 수정 - 난이도로 늘어나지 않고 시작 수만 사용(상한만 유지)
             enemyAliveCount = 0;
             IsRunning = true;
@@ -137,6 +152,7 @@ namespace ProjectMT.Contents.GuardianTrial
             // 08.07 안건준 수정 - 4번 건물 파괴 시 아군 공격력 버프 적용 콜백(ApplyAllyAttackBuff)을 함께 전달
             structureBuffs = new GuardiansTowerStructureBuffs(structures, ShowCenterNotification, ApplyAllyAttackBuff);
             structureBuffs.Reset();
+            offscreenIndicator?.Initialize(structures);
             for (var i = 0; i < enemyTotalCount; i++)
             {
                 SpawnEnemy(i); // 시작할 때 한 번만 스폰 (재보충 없음)
@@ -153,6 +169,7 @@ namespace ProjectMT.Contents.GuardianTrial
             ShutdownStructures();
             structureBuffs?.Shutdown();
             structureBuffs = null;
+            offscreenIndicator?.Shutdown();
             followers.Clear();
             if (notificationClearRoutine != null)
             {
@@ -440,23 +457,30 @@ namespace ProjectMT.Contents.GuardianTrial
         private void SpawnEnemy(int sequence)
         {
             var position = GetSpawnPosition(sequence); // 08.07 안건준 수정 - 스폰 구역 테두리를 따라 분산 스폰
-            // 08.07 안건준 수정 - 체력/공격력/방어력에 난이도 배율(enemyStatMultiplier, 레벨당 +10%)을 적용한다.
-            // (참고: 방어력은 현재 0이라 배율을 곱해도 0이며, 이 프로젝트의 데미지 계산은 defense 수치를
-            // 아직 사용하지 않는다. 방어력을 실제로 전투에 반영하려면 별도의 피해 감소 공식이 필요하다.)
-            var stats = new UnitStatsSnapshot // 침입 적: 직접 이동·공격하여 건물·아군을 위협
+            // 적 생성: 메인 전투와 동일하게 외형(ResolvePrefab) + 기본 스탯(CreateEnemyStats)을 읽어온 뒤,
+            // 수호수 난이도 배율(enemyStatMultiplier, 레벨당 +10%)을 곱해서 다시 적용한다.
+            var unitIndex = sequence;
+            var ranged = enemyAppearanceSet != null
+                ? enemyAppearanceSet.IsRangedSlot(enemyStage, unitIndex)
+                : unitIndex % 4 == 3;
+            var prefab = enemyAppearanceSet == null
+                ? enemyPrefab
+                : enemyAppearanceSet.ResolvePrefab(enemyStage, ranged);
+            if (prefab == null)
             {
-                maxHealth = 6f * enemyStatMultiplier,
-                damage = 4f * enemyStatMultiplier,
-                defense = 0f * enemyStatMultiplier,
-                moveSpeed = 2.2f,
-                attackRange = 0.6f,
-                attackInterval = 1f,
-                projectileSpeed = 0f,
-                ranged = false
-            };
-            var prefab = PickEnemyPrefab(); // 08.07 안건준 추가 - 여러 종류 중 랜덤 선택(현재는 목록이 비어 있어 기존 프리팹 그대로 사용)
-            var request = new UnitSpawnRequest($"guardians_tower_enemy_{sequence}", stats, UnitTeam.Enemy);
-            var actor = combatWorld.SpawnUnit(prefab, request, position, Quaternion.identity);
+                prefab = enemyPrefab;
+            }
+
+            var baseStats = enemySeedProfile != null
+                ? enemySeedProfile.CreateEnemyStats(EnemyStatBaseStage, ranged)
+                : CreateFallbackEnemyStats(ranged);
+            var stats = ApplyDifficultyScaling(baseStats);
+            var request = new UnitSpawnRequest(
+                $"guardians_tower_enemy_{enemyStage}_{sequence}",
+                stats,
+                UnitTeam.Enemy,
+                appearanceSeed: CreateEnemyAppearanceSeed(enemyStage, 1, sequence, enemySpawnRunVersion));
+            var actor = combatWorld.SpawnUnit(prefab, request, position, Quaternion.Euler(0f, 180f, 0f));
             if (actor == null)
             {
                 return;
@@ -467,19 +491,48 @@ namespace ProjectMT.Contents.GuardianTrial
             structureBuffs?.RegisterEnemy(actor.Health); // 08.07 안건준 추가 - 스폰 시점의 건물 버프(체력)를 즉시 반영
         }
 
-        // 08.07 안건준 추가 - 적 프리팹이 여러 종류 등록되어 있으면 그중 하나를 무작위로 고른다.
-        // 지금은 프로젝트에 적 몬스터 변형이 없어 목록이 비어 있고, 항상 기존 enemyPrefab을 사용한다.
-        // 나중에 몬스터가 추가되면 enemyPrefabVariants 배열에 등록하기만 하면 자동으로 랜덤 스폰에 포함된다.
-        private GameObject PickEnemyPrefab()
+        // 기본 체력·공격력을 읽어 수호수 난이도 배율을 곱한 뒤 스폰용 스탯으로 반환
+        private UnitStatsSnapshot ApplyDifficultyScaling(UnitStatsSnapshot baseStats)
         {
-            if (enemyPrefabVariants == null || enemyPrefabVariants.Length == 0)
-            {
-                return enemyPrefab;
-            }
+            var scaledStats = baseStats;
+            scaledStats.maxHealth = baseStats.maxHealth * enemyStatMultiplier;
+            scaledStats.damage = baseStats.damage * enemyStatMultiplier;
+            return scaledStats;
+        }
 
-            var index = UnityEngine.Random.Range(0, enemyPrefabVariants.Length);
-            var picked = enemyPrefabVariants[index];
-            return picked != null ? picked : enemyPrefab;
+        // enemySeedProfile이 비어 있을 때만 쓰는 Fallback. ExpeditionSeedProfile.CreateEnemyStats(stage 1)와 같은 수치.
+        private static UnitStatsSnapshot CreateFallbackEnemyStats(bool ranged)
+        {
+            return new UnitStatsSnapshot
+            {
+                maxHealth = 28f,
+                damage = 4f,
+                moveSpeed = ranged ? 1.9f : 2.15f,
+                attackRange = ranged ? 4.1f : 1f,
+                attackInterval = ranged ? 1.2f : 1f,
+                projectileSpeed = ranged ? 8f : 0f,
+                ranged = ranged
+            };
+        }
+
+        // 원정대(ExpeditionController)와 동일한 외형 시드 공식. 원본 코드는 수정하지 않고 그대로 복제해 사용한다.
+        private static int CreateEnemyAppearanceSeed(int stage, int wave, int index, int runVersion)
+        {
+            unchecked
+            {
+                var seed = 2166136261u;
+                seed = (seed ^ (uint)stage) * 16777619u;
+                seed = (seed ^ (uint)wave) * 16777619u;
+                seed = (seed ^ (uint)index) * 16777619u;
+                seed = (seed ^ (uint)runVersion) * 16777619u;
+                seed ^= seed >> 16;
+                seed *= 0x7FEB352Du;
+                seed ^= seed >> 15;
+                seed *= 0x846CA68Bu;
+                seed ^= seed >> 16;
+                var positiveSeed = (int)(seed & int.MaxValue);
+                return positiveSeed == 0 ? 1 : positiveSeed;
+            }
         }
 
         // 08.07 안건준 수정 - 스폰 구역 "내부"를 격자로 채우면 군단장이 있는 중앙 부근에도 적이
@@ -670,7 +723,8 @@ namespace ProjectMT.Contents.GuardianTrial
             TMP_Text gaugeText,
             Image gaugeFill,
             Button exit,
-            ContentClearOverlay overlay)
+            ContentClearOverlay overlay,
+            TMP_Text difficultyText = null)
         {
             combatWorld = world;
             followerPrefab = follower;
@@ -685,6 +739,7 @@ namespace ProjectMT.Contents.GuardianTrial
             enemyGaugeFillImage = gaugeFill;
             exitButton = exit;
             clearOverlay = overlay;
+            difficultyLevelText = difficultyText;
         }
 #endif
     }

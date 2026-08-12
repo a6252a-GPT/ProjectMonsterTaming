@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Input;
@@ -8,52 +9,6 @@ using UnityEngine.UI;
 
 namespace ProjectMT.Contents.GiantSpellbook
 {
-    /*
-     * 거대마도서 콘텐츠의 "연결 예제"를 담당한다.
-     *
-     * 이 클래스가 완성된 던전 규칙을 소유하는 것은 아니다. 팀원이 작업을 시작할 때 필요한 아래 흐름만
-     * 실제 프로젝트의 공용 시스템과 연결해 둔 상태다.
-     *
-     * 1. MainBattle 또는 DEV Bootstrap이 ContentContext를 전달한다.
-     * 2. ContentContext 안의 GiantSpellbookStartData에서 현재 본부대 Snapshot을 읽는다.
-     * 3. CommanderMoveController로 군단장을 터치패드/WASD로 이동시킨다.
-     * 4. CombatWorld에 아군 몬스터와 예시 적을 서로 다른 UnitTeam으로 생성한다.
-     * 5. UnitActor가 공용 타깃 탐색과 공격을 수행하므로 이 클래스가 매 프레임 공격 코드를 만들지 않는다.
-     * 6. 나가기 버튼은 ContentContext.Exit.Cancel()을 호출해 Hosted 콘텐츠를 닫고 MainBattle로 돌아간다.
-     *
-     * 팀원이 실제 거대마도서 규칙을 구현할 때는 SpawnExampleEnemy()를 웨이브/보스 생성 로직으로 바꾸고,
-     * 완료 조건에서 context.Exit.Complete(결과 데이터)를 호출하면 된다. 공용 이동·편성 Snapshot·종료 경계는
-     * 그대로 사용하면 MainBattle과 DEV Scene이 같은 Runtime Prefab을 계속 공유할 수 있다.
-     *
-     * [초보 팀원용 Notion 권장 읽기 순서]
-     * 1. `04_1단계_현재시드구조_이해하기`
-     *    - Hosted, BattlePartySnapshot, ContentFlow, Runtime Prefab이 무엇인지 쉬운 설명부터 읽는다.
-     * 2. `05_2단계_현재시드에서_최종구조로_가는방법`
-     *    - 성장 던전 4종을 같은 Hosted 방식으로 늘리는 과정과 Result/저장/복귀 경계를 읽는다.
-     * 3. `01_기능명세서` 안의 `16_특수콘텐츠`
-     *    - SPECIAL-14~18 거대 마도서의 필수 기능과 공통 군단장 이동·몬스터 추종 요구사항을 확인한다.
-     * 4. `00_프로젝트기획서`의 `거대 마도서` 항목
-     *    - 브레이크, 집중 공격, 군단장 스킬 성장이라는 실제 콘텐츠 목표를 확인한다.
-     * 5. `08_디자인패턴_현재시드와최종구조_이해하기`
-     *    - Factory, Adapter, State/Flow 같은 이름이 어렵게 느껴질 때 각 클래스가 왜 분리되어 있는지 읽는다.
-     *
-     * Notion 문서 제목은 링크 주소가 바뀌어도 검색할 수 있도록 제목 그대로 적었다.
-     *
-     * [이 Runtime Prefab이 식량 대소동에서 가져온 공용 구성]
-     * `PF_GiantSpellbookRuntime.prefab`은 검증된 `PF_FoodRiotRuntime.prefab`의 구성을 기준으로 만들었다.
-     * 아래 컴포넌트는 거대마도서 고유 로직이 아니라 모든 전투 콘텐츠가 함께 쓰는 기반이므로 제거하지 않는다.
-     *
-     * - ScenePoolScope: 유닛·투사체·피격 VFX·플로팅 숫자를 매번 Instantiate/Destroy하지 않고 재사용한다.
-     * - CombatWorld: 모든 UnitActor의 타깃 탐색과 근접/원거리 공격 실행을 한 곳에서 Tick한다.
-     * - CombatFeedbackPlayer: 피해 결과를 피격 VFX, 카메라 흔들림, 숫자, SFX 표현으로 전달한다.
-     * - FloatingNumberPresenter: 실제 적용된 피해량을 월드 위치의 데미지 숫자로 표시한다.
-     * - SfxPool: 같은 효과음이 겹칠 때 AudioSource를 재사용한다. 현재 개별 SFX Cue 배정은 후속 작업이다.
-     * - CameraImpulseRig: 공용 피격 피드백이 카메라 흔들림을 요청할 수 있는 연결점이다.
-     * - PF_SeedProjectile: 원거리 몬스터가 같은 CombatWorld에서 투사체 공격을 실행할 때 사용하는 공용 원본이다.
-     *
-     * 반대로 식량 대소동 전용 VegetableArea, 야채 생성/도망, 제한시간, 처치 수, 식량 보상 코드는 제거했다.
-     * 팀원은 위 공용 구성은 유지하고 GiantSpellbookController의 적/웨이브/브레이크 규칙만 확장하면 된다.
-     */
     [DisallowMultipleComponent]
     public sealed class GiantSpellbookController : MonoBehaviour, IContentController // 거대마도서 팀 작업용 빈 실행 골격
     {
@@ -65,6 +20,19 @@ namespace ProjectMT.Contents.GiantSpellbook
         [SerializeField] private CommanderMoveController commanderMove; // 터치패드와 WASD를 하나의 이동 벡터로 합치는 공용 이동 컴포넌트
         [SerializeField] private Button exitButton; // Cancel 결과를 보내 보상·저장 없이 MainBattle로 복귀하는 버튼
 
+        [Header("Break System")]
+        [SerializeField, Min(1f)]
+        private float maxBreakGauge = 100f; // [임시값] 브레이크에 필요한 최대 게이지
+
+        [SerializeField, Min(0.1f)]
+        private float breakGaugePerHit = 20f; // [임시값] 보스가 한 번 맞을 때 증가하는 게이지
+
+        [SerializeField, Min(0.1f)]
+        private float breakDuration = 5f; // [임시값] 브레이크 유지 시간
+
+        [SerializeField, Min(1f)]
+        private float breakDamageMultiplier = 1.5f; // [임시값] 브레이크 중 아군 공격력 배율
+
         private readonly Vector3[] followerOffsets =
         {
             new Vector3(-1.2f, 0f, -0.9f),
@@ -74,10 +42,24 @@ namespace ProjectMT.Contents.GiantSpellbook
             new Vector3(0.7f, 0f, -2f)
         };
 
+        // 생성된 아군들을 기억해 브레이크 중 공격력 배율을 적용한다.
+        private readonly List<UnitActor> followerActors = new();
+
         private ContentContext context; // 시작 정보와 Complete/Fail/Cancel 출구를 함께 전달하는 한 판의 공통 봉투
         private GiantSpellbookStartData startData; // 입장 순간의 본부대 구성을 고정해 보관하는 읽기 전용 시작값
+        private UnitActor bossActor; // 생성된 보스를 기억하고 사망 이벤트를 관리
+
+        private float currentBreakGauge; // 내부 판정용으로 현재까지 누적된 브레이크 공격량
+
+        // 플레이어에게는 브레이크 내구도가 최대값에서 0까지 깎이는 형태로 표시한다.
+        private float RemainingBreakGauge => Mathf.Max(0f, maxBreakGauge - currentBreakGauge);
+
+        private bool isBroken; // 현재 보스가 브레이크 상태인지
+        private float breakRemainingTime; // 브레이크 종료까지 남은 시간
+        [SerializeField] private GiantSpellbookHudPresenter hudPresenter; // DEV Prefab Instance에 구성한 HUD 표시 담당
 
         public bool IsRunning { get; private set; }
+        public event Action<GiantSpellbookHudState> HudStateChanged;
 
         public void Initialize(ContentContext contentContext)
         {
@@ -106,9 +88,30 @@ namespace ProjectMT.Contents.GiantSpellbook
             commanderMove.ResetToInitialPosition();
             commanderMove.SetInputEnabled(true);
             exitButton?.onClick.AddListener(Cancel);
+            followerActors.Clear();
+            currentBreakGauge = 0f;
+            isBroken = false;
+            breakRemainingTime = 0f;
             IsRunning = true;
             SpawnFollowers(); // 팀원이 내부 규칙을 붙이기 전 편성 연결만 확인
             SpawnExampleEnemy(); // 공용 전투 연결을 확인할 임시 적 한 기
+            hudPresenter?.Bind(this);
+            PublishHudState();
+        }
+
+        private void Update()
+        {
+            if (!IsRunning || !isBroken)
+            {
+                return;
+            }
+
+            breakRemainingTime -= Time.deltaTime;
+
+            if (breakRemainingTime <= 0f)
+            {
+                EndBreak();
+            }
         }
 
         public void Shutdown()
@@ -117,6 +120,16 @@ namespace ProjectMT.Contents.GiantSpellbook
             // 여러 번 호출돼도 안전하도록 Listener 제거와 공용 전투 정리를 같은 순서로 반복한다.
             exitButton?.onClick.RemoveListener(Cancel);
             commanderMove?.SetInputEnabled(false);
+
+            if (bossActor != null)
+            {
+                bossActor.Health.Damaged -= HandleBossDamaged;
+                bossActor.Died -= HandleBossDied; // 보스 사망 이벤트 구독 해제
+                bossActor = null;
+            }
+
+            ResetBreakState();
+            ReleaseHud();
             combatWorld?.Clear();
             if (commanderRoot != null)
             {
@@ -159,24 +172,23 @@ namespace ProjectMT.Contents.GiantSpellbook
                     request,
                     commanderRoot.transform.position + followerOffsets[i],
                     Quaternion.identity);
+
+                if (actor == null)
+                {
+                    continue;
+                }
+
                 actor?.SetFollowAnchor(commanderRoot.transform, followerOffsets[i], 6.5f, 8f);
+
+                followerActors.Add(actor); // 브레이크 공격력 적용을 위해 생성된 아군 보관
             }
         }
 
         private void SpawnExampleEnemy()
         {
-            /*
-             * 팀원이 공용 전투 연결 방식을 바로 확인할 수 있도록 만든 임시 적 한 기다.
-             * 별도의 Update 공격 코드를 작성하지 않는다. UnitTeam.Enemy로 CombatWorld에 등록하면
-             * 공용 UnitActor가 Player 팀 몬스터를 찾고, 반대로 Player 팀 몬스터도 이 적을 찾는다.
-             *
-             * maxHealth는 여러 번 맞는 모습을 보기 위해 높게 두고 damage는 1로 낮게 둔다.
-             * 실제 던전을 만들 때는 이 고정 Snapshot을 데이터/SO와 웨이브 생성 코드로 교체하면 된다.
-             * 전투 공용 책임 범위는 Notion `03_시드구조도`의 CombatWorld·UnitActor 부분을 참고한다.
-             */
             var stats = new UnitStatsSnapshot
             {
-                maxHealth = 10000f, // 여러 몬스터에게 맞아도 오래 살아 전투 흐름을 관찰할 수 있게 설정
+                maxHealth = 5000f, // 임시 테스트 수치!!
                 damage = 1f, // 아군 몬스터가 바로 죽지 않는 참고용 피해량
                 defense = 0f,
                 moveSpeed = 1.6f,
@@ -190,12 +202,173 @@ namespace ProjectMT.Contents.GiantSpellbook
                 "giant_spellbook_example_enemy",
                 stats,
                 UnitTeam.Enemy,
+                canMove: false, // 고정형 보스이므로 공용 추적 이동을 사용하지 않는다.
+                canAttack: false, // 공격은 추후 보스 전용 패턴에서 실행한다.
                 visualTint: new Color(1f, 0.65f, 0.65f));
-            combatWorld.SpawnUnit(
+            bossActor = combatWorld.SpawnUnit(
                 exampleEnemyPrefab,
                 request,
                 exampleEnemySpawn.position,
                 Quaternion.identity);
+
+            if (bossActor == null)
+            {
+                Debug.LogError("Giant Spellbook boss spawn failed.", this);
+                return;
+            }
+
+            bossActor.Health.Damaged += HandleBossDamaged;// 보스 피해 이벤트 구독
+            bossActor.Died += HandleBossDied; // 보스 사망 이벤트 구독
+
+        }
+        // 보스가 피해를 받을 때마다 브레이크 게이지를 증가시킨다.
+        private void HandleBossDamaged(DamageReport report)
+        {
+            // 콘텐츠가 종료된 뒤 들어온 피해 이벤트는 처리하지 않는다.
+            if (!IsRunning)
+            {
+                return;
+            }
+
+            // 브레이크 중에는 게이지를 추가로 올리지 않고, 감소한 체력만 HUD에 반영한다.
+            if (isBroken)
+            {
+                PublishHudState();
+                return;
+            }
+
+            // 사망 피해는 Died 이벤트의 Complete()에서 종료 처리한다.
+            if (report.Killed)
+            {
+                return;
+            }
+
+            currentBreakGauge = Mathf.Min(
+                currentBreakGauge + breakGaugePerHit,
+                maxBreakGauge);
+
+            Debug.Log(
+                $"Break Gauge Remaining: {RemainingBreakGauge} / {maxBreakGauge}",
+                this);
+
+            if (currentBreakGauge >= maxBreakGauge)
+            {
+                StartBreak();
+                return;
+            }
+
+            PublishHudState();
+        }
+
+        // 게이지가 가득 차면 브레이크를 시작하고 아군 공격력을 증가시킨다.
+        private void StartBreak()
+        {
+            if (!IsRunning || isBroken)
+            {
+                return;
+            }
+
+            isBroken = true;
+            breakRemainingTime = breakDuration;
+
+            for (var i = 0; i < followerActors.Count; i++)
+            {
+                var follower = followerActors[i];
+                if (follower != null && follower.IsAlive)
+                {
+                    follower.SetDamageMultiplier(breakDamageMultiplier);
+                }
+            }
+
+            Debug.Log(
+                $"BREAK started! Duration={breakDuration}, Damage x{breakDamageMultiplier}",
+                this);
+            PublishHudState();
+        }
+
+        // 브레이크 시간이 끝나면 공격력을 복구하고 게이지를 초기화한다.
+        private void EndBreak()
+        {
+            if (!isBroken)
+            {
+                return;
+            }
+
+            isBroken = false;
+            breakRemainingTime = 0f;
+            currentBreakGauge = 0f;
+
+            for (var i = 0; i < followerActors.Count; i++)
+            {
+                var follower = followerActors[i];
+                if (follower != null)
+                {
+                    follower.SetDamageMultiplier(1f);
+                }
+            }
+
+            Debug.Log("BREAK ended. Gauge reset.", this);
+            PublishHudState();
+        }
+
+        // 콘텐츠 종료 시 브레이크 배율과 실행값을 안전하게 초기화한다.
+        private void ResetBreakState()
+        {
+            for (var i = 0; i < followerActors.Count; i++)
+            {
+                var follower = followerActors[i];
+                if (follower != null)
+                {
+                    follower.SetDamageMultiplier(1f);
+                }
+            }
+
+            followerActors.Clear();
+            currentBreakGauge = 0f;
+            isBroken = false;
+            breakRemainingTime = 0f;
+        }
+
+        private void HandleBossDied(UnitActor actor)
+        {
+            if (!IsRunning || actor != bossActor)
+            {
+                return;
+            }
+
+            Complete(); // 보스를 처치했으므로 성공 종료 처리
+        }
+
+        //보스 처치 후 전투를 정리하고 성공 결과를 전달
+        private void Complete()
+        {
+            // 사망 이벤트가 중복으로 들어와도 성공 처리를 한 번만 실행
+            if (!IsRunning)
+            {
+                return;
+            }
+
+            IsRunning = false;
+
+            // 성공 처리 후 플레이어가 계속 움직이거나 나가기 버튼을 누르지 못하게 한다.
+            commanderMove?.SetInputEnabled(false);
+            exitButton?.onClick.RemoveListener(Cancel);
+
+            // 전투 오브젝트를 정리하기 전에 보스 사망 이벤트 연결을 해제
+            if (bossActor != null)
+            {
+                bossActor.Health.Damaged -= HandleBossDamaged;
+                bossActor.Died -= HandleBossDied;
+                bossActor = null;
+            }
+
+            ResetBreakState();
+            ReleaseHud();
+            combatWorld?.Clear();
+
+            // 콘텐츠 내부에서는 저장하지 않고, 이번 판의 결과만 공용 출구로 전달
+            var result = new GiantSpellbookResult();
+            context?.Exit.Complete(result);
         }
 
         private void Cancel()
@@ -207,10 +380,45 @@ namespace ProjectMT.Contents.GiantSpellbook
 
             IsRunning = false;
             commanderMove.SetInputEnabled(false);
+
+            if (bossActor != null) //보스이벤트 해제
+            {
+                bossActor.Health.Damaged -= HandleBossDamaged;
+                bossActor.Died -= HandleBossDied;
+                bossActor = null;
+            }
+            ResetBreakState();
+            ReleaseHud();
             combatWorld.Clear();
             // Cancel은 실패나 클리어가 아니므로 ResultAdapter와 보상 저장을 거치지 않는다.
             // MainBattle Hosted 실행에서는 ContentFlow가 Runtime을 닫고 기존 MainGameplayRoot를 다시 활성화한다.
             context.Exit.Cancel();
+        }
+
+        private void ReleaseHud()
+        {
+            if (hudPresenter == null)
+            {
+                return;
+            }
+
+            hudPresenter.Unbind();
+            hudPresenter.SetVisible(false);
+        }
+
+        private void PublishHudState()
+        {
+            if (bossActor == null)
+            {
+                return;
+            }
+
+            HudStateChanged?.Invoke(new GiantSpellbookHudState(
+                bossActor.Health.CurrentHealth,
+                bossActor.Health.MaxHealth,
+                RemainingBreakGauge,
+                maxBreakGauge,
+                isBroken));
         }
 
 #if UNITY_EDITOR

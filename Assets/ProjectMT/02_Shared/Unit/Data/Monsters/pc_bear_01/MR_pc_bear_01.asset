@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9063022393fce349b94c80b48a17738, type: 3}
+  m_Name: MR_pc_bear_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterRuntimeAssetSet
+  visualAdapterPrefab: {fileID: 3687683108359758524, guid: 8b82223f7679bea4aa05a1b7f47b4f98, type: 3}
+  animatorController: {fileID: 9100000, guid: 7f1cc261ce4c9804aa8dda313ca23f0f, type: 2}
+  bodyProfile: {fileID: 11400000, guid: 65121cb3c82829a4280f79bf80f23b6d, type: 2}
+  motionProfile: {fileID: 11400000, guid: d920ad6ac5cd433489e8ab69f8aee02d, type: 2}
+  combatProfile: {fileID: 11400000, guid: 13e63a8defe7a8c4d8feecd16563e2fa, type: 2}
+  ascensionProfile: {fileID: 11400000, guid: 3b30caa3c324c4a43ad57d627c889ea4, type: 2}
+  feedbackProfile: {fileID: 11400000, guid: 33478b2553ba0404ca7b06038d3fd1e0, type: 2}

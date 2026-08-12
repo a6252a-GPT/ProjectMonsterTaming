@@ -15,7 +15,7 @@ MonoBehaviour:
   monsterId: floria_01
   displayName: "\uD50C\uB85C\uB9AC\uC544"
   rarity: 4
-  portrait: {fileID: 21300000, guid: 146ee46eecdd67e40a858593ea173f19, type: 3}
+  portrait: {fileID: 21300000, guid: d9a8b2eb928427243bf7b2543f80f690, type: 3}
   rarityPassiveSkill: {fileID: 0}
   rarityActiveSkill: {fileID: 0}
   productionMemo: 'Notion role: ranged healer. Skill AOE reserved for future ability.'

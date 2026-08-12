@@ -76,6 +76,7 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private string runtimeAssetKey; // 정식 Monster 실행 자산 키
         [SerializeField] private MonsterRuntimeAssetSet runtimeAssetSet; // 현재 Provider 해석 결과
         [SerializeField] private string[] unlockedAbilityIds; // 현재 돌파에서 해금된 2·4 Ability
+        [SerializeField] private string displayName; // 콘텐츠 UI에 사용할 확정 이름
 
         public BattleUnitSnapshot(
             string unitId,
@@ -83,7 +84,8 @@ namespace ProjectMT.Shared.Unit
             Color visualTint = default,
             string runtimeAssetKey = null,
             MonsterRuntimeAssetSet runtimeAssetSet = null,
-            string[] unlockedAbilityIds = null)
+            string[] unlockedAbilityIds = null,
+            string displayName = null)
         {
             this.unitId = unitId;
             this.stats = stats;
@@ -91,6 +93,7 @@ namespace ProjectMT.Shared.Unit
             this.runtimeAssetKey = runtimeAssetKey ?? string.Empty;
             this.runtimeAssetSet = runtimeAssetSet;
             this.unlockedAbilityIds = unlockedAbilityIds ?? Array.Empty<string>();
+            this.displayName = string.IsNullOrWhiteSpace(displayName) ? this.unitId : displayName.Trim();
         }
 
         public string UnitId => unitId;
@@ -99,6 +102,7 @@ namespace ProjectMT.Shared.Unit
         public string RuntimeAssetKey => runtimeAssetKey ?? string.Empty;
         public MonsterRuntimeAssetSet RuntimeAssetSet => runtimeAssetSet;
         public string[] UnlockedAbilityIds => unlockedAbilityIds ?? Array.Empty<string>();
+        public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? UnitId : displayName;
     }
 
     [Serializable]
@@ -138,7 +142,7 @@ namespace ProjectMT.Shared.Unit
         }
     }
 
-    public static class SeedBattlePartySnapshotFactory // 고정 두부 5기 시드 생성
+    public static class SeedBattlePartySnapshotFactory // DEV Scene용 정식 몬스터 ID 예시 편성
     {
         public static BattlePartySnapshot Create()
         {
@@ -167,11 +171,11 @@ namespace ProjectMT.Shared.Unit
 
             return new BattlePartySnapshot(new[]
             {
-                new BattleUnitSnapshot("tofu_01", melee),
-                new BattleUnitSnapshot("tofu_02", melee),
-                new BattleUnitSnapshot("tofu_03", melee),
-                new BattleUnitSnapshot("tofu_04", ranged),
-                new BattleUnitSnapshot("tofu_05", ranged)
+                new BattleUnitSnapshot("spike_01", melee, displayName: "스파이크"),
+                new BattleUnitSnapshot("shell_01", melee, displayName: "쉘"),
+                new BattleUnitSnapshot("aru_01", melee, displayName: "아르"),
+                new BattleUnitSnapshot("ru_01", ranged, displayName: "루"),
+                new BattleUnitSnapshot("lumi_01", ranged, displayName: "루미")
             });
         }
     }

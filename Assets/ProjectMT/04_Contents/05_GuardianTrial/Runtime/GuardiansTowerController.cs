@@ -28,7 +28,6 @@ namespace ProjectMT.Contents.GuardianTrial
         // 08.07 안건준 수정 - 난이도 1당 "적 체력/공격력/방어력"과 "건물 체력"이 전부 +10%씩 오르도록 통일.
         private const float DifficultyStatGrowthPerLevel = 0.10f;
         private const float StructureAggroHoldSeconds = 0.35f; // 군단장이 범위 밖으로 나가면 이 시간 안에 자연히 원래 대상으로 복귀
-        private const string FailTitle = "실패"; // 08.07 안건준 추가 - 전멸/시간 초과 시 표시할 결과창 제목
         private const float NotificationDisplaySeconds = 2f; // 08.07 안건준 추가 - 알림 문구 1개당 표시 시간(큐 처리 간격)
         // 08.07 안건준 수정 - 4번 건물(Spawn) 버프의 "살아있는 동안 초당 소환" 방식은 폐지했다.
         // 대신 아래 ReinforcementInterval/ReinforcementEnemyCount로 "건물 버프와 무관하게" 일정 주기마다
@@ -563,18 +562,7 @@ namespace ProjectMT.Contents.GuardianTrial
             }
 
             var result = new GuardiansTowerResult(killCount, cleared: true); // 08.07 안건준 수정 - 성공 클리어는 난이도 상승 대상
-            if (clearOverlay != null &&
-                clearOverlay.TryShow($"처치 {killCount}마리", $"골드 +{killCount}", () => CompleteClear(result)))
-            {
-                return;
-            }
-
-            CompleteClear(result);
-        }
-
-        private void CompleteClear(GuardiansTowerResult result)
-        {
-            context?.Exit.Complete(result);
+            context?.Exit.Complete(result); // 저장 성공 뒤 AppRoot 공통창에서 표시
         }
 
         // 08.07 안건준 추가 - 아군 전멸 또는 시간 초과(적 잔존) 시 호출되는 실패 처리.
@@ -595,13 +583,7 @@ namespace ProjectMT.Contents.GuardianTrial
             }
 
             var result = new GuardiansTowerResult(killCount, cleared: false); // 08.07 안건준 수정 - 실패는 난이도를 올리지 않음
-            if (clearOverlay != null &&
-                clearOverlay.TryShow($"{reason} · 처치 {killCount}마리", $"골드 +{killCount}", () => CompleteClear(result), FailTitle))
-            {
-                return;
-            }
-
-            CompleteClear(result);
+            context?.Exit.Fail(result); // 실패는 보상·열쇠 변경 없이 공통 결과만 표시
         }
 
         private void Cancel()

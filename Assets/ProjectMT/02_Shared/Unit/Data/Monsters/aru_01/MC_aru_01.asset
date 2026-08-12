@@ -30,3 +30,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterCombatProfile
   combatType: 0
   action: {fileID: -4904125956464923833}
+  impactStrength: 0
+  reactionWeight: 1

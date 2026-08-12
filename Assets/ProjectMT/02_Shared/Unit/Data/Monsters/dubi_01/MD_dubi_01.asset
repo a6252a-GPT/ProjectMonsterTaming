@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5de17c54962b5e4498845b2d56bbb2f, type: 3}
+  m_Name: MD_dubi_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
+  monsterId: dubi_01
+  displayName: "\uB450\uBE44"
+  portrait: {fileID: 21300000, guid: a35a4a34c8fe9f442a9368da6c86abbe, type: 3}
+  previewPrefab: {fileID: 1285027137539520594, guid: 876abe367e8aada43bd9cd492081f3c3, type: 3}
+  visualTint: {r: 1, g: 1, b: 1, a: 1}
+  maxHealth: 100
+  attackPower: 10
+  defense: 0
+  attackSpeed: 1
+  moveSpeed: 2.5
+  attackRange: 1.2
+  ranged: 0
+  runtimeAssetKey: monster/dubi_01
+  runtimeAssetSet: {fileID: 11400000, guid: 5dea30b2a6729fd42a1e2807878f2fc1, type: 2}

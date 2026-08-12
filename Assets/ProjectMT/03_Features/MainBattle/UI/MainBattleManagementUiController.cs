@@ -1,3 +1,4 @@
+using System;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.Formation;
 using ProjectMT.Features.Inventory;
@@ -30,6 +31,8 @@ namespace ProjectMT.Features.MainBattle
 
         private int defaultSiblingIndex = -1;
         private FormationPageController formationPage;
+
+        public event Action GrowthDungeonPageOpened;
 
         public bool IsAnyPageOpen =>
             (commanderGrowthPage != null && commanderGrowthPage.activeSelf) ||
@@ -166,6 +169,7 @@ namespace ProjectMT.Features.MainBattle
         {
             CloseAllPages();
             growthDungeonPage?.SetActive(true);
+            GrowthDungeonPageOpened?.Invoke();
             BringToFront();
         }
 
@@ -258,6 +262,7 @@ namespace ProjectMT.Features.MainBattle
             growthDungeonPage?.SetActive(shouldOpen);
             if (shouldOpen)
             {
+                GrowthDungeonPageOpened?.Invoke();
                 BringToFront();
             }
         }

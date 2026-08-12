@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9063022393fce349b94c80b48a17738, type: 3}
+  m_Name: MR_silpia_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterRuntimeAssetSet
+  visualAdapterPrefab: {fileID: 5897278104092123394, guid: 729549142eae84f46aa2b162f6c4cc65, type: 3}
+  animatorController: {fileID: 9100000, guid: 6334bc8005e10b54f885f2671e53cf84, type: 2}
+  bodyProfile: {fileID: 11400000, guid: 821d6cc596b74044abf204b6f4a9338b, type: 2}
+  motionProfile: {fileID: 11400000, guid: 6ae7424e5480627418e589bbabdc85b7, type: 2}
+  combatProfile: {fileID: 11400000, guid: 11d1f06d4ac54944aa730d6b6de69671, type: 2}
+  ascensionProfile: {fileID: 11400000, guid: 35fd0226a12c09247841c82bec751f6f, type: 2}
+  feedbackProfile: {fileID: 11400000, guid: ca3954178d3d07e4cb20c6d76a65f0c8, type: 2}

@@ -26,6 +26,37 @@ namespace ProjectMT.Contents.Framework
             return TryCreateProgressChange(result, out change); // 기존 Adapter 호환
         }
 
+        public virtual bool TryCreateProgressChange(
+            IContentResultData result,
+            GameProgressView progress,
+            ContentRunInfo runInfo,
+            out GameProgressChange change)
+        {
+            return TryCreateProgressChange(result, progress, out change);
+        }
+
+        public virtual bool IsSuccessfulResult(IContentResultData result)
+        {
+            return result != null;
+        }
+
+        public virtual string CreateResultSummary(
+            IContentResultData result,
+            ContentRunInfo runInfo,
+            ContentOutcome outcome)
+        {
+            return outcome == ContentOutcome.Fail ? "도전에 실패했습니다." : "콘텐츠를 완료했습니다.";
+        }
+
+        public virtual bool TryCreateSweepResult(
+            GameProgressView progress,
+            string stageId,
+            out IContentResultData result)
+        {
+            result = null;
+            return false;
+        }
+
         public virtual bool TryCreateRewardPresentation(
             IContentResultData result,
             out RewardPresentationRequest presentation)

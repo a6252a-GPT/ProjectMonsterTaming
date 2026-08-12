@@ -242,6 +242,37 @@ namespace ProjectMT.Shared.Items
             return true;
         }
 
+        internal bool TrySetQuantity(string itemId, long quantity, ItemCatalog catalog)
+        {
+            if (catalog == null || string.IsNullOrWhiteSpace(itemId) || quantity < 0L ||
+                !catalog.TryGet(itemId.Trim(), out var definition) || quantity > definition.MaxQuantity)
+            {
+                return false;
+            }
+
+            var index = FindIndex(definition.ItemId);
+            if (quantity == 0L)
+            {
+                if (index >= 0)
+                {
+                    stacks.RemoveAt(index);
+                }
+
+                return true;
+            }
+
+            if (index >= 0)
+            {
+                stacks[index].SetQuantity(quantity);
+            }
+            else
+            {
+                stacks.Add(new ItemStackData(definition.ItemId, quantity));
+            }
+
+            return true;
+        }
+
         internal bool TryRemove(string itemId, long amount, long expectedQuantity)
         {
             if (string.IsNullOrWhiteSpace(itemId) || amount <= 0L || expectedQuantity < amount)

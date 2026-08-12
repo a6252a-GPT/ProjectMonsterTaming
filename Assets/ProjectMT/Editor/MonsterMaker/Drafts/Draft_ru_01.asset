@@ -15,7 +15,7 @@ MonoBehaviour:
   monsterId: ru_01
   displayName: "\uB8E8"
   rarity: 0
-  portrait: {fileID: 21300000, guid: c962203533741704bb65fd7b4a086b6b, type: 3}
+  portrait: {fileID: 21300000, guid: 2c161ecb39d37a14abf5516350daf6f9, type: 3}
   rarityPassiveSkill: {fileID: 0}
   rarityActiveSkill: {fileID: 0}
   productionMemo: 'Notion role: ranged healer. Ability effect TBD.'
@@ -62,7 +62,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
     markers:
-    - normalizedTime: 0.5
+    - normalizedTime: 0.4
       powerRatio: 1
       socketOverride: 
       feedback:

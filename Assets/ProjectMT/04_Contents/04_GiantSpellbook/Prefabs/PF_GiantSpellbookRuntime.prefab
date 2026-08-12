@@ -681,7 +681,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectMT.Contents.GiantSpellbook::ProjectMT.Contents.GiantSpellbook.GiantSpellbookController
   combatWorld: {fileID: 568971143346730181}
-  followerPrefab: {fileID: 7766625452383920133, guid: b78d7e4f3540df34393217f6f4c5372b, type: 3}
+  followerPrefab: {fileID: 6959060235660481435, guid: 7b1b752814782e24a85a3f05363652ca, type: 3}
   exampleEnemyPrefab: {fileID: 7263633238650975986, guid: ac58f44ede144f749185b369404789dc, type: 3}
   exampleEnemySpawn: {fileID: 2326448438156860273}
   commanderRoot: {fileID: 7677220525255481068}

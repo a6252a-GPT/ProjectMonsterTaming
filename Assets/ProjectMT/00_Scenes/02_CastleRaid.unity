@@ -320,7 +320,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Contents.CastleRaid::ProjectMT.Contents.CastleRaid.CastleRaidController
   poolScope: {fileID: 236593942}
   combatFeedback: {fileID: 582794790}
-  assaultUnitPrefab: {fileID: 5755159876237117165, guid: fdc69103f88111541b596f5160ef34cd, type: 3}
   deploymentCamera: {fileID: 123934998}
   deploymentZone: {fileID: 1744144564}
   innerEntry: {fileID: 1744144563}

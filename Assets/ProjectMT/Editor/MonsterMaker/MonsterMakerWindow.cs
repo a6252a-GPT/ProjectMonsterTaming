@@ -245,7 +245,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 DrawColumnHeader("게임 몬스터", $"{catalogDefinitions.Length}종");
                 GUILayout.Space(3f);
                 GUILayout.Label(
-                    "Maker 제작 항목을 누르면 수정 Draft가 열립니다. 기존 두부는 Catalog 확인만 가능합니다.",
+                    "Maker 제작 항목을 누르면 저장된 수정 Draft가 열립니다.",
                     usageBodyStyle);
                 GUILayout.Space(5f);
 

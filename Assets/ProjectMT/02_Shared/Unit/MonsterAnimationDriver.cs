@@ -23,6 +23,8 @@ namespace ProjectMT.Shared.Unit
         private float attackDuration;
         private float previousNormalizedTime;
         private string currentStateName;
+        private float desiredAnimatorSpeed = 1f;
+        private bool locallyPaused;
 
         public bool IsReady => animator != null && assetSet != null && motionProfile != null;
         public bool IsAttackPlaying => currentAttack != null;
@@ -34,6 +36,15 @@ namespace ProjectMT.Shared.Unit
             : Mathf.Clamp01(attackElapsed / attackDuration);
         public Transform AttackOrigin => attackOrigin != null ? attackOrigin : transform;
         public Transform HitCenter => hitCenter != null ? hitCenter : transform;
+
+        public void SetLocallyPaused(bool paused)
+        {
+            locallyPaused = paused;
+            if (animator != null)
+            {
+                animator.speed = paused ? 0f : Mathf.Max(0.01f, desiredAnimatorSpeed);
+            }
+        }
 
         private void Awake()
         {
@@ -171,6 +182,8 @@ namespace ProjectMT.Shared.Unit
 
         public void Shutdown()
         {
+            locallyPaused = false;
+            desiredAnimatorSpeed = 1f;
             if (animator != null)
             {
                 animator.speed = 1f;
@@ -209,7 +222,8 @@ namespace ProjectMT.Shared.Unit
                 return;
             }
 
-            animator.speed = Mathf.Max(0.01f, speed);
+            desiredAnimatorSpeed = Mathf.Max(0.01f, speed);
+            animator.speed = locallyPaused ? 0f : desiredAnimatorSpeed;
             if (crossFadeDuration <= 0f)
             {
                 animator.Play(stateName, 0, 0f);

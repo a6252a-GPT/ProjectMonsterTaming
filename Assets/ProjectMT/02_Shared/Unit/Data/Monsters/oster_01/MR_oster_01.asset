@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9063022393fce349b94c80b48a17738, type: 3}
+  m_Name: MR_oster_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterRuntimeAssetSet
+  visualAdapterPrefab: {fileID: 2377328692795762912, guid: c56e8d1d74f519e4f97d4a86272ea684, type: 3}
+  animatorController: {fileID: 9100000, guid: c9bd512663ceac44bb9e8f71427cb98b, type: 2}
+  bodyProfile: {fileID: 11400000, guid: 9b15842789133ef4ba0d4b6f5cf36b0d, type: 2}
+  motionProfile: {fileID: 11400000, guid: a563d1dc11b632649a6b2504ee4ae3fb, type: 2}
+  combatProfile: {fileID: 11400000, guid: 7f8c25957c5e10143950ea612f574853, type: 2}
+  ascensionProfile: {fileID: 11400000, guid: daf2f0a659b4ecb40b856181b1968c33, type: 2}
+  feedbackProfile: {fileID: 11400000, guid: bb91b3a629683674a92ac1dd94e64ec1, type: 2}

@@ -192,6 +192,7 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private GachaPityData gachaPity = GachaPityData.CreateDefault(); // 뽑기 천장 누적 카운터
         [SerializeField] private EquipmentSaveData equipment = EquipmentSaveData.CreateDefault(); // 08.10 안건준 추가 - 장비 보유·장착 저장
         [SerializeField] private ItemInventoryData items = ItemInventoryData.CreateDefault(); // 일반 아이템 보유 수량
+        [SerializeField] private GrowthDungeonProgressData growthDungeons = GrowthDungeonProgressData.CreateDefault(); // 성장 던전 단계·열쇠 기준일
         [SerializeField] private bool coreBalanceMigrationCompleted = true; // v11 이관 재실행 방지
         [NonSerialized] private ItemInventoryView? itemViewCache; // 변경 전까지 목록 복사 재사용
         [SerializeField] private EquipmentSlotUpgradeData equipmentSlotUpgrade = EquipmentSlotUpgradeData.CreateDefault(); // 부위 슬롯 영구 강화 레벨(장비 보유·장착과 별도 저장)
@@ -224,6 +225,8 @@ namespace ProjectMT.Shared.GameData
                 return itemViewCache.Value;
             }
         }
+        public GrowthDungeonProgressView GrowthDungeons =>
+            (growthDungeons ?? GrowthDungeonProgressData.CreateDefault()).CreateView();
         public EquipmentSlotUpgradeView EquipmentSlotUpgrade =>
             (equipmentSlotUpgrade ?? EquipmentSlotUpgradeData.CreateDefault()).CreateView();
 
@@ -251,6 +254,7 @@ namespace ProjectMT.Shared.GameData
                 gachaPity = gachaPity?.Clone() ?? GachaPityData.CreateDefault(),
                 equipment = equipment?.Clone() ?? EquipmentSaveData.CreateDefault(), // 08.10 안건준 추가
                 items = items?.Clone() ?? ItemInventoryData.CreateDefault(),
+                growthDungeons = growthDungeons?.Clone() ?? GrowthDungeonProgressData.CreateDefault(),
                 coreBalanceMigrationCompleted = coreBalanceMigrationCompleted,
                 equipmentSlotUpgrade = equipmentSlotUpgrade?.Clone() ?? EquipmentSlotUpgradeData.CreateDefault()
             };
@@ -283,6 +287,22 @@ namespace ProjectMT.Shared.GameData
                 return false; // 최초 보상 중복 지급 차단
             }
 
+            if (change.HasGrowthDungeonDailyKeyRefresh &&
+                !TryApplyGrowthDungeonDailyKeyRefresh(change, itemCatalog))
+            {
+                return false;
+            }
+
+            if (change.ItemCosts != null && change.ItemCosts.Count > 0)
+            {
+                if (!ItemInventoryTransactions.TrySpend(items, change.ItemCosts, itemCatalog, out var spentItems))
+                {
+                    return false;
+                }
+
+                items = spentItems; // 보상과 같은 후보 데이터에서 먼저 비용 차감
+            }
+
             if (change.HasExpeditionMode)
             {
                 expeditionMode = change.ExpeditionMode;
@@ -311,6 +331,15 @@ namespace ProjectMT.Shared.GameData
             if (change.GuardiansTowerBestKills >= 0) // 08.06 안건준 추가
             {
                 guardiansTowerBestKills = Math.Max(guardiansTowerBestKills, change.GuardiansTowerBestKills);
+            }
+
+            if (change.HasGrowthDungeonClear)
+            {
+                growthDungeons ??= GrowthDungeonProgressData.CreateDefault();
+                if (!growthDungeons.RecordClear(change.GrowthDungeonContentId, change.GrowthDungeonClearedStage))
+                {
+                    return false;
+                }
             }
 
             if (change.IncrementGuardiansTowerDifficulty) // 08.07 안건준 추가 - 클리어할 때마다 난이도 1 증가
@@ -499,6 +528,44 @@ namespace ProjectMT.Shared.GameData
             return true;
         }
 
+        private bool TryApplyGrowthDungeonDailyKeyRefresh(
+            GameProgressChange change,
+            ItemCatalog itemCatalog)
+        {
+            if (itemCatalog == null || change.GrowthDungeonDailyKeyTargets == null ||
+                change.GrowthDungeonDailyKeyTargets.Count != GrowthDungeonDailyKeyRules.KeyItemIds.Count)
+            {
+                return false;
+            }
+
+            growthDungeons ??= GrowthDungeonProgressData.CreateDefault();
+            var candidateItems = (items ?? ItemInventoryData.CreateDefault()).Clone();
+            for (var index = 0; index < change.GrowthDungeonDailyKeyTargets.Count; index++)
+            {
+                var target = change.GrowthDungeonDailyKeyTargets[index];
+                if (!target.IsValid || target.Amount > GrowthDungeonDailyKeyRules.MaximumQuantity ||
+                    !string.Equals(
+                        target.ItemId,
+                        GrowthDungeonDailyKeyRules.KeyItemIds[index],
+                        StringComparison.OrdinalIgnoreCase) ||
+                    !candidateItems.TrySetQuantity(target.ItemId, target.Amount, itemCatalog))
+                {
+                    return false;
+                }
+            }
+
+            if (!growthDungeons.TryAdvanceDailyKeyPeriod(
+                    change.ExpectedGrowthDungeonDailyKeyPeriod,
+                    change.GrowthDungeonDailyKeyPeriod))
+            {
+                return false;
+            }
+
+            items = candidateItems;
+            itemViewCache = null;
+            return true;
+        }
+
         private bool TryApplyRewards(
             RewardBundle rewards,
             CommanderGrowthConfig commanderGrowthConfig,
@@ -626,6 +693,8 @@ namespace ProjectMT.Shared.GameData
             items ??= ItemInventoryData.CreateDefault();
             items.Repair();
             itemViewCache = null;
+            growthDungeons ??= GrowthDungeonProgressData.CreateDefault();
+            growthDungeons.Repair();
             equipmentSlotUpgrade ??= EquipmentSlotUpgradeData.CreateDefault();
             equipmentSlotUpgrade.Repair();
 
@@ -658,6 +727,28 @@ namespace ProjectMT.Shared.GameData
                 coreBalanceMigrationCompleted = true; // 백업값은 보존하고 원본 권한만 ItemInventory로 이동
             }
 
+            if (sourceDataVersion <= 11)
+            {
+                monsters ??= MonsterRosterData.CreateDefault();
+                monsters.MigrateRetiredMonsterIds(); // 기존 보유·성장·편성 순서를 정식 몬스터로 보존
+            }
+
+            if (sourceDataVersion <= 12)
+            {
+                growthDungeons ??= GrowthDungeonProgressData.CreateDefault();
+                if (foodRiotBestKills > 0)
+                {
+                    growthDungeons.RecordClear(GrowthDungeonProgressIds.FoodRiot, 1); // 기존 기록이 있으면 1단계 클리어로 승격
+                }
+
+                if (guardiansTowerDifficultyLevel > 0)
+                {
+                    growthDungeons.RecordClear(
+                        GrowthDungeonProgressIds.GuardiansTower,
+                        guardiansTowerDifficultyLevel);
+                }
+            }
+
             Repair();
         }
 
@@ -687,6 +778,7 @@ namespace ProjectMT.Shared.GameData
             GachaPity = data.GachaPity;
             Equipment = data.Equipment; // 08.10 안건준 추가
             Items = data.Items;
+            GrowthDungeons = data.GrowthDungeons;
             EquipmentSlotUpgrade = data.EquipmentSlotUpgrade;
         }
 
@@ -706,6 +798,7 @@ namespace ProjectMT.Shared.GameData
         public GachaPityView GachaPity { get; } // 뽑기 천장 누적 카운터
         public EquipmentSaveDataView Equipment { get; } // 08.10 안건준 추가 - 장비 보유·장착 상태
         public ItemInventoryView Items { get; } // 일반 아이템 보유 수량
+        public GrowthDungeonProgressView GrowthDungeons { get; } // 성장 던전 단계·열쇠 기준일
         public EquipmentSlotUpgradeView EquipmentSlotUpgrade { get; } // 부위 슬롯 영구 강화 레벨
     }
 
@@ -724,6 +817,14 @@ namespace ProjectMT.Shared.GameData
         internal bool HasExpeditionRepeatClear { get; private set; }
         internal int ExpeditionRepeatClearStage { get; private set; }
         internal RewardBundle Rewards { get; private set; }
+        internal IReadOnlyList<ItemAmount> ItemCosts { get; private set; }
+        internal bool HasGrowthDungeonClear { get; private set; }
+        internal string GrowthDungeonContentId { get; private set; }
+        internal int GrowthDungeonClearedStage { get; private set; }
+        internal bool HasGrowthDungeonDailyKeyRefresh { get; private set; }
+        internal long ExpectedGrowthDungeonDailyKeyPeriod { get; private set; }
+        internal long GrowthDungeonDailyKeyPeriod { get; private set; }
+        internal IReadOnlyList<ItemAmount> GrowthDungeonDailyKeyTargets { get; private set; }
         internal int FoodRiotBestKills { get; private set; }
         internal int GuardiansTowerBestKills { get; private set; } // 08.06 안건준 추가
         internal bool IncrementGuardiansTowerDifficulty { get; private set; } // 08.07 안건준 추가
@@ -806,16 +907,68 @@ namespace ProjectMT.Shared.GameData
             };
         }
 
+        public bool TryAttachGrowthDungeonSettlement(
+            string contentId,
+            int clearedStage,
+            bool recordClear,
+            string keyItemId = null)
+        {
+            if ((recordClear && (HasGrowthDungeonClear || string.IsNullOrWhiteSpace(contentId) || clearedStage <= 0)) ||
+                (!string.IsNullOrWhiteSpace(keyItemId) && ItemCosts != null))
+            {
+                return false;
+            }
+
+            if (recordClear)
+            {
+                HasGrowthDungeonClear = true;
+                GrowthDungeonContentId = contentId.Trim();
+                GrowthDungeonClearedStage = clearedStage;
+            }
+
+            if (!string.IsNullOrWhiteSpace(keyItemId))
+            {
+                ItemCosts = new[] { new ItemAmount(keyItemId.Trim(), 1L) };
+            }
+
+            return recordClear || ItemCosts != null;
+        }
+
+        public static GameProgressChange RefreshGrowthDungeonDailyKeys(
+            long expectedPeriod,
+            long nextPeriod,
+            params ItemAmount[] targetQuantities)
+        {
+            return new GameProgressChange
+            {
+                HasGrowthDungeonDailyKeyRefresh = true,
+                ExpectedGrowthDungeonDailyKeyPeriod = expectedPeriod,
+                GrowthDungeonDailyKeyPeriod = nextPeriod,
+                GrowthDungeonDailyKeyTargets = targetQuantities == null
+                    ? Array.Empty<ItemAmount>()
+                    : (ItemAmount[])targetQuantities.Clone()
+            };
+        }
+
         // 08.06 안건준 추가 - 수호자의 탑 결과 요청 (식량 대소동과 별도 최고기록 집계)
         // 08.07 안건준 추가 - 성공적으로 클리어했을 때만 난이도를 1 올려서 다음 판 적 수·건물 체력 스케일링에 사용한다.
         // 08.07 안건준 수정 - 실패(전멸·시간초과)한 판까지 난이도가 오르면 테스트를 반복할수록 건물 체력이
         // 끝없이 불어나 버려서, cleared가 true일 때만 난이도를 올리도록 수정했다.
         public static GameProgressChange RecordGuardiansTowerClear(int killCount, bool cleared, RewardBundle rewards)
         {
+            return RecordGuardiansTowerClear(killCount, cleared, cleared, rewards);
+        }
+
+        public static GameProgressChange RecordGuardiansTowerClear(
+            int killCount,
+            bool cleared,
+            bool advanceDifficulty,
+            RewardBundle rewards)
+        {
             return new GameProgressChange
             {
                 GuardiansTowerBestKills = Math.Max(0, killCount),
-                IncrementGuardiansTowerDifficulty = cleared,
+                IncrementGuardiansTowerDifficulty = cleared && advanceDifficulty,
                 Rewards = rewards
             };
         }

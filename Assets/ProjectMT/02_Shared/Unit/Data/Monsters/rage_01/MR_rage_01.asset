@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9063022393fce349b94c80b48a17738, type: 3}
+  m_Name: MR_rage_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterRuntimeAssetSet
+  visualAdapterPrefab: {fileID: 4505932007282658015, guid: dddfcba0cca752247a0401e171934f9e, type: 3}
+  animatorController: {fileID: 9100000, guid: d2f27100e12edb745a15fdfb7278ddd7, type: 2}
+  bodyProfile: {fileID: 11400000, guid: dffaae07ec7048f4ab81b0bd1031c285, type: 2}
+  motionProfile: {fileID: 11400000, guid: 3770e9f79475c134ba9772d8a737260b, type: 2}
+  combatProfile: {fileID: 11400000, guid: 2a499c50d962e694e82ca1536ff9a7aa, type: 2}
+  ascensionProfile: {fileID: 11400000, guid: 7f56dd2706abbf94fb80274380577934, type: 2}
+  feedbackProfile: {fileID: 11400000, guid: 9b271a6137474e84c9c23f585c0c1263, type: 2}

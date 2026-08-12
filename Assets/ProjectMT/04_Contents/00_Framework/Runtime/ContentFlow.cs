@@ -19,6 +19,7 @@ namespace ProjectMT.Contents.Framework
         private readonly ItemCatalog itemCatalog; // 보상 표시 이름 해석
         private readonly IRewardPresentationPlayer rewardPresentation; // 저장 성공 보상 표현
         private readonly IContentFinishFeedback finishFeedback; // 저장 중·실패 재시도 표시
+        private readonly IContentResultView resultView; // 저장 확정 뒤 공통 결과창
 
         private ActiveRun activeRun; // 동시에 한 판만 허용
 
@@ -36,7 +37,8 @@ namespace ProjectMT.Contents.Framework
                 mainBattleSceneId,
                 null,
                 rewardPresentation,
-                finishFeedback)
+                finishFeedback,
+                null)
         {
         }
 
@@ -48,6 +50,27 @@ namespace ProjectMT.Contents.Framework
             ItemCatalog itemCatalog,
             IRewardPresentationPlayer rewardPresentation,
             IContentFinishFeedback finishFeedback)
+            : this(
+                catalog,
+                progress,
+                sceneNavigator,
+                mainBattleSceneId,
+                itemCatalog,
+                rewardPresentation,
+                finishFeedback,
+                null)
+        {
+        }
+
+        public ContentFlow(
+            ContentCatalog catalog,
+            IGameProgressService progress,
+            ISceneNavigator sceneNavigator,
+            SceneId mainBattleSceneId,
+            ItemCatalog itemCatalog,
+            IRewardPresentationPlayer rewardPresentation,
+            IContentFinishFeedback finishFeedback,
+            IContentResultView resultView)
         {
             this.catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             this.progress = progress ?? throw new ArgumentNullException(nameof(progress));
@@ -56,6 +79,7 @@ namespace ProjectMT.Contents.Framework
             this.itemCatalog = itemCatalog;
             this.rewardPresentation = rewardPresentation;
             this.finishFeedback = finishFeedback ?? throw new ArgumentNullException(nameof(finishFeedback));
+            this.resultView = resultView;
         }
 
         public bool IsRunning => activeRun != null;
@@ -63,7 +87,41 @@ namespace ProjectMT.Contents.Framework
 
         public bool StartHosted(ContentId contentId, BattlePartySnapshot party, IHostedContentRunner runner)
         {
-            if (IsRunning || runner == null || !TryGetDefinition(contentId, ContentOpenMode.MainBattleHosted, out var definition))
+            return StartHostedInternal(
+                contentId,
+                party,
+                runner,
+                new ContentRunInfo(contentId, "seed", ContentRunMode.SeedTest));
+        }
+
+        public bool StartHosted(
+            ContentId contentId,
+            BattlePartySnapshot party,
+            IHostedContentRunner runner,
+            ContentRunMode runMode,
+            int stage)
+        {
+            if (runMode != ContentRunMode.Challenge && runMode != ContentRunMode.Farming)
+            {
+                return false;
+            }
+
+            return StartHostedInternal(
+                contentId,
+                party,
+                runner,
+                new ContentRunInfo(contentId, Mathf.Max(1, stage).ToString(), runMode));
+        }
+
+        private bool StartHostedInternal(
+            ContentId contentId,
+            BattlePartySnapshot party,
+            IHostedContentRunner runner,
+            ContentRunInfo runInfo)
+        {
+            if (IsRunning || runner == null ||
+                !TryGetDefinition(contentId, ContentOpenMode.MainBattleHosted, out var definition) ||
+                !TryValidateGrowthDungeonEntry(definition, runInfo))
             {
                 return false;
             }
@@ -73,7 +131,7 @@ namespace ProjectMT.Contents.Framework
                 return false;
             }
 
-            var run = CreateRun(definition, startData, runner);
+            var run = CreateRun(definition, startData, runner, runInfo);
             Phase = ContentFlowPhase.Entering;
             activeRun = run; // Open 전에 중복 입장 차단
             if (runner.Open(run.Context))
@@ -85,6 +143,26 @@ namespace ProjectMT.Contents.Framework
             activeRun = null; // Hosted 열기 실패 복구
             Phase = ContentFlowPhase.Idle;
             return false;
+        }
+
+        public bool TryGetGrowthDungeonState(ContentId contentId, out GrowthDungeonEntryState state)
+        {
+            state = default;
+            if (!TryGetDefinition(contentId, ContentOpenMode.MainBattleHosted, out var definition) ||
+                string.IsNullOrEmpty(definition.DungeonKeyItemId))
+            {
+                return false;
+            }
+
+            var view = progress.View;
+            view.Items.TryGetQuantity(definition.DungeonKeyItemId, out var keyQuantity);
+            state = new GrowthDungeonEntryState(
+                contentId,
+                definition.DisplayName,
+                view.GrowthDungeons.GetHighestClearedStage(contentId.Value),
+                keyQuantity,
+                definition.SupportsSweep && definition.ResultAdapter != null);
+            return true;
         }
 
         public bool StartSeparate(ContentId contentId, BattlePartySnapshot party)
@@ -106,7 +184,11 @@ namespace ProjectMT.Contents.Framework
             }
 
             Phase = ContentFlowPhase.Entering;
-            activeRun = CreateRun(definition, startData, null); // 씬 이동 전 실행 등록
+            activeRun = CreateRun(
+                definition,
+                startData,
+                null,
+                new ContentRunInfo(contentId, "seed", ContentRunMode.SeedTest)); // 씬 이동 전 실행 등록
             sceneNavigator.Load(definition.SceneId);
             return true;
         }
@@ -137,9 +219,12 @@ namespace ProjectMT.Contents.Framework
             return true;
         }
 
-        private ActiveRun CreateRun(ContentDefinition definition, IContentStartData startData, IHostedContentRunner runner)
+        private ActiveRun CreateRun(
+            ContentDefinition definition,
+            IContentStartData startData,
+            IHostedContentRunner runner,
+            ContentRunInfo runInfo)
         {
-            var runInfo = new ContentRunInfo(definition.ContentId, "seed", ContentRunMode.SeedTest);
             var run = new ActiveRun(definition, runner);
             var exit = new ContentExitGate( // 현재 Run 전용 비공개 출구
                 result => _ = HandleExitAsync(run, ContentOutcome.Complete, result),
@@ -147,6 +232,30 @@ namespace ProjectMT.Contents.Framework
                 () => _ = HandleExitAsync(run, ContentOutcome.Cancel, null));
             run.Context = new ContentContext(runInfo, startData, exit, progress); // 08.07 안건준 추가 - Progress 읽기 전용 전달
             return run;
+        }
+
+        private bool TryValidateGrowthDungeonEntry(ContentDefinition definition, ContentRunInfo runInfo)
+        {
+            if (runInfo.RunMode == ContentRunMode.SeedTest)
+            {
+                return true;
+            }
+
+            if (!int.TryParse(runInfo.StageId, out var stage) || stage <= 0 ||
+                string.IsNullOrEmpty(definition.DungeonKeyItemId))
+            {
+                return false;
+            }
+
+            var view = progress.View;
+            var highestClearedStage = view.GrowthDungeons.GetHighestClearedStage(definition.ContentId.Value);
+            if (runInfo.RunMode == ContentRunMode.Challenge)
+            {
+                return stage == highestClearedStage + 1; // 미클리어 다음 단계는 무료 도전
+            }
+
+            view.Items.TryGetQuantity(definition.DungeonKeyItemId, out var keyQuantity);
+            return stage <= highestClearedStage && keyQuantity > 0L; // 파밍은 입장 시 한 개 예약
         }
 
         private bool TryGetDefinition(ContentId contentId, ContentOpenMode expectedMode, out ContentDefinition definition)
@@ -197,22 +306,51 @@ namespace ProjectMT.Contents.Framework
             }
 
             Phase = ContentFlowPhase.Finishing;
-            if (outcome != ContentOutcome.Complete || run.Definition.ResultAdapter == null)
+            if (outcome == ContentOutcome.Cancel || run.Definition.ResultAdapter == null)
             {
                 FinishRun(run);
                 return;
             }
 
+            var adapter = run.Definition.ResultAdapter;
+            var runInfo = run.Context.RunInfo;
+            if (outcome != ContentOutcome.Complete || !adapter.IsSuccessfulResult(result))
+            {
+                run.PendingResultPresentation = new ContentResultPresentation(
+                    run.Definition.ContentId,
+                    run.Definition.DisplayName,
+                    ContentOutcome.Fail,
+                    adapter.CreateResultSummary(result, runInfo, ContentOutcome.Fail),
+                    null);
+                await ShowResultAndFinishAsync(run);
+                return;
+            }
+
             var settlementView = progress.View; // 지급·표시에 같은 확정 전 상태 사용
-            if (!run.Definition.ResultAdapter.TryCreateProgressChange(result, settlementView, out var change))
+            if (!adapter.TryCreateProgressChange(result, settlementView, runInfo, out var change))
             {
                 Debug.LogError($"Content result was rejected. Content={run.Definition.ContentId}");
                 FinishRun(run);
                 return;
             }
 
+            if (runInfo.RunMode != ContentRunMode.SeedTest)
+            {
+                if (!int.TryParse(runInfo.StageId, out var stage) ||
+                    !change.TryAttachGrowthDungeonSettlement(
+                        run.Definition.ContentId.Value,
+                        stage,
+                        runInfo.RunMode == ContentRunMode.Challenge,
+                        runInfo.RunMode == ContentRunMode.Farming ? run.Definition.DungeonKeyItemId : null))
+                {
+                    Debug.LogError($"Growth dungeon settlement is invalid. Content={run.Definition.ContentId}");
+                    FinishRun(run);
+                    return;
+                }
+            }
+
             run.PendingChange = change;
-            if (run.Definition.ResultAdapter.TryCreateRewardPresentation(
+            if (adapter.TryCreateRewardPresentation(
                     result,
                     settlementView,
                     itemCatalog,
@@ -221,6 +359,13 @@ namespace ProjectMT.Contents.Framework
             {
                 run.PendingPresentation = presentation; // 재시도 때 동일한 표시 요청 재사용
             }
+
+            run.PendingResultPresentation = new ContentResultPresentation(
+                run.Definition.ContentId,
+                run.Definition.DisplayName,
+                ContentOutcome.Complete,
+                adapter.CreateResultSummary(result, runInfo, ContentOutcome.Complete),
+                run.PendingPresentation);
 
             await TrySaveAndFinishAsync(run);
         }
@@ -263,6 +408,24 @@ namespace ProjectMT.Contents.Framework
                 return;
             }
 
+            HideFinishFeedback();
+            if (run.PendingResultPresentation != null && resultView != null)
+            {
+                try
+                {
+                    await resultView.ShowAsync(run.PendingResultPresentation);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception); // 결과 표현 실패가 복귀를 막지 않음
+                }
+
+                if (!ReferenceEquals(activeRun, run))
+                {
+                    return;
+                }
+            }
+
             if (run.PendingPresentation != null)
             {
                 try
@@ -276,6 +439,32 @@ namespace ProjectMT.Contents.Framework
             }
 
             FinishRun(run);
+        }
+
+        private async Task ShowResultAndFinishAsync(ActiveRun run)
+        {
+            if (run == null || !ReferenceEquals(activeRun, run))
+            {
+                return;
+            }
+
+            HideFinishFeedback();
+            if (run.PendingResultPresentation != null && resultView != null)
+            {
+                try
+                {
+                    await resultView.ShowAsync(run.PendingResultPresentation);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                }
+            }
+
+            if (ReferenceEquals(activeRun, run))
+            {
+                FinishRun(run);
+            }
         }
 
         private void RetrySave(ActiveRun run)
@@ -359,6 +548,7 @@ namespace ProjectMT.Contents.Framework
             public ContentContext Context { get; set; }
             public GameProgressChange PendingChange { get; set; } // 저장 성공까지 보존할 동일 변경
             public RewardPresentationRequest PendingPresentation { get; set; } // 저장 성공 뒤 한 번 표시
+            public ContentResultPresentation PendingResultPresentation { get; set; } // 저장 확정 뒤 닫힐 때까지 표시
             public int ExitAccepted; // 첫 결과 접수 표식
             public int SettlementInFlight; // 동시 저장 재시도 차단
             public bool CanRetry; // 실패 확인 뒤에만 재시도 허용

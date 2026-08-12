@@ -4085,7 +4085,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectMT.Contents.GuardianTrial::ProjectMT.Contents.GuardianTrial.GuardiansTowerController
   combatWorld: {fileID: 94598009866326299}
-  followerPrefab: {fileID: 7766625452383920133, guid: b78d7e4f3540df34393217f6f4c5372b, type: 3}
+  followerPrefab: {fileID: 6959060235660481435, guid: 7b1b752814782e24a85a3f05363652ca, type: 3}
   enemyPrefab: {fileID: 7263633238650975986, guid: ac58f44ede144f749185b369404789dc, type: 3}
   enemyPrefabVariants: []
   commanderRoot: {fileID: 6755318087557679466}

@@ -7,6 +7,7 @@ using ProjectMT.Shared.Pooling;
 using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
+using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Events;
@@ -21,12 +22,15 @@ namespace ProjectMT.Contents.CastleRaid
         private const float InnerPathVerificationIntervalSeconds = 0.1f; // 경로 재검사 간격
         private const int RequiredConsecutivePathChecks = 5; // 열린 경로 연속 확인 횟수
         private const float CornerCoordinateTolerance = 0.05f; // 모서리 좌표 판정 오차
-        private const float DeadUnitPoolReturnDelaySeconds = UnitVisualFeedback.DeathPulseDurationSeconds + 0.05f; // 사망 연출 뒤 반환
+        private const float DeadUnitPoolReturnPaddingSeconds = 0.05f; // 사망 동작 종료 뒤 풀 반환 여유
+        private const float BreachOutsideProbeDistance = 0.9f; // 성벽 바깥 NavMesh 탐색 거리
+        private const float BreachInsideProbeDistance = 1.75f; // 성벽 안쪽 NavMesh 탐색 거리
+        private const float BreachProbeRadius = 0.8f; // 끊긴 양쪽 NavMesh 표면 탐색 반경
+        private const float BreachLinkWidth = 0.8f; // 파괴 타일 한 칸 통과 폭
 
         [Header("Runtime")]
         [SerializeField] private ScenePoolScope poolScope; // 공격 유닛 재사용 풀
         [SerializeField] private CombatFeedbackPlayer combatFeedback; // 타격·파괴 연출
-        [SerializeField] private GameObject assaultUnitPrefab; // 출전 유닛 원본
         [SerializeField] private Camera deploymentCamera; // 터치 좌표 변환 카메라
         [SerializeField] private CastleDeploymentZone deploymentZone; // 외곽 배치 가능 구역
         [SerializeField] private Transform innerEntry; // 성 내부 진입 목표점
@@ -46,6 +50,10 @@ namespace ProjectMT.Contents.CastleRaid
         [SerializeField, Min(0.1f)] private float defenderRange = 8f; // 수비대 공격 거리
 
         private readonly List<CastleAssaultUnit> activeUnits = new List<CastleAssaultUnit>(); // 현재 출전 유닛
+        private readonly List<GameObject> breachLinkObjects = new List<GameObject>(); // 파괴 성벽 런타임 연결
+        private readonly List<Vector3> breachEntryPoints = new List<Vector3>(); // 파괴 지점 바로 안쪽 진입점
+        private readonly HashSet<int> linkedWallIds = new HashSet<int>(); // 같은 성벽 중복 연결 차단
+        private NavMeshPath innerPathProbe; // 진입 경로 검사 재사용 버퍼
         private ContentContext context; // 결과 반환 통로
         private CastleRaidStartData startData; // 이번 판 시작 정보
         private UnityAction[] unitButtonActions; // 해제용 버튼 콜백
@@ -62,6 +70,30 @@ namespace ProjectMT.Contents.CastleRaid
         public int SelectedUnitIndex => selectedUnitIndex;
         public bool InnerPathOpen => innerPathOpen;
 
+        public bool TryResolveInnerEntry(Vector3 fromPosition, out Vector3 position)
+        {
+            if (!innerPathOpen || breachEntryPoints.Count == 0)
+            {
+                position = default;
+                return false;
+            }
+
+            var nearestIndex = 0;
+            var nearestDistance = (breachEntryPoints[0] - fromPosition).sqrMagnitude;
+            for (var i = 1; i < breachEntryPoints.Count; i++)
+            {
+                var distance = (breachEntryPoints[i] - fromPosition).sqrMagnitude;
+                if (distance < nearestDistance)
+                {
+                    nearestIndex = i;
+                    nearestDistance = distance;
+                }
+            }
+
+            position = breachEntryPoints[nearestIndex];
+            return true;
+        }
+
         public void Initialize(ContentContext contentContext)
         {
             Shutdown(); // 재초기화 전 이전 판 정리
@@ -72,7 +104,7 @@ namespace ProjectMT.Contents.CastleRaid
                 throw new ArgumentException("CastleRaidStartData is required.", nameof(contentContext));
             }
 
-            if (poolScope == null || assaultUnitPrefab == null || deploymentCamera == null || deploymentZone == null ||
+            if (poolScope == null || deploymentCamera == null || deploymentZone == null ||
                 targets == null || targets.Length == 0 || unitButtons == null || unitButtons.Length == 0)
             {
                 throw new InvalidOperationException("Castle Raid runtime references are missing.");
@@ -84,6 +116,7 @@ namespace ProjectMT.Contents.CastleRaid
             deployedCount = 0;
             selectedUnitIndex = -1;
             deployedUnits = new bool[Mathf.Min(startData.DeploymentLimit, startData.Party.Units.Length)]; // 실제 배치 가능 인원만 추적
+            innerPathProbe = new NavMeshPath(); // Unity 씬 인스턴스 생성이 끝난 뒤 네이티브 경로 버퍼 준비
             defenderAttackCooldown = defenderAttackInterval;
             innerPathOpen = false;
             verifyingInnerPath = false;
@@ -104,7 +137,7 @@ namespace ProjectMT.Contents.CastleRaid
             BindUnitButtons();
             exitButton?.onClick.AddListener(Cancel);
             IsRunning = true;
-            SetStatus("두부를 선택한 뒤 초록색 외곽을 터치하세요");
+            SetStatus("몬스터를 선택한 뒤 초록색 외곽을 터치하세요");
             UpdateHud();
         }
 
@@ -133,6 +166,7 @@ namespace ProjectMT.Contents.CastleRaid
 
             activeUnits.Clear();
             poolScope?.ReturnAll();
+            ClearBreachLinks();
             context = null;
             startData = null;
             deployedUnits = null;
@@ -192,6 +226,11 @@ namespace ProjectMT.Contents.CastleRaid
                     continue;
                 }
 
+                if (innerPathOpen && attacker != null && !attacker.CanReachTarget(candidate)) // 진입 뒤 끊긴 NavMesh 섬의 목표는 건너뜀
+                {
+                    continue;
+                }
+
                 var distance = attacker == null
                     ? 0f
                     : (candidate.transform.position - attacker.transform.position).sqrMagnitude;
@@ -225,7 +264,7 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             selectedUnitIndex = unitIndex;
-            SetStatus($"두부 {unitIndex + 1} 선택 · 초록색 외곽을 터치하세요");
+            SetStatus($"{ResolveUnitLabel(unitIndex)} 선택 · 초록색 외곽을 터치하세요");
             UpdateHud();
             return true;
         }
@@ -234,7 +273,7 @@ namespace ProjectMT.Contents.CastleRaid
         {
             if (!IsRunning || selectedUnitIndex < 0)
             {
-                SetStatus("먼저 두부를 선택하세요");
+                SetStatus("먼저 몬스터를 선택하세요");
                 return false;
             }
 
@@ -272,11 +311,25 @@ namespace ProjectMT.Contents.CastleRaid
             var rotation = direction.sqrMagnitude <= 0.001f
                 ? Quaternion.identity
                 : Quaternion.LookRotation(direction.normalized, Vector3.up);
-            var instance = poolScope.Rent(assaultUnitPrefab, spawnPosition, rotation); // 생성 대신 풀에서 대여
+            var snapshot = startData.Party.Units[selectedUnitIndex];
+            var assaultPrefab = snapshot?.RuntimeAssetSet?.VisualAdapterPrefab;
+            if (assaultPrefab == null)
+            {
+                Debug.LogError($"Castle Raid requires a formal Monster visual adapter. Unit={snapshot?.UnitId}");
+                SetStatus("몬스터 실행 자산을 확인해주세요");
+                return false;
+            }
+
+            var instance = poolScope.Rent(assaultPrefab, spawnPosition, rotation); // 편성 몬스터별 정식 Adapter 대여
             var unit = instance == null ? null : instance.GetComponent<CastleAssaultUnit>();
+            if (instance != null && unit == null)
+            {
+                unit = instance.AddComponent<CastleAssaultUnit>(); // Adapter를 CastleRaid NavMesh 실행기로 조립
+            }
+
             if (unit == null)
             {
-                Debug.LogError("Castle assault prefab has no CastleAssaultUnit.");
+                Debug.LogError("Castle Raid could not create a CastleAssaultUnit.");
                 if (instance != null)
                 {
                     poolScope.Return(instance);
@@ -292,7 +345,7 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             var deployedIndex = selectedUnitIndex; // 선택 해제 전에 번호 보관
-            unit.Initialize(startData.Party.Units[deployedIndex], this);
+            unit.Initialize(snapshot, this);
             unit.Damaged += HandleUnitDamaged;
             unit.Died += HandleUnitDied;
             activeUnits.Add(unit);
@@ -343,7 +396,7 @@ namespace ProjectMT.Contents.CastleRaid
 
         private IEnumerator ReturnDeadUnitAfterFeedback(CastleAssaultUnit unit)
         {
-            yield return new WaitForSeconds(DeadUnitPoolReturnDelaySeconds);
+            yield return new WaitForSeconds(unit.DeathPresentationDuration + DeadUnitPoolReturnPaddingSeconds);
             activeUnits.Remove(unit);
             if (unit == null)
             {
@@ -368,6 +421,7 @@ namespace ProjectMT.Contents.CastleRaid
 
             if (target.TargetKind == CastleTargetKind.Wall)
             {
+                TryCreateBreachLink(target); // 베이크 NavMesh의 외곽·내부 섬을 실제 보행 링크로 연결
                 if (!innerPathOpen && !verifyingInnerPath)
                 {
                     verifyingInnerPath = true;
@@ -384,13 +438,7 @@ namespace ProjectMT.Contents.CastleRaid
                 IsRunning = false;
                 UpdateHud();
                 var result = new CastleRaidResult(true); // 본성 파괴만 승리 처리
-                if (clearOverlay != null &&
-                    clearOverlay.TryShow("성을 파괴했습니다", "보상 연동 예정", () => CompleteClear(result)))
-                {
-                    return;
-                }
-
-                CompleteClear(result);
+                context?.Exit.Complete(result); // 저장 성공 뒤 AppRoot 공통 결과창에서 표시
             }
         }
 
@@ -422,11 +470,6 @@ namespace ProjectMT.Contents.CastleRaid
                     unit.RefreshNavigationPath();
                 }
             }
-        }
-
-        private void CompleteClear(CastleRaidResult result)
-        {
-            context?.Exit.Complete(result);
         }
 
         private IEnumerator VerifyInnerPath()
@@ -483,10 +526,14 @@ namespace ProjectMT.Contents.CastleRaid
 
         private bool ValidatePathToInnerEntry()
         {
-            if (innerEntry == null ||
-                !NavMesh.SamplePosition(innerEntry.position, out var end, 2f, NavMesh.AllAreas))
+            if (breachEntryPoints.Count == 0)
             {
                 return false;
+            }
+
+            if (innerPathProbe == null)
+            {
+                innerPathProbe = new NavMeshPath();
             }
 
             var aliveUnitCount = 0;
@@ -505,9 +552,22 @@ namespace ProjectMT.Contents.CastleRaid
                     return false;
                 }
 
-                var path = new NavMeshPath();
-                if (!NavMesh.CalculatePath(agent.nextPosition, end.position, NavMesh.AllAreas, path) ||
-                    path.status != NavMeshPathStatus.PathComplete)
+                var canReachBreach = false;
+                for (var pointIndex = 0; pointIndex < breachEntryPoints.Count; pointIndex++)
+                {
+                    if (NavMesh.CalculatePath(
+                            agent.nextPosition,
+                            breachEntryPoints[pointIndex],
+                            NavMesh.AllAreas,
+                            innerPathProbe) &&
+                        innerPathProbe.status == NavMeshPathStatus.PathComplete)
+                    {
+                        canReachBreach = true;
+                        break;
+                    }
+                }
+
+                if (!canReachBreach)
                 {
                     return false;
                 }
@@ -715,9 +775,81 @@ namespace ProjectMT.Contents.CastleRaid
 
                 if (unitButtonLabels != null && i < unitButtonLabels.Length && unitButtonLabels[i] != null)
                 {
-                    unitButtonLabels[i].text = deployed ? "배치 완료" : $"두부 {i + 1}";
+                    unitButtonLabels[i].text = deployed ? "배치 완료" : ResolveUnitLabel(i);
                 }
             }
+        }
+
+        private bool TryCreateBreachLink(CastleTarget wall)
+        {
+            if (wall == null || innerEntry == null || linkedWallIds.Contains(wall.GetInstanceID()))
+            {
+                return false;
+            }
+
+            var inward = innerEntry.position - wall.transform.position;
+            inward.y = 0f;
+            if (inward.sqrMagnitude <= 0.001f)
+            {
+                return false;
+            }
+
+            inward.Normalize();
+            var outsideProbe = wall.transform.position - inward * BreachOutsideProbeDistance;
+            var insideProbe = wall.transform.position + inward * BreachInsideProbeDistance;
+            if (!NavMesh.SamplePosition(outsideProbe, out var outside, BreachProbeRadius, NavMesh.AllAreas) ||
+                !NavMesh.SamplePosition(insideProbe, out var inside, BreachProbeRadius, NavMesh.AllAreas))
+            {
+                Debug.LogWarning($"Castle Raid breach link endpoints were not found. Wall={wall.name}", wall);
+                return false;
+            }
+
+            var linkRoot = new GameObject($"BreachLink_{wall.name}");
+            linkRoot.SetActive(false);
+            linkRoot.transform.SetParent(transform, false);
+            var link = linkRoot.AddComponent<NavMeshLink>();
+            link.agentTypeID = 0;
+            link.area = 0;
+            link.startPoint = linkRoot.transform.InverseTransformPoint(outside.position);
+            link.endPoint = linkRoot.transform.InverseTransformPoint(inside.position);
+            link.width = BreachLinkWidth;
+            link.bidirectional = true;
+            link.costModifier = -1f;
+            link.autoUpdate = false;
+            linkRoot.SetActive(true);
+            link.UpdateLink();
+            breachLinkObjects.Add(linkRoot);
+            breachEntryPoints.Add(inside.position);
+            linkedWallIds.Add(wall.GetInstanceID());
+            return true;
+        }
+
+        private void ClearBreachLinks()
+        {
+            for (var index = breachLinkObjects.Count - 1; index >= 0; index--)
+            {
+                if (breachLinkObjects[index] != null)
+                {
+                    Destroy(breachLinkObjects[index]);
+                }
+            }
+
+            breachLinkObjects.Clear();
+            breachEntryPoints.Clear();
+            linkedWallIds.Clear();
+        }
+
+        private string ResolveUnitLabel(int unitIndex)
+        {
+            var units = startData?.Party?.Units;
+            if (units == null || unitIndex < 0 || unitIndex >= units.Length || units[unitIndex] == null)
+            {
+                return $"부대 {unitIndex + 1}";
+            }
+
+            return string.IsNullOrWhiteSpace(units[unitIndex].DisplayName)
+                ? $"부대 {unitIndex + 1}"
+                : units[unitIndex].DisplayName;
         }
 
         private void SetStatus(string message)
@@ -749,7 +881,6 @@ namespace ProjectMT.Contents.CastleRaid
         public void EditorConfigure(
             ScenePoolScope pool,
             CombatFeedbackPlayer feedback,
-            GameObject assaultPrefab,
             Camera worldCamera,
             CastleDeploymentZone zone,
             Transform pathProbe,
@@ -762,7 +893,6 @@ namespace ProjectMT.Contents.CastleRaid
         {
             poolScope = pool;
             combatFeedback = feedback;
-            assaultUnitPrefab = assaultPrefab;
             deploymentCamera = worldCamera;
             deploymentZone = zone;
             innerEntry = pathProbe;

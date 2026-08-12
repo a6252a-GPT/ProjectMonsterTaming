@@ -75,7 +75,8 @@ namespace ProjectMT.Shared.Unit
                     definition.VisualTint,
                     definition.RuntimeAssetKey,
                     definition.RuntimeAssetSet,
-                    ResolveUnlockedAbilityIds(definition, owned.AscensionLevel)));
+                    ResolveUnlockedAbilityIds(definition, owned.AscensionLevel),
+                    definition.DisplayName));
             }
         }
 

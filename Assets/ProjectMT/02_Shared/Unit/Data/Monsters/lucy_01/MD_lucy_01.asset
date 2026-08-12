@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
   monsterId: lucy_01
   displayName: "\uB8E8\uC2DC"
-  portrait: {fileID: 21300000, guid: 18d7b4d1b9c20a8449443e5242a35ad9, type: 3}
+  portrait: {fileID: 21300000, guid: 7be34801877c6b74c9771eeb9d0575a7, type: 3}
   previewPrefab: {fileID: 7237655459383711368, guid: 808a624f466aedc418d029f3e3234527, type: 3}
   visualTint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 105

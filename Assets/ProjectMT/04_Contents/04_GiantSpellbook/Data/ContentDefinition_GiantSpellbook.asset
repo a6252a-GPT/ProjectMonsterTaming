@@ -14,8 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Contents.Framework::ProjectMT.Contents.Framework.ContentDefinition
   contentId:
     value: giant_spellbook
+  displayName: "\uAC70\uB300 \uB9C8\uB3C4\uC11C"
   openMode: 0
   sceneId:
     value: 
   startDataFactory: {fileID: 11400000, guid: a8c1cd42b0f025b4ab16f6ddf2c3b7e9, type: 2}
   resultAdapter: {fileID: 0}
+  dungeonKeyItemId: key_giant_spellbook
+  supportsSweep: 0

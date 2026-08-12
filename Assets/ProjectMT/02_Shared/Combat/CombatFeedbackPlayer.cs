@@ -23,6 +23,8 @@ namespace ProjectMT.Shared.Combat
         private int hitVfxThisFrame;
         private int impulsesThisFrame;
         private float strongestImpulseThisFrame; // 같은 프레임의 더 강한 요청은 승격 허용
+        private float nextHitImpulseTime;
+        private float strongestRecentHitImpulse;
 
         private void Awake()
         {
@@ -39,7 +41,36 @@ namespace ProjectMT.Shared.Combat
 
         public void PlayHit(UnitActor target, DamageReport report)
         {
-            target?.VisualFeedback?.PlayHit();
+            var source = report.Request.Source;
+            var combatProfile = source?.RuntimeAssetSet?.CombatProfile;
+            var ranged = combatProfile != null
+                ? combatProfile.CombatType == MonsterCombatType.Ranged
+                : source != null && source.IsRanged;
+            var strength = combatProfile?.ImpactStrength ?? MonsterImpactStrength.Standard;
+            var reactionWeight = target?.RuntimeAssetSet?.CombatProfile?.ReactionWeight ??
+                                 MonsterReactionWeight.Standard;
+            var preset = CombatImpactTuning.Resolve(
+                strength,
+                reactionWeight,
+                ranged,
+                report.Request.IsCritical,
+                report.Killed);
+            var direction = source != null && target != null
+                ? target.transform.position - source.transform.position
+                : Vector3.zero;
+
+            target?.ApplyLocalHitStop(preset.TargetHitStop);
+            if (!ranged)
+            {
+                source?.ApplyLocalHitStop(preset.AttackerHitStop);
+            }
+
+            target?.VisualFeedback?.PlayImpact(
+                direction,
+                preset.RecoilDistance,
+                preset.RecoilDuration,
+                preset.TargetHitStop,
+                report.Killed);
             floatingNumbers?.ShowDamage(target, report);
             sfxPool?.Play(hitSfx, report.Request.HitPoint);
             if (poolScope != null && hitVfxPrefab != null && hitVfxThisFrame < maxHitVfxPerFrame)
@@ -48,13 +79,36 @@ namespace ProjectMT.Shared.Combat
                 var instance = poolScope.Rent(hitVfxPrefab, report.Request.HitPoint, Quaternion.identity);
                 instance?.GetComponent<SeedFeedbackVfx>()?.Play(poolScope, new Color(1f, 0.88f, 0.35f), 0.22f, 0.25f);
             }
+
+            if (!report.Killed && source != null && target != null &&
+                source.Team == UnitTeam.Player && target.Team == UnitTeam.Enemy)
+            {
+                PlayHitImpulse(preset.CameraImpulse); // 플레이어 측 적중만 화면 반응
+            }
         }
 
         public void PlayDeath(UnitActor target, DamageReport report)
         {
             target?.VisualFeedback?.PlayDeath();
             sfxPool?.Play(deathSfx, report.Request.HitPoint);
-            PlayImpulse(0.08f);
+            var source = report.Request.Source;
+            if (source != null && target != null && source.Team == UnitTeam.Player && target.Team == UnitTeam.Enemy)
+            {
+                var strength = source.RuntimeAssetSet?.CombatProfile?.ImpactStrength ??
+                               MonsterImpactStrength.Standard;
+                var deathImpulse = strength switch
+                {
+                    MonsterImpactStrength.Light => 0.035f,
+                    MonsterImpactStrength.Heavy => 0.075f,
+                    _ => 0.055f
+                };
+                PlayImpulse(deathImpulse); // 사망타의 일반 적중 흔들림을 대체
+            }
+            else if (source != null && target != null &&
+                     source.Team == UnitTeam.Enemy && target.Team == UnitTeam.Player)
+            {
+                PlayImpulse(0.07f); // 아군 사망은 공격 강도와 무관한 한 번의 경고
+            }
         }
 
         public void PlayClimax(Vector3 position, CombatClimaxStrength strength)
@@ -109,11 +163,34 @@ namespace ProjectMT.Shared.Combat
             cameraImpulse.Impulse(strength);
         }
 
+        private void PlayHitImpulse(float strength)
+        {
+            strength = Mathf.Max(0f, strength);
+            if (strength <= 0f)
+            {
+                return;
+            }
+
+            var now = Time.unscaledTime;
+            if (now < nextHitImpulseTime && strength <= strongestRecentHitImpulse)
+            {
+                return; // 다대다 약한 적중이 카메라를 계속 떠는 현상 제한
+            }
+
+            strongestRecentHitImpulse = strength;
+            nextHitImpulseTime = now + 0.09f;
+            PlayImpulse(strength);
+        }
+
         private void LateUpdate()
         {
             hitVfxThisFrame = 0; // 다음 프레임 예산 복구
             impulsesThisFrame = 0; // 다음 프레임 예산 복구
             strongestImpulseThisFrame = 0f;
+            if (Time.unscaledTime >= nextHitImpulseTime)
+            {
+                strongestRecentHitImpulse = 0f;
+            }
         }
 
 #if UNITY_EDITOR

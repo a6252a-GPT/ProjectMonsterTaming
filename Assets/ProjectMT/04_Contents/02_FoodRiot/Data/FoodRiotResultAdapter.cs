@@ -23,6 +23,34 @@ namespace ProjectMT.Contents.FoodRiot
             return true;
         }
 
+        public override bool TryCreateProgressChange(
+            IContentResultData result,
+            GameProgressView progress,
+            ContentRunInfo runInfo,
+            out GameProgressChange change)
+        {
+            return TryCreateProgressChange(result, out change);
+        }
+
+        public override string CreateResultSummary(
+            IContentResultData result,
+            ContentRunInfo runInfo,
+            ContentOutcome outcome)
+        {
+            return result is FoodRiotResult foodResult
+                ? $"{runInfo.StageId}단계 · 처치 {Mathf.Max(0, foodResult.KillCount)}마리"
+                : base.CreateResultSummary(result, runInfo, outcome);
+        }
+
+        public override bool TryCreateSweepResult(
+            GameProgressView progress,
+            string stageId,
+            out IContentResultData result)
+        {
+            result = new FoodRiotResult(Mathf.Max(0, progress.FoodRiotBestKills));
+            return true;
+        }
+
         public override bool TryCreateRewardPresentation(
             IContentResultData result,
             out RewardPresentationRequest presentation)

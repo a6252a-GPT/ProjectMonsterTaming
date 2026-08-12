@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
   monsterId: mukuk_01
   displayName: "\uBB34\uCFE0\uD06C"
-  portrait: {fileID: 21300000, guid: 70b00a54cfb837646bb31eb85c446d1f, type: 3}
+  portrait: {fileID: 21300000, guid: 6218832df1d0d7f4fa875c40295b14fb, type: 3}
   previewPrefab: {fileID: 4729609903644569994, guid: eef58503914c3f1499436460e38ef785, type: 3}
   visualTint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 115

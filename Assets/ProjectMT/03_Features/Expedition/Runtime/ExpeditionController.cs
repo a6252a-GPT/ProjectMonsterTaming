@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ProjectMT.Features.WorldDrops;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Unit;
 using TMPro;
@@ -36,6 +38,7 @@ namespace ProjectMT.Features.Expedition
 
         private IGameProgressService progress; // 진행 조회·저장 계약
         private IRewardPresentationPlayer rewardPresentation; // 저장 확정 보상 표현
+        private WorldItemDropRuntime worldItemDrops; // 원정대 전용 표시 풀·획득 버퍼
         private BattlePartySnapshot party; // 다음 Run에 사용할 최신 부대 사진
         private BattlePartySnapshot activeRunParty; // 현재 Run 시작 때 고정한 부대 사진
         private ExpeditionRunMode currentMode; // 도전·반복 상태
@@ -43,7 +46,9 @@ namespace ProjectMT.Features.Expedition
         private int currentWave; // 현재 표시 웨이브
         private float waveElapsed; // 2웨이브 대기 시간
         private float challengeTimeRemaining; // 도전 남은 시간
-        private bool waveTwoSpawned; // 두 번째 웨이브 출현 여부
+        private int nextWaveToSpawn; // 다음 데이터 웨이브 번호
+        private int waveCount; // 현재 단계의 전체 웨이브 수
+        private bool allWavesSpawned; // 모든 데이터 웨이브 출현 완료
         private bool running; // 전투 Tick 허용
         private bool settling; // 결과 저장 중
         private int operationVersion; // 늦은 비동기 결과 무효화
@@ -53,8 +58,9 @@ namespace ProjectMT.Features.Expedition
         private bool formationPlacementActive;
         private readonly Dictionary<UnitActor, int> enemyWaveByActor = new Dictionary<UnitActor, int>(); // 적별 소속 웨이브
         private readonly Dictionary<UnitActor, int> playerSlotByActor = new Dictionary<UnitActor, int>(); // 아군별 본부대 자리
-        private readonly int[] aliveEnemiesByWave = new int[ExpeditionStageRules.WaveCount + 1]; // 웨이브별 생존 적
-        private readonly bool[] climaxPlayedByWave = new bool[ExpeditionStageRules.WaveCount + 1]; // 웨이브당 한 번만 재생
+        private int[] aliveEnemiesByWave = new int[ExpeditionStageRules.LegacyWaveCount + 1]; // 웨이브별 생존 적
+        private bool[] climaxPlayedByWave = new bool[ExpeditionStageRules.LegacyWaveCount + 1]; // 웨이브당 한 번만 재생
+        private readonly List<WorldItemDropRequest> worldDropBuffer = new List<WorldItemDropRequest>(4); // 사망 1회 드랍 재사용 버퍼
         private int nextReserveIndex; // 다음에 투입할 예비 순서
         private int runEnemyTotalCount; // 현재 Run 전체 적 수
         private int defeatedEnemyCount; // 현재 Run 처치 적 수
@@ -62,6 +68,7 @@ namespace ProjectMT.Features.Expedition
         private ExpeditionRunMode displayedMode;
         private int displayedStage;
         private int displayedWave;
+        private int displayedWaveCount;
         private int displayedAllyCount;
         private int displayedEnemyCount;
         private int displayedTimerSeconds;
@@ -124,7 +131,9 @@ namespace ProjectMT.Features.Expedition
             IGameProgressService progressService,
             BattlePartySnapshot partySnapshot,
             IRewardPresentationPlayer rewardPlayer = null,
-            Collider formationGround = null)
+            Collider formationGround = null,
+            ItemCatalog itemCatalog = null,
+            Transform worldDropPickupTarget = null)
         {
             Shutdown();
             InvalidateHudCache();
@@ -132,6 +141,7 @@ namespace ProjectMT.Features.Expedition
             party = partySnapshot ?? throw new ArgumentNullException(nameof(partySnapshot));
             rewardPresentation = rewardPlayer;
             ConfigureFormationFrame(formationGround);
+            ConfigureWorldItemDrops(itemCatalog, worldDropPickupTarget);
             if (modeButton != null)
             {
                 modeButton.onClick.AddListener(ToggleMode);
@@ -168,6 +178,8 @@ namespace ProjectMT.Features.Expedition
             formationPlacementActive = false;
             ResetWaveTracking();
             ResetPlayerTracking();
+            worldItemDrops?.CollectAllActive(); // 무정산 종료도 남은 드랍을 전부 획득 확정
+            _ = FlushWorldDropsCheckpointAsync(); // 전체 획득분은 콘텐츠 전환 전 출구 체크포인트 저장
             combatWorld?.Clear();
             UpdateHud();
         }
@@ -205,11 +217,15 @@ namespace ProjectMT.Features.Expedition
 
             ResetWaveTracking();
             ResetPlayerTracking();
+            worldItemDrops?.CollectAllActive(); // 씬 종료 전에 남은 드랍을 전부 획득 확정
+            _ = FlushWorldDropsCheckpointAsync(); // 씬 종료 뒤에도 시작한 저장 Task가 획득분을 확정
+            worldItemDrops?.Initialize(null, null, null, null);
             combatWorld?.Clear();
             progress = null;
             rewardPresentation = null;
             party = null;
             activeRunParty = null;
+            worldItemDrops = null;
             formationFrameConfigured = false;
             InvalidateHudCache();
         }
@@ -227,12 +243,15 @@ namespace ProjectMT.Features.Expedition
                 challengeTimeRemaining = Mathf.Max(0f, challengeTimeRemaining - Time.deltaTime);
             }
 
-            if (!waveTwoSpawned &&
-                (waveElapsed >= profile.WaveIntervalSeconds || combatWorld.CountAlive(UnitTeam.Enemy) == 0))
+            if (!allWavesSpawned && nextWaveToSpawn <= waveCount &&
+                (waveElapsed >= profile.GetWaveSpawnDelay(currentStage, nextWaveToSpawn) ||
+                 combatWorld.CountAlive(UnitTeam.Enemy) == 0))
             {
-                SpawnWave(2); // 시간 경과 또는 전멸 시 두 번째 웨이브
-                waveTwoSpawned = true;
-                currentWave = 2;
+                SpawnWave(nextWaveToSpawn); // 데이터 간격 또는 전멸 시 다음 웨이브
+                currentWave = nextWaveToSpawn;
+                nextWaveToSpawn++;
+                waveElapsed = 0f;
+                allWavesSpawned = nextWaveToSpawn > waveCount;
             }
 
             if (combatWorld.CountAlive(UnitTeam.Player) == 0 ||
@@ -242,7 +261,7 @@ namespace ProjectMT.Features.Expedition
                 return;
             }
 
-            if (waveTwoSpawned && combatWorld.CountAlive(UnitTeam.Enemy) == 0)
+            if (allWavesSpawned && combatWorld.CountAlive(UnitTeam.Enemy) == 0)
             {
                 FinishVictory();
                 return;
@@ -257,6 +276,7 @@ namespace ProjectMT.Features.Expedition
             runSequence++;
             ResetWaveTracking();
             ResetPlayerTracking();
+            worldItemDrops?.CollectAllActive(); // Run 교체 전 남은 드랍 누락 방지
             activeRunParty = party; // 진행 중 편성 변경은 다음 Run부터 반영
             combatWorld.Clear();
             combatWorld.SetPaused(false);
@@ -266,10 +286,13 @@ namespace ProjectMT.Features.Expedition
             currentWave = 1;
             waveElapsed = 0f;
             challengeTimeRemaining = profile.ChallengeTimeLimitSeconds;
-            waveTwoSpawned = false;
+            waveCount = Mathf.Max(1, profile.GetWaveCount(currentStage));
+            nextWaveToSpawn = 2;
+            allWavesSpawned = waveCount <= 1;
+            aliveEnemiesByWave = new int[waveCount + 1];
+            climaxPlayedByWave = new bool[waveCount + 1];
             nextReserveIndex = 0;
-            runEnemyTotalCount = ExpeditionStageRules.GetEnemiesPerWave(currentStage) *
-                                 ExpeditionStageRules.WaveCount;
+            runEnemyTotalCount = profile.GetTotalEnemies(currentStage);
             defeatedEnemyCount = 0;
             InvalidateHudCache();
             if (resultText != null)
@@ -405,7 +428,7 @@ namespace ProjectMT.Features.Expedition
 
         private void SpawnWave(int wave)
         {
-            var count = ExpeditionStageRules.GetEnemiesPerWave(currentStage);
+            var count = profile.GetEnemyCount(currentStage, wave);
             var anchor = enemySpawnAnchor == null ? transform.position + new Vector3(4f, 0f, 4f) : enemySpawnAnchor.position;
             var formationRight = enemySpawnAnchor == null ? Vector3.right : enemySpawnAnchor.right;
             var formationForward = enemySpawnAnchor == null ? Vector3.forward : enemySpawnAnchor.forward;
@@ -414,14 +437,12 @@ namespace ProjectMT.Features.Expedition
                 var formationOffset = ExpeditionStageRules.GetFormationOffset(i, count); // 실제 인원 기준 중앙 정렬
                 var position = anchor +
                                formationRight * formationOffset.x +
-                               formationForward * (formationOffset.y + (wave - 1) * 1.15f);
+                               formationForward * (formationOffset.y + profile.GetWaveForwardOffset(currentStage, wave));
                 var unitIndex = i + wave * 10;
-                var ranged = enemyAppearanceSet != null
-                    ? enemyAppearanceSet.IsRangedSlot(currentStage, unitIndex)
-                    : unitIndex % 4 == 3;
+                var ranged = profile.IsRangedSlot(currentStage, unitIndex);
                 var enemyPrefab = enemyAppearanceSet == null
                     ? enemyUnitPrefab
-                    : enemyAppearanceSet.ResolvePrefab(currentStage, ranged);
+                    : enemyAppearanceSet.ResolvePrefab(profile.ResolveAppearance(currentStage, ranged));
                 var stats = profile.CreateEnemyStats(currentStage, ranged);
                 var request = new UnitSpawnRequest(
                     $"enemy_{currentStage}_{wave}_{i}",
@@ -475,6 +496,15 @@ namespace ProjectMT.Features.Expedition
             enemyWaveByActor.Remove(actor);
             aliveEnemiesByWave[wave] = Mathf.Max(0, aliveEnemiesByWave[wave] - 1);
             defeatedEnemyCount = Mathf.Min(runEnemyTotalCount, defeatedEnemyCount + 1);
+            if (running && profile != null &&
+                profile.CreateEnemyWorldDrops(currentStage, wave, actor.transform.position, worldDropBuffer) > 0)
+            {
+                for (var index = 0; index < worldDropBuffer.Count; index++)
+                {
+                    worldItemDrops?.TrySpawn(worldDropBuffer[index]); // 보상 원본과 분리된 표시 요청
+                }
+            }
+
             if (!running || aliveEnemiesByWave[wave] != 0 || climaxPlayedByWave[wave])
             {
                 return;
@@ -482,6 +512,7 @@ namespace ProjectMT.Features.Expedition
 
             climaxPlayedByWave[wave] = true;
             combatWorld?.PlayClimax(actor.transform.position, CombatClimaxStrength.Weak);
+            _ = FlushWorldDropsCheckpointAsync(); // 이미 흡수한 항목만 웨이브 체크포인트 저장
         }
 
         private void ResetWaveTracking()
@@ -522,8 +553,15 @@ namespace ProjectMT.Features.Expedition
             settling = true;
             ResetWaveTracking();
             ResetPlayerTracking();
+            worldItemDrops?.CollectAllActive(); // 모드 변경 전 남은 드랍을 전부 획득 확정
             combatWorld.Clear();
             SetResult("모드 변경 중...");
+            await FlushWorldDropsCheckpointAsync(); // 모드 변경도 현재 Run의 전체 획득분 저장
+            if (this == null || version != operationVersion)
+            {
+                return;
+            }
+
             var saved = await progress.TryApplyAndSaveAsync(GameProgressChange.SetExpeditionMode(nextMode));
             if (this == null || version != operationVersion)
             {
@@ -546,6 +584,7 @@ namespace ProjectMT.Features.Expedition
 
             running = false;
             settling = true;
+            worldItemDrops?.CollectAllActive(); // 전투 종료 시 남은 표현도 획득으로 확정
             combatWorld.SetPaused(true); // 결과 연출 동안 전투 정지
             SetResult(currentMode == ExpeditionRunMode.Challenge ? "승리 정산 중..." : string.Empty);
             _ = ResolveVictoryAsync(++operationVersion); // 저장 후 새 Run 시작
@@ -553,6 +592,12 @@ namespace ProjectMT.Features.Expedition
 
         private async Task ResolveVictoryAsync(int version)
         {
+            await FlushWorldDropsCheckpointAsync();
+            if (this == null || version != operationVersion)
+            {
+                return;
+            }
+
             var settledMode = currentMode;
             var settledStage = currentStage;
             RewardBundle rewards;
@@ -633,6 +678,7 @@ namespace ProjectMT.Features.Expedition
 
             running = false;
             settling = true;
+            worldItemDrops?.CollectAllActive(); // 패배도 남은 드랍을 전부 획득 확정
             combatWorld.SetPaused(true);
             SetResult("패배");
             _ = ResolveDefeatAsync(++operationVersion); // 실패 단계에서 반복 전환
@@ -640,6 +686,12 @@ namespace ProjectMT.Features.Expedition
 
         private async Task ResolveDefeatAsync(int version)
         {
+            await FlushWorldDropsCheckpointAsync(); // 패배 전 남은 드랍까지 전부 저장
+            if (this == null || version != operationVersion)
+            {
+                return;
+            }
+
             if (currentMode == ExpeditionRunMode.Challenge && progress.View.LastClearedStage > 0)
             {
                 await progress.TryApplyAndSaveAsync(GameProgressChange.SetExpeditionMode(ExpeditionRunMode.Repeat)); // 마지막 성공 단계 반복
@@ -655,6 +707,45 @@ namespace ProjectMT.Features.Expedition
             StartFromSavedMode();
         }
 
+        private void ConfigureWorldItemDrops(ItemCatalog itemCatalog, Transform pickupTarget)
+        {
+            var visualCatalog = profile == null ? null : profile.WorldItemDropVisualCatalog;
+            if (itemCatalog == null || visualCatalog == null || pickupTarget == null)
+            {
+                worldItemDrops = null;
+                return;
+            }
+
+            worldItemDrops = GetComponentInChildren<WorldItemDropRuntime>(true);
+            if (worldItemDrops == null)
+            {
+                worldItemDrops = WorldItemDropRuntime.Create(
+                    transform,
+                    progress,
+                    itemCatalog,
+                    visualCatalog,
+                    pickupTarget,
+                    Camera.main);
+                return;
+            }
+
+            worldItemDrops.Initialize(progress, itemCatalog, visualCatalog, pickupTarget, Camera.main);
+        }
+
+        private async Task FlushWorldDropsCheckpointAsync()
+        {
+            if (worldItemDrops == null || worldItemDrops.PendingItemTypeCount == 0)
+            {
+                return;
+            }
+
+            var saved = await worldItemDrops.FlushAsync();
+            if (!saved && this != null)
+            {
+                Debug.LogWarning("월드 드랍 획득분 저장을 다음 체크포인트에서 다시 시도합니다.");
+            }
+        }
+
         private void UpdateHud()
         {
             var modeChanged = !hudCacheValid || displayedMode != currentMode;
@@ -668,9 +759,10 @@ namespace ProjectMT.Features.Expedition
                 stageText.text = $"원정대 {currentStage}";
             }
 
-            if (waveText != null && (!hudCacheValid || displayedWave != currentWave))
+            if (waveText != null &&
+                (!hudCacheValid || displayedWave != currentWave || displayedWaveCount != waveCount))
             {
-                waveText.text = $"웨이브 {currentWave}/{ExpeditionStageRules.WaveCount}";
+                waveText.text = $"웨이브 {currentWave}/{Mathf.Max(1, waveCount)}";
             }
 
             var allyCount = combatWorld == null ? 0 : combatWorld.CountAlive(UnitTeam.Player);
@@ -713,6 +805,7 @@ namespace ProjectMT.Features.Expedition
             displayedMode = currentMode;
             displayedStage = currentStage;
             displayedWave = currentWave;
+            displayedWaveCount = waveCount;
             displayedAllyCount = allyCount;
             displayedEnemyCount = enemyCount;
             displayedTimerSeconds = timerSeconds;

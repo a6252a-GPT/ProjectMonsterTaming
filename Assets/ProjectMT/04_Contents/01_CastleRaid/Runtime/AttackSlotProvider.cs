@@ -11,7 +11,7 @@ namespace ProjectMT.Contents.CastleRaid
         private readonly Dictionary<Component, Transform> leases = new Dictionary<Component, Transform>(); // 공격자별 대여 자리
         private readonly HashSet<Transform> occupied = new HashSet<Transform>(); // 현재 사용 중 자리
 
-        public bool TryLease(Component owner, Vector3 fromPosition, out Transform slot)
+        public bool TryResolveAvailableSlot(Component owner, Vector3 fromPosition, out Transform slot)
         {
             if (owner != null && leases.TryGetValue(owner, out slot) && slot != null)
             {
@@ -44,6 +44,21 @@ namespace ProjectMT.Contents.CastleRaid
             if (slot == null)
             {
                 return false;
+            }
+
+            return true;
+        }
+
+        public bool TryLease(Component owner, Vector3 fromPosition, out Transform slot)
+        {
+            if (!TryResolveAvailableSlot(owner, fromPosition, out slot))
+            {
+                return false;
+            }
+
+            if (leases.ContainsKey(owner))
+            {
+                return true;
             }
 
             leases[owner] = slot; // 같은 공격자는 같은 자리 유지

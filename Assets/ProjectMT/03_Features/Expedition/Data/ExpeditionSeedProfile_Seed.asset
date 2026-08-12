@@ -19,3 +19,99 @@ MonoBehaviour:
   enemyBaseDamage: 4
   enemyHealthGrowthPerStage: 0.11
   enemyDamageGrowthPerStage: 0.07
+  stages:
+  - definitionId: stage_01_10
+    minimumStage: 1
+    maximumStage: 10
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    waves:
+    - baseEnemyCount: 4
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 1
+        chance: 1
+    - baseEnemyCount: 4
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 1
+        chance: 1
+  - definitionId: stage_11_20
+    minimumStage: 11
+    maximumStage: 20
+    meleeAppearance: 1
+    rangedAppearance: 4
+    rangedEveryUnits: 4
+    waves:
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 1
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 1
+        chance: 1
+  - definitionId: stage_21_30
+    minimumStage: 21
+    maximumStage: 30
+    meleeAppearance: 2
+    rangedAppearance: 5
+    rangedEveryUnits: 4
+    waves:
+    - baseEnemyCount: 6
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 1
+        chance: 1
+    - baseEnemyCount: 6
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 1
+        chance: 1
+  - definitionId: stage_31_plus
+    minimumStage: 31
+    maximumStage: 0
+    meleeAppearance: 3
+    rangedAppearance: 6
+    rangedEveryUnits: 4
+    waves:
+    - baseEnemyCount: 7
+      extraEnemyEveryStages: 10
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 1
+        chance: 1
+    - baseEnemyCount: 7
+      extraEnemyEveryStages: 10
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 1
+        chance: 1
+  worldItemDropVisualCatalog: {fileID: 11400000, guid: f18b689dc18bfca449462502e4ea93b5, type: 2}
+  enemyWorldDropItemId: currency_gold
+  enemyWorldDropQuantity: 1

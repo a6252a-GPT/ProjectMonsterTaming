@@ -26,6 +26,54 @@ namespace ProjectMT.Contents.GuardianTrial
             return true;
         }
 
+        public override bool TryCreateProgressChange(
+            IContentResultData result,
+            GameProgressView progress,
+            ContentRunInfo runInfo,
+            out GameProgressChange change)
+        {
+            if (!(result is GuardiansTowerResult towerResult) || !TryCreateRewards(towerResult, out var rewards))
+            {
+                change = null;
+                return false;
+            }
+
+            change = GameProgressChange.RecordGuardiansTowerClear(
+                towerResult.KillCount,
+                towerResult.Cleared,
+                runInfo.RunMode != ContentRunMode.Farming,
+                rewards);
+            return true;
+        }
+
+        public override bool IsSuccessfulResult(IContentResultData result)
+        {
+            return result is GuardiansTowerResult towerResult && towerResult.Cleared;
+        }
+
+        public override string CreateResultSummary(
+            IContentResultData result,
+            ContentRunInfo runInfo,
+            ContentOutcome outcome)
+        {
+            if (!(result is GuardiansTowerResult towerResult))
+            {
+                return base.CreateResultSummary(result, runInfo, outcome);
+            }
+
+            var status = towerResult.Cleared ? "클리어" : "실패";
+            return $"{runInfo.StageId}단계 {status} · 처치 {Mathf.Max(0, towerResult.KillCount)}마리";
+        }
+
+        public override bool TryCreateSweepResult(
+            GameProgressView progress,
+            string stageId,
+            out IContentResultData result)
+        {
+            result = new GuardiansTowerResult(Mathf.Max(0, progress.GuardiansTowerBestKills), cleared: true);
+            return true;
+        }
+
         public override bool TryCreateRewardPresentation(
             IContentResultData result,
             out RewardPresentationRequest presentation)

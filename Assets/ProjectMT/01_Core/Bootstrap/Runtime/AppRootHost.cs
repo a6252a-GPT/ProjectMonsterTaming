@@ -24,9 +24,11 @@ namespace ProjectMT.Bootstrap
         [SerializeField] private SceneLoader sceneLoader; // 정식 씬 전환 담당
         [SerializeField] private RewardAcquirePresenter rewardPresenter; // 저장 확정 보상 연출
         [SerializeField] private ContentFinishFeedbackPresenter finishFeedbackPresenter; // 콘텐츠 저장 재시도 표시
+        [SerializeField] private ContentResultOverlayPresenter resultOverlayPresenter; // 저장 확정 공통 결과창
 
         private GameDataService gameDataService; // 진행 데이터 관리자
         private ContentFlow contentFlow; // 콘텐츠 실행 흐름
+        private GrowthDungeonSweepService growthDungeonSweepService; // Runtime 없는 1회 소탕
         private BattlePartySnapshotBuilder partyBuilder; // 저장 편성 해석기
         private CommanderGrowthConfig commanderGrowthConfig; // 군단장 경험치·레벨 규칙
         private DebugPanelController debugPanel; // 개발 빌드 전용 도구 패널
@@ -93,6 +95,16 @@ namespace ProjectMT.Bootstrap
                 throw new InvalidOperationException("ContentFinishFeedbackPresenter is missing from AppRoot.");
             }
 
+            if (resultOverlayPresenter == null)
+            {
+                resultOverlayPresenter = GetComponentInChildren<ContentResultOverlayPresenter>(true);
+            }
+
+            if (resultOverlayPresenter == null)
+            {
+                throw new InvalidOperationException("ContentResultOverlayPresenter is missing from AppRoot.");
+            }
+
             var savePath = Path.Combine(Application.persistentDataPath, "ProjectMT_seed_save.json"); // 시드 저장 위치
             var saveService = new SaveService(new AtomicFileStore(), savePath);
             commanderGrowthConfig = projectConfig.CommanderGrowthConfig;
@@ -106,6 +118,7 @@ namespace ProjectMT.Bootstrap
                 commanderGrowthConfig,
                 projectConfig.ItemCatalog);
             await gameDataService.LoadAsync(); // 씬 초기화 전 저장 로드
+            await RefreshGrowthDungeonKeysAsync(); // 접속 1회 KST 05:00 기준 충전
             partyBuilder = new BattlePartySnapshotBuilder(projectConfig.MonsterCatalog);
 
             sceneLoader.Configure(projectConfig.SceneCatalog);
@@ -116,7 +129,15 @@ namespace ProjectMT.Bootstrap
                 projectConfig.MainBattleSceneId,
                 projectConfig.ItemCatalog,
                 rewardPresenter,
-                finishFeedbackPresenter);
+                finishFeedbackPresenter,
+                resultOverlayPresenter);
+            growthDungeonSweepService = new GrowthDungeonSweepService(
+                projectConfig.ContentCatalog,
+                gameDataService,
+                projectConfig.ItemCatalog,
+                rewardPresenter,
+                finishFeedbackPresenter,
+                resultOverlayPresenter);
             sceneLoader.ContextFactory = CreateSceneContext; // 씬별 권한 봉투 생성
             sceneLoader.SceneFailed += HandleSceneFailed;
 
@@ -238,7 +259,8 @@ namespace ProjectMT.Bootstrap
                 return "지급할 아이템이 없습니다";
             }
 
-            var rewards = new ItemAmount[definitions.Count];
+            var rewards = new List<ItemAmount>(definitions.Count);
+            var inventory = gameDataService.View.Items;
             for (var index = 0; index < definitions.Count; index++)
             {
                 var definition = definitions[index];
@@ -247,13 +269,22 @@ namespace ProjectMT.Bootstrap
                     return "아이템 카탈로그가 올바르지 않습니다";
                 }
 
-                rewards[index] = new ItemAmount(definition.ItemId, 1L);
+                inventory.TryGetQuantity(definition.ItemId, out var currentQuantity);
+                if (currentQuantity < definition.MaxQuantity)
+                {
+                    rewards.Add(new ItemAmount(definition.ItemId, 1L));
+                }
+            }
+
+            if (rewards.Count == 0)
+            {
+                return "모든 아이템이 보유 한도입니다";
             }
 
             var saved = await gameDataService.TryApplyAndSaveAsync(
-                GameProgressChange.GrantItems(rewards));
+                GameProgressChange.GrantItems(rewards.ToArray()));
             return saved
-                ? $"{rewards.Length}종 아이템 1개씩 획득 완료"
+                ? $"{rewards.Count}종 아이템 1개씩 획득 완료"
                 : "아이템 획득 정보를 저장하지 못했습니다";
         }
 #endif
@@ -275,7 +306,8 @@ namespace ProjectMT.Bootstrap
                     commanderGrowthConfig,
                     projectConfig.EquipmentBalanceConfig,
                     () => partyBuilder.Build(gameDataService.View), // 저장 확정 시 새 부대 사진 생성
-                    rewardPresenter);
+                    rewardPresenter,
+                    growthDungeonSweepService);
             }
 
             return contentFlow.CreateSeparateSceneContext(sceneId); // 별도 콘텐츠 실행 봉투
@@ -319,6 +351,34 @@ namespace ProjectMT.Bootstrap
             }
         }
 
+        private async Task RefreshGrowthDungeonKeysAsync()
+        {
+            var view = gameDataService.View;
+            var currentPeriod = GrowthDungeonDailyKeyRules.GetPeriodId(DateTime.UtcNow);
+            var previousPeriod = view.GrowthDungeons.LastDailyKeyPeriod;
+            if (currentPeriod <= previousPeriod)
+            {
+                return;
+            }
+
+            var targets = new ItemAmount[GrowthDungeonDailyKeyRules.KeyItemIds.Count];
+            for (var index = 0; index < targets.Length; index++)
+            {
+                var itemId = GrowthDungeonDailyKeyRules.KeyItemIds[index];
+                view.Items.TryGetQuantity(itemId, out var currentQuantity);
+                targets[index] = new ItemAmount(
+                    itemId,
+                    GrowthDungeonDailyKeyRules.GetRechargedQuantity(currentQuantity));
+            }
+
+            var saved = await gameDataService.TryApplyAndSaveAsync(
+                GameProgressChange.RefreshGrowthDungeonDailyKeys(previousPeriod, currentPeriod, targets));
+            if (!saved)
+            {
+                throw new InvalidOperationException("Growth dungeon daily keys could not be refreshed.");
+            }
+        }
+
         private void OnDestroy()
         {
             if (Instance == this)
@@ -347,6 +407,11 @@ namespace ProjectMT.Bootstrap
         public void EditorConfigureFinishFeedback(ContentFinishFeedbackPresenter presenter)
         {
             finishFeedbackPresenter = presenter;
+        }
+
+        public void EditorConfigureResultOverlay(ContentResultOverlayPresenter presenter)
+        {
+            resultOverlayPresenter = presenter;
         }
 #endif
     }

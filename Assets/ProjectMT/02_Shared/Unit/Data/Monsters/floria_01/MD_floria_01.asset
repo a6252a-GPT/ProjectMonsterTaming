@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
   monsterId: floria_01
   displayName: "\uD50C\uB85C\uB9AC\uC544"
-  portrait: {fileID: 21300000, guid: 146ee46eecdd67e40a858593ea173f19, type: 3}
+  portrait: {fileID: 21300000, guid: d9a8b2eb928427243bf7b2543f80f690, type: 3}
   previewPrefab: {fileID: 7094695086820513081, guid: f8e423c581a5d1943bcd29c2585469e0, type: 3}
   visualTint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 115

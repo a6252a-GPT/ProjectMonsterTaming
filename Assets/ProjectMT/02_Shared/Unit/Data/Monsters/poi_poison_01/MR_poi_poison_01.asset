@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9063022393fce349b94c80b48a17738, type: 3}
+  m_Name: MR_poi_poison_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterRuntimeAssetSet
+  visualAdapterPrefab: {fileID: 4000610898571922034, guid: a4f91214ac793b54eb1a626e627cacb0, type: 3}
+  animatorController: {fileID: 9100000, guid: 5dc4d2b58fe3a7d48ab1b2ad0f6e76b2, type: 2}
+  bodyProfile: {fileID: 11400000, guid: b641964eb45b8de4b8f583ba6a485194, type: 2}
+  motionProfile: {fileID: 11400000, guid: d44800d607662104aa0aa264ea42c163, type: 2}
+  combatProfile: {fileID: 11400000, guid: 5fd5e8f602caf95499d4c2610c4aa662, type: 2}
+  ascensionProfile: {fileID: 11400000, guid: 69a842d0e81d6af469bd5fa5da2a0214, type: 2}
+  feedbackProfile: {fileID: 11400000, guid: 21f7fe076edd6a8469b64788eacc3d55, type: 2}

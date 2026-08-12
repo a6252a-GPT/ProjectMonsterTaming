@@ -21,11 +21,15 @@ namespace ProjectMT.Features.Commander
         [SerializeField] private TMP_Text levelUpButtonText;
         [SerializeField] private GameObject levelUpReadyBadge;
         [SerializeField] private TMP_Text goldText;
+        [SerializeField] private TMP_Text[] overviewCoreBonusTexts = Array.Empty<TMP_Text>();
+        [SerializeField] private TMP_Text[] coreBonusLevelTexts = Array.Empty<TMP_Text>();
+        [SerializeField] private TMP_Text[] coreBonusValueTexts = Array.Empty<TMP_Text>();
 
         private IGameProgressService progress;
         private CommanderGrowthConfig config;
         private Action levelChanged;
         private bool savePending;
+        private string feedbackMessage;
 
         private void Awake()
         {
@@ -35,6 +39,7 @@ namespace ProjectMT.Features.Commander
 
         private void OnEnable()
         {
+            feedbackMessage = null;
             Refresh();
         }
 
@@ -88,9 +93,19 @@ namespace ProjectMT.Features.Commander
             var progress01 = config.GetProgress01(commander.Level, commander.Experience);
             var isMaxLevel = commander.Level >= config.MaxLevel;
             var canLevelUp = !isMaxLevel && config.CanLevelUp(commander.Level, commander.Experience);
+            var currentRate = config.GetAccumulatedCoreStatRate(commander.Level);
+            var nextLevel = Mathf.Min(commander.Level + 1, config.MaxLevel);
+            var nextRate = config.GetAccumulatedCoreStatRate(nextLevel);
 
-            SetText(goldText, $"보유 골드  {progressView.Gold:N0}");
-            SetText(commanderLevelText, $"군단장 LV. {commander.Level:N0} ({FormatPercent(progressRatio)})");
+            SetText(
+                goldText,
+                feedbackMessage ??
+                (isMaxLevel
+                    ? $"최대 군단 보너스  {FormatBonus(currentRate)}"
+                    : $"다음 레벨 군단 보너스  {FormatBonus(nextRate)}"));
+            SetText(
+                commanderLevelText,
+                $"군단장 LV. {commander.Level:N0} · 핵심 능력치 {FormatBonus(currentRate)}");
             SetText(levelText, $"LV. {commander.Level:N0}");
             SetText(
                 experienceText,
@@ -107,6 +122,13 @@ namespace ProjectMT.Features.Commander
                 levelUpButton.interactable = canLevelUp && !savePending;
             }
 
+            SetTexts(overviewCoreBonusTexts, FormatBonus(currentRate));
+            SetTexts(coreBonusLevelTexts, $"LV. {commander.Level:N0}");
+            SetTexts(
+                coreBonusValueTexts,
+                isMaxLevel
+                    ? $"현재 {FormatBonus(currentRate)} · MAX"
+                    : $"현재 {FormatBonus(currentRate)}  →  다음 {FormatBonus(nextRate)}");
             SetText(levelUpButtonText, isMaxLevel ? "MAX" : "레벨 업");
             levelUpReadyBadge?.SetActive(canLevelUp);
         }
@@ -126,13 +148,26 @@ namespace ProjectMT.Features.Commander
             }
 
             savePending = true;
+            feedbackMessage = null;
             Refresh();
             try
             {
-                if (await progress.TryApplyAndSaveAsync(GameProgressChange.LevelUpCommander(commander.Level)))
+                var saved = await progress.TryApplyAndSaveAsync(
+                    GameProgressChange.LevelUpCommander(commander.Level));
+                if (saved)
                 {
+                    feedbackMessage = "레벨업 저장 완료 · 다음 전투부터 적용";
                     levelChanged?.Invoke();
                 }
+                else
+                {
+                    feedbackMessage = "레벨업 저장 실패 · 다시 시도해 주세요";
+                }
+            }
+            catch (Exception exception)
+            {
+                feedbackMessage = "레벨업 저장 실패 · 다시 시도해 주세요";
+                Debug.LogException(exception);
             }
             finally
             {
@@ -142,6 +177,21 @@ namespace ProjectMT.Features.Commander
         }
 
         private static string FormatPercent(double ratio) => $"{Math.Max(0d, ratio) * 100d:0.0}%";
+
+        private static string FormatBonus(float rate) => $"+{Mathf.Max(0f, rate) * 100f:0.#}%";
+
+        private static void SetTexts(TMP_Text[] targets, string value)
+        {
+            if (targets == null)
+            {
+                return;
+            }
+
+            for (var index = 0; index < targets.Length; index++)
+            {
+                SetText(targets[index], value);
+            }
+        }
 
         private static void SetText(TMP_Text target, string value)
         {

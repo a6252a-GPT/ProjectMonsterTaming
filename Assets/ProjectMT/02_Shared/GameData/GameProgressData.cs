@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ProjectMT.Shared.Equipment;
+using ProjectMT.Shared.Gacha;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Stats;
@@ -426,8 +427,24 @@ namespace ProjectMT.Shared.GameData
                 return false;
             }
 
-            if (change.HasGachaPull &&
-                !TryApplyGachaPull(change.GachaPullMonsterId, change.GachaPullRarity))
+            if (change.GachaPulls != null)
+            {
+                if (change.GachaPulls.Count == 0)
+                {
+                    return false;
+                }
+
+                for (var index = 0; index < change.GachaPulls.Count; index++)
+                {
+                    var pull = change.GachaPulls[index];
+                    if (!TryApplyGachaPull(pull.MonsterId, pull.Rarity))
+                    {
+                        return false;
+                    }
+                }
+            }
+            else if (change.HasGachaPull &&
+                     !TryApplyGachaPull(change.GachaPullMonsterId, change.GachaPullRarity))
             {
                 return false;
             }
@@ -846,6 +863,7 @@ namespace ProjectMT.Shared.GameData
         internal bool HasGachaPull { get; private set; }
         internal string GachaPullMonsterId { get; private set; }
         internal MonsterRarity GachaPullRarity { get; private set; }
+        internal IReadOnlyList<GachaPullRecord> GachaPulls { get; private set; }
         internal bool HasAcquireEquipment { get; private set; } // 08.10 안건준 추가
         internal List<EquipmentInstanceData> AcquireEquipmentInstances { get; private set; }
         internal bool HasEquipItem { get; private set; }
@@ -1109,6 +1127,35 @@ namespace ProjectMT.Shared.GameData
                 HasGachaPull = true,
                 GachaPullMonsterId = monsterId?.Trim(),
                 GachaPullRarity = rarity
+            };
+        }
+
+        public static GameProgressChange RecordGachaPulls(
+            IReadOnlyList<GachaPullRecord> pulls,
+            IReadOnlyList<ItemAmount> itemCosts)
+        {
+            var pullCopy = new List<GachaPullRecord>(pulls?.Count ?? 0);
+            if (pulls != null)
+            {
+                for (var index = 0; index < pulls.Count; index++)
+                {
+                    pullCopy.Add(pulls[index]);
+                }
+            }
+
+            var costCopy = new List<ItemAmount>(itemCosts?.Count ?? 0);
+            if (itemCosts != null)
+            {
+                for (var index = 0; index < itemCosts.Count; index++)
+                {
+                    costCopy.Add(itemCosts[index]);
+                }
+            }
+
+            return new GameProgressChange
+            {
+                GachaPulls = pullCopy,
+                ItemCosts = costCopy
             };
         }
 

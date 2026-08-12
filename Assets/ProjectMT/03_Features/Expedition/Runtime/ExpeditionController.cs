@@ -38,6 +38,7 @@ namespace ProjectMT.Features.Expedition
 
         private IGameProgressService progress; // 진행 조회·저장 계약
         private IRewardPresentationPlayer rewardPresentation; // 저장 확정 보상 표현
+        private ItemCatalog itemCatalog; // 결과 안내의 아이템 이름 조회
         private WorldItemDropRuntime worldItemDrops; // 원정대 전용 표시 풀·획득 버퍼
         private BattlePartySnapshot party; // 다음 Run에 사용할 최신 부대 사진
         private BattlePartySnapshot activeRunParty; // 현재 Run 시작 때 고정한 부대 사진
@@ -140,6 +141,7 @@ namespace ProjectMT.Features.Expedition
             progress = progressService ?? throw new ArgumentNullException(nameof(progressService));
             party = partySnapshot ?? throw new ArgumentNullException(nameof(partySnapshot));
             rewardPresentation = rewardPlayer;
+            this.itemCatalog = itemCatalog;
             ConfigureFormationFrame(formationGround);
             ConfigureWorldItemDrops(itemCatalog, worldDropPickupTarget);
             if (modeButton != null)
@@ -223,6 +225,7 @@ namespace ProjectMT.Features.Expedition
             combatWorld?.Clear();
             progress = null;
             rewardPresentation = null;
+            itemCatalog = null;
             party = null;
             activeRunParty = null;
             worldItemDrops = null;
@@ -638,7 +641,7 @@ namespace ProjectMT.Features.Expedition
             {
                 try
                 {
-                    rewardPresentation?.PlayConfirmed(RewardPresentationRequest.FromBundle(rewards));
+                    rewardPresentation?.PlayConfirmed(RewardPresentationRequest.FromBundle(rewards, itemCatalog));
                 }
                 catch (Exception exception)
                 {
@@ -647,12 +650,14 @@ namespace ProjectMT.Features.Expedition
 
                 if (settledMode == ExpeditionRunMode.Challenge)
                 {
-                    SetResult($"원정대 {settledStage} 승리 · 골드 +{rewards.Gold:N0}");
+                    SetResult(ExpeditionResultNoticeFormatter.ChallengeVictory(
+                        settledStage,
+                        RewardPresentationRequest.FromBundle(rewards, itemCatalog)));
                 }
             }
             else
             {
-                SetResult("보상 저장 실패");
+                SetResult("보상 저장 실패 · 같은 단계 재시도");
             }
 
             if (settledMode == ExpeditionRunMode.Challenge || !saved)
@@ -680,7 +685,7 @@ namespace ProjectMT.Features.Expedition
             settling = true;
             worldItemDrops?.CollectAllActive(); // 패배도 남은 드랍을 전부 획득 확정
             combatWorld.SetPaused(true);
-            SetResult("패배");
+            SetResult(currentMode == ExpeditionRunMode.Challenge ? "도전 실패" : string.Empty);
             _ = ResolveDefeatAsync(++operationVersion); // 실패 단계에서 반복 전환
         }
 
@@ -692,9 +697,31 @@ namespace ProjectMT.Features.Expedition
                 return;
             }
 
-            if (currentMode == ExpeditionRunMode.Challenge && progress.View.LastClearedStage > 0)
+            if (currentMode == ExpeditionRunMode.Challenge)
             {
-                await progress.TryApplyAndSaveAsync(GameProgressChange.SetExpeditionMode(ExpeditionRunMode.Repeat)); // 마지막 성공 단계 반복
+                var lastClearedStage = progress.View.LastClearedStage;
+                var repeatModeSaved = false;
+                if (lastClearedStage > 0)
+                {
+                    try
+                    {
+                        repeatModeSaved = await progress.TryApplyAndSaveAsync(
+                            GameProgressChange.SetExpeditionMode(ExpeditionRunMode.Repeat)); // 마지막 성공 단계 반복
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogException(exception);
+                    }
+
+                    if (this == null || version != operationVersion)
+                    {
+                        return;
+                    }
+                }
+
+                SetResult(ExpeditionResultNoticeFormatter.ChallengeDefeat(
+                    lastClearedStage,
+                    repeatModeSaved));
             }
 
             await Task.Delay(TimeSpan.FromSeconds(profile.ResultDelaySeconds));

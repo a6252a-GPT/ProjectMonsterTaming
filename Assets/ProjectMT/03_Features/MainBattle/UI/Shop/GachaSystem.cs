@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using ProjectMT.Shared.Gacha;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -32,13 +34,23 @@ namespace ProjectMT.Features.MainBattle
             public bool IsNew;
         }
 
+        private sealed class PlannedPull
+        {
+            public MonsterDefinition Definition;
+            public MonsterRarity Rarity;
+            public bool WasNew;
+        }
+
         [Header("뽑기 설정 등급,확률 카탈로그")]
         [SerializeField] private MonsterRarityCatalog rarityCatalog; // 몬스터 ↔ 등급 매칭표
         [SerializeField] private GachaProbability probability; // 등급별 확률·천장 설정
+        [SerializeField] private GachaCostConfig costConfig; // 소환권 우선·다이아 비용
 
         [Header("뽑기 버튼")]
         [SerializeField] private Button oneDrawButton; // OneButton - 1회 뽑기
         [SerializeField] private Button tenDrawButton; // TwoButton - 10회 뽑기
+        [SerializeField] private TMP_Text oneDrawCostText;
+        [SerializeField] private TMP_Text tenDrawCostText;
 
         [Header("결과 표시")]
         [SerializeField] private TMP_Text resultText;
@@ -122,62 +134,124 @@ namespace ProjectMT.Features.MainBattle
                 return;
             }
 
+            if (!TryGetPaymentPlan(drawCount, out var payment) || !payment.CanAfford)
+            {
+                SetResult(BuildPaymentFailureText(payment));
+                RefreshGachaInfo();
+                return;
+            }
+
             isDrawing = true;
             SetButtonsInteractable(false);
             HideResults();
             try
             {
-                // monsterId 순서를 유지한 채 개수·신규 여부를 모은다.
-                var summaries = new Dictionary<string, PullSummary>();
-                var order = new List<string>(drawCount);
-
-                for (var index = 0; index < drawCount; index++)
+                if (!TryPlanPulls(drawCount, out var plannedPulls))
                 {
-                    var pull = await DrawOnceAsync();
-                    if (pull.definition == null)
-                    {
-                        break; // 저장 실패 시 남은 횟수는 중단 (이미 성공한 결과는 유지)
-                    }
-
-                    var monsterId = pull.definition.MonsterId;
-                    if (!summaries.TryGetValue(monsterId, out var summary))
-                    {
-                        summary = new PullSummary
-                        {
-                            Definition = pull.definition,
-                            DisplayName = pull.definition.DisplayName,
-                            Rarity = pull.rarity,
-                            Count = 0,
-                            IsNew = false
-                        };
-                        summaries.Add(monsterId, summary);
-                        order.Add(monsterId);
-                    }
-
-                    summary.Count++;
-                    if (pull.wasNew)
-                    {
-                        summary.IsNew = true; // 이번 묶음에서 한 번이라도 신규면 New로 표기
-                    }
-                }
-
-                if (order.Count == 0)
-                {
-                    SetResult("뽑기에 실패했습니다");
+                    SetResult("등급별 몬스터 등록 정보를 확인해 주세요");
                     return;
                 }
 
+                var records = new List<GachaPullRecord>(plannedPulls.Count);
+                for (var index = 0; index < plannedPulls.Count; index++)
+                {
+                    records.Add(new GachaPullRecord(
+                        plannedPulls[index].Definition.MonsterId,
+                        plannedPulls[index].Rarity));
+                }
+
+                bool saved;
+                try
+                {
+                    saved = await progress.TryApplyAndSaveAsync(
+                        GameProgressChange.RecordGachaPulls(records, payment.CreateItemCosts()));
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                    saved = false;
+                }
+
+                if (!saved)
+                {
+                    SetResult("소환 저장에 실패했습니다 · 비용과 결과는 반영되지 않았습니다");
+                    return;
+                }
+
+                BuildPullSummaries(plannedPulls, out var order, out var summaries);
                 var detailText = BuildResultText(order, summaries);
+                var paymentText = BuildPaymentSummary(payment);
                 SetResult(resultOverlay != null
-                    ? BuildResultHeadline(drawCount, order, summaries)
-                    : detailText);
+                    ? $"{BuildResultHeadline(drawCount, order, summaries)} · {paymentText}"
+                    : $"{detailText}\n\n사용: {paymentText}");
                 ShowResults(drawCount, order, summaries);
                 LogOwnedRosterDebug(); // 보유 몬스터 이름·등급·돌파·재료를 콘솔에 출력
             }
             finally
             {
                 isDrawing = false;
-                SetButtonsInteractable(true);
+                RefreshGachaInfo();
+            }
+        }
+
+        private bool TryPlanPulls(int drawCount, out List<PlannedPull> plannedPulls)
+        {
+            plannedPulls = new List<PlannedPull>(drawCount);
+            var pity = BuildPityState();
+            var ownedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var owned = progress.View.Monsters.OwnedMonsters;
+            for (var index = 0; index < owned.Count; index++)
+            {
+                ownedIds.Add(owned[index].MonsterId);
+            }
+
+            for (var index = 0; index < drawCount; index++)
+            {
+                var rarity = probability.Roll(pity);
+                var definition = PickMonsterOfRarity(rarity);
+                if (definition == null)
+                {
+                    plannedPulls.Clear();
+                    return false;
+                }
+
+                plannedPulls.Add(new PlannedPull
+                {
+                    Definition = definition,
+                    Rarity = rarity,
+                    WasNew = ownedIds.Add(definition.MonsterId)
+                });
+                pity = pity.Advance(rarity); // 같은 10회 묶음 안에서도 천장을 순서대로 갱신
+            }
+
+            return true;
+        }
+
+        private static void BuildPullSummaries(
+            List<PlannedPull> plannedPulls,
+            out List<string> order,
+            out Dictionary<string, PullSummary> summaries)
+        {
+            order = new List<string>(plannedPulls.Count);
+            summaries = new Dictionary<string, PullSummary>(StringComparer.OrdinalIgnoreCase);
+            for (var index = 0; index < plannedPulls.Count; index++)
+            {
+                var pull = plannedPulls[index];
+                var monsterId = pull.Definition.MonsterId;
+                if (!summaries.TryGetValue(monsterId, out var summary))
+                {
+                    summary = new PullSummary
+                    {
+                        Definition = pull.Definition,
+                        DisplayName = pull.Definition.DisplayName,
+                        Rarity = pull.Rarity
+                    };
+                    summaries.Add(monsterId, summary);
+                    order.Add(monsterId);
+                }
+
+                summary.Count++;
+                summary.IsNew |= pull.WasNew;
             }
         }
 
@@ -244,26 +318,6 @@ namespace ProjectMT.Features.MainBattle
             }
 
             spawnedResultItems.Clear();
-        }
-
-        private async Task<(MonsterDefinition definition, bool wasNew, MonsterRarity rarity)> DrawOnceAsync()
-        {
-            var rarity = probability.Roll(BuildPityState());
-            var definition = PickMonsterOfRarity(rarity);
-            if (definition == null)
-            {
-                return (null, false, rarity); // 해당 등급으로 등록된 몬스터가 없음 (매칭표 확인 필요)
-            }
-
-            var wasOwned = progress.View.Monsters.Owns(definition.MonsterId);
-            var saved = await progress.TryApplyAndSaveAsync(
-                GameProgressChange.RecordGachaPull(definition.MonsterId, rarity));
-            if (!saved)
-            {
-                return (null, false, rarity);
-            }
-
-            return (definition, !wasOwned, rarity);
         }
 
         // 예: "(New 스파이크 / 등급 : 일반 / 수량 : 3) , (루미 / 등급 : 영웅 / 수량 : 1)"
@@ -383,7 +437,7 @@ namespace ProjectMT.Features.MainBattle
                 }
             }
 
-            return candidates.Count == 0 ? null : candidates[Random.Range(0, candidates.Count)];
+            return candidates.Count == 0 ? null : candidates[UnityEngine.Random.Range(0, candidates.Count)];
         }
 
         private GachaPityState BuildPityState()
@@ -398,7 +452,25 @@ namespace ProjectMT.Features.MainBattle
 
         private bool CanDraw()
         {
-            return progress != null && monsterCatalog != null && rarityCatalog != null && probability != null;
+            return progress != null && progress.IsLoaded && monsterCatalog != null &&
+                   rarityCatalog != null && probability != null && costConfig != null &&
+                   costConfig.TryValidate(out _);
+        }
+
+        private bool TryGetPaymentPlan(int drawCount, out GachaPaymentPlan payment)
+        {
+            payment = default;
+            if (progress == null || !progress.IsLoaded || costConfig == null ||
+                !costConfig.TryValidate(out _))
+            {
+                return false;
+            }
+
+            var items = progress.View.Items;
+            items.TryGetQuantity(ItemIds.MonsterSummonTicket, out var tickets);
+            items.TryGetQuantity(ItemIds.Diamond, out var diamonds);
+            payment = costConfig.CreatePaymentPlan(drawCount, tickets, diamonds);
+            return payment.IsValid;
         }
 
         private void RefreshGachaInfo()
@@ -412,6 +484,76 @@ namespace ProjectMT.Features.MainBattle
             {
                 pityText.text = BuildPityText();
             }
+
+            if (TryGetPaymentPlan(GachaCostConfig.SingleDrawCount, out var onePayment))
+            {
+                SetPaymentText(oneDrawCostText, onePayment);
+            }
+
+            if (TryGetPaymentPlan(GachaCostConfig.TenDrawCount, out var tenPayment))
+            {
+                SetPaymentText(tenDrawCostText, tenPayment);
+            }
+
+            if (!isDrawing)
+            {
+                RefreshDrawAvailability();
+            }
+        }
+
+        private void RefreshDrawAvailability()
+        {
+            if (oneDrawButton != null)
+            {
+                oneDrawButton.interactable = CanDraw() &&
+                    TryGetPaymentPlan(GachaCostConfig.SingleDrawCount, out var payment) &&
+                    payment.CanAfford;
+            }
+
+            if (tenDrawButton != null)
+            {
+                tenDrawButton.interactable = CanDraw() &&
+                    TryGetPaymentPlan(GachaCostConfig.TenDrawCount, out var payment) &&
+                    payment.CanAfford;
+            }
+        }
+
+        private static void SetPaymentText(TMP_Text target, GachaPaymentPlan payment)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            var prefix = payment.CanAfford ? "결제 예정" : "재화 부족";
+            target.text = $"소환권 {payment.AvailableTickets:N0}장 보유 · {prefix}: " +
+                          BuildPaymentSummary(payment);
+        }
+
+        private static string BuildPaymentSummary(GachaPaymentPlan payment)
+        {
+            if (payment.TicketsUsed > 0 && payment.DiamondCost > 0L)
+            {
+                return $"소환권 {payment.TicketsUsed:N0}장 + 다이아 {payment.DiamondCost:N0}";
+            }
+
+            if (payment.TicketsUsed > 0)
+            {
+                return $"소환권 {payment.TicketsUsed:N0}장";
+            }
+
+            return $"다이아 {payment.DiamondCost:N0}";
+        }
+
+        private static string BuildPaymentFailureText(GachaPaymentPlan payment)
+        {
+            if (!payment.IsValid)
+            {
+                return "소환 비용 정보를 불러올 수 없습니다";
+            }
+
+            return $"재화 부족 · 필요 {BuildPaymentSummary(payment)} · " +
+                   $"보유 다이아 {payment.AvailableDiamonds:N0}";
         }
 
         private string BuildProbabilityText()
@@ -537,14 +679,19 @@ namespace ProjectMT.Features.MainBattle
 
         private void SetButtonsInteractable(bool interactable)
         {
-            if (oneDrawButton != null)
+            if (interactable)
             {
-                oneDrawButton.interactable = interactable;
+                RefreshDrawAvailability();
+                return;
             }
 
+            if (oneDrawButton != null)
+            {
+                oneDrawButton.interactable = false;
+            }
             if (tenDrawButton != null)
             {
-                tenDrawButton.interactable = interactable;
+                tenDrawButton.interactable = false;
             }
         }
 
@@ -569,6 +716,16 @@ namespace ProjectMT.Features.MainBattle
             oneDrawButton = oneButton;
             tenDrawButton = tenButton;
             resultText = result;
+        }
+
+        public void EditorConfigureCost(
+            GachaCostConfig config,
+            TMP_Text oneCost,
+            TMP_Text tenCost)
+        {
+            costConfig = config;
+            oneDrawCostText = oneCost;
+            tenDrawCostText = tenCost;
         }
 
         public void EditorConfigurePresentation(

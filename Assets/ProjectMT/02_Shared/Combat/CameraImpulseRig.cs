@@ -34,6 +34,18 @@ namespace ProjectMT.Shared.Combat
             phase = Mathf.Repeat(phase + 2.399963f, Mathf.PI * 2f); // 매 충격 방향은 바꾸되 한 충격 안에서는 부드럽게
         }
 
+        public void RebaseOrigin()
+        {
+            if (target == null)
+            {
+                target = transform;
+            }
+
+            originLocalPosition = target.localPosition; // 카메라 구도 변경 뒤 새 기준점
+            strength = 0f;
+            phase = 0f;
+        }
+
         private void LateUpdate()
         {
             if (target == null)

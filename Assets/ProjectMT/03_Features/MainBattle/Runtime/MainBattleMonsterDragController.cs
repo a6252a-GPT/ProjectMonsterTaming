@@ -34,6 +34,7 @@ namespace ProjectMT.Features.MainBattle
         private Func<UnitActor, Vector3, bool> canDropAt;
         private Action<UnitActor, Vector3, bool> dragPreviewChanged;
         private Action<UnitActor, Vector3, bool> dragReleased;
+        private Action dragCancelled;
         private bool configured;
 
         private int activePointerId = NoPointerId;
@@ -52,14 +53,26 @@ namespace ProjectMT.Features.MainBattle
 
         public void Configure(Camera camera, Collider ground, Func<bool> interactionGate)
         {
+            Configure(camera, ground, interactionGate, null, null, null);
+        }
+
+        public void Configure(
+            Camera camera,
+            Collider ground,
+            Func<bool> interactionGate,
+            Action<UnitActor, Vector3, bool> previewChanged,
+            Action<UnitActor, Vector3, bool> released,
+            Action cancelled)
+        {
             CancelInteraction();
             worldCamera = camera != null ? camera : throw new ArgumentNullException(nameof(camera));
             groundCollider = ground != null ? ground : throw new ArgumentNullException(nameof(ground));
             canInteract = interactionGate;
             canSelectUnit = null;
             canDropAt = null;
-            dragPreviewChanged = null;
-            dragReleased = null;
+            dragPreviewChanged = previewChanged;
+            dragReleased = released;
+            dragCancelled = cancelled;
             configured = true;
             enabled = true;
         }
@@ -89,6 +102,7 @@ namespace ProjectMT.Features.MainBattle
             canDropAt = null;
             dragPreviewChanged = null;
             dragReleased = null;
+            dragCancelled = null;
             worldCamera = null;
             groundCollider = null;
             enabled = false;
@@ -378,7 +392,7 @@ namespace ProjectMT.Features.MainBattle
 
             var unit = activeUnit;
             var target = validGround ? lastGroundPosition : originalPosition;
-            dragReleased?.Invoke(unit, target, validGround);
+            dragReleased?.Invoke(unit, lastGroundPosition, validGround);
             ResetPointerState();
             BeginDrop(target);
         }
@@ -429,6 +443,7 @@ namespace ProjectMT.Features.MainBattle
             ResetPointerState();
             if (dropRoutine == null)
             {
+                dragCancelled?.Invoke();
                 BeginDrop(lastGroundPosition); // 잡힌 채 사망하면 땅으로 놓고 기존 사망 수명 유지
             }
         }
@@ -476,6 +491,7 @@ namespace ProjectMT.Features.MainBattle
 
         private void CancelInteraction()
         {
+            dragCancelled?.Invoke();
             ResetPointerState();
             if (dropRoutine != null)
             {

@@ -57,6 +57,15 @@ namespace ProjectMT.Shared.Gacha
         public int PullsSinceEpicOrBetter { get; }
         public int PullsSinceLegendaryOrBetter { get; }
         public int PullsSinceMythicOrBetter { get; }
+
+        public GachaPityState Advance(MonsterRarity rarity)
+        {
+            return new GachaPityState(
+                rarity >= MonsterRarity.Rare ? 0 : PullsSinceRareOrBetter + 1,
+                rarity >= MonsterRarity.Epic ? 0 : PullsSinceEpicOrBetter + 1,
+                rarity >= MonsterRarity.Legendary ? 0 : PullsSinceLegendaryOrBetter + 1,
+                rarity >= MonsterRarity.Mythic ? 0 : PullsSinceMythicOrBetter + 1);
+        }
     }
 
     // 등급별 뽑기 확률과 천장(구간 확정) 규칙을 담는 설정 에셋.

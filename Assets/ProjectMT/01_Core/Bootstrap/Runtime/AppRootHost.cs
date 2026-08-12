@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ProjectMT.Core.SaveIO;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Features.Commander;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Debugging;
@@ -305,12 +306,22 @@ namespace ProjectMT.Bootstrap
                     projectConfig.ItemCatalog,
                     commanderGrowthConfig,
                     projectConfig.EquipmentBalanceConfig,
-                    () => partyBuilder.Build(gameDataService.View), // 저장 확정 시 새 부대 사진 생성
+                    BuildCurrentParty, // 저장 확정 시 군단장 보너스를 포함한 새 부대 사진 생성
                     rewardPresenter,
                     growthDungeonSweepService);
             }
 
             return contentFlow.CreateSeparateSceneContext(sceneId); // 별도 콘텐츠 실행 봉투
+        }
+
+        private BattlePartySnapshot BuildCurrentParty()
+        {
+            var legionModifiers = new List<StatModifier>(3);
+            CommanderLegionModifierProvider.Append(
+                gameDataService.View.Commander,
+                commanderGrowthConfig,
+                legionModifiers);
+            return partyBuilder.Build(gameDataService.View, legionModifiers);
         }
 
         private void HandleSceneFailed(SceneId failedSceneId, string error)

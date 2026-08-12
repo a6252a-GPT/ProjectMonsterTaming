@@ -5,6 +5,7 @@ using ProjectMT.Features.Commander;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.Expedition;
 using ProjectMT.Features.Formation;
+using ProjectMT.Features.GrowthDungeon;
 using ProjectMT.Features.Inventory;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
@@ -47,10 +48,12 @@ namespace ProjectMT.Features.MainBattle
         private MainSceneContext context; // 진행·콘텐츠 실행 권한
         private BattlePartySnapshot party; // 시드 부대 사진
         private MainBattleMonsterDragController monsterDrag; // 메인전투 직접 재배치 입력
+        private MainBattleDragIndicatorPresenter dragIndicator; // 선택 몬스터·목적지 표시
         private MainBattleSpatialController spatialController; // 전투 간격·군단장 추종
         private MainBattleFormationPlacementController placementController; // 본부대 시작 위치 편집
         private MainBattleManagementUiController managementUi; // 관리창 상호 배타 제어
         private MainBattleHudProgressView hudProgressView; // 상단 계정·재화 표시
+        private GrowthDungeonStageEntryController growthDungeonEntry; // 단계 선택·파밍 입장
 
         public SceneId SceneId => sceneId;
         public bool IsInitialized { get; private set; }
@@ -78,12 +81,17 @@ namespace ProjectMT.Features.MainBattle
             {
                 throw new InvalidOperationException("MainBattle party is missing.");
             }
-            foodRiotButton?.onClick.AddListener(OpenFoodRiot);
+            growthDungeonEntry = GetComponentInChildren<GrowthDungeonStageEntryController>(true);
+            if (growthDungeonEntry == null)
+            {
+                foodRiotButton?.onClick.AddListener(OpenFoodRiot); // 신규 컨트롤러 누락 시 기존 진입 보존
+                towerButton?.onClick.AddListener(OpenGuardiansTower);
+                giantSpellbookButton?.onClick.AddListener(OpenGiantSpellbook);
+                foodRiotSweepButton?.onClick.AddListener(SweepFoodRiot);
+                towerSweepButton?.onClick.AddListener(SweepGuardiansTower);
+            }
+
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
-            towerButton?.onClick.AddListener(OpenGuardiansTower); // 08.06 안건준 추가
-            giantSpellbookButton?.onClick.AddListener(OpenGiantSpellbook);
-            foodRiotSweepButton?.onClick.AddListener(SweepFoodRiot);
-            towerSweepButton?.onClick.AddListener(SweepGuardiansTower);
             var runtimeRoot = transform.Find("01_MainGameplayRoot/01_RuntimeRoot");
             var commander = runtimeRoot?.Find("CommanderVisual");
             var enemySpawnAnchor = runtimeRoot?.Find("EnemySpawnAnchor");
@@ -106,11 +114,24 @@ namespace ProjectMT.Features.MainBattle
             formationPage.Configure(context.Progress, context.MonsterCatalog, context.RefreshParty);
             managementUi = GetComponentInChildren<MainBattleManagementUiController>(true);
             managementUi?.ConfigureFormationPage(formationPage);
+            growthDungeonEntry?.Configure(
+                context.Progress,
+                context.ContentLauncher,
+                context.GrowthDungeonSweep,
+                hostedRunner,
+                () =>
+                {
+                    party = context.RefreshParty();
+                    return party;
+                },
+                TryOpenContent,
+                () => managementUi?.CloseAllPages(),
+                SetStatus);
             if (managementUi != null)
             {
-                managementUi.GrowthDungeonPageOpened += RefreshGrowthDungeonKeyUi;
+                managementUi.GrowthDungeonPageOpened += RefreshGrowthDungeonUi;
             }
-            RefreshGrowthDungeonKeyUi();
+            RefreshGrowthDungeonUi();
             hudProgressView = GetComponentInChildren<MainBattleHudProgressView>(true);
             hudProgressView?.Configure(context.Progress);
             ResolveMonsterManagementPage()?.Configure(context.Progress, context.MonsterCatalog);
@@ -141,6 +162,8 @@ namespace ProjectMT.Features.MainBattle
 
             spatialController?.Shutdown();
             monsterDrag?.Shutdown();
+            dragIndicator?.Shutdown();
+            growthDungeonEntry?.Shutdown();
             foodRiotButton?.onClick.RemoveListener(OpenFoodRiot);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
             towerButton?.onClick.RemoveListener(OpenGuardiansTower); // 08.06 안건준 추가
@@ -155,7 +178,7 @@ namespace ProjectMT.Features.MainBattle
             managementUi?.ConfigureInventoryPage(null);
             if (managementUi != null)
             {
-                managementUi.GrowthDungeonPageOpened -= RefreshGrowthDungeonKeyUi;
+                managementUi.GrowthDungeonPageOpened -= RefreshGrowthDungeonUi;
             }
             ResolveItemInventoryPage()?.Shutdown();
             if (formationPage != null)
@@ -181,10 +204,12 @@ namespace ProjectMT.Features.MainBattle
             context = null;
             party = null;
             monsterDrag = null;
+            dragIndicator = null;
             spatialController = null;
             placementController = null;
             managementUi = null;
             hudProgressView = null;
+            growthDungeonEntry = null;
             IsInitialized = false;
         }
 
@@ -263,7 +288,19 @@ namespace ProjectMT.Features.MainBattle
             }
 
             var page = GetComponentInChildren<CommanderGrowthPageView>(true);
-            page?.Configure(context.Progress, context.CommanderGrowthConfig);
+            page?.Configure(
+                context.Progress,
+                context.CommanderGrowthConfig,
+                HandleCommanderLevelChanged);
+        }
+
+        private void HandleCommanderLevelChanged()
+        {
+            party = context.RefreshParty();
+            expedition.SetPartyForNextRun(party); // 현재 교전은 유지하고 다음 웨이브부터 새 스냅샷 사용
+            var level = context.Progress.View.Commander.Level;
+            var rate = context.CommanderGrowthConfig.GetAccumulatedCoreStatRate(level) * 100f;
+            SetStatus($"군단장 LV.{level:N0} · 핵심 능력치 +{rate:0.#}% · 다음 전투부터 적용");
         }
 
         // 장비 슬롯 강화 패널을 진행 데이터 및 메인 관리 UI에 연결한다.
@@ -345,7 +382,20 @@ namespace ProjectMT.Features.MainBattle
                 monsterDrag = expedition.gameObject.AddComponent<MainBattleMonsterDragController>();
             }
 
-            monsterDrag.Configure(worldCamera, ground, CanDragMonster);
+            dragIndicator = expedition.GetComponent<MainBattleDragIndicatorPresenter>();
+            if (dragIndicator == null)
+            {
+                dragIndicator = expedition.gameObject.AddComponent<MainBattleDragIndicatorPresenter>();
+            }
+
+            dragIndicator.Configure(worldCamera);
+            monsterDrag.Configure(
+                worldCamera,
+                ground,
+                CanDragMonster,
+                dragIndicator.ShowPreview,
+                dragIndicator.ShowRelease,
+                dragIndicator.HideImmediate);
         }
 
         private void ConfigureSpatialMovement()
@@ -645,6 +695,12 @@ namespace ProjectMT.Features.MainBattle
                     context.ContentLauncher.TryGetGrowthDungeonState(guardiansTowerContentId, out var towerState) &&
                     towerState.CanSweep;
             }
+        }
+
+        private void RefreshGrowthDungeonUi()
+        {
+            RefreshGrowthDungeonKeyUi();
+            growthDungeonEntry?.Refresh();
         }
 
         private static void SetKeyText(TMP_Text target, ItemInventoryView items, string itemId)

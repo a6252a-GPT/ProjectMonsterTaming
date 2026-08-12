@@ -4,19 +4,17 @@ using UnityEngine;
 namespace ProjectMT.Shared.Stats
 {
     [CreateAssetMenu(menuName = "ProjectMT/Stats/Commander Growth Config", fileName = "CommanderGrowthConfig")]
-    public sealed class CommanderGrowthConfig : ScriptableObject // 군단장 경험치 곡선과 군단 공용 기본 성장
+    public sealed class CommanderGrowthConfig : ScriptableObject // 군단장 경험치 곡선
     {
         private static CommanderGrowthConfig runtimeDefault;
 
         [SerializeField, Min(1)] private int maxLevel = 1000;
         [SerializeField, Min(1)] private long baseExperienceRequirement = 10L;
         [SerializeField, Min(1f)] private float experienceGrowthMultiplier = 1.1f;
-        [SerializeField, Min(0f)] private float coreStatRatePerLevel = 0.01f;
 
         public int MaxLevel => Mathf.Max(1, maxLevel);
         public long BaseExperienceRequirement => Math.Max(1L, baseExperienceRequirement);
         public float ExperienceGrowthMultiplier => Mathf.Max(1f, experienceGrowthMultiplier);
-        public float CoreStatRatePerLevel => Mathf.Max(0f, coreStatRatePerLevel);
 
         public static CommanderGrowthConfig RuntimeDefault
         {
@@ -30,11 +28,6 @@ namespace ProjectMT.Shared.Stats
 
                 return runtimeDefault;
             }
-        }
-
-        public float GetAccumulatedCoreStatRate(int level)
-        {
-            return CoreStatRatePerLevel * Math.Max(0, Mathf.Clamp(level, 1, MaxLevel) - 1);
         }
 
         public long GetExperienceRequirement(int level)
@@ -98,8 +91,7 @@ namespace ProjectMT.Shared.Stats
 
         public bool TryValidate(out string error)
         {
-            if (maxLevel < 1 || baseExperienceRequirement < 1L ||
-                experienceGrowthMultiplier < 1f || coreStatRatePerLevel < 0f)
+            if (maxLevel < 1 || baseExperienceRequirement < 1L || experienceGrowthMultiplier < 1f)
             {
                 error = "Commander growth settings are invalid.";
                 return false;

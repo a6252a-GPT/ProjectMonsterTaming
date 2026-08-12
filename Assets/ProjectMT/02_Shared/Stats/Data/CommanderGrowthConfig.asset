@@ -15,4 +15,3 @@ MonoBehaviour:
   maxLevel: 1000
   baseExperienceRequirement: 10
   experienceGrowthMultiplier: 1.1
-  coreStatRatePerLevel: 0.01

@@ -2580,7 +2580,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: ?? +0%  ?  ?? +1%
+  m_text: "<color=#F1EDE5>15,400</color> <color=#CFC8BD>\u2192</color> <color=#D8B95A>15,650</color>"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3718a141c8028064eb11791445f163c4, type: 2}
   m_sharedMaterial: {fileID: 2334897706883836998, guid: 3718a141c8028064eb11791445f163c4, type: 2}
@@ -3696,7 +3696,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &2698220466510538645
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4674,7 +4674,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1317519441965069134}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ab6e67b1cf4ab8a4f971c4aca86d8741, type: 3}
   m_Name: 
@@ -4700,7 +4700,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1317519441965069134}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 74be5c7b669273d4399f4908c31f4fc6, type: 3}
   m_Name: 
@@ -4736,18 +4736,6 @@ MonoBehaviour:
   levelUpButtonText: {fileID: 1608263896028716329}
   levelUpReadyBadge: {fileID: 7995648125654863586}
   goldText: {fileID: 5089781751260073072}
-  overviewCoreBonusTexts:
-  - {fileID: 7042936260961259448}
-  - {fileID: 830713389447345406}
-  - {fileID: 2071350324937425829}
-  coreBonusLevelTexts:
-  - {fileID: 4494908723199376030}
-  - {fileID: 4845428578931459077}
-  - {fileID: 3183724613168951167}
-  coreBonusValueTexts:
-  - {fileID: 3914966548742391073}
-  - {fileID: 5904645513118391534}
-  - {fileID: 1161023481048402940}
 --- !u!1 &1378160903718951587
 GameObject:
   m_ObjectHideFlags: 0
@@ -6004,7 +5992,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: ?? ?? ??
+  m_text: "\uB2A5\uB825\uCE58 \uC131\uC7A5"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3718a141c8028064eb11791445f163c4, type: 2}
   m_sharedMaterial: {fileID: 2334897706883836998, guid: 3718a141c8028064eb11791445f163c4, type: 2}
@@ -6250,7 +6238,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &3434562645033209961
 RectTransform:
   m_ObjectHideFlags: 0
@@ -7718,7 +7706,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: ??? LV. 1 ? ?? ??? +0%
+  m_text: "Lv. 12  \xB7  \uC804\uD22C\uB825 12,480"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3718a141c8028064eb11791445f163c4, type: 2}
   m_sharedMaterial: {fileID: 2334897706883836998, guid: 3718a141c8028064eb11791445f163c4, type: 2}
@@ -10027,7 +10015,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &5220240984325786768
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11051,7 +11039,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: ?? +0%  ?  ?? +1%
+  m_text: "<color=#F1EDE5>1,280</color> <color=#CFC8BD>\u2192</color> <color=#D8B95A>1,305</color>"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3718a141c8028064eb11791445f163c4, type: 2}
   m_sharedMaterial: {fileID: 2334897706883836998, guid: 3718a141c8028064eb11791445f163c4, type: 2}
@@ -11726,7 +11714,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &8216837369208972921
 RectTransform:
   m_ObjectHideFlags: 0
@@ -12146,7 +12134,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &8574603332100461482
 RectTransform:
   m_ObjectHideFlags: 0
@@ -13542,7 +13530,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: ?? ?? ?? ???  +1%
+  m_text: "\uBCF4\uC720 \uACE8\uB4DC  0"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3718a141c8028064eb11791445f163c4, type: 2}
   m_sharedMaterial: {fileID: 2334897706883836998, guid: 3718a141c8028064eb11791445f163c4, type: 2}
@@ -18672,7 +18660,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &703619826414352555
 RectTransform:
   m_ObjectHideFlags: 0
@@ -18865,7 +18853,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1010556902614123832
 RectTransform:
   m_ObjectHideFlags: 0
@@ -23389,7 +23377,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &4894060550242638224
 RectTransform:
   m_ObjectHideFlags: 0
@@ -23593,7 +23581,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: ?? +0%  ?  ?? +1%
+  m_text: "<color=#F1EDE5>860</color> <color=#CFC8BD>\u2192</color> <color=#D8B95A>878</color>"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3718a141c8028064eb11791445f163c4, type: 2}
   m_sharedMaterial: {fileID: 2334897706883836998, guid: 3718a141c8028064eb11791445f163c4, type: 2}
@@ -28210,7 +28198,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1582691163645127345
 RectTransform:
   m_ObjectHideFlags: 0
@@ -30656,7 +30644,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &7847187543170704168
 RectTransform:
   m_ObjectHideFlags: 0
@@ -31629,10 +31617,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: StatCard_RangeOrCritical
       objectReference: {fileID: 0}
-    - target: {fileID: 2661648549793019999, guid: 91f472b8fb5b22d479243dc7527373c1, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 4004987575393467311, guid: 91f472b8fb5b22d479243dc7527373c1, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -31757,10 +31741,6 @@ PrefabInstance:
     - target: {fileID: 2661648549793019999, guid: 91f472b8fb5b22d479243dc7527373c1, type: 3}
       propertyPath: m_Name
       value: StatCard_MoveSpeed
-      objectReference: {fileID: 0}
-    - target: {fileID: 2661648549793019999, guid: 91f472b8fb5b22d479243dc7527373c1, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4004987575393467311, guid: 91f472b8fb5b22d479243dc7527373c1, type: 3}
       propertyPath: m_Sprite
@@ -31973,7 +31953,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6190407786420137901, guid: 91f472b8fb5b22d479243dc7527373c1, type: 3}
       propertyPath: m_text
-      value: +0%
+      value: 1,280
       objectReference: {fileID: 0}
     - target: {fileID: 7321398296626610505, guid: 91f472b8fb5b22d479243dc7527373c1, type: 3}
       propertyPath: m_text
@@ -32196,10 +32176,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: StatCard_AttackSpeed
       objectReference: {fileID: 0}
-    - target: {fileID: 2661648549793019999, guid: 91f472b8fb5b22d479243dc7527373c1, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 4004987575393467311, guid: 91f472b8fb5b22d479243dc7527373c1, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -32411,7 +32387,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6190407786420137901, guid: 91f472b8fb5b22d479243dc7527373c1, type: 3}
       propertyPath: m_text
-      value: +0%
+      value: 860
       objectReference: {fileID: 0}
     - target: {fileID: 7321398296626610505, guid: 91f472b8fb5b22d479243dc7527373c1, type: 3}
       propertyPath: m_text
@@ -32529,10 +32505,6 @@ PrefabInstance:
     - target: {fileID: 5345257957735609476, guid: 91f472b8fb5b22d479243dc7527373c1, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6190407786420137901, guid: 91f472b8fb5b22d479243dc7527373c1, type: 3}
-      propertyPath: m_text
-      value: +0%
       objectReference: {fileID: 0}
     - target: {fileID: 7321398296626610505, guid: 91f472b8fb5b22d479243dc7527373c1, type: 3}
       propertyPath: m_text

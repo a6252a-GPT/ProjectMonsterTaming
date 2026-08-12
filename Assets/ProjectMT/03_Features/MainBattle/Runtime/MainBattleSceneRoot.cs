@@ -288,19 +288,7 @@ namespace ProjectMT.Features.MainBattle
             }
 
             var page = GetComponentInChildren<CommanderGrowthPageView>(true);
-            page?.Configure(
-                context.Progress,
-                context.CommanderGrowthConfig,
-                HandleCommanderLevelChanged);
-        }
-
-        private void HandleCommanderLevelChanged()
-        {
-            party = context.RefreshParty();
-            expedition.SetPartyForNextRun(party); // 현재 교전은 유지하고 다음 웨이브부터 새 스냅샷 사용
-            var level = context.Progress.View.Commander.Level;
-            var rate = context.CommanderGrowthConfig.GetAccumulatedCoreStatRate(level) * 100f;
-            SetStatus($"군단장 LV.{level:N0} · 핵심 능력치 +{rate:0.#}% · 다음 전투부터 적용");
+            page?.Configure(context.Progress, context.CommanderGrowthConfig);
         }
 
         // 장비 슬롯 강화 패널을 진행 데이터 및 메인 관리 UI에 연결한다.

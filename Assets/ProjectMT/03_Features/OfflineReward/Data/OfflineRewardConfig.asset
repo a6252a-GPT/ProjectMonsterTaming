@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38ea59e64d58fdb4d82462cd8b5ea8ed, type: 3}
+  m_Name: OfflineRewardConfig
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.OfflineReward.OfflineRewardConfig
+  balanceVersion: 1
+  minimumOfflineSeconds: 60
+  maximumAccumulationSeconds: 43200
+  rates:
+  - minimumStage: 1
+    goldPerMinute: 5
+    commanderExperiencePerMinute: 1
+    upgradeStoneIntervalSeconds: 120
+  - minimumStage: 11
+    goldPerMinute: 10
+    commanderExperiencePerMinute: 2
+    upgradeStoneIntervalSeconds: 110
+  - minimumStage: 21
+    goldPerMinute: 15
+    commanderExperiencePerMinute: 3
+    upgradeStoneIntervalSeconds: 100
+  - minimumStage: 31
+    goldPerMinute: 20
+    commanderExperiencePerMinute: 4
+    upgradeStoneIntervalSeconds: 90
+  - minimumStage: 41
+    goldPerMinute: 25
+    commanderExperiencePerMinute: 5
+    upgradeStoneIntervalSeconds: 80

@@ -194,6 +194,7 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private EquipmentSaveData equipment = EquipmentSaveData.CreateDefault(); // 08.10 안건준 추가 - 장비 보유·장착 저장
         [SerializeField] private ItemInventoryData items = ItemInventoryData.CreateDefault(); // 일반 아이템 보유 수량
         [SerializeField] private GrowthDungeonProgressData growthDungeons = GrowthDungeonProgressData.CreateDefault(); // 성장 던전 단계·열쇠 기준일
+        [SerializeField] private OfflineRewardProgressData offlineRewards = OfflineRewardProgressData.CreateDefault(); // 방치 시작·정산 영수증
         [SerializeField] private bool coreBalanceMigrationCompleted = true; // v11 이관 재실행 방지
         [NonSerialized] private ItemInventoryView? itemViewCache; // 변경 전까지 목록 복사 재사용
         [SerializeField] private EquipmentSlotUpgradeData equipmentSlotUpgrade = EquipmentSlotUpgradeData.CreateDefault(); // 부위 슬롯 영구 강화 레벨(장비 보유·장착과 별도 저장)
@@ -228,6 +229,8 @@ namespace ProjectMT.Shared.GameData
         }
         public GrowthDungeonProgressView GrowthDungeons =>
             (growthDungeons ?? GrowthDungeonProgressData.CreateDefault()).CreateView();
+        public OfflineRewardProgressView OfflineRewards =>
+            new OfflineRewardProgressView(offlineRewards ?? OfflineRewardProgressData.CreateDefault());
         public EquipmentSlotUpgradeView EquipmentSlotUpgrade =>
             (equipmentSlotUpgrade ?? EquipmentSlotUpgradeData.CreateDefault()).CreateView();
 
@@ -256,6 +259,7 @@ namespace ProjectMT.Shared.GameData
                 equipment = equipment?.Clone() ?? EquipmentSaveData.CreateDefault(), // 08.10 안건준 추가
                 items = items?.Clone() ?? ItemInventoryData.CreateDefault(),
                 growthDungeons = growthDungeons?.Clone() ?? GrowthDungeonProgressData.CreateDefault(),
+                offlineRewards = offlineRewards?.Clone() ?? OfflineRewardProgressData.CreateDefault(),
                 coreBalanceMigrationCompleted = coreBalanceMigrationCompleted,
                 equipmentSlotUpgrade = equipmentSlotUpgrade?.Clone() ?? EquipmentSlotUpgradeData.CreateDefault()
             };
@@ -290,6 +294,12 @@ namespace ProjectMT.Shared.GameData
 
             if (change.HasGrowthDungeonDailyKeyRefresh &&
                 !TryApplyGrowthDungeonDailyKeyRefresh(change, itemCatalog))
+            {
+                return false;
+            }
+
+            if ((change.HasMarkOfflineInactive || change.HasSettleOfflineReward || change.HasAcknowledgeOfflineRewards) &&
+                !TryApplyOfflineRewardProgress(change))
             {
                 return false;
             }
@@ -629,6 +639,64 @@ namespace ProjectMT.Shared.GameData
             return true;
         }
 
+        private bool TryApplyOfflineRewardProgress(GameProgressChange change)
+        {
+            var operationCount = (change.HasMarkOfflineInactive ? 1 : 0) +
+                                 (change.HasSettleOfflineReward ? 1 : 0) +
+                                 (change.HasAcknowledgeOfflineRewards ? 1 : 0);
+            if (operationCount != 1)
+            {
+                return false;
+            }
+
+            offlineRewards ??= OfflineRewardProgressData.CreateDefault();
+            if (change.HasMarkOfflineInactive)
+            {
+                return (change.Rewards == null || change.Rewards.IsEmpty) &&
+                       offlineRewards.TryMarkInactive(
+                           change.ExpectedOfflineLastActiveUtc,
+                           change.OfflineNextActiveUtc,
+                           change.OfflineNextActiveStage);
+            }
+
+            if (change.HasAcknowledgeOfflineRewards)
+            {
+                return (change.Rewards == null || change.Rewards.IsEmpty) &&
+                       offlineRewards.TryAcknowledge(change.OfflineReceiptIds);
+            }
+
+            return MatchesOfflineReceipt(change.OfflineReceipt, change.Rewards) &&
+                   offlineRewards.TrySettle(
+                       change.ExpectedOfflineLastActiveUtc,
+                       change.OfflineNextActiveUtc,
+                       change.OfflineNextActiveStage,
+                       change.OfflineReceipt);
+        }
+
+        private static bool MatchesOfflineReceipt(
+            OfflineRewardReceiptData receipt,
+            RewardBundle rewards)
+        {
+            if (receipt == null || !receipt.IsValid || rewards == null || rewards.IsEmpty ||
+                receipt.Gold != rewards.Gold ||
+                receipt.CommanderExperience != rewards.CommanderExperience)
+            {
+                return false;
+            }
+
+            if (receipt.UpgradeStone <= 0L)
+            {
+                return rewards.Items.Count == 0;
+            }
+
+            return rewards.Items.Count == 1 &&
+                   string.Equals(
+                       rewards.Items[0].ItemId,
+                       ItemIds.EquipmentSlotUpgradeStone,
+                       StringComparison.OrdinalIgnoreCase) &&
+                   rewards.Items[0].Amount == receipt.UpgradeStone;
+        }
+
         private bool TryApplyExpeditionFirstClear(GameProgressChange change)
         {
             if (expeditionMode != ExpeditionRunMode.Challenge ||
@@ -712,6 +780,8 @@ namespace ProjectMT.Shared.GameData
             itemViewCache = null;
             growthDungeons ??= GrowthDungeonProgressData.CreateDefault();
             growthDungeons.Repair();
+            offlineRewards ??= OfflineRewardProgressData.CreateDefault();
+            offlineRewards.Repair();
             equipmentSlotUpgrade ??= EquipmentSlotUpgradeData.CreateDefault();
             equipmentSlotUpgrade.Repair();
 
@@ -766,6 +836,11 @@ namespace ProjectMT.Shared.GameData
                 }
             }
 
+            if (sourceDataVersion <= 13)
+            {
+                offlineRewards = OfflineRewardProgressData.CreateDefault(); // 기존 저장은 소급 보상 없이 현재부터 기록
+            }
+
             Repair();
         }
 
@@ -796,6 +871,7 @@ namespace ProjectMT.Shared.GameData
             Equipment = data.Equipment; // 08.10 안건준 추가
             Items = data.Items;
             GrowthDungeons = data.GrowthDungeons;
+            OfflineRewards = data.OfflineRewards;
             EquipmentSlotUpgrade = data.EquipmentSlotUpgrade;
         }
 
@@ -816,6 +892,7 @@ namespace ProjectMT.Shared.GameData
         public EquipmentSaveDataView Equipment { get; } // 08.10 안건준 추가 - 장비 보유·장착 상태
         public ItemInventoryView Items { get; } // 일반 아이템 보유 수량
         public GrowthDungeonProgressView GrowthDungeons { get; } // 성장 던전 단계·열쇠 기준일
+        public OfflineRewardProgressView OfflineRewards { get; } // 방치 시작점·확인 대기 정산
         public EquipmentSlotUpgradeView EquipmentSlotUpgrade { get; } // 부위 슬롯 영구 강화 레벨
     }
 
@@ -882,6 +959,15 @@ namespace ProjectMT.Shared.GameData
         internal bool HasUpgradeEquipmentSlot { get; private set; }
         internal EquipmentPart UpgradeEquipmentSlotPart { get; private set; }
         internal int ExpectedEquipmentSlotLevel { get; private set; }
+        internal bool HasMarkOfflineInactive { get; private set; }
+        internal bool HasSettleOfflineReward { get; private set; }
+        internal bool HasAcknowledgeOfflineRewards { get; private set; }
+        internal string ExpectedOfflineLastActiveUtc { get; private set; }
+        internal DateTime OfflineNextActiveUtc { get; private set; }
+        internal int OfflineNextActiveStage { get; private set; }
+        internal OfflineRewardReceiptData OfflineReceipt { get; private set; }
+        internal IReadOnlyList<string> OfflineReceiptIds { get; private set; }
+        internal bool SuppressChangedNotification => HasMarkOfflineInactive; // Pause·Quit 저장은 파괴 중 UI를 갱신하지 않음
 
         public static GameProgressChange SetExpeditionMode(ExpeditionRunMode mode)
         {
@@ -889,6 +975,59 @@ namespace ProjectMT.Shared.GameData
             {
                 HasExpeditionMode = true,
                 ExpeditionMode = mode
+            };
+        }
+
+        public static GameProgressChange MarkOfflineInactive(
+            string expectedLastActiveUtc,
+            DateTime inactiveUtc,
+            int stage)
+        {
+            return new GameProgressChange
+            {
+                HasMarkOfflineInactive = true,
+                ExpectedOfflineLastActiveUtc = expectedLastActiveUtc?.Trim() ?? string.Empty,
+                OfflineNextActiveUtc = inactiveUtc.ToUniversalTime(),
+                OfflineNextActiveStage = Math.Max(1, stage)
+            };
+        }
+
+        public static GameProgressChange SettleOfflineReward(
+            string expectedLastActiveUtc,
+            DateTime settledToUtc,
+            int nextStage,
+            OfflineRewardReceiptData receipt,
+            RewardBundle rewards)
+        {
+            return new GameProgressChange
+            {
+                HasSettleOfflineReward = true,
+                ExpectedOfflineLastActiveUtc = expectedLastActiveUtc?.Trim() ?? string.Empty,
+                OfflineNextActiveUtc = settledToUtc.ToUniversalTime(),
+                OfflineNextActiveStage = Math.Max(1, nextStage),
+                OfflineReceipt = receipt?.Clone(),
+                Rewards = rewards ?? RewardBundle.Empty
+            };
+        }
+
+        public static GameProgressChange AcknowledgeOfflineRewards(IReadOnlyList<string> receiptIds)
+        {
+            var ids = new List<string>(receiptIds?.Count ?? 0);
+            if (receiptIds != null)
+            {
+                for (var index = 0; index < receiptIds.Count; index++)
+                {
+                    if (!string.IsNullOrWhiteSpace(receiptIds[index]))
+                    {
+                        ids.Add(receiptIds[index].Trim());
+                    }
+                }
+            }
+
+            return new GameProgressChange
+            {
+                HasAcknowledgeOfflineRewards = true,
+                OfflineReceiptIds = ids
             };
         }
 

@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using ProjectMT.Core.SaveIO;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Contents.Framework;
-using ProjectMT.Features.Commander;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.MainBattle;
+using ProjectMT.Features.OfflineReward;
 using ProjectMT.Shared.Debugging;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
@@ -26,14 +26,17 @@ namespace ProjectMT.Bootstrap
         [SerializeField] private RewardAcquirePresenter rewardPresenter; // 저장 확정 보상 연출
         [SerializeField] private ContentFinishFeedbackPresenter finishFeedbackPresenter; // 콘텐츠 저장 재시도 표시
         [SerializeField] private ContentResultOverlayPresenter resultOverlayPresenter; // 저장 확정 공통 결과창
+        [SerializeField] private OfflineRewardPopupPresenter offlineRewardPresenter; // 접속·복귀 방치 정산창
 
         private GameDataService gameDataService; // 진행 데이터 관리자
         private ContentFlow contentFlow; // 콘텐츠 실행 흐름
         private GrowthDungeonSweepService growthDungeonSweepService; // Runtime 없는 1회 소탕
         private BattlePartySnapshotBuilder partyBuilder; // 저장 편성 해석기
         private CommanderGrowthConfig commanderGrowthConfig; // 군단장 경험치·레벨 규칙
+        private OfflineRewardCoordinator offlineRewardCoordinator; // 종료·복귀 방치 정산 흐름
         private DebugPanelController debugPanel; // 개발 빌드 전용 도구 패널
         private bool initialized; // 중복 초기화 방지
+        private SceneId readySceneId; // 마지막 초기화 완료 씬
 
         public static AppRootHost Instance { get; private set; } // 전역 AppRoot 한 개
         public bool IsInitialized => initialized;
@@ -106,6 +109,23 @@ namespace ProjectMT.Bootstrap
                 throw new InvalidOperationException("ContentResultOverlayPresenter is missing from AppRoot.");
             }
 
+            if (offlineRewardPresenter == null)
+            {
+                offlineRewardPresenter = GetComponentInChildren<OfflineRewardPopupPresenter>(true);
+            }
+
+            if (offlineRewardPresenter == null)
+            {
+                throw new InvalidOperationException("OfflineRewardPopupPresenter is missing from AppRoot.");
+            }
+
+            var offlineRewardError = "Config is missing.";
+            if (projectConfig.OfflineRewardConfig == null ||
+                !projectConfig.OfflineRewardConfig.TryValidate(out offlineRewardError))
+            {
+                throw new InvalidOperationException($"OfflineRewardConfig is invalid. {offlineRewardError}");
+            }
+
             var savePath = Path.Combine(Application.persistentDataPath, "ProjectMT_seed_save.json"); // 시드 저장 위치
             var saveService = new SaveService(new AtomicFileStore(), savePath);
             commanderGrowthConfig = projectConfig.CommanderGrowthConfig;
@@ -120,6 +140,14 @@ namespace ProjectMT.Bootstrap
                 projectConfig.ItemCatalog);
             await gameDataService.LoadAsync(); // 씬 초기화 전 저장 로드
             await RefreshGrowthDungeonKeysAsync(); // 접속 1회 KST 05:00 기준 충전
+            offlineRewardCoordinator = new OfflineRewardCoordinator(
+                gameDataService,
+                projectConfig.OfflineRewardConfig);
+            if (!await offlineRewardCoordinator.PrepareOnLoginAsync())
+            {
+                throw new InvalidOperationException("Offline reward login settlement could not be saved.");
+            }
+
             partyBuilder = new BattlePartySnapshotBuilder(projectConfig.MonsterCatalog);
 
             sceneLoader.Configure(projectConfig.SceneCatalog);
@@ -140,6 +168,7 @@ namespace ProjectMT.Bootstrap
                 finishFeedbackPresenter,
                 resultOverlayPresenter);
             sceneLoader.ContextFactory = CreateSceneContext; // 씬별 권한 봉투 생성
+            sceneLoader.SceneReady += HandleSceneReady;
             sceneLoader.SceneFailed += HandleSceneFailed;
 
             initialized = true;
@@ -306,22 +335,12 @@ namespace ProjectMT.Bootstrap
                     projectConfig.ItemCatalog,
                     commanderGrowthConfig,
                     projectConfig.EquipmentBalanceConfig,
-                    BuildCurrentParty, // 저장 확정 시 군단장 보너스를 포함한 새 부대 사진 생성
+                    () => partyBuilder.Build(gameDataService.View), // 저장 확정 시 새 부대 사진 생성
                     rewardPresenter,
                     growthDungeonSweepService);
             }
 
             return contentFlow.CreateSeparateSceneContext(sceneId); // 별도 콘텐츠 실행 봉투
-        }
-
-        private BattlePartySnapshot BuildCurrentParty()
-        {
-            var legionModifiers = new List<StatModifier>(3);
-            CommanderLegionModifierProvider.Append(
-                gameDataService.View.Commander,
-                commanderGrowthConfig,
-                legionModifiers);
-            return partyBuilder.Build(gameDataService.View, legionModifiers);
         }
 
         private void HandleSceneFailed(SceneId failedSceneId, string error)
@@ -334,11 +353,58 @@ namespace ProjectMT.Bootstrap
             }
         }
 
+        private void HandleSceneReady(SceneId sceneId)
+        {
+            readySceneId = sceneId;
+            if (sceneId == projectConfig.MainBattleSceneId)
+            {
+                ShowPendingOfflineRewards(); // 메인 전투 준비 뒤 접속 정산창 표시
+            }
+        }
+
+        private void ShowPendingOfflineRewards()
+        {
+            if (offlineRewardPresenter == null || offlineRewardCoordinator == null ||
+                !offlineRewardCoordinator.TryGetPendingPresentation(out var presentation))
+            {
+                return;
+            }
+
+            offlineRewardPresenter.Show(
+                presentation,
+                () => offlineRewardCoordinator.AcknowledgeAsync(presentation.ReceiptIds),
+                HandleOfflineRewardConfirmed);
+        }
+
+        private void HandleOfflineRewardConfirmed(OfflineRewardPresentation presentation)
+        {
+            rewardPresenter?.PlayConfirmed(presentation?.CreateAcquirePresentation());
+            ShowPendingOfflineRewards(); // 확인 중 새로 쌓인 영수증만 이어서 표시
+        }
+
         private async void OnApplicationPause(bool paused)
         {
             if (paused && initialized)
             {
+                await SaveOfflineInactiveSafelyAsync(); // 방치 시작점을 진행 데이터와 함께 확정
                 await SaveCurrentSafelyAsync(); // 백그라운드 전환 저장
+                return;
+            }
+
+            if (!paused && initialized && offlineRewardCoordinator != null)
+            {
+                try
+                {
+                    if (await offlineRewardCoordinator.ResumeAsync() &&
+                        readySceneId == projectConfig.MainBattleSceneId)
+                    {
+                        ShowPendingOfflineRewards();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                }
             }
         }
 
@@ -346,7 +412,28 @@ namespace ProjectMT.Bootstrap
         {
             if (initialized)
             {
+                await SaveOfflineInactiveSafelyAsync(); // Pause 누락 환경의 종료시각 보완
                 await SaveCurrentSafelyAsync(); // 앱 종료 직전 저장
+            }
+        }
+
+        private async Task SaveOfflineInactiveSafelyAsync()
+        {
+            if (offlineRewardCoordinator == null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (!await offlineRewardCoordinator.MarkInactiveAsync())
+                {
+                    Debug.LogError("Offline inactive time could not be saved.");
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
             }
         }
 
@@ -396,6 +483,7 @@ namespace ProjectMT.Bootstrap
             {
                 if (sceneLoader != null)
                 {
+                    sceneLoader.SceneReady -= HandleSceneReady;
                     sceneLoader.SceneFailed -= HandleSceneFailed;
                 }
 
@@ -423,6 +511,11 @@ namespace ProjectMT.Bootstrap
         public void EditorConfigureResultOverlay(ContentResultOverlayPresenter presenter)
         {
             resultOverlayPresenter = presenter;
+        }
+
+        public void EditorConfigureOfflineRewardPresenter(OfflineRewardPopupPresenter presenter)
+        {
+            offlineRewardPresenter = presenter;
         }
 #endif
     }

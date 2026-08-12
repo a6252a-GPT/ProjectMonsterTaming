@@ -56,6 +56,7 @@ namespace ProjectMT.Shared.GameData
 
         public async Task<bool> TryApplyAndSaveAsync(GameProgressChange change)
         {
+            var notifyChanged = false;
             await gate.WaitAsync();
             try
             {
@@ -72,13 +73,18 @@ namespace ProjectMT.Shared.GameData
 
                 await saveService.SaveAsync(candidate); // 저장 성공을 먼저 확인
                 current = candidate; // 성공한 후보만 확정
+                notifyChanged = !change.SuppressChangedNotification;
             }
             finally
             {
                 gate.Release();
             }
 
-            Changed?.Invoke();
+            if (notifyChanged)
+            {
+                Changed?.Invoke();
+            }
+
             return true;
         }
 

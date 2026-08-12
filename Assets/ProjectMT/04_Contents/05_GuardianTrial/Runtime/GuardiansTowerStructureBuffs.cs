@@ -10,30 +10,27 @@ namespace ProjectMT.Contents.GuardianTrial
     // 매 프레임 Tick()을 호출해준다. 이 클래스는 오직 수호자의 탑 전용이며 다른 던전 코드는 건드리지 않는다.
     //
     // 버프 4종류:
-    //  1번 건물(Defense)     : 08.07 안건준 수정 - "적 캐릭터" 방어력 *3 → 받는 피해가 1/3이 되도록
-    //                          피해의 2/3(=1 - 1/3)을 즉시 환불해 흉내낸다. (이전: 300% 상승 ≈ 4배 → 환불 3/4)
-    //  2번 건물(Health)      : 08.07 안건준 수정 - "적 캐릭터" 최대 체력 *3. (이전: 300% 상승 = 4배)
+    //  1번 건물(Defense)     : 적에게 방어력 스탯이 없어 방어력을 올릴 수 없으므로, 아군이 적에게 주는
+    //                          피해를 적용하기 전에 30%로 계산해서 넘긴다(피해를 100% 적용 후 환불하는
+    //                          방식이 아니라, 적용 전에 최종 피해의 30%만 계산해서 넘기는 방식).
+    //  2번 건물(Health)      : "적 캐릭터" 최대 체력 *3.
     //  3번 건물(Regen)       : "적 캐릭터"가 1초마다 최대 체력의 30% 회복.
-    //  4번 건물(AttackBoost) : 08.07 안건준 수정 - "살아있는 동안 적 증원" 방식을 폐지하고, 이 건물이
-    //                          "파괴되는 순간" 1회 "아군"에게 공격력 2배 버프를 발동하는 방식으로 변경.
+    //  4번 건물(AttackBoost) : 이 건물이 "파괴되는 순간" 1회 "아군"에게 공격력 2배 버프를 발동한다.
     //                          실제 배율 적용(UnitActor.SetDamageMultiplier)은 아군 목록을 가진
     //                          GuardiansTowerController만 할 수 있어서, 이 클래스는 파괴 시점에
     //                          onAllyAttackBuffTriggered 콜백만 호출해 알려주고 실제 적용은 컨트롤러가 담당한다.
     // 1~3번 건물이 부서지면 그 버프만 즉시 해제되고, 화면 중앙 알림 콜백이 호출된다.
     public sealed class GuardiansTowerStructureBuffs
     {
-        // 08.07 안건준 수정 - 방어력 *3 → 실제 피해 1/3만 남기므로 받은 피해의 2/3을 즉시 환불
-        private const float DefenseDamageRefundRatio = 2f / 3f;
-        // 08.07 안건준 수정 - 2번 건물: 적 최대 체력 *3 (이전 300% 상승=4배에서 변경)
-        private const float EnemyHealthMultiplier = 3f;
+        private const float DefenseIncomingDamageMultiplier = 0.30f; // 1번: 받는 피해를 적용 전에 30%로 계산
+        private const float EnemyHealthMultiplier = 3f; // 2번: 적 최대 체력 *3
         private const float RegenRatioPerTick = 0.30f; // 3번 건물: 1초마다 최대 체력의 30% 회복
         private const float RegenTickInterval = 1f;
 
         private sealed class EnemyBuffState
         {
-            public HealthComponent Health; // 체력·방어력 버프 적용 대상
+            public HealthComponent Health; // 체력·받는피해 버프 적용 대상
             public float BaseMaxHealth; // 체력 버프 적용 전 원래 최대 체력(적마다 다를 수 있어 개별 저장)
-            public float PreviousHealth; // 직전 프레임 체력(방어력 버프 피해 감지용)
         }
 
         private readonly GuardiansTowerStructure[] structures;
@@ -102,59 +99,39 @@ namespace ProjectMT.Contents.GuardianTrial
                 enemyHealth.SetMaxHealth(baseMax * EnemyHealthMultiplier, keepCurrentRatio: false); // 새로 스폰되므로 가득 채워 시작
             }
 
+            if (defenseBuffActive)
+            {
+                enemyHealth.SetIncomingDamageMultiplier(DefenseIncomingDamageMultiplier);
+            }
+
             enemyStates[enemyHealth] = new EnemyBuffState
             {
                 Health = enemyHealth,
-                BaseMaxHealth = baseMax,
-                PreviousHealth = enemyHealth.CurrentHealth
+                BaseMaxHealth = baseMax
             };
         }
 
-        // 매 프레임 호출: 방어력 환불(피해 감지) + 체력회복 틱 처리.
+        // 매 프레임 호출: 체력회복 틱만 처리(방어 버프는 스폰 시점에 이미 적용됨).
         public void Tick(float deltaTime)
         {
-            if (defenseBuffActive)
+            if (!regenBuffActive)
             {
-                foreach (var pair in enemyStates)
-                {
-                    var enemyHealth = pair.Key;
-                    if (enemyHealth == null || !enemyHealth.IsAlive)
-                    {
-                        continue;
-                    }
-
-                    var state = pair.Value;
-                    if (enemyHealth.CurrentHealth < state.PreviousHealth)
-                    {
-                        var lost = state.PreviousHealth - enemyHealth.CurrentHealth;
-                        enemyHealth.Heal(lost * DefenseDamageRefundRatio); // 받은 피해의 상당 부분을 즉시 환불
-                    }
-                }
+                return;
             }
 
-            if (regenBuffActive)
+            regenTimer += deltaTime;
+            if (regenTimer < RegenTickInterval)
             {
-                regenTimer += deltaTime;
-                if (regenTimer >= RegenTickInterval)
-                {
-                    regenTimer -= RegenTickInterval;
-                    foreach (var pair in enemyStates)
-                    {
-                        var enemyHealth = pair.Key;
-                        if (enemyHealth != null && enemyHealth.IsAlive)
-                        {
-                            enemyHealth.Heal(enemyHealth.MaxHealth * RegenRatioPerTick);
-                        }
-                    }
-                }
+                return;
             }
 
-            // 이번 프레임에 적용한 환불·회복까지 반영한 값을 다음 프레임 비교 기준으로 저장.
+            regenTimer -= RegenTickInterval;
             foreach (var pair in enemyStates)
             {
-                if (pair.Key != null)
+                var enemyHealth = pair.Key;
+                if (enemyHealth != null && enemyHealth.IsAlive)
                 {
-                    pair.Value.PreviousHealth = pair.Key.CurrentHealth;
+                    enemyHealth.Heal(enemyHealth.MaxHealth * RegenRatioPerTick);
                 }
             }
         }
@@ -167,6 +144,7 @@ namespace ProjectMT.Contents.GuardianTrial
                     if (defenseBuffActive)
                     {
                         defenseBuffActive = false;
+                        RevertEnemyDefenseBuff();
                         showNotification?.Invoke("적의 방어력이 약해졌습니다.");
                     }
 
@@ -205,8 +183,15 @@ namespace ProjectMT.Contents.GuardianTrial
                 if (enemyHealth != null && enemyHealth.IsAlive)
                 {
                     enemyHealth.SetMaxHealth(pair.Value.BaseMaxHealth, keepCurrentRatio: true);
-                    pair.Value.PreviousHealth = enemyHealth.CurrentHealth; // 감소를 피해로 오인하지 않도록 즉시 동기화
                 }
+            }
+        }
+
+        private void RevertEnemyDefenseBuff()
+        {
+            foreach (var pair in enemyStates)
+            {
+                pair.Key?.SetIncomingDamageMultiplier(1f);
             }
         }
 

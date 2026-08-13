@@ -75,7 +75,7 @@ namespace ProjectMT.Features.Equipment
                 }
             }
 
-            // 08.13 안건준 추가 - 군단장 잠재능력 슬롯 기여분도 장비와 같은 방식으로 합산한다.
+            // 군단장 잠재능력 슬롯 기여분도 장비와 같은 방식으로 합산한다.
             Accumulate(CommanderPotentialCalculator.GetContributions(CommanderPotentialRuntime.GetView()), values);
 
             return new EquipmentLegionBonus

@@ -25,11 +25,11 @@ namespace ProjectMT.Features.Commander
         [SerializeField] private GameObject levelUpReadyBadge;
         [SerializeField] private TMP_Text goldText;
 
-        // 08.13 안건준 추가 - 능력치/잠재능력 탭 전환 및 잠재능력 행 표시(이름 기반 탐색, 인스펙터 연결 불필요).
+        // 능력치/잠재능력 탭 전환 및 잠재능력 행 표시(이름 기반 탐색, 인스펙터 연결 불필요).
         private sealed class PotentialRowRefs
         {
             public TMP_Text TextLevel;
-            public TMP_Text UpTextLevel; // 08.13 안건준 추가 - "Text_Level"(등급 이름) 위에 붙는 "[등급]" 고정 라벨
+            public TMP_Text UpTextLevel; // "Text_Level"(등급 이름) 위에 붙는 "[등급]" 고정 라벨
             public TMP_Text Text;
             public List<TMP_Text> ExtraTexts; // 프리팹 복제 과정에서 남은 목업 문구("Unlocks at..." 등) 정리용
             public GameObject IconOn; // 자물쇠 켜짐 오브젝트(더 이상 직접 켜지 않음, 스프라이트만 빌려 씀)
@@ -277,11 +277,11 @@ namespace ProjectMT.Features.Commander
             {
                 var range = CommanderPotentialOptionTable.GetOption(slot.OptionType, slot.Grade);
                 var statName = EquipmentOptionInfo.GetDisplayName(slot.OptionType);
-                // 08.13 안건준 수정 - "등급 : " 접두어 없이 등급 이름만("일반", "레어" 등) 표기.
+                // "등급 : " 접두어 없이 등급 이름만("일반", "희귀" 등) 표기.
                 // 접두어는 별도로 분리해둔 "UpText_Level"에 고정 라벨("[등급]")로 표시한다.
                 SetText(row.UpTextLevel, "[등급]");
                 SetText(row.TextLevel, CommanderPotentialOptionTable.GetGradeDisplayName(slot.Grade));
-                // 08.13 안건준 수정 - 적용값을 정수로 반올림하면 좁은 범위 안에서는 재추첨 전후가
+                // 적용값을 정수로 반올림하면 좁은 범위 안에서는 재추첨 전후가
                 // 같은 숫자로 보여서 "옵션 스탯 변경"을 눌러도 안 바뀐 것처럼 보인다. 소수 1자리로 표시.
                 SetTextFit(
                     row.Text,
@@ -310,7 +310,7 @@ namespace ProjectMT.Features.Commander
                 }
             }
 
-            // 08.13 안건준 수정 - "IconOn"/"IconOff" 두 오브젝트를 번갈아 켜고 끄는 방식은 한쪽이 프리팹
+            // "IconOn"/"IconOff" 두 오브젝트를 번갈아 켜고 끄는 방식은 한쪽이 프리팹
             // 설정(스프라이트가 없거나 렌더 순서 등) 때문에 안 보이는 경우가 있었다. 그래서 "IconOff" 오브젝트
             // 하나만 항상 켜두고, 그 안의 스프라이트만 잠금/해제 상태에 맞게 갈아 끼우는 방식으로 바꿨다.
             // 빈 슬롯은 잠글 수 없으므로 항상 "해제" 스프라이트로 유지된다.
@@ -448,7 +448,7 @@ namespace ProjectMT.Features.Commander
             var iconOnImage = iconOnTransform?.GetComponent<Image>();
             var iconOffImage = iconOffTransform?.GetComponent<Image>();
 
-            // 08.13 안건준 수정 - "IconOn"/"IconOff" 두 오브젝트를 각각 켜고 끄는 방식은 한쪽이 프리팹 설정
+            // "IconOn"/"IconOff" 두 오브젝트를 각각 켜고 끄는 방식은 한쪽이 프리팹 설정
             // 때문에 화면에 안 보이는 문제가 있었다. 이제 "IconOff" 오브젝트 하나만 항상 켜두고, 원래 각
             // 오브젝트에 물려있던 스프라이트(잠김/해제)만 상황에 맞게 갈아 끼우는 방식으로 바꿨다.
             // 클릭 판정은 그대로 두 오브젝트 모두에 걸어둔다(리스너 자체는 오브젝트가 꺼져 있어도 등록에 문제없다).
@@ -493,7 +493,7 @@ namespace ProjectMT.Features.Commander
 
         private static Button EnsureButton(Transform target)
         {
-            // 08.13 안건준 추가 - 이미지로만 만들어둔 오브젝트는 Raycast Target이 꺼져있으면
+            // 이미지로만 만들어둔 오브젝트는 Raycast Target이 꺼져있으면
             // Button을 붙여도 클릭 판정을 받지 못한다. 켜져 있도록 강제한다.
             var graphic = target.GetComponent<Graphic>();
             if (graphic != null)

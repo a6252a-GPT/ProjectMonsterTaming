@@ -5,7 +5,7 @@ using ProjectMT.Shared.Equipment;
 
 namespace ProjectMT.Features.Commander
 {
-    // 08.13 안건준 추가 - 채워진 잠재능력 슬롯들을 장비와 동일한 EquipmentStatContribution 형태로 바꿔준다.
+    // 채워진 잠재능력 슬롯들을 장비와 동일한 EquipmentStatContribution 형태로 바꿔준다.
     // 이 형태로 만들어두면 EquipmentLegionBonusCalculator가 장비 옵션과 완전히 같은 방식으로 합산할 수 있다.
     public static class CommanderPotentialCalculator
     {

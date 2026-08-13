@@ -8,11 +8,10 @@ using ProjectMT.Shared.Items;
 
 namespace ProjectMT.Features.Commander
 {
-    // 08.13 안건준 추가 - 군단장 잠재능력 슬롯 조회·최초 배정 파사드(GameProgressData 연동).
-    // EquipmentSlotUpgradeRuntime과 동일한 구조다.
+    // 군단장 잠재능력 슬롯 조회·최초 배정 파사드(GameProgressData 연동). EquipmentSlotUpgradeRuntime과 동일한 구조다.
     public static class CommanderPotentialRuntime
     {
-        // 08.13 안건준 추가 - "수호자의 힘" 단계 = 해금된 잠재능력 슬롯 수(1단계=1슬롯 ... 5단계=5슬롯).
+        // "수호자의 힘" 단계 = 해금된 잠재능력 슬롯 수(1단계=1슬롯 ... 5단계=5슬롯).
         public static int UnlockedSlotCount => IsReady ? progress.View.CommanderPotential.Stage : 1;
 
         private static IGameProgressService progress;
@@ -51,7 +50,7 @@ namespace ProjectMT.Features.Commander
         public static CommanderPotentialView GetView() =>
             IsReady ? progress.View.CommanderPotential : default;
 
-        // 08.13 안건준 추가 - "수호자의 힘" 현재 단계/경험치. PotentialText·PotentialSlider 표시용.
+        // "수호자의 힘" 현재 단계/경험치. PotentialText·PotentialSlider 표시용.
         public static int Stage => IsReady ? progress.View.CommanderPotential.Stage : 1;
         public static long Experience => IsReady ? progress.View.CommanderPotential.Experience : 0L;
         public static long ExperiencePerStage => CommanderPotentialData.ExperiencePerStage;
@@ -77,7 +76,7 @@ namespace ProjectMT.Features.Commander
             }
         }
 
-        // 08.13 안건준 추가 - "잠재 능력 변경"에 필요한 잠재능력 강화석 보유량.
+        // "잠재 능력 변경"에 필요한 잠재능력 강화석 보유량.
         public static long StoneBalance =>
             IsReady && progress.View.Items.TryGetQuantity(ItemIds.LegionPotentialUpgradeStone, out var quantity)
                 ? quantity
@@ -105,8 +104,8 @@ namespace ProjectMT.Features.Commander
             return false;
         }
 
-        // 08.13 안건준 수정 - 오직 "첫 번째 슬롯"만 자동으로 채운다. 2단계 이후 새로 해금되는 슬롯은
-        // 개방만 되고 옵션은 비어있는 상태로 유지되며(자동 배정 없음), 이미 값이 있으면 아무 것도 하지 않는다.
+        // 오직 "첫 번째 슬롯"만 자동으로 채운다. 2단계 이후 새로 해금되는 슬롯은 개방만 되고
+        // 옵션은 비어있는 상태로 유지되며(자동 배정 없음), 이미 값이 있으면 아무 것도 하지 않는다.
         public static async Task EnsureInitialRollAsync()
         {
             if (!IsReady || rollInFlight || GetSlot(0).HasValue)
@@ -127,8 +126,8 @@ namespace ProjectMT.Features.Commander
             }
         }
 
-        // 08.13 안건준 수정 - "잠재 능력 변경"(ButtonArea_2) 버튼: 강화석 1개를 소모해 잠기지 않은 채워진
-        // 슬롯은 전부 완전히 새로 뽑고(옵션 종류·등급·수치 모두 다시 추첨), 해금됐지만 아직 비어있는("대기 중")
+        // "잠재 능력 변경"(ButtonArea_2) 버튼: 강화석 1개를 소모해 잠기지 않은 채워진 슬롯은 전부
+        // 완전히 새로 뽑고(옵션 종류·등급·수치 모두 다시 추첨), 해금됐지만 아직 비어있는("대기 중")
         // 슬롯은 이 클릭으로 처음 배정된다. 잠긴 슬롯과 아직 해금되지 않은 슬롯은 건너뛴다.
         public static async Task<bool> TryRerollAsync()
         {
@@ -176,9 +175,9 @@ namespace ProjectMT.Features.Commander
             }
         }
 
-        // 08.13 안건준 수정 - "옵션 스탯 변경"(ButtonArea_1) 버튼: 강화석 1개를 소모해 채워진 슬롯들의
-        // 옵션 종류·등급은 그대로 두고 같은 등급 범위 안에서 수치만 다시 뽑는다. 잠금은 옵션 자체가 바뀌는
-        // "잠재 능력 변경"만 막는 용도라, 잠긴 슬롯도 여기서는 대상이 된다(값이 있으면 잠금 여부와 무관하게 적용).
+        // "옵션 스탯 변경"(ButtonArea_1) 버튼: 강화석 1개를 소모해 채워진 슬롯들의 옵션 종류·등급은
+        // 그대로 두고 같은 등급 범위 안에서 수치만 다시 뽑는다. 잠금은 옵션 자체가 바뀌는 "잠재 능력 변경"만
+        // 막는 용도라, 잠긴 슬롯도 여기서는 대상이 된다(값이 있으면 잠금 여부와 무관하게 적용).
         public static async Task<bool> TryRerollValueAsync()
         {
             if (!IsReady || rerollInFlight)
@@ -218,7 +217,7 @@ namespace ProjectMT.Features.Commander
             }
         }
 
-        // 08.13 안건준 추가 - 자물쇠 아이콘 클릭: 값이 있는 슬롯의 잠금 상태를 반대로 토글한다.
+        // 자물쇠 아이콘 클릭: 값이 있는 슬롯의 잠금 상태를 반대로 토글한다.
         public static async Task<bool> ToggleLockAsync(int index)
         {
             if (!IsReady || lockToggleInFlight)

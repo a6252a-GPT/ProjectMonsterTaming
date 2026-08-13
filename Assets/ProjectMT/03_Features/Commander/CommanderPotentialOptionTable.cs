@@ -5,7 +5,7 @@ using ProjectMT.Shared.Equipment;
 
 namespace ProjectMT.Features.Commander
 {
-    // 08.13 안건준 추가 - 옵션 종류(13) x 등급(5) 조합 1개의 정보(값 범위 포함).
+    // 옵션 종류(13) x 등급(5) 조합 1개의 정보(값 범위 포함).
     public readonly struct CommanderPotentialOption
     {
         public CommanderPotentialOption(EquipmentOptionType type, EquipmentGrade grade, float minValue, float maxValue)
@@ -22,7 +22,7 @@ namespace ProjectMT.Features.Commander
         public float MaxValue { get; }
     }
 
-    // 08.13 안건준 추가 - 실제로 뽑힌 결과(등급+옵션 종류+확정값 1개).
+    // 실제로 뽑힌 결과(등급+옵션 종류+확정값 1개).
     public readonly struct CommanderPotentialRollResult
     {
         public CommanderPotentialRollResult(EquipmentOptionType type, EquipmentGrade grade, float value)
@@ -37,7 +37,7 @@ namespace ProjectMT.Features.Commander
         public float Value { get; }
     }
 
-    // 08.13 안건준 추가 - 군단장 잠재능력 옵션표(문서 "잠재능력_옵션_정리.md" 기준).
+    // 군단장 잠재능력 옵션표(문서 "잠재능력_옵션_정리.md" 기준).
     // 옵션 기준값·같은 등급 안의 랜덤 범위·옵션 종류 가중치는 장비 추가 옵션(EquipmentRandomOptionRoller)과
     // 완전히 동일한 공식을 그대로 재사용한다("장비처럼 등급이 같아도 일정 범위 안에서 랜덤값이 붙는다").
     // 등급이 뽑힐 확률만 장비 드랍 확률표와 다른, 잠재능력 전용표를 쓴다.
@@ -54,7 +54,7 @@ namespace ProjectMT.Features.Commander
 
         public static IReadOnlyList<EquipmentGrade> Grades => OrderedGrades;
 
-        // 08.13 안건준 수정 - 잠재능력 등급 표기: 일반/희귀/영웅/전설/신화.
+        // 잠재능력 등급 표기: 일반/희귀/영웅/전설/신화.
         public static string GetGradeDisplayName(EquipmentGrade grade)
         {
             switch (grade)

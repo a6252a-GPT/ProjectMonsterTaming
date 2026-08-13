@@ -1,19 +1,20 @@
 {
-  "name": "ProjectMT.Contents.GiantSpellbook",
-  "rootNamespace": "ProjectMT.Contents.GiantSpellbook",
-  "references": [
-    "ProjectMT.Core",
-    "ProjectMT.Shared",
-    "ProjectMT.Contents.Framework",
-    "UnityEngine.UI"
-  ],
-  "includePlatforms": [],
-  "excludePlatforms": [],
-  "allowUnsafeCode": false,
-  "overrideReferences": false,
-  "precompiledReferences": [],
-  "autoReferenced": true,
-  "defineConstraints": [],
-  "versionDefines": [],
-  "noEngineReferences": false
+    "name": "ProjectMT.Contents.GiantSpellbook",
+    "rootNamespace": "ProjectMT.Contents.GiantSpellbook",
+    "references": [
+        "ProjectMT.Core",
+        "ProjectMT.Shared",
+        "ProjectMT.Contents.Framework",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

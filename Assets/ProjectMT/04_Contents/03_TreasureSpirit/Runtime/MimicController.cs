@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace ProjectMT.Contents.GrowthDungeon
+namespace ProjectMT.Contents.TreasureSpirit
 {
     [RequireComponent(typeof(NavMeshAgent))]
     public class MimicController : MonoBehaviour
@@ -23,8 +23,12 @@ namespace ProjectMT.Contents.GrowthDungeon
 
         private void Start()
         {
-            DungeonStarterController player = FindFirstObjectByType<DungeonStarterController>();
-            if (player != null) targetPlayer = player.transform;
+            // 태그가 Player인 오브젝트 추적
+            GameObject playerObj = GameObject.FindWithTag("Player");
+            if (playerObj != null)
+            {
+                targetPlayer = playerObj.transform;
+            }
         }
 
         private void Update()

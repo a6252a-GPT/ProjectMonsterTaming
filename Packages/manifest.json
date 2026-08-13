@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.unity.ai.inference": "2.6.1",
     "com.unity.ai.navigation": "2.0.12",
     "com.unity.burst": "1.8.29",
     "com.unity.collab-proxy": "2.12.4",
@@ -12,7 +13,6 @@
     "com.unity.test-framework": "1.6.0",
     "com.unity.timeline": "1.8.12",
     "com.unity.toonshader": "0.13.0-preview",
-    "com.unity.ugui": "2.0.0",
     "com.unity.visualscripting": "1.9.11",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.adaptiveperformance": "1.0.0",

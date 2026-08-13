@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace ProjectMT.Contents.GrowthDungeon
+namespace ProjectMT.Contents.TreasureSpirit
 {
     public class MazeCameraFollow : MonoBehaviour
     {

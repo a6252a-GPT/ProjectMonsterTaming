@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace ProjectMT.Contents.GrowthDungeon
+namespace ProjectMT.Contents.TreasureSpirit
 {
     [RequireComponent(typeof(NavMeshAgent))]
     public class GuardAI : MonoBehaviour
@@ -29,6 +29,7 @@ namespace ProjectMT.Contents.GrowthDungeon
 
         [Header("공격 설정")]
         [SerializeField] private float attackCooldown = 1.5f;
+        [SerializeField] private int attackMotionCount = 3;
         private float lastAttackTime;
 
         [Header("배회 범위 설정")]
@@ -39,65 +40,123 @@ namespace ProjectMT.Contents.GrowthDungeon
         [Header("체력 설정")]
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float currentHealth;
-        [SerializeField] private float deathDestroyDelay = 3.0f; // 사망 애니메이션 재생 시간 확보용
+        [SerializeField] private float deathDestroyDelay = 3.0f;
         private bool isDead;
 
+        [Header("타겟 설정")]
+        [SerializeField] private Transform commanderTarget; // 기본 군단장(플레이어)
+        private Transform currentTarget;                  // 현재 조준 중인 최종 타깃(팔로워 우선)
+
         private NavMeshAgent agent;
-        private Animator animator; // Animator 참조 추가
-        private DungeonStarterController targetPlayer;
+        private Animator animator;
 
         private void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
-            animator = GetComponentInChildren<Animator>(); // 자식 오프젝트의 Animator 수집
+            animator = GetComponentInChildren<Animator>();
         }
 
         private void Start()
         {
             currentHealth = maxHealth;
             agent.speed = patrolSpeed;
-            FindPlayer();
             SetRandomPatrolDestination();
+        }
+
+        public void SetTargetPlayer(Transform target)
+        {
+            commanderTarget = target;
         }
 
         private void Update()
         {
-            if (isDead) return; // 사망 상태에서는 아무 로직도 실행하지 않음
+            if (isDead) return;
 
-            // 애니메이션 Speed 파라미터 갱신 (실제 이동 속도 연동)
             if (animator != null)
             {
                 animator.SetFloat("Speed", agent.velocity.magnitude);
             }
 
-            if (targetPlayer == null)
+            // ★ 실시간 타깃 평가 (팔로워 우선 감지)
+            EvaluateTarget();
+
+            if (currentTarget == null)
             {
-                FindPlayer();
+                if (currentState != GuardState.Patrol)
+                {
+                    currentState = GuardState.Patrol;
+                    agent.speed = patrolSpeed;
+                    SetRandomPatrolDestination();
+                }
                 PatrolBehavior();
                 return;
             }
 
-            float distanceToPlayer = Vector3.Distance(transform.position, targetPlayer.transform.position);
+            float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
 
             switch (currentState)
             {
                 case GuardState.Patrol:
-                    UpdatePatrolState(distanceToPlayer);
+                    UpdatePatrolState(distanceToTarget);
                     break;
 
                 case GuardState.Chase:
-                    UpdateChaseState(distanceToPlayer);
+                    UpdateChaseState(distanceToTarget);
                     break;
 
                 case GuardState.Attack:
-                    UpdateAttackState(distanceToPlayer);
+                    UpdateAttackState(distanceToTarget);
                     break;
             }
         }
 
-        private void UpdatePatrolState(float distanceToPlayer)
+        // ★ 팔로워 우선 타깃 탐색 메서드
+        private void EvaluateTarget()
         {
-            if (distanceToPlayer <= detectionRange)
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, detectionRange);
+            Transform closestFollower = null;
+            float minFollowerDistance = float.MaxValue;
+
+            foreach (var col in hitColliders)
+            {
+                bool isFollower = col.GetComponentInParent<FollowerAI>() != null;
+
+                if (isFollower)
+                {
+                    float dist = Vector3.Distance(transform.position, col.transform.position);
+                    if (dist < minFollowerDistance)
+                    {
+                        minFollowerDistance = dist;
+                        closestFollower = col.transform;
+                    }
+                }
+            }
+
+            // 1순위: 감지 범위 내 팔로워가 있다면 팔로워를 타깃으로 설정
+            if (closestFollower != null)
+            {
+                currentTarget = closestFollower;
+                return;
+            }
+
+            // 2순위: 범위 내 팔로워가 없고 군단장이 있다면 군단장 타깃 지정
+            if (commanderTarget != null)
+            {
+                float distToCommander = Vector3.Distance(transform.position, commanderTarget.position);
+                if (distToCommander <= detectionRange || currentState == GuardState.Chase || currentState == GuardState.Attack)
+                {
+                    currentTarget = commanderTarget;
+                    return;
+                }
+            }
+
+            // 아무도 범위 내에 없으면 타깃 해제
+            currentTarget = null;
+        }
+
+        private void UpdatePatrolState(float distanceToTarget)
+        {
+            if (distanceToTarget <= detectionRange)
             {
                 currentState = GuardState.Chase;
                 agent.speed = chaseSpeed;
@@ -107,9 +166,9 @@ namespace ProjectMT.Contents.GrowthDungeon
             PatrolBehavior();
         }
 
-        private void UpdateChaseState(float distanceToPlayer)
+        private void UpdateChaseState(float distanceToTarget)
         {
-            if (distanceToPlayer > loseTargetRange)
+            if (distanceToTarget > loseTargetRange)
             {
                 currentState = GuardState.Patrol;
                 agent.speed = patrolSpeed;
@@ -117,7 +176,7 @@ namespace ProjectMT.Contents.GrowthDungeon
                 return;
             }
 
-            if (distanceToPlayer <= attackRange)
+            if (distanceToTarget <= attackRange)
             {
                 currentState = GuardState.Attack;
                 agent.isStopped = true;
@@ -125,19 +184,19 @@ namespace ProjectMT.Contents.GrowthDungeon
             }
 
             agent.isStopped = false;
-            agent.SetDestination(targetPlayer.transform.position);
+            agent.SetDestination(currentTarget.position);
         }
 
-        private void UpdateAttackState(float distanceToPlayer)
+        private void UpdateAttackState(float distanceToTarget)
         {
-            if (distanceToPlayer > attackRange)
+            if (distanceToTarget > attackRange)
             {
                 currentState = GuardState.Chase;
                 agent.isStopped = false;
                 return;
             }
 
-            Vector3 lookDir = targetPlayer.transform.position - transform.position;
+            Vector3 lookDir = currentTarget.position - transform.position;
             lookDir.y = 0;
             if (lookDir != Vector3.zero)
             {
@@ -177,12 +236,8 @@ namespace ProjectMT.Contents.GrowthDungeon
             }
         }
 
-        [Header("공격 모션 설정")]
-        [SerializeField] private int attackMotionCount = 3; // 공격 모션 개수
-
         private void PerformAttack()
         {
-            // 공격 애니메이션 트리거 실행 (여러 모션 중 랜덤 선택)
             if (animator != null)
             {
                 int randomAttackIndex = Random.Range(0, attackMotionCount);
@@ -190,12 +245,10 @@ namespace ProjectMT.Contents.GrowthDungeon
                 animator.SetTrigger("Attack");
             }
 
-            Debug.Log($"⚔️ {gameObject.name}이(가) 플레이어를 공격했습니다!");
+            string targetName = currentTarget != null ? currentTarget.name : "타겟";
+            Debug.Log($"⚔️ {gameObject.name}이(가) [{targetName}]을(를) 공격했습니다!");
         }
 
-        /// <summary>
-        /// 외부(플레이어 공격 등)에서 데미지를 줄 때 호출하는 함수
-        /// </summary>
         public void TakeDamage(float damage)
         {
             if (isDead) return;
@@ -214,7 +267,6 @@ namespace ProjectMT.Contents.GrowthDungeon
             isDead = true;
             currentState = GuardState.Dead;
 
-            // 더 이상 이동/충돌하지 않도록 정리
             agent.isStopped = true;
             agent.enabled = false;
 
@@ -238,15 +290,6 @@ namespace ProjectMT.Contents.GrowthDungeon
         {
             yield return new WaitForSeconds(deathDestroyDelay);
             Destroy(gameObject);
-        }
-
-        private void FindPlayer()
-        {
-            DungeonStarterController player = FindObjectOfType<DungeonStarterController>();
-            if (player != null)
-            {
-                targetPlayer = player;
-            }
         }
 
         private void OnDrawGizmosSelected()

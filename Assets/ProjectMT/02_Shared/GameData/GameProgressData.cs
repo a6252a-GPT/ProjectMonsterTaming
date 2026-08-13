@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ProjectMT.Shared.Commander;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.Gacha;
 using ProjectMT.Shared.Items;
@@ -198,6 +199,7 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private bool coreBalanceMigrationCompleted = true; // v11 이관 재실행 방지
         [NonSerialized] private ItemInventoryView? itemViewCache; // 변경 전까지 목록 복사 재사용
         [SerializeField] private EquipmentSlotUpgradeData equipmentSlotUpgrade = EquipmentSlotUpgradeData.CreateDefault(); // 부위 슬롯 영구 강화 레벨(장비 보유·장착과 별도 저장)
+        [SerializeField] private CommanderPotentialData commanderPotential = CommanderPotentialData.CreateDefault(); // 08.13 안건준 추가 - 군단장 잠재능력 5슬롯
 
         public int CurrentChallengeStage => currentChallengeStage;
         public int LastClearedStage => lastClearedStage;
@@ -233,6 +235,8 @@ namespace ProjectMT.Shared.GameData
             new OfflineRewardProgressView(offlineRewards ?? OfflineRewardProgressData.CreateDefault());
         public EquipmentSlotUpgradeView EquipmentSlotUpgrade =>
             (equipmentSlotUpgrade ?? EquipmentSlotUpgradeData.CreateDefault()).CreateView();
+        public CommanderPotentialView CommanderPotential => // 08.13 안건준 추가
+            (commanderPotential ?? CommanderPotentialData.CreateDefault()).CreateView();
 
         public static GameProgressData CreateDefault()
         {
@@ -261,7 +265,8 @@ namespace ProjectMT.Shared.GameData
                 growthDungeons = growthDungeons?.Clone() ?? GrowthDungeonProgressData.CreateDefault(),
                 offlineRewards = offlineRewards?.Clone() ?? OfflineRewardProgressData.CreateDefault(),
                 coreBalanceMigrationCompleted = coreBalanceMigrationCompleted,
-                equipmentSlotUpgrade = equipmentSlotUpgrade?.Clone() ?? EquipmentSlotUpgradeData.CreateDefault()
+                equipmentSlotUpgrade = equipmentSlotUpgrade?.Clone() ?? EquipmentSlotUpgradeData.CreateDefault(),
+                commanderPotential = commanderPotential?.Clone() ?? CommanderPotentialData.CreateDefault() // 08.13 안건준 추가
             };
         }
 
@@ -551,6 +556,150 @@ namespace ProjectMT.Shared.GameData
                 items = slotUpgradeItems;
             }
 
+            // 08.13 안건준 추가 - 잠재능력 슬롯 최초 배정. 이미 값이 있으면 실패해 중복 배정을 막는다.
+            if (change.HasAssignCommanderPotentialSlot)
+            {
+                commanderPotential ??= CommanderPotentialData.CreateDefault();
+                if (!commanderPotential.TryAssignSlot(
+                        change.CommanderPotentialSlotIndex,
+                        change.CommanderPotentialOptionType,
+                        change.CommanderPotentialGrade,
+                        change.CommanderPotentialValue))
+                {
+                    return false;
+                }
+            }
+
+            // 08.13 안건준 수정 - "잠재 능력 변경": 강화석 1개 차감 후 잠기지 않은 대상 슬롯들을 새 옵션으로 교체.
+            // 해금됐지만 아직 비어있는("대기 중") 슬롯도 이 버튼으로 함께 처음 배정된다(값 있는 슬롯은 교체, 빈 슬롯은 신규 배정).
+            if (change.HasRerollCommanderPotentialSlots)
+            {
+                var entries = change.CommanderPotentialRerollEntries;
+                if (entries == null || entries.Count == 0)
+                {
+                    return false;
+                }
+
+                commanderPotential ??= CommanderPotentialData.CreateDefault();
+
+                // 실제로 반영하기 전에 대상 슬롯이 여전히 유효한지 먼저 확인해서
+                // 강화석을 차감한 뒤 일부만 반영되는 상황을 막는다. 값이 있는 슬롯은 잠겨있지 않아야 하고,
+                // 값이 없는 슬롯은 (해금 여부와 무관하게, 호출한 쪽에서 이미 걸러 보냈다고 보고) 신규 배정 대상이다.
+                for (var i = 0; i < entries.Count; i++)
+                {
+                    var target = commanderPotential.GetSlot(entries[i].SlotIndex);
+                    if (target == null || (target.HasValue && target.Locked))
+                    {
+                        return false;
+                    }
+                }
+
+                if (!ItemInventoryTransactions.TrySpend(
+                        items,
+                        new[] { new ItemAmount(ItemIds.LegionPotentialUpgradeStone, 1) },
+                        itemCatalog,
+                        out var rerollItems))
+                {
+                    return false; // 잠재능력 강화석 부족
+                }
+
+                for (var i = 0; i < entries.Count; i++)
+                {
+                    var entry = entries[i];
+                    var target = commanderPotential.GetSlot(entry.SlotIndex);
+                    if (target != null && target.HasValue)
+                    {
+                        commanderPotential.TryReplaceSlot(entry.SlotIndex, entry.OptionType, entry.Grade, entry.Value);
+                    }
+                    else
+                    {
+                        commanderPotential.TryAssignSlot(entry.SlotIndex, entry.OptionType, entry.Grade, entry.Value);
+                    }
+                }
+
+                // 08.13 안건준 추가 - "잠재 능력 변경" 1회 성공마다 "수호자의 힘" 경험치 +10, 100 채우면 다음 단계로 승급.
+                commanderPotential.AddExperience(CommanderPotentialData.ExperiencePerReroll);
+
+                items = rerollItems;
+            }
+
+            // 08.13 안건준 추가 - "옵션 스탯 변경": 강화석 1개 차감 후 옵션 종류·등급은 그대로 두고 수치만 교체.
+            // 잠금은 옵션 자체가 바뀌는 "잠재 능력 변경"만 막는 용도라, 여기서는 잠긴 슬롯도 대상이 된다(값만 있으면 됨).
+            if (change.HasRerollCommanderPotentialValues)
+            {
+                var valueEntries = change.CommanderPotentialValueRerollEntries;
+                if (valueEntries == null || valueEntries.Count == 0)
+                {
+                    return false;
+                }
+
+                commanderPotential ??= CommanderPotentialData.CreateDefault();
+
+                for (var i = 0; i < valueEntries.Count; i++)
+                {
+                    var target = commanderPotential.GetSlot(valueEntries[i].SlotIndex);
+                    if (target == null || !target.HasValue)
+                    {
+                        return false;
+                    }
+                }
+
+                if (!ItemInventoryTransactions.TrySpend(
+                        items,
+                        new[] { new ItemAmount(ItemIds.LegionPotentialUpgradeStone, 1) },
+                        itemCatalog,
+                        out var valueRerollItems))
+                {
+                    return false; // 잠재능력 강화석 부족
+                }
+
+                for (var i = 0; i < valueEntries.Count; i++)
+                {
+                    var entry = valueEntries[i];
+                    commanderPotential.TryRerollSlotValue(entry.SlotIndex, entry.Value);
+                }
+
+                // 08.13 안건준 추가 - "옵션 스탯 변경" 1회 성공마다 "수호자의 힘" 경험치 +10.
+                commanderPotential.AddExperience(CommanderPotentialData.ExperiencePerReroll);
+
+                items = valueRerollItems;
+            }
+
+            // 08.13 안건준 수정 - 자물쇠 아이콘 클릭으로 재추첨 대상 제외 여부를 토글. 잠그는 경우에만 강화석을
+            // 소모하며(해제는 무료), 이미 잠긴 슬롯 수에 따라 비용이 1→2→4→8→16개로 2배씩 늘어난다.
+            if (change.HasSetCommanderPotentialLocked)
+            {
+                commanderPotential ??= CommanderPotentialData.CreateDefault();
+
+                var lockTarget = commanderPotential.GetSlot(change.CommanderPotentialLockSlotIndex);
+                if (lockTarget == null || !lockTarget.HasValue ||
+                    lockTarget.Locked != change.ExpectedCommanderPotentialLocked)
+                {
+                    return false;
+                }
+
+                if (change.NewCommanderPotentialLocked)
+                {
+                    var alreadyLockedCount = commanderPotential.CountLockedSlots();
+                    var lockCost = CommanderPotentialData.GetLockStoneCost(alreadyLockedCount);
+                    if (!ItemInventoryTransactions.TrySpend(
+                            items,
+                            new[] { new ItemAmount(ItemIds.LegionPotentialUpgradeStone, lockCost) },
+                            itemCatalog,
+                            out var lockItems))
+                    {
+                        return false; // 잠재능력 강화석 부족
+                    }
+
+                    items = lockItems;
+                }
+
+                commanderPotential.TrySetSlotLocked(
+                    change.CommanderPotentialLockSlotIndex,
+                    change.ExpectedCommanderPotentialLocked,
+                    change.NewCommanderPotentialLocked);
+            }
+
             Repair(commanderGrowthConfig); // 변경 후 불변식 재확인
             return true;
         }
@@ -784,6 +933,8 @@ namespace ProjectMT.Shared.GameData
             offlineRewards.Repair();
             equipmentSlotUpgrade ??= EquipmentSlotUpgradeData.CreateDefault();
             equipmentSlotUpgrade.Repair();
+            commanderPotential ??= CommanderPotentialData.CreateDefault(); // 08.13 안건준 추가
+            commanderPotential.Repair();
 
             if (!IsValidExpeditionMode(expeditionMode) ||
                 (lastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat))
@@ -873,6 +1024,7 @@ namespace ProjectMT.Shared.GameData
             GrowthDungeons = data.GrowthDungeons;
             OfflineRewards = data.OfflineRewards;
             EquipmentSlotUpgrade = data.EquipmentSlotUpgrade;
+            CommanderPotential = data.CommanderPotential; // 08.13 안건준 추가
         }
 
         public int CurrentChallengeStage { get; }
@@ -894,6 +1046,7 @@ namespace ProjectMT.Shared.GameData
         public GrowthDungeonProgressView GrowthDungeons { get; } // 성장 던전 단계·열쇠 기준일
         public OfflineRewardProgressView OfflineRewards { get; } // 방치 시작점·확인 대기 정산
         public EquipmentSlotUpgradeView EquipmentSlotUpgrade { get; } // 부위 슬롯 영구 강화 레벨
+        public CommanderPotentialView CommanderPotential { get; } // 08.13 안건준 추가 - 군단장 잠재능력 5슬롯
     }
 
     public sealed class GameProgressChange // 한 번에 검증할 진행 변경 묶음
@@ -959,6 +1112,19 @@ namespace ProjectMT.Shared.GameData
         internal bool HasUpgradeEquipmentSlot { get; private set; }
         internal EquipmentPart UpgradeEquipmentSlotPart { get; private set; }
         internal int ExpectedEquipmentSlotLevel { get; private set; }
+        internal bool HasAssignCommanderPotentialSlot { get; private set; } // 08.13 안건준 추가
+        internal int CommanderPotentialSlotIndex { get; private set; }
+        internal EquipmentOptionType CommanderPotentialOptionType { get; private set; }
+        internal EquipmentGrade CommanderPotentialGrade { get; private set; }
+        internal float CommanderPotentialValue { get; private set; }
+        internal bool HasRerollCommanderPotentialSlots { get; private set; } // 08.13 안건준 추가 - "잠재 능력 변경"
+        internal IReadOnlyList<CommanderPotentialRerollEntry> CommanderPotentialRerollEntries { get; private set; }
+        internal bool HasRerollCommanderPotentialValues { get; private set; } // 08.13 안건준 추가 - "옵션 스탯 변경"(잠금 무시)
+        internal IReadOnlyList<CommanderPotentialRerollEntry> CommanderPotentialValueRerollEntries { get; private set; }
+        internal bool HasSetCommanderPotentialLocked { get; private set; } // 08.13 안건준 추가 - 자물쇠 아이콘 토글
+        internal int CommanderPotentialLockSlotIndex { get; private set; }
+        internal bool ExpectedCommanderPotentialLocked { get; private set; }
+        internal bool NewCommanderPotentialLocked { get; private set; }
         internal bool HasMarkOfflineInactive { get; private set; }
         internal bool HasSettleOfflineReward { get; private set; }
         internal bool HasAcknowledgeOfflineRewards { get; private set; }
@@ -1335,6 +1501,60 @@ namespace ProjectMT.Shared.GameData
                 HasUpgradeEquipmentSlot = true,
                 UpgradeEquipmentSlotPart = part,
                 ExpectedEquipmentSlotLevel = expectedLevel
+            };
+        }
+
+        // 08.13 안건준 추가 - 군단장 잠재능력 슬롯에 랜덤으로 뽑힌 옵션 1개를 최초로 배정한다.
+        // 이미 값이 있는 슬롯이면 TryApply에서 실패 처리된다.
+        public static GameProgressChange AssignCommanderPotentialSlot(
+            int slotIndex,
+            EquipmentOptionType optionType,
+            EquipmentGrade grade,
+            float value)
+        {
+            return new GameProgressChange
+            {
+                HasAssignCommanderPotentialSlot = true,
+                CommanderPotentialSlotIndex = slotIndex,
+                CommanderPotentialOptionType = optionType,
+                CommanderPotentialGrade = grade,
+                CommanderPotentialValue = value
+            };
+        }
+
+        // 08.13 안건준 추가 - "잠재 능력 변경": 강화석 1개를 소모해 잠기지 않은 슬롯들을 새로 뽑은 옵션으로 교체한다.
+        // 추첨(랜덤)은 호출 전에 이미 끝나 있고, 여기서는 그 결과를 결정론적으로 반영만 한다.
+        public static GameProgressChange RerollCommanderPotentialSlots(
+            IReadOnlyList<CommanderPotentialRerollEntry> entries)
+        {
+            return new GameProgressChange
+            {
+                HasRerollCommanderPotentialSlots = true,
+                CommanderPotentialRerollEntries = entries
+            };
+        }
+
+        // 08.13 안건준 추가 - "옵션 스탯 변경": 강화석 1개를 소모해 옵션 종류·등급은 유지하고 수치만 다시 뽑는다.
+        // 잠금은 옵션 자체가 바뀌는 "잠재 능력 변경"만 막는 용도라 잠긴 슬롯도 여기서는 대상이 된다.
+        public static GameProgressChange RerollCommanderPotentialValues(
+            IReadOnlyList<CommanderPotentialRerollEntry> entries)
+        {
+            return new GameProgressChange
+            {
+                HasRerollCommanderPotentialValues = true,
+                CommanderPotentialValueRerollEntries = entries
+            };
+        }
+
+        // 08.13 안건준 추가 - 잠재능력 슬롯의 자물쇠 아이콘 클릭 시 잠금/해제를 토글한다.
+        public static GameProgressChange SetCommanderPotentialLocked(int slotIndex, bool expectedLocked, bool newLocked)
+        {
+            return new GameProgressChange
+            {
+                HasSetCommanderPotentialLocked = true,
+                CommanderPotentialLockSlotIndex = slotIndex,
+                ExpectedCommanderPotentialLocked = expectedLocked,
+                NewCommanderPotentialLocked = newLocked
             };
         }
     }

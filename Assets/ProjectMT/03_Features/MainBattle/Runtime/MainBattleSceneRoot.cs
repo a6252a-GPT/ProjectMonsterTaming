@@ -107,7 +107,8 @@ namespace ProjectMT.Features.MainBattle
                 context.RewardPresentation,
                 formationGround,
                 context.ItemCatalog,
-                commander);
+                commander,
+                context.EquipmentBalanceConfig);
             formationPage.PartyChanged += HandlePartyChanged;
             formationPage.OpenStateChanged += HandleFormationPageOpenStateChanged;
             formationPage.PositionFormationRequested += HandlePositionFormationRequested;

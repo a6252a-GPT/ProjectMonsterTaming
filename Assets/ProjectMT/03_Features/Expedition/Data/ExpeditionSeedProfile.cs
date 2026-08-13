@@ -26,12 +26,23 @@ namespace ProjectMT.Features.Expedition
         [SerializeField] private string enemyWorldDropItemId = ItemIds.Gold; // 적 1기당 시드 드랍
         [SerializeField, Min(1)] private int enemyWorldDropQuantity = 1; // 최종 밸런스 전 최소 수량
 
+        [Header("Equipment Drops")]
+        [SerializeField] private EquipmentDropChestVisualCatalog equipmentDropChestVisualCatalog; // 등급별 상자 외형
+        [SerializeField, Range(0f, 1f)] private float normalEnemyEquipmentDropChance = 0.05f; // 일반 적 임시 파밍값
+
         public float WaveIntervalSeconds => waveIntervalSeconds;
         public float ChallengeTimeLimitSeconds => challengeTimeLimitSeconds;
         public float ResultDelaySeconds => resultDelaySeconds;
         public WorldItemDropVisualCatalog WorldItemDropVisualCatalog => worldItemDropVisualCatalog;
         public string EnemyWorldDropItemId => enemyWorldDropItemId ?? string.Empty;
         public int EnemyWorldDropQuantity => Mathf.Max(1, enemyWorldDropQuantity);
+        public EquipmentDropChestVisualCatalog EquipmentDropChestVisualCatalog => equipmentDropChestVisualCatalog;
+        public float NormalEnemyEquipmentDropChance => Mathf.Clamp01(normalEnemyEquipmentDropChance);
+
+        public bool ShouldDropNormalEnemyEquipment(float roll)
+        {
+            return NormalEnemyEquipmentDropChance >= 1f || Mathf.Clamp01(roll) < NormalEnemyEquipmentDropChance;
+        }
 
         public bool TryResolveStage(int stage, out ExpeditionStageDefinition definition)
         {
@@ -193,6 +204,14 @@ namespace ProjectMT.Features.Expedition
             worldItemDropVisualCatalog = visualCatalog;
             enemyWorldDropItemId = itemId?.Trim();
             enemyWorldDropQuantity = Mathf.Max(1, quantity);
+        }
+
+        public void EditorConfigureEquipmentDrops(
+            EquipmentDropChestVisualCatalog visualCatalog,
+            float dropChance)
+        {
+            equipmentDropChestVisualCatalog = visualCatalog;
+            normalEnemyEquipmentDropChance = Mathf.Clamp01(dropChance);
         }
 #endif
     }

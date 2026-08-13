@@ -463,7 +463,10 @@ namespace ProjectMT.Shared.GameData
             if (change.HasAcquireEquipment)
             {
                 equipment ??= EquipmentSaveData.CreateDefault();
-                equipment.Acquire(change.AcquireEquipmentInstances);
+                if (!equipment.TryAcquire(change.AcquireEquipmentInstances))
+                {
+                    return false;
+                }
             }
 
             if (change.HasEquipItem &&
@@ -477,6 +480,29 @@ namespace ProjectMT.Shared.GameData
                 !(equipment ??= EquipmentSaveData.CreateDefault()).TryUnequip(change.UnequipItemPart))
             {
                 return false;
+            }
+
+            if (change.HasSetEquipmentLock &&
+                (string.IsNullOrEmpty(change.EquipmentLockInstanceId) ||
+                 !(equipment ??= EquipmentSaveData.CreateDefault()).TrySetLocked(
+                     change.EquipmentLockInstanceId,
+                     change.ExpectedEquipmentLockValue,
+                     change.EquipmentLockValue)))
+            {
+                return false;
+            }
+
+            if (change.HasDismantleEquipment)
+            {
+                equipment ??= EquipmentSaveData.CreateDefault();
+                if (!equipment.TryDismantle(change.DismantleEquipmentInstanceIds, out var upgradeStoneAmount) ||
+                    !TryApplyRewards(
+                        RewardBundle.FromItems(new ItemAmount(ItemIds.EquipmentSlotUpgradeStone, upgradeStoneAmount)),
+                        commanderGrowthConfig,
+                        itemCatalog))
+                {
+                    return false;
+                }
             }
 
             if (change.HasDiscardItem)
@@ -947,6 +973,12 @@ namespace ProjectMT.Shared.GameData
         internal string EquipItemInstanceId { get; private set; }
         internal bool HasUnequipItem { get; private set; }
         internal EquipmentPart UnequipItemPart { get; private set; }
+        internal bool HasSetEquipmentLock { get; private set; }
+        internal string EquipmentLockInstanceId { get; private set; }
+        internal bool ExpectedEquipmentLockValue { get; private set; }
+        internal bool EquipmentLockValue { get; private set; }
+        internal bool HasDismantleEquipment { get; private set; }
+        internal IReadOnlyList<string> DismantleEquipmentInstanceIds { get; private set; }
         internal bool HasStandaloneItemGrant { get; private set; }
         internal bool HasDiscardItem { get; private set; }
         internal bool HasUseItem { get; private set; }
@@ -1324,6 +1356,38 @@ namespace ProjectMT.Shared.GameData
             {
                 HasUnequipItem = true,
                 UnequipItemPart = part
+            };
+        }
+
+        public static GameProgressChange SetEquipmentLock(
+            string instanceId,
+            bool expectedValue,
+            bool nextValue)
+        {
+            return new GameProgressChange
+            {
+                HasSetEquipmentLock = true,
+                EquipmentLockInstanceId = instanceId?.Trim(),
+                ExpectedEquipmentLockValue = expectedValue,
+                EquipmentLockValue = nextValue
+            };
+        }
+
+        public static GameProgressChange DismantleEquipment(IReadOnlyList<string> instanceIds)
+        {
+            var copiedIds = new List<string>(instanceIds?.Count ?? 0);
+            if (instanceIds != null)
+            {
+                for (var index = 0; index < instanceIds.Count; index++)
+                {
+                    copiedIds.Add(instanceIds[index]?.Trim());
+                }
+            }
+
+            return new GameProgressChange
+            {
+                HasDismantleEquipment = true,
+                DismantleEquipmentInstanceIds = copiedIds
             };
         }
 

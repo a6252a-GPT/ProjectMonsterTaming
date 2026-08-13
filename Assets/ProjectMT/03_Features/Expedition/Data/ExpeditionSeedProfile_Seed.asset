@@ -115,3 +115,5 @@ MonoBehaviour:
   worldItemDropVisualCatalog: {fileID: 11400000, guid: f18b689dc18bfca449462502e4ea93b5, type: 2}
   enemyWorldDropItemId: currency_gold
   enemyWorldDropQuantity: 1
+  equipmentDropChestVisualCatalog: {fileID: 11400000, guid: 665b60412704a3b40964b5c078771cd7, type: 2}
+  normalEnemyEquipmentDropChance: 0.05

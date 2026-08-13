@@ -29,13 +29,26 @@ namespace ProjectMT.Features.Equipment
             var results = new List<EquipmentInstanceData>(DropCount);
             for (var i = 0; i < DropCount; i++)
             {
-                var part = EquipmentPartInfo.RollUniform((float)rng.NextDouble());
-                var grade = EquipmentGradeInfo.RollWeighted((float)(rng.NextDouble() * 100.0), balance);
-                var randomOptions = EquipmentRandomOptionRoller.Roll(grade, balance, rng);
-                results.Add(new EquipmentInstanceData(Guid.NewGuid().ToString("N"), part, grade, randomOptions));
+                results.Add(RollSingle(balance, rng));
             }
 
             return results;
+        }
+
+        public static EquipmentInstanceData RollSingle(
+            EquipmentBalanceConfig balance,
+            Random random = null)
+        {
+            if (balance == null)
+            {
+                throw new ArgumentNullException(nameof(balance));
+            }
+
+            var rng = random ?? new Random();
+            var part = EquipmentPartInfo.RollUniform((float)rng.NextDouble());
+            var grade = EquipmentGradeInfo.RollWeighted((float)(rng.NextDouble() * 100.0), balance);
+            var randomOptions = EquipmentRandomOptionRoller.Roll(grade, balance, rng);
+            return new EquipmentInstanceData(Guid.NewGuid().ToString("N"), part, grade, randomOptions);
         }
     }
 }

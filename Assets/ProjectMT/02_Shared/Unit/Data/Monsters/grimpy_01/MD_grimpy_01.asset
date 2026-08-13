@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5de17c54962b5e4498845b2d56bbb2f, type: 3}
+  m_Name: MD_grimpy_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
+  monsterId: grimpy_01
+  displayName: "\uADF8\uB9BC\uD53C"
+  portrait: {fileID: 21300000, guid: 8cffbec00bf82ef4d9677185e19f202c, type: 3}
+  previewPrefab: {fileID: 6670167171498116428, guid: 848c27bc58ecfb843890301c581f580b, type: 3}
+  visualTint: {r: 1, g: 1, b: 1, a: 1}
+  maxHealth: 100
+  attackPower: 10
+  defense: 0
+  attackSpeed: 1
+  moveSpeed: 2.5
+  attackRange: 1.2
+  ranged: 0
+  runtimeAssetKey: monster/grimpy_01
+  runtimeAssetSet: {fileID: 11400000, guid: b7659f24facbcf44185c13bc570fa2f7, type: 2}

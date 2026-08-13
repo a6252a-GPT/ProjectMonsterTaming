@@ -142,19 +142,19 @@ namespace ProjectMT.Contents.GuardianTrial
             }
         }
 
-        // 08.07 안건준 추가 - 버프 종류를 화면에 표시할 짧은 단어로 변환.
+        // 건물 위 버프 표기. Wall_N_Text에 2줄로 표시한다.
         private static string ResolveRoleLabel(GuardiansTowerStructureRole structureRole)
         {
             switch (structureRole)
             {
                 case GuardiansTowerStructureRole.Defense:
-                    return "적 방어 버프 OFF";
+                    return "방어 장벽\n방어 70%";
                 case GuardiansTowerStructureRole.Health:
-                    return "적 체력 버프 OFF";
+                    return "생명 장벽\n체력 3배";
                 case GuardiansTowerStructureRole.Regen:
-                    return "적 회복 버프 OFF";
+                    return "재생 방벽\n회복";
                 case GuardiansTowerStructureRole.AttackBoost:
-                    return "아군공격 버프 ON"; // 08.07 안건준 수정 - 파괴 시 아군 공격력 2배 버프(4번 건물)
+                    return "전투 장벽\n공격 2배";
                 default:
                     return string.Empty;
             }

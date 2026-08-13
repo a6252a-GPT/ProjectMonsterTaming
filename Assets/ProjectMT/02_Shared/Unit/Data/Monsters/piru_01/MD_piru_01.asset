@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5de17c54962b5e4498845b2d56bbb2f, type: 3}
+  m_Name: MD_piru_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
+  monsterId: piru_01
+  displayName: "\uD53C\uB8E8"
+  portrait: {fileID: 21300000, guid: acf391569ef620046b7311d86d4586fd, type: 3}
+  previewPrefab: {fileID: 6848239659094107171, guid: e6205da96c615e6408f159c9ab94ab6e, type: 3}
+  visualTint: {r: 1, g: 1, b: 1, a: 1}
+  maxHealth: 100
+  attackPower: 10
+  defense: 0
+  attackSpeed: 1
+  moveSpeed: 2.5
+  attackRange: 1.2
+  ranged: 0
+  runtimeAssetKey: monster/piru_01
+  runtimeAssetSet: {fileID: 11400000, guid: 895602bcb9ad3ff469da8fc3979d6ec6, type: 2}

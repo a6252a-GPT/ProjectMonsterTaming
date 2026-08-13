@@ -15,7 +15,7 @@ MonoBehaviour:
   monsterId: aru_01
   displayName: "\uC544\uB974"
   rarity: 0
-  portrait: {fileID: 21300000, guid: ba720428749c7544a9563f4ef0b7c02e, type: 3}
+  portrait: {fileID: 21300000, guid: 15a70d8461f638046a56fca8c9067cea, type: 3}
   rarityPassiveSkill: {fileID: 0}
   rarityActiveSkill: {fileID: 0}
   productionMemo: 'Notion role: melee attacker. Two selected attack motions.'
@@ -62,7 +62,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
     markers:
-    - normalizedTime: 0.42
+    - normalizedTime: 0.45
       powerRatio: 1
       socketOverride: 
       feedback:
@@ -88,7 +88,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
     markers:
-    - normalizedTime: 0.58
+    - normalizedTime: 0.55
       powerRatio: 1
       socketOverride: 
       feedback:
@@ -129,7 +129,7 @@ MonoBehaviour:
     attackSpeedRate: 0
     moveSpeedRate: 0
     attackRangeRate: 0
-  ascensionConfigured: 0
+  ascensionConfigured: 1
   ascension1:
     healthRate: 0
     attackRate: 0

@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
 
@@ -104,7 +107,20 @@ namespace ProjectMT.Contents.Framework
     {
         bool IsRunning { get; }
         bool StartHosted(ContentId contentId, BattlePartySnapshot party, IHostedContentRunner runner);
+        bool StartHosted(
+            ContentId contentId,
+            BattlePartySnapshot party,
+            IHostedContentRunner runner,
+            ContentRunMode runMode,
+            int stage);
         bool StartSeparate(ContentId contentId, BattlePartySnapshot party);
+        bool TryGetGrowthDungeonState(ContentId contentId, out GrowthDungeonEntryState state);
+    }
+
+    public interface IGrowthDungeonSweepService // RuntimePrefab을 열지 않는 1회 소탕 정산
+    {
+        bool IsBusy { get; }
+        Task<bool> TrySweepAsync(ContentId contentId);
     }
 
     public interface IContentFinishFeedback // 저장 중·실패 재시도 공통 표시
@@ -112,6 +128,61 @@ namespace ProjectMT.Contents.Framework
         void ShowSaving();
         void ShowSaveFailed(Action retry);
         void Hide();
+    }
+
+    public interface IContentResultView // 저장 확정 뒤 닫힐 때까지 대기하는 공통 결과창
+    {
+        Task ShowAsync(ContentResultPresentation presentation);
+    }
+
+    public sealed class ContentResultPresentation // 보상 계산 권한이 없는 결과 표시값
+    {
+        public ContentResultPresentation(
+            ContentId contentId,
+            string displayName,
+            ContentOutcome outcome,
+            string summary,
+            RewardPresentationRequest rewards)
+        {
+            ContentId = contentId;
+            DisplayName = string.IsNullOrWhiteSpace(displayName) ? contentId.Value : displayName.Trim();
+            Outcome = outcome;
+            Summary = summary?.Trim() ?? string.Empty;
+            Rewards = rewards ?? new RewardPresentationRequest();
+        }
+
+        public ContentId ContentId { get; }
+        public string DisplayName { get; }
+        public ContentOutcome Outcome { get; }
+        public string Summary { get; }
+        public RewardPresentationRequest Rewards { get; }
+        public IReadOnlyList<RewardPresentationItem> RewardItems => Rewards.Items;
+    }
+
+    public readonly struct GrowthDungeonEntryState // 카드 표시·입장 검증용 Snapshot
+    {
+        public GrowthDungeonEntryState(
+            ContentId contentId,
+            string displayName,
+            int highestClearedStage,
+            long keyQuantity,
+            bool supportsSweep)
+        {
+            ContentId = contentId;
+            DisplayName = displayName ?? contentId.Value;
+            HighestClearedStage = Math.Max(0, highestClearedStage);
+            NextChallengeStage = HighestClearedStage + 1;
+            KeyQuantity = Math.Max(0L, keyQuantity);
+            SupportsSweep = supportsSweep;
+        }
+
+        public ContentId ContentId { get; }
+        public string DisplayName { get; }
+        public int HighestClearedStage { get; }
+        public int NextChallengeStage { get; }
+        public long KeyQuantity { get; }
+        public bool SupportsSweep { get; }
+        public bool CanSweep => SupportsSweep && HighestClearedStage > 0 && KeyQuantity > 0L;
     }
 
     public readonly struct ContentRunInfo // 한 판의 고정 식별 정보

@@ -23,6 +23,8 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private Button monsterGrowthButton;
         [SerializeField] private Button formationButton;
         [SerializeField] private Button equipmentButton;
+        [SerializeField] private Button inventoryButton;
+        [SerializeField] private Button equipmentSlotUpgradeButton;
         [SerializeField] private Button commanderButton;
         [SerializeField] private Button castleRaidButton;
         [SerializeField] private Button modeButton;
@@ -45,6 +47,8 @@ namespace ProjectMT.Features.MainBattle
             monsterGrowthButton?.onClick.AddListener(OpenMonsterGrowth);
             formationButton?.onClick.AddListener(OpenFormation);
             equipmentButton?.onClick.AddListener(OpenEquipment);
+            inventoryButton?.onClick.AddListener(OpenInventory);
+            equipmentSlotUpgradeButton?.onClick.AddListener(OpenEquipmentSlotUpgrade);
             commanderButton?.onClick.AddListener(OpenCommander);
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
             modeButton?.onClick.AddListener(CloseMenu);
@@ -60,6 +64,8 @@ namespace ProjectMT.Features.MainBattle
             monsterGrowthButton?.onClick.RemoveListener(OpenMonsterGrowth);
             formationButton?.onClick.RemoveListener(OpenFormation);
             equipmentButton?.onClick.RemoveListener(OpenEquipment);
+            inventoryButton?.onClick.RemoveListener(OpenInventory);
+            equipmentSlotUpgradeButton?.onClick.RemoveListener(OpenEquipmentSlotUpgrade);
             commanderButton?.onClick.RemoveListener(OpenCommander);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
             modeButton?.onClick.RemoveListener(CloseMenu);
@@ -126,6 +132,18 @@ namespace ProjectMT.Features.MainBattle
             managementUi?.OpenEquipmentPage();
         }
 
+        private void OpenInventory()
+        {
+            CloseMenu();
+            managementUi?.OpenInventoryPage();
+        }
+
+        private void OpenEquipmentSlotUpgrade()
+        {
+            CloseMenu();
+            managementUi?.OpenEquipmentSlotUpgradePage();
+        }
+
         private void OpenCommander()
         {
             CloseMenu();
@@ -160,6 +178,8 @@ namespace ProjectMT.Features.MainBattle
             Button openMonsterGrowthButton,
             Button openFormationButton,
             Button openEquipmentButton,
+            Button openInventoryButton,
+            Button openEquipmentSlotUpgradeButton,
             Button openCommanderButton,
             Button openCastleRaidButton,
             Button currentModeButton)
@@ -176,6 +196,8 @@ namespace ProjectMT.Features.MainBattle
             monsterGrowthButton = openMonsterGrowthButton;
             formationButton = openFormationButton;
             equipmentButton = openEquipmentButton;
+            inventoryButton = openInventoryButton;
+            equipmentSlotUpgradeButton = openEquipmentSlotUpgradeButton;
             commanderButton = openCommanderButton;
             castleRaidButton = openCastleRaidButton;
             modeButton = currentModeButton;

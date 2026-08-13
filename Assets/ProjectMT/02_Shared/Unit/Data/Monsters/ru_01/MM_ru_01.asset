@@ -44,7 +44,7 @@ MonoBehaviour:
     weight: 1
     preventImmediateRepeat: 0
     markers:
-    - normalizedTime: 0.5
+    - normalizedTime: 0.4
       powerRatio: 1
       feedbackOverride:
         sfx: {fileID: 0}

@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5de17c54962b5e4498845b2d56bbb2f, type: 3}
+  m_Name: MD_krabi_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
+  monsterId: krabi_01
+  displayName: "\uD06C\uB77C\uBE44"
+  portrait: {fileID: 21300000, guid: 33cf74f0895de4145811a584626ebe2d, type: 3}
+  previewPrefab: {fileID: 4036688507685142794, guid: 3e15fc27bc204ea498cc283866575d3a, type: 3}
+  visualTint: {r: 1, g: 1, b: 1, a: 1}
+  maxHealth: 100
+  attackPower: 10
+  defense: 0
+  attackSpeed: 1
+  moveSpeed: 2.5
+  attackRange: 4
+  ranged: 1
+  runtimeAssetKey: monster/krabi_01
+  runtimeAssetSet: {fileID: 11400000, guid: 57222cba334c6b543a348f05ebda82a6, type: 2}

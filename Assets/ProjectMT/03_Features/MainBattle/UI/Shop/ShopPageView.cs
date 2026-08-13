@@ -166,7 +166,9 @@ namespace ProjectMT.Features.MainBattle
 
             if (diamondValueText != null)
             {
-                diamondValueText.text = "보석  —"; // 다이아 저장·거래 계약은 아직 미구현
+                diamondValueText.text = progress == null
+                    ? "다이아  —"
+                    : $"다이아  {progress.View.Diamond:N0}";
             }
 
             if (ascensionCurrencyValueText != null)

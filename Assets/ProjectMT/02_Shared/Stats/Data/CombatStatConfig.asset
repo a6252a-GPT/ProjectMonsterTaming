@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5281802a8b65a5458479f57c47055f7, type: 3}
+  m_Name: CombatStatConfig
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Stats.CombatStatConfig
+  baseCriticalRate: 0
+  baseCriticalDamageMultiplier: 1.5
+  minimumDamage: 1
+  defenseK: 100
+  criticalRateCap: 0.75
+  criticalDamageMultiplierCap: 3
+  attackSpeedBonusRateCap: 0.5
+  moveSpeedBonusRateCap: 0.3
+  skillCooldownReductionCap: 0.4
+  defensePenetrationCap: 0.8
+  damageReductionCap: 0.7
+  attackRangeBonusRateCap: 0.2

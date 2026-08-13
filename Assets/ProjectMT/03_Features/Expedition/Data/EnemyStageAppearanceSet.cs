@@ -43,7 +43,12 @@ namespace ProjectMT.Features.Expedition
 
         public GameObject ResolvePrefab(int stage, bool ranged)
         {
-            return ResolveGroup(stage, ranged) switch
+            return ResolvePrefab(ResolveGroup(stage, ranged));
+        }
+
+        public GameObject ResolvePrefab(EnemyAppearanceGroup group)
+        {
+            return group switch
             {
                 EnemyAppearanceGroup.Peasant => peasantPrefab,
                 EnemyAppearanceGroup.KnightTier1 => knightTier1Prefab,

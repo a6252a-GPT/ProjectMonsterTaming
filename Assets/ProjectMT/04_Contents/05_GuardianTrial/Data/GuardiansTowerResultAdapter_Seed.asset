@@ -12,3 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2c0fd5c84894d19bda89d4a701a750c, type: 3}
   m_Name: GuardiansTowerResultAdapter_Seed
   m_EditorClassIdentifier: ProjectMT.Contents.GuardianTrial::ProjectMT.Contents.GuardianTrial.GuardiansTowerResultAdapter
+  rewardPerKill: {fileID: 11400000, guid: 752dcc24a02753a4b8f6ecdf08ed3db5, type: 2}
+  clearReward: {fileID: 11400000, guid: a3a8fa57f925251489c64594bb6b81eb, type: 2}

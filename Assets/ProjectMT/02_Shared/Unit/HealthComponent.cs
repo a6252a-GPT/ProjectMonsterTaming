@@ -10,6 +10,7 @@ namespace ProjectMT.Shared.Unit
     public sealed class HealthComponent : MonoBehaviour, IDamageable // 공용 체력·피해 처리
     {
         private float fixedDamagePerHit; // 콘텐츠 전용 고정 피해
+        private float incomingDamageMultiplier = 1f; // 받는 피해 배율(1=기본, 적용 전에 곱함)
 
         public float MaxHealth { get; private set; }
         public float CurrentHealth { get; private set; }
@@ -24,6 +25,13 @@ namespace ProjectMT.Shared.Unit
             MaxHealth = Mathf.Max(1f, maxHealth);
             CurrentHealth = MaxHealth;
             this.fixedDamagePerHit = Mathf.Max(0f, fixedDamagePerHit);
+            incomingDamageMultiplier = 1f;
+        }
+
+        // 받는 피해를 적용 전에 배율로 조절(1이면 원래 피해)
+        public void SetIncomingDamageMultiplier(float multiplier)
+        {
+            incomingDamageMultiplier = Mathf.Max(0f, multiplier);
         }
 
         public bool ApplyDamage(DamageRequest request)
@@ -42,7 +50,7 @@ namespace ProjectMT.Shared.Unit
                 return false;
             }
 
-            var requestedDamage = fixedDamagePerHit > 0f ? fixedDamagePerHit : request.Amount; // 고정 피해 규칙 우선
+            var requestedDamage = fixedDamagePerHit > 0f ? fixedDamagePerHit : request.Amount * incomingDamageMultiplier; // 고정 피해 규칙 우선
             appliedDamage = Mathf.Min(CurrentHealth, requestedDamage);
             CurrentHealth -= appliedDamage;
             var killed = CurrentHealth <= 0f;

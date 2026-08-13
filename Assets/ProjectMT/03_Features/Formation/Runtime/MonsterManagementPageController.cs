@@ -85,7 +85,7 @@ namespace ProjectMT.Features.Formation
         private bool isBusy;
 
         public event Action<bool> OpenStateChanged;
-        public bool IsOpen => gameObject.activeInHierarchy;
+        public bool IsOpen => this != null && gameObject.activeInHierarchy;
 
         private void Awake()
         {
@@ -316,6 +316,11 @@ namespace ProjectMT.Features.Formation
 
         private void HandleProgressChanged()
         {
+            if (this == null || progress == null)
+            {
+                return; // 파괴 예약 뒤 남은 이벤트 호출 무시
+            }
+
             if (!isBusy && IsOpen)
             {
                 if (!progress.View.Monsters.Owns(selectedMonsterId))

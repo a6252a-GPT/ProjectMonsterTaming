@@ -1,4 +1,7 @@
+using System;
+using ProjectMT.Features.Equipment;
 using ProjectMT.Features.Formation;
+using ProjectMT.Features.Inventory;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,17 +24,23 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private MonsterManagementPageController monsterManagementPage;
         [SerializeField] private GameObject equipmentPage;
         [SerializeField] private Button equipmentCloseButton;
+        [SerializeField] private EquipmentSlotUpgradePanelController equipmentSlotUpgradePage;
+        [SerializeField] private ItemInventoryPageController inventoryPage;
         [SerializeField] private GameObject growthDungeonPage;
         [SerializeField] private Button growthDungeonCloseButton;
 
         private int defaultSiblingIndex = -1;
         private FormationPageController formationPage;
 
+        public event Action GrowthDungeonPageOpened;
+
         public bool IsAnyPageOpen =>
             (commanderGrowthPage != null && commanderGrowthPage.activeSelf) ||
             (shopPage != null && shopPage.activeSelf) ||
             (monsterManagementPage != null && monsterManagementPage.IsOpen) ||
             (equipmentPage != null && equipmentPage.activeSelf) ||
+            (equipmentSlotUpgradePage != null && equipmentSlotUpgradePage.IsOpen) ||
+            (inventoryPage != null && inventoryPage.IsOpen) ||
             (growthDungeonPage != null && growthDungeonPage.activeSelf) ||
             (formationPage != null && formationPage.IsOpen);
 
@@ -72,6 +81,8 @@ namespace ProjectMT.Features.MainBattle
             equipmentCloseButton?.onClick.RemoveListener(CloseEquipmentPage);
             growthDungeonButton?.onClick.RemoveListener(ToggleGrowthDungeonPage);
             growthDungeonCloseButton?.onClick.RemoveListener(CloseGrowthDungeonPage);
+            ConfigureEquipmentSlotUpgradePage(null);
+            ConfigureInventoryPage(null);
             if (monsterManagementPage != null)
             {
                 monsterManagementPage.OpenStateChanged -= HandleMonsterManagementOpenStateChanged;
@@ -100,10 +111,65 @@ namespace ProjectMT.Features.MainBattle
             BringToFront();
         }
 
+        public void OpenEquipmentSlotUpgradePage()
+        {
+            CloseAllPages();
+            equipmentSlotUpgradePage?.Open();
+        }
+
+        public void ConfigureEquipmentSlotUpgradePage(EquipmentSlotUpgradePanelController page)
+        {
+            if (equipmentSlotUpgradePage == page)
+            {
+                equipmentSlotUpgradePage?.Close();
+                return;
+            }
+
+            if (equipmentSlotUpgradePage != null)
+            {
+                equipmentSlotUpgradePage.OpenStateChanged -= HandleEquipmentSlotUpgradeOpenStateChanged;
+            }
+
+            equipmentSlotUpgradePage = page;
+            if (equipmentSlotUpgradePage != null)
+            {
+                equipmentSlotUpgradePage.OpenStateChanged += HandleEquipmentSlotUpgradeOpenStateChanged;
+                equipmentSlotUpgradePage.Close();
+            }
+        }
+
+        public void OpenInventoryPage()
+        {
+            CloseAllPages();
+            inventoryPage?.Open();
+        }
+
+        public void ConfigureInventoryPage(ItemInventoryPageController page)
+        {
+            if (inventoryPage == page)
+            {
+                inventoryPage?.Close();
+                return;
+            }
+
+            if (inventoryPage != null)
+            {
+                inventoryPage.OpenStateChanged -= HandleInventoryOpenStateChanged;
+            }
+
+            inventoryPage = page;
+            if (inventoryPage != null)
+            {
+                inventoryPage.OpenStateChanged += HandleInventoryOpenStateChanged;
+                inventoryPage.Close();
+            }
+        }
+
         public void OpenGrowthDungeonPage()
         {
             CloseAllPages();
             growthDungeonPage?.SetActive(true);
+            GrowthDungeonPageOpened?.Invoke();
             BringToFront();
         }
 
@@ -136,6 +202,8 @@ namespace ProjectMT.Features.MainBattle
             shopPage?.SetActive(false);
             monsterManagementPage?.ClosePage();
             equipmentPage?.SetActive(false);
+            equipmentSlotUpgradePage?.Close();
+            inventoryPage?.Close();
             growthDungeonPage?.SetActive(false);
             RestoreHudOrder();
         }
@@ -194,6 +262,7 @@ namespace ProjectMT.Features.MainBattle
             growthDungeonPage?.SetActive(shouldOpen);
             if (shouldOpen)
             {
+                GrowthDungeonPageOpened?.Invoke();
                 BringToFront();
             }
         }
@@ -213,7 +282,33 @@ namespace ProjectMT.Features.MainBattle
             else if ((commanderGrowthPage == null || !commanderGrowthPage.activeSelf) &&
                      (shopPage == null || !shopPage.activeSelf) &&
                      (equipmentPage == null || !equipmentPage.activeSelf) &&
+                     (equipmentSlotUpgradePage == null || !equipmentSlotUpgradePage.IsOpen) &&
+                     (inventoryPage == null || !inventoryPage.IsOpen) &&
                      (growthDungeonPage == null || !growthDungeonPage.activeSelf))
+            {
+                RestoreHudOrder();
+            }
+        }
+
+        private void HandleEquipmentSlotUpgradeOpenStateChanged(bool open)
+        {
+            if (open)
+            {
+                BringToFront();
+            }
+            else if (!IsAnyPageOpen)
+            {
+                RestoreHudOrder();
+            }
+        }
+
+        private void HandleInventoryOpenStateChanged(bool open)
+        {
+            if (open)
+            {
+                BringToFront();
+            }
+            else if (!IsAnyPageOpen)
             {
                 RestoreHudOrder();
             }

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f39511215c9933449ecded417cba0a7, type: 3}
+  m_Name: Item_Ticket_MonsterSummon
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Items.ItemDefinition
+  itemId: ticket_monster_summon
+  displayName: "\uBAAC\uC2A4\uD130 \uC18C\uD658\uAD8C"
+  description: "\uC77C\uBC18 \uBAAC\uC2A4\uD130 \uC18C\uD658 1\uD68C\uC5D0 \uC0AC\uC6A9\uD558\uB294
+    \uC18C\uD658\uAD8C."
+  icon: {fileID: 21300000, guid: 406f715c6d26b42e9bc2ba9cb23a962f, type: 3}
+  category: 2
+  maxQuantity: 9223372036854775807
+  discardable: 0
+  allowMultiUse: 0
+  useEffect: {fileID: 0}
+  sortOrder: 400

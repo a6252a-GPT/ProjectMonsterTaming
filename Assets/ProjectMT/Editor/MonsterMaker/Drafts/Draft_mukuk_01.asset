@@ -15,7 +15,7 @@ MonoBehaviour:
   monsterId: mukuk_01
   displayName: "\uBB34\uCFE0\uD06C"
   rarity: 3
-  portrait: {fileID: 21300000, guid: 70b00a54cfb837646bb31eb85c446d1f, type: 3}
+  portrait: {fileID: 21300000, guid: 6218832df1d0d7f4fa875c40295b14fb, type: 3}
   rarityPassiveSkill: {fileID: 0}
   rarityActiveSkill: {fileID: 0}
   productionMemo: 'Notion role: ranged buffer. Happy and Jump_water reserved for
@@ -63,7 +63,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
     markers:
-    - normalizedTime: 0.5
+    - normalizedTime: 0.45
       powerRatio: 1
       socketOverride: 
       feedback:
@@ -104,7 +104,7 @@ MonoBehaviour:
     attackSpeedRate: 0
     moveSpeedRate: 0
     attackRangeRate: 0
-  ascensionConfigured: 0
+  ascensionConfigured: 1
   ascension1:
     healthRate: 0
     attackRate: 0

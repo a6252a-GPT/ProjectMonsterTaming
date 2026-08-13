@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5de17c54962b5e4498845b2d56bbb2f, type: 3}
+  m_Name: MD_grisu_fire_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
+  monsterId: grisu_fire_01
+  displayName: "\uADF8\uB9AC\uC218"
+  portrait: {fileID: 21300000, guid: 2dd88e712aa6ddf4cb1e79cad3a87ee7, type: 3}
+  previewPrefab: {fileID: 4063105653316211765, guid: ad81e2ee47f1fed498d8241c583aa7e0, type: 3}
+  visualTint: {r: 1, g: 1, b: 1, a: 1}
+  maxHealth: 100
+  attackPower: 10
+  defense: 0
+  attackSpeed: 1
+  moveSpeed: 2.5
+  attackRange: 4
+  ranged: 1
+  runtimeAssetKey: monster/grisu_fire_01
+  runtimeAssetSet: {fileID: 11400000, guid: 25e9360bee1493b4a9985cfed468fb74, type: 2}

@@ -14,8 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Contents.Framework::ProjectMT.Contents.Framework.ContentDefinition
   contentId:
     value: food_riot
+  displayName: "\uC2DD\uB7C9 \uB300\uC18C\uB3D9"
   openMode: 0
   sceneId:
     value: 
   startDataFactory: {fileID: 11400000, guid: 9cd6a8176f9c8db409b4baa847d2a2c8, type: 2}
   resultAdapter: {fileID: 11400000, guid: 90c081823b615f74387df8662f2f5648, type: 2}
+  dungeonKeyItemId: key_food_riot
+  supportsSweep: 1

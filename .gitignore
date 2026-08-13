@@ -102,8 +102,6 @@ InitTestScene*.unity*
 !/[Aa]ssets/ProjectMT/99_Tests/PlayMode/ProjectMT.Tests.PlayMode.asmdef.meta
 /[Aa]ssets/[Ee]ditor/Codex*.cs
 /[Aa]ssets/[Ee]ditor/Codex*.cs.meta
-/[Aa]ssets/ProjectMT/00_Scenes/UItest.unity
-/[Aa]ssets/ProjectMT/00_Scenes/UItest.unity.meta
 /[Aa]ssets/ProjectMT/00_Scenes/test.unity
 /[Aa]ssets/ProjectMT/00_Scenes/test.unity.meta
 

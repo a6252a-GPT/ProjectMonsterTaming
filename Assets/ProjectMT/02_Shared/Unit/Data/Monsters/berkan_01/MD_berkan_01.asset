@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5de17c54962b5e4498845b2d56bbb2f, type: 3}
+  m_Name: MD_berkan_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
+  monsterId: berkan_01
+  displayName: "\uBCA0\uB974\uCE78"
+  portrait: {fileID: 21300000, guid: 32b26758531b4264fb74b90df6b9a025, type: 3}
+  previewPrefab: {fileID: 7053366614606345691, guid: 074b65e2d05236a4f8a6c4875d7beabd, type: 3}
+  visualTint: {r: 1, g: 1, b: 1, a: 1}
+  maxHealth: 100
+  attackPower: 10
+  defense: 0
+  attackSpeed: 1
+  moveSpeed: 2.5
+  attackRange: 1.2
+  ranged: 0
+  runtimeAssetKey: monster/berkan_01
+  runtimeAssetSet: {fileID: 11400000, guid: db14fbe4acbfe92459d2577d335fd24e, type: 2}

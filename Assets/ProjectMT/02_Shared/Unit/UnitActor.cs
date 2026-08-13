@@ -83,6 +83,11 @@ namespace ProjectMT.Shared.Unit
         private IDamageable actionTarget;
         private bool attackActionRunning;
         private int nextActionSequenceId;
+        private float localHitStopRemaining;
+        private Animator[] fallbackHitStopAnimators = Array.Empty<Animator>();
+        private float[] fallbackAnimatorSpeeds = Array.Empty<float>();
+        private bool fallbackAnimatorsPaused;
+        private bool fallbackAnimatorsResolved;
 
         public string UnitId { get; private set; }
         public UnitTeam Team { get; private set; }
@@ -93,6 +98,8 @@ namespace ProjectMT.Shared.Unit
         public bool IsManuallyHeld => isManuallyHeld;
         public MonsterRuntimeAssetSet RuntimeAssetSet => runtimeAssetSet;
         public MonsterAnimationDriver AnimationDriver => animationDriver;
+        public bool IsHitStopped => localHitStopRemaining > 0f;
+        public bool IsRanged => stats.ranged;
 
         public event Action<UnitActor> Died;
 
@@ -131,6 +138,7 @@ namespace ProjectMT.Shared.Unit
                 Debug.LogError($"Formal Monster has no valid MonsterAnimationDriver. Unit={request.UnitId}", this);
                 runtimeAssetSet = null; // 잘못된 Adapter에서도 기존 즉시 공격으로 안전하게 복귀
             }
+            RefreshFallbackHitStopAnimators();
             attackCooldown = UnityEngine.Random.Range(0f, Mathf.Max(0.05f, stats.attackInterval * 0.35f)); // 동시 공격 분산
             retargetCooldown = UnityEngine.Random.Range(0f, 0.2f);
             moveSpeedMultiplier = 1f; // 08.07 안건준 추가 - 풀 재사용 전 이전 버프 배율 초기화
@@ -227,6 +235,11 @@ namespace ProjectMT.Shared.Unit
 
         public void Tick(float deltaTime)
         {
+            if (TickLocalHitStop())
+            {
+                return;
+            }
+
             if (!IsAlive || world == null)
             {
                 return;
@@ -305,7 +318,7 @@ namespace ProjectMT.Shared.Unit
             FaceTowards(Target.transform.position, deltaTime);
             if (canAttack && attackCooldown <= 0f)
             {
-                StartAttack(Target.Health); // 정식은 Animation Marker, 두부는 기존 즉시 공격
+                StartAttack(Target.Health); // 정식은 Animation Marker, 레거시는 기존 즉시 공격
             }
             else
             {
@@ -343,7 +356,101 @@ namespace ProjectMT.Shared.Unit
             isManuallyHeld = false;
             forcedTarget = null; // 08.07 안건준 추가 - 풀 재사용 전 강제 지정 상태 초기화
             forcedTargetTimer = 0f;
+            localHitStopRemaining = 0f;
+            SetLocalAnimationPaused(false);
+            fallbackHitStopAnimators = Array.Empty<Animator>();
+            fallbackAnimatorSpeeds = Array.Empty<float>();
+            fallbackAnimatorsResolved = false;
             Died = null; // 풀 재사용 전 외부 구독 제거
+        }
+
+        public void ApplyLocalHitStop(float duration)
+        {
+            duration = Mathf.Clamp(duration, 0f, 0.06f);
+            if (duration <= 0f || !gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            localHitStopRemaining = Mathf.Max(localHitStopRemaining, duration); // 연속 타격은 합산하지 않음
+            SetLocalAnimationPaused(true);
+        }
+
+        private bool TickLocalHitStop()
+        {
+            if (localHitStopRemaining <= 0f)
+            {
+                return false;
+            }
+
+            localHitStopRemaining = Mathf.Max(0f, localHitStopRemaining - Time.unscaledDeltaTime);
+            if (localHitStopRemaining <= 0f)
+            {
+                SetLocalAnimationPaused(false);
+                return false;
+            }
+
+            return true;
+        }
+
+        private void SetLocalAnimationPaused(bool paused)
+        {
+            if (animationDriver != null)
+            {
+                animationDriver.SetLocallyPaused(paused);
+                return;
+            }
+
+            if (paused)
+            {
+                if (fallbackAnimatorsPaused)
+                {
+                    return;
+                }
+
+                RefreshFallbackHitStopAnimators();
+                for (var index = 0; index < fallbackHitStopAnimators.Length; index++)
+                {
+                    var animator = fallbackHitStopAnimators[index];
+                    if (animator == null)
+                    {
+                        continue;
+                    }
+
+                    fallbackAnimatorSpeeds[index] = animator.speed;
+                    animator.speed = 0f;
+                }
+
+                fallbackAnimatorsPaused = true;
+                return;
+            }
+
+            if (!fallbackAnimatorsPaused)
+            {
+                return;
+            }
+
+            for (var index = 0; index < fallbackHitStopAnimators.Length; index++)
+            {
+                if (fallbackHitStopAnimators[index] != null)
+                {
+                    fallbackHitStopAnimators[index].speed = fallbackAnimatorSpeeds[index];
+                }
+            }
+
+            fallbackAnimatorsPaused = false;
+        }
+
+        private void RefreshFallbackHitStopAnimators()
+        {
+            if (animationDriver != null || fallbackAnimatorsPaused || fallbackAnimatorsResolved)
+            {
+                return;
+            }
+
+            fallbackHitStopAnimators = GetComponentsInChildren<Animator>(true);
+            fallbackAnimatorSpeeds = new float[fallbackHitStopAnimators.Length];
+            fallbackAnimatorsResolved = true;
         }
 
         // 08.07 안건준 추가 - damageMultiplier가 적용된 능력치 사본을 반환한다(원본 stats는 그대로 유지).
@@ -441,7 +548,7 @@ namespace ProjectMT.Shared.Unit
             var targetActor = component != null ? component.GetComponent<UnitActor>() : null;
             if (targetActor != null)
             {
-                world.Attack(this, targetActor, effectiveStats); // 기존 두부 경로
+                world.Attack(this, targetActor, effectiveStats); // Runtime Asset 없는 레거시 호환 경로
             }
             else
             {
@@ -548,7 +655,7 @@ namespace ProjectMT.Shared.Unit
             FaceTowards(forcedTarget.Position, deltaTime);
             if (canAttack && attackCooldown <= 0f)
             {
-                StartAttack(forcedTarget); // 정식은 같은 Marker 경로, 두부는 기존 구조물 공격
+                StartAttack(forcedTarget); // 정식은 같은 Marker 경로, 레거시는 기존 구조물 공격
             }
             else
             {
@@ -619,7 +726,7 @@ namespace ProjectMT.Shared.Unit
             feedback?.PlayDeath(this, report);
             attackActionRunning = false;
             actionTarget = null;
-            var returnDelay = animationDriver?.PlayDeath() ?? 0.38f;
+            var returnDelay = (animationDriver?.PlayDeath() ?? 0.38f) + localHitStopRemaining;
             if (runtimeAssetSet != null)
             {
                 world?.PlayMonsterFeedback(

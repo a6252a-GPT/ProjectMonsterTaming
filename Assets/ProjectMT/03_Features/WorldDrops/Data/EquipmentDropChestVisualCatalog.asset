@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c8932554ed5a0146bfbc017b4048c13, type: 3}
+  m_Name: EquipmentDropChestVisualCatalog
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.WorldDrops.EquipmentDropChestVisualCatalog
+  entries:
+  - grade: 0
+    modelPrefab: {fileID: 1141849767284236496, guid: 5599e925843d44345a645752d373bdf7, type: 3}
+    localPosition: {x: 0.0025849296, y: 0.03982437, z: -0.010543958}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1.3676256, y: 1.3676256, z: 1.3676256}
+  - grade: 1
+    modelPrefab: {fileID: 8111757877157432391, guid: a105dc230d1322943bbdff8ecfba2a7e, type: 3}
+    localPosition: {x: -0.012087895, y: 0.039137404, z: -0.02475465}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1.4263005, y: 1.4263005, z: 1.4263005}
+  - grade: 2
+    modelPrefab: {fileID: 3891305707249952213, guid: 1b411e6bda2804a42a3a444cf02e2625, type: 3}
+    localPosition: {x: 0.0004886486, y: 0.04033718, z: 0.0076712486}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1.3028467, y: 1.3028467, z: 1.3028467}
+  - grade: 3
+    modelPrefab: {fileID: 5570505003919555119, guid: c47ec8fd66c87cd4db40c3afe0a17a6d, type: 3}
+    localPosition: {x: -0.005221982, y: 0.04023942, z: 0.004925653}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1.0380708, y: 1.0380708, z: 1.0380708}
+  - grade: 4
+    modelPrefab: {fileID: 7426855970844095587, guid: c61a00eef801dbb4facb8c1c9da445bf, type: 3}
+    localPosition: {x: 0.0041564605, y: 0.0388358, z: 0.003846756}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1.2576127, y: 1.2576127, z: 1.2576127}

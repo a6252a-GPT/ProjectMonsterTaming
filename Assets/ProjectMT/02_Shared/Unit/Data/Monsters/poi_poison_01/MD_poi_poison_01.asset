@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5de17c54962b5e4498845b2d56bbb2f, type: 3}
+  m_Name: MD_poi_poison_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
+  monsterId: poi_poison_01
+  displayName: "\uD3EC\uC774"
+  portrait: {fileID: 21300000, guid: 687437c148c46f143888ef66656a0ed9, type: 3}
+  previewPrefab: {fileID: 3058625013525665310, guid: 072bbd9b6edd7f14791759832916fd25, type: 3}
+  visualTint: {r: 1, g: 1, b: 1, a: 1}
+  maxHealth: 100
+  attackPower: 10
+  defense: 0
+  attackSpeed: 1
+  moveSpeed: 2.5
+  attackRange: 1.2
+  ranged: 0
+  runtimeAssetKey: monster/poi_poison_01
+  runtimeAssetSet: {fileID: 11400000, guid: f212cce910246594eb62fc3f096ef803, type: 2}

@@ -14,8 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Contents.Framework::ProjectMT.Contents.Framework.ContentDefinition
   contentId:
     value: guardians_tower
+  displayName: "\uACE0\uB300 \uC218\uD638\uC218\uC758 \uC2DC\uB828"
   openMode: 0
   sceneId:
     value: 
   startDataFactory: {fileID: 11400000, guid: 146dc74446824a45977b5db268a62628, type: 2}
   resultAdapter: {fileID: 11400000, guid: 61421f8b536d486d9f9829423d7d2d78, type: 2}
+  dungeonKeyItemId: key_guardians_tower
+  supportsSweep: 1

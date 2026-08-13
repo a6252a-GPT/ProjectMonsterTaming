@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e15cafea5d5616479d4551ccb7a7dda, type: 3}
+  m_Name: EquipmentBalanceConfig
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Equipment.EquipmentBalanceConfig
+  dropWeights:
+  - 68
+  - 20
+  - 8
+  - 3
+  - 1
+  coreStatBudgetPercent:
+  - 3
+  - 5
+  - 8
+  - 12
+  - 18
+  randomOptionGradeMultiplier:
+  - 1
+  - 1.5
+  - 2.2
+  - 3.2
+  - 4.5
+  randomOptionCount: 0100000001000000020000000300000004000000
+  gloveCriticalRatePercent:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  gloveCriticalDamagePercent:
+  - 5
+  - 10
+  - 15
+  - 20
+  - 25
+  ringAttackSpeedPercent:
+  - 2
+  - 4
+  - 6
+  - 8
+  - 10
+  ringMoveSpeedPercent:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  optionBaseValuesPercent:
+  - 2
+  - 2
+  - 2
+  - 1
+  - 0.5
+  - 1
+  - 5
+  - 2
+  - 2
+  - 2
+  - 1
+  - 2
+  - 1
+  coreGroupWeight: 50
+  offenseGroupWeight: 30
+  utilityDefenseGroupWeight: 20
+  minimumRandomMultiplier: 0.8
+  maximumRandomMultiplier: 1.2

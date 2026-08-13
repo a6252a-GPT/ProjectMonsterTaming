@@ -111,7 +111,12 @@ namespace ProjectMT.Features.Equipment
         // 카탈로그를 연결해주기만 하면 된다.
         public void Configure(IGameProgressService progress)
         {
-            EquipmentInventoryRuntime.Configure(progress, ResolveCatalog());
+            Configure(progress, EquipmentBalanceConfig.RuntimeDefault);
+        }
+
+        public void Configure(IGameProgressService progress, EquipmentBalanceConfig balance)
+        {
+            EquipmentInventoryRuntime.Configure(progress, ResolveCatalog(), balance);
         }
 
         // ---------------------------------------------------------------
@@ -921,14 +926,14 @@ namespace ProjectMT.Features.Equipment
         }
 
         // ---------------------------------------------------------------
-        // 군단장 능력치 카드(StatGrid) + 총전투력(CommanderSummary)
+        // 편성 전체에 적용되는 장비 보너스 카드
         // ---------------------------------------------------------------
 
         private static readonly Regex PowerPattern = new Regex(@"전투력\s*[\d,]+");
 
         private void RefreshCommanderStats()
         {
-            var stats = CommanderEquipmentStatsCalculator.CalculateTotal();
+            var stats = EquipmentLegionBonusCalculator.CalculateTotal();
 
             if (statGrid != null)
             {
@@ -949,11 +954,10 @@ namespace ProjectMT.Features.Equipment
 
             if (commanderSummaryText != null)
             {
-                var power = stats.EstimatePower();
-                var powerText = $"전투력 {power:N0}";
+                const string powerText = "군단 장비 보너스";
                 commanderSummaryText.text = PowerPattern.IsMatch(commanderSummaryText.text)
                     ? PowerPattern.Replace(commanderSummaryText.text, powerText)
-                    : commanderSummaryText.text; // 형식이 다르면 임의로 덮어쓰지 않는다
+                    : powerText;
             }
         }
 
@@ -972,16 +976,7 @@ namespace ProjectMT.Features.Equipment
 
         private static string FormatStatValue(EquipmentStatType statType, float value)
         {
-            switch (statType)
-            {
-                case EquipmentStatType.AttackSpeed:
-                case EquipmentStatType.MoveSpeed:
-                    return value.ToString("0.00");
-                case EquipmentStatType.CriticalRate:
-                    return $"{value:0}%";
-                default:
-                    return value.ToString("N0");
-            }
+            return $"+{value:0.#}%";
         }
     }
 }

@@ -9,6 +9,8 @@ namespace ProjectMT.Shared.Equipment
     [Serializable]
     public sealed class EquipmentInstanceData
     {
+        public const int MaxRandomOptionCount = 4;
+
         [SerializeField] private string instanceId;
         [SerializeField] private EquipmentPart part;
         [SerializeField] private EquipmentGrade grade;
@@ -33,12 +35,13 @@ namespace ProjectMT.Shared.Equipment
 
         public EquipmentInstanceData Clone()
         {
-            var clonedOptions = new List<EquipmentOptionRollData>(randomOptions.Count);
-            for (var i = 0; i < randomOptions.Count; i++)
+            var sourceOptions = randomOptions ?? new List<EquipmentOptionRollData>();
+            var clonedOptions = new List<EquipmentOptionRollData>(sourceOptions.Count);
+            for (var i = 0; i < sourceOptions.Count; i++)
             {
-                if (randomOptions[i] != null)
+                if (sourceOptions[i] != null)
                 {
-                    clonedOptions.Add(randomOptions[i].Clone());
+                    clonedOptions.Add(sourceOptions[i].Clone());
                 }
             }
 
@@ -47,9 +50,42 @@ namespace ProjectMT.Shared.Equipment
 
         internal bool Repair()
         {
+            instanceId = instanceId?.Trim();
+            if (string.IsNullOrEmpty(instanceId) ||
+                !Enum.IsDefined(typeof(EquipmentPart), part) ||
+                !Enum.IsDefined(typeof(EquipmentGrade), grade))
+            {
+                return false;
+            }
+
             randomOptions ??= new List<EquipmentOptionRollData>();
-            randomOptions.RemoveAll(option => option == null);
-            return !string.IsNullOrEmpty(instanceId);
+            randomOptions.RemoveAll(option => option == null || !option.Repair());
+            if (randomOptions.Count > MaxRandomOptionCount)
+            {
+                randomOptions.RemoveRange(MaxRandomOptionCount, randomOptions.Count - MaxRandomOptionCount);
+            }
+
+            return true;
+        }
+
+        // 기존 저장의 중복 옵션은 유지하되 신규 획득 데이터에는 허용하지 않는다.
+        internal bool IsValidForAcquire()
+        {
+            if (!Repair())
+            {
+                return false;
+            }
+
+            var optionTypes = new HashSet<EquipmentOptionType>();
+            for (var i = 0; i < randomOptions.Count; i++)
+            {
+                if (!optionTypes.Add(randomOptions[i].Type))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

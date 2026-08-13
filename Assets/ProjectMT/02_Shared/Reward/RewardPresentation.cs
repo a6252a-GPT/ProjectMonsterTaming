@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ProjectMT.Shared.Items;
 
 namespace ProjectMT.Shared.Reward
 {
@@ -12,16 +13,22 @@ namespace ProjectMT.Shared.Reward
 
     public readonly struct RewardPresentationItem // 저장 성공 뒤 보여줄 읽기 전용 값
     {
-        public RewardPresentationItem(RewardPresentationKind kind, string label, long amount)
+        public RewardPresentationItem(
+            RewardPresentationKind kind,
+            string label,
+            long amount,
+            string itemId = null)
         {
             Kind = kind;
             Label = label ?? string.Empty;
             Amount = Math.Max(0L, amount);
+            ItemId = itemId ?? string.Empty;
         }
 
         public RewardPresentationKind Kind { get; }
         public string Label { get; }
         public long Amount { get; }
+        public string ItemId { get; }
         public bool IsValid => Amount > 0L;
     }
 
@@ -58,11 +65,43 @@ namespace ProjectMT.Shared.Reward
                 new RewardPresentationItem(RewardPresentationKind.Gold, "골드", amount));
         }
 
-        public static RewardPresentationRequest FromBundle(RewardBundle bundle)
+        public static RewardPresentationRequest FromBundle(
+            RewardBundle bundle,
+            ItemCatalog itemCatalog = null)
         {
-            return bundle == null || bundle.IsEmpty
-                ? new RewardPresentationRequest()
-                : Gold(bundle.Gold);
+            if (bundle == null)
+            {
+                return new RewardPresentationRequest();
+            }
+
+            var rewardItems = new List<RewardPresentationItem>(2 + bundle.Items.Count)
+            {
+                new RewardPresentationItem(RewardPresentationKind.Gold, "골드", bundle.Gold),
+                new RewardPresentationItem(
+                    RewardPresentationKind.CommanderExperience,
+                    "군단장 경험치",
+                    bundle.CommanderExperience)
+            };
+            for (var index = 0; index < bundle.Items.Count; index++)
+            {
+                var itemReward = bundle.Items[index];
+                if (!itemReward.IsValid)
+                {
+                    continue;
+                }
+
+                var label = itemCatalog != null &&
+                            itemCatalog.TryGet(itemReward.ItemId, out var definition)
+                    ? definition.DisplayName
+                    : ItemIds.GetFallbackDisplayName(itemReward.ItemId);
+                rewardItems.Add(new RewardPresentationItem(
+                    RewardPresentationKind.Item,
+                    label,
+                    itemReward.Amount,
+                    itemReward.ItemId));
+            }
+
+            return new RewardPresentationRequest(rewardItems.ToArray());
         }
     }
 

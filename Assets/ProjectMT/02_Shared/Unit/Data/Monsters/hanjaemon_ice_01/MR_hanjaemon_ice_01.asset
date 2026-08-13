@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9063022393fce349b94c80b48a17738, type: 3}
+  m_Name: MR_hanjaemon_ice_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterRuntimeAssetSet
+  visualAdapterPrefab: {fileID: 912775640923376284, guid: b170c6d2d1cde9c4783683a6a00eb58a, type: 3}
+  animatorController: {fileID: 9100000, guid: ee3baf54068b78d408ab4397a0eeff88, type: 2}
+  bodyProfile: {fileID: 11400000, guid: a8edd834e2c103b488c2abf380dea758, type: 2}
+  motionProfile: {fileID: 11400000, guid: 7f51f51c70b4bcc4caa192ee89bf0065, type: 2}
+  combatProfile: {fileID: 11400000, guid: 68ee43913846a1e4cb4fcc1dc19efb12, type: 2}
+  ascensionProfile: {fileID: 11400000, guid: bffa89799a47b15409633cb50956d069, type: 2}
+  feedbackProfile: {fileID: 11400000, guid: 6f3e6f25a3287b34e8200d56eff3f8b8, type: 2}

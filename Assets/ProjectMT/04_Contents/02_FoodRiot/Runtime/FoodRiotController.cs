@@ -209,18 +209,7 @@ namespace ProjectMT.Contents.FoodRiot
             }
 
             var result = new FoodRiotResult(killCount); // 최종 처치 수를 보상 계층에 전달
-            if (clearOverlay != null &&
-                clearOverlay.TryShow($"처치 {killCount}마리", $"골드 +{killCount}", () => CompleteClear(result)))
-            {
-                return;
-            }
-
-            CompleteClear(result);
-        }
-
-        private void CompleteClear(FoodRiotResult result)
-        {
-            context?.Exit.Complete(result);
+            context?.Exit.Complete(result); // 최종 결과는 저장 성공 뒤 AppRoot 공통창에서 표시
         }
 
         private void Cancel()

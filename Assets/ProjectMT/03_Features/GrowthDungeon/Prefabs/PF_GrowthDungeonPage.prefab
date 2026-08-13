@@ -10331,8 +10331,40 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1085132696197444980, guid: 370139a0a35b2de47bca977734ade668, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7009384007993554881}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6877591118280009215, guid: 370139a0a35b2de47bca977734ade668, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2307846674436346541}
   m_SourcePrefab: {fileID: 100100000, guid: 370139a0a35b2de47bca977734ade668, type: 3}
+--- !u!1 &3299868612238271413 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6877591118280009215, guid: 370139a0a35b2de47bca977734ade668, type: 3}
+  m_PrefabInstance: {fileID: 8266745974569453130}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2307846674436346541
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3299868612238271413}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 446d193af2addbd428c5c3734ad8c6bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.GrowthDungeon.GrowthDungeonStageEntryController
+  foodRiotEnterButton: {fileID: 3654442710369828068}
+  foodRiotSweepButton: {fileID: 2137591068780031592}
+  treasureSpiritEnterButton: {fileID: 7542965265843686281}
+  treasureSpiritSweepButton: {fileID: 1445497294973280399}
+  giantSpellbookEnterButton: {fileID: 7414676203000316062}
+  giantSpellbookSweepButton: {fileID: 8346465444515285788}
+  guardiansTowerEnterButton: {fileID: 5889954035894364611}
+  guardiansTowerSweepButton: {fileID: 8868556331733369980}
+  foodRiotPopupPrefab: {fileID: 5440967762579022343, guid: 13269a1a14a489d40ab64ab17b247c80, type: 3}
+  treasureSpiritPopupPrefab: {fileID: 5440967762579022343, guid: 53f58d89414d40741ae1ed3f80600023, type: 3}
+  giantSpellbookPopupPrefab: {fileID: 5440967762579022343, guid: 8f3ae42619d458749a343c21dd366ed9, type: 3}
+  guardiansTowerPopupPrefab: {fileID: 5440967762579022343, guid: 87e87ae7fb54b254dacbf911b2ec61ed, type: 3}
 --- !u!224 &9058511101076501310 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 1085132696197444980, guid: 370139a0a35b2de47bca977734ade668, type: 3}

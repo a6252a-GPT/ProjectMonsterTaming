@@ -15,7 +15,7 @@ MonoBehaviour:
   monsterId: lumi_01
   displayName: "\uB8E8\uBBF8"
   rarity: 2
-  portrait: {fileID: 21300000, guid: 65f9d6ebf3596084fb0677663126c01c, type: 3}
+  portrait: {fileID: 21300000, guid: 38d07119f913fc743b2960fcb731c466, type: 3}
   rarityPassiveSkill: {fileID: 0}
   rarityActiveSkill: {fileID: 0}
   productionMemo: 'Notion role: melee attacker. Initial formal asset.'
@@ -62,7 +62,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
     markers:
-    - normalizedTime: 0.48
+    - normalizedTime: 0.45
       powerRatio: 1
       socketOverride: 
       feedback:

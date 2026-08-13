@@ -56,6 +56,27 @@ namespace ProjectMT.Shared.GameData
             return !string.IsNullOrEmpty(monsterId);
         }
 
+        internal void ReplaceMonsterId(string replacementId)
+        {
+            monsterId = replacementId?.Trim();
+        }
+
+        internal void MergeRetiredProgress(OwnedMonsterData retired)
+        {
+            if (retired == null)
+            {
+                return;
+            }
+
+            level = Math.Max(level, retired.level);
+            var preservedProgress = Math.Max(
+                ascensionLevel + ascensionMaterialCount,
+                retired.ascensionLevel + retired.ascensionMaterialCount);
+            ascensionLevel = Math.Max(ascensionLevel, retired.ascensionLevel);
+            ascensionMaterialCount = Math.Max(0, preservedProgress - ascensionLevel);
+            Repair(); // 합쳐진 진행값을 현재 돌파 상한에 맞춘다
+        }
+
         internal bool TryLevelUp(int expectedLevel)
         {
             if (level != expectedLevel || level == int.MaxValue)
@@ -103,7 +124,20 @@ namespace ProjectMT.Shared.GameData
     {
         public const int MainPartySlotCount = 5;
         public const int ReservePartySlotCount = 2;
-        public const string StarterMonsterId = "tofu_01";
+        public const string StarterMonsterId = "spike_01";
+
+        private static readonly Dictionary<string, string> RetiredMonsterIds =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "tofu_01", "spike_01" },
+                { "tofu_02", "shell_01" },
+                { "tofu_03", "ru_01" },
+                { "tofu_04", "aru_01" },
+                { "tofu_05", "lumi_01" },
+                { "tofu_06", "shakun_01" },
+                { "tofu_07", "lucy_01" },
+                { "tofu_08", "mukuk_01" }
+            };
 
         [SerializeField] private List<OwnedMonsterData> ownedMonsters = new List<OwnedMonsterData>();
         [SerializeField] private string[] mainPartySlots = new string[MainPartySlotCount];
@@ -190,6 +224,37 @@ namespace ProjectMT.Shared.GameData
                     mainPartySlots[0] = ownedMonsters[0].MonsterId; // 최소 본부대 한 기 보장
                 }
             }
+        }
+
+        internal void MigrateRetiredMonsterIds()
+        {
+            ownedMonsters ??= new List<OwnedMonsterData>();
+            var migrated = new List<OwnedMonsterData>(ownedMonsters.Count);
+            var byId = new Dictionary<string, OwnedMonsterData>(StringComparer.OrdinalIgnoreCase);
+            for (var index = 0; index < ownedMonsters.Count; index++)
+            {
+                var owned = ownedMonsters[index];
+                if (owned == null || !owned.Repair())
+                {
+                    continue;
+                }
+
+                var migratedId = ResolveRetiredMonsterId(owned.MonsterId);
+                owned.ReplaceMonsterId(migratedId);
+                if (byId.TryGetValue(migratedId, out var existing))
+                {
+                    existing.MergeRetiredProgress(owned); // 이미 정식 몬스터를 보유했다면 높은 진행값 보존
+                    continue;
+                }
+
+                byId.Add(migratedId, owned);
+                migrated.Add(owned);
+            }
+
+            ownedMonsters = migrated;
+            MigrateSlotIds(mainPartySlots);
+            MigrateSlotIds(reservePartySlots);
+            Repair();
         }
 
         internal bool TryAcquire(string monsterId)
@@ -375,6 +440,27 @@ namespace ProjectMT.Shared.GameData
             {
                 slots[index] = string.Empty;
             }
+        }
+
+        private static void MigrateSlotIds(string[] slots)
+        {
+            if (slots == null)
+            {
+                return;
+            }
+
+            for (var index = 0; index < slots.Length; index++)
+            {
+                slots[index] = ResolveRetiredMonsterId(slots[index]);
+            }
+        }
+
+        private static string ResolveRetiredMonsterId(string monsterId)
+        {
+            var normalizedId = monsterId?.Trim();
+            return !string.IsNullOrEmpty(normalizedId) && RetiredMonsterIds.TryGetValue(normalizedId, out var replacement)
+                ? replacement
+                : normalizedId ?? string.Empty;
         }
 
         private static int CountAssigned(string[] slots)

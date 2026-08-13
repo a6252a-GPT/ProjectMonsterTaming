@@ -14,8 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Contents.Framework::ProjectMT.Contents.Framework.ContentDefinition
   contentId:
     value: castle_raid
+  displayName: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5"
   openMode: 1
   sceneId:
     value: castle_raid
   startDataFactory: {fileID: 11400000, guid: ca0cf4c819d5c664680900ca72bc8c9e, type: 2}
   resultAdapter: {fileID: 11400000, guid: 65a1705672153ba4a92ba084aaa8191e, type: 2}
+  dungeonKeyItemId: 
+  supportsSweep: 0

@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9063022393fce349b94c80b48a17738, type: 3}
+  m_Name: MR_kutan_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterRuntimeAssetSet
+  visualAdapterPrefab: {fileID: 9004067945869158303, guid: 9a10d3cdbba24a64fa0c7dd5222c97e0, type: 3}
+  animatorController: {fileID: 9100000, guid: f08cb9ec9efff014ebbb6a5ef91c620b, type: 2}
+  bodyProfile: {fileID: 11400000, guid: d2b55b70acdb3d4409f4e9dd28fe6d2d, type: 2}
+  motionProfile: {fileID: 11400000, guid: e283866a75fc6e449ac5bb70f23d048c, type: 2}
+  combatProfile: {fileID: 11400000, guid: 2ad58ceabb22b8141a672a2037135c56, type: 2}
+  ascensionProfile: {fileID: 11400000, guid: f1179844c2135374d95695e4437c058c, type: 2}
+  feedbackProfile: {fileID: 11400000, guid: e5453131452e8054db124be454c5bdc6, type: 2}

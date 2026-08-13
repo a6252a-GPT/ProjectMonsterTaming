@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5880b30c926cb124e9ebfea2785517a1, type: 3}
+  m_Name: WorldItemDropVisualCatalog
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.WorldDrops.WorldItemDropVisualCatalog
+  entries:
+  - itemId: currency_gold
+    modelPrefab: {fileID: 1502487094534434837, guid: 932a79ad81ce2b14f90aceda58973123, type: 3}
+    localPosition: {x: 0.002447123, y: 0.037160784, z: 0.00000003803449}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 8.597731, y: 8.597731, z: 8.597731}
+  - itemId: currency_diamond
+    modelPrefab: {fileID: 523365414469850654, guid: dd91872dcf56e554389ce1ed59b8a6ae, type: 3}
+    localPosition: {x: -0.0008619015, y: 0.0367386, z: -0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 6.921188, y: 6.921188, z: 6.921188}
+  - itemId: currency_ascension_stone
+    modelPrefab: {fileID: 2104856254890669908, guid: a09b5459f3865ae4abe521c2feb406a1, type: 3}
+    localPosition: {x: -0.0014394226, y: 0.040521365, z: -0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 8.392712, y: 8.392712, z: 8.392712}
+  - itemId: material_equipment_slot_upgrade_stone
+    modelPrefab: {fileID: 7189265134999805807, guid: 2ed7c7f5137257647bd765d001090171, type: 3}
+    localPosition: {x: -0.019002743, y: 0.038729306, z: -0.017577508}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1.2155704, y: 1.2155704, z: 1.2155704}
+  - itemId: material_commander_skill_upgrade_stone
+    modelPrefab: {fileID: 3965262972449882181, guid: 1c81521f27265cd47829e5570929c9df, type: 3}
+    localPosition: {x: -0.0005443453, y: 0.040715113, z: -0.009635966}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1.9794844, y: 1.9794844, z: 1.9794844}
+  - itemId: material_legion_potential_upgrade_stone
+    modelPrefab: {fileID: 6460890942317568379, guid: 7438a0682256bfb47a094944f1426d5e, type: 3}
+    localPosition: {x: -0.0028848653, y: 0.040715117, z: -0.019098729}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 3.4971104, y: 3.4971104, z: 3.4971104}
+  - itemId: ticket_monster_summon
+    modelPrefab: {fileID: 1478011312344183534, guid: 3a751b2e2b42d944a81b0d8b36a3096a, type: 3}
+    localPosition: {x: -0.0012114936, y: 0.042372935, z: -0.018766386}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 2.4815743, y: 2.4815743, z: 2.4815743}
+  - itemId: ticket_commander_skill_summon
+    modelPrefab: {fileID: 6499118185689053006, guid: 7d250fe47bf1a5440b0291e91b382617, type: 3}
+    localPosition: {x: 0.00043858154, y: 0.042372935, z: 0.016093949}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 2.481574, y: 2.481574, z: 2.481574}
+  - itemId: key_food_riot
+    modelPrefab: {fileID: 792742899075664232, guid: 91a1dc0eacabb584d8a7c5ed0faabbef, type: 3}
+    localPosition: {x: 0.007729188, y: 0.04105504, z: 0.0009998082}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 4.066185, y: 4.066185, z: 4.066185}
+  - itemId: key_treasure_spirit
+    modelPrefab: {fileID: 9177907889262430509, guid: 668139ecbc96a384da026499d9283eeb, type: 3}
+    localPosition: {x: 0.008835411, y: 0.04105504, z: 0.0011406536}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 4.066185, y: 4.066185, z: 4.066185}
+  - itemId: key_giant_spellbook
+    modelPrefab: {fileID: 1673465879083865, guid: e2b6f2e536a1066438471c50693edf9d, type: 3}
+    localPosition: {x: 0.0083950255, y: 0.04105504, z: 0.0008983241}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 4.066185, y: 4.066185, z: 4.066185}
+  - itemId: key_guardians_tower
+    modelPrefab: {fileID: 4572761789144577266, guid: 45d820676283ba843a99d70533816dce, type: 3}
+    localPosition: {x: -0.00038002862, y: 0.039014164, z: 0.0002631722}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 2.975142, y: 2.975142, z: 2.975142}
+  - itemId: consumable_gold_pouch
+    modelPrefab: {fileID: 2801285382546209286, guid: df7fabaf199a39a43a5a0873e5a9e0a4, type: 3}
+    localPosition: {x: -0.0043246397, y: 0.037535097, z: -0.0028359257}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    localScale: {x: 1.9295979, y: 1.9295979, z: 1.9295979}

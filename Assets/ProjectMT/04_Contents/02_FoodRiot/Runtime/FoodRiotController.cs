@@ -3,7 +3,6 @@ using System.Collections;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Input;
-using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -28,7 +27,6 @@ namespace ProjectMT.Contents.FoodRiot
         [SerializeField] private TMP_Text killText; // 처치 수 표시
         [SerializeField] private TMP_Text resultText; // 조작 안내·결과 문구
         [SerializeField] private Button exitButton; // 콘텐츠 나가기 버튼
-        [SerializeField] private ContentClearOverlay clearOverlay; // 종료 결과 화면
 
         private ContentContext context; // 결과 반환 통로
         private FoodRiotStartData startData; // 이번 판 시작 정보
@@ -54,7 +52,6 @@ namespace ProjectMT.Contents.FoodRiot
             }
 
             combatWorld.Clear(); // 이전 판의 남은 유닛 제거
-            clearOverlay?.Hide();
             commanderRoot.SetActive(true);
             commanderMove?.ResetToInitialPosition(); // 재입장도 최초 위치에서 시작
             commanderMove?.SetInputEnabled(true);
@@ -80,7 +77,6 @@ namespace ProjectMT.Contents.FoodRiot
         public void Shutdown()
         {
             StopAllCoroutines();
-            clearOverlay?.Hide();
             exitButton?.onClick.RemoveListener(Cancel);
             commanderMove?.SetInputEnabled(false);
             combatWorld?.Clear();
@@ -205,7 +201,7 @@ namespace ProjectMT.Contents.FoodRiot
             combatWorld.Clear();
             if (resultText != null)
             {
-                resultText.text = clearOverlay == null ? $"완료 · 처치 {killCount}" : string.Empty;
+                resultText.text = string.Empty; // 최종 결과는 AppRoot 공통창에서 표시
             }
 
             var result = new FoodRiotResult(killCount); // 최종 처치 수를 보상 계층에 전달

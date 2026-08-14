@@ -5,6 +5,7 @@ using ProjectMT.Features.Equipment;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Reward;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,8 +15,8 @@ namespace ProjectMT.Features.OfflineReward
     [DisallowMultipleComponent]
     public sealed class OfflineRewardPopupPresenter : MonoBehaviour // 정산 완료 영수증 표시·확인 저장
     {
-        private const string FrameVariantPrefix = "ItemFrame_01_Normal_";
-        private const string CommonFrameVariantSuffix = "Green";
+        private const string FrameVariantPrefix = ItemGradeFramePalette.FrameVariantPrefix;
+        private const string CommonFrameVariantSuffix = ItemGradeFramePalette.CommonSuffix;
 
         [SerializeField] private TMP_Text timeText;
         [SerializeField] private TMP_Text stageText;
@@ -42,6 +43,7 @@ namespace ProjectMT.Features.OfflineReward
         [SerializeField] private Button adButton;
         [SerializeField] private Button claimButton;
         [SerializeField] private Button closeButton;
+        [SerializeField] private GameObject displayRootOverride;
         [SerializeField] private GameObject mainPopupRoot;
         [SerializeField] private GameObject autoDismantleNoticeRoot;
         [SerializeField] private TMP_Text autoDismantleNoticeText;
@@ -55,7 +57,7 @@ namespace ProjectMT.Features.OfflineReward
         private ItemCatalog itemCatalog;
         private bool busy;
 
-        private GameObject DisplayRoot => gameObject;
+        private GameObject DisplayRoot => displayRootOverride != null ? displayRootOverride : gameObject;
         public bool IsOpen => DisplayRoot.activeSelf;
 
         private void Awake()
@@ -209,7 +211,7 @@ namespace ProjectMT.Features.OfflineReward
                         ResolveRewardIcon(item),
                         item.Amount,
                         item.Label,
-                        ResolveCommonItemFrame());
+                        ResolveItemFrame(item));
                 }
                 else
                 {
@@ -301,6 +303,22 @@ namespace ProjectMT.Features.OfflineReward
                 : null;
         }
 
+        private GameObject ResolveItemFrame(RewardPresentationItem item)
+        {
+            var itemId = item.Kind == RewardPresentationKind.Gold ? ItemIds.Gold : item.ItemId;
+            if (!string.IsNullOrWhiteSpace(itemId) && itemCatalog != null &&
+                itemCatalog.TryGet(itemId, out var definition))
+            {
+                var suffix = ItemGradeFramePalette.GetSuffix(definition.Grade);
+                if (frameVariantTemplates.TryGetValue(suffix, out var template))
+                {
+                    return template;
+                }
+            }
+
+            return ResolveCommonItemFrame();
+        }
+
         private void BindEquipmentSlot(OfflineRewardItemSlotView slot, EquipmentInstanceData equipment)
         {
             if (slot == null || equipment == null)
@@ -324,15 +342,7 @@ namespace ProjectMT.Features.OfflineReward
 
         private GameObject ResolveEquipmentFrame(EquipmentGrade grade)
         {
-            var suffix = grade switch
-            {
-                EquipmentGrade.Common => "Green",
-                EquipmentGrade.Rare => "Blue",
-                EquipmentGrade.Epic => "Yellow",
-                EquipmentGrade.Legendary => "Plum",
-                EquipmentGrade.Mythic => "Red",
-                _ => CommonFrameVariantSuffix
-            };
+            var suffix = ItemGradeFramePalette.GetSuffix(grade);
             return frameVariantTemplates.TryGetValue(suffix, out var template)
                 ? template
                 : ResolveCommonItemFrame();
@@ -430,6 +440,11 @@ namespace ProjectMT.Features.OfflineReward
         }
 
 #if UNITY_EDITOR
+        public void EditorConfigureDisplayRoot(GameObject displayRoot)
+        {
+            displayRootOverride = displayRoot;
+        }
+
         public void EditorConfigure(
             TMP_Text offlineTime,
             TMP_Text basisStage,

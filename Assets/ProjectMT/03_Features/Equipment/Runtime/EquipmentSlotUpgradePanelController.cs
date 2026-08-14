@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,14 +21,14 @@ namespace ProjectMT.Features.Equipment
         // 등급별 완성 프레임 이름 접미사.
         private static readonly Dictionary<EquipmentGrade, string> FrameVariantSuffixByGrade = new Dictionary<EquipmentGrade, string>
         {
-            { EquipmentGrade.Common, "Green" },
-            { EquipmentGrade.Rare, "Blue" },
-            { EquipmentGrade.Epic, "Yellow" },
-            { EquipmentGrade.Legendary, "Plum" },
-            { EquipmentGrade.Mythic, "Red" },
+            { EquipmentGrade.Common, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Common) },
+            { EquipmentGrade.Rare, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Rare) },
+            { EquipmentGrade.Epic, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Epic) },
+            { EquipmentGrade.Legendary, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Legendary) },
+            { EquipmentGrade.Mythic, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Mythic) },
         };
 
-        private const string FrameVariantPrefix = "ItemFrame_01_Normal_";
+        private const string FrameVariantPrefix = ItemGradeFramePalette.FrameVariantPrefix;
         private const string EmptySlotBackgroundName = "EmptySlotGrayBg";
         private static readonly Color EmptySlotTintColor = new Color(0.5f, 0.5f, 0.5f, 1f);
 

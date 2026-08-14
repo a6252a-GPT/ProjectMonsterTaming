@@ -380,7 +380,6 @@ MonoBehaviour:
   - {fileID: 1933715675}
   - {fileID: 793072929}
   exitButton: {fileID: 2005170568}
-  clearOverlay: {fileID: 601435566}
   defenderAttackInterval: 1.15
   defenderDamage: 7
   defenderRange: 8
@@ -560,17 +559,6 @@ Transform:
   - {fileID: 582794791}
   m_Father: {fileID: 542566293}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &601435566 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5304282967564185975, guid: 70284f92bd76a0948a33ca71e365a52d, type: 3}
-  m_PrefabInstance: {fileID: 6985974095350508649}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8336f3bd3352a874e897fdd1d71de729, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.ContentClearOverlay
 --- !u!114 &621598959 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8676652778438481857, guid: 70284f92bd76a0948a33ca71e365a52d, type: 3}

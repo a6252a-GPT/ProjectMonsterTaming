@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -12,6 +13,19 @@ namespace ProjectMT.Features.Inventory
     [DisallowMultipleComponent]
     public sealed class ItemInventoryPageController : MonoBehaviour // 일반 아이템 목록·상세·사용 연결
     {
+        private const string GradeFrameTemplateRootName = "ItemGradeFrameTemplates";
+        private const string FrameVariantPrefix = ItemGradeFramePalette.FrameVariantPrefix;
+
+        private static readonly Dictionary<ItemGrade, string> FrameVariantSuffixByGrade =
+            new Dictionary<ItemGrade, string>
+            {
+                { ItemGrade.Common, ItemGradeFramePalette.GetSuffix(ItemGrade.Common) },
+                { ItemGrade.Rare, ItemGradeFramePalette.GetSuffix(ItemGrade.Rare) },
+                { ItemGrade.Epic, ItemGradeFramePalette.GetSuffix(ItemGrade.Epic) },
+                { ItemGrade.Legendary, ItemGradeFramePalette.GetSuffix(ItemGrade.Legendary) },
+                { ItemGrade.Mythic, ItemGradeFramePalette.GetSuffix(ItemGrade.Mythic) }
+            };
+
         private static readonly ItemCategory?[] FilterCategories =
         {
             null,
@@ -20,6 +34,16 @@ namespace ProjectMT.Features.Inventory
             ItemCategory.SummonTicket,
             ItemCategory.DungeonKey,
             ItemCategory.UpgradeMaterial
+        };
+
+        private static readonly string[] FilterLabels =
+        {
+            "전체",
+            "소비",
+            "재화",
+            "기타1",
+            "기타2",
+            "기타3"
         };
 
         private static readonly Color SelectedFilterColor = new Color32(244, 197, 72, 255);
@@ -60,6 +84,8 @@ namespace ProjectMT.Features.Inventory
         [SerializeField] private Sprite[] categoryFallbackIcons = Array.Empty<Sprite>();
 
         private readonly List<SlotBinding> slots = new List<SlotBinding>();
+        private readonly Dictionary<ItemGrade, GameObject> gradeFrameTemplates =
+            new Dictionary<ItemGrade, GameObject>();
         private IGameProgressService progress;
         private ItemCatalog catalog;
         private IReadOnlyList<ItemInventoryEntryView> visibleEntries = Array.Empty<ItemInventoryEntryView>();
@@ -160,6 +186,7 @@ namespace ProjectMT.Features.Inventory
 
             inventoryCloseButton.onClick.AddListener(Close);
             detailCloseButton.onClick.AddListener(CloseDetail);
+            ConfigureFilterButtons();
             filterButtons[0]?.onClick.AddListener(HandleFilterAll);
             filterButtons[1]?.onClick.AddListener(HandleFilterConsumable);
             filterButtons[2]?.onClick.AddListener(HandleFilterCurrency);
@@ -181,6 +208,7 @@ namespace ProjectMT.Features.Inventory
                 soloActionPosition = ((RectTransform)discardSoloButton.transform).anchoredPosition;
             }
 
+            CacheGradeFrameTemplates();
             BuildSlotBindings();
             referencesReady = slots.Count > 0;
             if (!referencesReady)
@@ -219,11 +247,12 @@ namespace ProjectMT.Features.Inventory
                     iconRoot.GetComponent<Image>(),
                     quantityRoot.GetComponent<TMP_Text>(),
                     selectionRoot.gameObject,
-                    FindDescendant(child, "NormalArea")?.gameObject,
+                    FindDescendant(child, "NormalArea"),
                     FindDescendant(child, "Add_1")?.gameObject,
                     FindDescendant(child, "Add_2")?.gameObject,
                     FindDescendant(child, "Lock")?.gameObject,
-                    FindDescendant(child, "Text_Level")?.gameObject);
+                    FindDescendant(child, "Text_Level")?.gameObject,
+                    gradeFrameTemplates);
                 var capturedIndex = slots.Count;
                 slot.ClickAction = () => SelectSlot(capturedIndex);
                 button.onClick.AddListener(slot.ClickAction);
@@ -296,7 +325,7 @@ namespace ProjectMT.Features.Inventory
                 detailItemIcon.enabled = detailItemIcon.sprite != null;
             }
 
-            rarityText.text = "일반 아이템";
+            rarityText.text = $"{GetGradeDisplayName(definition.Grade)} 아이템";
             ownedCountText.text = $"보유 {entry.Quantity:N0}";
             itemNameText.text = definition.DisplayName;
             itemTypeText.text = GetCategoryLabel(definition.Category);
@@ -466,6 +495,27 @@ namespace ProjectMT.Features.Inventory
         private void HandleFilterOtherTwo() => SetFilter(FilterCategories[4]);
         private void HandleFilterOtherThree() => SetFilter(FilterCategories[5]);
 
+        private void ConfigureFilterButtons()
+        {
+            for (var index = 0; index < filterButtons.Length; index++)
+            {
+                var button = filterButtons[index];
+                if (button == null)
+                {
+                    continue;
+                }
+
+                var label = button.GetComponentInChildren<TMP_Text>(true);
+                if (label != null)
+                {
+                    label.text = FilterLabels[index];
+                }
+
+                var icon = button.transform.Find("Icon");
+                icon?.gameObject.SetActive(false); // 필터는 아이콘 대신 텍스트 사용
+            }
+        }
+
         private void UpdateFilterVisuals()
         {
             for (var index = 0; index < filterButtons.Length; index++)
@@ -477,7 +527,9 @@ namespace ProjectMT.Features.Inventory
                 }
 
                 var selected = FilterCategories[index] == currentFilter;
-                button.interactable = !selected;
+                button.interactable = true;
+                var focus = button.transform.Find("Focus");
+                focus?.gameObject.SetActive(selected);
                 var label = button.GetComponentInChildren<TMP_Text>(true);
                 if (label != null)
                 {
@@ -577,6 +629,19 @@ namespace ProjectMT.Features.Inventory
             };
         }
 
+        private static string GetGradeDisplayName(ItemGrade grade)
+        {
+            return grade switch
+            {
+                ItemGrade.Common => "일반",
+                ItemGrade.Rare => "희귀",
+                ItemGrade.Epic => "영웅",
+                ItemGrade.Legendary => "전설",
+                ItemGrade.Mythic => "신화",
+                _ => grade.ToString()
+            };
+        }
+
         private static string GetCategoryPurpose(ItemCategory category)
         {
             return category switch
@@ -614,6 +679,31 @@ namespace ProjectMT.Features.Inventory
             return null;
         }
 
+        private void CacheGradeFrameTemplates()
+        {
+            gradeFrameTemplates.Clear();
+            var templateRoot = FindDescendant(transform, GradeFrameTemplateRootName);
+            if (templateRoot == null)
+            {
+                Debug.LogError($"ItemInventoryPageController: {GradeFrameTemplateRootName}를 찾지 못했습니다.", this);
+                return;
+            }
+
+            foreach (var pair in FrameVariantSuffixByGrade)
+            {
+                var template = FindDescendant(templateRoot, FrameVariantPrefix + pair.Value);
+                if (template != null)
+                {
+                    gradeFrameTemplates[pair.Key] = template.gameObject;
+                }
+            }
+
+            if (gradeFrameTemplates.Count != FrameVariantSuffixByGrade.Count)
+            {
+                Debug.LogError("ItemInventoryPageController: 일반 아이템 등급 프레임 5종 연결이 필요합니다.", this);
+            }
+        }
+
         private sealed class SlotBinding
         {
             private readonly GameObject root;
@@ -621,13 +711,16 @@ namespace ProjectMT.Features.Inventory
             private readonly Image icon;
             private readonly TMP_Text quantity;
             private readonly GameObject selection;
-            private readonly GameObject normalArea;
+            private readonly Transform normalArea;
             private readonly GameObject addOne;
             private readonly GameObject addTwo;
             private readonly GameObject lockRoot;
             private readonly GameObject levelRoot;
-            private readonly Image[] frameImages;
-            private readonly Color[] frameColors;
+            private readonly IReadOnlyDictionary<ItemGrade, GameObject> gradeFrameTemplates;
+            private GameObject currentFrame;
+            private Image[] frameImages = Array.Empty<Image>();
+            private Color[] frameColors = Array.Empty<Color>();
+            private bool frameDimmed;
 
             public SlotBinding(
                 GameObject slotRoot,
@@ -635,11 +728,12 @@ namespace ProjectMT.Features.Inventory
                 Image itemIcon,
                 TMP_Text quantityText,
                 GameObject selectionRoot,
-                GameObject normalRoot,
+                Transform normalRoot,
                 GameObject addOneRoot,
                 GameObject addTwoRoot,
                 GameObject lockObject,
-                GameObject levelObject)
+                GameObject levelObject,
+                IReadOnlyDictionary<ItemGrade, GameObject> frameTemplates)
             {
                 root = slotRoot;
                 button = slotButton;
@@ -651,14 +745,11 @@ namespace ProjectMT.Features.Inventory
                 addTwo = addTwoRoot;
                 lockRoot = lockObject;
                 levelRoot = levelObject;
-                frameImages = normalRoot != null
-                    ? normalRoot.GetComponentsInChildren<Image>(true)
-                    : Array.Empty<Image>();
-                frameColors = new Color[frameImages.Length];
-                for (var index = 0; index < frameImages.Length; index++)
-                {
-                    frameColors[index] = frameImages[index].color;
-                }
+                gradeFrameTemplates = frameTemplates;
+                currentFrame = normalRoot != null && normalRoot.childCount > 0
+                    ? normalRoot.GetChild(0).gameObject
+                    : null;
+                CacheFrameColors();
             }
 
             public UnityAction ClickAction { get; set; }
@@ -667,12 +758,16 @@ namespace ProjectMT.Features.Inventory
             {
                 root.SetActive(true);
                 button.interactable = entry.Definition != null;
-                normalArea?.SetActive(true);
+                normalArea?.gameObject.SetActive(true);
                 addOne?.SetActive(false);
                 addTwo?.SetActive(false);
                 lockRoot?.SetActive(false);
                 levelRoot?.SetActive(false);
                 selection.SetActive(false);
+                if (entry.Definition != null)
+                {
+                    ApplyFrameVariant(entry.Definition.Grade);
+                }
                 SetFrameDimmed(false);
                 icon.sprite = itemIcon;
                 icon.enabled = itemIcon != null;
@@ -684,7 +779,7 @@ namespace ProjectMT.Features.Inventory
             {
                 root.SetActive(true);
                 button.interactable = false;
-                normalArea?.SetActive(true);
+                normalArea?.gameObject.SetActive(true);
                 addOne?.SetActive(false);
                 addTwo?.SetActive(false);
                 lockRoot?.SetActive(false);
@@ -712,6 +807,11 @@ namespace ProjectMT.Features.Inventory
 
             private void SetFrameDimmed(bool dimmed)
             {
+                if (frameDimmed == dimmed)
+                {
+                    return;
+                }
+
                 const float dimFactor = 0.26f;
                 for (var index = 0; index < frameImages.Length; index++)
                 {
@@ -723,6 +823,58 @@ namespace ProjectMT.Features.Inventory
                             original.b * dimFactor,
                             original.a)
                         : original;
+                }
+
+                frameDimmed = dimmed;
+            }
+
+            private void ApplyFrameVariant(ItemGrade grade)
+            {
+                if (normalArea == null || gradeFrameTemplates == null ||
+                    !FrameVariantSuffixByGrade.TryGetValue(grade, out var suffix) ||
+                    !gradeFrameTemplates.TryGetValue(grade, out var template) || template == null)
+                {
+                    return;
+                }
+
+                var desiredName = FrameVariantPrefix + suffix;
+                if (currentFrame != null && currentFrame.name == desiredName && !frameDimmed)
+                {
+                    return;
+                }
+
+                if (currentFrame != null)
+                {
+                    currentFrame.SetActive(false);
+                    UnityEngine.Object.Destroy(currentFrame);
+                }
+
+                currentFrame = UnityEngine.Object.Instantiate(template, normalArea);
+                currentFrame.name = desiredName;
+                currentFrame.SetActive(true);
+
+                var rect = currentFrame.GetComponent<RectTransform>();
+                if (rect != null)
+                {
+                    rect.anchorMin = Vector2.zero;
+                    rect.anchorMax = Vector2.one;
+                    rect.offsetMin = Vector2.zero;
+                    rect.offsetMax = Vector2.zero;
+                }
+
+                frameDimmed = false;
+                CacheFrameColors();
+            }
+
+            private void CacheFrameColors()
+            {
+                frameImages = currentFrame != null
+                    ? currentFrame.GetComponentsInChildren<Image>(true)
+                    : Array.Empty<Image>();
+                frameColors = new Color[frameImages.Length];
+                for (var index = 0; index < frameImages.Length; index++)
+                {
+                    frameColors[index] = frameImages[index].color;
                 }
             }
         }

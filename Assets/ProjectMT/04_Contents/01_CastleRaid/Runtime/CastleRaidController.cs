@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Pooling;
-using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using Unity.AI.Navigation;
@@ -42,7 +41,6 @@ namespace ProjectMT.Contents.CastleRaid
         [SerializeField] private Button[] unitButtons; // 출전 유닛 선택 버튼
         [SerializeField] private TMP_Text[] unitButtonLabels; // 유닛 버튼 글자
         [SerializeField] private Button exitButton; // 콘텐츠 나가기 버튼
-        [SerializeField] private ContentClearOverlay clearOverlay; // 승리 결과 화면
 
         [Header("Seed Balance")]
         [SerializeField, Min(0.1f)] private float defenderAttackInterval = 1.15f; // 수비대 공격 주기
@@ -111,7 +109,6 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             poolScope.ReturnAll();
-            clearOverlay?.Hide();
             activeUnits.Clear();
             deployedCount = 0;
             selectedUnitIndex = -1;
@@ -144,7 +141,6 @@ namespace ProjectMT.Contents.CastleRaid
         public void Shutdown()
         {
             StopAllCoroutines(); // 경로 확인·풀 반환 대기 중단
-            clearOverlay?.Hide();
             UnbindUnitButtons();
             exitButton?.onClick.RemoveListener(Cancel);
             for (var i = 0; i < targets?.Length; i++)
@@ -434,7 +430,7 @@ namespace ProjectMT.Contents.CastleRaid
             if (target.TargetKind == CastleTargetKind.MainCastle)
             {
                 combatFeedback?.PlayClimax(target.transform.position, CombatClimaxStrength.Strong);
-                SetStatus(clearOverlay == null ? "성 파괴 완료" : string.Empty);
+                SetStatus(string.Empty); // 최종 결과는 AppRoot 공통창에서 표시
                 IsRunning = false;
                 UpdateHud();
                 var result = new CastleRaidResult(true); // 본성 파괴만 승리 처리

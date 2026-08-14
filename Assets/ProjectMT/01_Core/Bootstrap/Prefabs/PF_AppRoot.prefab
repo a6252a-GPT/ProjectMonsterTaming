@@ -335,6 +335,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6830132062408562449, guid: 025482e52a5c2664195bfc54953ee82e, type: 3}
+      propertyPath: displayRootOverride
+      value: 
+      objectReference: {fileID: 8799466515846509343}
     - target: {fileID: 8502035318672910821, guid: 025482e52a5c2664195bfc54953ee82e, type: 3}
       propertyPath: m_Name
       value: OfflineRewardPopup

@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -64,17 +65,20 @@ namespace ProjectMT.Features.Equipment
         private readonly Dictionary<EquipmentPart, Sprite> partIconSprites = new Dictionary<EquipmentPart, Sprite>();
 
         // 테두리 색은 런타임 tint가 아니라, 목업에 있는 등급별 완성 프레임
-        // (ItemFrame_01_Normal_Green/Blue/Yellow/Plum/Red)을 그대로 재사용한다.
+        // (ItemFrame_01_Normal_Gray/Blue/Plum/Yellow/Red)을 그대로 재사용한다.
         private static readonly Dictionary<EquipmentGrade, string> FrameVariantSuffixByGrade = new Dictionary<EquipmentGrade, string>
         {
-            { EquipmentGrade.Common, "Green" },
-            { EquipmentGrade.Rare, "Blue" },
-            { EquipmentGrade.Epic, "Yellow" },
-            { EquipmentGrade.Legendary, "Plum" },
-            { EquipmentGrade.Mythic, "Red" },
+            { EquipmentGrade.Common, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Common) },
+            { EquipmentGrade.Rare, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Rare) },
+            { EquipmentGrade.Epic, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Epic) },
+            { EquipmentGrade.Legendary, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Legendary) },
+            { EquipmentGrade.Mythic, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Mythic) },
         };
 
-        private const string FrameVariantPrefix = "ItemFrame_01_Normal_";
+        private static readonly Color SelectedFilterColor = new Color32(244, 197, 72, 255);
+        private static readonly Color NormalFilterColor = new Color32(236, 232, 225, 255);
+
+        private const string FrameVariantPrefix = ItemGradeFramePalette.FrameVariantPrefix;
         private readonly Dictionary<string, GameObject> frameVariantTemplates = new Dictionary<string, GameObject>();
         private Transform frameVariantTemplateStorage;
 
@@ -455,9 +459,7 @@ namespace ProjectMT.Features.Equipment
         }
 
         // ---------------------------------------------------------------
-        // 부위 필터 탭 - 필터 UI 목업에는 Button이 연결돼 있지 않아 런타임에 추가한다.
-        // 목업 탭(전체/무기/방패/방어구/장신구/신발) 5분류를 우리 6부위에 맞춰 대응시킨다.
-        // 장갑(Glove)은 전용 탭이 없어 "전체"에서만 표시된다.
+        // 부위 필터 탭 - 6부위를 아이콘 없이 한글 텍스트로 구분한다.
         // ---------------------------------------------------------------
 
         private void BuildFilterButtons()
@@ -466,11 +468,13 @@ namespace ProjectMT.Features.Equipment
             AddFilterTab("Filter_Weapon", EquipmentPart.Weapon);
             AddFilterTab("Filter_Shield", EquipmentPart.Helmet);
             AddFilterTab("Filter_Armor", EquipmentPart.Armor);
-            AddFilterTab("Filter_Accessory", EquipmentPart.Ring);
             AddFilterTab("Filter_Boots", EquipmentPart.Boots);
+            AddFilterTab("Filter_Glove", EquipmentPart.Glove);
+            AddFilterTab("Filter_Accessory", EquipmentPart.Ring);
 
             if (allFilterTab != null)
             {
+                ConfigureTextFilterTab(allFilterTab, "전체");
                 var button = EnsureButton(allFilterTab);
                 button.onClick.AddListener(() => SetFilter(null));
             }
@@ -485,8 +489,21 @@ namespace ProjectMT.Features.Equipment
             }
 
             filterTabs[part] = tab;
+            ConfigureTextFilterTab(tab, EquipmentPartInfo.GetDisplayName(part));
             var button = EnsureButton(tab);
             button.onClick.AddListener(() => SetFilter(part));
+        }
+
+        private static void ConfigureTextFilterTab(Transform tab, string labelText)
+        {
+            var label = tab.GetComponentInChildren<TMP_Text>(true);
+            if (label != null)
+            {
+                label.text = labelText;
+            }
+
+            var icon = tab.Find("Icon");
+            icon?.gameObject.SetActive(false); // 부위 필터는 텍스트만 표시
         }
 
         private void SetFilter(EquipmentPart? part)
@@ -500,19 +517,25 @@ namespace ProjectMT.Features.Equipment
         // 각 탭의 "Focus" 하위 오브젝트를 선택 상태 표시로 사용한다(활성=선택됨).
         private void RefreshFilterHighlight()
         {
-            SetFocusActive(allFilterTab, currentFilter == null);
+            SetFilterVisual(allFilterTab, currentFilter == null);
             foreach (var pair in filterTabs)
             {
-                SetFocusActive(pair.Value, currentFilter == pair.Key);
+                SetFilterVisual(pair.Value, currentFilter == pair.Key);
             }
         }
 
-        private static void SetFocusActive(Transform tab, bool active)
+        private static void SetFilterVisual(Transform tab, bool selected)
         {
             var focus = tab != null ? tab.Find("Focus") : null;
             if (focus != null)
             {
-                focus.gameObject.SetActive(active);
+                focus.gameObject.SetActive(selected);
+            }
+
+            var label = tab != null ? tab.GetComponentInChildren<TMP_Text>(true) : null;
+            if (label != null)
+            {
+                label.color = selected ? SelectedFilterColor : NormalFilterColor;
             }
         }
 

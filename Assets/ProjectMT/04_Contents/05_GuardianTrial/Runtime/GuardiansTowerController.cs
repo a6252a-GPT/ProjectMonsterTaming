@@ -5,7 +5,6 @@ using ProjectMT.Contents.Framework;
 using ProjectMT.Features.Expedition;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Input;
-using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -77,7 +76,6 @@ namespace ProjectMT.Contents.GuardianTrial
         [SerializeField] private TMP_Text enemyGaugeText; // "잡은 수량 X / 남은 수량 Y"
         [SerializeField] private Image enemyGaugeFillImage; // Type=Filled 상단 게이지
         [SerializeField] private Button exitButton; // 콘텐츠 나가기 버튼
-        [SerializeField] private ContentClearOverlay clearOverlay; // 종료 결과 화면
         [SerializeField] private TMP_Text difficultyLevelText; // 수호수 난이도 표시("난이도 N")
 
         private ContentContext context; // 결과 반환 통로
@@ -116,7 +114,6 @@ namespace ProjectMT.Contents.GuardianTrial
             }
 
             combatWorld.Clear(); // 이전 판의 남은 유닛 제거
-            clearOverlay?.Hide();
             commanderRoot.SetActive(true);
             commanderMove?.ResetToInitialPosition(); // 08.07 안건준 추가 - 나갔다가 다시 들어오면 항상 처음(중앙) 위치에서 시작
             commanderMove?.SetInputEnabled(true);
@@ -163,7 +160,6 @@ namespace ProjectMT.Contents.GuardianTrial
 
         public void Shutdown()
         {
-            clearOverlay?.Hide();
             exitButton?.onClick.RemoveListener(Cancel);
             commanderMove?.SetInputEnabled(false);
             ShutdownStructures();
@@ -611,7 +607,7 @@ namespace ProjectMT.Contents.GuardianTrial
             combatWorld.Clear();
             if (resultText != null)
             {
-                resultText.text = clearOverlay == null ? $"완료 · 처치 {killCount}" : string.Empty;
+                resultText.text = string.Empty; // 최종 결과는 AppRoot 공통창에서 표시
             }
 
             var result = new GuardiansTowerResult(killCount, cleared: true); // 08.07 안건준 수정 - 성공 클리어는 난이도 상승 대상
@@ -632,7 +628,7 @@ namespace ProjectMT.Contents.GuardianTrial
             combatWorld.Clear();
             if (resultText != null)
             {
-                resultText.text = clearOverlay == null ? $"실패 · {reason} · 처치 {killCount}" : string.Empty;
+                resultText.text = string.Empty; // 최종 결과는 AppRoot 공통창에서 표시
             }
 
             var result = new GuardiansTowerResult(killCount, cleared: false); // 08.07 안건준 수정 - 실패는 난이도를 올리지 않음
@@ -723,7 +719,6 @@ namespace ProjectMT.Contents.GuardianTrial
             TMP_Text gaugeText,
             Image gaugeFill,
             Button exit,
-            ContentClearOverlay overlay,
             TMP_Text difficultyText = null)
         {
             combatWorld = world;
@@ -738,7 +733,6 @@ namespace ProjectMT.Contents.GuardianTrial
             enemyGaugeText = gaugeText;
             enemyGaugeFillImage = gaugeFill;
             exitButton = exit;
-            clearOverlay = overlay;
             difficultyLevelText = difficultyText;
         }
 #endif

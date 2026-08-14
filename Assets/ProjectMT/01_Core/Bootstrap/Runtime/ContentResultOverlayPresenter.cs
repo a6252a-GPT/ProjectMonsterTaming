@@ -1,62 +1,79 @@
 using System.Threading.Tasks;
 using ProjectMT.Contents.Framework;
-using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace ProjectMT.Bootstrap
 {
     [DisallowMultipleComponent]
     public sealed class ContentResultOverlayPresenter : MonoBehaviour, IContentResultView // AppRoot 공통 최종 결과창
     {
-        [SerializeField] private ContentClearOverlay overlay; // 공용 결과 시각 원본 재사용
+        [SerializeField] private GameObject panelRoot; // 공통 결과 화면 루트
+        [SerializeField] private TMP_Text titleText; // 콘텐츠별 승패 제목
+        [SerializeField] private TMP_Text summaryText; // 최종 결과 요약
+        [SerializeField] private Button confirmButton; // 확인 뒤 복귀 진행
         [SerializeField] private TMP_Text[] rewardSlotTexts; // 최대 3개 확정 보상 카드
 
         private TaskCompletionSource<bool> closeSource;
+        private bool confirmed; // 중복 확인 차단
+
+        public bool IsVisible => panelRoot != null && panelRoot.activeSelf;
 
         private void Awake()
         {
-            overlay?.Hide();
+            confirmButton?.onClick.AddListener(HandleConfirmed);
+            Hide();
         }
 
         private void OnDestroy()
         {
-            closeSource?.TrySetResult(true);
-            closeSource = null;
+            confirmButton?.onClick.RemoveListener(HandleConfirmed);
+            CompleteClose();
         }
 
         public Task ShowAsync(ContentResultPresentation presentation)
         {
-            if (presentation == null || overlay == null)
+            if (presentation == null)
             {
                 return Task.CompletedTask;
             }
 
-            closeSource?.TrySetResult(true); // 비정상 중복 표시가 와도 이전 대기 해제
+            if (!IsConfigured())
+            {
+                Debug.LogError("Content result overlay references are missing.");
+                return Task.CompletedTask;
+            }
+
+            CompleteClose(); // 비정상 중복 표시가 와도 이전 대기 해제
             closeSource = new TaskCompletionSource<bool>();
-            var title = presentation.Outcome == ContentOutcome.Fail
+            titleText.text = presentation.Outcome == ContentOutcome.Fail
                 ? $"{presentation.DisplayName} 실패"
                 : $"{presentation.DisplayName} 완료";
-            if (!overlay.TryShow(
-                    presentation.Summary,
-                    FormatPrimaryReward(presentation),
-                    HandleConfirmed,
-                    title))
-            {
-                closeSource.TrySetResult(true);
-            }
-            else
-            {
-                ApplyRewardSlots(presentation);
-            }
+            summaryText.text = string.IsNullOrWhiteSpace(presentation.Summary)
+                ? "콘텐츠 완료"
+                : presentation.Summary;
+            ApplyRewardSlots(presentation);
+
+            confirmed = false;
+            confirmButton.interactable = true;
+            panelRoot.SetActive(true);
+            panelRoot.transform.SetAsLastSibling();
 
             return closeSource.Task;
         }
 
         private void HandleConfirmed()
         {
-            closeSource?.TrySetResult(true);
-            closeSource = null;
+            if (confirmed)
+            {
+                return;
+            }
+
+            confirmed = true;
+            confirmButton.interactable = false;
+            panelRoot.SetActive(false);
+            CompleteClose();
         }
 
         private void ApplyRewardSlots(ContentResultPresentation presentation)
@@ -107,11 +124,31 @@ namespace ProjectMT.Bootstrap
             }
         }
 
-        private static string FormatPrimaryReward(ContentResultPresentation presentation)
+        private bool IsConfigured()
         {
-            return presentation.RewardItems.Count == 0
-                ? presentation.Outcome == ContentOutcome.Fail ? "획득 보상 없음" : "보상 없음"
-                : FormatReward(presentation.RewardItems[0]);
+            return panelRoot != null && panelRoot != gameObject && titleText != null && summaryText != null &&
+                   confirmButton != null && rewardSlotTexts != null && rewardSlotTexts.Length >= 3 &&
+                   rewardSlotTexts[0] != null && rewardSlotTexts[1] != null && rewardSlotTexts[2] != null;
+        }
+
+        private void Hide()
+        {
+            confirmed = false;
+            if (confirmButton != null)
+            {
+                confirmButton.interactable = true;
+            }
+
+            if (panelRoot != null && panelRoot.activeSelf)
+            {
+                panelRoot.SetActive(false);
+            }
+        }
+
+        private void CompleteClose()
+        {
+            closeSource?.TrySetResult(true);
+            closeSource = null;
         }
 
         private static string FormatReward(ProjectMT.Shared.Reward.RewardPresentationItem item)
@@ -121,9 +158,17 @@ namespace ProjectMT.Bootstrap
         }
 
 #if UNITY_EDITOR
-        public void EditorConfigure(ContentClearOverlay resultOverlay, params TMP_Text[] rewardSlots)
+        public void EditorConfigure(
+            GameObject resultPanel,
+            TMP_Text title,
+            TMP_Text summary,
+            Button confirm,
+            params TMP_Text[] rewardSlots)
         {
-            overlay = resultOverlay;
+            panelRoot = resultPanel;
+            titleText = title;
+            summaryText = summary;
+            confirmButton = confirm;
             rewardSlotTexts = rewardSlots;
         }
 #endif

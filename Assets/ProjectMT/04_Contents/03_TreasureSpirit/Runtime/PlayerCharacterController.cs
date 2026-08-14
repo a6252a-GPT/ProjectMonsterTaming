@@ -24,6 +24,7 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private CharacterController characterController;
         private int speedHash;
+        private bool hasSpeedParameter; // 애니메이션 파라미터 안전성 체크 플래그
         private bool inputEnabled = true;
 
         public bool InputEnabled => inputEnabled;
@@ -37,9 +38,30 @@ namespace ProjectMT.Contents.TreasureSpirit
                 animator = GetComponentInChildren<Animator>();
             }
 
-            if (animator != null)
+            CheckSpeedParameter();
+        }
+
+        /// <summary>
+        /// Animator Controller 내에 'Speed' 파라미터가 실제 존재하는지 사전 검사
+        /// </summary>
+        private void CheckSpeedParameter()
+        {
+            if (animator == null || string.IsNullOrEmpty(speedParameter))
             {
-                speedHash = Animator.StringToHash(speedParameter);
+                hasSpeedParameter = false;
+                return;
+            }
+
+            speedHash = Animator.StringToHash(speedParameter);
+            hasSpeedParameter = false;
+
+            foreach (AnimatorControllerParameter param in animator.parameters)
+            {
+                if (param.nameHash == speedHash)
+                {
+                    hasSpeedParameter = true;
+                    break;
+                }
             }
         }
 
@@ -75,7 +97,7 @@ namespace ProjectMT.Contents.TreasureSpirit
                 // 방향 정규화 및 이동 속도 계산
                 Vector3 moveDelta = movement.normalized * (moveSpeed * Time.deltaTime);
 
-                // 2. ★ 안전한 맵 경계 제한 (CharacterController.enabled를 끄지 않고 미리 차단)
+                // 2. 안전한 맵 경계 제한 (CharacterController.enabled를 끄지 않고 미리 차단)
                 if (useMapBounds)
                 {
                     moveDelta = ClampMovementWithinBounds(moveDelta);
@@ -149,7 +171,8 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private void UpdateAnimation(float speedValue)
         {
-            if (animator != null && speedHash != 0)
+            // 애니메이터에 해당 파라미터가 실제로 존재할 경우에만 안심하고 호출
+            if (animator != null && hasSpeedParameter)
             {
                 animator.SetFloat(speedHash, speedValue, 0.08f, Time.deltaTime);
             }

@@ -1428,7 +1428,7 @@ MonoBehaviour:
   floorPrefab: {fileID: 1205378017439122977, guid: bfdb00556ecae024587eb3d9c36d7051, type: 3}
   playerTransform: {fileID: 1433094538}
   prisonPrefab: {fileID: 1657353520625999579, guid: 2ab4f89d17ba59444a915f7c43d85e0f, type: 3}
-  prisonContentPrefab: {fileID: 7766625452383920133, guid: b78d7e4f3540df34393217f6f4c5372b, type: 3}
+  prisonContentPrefab: {fileID: 1904210629174728, guid: 94c60322659a75c489677560265c672a, type: 3}
   guardPrefab: {fileID: 9151998103618918405, guid: 7c6491b74c708764a80dcd6a730525e3, type: 3}
   guardCount: 4
   treasureChestPrefab: {fileID: 8111757877157432391, guid: a105dc230d1322943bbdff8ecfba2a7e, type: 3}
@@ -1605,7 +1605,7 @@ Rigidbody:
   m_IsKinematic: 1
   m_Interpolate: 0
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 2
 --- !u!1001 &1454890026
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1946,6 +1946,7 @@ MonoBehaviour:
   commanderMove: {fileID: 1433094540}
   timerText: {fileID: 1163433171}
   statusText: {fileID: 1898932450}
+  killCountText: {fileID: 38408470}
   resultText: {fileID: 1571000276}
   exitButton: {fileID: 929909576}
   clearOverlay: {fileID: 1111000677}
@@ -2259,7 +2260,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf01cfa7db7f47a48a7d287f62004395, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ProjectMT.Contents.TreasureSpirit::ProjectMT.Contents.TreasureSpirit.FollowerSpawner
-  followerPrefab: {fileID: 7766625452383920133, guid: b78d7e4f3540df34393217f6f4c5372b, type: 3}
+  monsterDefinition: {fileID: 11400000, guid: 67cb9560caba5d348af985604ecd1943, type: 2}
+  runtimeAssetSet: {fileID: 11400000, guid: 1f467eb761e5fe04591e074e3c6bb97a, type: 2}
   commanderTransform: {fileID: 1433094538}
 --- !u!54 &2066838567
 Rigidbody:
@@ -2304,6 +2306,7 @@ MonoBehaviour:
   detectEnemyRange: 6
   attackRange: 1.5
   followOffsetDistance: 1
+  baseMoveSpeed: 3.5
   attackDamage: 20
   attackCooldown: 1.2
   commander: {fileID: 1433094538}

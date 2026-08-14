@@ -277,10 +277,10 @@ namespace ProjectMT.Contents.TreasureSpirit
                 }
             }
 
-            // 감옥 및 감옥 내부 외형 오브젝트 생성
+            // ★ 감옥 전체(내용물 포함) z축으로 한 칸(-1f) 뒤로 배치
             if (prisonPrefab != null)
             {
-                Vector3 prisonPos = new Vector3((width - 2) * cellSize, floorY, (height - 1) * cellSize);
+                Vector3 prisonPos = new Vector3((width - 2) * cellSize, floorY, (height - 1) * cellSize + 2f);
                 GameObject prisonObj = Instantiate(prisonPrefab, prisonPos, Quaternion.identity, transform);
 
                 // 감옥 문 트리거 설정
@@ -296,7 +296,7 @@ namespace ProjectMT.Contents.TreasureSpirit
                     col.isTrigger = true;
                 }
 
-                // ★ 감옥 내부 외형 프리팹 배치 (Z축 -1f 전진)
+                // 내용물 위치
                 if (prisonContentPrefab != null)
                 {
                     Vector3 contentPos = prisonPos + new Vector3(0f, 0f, -1f);

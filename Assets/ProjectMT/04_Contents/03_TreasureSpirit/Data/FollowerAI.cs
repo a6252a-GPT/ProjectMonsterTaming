@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
+using ProjectMT.Shared.Unit; // SO 프로필 클래스 사용
 
 namespace ProjectMT.Contents.TreasureSpirit
 {
@@ -8,7 +9,6 @@ namespace ProjectMT.Contents.TreasureSpirit
     [RequireComponent(typeof(CapsuleCollider))]
     public class FollowerAI : MonoBehaviour
     {
-        // enum 이름을 State로 정의하여 변수 타입과 일치시킴
         public enum State
         {
             FollowCommander, // 군단장 추적
@@ -21,27 +21,29 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         [Header("감지 및 거리 설정")]
         [SerializeField] private float detectEnemyRange = 6.0f;     // 적 감지 거리
-        [SerializeField] private float attackRange = 1.5f;          // 공격 가능 거리
+        [SerializeField] private float attackRange = 1.5f;          // 공격 가능 거리 (SO 기반)
         [SerializeField] private float followOffsetDistance = 1.0f; // 군단장과의 유지 거리
 
-        [Header("전투 설정")]
-        [SerializeField] private float attackDamage = 20f;
-        [SerializeField] private float attackCooldown = 1.2f;
+        [Header("전투 및 이동 스탯 (SO 기반)")]
+        [SerializeField] private float baseMoveSpeed = 3.5f;        // 기본 이동 속도 (MD)
+        [SerializeField] private float attackDamage = 20f;          // 공격력 (MD)
+        [SerializeField] private float attackCooldown = 1.0f;        // 공격 쿨타임 (MD AttackSpeed 기반)
         private float lastAttackTime;
 
         [Header("타겟 참조")]
         [SerializeField] private Transform commander;
         [SerializeField] private GuardAI targetGuard;
 
+        [Header("SO 프로필 데이터")]
+        private MonsterDefinition definition;
+        private MonsterRuntimeAssetSet runtimeAssetSet;
+
         private NavMeshAgent agent;
-        private Animator animator;
 
         private void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
-            animator = GetComponentInChildren<Animator>();
 
-            // NavMeshAgent가 자체적으로 회전을 제어하도록 보장
             if (agent != null)
             {
                 agent.updateRotation = true;
@@ -49,9 +51,60 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
         }
 
-        public void Initialize(Transform commanderTransform)
+        /// <summary>
+        /// 스포너로부터 군단장 Transform과 SO 데이터 세트를 받아 동적으로 초기화합니다.
+        /// </summary>
+        public void Initialize(Transform commanderTransform, MonsterDefinition monsterDef, MonsterRuntimeAssetSet runtimeSet)
         {
             commander = commanderTransform;
+            definition = monsterDef;
+            runtimeAssetSet = runtimeSet;
+
+            // SO 데이터 스탯 반영
+            ApplyStatsFromProfile();
+        }
+
+        /// <summary>
+        /// SO(MonsterDefinition, MonsterCombatProfile)의 public 프로퍼티 수치를 AI 스탯에 바인딩합니다.
+        /// </summary>
+        private void ApplyStatsFromProfile()
+        {
+            // 1. MD(MonsterDefinition) Public 프로퍼티 반영
+            if (definition != null)
+            {
+                baseMoveSpeed = definition.MoveSpeed;   // public 프로퍼티
+                attackDamage = definition.AttackPower; // public 프로퍼티
+                attackRange = definition.AttackRange;   // public 프로퍼티
+
+                if (definition.AttackSpeed > 0)
+                {
+                    attackCooldown = 1.0f / definition.AttackSpeed;
+                }
+
+                if (agent != null)
+                {
+                    agent.speed = baseMoveSpeed;
+                }
+            }
+
+            // 2. MR(MonsterRuntimeAssetSet) 프로퍼티 참조
+            MonsterRuntimeAssetSet targetRuntimeSet = runtimeAssetSet;
+            if (targetRuntimeSet == null && definition != null)
+            {
+                targetRuntimeSet = definition.RuntimeAssetSet;
+            }
+
+            if (targetRuntimeSet != null && targetRuntimeSet.CombatProfile != null)
+            {
+                MonsterCombatProfile combatProfile = targetRuntimeSet.CombatProfile;
+                if (combatProfile.Action is MeleeActionDefinition meleeAction)
+                {
+                    if (meleeAction.AreaRadius > 0)
+                    {
+                        attackRange = meleeAction.AreaRadius;
+                    }
+                }
+            }
         }
 
         private void Update()
@@ -65,13 +118,8 @@ namespace ProjectMT.Contents.TreasureSpirit
                 }
                 else
                 {
-                    return; // 군단장을 못 찾으면 리턴
+                    return;
                 }
-            }
-
-            if (animator != null)
-            {
-                animator.SetFloat("Speed", agent.velocity.magnitude);
             }
 
             // 1. 주변 경비병(GuardAI) 탐색
@@ -100,7 +148,6 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
         }
 
-        // 가장 가까운 경비병 탐색
         private void FindNearestGuard()
         {
 #pragma warning disable CS0618
@@ -123,7 +170,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             targetGuard = nearest;
         }
 
-        private Vector3 lastCommanderPosition; // 군단장 이전 위치 기록용
+        private Vector3 lastCommanderPosition;
 
         private void FollowCommanderBehavior()
         {
@@ -135,14 +182,14 @@ namespace ProjectMT.Contents.TreasureSpirit
             {
                 agent.isStopped = false;
 
-                // 군단장과의 거리가 멀어지면 순간 속도를 높여 바로 따라잡음
+                // 군단장과 멀어지면 부스터 속도(기본 이동 속도의 1.4배 적용)
                 if (distanceToCommander > 4.0f)
                 {
-                    agent.speed = 7.0f; // 부스터 속도
+                    agent.speed = baseMoveSpeed * 1.4f;
                 }
                 else
                 {
-                    agent.speed = 5.5f; // 기본 이동 속도
+                    agent.speed = baseMoveSpeed;
                 }
 
                 if (Vector3.SqrMagnitude(commander.position - lastCommanderPosition) > 0.1f)
@@ -160,16 +207,15 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
         }
 
-        // 경비병 추적
         private void ChaseGuardBehavior()
         {
             if (targetGuard == null) return;
 
             agent.isStopped = false;
+            agent.speed = baseMoveSpeed;
             agent.SetDestination(targetGuard.transform.position);
         }
 
-        // 경비병 공격
         private void AttackBehavior()
         {
             agent.isStopped = true;
@@ -186,15 +232,12 @@ namespace ProjectMT.Contents.TreasureSpirit
 
             if (Time.time >= lastAttackTime + attackCooldown)
             {
-                if (animator != null)
-                {
-                    animator.SetTrigger("Attack");
-                }
+                // TODO: 나중에 애니메이션 추가 시 Animator 파라미터 Trigger("Attack") 재연결 위치
 
                 if (targetGuard != null)
                 {
                     targetGuard.TakeDamage(attackDamage);
-                    Debug.Log($"⚔️ 팔로워가 {targetGuard.gameObject.name}을(를) 공격했습니다!");
+                    Debug.Log($"⚔️ 팔로워가 {targetGuard.gameObject.name}을(를) 공격했습니다! (적용 데미지: {attackDamage})");
                 }
 
                 lastAttackTime = Time.time;

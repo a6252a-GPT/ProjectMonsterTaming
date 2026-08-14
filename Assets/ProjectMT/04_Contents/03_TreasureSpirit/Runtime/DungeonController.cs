@@ -27,6 +27,7 @@ namespace ProjectMT.Contents.TreasureSpirit
         [Header("HUD 요소")]
         [SerializeField] private TMP_Text timerText;
         [SerializeField] private TMP_Text statusText;
+        [SerializeField] private TMP_Text killCountText; // ★ 킬 카운트 텍스트 추가
         [SerializeField] private TMP_Text resultText;
         [SerializeField] private Button exitButton;
         [SerializeField] private ContentClearOverlay clearOverlay;
@@ -37,6 +38,7 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private ContentContext context;
         private float timeRemaining;
+        private int killCount; // ★ 처치 수치 저장 변수
         private Coroutine clearGuideCoroutine;
 
         public bool IsRunning { get; private set; }
@@ -80,7 +82,7 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private IEnumerator BuildNavMeshAndSpawnRoutine()
         {
-            // 1. Instantiat된 미로 오브젝트들의 Collider가 물리 엔진에 등록될 때까지 대기
+            // 1. Instantiate된 미로 오브젝트들의 Collider가 물리 엔진에 등록될 때까지 대기
             yield return new WaitForFixedUpdate();
             yield return null;
 
@@ -110,6 +112,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             commanderMove?.SetInputEnabled(true);
 
             timeRemaining = timeLimitSeconds;
+            killCount = 0; // ★ 킬 카운트 초기화
             IsRunning = true;
             Time.timeScale = 1f;
 
@@ -117,7 +120,6 @@ namespace ProjectMT.Contents.TreasureSpirit
             SpawnFollower();
             UpdateHud();
         }
-
 
         public void Shutdown()
         {
@@ -169,6 +171,15 @@ namespace ProjectMT.Contents.TreasureSpirit
             followerSpawner.SpawnFollower(spawnPosition);
         }
 
+        /// <summary>
+        /// 팔로워가 적을 처치했을 때 호출하여 킬수를 1 올립니다.
+        /// </summary>
+        public void AddKillCount()
+        {
+            killCount++;
+            UpdateHud();
+        }
+
         private void UpdateHud()
         {
             if (timerText != null)
@@ -179,6 +190,12 @@ namespace ProjectMT.Contents.TreasureSpirit
             if (statusText != null && mazeGenerator != null)
             {
                 statusText.text = mazeGenerator.HasKey ? "열쇠 획득: O" : "열쇠 획득: X";
+            }
+
+            // ★ HUD 처치 텍스트 업데이트 ("처치 : 0")
+            if (killCountText != null)
+            {
+                killCountText.text = $"처치 : {killCount}";
             }
         }
 

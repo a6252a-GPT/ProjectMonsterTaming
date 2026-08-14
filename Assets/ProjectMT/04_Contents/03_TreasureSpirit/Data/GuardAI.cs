@@ -284,6 +284,16 @@ namespace ProjectMT.Contents.TreasureSpirit
             Debug.Log($"💀 {gameObject.name}이(가) 사망했습니다.");
 
             StartCoroutine(DestroyAfterDelay());
+
+            // 씬 내의 DungeonController를 찾아 킬 카운트 +1 전달
+#pragma warning disable CS0618
+            DungeonController dungeonController = FindObjectOfType<DungeonController>();
+#pragma warning restore CS0618
+
+            if (dungeonController != null)
+            {
+                dungeonController.AddKillCount();
+            }
         }
 
         private IEnumerator DestroyAfterDelay()

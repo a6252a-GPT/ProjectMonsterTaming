@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: 'Notion role: melee attacker. Two selected attack motions.'
   vendorPrefab: {fileID: 3254523618690034901, guid: ae1378bd9eff6b241bdb73f8b24e4d22, type: 3}
   animatorSource: {fileID: 8535808602845711854, guid: ae1378bd9eff6b241bdb73f8b24e4d22, type: 3}
-  visualScale: {x: 0.78, y: 0.78, z: 0.78}
+  visualScale: {x: 0.9, y: 0.9, z: 0.9}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0.03
   facingYawOffset: 0

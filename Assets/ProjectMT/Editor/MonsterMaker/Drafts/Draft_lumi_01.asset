@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: 'Notion role: melee attacker. Initial formal asset.'
   vendorPrefab: {fileID: 7238274270470197736, guid: 9f257dcb9bd2a574ca15e9498ce46ed4, type: 3}
   animatorSource: {fileID: 6678039240759619955, guid: 9f257dcb9bd2a574ca15e9498ce46ed4, type: 3}
-  visualScale: {x: 2.4, y: 2.4, z: 2.4}
+  visualScale: {x: 2.6, y: 2.6, z: 2.6}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0.11
   facingYawOffset: 0

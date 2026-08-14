@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 
 namespace ProjectMT.Features.OfflineReward
@@ -26,6 +27,7 @@ namespace ProjectMT.Features.OfflineReward
     {
         private readonly IGameProgressService progress;
         private readonly OfflineRewardConfig config;
+        private readonly EquipmentBalanceConfig equipmentBalance;
         private readonly IUtcClock clock;
         private readonly SemaphoreSlim gate = new SemaphoreSlim(1, 1); // Pause·Resume·확인 저장 직렬화
         private bool inactive; // 중복 Pause·활성 상태 Resume의 시작점 변경 차단
@@ -33,10 +35,12 @@ namespace ProjectMT.Features.OfflineReward
         public OfflineRewardCoordinator(
             IGameProgressService progressService,
             OfflineRewardConfig rewardConfig,
-            IUtcClock utcClock = null)
+            IUtcClock utcClock = null,
+            EquipmentBalanceConfig equipmentBalanceConfig = null)
         {
             progress = progressService ?? throw new ArgumentNullException(nameof(progressService));
             config = rewardConfig ?? throw new ArgumentNullException(nameof(rewardConfig));
+            equipmentBalance = equipmentBalanceConfig ?? EquipmentBalanceConfig.RuntimeDefault;
             clock = utcClock ?? SystemUtcClock.Instance;
         }
 
@@ -141,6 +145,9 @@ namespace ProjectMT.Features.OfflineReward
                         offline.LastActiveStage,
                         Guid.NewGuid().ToString("N"),
                         config,
+                        view.Equipment,
+                        equipmentBalance,
+                        null,
                         out var calculation))
                 {
                     return true; // 최소 인정시간 전에는 기존 시작점을 유지

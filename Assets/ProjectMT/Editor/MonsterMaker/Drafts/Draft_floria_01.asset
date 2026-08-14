@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: 'Notion role: ranged healer. Skill AOE reserved for future ability.'
   vendorPrefab: {fileID: 7094695086820513081, guid: f8e423c581a5d1943bcd29c2585469e0, type: 3}
   animatorSource: {fileID: 4532674110369445655, guid: f8e423c581a5d1943bcd29c2585469e0, type: 3}
-  visualScale: {x: 0.43, y: 0.43, z: 0.43}
+  visualScale: {x: 0.8, y: 0.8, z: 0.8}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0.042
   facingYawOffset: 0

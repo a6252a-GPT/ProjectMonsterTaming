@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Reward;
@@ -9,6 +10,7 @@ namespace ProjectMT.Features.OfflineReward
     public sealed class OfflineRewardPresentation // 여러 미확인 영수증을 한 화면에 합친 표시값
     {
         private readonly string[] receiptIds;
+        private readonly EquipmentInstanceData[] equipmentRewards;
 
         private OfflineRewardPresentation(
             string[] ids,
@@ -17,9 +19,18 @@ namespace ProjectMT.Features.OfflineReward
             long gold,
             long experience,
             long stone,
+            long equipmentSlotStone,
+            long commanderSkillStone,
+            long legionPotentialStone,
             long goldRate,
             long experienceRate,
             int stoneInterval,
+            int multiplierBasisPoints,
+            int equipmentChanceBasisPoints,
+            EquipmentInstanceData[] equipment,
+            int rolledEquipmentCount,
+            int autoDismantledEquipmentCount,
+            long autoDismantleUpgradeStone,
             bool capped,
             bool mixedBasis)
         {
@@ -29,9 +40,18 @@ namespace ProjectMT.Features.OfflineReward
             Gold = gold;
             CommanderExperience = experience;
             UpgradeStone = stone;
+            EquipmentSlotUpgradeStone = equipmentSlotStone;
+            CommanderSkillUpgradeStone = commanderSkillStone;
+            LegionPotentialUpgradeStone = legionPotentialStone;
             GoldPerMinute = goldRate;
             CommanderExperiencePerMinute = experienceRate;
             UpgradeStoneIntervalSeconds = stoneInterval;
+            RewardMultiplierBasisPoints = multiplierBasisPoints;
+            EquipmentChanceBasisPointsPerMinute = equipmentChanceBasisPoints;
+            equipmentRewards = equipment ?? Array.Empty<EquipmentInstanceData>();
+            RolledEquipmentCount = rolledEquipmentCount;
+            AutoDismantledEquipmentCount = autoDismantledEquipmentCount;
+            AutoDismantleUpgradeStone = autoDismantleUpgradeStone;
             Capped = capped;
             MixedBasis = mixedBasis;
         }
@@ -42,15 +62,25 @@ namespace ProjectMT.Features.OfflineReward
         public long Gold { get; }
         public long CommanderExperience { get; }
         public long UpgradeStone { get; }
+        public long EquipmentSlotUpgradeStone { get; }
+        public long CommanderSkillUpgradeStone { get; }
+        public long LegionPotentialUpgradeStone { get; }
         public long GoldPerMinute { get; }
         public long CommanderExperiencePerMinute { get; }
         public int UpgradeStoneIntervalSeconds { get; }
+        public int RewardMultiplierBasisPoints { get; }
+        public int EquipmentChanceBasisPointsPerMinute { get; }
+        public IReadOnlyList<EquipmentInstanceData> EquipmentRewards => equipmentRewards;
+        public int RolledEquipmentCount { get; }
+        public int AutoDismantledEquipmentCount { get; }
+        public long AutoDismantleUpgradeStone { get; }
         public bool Capped { get; }
         public bool MixedBasis { get; }
 
         public RewardPresentationRequest CreateAcquirePresentation()
         {
-            return new RewardPresentationRequest(
+            var items = new List<RewardPresentationItem>(5)
+            {
                 new RewardPresentationItem(RewardPresentationKind.Gold, "골드", Gold),
                 new RewardPresentationItem(
                     RewardPresentationKind.CommanderExperience,
@@ -59,8 +89,20 @@ namespace ProjectMT.Features.OfflineReward
                 new RewardPresentationItem(
                     RewardPresentationKind.Item,
                     ItemIds.GetFallbackDisplayName(ItemIds.EquipmentSlotUpgradeStone),
-                    UpgradeStone,
-                    ItemIds.EquipmentSlotUpgradeStone));
+                    EquipmentSlotUpgradeStone,
+                    ItemIds.EquipmentSlotUpgradeStone),
+                new RewardPresentationItem(
+                    RewardPresentationKind.Item,
+                    ItemIds.GetFallbackDisplayName(ItemIds.CommanderSkillUpgradeStone),
+                    CommanderSkillUpgradeStone,
+                    ItemIds.CommanderSkillUpgradeStone),
+                new RewardPresentationItem(
+                    RewardPresentationKind.Item,
+                    ItemIds.GetFallbackDisplayName(ItemIds.LegionPotentialUpgradeStone),
+                    LegionPotentialUpgradeStone,
+                    ItemIds.LegionPotentialUpgradeStone)
+            };
+            return new RewardPresentationRequest(items.ToArray());
         }
 
         public static bool TryCreate(
@@ -78,10 +120,19 @@ namespace ProjectMT.Features.OfflineReward
             long gold = 0L;
             long experience = 0L;
             long stone = 0L;
+            long equipmentSlotStone = 0L;
+            long commanderSkillStone = 0L;
+            long legionPotentialStone = 0L;
             var stage = 1;
             long goldRate = 0L;
             long experienceRate = 0L;
             var stoneInterval = 1;
+            var multiplierBasisPoints = 10000;
+            var equipmentChanceBasisPoints = 0;
+            var equipment = new List<EquipmentInstanceData>();
+            var rolledEquipmentCount = 0;
+            var autoDismantledEquipmentCount = 0;
+            long autoDismantleUpgradeStone = 0L;
             var capped = false;
             for (var index = 0; index < receipts.Count; index++)
             {
@@ -90,7 +141,13 @@ namespace ProjectMT.Features.OfflineReward
                     !TryAdd(elapsed, receipt.ElapsedSeconds, out elapsed) ||
                     !TryAdd(gold, receipt.Gold, out gold) ||
                     !TryAdd(experience, receipt.CommanderExperience, out experience) ||
-                    !TryAdd(stone, receipt.UpgradeStone, out stone))
+                    !TryAdd(stone, receipt.UpgradeStone, out stone) ||
+                    !TryAdd(equipmentSlotStone, receipt.EquipmentSlotUpgradeStone, out equipmentSlotStone) ||
+                    !TryAdd(commanderSkillStone, receipt.CommanderSkillUpgradeStone, out commanderSkillStone) ||
+                    !TryAdd(legionPotentialStone, receipt.LegionPotentialUpgradeStone, out legionPotentialStone) ||
+                    !TryAdd(autoDismantleUpgradeStone, receipt.AutoDismantleUpgradeStone, out autoDismantleUpgradeStone) ||
+                    receipt.RolledEquipmentCount > int.MaxValue - rolledEquipmentCount ||
+                    receipt.AutoDismantledEquipmentCount > int.MaxValue - autoDismantledEquipmentCount)
                 {
                     return false;
                 }
@@ -100,7 +157,23 @@ namespace ProjectMT.Features.OfflineReward
                 goldRate = receipt.GoldPerMinute;
                 experienceRate = receipt.CommanderExperiencePerMinute;
                 stoneInterval = receipt.UpgradeStoneIntervalSeconds;
+                multiplierBasisPoints = receipt.RewardMultiplierBasisPoints;
+                equipmentChanceBasisPoints = receipt.EquipmentChanceBasisPointsPerMinute;
+                rolledEquipmentCount += receipt.RolledEquipmentCount;
+                autoDismantledEquipmentCount += receipt.AutoDismantledEquipmentCount;
+                for (var equipmentIndex = 0; equipmentIndex < receipt.EquipmentRewards.Count; equipmentIndex++)
+                {
+                    if (receipt.EquipmentRewards[equipmentIndex] != null)
+                    {
+                        equipment.Add(receipt.EquipmentRewards[equipmentIndex].Clone());
+                    }
+                }
                 capped |= receipt.Capped;
+            }
+
+            if (!TryAdd(equipmentSlotStone, autoDismantleUpgradeStone, out var totalEquipmentSlotStone))
+            {
+                return false;
             }
 
             presentation = new OfflineRewardPresentation(
@@ -110,9 +183,18 @@ namespace ProjectMT.Features.OfflineReward
                 gold,
                 experience,
                 stone,
+                totalEquipmentSlotStone,
+                commanderSkillStone,
+                legionPotentialStone,
                 goldRate,
                 experienceRate,
                 stoneInterval,
+                multiplierBasisPoints,
+                equipmentChanceBasisPoints,
+                equipment.ToArray(),
+                rolledEquipmentCount,
+                autoDismantledEquipmentCount,
+                autoDismantleUpgradeStone,
                 capped,
                 receipts.Count > 1);
             return true;

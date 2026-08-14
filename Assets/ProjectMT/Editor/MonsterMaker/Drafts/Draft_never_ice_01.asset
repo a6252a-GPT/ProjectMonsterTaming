@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: Notion monster batch / IceMage_02
   vendorPrefab: {fileID: 55464407614961504, guid: f63530eb1e1b2e64ba590c0bf0dedaf5, type: 3}
   animatorSource: {fileID: 5369387749179136296, guid: f63530eb1e1b2e64ba590c0bf0dedaf5, type: 3}
-  visualScale: {x: 1, y: 1, z: 1}
+  visualScale: {x: 0.5, y: 0.5, z: 0.5}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0

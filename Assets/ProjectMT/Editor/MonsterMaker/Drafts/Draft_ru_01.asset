@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: 'Notion role: ranged healer. Ability effect TBD.'
   vendorPrefab: {fileID: 47124499327975386, guid: b6412fba3181e544589521d9a351b14e, type: 3}
   animatorSource: {fileID: 6020265231717136846, guid: b6412fba3181e544589521d9a351b14e, type: 3}
-  visualScale: {x: 1.7, y: 1.7, z: 1.7}
+  visualScale: {x: 1.2, y: 1.2, z: 1.2}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0

@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: Notion monster batch / IceGolem
   vendorPrefab: {fileID: 5341242082615092904, guid: 9e2c8b1e275784c409008a200e18b33a, type: 3}
   animatorSource: {fileID: 5233229399799219517, guid: 9e2c8b1e275784c409008a200e18b33a, type: 3}
-  visualScale: {x: 1, y: 1, z: 1}
+  visualScale: {x: 0.6, y: 0.6, z: 0.6}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0

@@ -23,7 +23,7 @@ MonoBehaviour:
     \uC9C0\uC815."
   vendorPrefab: {fileID: 1540857387673783191, guid: 19733e9f226cb484da2a78534abf28f5, type: 3}
   animatorSource: {fileID: 1540857387664308311, guid: 19733e9f226cb484da2a78534abf28f5, type: 3}
-  visualScale: {x: 0.85, y: 0.85, z: 0.85}
+  visualScale: {x: 0.7, y: 0.7, z: 0.7}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0.032
   facingYawOffset: 0

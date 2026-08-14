@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: Notion monster batch / Mushroom_03
   vendorPrefab: {fileID: 3058625013525665310, guid: 072bbd9b6edd7f14791759832916fd25, type: 3}
   animatorSource: {fileID: 1291796794317566652, guid: 072bbd9b6edd7f14791759832916fd25, type: 3}
-  visualScale: {x: 1, y: 1, z: 1}
+  visualScale: {x: 1.2, y: 1.2, z: 1.2}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0

@@ -22,7 +22,7 @@ MonoBehaviour:
     future ability.'
   vendorPrefab: {fileID: 4729609903644569994, guid: eef58503914c3f1499436460e38ef785, type: 3}
   animatorSource: {fileID: 7036629295771021616, guid: eef58503914c3f1499436460e38ef785, type: 3}
-  visualScale: {x: 0.56, y: 0.56, z: 0.56}
+  visualScale: {x: 0.7, y: 0.7, z: 0.7}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0.235
   facingYawOffset: 0

@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: Notion monster batch / Spider_01
   vendorPrefab: {fileID: 4430548658674262411, guid: c55556d8783d684409b586376a69eae8, type: 3}
   animatorSource: {fileID: 3481616375186896877, guid: c55556d8783d684409b586376a69eae8, type: 3}
-  visualScale: {x: 1, y: 1, z: 1}
+  visualScale: {x: 1.8, y: 1.8, z: 1.8}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0

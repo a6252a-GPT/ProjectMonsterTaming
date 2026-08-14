@@ -334,6 +334,12 @@ namespace ProjectMT.Shared.GameData
                 return false;
             }
 
+            if (change.HasSettleOfflineReward &&
+                !TryApplyOfflineEquipmentSettlement(change.OfflineReceipt))
+            {
+                return false;
+            }
+
             if (change.FoodRiotBestKills >= 0)
             {
                 foodRiotBestKills = Math.Max(foodRiotBestKills, change.FoodRiotBestKills);
@@ -710,17 +716,65 @@ namespace ProjectMT.Shared.GameData
                 return false;
             }
 
-            if (receipt.UpgradeStone <= 0L)
+            var expected = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+            AddExpectedItem(expected, ItemIds.EquipmentSlotUpgradeStone, receipt.TotalEquipmentSlotUpgradeStone);
+            AddExpectedItem(expected, ItemIds.CommanderSkillUpgradeStone, receipt.CommanderSkillUpgradeStone);
+            AddExpectedItem(expected, ItemIds.LegionPotentialUpgradeStone, receipt.LegionPotentialUpgradeStone);
+            if (rewards.Items.Count != expected.Count)
             {
-                return rewards.Items.Count == 0;
+                return false;
             }
 
-            return rewards.Items.Count == 1 &&
-                   string.Equals(
-                       rewards.Items[0].ItemId,
-                       ItemIds.EquipmentSlotUpgradeStone,
-                       StringComparison.OrdinalIgnoreCase) &&
-                   rewards.Items[0].Amount == receipt.UpgradeStone;
+            var matched = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (var index = 0; index < rewards.Items.Count; index++)
+            {
+                var item = rewards.Items[index];
+                if (!item.IsValid || !matched.Add(item.ItemId) ||
+                    !expected.TryGetValue(item.ItemId, out var amount) || amount != item.Amount)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool TryApplyOfflineEquipmentSettlement(OfflineRewardReceiptData receipt)
+        {
+            if (receipt == null || !receipt.IsValid)
+            {
+                return false;
+            }
+
+            equipment ??= EquipmentSaveData.CreateDefault();
+            if (receipt.ExistingAutoDismantleInstanceIds.Count > 0)
+            {
+                if (!equipment.TryDismantle(
+                        receipt.ExistingAutoDismantleInstanceIds,
+                        out var existingDismantleStones) ||
+                    existingDismantleStones != receipt.ExistingAutoDismantleUpgradeStone)
+                {
+                    return false;
+                }
+            }
+            else if (receipt.ExistingAutoDismantleUpgradeStone != 0L)
+            {
+                return false;
+            }
+
+            return receipt.EquipmentRewards.Count == 0 ||
+                   equipment.TryAcquire(receipt.EquipmentRewards);
+        }
+
+        private static void AddExpectedItem(
+            IDictionary<string, long> expected,
+            string itemId,
+            long amount)
+        {
+            if (amount > 0L)
+            {
+                expected.Add(itemId, amount);
+            }
         }
 
         private bool TryApplyExpeditionFirstClear(GameProgressChange change)

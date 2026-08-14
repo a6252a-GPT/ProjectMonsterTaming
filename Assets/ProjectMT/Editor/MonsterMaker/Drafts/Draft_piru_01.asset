@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: Notion monster batch / Fire_Gazer_01
   vendorPrefab: {fileID: 6848239659094107171, guid: e6205da96c615e6408f159c9ab94ab6e, type: 3}
   animatorSource: {fileID: 205973460016576835, guid: e6205da96c615e6408f159c9ab94ab6e, type: 3}
-  visualScale: {x: 1, y: 1, z: 1}
+  visualScale: {x: 2, y: 2, z: 2}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0

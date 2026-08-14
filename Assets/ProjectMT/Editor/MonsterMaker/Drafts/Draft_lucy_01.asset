@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: 'Notion role: ranged buffer. Ability effect TBD.'
   vendorPrefab: {fileID: 7237655459383711368, guid: 808a624f466aedc418d029f3e3234527, type: 3}
   animatorSource: {fileID: 6690976355862451664, guid: 808a624f466aedc418d029f3e3234527, type: 3}
-  visualScale: {x: 0.72, y: 0.72, z: 0.72}
+  visualScale: {x: 1.1, y: 1.1, z: 1.1}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0.055
   facingYawOffset: 0

@@ -142,7 +142,9 @@ namespace ProjectMT.Bootstrap
             await RefreshGrowthDungeonKeysAsync(); // 접속 1회 KST 05:00 기준 충전
             offlineRewardCoordinator = new OfflineRewardCoordinator(
                 gameDataService,
-                projectConfig.OfflineRewardConfig);
+                projectConfig.OfflineRewardConfig,
+                null,
+                projectConfig.EquipmentBalanceConfig);
             if (!await offlineRewardCoordinator.PrepareOnLoginAsync())
             {
                 throw new InvalidOperationException("Offline reward login settlement could not be saved.");
@@ -372,6 +374,7 @@ namespace ProjectMT.Bootstrap
 
             offlineRewardPresenter.Show(
                 presentation,
+                projectConfig.ItemCatalog,
                 () => offlineRewardCoordinator.AcknowledgeAsync(presentation.ReceiptIds),
                 HandleOfflineRewardConfirmed);
         }

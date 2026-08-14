@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: Notion monster batch / DragonSpark
   vendorPrefab: {fileID: 4695351021120890131, guid: 43532f07dad00df48bda2f336301f7f0, type: 3}
   animatorSource: {fileID: 3440591615513860790, guid: 43532f07dad00df48bda2f336301f7f0, type: 3}
-  visualScale: {x: 1, y: 1, z: 1}
+  visualScale: {x: 0.9, y: 0.9, z: 0.9}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0

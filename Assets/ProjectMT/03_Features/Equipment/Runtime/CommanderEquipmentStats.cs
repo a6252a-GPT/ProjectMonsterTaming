@@ -1,4 +1,5 @@
 using System;
+using ProjectMT.Features.Commander;
 using ProjectMT.Shared.Equipment;
 
 namespace ProjectMT.Features.Equipment
@@ -73,6 +74,9 @@ namespace ProjectMT.Features.Equipment
                     }
                 }
             }
+
+            // 군단장 잠재능력 슬롯 기여분도 장비와 같은 방식으로 합산한다.
+            Accumulate(CommanderPotentialCalculator.GetContributions(CommanderPotentialRuntime.GetView()), values);
 
             return new EquipmentLegionBonus
             {

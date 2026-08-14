@@ -50,6 +50,9 @@ namespace ProjectMT.Features.Equipment
         private TMP_Text statText;
         private TMP_Text statText2;
         private TMP_Text totalText;
+        private TMP_Text upgradeMaterialText; // 강화 재료(보유/필요) 표시
+        private TMP_Text upHeaderStatText; // 현재(다음 1강화) 강화 능력 증가율 표시
+        private TMP_Text downHeaderStatText; // 다다음(그 다음 강화) 강화 능력 증가율 표시
 
         private EquipmentPart currentPart = EquipmentPart.Weapon;
         private bool hasSelectedPart;
@@ -146,6 +149,9 @@ namespace ProjectMT.Features.Equipment
             statText = FindDeep(transform, "StatText")?.GetComponent<TMP_Text>();
             statText2 = FindDeep(transform, "StatText2")?.GetComponent<TMP_Text>();
             totalText = FindDeep(transform, "TotalText")?.GetComponent<TMP_Text>();
+            upgradeMaterialText = FindDeep(transform, "UpgradeMaterialText")?.GetComponent<TMP_Text>();
+            upHeaderStatText = FindDeep(transform, "UpHeaderStat")?.GetComponent<TMP_Text>();
+            downHeaderStatText = FindDeep(transform, "DownHeaderStat")?.GetComponent<TMP_Text>();
 
             var upgradeButtonTransform = FindDeep(transform, "UpgradeButton");
             if (upgradeButtonTransform != null)
@@ -397,6 +403,16 @@ namespace ProjectMT.Features.Equipment
                 Debug.LogWarning("EquipmentSlotUpgradePanelController: TotalText를 찾지 못했습니다.", this);
             }
 
+            if (upgradeMaterialText == null)
+            {
+                Debug.LogWarning("EquipmentSlotUpgradePanelController: UpgradeMaterialText를 찾지 못했습니다.", this);
+            }
+
+            if (upHeaderStatText == null || downHeaderStatText == null)
+            {
+                Debug.LogWarning("EquipmentSlotUpgradePanelController: UpHeaderStat/DownHeaderStat 중 일부를 찾지 못했습니다.", this);
+            }
+
             foreach (EquipmentPart part in System.Enum.GetValues(typeof(EquipmentPart)))
             {
                 if (!slotDisplays.ContainsKey(part))
@@ -491,6 +507,64 @@ namespace ProjectMT.Features.Equipment
             if (statText2 != null)
             {
                 statText2.text = BuildSlotBonusText(currentPart);
+            }
+
+            RefreshUpgradeMaterialText(currentPart);
+            RefreshUpgradeRateTexts(currentPart);
+        }
+
+        // "강화 재료" 표시: 부위별 보유 강화석 / 다음 강화에 필요한 강화석 개수.
+        // 강화석은 공용 재화지만, 필요 개수는 부위·현재 레벨에 따라 달라지므로 부위마다 따로 계산한다.
+        private void RefreshUpgradeMaterialText(EquipmentPart part)
+        {
+            if (upgradeMaterialText == null)
+            {
+                return;
+            }
+
+            if (!EquipmentSlotUpgradeCalculator.IsSlotUpgradeSupported(part))
+            {
+                upgradeMaterialText.text = "-";
+                return;
+            }
+
+            var owned = EquipmentSlotUpgradeRuntime.EnhancementStoneBalance;
+            var required = EquipmentSlotUpgradeRuntime.GetNextStoneCost(part);
+            upgradeMaterialText.text = $"{owned} / {required}";
+        }
+
+        // UpHeaderStat("현재 강화 능력 증가율") = 이번 강화(레벨 → 레벨+1)로 오르는 증가율.
+        // DownHeaderStat("다음 강화 능력 증가율") = 그 다음 강화(레벨+1 → 레벨+2)로 오르는 증가율.
+        // 부위마다 현재 레벨이 다르므로 선택된 부위의 레벨을 기준으로 각각 계산한다.
+        private void RefreshUpgradeRateTexts(EquipmentPart part)
+        {
+            if (upHeaderStatText == null && downHeaderStatText == null)
+            {
+                return;
+            }
+
+            if (!EquipmentSlotUpgradeCalculator.IsSlotUpgradeSupported(part))
+            {
+                SetOptionalText(upHeaderStatText, "-");
+                SetOptionalText(downHeaderStatText, "-");
+                return;
+            }
+
+            var level = EquipmentSlotUpgradeRuntime.GetLevel(part);
+            var currentUpgradeRate = EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level + 1)
+                - EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level);
+            var nextUpgradeRate = EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level + 2)
+                - EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level + 1);
+
+            SetOptionalText(upHeaderStatText, $"+{currentUpgradeRate:0.00}%");
+            SetOptionalText(downHeaderStatText, $"+{nextUpgradeRate:0.00}%");
+        }
+
+        private static void SetOptionalText(TMP_Text text, string value)
+        {
+            if (text != null)
+            {
+                text.text = value;
             }
         }
 

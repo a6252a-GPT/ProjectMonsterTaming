@@ -56,6 +56,7 @@ namespace ProjectMT.Features.Equipment
 
         private EquipmentPart currentPart = EquipmentPart.Weapon;
         private bool hasSelectedPart;
+        private Action combatInputSaved;
 
         public event Action<bool> OpenStateChanged;
 
@@ -90,8 +91,9 @@ namespace ProjectMT.Features.Equipment
         }
 
         // MainBattleSceneRoot 등 씬 조립 시점에 진행 데이터 서비스를 주입한다.
-        public void Configure(IGameProgressService progress)
+        public void Configure(IGameProgressService progress, Action onCombatInputSaved = null)
         {
+            combatInputSaved = onCombatInputSaved;
             EquipmentSlotUpgradeRuntime.Configure(progress);
         }
 
@@ -624,7 +626,10 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            await EquipmentSlotUpgradeRuntime.TryUpgradeAsync(currentPart);
+            if (await EquipmentSlotUpgradeRuntime.TryUpgradeAsync(currentPart))
+            {
+                combatInputSaved?.Invoke();
+            }
         }
     }
 }

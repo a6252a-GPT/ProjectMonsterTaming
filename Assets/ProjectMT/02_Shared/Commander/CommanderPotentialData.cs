@@ -248,6 +248,104 @@ namespace ProjectMT.Shared.Commander
             return index >= 0 && index < slots.Count && slots[index].TryReplace(type, grade, value);
         }
 
+        // 새 재추첨 결과는 같은 옵션 종류를 최대 2개까지만 허용한다.
+        // 이전 저장에 이미 3개 이상이 있더라도 대상 밖 슬롯은 그대로 두고 새 중복만 막는다.
+        internal bool CanApplyOptionReroll(
+            IReadOnlyList<CommanderPotentialRerollEntry> entries,
+            int maxSameOptionCount)
+        {
+            EnsureSlots(this);
+            if (entries == null || entries.Count == 0 || maxSameOptionCount < 1)
+            {
+                return false;
+            }
+
+            var targetIndices = new HashSet<int>();
+            for (var i = 0; i < entries.Count; i++)
+            {
+                var entry = entries[i];
+                if (entry.SlotIndex < 0 || entry.SlotIndex >= stage ||
+                    !targetIndices.Add(entry.SlotIndex) ||
+                    !Enum.IsDefined(typeof(EquipmentOptionType), entry.OptionType) ||
+                    !Enum.IsDefined(typeof(EquipmentGrade), entry.Grade) ||
+                    float.IsNaN(entry.Value) || float.IsInfinity(entry.Value) || entry.Value <= 0f)
+                {
+                    return false;
+                }
+
+                var target = slots[entry.SlotIndex];
+                if (target.HasValue && target.Locked)
+                {
+                    return false;
+                }
+            }
+
+            var counts = new Dictionary<EquipmentOptionType, int>();
+            for (var i = 0; i < slots.Count; i++)
+            {
+                if (!targetIndices.Contains(i) && slots[i].HasValue)
+                {
+                    AddOptionCount(counts, slots[i].OptionType);
+                }
+            }
+
+            for (var i = 0; i < entries.Count; i++)
+            {
+                counts.TryGetValue(entries[i].OptionType, out var count);
+                if (count >= maxSameOptionCount)
+                {
+                    return false;
+                }
+
+                counts[entries[i].OptionType] = count + 1;
+            }
+
+            return true;
+        }
+
+        // 값만 바꾸는 재추첨 요청을 재화 차감 전에 전부 검증한다.
+        internal bool CanApplyValueReroll(
+            IReadOnlyList<CommanderPotentialRerollEntry> entries,
+            EquipmentBalanceConfig balance)
+        {
+            EnsureSlots(this);
+            if (entries == null || entries.Count == 0 || balance == null)
+            {
+                return false;
+            }
+
+            var targetIndices = new HashSet<int>();
+            for (var i = 0; i < entries.Count; i++)
+            {
+                var entry = entries[i];
+                if (entry.SlotIndex < 0 || entry.SlotIndex >= stage ||
+                    !targetIndices.Add(entry.SlotIndex) ||
+                    !Enum.IsDefined(typeof(EquipmentOptionType), entry.OptionType) ||
+                    !Enum.IsDefined(typeof(EquipmentGrade), entry.Grade) ||
+                    float.IsNaN(entry.Value) || float.IsInfinity(entry.Value) || entry.Value <= 0f)
+                {
+                    return false;
+                }
+
+                var target = slots[entry.SlotIndex];
+                if (!target.HasValue || target.OptionType != entry.OptionType || target.Grade != entry.Grade)
+                {
+                    return false; // 값 재추첨은 기존 종류·등급을 바꾸지 않음
+                }
+
+                var baseValue = balance.GetOptionBaseValuePercent(entry.OptionType);
+                var gradeMultiplier = balance.GetRandomOptionGradeMultiplier(entry.Grade);
+                var minimum = baseValue * gradeMultiplier * balance.MinimumRandomMultiplier;
+                var maximum = baseValue * gradeMultiplier * balance.MaximumRandomMultiplier;
+                if (entry.Value < minimum || entry.Value > maximum)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         // 재추첨 대상에서 제외할 슬롯 잠금/해제 토글.
         internal bool TrySetSlotLocked(int index, bool expectedLocked, bool newLocked)
         {
@@ -292,6 +390,14 @@ namespace ProjectMT.Shared.Commander
             {
                 data.slots.RemoveRange(SlotCount, data.slots.Count - SlotCount);
             }
+        }
+
+        private static void AddOptionCount(
+            Dictionary<EquipmentOptionType, int> counts,
+            EquipmentOptionType type)
+        {
+            counts.TryGetValue(type, out var current);
+            counts[type] = current + 1;
         }
     }
 

@@ -15,3 +15,12 @@ MonoBehaviour:
   maxLevel: 1000
   baseExperienceRequirement: 10
   experienceGrowthMultiplier: 1.1
+  legionGrowthRatePerLevel: 0.01
+  legionCoreStatMaxLevel: 100
+  legionCoreStatBaseGoldCost: 100
+  legionCoreStatGoldGrowthMultiplier: 1.12
+  legionAttackSpeedMaxLevel: 25
+  legionMoveSpeedMaxLevel: 15
+  legionAttackRangeMaxLevel: 10
+  legionTrainingPointBaseCost: 1
+  legionTrainingPointLevelsPerTier: 10

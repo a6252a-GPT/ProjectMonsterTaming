@@ -112,13 +112,16 @@ namespace ProjectMT.Features.Commander
 
         // 등급은 잠재능력 전용 확률표로, 옵션 종류는 장비와 같은 그룹 가중치로 뽑고,
         // 최종 수치는 그 등급 범위 안에서 균등 난수로 정한다.
-        public static CommanderPotentialRollResult Roll(EquipmentBalanceConfig balance = null, Random random = null)
+        public static CommanderPotentialRollResult Roll(
+            EquipmentBalanceConfig balance = null,
+            Random random = null,
+            Predicate<EquipmentOptionType> typeAllowed = null)
         {
             balance ??= EquipmentBalanceConfig.RuntimeDefault;
             var rng = random ?? new Random();
 
             var grade = RollGrade(rng);
-            var type = RollType(balance, rng);
+            var type = RollType(balance, rng, typeAllowed);
             var option = GetOption(type, grade, balance);
             var value = option.MinValue + (float)rng.NextDouble() * (option.MaxValue - option.MinValue);
             return new CommanderPotentialRollResult(type, grade, value);
@@ -146,17 +149,31 @@ namespace ProjectMT.Features.Commander
             return OrderedGrades[OrderedGrades.Length - 1];
         }
 
-        private static EquipmentOptionType RollType(EquipmentBalanceConfig balance, Random rng)
+        private static EquipmentOptionType RollType(
+            EquipmentBalanceConfig balance,
+            Random rng,
+            Predicate<EquipmentOptionType> typeAllowed)
         {
             var types = EquipmentOptionInfo.AllTypes;
             var totalWeight = 0f;
             for (var i = 0; i < types.Length; i++)
             {
-                totalWeight += balance.GetOptionWeight(types[i]);
+                if (typeAllowed == null || typeAllowed(types[i]))
+                {
+                    totalWeight += balance.GetOptionWeight(types[i]);
+                }
             }
 
             if (totalWeight <= 0f)
             {
+                for (var i = 0; i < types.Length; i++)
+                {
+                    if (typeAllowed == null || typeAllowed(types[i]))
+                    {
+                        return types[i];
+                    }
+                }
+
                 return types[0];
             }
 
@@ -164,8 +181,21 @@ namespace ProjectMT.Features.Commander
             var accumulated = 0f;
             for (var i = 0; i < types.Length; i++)
             {
+                if (typeAllowed != null && !typeAllowed(types[i]))
+                {
+                    continue;
+                }
+
                 accumulated += balance.GetOptionWeight(types[i]);
                 if (roll < accumulated)
+                {
+                    return types[i];
+                }
+            }
+
+            for (var i = types.Length - 1; i >= 0; i--)
+            {
+                if (typeAllowed == null || typeAllowed(types[i]))
                 {
                     return types[i];
                 }

@@ -1,4 +1,8 @@
 using System;
+using System.Collections.Generic;
+using ProjectMT.Shared.Commander;
+using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Stats;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -9,11 +13,13 @@ namespace ProjectMT.Features.MainBattle
     [DisallowMultipleComponent]
     public sealed class GrowthCalculator : MonoBehaviour // 능력치 6종 강화 계산·UI 반영
     {
-        [Header("최대강화")]
-        [SerializeField] private int maxGrowthLevel = 1000; // 스탯별 강화 가능한 최고 레벨
-
-        [Header("강화당 증가량 (밸런싱 전 임시값)")]
-        [SerializeField] private float growthRatePerLevel = 0.1f; // 레벨 1당 증가하는 보너스 비율 (임시 0.1)
+        private sealed class GrowthRow
+        {
+            public Button Button;
+            public TMP_Text LevelText;
+            public TMP_Text ValueText;
+            public TMP_Text CostText;
+        }
 
         [Header("체력")]
         [SerializeField] private Button healthButton; // 체력 강화 버튼
@@ -39,102 +45,220 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private Button attackRangeButton; // 사거리 강화 버튼
         [SerializeField] private TMP_Text attackRangeLevelText; // 사거리 레벨 표시 텍스트
 
-        private int healthLevel = 1; // 체력 현재 강화 레벨 (기본 LV.1)
-        private int attackLevel = 1; // 공격력 현재 강화 레벨
-        private int defenseLevel = 1; // 방어력 현재 강화 레벨
-        private int attackSpeedLevel = 1; // 공격 속도 현재 강화 레벨
-        private int moveSpeedLevel = 1; // 이동 속도 현재 강화 레벨
-        private int attackRangeLevel = 1; // 사거리 현재 강화 레벨
+        private readonly Dictionary<CommanderLegionStat, GrowthRow> rows = new();
+        private IGameProgressService progress;
+        private CommanderGrowthConfig config;
+        private Action savedCallback;
+        private bool savePending;
 
-        public LegionStatBonus CurrentBonus { get; private set; } // 최신 계산된 강화 보너스 6종
-
-        public event Action<LegionStatBonus> BonusChanged; // 강화 결과가 필요한 다른 시스템(전투 반영 등)이 구독
+        public LegionStatBonus CurrentBonus { get; private set; }
+        public event Action<LegionStatBonus> BonusChanged;
 
         private void Awake()
         {
-            // 버튼 6개에 각 스탯 강화 함수 연결
-            healthButton?.onClick.AddListener(GrowHealth);
-            attackButton?.onClick.AddListener(GrowAttack);
-            defenseButton?.onClick.AddListener(GrowDefense);
-            attackSpeedButton?.onClick.AddListener(GrowAttackSpeed);
-            moveSpeedButton?.onClick.AddListener(GrowMoveSpeed);
-            attackRangeButton?.onClick.AddListener(GrowAttackRange);
+            CacheRow(CommanderLegionStat.MaxHealth, "GrowthRow_Health", healthButton, healthLevelText);
+            CacheRow(CommanderLegionStat.AttackPower, "GrowthRow_Attack", attackButton, attackLevelText);
+            CacheRow(CommanderLegionStat.Defense, "GrowthRow_Defense", defenseButton, defenseLevelText);
+            CacheRow(CommanderLegionStat.AttackSpeed, "GrowthRow_AttackSpeed", attackSpeedButton, attackSpeedLevelText);
+            CacheRow(CommanderLegionStat.MoveSpeed, "GrowthRow_MoveSpeed", moveSpeedButton, moveSpeedLevelText);
+            CacheRow(CommanderLegionStat.AttackRange, "GrowthRow_AttackRange", attackRangeButton, attackRangeLevelText);
+
+            EnsureFullRectHitArea(healthButton);
+            EnsureFullRectHitArea(attackButton);
+            EnsureFullRectHitArea(defenseButton);
+            EnsureFullRectHitArea(attackSpeedButton);
+            EnsureFullRectHitArea(moveSpeedButton);
+            EnsureFullRectHitArea(attackRangeButton);
+
+            healthButton?.onClick.AddListener(UpgradeHealth);
+            attackButton?.onClick.AddListener(UpgradeAttack);
+            defenseButton?.onClick.AddListener(UpgradeDefense);
+            attackSpeedButton?.onClick.AddListener(UpgradeAttackSpeed);
+            moveSpeedButton?.onClick.AddListener(UpgradeMoveSpeed);
+            attackRangeButton?.onClick.AddListener(UpgradeAttackRange);
         }
 
-        private void Start()
-        {
-            RecalculateBonus(); // 시작 시 기본값(LV.1 기준)으로 LegionStatBonus 계산
-            RefreshAllLevelTexts(); // 모든 레벨 텍스트를 "LV. 1"로 표기
-        }
+        private void OnEnable() => Refresh();
 
         private void OnDestroy()
         {
-            // 오브젝트 파괴 시 이벤트 해제로 누수 방지
-            healthButton?.onClick.RemoveListener(GrowHealth);
-            attackButton?.onClick.RemoveListener(GrowAttack);
-            defenseButton?.onClick.RemoveListener(GrowDefense);
-            attackSpeedButton?.onClick.RemoveListener(GrowAttackSpeed);
-            moveSpeedButton?.onClick.RemoveListener(GrowMoveSpeed);
-            attackRangeButton?.onClick.RemoveListener(GrowAttackRange);
-        }
-
-        private void OnValidate()
-        {
-            // Inspector에서 잘못된 값(0 이하 최대강화, 음수 증가량) 입력 방지
-            maxGrowthLevel = Mathf.Max(1, maxGrowthLevel);
-            growthRatePerLevel = Mathf.Max(0f, growthRatePerLevel);
-        }
-
-        // 버튼 6개 각각의 클릭 콜백 - 공통 Grow 로직에 해당 스탯 레벨/텍스트만 전달
-        private void GrowHealth() => Grow(ref healthLevel, healthLevelText);
-        private void GrowAttack() => Grow(ref attackLevel, attackLevelText);
-        private void GrowDefense() => Grow(ref defenseLevel, defenseLevelText);
-        private void GrowAttackSpeed() => Grow(ref attackSpeedLevel, attackSpeedLevelText);
-        private void GrowMoveSpeed() => Grow(ref moveSpeedLevel, moveSpeedLevelText);
-        private void GrowAttackRange() => Grow(ref attackRangeLevel, attackRangeLevelText);
-
-        private void Grow(ref int level, TMP_Text levelText)
-        {
-            if (level >= maxGrowthLevel)
+            if (progress != null)
             {
-                return; // 최대치 도달 시 더 이상 증가 안 함
+                progress.Changed -= Refresh;
             }
 
-            level++; // 레벨 1 증가
-            RefreshLevelText(levelText, level); // 해당 스탯 텍스트를 "LV. {새 레벨}"로 갱신
-            RecalculateBonus(); // 레벨 변경을 반영해 LegionStatBonus 재계산
+            healthButton?.onClick.RemoveListener(UpgradeHealth);
+            attackButton?.onClick.RemoveListener(UpgradeAttack);
+            defenseButton?.onClick.RemoveListener(UpgradeDefense);
+            attackSpeedButton?.onClick.RemoveListener(UpgradeAttackSpeed);
+            moveSpeedButton?.onClick.RemoveListener(UpgradeMoveSpeed);
+            attackRangeButton?.onClick.RemoveListener(UpgradeAttackRange);
         }
 
-        private void RecalculateBonus()
+        public void Configure(
+            IGameProgressService progressService,
+            CommanderGrowthConfig growthConfig,
+            Action onSaved = null)
         {
-            // 각 스탯 레벨을 (레벨-1) * 증가량 공식으로 환산해 LegionStatBonus로 묶음
-            CurrentBonus = new LegionStatBonus(
-                (healthLevel - 1) * growthRatePerLevel,
-                (attackLevel - 1) * growthRatePerLevel,
-                (defenseLevel - 1) * growthRatePerLevel,
-                (attackSpeedLevel - 1) * growthRatePerLevel,
-                (moveSpeedLevel - 1) * growthRatePerLevel,
-                (attackRangeLevel - 1) * growthRatePerLevel);
-
-            BonusChanged?.Invoke(CurrentBonus); // 구독 중인 다른 시스템에 최신값 전달
-        }
-
-        private void RefreshAllLevelTexts()
-        {
-            // 시작 시점에 6개 텍스트 전부 현재 레벨로 초기 표기
-            RefreshLevelText(healthLevelText, healthLevel);
-            RefreshLevelText(attackLevelText, attackLevel);
-            RefreshLevelText(defenseLevelText, defenseLevel);
-            RefreshLevelText(attackSpeedLevelText, attackSpeedLevel);
-            RefreshLevelText(moveSpeedLevelText, moveSpeedLevel);
-            RefreshLevelText(attackRangeLevelText, attackRangeLevel);
-        }
-
-        private static void RefreshLevelText(TMP_Text text, int level)
-        {
-            if (text != null)
+            if (progress != null)
             {
-                text.text = $"LV. {level}"; // 요청한 표기 형식 고정
+                progress.Changed -= Refresh;
+            }
+
+            progress = progressService;
+            config = growthConfig;
+            savedCallback = onSaved;
+            if (progress != null)
+            {
+                progress.Changed += Refresh;
+            }
+
+            Refresh();
+        }
+
+        private async void Upgrade(CommanderLegionStat stat)
+        {
+            if (savePending || progress == null || !progress.IsLoaded || config == null)
+            {
+                return;
+            }
+
+            var level = progress.View.CommanderLegionGrowth.GetLevel(stat);
+            if (level >= config.GetLegionGrowthMaxLevel(stat))
+            {
+                return;
+            }
+
+            savePending = true;
+            Refresh();
+            try
+            {
+                if (await progress.TryApplyAndSaveAsync(GameProgressChange.UpgradeCommanderLegionStat(stat, level)))
+                {
+                    savedCallback?.Invoke(); // 현재 전투는 유지하고 다음 전투 Snapshot만 갱신
+                }
+            }
+            finally
+            {
+                savePending = false;
+                Refresh();
+            }
+        }
+
+        private void UpgradeHealth() => Upgrade(CommanderLegionStat.MaxHealth);
+        private void UpgradeAttack() => Upgrade(CommanderLegionStat.AttackPower);
+        private void UpgradeDefense() => Upgrade(CommanderLegionStat.Defense);
+        private void UpgradeAttackSpeed() => Upgrade(CommanderLegionStat.AttackSpeed);
+        private void UpgradeMoveSpeed() => Upgrade(CommanderLegionStat.MoveSpeed);
+        private void UpgradeAttackRange() => Upgrade(CommanderLegionStat.AttackRange);
+
+        private void Refresh()
+        {
+            if (progress == null || !progress.IsLoaded || config == null)
+            {
+                return;
+            }
+
+            var progressView = progress.View;
+            var growth = progressView.CommanderLegionGrowth;
+            foreach (var pair in rows)
+            {
+                var stat = pair.Key;
+                var row = pair.Value;
+                var level = growth.GetLevel(stat);
+                var maxLevel = config.GetLegionGrowthMaxLevel(stat);
+                var maxed = level >= maxLevel;
+                SetText(row.LevelText, $"LV. {level}");
+                SetText(row.ValueText, $"+{config.GetLegionGrowthRate(stat, level) * 100f:0}%");
+                SetText(row.CostText, maxed ? "MAX" : FormatCost(stat, level));
+                if (row.Button != null)
+                {
+                    row.Button.interactable = !savePending && !maxed && CanAfford(progressView, stat, level);
+                }
+            }
+
+            CurrentBonus = new LegionStatBonus(
+                config.GetLegionGrowthRate(CommanderLegionStat.MaxHealth, growth.HealthLevel),
+                config.GetLegionGrowthRate(CommanderLegionStat.AttackPower, growth.AttackLevel),
+                config.GetLegionGrowthRate(CommanderLegionStat.Defense, growth.DefenseLevel),
+                config.GetLegionGrowthRate(CommanderLegionStat.AttackSpeed, growth.AttackSpeedLevel),
+                config.GetLegionGrowthRate(CommanderLegionStat.MoveSpeed, growth.MoveSpeedLevel),
+                config.GetLegionGrowthRate(CommanderLegionStat.AttackRange, growth.AttackRangeLevel));
+            BonusChanged?.Invoke(CurrentBonus);
+        }
+
+        private bool CanAfford(GameProgressView view, CommanderLegionStat stat, int level)
+        {
+            return config.UsesGoldForLegionGrowth(stat)
+                ? view.Gold >= config.GetLegionGrowthGoldCost(stat, level)
+                : view.CommanderLegionGrowth.UnspentTrainingPoints >=
+                  config.GetLegionGrowthTrainingPointCost(stat, level);
+        }
+
+        private string FormatCost(CommanderLegionStat stat, int level)
+        {
+            return config.UsesGoldForLegionGrowth(stat)
+                ? $"{config.GetLegionGrowthGoldCost(stat, level):N0}"
+                : $"{config.GetLegionGrowthTrainingPointCost(stat, level):N0} P";
+        }
+
+        private void CacheRow(
+            CommanderLegionStat stat,
+            string rowName,
+            Button button,
+            TMP_Text levelText)
+        {
+            var rowTransform = FindDeep(transform, rowName);
+            rows[stat] = new GrowthRow
+            {
+                Button = button,
+                LevelText = levelText,
+                ValueText = rowTransform?.Find("Text_Value")?.GetComponent<TMP_Text>(),
+                CostText = rowTransform?.Find("ButtonArea/Group/Text_Value")?.GetComponent<TMP_Text>()
+            };
+        }
+
+        private static Transform FindDeep(Transform root, string targetName)
+        {
+            var all = root.GetComponentsInChildren<Transform>(true);
+            for (var index = 0; index < all.Length; index++)
+            {
+                if (all[index].name == targetName)
+                {
+                    return all[index];
+                }
+            }
+
+            return null;
+        }
+
+        private static void SetText(TMP_Text target, string value)
+        {
+            if (target != null)
+            {
+                target.text = value;
+            }
+        }
+
+        private static void EnsureFullRectHitArea(Button button)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var hitArea = button.GetComponent<Graphic>();
+            if (hitArea == null)
+            {
+                var image = button.gameObject.AddComponent<Image>();
+                image.color = Color.clear;
+                hitArea = image;
+            }
+
+            hitArea.raycastTarget = true;
+            if (button.targetGraphic == null)
+            {
+                button.targetGraphic = hitArea;
             }
         }
     }

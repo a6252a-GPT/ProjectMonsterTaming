@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Stats;
 
@@ -20,17 +21,20 @@ namespace ProjectMT.Shared.GameData
         private readonly SaveService saveService; // 저장 직렬화 담당
         private readonly CommanderGrowthConfig commanderGrowthConfig; // 군단장 경험치 곡선
         private readonly ItemCatalog itemCatalog; // 일반 아이템 정의 등록부
+        private readonly EquipmentBalanceConfig equipmentBalanceConfig; // 잠재능력 수치 범위
         private readonly SemaphoreSlim gate = new SemaphoreSlim(1, 1); // 동시 변경 직렬화
         private GameProgressData current = GameProgressData.CreateDefault(); // 현재 확정 데이터
 
         public GameDataService(
             SaveService saveService,
             CommanderGrowthConfig growthConfig = null,
-            ItemCatalog catalog = null)
+            ItemCatalog catalog = null,
+            EquipmentBalanceConfig equipmentConfig = null)
         {
             this.saveService = saveService ?? throw new ArgumentNullException(nameof(saveService));
             commanderGrowthConfig = growthConfig ?? CommanderGrowthConfig.RuntimeDefault;
             itemCatalog = catalog;
+            equipmentBalanceConfig = equipmentConfig ?? EquipmentBalanceConfig.RuntimeDefault;
         }
 
         public GameProgressView View => new GameProgressView(current); // 외부에는 읽기 전용 값만 제공
@@ -66,7 +70,7 @@ namespace ProjectMT.Shared.GameData
                 }
 
                 var candidate = current.Clone(); // 원본 보존 후 변경 검증
-                if (!candidate.TryApply(change, commanderGrowthConfig, itemCatalog))
+                if (!candidate.TryApply(change, commanderGrowthConfig, itemCatalog, equipmentBalanceConfig))
                 {
                     return false;
                 }

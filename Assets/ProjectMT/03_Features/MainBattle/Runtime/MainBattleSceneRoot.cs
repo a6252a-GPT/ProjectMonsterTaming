@@ -54,6 +54,7 @@ namespace ProjectMT.Features.MainBattle
         private MainBattleManagementUiController managementUi; // 관리창 상호 배타 제어
         private MainBattleHudProgressView hudProgressView; // 상단 계정·재화 표시
         private GrowthDungeonStageEntryController growthDungeonEntry; // 단계 선택·파밍 입장
+        private CommanderGrowthPageView commanderGrowthPage; // 저장 편성 총전투력 표시
 
         public SceneId SceneId => sceneId;
         public bool IsInitialized { get; private set; }
@@ -209,6 +210,7 @@ namespace ProjectMT.Features.MainBattle
             spatialController = null;
             placementController = null;
             managementUi = null;
+            commanderGrowthPage = null;
             hudProgressView = null;
             growthDungeonEntry = null;
             IsInitialized = false;
@@ -262,7 +264,10 @@ namespace ProjectMT.Features.MainBattle
         // 다시 찾아 연결한다.
         private void ConfigureEquipmentPage()
         {
-            ResolveEquipmentPage()?.Configure(context.Progress);
+            ResolveEquipmentPage()?.Configure(
+                context.Progress,
+                context.EquipmentBalanceConfig,
+                RefreshPartyForNextRun);
         }
 
         private EquipmentPageController ResolveEquipmentPage()
@@ -288,15 +293,20 @@ namespace ProjectMT.Features.MainBattle
                 return;
             }
 
-            var page = GetComponentInChildren<CommanderGrowthPageView>(true);
-            page?.Configure(context.Progress, context.CommanderGrowthConfig);
+            commanderGrowthPage = GetComponentInChildren<CommanderGrowthPageView>(true);
+            commanderGrowthPage?.Configure(
+                context.Progress,
+                context.CommanderGrowthConfig,
+                context.EquipmentBalanceConfig,
+                RefreshPartyForNextRun);
+            commanderGrowthPage?.SetParty(party);
         }
 
         // 장비 슬롯 강화 패널을 진행 데이터 및 메인 관리 UI에 연결한다.
         private void ConfigureEquipmentSlotUpgrade()
         {
             var panel = ResolveEquipmentSlotUpgradePanel();
-            panel?.Configure(context.Progress);
+            panel?.Configure(context.Progress, RefreshPartyForNextRun);
             managementUi?.ConfigureEquipmentSlotUpgradePage(panel);
         }
 
@@ -654,7 +664,16 @@ namespace ProjectMT.Features.MainBattle
 
             party = updatedParty;
             expedition.SetPartyForNextRun(updatedParty); // 현재 소환 유닛은 유지
+            commanderGrowthPage?.SetParty(updatedParty);
             SetStatus("편성 저장 완료 · 다음 전투부터 적용");
+        }
+
+        private void RefreshPartyForNextRun()
+        {
+            if (context != null)
+            {
+                HandlePartyChanged(context.RefreshParty());
+            }
         }
 
         private void RefreshGrowthDungeonKeyUi()

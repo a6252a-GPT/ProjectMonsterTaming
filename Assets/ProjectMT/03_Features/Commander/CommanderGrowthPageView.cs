@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using ProjectMT.Features.Equipment;
+using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Commander;
+using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Stats;
+using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -54,6 +57,9 @@ namespace ProjectMT.Features.Commander
 
         private IGameProgressService progress;
         private CommanderGrowthConfig config;
+        private Action combatInputSaved;
+        private GrowthCalculator growthCalculator;
+        private BattlePartySnapshot party;
         private bool savePending;
 
         private void Awake()
@@ -86,7 +92,9 @@ namespace ProjectMT.Features.Commander
 
         public void Configure(
             IGameProgressService progressService,
-            CommanderGrowthConfig growthConfig)
+            CommanderGrowthConfig growthConfig,
+            EquipmentBalanceConfig equipmentBalanceConfig = null,
+            Action onCombatInputSaved = null)
         {
             if (progress != null)
             {
@@ -95,15 +103,24 @@ namespace ProjectMT.Features.Commander
 
             progress = progressService;
             config = growthConfig;
+            combatInputSaved = onCombatInputSaved;
             if (progress != null)
             {
                 progress.Changed += Refresh;
             }
 
-            CommanderPotentialRuntime.Configure(progressService);
+            growthCalculator ??= GetComponent<GrowthCalculator>();
+            growthCalculator?.Configure(progressService, growthConfig, onCombatInputSaved);
+            CommanderPotentialRuntime.Configure(progressService, equipmentBalanceConfig);
             CommanderPotentialRuntime.Changed -= RefreshPotentialPanel;
             CommanderPotentialRuntime.Changed += RefreshPotentialPanel;
 
+            Refresh();
+        }
+
+        public void SetParty(BattlePartySnapshot snapshot)
+        {
+            party = snapshot;
             Refresh();
         }
 
@@ -127,8 +144,14 @@ namespace ProjectMT.Features.Commander
             var isMaxLevel = commander.Level >= config.MaxLevel;
             var canLevelUp = !isMaxLevel && config.CanLevelUp(commander.Level, commander.Experience);
 
-            SetText(goldText, $"보유 골드  {progressView.Gold:N0}");
-            SetText(commanderLevelText, $"군단장 LV. {commander.Level:N0} ({FormatPercent(progressRatio)})");
+            SetText(
+                goldText,
+                $"보유 골드  {progressView.Gold:N0}  |  훈련 포인트  " +
+                $"{progressView.CommanderLegionGrowth.UnspentTrainingPoints:N0}");
+            SetText(
+                commanderLevelText,
+                $"군단장 LV. {commander.Level:N0} ({FormatPercent(progressRatio)})  ·  " +
+                $"전투력 {(party?.TotalPower ?? 0f):N0}");
             SetText(levelText, $"LV. {commander.Level:N0}");
             SetText(
                 experienceText,
@@ -223,20 +246,29 @@ namespace ProjectMT.Features.Commander
 
         private async void TriggerInitialPotentialRoll()
         {
-            await CommanderPotentialRuntime.EnsureInitialRollAsync();
+            if (await CommanderPotentialRuntime.EnsureInitialRollAsync())
+            {
+                combatInputSaved?.Invoke();
+            }
         }
 
         // "잠재 능력 변경" 버튼(ButtonArea_2): 강화석 1개 소모 후 잠기지 않은 슬롯을 완전히 새 옵션으로 재추첨.
         // 이 클릭으로 "수호자의 힘" 단계가 올라 슬롯이 새로 해금되어도 그 자리는 비어있는 채로 둔다(자동 배정 없음).
         private async void TriggerPotentialReroll()
         {
-            await CommanderPotentialRuntime.TryRerollAsync();
+            if (await CommanderPotentialRuntime.TryRerollAsync())
+            {
+                combatInputSaved?.Invoke();
+            }
         }
 
         // "옵션 스탯 변경" 버튼(ButtonArea_1): 강화석 1개 소모 후 옵션 종류·등급은 유지하고 수치만 다시 뽑는다.
         private async void TriggerPotentialValueReroll()
         {
-            await CommanderPotentialRuntime.TryRerollValueAsync();
+            if (await CommanderPotentialRuntime.TryRerollValueAsync())
+            {
+                combatInputSaved?.Invoke();
+            }
         }
 
         // ---------------------------------------------------------------

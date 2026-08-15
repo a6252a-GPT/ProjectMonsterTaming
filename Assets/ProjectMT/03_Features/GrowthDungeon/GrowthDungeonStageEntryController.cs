@@ -39,6 +39,8 @@ namespace ProjectMT.Features.GrowthDungeon
     [DisallowMultipleComponent]
     public sealed class GrowthDungeonStageEntryController : MonoBehaviour // 성장 던전 입장 팝업 조율
     {
+        private const float PopupHorizontalGap = 40f;
+
         private sealed class DungeonBinding
         {
             public DungeonBinding(
@@ -235,7 +237,8 @@ namespace ProjectMT.Features.GrowthDungeon
 
             if (!popupCache.TryGetValue(binding.ContentId.Value, out currentPopup) || currentPopup == null)
             {
-                var popupObject = Instantiate(binding.PopupPrefab, transform);
+                var popupParent = transform.parent != null ? transform.parent : transform;
+                var popupObject = Instantiate(binding.PopupPrefab, popupParent); // 캔버스 기준 좌표를 한 번만 적용
                 popupObject.name = binding.PopupPrefab.name;
                 currentPopup = popupObject.GetComponent<GrowthDungeonStageEntryPopupView>();
                 if (currentPopup == null)
@@ -252,6 +255,7 @@ namespace ProjectMT.Features.GrowthDungeon
                 popupCache[binding.ContentId.Value] = currentPopup;
             }
 
+            AlignPopupLeftOfPage(currentPopup.transform as RectTransform);
             currentPopup.gameObject.SetActive(true);
             currentPopup.transform.SetAsLastSibling();
             RefreshPopup();
@@ -438,6 +442,19 @@ namespace ProjectMT.Features.GrowthDungeon
 
             currentPopup = null;
             currentBinding = null;
+        }
+
+        private void AlignPopupLeftOfPage(RectTransform popupRect)
+        {
+            var pageRect = transform as RectTransform;
+            if (popupRect == null || pageRect == null || popupRect.parent != pageRect.parent)
+            {
+                return;
+            }
+
+            var popupX = pageRect.anchoredPosition.x -
+                (pageRect.rect.width + popupRect.rect.width) * 0.5f - PopupHorizontalGap;
+            popupRect.anchoredPosition = new Vector2(popupX, pageRect.anchoredPosition.y); // 인벤토리와 같은 좌우 2열
         }
 
         private static void SetButtonText(Button button, string value)

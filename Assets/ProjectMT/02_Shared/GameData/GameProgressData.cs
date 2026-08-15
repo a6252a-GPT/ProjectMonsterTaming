@@ -200,6 +200,7 @@ namespace ProjectMT.Shared.GameData
         [NonSerialized] private ItemInventoryView? itemViewCache; // 변경 전까지 목록 복사 재사용
         [SerializeField] private EquipmentSlotUpgradeData equipmentSlotUpgrade = EquipmentSlotUpgradeData.CreateDefault(); // 부위 슬롯 영구 강화 레벨(장비 보유·장착과 별도 저장)
         [SerializeField] private CommanderPotentialData commanderPotential = CommanderPotentialData.CreateDefault(); // 군단장 잠재능력 5슬롯
+        [SerializeField] private CommanderLegionGrowthData commanderLegionGrowth = CommanderLegionGrowthData.CreateDefault(); // 군단 공용 6종 강화
 
         public int CurrentChallengeStage => currentChallengeStage;
         public int LastClearedStage => lastClearedStage;
@@ -237,6 +238,8 @@ namespace ProjectMT.Shared.GameData
             (equipmentSlotUpgrade ?? EquipmentSlotUpgradeData.CreateDefault()).CreateView();
         public CommanderPotentialView CommanderPotential =>
             (commanderPotential ?? CommanderPotentialData.CreateDefault()).CreateView();
+        public CommanderLegionGrowthView CommanderLegionGrowth =>
+            (commanderLegionGrowth ?? CommanderLegionGrowthData.CreateDefault()).CreateView();
 
         public static GameProgressData CreateDefault()
         {
@@ -266,14 +269,16 @@ namespace ProjectMT.Shared.GameData
                 offlineRewards = offlineRewards?.Clone() ?? OfflineRewardProgressData.CreateDefault(),
                 coreBalanceMigrationCompleted = coreBalanceMigrationCompleted,
                 equipmentSlotUpgrade = equipmentSlotUpgrade?.Clone() ?? EquipmentSlotUpgradeData.CreateDefault(),
-                commanderPotential = commanderPotential?.Clone() ?? CommanderPotentialData.CreateDefault()
+                commanderPotential = commanderPotential?.Clone() ?? CommanderPotentialData.CreateDefault(),
+                commanderLegionGrowth = commanderLegionGrowth?.Clone() ?? CommanderLegionGrowthData.CreateDefault()
             };
         }
 
         internal bool TryApply(
             GameProgressChange change,
             CommanderGrowthConfig commanderGrowthConfig = null,
-            ItemCatalog itemCatalog = null)
+            ItemCatalog itemCatalog = null,
+            EquipmentBalanceConfig equipmentBalanceConfig = null)
         {
             if (change == null)
             {
@@ -387,6 +392,56 @@ namespace ProjectMT.Shared.GameData
                 {
                     return false;
                 }
+
+                commanderLegionGrowth ??= CommanderLegionGrowthData.CreateDefault();
+                commanderLegionGrowth.GrantTrainingPoints(1); // 저장된 수동 레벨업 1회당 1포인트
+            }
+
+            if (change.HasUpgradeCommanderLegionStat)
+            {
+                var growthConfig = commanderGrowthConfig ?? CommanderGrowthConfig.RuntimeDefault;
+                commanderLegionGrowth ??= CommanderLegionGrowthData.CreateDefault();
+                var nextGrowth = commanderLegionGrowth.Clone();
+                var currentLevel = nextGrowth.GetLevel(change.CommanderLegionStatToUpgrade);
+                var maxLevel = growthConfig.GetLegionGrowthMaxLevel(change.CommanderLegionStatToUpgrade);
+                if (currentLevel != change.ExpectedCommanderLegionStatLevel || currentLevel >= maxLevel)
+                {
+                    return false;
+                }
+
+                var nextItems = items;
+                if (growthConfig.UsesGoldForLegionGrowth(change.CommanderLegionStatToUpgrade))
+                {
+                    var goldCost = growthConfig.GetLegionGrowthGoldCost(
+                        change.CommanderLegionStatToUpgrade,
+                        currentLevel);
+                    if (!ItemInventoryTransactions.TrySpend(
+                            items,
+                            new[] { new ItemAmount(ItemIds.Gold, goldCost) },
+                            itemCatalog,
+                            out nextItems))
+                    {
+                        return false;
+                    }
+                }
+                else if (!nextGrowth.TrySpendTrainingPoints(
+                             growthConfig.GetLegionGrowthTrainingPointCost(
+                                 change.CommanderLegionStatToUpgrade,
+                                 currentLevel)))
+                {
+                    return false;
+                }
+
+                if (!nextGrowth.TryLevelUp(
+                        change.CommanderLegionStatToUpgrade,
+                        change.ExpectedCommanderLegionStatLevel,
+                        maxLevel))
+                {
+                    return false;
+                }
+
+                items = nextItems;
+                commanderLegionGrowth = nextGrowth;
             }
 
             if (change.HasAcquireMonster &&
@@ -563,21 +618,17 @@ namespace ProjectMT.Shared.GameData
                     return false; // 요청 시점과 처리 시점 사이에 레벨이 달라짐(중복 클릭 등)
                 }
 
-                var slotUpgradeItems = items;
-                if (EquipmentSlotUpgradeCostRules.ChargeCurrencyOnUpgrade)
+                var goldCost = EquipmentSlotUpgradeCostRules.GetNextGoldCost(currentLevel);
+                var stoneCost = EquipmentSlotUpgradeCostRules.GetNextStoneCost(currentLevel);
+                var costs = new[]
                 {
-                    var goldCost = EquipmentSlotUpgradeCostRules.GetNextGoldCost(currentLevel);
-                    var stoneCost = EquipmentSlotUpgradeCostRules.GetNextStoneCost(currentLevel);
-                    var costs = new[]
-                    {
-                        new ItemAmount(ItemIds.Gold, goldCost),
-                        new ItemAmount(ItemIds.EquipmentSlotUpgradeStone, stoneCost)
-                    };
+                    new ItemAmount(ItemIds.Gold, goldCost),
+                    new ItemAmount(ItemIds.EquipmentSlotUpgradeStone, stoneCost)
+                };
 
-                    if (!ItemInventoryTransactions.TrySpend(items, costs, itemCatalog, out slotUpgradeItems))
-                    {
-                        return false; // 재화 부족
-                    }
+                if (!ItemInventoryTransactions.TrySpend(items, costs, itemCatalog, out var slotUpgradeItems))
+                {
+                    return false; // 재화 부족
                 }
 
                 if (!equipmentSlotUpgrade.TryLevelUp(change.UpgradeEquipmentSlotPart, change.ExpectedEquipmentSlotLevel))
@@ -614,16 +665,10 @@ namespace ProjectMT.Shared.GameData
 
                 commanderPotential ??= CommanderPotentialData.CreateDefault();
 
-                // 실제로 반영하기 전에 대상 슬롯이 여전히 유효한지 먼저 확인해서
-                // 강화석을 차감한 뒤 일부만 반영되는 상황을 막는다. 값이 있는 슬롯은 잠겨있지 않아야 하고,
-                // 값이 없는 슬롯은 (해금 여부와 무관하게, 호출한 쪽에서 이미 걸러 보냈다고 보고) 신규 배정 대상이다.
-                for (var i = 0; i < entries.Count; i++)
+                // 유효 슬롯·잠금·중복 대상·같은 옵션 최대 2개를 차감 전에 한 번에 검증한다.
+                if (!commanderPotential.CanApplyOptionReroll(entries, 2))
                 {
-                    var target = commanderPotential.GetSlot(entries[i].SlotIndex);
-                    if (target == null || (target.HasValue && target.Locked))
-                    {
-                        return false;
-                    }
+                    return false;
                 }
 
                 if (!ItemInventoryTransactions.TrySpend(
@@ -667,13 +712,11 @@ namespace ProjectMT.Shared.GameData
 
                 commanderPotential ??= CommanderPotentialData.CreateDefault();
 
-                for (var i = 0; i < valueEntries.Count; i++)
+                if (!commanderPotential.CanApplyValueReroll(
+                        valueEntries,
+                        equipmentBalanceConfig ?? EquipmentBalanceConfig.RuntimeDefault))
                 {
-                    var target = commanderPotential.GetSlot(valueEntries[i].SlotIndex);
-                    if (target == null || !target.HasValue)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
 
                 if (!ItemInventoryTransactions.TrySpend(
@@ -688,7 +731,10 @@ namespace ProjectMT.Shared.GameData
                 for (var i = 0; i < valueEntries.Count; i++)
                 {
                     var entry = valueEntries[i];
-                    commanderPotential.TryRerollSlotValue(entry.SlotIndex, entry.Value);
+                    if (!commanderPotential.TryRerollSlotValue(entry.SlotIndex, entry.Value))
+                    {
+                        return false;
+                    }
                 }
 
                 // "옵션 스탯 변경" 1회 성공마다 "수호자의 힘" 경험치 +10.
@@ -1015,6 +1061,8 @@ namespace ProjectMT.Shared.GameData
             equipmentSlotUpgrade.Repair();
             commanderPotential ??= CommanderPotentialData.CreateDefault();
             commanderPotential.Repair();
+            commanderLegionGrowth ??= CommanderLegionGrowthData.CreateDefault();
+            commanderLegionGrowth.Repair();
 
             if (!IsValidExpeditionMode(expeditionMode) ||
                 (lastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat))
@@ -1027,6 +1075,7 @@ namespace ProjectMT.Shared.GameData
         {
             Repair();
             commander.Repair(commanderGrowthConfig);
+            commanderLegionGrowth.Repair(commanderGrowthConfig);
         }
 
         internal void MigrateFromVersion(int sourceDataVersion)
@@ -1072,6 +1121,12 @@ namespace ProjectMT.Shared.GameData
                 offlineRewards = OfflineRewardProgressData.CreateDefault(); // 기존 저장은 소급 보상 없이 현재부터 기록
             }
 
+            if (sourceDataVersion <= 15)
+            {
+                commanderLegionGrowth ??= CommanderLegionGrowthData.CreateDefault();
+                commanderLegionGrowth.SetMigratedTrainingPoints(Math.Max(0, (commander?.Level ?? 1) - 1));
+            }
+
             Repair();
         }
 
@@ -1105,6 +1160,7 @@ namespace ProjectMT.Shared.GameData
             OfflineRewards = data.OfflineRewards;
             EquipmentSlotUpgrade = data.EquipmentSlotUpgrade;
             CommanderPotential = data.CommanderPotential;
+            CommanderLegionGrowth = data.CommanderLegionGrowth;
         }
 
         public int CurrentChallengeStage { get; }
@@ -1127,6 +1183,7 @@ namespace ProjectMT.Shared.GameData
         public OfflineRewardProgressView OfflineRewards { get; } // 방치 시작점·확인 대기 정산
         public EquipmentSlotUpgradeView EquipmentSlotUpgrade { get; } // 부위 슬롯 영구 강화 레벨
         public CommanderPotentialView CommanderPotential { get; } // 군단장 잠재능력 5슬롯
+        public CommanderLegionGrowthView CommanderLegionGrowth { get; } // 군단 공용 6종 강화
     }
 
     public sealed class GameProgressChange // 한 번에 검증할 진행 변경 묶음
@@ -1195,6 +1252,9 @@ namespace ProjectMT.Shared.GameData
         internal long CommanderExperience { get; private set; }
         internal bool HasLevelUpCommander { get; private set; }
         internal int ExpectedCommanderLevel { get; private set; }
+        internal bool HasUpgradeCommanderLegionStat { get; private set; }
+        internal CommanderLegionStat CommanderLegionStatToUpgrade { get; private set; }
+        internal int ExpectedCommanderLegionStatLevel { get; private set; }
         internal bool HasUpgradeEquipmentSlot { get; private set; }
         internal EquipmentPart UpgradeEquipmentSlotPart { get; private set; }
         internal int ExpectedEquipmentSlotLevel { get; private set; }
@@ -1441,6 +1501,18 @@ namespace ProjectMT.Shared.GameData
             {
                 HasLevelUpCommander = true,
                 ExpectedCommanderLevel = expectedLevel
+            };
+        }
+
+        public static GameProgressChange UpgradeCommanderLegionStat(
+            CommanderLegionStat stat,
+            int expectedLevel)
+        {
+            return new GameProgressChange
+            {
+                HasUpgradeCommanderLegionStat = true,
+                CommanderLegionStatToUpgrade = stat,
+                ExpectedCommanderLegionStatLevel = expectedLevel
             };
         }
 

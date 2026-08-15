@@ -19,7 +19,7 @@ MonoBehaviour:
     sceneKind: 0
   - sceneId:
       value: main_battle
-    scenePath: Assets/ProjectMT/00_Scenes/01_MainBattle 1.unity
+    scenePath: Assets/ProjectMT/00_Scenes/01_MainBattle.unity
     sceneKind: 1
   - sceneId:
       value: castle_raid

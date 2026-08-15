@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -138,6 +139,7 @@ namespace ProjectMT.Features.Equipment
         private readonly HashSet<string> dismantleSelection = new HashSet<string>();
         private EquipmentPageMode currentMode = EquipmentPageMode.Equip;
         private bool requestInFlight;
+        private Action combatInputSaved;
 
         private void Awake()
         {
@@ -170,11 +172,15 @@ namespace ProjectMT.Features.Equipment
         // 카탈로그를 연결해주기만 하면 된다.
         public void Configure(IGameProgressService progress)
         {
-            Configure(progress, EquipmentBalanceConfig.RuntimeDefault);
+            Configure(progress, EquipmentBalanceConfig.RuntimeDefault, null);
         }
 
-        public void Configure(IGameProgressService progress, EquipmentBalanceConfig balance)
+        public void Configure(
+            IGameProgressService progress,
+            EquipmentBalanceConfig balance,
+            Action onCombatInputSaved = null)
         {
+            combatInputSaved = onCombatInputSaved;
             EquipmentInventoryRuntime.Configure(progress, ResolveCatalog(), balance);
         }
 
@@ -500,6 +506,7 @@ namespace ProjectMT.Features.Equipment
             if (label != null)
             {
                 label.text = labelText;
+                label.gameObject.SetActive(true);
             }
 
             var icon = tab.Find("Icon");
@@ -761,6 +768,20 @@ namespace ProjectMT.Features.Equipment
                 button.transition = Selectable.Transition.None; // 목업 비주얼을 그대로 유지, 클릭 판정만 추가
             }
 
+            var hitArea = target.GetComponent<Graphic>();
+            if (hitArea == null)
+            {
+                var image = target.gameObject.AddComponent<Image>();
+                image.color = Color.clear;
+                hitArea = image;
+            }
+
+            hitArea.raycastTarget = true;
+            if (button.targetGraphic == null)
+            {
+                button.targetGraphic = hitArea;
+            }
+
             return button;
         }
 
@@ -820,11 +841,17 @@ namespace ProjectMT.Features.Equipment
 
             if (item.IsEquipped)
             {
-                await EquipmentInventoryRuntime.TryUnequipAsync(item.Part);
+                if (await EquipmentInventoryRuntime.TryUnequipAsync(item.Part))
+                {
+                    combatInputSaved?.Invoke();
+                }
             }
             else
             {
-                await EquipmentInventoryRuntime.TryEquipAsync(selectedInstanceId);
+                if (await EquipmentInventoryRuntime.TryEquipAsync(selectedInstanceId))
+                {
+                    combatInputSaved?.Invoke();
+                }
             }
         }
 

@@ -100,6 +100,7 @@ namespace ProjectMT.Shared.Unit
         public MonsterAnimationDriver AnimationDriver => animationDriver;
         public bool IsHitStopped => localHitStopRemaining > 0f;
         public bool IsRanged => stats.ranged;
+        public UnitStatsSnapshot EffectiveStats => GetEffectiveStats(); // 피격 계산용 현재 Snapshot
 
         public event Action<UnitActor> Died;
 

@@ -8,7 +8,9 @@ using ProjectMT.Contents.Framework;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Features.OfflineReward;
+using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Debugging;
+using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Stats;
@@ -137,8 +139,11 @@ namespace ProjectMT.Bootstrap
             gameDataService = new GameDataService(
                 saveService,
                 commanderGrowthConfig,
-                projectConfig.ItemCatalog);
+                projectConfig.ItemCatalog,
+                projectConfig.EquipmentBalanceConfig);
             await gameDataService.LoadAsync(); // 씬 초기화 전 저장 로드
+            CombatWorld.ConfigureSharedStatRules(
+                projectConfig.CombatStatConfig ?? CombatStatConfig.RuntimeDefault);
             await RefreshGrowthDungeonKeysAsync(); // 접속 1회 KST 05:00 기준 충전
             offlineRewardCoordinator = new OfflineRewardCoordinator(
                 gameDataService,
@@ -150,7 +155,9 @@ namespace ProjectMT.Bootstrap
                 throw new InvalidOperationException("Offline reward login settlement could not be saved.");
             }
 
-            partyBuilder = new BattlePartySnapshotBuilder(projectConfig.MonsterCatalog);
+            partyBuilder = new BattlePartySnapshotBuilder(
+                projectConfig.MonsterCatalog,
+                projectConfig.CombatStatConfig ?? CombatStatConfig.RuntimeDefault);
 
             sceneLoader.Configure(projectConfig.SceneCatalog);
             contentFlow = new ContentFlow(
@@ -337,12 +344,21 @@ namespace ProjectMT.Bootstrap
                     projectConfig.ItemCatalog,
                     commanderGrowthConfig,
                     projectConfig.EquipmentBalanceConfig,
-                    () => partyBuilder.Build(gameDataService.View), // 저장 확정 시 새 부대 사진 생성
+                    BuildCurrentParty, // 저장 확정 시 모든 군단 보너스로 새 부대 사진 생성
                     rewardPresenter,
                     growthDungeonSweepService);
             }
 
             return contentFlow.CreateSeparateSceneContext(sceneId); // 별도 콘텐츠 실행 봉투
+        }
+
+        private BattlePartySnapshot BuildCurrentParty()
+        {
+            var modifiers = LegionStatModifierProvider.Build(
+                gameDataService.View,
+                commanderGrowthConfig,
+                projectConfig.EquipmentBalanceConfig ?? EquipmentBalanceConfig.RuntimeDefault);
+            return partyBuilder.Build(gameDataService.View, modifiers);
         }
 
         private void HandleSceneFailed(SceneId failedSceneId, string error)

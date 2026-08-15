@@ -38,7 +38,7 @@ namespace ProjectMT.Features.Equipment
     }
 
     // 슬롯 레벨 → 능력치 보너스·강화 비용 순수 계산기(MonoBehaviour 아님).
-    // 장갑·장신구는 핵심 능력치 구성이 달라 슬롯 강화 대상에서 제외한다.
+    // 장비 보유와 무관하게 여섯 부위 모두 군단 공용 성장으로 적용한다.
     public static class EquipmentSlotUpgradeCalculator
     {
         public const int MinLevel = 0;
@@ -46,19 +46,19 @@ namespace ProjectMT.Features.Equipment
         // 슬롯 레벨 1당 늘어나는 보너스 예산(%).
         private const float BonusBudgetPercentPerLevel = 1f;
 
-        // 부위별 배분 비율. 무기·투구·갑옷·하의만 포함한다(장갑·장신구는 제외).
-        // { EquipmentPart.Glove, new EquipmentSlotUpgradeRatio(0.70f, 0.30f, 0f) },
-        // { EquipmentPart.Ring, new EquipmentSlotUpgradeRatio(0.34f, 0.33f, 0.33f) },
+        // 부위별 배분 비율. 각 부위의 합은 100%다.
         private static readonly Dictionary<EquipmentPart, EquipmentSlotUpgradeRatio> DistributionByPart =
             new Dictionary<EquipmentPart, EquipmentSlotUpgradeRatio>
             {
                 { EquipmentPart.Weapon, new EquipmentSlotUpgradeRatio(1.00f, 0f, 0f) },
                 { EquipmentPart.Helmet, new EquipmentSlotUpgradeRatio(0f, 0.70f, 0.30f) },
                 { EquipmentPart.Armor, new EquipmentSlotUpgradeRatio(0f, 0.30f, 0.70f) },
-                { EquipmentPart.Boots, new EquipmentSlotUpgradeRatio(0f, 0.50f, 0.50f) }
+                { EquipmentPart.Boots, new EquipmentSlotUpgradeRatio(0f, 0.50f, 0.50f) },
+                { EquipmentPart.Glove, new EquipmentSlotUpgradeRatio(0.70f, 0.30f, 0f) },
+                { EquipmentPart.Ring, new EquipmentSlotUpgradeRatio(0.34f, 0.33f, 0.33f) }
             };
 
-        // 슬롯 강화 지원 부위인지(무기/투구/갑옷/하의만 true).
+        // 슬롯 강화 지원 부위인지.
         public static bool IsSlotUpgradeSupported(EquipmentPart part) => DistributionByPart.ContainsKey(part);
 
         public static float GetBonusBudgetPercent(int level)

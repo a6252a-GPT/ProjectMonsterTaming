@@ -15,13 +15,16 @@ namespace ProjectMT.Features.Commander
         public static int UnlockedSlotCount => IsReady ? progress.View.CommanderPotential.Stage : 1;
 
         private static IGameProgressService progress;
+        private static EquipmentBalanceConfig equipmentBalance;
         private static bool rollInFlight;
         private static bool rerollInFlight;
         private static bool lockToggleInFlight;
 
         public static event Action Changed;
 
-        public static void Configure(IGameProgressService progressService)
+        public static void Configure(
+            IGameProgressService progressService,
+            EquipmentBalanceConfig balanceConfig = null)
         {
             if (progress != null)
             {
@@ -29,6 +32,7 @@ namespace ProjectMT.Features.Commander
             }
 
             progress = progressService;
+            equipmentBalance = balanceConfig ?? EquipmentBalanceConfig.RuntimeDefault;
 
             if (progress != null)
             {
@@ -106,18 +110,18 @@ namespace ProjectMT.Features.Commander
 
         // 오직 "첫 번째 슬롯"만 자동으로 채운다. 2단계 이후 새로 해금되는 슬롯은 개방만 되고
         // 옵션은 비어있는 상태로 유지되며(자동 배정 없음), 이미 값이 있으면 아무 것도 하지 않는다.
-        public static async Task EnsureInitialRollAsync()
+        public static async Task<bool> EnsureInitialRollAsync()
         {
             if (!IsReady || rollInFlight || GetSlot(0).HasValue)
             {
-                return;
+                return false;
             }
 
             rollInFlight = true;
             try
             {
-                var roll = CommanderPotentialOptionTable.Roll(EquipmentBalanceConfig.RuntimeDefault);
-                await progress.TryApplyAndSaveAsync(
+                var roll = CommanderPotentialOptionTable.Roll(equipmentBalance);
+                return await progress.TryApplyAndSaveAsync(
                     GameProgressChange.AssignCommanderPotentialSlot(0, roll.Type, roll.Grade, roll.Value));
             }
             finally
@@ -136,10 +140,20 @@ namespace ProjectMT.Features.Commander
                 return false;
             }
 
-            var balance = EquipmentBalanceConfig.RuntimeDefault;
+            var balance = equipmentBalance ?? EquipmentBalanceConfig.RuntimeDefault;
             var rng = new Random(); // 슬롯마다 새로 만들면 같은 틱에 같은 값이 나올 수 있어 하나만 만들어 공유한다.
             var unlockedCount = UnlockedSlotCount;
             var entries = new List<CommanderPotentialRerollEntry>(CommanderPotentialData.SlotCount);
+            var optionCounts = new Dictionary<EquipmentOptionType, int>();
+            for (var i = 0; i < CommanderPotentialData.SlotCount; i++)
+            {
+                var retained = GetSlot(i);
+                if (retained.HasValue && retained.Locked)
+                {
+                    AddOptionCount(optionCounts, retained.OptionType);
+                }
+            }
+
             for (var i = 0; i < CommanderPotentialData.SlotCount; i++)
             {
                 var slot = GetSlot(i);
@@ -155,7 +169,11 @@ namespace ProjectMT.Features.Commander
                     continue; // 아직 해금되지 않은 슬롯은 대상이 아님
                 }
 
-                var roll = CommanderPotentialOptionTable.Roll(balance, rng);
+                var roll = CommanderPotentialOptionTable.Roll(
+                    balance,
+                    rng,
+                    type => !optionCounts.TryGetValue(type, out var count) || count < 2);
+                AddOptionCount(optionCounts, roll.Type);
                 entries.Add(new CommanderPotentialRerollEntry(i, roll.Type, roll.Grade, roll.Value));
             }
 
@@ -185,7 +203,7 @@ namespace ProjectMT.Features.Commander
                 return false;
             }
 
-            var balance = EquipmentBalanceConfig.RuntimeDefault;
+            var balance = equipmentBalance ?? EquipmentBalanceConfig.RuntimeDefault;
             var rng = new Random();
             var entries = new List<CommanderPotentialRerollEntry>(CommanderPotentialData.SlotCount);
             for (var i = 0; i < CommanderPotentialData.SlotCount; i++)
@@ -241,6 +259,14 @@ namespace ProjectMT.Features.Commander
             {
                 lockToggleInFlight = false;
             }
+        }
+
+        private static void AddOptionCount(
+            Dictionary<EquipmentOptionType, int> counts,
+            EquipmentOptionType type)
+        {
+            counts.TryGetValue(type, out var current);
+            counts[type] = current + 1;
         }
     }
 }

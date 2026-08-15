@@ -51,8 +51,8 @@ namespace ProjectMT.Features.Equipment
         private TMP_Text statText2;
         private TMP_Text totalText;
         private TMP_Text upgradeMaterialText; // 강화 재료(보유/필요) 표시
-        private TMP_Text upHeaderStatText; // 현재(다음 1강화) 강화 능력 증가율 표시
-        private TMP_Text downHeaderStatText; // 다다음(그 다음 강화) 강화 능력 증가율 표시
+        private TMP_Text upHeaderStatText; // 현재 레벨까지 누적된 강화 수치 표시
+        private TMP_Text downHeaderStatText; // 다음 강화 완료 시 누적될 수치 표시
 
         private EquipmentPart currentPart = EquipmentPart.Weapon;
         private bool hasSelectedPart;
@@ -535,8 +535,9 @@ namespace ProjectMT.Features.Equipment
             upgradeMaterialText.text = $"{owned} / {required}";
         }
 
-        // UpHeaderStat("현재 강화 능력 증가율") = 이번 강화(레벨 → 레벨+1)로 오르는 증가율.
-        // DownHeaderStat("다음 강화 능력 증가율") = 그 다음 강화(레벨+1 → 레벨+2)로 오르는 증가율.
+        // UpHeaderStat("현재 강화 수치") = 지금 레벨까지 강화되어 있는 누적 수치.
+        // DownHeaderStat("다음 강화 수치") = 다음 강화(레벨+1)를 마쳤을 때의 누적 수치.
+        // 증가율(레벨 간 차이)은 선형 공식상 항상 같은 값으로 보여서, 누적 수치 자체를 보여주는 방식으로 바꿨다.
         // 부위마다 현재 레벨이 다르므로 선택된 부위의 레벨을 기준으로 각각 계산한다.
         private void RefreshUpgradeRateTexts(EquipmentPart part)
         {
@@ -553,13 +554,11 @@ namespace ProjectMT.Features.Equipment
             }
 
             var level = EquipmentSlotUpgradeRuntime.GetLevel(part);
-            var currentUpgradeRate = EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level + 1)
-                - EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level);
-            var nextUpgradeRate = EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level + 2)
-                - EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level + 1);
+            var currentValue = EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level);
+            var nextValue = EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level + 1);
 
-            SetOptionalText(upHeaderStatText, $"+{currentUpgradeRate:0.00}%");
-            SetOptionalText(downHeaderStatText, $"+{nextUpgradeRate:0.00}%");
+            SetOptionalText(upHeaderStatText, $"+{currentValue:0.00}%");
+            SetOptionalText(downHeaderStatText, $"+{nextValue:0.00}%");
         }
 
         private static void SetOptionalText(TMP_Text text, string value)

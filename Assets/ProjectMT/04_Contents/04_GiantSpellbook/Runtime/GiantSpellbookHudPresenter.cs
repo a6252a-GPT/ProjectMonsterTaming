@@ -101,7 +101,7 @@ namespace ProjectMT.Contents.GiantSpellbook
 
             if (bossHealthValue != null)
             {
-                //소수점 올림해서 정수처럼 표시
+                // 소수점 올림해서 정수처럼 표시
                 bossHealthValue.text =
                     $"{Mathf.CeilToInt(state.BossHealth)} / {Mathf.CeilToInt(state.BossMaxHealth)}";
             }

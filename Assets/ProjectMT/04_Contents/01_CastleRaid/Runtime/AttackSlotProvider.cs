@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 namespace ProjectMT.Contents.CastleRaid
@@ -13,9 +14,18 @@ namespace ProjectMT.Contents.CastleRaid
 
         public bool TryResolveAvailableSlot(Component owner, Vector3 fromPosition, out Transform slot)
         {
+            return TryResolveAvailableSlot(owner, fromPosition, null, out slot);
+        }
+
+        public bool TryResolveAvailableSlot(
+            Component owner,
+            Vector3 fromPosition,
+            Predicate<Transform> isUsable,
+            out Transform slot)
+        {
             if (owner != null && leases.TryGetValue(owner, out slot) && slot != null)
             {
-                return true;
+                return isUsable == null || isUsable(slot);
             }
 
             slot = null;
@@ -29,6 +39,11 @@ namespace ProjectMT.Contents.CastleRaid
             {
                 var candidate = slots[i];
                 if (candidate == null || occupied.Contains(candidate))
+                {
+                    continue;
+                }
+
+                if (isUsable != null && !isUsable(candidate))
                 {
                     continue;
                 }
@@ -51,7 +66,16 @@ namespace ProjectMT.Contents.CastleRaid
 
         public bool TryLease(Component owner, Vector3 fromPosition, out Transform slot)
         {
-            if (!TryResolveAvailableSlot(owner, fromPosition, out slot))
+            return TryLease(owner, fromPosition, null, out slot);
+        }
+
+        public bool TryLease(
+            Component owner,
+            Vector3 fromPosition,
+            Predicate<Transform> isUsable,
+            out Transform slot)
+        {
+            if (!TryResolveAvailableSlot(owner, fromPosition, isUsable, out slot))
             {
                 return false;
             }

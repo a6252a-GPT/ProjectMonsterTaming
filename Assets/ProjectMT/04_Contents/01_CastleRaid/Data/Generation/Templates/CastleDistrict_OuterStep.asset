@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23132356ffbb15e43961198ab6b30b31, type: 3}
+  m_Name: CastleDistrict_OuterStep
+  m_EditorClassIdentifier: ProjectMT.Contents.CastleRaid::ProjectMT.Contents.CastleRaid.Generation.CastleDistrictTemplate
+  templateId: district_outer_step_5x5_14x14
+  minimumWidth: 5
+  maximumWidth: 14
+  minimumHeight: 5
+  maximumHeight: 14
+  wallLayers: 1
+  minimumInteriorPlacements: 1
+  maximumInteriorPlacements: 4
+  selectionWeight: 0.7
+  palaceCore: 0
+  supportsSpecialLoot: 1

@@ -8,7 +8,8 @@
     "ProjectMT.Contents.Framework",
     "ProjectMT.Contents.FoodRiot",
     "ProjectMT.Contents.CastleRaid",
-    "ProjectMT.Contents.GuardianTrial"
+    "ProjectMT.Contents.GuardianTrial",
+    "ProjectMT.Tools.CastleBake.Editor"
   ],
   "includePlatforms": [
     "Editor"

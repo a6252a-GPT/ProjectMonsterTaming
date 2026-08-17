@@ -145,9 +145,13 @@ namespace ProjectMT.Contents.CastleRaid
 
             var destination = candidate.transform.position;
             if (candidate.AttackSlots != null &&
-                candidate.AttackSlots.TryResolveAvailableSlot(this, transform.position, out var availableSlot))
+                candidate.AttackSlots.TryResolveAvailableSlot(
+                    this,
+                    transform.position,
+                    slot => HasCompletePath(slot.position),
+                    out var availableSlot))
             {
-                destination = availableSlot.position;
+                return true;
             }
 
             return HasCompletePath(destination);
@@ -211,7 +215,11 @@ namespace ProjectMT.Contents.CastleRaid
             hasNavigationDestination = false;
             if (target != null)
             {
-                target.AttackSlots?.TryLease(this, transform.position, out leasedSlot); // 대상 주변 빈 자리 확보
+                target.AttackSlots?.TryLease(
+                    this,
+                    transform.position,
+                    slot => HasCompletePath(slot.position),
+                    out leasedSlot); // 실제로 닿는 빈 공격 자리를 확보
             }
         }
 

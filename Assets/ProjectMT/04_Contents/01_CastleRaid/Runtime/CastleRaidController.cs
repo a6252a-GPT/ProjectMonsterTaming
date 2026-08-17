@@ -68,6 +68,23 @@ namespace ProjectMT.Contents.CastleRaid
         public int SelectedUnitIndex => selectedUnitIndex;
         public bool InnerPathOpen => innerPathOpen;
 
+        public void ConfigureRuntimeStage(
+            CastleDeploymentZone zone,
+            Transform pathProbe,
+            CastleTarget[] castleTargets)
+        {
+            if (IsRunning)
+            {
+                throw new InvalidOperationException("진행 중인 Castle Raid의 Stage는 교체할 수 없습니다.");
+            }
+
+            deploymentZone = zone != null ? zone : throw new ArgumentNullException(nameof(zone));
+            innerEntry = pathProbe != null ? pathProbe : throw new ArgumentNullException(nameof(pathProbe));
+            targets = castleTargets != null && castleTargets.Length > 0
+                ? castleTargets
+                : throw new ArgumentException("생성 Stage에는 하나 이상의 목표가 필요합니다.", nameof(castleTargets));
+        }
+
         public bool TryResolveInnerEntry(Vector3 fromPosition, out Vector3 position)
         {
             if (!innerPathOpen || breachEntryPoints.Count == 0)
@@ -200,9 +217,17 @@ namespace ProjectMT.Contents.CastleRaid
 
         public CastleTarget FindPriorityTarget(CastleAssaultUnit attacker)
         {
-            CastleTarget best = null;
+            if (attacker != null && attacker.Target != null && attacker.Target.IsAlive &&
+                attacker.CanReachTarget(attacker.Target))
+            {
+                return attacker.Target; // 잡은 목표는 파괴할 때까지 유지해 대규모 성의 경로 재계산을 줄인다
+            }
+
+            CastleTarget bestStructure = null;
+            CastleTarget bestWall = null;
             var bestPriority = int.MaxValue;
-            var bestDistance = float.PositiveInfinity;
+            var bestStructureDistance = float.PositiveInfinity;
+            var bestWallDistance = float.PositiveInfinity;
             for (var i = 0; i < targets.Length; i++)
             {
                 var candidate = targets[i];
@@ -211,18 +236,7 @@ namespace ProjectMT.Contents.CastleRaid
                     continue;
                 }
 
-                var priority = GetPriority(candidate.TargetKind);
-                if (!innerPathOpen && candidate.TargetKind != CastleTargetKind.Wall) // 진입 전에는 성벽만 공격
-                {
-                    continue;
-                }
-
-                if (innerPathOpen && candidate.TargetKind == CastleTargetKind.Wall) // 진입 뒤에는 내부 목표만 공격
-                {
-                    continue;
-                }
-
-                if (innerPathOpen && attacker != null && !attacker.CanReachTarget(candidate)) // 진입 뒤 끊긴 NavMesh 섬의 목표는 건너뜀
+                if (attacker != null && !attacker.CanReachTarget(candidate)) // 현재 NavMesh에서 닿는 목표만 선택
                 {
                     continue;
                 }
@@ -230,15 +244,27 @@ namespace ProjectMT.Contents.CastleRaid
                 var distance = attacker == null
                     ? 0f
                     : (candidate.transform.position - attacker.transform.position).sqrMagnitude;
-                if (priority < bestPriority || priority == bestPriority && distance < bestDistance) // 같은 종류면 가까운 목표 우선
+                if (candidate.TargetKind == CastleTargetKind.Wall)
                 {
-                    best = candidate;
+                    if (distance < bestWallDistance)
+                    {
+                        bestWall = candidate;
+                        bestWallDistance = distance;
+                    }
+
+                    continue;
+                }
+
+                var priority = GetPriority(candidate.TargetKind);
+                if (priority < bestPriority || priority == bestPriority && distance < bestStructureDistance)
+                {
+                    bestStructure = candidate;
                     bestPriority = priority;
-                    bestDistance = distance;
+                    bestStructureDistance = distance;
                 }
             }
 
-            return best;
+            return bestStructure != null ? bestStructure : bestWall; // 내부가 막혔을 때만 가장 가까운 성벽을 친다
         }
 
         public void Attack(CastleAssaultUnit attacker, CastleTarget target, float damage)

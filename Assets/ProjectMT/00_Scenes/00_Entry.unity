@@ -197,6 +197,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 350157403540051584, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
+      propertyPath: m_fontSize
+      value: 23
+      objectReference: {fileID: 0}
     - target: {fileID: 401323549924635382, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -220,6 +224,10 @@ PrefabInstance:
     - target: {fileID: 401323549924635382, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 639620732962255595, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
+      propertyPath: m_fontSize
+      value: 23
       objectReference: {fileID: 0}
     - target: {fileID: 812044300357617930, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
       propertyPath: m_AnchorMax.y
@@ -297,6 +305,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 993550950676511198, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 2365587455
+      objectReference: {fileID: 0}
     - target: {fileID: 1380526134047760358, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
       propertyPath: m_Name
       value: PF_AppRoot
@@ -344,6 +356,10 @@ PrefabInstance:
     - target: {fileID: 2920923748530525376, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4149575092508265125, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
+      propertyPath: m_fontSize
+      value: 23
       objectReference: {fileID: 0}
     - target: {fileID: 4446799968588271208, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
       propertyPath: m_AnchorMax.y
@@ -397,6 +413,14 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6667645085380876053, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 8449735598181610941, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
+      propertyPath: m_fontSize
+      value: 23
+      objectReference: {fileID: 0}
     - target: {fileID: 8627034600908333134, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -424,6 +448,10 @@ PrefabInstance:
     - target: {fileID: 8967176565493135945, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
       value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 9201636232681678115, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
+      propertyPath: m_fontSize
+      value: 23
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

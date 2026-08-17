@@ -13,6 +13,15 @@ namespace ProjectMT.Contents.CastleRaid
         public Vector2 OuterHalfExtents => outerHalfExtents;
         public Vector2 InnerHalfExtents => innerHalfExtents;
 
+        public void ConfigureBounds(Vector2 outer, Vector2 inner, float sampleRadius = 1f)
+        {
+            outerHalfExtents = Vector2.Max(Vector2.one * 0.1f, outer);
+            innerHalfExtents = Vector2.Min(
+                outerHalfExtents,
+                Vector2.Max(Vector2.zero, inner));
+            navMeshSampleRadius = Mathf.Max(0.1f, sampleRadius);
+        }
+
         public bool ContainsWorldPosition(Vector3 worldPosition)
         {
             var local = transform.InverseTransformPoint(worldPosition);
@@ -53,9 +62,7 @@ namespace ProjectMT.Contents.CastleRaid
 #if UNITY_EDITOR
         public void EditorConfigure(Vector2 outer, Vector2 inner, float sampleRadius = 1f)
         {
-            outerHalfExtents = outer;
-            innerHalfExtents = inner;
-            navMeshSampleRadius = Mathf.Max(0.1f, sampleRadius);
+            ConfigureBounds(outer, inner, sampleRadius);
         }
 #endif
     }

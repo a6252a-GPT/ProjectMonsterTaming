@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectMT.Contents.CastleRaid.Generation;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -146,6 +147,8 @@ namespace ProjectMT.EditorTools.CastleBake
         static CastleGenerationScenePreview()
         {
             EditorSceneManager.sceneSaving += HandleSceneSaving;
+            EditorSceneManager.sceneClosing += HandleSceneClosing;
+            EditorSceneManager.activeSceneChangedInEditMode += HandleActiveSceneChangedInEditMode;
             AssemblyReloadEvents.beforeAssemblyReload += ClearAllOpenScenes;
             EditorApplication.quitting += ClearAllOpenScenes;
             EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
@@ -332,25 +335,35 @@ namespace ProjectMT.EditorTools.CastleBake
                 return 0;
             }
 
-            var removed = 0;
-            foreach (var root in scene.GetRootGameObjects())
+            var ownedRoots = new HashSet<GameObject>();
+            foreach (var sceneRoot in scene.GetRootGameObjects())
             {
-                if (root.name != PreviewRootName)
+                foreach (var transform in sceneRoot.GetComponentsInChildren<Transform>(true))
                 {
-                    continue;
+                    if (transform.name == PreviewRootName ||
+                        transform.GetComponent<CastleGenerationScenePreviewState>() != null)
+                    {
+                        ownedRoots.Add(transform.gameObject);
+                    }
                 }
-
-                root.GetComponent<CastleGenerationScenePreviewState>()?.RestoreStage();
-                DestroyPreviewRoot(root);
-                removed++;
             }
 
-            if (removed > 0)
+            var roots = ownedRoots
+                .Where(candidate => candidate != null && !ownedRoots.Any(other =>
+                    other != null && other != candidate && candidate.transform.IsChildOf(other.transform)))
+                .ToArray();
+            foreach (var root in roots)
+            {
+                root.GetComponent<CastleGenerationScenePreviewState>()?.RestoreStage();
+                DestroyPreviewRoot(root);
+            }
+
+            if (roots.Length > 0)
             {
                 SceneView.RepaintAll();
             }
 
-            return removed;
+            return roots.Length;
         }
 
         private static GameObject FindExistingStage(Scene scene)
@@ -388,6 +401,16 @@ namespace ProjectMT.EditorTools.CastleBake
         private static void HandleSceneSaving(Scene scene, string path)
         {
             Clear(scene); // 실제 Scene에는 기존 성의 활성 상태만 저장한다
+        }
+
+        private static void HandleSceneClosing(Scene scene, bool removingScene)
+        {
+            Clear(scene); // Scene이 닫히기 전에 임시 프리뷰 상태를 복원한다
+        }
+
+        private static void HandleActiveSceneChangedInEditMode(Scene previousScene, Scene nextScene)
+        {
+            Clear(previousScene); // 다른 Scene으로 이동하면 이전 Scene의 프리뷰를 남기지 않는다
         }
 
         private static void HandlePlayModeStateChanged(PlayModeStateChange state)

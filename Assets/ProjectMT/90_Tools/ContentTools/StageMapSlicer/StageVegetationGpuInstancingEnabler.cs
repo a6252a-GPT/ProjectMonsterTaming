@@ -9,7 +9,7 @@ namespace ProjectMT.Tools.StageMapSlicer
     public sealed class StageVegetationGpuInstancingEnabler : MonoBehaviour
     {
         [SerializeField] private bool applyOnEnable = true;
-        [SerializeField] private bool enableTerrainDrawInstanced = true;
+        [SerializeField] private bool enableTerrainDrawInstanced;
         [SerializeField] private Material[] targetMaterials = Array.Empty<Material>();
 
         public IReadOnlyList<Material> TargetMaterials => targetMaterials;
@@ -60,23 +60,17 @@ namespace ProjectMT.Tools.StageMapSlicer
             {
                 material.enableInstancing = false;
             }
-            foreach (Terrain terrain in GetComponentsInChildren<Terrain>(true))
-            {
-                terrain.drawInstanced = false;
-            }
 #else
             foreach (Material material in targets)
             {
                 material.enableInstancing = true;
             }
-            if (enableTerrainDrawInstanced)
-            {
-                foreach (Terrain terrain in GetComponentsInChildren<Terrain>(true))
-                {
-                    terrain.drawInstanced = true;
-                }
-            }
 #endif
+
+            foreach (Terrain terrain in GetComponentsInChildren<Terrain>(true))
+            {
+                terrain.drawInstanced = enableTerrainDrawInstanced; // Editor와 Player가 같은 경로를 사용한다.
+            }
 
             return CountTargetRenderers(targets);
         }

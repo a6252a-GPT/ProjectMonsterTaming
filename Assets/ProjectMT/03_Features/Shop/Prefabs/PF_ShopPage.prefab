@@ -8557,6 +8557,13 @@ MonoBehaviour:
   goldValueText: {fileID: 6246615448999206830}
   diamondValueText: {fileID: 4697763208660276306}
   ascensionCurrencyValueText: {fileID: 4074193245412682969}
+  diamondTestGrantButtons:
+  - {fileID: 4938797585167153844}
+  - {fileID: 3175921689761922954}
+  - {fileID: 3001862169048446917}
+  - {fileID: 6812401960217013524}
+  - {fileID: 7581633835179510989}
+  - {fileID: 8448109017858629023}
 --- !u!1 &1781818849075562880
 GameObject:
   m_ObjectHideFlags: 0

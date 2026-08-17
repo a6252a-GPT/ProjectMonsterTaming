@@ -182,7 +182,7 @@ namespace ProjectMT.Features.GrowthDungeon
         {
             RefreshCard(foodRiotEnterButton, foodRiotSweepButton, FoodRiotId, true);
             RefreshCard(treasureSpiritEnterButton, treasureSpiritSweepButton, TreasureSpiritId, false);
-            RefreshCard(giantSpellbookEnterButton, giantSpellbookSweepButton, GiantSpellbookId, false);
+            RefreshCard(giantSpellbookEnterButton, giantSpellbookSweepButton, GiantSpellbookId, true);
             RefreshCard(guardiansTowerEnterButton, guardiansTowerSweepButton, GuardiansTowerId, true);
             RefreshPopup();
         }
@@ -203,7 +203,7 @@ namespace ProjectMT.Features.GrowthDungeon
 
         private void OpenGiantSpellbook()
         {
-            Open(new DungeonBinding(GiantSpellbookId, "거대 마도서", false, giantSpellbookPopupPrefab));
+            Open(new DungeonBinding(GiantSpellbookId, "거대 마도서", true, giantSpellbookPopupPrefab));
         }
 
         private void OpenGuardiansTower()

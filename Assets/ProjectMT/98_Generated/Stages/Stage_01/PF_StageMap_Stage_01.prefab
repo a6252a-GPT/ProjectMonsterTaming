@@ -2198,7 +2198,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectMT.Tools.StageMapSlicer.StageVegetationGpuInstancingEnabler
   applyOnEnable: 1
-  enableTerrainDrawInstanced: 1
+  enableTerrainDrawInstanced: 0
   targetMaterials: []
 --- !u!1 &5657610407048529971
 GameObject:

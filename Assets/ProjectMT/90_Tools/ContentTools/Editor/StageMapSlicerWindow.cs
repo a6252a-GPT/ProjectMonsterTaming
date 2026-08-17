@@ -58,7 +58,7 @@ namespace ProjectMT.EditorTools.StageMapSlicer
         [SerializeField] private bool enableVegetationDistanceCulling;
         [SerializeField] private float vegetationCullDistance = 28f;
         [SerializeField] private float vegetationCullCellSize = 6f;
-        [SerializeField] private bool enableTerrainDrawInstanced = true;
+        [SerializeField] private bool enableTerrainDrawInstanced; // Player Terrain 검게 빠짐 방지를 위해 기본 비활성
         [SerializeField] private bool overrideTerrainDistances;
         [SerializeField] private float terrainDetailDistance = 35f;
         [SerializeField] private float terrainTreeDistance = 100f;
@@ -203,7 +203,7 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             terrainDetailDistance = Mathf.Max(0f, terrainDetailDistance);
             terrainTreeDistance = Mathf.Max(0f, terrainTreeDistance);
             EditorGUILayout.HelpBox(
-                "풀/꽃 식별은 프리팹·오브젝트·Material 이름을 사용합니다. GPU Instancing은 스테이지 전용 Material과 런타임 적용 컴포넌트를 만들고, 해당 식생 Renderer만 SRP Batcher에서 제외해 실제 Instancing 경로를 사용합니다. 전역 SRP Batcher·원본 Shader·원본 Material은 수정하지 않으며, 프리팹 연결과 Terrain Detail/Tree 데이터는 항상 유지합니다.",
+                "풀/꽃 식별은 프리팹·오브젝트·Material 이름을 사용합니다. GPU Instancing은 스테이지 전용 Material과 런타임 적용 컴포넌트를 만들고, 해당 식생 Renderer만 SRP Batcher에서 제외해 실제 Instancing 경로를 사용합니다. Terrain Draw Instanced는 Player 빌드 화면을 확인한 경우에만 켭니다. 전역 SRP Batcher·원본 Shader·원본 Material은 수정하지 않으며, 프리팹 연결과 Terrain Detail/Tree 데이터는 항상 유지합니다.",
                 MessageType.None);
 
             EditorGUILayout.BeginHorizontal();

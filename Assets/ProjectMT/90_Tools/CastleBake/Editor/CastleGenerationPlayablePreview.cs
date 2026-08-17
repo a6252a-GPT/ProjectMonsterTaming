@@ -43,6 +43,8 @@ namespace ProjectMT.EditorTools.CastleBake
         static CastleGenerationPlayablePreview()
         {
             EditorSceneManager.sceneSaving += HandleSceneSaving;
+            EditorSceneManager.sceneClosing += HandleSceneClosing;
+            EditorSceneManager.activeSceneChangedInEditMode += HandleActiveSceneChangedInEditMode;
             EditorApplication.quitting += ClearAllOpenScenes;
         }
 
@@ -211,9 +213,12 @@ namespace ProjectMT.EditorTools.CastleBake
 
             var roots = scene.GetRootGameObjects()
                 .SelectMany(root => root.GetComponentsInChildren<Transform>(true))
-                .Where(transform => transform.name == PlayableRootName)
+                .Where(transform => transform.name == PlayableRootName ||
+                                    transform.GetComponent<GeneratedCastleRuntimeStage>() != null)
                 .Select(transform => transform.gameObject)
                 .Distinct()
+                .Where(candidate => !candidate.transform.GetComponentsInParent<GeneratedCastleRuntimeStage>(true)
+                    .Any(stage => stage.gameObject != candidate))
                 .ToArray();
             foreach (var root in roots)
             {
@@ -577,6 +582,16 @@ namespace ProjectMT.EditorTools.CastleBake
         private static void HandleSceneSaving(Scene scene, string path)
         {
             Clear(scene); // 플레이 시험장은 정식 Scene에 저장하지 않는다
+        }
+
+        private static void HandleSceneClosing(Scene scene, bool removingScene)
+        {
+            Clear(scene); // Scene이 닫히기 전에 기존 성과 카메라를 복원한다
+        }
+
+        private static void HandleActiveSceneChangedInEditMode(Scene previousScene, Scene nextScene)
+        {
+            Clear(previousScene); // 다른 Scene으로 이동하면 이전 Scene의 시험장을 남기지 않는다
         }
 
         private static void ClearAllOpenScenes()

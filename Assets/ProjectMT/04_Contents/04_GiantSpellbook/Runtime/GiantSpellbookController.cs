@@ -58,8 +58,24 @@ namespace ProjectMT.Contents.GiantSpellbook
         private float breakRemainingTime; // 브레이크 종료까지 남은 시간
         [SerializeField] private GiantSpellbookHudPresenter hudPresenter; // DEV Prefab Instance에 구성한 HUD 표시 담당
 
+        [Header("Boss Attack")]
+        [SerializeField, Min(0.1f)] private float attackInterval = 2f;
+        [SerializeField, Min(0.1f)] private float handSlamRange = 4f;
+        [SerializeField, Min(0.1f)] private float handSlamCooldown = 6f;
+        [SerializeField, Min(0.1f)] private float handSlamCastTime = 1.5f;
+        [SerializeField, Min(0.1f)] private float handSlamRadius = 3f;
+        [SerializeField, Min(0.1f)] private float markStrikeCooldown = 5f;
+        [SerializeField, Min(0.1f)] private float markStrikeCastTime = 1.8f;
+        [SerializeField, Min(0.1f)] private float markStrikeRadius = 2f;
+        [SerializeField, Min(0.1f)] private float wideBurstCastTime = 5f;
+        [SerializeField, Min(0.1f)] private float wideBurstRadius = 15f;
+        [SerializeField, Min(1)] private int normalAttacksBeforeWide = 4;
+        [SerializeField, Min(0.01f)] private float bossAttackDamage = 1f;
+
         public bool IsRunning { get; private set; }
         public event Action<GiantSpellbookHudState> HudStateChanged;
+
+        private GiantSpellbookStateMachine stateMachine;
 
         public void Initialize(ContentContext contentContext)
         {
@@ -95,13 +111,25 @@ namespace ProjectMT.Contents.GiantSpellbook
             IsRunning = true;
             SpawnFollowers(); // 팀원이 내부 규칙을 붙이기 전 편성 연결만 확인
             SpawnExampleEnemy(); // 공용 전투 연결을 확인할 임시 적 한 기
+
+            stateMachine = new GiantSpellbookStateMachine(); // FSM 생성
+
+            ConfigureStateMachine();
             hudPresenter?.Bind(this);
             PublishHudState();
+
         }
 
         private void Update()
         {
-            if (!IsRunning || !isBroken)
+            if (!IsRunning)
+            {
+                return;
+            }
+
+            stateMachine?.Tick(Time.deltaTime, isBroken);
+
+            if (!isBroken)
             {
                 return;
             }
@@ -120,6 +148,8 @@ namespace ProjectMT.Contents.GiantSpellbook
             // 여러 번 호출돼도 안전하도록 Listener 제거와 공용 전투 정리를 같은 순서로 반복한다.
             exitButton?.onClick.RemoveListener(Cancel);
             commanderMove?.SetInputEnabled(false);
+            stateMachine?.Shutdown();
+            stateMachine = null;
 
             if (bossActor != null)
             {
@@ -139,6 +169,28 @@ namespace ProjectMT.Contents.GiantSpellbook
             context = null;
             startData = null;
             IsRunning = false;
+        }
+
+        private void ConfigureStateMachine()
+        {
+            stateMachine ??= new GiantSpellbookStateMachine();
+            stateMachine.Configure(
+                combatWorld,
+                bossActor,
+                commanderRoot.transform,
+                followerActors,
+                attackInterval,
+                handSlamRange,
+                handSlamCooldown,
+                handSlamCastTime,
+                handSlamRadius,
+                markStrikeCooldown,
+                markStrikeCastTime,
+                markStrikeRadius,
+                wideBurstCastTime,
+                wideBurstRadius,
+                normalAttacksBeforeWide,
+                bossAttackDamage);
         }
 
         private void SpawnFollowers()
@@ -268,6 +320,7 @@ namespace ProjectMT.Contents.GiantSpellbook
                 return;
             }
 
+            stateMachine?.EnterBroken();
             isBroken = true;
             breakRemainingTime = breakDuration;
 
@@ -295,6 +348,7 @@ namespace ProjectMT.Contents.GiantSpellbook
             }
 
             isBroken = false;
+            stateMachine?.ExitBroken();
             breakRemainingTime = 0f;
             currentBreakGauge = 0f;
 
@@ -353,6 +407,8 @@ namespace ProjectMT.Contents.GiantSpellbook
             // 성공 처리 후 플레이어가 계속 움직이거나 나가기 버튼을 누르지 못하게 한다.
             commanderMove?.SetInputEnabled(false);
             exitButton?.onClick.RemoveListener(Cancel);
+            stateMachine?.Shutdown();
+            stateMachine = null;
 
             // 전투 오브젝트를 정리하기 전에 보스 사망 이벤트 연결을 해제
             if (bossActor != null)
@@ -380,6 +436,8 @@ namespace ProjectMT.Contents.GiantSpellbook
 
             IsRunning = false;
             commanderMove.SetInputEnabled(false);
+            stateMachine?.Shutdown();
+            stateMachine = null;
 
             if (bossActor != null) //보스이벤트 해제
             {

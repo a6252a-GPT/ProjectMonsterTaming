@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectMT.Features.Quest;
 using ProjectMT.Shared.Gacha;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -176,6 +178,24 @@ namespace ProjectMT.Features.MainBattle
                 {
                     SetResult("소환 저장에 실패했습니다 · 비용과 결과는 반영되지 않았습니다");
                     return;
+                }
+
+                // 실제 뽑기가 저장까지 성공한 경우에만 "몬스터 뽑기" 종류 퀘스트 진행도를 올린다(뽑은 마리 수만큼).
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.MonsterSummon, plannedPulls.Count);
+
+                // 이번에 신규로 보유하게 된 몬스터 수만큼 "몬스터 보유" 종류 퀘스트 진행도도 함께 올린다.
+                var newlyOwnedCount = 0;
+                for (var index = 0; index < plannedPulls.Count; index++)
+                {
+                    if (plannedPulls[index].WasNew)
+                    {
+                        newlyOwnedCount++;
+                    }
+                }
+
+                if (newlyOwnedCount > 0)
+                {
+                    _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.MonsterOwnedCount, newlyOwnedCount);
                 }
 
                 BuildPullSummaries(plannedPulls, out var order, out var summaries);

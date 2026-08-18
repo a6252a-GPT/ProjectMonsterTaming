@@ -94,6 +94,11 @@ namespace ProjectMT.Features.Quest
                 ? new List<QuestUnlockTarget>()
                 : new List<QuestUnlockTarget>(unlocks);
         }
+
+        public void EditorSetReward(RewardDefinition rewardDefinition)
+        {
+            reward = rewardDefinition;
+        }
 #endif
     }
 }

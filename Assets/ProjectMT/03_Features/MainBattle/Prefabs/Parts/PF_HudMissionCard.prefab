@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6652408945342293569}
+  - component: {fileID: 6652408945342293570}
   m_Layer: 5
   m_Name: PF_HudMissionCard
   m_TagString: Untagged
@@ -39,6 +40,22 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 659.59, y: 70.93}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &6652408945342293570
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6652408945342293568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e7c1a9b2d584f6a8c0e3f5b7d9a1c2e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestHudTrackerView
+  missionText: {fileID: 6652408946809646104}
+  questDescriptionText: {fileID: 6652408946341337558}
+  statusText: {fileID: 6652408946455401044}
+  trackedType: 0
 --- !u!1 &6652408945356163951
 GameObject:
   m_ObjectHideFlags: 0
@@ -203,7 +220,7 @@ GameObject:
   - component: {fileID: 6652408946341337559}
   - component: {fileID: 6652408946341337558}
   m_Layer: 5
-  m_Name: Text (TMP) (1)
+  m_Name: QuestDescriptionText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -340,7 +357,7 @@ GameObject:
   - component: {fileID: 6652408946455401045}
   - component: {fileID: 6652408946455401044}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: StatusText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -477,7 +494,7 @@ GameObject:
   - component: {fileID: 6652408946809646105}
   - component: {fileID: 6652408946809646104}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: MissionText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

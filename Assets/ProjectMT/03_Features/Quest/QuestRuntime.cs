@@ -12,6 +12,10 @@ namespace ProjectMT.Features.Quest
     // 진행도 갱신·보상 수령은 GameProgressChange를 거쳐 저장까지 확정된다.
     public static class QuestRuntime
     {
+        // 같은 프레임에 이벤트가 여러 번 겹칠 때(광역 처치로 여러 마리 동시 사망 등) 낙관적 동시성
+        // 충돌로 거절된 진행도 증가를 최신 값으로 다시 계산해 재시도하는 횟수.
+        private const int MaxAdvanceRetryCount = 8;
+
         private static IGameProgressService progress;
         private static QuestCatalog catalog;
 
@@ -70,8 +74,90 @@ namespace ProjectMT.Features.Quest
             return view.Completed && !view.RewardClaimed;
         }
 
-        // 실제 게임 이벤트(몬스터 처치 등)가 붙기 전까지 진행도를 검증된 방식으로 올리는 진입점.
-        // 6.2(진행 이벤트 연결) 단계에서 각 시스템의 이벤트 핸들러가 이 메서드를 호출하게 된다.
+        // HUD가 보여줄 현재 메인(또는 지정 종류) 퀘스트.
+        // 원정대 클리어 퀘스트는 저장 퀘스트 진행이 아니라 실제 LastClearedStage를 기준으로 본다.
+        public static bool TryGetTrackedQuest(
+            QuestType type,
+            out QuestDefinition definition,
+            out QuestProgressEntryView progressView)
+        {
+            definition = null;
+            progressView = default;
+            if (catalog == null || !catalog.TryGetFirst(type, out var current))
+            {
+                return false;
+            }
+
+            while (current != null)
+            {
+                var view = GetTrackedProgress(current);
+
+                // 목표를 채웠어도 보상을 아직 안 받았으면 "완료" 상태로 계속 보여준다.
+                // 보상까지 받은 퀘스트만 다음 퀘스트로 넘어간다.
+                if (!view.Completed || !view.RewardClaimed)
+                {
+                    definition = current;
+                    progressView = view;
+                    return true;
+                }
+
+                var completed = current;
+                if (!catalog.TryGetNext(completed.QuestId, out current))
+                {
+                    definition = completed;
+                    progressView = view;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // 원정대 1을 아직 깨지 않았으면 해당 퀘스트는 항상 0/1·진행 중으로 표시한다.
+        private static QuestProgressEntryView GetTrackedProgress(QuestDefinition definition)
+        {
+            var saved = GetProgress(definition.QuestId);
+            if (definition.ConditionType != QuestConditionType.ExpeditionClear || progress == null)
+            {
+                return saved;
+            }
+
+            var derived = Math.Max(0L, progress.View.LastClearedStage);
+            var current = Math.Min(derived, definition.TargetValue);
+            var completed = current >= definition.TargetValue;
+            return new QuestProgressEntryView(
+                definition.QuestId,
+                current,
+                completed,
+                completed && saved.RewardClaimed);
+        }
+
+        // 실제 게임 이벤트(몬스터 뽑기 등)가 발생했을 때 호출하는 진입점.
+        // 해당 조건 종류를 쓰는 미완료 퀘스트를 전부 amount만큼 진행시킨다(카탈로그에 여러 개 있어도 안전).
+        public static async Task AdvanceAllOfConditionAsync(QuestConditionType conditionType, long amount)
+        {
+            if (!IsReady || amount <= 0L)
+            {
+                return;
+            }
+
+            var definitions = catalog.Definitions;
+            for (var i = 0; i < definitions.Count; i++)
+            {
+                var definition = definitions[i];
+                if (definition != null && definition.ConditionType == conditionType)
+                {
+                    await TryAdvanceProgressAsync(definition.QuestId, amount);
+                }
+            }
+        }
+
+        // 실제 게임 이벤트(몬스터 처치 등)가 붙었을 때 진행도를 검증된 방식으로 올리는 진입점.
+        // 6.2(진행 이벤트 연결) 단계의 각 시스템 이벤트 핸들러가 이 메서드(또는 AdvanceAllOfConditionAsync)를 호출한다.
+        //
+        // 광역 처치처럼 같은 프레임에 이 메서드가 여러 번 겹쳐 호출되면, 먼저 저장된 호출이 진행도를 올린 뒤
+        // 나중 호출은 "기대했던 이전 값"이 낡아서 거절될 수 있다(GameProgressData의 낙관적 동시성 검증).
+        // 이런 경우 진행도를 잃지 않도록 최신 값을 다시 읽어 재시도한다.
         public static async Task<bool> TryAdvanceProgressAsync(QuestId questId, long amount)
         {
             if (!IsReady || amount == 0L || !catalog.TryGet(questId, out var definition))
@@ -79,25 +165,44 @@ namespace ProjectMT.Features.Quest
                 return false;
             }
 
-            var current = GetProgress(questId);
-            if (current.Completed)
+            for (var attempt = 0; attempt < MaxAdvanceRetryCount; attempt++)
             {
-                return false;
+                var current = GetProgress(questId);
+                if (current.Completed)
+                {
+                    return false;
+                }
+
+                var newProgress = current.CurrentProgress + amount;
+                var applied = await progress.TryApplyAndSaveAsync(
+                    GameProgressChange.SetQuestProgress(
+                        questId,
+                        current.CurrentProgress,
+                        newProgress,
+                        definition.TargetValue));
+                if (applied)
+                {
+                    return true;
+                }
             }
 
-            var newProgress = current.CurrentProgress + amount;
-            return await progress.TryApplyAndSaveAsync(
-                GameProgressChange.SetQuestProgress(
-                    questId,
-                    current.CurrentProgress,
-                    newProgress,
-                    definition.TargetValue));
+            return false;
         }
 
         // 완료된 퀘스트의 보상을 수령한다. 우편함이 아직 없어서 지급과 함께 전체 정보를 콘솔에 출력한다.
         public static async Task<bool> TryClaimRewardAsync(QuestId questId)
         {
-            if (!IsReady || !catalog.TryGet(questId, out var definition) || !CanClaimReward(questId))
+            if (!IsReady || !catalog.TryGet(questId, out var definition))
+            {
+                return false;
+            }
+
+            // 원정대 클리어 퀘스트는 화면에 LastClearedStage 기준 진행도를 보여준다(위 GetTrackedProgress 참고).
+            // 이벤트 연결 전에 이미 그 단계를 깬 세이브처럼 저장된 카운터가 아직 못 따라간 경우,
+            // 저장 값을 먼저 맞춰야 보상 수령 검증(RejectInvalidQuestClaim)을 통과할 수 있다.
+            await SyncExpeditionProgressAsync(definition);
+
+            if (!CanClaimReward(questId))
             {
                 return false;
             }
@@ -115,6 +220,33 @@ namespace ProjectMT.Features.Quest
             }
 
             return applied;
+        }
+
+        private static async Task SyncExpeditionProgressAsync(QuestDefinition definition)
+        {
+            if (definition.ConditionType != QuestConditionType.ExpeditionClear)
+            {
+                return;
+            }
+
+            var saved = GetProgress(definition.QuestId);
+            if (saved.Completed)
+            {
+                return;
+            }
+
+            var derived = Math.Max(0L, progress.View.LastClearedStage);
+            if (derived < definition.TargetValue)
+            {
+                return;
+            }
+
+            await progress.TryApplyAndSaveAsync(
+                GameProgressChange.SetQuestProgress(
+                    definition.QuestId,
+                    saved.CurrentProgress,
+                    derived,
+                    definition.TargetValue));
         }
 
         // 우편함이 아직 없어서, 퀘스트 이름·설명·조건·진행도·보상·해금 대상을 전부 콘솔에 대신 출력한다.

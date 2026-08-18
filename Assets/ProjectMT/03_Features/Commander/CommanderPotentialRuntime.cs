@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ProjectMT.Features.Quest;
 using ProjectMT.Shared.Commander;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.Quest;
 
 namespace ProjectMT.Features.Commander
 {
@@ -185,7 +187,13 @@ namespace ProjectMT.Features.Commander
             rerollInFlight = true;
             try
             {
-                return await progress.TryApplyAndSaveAsync(GameProgressChange.RerollCommanderPotentialSlots(entries));
+                var saved = await progress.TryApplyAndSaveAsync(GameProgressChange.RerollCommanderPotentialSlots(entries));
+                if (saved)
+                {
+                    _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.CommanderPotentialUpgrade, 1L);
+                }
+
+                return saved;
             }
             finally
             {
@@ -227,7 +235,13 @@ namespace ProjectMT.Features.Commander
             rerollInFlight = true;
             try
             {
-                return await progress.TryApplyAndSaveAsync(GameProgressChange.RerollCommanderPotentialValues(entries));
+                var saved = await progress.TryApplyAndSaveAsync(GameProgressChange.RerollCommanderPotentialValues(entries));
+                if (saved)
+                {
+                    _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.CommanderPotentialUpgrade, 1L);
+                }
+
+                return saved;
             }
             finally
             {

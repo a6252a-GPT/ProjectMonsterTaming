@@ -175,7 +175,7 @@ namespace ProjectMT.Shared.GameData
     }
 
     [Serializable]
-    public sealed class GameProgressData // 시드 사용자 진행 원본
+    public sealed partial class GameProgressData // 시드 사용자 진행 원본
     {
         [SerializeField] private int currentChallengeStage = 1; // 현재 도전 단계
         [SerializeField] private int lastClearedStage; // 마지막 성공 단계
@@ -248,7 +248,7 @@ namespace ProjectMT.Shared.GameData
 
         public GameProgressData Clone()
         {
-            return new GameProgressData // 변경 전 후보 복사본
+            var clone = new GameProgressData // 변경 전 후보 복사본
             {
                 currentChallengeStage = currentChallengeStage,
                 lastClearedStage = lastClearedStage,
@@ -272,7 +272,15 @@ namespace ProjectMT.Shared.GameData
                 commanderPotential = commanderPotential?.Clone() ?? CommanderPotentialData.CreateDefault(),
                 commanderLegionGrowth = commanderLegionGrowth?.Clone() ?? CommanderLegionGrowthData.CreateDefault()
             };
+            CopyQuestTo(clone);
+            return clone;
         }
+
+        partial void CopyQuestTo(GameProgressData clone);
+        partial void RepairQuest();
+        partial void RejectInvalidQuestClaim(GameProgressChange change, ref bool rejected);
+        partial void ApplyQuestProgress(GameProgressChange change, ref bool rejected);
+        partial void ApplyQuestClaim(GameProgressChange change);
 
         internal bool TryApply(
             GameProgressChange change,
@@ -281,6 +289,14 @@ namespace ProjectMT.Shared.GameData
             EquipmentBalanceConfig equipmentBalanceConfig = null)
         {
             if (change == null)
+            {
+                return false;
+            }
+
+            var questRejected = false;
+            RejectInvalidQuestClaim(change, ref questRejected);
+            ApplyQuestProgress(change, ref questRejected);
+            if (questRejected)
             {
                 return false;
             }
@@ -310,9 +326,9 @@ namespace ProjectMT.Shared.GameData
 
             if ((change.HasMarkOfflineInactive || change.HasSettleOfflineReward || change.HasAcknowledgeOfflineRewards) &&
                 !TryApplyOfflineRewardProgress(change))
-            {
-                return false;
-            }
+                {
+                    return false;
+                }
 
             if (change.ItemCosts != null && change.ItemCosts.Count > 0)
             {
@@ -343,6 +359,8 @@ namespace ProjectMT.Shared.GameData
             {
                 return false;
             }
+
+            ApplyQuestClaim(change);
 
             if (change.HasSettleOfflineReward &&
                 !TryApplyOfflineEquipmentSettlement(change.OfflineReceipt))
@@ -1069,6 +1087,8 @@ namespace ProjectMT.Shared.GameData
             {
                 expeditionMode = ExpeditionRunMode.Challenge; // 손상값·클리어 전 반복 복구
             }
+
+            RepairQuest();
         }
 
         internal void Repair(CommanderGrowthConfig commanderGrowthConfig)
@@ -1186,7 +1206,7 @@ namespace ProjectMT.Shared.GameData
         public CommanderLegionGrowthView CommanderLegionGrowth { get; } // 군단 공용 6종 강화
     }
 
-    public sealed class GameProgressChange // 한 번에 검증할 진행 변경 묶음
+    public sealed partial class GameProgressChange // 한 번에 검증할 진행 변경 묶음
     {
         private GameProgressChange()
         {

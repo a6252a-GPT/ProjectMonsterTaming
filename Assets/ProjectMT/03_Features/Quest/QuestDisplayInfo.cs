@@ -41,6 +41,22 @@ namespace ProjectMT.Features.Quest
         }
     }
 
+    // HUD MissionText용 묶음 이름. 조건 종류를 토벌/성장으로 나눠 표시한다.
+    public static class QuestMissionCategoryInfo
+    {
+        public static string GetDisplayName(QuestConditionType type)
+        {
+            switch (type)
+            {
+                case QuestConditionType.MonsterKill:
+                case QuestConditionType.ExpeditionClear:
+                    return "토벌 임무";
+                default:
+                    return "성장 임무";
+            }
+        }
+    }
+
     public static class QuestUnlockTargetInfo
     {
         public static string GetDisplayName(QuestUnlockTarget target)

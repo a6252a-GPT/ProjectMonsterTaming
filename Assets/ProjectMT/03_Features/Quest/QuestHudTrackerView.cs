@@ -1,0 +1,262 @@
+using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Quest;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace ProjectMT.Features.Quest
+{
+    // 메인 HUD 퀘스트 카드(MissionText / QuestDescriptionText / StatusText / Icon) 표시 전담.
+    // QuestRuntime이 준비되면 현재 추적 중인 메인 퀘스트를 자동으로 갱신하고,
+    // 완료된 퀘스트는 아이콘을 눌러 직접 보상을 수령할 수 있게 한다.
+    [DisallowMultipleComponent]
+    public sealed class QuestHudTrackerView : MonoBehaviour
+    {
+        [SerializeField] private TMP_Text missionText;
+        [SerializeField] private TMP_Text questDescriptionText;
+        [SerializeField] private TMP_Text statusText;
+        [SerializeField] private Image claimIcon;
+        [SerializeField] private QuestType trackedType = QuestType.Main;
+
+        private Button claimButton;
+        private QuestId trackedQuestId;
+        private bool canClaimTracked;
+        private bool isClaiming;
+
+        private void Awake()
+        {
+            ResolveReferences();
+        }
+
+        private void OnEnable()
+        {
+            ResolveReferences();
+            QuestRuntime.Changed += RefreshView;
+            QuestProgressServiceHub.Ready += HandleProgressReady;
+            RefreshView();
+        }
+
+        private void OnDisable()
+        {
+            QuestRuntime.Changed -= RefreshView;
+            QuestProgressServiceHub.Ready -= HandleProgressReady;
+            if (claimButton != null)
+            {
+                claimButton.onClick.RemoveListener(HandleIconClicked);
+            }
+        }
+
+        private void HandleProgressReady(IGameProgressService _)
+        {
+            RefreshView();
+        }
+
+        private void RefreshView()
+        {
+            ResolveReferences();
+
+            if (!QuestRuntime.IsReady ||
+                !QuestRuntime.TryGetTrackedQuest(trackedType, out var definition, out var progress))
+            {
+                canClaimTracked = false;
+                UpdateClaimButtonState();
+                Apply("메인 임무", "임무를 준비 중입니다.", "준비 중");
+                return;
+            }
+
+            trackedQuestId = definition.QuestId;
+            canClaimTracked = progress.Completed && !progress.RewardClaimed;
+            UpdateClaimButtonState();
+
+            Apply(
+                QuestMissionCategoryInfo.GetDisplayName(definition.ConditionType),
+                FormatDescription(definition, progress),
+                FormatStatus(progress));
+        }
+
+        // 아이콘 클릭 → 현재 추적 중인 퀘스트 보상 수령 → QuestRuntime.Changed가 갱신을 자동으로 트리거해
+        // 다음 퀘스트로 넘어간 화면이 곧바로 표시된다.
+        private async void HandleIconClicked()
+        {
+            if (isClaiming || !canClaimTracked || !QuestRuntime.IsReady)
+            {
+                return;
+            }
+
+            isClaiming = true;
+            UpdateClaimButtonState();
+            try
+            {
+                await QuestRuntime.TryClaimRewardAsync(trackedQuestId);
+            }
+            finally
+            {
+                isClaiming = false;
+                UpdateClaimButtonState();
+            }
+        }
+
+        private void UpdateClaimButtonState()
+        {
+            if (claimButton != null)
+            {
+                claimButton.interactable = canClaimTracked && !isClaiming;
+            }
+        }
+
+        private void Apply(string mission, string description, string status)
+        {
+            SetText(missionText, mission);
+            SetText(questDescriptionText, description);
+            SetText(statusText, status);
+        }
+
+        private static string FormatDescription(QuestDefinition definition, QuestProgressEntryView progress)
+        {
+            var body = string.IsNullOrWhiteSpace(definition.Description)
+                ? definition.DisplayName
+                : definition.Description.Trim();
+            return $"{body} ({progress.CurrentProgress}/{definition.TargetValue})";
+        }
+
+        // 목표를 채우면 보상 수령 여부와 상관없이 "완료"로 표시하고, 그 전에는 "진행 중"으로 표시한다.
+        private static string FormatStatus(QuestProgressEntryView progress)
+        {
+            return progress.Completed ? "완료" : "진행 중";
+        }
+
+        private void ResolveReferences()
+        {
+            var root = FindTrackerRoot();
+            if (missionText == null)
+            {
+                missionText = FindText(root, "MissionText");
+            }
+
+            if (questDescriptionText == null)
+            {
+                questDescriptionText = FindText(root, "QuestDescriptionText");
+            }
+
+            if (statusText == null)
+            {
+                statusText = FindText(root, "StatusText");
+            }
+
+            if (claimIcon == null)
+            {
+                claimIcon = FindImage(root, "Icon");
+            }
+
+            if (claimIcon != null && claimButton == null)
+            {
+                claimIcon.raycastTarget = true;
+                claimButton = claimIcon.GetComponent<Button>();
+                if (claimButton == null)
+                {
+                    claimButton = claimIcon.gameObject.AddComponent<Button>();
+                }
+
+                claimButton.targetGraphic = claimIcon;
+                claimButton.onClick.RemoveListener(HandleIconClicked);
+                claimButton.onClick.AddListener(HandleIconClicked);
+                UpdateClaimButtonState();
+            }
+        }
+
+        private Transform FindTrackerRoot()
+        {
+            var current = transform;
+            while (current != null)
+            {
+                if (current.name.IndexOf("QuestTracker", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    current.name.IndexOf("HudMissionCard", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return current;
+                }
+
+                current = current.parent;
+            }
+
+            return transform.parent != null ? transform.parent : transform;
+        }
+
+        private static TMP_Text FindText(Transform root, string objectName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            for (var i = 0; i < transforms.Length; i++)
+            {
+                var candidate = transforms[i];
+                if (candidate == null || candidate.name != objectName)
+                {
+                    continue;
+                }
+
+                var text = candidate.GetComponent<TMP_Text>();
+                if (text != null)
+                {
+                    return text;
+                }
+            }
+
+            return null;
+        }
+
+        private static Image FindImage(Transform root, string objectName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            for (var i = 0; i < transforms.Length; i++)
+            {
+                var candidate = transforms[i];
+                if (candidate == null || candidate.name != objectName)
+                {
+                    continue;
+                }
+
+                var image = candidate.GetComponent<Image>();
+                if (image != null)
+                {
+                    return image;
+                }
+            }
+
+            return null;
+        }
+
+        private static void SetText(TMP_Text target, string value)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            if (!target.gameObject.activeSelf)
+            {
+                target.gameObject.SetActive(true);
+            }
+
+            target.enabled = true;
+            target.text = value;
+        }
+
+#if UNITY_EDITOR
+        public void EditorConfigure(TMP_Text mission, TMP_Text description, TMP_Text status, Image icon = null)
+        {
+            missionText = mission;
+            questDescriptionText = description;
+            statusText = status;
+            claimIcon = icon;
+        }
+#endif
+    }
+}

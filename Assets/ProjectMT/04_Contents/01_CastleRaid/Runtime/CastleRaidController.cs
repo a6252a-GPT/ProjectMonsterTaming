@@ -42,6 +42,14 @@ namespace ProjectMT.Contents.CastleRaid
         [SerializeField] private TMP_Text[] unitButtonLabels; // 유닛 버튼 글자
         [SerializeField] private Button exitButton; // 콘텐츠 나가기 버튼
 
+        [Header("Runtime Generation")]
+        [SerializeField] private CastleRuntimeStageGenerator runtimeStageGenerator; // 입장·재도전 성 생성기
+        [SerializeField] private TMP_Text castleInfoText; // 현재 테마·방어선·Seed
+        [SerializeField] private Button doubleWallButton; // 2중벽 새 성
+        [SerializeField] private Button tripleWallButton; // 3중벽 새 성
+        [SerializeField] private Button quadrupleWallButton; // 4중벽 새 성
+        [SerializeField] private Button regenerateCastleButton; // 같은 방어선의 다른 성
+
         [Header("Seed Balance")]
         [SerializeField, Min(0.1f)] private float defenderAttackInterval = 1.15f; // 수비대 공격 주기
         [SerializeField, Min(0f)] private float defenderDamage = 7f; // 수비대 1회 피해
@@ -62,6 +70,7 @@ namespace ProjectMT.Contents.CastleRaid
         private bool innerPathOpen; // 본성 진입 가능 여부
         private bool verifyingInnerPath; // 경로 확인 중복 방지
         private bool unitPathRefreshQueued; // 같은 프레임 파괴 경로 갱신 합치기
+        private bool generationInProgress; // 중복 재생성 입력 차단
 
         public bool IsRunning { get; private set; }
         public int DeployedCount => deployedCount;
@@ -119,6 +128,8 @@ namespace ProjectMT.Contents.CastleRaid
                 throw new ArgumentException("CastleRaidStartData is required.", nameof(contentContext));
             }
 
+            runtimeStageGenerator?.EnsureGeneratedStage(); // 입장마다 검수된 랜덤 성을 전투 참조에 먼저 연결
+
             if (poolScope == null || deploymentCamera == null || deploymentZone == null ||
                 targets == null || targets.Length == 0 || unitButtons == null || unitButtons.Length == 0)
             {
@@ -149,16 +160,19 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             BindUnitButtons();
+            BindGenerationButtons();
             exitButton?.onClick.AddListener(Cancel);
             IsRunning = true;
             SetStatus("몬스터를 선택한 뒤 초록색 외곽을 터치하세요");
             UpdateHud();
+            UpdateGenerationHud();
         }
 
         public void Shutdown()
         {
             StopAllCoroutines(); // 경로 확인·풀 반환 대기 중단
             UnbindUnitButtons();
+            UnbindGenerationButtons();
             exitButton?.onClick.RemoveListener(Cancel);
             for (var i = 0; i < targets?.Length; i++)
             {
@@ -189,6 +203,108 @@ namespace ProjectMT.Contents.CastleRaid
             IsRunning = false;
         }
 
+        private void BindGenerationButtons()
+        {
+            doubleWallButton?.onClick.AddListener(GenerateDoubleWallCastle);
+            tripleWallButton?.onClick.AddListener(GenerateTripleWallCastle);
+            quadrupleWallButton?.onClick.AddListener(GenerateQuadrupleWallCastle);
+            regenerateCastleButton?.onClick.AddListener(GenerateAnotherCastle);
+        }
+
+        private void UnbindGenerationButtons()
+        {
+            doubleWallButton?.onClick.RemoveListener(GenerateDoubleWallCastle);
+            tripleWallButton?.onClick.RemoveListener(GenerateTripleWallCastle);
+            quadrupleWallButton?.onClick.RemoveListener(GenerateQuadrupleWallCastle);
+            regenerateCastleButton?.onClick.RemoveListener(GenerateAnotherCastle);
+        }
+
+        private void GenerateDoubleWallCastle()
+        {
+            RestartWithRandomCastle(2);
+        }
+
+        private void GenerateTripleWallCastle()
+        {
+            RestartWithRandomCastle(3);
+        }
+
+        private void GenerateQuadrupleWallCastle()
+        {
+            RestartWithRandomCastle(4);
+        }
+
+        private void GenerateAnotherCastle()
+        {
+            var defenseLayers = runtimeStageGenerator == null ||
+                                runtimeStageGenerator.CurrentDefenseLayerCount < 2
+                ? 2
+                : runtimeStageGenerator.CurrentDefenseLayerCount;
+            RestartWithRandomCastle(defenseLayers);
+        }
+
+        private void RestartWithRandomCastle(int defenseLayerCount)
+        {
+            if (!IsRunning || generationInProgress || runtimeStageGenerator == null || context == null)
+            {
+                return;
+            }
+
+            var restartContext = context;
+            generationInProgress = true;
+            UpdateGenerationHud();
+            SetStatus($"{defenseLayerCount}중벽 성을 찾는 중입니다...");
+            try
+            {
+                Shutdown(); // 현재 출전 유닛과 목표 이벤트를 정리한 뒤 Stage를 교체한다
+                runtimeStageGenerator.GenerateRandomStage(defenseLayerCount);
+                Initialize(restartContext);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception, this);
+                try
+                {
+                    Initialize(restartContext); // 새 후보가 실패하면 직전 성으로 즉시 복귀한다
+                    SetStatus("새 성 생성에 실패해 이전 성으로 돌아왔습니다");
+                }
+                catch (Exception restoreException)
+                {
+                    Debug.LogException(restoreException, this);
+                    SetStatus("성을 준비하지 못했습니다. 콘텐츠에서 나갔다가 다시 시도해 주세요");
+                }
+            }
+            finally
+            {
+                generationInProgress = false;
+                UpdateGenerationHud();
+            }
+        }
+
+        private void UpdateGenerationHud()
+        {
+            if (castleInfoText != null)
+            {
+                castleInfoText.text = runtimeStageGenerator == null
+                    ? "랜덤 성 생성기 미연결"
+                    : runtimeStageGenerator.CurrentSummary;
+            }
+
+            var canGenerate = IsRunning && !generationInProgress;
+            SetGenerationButtonState(doubleWallButton, canGenerate);
+            SetGenerationButtonState(tripleWallButton, canGenerate);
+            SetGenerationButtonState(quadrupleWallButton, canGenerate);
+            SetGenerationButtonState(regenerateCastleButton, canGenerate);
+        }
+
+        private static void SetGenerationButtonState(Button button, bool interactable)
+        {
+            if (button != null)
+            {
+                button.interactable = interactable;
+            }
+        }
+
         private void Update()
         {
             if (!IsRunning)
@@ -217,7 +333,12 @@ namespace ProjectMT.Contents.CastleRaid
 
         public CastleTarget FindPriorityTarget(CastleAssaultUnit attacker)
         {
-            if (attacker != null && attacker.Target != null && attacker.Target.IsAlive &&
+            var mustBreachWall = !innerPathOpen;
+            var currentTargetMatchesPhase = attacker != null && attacker.Target != null &&
+                                            (mustBreachWall
+                                                ? attacker.Target.TargetKind == CastleTargetKind.Wall
+                                                : attacker.Target.TargetKind != CastleTargetKind.Wall);
+            if (currentTargetMatchesPhase && attacker.Target.IsAlive &&
                 attacker.CanReachTarget(attacker.Target))
             {
                 return attacker.Target; // 잡은 목표는 파괴할 때까지 유지해 대규모 성의 경로 재계산을 줄인다
@@ -234,6 +355,11 @@ namespace ProjectMT.Contents.CastleRaid
                 if (candidate == null || !candidate.IsAlive)
                 {
                     continue;
+                }
+
+                if (mustBreachWall && candidate.TargetKind != CastleTargetKind.Wall)
+                {
+                    continue; // 성 밖에서는 건물·수비대 경로를 계산하지 않고 벽만 고른다
                 }
 
                 if (attacker != null && !attacker.CanReachTarget(candidate)) // 현재 NavMesh에서 닿는 목표만 선택
@@ -264,7 +390,7 @@ namespace ProjectMT.Contents.CastleRaid
                 }
             }
 
-            return bestStructure != null ? bestStructure : bestWall; // 내부가 막혔을 때만 가장 가까운 성벽을 친다
+            return mustBreachWall ? bestWall : bestStructure ?? bestWall;
         }
 
         public void Attack(CastleAssaultUnit attacker, CastleTarget target, float damage)
@@ -924,6 +1050,22 @@ namespace ProjectMT.Contents.CastleRaid
             unitButtons = rosterButtons;
             unitButtonLabels = rosterLabels;
             exitButton = exit;
+        }
+
+        public void EditorConfigureRuntimeGeneration(
+            CastleRuntimeStageGenerator stageGenerator,
+            TMP_Text castleInfo,
+            Button doubleWall,
+            Button tripleWall,
+            Button quadrupleWall,
+            Button regenerate)
+        {
+            runtimeStageGenerator = stageGenerator;
+            castleInfoText = castleInfo;
+            doubleWallButton = doubleWall;
+            tripleWallButton = tripleWall;
+            quadrupleWallButton = quadrupleWall;
+            regenerateCastleButton = regenerate;
         }
 #endif
     }

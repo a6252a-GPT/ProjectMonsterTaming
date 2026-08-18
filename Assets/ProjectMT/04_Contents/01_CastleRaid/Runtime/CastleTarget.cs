@@ -180,6 +180,19 @@ namespace ProjectMT.Contents.CastleRaid
             }
         }
 
+        public void Configure(
+            CastleTargetKind kind,
+            float healthValue,
+            AttackSlotProvider slots,
+            NavMeshObstacle obstacle)
+        {
+            targetKind = kind;
+            maxHealth = Mathf.Max(1f, healthValue);
+            attackSlots = slots;
+            linkedObstacle = obstacle;
+            ResolveReferences();
+        }
+
 #if UNITY_EDITOR
         public void EditorConfigure(
             CastleTargetKind kind,
@@ -187,11 +200,7 @@ namespace ProjectMT.Contents.CastleRaid
             AttackSlotProvider slots,
             NavMeshObstacle obstacle)
         {
-            targetKind = kind;
-            maxHealth = healthValue;
-            attackSlots = slots;
-            linkedObstacle = obstacle;
-            ResolveReferences();
+            Configure(kind, healthValue, slots, obstacle);
         }
 #endif
     }

@@ -321,6 +321,7 @@ GameObject:
   - component: {fileID: 542566293}
   - component: {fileID: 542566292}
   - component: {fileID: 542566291}
+  - component: {fileID: 542566294}
   m_Layer: 0
   m_Name: 00_SceneRoot
   m_TagString: Untagged
@@ -402,6 +403,12 @@ MonoBehaviour:
   - {fileID: 1933715675}
   - {fileID: 793072929}
   exitButton: {fileID: 2005170568}
+  runtimeStageGenerator: {fileID: 542566294}
+  castleInfoText: {fileID: 6985974095350508654}
+  doubleWallButton: {fileID: 6985974095350508653}
+  tripleWallButton: {fileID: 6985974095350508652}
+  quadrupleWallButton: {fileID: 6985974095350508651}
+  regenerateCastleButton: {fileID: 6985974095350508650}
   defenderAttackInterval: 1.15
   defenderDamage: 7
   defenderRange: 8
@@ -441,6 +448,35 @@ Transform:
   - {fileID: 1977161566}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &542566294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 542566290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 457c589c74ea696489e11a9467c83920, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Contents.CastleRaid::ProjectMT.Contents.CastleRaid.CastleRuntimeStageGenerator
+  rules: {fileID: 11400000, guid: 0992c3648546e87488d6ad27daf46050, type: 2}
+  defaultDefenseLayerCount: 2
+  maximumGenerationAttempts: 32
+  cellSize: 1
+  raidController: {fileID: 542566291}
+  cameraController: {fileID: 123935001}
+  worldRoot: {fileID: 1915729500}
+  fallbackStage: {fileID: 544981382}
+  deploymentMaterial: {fileID: 2100000, guid: a5adfccbdc1874e4db52a19887091fb4, type: 2}
+  wallMaterial: {fileID: 2100000, guid: d40588835a4f1ac43b530e509a752813, type: 2}
+  buildingMaterial: {fileID: 2100000, guid: 99e94a881e506da428f54ecd24aea483, type: 2}
+  palaceMaterial: {fileID: 2100000, guid: f952207e1aa82ff4dacd6e2d6497c3a3, type: 2}
+--- !u!1 &544981382 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8676513260348771993, guid: 5dbed1f1c53e5724ead312fc8112e7b6, type: 3}
+  m_PrefabInstance: {fileID: 1744144520}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &582384438 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8225319513289019399, guid: 70284f92bd76a0948a33ca71e365a52d, type: 3}
@@ -1616,6 +1652,61 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 70284f92bd76a0948a33ca71e365a52d, type: 3}
+--- !u!114 &6985974095350508650 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6257396434343078046, guid: 70284f92bd76a0948a33ca71e365a52d, type: 3}
+  m_PrefabInstance: {fileID: 6985974095350508649}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+--- !u!114 &6985974095350508651 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1758205343947246714, guid: 70284f92bd76a0948a33ca71e365a52d, type: 3}
+  m_PrefabInstance: {fileID: 6985974095350508649}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+--- !u!114 &6985974095350508652 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8999865728773087228, guid: 70284f92bd76a0948a33ca71e365a52d, type: 3}
+  m_PrefabInstance: {fileID: 6985974095350508649}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+--- !u!114 &6985974095350508653 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7874983708596892286, guid: 70284f92bd76a0948a33ca71e365a52d, type: 3}
+  m_PrefabInstance: {fileID: 6985974095350508649}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+--- !u!114 &6985974095350508654 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 619232613824726190, guid: 70284f92bd76a0948a33ca71e365a52d, type: 3}
+  m_PrefabInstance: {fileID: 6985974095350508649}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

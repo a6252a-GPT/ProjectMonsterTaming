@@ -327,6 +327,41 @@ namespace ProjectMT.Contents.CastleRaid
             }
         }
 
+        public void Configure(
+            CastleRaidController controller,
+            CastleRaidCameraController raidCamera,
+            CastleDeploymentZone zone,
+            Transform palaceEntry,
+            CastleTarget[] castleTargets,
+            NavMeshSurface surface,
+            Collider[] colliders,
+            NavMeshObstacle[] obstacles,
+            Vector2 boundsCenter,
+            Vector2 boundsSize,
+            float cameraSize,
+            float minimumSize,
+            float maximumSize,
+            MonsterCatalog monsterCatalog = null,
+            bool seedPlaytest = false)
+        {
+            raidController = controller;
+            cameraController = raidCamera;
+            deploymentZone = zone;
+            innerEntry = palaceEntry;
+            targets = castleTargets ?? Array.Empty<CastleTarget>();
+            navigationSurface = surface;
+            targetColliders = colliders ?? Array.Empty<Collider>();
+            targetObstacles = obstacles ?? Array.Empty<NavMeshObstacle>();
+            worldCenter = boundsCenter;
+            worldSize = Vector2.Max(Vector2.one, boundsSize);
+            defaultCameraSize = Mathf.Max(1f, cameraSize);
+            minimumCameraSize = Mathf.Max(0.1f, minimumSize);
+            maximumCameraSize = Mathf.Max(defaultCameraSize, maximumSize);
+            playtestMonsterCatalog = monsterCatalog;
+            buildNavigationOnAwake = true;
+            initializeSeedPlaytest = seedPlaytest;
+        }
+
 #if UNITY_EDITOR
         public void EditorConfigure(
             CastleRaidController controller,
@@ -345,22 +380,22 @@ namespace ProjectMT.Contents.CastleRaid
             MonsterCatalog monsterCatalog,
             bool seedPlaytest = true)
         {
-            raidController = controller;
-            cameraController = raidCamera;
-            deploymentZone = zone;
-            innerEntry = palaceEntry;
-            targets = castleTargets ?? Array.Empty<CastleTarget>();
-            navigationSurface = surface;
-            targetColliders = colliders ?? Array.Empty<Collider>();
-            targetObstacles = obstacles ?? Array.Empty<NavMeshObstacle>();
-            worldCenter = boundsCenter;
-            worldSize = Vector2.Max(Vector2.one, boundsSize);
-            defaultCameraSize = Mathf.Max(1f, cameraSize);
-            minimumCameraSize = Mathf.Max(0.1f, minimumSize);
-            maximumCameraSize = Mathf.Max(defaultCameraSize, maximumSize);
-            playtestMonsterCatalog = monsterCatalog;
-            buildNavigationOnAwake = true;
-            initializeSeedPlaytest = seedPlaytest;
+            Configure(
+                controller,
+                raidCamera,
+                zone,
+                palaceEntry,
+                castleTargets,
+                surface,
+                colliders,
+                obstacles,
+                boundsCenter,
+                boundsSize,
+                cameraSize,
+                minimumSize,
+                maximumSize,
+                monsterCatalog,
+                seedPlaytest);
         }
 
         public void EditorPreparePreviewPresentation(

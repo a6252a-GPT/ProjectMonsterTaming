@@ -110,10 +110,16 @@ namespace ProjectMT.Contents.CastleRaid
             ReleaseAll();
         }
 
+        public void ConfigureSlots(Transform[] attackSlots)
+        {
+            slots = attackSlots ?? Array.Empty<Transform>();
+            ReleaseAll();
+        }
+
 #if UNITY_EDITOR
         public void EditorSetSlots(Transform[] attackSlots)
         {
-            slots = attackSlots;
+            ConfigureSlots(attackSlots);
         }
 #endif
     }

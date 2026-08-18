@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cb55aa8e0400be4e8a25f816c2469eb, type: 3}
+  m_Name: RewardTable_GuardiansTower
+  m_EditorClassIdentifier: ProjectMT.Contents.Framework::ProjectMT.Contents.Framework.GrowthDungeonRewardTable
+  contentId: guardians_tower
+  challengeRewardBasisPoints: 2500
+  entries:
+  - stage: 1
+    gold: 0
+    commanderExperience: 0
+    items:
+    - itemId: material_legion_potential_upgrade_stone
+      amount: 2
+  - stage: 2
+    gold: 0
+    commanderExperience: 0
+    items:
+    - itemId: material_legion_potential_upgrade_stone
+      amount: 3
+  - stage: 3
+    gold: 0
+    commanderExperience: 0
+    items:
+    - itemId: material_legion_potential_upgrade_stone
+      amount: 5
+  - stage: 4
+    gold: 0
+    commanderExperience: 0
+    items:
+    - itemId: material_legion_potential_upgrade_stone
+      amount: 8
+  - stage: 5
+    gold: 0
+    commanderExperience: 0
+    items:
+    - itemId: material_legion_potential_upgrade_stone
+      amount: 12

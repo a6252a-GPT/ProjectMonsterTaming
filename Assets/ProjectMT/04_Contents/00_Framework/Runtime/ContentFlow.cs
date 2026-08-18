@@ -161,7 +161,8 @@ namespace ProjectMT.Contents.Framework
                 definition.DisplayName,
                 view.GrowthDungeons.GetHighestClearedStage(contentId.Value),
                 keyQuantity,
-                definition.SupportsSweep && definition.ResultAdapter != null);
+                definition.SupportsSweep && definition.ResultAdapter != null,
+                GrowthDungeonStageRules.ResolveMaximumUnlockedStage(view.LastClearedStage));
             return true;
         }
 
@@ -249,9 +250,16 @@ namespace ProjectMT.Contents.Framework
 
             var view = progress.View;
             var highestClearedStage = view.GrowthDungeons.GetHighestClearedStage(definition.ContentId.Value);
+            var maximumUnlockedStage = GrowthDungeonStageRules.ResolveMaximumUnlockedStage(view.LastClearedStage);
+            if (!GrowthDungeonStageRules.IsValidStage(stage) || stage > maximumUnlockedStage)
+            {
+                return false;
+            }
+
             if (runInfo.RunMode == ContentRunMode.Challenge)
             {
-                return stage == highestClearedStage + 1; // 미클리어 다음 단계는 무료 도전
+                return highestClearedStage < maximumUnlockedStage &&
+                       stage == highestClearedStage + 1; // 해금된 다음 단계만 무료 도전
             }
 
             view.Items.TryGetQuantity(definition.DungeonKeyItemId, out var keyQuantity);
@@ -353,6 +361,7 @@ namespace ProjectMT.Contents.Framework
             if (adapter.TryCreateRewardPresentation(
                     result,
                     settlementView,
+                    runInfo,
                     itemCatalog,
                     out var presentation) &&
                 presentation != null && !presentation.IsEmpty)

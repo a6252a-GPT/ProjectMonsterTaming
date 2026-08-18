@@ -13,12 +13,13 @@ namespace ProjectMT.Features.GrowthDungeon
     {
         public static int ClampStage(GrowthDungeonEntryState state, int requestedStage)
         {
-            return Mathf.Clamp(requestedStage, 1, Mathf.Max(1, state.NextChallengeStage));
+            return Mathf.Clamp(requestedStage, 1, state.MaximumSelectableStage);
         }
 
         public static ContentRunMode ResolveMode(GrowthDungeonEntryState state, int selectedStage)
         {
-            return ClampStage(state, selectedStage) == state.NextChallengeStage
+            return state.HasChallengeStage &&
+                   ClampStage(state, selectedStage) == state.NextChallengeStage
                 ? ContentRunMode.Challenge
                 : ContentRunMode.Farming;
         }
@@ -31,7 +32,12 @@ namespace ProjectMT.Features.GrowthDungeon
             }
 
             var stage = ClampStage(state, selectedStage);
-            return stage == state.NextChallengeStage ||
+            if (state.MaximumUnlockedStage <= 0)
+            {
+                return false;
+            }
+
+            return (state.HasChallengeStage && stage == state.NextChallengeStage) ||
                    (stage <= state.HighestClearedStage && state.KeyQuantity > 0L);
         }
     }
@@ -291,7 +297,9 @@ namespace ProjectMT.Features.GrowthDungeon
             if (!GrowthDungeonEntryRules.CanEnter(state, selectedStage, currentBinding.RuntimeAvailable))
             {
                 statusChanged?.Invoke(currentBinding.RuntimeAvailable
-                    ? "파밍 열쇠가 부족합니다"
+                    ? state.MaximumUnlockedStage <= 0
+                        ? "원정대 1단계를 먼저 클리어해 주세요"
+                        : "파밍 열쇠가 부족합니다"
                     : "아직 준비 중인 콘텐츠입니다");
                 RefreshPopup();
                 return;
@@ -550,7 +558,7 @@ namespace ProjectMT.Features.GrowthDungeon
                 : "준비 중");
             SetText(stageValue, Mathf.Max(1, selectedStage).ToString());
             SetText(rewardTitle, runtimeAvailable
-                ? (isChallenge ? "도전 보상" : "파밍 보상")
+                ? (isChallenge ? "도전 보상 · 파밍의 25%" : "파밍 보상")
                 : displayName);
             SetText(rewardAmount, runtimeAvailable ? "클리어 결과 기준" : "콘텐츠 준비 중");
             SetText(
@@ -565,7 +573,8 @@ namespace ProjectMT.Features.GrowthDungeon
 
             if (nextButton != null)
             {
-                nextButton.interactable = runtimeAvailable && !busy && selectedStage < state.NextChallengeStage;
+                nextButton.interactable = runtimeAvailable && !busy &&
+                    selectedStage < state.MaximumSelectableStage;
             }
 
             if (enterButton != null)

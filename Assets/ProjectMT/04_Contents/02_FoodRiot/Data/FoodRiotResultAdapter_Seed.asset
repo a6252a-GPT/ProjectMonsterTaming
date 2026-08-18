@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: FoodRiotResultAdapter_Seed
   m_EditorClassIdentifier: ProjectMT.Contents.FoodRiot::ProjectMT.Contents.FoodRiot.FoodRiotResultAdapter
   rewardPerKill: {fileID: 11400000, guid: e9b570b552c0a8245892ee7638523ecc, type: 2}
+  stageRewards: {fileID: 11400000, guid: 22d7c99c070999f4d8aacb7cba988ed0, type: 2}

@@ -77,7 +77,7 @@ namespace ProjectMT.Features.OfflineReward
                 return false;
             }
 
-            if (!config.UsesScaledRewards)
+            if (!config.UsesScaledRewards && !config.UsesIndependentRewards)
             {
                 return TryCalculateLegacy(
                     fromUtc,
@@ -94,11 +94,42 @@ namespace ProjectMT.Features.OfflineReward
             equipmentBalance ??= EquipmentBalanceConfig.RuntimeDefault;
             var rng = random ?? new Random();
             var minutes = rewardedSeconds / 60L;
-            var multiplier = rate.RewardMultiplierBasisPoints;
-            if (!TryScale(minutes, config.BaseGoldPerMinute, multiplier, out var gold) ||
-                !TryScale(minutes, config.BaseCommanderExperiencePerMinute, multiplier, out var experience) ||
-                !TryScale(minutes, config.BaseUpgradeStonePerMinute, multiplier, out var randomStoneCount) ||
-                randomStoneCount > int.MaxValue)
+            var multiplier = config.UsesIndependentRewards ? BasisPointDenominator : rate.RewardMultiplierBasisPoints;
+            var receiptGoldRate = config.UsesIndependentRewards
+                ? rate.GoldPerMinute
+                : config.BaseGoldPerMinute;
+            var receiptExperienceRate = config.UsesIndependentRewards
+                ? rate.CommanderExperiencePerMinute
+                : config.BaseCommanderExperiencePerMinute;
+            long gold;
+            long experience;
+            long randomStoneCount;
+            int effectiveEquipmentChance;
+            if (config.UsesIndependentRewards)
+            {
+                if (!TryMultiply(minutes, rate.GoldPerMinute, out gold) ||
+                    !TryMultiply(minutes, rate.CommanderExperiencePerMinute, out experience))
+                {
+                    return false;
+                }
+
+                randomStoneCount = rewardedSeconds / rate.UpgradeStoneIntervalSeconds;
+                effectiveEquipmentChance = rate.EquipmentChanceBasisPointsPerMinute;
+            }
+            else if (!TryScale(minutes, config.BaseGoldPerMinute, multiplier, out gold) ||
+                     !TryScale(minutes, config.BaseCommanderExperiencePerMinute, multiplier, out experience) ||
+                     !TryScale(minutes, config.BaseUpgradeStonePerMinute, multiplier, out randomStoneCount))
+            {
+                return false;
+            }
+            else
+            {
+                effectiveEquipmentChance = ResolveEffectiveChance(
+                    config.BaseEquipmentChanceBasisPointsPerMinute,
+                    multiplier);
+            }
+
+            if (randomStoneCount > int.MaxValue)
             {
                 return false;
             }
@@ -122,9 +153,6 @@ namespace ProjectMT.Features.OfflineReward
                 }
             }
 
-            var effectiveEquipmentChance = ResolveEffectiveChance(
-                config.BaseEquipmentChanceBasisPointsPerMinute,
-                multiplier);
             var rolledEquipment = new List<EquipmentInstanceData>();
             for (var minute = 0L; minute < minutes; minute++)
             {
@@ -168,8 +196,8 @@ namespace ProjectMT.Features.OfflineReward
                 slotStones,
                 skillStones,
                 potentialStones,
-                config.BaseGoldPerMinute,
-                config.BaseCommanderExperiencePerMinute,
+                receiptGoldRate,
+                receiptExperienceRate,
                 multiplier,
                 effectiveEquipmentChance,
                 keptEquipment,

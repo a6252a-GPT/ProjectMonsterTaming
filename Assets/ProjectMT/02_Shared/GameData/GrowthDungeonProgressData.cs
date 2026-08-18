@@ -5,6 +5,36 @@ using UnityEngine;
 
 namespace ProjectMT.Shared.GameData
 {
+    public static class GrowthDungeonStageRules // 원정대 진행에 따른 성장 던전 해금 규칙
+    {
+        public const int MaximumStage = 5;
+
+        private static readonly int[] expeditionStageRequirements = { 1, 10, 20, 30, 40 };
+
+        public static IReadOnlyList<int> ExpeditionStageRequirements => expeditionStageRequirements;
+
+        public static int ResolveMaximumUnlockedStage(int lastClearedExpeditionStage)
+        {
+            var unlocked = 0;
+            for (var index = 0; index < expeditionStageRequirements.Length; index++)
+            {
+                if (lastClearedExpeditionStage < expeditionStageRequirements[index])
+                {
+                    break;
+                }
+
+                unlocked = index + 1;
+            }
+
+            return unlocked;
+        }
+
+        public static bool IsValidStage(int stage)
+        {
+            return stage >= 1 && stage <= MaximumStage;
+        }
+    }
+
     public static class GrowthDungeonProgressIds // 저장에서 사용하는 콘텐츠 고정 ID
     {
         public const string FoodRiot = "food_riot";
@@ -20,7 +50,7 @@ namespace ProjectMT.Shared.GameData
         [SerializeField, Min(0)] private int highestClearedStage;
 
         public string ContentId => contentId?.Trim() ?? string.Empty;
-        public int HighestClearedStage => Math.Max(0, highestClearedStage);
+        public int HighestClearedStage => Math.Clamp(highestClearedStage, 0, GrowthDungeonStageRules.MaximumStage);
 
         internal GrowthDungeonProgressEntryData()
         {
@@ -43,7 +73,9 @@ namespace ProjectMT.Shared.GameData
 
         internal void RecordClear(int stage)
         {
-            highestClearedStage = Math.Max(HighestClearedStage, stage);
+            highestClearedStage = Math.Max(
+                HighestClearedStage,
+                Math.Clamp(stage, 0, GrowthDungeonStageRules.MaximumStage));
         }
     }
 
@@ -104,7 +136,7 @@ namespace ProjectMT.Shared.GameData
         internal bool RecordClear(string contentId, int stage)
         {
             var canonicalId = contentId?.Trim();
-            if (string.IsNullOrEmpty(canonicalId) || stage <= 0)
+            if (string.IsNullOrEmpty(canonicalId) || !GrowthDungeonStageRules.IsValidStage(stage))
             {
                 return false;
             }

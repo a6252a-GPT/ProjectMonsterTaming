@@ -138,6 +138,7 @@ namespace ProjectMT.Contents.Framework
             adapter.TryCreateRewardPresentation(
                 result,
                 settlementView,
+                runInfo,
                 itemCatalog,
                 out rewardRequest);
             resultPresentation = new ContentResultPresentation(

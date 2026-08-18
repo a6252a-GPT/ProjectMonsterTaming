@@ -11,12 +11,15 @@ namespace ProjectMT.Features.OfflineReward
         [SerializeField, Min(0)] private long commanderExperiencePerMinute = 5L;
         [SerializeField, Min(1)] private int upgradeStoneIntervalSeconds = 600;
         [SerializeField, Min(1)] private int rewardMultiplierBasisPoints = 10000;
+        [SerializeField, Range(0, 10000)] private int equipmentChanceBasisPointsPerMinute = 50;
 
         public int MinimumStage => Math.Max(1, minimumStage);
         public long GoldPerMinute => Math.Max(0L, goldPerMinute);
         public long CommanderExperiencePerMinute => Math.Max(0L, commanderExperiencePerMinute);
         public int UpgradeStoneIntervalSeconds => Math.Max(1, upgradeStoneIntervalSeconds);
         public int RewardMultiplierBasisPoints => Math.Max(1, rewardMultiplierBasisPoints);
+        public int EquipmentChanceBasisPointsPerMinute =>
+            Math.Clamp(equipmentChanceBasisPointsPerMinute, 0, 10000);
 
         public static OfflineRewardRateEntry Create(
             int stage,
@@ -41,6 +44,24 @@ namespace ProjectMT.Features.OfflineReward
                 rewardMultiplierBasisPoints = Math.Max(1, multiplierBasisPoints)
             };
         }
+
+        public static OfflineRewardRateEntry CreateIndependent(
+            int stage,
+            long goldRate,
+            long experienceRate,
+            int stoneInterval,
+            int equipmentChanceBasisPoints)
+        {
+            return new OfflineRewardRateEntry
+            {
+                minimumStage = Math.Max(1, stage),
+                goldPerMinute = Math.Max(0L, goldRate),
+                commanderExperiencePerMinute = Math.Max(0L, experienceRate),
+                upgradeStoneIntervalSeconds = Math.Max(1, stoneInterval),
+                rewardMultiplierBasisPoints = 10000,
+                equipmentChanceBasisPointsPerMinute = Math.Clamp(equipmentChanceBasisPoints, 0, 10000)
+            };
+        }
     }
 
     [CreateAssetMenu(menuName = "ProjectMT/Offline Reward/Config", fileName = "OfflineRewardConfig")]
@@ -58,7 +79,8 @@ namespace ProjectMT.Features.OfflineReward
         public int BalanceVersion => Math.Max(1, balanceVersion);
         public int MinimumOfflineSeconds => Math.Max(60, minimumOfflineSeconds);
         public int MaximumAccumulationSeconds => Math.Max(MinimumOfflineSeconds, maximumAccumulationSeconds);
-        public bool UsesScaledRewards => BalanceVersion >= 2;
+        public bool UsesScaledRewards => BalanceVersion == 2;
+        public bool UsesIndependentRewards => BalanceVersion >= 3;
         public long BaseGoldPerMinute => Math.Max(1L, baseGoldPerMinute);
         public long BaseCommanderExperiencePerMinute => Math.Max(1L, baseCommanderExperiencePerMinute);
         public long BaseUpgradeStonePerMinute => Math.Max(1L, baseUpgradeStonePerMinute);
@@ -119,7 +141,10 @@ namespace ProjectMT.Features.OfflineReward
                 if (rate == null || rate.MinimumStage <= previousStage ||
                     (rate.GoldPerMinute <= 0L && rate.CommanderExperiencePerMinute <= 0L) ||
                     rate.UpgradeStoneIntervalSeconds <= 0 ||
-                    (UsesScaledRewards && rate.RewardMultiplierBasisPoints <= 0))
+                    (UsesScaledRewards && rate.RewardMultiplierBasisPoints <= 0) ||
+                    (UsesIndependentRewards &&
+                     (rate.EquipmentChanceBasisPointsPerMinute < 0 ||
+                      rate.EquipmentChanceBasisPointsPerMinute > 10000)))
                 {
                     error = $"Offline reward rate is invalid. Index={index}";
                     return false;
@@ -162,6 +187,17 @@ namespace ProjectMT.Features.OfflineReward
             baseCommanderExperiencePerMinute = Math.Max(1L, experiencePerMinute);
             baseUpgradeStonePerMinute = Math.Max(1L, stonePerMinute);
             baseEquipmentChanceBasisPointsPerMinute = Math.Clamp(equipmentChanceBasisPoints, 0, 10000);
+            rates = stageRates ?? Array.Empty<OfflineRewardRateEntry>();
+        }
+
+        public void EditorConfigureIndependent(
+            int minimumSeconds,
+            int maximumSeconds,
+            params OfflineRewardRateEntry[] stageRates)
+        {
+            balanceVersion = 3;
+            minimumOfflineSeconds = Math.Max(60, minimumSeconds);
+            maximumAccumulationSeconds = Math.Max(minimumOfflineSeconds, maximumSeconds);
             rates = stageRates ?? Array.Empty<OfflineRewardRateEntry>();
         }
 #endif

@@ -33,7 +33,7 @@ MonoBehaviour:
       formationForwardOffset: 0
       drops:
       - itemId: currency_gold
-        quantity: 1
+        quantity: 2
         chance: 1
     - baseEnemyCount: 4
       extraEnemyEveryStages: 0
@@ -41,7 +41,7 @@ MonoBehaviour:
       formationForwardOffset: 1.15
       drops:
       - itemId: currency_gold
-        quantity: 1
+        quantity: 2
         chance: 1
   - definitionId: stage_11_20
     minimumStage: 11
@@ -56,7 +56,7 @@ MonoBehaviour:
       formationForwardOffset: 0
       drops:
       - itemId: currency_gold
-        quantity: 1
+        quantity: 3
         chance: 1
     - baseEnemyCount: 5
       extraEnemyEveryStages: 0
@@ -64,7 +64,7 @@ MonoBehaviour:
       formationForwardOffset: 1.15
       drops:
       - itemId: currency_gold
-        quantity: 1
+        quantity: 3
         chance: 1
   - definitionId: stage_21_30
     minimumStage: 21
@@ -79,7 +79,7 @@ MonoBehaviour:
       formationForwardOffset: 0
       drops:
       - itemId: currency_gold
-        quantity: 1
+        quantity: 4
         chance: 1
     - baseEnemyCount: 6
       extraEnemyEveryStages: 0
@@ -87,7 +87,7 @@ MonoBehaviour:
       formationForwardOffset: 1.15
       drops:
       - itemId: currency_gold
-        quantity: 1
+        quantity: 4
         chance: 1
   - definitionId: stage_31_plus
     minimumStage: 31
@@ -102,7 +102,7 @@ MonoBehaviour:
       formationForwardOffset: 0
       drops:
       - itemId: currency_gold
-        quantity: 1
+        quantity: 5
         chance: 1
     - baseEnemyCount: 7
       extraEnemyEveryStages: 10
@@ -110,10 +110,10 @@ MonoBehaviour:
       formationForwardOffset: 1.15
       drops:
       - itemId: currency_gold
-        quantity: 1
+        quantity: 5
         chance: 1
   worldItemDropVisualCatalog: {fileID: 11400000, guid: f18b689dc18bfca449462502e4ea93b5, type: 2}
   enemyWorldDropItemId: currency_gold
-  enemyWorldDropQuantity: 1
+  enemyWorldDropQuantity: 2
   equipmentDropChestVisualCatalog: {fileID: 11400000, guid: 665b60412704a3b40964b5c078771cd7, type: 2}
-  normalEnemyEquipmentDropChance: 0.05
+  normalEnemyEquipmentDropChance: 0.08

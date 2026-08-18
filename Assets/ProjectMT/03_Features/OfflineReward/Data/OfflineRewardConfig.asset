@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38ea59e64d58fdb4d82462cd8b5ea8ed, type: 3}
   m_Name: OfflineRewardConfig
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.OfflineReward.OfflineRewardConfig
-  balanceVersion: 2
+  balanceVersion: 3
   minimumOfflineSeconds: 60
   maximumAccumulationSeconds: 43200
   baseGoldPerMinute: 5
@@ -21,27 +21,32 @@ MonoBehaviour:
   baseEquipmentChanceBasisPointsPerMinute: 100
   rates:
   - minimumStage: 1
-    goldPerMinute: 10
-    commanderExperiencePerMinute: 5
-    upgradeStoneIntervalSeconds: 600
+    goldPerMinute: 20
+    commanderExperiencePerMinute: 2
+    upgradeStoneIntervalSeconds: 1800
     rewardMultiplierBasisPoints: 10000
+    equipmentChanceBasisPointsPerMinute: 50
   - minimumStage: 11
-    goldPerMinute: 10
-    commanderExperiencePerMinute: 5
-    upgradeStoneIntervalSeconds: 600
-    rewardMultiplierBasisPoints: 10500
+    goldPerMinute: 30
+    commanderExperiencePerMinute: 3
+    upgradeStoneIntervalSeconds: 1500
+    rewardMultiplierBasisPoints: 10000
+    equipmentChanceBasisPointsPerMinute: 65
   - minimumStage: 21
-    goldPerMinute: 10
-    commanderExperiencePerMinute: 5
-    upgradeStoneIntervalSeconds: 600
-    rewardMultiplierBasisPoints: 11000
+    goldPerMinute: 45
+    commanderExperiencePerMinute: 4
+    upgradeStoneIntervalSeconds: 1200
+    rewardMultiplierBasisPoints: 10000
+    equipmentChanceBasisPointsPerMinute: 85
   - minimumStage: 31
-    goldPerMinute: 10
+    goldPerMinute: 65
     commanderExperiencePerMinute: 5
-    upgradeStoneIntervalSeconds: 600
-    rewardMultiplierBasisPoints: 11500
+    upgradeStoneIntervalSeconds: 900
+    rewardMultiplierBasisPoints: 10000
+    equipmentChanceBasisPointsPerMinute: 110
   - minimumStage: 41
-    goldPerMinute: 10
-    commanderExperiencePerMinute: 5
-    upgradeStoneIntervalSeconds: 600
-    rewardMultiplierBasisPoints: 12000
+    goldPerMinute: 90
+    commanderExperiencePerMinute: 6
+    upgradeStoneIntervalSeconds: 720
+    rewardMultiplierBasisPoints: 10000
+    equipmentChanceBasisPointsPerMinute: 140

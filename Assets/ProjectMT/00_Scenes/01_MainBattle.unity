@@ -42734,7 +42734,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Expedition.ExpeditionController
   profile: {fileID: 11400000, guid: 90df3189124e20e46907a1e10952ecfa, type: 2}
   combatWorld: {fileID: 1681861047}
-  playerUnitPrefab: {fileID: 6959060235660481435, guid: 7b1b752814782e24a85a3f05363652ca, type: 3}
+  playerUnitPrefab: {fileID: 6359954306265597437, guid: c16a53cef90a01d4290cd0dad4732347, type: 3}
   enemyAppearanceSet: {fileID: 11400000, guid: 36618e48dd3084a4282d688977b340c0, type: 2}
   enemyUnitPrefab: {fileID: 0}
   playerSpawnPoints:

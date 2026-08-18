@@ -91,7 +91,7 @@ namespace ProjectMT.Contents.CastleRaid
                 yield break;
             }
 
-            var startData = new CastleRaidStartData(playtestParty, 5);
+            var startData = new CastleRaidStartData(playtestParty, 3);
             var context = new ContentContext(
                 new ContentRunInfo(
                     new ContentId("castle_raid"),
@@ -143,7 +143,7 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             var definitions = new List<MonsterDefinition>(5);
-            var preferredIds = new[] { "spike_01", "shell_01", "aru_01", "ru_01", "lumi_01" };
+            var preferredIds = new[] { "lumi_01", "shell_01", "aru_01", "ru_01", "lucy_01" };
             foreach (var monsterId in preferredIds)
             {
                 if (playtestMonsterCatalog.TryGet(monsterId, out var definition) &&

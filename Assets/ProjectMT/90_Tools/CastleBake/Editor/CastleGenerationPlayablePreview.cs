@@ -97,6 +97,12 @@ namespace ProjectMT.EditorTools.CastleBake
             }
 
             var displayBounds = CastleGenerationScenePreview.ResolveSquareDisplayBounds(candidate);
+            var exteriorCells = CastleDeploymentAreaResolver.ResolveExteriorCells(candidate, displayBounds);
+            if (exteriorCells.Count == 0)
+            {
+                throw new InvalidOperationException("생성된 성에서 배치 가능한 외곽 셀을 찾지 못했습니다.");
+            }
+
             var displayCenter = ResolveDisplayCenter(candidate, displayBounds, cellSize);
             var displaySide = displayBounds.width * cellSize;
             var groundCenter = worldOffset + new Vector3(displayCenter.x, 0f, displayCenter.y);
@@ -112,7 +118,7 @@ namespace ProjectMT.EditorTools.CastleBake
                 throw new InvalidOperationException("생성 성 플레이 프리뷰용 MonsterCatalog을 찾지 못했습니다.");
             }
 
-            BuildGround(root.transform, scene, displayCenter, displaySide, cellSize, materials.Deployment);
+            BuildGround(root.transform, scene, displayCenter, displaySide, materials.Deployment);
             var targetsRoot = CreateChild("02_Targets", root.transform, scene).transform;
             var targets = new List<CastleTarget>(candidate.Placements.Count);
             var colliders = new List<Collider>(candidate.Placements.Count);
@@ -152,11 +158,11 @@ namespace ProjectMT.EditorTools.CastleBake
             var zoneObject = CreateChild("01_DeploymentZone", root.transform, scene);
             zoneObject.transform.localPosition = new Vector3(displayCenter.x, 0f, displayCenter.y);
             var deploymentZone = zoneObject.AddComponent<CastleDeploymentZone>();
-            var outerHalfExtents = Vector2.one * (displaySide * 0.5f);
-            var innerHalfExtents = Vector2.Max(
-                Vector2.zero,
-                outerHalfExtents - Vector2.one * (CastleSpatialContract.DeploymentMargin * cellSize));
-            deploymentZone.ConfigureBounds(outerHalfExtents, innerHalfExtents, Mathf.Max(0.5f, cellSize));
+            deploymentZone.ConfigureExteriorCells(
+                displayBounds,
+                exteriorCells,
+                cellSize,
+                Mathf.Max(0.5f, cellSize));
 
             var surface = root.AddComponent<NavMeshSurface>();
             surface.collectObjects = CollectObjects.Children;
@@ -344,33 +350,19 @@ namespace ProjectMT.EditorTools.CastleBake
             Scene scene,
             Vector2 center,
             float displaySide,
-            float cellSize,
             Material deploymentMaterial)
         {
             var groundRoot = CreateChild("00_Ground", parent, scene).transform;
             groundRoot.localPosition = new Vector3(center.x, 0f, center.y);
             CreateGroundBox(
-                "DeploymentBelt",
+                "BattlefieldGround",
                 groundRoot,
                 scene,
                 displaySide,
                 0.2f,
                 deploymentMaterial,
-                new Color(0.12f, 0.22f, 0.18f),
-                true);
-            var innerSide = Mathf.Max(
-                cellSize,
-                displaySide - CastleSpatialContract.DeploymentMargin * 2f * cellSize);
-            var inner = CreateGroundBox(
-                "BuildArea",
-                groundRoot,
-                scene,
-                innerSide,
-                0.04f,
-                deploymentMaterial,
                 new Color(0.20f, 0.34f, 0.23f),
-                false);
-            inner.transform.localPosition = new Vector3(0f, 0.02f, 0f);
+                true);
         }
 
         private static GameObject CreateGroundBox(

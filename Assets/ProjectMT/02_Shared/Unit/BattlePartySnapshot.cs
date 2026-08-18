@@ -182,11 +182,11 @@ namespace ProjectMT.Shared.Unit
 
             return new BattlePartySnapshot(new[]
             {
-                new BattleUnitSnapshot("spike_01", melee, displayName: "스파이크"),
+                new BattleUnitSnapshot("lumi_01", melee, displayName: "루미"),
                 new BattleUnitSnapshot("shell_01", melee, displayName: "쉘"),
                 new BattleUnitSnapshot("aru_01", melee, displayName: "아르"),
                 new BattleUnitSnapshot("ru_01", ranged, displayName: "루"),
-                new BattleUnitSnapshot("lumi_01", ranged, displayName: "루미")
+                new BattleUnitSnapshot("lucy_01", ranged, displayName: "루시")
             });
         }
     }

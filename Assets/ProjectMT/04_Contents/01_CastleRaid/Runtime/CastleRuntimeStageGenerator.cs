@@ -153,6 +153,12 @@ namespace ProjectMT.Contents.CastleRaid
         private GameObject BuildStage(CastleGenerationCandidate candidate)
         {
             var displayBounds = ResolveSquareDisplayBounds(candidate);
+            var exteriorCells = CastleDeploymentAreaResolver.ResolveExteriorCells(candidate, displayBounds);
+            if (exteriorCells.Count == 0)
+            {
+                throw new InvalidOperationException("생성된 성에서 배치 가능한 외곽 셀을 찾지 못했습니다.");
+            }
+
             var displayCenter = ResolveDisplayCenter(candidate, displayBounds, cellSize);
             var displaySide = displayBounds.width * cellSize;
             var groundCenter = new Vector2(displayCenter.x, displayCenter.y);
@@ -162,7 +168,7 @@ namespace ProjectMT.Contents.CastleRaid
 
             try
             {
-                BuildGround(root.transform, displayCenter, displaySide, cellSize);
+                BuildGround(root.transform, displayCenter, displaySide);
                 var targetsRoot = CreateChild("02_Targets", root.transform).transform;
                 var targets = new List<CastleTarget>(candidate.Placements.Count);
                 var colliders = new List<Collider>(candidate.Placements.Count);
@@ -199,11 +205,11 @@ namespace ProjectMT.Contents.CastleRaid
                 var zoneObject = CreateChild("01_DeploymentZone", root.transform);
                 zoneObject.transform.localPosition = new Vector3(displayCenter.x, 0f, displayCenter.y);
                 var deploymentZone = zoneObject.AddComponent<CastleDeploymentZone>();
-                var outerHalfExtents = Vector2.one * (displaySide * 0.5f);
-                var innerHalfExtents = Vector2.Max(
-                    Vector2.zero,
-                    outerHalfExtents - Vector2.one * (CastleSpatialContract.DeploymentMargin * cellSize));
-                deploymentZone.ConfigureBounds(outerHalfExtents, innerHalfExtents, Mathf.Max(0.5f, cellSize));
+                deploymentZone.ConfigureExteriorCells(
+                    displayBounds,
+                    exteriorCells,
+                    cellSize,
+                    Mathf.Max(0.5f, cellSize));
 
                 var surface = root.AddComponent<NavMeshSurface>();
                 surface.collectObjects = CollectObjects.Children;
@@ -338,31 +344,18 @@ namespace ProjectMT.Contents.CastleRaid
         private void BuildGround(
             Transform parent,
             Vector2 center,
-            float displaySide,
-            float targetCellSize)
+            float displaySide)
         {
             var groundRoot = CreateChild("00_Ground", parent).transform;
             groundRoot.localPosition = new Vector3(center.x, 0f, center.y);
             CreateGroundBox(
-                "DeploymentBelt",
+                "BattlefieldGround",
                 groundRoot,
                 displaySide,
                 0.2f,
                 deploymentMaterial,
-                new Color(0.12f, 0.22f, 0.18f),
-                true);
-            var innerSide = Mathf.Max(
-                targetCellSize,
-                displaySide - CastleSpatialContract.DeploymentMargin * 2f * targetCellSize);
-            var inner = CreateGroundBox(
-                "BuildArea",
-                groundRoot,
-                innerSide,
-                0.04f,
-                deploymentMaterial,
                 new Color(0.20f, 0.34f, 0.23f),
-                false);
-            inner.transform.localPosition = new Vector3(0f, 0.02f, 0f);
+                true);
         }
 
         private static GameObject CreateGroundBox(

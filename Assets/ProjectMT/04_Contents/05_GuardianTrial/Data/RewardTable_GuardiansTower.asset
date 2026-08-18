@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: RewardTable_GuardiansTower
   m_EditorClassIdentifier: ProjectMT.Contents.Framework::ProjectMT.Contents.Framework.GrowthDungeonRewardTable
   contentId: guardians_tower
-  challengeRewardBasisPoints: 2500
+  challengeRewardBasisPoints: 20000
+  continuationGrowthBasisPoints: 500
   entries:
   - stage: 1
     gold: 0
@@ -32,16 +33,16 @@ MonoBehaviour:
     commanderExperience: 0
     items:
     - itemId: material_legion_potential_upgrade_stone
-      amount: 5
+      amount: 4
   - stage: 4
     gold: 0
     commanderExperience: 0
     items:
     - itemId: material_legion_potential_upgrade_stone
-      amount: 8
+      amount: 5
   - stage: 5
     gold: 0
     commanderExperience: 0
     items:
     - itemId: material_legion_potential_upgrade_stone
-      amount: 12
+      amount: 6

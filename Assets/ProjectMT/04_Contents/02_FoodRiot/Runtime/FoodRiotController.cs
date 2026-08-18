@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Shared.Combat;
+using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Input;
 using ProjectMT.Shared.Unit;
 using TMPro;
@@ -33,6 +34,7 @@ namespace ProjectMT.Contents.FoodRiot
         private float timeRemaining; // 남은 제한 시간
         private int killCount; // 이번 판 처치 수
         private int spawnSequence; // 야채 고유 번호
+        private float difficultyMultiplier = 1f; // 선택 단계에 따른 야채 체력 배율
 
         public bool IsRunning { get; private set; }
 
@@ -59,6 +61,11 @@ namespace ProjectMT.Contents.FoodRiot
             timeRemaining = startData.DurationSeconds;
             killCount = 0;
             spawnSequence = 0;
+            var stage = int.TryParse(context.RunInfo.StageId, out var selectedStage) &&
+                        GrowthDungeonStageRules.IsValidStage(selectedStage)
+                ? selectedStage
+                : 1;
+            difficultyMultiplier = GrowthDungeonStageRules.ResolveDifficultyMultiplier(stage);
             IsRunning = true;
             if (resultText != null)
             {
@@ -87,6 +94,7 @@ namespace ProjectMT.Contents.FoodRiot
 
             context = null;
             startData = null;
+            difficultyMultiplier = 1f;
             IsRunning = false;
         }
 
@@ -145,7 +153,7 @@ namespace ProjectMT.Contents.FoodRiot
             var hitCount = 2 + spawnSequence % 3; // 야채마다 2~4회 타격 필요
             var stats = new UnitStatsSnapshot
             {
-                maxHealth = hitCount,
+                maxHealth = hitCount * difficultyMultiplier,
                 damage = 0f,
                 moveSpeed = 0f,
                 attackRange = 0.5f,

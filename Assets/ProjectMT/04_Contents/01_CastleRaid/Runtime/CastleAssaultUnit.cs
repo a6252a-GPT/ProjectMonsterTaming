@@ -27,10 +27,15 @@ namespace ProjectMT.Contents.CastleRaid
         private NavMeshPath navigationPath; // 경로 검사 재사용 버퍼
         private Vector3 requestedNavigationDestination; // 공격 자리 변경 감지값
         private bool hasNavigationDestination; // 같은 경로를 매 프레임 다시 넣지 않음
+        private string unitId = string.Empty; // 포탑 표적 등급 판정용 편성 ID
 
         public bool IsAlive => health != null && health.IsAlive;
         public CastleTarget Target => target;
         public float DeathPresentationDuration => deathPresentationDuration;
+        public string UnitId => unitId;
+        public float MaxHealth => health == null ? 0f : health.MaxHealth;
+        public float TurretCollisionRadius => agent == null ? 0.35f : Mathf.Max(0.15f, agent.radius);
+        public Vector3 TurretHitPoint => transform.position + Vector3.up * (agent == null ? 0.55f : Mathf.Max(0.4f, agent.height * 0.45f));
 
         public event Action<CastleAssaultUnit> Died;
         public event Action<CastleAssaultUnit, DamageReport> Damaged;
@@ -50,6 +55,7 @@ namespace ProjectMT.Contents.CastleRaid
             Shutdown(); // 풀 재사용 전 이전 연결 정리
             ResolveReferences();
             controller = raidController ?? throw new ArgumentNullException(nameof(raidController));
+            unitId = unit.UnitId ?? string.Empty;
             stats = unit.Stats;
             visualFeedback?.SetTint(unit.VisualTint); // 실제 편성 몬스터 색상 적용
             runtimeAssetSet = unit.RuntimeAssetSet;
@@ -198,6 +204,7 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             controller = null;
+            unitId = string.Empty;
             runtimeAssetSet = null;
             attackActionRunning = false;
             nextActionSequenceId = 0;

@@ -39,6 +39,14 @@ namespace ProjectMT.Contents.CastleRaid
         [SerializeField] private Material buildingMaterial;
         [SerializeField] private Material palaceMaterial;
 
+        [Header("Turret Visuals")]
+        [SerializeField] private GameObject[] cannonTurretHeads = new GameObject[3];
+        [SerializeField] private GameObject[] ballistaTurretHeads = new GameObject[3];
+        [SerializeField] private GameObject[] fireballTurretHeads = new GameObject[3];
+        [SerializeField] private CastleTurretAttackCatalog turretAttackCatalog;
+        [SerializeField, Range(0.5f, 0.95f)] private float turretHeadFootprintRatio = 0.82f;
+        [SerializeField, Range(0.35f, 0.75f)] private float turretBodyHeightRatio = 0.58f;
+
         private GameObject currentStageRoot;
         private int currentSeed;
         private CastleLayoutTheme currentTheme;
@@ -254,7 +262,7 @@ namespace ProjectMT.Contents.CastleRaid
             targetObject.transform.localPosition = new Vector3(center.x, 0f, center.y);
             var footprint = new Vector2(placement.Width * targetCellSize, placement.Height * targetCellSize);
             var height = ResolveHeight(placement, targetCellSize);
-            BuildTargetVisual(targetObject.transform, placement, footprint, height);
+            BuildTargetVisual(candidate, targetObject.transform, placement, footprint, height);
 
             var boxCollider = targetObject.AddComponent<BoxCollider>();
             boxCollider.center = new Vector3(0f, height * 0.5f, 0f);
@@ -286,10 +294,19 @@ namespace ProjectMT.Contents.CastleRaid
                 slots,
                 targetObstacle);
             health.Initialize(Mathf.Max(1f, placement.EffectiveHealth));
+            if (placement.Kind == CastlePlacementKind.DefenseBuilding)
+            {
+                var turretVisual = targetObject.GetComponent<CastleTurretVisual>();
+                var turretProfile = turretAttackCatalog.Resolve(turretVisual.Family, turretVisual.Level);
+                var turretRuntime = targetObject.AddComponent<CastleTurretRuntime>();
+                turretRuntime.Configure(raidController, target, turretVisual, turretProfile);
+            }
+
             return target;
         }
 
         private void BuildTargetVisual(
+            CastleGenerationCandidate candidate,
             Transform parent,
             CastlePlacementData placement,
             Vector2 footprint,
@@ -311,8 +328,108 @@ namespace ProjectMT.Contents.CastleRaid
                 return;
             }
 
+            if (placement.Kind == CastlePlacementKind.DefenseBuilding)
+            {
+                BuildTurretVisual(candidate, parent, placement, footprint, height, material, color);
+                return;
+            }
+
             CreateVisualBox("Body", parent, footprint.x * 0.88f, height * 0.72f, footprint.y * 0.88f, height * 0.36f, material, color);
             CreateVisualBox("Cap", parent, footprint.x * 0.58f, height * 0.28f, footprint.y * 0.58f, height * 0.86f, material, Color.Lerp(color, Color.white, 0.16f));
+        }
+
+        private void BuildTurretVisual(
+            CastleGenerationCandidate candidate,
+            Transform parent,
+            CastlePlacementData placement,
+            Vector2 footprint,
+            float height,
+            Material material,
+            Color color)
+        {
+            var minimumFootprint = Mathf.Min(footprint.x, footprint.y);
+            var bodyHeight = Mathf.Clamp(
+                minimumFootprint * turretBodyHeightRatio,
+                height * 0.24f,
+                height * 0.46f);
+            CreateVisualBox(
+                "TurretBody_TemporaryRed",
+                parent,
+                footprint.x * 0.84f,
+                bodyHeight,
+                footprint.y * 0.84f,
+                bodyHeight * 0.5f,
+                material,
+                color);
+
+            var defenseRing = ResolveDefenseRing(candidate, placement);
+            var family = CastleTurretVisualSelector.ResolveFamily(candidate.Seed, placement.PlacementId);
+            var level = CastleTurretVisualSelector.ResolveLevel(candidate.RequestedDefenseLayerCount, defenseRing);
+            var headPrefab = ResolveTurretHeadPrefab(family, level);
+            var headMount = CreateChild("Joint_TurretHeadMount", parent).transform;
+            headMount.localPosition = new Vector3(0f, bodyHeight, 0f);
+
+            var head = Instantiate(headPrefab, headMount, false);
+            head.name = $"Head_{family}_Lv{level}";
+            head.transform.localPosition = Vector3.zero;
+            head.transform.localRotation = Quaternion.identity;
+            head.transform.localScale = Vector3.one;
+            FitTurretHead(head.transform, minimumFootprint);
+
+            var turret = parent.gameObject.AddComponent<CastleTurretVisual>();
+            turret.Configure(family, level, head.transform);
+        }
+
+        private void FitTurretHead(Transform head, float minimumFootprint)
+        {
+            var model = head.Find("Joint_BodyMount/YawPivot/PitchPivot/Model");
+            var renderers = model == null
+                ? Array.Empty<Renderer>()
+                : model.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0)
+            {
+                throw new InvalidOperationException($"포탑 헤드 {head.name}에서 Model Renderer를 찾지 못했습니다.");
+            }
+
+            var bounds = renderers[0].bounds;
+            for (var index = 1; index < renderers.Length; index++)
+            {
+                bounds.Encapsulate(renderers[index].bounds);
+            }
+
+            var currentFootprint = Mathf.Max(bounds.size.x, bounds.size.z);
+            if (currentFootprint <= 0.001f)
+            {
+                throw new InvalidOperationException($"포탑 헤드 {head.name}의 Renderer Bounds가 비어 있습니다.");
+            }
+
+            var targetFootprint = Mathf.Clamp(minimumFootprint * turretHeadFootprintRatio, 0.82f, 1.55f);
+            var scale = Mathf.Clamp(targetFootprint / currentFootprint, 0.65f, 1.35f);
+            head.localScale = Vector3.one * scale;
+        }
+
+        private static int ResolveDefenseRing(CastleGenerationCandidate candidate, CastlePlacementData placement)
+        {
+            for (var index = 0; index < candidate.Compartments.Count; index++)
+            {
+                var compartment = candidate.Compartments[index];
+                if (string.Equals(compartment.CompartmentId, placement.DistrictId, StringComparison.Ordinal))
+                {
+                    return compartment.DefenseRing;
+                }
+            }
+
+            return candidate.RequestedDefenseLayerCount - 1;
+        }
+
+        private GameObject ResolveTurretHeadPrefab(CastleTurretFamily family, int level)
+        {
+            var heads = family == CastleTurretFamily.Cannon
+                ? cannonTurretHeads
+                : family == CastleTurretFamily.Ballista
+                    ? ballistaTurretHeads
+                    : fireballTurretHeads;
+            return heads[Mathf.Clamp(level, 1, 3) - 1];
         }
 
         private static Transform[] BuildAttackSlots(Transform parent, Vector2 footprint)
@@ -627,10 +744,19 @@ namespace ProjectMT.Contents.CastleRaid
         private void ValidateReferences()
         {
             if (rules == null || raidController == null || cameraController == null || worldRoot == null ||
-                deploymentMaterial == null || wallMaterial == null || buildingMaterial == null || palaceMaterial == null)
+                deploymentMaterial == null || wallMaterial == null || buildingMaterial == null || palaceMaterial == null ||
+                turretAttackCatalog == null || !turretAttackCatalog.IsComplete ||
+                !HasCompleteTurretHeadSet(cannonTurretHeads) ||
+                !HasCompleteTurretHeadSet(ballistaTurretHeads) ||
+                !HasCompleteTurretHeadSet(fireballTurretHeads))
             {
                 throw new InvalidOperationException("Castle Raid 런타임 생성기 참조가 완성되지 않았습니다.");
             }
+        }
+
+        private static bool HasCompleteTurretHeadSet(GameObject[] heads)
+        {
+            return heads != null && heads.Length == 3 && heads[0] != null && heads[1] != null && heads[2] != null;
         }
 
         private void OnDestroy()
@@ -664,6 +790,33 @@ namespace ProjectMT.Contents.CastleRaid
             wallMaterial = wall;
             buildingMaterial = building;
             palaceMaterial = palace;
+        }
+
+        public void EditorConfigureTurretHeads(
+            GameObject[] cannonHeads,
+            GameObject[] ballistaHeads,
+            GameObject[] fireballHeads)
+        {
+            cannonTurretHeads = CopyTurretHeadSet(cannonHeads);
+            ballistaTurretHeads = CopyTurretHeadSet(ballistaHeads);
+            fireballTurretHeads = CopyTurretHeadSet(fireballHeads);
+        }
+
+        public void EditorConfigureTurretAttackCatalog(CastleTurretAttackCatalog catalog)
+        {
+            turretAttackCatalog = catalog != null && catalog.IsComplete
+                ? catalog
+                : throw new ArgumentException("완성된 포탑 공격 카탈로그가 필요합니다.", nameof(catalog));
+        }
+
+        private static GameObject[] CopyTurretHeadSet(GameObject[] source)
+        {
+            if (!HasCompleteTurretHeadSet(source))
+            {
+                throw new ArgumentException("포탑 헤드는 Lv1~3 세 개가 모두 필요합니다.", nameof(source));
+            }
+
+            return new[] { source[0], source[1], source[2] };
         }
 #endif
     }

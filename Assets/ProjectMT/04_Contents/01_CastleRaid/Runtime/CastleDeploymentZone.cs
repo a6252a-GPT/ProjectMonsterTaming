@@ -20,11 +20,22 @@ namespace ProjectMT.Contents.CastleRaid
         private Mesh areaMesh;
         private Material areaMaterial;
         private Texture2D areaTexture;
+        private bool visualVisible = true;
 
         public Vector2 OuterHalfExtents => outerHalfExtents;
         public Vector2 InnerHalfExtents => innerHalfExtents;
         public bool UsesExteriorCellMask => usesExteriorCellMask;
         public int AllowedCellCount => allowedLocalCells.Count;
+        public bool IsVisualVisible => visualRoot != null && visualRoot.activeSelf;
+
+        public void SetVisualVisible(bool visible)
+        {
+            visualVisible = visible;
+            if (visualRoot != null && visualRoot.activeSelf != visible)
+            {
+                visualRoot.SetActive(visible); // 판정은 유지하고 표시만 전환
+            }
+        }
 
         public void ConfigureBounds(Vector2 outer, Vector2 inner, float sampleRadius = 1f)
         {
@@ -115,6 +126,7 @@ namespace ProjectMT.Contents.CastleRaid
             visualRoot = new GameObject("DeploymentAreaVisual");
             visualRoot.transform.SetParent(transform, false);
             visualRoot.hideFlags = HideFlags.DontSave;
+            visualRoot.SetActive(visualVisible);
 
             var shader = Shader.Find("Sprites/Default") ?? Shader.Find("UI/Default");
             if (shader == null)

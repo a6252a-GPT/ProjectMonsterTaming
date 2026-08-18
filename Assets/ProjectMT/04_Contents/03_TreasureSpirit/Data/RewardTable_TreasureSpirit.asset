@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: RewardTable_TreasureSpirit
   m_EditorClassIdentifier: ProjectMT.Contents.Framework::ProjectMT.Contents.Framework.GrowthDungeonRewardTable
   contentId: treasure_spirit
-  challengeRewardBasisPoints: 2500
+  challengeRewardBasisPoints: 20000
+  continuationGrowthBasisPoints: 500
   entries:
   - stage: 1
     gold: 0
@@ -26,22 +27,22 @@ MonoBehaviour:
     commanderExperience: 0
     items:
     - itemId: material_equipment_slot_upgrade_stone
-      amount: 6
+      amount: 5
   - stage: 3
     gold: 0
     commanderExperience: 0
     items:
     - itemId: material_equipment_slot_upgrade_stone
-      amount: 9
+      amount: 6
   - stage: 4
     gold: 0
     commanderExperience: 0
     items:
     - itemId: material_equipment_slot_upgrade_stone
-      amount: 14
+      amount: 7
   - stage: 5
     gold: 0
     commanderExperience: 0
     items:
     - itemId: material_equipment_slot_upgrade_stone
-      amount: 21
+      amount: 8

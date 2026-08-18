@@ -10,22 +10,29 @@ namespace ProjectMT.Contents.Framework
     [Serializable]
     public sealed class GrowthDungeonRewardEntry // 성장 던전 한 단계의 파밍 기준 보상
     {
-        [SerializeField, Range(1, GrowthDungeonStageRules.MaximumStage)] private int stage = 1;
+        [SerializeField, Range(1, GrowthDungeonRewardTable.AuthoredStageCount)] private int stage = 1;
         [SerializeField, Min(0)] private long gold;
         [SerializeField, Min(0)] private long commanderExperience;
         [SerializeField] private List<ItemAmount> items = new List<ItemAmount>();
 
-        public int Stage => Math.Clamp(stage, 1, GrowthDungeonStageRules.MaximumStage);
+        public int Stage => Math.Clamp(stage, 1, GrowthDungeonRewardTable.AuthoredStageCount);
         public long Gold => Math.Max(0L, gold);
         public long CommanderExperience => Math.Max(0L, commanderExperience);
         public IReadOnlyList<ItemAmount> Items => items != null ? items : Array.Empty<ItemAmount>();
 
-        public bool TryCreate(int rewardBasisPoints, out RewardBundle rewards)
+        public bool TryCreate(
+            int rewardBasisPoints,
+            int stageOffset,
+            int growthBasisPointsPerStage,
+            out RewardBundle rewards)
         {
             rewards = null;
-            if (rewardBasisPoints <= 0 || rewardBasisPoints > GrowthDungeonRewardTable.BasisPointDenominator ||
-                !TryScale(Gold, rewardBasisPoints, out var scaledGold) ||
-                !TryScale(CommanderExperience, rewardBasisPoints, out var scaledExperience))
+            if (rewardBasisPoints <= 0 ||
+                stageOffset < 0 || growthBasisPointsPerStage <= 0 ||
+                !TryResolveLinearValue(Gold, stageOffset, growthBasisPointsPerStage, out var stageGold) ||
+                !TryResolveLinearValue(CommanderExperience, stageOffset, growthBasisPointsPerStage, out var stageExperience) ||
+                !TryScale(stageGold, rewardBasisPoints, out var scaledGold) ||
+                !TryScale(stageExperience, rewardBasisPoints, out var scaledExperience))
             {
                 return false;
             }
@@ -34,7 +41,9 @@ namespace ProjectMT.Contents.Framework
             for (var index = 0; index < Items.Count; index++)
             {
                 var item = Items[index];
-                if (!item.IsValid || !TryScale(item.Amount, rewardBasisPoints, out var amount))
+                if (!item.IsValid ||
+                    !TryResolveLinearValue(item.Amount, stageOffset, growthBasisPointsPerStage, out var stageAmount) ||
+                    !TryScale(stageAmount, rewardBasisPoints, out var amount))
                 {
                     return false;
                 }
@@ -46,16 +55,55 @@ namespace ProjectMT.Contents.Framework
             return !rewards.IsEmpty;
         }
 
-        private static bool TryScale(long value, int basisPoints, out long result)
+        private static bool TryResolveLinearValue(
+            long baseValue,
+            int stageOffset,
+            int growthBasisPointsPerStage,
+            out long result)
         {
             result = 0L;
-            if (value < 0L || (value > 0L && value > (long.MaxValue - (GrowthDungeonRewardTable.BasisPointDenominator - 1L)) / basisPoints))
+            if (baseValue < 0L || stageOffset < 0 || growthBasisPointsPerStage <= 0)
             {
                 return false;
             }
 
-            result = (value * basisPoints + GrowthDungeonRewardTable.BasisPointDenominator - 1L) /
-                     GrowthDungeonRewardTable.BasisPointDenominator; // Challenge 소수 보상은 올림
+            if (baseValue == 0L || stageOffset == 0)
+            {
+                result = baseValue;
+                return true;
+            }
+
+            if (!TryScale(baseValue, growthBasisPointsPerStage, out var increment))
+            {
+                return false;
+            }
+
+            increment = Math.Max(1L, increment); // 소량 재료도 같은 수량에서 멈추지 않게 최소 1 증가
+            result = increment > (long.MaxValue - baseValue) / stageOffset
+                ? long.MaxValue
+                : baseValue + increment * stageOffset;
+            return true;
+        }
+
+        private static bool TryScale(long value, long basisPoints, out long result)
+        {
+            result = 0L;
+            if (value < 0L || basisPoints <= 0L)
+            {
+                return false;
+            }
+
+            try
+            {
+                var scaled = decimal.Ceiling(
+                    (decimal)value * basisPoints / GrowthDungeonRewardTable.BasisPointDenominator);
+                result = scaled >= long.MaxValue ? long.MaxValue : (long)scaled;
+            }
+            catch (OverflowException)
+            {
+                result = long.MaxValue; // 저장 숫자 한계에서는 포화시키되 단계 진행 자체는 막지 않는다.
+            }
+
             return true;
         }
 
@@ -68,7 +116,7 @@ namespace ProjectMT.Contents.Framework
         {
             return new GrowthDungeonRewardEntry
             {
-                stage = Math.Clamp(rewardStage, 1, GrowthDungeonStageRules.MaximumStage),
+                stage = Math.Clamp(rewardStage, 1, GrowthDungeonRewardTable.AuthoredStageCount),
                 gold = Math.Max(0L, goldAmount),
                 commanderExperience = Math.Max(0L, experienceAmount),
                 items = itemRewards == null ? new List<ItemAmount>() : new List<ItemAmount>(itemRewards)
@@ -78,18 +126,25 @@ namespace ProjectMT.Contents.Framework
     }
 
     [CreateAssetMenu(menuName = "ProjectMT/Content/Growth Dungeon Reward Table", fileName = "GrowthDungeonRewardTable")]
-    public sealed class GrowthDungeonRewardTable : ScriptableObject // Farming·Challenge가 공유하는 5단계 보상 원본
+    public sealed class GrowthDungeonRewardTable : ScriptableObject // 1단계 기준 보상과 단계당 선형 증가폭
     {
         public const int BasisPointDenominator = 10000;
-        public const int DefaultChallengeRewardBasisPoints = 2500;
+        public const int DefaultChallengeRewardBasisPoints = 20000; // 다음 미클리어 단계 도전 클리어 보상 200%
+        public const int DefaultContinuationGrowthBasisPoints = 500; // 1단계 기준 보상의 +5%씩 선형 증가
+        public const int AuthoredStageCount = 5;
 
         [SerializeField] private string contentId;
-        [SerializeField, Range(1, BasisPointDenominator)]
+        [SerializeField, Min(1)]
         private int challengeRewardBasisPoints = DefaultChallengeRewardBasisPoints;
+        [SerializeField, Min(1)]
+        private int continuationGrowthBasisPoints = DefaultContinuationGrowthBasisPoints;
         [SerializeField] private List<GrowthDungeonRewardEntry> entries = new List<GrowthDungeonRewardEntry>();
 
         public string ContentId => contentId?.Trim() ?? string.Empty;
-        public int ChallengeRewardBasisPoints => Math.Clamp(challengeRewardBasisPoints, 1, BasisPointDenominator);
+        public int ChallengeRewardBasisPoints => Math.Max(1, challengeRewardBasisPoints);
+        public int ContinuationGrowthBasisPoints => continuationGrowthBasisPoints > 0
+            ? Math.Clamp(continuationGrowthBasisPoints, 1, BasisPointDenominator)
+            : DefaultContinuationGrowthBasisPoints;
         public IReadOnlyList<GrowthDungeonRewardEntry> Entries =>
             entries != null ? entries : Array.Empty<GrowthDungeonRewardEntry>();
 
@@ -106,12 +161,16 @@ namespace ProjectMT.Contents.Framework
             for (var index = 0; index < Entries.Count; index++)
             {
                 var entry = Entries[index];
-                if (entry != null && entry.Stage == stage)
+                if (entry != null && entry.Stage == 1)
                 {
                     var basisPoints = runMode == ContentRunMode.Challenge
                         ? ChallengeRewardBasisPoints
                         : BasisPointDenominator;
-                    return entry.TryCreate(basisPoints, out rewards);
+                    return entry.TryCreate(
+                        basisPoints,
+                        stage - 1,
+                        ContinuationGrowthBasisPoints,
+                        out rewards);
                 }
             }
 
@@ -120,25 +179,73 @@ namespace ProjectMT.Contents.Framework
 
         public bool TryValidate(out string error)
         {
-            if (string.IsNullOrWhiteSpace(ContentId) || Entries.Count != GrowthDungeonStageRules.MaximumStage)
+            if (string.IsNullOrWhiteSpace(ContentId) || Entries.Count != AuthoredStageCount)
             {
                 error = $"Growth dungeon reward table must contain five stages. Asset={name}";
                 return false;
             }
 
             var seen = new HashSet<int>();
+            GrowthDungeonRewardEntry baseEntry = null;
             for (var index = 0; index < Entries.Count; index++)
             {
                 var entry = Entries[index];
                 if (entry == null || !seen.Add(entry.Stage) ||
-                    !entry.TryCreate(BasisPointDenominator, out _))
+                    !entry.TryCreate(BasisPointDenominator, 0, ContinuationGrowthBasisPoints, out _))
                 {
                     error = $"Growth dungeon reward entry is invalid. Asset={name}, Index={index}";
+                    return false;
+                }
+
+                if (entry.Stage == 1)
+                {
+                    baseEntry = entry;
+                }
+            }
+
+            if (baseEntry == null)
+            {
+                error = $"Growth dungeon reward table has no stage 1 base. Asset={name}";
+                return false;
+            }
+
+            for (var index = 0; index < Entries.Count; index++)
+            {
+                var entry = Entries[index];
+                if (!entry.TryCreate(BasisPointDenominator, 0, ContinuationGrowthBasisPoints, out var authored) ||
+                    !baseEntry.TryCreate(
+                        BasisPointDenominator,
+                        entry.Stage - 1,
+                        ContinuationGrowthBasisPoints,
+                        out var expected) ||
+                    !RewardsMatch(authored, expected))
+                {
+                    error = $"Growth dungeon reward preview must follow the linear growth rule. Asset={name}, Stage={entry.Stage}";
                     return false;
                 }
             }
 
             error = string.Empty;
+            return true;
+        }
+
+        private static bool RewardsMatch(RewardBundle left, RewardBundle right)
+        {
+            if (left == null || right == null || left.Gold != right.Gold ||
+                left.CommanderExperience != right.CommanderExperience || left.Items.Count != right.Items.Count)
+            {
+                return false;
+            }
+
+            for (var index = 0; index < left.Items.Count; index++)
+            {
+                if (!string.Equals(left.Items[index].ItemId, right.Items[index].ItemId, StringComparison.OrdinalIgnoreCase) ||
+                    left.Items[index].Amount != right.Items[index].Amount)
+                {
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -148,8 +255,22 @@ namespace ProjectMT.Contents.Framework
             int challengeBasisPoints,
             params GrowthDungeonRewardEntry[] stageRewards)
         {
+            EditorConfigureWithContinuation(
+                rewardContentId,
+                challengeBasisPoints,
+                DefaultContinuationGrowthBasisPoints,
+                stageRewards);
+        }
+
+        public void EditorConfigureWithContinuation(
+            string rewardContentId,
+            int challengeBasisPoints,
+            int continuationBasisPoints,
+            params GrowthDungeonRewardEntry[] stageRewards)
+        {
             contentId = rewardContentId?.Trim();
-            challengeRewardBasisPoints = Math.Clamp(challengeBasisPoints, 1, BasisPointDenominator);
+            challengeRewardBasisPoints = Math.Max(1, challengeBasisPoints);
+            continuationGrowthBasisPoints = Math.Clamp(continuationBasisPoints, 1, BasisPointDenominator);
             entries = stageRewards == null
                 ? new List<GrowthDungeonRewardEntry>()
                 : new List<GrowthDungeonRewardEntry>(stageRewards);

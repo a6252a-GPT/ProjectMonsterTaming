@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Shared.Combat;
+using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Input;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
@@ -48,6 +49,7 @@ namespace ProjectMT.Contents.GiantSpellbook
         private ContentContext context; // 시작 정보와 Complete/Fail/Cancel 출구를 함께 전달하는 한 판의 공통 봉투
         private GiantSpellbookStartData startData; // 입장 순간의 본부대 구성을 고정해 보관하는 읽기 전용 시작값
         private UnitActor bossActor; // 생성된 보스를 기억하고 사망 이벤트를 관리
+        private float difficultyMultiplier = 1f; // 선택 단계에 따른 보스 체력·피해 배율
 
         private float currentBreakGauge; // 내부 판정용으로 현재까지 누적된 브레이크 공격량
 
@@ -108,6 +110,11 @@ namespace ProjectMT.Contents.GiantSpellbook
             currentBreakGauge = 0f;
             isBroken = false;
             breakRemainingTime = 0f;
+            var stage = int.TryParse(context.RunInfo.StageId, out var selectedStage) &&
+                        GrowthDungeonStageRules.IsValidStage(selectedStage)
+                ? selectedStage
+                : 1;
+            difficultyMultiplier = GrowthDungeonStageRules.ResolveDifficultyMultiplier(stage);
             IsRunning = true;
             SpawnFollowers(); // 팀원이 내부 규칙을 붙이기 전 편성 연결만 확인
             SpawnExampleEnemy(); // 공용 전투 연결을 확인할 임시 적 한 기
@@ -168,6 +175,7 @@ namespace ProjectMT.Contents.GiantSpellbook
 
             context = null;
             startData = null;
+            difficultyMultiplier = 1f;
             IsRunning = false;
         }
 
@@ -190,7 +198,7 @@ namespace ProjectMT.Contents.GiantSpellbook
                 wideBurstCastTime,
                 wideBurstRadius,
                 normalAttacksBeforeWide,
-                bossAttackDamage);
+                bossAttackDamage * difficultyMultiplier);
         }
 
         private void SpawnFollowers()
@@ -240,7 +248,7 @@ namespace ProjectMT.Contents.GiantSpellbook
         {
             var stats = new UnitStatsSnapshot
             {
-                maxHealth = 5000f, // 임시 테스트 수치!!
+                maxHealth = 5000f * difficultyMultiplier, // 선택 단계가 오를수록 보스 체력 증가
                 damage = 1f, // 아군 몬스터가 바로 죽지 않는 참고용 피해량
                 defense = 0f,
                 moveSpeed = 1.6f,

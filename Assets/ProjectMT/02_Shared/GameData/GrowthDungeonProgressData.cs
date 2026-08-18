@@ -5,33 +5,25 @@ using UnityEngine;
 
 namespace ProjectMT.Shared.GameData
 {
-    public static class GrowthDungeonStageRules // 원정대 진행에 따른 성장 던전 해금 규칙
+    public static class GrowthDungeonStageRules // 성장 던전 공통 단계 규칙
     {
-        public const int MaximumStage = 5;
-
-        private static readonly int[] expeditionStageRequirements = { 1, 10, 20, 30, 40 };
-
-        public static IReadOnlyList<int> ExpeditionStageRequirements => expeditionStageRequirements;
-
-        public static int ResolveMaximumUnlockedStage(int lastClearedExpeditionStage)
-        {
-            var unlocked = 0;
-            for (var index = 0; index < expeditionStageRequirements.Length; index++)
-            {
-                if (lastClearedExpeditionStage < expeditionStageRequirements[index])
-                {
-                    break;
-                }
-
-                unlocked = index + 1;
-            }
-
-            return unlocked;
-        }
+        public const float DifficultyStatGrowthPerStage = 0.05f; // 1단계 기준으로 단계당 전투 핵심 수치 +5%p
 
         public static bool IsValidStage(int stage)
         {
-            return stage >= 1 && stage <= MaximumStage;
+            return stage >= 1;
+        }
+
+        public static int ResolveNextChallengeStage(int highestClearedStage)
+        {
+            var highest = Math.Max(0, highestClearedStage);
+            return highest < int.MaxValue ? highest + 1 : int.MaxValue;
+        }
+
+        public static float ResolveDifficultyMultiplier(int stage)
+        {
+            var difficultyLevel = stage <= 1 ? 0 : stage - 1;
+            return 1f + DifficultyStatGrowthPerStage * difficultyLevel;
         }
     }
 
@@ -50,7 +42,7 @@ namespace ProjectMT.Shared.GameData
         [SerializeField, Min(0)] private int highestClearedStage;
 
         public string ContentId => contentId?.Trim() ?? string.Empty;
-        public int HighestClearedStage => Math.Clamp(highestClearedStage, 0, GrowthDungeonStageRules.MaximumStage);
+        public int HighestClearedStage => Math.Max(0, highestClearedStage);
 
         internal GrowthDungeonProgressEntryData()
         {
@@ -73,9 +65,7 @@ namespace ProjectMT.Shared.GameData
 
         internal void RecordClear(int stage)
         {
-            highestClearedStage = Math.Max(
-                HighestClearedStage,
-                Math.Clamp(stage, 0, GrowthDungeonStageRules.MaximumStage));
+            highestClearedStage = Math.Max(HighestClearedStage, stage);
         }
     }
 

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Features.Expedition;
 using ProjectMT.Shared.Combat;
+using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Input;
 using ProjectMT.Shared.Unit;
 using TMPro;
@@ -25,8 +26,6 @@ namespace ProjectMT.Contents.GuardianTrial
         // 08.07 안건준 수정 - 난이도 1당 적 수를 늘리던 방식은 폐지. 이제 시작 적 수는 난이도와 무관하게 고정이고,
         // 5초마다 오는 증원도 이 상한(100마리) 안에서만 스폰된다(상한 도달 시 증원 정지).
         private const int MaxEnemyCount = 100;
-        // 08.07 안건준 수정 - 난이도 1당 "적 체력/공격력/방어력"과 "건물 체력"이 전부 +10%씩 오르도록 통일.
-        private const float DifficultyStatGrowthPerLevel = 0.10f;
         private const int EnemyStatBaseStage = 1; // 기본 스탯 조회용 고정 스테이지(원정대 자체 성장곡선은 쓰지 않고, 수호수 난이도 배율만 적용)
         private const float StructureAggroHoldSeconds = 0.35f; // 군단장이 범위 밖으로 나가면 이 시간 안에 자연히 원래 대상으로 복귀
         private const float NotificationDisplaySeconds = 2f; // 08.07 안건준 추가 - 알림 문구 1개당 표시 시간(큐 처리 간격)
@@ -124,12 +123,15 @@ namespace ProjectMT.Contents.GuardianTrial
             followers.Clear();
             enemySpawnRunVersion++;
 
-            // 08.07 안건준 수정 - 난이도 스케일링: 클리어할 때마다 1씩 오르는 난이도 값을 읽어
-            // 적 체력·공격력·방어력, 건물 체력을 전부 레벨당 +10% 적용한다. (적 "수"는 더 이상 난이도로 늘지 않음)
-            var difficultyLevel = Mathf.Max(0, context.Progress?.View.GuardiansTowerDifficultyLevel ?? 0);
-            var difficultyMultiplier = 1f + DifficultyStatGrowthPerLevel * difficultyLevel;
+            // 선택한 성장 던전 단계가 난이도의 기준이다. 낮은 단계를 파밍하면 그 단계 수치로 돌아간다.
+            var selectedStage = int.TryParse(context.RunInfo.StageId, out var parsedStage) &&
+                                GrowthDungeonStageRules.IsValidStage(parsedStage)
+                ? parsedStage
+                : 1;
+            var difficultyLevel = selectedStage - 1;
+            var difficultyMultiplier = GrowthDungeonStageRules.ResolveDifficultyMultiplier(selectedStage);
             enemyStatMultiplier = difficultyMultiplier; // SpawnEnemy에서 매 스폰마다 사용
-            enemyStage = Mathf.Max(1, difficultyLevel); // 난이도가 오를수록 메인과 같은 방식으로 더 강한 외형을 선택
+            enemyStage = Mathf.Max(1, difficultyLevel + 1); // 난이도가 오를수록 메인과 같은 방식으로 더 강한 외형을 선택
             var structureHealthMultiplier = difficultyMultiplier;
             if (difficultyLevelText != null)
             {

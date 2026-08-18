@@ -238,6 +238,10 @@ MonoBehaviour:
   worldSize: {x: 20, y: 20}
   dragThresholdPixels: 8
   wheelZoomStep: 0.18
+  movementSmoothTime: 0.08
+  zoomSmoothTime: 0.1
+  inertiaDeceleration: 48
+  maximumInertiaSpeed: 24
   groundPlaneY: 0
 --- !u!114 &197936841 stripped
 MonoBehaviour:
@@ -592,6 +596,21 @@ MonoBehaviour:
   wallMaterial: {fileID: 2100000, guid: d40588835a4f1ac43b530e509a752813, type: 2}
   buildingMaterial: {fileID: 2100000, guid: 99e94a881e506da428f54ecd24aea483, type: 2}
   palaceMaterial: {fileID: 2100000, guid: f952207e1aa82ff4dacd6e2d6497c3a3, type: 2}
+  cannonTurretHeads:
+  - {fileID: 5587118630968250512, guid: a1ae107bb131ba94595a686ab59bd8ca, type: 3}
+  - {fileID: 9038195600159228464, guid: c2d2f1dced7ae724394b5424e56eb770, type: 3}
+  - {fileID: 7841240873355212477, guid: cbeaaaf13f9148247b4fec46893f4f0c, type: 3}
+  ballistaTurretHeads:
+  - {fileID: 5401822020959080341, guid: dc96b67954f3d784781281405d79e890, type: 3}
+  - {fileID: 6439229621509109357, guid: c76c3a7a8e05ae74bad815acdad522c4, type: 3}
+  - {fileID: 147919058982309883, guid: 85aa122e770a1d74b951d0898fe0e746, type: 3}
+  fireballTurretHeads:
+  - {fileID: 6095896801538245040, guid: 8b61e1feddaca574e8c369a6ada4814f, type: 3}
+  - {fileID: 8119026202672893265, guid: 4db1d1f9047b29247bcdf8d9bd5c733e, type: 3}
+  - {fileID: 1213838234147632810, guid: b3587fba88316904ea9e4441100b6439, type: 3}
+  turretAttackCatalog: {fileID: 11400000, guid: 44d0d2b8d16e519409338172f570735d, type: 2}
+  turretHeadFootprintRatio: 0.82
+  turretBodyHeightRatio: 0.58
 --- !u!1 &544981382 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8676513260348771993, guid: 5dbed1f1c53e5724ead312fc8112e7b6, type: 3}

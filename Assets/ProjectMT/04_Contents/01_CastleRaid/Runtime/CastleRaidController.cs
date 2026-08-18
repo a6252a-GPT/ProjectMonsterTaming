@@ -5,6 +5,7 @@ using ProjectMT.Contents.Framework;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Pooling;
 using ProjectMT.Shared.Unit;
+using ProjectMT.Shared.Audio;
 using TMPro;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -205,6 +206,7 @@ namespace ProjectMT.Contents.CastleRaid
             verifyingInnerPath = false;
             unitPathRefreshQueued = false;
             IsRunning = false;
+            UpdateDeploymentZoneVisual();
         }
 
         private void BindGenerationButtons()
@@ -407,6 +409,182 @@ namespace ProjectMT.Contents.CastleRaid
             target.Health.ApplyDamage(new DamageRequest(null, Mathf.Max(0f, damage), target.transform.position));
         }
 
+        public CastleAssaultUnit FindTurretTarget(
+            Vector3 origin,
+            float range,
+            CastleTurretTargetPriority priority)
+        {
+            if (!IsRunning)
+            {
+                return null;
+            }
+
+            var rangeSquared = Mathf.Max(0f, range) * Mathf.Max(0f, range);
+            CastleAssaultUnit best = null;
+            var bestDistance = priority == CastleTurretTargetPriority.Nearest
+                ? float.PositiveInfinity
+                : float.NegativeInfinity;
+            var bestTier = int.MaxValue;
+            for (var index = 0; index < activeUnits.Count; index++)
+            {
+                var unit = activeUnits[index];
+                if (unit == null || !unit.IsAlive)
+                {
+                    continue;
+                }
+
+                var offset = unit.transform.position - origin;
+                offset.y = 0f;
+                var distance = offset.sqrMagnitude;
+                if (distance > rangeSquared)
+                {
+                    continue;
+                }
+
+                if (priority == CastleTurretTargetPriority.Nearest)
+                {
+                    if (distance < bestDistance)
+                    {
+                        best = unit;
+                        bestDistance = distance;
+                    }
+
+                    continue;
+                }
+
+                var tier = ResolveTurretTargetTier(unit.UnitId);
+                if (tier < bestTier || tier == bestTier && distance > bestDistance)
+                {
+                    best = unit;
+                    bestTier = tier;
+                    bestDistance = distance;
+                }
+            }
+
+            return best;
+        }
+
+        public bool TryFindFirstTurretHit(
+            Vector3 from,
+            Vector3 to,
+            float projectileRadius,
+            ISet<int> excludedIds,
+            out CastleAssaultUnit target,
+            out Vector3 hitPoint)
+        {
+            target = null;
+            hitPoint = to;
+            var segment = to - from;
+            var segmentLengthSquared = segment.sqrMagnitude;
+            var bestRatio = float.PositiveInfinity;
+            for (var index = 0; index < activeUnits.Count; index++)
+            {
+                var unit = activeUnits[index];
+                if (unit == null || !unit.IsAlive || excludedIds != null && excludedIds.Contains(unit.GetInstanceID()))
+                {
+                    continue;
+                }
+
+                var ratio = segmentLengthSquared <= 0.000001f
+                    ? 0f
+                    : Mathf.Clamp01(Vector3.Dot(unit.TurretHitPoint - from, segment) / segmentLengthSquared);
+                var closest = from + segment * ratio;
+                var combinedRadius = Mathf.Max(0.01f, projectileRadius) + unit.TurretCollisionRadius;
+                if ((unit.TurretHitPoint - closest).sqrMagnitude > combinedRadius * combinedRadius || ratio >= bestRatio)
+                {
+                    continue;
+                }
+
+                target = unit;
+                hitPoint = closest;
+                bestRatio = ratio;
+            }
+
+            return target != null;
+        }
+
+        public bool ApplyTurretDamage(CastleAssaultUnit target, float damage, Vector3 hitPoint)
+        {
+            if (!IsRunning || target == null || !target.IsAlive || damage <= 0f)
+            {
+                return false;
+            }
+
+            target.ApplyDefenderDamage(damage, hitPoint);
+            return true;
+        }
+
+        public int ApplyTurretAreaDamage(
+            Vector3 center,
+            float radius,
+            float damage,
+            CastleTurretRuntime sourceTurret = null)
+        {
+            if (!IsRunning || radius <= 0f || damage <= 0f)
+            {
+                return 0;
+            }
+
+            var count = 0;
+            for (var index = activeUnits.Count - 1; index >= 0; index--)
+            {
+                var unit = activeUnits[index];
+                if (unit == null || !unit.IsAlive)
+                {
+                    continue;
+                }
+
+                var unitPosition = unit.transform.position;
+                var flatCenter = center;
+                unitPosition.y = 0f;
+                flatCenter.y = 0f;
+                var distance = Vector3.Distance(unitPosition, flatCenter);
+                if (distance > radius)
+                {
+                    continue;
+                }
+
+                var resolvedDamage = CastleTurretDamageMath.ResolveExplosionDamage(damage, radius, distance);
+                if (ApplyTurretDamage(unit, resolvedDamage, unit.TurretHitPoint))
+                {
+                    sourceTurret?.ReportHit(resolvedDamage);
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        public GameObject RentTurretObject(GameObject prefab, Vector3 position, Quaternion rotation)
+        {
+            return poolScope == null ? null : poolScope.Rent(prefab, position, rotation);
+        }
+
+        public void ReturnTurretObject(GameObject instance)
+        {
+            poolScope?.Return(instance);
+        }
+
+        public bool PlayTurretCue(SfxCue cue, Vector3 position)
+        {
+            return cue != null && combatFeedback != null && combatFeedback.PlayMonsterCue(cue, position);
+        }
+
+        private static int ResolveTurretTargetTier(string unitId)
+        {
+            if (string.IsNullOrWhiteSpace(unitId))
+            {
+                return 2;
+            }
+
+            if (unitId.IndexOf("boss", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return 0;
+            }
+
+            return unitId.IndexOf("elite", StringComparison.OrdinalIgnoreCase) >= 0 ? 1 : 2;
+        }
+
         public bool SelectUnit(int unitIndex)
         {
             if (!IsRunning || remainingDeployments == null || unitIndex < 0 ||
@@ -520,6 +698,7 @@ namespace ProjectMT.Contents.CastleRaid
             {
                 SetStatus("습격 실패");
                 IsRunning = false;
+                UpdateDeploymentZoneVisual();
                 context.Exit.Fail(new CastleRaidResult(false));
             }
         }
@@ -913,11 +1092,13 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             IsRunning = false;
+            UpdateDeploymentZoneVisual();
             context.Exit.Cancel(); // 보상 없이 콘텐츠 종료
         }
 
         private void UpdateHud()
         {
+            UpdateDeploymentZoneVisual();
             if (deploymentText != null)
             {
                 var limit = startData == null ? 0 : startData.DeploymentLimit;
@@ -955,6 +1136,11 @@ namespace ProjectMT.Contents.CastleRaid
                             : $"{ResolveUnitLabel(i)}\n×{remaining}";
                 }
             }
+        }
+
+        private void UpdateDeploymentZoneVisual()
+        {
+            deploymentZone?.SetVisualVisible(IsRunning && HasRemainingDeployments());
         }
 
         private bool TryCreateBreachLink(CastleTarget wall)

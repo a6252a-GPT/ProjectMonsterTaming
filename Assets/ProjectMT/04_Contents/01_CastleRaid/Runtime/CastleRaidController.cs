@@ -63,7 +63,7 @@ namespace ProjectMT.Contents.CastleRaid
         private ContentContext context; // 결과 반환 통로
         private CastleRaidStartData startData; // 이번 판 시작 정보
         private UnityAction[] unitButtonActions; // 해제용 버튼 콜백
-        private bool[] deployedUnits; // 유닛별 배치 여부
+        private int[] remainingDeployments; // 편성 슬롯별 남은 소환 수
         private int deployedCount; // 누적 배치 수
         private int selectedUnitIndex = -1; // 배치 대기 유닛 번호
         private float defenderAttackCooldown; // 다음 수비대 공격까지 시간
@@ -140,7 +140,11 @@ namespace ProjectMT.Contents.CastleRaid
             activeUnits.Clear();
             deployedCount = 0;
             selectedUnitIndex = -1;
-            deployedUnits = new bool[Mathf.Min(startData.DeploymentLimit, startData.Party.Units.Length)]; // 실제 배치 가능 인원만 추적
+            remainingDeployments = new int[startData.UnitSlotCount];
+            for (var index = 0; index < remainingDeployments.Length; index++)
+            {
+                remainingDeployments[index] = startData.SummonsPerSlot;
+            }
             innerPathProbe = new NavMeshPath(); // Unity 씬 인스턴스 생성이 끝난 뒤 네이티브 경로 버퍼 준비
             defenderAttackCooldown = defenderAttackInterval;
             innerPathOpen = false;
@@ -196,7 +200,7 @@ namespace ProjectMT.Contents.CastleRaid
             ClearBreachLinks();
             context = null;
             startData = null;
-            deployedUnits = null;
+            remainingDeployments = null;
             selectedUnitIndex = -1;
             verifyingInnerPath = false;
             unitPathRefreshQueued = false;
@@ -405,14 +409,14 @@ namespace ProjectMT.Contents.CastleRaid
 
         public bool SelectUnit(int unitIndex)
         {
-            if (!IsRunning || deployedUnits == null || unitIndex < 0 || unitIndex >= deployedUnits.Length ||
-                deployedUnits[unitIndex])
+            if (!IsRunning || remainingDeployments == null || unitIndex < 0 ||
+                unitIndex >= remainingDeployments.Length || remainingDeployments[unitIndex] <= 0)
             {
                 return false;
             }
 
             selectedUnitIndex = unitIndex;
-            SetStatus($"{ResolveUnitLabel(unitIndex)} 선택 · 초록색 외곽을 터치하세요");
+            SetStatus($"{ResolveUnitLabel(unitIndex)} 선택 · {remainingDeployments[unitIndex]}마리 배치 가능");
             UpdateHud();
             return true;
         }
@@ -448,8 +452,8 @@ namespace ProjectMT.Contents.CastleRaid
 
         private bool DeploySelectedUnit(Vector3 spawnPosition)
         {
-            if (startData == null || deployedUnits == null || selectedUnitIndex < 0 ||
-                selectedUnitIndex >= deployedUnits.Length || deployedUnits[selectedUnitIndex])
+            if (startData == null || remainingDeployments == null || selectedUnitIndex < 0 ||
+                selectedUnitIndex >= remainingDeployments.Length || remainingDeployments[selectedUnitIndex] <= 0)
             {
                 return false;
             }
@@ -497,10 +501,12 @@ namespace ProjectMT.Contents.CastleRaid
             unit.Damaged += HandleUnitDamaged;
             unit.Died += HandleUnitDied;
             activeUnits.Add(unit);
-            deployedUnits[deployedIndex] = true;
+            remainingDeployments[deployedIndex]--;
             deployedCount++;
-            selectedUnitIndex = -1;
-            SetStatus("가장 가까운 성벽을 공격합니다");
+            selectedUnitIndex = remainingDeployments[deployedIndex] > 0 ? deployedIndex : -1;
+            SetStatus(remainingDeployments[deployedIndex] > 0
+                ? $"{ResolveUnitLabel(deployedIndex)} {remainingDeployments[deployedIndex]}마리 남음 · 계속 배치할 수 있습니다"
+                : $"{ResolveUnitLabel(deployedIndex)} 3마리 배치 완료");
             UpdateHud();
             return true;
         }
@@ -510,7 +516,7 @@ namespace ProjectMT.Contents.CastleRaid
             unit.Damaged -= HandleUnitDamaged;
             unit.Died -= HandleUnitDied;
             StartCoroutine(ReturnDeadUnitAfterFeedback(unit)); // 사망 연출이 끝난 뒤 풀 반환
-            if (AllDeployedUnitsDead() && deployedCount >= startData.DeploymentLimit) // 추가 배치도 불가능할 때만 패배
+            if (AllDeployedUnitsDead() && !HasRemainingDeployments()) // 추가 배치도 불가능할 때만 패배
             {
                 SetStatus("습격 실패");
                 IsRunning = false;
@@ -845,6 +851,24 @@ namespace ProjectMT.Contents.CastleRaid
             return true;
         }
 
+        private bool HasRemainingDeployments()
+        {
+            if (remainingDeployments == null)
+            {
+                return false;
+            }
+
+            for (var index = 0; index < remainingDeployments.Length; index++)
+            {
+                if (remainingDeployments[index] > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void BindUnitButtons()
         {
             UnbindUnitButtons();
@@ -909,12 +933,13 @@ namespace ProjectMT.Contents.CastleRaid
                     continue;
                 }
 
-                var available = deployedUnits != null && i < deployedUnits.Length;
-                var deployed = available && deployedUnits[i];
-                button.interactable = IsRunning && available && !deployed;
+                var available = remainingDeployments != null && i < remainingDeployments.Length;
+                var remaining = available ? remainingDeployments[i] : 0;
+                var exhausted = available && remaining <= 0;
+                button.interactable = IsRunning && available && !exhausted;
                 if (button.targetGraphic != null)
                 {
-                    button.targetGraphic.color = deployed
+                    button.targetGraphic.color = !available || exhausted
                         ? new Color(0.18f, 0.2f, 0.22f, 0.9f)
                         : i == selectedUnitIndex
                             ? new Color(1f, 0.58f, 0.15f, 1f)
@@ -923,7 +948,11 @@ namespace ProjectMT.Contents.CastleRaid
 
                 if (unitButtonLabels != null && i < unitButtonLabels.Length && unitButtonLabels[i] != null)
                 {
-                    unitButtonLabels[i].text = deployed ? "배치 완료" : ResolveUnitLabel(i);
+                    unitButtonLabels[i].text = !available
+                        ? $"슬롯 {i + 1}\n비어 있음"
+                        : exhausted
+                            ? $"{ResolveUnitLabel(i)}\n소진"
+                            : $"{ResolveUnitLabel(i)}\n×{remaining}";
                 }
             }
         }

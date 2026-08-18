@@ -14,9 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterRarityCatalog
   sourceCatalog: {fileID: 11400000, guid: fe8b78d3f8fdc474f867c3d64664a095, type: 2}
   commonToEpicEntries:
-  - monster: {fileID: 11400000, guid: 67cb9560caba5d348af985604ecd1943, type: 2}
-    rarity: 0
-    passiveSkill: {fileID: 0}
   - monster: {fileID: 11400000, guid: c42578432c454694293379b550c7b6cc, type: 2}
     rarity: 0
     passiveSkill: {fileID: 0}

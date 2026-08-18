@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: MonsterCatalog
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterCatalog
   definitions:
-  - {fileID: 11400000, guid: 67cb9560caba5d348af985604ecd1943, type: 2}
   - {fileID: 11400000, guid: c42578432c454694293379b550c7b6cc, type: 2}
   - {fileID: 11400000, guid: 04f44bdcadfebf74cbdd9eec1c50f9bb, type: 2}
   - {fileID: 11400000, guid: 57921e4acff8c254db7ae01975cda828, type: 2}

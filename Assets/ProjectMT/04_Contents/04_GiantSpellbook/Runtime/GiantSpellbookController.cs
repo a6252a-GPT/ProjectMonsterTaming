@@ -86,13 +86,13 @@ namespace ProjectMT.Contents.GiantSpellbook
         [SerializeField, Min(0.1f)] private float attackInterval = 2f;
         [SerializeField, Min(0.1f)] private float handSlamRange = 4f;
         [SerializeField, Min(0.1f)] private float handSlamCooldown = 6f;
-        [SerializeField, Min(0.1f)] private float handSlamCastTime = 1.5f;
-        [SerializeField, Min(0.1f)] private float handSlamRadius = 3.5f;
+        [SerializeField, Min(0.1f)] private float handSlamCastTime = 2.5f;
+        [SerializeField, Min(0.1f)] private float handSlamRadius = 5.25f;
         [SerializeField, Min(0.1f)] private float handSlamStunDuration = 1.5f;
         [SerializeField, Min(0.1f)] private float markStrikeCooldown = 5f;
         [SerializeField, Min(0.1f)] private float markStrikeCastTime = 1.8f;
-        [SerializeField, Min(0.1f)] private float markStrikeRadius = 1.75f;
-        [SerializeField, Min(0.1f)] private float wideBurstCastTime = 5f;
+        [SerializeField, Min(0.1f)] private float markStrikeRadius = 2.75f;
+        [SerializeField, Min(0.1f)] private float wideBurstCastTime = 4.5f;
         [SerializeField, Min(0.1f)] private float wideBurstStartRadius = 2f;
         [SerializeField, Min(0.1f)] private float wideBurstRadius = 12f;
         [SerializeField, Min(0.1f)] private float wideBurstStunDuration = 2.5f;

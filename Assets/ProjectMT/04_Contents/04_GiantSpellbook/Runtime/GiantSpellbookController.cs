@@ -19,13 +19,27 @@ namespace ProjectMT.Contents.GiantSpellbook
         [SerializeField] private GameObject commanderRoot; // 모델이 아니라 실제 위치와 회전을 움직이는 군단장 최상위 오브젝트
         [SerializeField] private CommanderMoveController commanderMove; // 터치패드와 WASD를 하나의 이동 벡터로 합치는 공용 이동 컴포넌트
         [SerializeField] private Button exitButton; // Cancel 결과를 보내 보상·저장 없이 MainBattle로 복귀하는 버튼
-
         [Header("Break System")]
         [SerializeField, Min(1f)]
         private float maxBreakGauge = 100f; // [임시값] 브레이크에 필요한 최대 게이지
 
         [SerializeField, Min(0.1f)]
-        private float breakGaugePerHit = 20f; // [임시값] 보스가 한 번 맞을 때 증가하는 게이지
+        private float breakGaugePerHit = 10f; // [임시값] 보스가 한 번 맞을 때 증가하는 게이지
+
+        [SerializeField, Range(0.01f, 1f)]
+        private float breakGaugeAttackPowerMultiplier = 0.25f;
+
+        [SerializeField, Range(0.01f, 1f)]
+        private float breakGaugePhaseTwoHealthRatio = 0.7f;
+
+        [SerializeField, Range(0.01f, 1f)]
+        private float breakGaugePhaseThreeHealthRatio = 0.4f;
+
+        [SerializeField, Range(0.01f, 1f)]
+        private float breakGaugePhaseTwoMultiplier = 0.75f;
+
+        [SerializeField, Range(0.01f, 1f)]
+        private float breakGaugePhaseThreeMultiplier = 0.5f;
 
         [SerializeField, Min(0.1f)]
         private float breakDuration = 5f; // [임시값] 브레이크 유지 시간
@@ -48,6 +62,7 @@ namespace ProjectMT.Contents.GiantSpellbook
         private ContentContext context; // 시작 정보와 Complete/Fail/Cancel 출구를 함께 전달하는 한 판의 공통 봉투
         private GiantSpellbookStartData startData; // 입장 순간의 본부대 구성을 고정해 보관하는 읽기 전용 시작값
         private UnitActor bossActor; // 생성된 보스를 기억하고 사망 이벤트를 관리
+        private Quaternion bossFacingRotation;
 
         private float currentBreakGauge; // 내부 판정용으로 현재까지 누적된 브레이크 공격량
 
@@ -58,19 +73,32 @@ namespace ProjectMT.Contents.GiantSpellbook
         private float breakRemainingTime; // 브레이크 종료까지 남은 시간
         [SerializeField] private GiantSpellbookHudPresenter hudPresenter; // DEV Prefab Instance에 구성한 HUD 표시 담당
 
+        [SerializeField, Min(1f)] private float timeLimitSeconds = 80f;
+        private float remainingTime;
+        private int score;
+        [SerializeField, Min(0.1f)] private float comboResetTime = 2f;
+        private float comboRemainingTime;
+        private int comboCount;
+        private int comboScore;
+        public int CurrentScore => score;
+
         [Header("Boss Attack")]
         [SerializeField, Min(0.1f)] private float attackInterval = 2f;
         [SerializeField, Min(0.1f)] private float handSlamRange = 4f;
         [SerializeField, Min(0.1f)] private float handSlamCooldown = 6f;
         [SerializeField, Min(0.1f)] private float handSlamCastTime = 1.5f;
-        [SerializeField, Min(0.1f)] private float handSlamRadius = 3f;
+        [SerializeField, Min(0.1f)] private float handSlamRadius = 3.5f;
+        [SerializeField, Min(0.1f)] private float handSlamStunDuration = 1.5f;
         [SerializeField, Min(0.1f)] private float markStrikeCooldown = 5f;
         [SerializeField, Min(0.1f)] private float markStrikeCastTime = 1.8f;
-        [SerializeField, Min(0.1f)] private float markStrikeRadius = 2f;
+        [SerializeField, Min(0.1f)] private float markStrikeRadius = 1.75f;
         [SerializeField, Min(0.1f)] private float wideBurstCastTime = 5f;
-        [SerializeField, Min(0.1f)] private float wideBurstRadius = 15f;
+        [SerializeField, Min(0.1f)] private float wideBurstStartRadius = 2f;
+        [SerializeField, Min(0.1f)] private float wideBurstRadius = 12f;
+        [SerializeField, Min(0.1f)] private float wideBurstStunDuration = 2.5f;
         [SerializeField, Min(1)] private int normalAttacksBeforeWide = 4;
         [SerializeField, Min(0.01f)] private float bossAttackDamage = 1f;
+        [SerializeField] private GameObject attackTelegraphPrefab;
 
         public bool IsRunning { get; private set; }
         public event Action<GiantSpellbookHudState> HudStateChanged;
@@ -108,6 +136,11 @@ namespace ProjectMT.Contents.GiantSpellbook
             currentBreakGauge = 0f;
             isBroken = false;
             breakRemainingTime = 0f;
+            remainingTime = timeLimitSeconds;
+            score = 0;
+            comboRemainingTime = 0f;
+            comboCount = 0;
+            comboScore = 0;
             IsRunning = true;
             SpawnFollowers(); // 팀원이 내부 규칙을 붙이기 전 편성 연결만 확인
             SpawnExampleEnemy(); // 공용 전투 연결을 확인할 임시 적 한 기
@@ -120,6 +153,14 @@ namespace ProjectMT.Contents.GiantSpellbook
 
         }
 
+        private void LateUpdate()
+        {
+            if (IsRunning && bossActor != null)
+            {
+                bossActor.transform.rotation = bossFacingRotation;
+            }
+        }
+
         private void Update()
         {
             if (!IsRunning)
@@ -127,18 +168,71 @@ namespace ProjectMT.Contents.GiantSpellbook
                 return;
             }
 
-            stateMachine?.Tick(Time.deltaTime, isBroken);
-
-            if (!isBroken)
+            remainingTime = Mathf.Max(0f, remainingTime - Time.deltaTime);
+            if (remainingTime <= 0f)
             {
+                Timeout();
                 return;
             }
 
-            breakRemainingTime -= Time.deltaTime;
+            stateMachine?.Tick(Time.deltaTime, isBroken);
 
-            if (breakRemainingTime <= 0f)
+            if (isBroken)
             {
-                EndBreak();
+                breakRemainingTime -= Time.deltaTime;
+
+                if (breakRemainingTime <= 0f)
+                {
+                    EndBreak();
+                }
+            }
+
+            if (comboRemainingTime > 0f)
+            {
+                comboRemainingTime = Mathf.Max(0f, comboRemainingTime - Time.deltaTime);
+                if (comboRemainingTime <= 0f)
+                {
+                    comboCount = 0;
+                    comboScore = 0;
+                }
+            }
+
+            PublishHudState();
+        }
+
+        public void DebugTimeout()
+        {
+            if (IsRunning)
+            {
+                Timeout();
+            }
+        }
+
+        public void DebugBasicAttack()
+        {
+            DebugForceAttack(GiantSpellbookDebugAttack.BasicAttack);
+        }
+
+        public void DebugHandSlam()
+        {
+            DebugForceAttack(GiantSpellbookDebugAttack.HandSlam);
+        }
+
+        public void DebugMarkStrike()
+        {
+            DebugForceAttack(GiantSpellbookDebugAttack.MarkStrike);
+        }
+
+        public void DebugWideBurst()
+        {
+            DebugForceAttack(GiantSpellbookDebugAttack.WideBurst);
+        }
+
+        private void DebugForceAttack(GiantSpellbookDebugAttack attack)
+        {
+            if (IsRunning && !isBroken)
+            {
+                stateMachine?.DebugForceAttack(attack);
             }
         }
 
@@ -184,13 +278,32 @@ namespace ProjectMT.Contents.GiantSpellbook
                 handSlamCooldown,
                 handSlamCastTime,
                 handSlamRadius,
+                handSlamStunDuration,
                 markStrikeCooldown,
                 markStrikeCastTime,
                 markStrikeRadius,
                 wideBurstCastTime,
+                wideBurstStartRadius,
                 wideBurstRadius,
+                wideBurstStunDuration,
                 normalAttacksBeforeWide,
-                bossAttackDamage);
+                bossAttackDamage,
+                attackTelegraphPrefab,
+                HandleWideBurstMovementLock);
+        }
+
+        private void HandleWideBurstMovementLock(bool locked)
+        {
+            if (locked)
+            {
+                commanderMove?.SetInputEnabled(false);
+                return;
+            }
+
+            if (IsRunning && !isBroken)
+            {
+                commanderMove?.SetInputEnabled(true);
+            }
         }
 
         private void SpawnFollowers()
@@ -227,12 +340,61 @@ namespace ProjectMT.Contents.GiantSpellbook
 
                 if (actor == null)
                 {
+                    Debug.LogError($"Giant Spellbook follower spawn failed. UnitId={partyUnit.UnitId}", this);
                     continue;
                 }
 
                 actor?.SetFollowAnchor(commanderRoot.transform, followerOffsets[i], 6.5f, 8f);
+                EnsureFollowerPlaceholderVisual(actor, i, partyUnit.VisualTint);
 
                 followerActors.Add(actor); // 브레이크 공격력 적용을 위해 생성된 아군 보관
+            }
+        }
+
+        private static void EnsureFollowerPlaceholderVisual(UnitActor actor, int index, Color tint)
+        {
+            if (actor == null)
+            {
+                return;
+            }
+
+            var placeholder = actor.transform.Find("GiantSpellbookFollowerPlaceholder_Runtime");
+            if (placeholder == null && actor.GetComponentsInChildren<Renderer>(true).Length > 0)
+            {
+                return;
+            }
+
+            if (placeholder == null)
+            {
+                var placeholderObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                placeholderObject.name = "GiantSpellbookFollowerPlaceholder_Runtime";
+                placeholderObject.transform.SetParent(actor.transform, false);
+                placeholderObject.transform.localPosition = new Vector3(0f, 0.55f, 0f);
+                placeholderObject.transform.localScale = new Vector3(0.65f, 0.65f, 0.65f);
+                UnityEngine.Object.Destroy(placeholderObject.GetComponent<Collider>());
+                placeholder = placeholderObject.transform;
+            }
+
+            var renderer = placeholder.GetComponent<Renderer>();
+            if (renderer == null)
+            {
+                return;
+            }
+
+            var shader = Shader.Find("Universal Render Pipeline/Unlit") ??
+                         Shader.Find("Unlit/Color") ??
+                         Shader.Find("Standard");
+            if (renderer.sharedMaterial == null && shader != null)
+            {
+                renderer.material = new Material(shader);
+            }
+
+            if (renderer.material != null)
+            {
+                var color = tint.a > 0f && tint != Color.white
+                    ? tint
+                    : Color.HSVToRGB((index * 0.17f) % 1f, 0.55f, 1f);
+                renderer.material.color = color;
             }
         }
 
@@ -269,6 +431,7 @@ namespace ProjectMT.Contents.GiantSpellbook
                 return;
             }
 
+            bossFacingRotation = bossActor.transform.rotation;
             bossActor.Health.Damaged += HandleBossDamaged;// 보스 피해 이벤트 구독
             bossActor.Died += HandleBossDied; // 보스 사망 이벤트 구독
 
@@ -276,10 +439,18 @@ namespace ProjectMT.Contents.GiantSpellbook
         // 보스가 피해를 받을 때마다 브레이크 게이지를 증가시킨다.
         private void HandleBossDamaged(DamageReport report)
         {
+            score += Mathf.Max(0, Mathf.CeilToInt(report.AppliedDamage));
             // 콘텐츠가 종료된 뒤 들어온 피해 이벤트는 처리하지 않는다.
             if (!IsRunning)
             {
                 return;
+            }
+
+            if (report.AppliedDamage > 0f)
+            {
+                comboCount = comboRemainingTime > 0f ? comboCount + 1 : 1;
+                comboScore += comboCount;
+                comboRemainingTime = comboResetTime;
             }
 
             // 브레이크 중에는 게이지를 추가로 올리지 않고, 감소한 체력만 HUD에 반영한다.
@@ -295,8 +466,11 @@ namespace ProjectMT.Contents.GiantSpellbook
                 return;
             }
 
+            var appliedBreakGaugeDamage = breakGaugePerHit *
+                breakGaugeAttackPowerMultiplier *
+                GetHealthPhaseBreakGaugeMultiplier();
             currentBreakGauge = Mathf.Min(
-                currentBreakGauge + breakGaugePerHit,
+                currentBreakGauge + appliedBreakGaugeDamage,
                 maxBreakGauge);
 
             Debug.Log(
@@ -310,6 +484,27 @@ namespace ProjectMT.Contents.GiantSpellbook
             }
 
             PublishHudState();
+        }
+
+        private float GetHealthPhaseBreakGaugeMultiplier()
+        {
+            if (bossActor == null || bossActor.Health == null || bossActor.Health.MaxHealth <= 0f)
+            {
+                return 1f;
+            }
+
+            var healthRatio = bossActor.Health.CurrentHealth / bossActor.Health.MaxHealth;
+            if (healthRatio <= breakGaugePhaseThreeHealthRatio)
+            {
+                return breakGaugePhaseThreeMultiplier;
+            }
+
+            if (healthRatio <= breakGaugePhaseTwoHealthRatio)
+            {
+                return breakGaugePhaseTwoMultiplier;
+            }
+
+            return 1f;
         }
 
         // 게이지가 가득 차면 브레이크를 시작하고 아군 공격력을 증가시킨다.
@@ -381,6 +576,9 @@ namespace ProjectMT.Contents.GiantSpellbook
             currentBreakGauge = 0f;
             isBroken = false;
             breakRemainingTime = 0f;
+            comboRemainingTime = 0f;
+            comboCount = 0;
+            comboScore = 0;
         }
 
         private void HandleBossDied(UnitActor actor)
@@ -394,7 +592,17 @@ namespace ProjectMT.Contents.GiantSpellbook
         }
 
         //보스 처치 후 전투를 정리하고 성공 결과를 전달
+        private void Timeout()
+        {
+            Finish(ContentOutcome.Fail);
+        }
+
         private void Complete()
+        {
+            Finish(ContentOutcome.Complete);
+        }
+
+        private void Finish(ContentOutcome outcome)
         {
             // 사망 이벤트가 중복으로 들어와도 성공 처리를 한 번만 실행
             if (!IsRunning)
@@ -424,7 +632,14 @@ namespace ProjectMT.Contents.GiantSpellbook
 
             // 콘텐츠 내부에서는 저장하지 않고, 이번 판의 결과만 공용 출구로 전달
             var result = new GiantSpellbookResult();
-            context?.Exit.Complete(result);
+            if (outcome == ContentOutcome.Complete)
+            {
+                context?.Exit.Complete(result);
+            }
+            else
+            {
+                context?.Exit.Fail(result);
+            }
         }
 
         private void Cancel()
@@ -476,7 +691,14 @@ namespace ProjectMT.Contents.GiantSpellbook
                 bossActor.Health.MaxHealth,
                 RemainingBreakGauge,
                 maxBreakGauge,
-                isBroken));
+                isBroken,
+                score,
+                remainingTime,
+                comboCount,
+                comboScore,
+                comboRemainingTime,
+                breakRemainingTime,
+                breakDuration));
         }
 
 #if UNITY_EDITOR

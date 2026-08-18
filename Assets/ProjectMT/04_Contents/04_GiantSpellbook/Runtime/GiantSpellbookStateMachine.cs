@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
@@ -28,13 +27,9 @@ namespace ProjectMT.Contents.GiantSpellbook
             Dead
         }
 
-        private readonly List<UnitActor> areaTargets = new();
-        private readonly List<UnitActor> stunnedFollowers = new();
-
         private CombatWorld combatWorld; // 공격과 유닛 관리 담당 CombatWorld
         private UnitActor bossActor; // 보스 유닛
         private Transform commanderRoot; // 군단장 위치
-        private List<UnitActor> followerActors; // 군단장 추종 유닛들
         private BossState currentState = BossState.Idle;
         private float stateRemainingTime; // 현재 상태에서 남은 시간
         private float attackCooldownRemaining; // 다음 공격까지 남은 시간
@@ -42,13 +37,13 @@ namespace ProjectMT.Contents.GiantSpellbook
         private float markStrikeCooldownRemaining;
         private int normalAttackCount; // 일반 공격 횟수
         private bool isActive; // 상태 머신 활성화 여부
-        private bool isWideBurstLockingFollowers; // WideBurst 공격 중 추종 유닛 위치 고정 여부
-        private UnitActor singleTarget;
+        private bool isCommanderMovementLocked;
+        private float commanderMovementLockRemaining;
         private Vector3 attackPosition; // 공격이 발생할 위치
         private GameObject telegraphObject; // 공격 범위 표시용 오브젝트
         private float telegraphBaseDiameter;
         private GameObject attackTelegraphPrefab;
-        private Action<bool> wideBurstMovementLockChanged;
+        private Action<bool> commanderMovementLockChanged;
 
         private float attackInterval;
         private float handSlamRange;
@@ -56,7 +51,6 @@ namespace ProjectMT.Contents.GiantSpellbook
         private float handSlamCastTime;
         private float handSlamRadius;
         private float handSlamStunDuration;
-        private float followerStunRemaining;
         private float markStrikeCooldown;
         private float markStrikeCastTime;
         private float markStrikeRadius;
@@ -64,16 +58,13 @@ namespace ProjectMT.Contents.GiantSpellbook
         private float wideBurstStartRadius;
         private float wideBurstRadius;
         private float wideBurstStunDuration;
-        private float wideBurstStunRemaining;
         private int normalAttacksBeforeWide;
-        private float damage;
 
         //FSM에 필요한 설정값들을 초기화하는 메서드
         public void Configure(
             CombatWorld world,
             UnitActor boss,
             Transform commander,
-            List<UnitActor> followers,
             float interval,
             float slamRange,
             float slamCooldown,
@@ -88,7 +79,6 @@ namespace ProjectMT.Contents.GiantSpellbook
             float burstRadius,
             float burstStunDuration,
             int attacksBeforeWide,
-            float attackDamage,
             GameObject telegraphPrefab,
             Action<bool> movementLockChanged)
         {
@@ -97,7 +87,6 @@ namespace ProjectMT.Contents.GiantSpellbook
             combatWorld = world;
             bossActor = boss;
             commanderRoot = commander;
-            followerActors = followers;
 
             // 간격이 0초가 되지 않도록 최소값을 설정
             attackInterval = Mathf.Max(0.1f, interval);
@@ -114,12 +103,11 @@ namespace ProjectMT.Contents.GiantSpellbook
             wideBurstStartRadius = Mathf.Clamp(burstStartRadius, 0.1f, wideBurstRadius);
             wideBurstStunDuration = Mathf.Max(0.1f, burstStunDuration);
             normalAttacksBeforeWide = Mathf.Max(1, attacksBeforeWide);
-            damage = Mathf.Max(0.01f, attackDamage);
             attackTelegraphPrefab = telegraphPrefab;
-            wideBurstMovementLockChanged = movementLockChanged;
+            commanderMovementLockChanged = movementLockChanged;
             attackCooldownRemaining = attackInterval;
             currentState = BossState.Idle;
-            isActive = combatWorld != null && bossActor != null && followerActors != null;
+            isActive = combatWorld != null && bossActor != null && commanderRoot != null;
         }
 
         // 상태 머신을 매 프레임마다 업데이트하는 메서드
@@ -143,8 +131,7 @@ namespace ProjectMT.Contents.GiantSpellbook
 
             // deltaTime가 음수가 되지 않도록 보정
             deltaTime = Mathf.Max(0f, deltaTime);
-            TickFollowerStun(deltaTime);
-            TickWideBurstStun(deltaTime);
+            TickCommanderMovementLock(deltaTime);
 
             switch (currentState)
             {
@@ -169,8 +156,7 @@ namespace ProjectMT.Contents.GiantSpellbook
             }
 
             ClearAttackRuntime();
-            wideBurstStunRemaining = 0f;
-            wideBurstMovementLockChanged?.Invoke(false);
+            ReleaseCommanderMovementLock();
             ChangeState(BossState.Broken);
         }
 
@@ -191,18 +177,15 @@ namespace ProjectMT.Contents.GiantSpellbook
         public void Shutdown()
         {
             ClearAttackRuntime();
-            ReleaseStunnedFollowers();
-            wideBurstMovementLockChanged?.Invoke(false);
+            ReleaseCommanderMovementLock();
             combatWorld = null;
             bossActor = null;
             commanderRoot = null;
-            followerActors = null;
             attackTelegraphPrefab = null;
-            areaTargets.Clear();
+            commanderMovementLockChanged = null;
             attackCooldownRemaining = 0f;
             handSlamCooldownRemaining = 0f;
             markStrikeCooldownRemaining = 0f;
-            wideBurstStunRemaining = 0f;
             normalAttackCount = 0;
             currentState = BossState.Idle;
             isActive = false;
@@ -216,9 +199,7 @@ namespace ProjectMT.Contents.GiantSpellbook
             }
 
             ClearAttackRuntime();
-            ReleaseStunnedFollowers();
-            wideBurstStunRemaining = 0f;
-            wideBurstMovementLockChanged?.Invoke(false);
+            ReleaseCommanderMovementLock();
             attackCooldownRemaining = 0f;
 
             switch (attack)
@@ -262,19 +243,6 @@ namespace ProjectMT.Contents.GiantSpellbook
         // 현재 공격의 시전 시간이 끝났는지 확인하는 함수
         private void TickAttack(float deltaTime)
         {
-            if (currentState == BossState.BasicAttack &&
-                singleTarget != null &&
-                singleTarget.IsAlive)
-            {
-                attackPosition = singleTarget.transform.position;
-                if (telegraphObject != null)
-                {
-                    telegraphObject.transform.position = new Vector3(
-                        attackPosition.x,
-                        attackPosition.y + 0.03f,
-                        attackPosition.z);
-                }
-            }
             // 현재 공격에 남은 시전 시간을 감소
             stateRemainingTime -= deltaTime;
 
@@ -296,34 +264,21 @@ namespace ProjectMT.Contents.GiantSpellbook
             switch (currentState)
             {
                 case BossState.BasicAttack:
-                    ApplySingleTargetDamage(singleTarget);
+                    ApplyCommanderHit(attackPosition, 0.6f, 0.35f);
                     FinishNormalAttack();
                     break;
                 case BossState.HandSlam:
-                    ApplyAreaDamage(attackPosition, handSlamRadius, true);
+                    ApplyCommanderHit(attackPosition, handSlamRadius, handSlamStunDuration);
                     handSlamCooldownRemaining = handSlamCooldown;
                     FinishNormalAttack();
                     break;
                 case BossState.MarkStrike:
-                    ApplyAreaDamage(attackPosition, markStrikeRadius);
+                    ApplyCommanderHit(attackPosition, markStrikeRadius, Mathf.Min(0.75f, handSlamStunDuration));
                     markStrikeCooldownRemaining = markStrikeCooldown;
                     FinishNormalAttack();
                     break;
                 case BossState.WideBurst:
-                    var burstPosition = GetBossPosition();
-                    var commanderHit = commanderRoot != null &&
-                        IsPositionInArea(commanderRoot.position, burstPosition, wideBurstRadius);
-                    ApplyAreaDamage(
-                        burstPosition,
-                        wideBurstRadius,
-                        !commanderHit,
-                        wideBurstStunDuration);
-                    if (commanderHit)
-                    {
-                        LockFollowers();
-                        wideBurstStunRemaining = wideBurstStunDuration;
-                        wideBurstMovementLockChanged?.Invoke(true);
-                    }
+                    ApplyCommanderHit(GetBossPosition(), wideBurstRadius, wideBurstStunDuration);
                     normalAttackCount = 0;
                     FinishAttack();
                     break;
@@ -353,8 +308,7 @@ namespace ProjectMT.Contents.GiantSpellbook
         private void BeginBasicAttack()
         {
             stateRemainingTime = 0.35f;
-            singleTarget = FindNearestFollower();
-            attackPosition = singleTarget != null ? singleTarget.transform.position : GetBossPosition();
+            attackPosition = commanderRoot != null ? commanderRoot.position : GetBossPosition();
             CreateTelegraph(attackPosition, 0.6f, new Color(1f, 0.85f, 0.1f, 0.65f));
         }
 
@@ -382,8 +336,7 @@ namespace ProjectMT.Contents.GiantSpellbook
         private void BeginMarkStrike()
         {
             stateRemainingTime = markStrikeCastTime;
-            singleTarget = FindNearestFollower();
-            attackPosition = singleTarget != null ? singleTarget.transform.position : GetBossPosition();
+            attackPosition = commanderRoot != null ? commanderRoot.position : GetBossPosition();
             CreateTelegraph(attackPosition, markStrikeRadius, new Color(0.35f, 0.75f, 1f, 0.65f));
         }
 
@@ -428,22 +381,15 @@ namespace ProjectMT.Contents.GiantSpellbook
         private void FinishAttack()
         {
             DestroyTelegraph();
-            if (wideBurstStunRemaining <= 0f)
-            {
-                ReleaseFollowers();
-            }
             stateRemainingTime = 0f;
             attackCooldownRemaining = attackInterval;
-            singleTarget = null;
             ChangeState(BossState.Idle);
         }
 
         private void ClearAttackRuntime()
         {
             DestroyTelegraph();
-            ReleaseFollowers();
             stateRemainingTime = 0f;
-            singleTarget = null;
         }
 
         private bool IsHandSlamInRange()
@@ -465,170 +411,58 @@ namespace ProjectMT.Contents.GiantSpellbook
             return offset.sqrMagnitude <= radius * radius;
         }
 
-        private UnitActor FindNearestFollower()
-        {
-            if (followerActors == null || bossActor == null)
-            {
-                return null;
-            }
-
-            UnitActor nearest = null;
-            var nearestDistance = float.PositiveInfinity;
-            for (var i = 0; i < followerActors.Count; i++)
-            {
-                var candidate = followerActors[i];
-                if (candidate == null || !candidate.IsAlive)
-                {
-                    continue;
-                }
-
-                var distance = (candidate.transform.position - GetBossPosition()).sqrMagnitude;
-                if (distance < nearestDistance)
-                {
-                    nearest = candidate;
-                    nearestDistance = distance;
-                }
-            }
-
-            return nearest;
-        }
-
-        private Vector3 GetNearestFollowerPosition()
-        {
-            var target = FindNearestFollower();
-            return target != null ? target.transform.position : GetBossPosition();
-        }
-
         private Vector3 GetBossPosition()
         {
             return bossActor != null ? bossActor.transform.position : Vector3.zero;
         }
 
-        private void ApplySingleTargetDamage(UnitActor target)
+        private bool ApplyCommanderHit(Vector3 center, float radius, float movementLockDuration)
         {
-            if (target != null && target.IsAlive)
+            if (commanderRoot == null || !IsPositionInArea(commanderRoot.position, center, radius))
             {
-                combatWorld.ApplyMonsterDamage(bossActor, target.Health, damage);
+                return false;
+            }
+
+            LockCommanderMovement(movementLockDuration);
+            return true;
+        }
+
+        private void LockCommanderMovement(float duration)
+        {
+            commanderMovementLockRemaining = Mathf.Max(commanderMovementLockRemaining, Mathf.Max(0.1f, duration));
+            if (!isCommanderMovementLocked)
+            {
+                isCommanderMovementLocked = true;
+                commanderMovementLockChanged?.Invoke(true);
             }
         }
 
-        private bool ApplyAreaDamage(
-            Vector3 center,
-            float radius,
-            bool applyStun = false,
-            float stunDuration = 0f)
+        private void TickCommanderMovementLock(float deltaTime)
         {
-            areaTargets.Clear();
-            combatWorld.CollectUnits(UnitTeam.Player, center, radius, 64, areaTargets);
-            var hitAnyTarget = false;
-            for (var i = 0; i < areaTargets.Count; i++)
-            {
-                var target = areaTargets[i];
-                if (target != null && target.IsAlive)
-                {
-                    hitAnyTarget = true;
-                    combatWorld.ApplyMonsterDamage(bossActor, target.Health, damage);
-                    if (applyStun)
-                    {
-                        StunFollower(target, stunDuration);
-                    }
-                }
-            }
-
-            return hitAnyTarget;
-        }
-
-        private void StunFollower(UnitActor follower, float duration = 0f)
-        {
-            if (follower == null || !follower.IsAlive || followerActors == null || !followerActors.Contains(follower))
+            if (!isCommanderMovementLocked)
             {
                 return;
             }
 
-            if (!stunnedFollowers.Contains(follower))
-            {
-                if (!follower.BeginManualReposition())
-                {
-                    return;
-                }
-
-                stunnedFollowers.Add(follower);
-            }
-
-            var stunTime = duration > 0f ? duration : handSlamStunDuration;
-            followerStunRemaining = Mathf.Max(followerStunRemaining, stunTime);
-        }
-
-        private void TickFollowerStun(float deltaTime)
-        {
-            if (stunnedFollowers.Count == 0)
+            commanderMovementLockRemaining -= deltaTime;
+            if (commanderMovementLockRemaining > 0f)
             {
                 return;
             }
 
-            followerStunRemaining -= deltaTime;
-            if (followerStunRemaining > 0f)
+            ReleaseCommanderMovementLock();
+        }
+
+        private void ReleaseCommanderMovementLock()
+        {
+            commanderMovementLockRemaining = 0f;
+            if (!isCommanderMovementLocked)
             {
                 return;
             }
 
-            ReleaseStunnedFollowers();
-        }
-
-        private void ReleaseStunnedFollowers()
-        {
-            for (var i = 0; i < stunnedFollowers.Count; i++)
-            {
-                stunnedFollowers[i]?.EndManualReposition();
-            }
-
-            stunnedFollowers.Clear();
-            followerStunRemaining = 0f;
-        }
-
-        private void TickWideBurstStun(float deltaTime)
-        {
-            if (wideBurstStunRemaining <= 0f)
-            {
-                return;
-            }
-
-            wideBurstStunRemaining -= deltaTime;
-            if (wideBurstStunRemaining <= 0f)
-            {
-                ReleaseFollowers();
-                wideBurstMovementLockChanged?.Invoke(false);
-            }
-        }
-
-        private void LockFollowers()
-        {
-            if (isWideBurstLockingFollowers || followerActors == null)
-            {
-                return;
-            }
-
-            for (var i = 0; i < followerActors.Count; i++)
-            {
-                followerActors[i]?.BeginManualReposition();
-            }
-
-            isWideBurstLockingFollowers = true;
-        }
-
-        private void ReleaseFollowers()
-        {
-            if (!isWideBurstLockingFollowers || followerActors == null)
-            {
-                return;
-            }
-
-            for (var i = 0; i < followerActors.Count; i++)
-            {
-                followerActors[i]?.EndManualReposition();
-            }
-
-            isWideBurstLockingFollowers = false;
+            isCommanderMovementLocked = false;
+            commanderMovementLockChanged?.Invoke(false);
         }
 
         private void CreateTelegraph(

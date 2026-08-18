@@ -8,6 +8,7 @@ using ProjectMT.Contents.Framework;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Features.OfflineReward;
+using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Debugging;
 using ProjectMT.Shared.Equipment;
@@ -136,11 +137,26 @@ namespace ProjectMT.Bootstrap
                 commanderGrowthConfig = CommanderGrowthConfig.RuntimeDefault; // 미할당·손상 설정 안전 복구
             }
 
+            var commanderSkillBalanceConfig = projectConfig.CommanderSkillBalanceConfig;
+            if (commanderSkillBalanceConfig == null || !commanderSkillBalanceConfig.TryValidate(out _))
+            {
+                commanderSkillBalanceConfig = CommanderSkillBalanceConfig.RuntimeDefault; // SO 누락 시 현재 2종 시드 유지
+            }
+
+            var commanderSkillSummonConfig = projectConfig.CommanderSkillSummonConfig;
+            if (commanderSkillSummonConfig == null ||
+                !commanderSkillSummonConfig.TryValidate(commanderSkillBalanceConfig, out _))
+            {
+                commanderSkillSummonConfig = CommanderSkillSummonConfig.RuntimeDefault; // 전용 소환 시드 복구
+            }
+
             gameDataService = new GameDataService(
                 saveService,
                 commanderGrowthConfig,
                 projectConfig.ItemCatalog,
-                projectConfig.EquipmentBalanceConfig);
+                projectConfig.EquipmentBalanceConfig,
+                commanderSkillBalanceConfig,
+                commanderSkillSummonConfig);
             await gameDataService.LoadAsync(); // 씬 초기화 전 저장 로드
             CombatWorld.ConfigureSharedStatRules(
                 projectConfig.CombatStatConfig ?? CombatStatConfig.RuntimeDefault);

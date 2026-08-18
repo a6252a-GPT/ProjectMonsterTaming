@@ -1,0 +1,23 @@
+{
+  "name": "ProjectMT.Features.CommanderSkill.Editor",
+  "rootNamespace": "ProjectMT.EditorTools.CommanderSkill",
+  "references": [
+    "ProjectMT.Core",
+    "ProjectMT.Shared",
+    "ProjectMT.Features",
+    "ProjectMT.Bootstrap",
+    "UnityEngine.UI",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

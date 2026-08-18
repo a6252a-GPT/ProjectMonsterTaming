@@ -26,6 +26,7 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private Button inventoryButton;
         [SerializeField] private Button equipmentSlotUpgradeButton;
         [SerializeField] private Button commanderButton;
+        [SerializeField] private Button skillButton;
         [SerializeField] private Button castleRaidButton;
         [SerializeField] private Button modeButton;
 
@@ -50,6 +51,7 @@ namespace ProjectMT.Features.MainBattle
             inventoryButton?.onClick.AddListener(OpenInventory);
             equipmentSlotUpgradeButton?.onClick.AddListener(OpenEquipmentSlotUpgrade);
             commanderButton?.onClick.AddListener(OpenCommander);
+            skillButton?.onClick.AddListener(OpenCommanderSkill);
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
             modeButton?.onClick.AddListener(CloseMenu);
             SetMenuOpen(false);
@@ -67,6 +69,7 @@ namespace ProjectMT.Features.MainBattle
             inventoryButton?.onClick.RemoveListener(OpenInventory);
             equipmentSlotUpgradeButton?.onClick.RemoveListener(OpenEquipmentSlotUpgrade);
             commanderButton?.onClick.RemoveListener(OpenCommander);
+            skillButton?.onClick.RemoveListener(OpenCommanderSkill);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
             modeButton?.onClick.RemoveListener(CloseMenu);
         }
@@ -150,6 +153,12 @@ namespace ProjectMT.Features.MainBattle
             managementUi?.OpenCommanderGrowthPage();
         }
 
+        private void OpenCommanderSkill()
+        {
+            CloseMenu();
+            managementUi?.OpenCommanderSkillPage();
+        }
+
         private void OpenCastleRaid()
         {
             CloseMenu();
@@ -181,6 +190,7 @@ namespace ProjectMT.Features.MainBattle
             Button openInventoryButton,
             Button openEquipmentSlotUpgradeButton,
             Button openCommanderButton,
+            Button openSkillButton,
             Button openCastleRaidButton,
             Button currentModeButton)
         {
@@ -199,6 +209,7 @@ namespace ProjectMT.Features.MainBattle
             inventoryButton = openInventoryButton;
             equipmentSlotUpgradeButton = openEquipmentSlotUpgradeButton;
             commanderButton = openCommanderButton;
+            skillButton = openSkillButton;
             castleRaidButton = openCastleRaidButton;
             modeButton = currentModeButton;
         }

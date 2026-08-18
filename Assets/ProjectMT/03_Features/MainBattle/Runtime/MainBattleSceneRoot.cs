@@ -2,11 +2,13 @@ using System;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Features.Commander;
+using ProjectMT.Features.CommanderSkill;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.Expedition;
 using ProjectMT.Features.Formation;
 using ProjectMT.Features.GrowthDungeon;
 using ProjectMT.Features.Inventory;
+using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Unit;
@@ -55,6 +57,10 @@ namespace ProjectMT.Features.MainBattle
         private MainBattleHudProgressView hudProgressView; // 상단 계정·재화 표시
         private GrowthDungeonStageEntryController growthDungeonEntry; // 단계 선택·파밍 입장
         private CommanderGrowthPageView commanderGrowthPage; // 저장 편성 총전투력 표시
+        private CommanderSkillRuntime commanderSkillRuntime; // 군단장 스킬 실행
+        private CommanderSkillHudView commanderSkillHud; // 우측 하단 AUTO·6슬롯 HUD
+        private CommanderSkillPageController commanderSkillPage; // 군단장 스킬 장착·성장 관리창
+        private CommanderSkillSummonController commanderSkillSummon; // 상점 전용 스킬 소환
 
         public SceneId SceneId => sceneId;
         public bool IsInitialized { get; private set; }
@@ -116,6 +122,7 @@ namespace ProjectMT.Features.MainBattle
             formationPage.Configure(context.Progress, context.MonsterCatalog, context.RefreshParty);
             managementUi = GetComponentInChildren<MainBattleManagementUiController>(true);
             managementUi?.ConfigureFormationPage(formationPage);
+            ConfigureCommanderSkills(commander);
             growthDungeonEntry?.Configure(
                 context.Progress,
                 context.ContentLauncher,
@@ -175,9 +182,14 @@ namespace ProjectMT.Features.MainBattle
             ResolveGachaSystem()?.Shutdown();
             ResolveShopPageView()?.Shutdown();
             hudProgressView?.Shutdown();
+            commanderSkillHud?.Shutdown();
+            commanderSkillPage?.Shutdown();
+            commanderSkillSummon?.Shutdown();
+            commanderSkillRuntime?.Shutdown();
             managementUi?.ConfigureFormationPage(null);
             managementUi?.ConfigureEquipmentSlotUpgradePage(null);
             managementUi?.ConfigureInventoryPage(null);
+            managementUi?.ConfigureCommanderSkillPage(null);
             if (managementUi != null)
             {
                 managementUi.GrowthDungeonPageOpened -= RefreshGrowthDungeonUi;
@@ -213,7 +225,50 @@ namespace ProjectMT.Features.MainBattle
             commanderGrowthPage = null;
             hudProgressView = null;
             growthDungeonEntry = null;
+            commanderSkillHud = null;
+            commanderSkillPage = null;
+            commanderSkillRuntime = null;
+            commanderSkillSummon = null;
             IsInitialized = false;
+        }
+
+        private void ConfigureCommanderSkills(Transform commander)
+        {
+            var catalog = Resources.Load<CommanderSkillCatalog>("CommanderSkills/CommanderSkillCatalog");
+            var combatWorld = expedition.GetComponentInChildren<CombatWorld>(true);
+            commanderSkillHud = GetComponentInChildren<CommanderSkillHudView>(true);
+            var catalogError = catalog == null ? "Catalog asset is missing." : string.Empty;
+            if (catalog == null || !catalog.TryValidate(out catalogError))
+            {
+                Debug.LogError($"Commander skill catalog is missing or invalid: {catalogError}", this);
+                return;
+            }
+
+            commanderSkillSummon = GetComponentInChildren<CommanderSkillSummonController>(true);
+            commanderSkillSummon?.Configure(context.Progress, catalog);
+
+            if (combatWorld == null || commanderSkillHud == null)
+            {
+                Debug.LogWarning("Commander skill combat world or HUD is missing.", this);
+                return;
+            }
+
+            commanderSkillRuntime = GetComponent<CommanderSkillRuntime>();
+            if (commanderSkillRuntime == null)
+            {
+                commanderSkillRuntime = gameObject.AddComponent<CommanderSkillRuntime>(); // 신규 신 참조를 요구하지 않는 런타임 소유
+            }
+
+            commanderSkillRuntime.Configure(
+                context.Progress,
+                catalog,
+                combatWorld,
+                commander,
+                () => managementUi != null && managementUi.IsAnyPageOpen);
+            commanderSkillHud.Configure(context.Progress, catalog, commanderSkillRuntime);
+            commanderSkillPage = GetComponentInChildren<CommanderSkillPageController>(true);
+            commanderSkillPage?.Configure(context.Progress, catalog);
+            managementUi?.ConfigureCommanderSkillPage(commanderSkillPage);
         }
 
         // GachaSystem은 비활성 MonsterShop에 두면 프리팹 오버라이드 참조가 Missing으로 깨질 수 있다.

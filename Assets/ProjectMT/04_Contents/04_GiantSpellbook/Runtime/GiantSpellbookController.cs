@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Input;
@@ -11,10 +11,9 @@ using UnityEngine.UI;
 namespace ProjectMT.Contents.GiantSpellbook
 {
     [DisallowMultipleComponent]
-    public sealed class GiantSpellbookController : MonoBehaviour, IContentController // 거대마도서 팀 작업용 빈 실행 골격
+    public sealed class GiantSpellbookController : MonoBehaviour, IContentController // 군단장 대 보스 1:1 전투 총괄
     {
         [SerializeField] private CombatWorld combatWorld; // UnitActor 생성·타깃 탐색·공격 Tick·정리를 맡는 공용 전투 공간
-        [SerializeField] private GameObject followerPrefab; // 정식 Monster 외형 연결이 없을 때만 사용하는 공용 대체 Prefab
         [SerializeField] private GameObject exampleEnemyPrefab; // UnitActor가 붙은 팀원 참고용 임시 적 Prefab
         [SerializeField] private Transform exampleEnemySpawn; // 예시 적 한 기를 놓을 위치, 실제 구현에서는 웨이브 SpawnPoint로 교체 가능
         [SerializeField] private GameObject commanderRoot; // 모델이 아니라 실제 위치와 회전을 움직이는 군단장 최상위 오브젝트
@@ -46,24 +45,13 @@ namespace ProjectMT.Contents.GiantSpellbook
         private float breakDuration = 5f; // [임시값] 브레이크 유지 시간
 
         [SerializeField, Min(1f)]
-        private float breakDamageMultiplier = 1.5f; // [임시값] 브레이크 중 아군 공격력 배율
-
-        private readonly Vector3[] followerOffsets =
-        {
-            new Vector3(-1.2f, 0f, -0.9f),
-            new Vector3(0f, 0f, -1.2f),
-            new Vector3(1.2f, 0f, -0.9f),
-            new Vector3(-0.7f, 0f, -2f),
-            new Vector3(0.7f, 0f, -2f)
-        };
-
-        // 생성된 아군들을 기억해 브레이크 중 공격력 배율을 적용한다.
-        private readonly List<UnitActor> followerActors = new();
+        private float breakDamageMultiplier = 1.5f; // [임시값] 브레이크 중 군단장 스킬 피해 배율
 
         private ContentContext context; // 시작 정보와 Complete/Fail/Cancel 출구를 함께 전달하는 한 판의 공통 봉투
-        private GiantSpellbookStartData startData; // 입장 순간의 본부대 구성을 고정해 보관하는 읽기 전용 시작값
+        private GiantSpellbookStartData startData; // 군단장 단독 보스전 시작 표식
         private UnitActor bossActor; // 생성된 보스를 기억하고 사망 이벤트를 관리
-        private float difficultyMultiplier = 1f; // 선택 단계에 따른 보스 체력·피해 배율
+        private ICommanderSkillContentBridge commanderSkillBridge;
+        private float difficultyMultiplier = 1f; // 선택 단계에 따른 보스 체력 배율
         private Quaternion bossFacingRotation;
 
         private float currentBreakGauge; // 내부 판정용으로 현재까지 누적된 브레이크 공격량
@@ -99,7 +87,6 @@ namespace ProjectMT.Contents.GiantSpellbook
         [SerializeField, Min(0.1f)] private float wideBurstRadius = 12f;
         [SerializeField, Min(0.1f)] private float wideBurstStunDuration = 2.5f;
         [SerializeField, Min(1)] private int normalAttacksBeforeWide = 4;
-        [SerializeField, Min(0.01f)] private float bossAttackDamage = 1f;
         [SerializeField] private GameObject attackTelegraphPrefab;
 
         public bool IsRunning { get; private set; }
@@ -117,12 +104,12 @@ namespace ProjectMT.Contents.GiantSpellbook
             // 여기서 구체 타입을 확인해 두면 잘못된 StartData를 연결했을 때 조용히 오작동하지 않고 즉시 알 수 있다.
             context = contentContext ?? throw new ArgumentNullException(nameof(contentContext));
             startData = contentContext.StartData as GiantSpellbookStartData;
-            if (startData?.Party == null)
+            if (startData == null)
             {
                 throw new ArgumentException("GiantSpellbookStartData is required.", nameof(contentContext));
             }
 
-            if (combatWorld == null || followerPrefab == null || exampleEnemyPrefab == null ||
+            if (combatWorld == null || exampleEnemyPrefab == null ||
                 exampleEnemySpawn == null || commanderRoot == null || commanderMove == null)
             {
                 throw new InvalidOperationException("Giant Spellbook skeleton references are missing.");
@@ -134,7 +121,6 @@ namespace ProjectMT.Contents.GiantSpellbook
             commanderMove.ResetToInitialPosition();
             commanderMove.SetInputEnabled(true);
             exitButton?.onClick.AddListener(Cancel);
-            followerActors.Clear();
             currentBreakGauge = 0f;
             isBroken = false;
             breakRemainingTime = 0f;
@@ -149,12 +135,12 @@ namespace ProjectMT.Contents.GiantSpellbook
             comboCount = 0;
             comboScore = 0;
             IsRunning = true;
-            SpawnFollowers(); // 팀원이 내부 규칙을 붙이기 전 편성 연결만 확인
-            SpawnExampleEnemy(); // 공용 전투 연결을 확인할 임시 적 한 기
+            SpawnExampleEnemy();
 
             stateMachine = new GiantSpellbookStateMachine(); // FSM 생성
 
             ConfigureStateMachine();
+            ConfigureCommanderSkills();
             hudPresenter?.Bind(this);
             PublishHudState();
 
@@ -247,7 +233,9 @@ namespace ProjectMT.Contents.GiantSpellbook
         {
             // Shutdown은 MainBattle 복귀, DEV Scene 종료, 재초기화 모두에서 호출될 수 있다.
             // 여러 번 호출돼도 안전하도록 Listener 제거와 공용 전투 정리를 같은 순서로 반복한다.
+            IsRunning = false;
             exitButton?.onClick.RemoveListener(Cancel);
+            ShutdownCommanderSkills();
             commanderMove?.SetInputEnabled(false);
             stateMachine?.Shutdown();
             stateMachine = null;
@@ -270,7 +258,6 @@ namespace ProjectMT.Contents.GiantSpellbook
             context = null;
             startData = null;
             difficultyMultiplier = 1f;
-            IsRunning = false;
         }
 
         private void ConfigureStateMachine()
@@ -280,7 +267,6 @@ namespace ProjectMT.Contents.GiantSpellbook
                 combatWorld,
                 bossActor,
                 commanderRoot.transform,
-                followerActors,
                 attackInterval,
                 handSlamRange,
                 handSlamCooldown,
@@ -295,12 +281,11 @@ namespace ProjectMT.Contents.GiantSpellbook
                 wideBurstRadius,
                 wideBurstStunDuration,
                 normalAttacksBeforeWide,
-                bossAttackDamage * difficultyMultiplier,
                 attackTelegraphPrefab,
-                HandleWideBurstMovementLock);
+                HandleBossHitMovementLock);
         }
 
-        private void HandleWideBurstMovementLock(bool locked)
+        private void HandleBossHitMovementLock(bool locked)
         {
             if (locked)
             {
@@ -311,98 +296,6 @@ namespace ProjectMT.Contents.GiantSpellbook
             if (IsRunning && !isBroken)
             {
                 commanderMove?.SetInputEnabled(true);
-            }
-        }
-
-        private void SpawnFollowers()
-        {
-            /*
-             * BattlePartySnapshot은 입장 시점에 계산이 끝난 아군 데이터다.
-             * UnitId, 전투 능력치, 표시 색상, 정식 RuntimeAssetSet을 그대로 UnitSpawnRequest에 복사한다.
-             * RuntimeAssetSet에 정식 Monster Prefab이 있으면 CombatWorld가 followerPrefab보다 그 Prefab을 우선 사용한다.
-             *
-             * UnitTeam.Player로 생성한 뒤 SetFollowAnchor를 호출하면 몬스터는 군단장 주변 지정 위치를 유지한다.
-             * 적(UnitTeam.Enemy)을 발견하면 공용 UnitActor가 자동으로 접근·공격하고, 전투가 끝나면 다시 군단장을 따른다.
-             * 이 개념이 어렵다면 Notion `04_1단계_현재시드구조_이해하기`에서 Snapshot 설명을 먼저 읽는다.
-             */
-            var partyUnits = startData.Party.Units;
-            for (var i = 0; i < partyUnits.Length && i < followerOffsets.Length; i++)
-            {
-                var partyUnit = partyUnits[i];
-                if (partyUnit == null)
-                {
-                    continue;
-                }
-
-                var request = new UnitSpawnRequest(
-                    partyUnit.UnitId,
-                    partyUnit.Stats,
-                    UnitTeam.Player,
-                    visualTint: partyUnit.VisualTint,
-                    runtimeAssetSet: partyUnit.RuntimeAssetSet);
-                var actor = combatWorld.SpawnUnit(
-                    followerPrefab,
-                    request,
-                    commanderRoot.transform.position + followerOffsets[i],
-                    Quaternion.identity);
-
-                if (actor == null)
-                {
-                    Debug.LogError($"Giant Spellbook follower spawn failed. UnitId={partyUnit.UnitId}", this);
-                    continue;
-                }
-
-                actor?.SetFollowAnchor(commanderRoot.transform, followerOffsets[i], 6.5f, 8f);
-                EnsureFollowerPlaceholderVisual(actor, i, partyUnit.VisualTint);
-
-                followerActors.Add(actor); // 브레이크 공격력 적용을 위해 생성된 아군 보관
-            }
-        }
-
-        private static void EnsureFollowerPlaceholderVisual(UnitActor actor, int index, Color tint)
-        {
-            if (actor == null)
-            {
-                return;
-            }
-
-            var placeholder = actor.transform.Find("GiantSpellbookFollowerPlaceholder_Runtime");
-            if (placeholder == null && actor.GetComponentsInChildren<Renderer>(true).Length > 0)
-            {
-                return;
-            }
-
-            if (placeholder == null)
-            {
-                var placeholderObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                placeholderObject.name = "GiantSpellbookFollowerPlaceholder_Runtime";
-                placeholderObject.transform.SetParent(actor.transform, false);
-                placeholderObject.transform.localPosition = new Vector3(0f, 0.55f, 0f);
-                placeholderObject.transform.localScale = new Vector3(0.65f, 0.65f, 0.65f);
-                UnityEngine.Object.Destroy(placeholderObject.GetComponent<Collider>());
-                placeholder = placeholderObject.transform;
-            }
-
-            var renderer = placeholder.GetComponent<Renderer>();
-            if (renderer == null)
-            {
-                return;
-            }
-
-            var shader = Shader.Find("Universal Render Pipeline/Unlit") ??
-                         Shader.Find("Unlit/Color") ??
-                         Shader.Find("Standard");
-            if (renderer.sharedMaterial == null && shader != null)
-            {
-                renderer.material = new Material(shader);
-            }
-
-            if (renderer.material != null)
-            {
-                var color = tint.a > 0f && tint != Color.white
-                    ? tint
-                    : Color.HSVToRGB((index * 0.17f) % 1f, 0.55f, 1f);
-                renderer.material.color = color;
             }
         }
 
@@ -515,7 +408,7 @@ namespace ProjectMT.Contents.GiantSpellbook
             return 1f;
         }
 
-        // 게이지가 가득 차면 브레이크를 시작하고 아군 공격력을 증가시킨다.
+        // 게이지가 가득 차면 브레이크를 시작하고 군단장 스킬 피해 배율을 활성화한다.
         private void StartBreak()
         {
             if (!IsRunning || isBroken)
@@ -527,22 +420,13 @@ namespace ProjectMT.Contents.GiantSpellbook
             isBroken = true;
             breakRemainingTime = breakDuration;
 
-            for (var i = 0; i < followerActors.Count; i++)
-            {
-                var follower = followerActors[i];
-                if (follower != null && follower.IsAlive)
-                {
-                    follower.SetDamageMultiplier(breakDamageMultiplier);
-                }
-            }
-
             Debug.Log(
                 $"BREAK started! Duration={breakDuration}, Damage x{breakDamageMultiplier}",
                 this);
             PublishHudState();
         }
 
-        // 브레이크 시간이 끝나면 공격력을 복구하고 게이지를 초기화한다.
+        // 브레이크 시간이 끝나면 스킬 배율과 게이지를 초기화한다.
         private void EndBreak()
         {
             if (!isBroken)
@@ -555,32 +439,13 @@ namespace ProjectMT.Contents.GiantSpellbook
             breakRemainingTime = 0f;
             currentBreakGauge = 0f;
 
-            for (var i = 0; i < followerActors.Count; i++)
-            {
-                var follower = followerActors[i];
-                if (follower != null)
-                {
-                    follower.SetDamageMultiplier(1f);
-                }
-            }
-
             Debug.Log("BREAK ended. Gauge reset.", this);
             PublishHudState();
         }
 
-        // 콘텐츠 종료 시 브레이크 배율과 실행값을 안전하게 초기화한다.
+        // 콘텐츠 종료 시 브레이크 실행값을 안전하게 초기화한다.
         private void ResetBreakState()
         {
-            for (var i = 0; i < followerActors.Count; i++)
-            {
-                var follower = followerActors[i];
-                if (follower != null)
-                {
-                    follower.SetDamageMultiplier(1f);
-                }
-            }
-
-            followerActors.Clear();
             currentBreakGauge = 0f;
             isBroken = false;
             breakRemainingTime = 0f;
@@ -621,6 +486,7 @@ namespace ProjectMT.Contents.GiantSpellbook
             IsRunning = false;
 
             // 성공 처리 후 플레이어가 계속 움직이거나 나가기 버튼을 누르지 못하게 한다.
+            ShutdownCommanderSkills();
             commanderMove?.SetInputEnabled(false);
             exitButton?.onClick.RemoveListener(Cancel);
             stateMachine?.Shutdown();
@@ -658,6 +524,7 @@ namespace ProjectMT.Contents.GiantSpellbook
             }
 
             IsRunning = false;
+            ShutdownCommanderSkills();
             commanderMove.SetInputEnabled(false);
             stateMachine?.Shutdown();
             stateMachine = null;
@@ -687,6 +554,29 @@ namespace ProjectMT.Contents.GiantSpellbook
             hudPresenter.SetVisible(false);
         }
 
+        private void ConfigureCommanderSkills()
+        {
+            commanderSkillBridge = CommanderSkillContentBridgeLocator.Find(this);
+            if (commanderSkillBridge == null)
+            {
+                Debug.LogError("Giant Spellbook commander skill bridge is missing.", this);
+                return;
+            }
+
+            commanderSkillBridge.Configure(
+                context.Progress,
+                combatWorld,
+                commanderRoot.transform,
+                () => !IsRunning || commanderMove == null || !commanderMove.IsInputEnabled,
+                () => isBroken ? breakDamageMultiplier : 1f);
+        }
+
+        private void ShutdownCommanderSkills()
+        {
+            commanderSkillBridge?.Shutdown();
+            commanderSkillBridge = null;
+        }
+
         private void PublishHudState()
         {
             if (bossActor == null)
@@ -712,7 +602,6 @@ namespace ProjectMT.Contents.GiantSpellbook
 #if UNITY_EDITOR
         public void EditorConfigure(
             CombatWorld world,
-            GameObject follower,
             GameObject enemy,
             Transform enemySpawn,
             GameObject commander,
@@ -720,7 +609,6 @@ namespace ProjectMT.Contents.GiantSpellbook
             Button exit)
         {
             combatWorld = world;
-            followerPrefab = follower;
             exampleEnemyPrefab = enemy;
             exampleEnemySpawn = enemySpawn;
             commanderRoot = commander;

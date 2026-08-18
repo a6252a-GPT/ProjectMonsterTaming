@@ -74,20 +74,25 @@ namespace ProjectMT.Features.Commander
 
         private void OnEnable()
         {
+            Subscribe();
             Refresh();
             SelectGrowthTab(false); // 창을 열 때마다 능력치 탭이 기본으로 보이도록 초기화
         }
 
+        private void OnDisable() => Unsubscribe();
+
         private void OnDestroy()
         {
-            closeButton?.onClick.RemoveListener(Close);
-            levelUpButton?.onClick.RemoveListener(LevelUp);
-            if (progress != null)
+            Unsubscribe(); // 자식 UI가 먼저 파괴돼도 서비스 구독부터 정리
+            if (closeButton != null)
             {
-                progress.Changed -= Refresh;
+                closeButton.onClick.RemoveListener(Close);
             }
 
-            CommanderPotentialRuntime.Changed -= RefreshPotentialPanel;
+            if (levelUpButton != null)
+            {
+                levelUpButton.onClick.RemoveListener(LevelUp);
+            }
         }
 
         public void Configure(
@@ -96,24 +101,17 @@ namespace ProjectMT.Features.Commander
             EquipmentBalanceConfig equipmentBalanceConfig = null,
             Action onCombatInputSaved = null)
         {
-            if (progress != null)
-            {
-                progress.Changed -= Refresh;
-            }
-
+            Unsubscribe();
             progress = progressService;
             config = growthConfig;
             combatInputSaved = onCombatInputSaved;
-            if (progress != null)
-            {
-                progress.Changed += Refresh;
-            }
-
             growthCalculator ??= GetComponent<GrowthCalculator>();
             growthCalculator?.Configure(progressService, growthConfig, onCombatInputSaved);
             CommanderPotentialRuntime.Configure(progressService, equipmentBalanceConfig);
-            CommanderPotentialRuntime.Changed -= RefreshPotentialPanel;
-            CommanderPotentialRuntime.Changed += RefreshPotentialPanel;
+            if (isActiveAndEnabled)
+            {
+                Subscribe();
+            }
 
             Refresh();
         }
@@ -131,7 +129,7 @@ namespace ProjectMT.Features.Commander
 
         private void Refresh()
         {
-            if (progress == null || !progress.IsLoaded || config == null)
+            if (this == null || progress == null || !progress.IsLoaded || config == null)
             {
                 return;
             }
@@ -169,7 +167,29 @@ namespace ProjectMT.Features.Commander
             }
 
             SetText(levelUpButtonText, isMaxLevel ? "MAX" : "레벨 업");
-            levelUpReadyBadge?.SetActive(canLevelUp);
+            SetActiveSafe(levelUpReadyBadge, canLevelUp);
+        }
+
+        private void Subscribe()
+        {
+            if (progress != null)
+            {
+                progress.Changed -= Refresh;
+                progress.Changed += Refresh;
+            }
+
+            CommanderPotentialRuntime.Changed -= RefreshPotentialPanel;
+            CommanderPotentialRuntime.Changed += RefreshPotentialPanel;
+        }
+
+        private void Unsubscribe()
+        {
+            if (progress != null)
+            {
+                progress.Changed -= Refresh;
+            }
+
+            CommanderPotentialRuntime.Changed -= RefreshPotentialPanel;
         }
 
         private async void LevelUp()

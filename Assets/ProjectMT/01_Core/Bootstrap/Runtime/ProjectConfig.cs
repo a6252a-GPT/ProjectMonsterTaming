@@ -2,6 +2,7 @@ using ProjectMT.Core.Config;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Features.OfflineReward;
+using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Stats;
@@ -20,6 +21,8 @@ namespace ProjectMT.Bootstrap
         [SerializeField] private CombatStatConfig combatStatConfig; // 전투 능력치 상한·기본값
         [SerializeField] private CommanderGrowthConfig commanderGrowthConfig; // 군단장 레벨 성장 곡선
         [SerializeField] private EquipmentBalanceConfig equipmentBalanceConfig; // 장비 드랍·옵션 밸런스
+        [SerializeField] private CommanderSkillBalanceConfig commanderSkillBalanceConfig; // 스킬 레벨 성장 곡선
+        [SerializeField] private CommanderSkillSummonConfig commanderSkillSummonConfig; // 스킬 전용 소환 풀·상품
         [SerializeField] private OfflineRewardConfig offlineRewardConfig; // 방치 시간·단계별 임시 보상률
         [SerializeField] private SceneId entrySceneId; // 최초 진입 씬
         [SerializeField] private SceneId mainBattleSceneId; // 기본 복귀 씬
@@ -31,6 +34,8 @@ namespace ProjectMT.Bootstrap
         public CombatStatConfig CombatStatConfig => combatStatConfig;
         public CommanderGrowthConfig CommanderGrowthConfig => commanderGrowthConfig;
         public EquipmentBalanceConfig EquipmentBalanceConfig => equipmentBalanceConfig;
+        public CommanderSkillBalanceConfig CommanderSkillBalanceConfig => commanderSkillBalanceConfig;
+        public CommanderSkillSummonConfig CommanderSkillSummonConfig => commanderSkillSummonConfig;
         public OfflineRewardConfig OfflineRewardConfig => offlineRewardConfig;
         public SceneId EntrySceneId => entrySceneId;
         public SceneId MainBattleSceneId => mainBattleSceneId;
@@ -71,6 +76,16 @@ namespace ProjectMT.Bootstrap
         public void EditorConfigureOfflineReward(OfflineRewardConfig config)
         {
             offlineRewardConfig = config;
+        }
+
+        public void EditorConfigureCommanderSkillBalance(CommanderSkillBalanceConfig config)
+        {
+            commanderSkillBalanceConfig = config;
+        }
+
+        public void EditorConfigureCommanderSkillSummon(CommanderSkillSummonConfig config)
+        {
+            commanderSkillSummonConfig = config;
         }
 #endif
     }

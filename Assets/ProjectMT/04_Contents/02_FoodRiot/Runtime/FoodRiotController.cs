@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Input;
@@ -35,6 +36,7 @@ namespace ProjectMT.Contents.FoodRiot
         private int killCount; // 이번 판 처치 수
         private int spawnSequence; // 야채 고유 번호
         private float difficultyMultiplier = 1f; // 선택 단계에 따른 야채 체력 배율
+        private ICommanderSkillContentBridge commanderSkillBridge;
 
         public bool IsRunning { get; private set; }
 
@@ -78,6 +80,7 @@ namespace ProjectMT.Contents.FoodRiot
                 SpawnVegetable();
             }
 
+            ConfigureCommanderSkills();
             UpdateHud();
         }
 
@@ -85,6 +88,7 @@ namespace ProjectMT.Contents.FoodRiot
         {
             StopAllCoroutines();
             exitButton?.onClick.RemoveListener(Cancel);
+            ShutdownCommanderSkills();
             commanderMove?.SetInputEnabled(false);
             combatWorld?.Clear();
             if (commanderRoot != null)
@@ -205,6 +209,7 @@ namespace ProjectMT.Contents.FoodRiot
             }
 
             IsRunning = false;
+            ShutdownCommanderSkills();
             commanderMove?.SetInputEnabled(false);
             combatWorld.Clear();
             if (resultText != null)
@@ -224,6 +229,7 @@ namespace ProjectMT.Contents.FoodRiot
             }
 
             IsRunning = false;
+            ShutdownCommanderSkills();
             commanderMove?.SetInputEnabled(false);
             combatWorld.Clear();
             context.Exit.Cancel(); // 보상 없이 콘텐츠 종료
@@ -240,6 +246,28 @@ namespace ProjectMT.Contents.FoodRiot
             {
                 killText.text = $"처치 {killCount}";
             }
+        }
+
+        private void ConfigureCommanderSkills()
+        {
+            commanderSkillBridge = CommanderSkillContentBridgeLocator.Find(this);
+            if (commanderSkillBridge == null)
+            {
+                Debug.LogError("Food Riot commander skill bridge is missing.", this);
+                return;
+            }
+
+            commanderSkillBridge.Configure(
+                context.Progress,
+                combatWorld,
+                commanderRoot.transform,
+                () => !IsRunning || commanderMove == null || !commanderMove.IsInputEnabled);
+        }
+
+        private void ShutdownCommanderSkills()
+        {
+            commanderSkillBridge?.Shutdown();
+            commanderSkillBridge = null;
         }
 
 #if UNITY_EDITOR

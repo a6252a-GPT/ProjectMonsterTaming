@@ -78,21 +78,46 @@ namespace ProjectMT.Features.MainBattle
             attackRangeButton?.onClick.AddListener(UpgradeAttackRange);
         }
 
-        private void OnEnable() => Refresh();
+        private void OnEnable()
+        {
+            Subscribe();
+            Refresh();
+        }
+
+        private void OnDisable() => Unsubscribe();
 
         private void OnDestroy()
         {
-            if (progress != null)
+            Unsubscribe(); // 비동기 저장 완료 전에 창이 파괴돼도 콜백을 남기지 않음
+            if (healthButton != null)
             {
-                progress.Changed -= Refresh;
+                healthButton.onClick.RemoveListener(UpgradeHealth);
             }
 
-            healthButton?.onClick.RemoveListener(UpgradeHealth);
-            attackButton?.onClick.RemoveListener(UpgradeAttack);
-            defenseButton?.onClick.RemoveListener(UpgradeDefense);
-            attackSpeedButton?.onClick.RemoveListener(UpgradeAttackSpeed);
-            moveSpeedButton?.onClick.RemoveListener(UpgradeMoveSpeed);
-            attackRangeButton?.onClick.RemoveListener(UpgradeAttackRange);
+            if (attackButton != null)
+            {
+                attackButton.onClick.RemoveListener(UpgradeAttack);
+            }
+
+            if (defenseButton != null)
+            {
+                defenseButton.onClick.RemoveListener(UpgradeDefense);
+            }
+
+            if (attackSpeedButton != null)
+            {
+                attackSpeedButton.onClick.RemoveListener(UpgradeAttackSpeed);
+            }
+
+            if (moveSpeedButton != null)
+            {
+                moveSpeedButton.onClick.RemoveListener(UpgradeMoveSpeed);
+            }
+
+            if (attackRangeButton != null)
+            {
+                attackRangeButton.onClick.RemoveListener(UpgradeAttackRange);
+            }
         }
 
         public void Configure(
@@ -100,20 +125,35 @@ namespace ProjectMT.Features.MainBattle
             CommanderGrowthConfig growthConfig,
             Action onSaved = null)
         {
+            Unsubscribe();
+            progress = progressService;
+            config = growthConfig;
+            savedCallback = onSaved;
+            if (isActiveAndEnabled)
+            {
+                Subscribe();
+            }
+
+            Refresh();
+        }
+
+        private void Subscribe()
+        {
+            if (progress == null)
+            {
+                return;
+            }
+
+            progress.Changed -= Refresh;
+            progress.Changed += Refresh;
+        }
+
+        private void Unsubscribe()
+        {
             if (progress != null)
             {
                 progress.Changed -= Refresh;
             }
-
-            progress = progressService;
-            config = growthConfig;
-            savedCallback = onSaved;
-            if (progress != null)
-            {
-                progress.Changed += Refresh;
-            }
-
-            Refresh();
         }
 
         private async void Upgrade(CommanderLegionStat stat)
@@ -154,7 +194,7 @@ namespace ProjectMT.Features.MainBattle
 
         private void Refresh()
         {
-            if (progress == null || !progress.IsLoaded || config == null)
+            if (this == null || progress == null || !progress.IsLoaded || config == null)
             {
                 return;
             }

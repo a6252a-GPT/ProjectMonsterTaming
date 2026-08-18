@@ -1,4 +1,5 @@
 using System;
+using ProjectMT.Features.CommanderSkill;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.Formation;
 using ProjectMT.Features.Inventory;
@@ -26,6 +27,7 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private Button equipmentCloseButton;
         [SerializeField] private EquipmentSlotUpgradePanelController equipmentSlotUpgradePage;
         [SerializeField] private ItemInventoryPageController inventoryPage;
+        [SerializeField] private CommanderSkillPageController commanderSkillPage;
         [SerializeField] private GameObject growthDungeonPage;
         [SerializeField] private Button growthDungeonCloseButton;
 
@@ -41,6 +43,7 @@ namespace ProjectMT.Features.MainBattle
             (equipmentPage != null && equipmentPage.activeSelf) ||
             (equipmentSlotUpgradePage != null && equipmentSlotUpgradePage.IsOpen) ||
             (inventoryPage != null && inventoryPage.IsOpen) ||
+            (commanderSkillPage != null && commanderSkillPage.IsOpen) ||
             (growthDungeonPage != null && growthDungeonPage.activeSelf) ||
             (formationPage != null && formationPage.IsOpen);
 
@@ -83,6 +86,7 @@ namespace ProjectMT.Features.MainBattle
             growthDungeonCloseButton?.onClick.RemoveListener(CloseGrowthDungeonPage);
             ConfigureEquipmentSlotUpgradePage(null);
             ConfigureInventoryPage(null);
+            ConfigureCommanderSkillPage(null);
             if (monsterManagementPage != null)
             {
                 monsterManagementPage.OpenStateChanged -= HandleMonsterManagementOpenStateChanged;
@@ -142,6 +146,33 @@ namespace ProjectMT.Features.MainBattle
         {
             CloseAllPages();
             inventoryPage?.Open();
+        }
+
+        public void OpenCommanderSkillPage()
+        {
+            CloseAllPages();
+            commanderSkillPage?.Open();
+        }
+
+        public void ConfigureCommanderSkillPage(CommanderSkillPageController page)
+        {
+            if (commanderSkillPage == page)
+            {
+                commanderSkillPage?.Close();
+                return;
+            }
+
+            if (commanderSkillPage != null)
+            {
+                commanderSkillPage.OpenStateChanged -= HandleCommanderSkillOpenStateChanged;
+            }
+
+            commanderSkillPage = page;
+            if (commanderSkillPage != null)
+            {
+                commanderSkillPage.OpenStateChanged += HandleCommanderSkillOpenStateChanged;
+                commanderSkillPage.Close();
+            }
         }
 
         public void ConfigureInventoryPage(ItemInventoryPageController page)
@@ -204,6 +235,7 @@ namespace ProjectMT.Features.MainBattle
             equipmentPage?.SetActive(false);
             equipmentSlotUpgradePage?.Close();
             inventoryPage?.Close();
+            commanderSkillPage?.Close();
             growthDungeonPage?.SetActive(false);
             RestoreHudOrder();
         }
@@ -284,6 +316,7 @@ namespace ProjectMT.Features.MainBattle
                      (equipmentPage == null || !equipmentPage.activeSelf) &&
                      (equipmentSlotUpgradePage == null || !equipmentSlotUpgradePage.IsOpen) &&
                      (inventoryPage == null || !inventoryPage.IsOpen) &&
+                     (commanderSkillPage == null || !commanderSkillPage.IsOpen) &&
                      (growthDungeonPage == null || !growthDungeonPage.activeSelf))
             {
                 RestoreHudOrder();
@@ -303,6 +336,18 @@ namespace ProjectMT.Features.MainBattle
         }
 
         private void HandleInventoryOpenStateChanged(bool open)
+        {
+            if (open)
+            {
+                BringToFront();
+            }
+            else if (!IsAnyPageOpen)
+            {
+                RestoreHudOrder();
+            }
+        }
+
+        private void HandleCommanderSkillOpenStateChanged(bool open)
         {
             if (open)
             {

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectMT.Shared.Commander;
+using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.Gacha;
 using ProjectMT.Shared.Items;
@@ -201,6 +203,7 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private EquipmentSlotUpgradeData equipmentSlotUpgrade = EquipmentSlotUpgradeData.CreateDefault(); // 부위 슬롯 영구 강화 레벨(장비 보유·장착과 별도 저장)
         [SerializeField] private CommanderPotentialData commanderPotential = CommanderPotentialData.CreateDefault(); // 군단장 잠재능력 5슬롯
         [SerializeField] private CommanderLegionGrowthData commanderLegionGrowth = CommanderLegionGrowthData.CreateDefault(); // 군단 공용 6종 강화
+        [SerializeField] private CommanderSkillProgressData commanderSkills = CommanderSkillProgressData.CreateDefault(); // 군단장 스킬 보유·장착·자동사용
 
         public int CurrentChallengeStage => currentChallengeStage;
         public int LastClearedStage => lastClearedStage;
@@ -240,13 +243,17 @@ namespace ProjectMT.Shared.GameData
             (commanderPotential ?? CommanderPotentialData.CreateDefault()).CreateView();
         public CommanderLegionGrowthView CommanderLegionGrowth =>
             (commanderLegionGrowth ?? CommanderLegionGrowthData.CreateDefault()).CreateView();
+        public CommanderSkillProgressView CommanderSkills =>
+            (commanderSkills ?? CommanderSkillProgressData.CreateDefault()).CreateView();
 
         public static GameProgressData CreateDefault()
         {
             return new GameProgressData();
         }
 
-        public GameProgressData Clone()
+        public GameProgressData Clone(
+            CommanderSkillBalanceConfig commanderSkillBalanceConfig = null,
+            CommanderSkillSummonConfig commanderSkillSummonConfig = null)
         {
             return new GameProgressData // 변경 전 후보 복사본
             {
@@ -270,7 +277,10 @@ namespace ProjectMT.Shared.GameData
                 coreBalanceMigrationCompleted = coreBalanceMigrationCompleted,
                 equipmentSlotUpgrade = equipmentSlotUpgrade?.Clone() ?? EquipmentSlotUpgradeData.CreateDefault(),
                 commanderPotential = commanderPotential?.Clone() ?? CommanderPotentialData.CreateDefault(),
-                commanderLegionGrowth = commanderLegionGrowth?.Clone() ?? CommanderLegionGrowthData.CreateDefault()
+                commanderLegionGrowth = commanderLegionGrowth?.Clone() ?? CommanderLegionGrowthData.CreateDefault(),
+                commanderSkills = commanderSkills?.Clone(
+                    commanderSkillBalanceConfig,
+                    commanderSkillSummonConfig) ?? CommanderSkillProgressData.CreateDefault()
             };
         }
 
@@ -278,7 +288,9 @@ namespace ProjectMT.Shared.GameData
             GameProgressChange change,
             CommanderGrowthConfig commanderGrowthConfig = null,
             ItemCatalog itemCatalog = null,
-            EquipmentBalanceConfig equipmentBalanceConfig = null)
+            EquipmentBalanceConfig equipmentBalanceConfig = null,
+            CommanderSkillBalanceConfig commanderSkillBalanceConfig = null,
+            CommanderSkillSummonConfig commanderSkillSummonConfig = null)
         {
             if (change == null)
             {
@@ -312,6 +324,98 @@ namespace ProjectMT.Shared.GameData
                 !TryApplyOfflineRewardProgress(change))
             {
                 return false;
+            }
+
+            if (change.HasSetCommanderSkillAutoUse)
+            {
+                commanderSkills ??= CommanderSkillProgressData.CreateDefault();
+                if (!commanderSkills.TrySetAutoUse(
+                        change.ExpectedCommanderSkillAutoUse,
+                        change.NewCommanderSkillAutoUse))
+                {
+                    return false;
+                }
+            }
+
+            if (change.HasEquipCommanderSkill)
+            {
+                commanderSkills ??= CommanderSkillProgressData.CreateDefault();
+                if (!commanderSkills.TryEquip(
+                        change.CommanderSkillSlotIndex,
+                        change.ExpectedCommanderSkillId,
+                        change.NewCommanderSkillId,
+                        commanderSkillBalanceConfig))
+                {
+                    return false;
+                }
+            }
+
+            if (change.HasRecordCommanderSkillSummon)
+            {
+                commanderSkills ??= CommanderSkillProgressData.CreateDefault();
+                var summonConfig = commanderSkillSummonConfig ?? CommanderSkillSummonConfig.RuntimeDefault;
+                var summonedSkillIds = change.SummonedCommanderSkillIds;
+                if (summonedSkillIds == null || summonedSkillIds.Count == 0)
+                {
+                    return false;
+                }
+
+                if (change.CommanderSkillSummonRequiresPayment)
+                {
+                    if (!summonConfig.TryGetOffer(
+                            change.CommanderSkillSummonDrawCount,
+                            out var offer) ||
+                        offer.DrawCount != summonedSkillIds.Count)
+                    {
+                        return false;
+                    }
+
+                    var availableTickets = items.GetQuantity(summonConfig.TicketItemId);
+                    var payment = summonConfig.CalculatePayment(offer, availableTickets);
+                    var costs = new List<ItemAmount>(2);
+                    if (payment.TicketCost > 0)
+                    {
+                        costs.Add(new ItemAmount(summonConfig.TicketItemId, payment.TicketCost));
+                    }
+
+                    if (payment.DiamondCost > 0L)
+                    {
+                        costs.Add(new ItemAmount(ItemIds.Diamond, payment.DiamondCost));
+                    }
+
+                    if (!ItemInventoryTransactions.TrySpend(
+                            items,
+                            costs,
+                            itemCatalog,
+                            out var spentCommanderSkillPayment))
+                    {
+                        return false;
+                    }
+
+                    items = spentCommanderSkillPayment; // 소환권·다이아·결과를 같은 후보에서만 반영
+                }
+
+                if (!commanderSkills.TryRecordSummons(
+                        change.ExpectedCommanderSkillSummonCount,
+                        summonedSkillIds,
+                        commanderSkillBalanceConfig,
+                        summonConfig))
+                {
+                    return false;
+                }
+            }
+
+            if (change.HasLevelUpCommanderSkill)
+            {
+                commanderSkills ??= CommanderSkillProgressData.CreateDefault();
+                if (!commanderSkills.TryLevelUp(
+                        change.CommanderSkillToLevelUpId,
+                        change.ExpectedCommanderSkillLevel,
+                        change.ExpectedCommanderSkillDuplicateCount,
+                        commanderSkillBalanceConfig))
+                {
+                    return false;
+                }
             }
 
             if (change.ItemCosts != null && change.ItemCosts.Count > 0)
@@ -778,7 +882,10 @@ namespace ProjectMT.Shared.GameData
                     change.NewCommanderPotentialLocked);
             }
 
-            Repair(commanderGrowthConfig); // 변경 후 불변식 재확인
+            Repair(
+                commanderGrowthConfig,
+                commanderSkillBalanceConfig,
+                commanderSkillSummonConfig); // 변경 후 불변식 재확인
             return true;
         }
 
@@ -1031,7 +1138,9 @@ namespace ProjectMT.Shared.GameData
             return true;
         }
 
-        internal void Repair()
+        internal void Repair(
+            CommanderSkillBalanceConfig commanderSkillBalanceConfig = null,
+            CommanderSkillSummonConfig commanderSkillSummonConfig = null)
         {
             currentChallengeStage = Math.Max(1, currentChallengeStage);
             lastClearedStage = Math.Max(0, Math.Min(lastClearedStage, currentChallengeStage - 1));
@@ -1063,6 +1172,8 @@ namespace ProjectMT.Shared.GameData
             commanderPotential.Repair();
             commanderLegionGrowth ??= CommanderLegionGrowthData.CreateDefault();
             commanderLegionGrowth.Repair();
+            commanderSkills ??= CommanderSkillProgressData.CreateDefault();
+            commanderSkills.Repair(commanderSkillBalanceConfig, commanderSkillSummonConfig);
 
             if (!IsValidExpeditionMode(expeditionMode) ||
                 (lastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat))
@@ -1071,9 +1182,12 @@ namespace ProjectMT.Shared.GameData
             }
         }
 
-        internal void Repair(CommanderGrowthConfig commanderGrowthConfig)
+        internal void Repair(
+            CommanderGrowthConfig commanderGrowthConfig,
+            CommanderSkillBalanceConfig commanderSkillBalanceConfig = null,
+            CommanderSkillSummonConfig commanderSkillSummonConfig = null)
         {
-            Repair();
+            Repair(commanderSkillBalanceConfig, commanderSkillSummonConfig);
             commander.Repair(commanderGrowthConfig);
             commanderLegionGrowth.Repair(commanderGrowthConfig);
         }
@@ -1127,6 +1241,11 @@ namespace ProjectMT.Shared.GameData
                 commanderLegionGrowth.SetMigratedTrainingPoints(Math.Max(0, (commander?.Level ?? 1) - 1));
             }
 
+            if (sourceDataVersion <= 17)
+            {
+                commanderSkills = CommanderSkillProgressData.CreateDefault(); // 기존 저장은 초기 2스킬로 시작
+            }
+
             Repair();
         }
 
@@ -1161,6 +1280,7 @@ namespace ProjectMT.Shared.GameData
             EquipmentSlotUpgrade = data.EquipmentSlotUpgrade;
             CommanderPotential = data.CommanderPotential;
             CommanderLegionGrowth = data.CommanderLegionGrowth;
+            CommanderSkills = data.CommanderSkills;
         }
 
         public int CurrentChallengeStage { get; }
@@ -1184,6 +1304,7 @@ namespace ProjectMT.Shared.GameData
         public EquipmentSlotUpgradeView EquipmentSlotUpgrade { get; } // 부위 슬롯 영구 강화 레벨
         public CommanderPotentialView CommanderPotential { get; } // 군단장 잠재능력 5슬롯
         public CommanderLegionGrowthView CommanderLegionGrowth { get; } // 군단 공용 6종 강화
+        public CommanderSkillProgressView CommanderSkills { get; } // 군단장 스킬 장착·자동사용
     }
 
     public sealed class GameProgressChange // 한 번에 검증할 진행 변경 묶음
@@ -1280,6 +1401,22 @@ namespace ProjectMT.Shared.GameData
         internal OfflineRewardReceiptData OfflineReceipt { get; private set; }
         internal IReadOnlyList<string> OfflineReceiptIds { get; private set; }
         internal bool SuppressChangedNotification => HasMarkOfflineInactive; // Pause·Quit 저장은 파괴 중 UI를 갱신하지 않음
+        internal bool HasSetCommanderSkillAutoUse { get; private set; }
+        internal bool ExpectedCommanderSkillAutoUse { get; private set; }
+        internal bool NewCommanderSkillAutoUse { get; private set; }
+        internal bool HasEquipCommanderSkill { get; private set; }
+        internal int CommanderSkillSlotIndex { get; private set; }
+        internal string ExpectedCommanderSkillId { get; private set; }
+        internal string NewCommanderSkillId { get; private set; }
+        internal bool HasRecordCommanderSkillSummon { get; private set; }
+        internal int ExpectedCommanderSkillSummonCount { get; private set; }
+        internal IReadOnlyList<string> SummonedCommanderSkillIds { get; private set; }
+        internal bool CommanderSkillSummonRequiresPayment { get; private set; }
+        internal int CommanderSkillSummonDrawCount { get; private set; }
+        internal bool HasLevelUpCommanderSkill { get; private set; }
+        internal string CommanderSkillToLevelUpId { get; private set; }
+        internal int ExpectedCommanderSkillLevel { get; private set; }
+        internal int ExpectedCommanderSkillDuplicateCount { get; private set; }
 
         public static GameProgressChange SetExpeditionMode(ExpeditionRunMode mode)
         {
@@ -1745,6 +1882,74 @@ namespace ProjectMT.Shared.GameData
                 CommanderPotentialLockSlotIndex = slotIndex,
                 ExpectedCommanderPotentialLocked = expectedLocked,
                 NewCommanderPotentialLocked = newLocked
+            };
+        }
+
+        public static GameProgressChange SetCommanderSkillAutoUse(bool expectedValue, bool newValue)
+        {
+            return new GameProgressChange
+            {
+                HasSetCommanderSkillAutoUse = true,
+                ExpectedCommanderSkillAutoUse = expectedValue,
+                NewCommanderSkillAutoUse = newValue
+            };
+        }
+
+        public static GameProgressChange EquipCommanderSkill(
+            int slotIndex,
+            string expectedSkillId,
+            string newSkillId)
+        {
+            return new GameProgressChange
+            {
+                HasEquipCommanderSkill = true,
+                CommanderSkillSlotIndex = slotIndex,
+                ExpectedCommanderSkillId = expectedSkillId?.Trim() ?? string.Empty,
+                NewCommanderSkillId = newSkillId?.Trim() ?? string.Empty
+            };
+        }
+
+        public static GameProgressChange RecordCommanderSkillSummon(
+            int expectedSummonCount,
+            string summonedSkillId)
+        {
+            return new GameProgressChange
+            {
+                HasRecordCommanderSkillSummon = true,
+                ExpectedCommanderSkillSummonCount = expectedSummonCount,
+                SummonedCommanderSkillIds = new[] { summonedSkillId?.Trim() ?? string.Empty }
+            };
+        }
+
+        public static GameProgressChange RecordPaidCommanderSkillSummons(
+            int expectedSummonCount,
+            int drawCount,
+            IReadOnlyList<string> summonedSkillIds)
+        {
+            var copiedIds = summonedSkillIds == null
+                ? Array.Empty<string>()
+                : summonedSkillIds.Select(id => id?.Trim() ?? string.Empty).ToArray();
+            return new GameProgressChange
+            {
+                HasRecordCommanderSkillSummon = true,
+                ExpectedCommanderSkillSummonCount = expectedSummonCount,
+                SummonedCommanderSkillIds = copiedIds,
+                CommanderSkillSummonRequiresPayment = true,
+                CommanderSkillSummonDrawCount = drawCount
+            };
+        }
+
+        public static GameProgressChange LevelUpCommanderSkill(
+            string skillId,
+            int expectedLevel,
+            int expectedDuplicateCount)
+        {
+            return new GameProgressChange
+            {
+                HasLevelUpCommanderSkill = true,
+                CommanderSkillToLevelUpId = skillId?.Trim() ?? string.Empty,
+                ExpectedCommanderSkillLevel = expectedLevel,
+                ExpectedCommanderSkillDuplicateCount = expectedDuplicateCount
             };
         }
     }

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Features.Expedition;
+using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Input;
@@ -92,6 +93,7 @@ namespace ProjectMT.Contents.GuardianTrial
         private float enemyStatMultiplier = 1f; // 08.07 안건준 추가 - 난이도에 따른 적 체력/공격력/방어력 배율(스폰마다 적용)
         private int enemyStage = 1; // 적 외형 선택용 단계(난이도 기준)
         private int enemySpawnRunVersion; // 외형 시드 분산용(원정대 operationVersion과 같은 역할)
+        private ICommanderSkillContentBridge commanderSkillBridge;
 
         public bool IsRunning { get; private set; }
 
@@ -157,12 +159,14 @@ namespace ProjectMT.Contents.GuardianTrial
                 SpawnEnemy(i); // 시작할 때 한 번만 스폰 (재보충 없음)
             }
 
+            ConfigureCommanderSkills();
             UpdateHud();
         }
 
         public void Shutdown()
         {
             exitButton?.onClick.RemoveListener(Cancel);
+            ShutdownCommanderSkills();
             commanderMove?.SetInputEnabled(false);
             ShutdownStructures();
             structureBuffs?.Shutdown();
@@ -605,6 +609,7 @@ namespace ProjectMT.Contents.GuardianTrial
             }
 
             IsRunning = false;
+            ShutdownCommanderSkills();
             commanderMove?.SetInputEnabled(false);
             combatWorld.Clear();
             if (resultText != null)
@@ -626,6 +631,7 @@ namespace ProjectMT.Contents.GuardianTrial
             }
 
             IsRunning = false;
+            ShutdownCommanderSkills();
             commanderMove?.SetInputEnabled(false);
             combatWorld.Clear();
             if (resultText != null)
@@ -645,6 +651,7 @@ namespace ProjectMT.Contents.GuardianTrial
             }
 
             IsRunning = false;
+            ShutdownCommanderSkills();
             commanderMove?.SetInputEnabled(false);
             combatWorld.Clear();
             context.Exit.Cancel(); // 보상 없이 콘텐츠 종료
@@ -666,6 +673,28 @@ namespace ProjectMT.Contents.GuardianTrial
             {
                 notificationClearRoutine = StartCoroutine(ProcessNotificationQueue());
             }
+        }
+
+        private void ConfigureCommanderSkills()
+        {
+            commanderSkillBridge = CommanderSkillContentBridgeLocator.Find(this);
+            if (commanderSkillBridge == null)
+            {
+                Debug.LogError("Guardian Trial commander skill bridge is missing.", this);
+                return;
+            }
+
+            commanderSkillBridge.Configure(
+                context.Progress,
+                combatWorld,
+                commanderRoot.transform,
+                () => !IsRunning || commanderMove == null || !commanderMove.IsInputEnabled);
+        }
+
+        private void ShutdownCommanderSkills()
+        {
+            commanderSkillBridge?.Shutdown();
+            commanderSkillBridge = null;
         }
 
         private IEnumerator ProcessNotificationQueue()

@@ -1,16 +1,9 @@
 using ProjectMT.Contents.Framework;
-using ProjectMT.Shared.Unit;
 
 namespace ProjectMT.Contents.GiantSpellbook
 {
-    public sealed class GiantSpellbookStartData : IContentStartData // 팀원 구현에 넘길 최소 시작값
+    public sealed class GiantSpellbookStartData : IContentStartData // 군단장 단독 보스전에 필요한 시작 표식
     {
-        public GiantSpellbookStartData(BattlePartySnapshot party)
-        {
-            Party = party;
-        }
-
-        public BattlePartySnapshot Party { get; }
     }
 
     // 거대 마도서 한 판이 성공했을 때 공용 시스템으로 전달하는 결과 데이터

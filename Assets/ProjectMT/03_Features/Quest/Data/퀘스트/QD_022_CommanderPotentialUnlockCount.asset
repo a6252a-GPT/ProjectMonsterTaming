@@ -15,7 +15,7 @@ MonoBehaviour:
   questId:
     value: quest_022_commander_potential_unlock_count
   displayName: 잠재능력 슬롯 개방
-  description: 잠재능력 슬롯을 목표 개수만큼 개방하세요.
+  description: 잠재능력 슬롯을 {target}개 개방하세요.
   questType: 0
   conditionType: 21
   targetValue: 2

@@ -312,7 +312,7 @@ namespace ProjectMT.Bootstrap
                 inventory.TryGetQuantity(definition.ItemId, out var currentQuantity);
                 if (currentQuantity < definition.MaxQuantity)
                 {
-                    rewards.Add(new ItemAmount(definition.ItemId, 1L));
+                    rewards.Add(new ItemAmount(definition.ItemId, 200000L)); //0819 안건준 수정
                 }
             }
 
@@ -324,7 +324,7 @@ namespace ProjectMT.Bootstrap
             var saved = await gameDataService.TryApplyAndSaveAsync(
                 GameProgressChange.GrantItems(rewards.ToArray()));
             return saved
-                ? $"{rewards.Count}종 아이템 1개씩 획득 완료"
+                ? $"{rewards.Count}종 아이템 200000개씩 획득 완료"
                 : "아이템 획득 정보를 저장하지 못했습니다";
         }
 #endif

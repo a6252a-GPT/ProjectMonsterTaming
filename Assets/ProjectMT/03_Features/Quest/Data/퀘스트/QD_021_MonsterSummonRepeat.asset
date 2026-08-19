@@ -15,7 +15,7 @@ MonoBehaviour:
   questId:
     value: quest_021_monster_summon_repeat
   displayName: "\uBAAC\uC2A4\uD130 \uBF51\uAE30"
-  description: "\uBAAC\uC2A4\uD130\uB97C \uBAA9\uD45C \uD69F\uC218\uB9CC\uD07C \uBF51\uC73C\uC138\uC694."
+  description: 몬스터를 {target}회 뽑으세요.
   questType: 0
   conditionType: 1
   targetValue: 10

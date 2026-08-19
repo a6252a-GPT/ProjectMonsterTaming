@@ -168,7 +168,7 @@ namespace ProjectMT.EditorTools.Quest
             EditorGUILayout.BeginHorizontal();
             expandedByInstanceId.TryGetValue(key, out var expanded);
             var header = definition != null
-                ? $"{index + 1}. [{definition.QuestId.Value}] {definition.DisplayName}{(definition.IsRepeatingTemplate ? " [반복]" : string.Empty)}  ({QuestConditionTypeInfo.GetDisplayName(definition.ConditionType)} {definition.TargetValue})"
+                ? $"{index + 1}. [{definition.QuestId.Value}] {definition.DisplayName}{(definition.IsEnabled ? string.Empty : " [미사용]")}{(definition.IsRepeatingTemplate ? " [반복]" : string.Empty)}  ({QuestConditionTypeInfo.GetDisplayName(definition.ConditionType)} {definition.TargetValue})"
                 : $"{index + 1}. (비어 있는 슬롯)";
             var newExpanded = EditorGUILayout.Foldout(expanded, header, true);
             if (newExpanded != expanded)
@@ -218,6 +218,7 @@ namespace ProjectMT.EditorTools.Quest
             var so = new SerializedObject(definition);
             so.Update();
 
+            var enabledProp = so.FindProperty("isEnabled");
             var idProp = so.FindProperty("questId").FindPropertyRelative("value");
             var nameProp = so.FindProperty("displayName");
             var descProp = so.FindProperty("description");
@@ -232,9 +233,26 @@ namespace ProjectMT.EditorTools.Quest
             var repeatIncrementProp = so.FindProperty("repeatIncrement");
             var repeatMaxOccurrencesProp = so.FindProperty("repeatMaxOccurrences");
 
+            enabledProp.boolValue = EditorGUILayout.ToggleLeft(
+                new GUIContent("퀘스트 사용", "꺼두면 이 퀘스트는 선행 체인·반복 풀에서 통째로 건너뛰고, 화면에도 표시되지 않습니다. 콘텐츠가 아직 준비되지 않았을 때 임시로 꺼두는 용도입니다."),
+                enabledProp.boolValue);
+            if (!enabledProp.boolValue)
+            {
+                EditorGUILayout.HelpBox(
+                    "미사용 상태입니다. 이 퀘스트는 건너뛰고 선행 체인이 앞뒤로 자연스럽게 이어집니다.",
+                    MessageType.Warning);
+            }
+
+            EditorGUILayout.Space(4f);
             EditorGUILayout.PropertyField(idProp, new GUIContent("퀘스트 ID"));
             EditorGUILayout.PropertyField(nameProp, new GUIContent("표시 이름"));
             EditorGUILayout.PropertyField(descProp, new GUIContent("설명"));
+            if (repeatingProp.boolValue)
+            {
+                EditorGUILayout.HelpBox(
+                    "설명에 {target} 을 넣으면 지금 사이클의 실제 목표 수치로 자동 치환되어 표시됩니다. 예: \"체력을 {target}레벨까지 올리세요.\"",
+                    MessageType.None);
+            }
             DrawEnumPopupKorean<QuestType>(typeProp, "종류", QuestTypeInfo.GetDisplayName);
             DrawEnumPopupKorean<QuestConditionType>(conditionProp, "조건 종류", QuestConditionTypeInfo.GetDisplayName);
             EditorGUILayout.PropertyField(

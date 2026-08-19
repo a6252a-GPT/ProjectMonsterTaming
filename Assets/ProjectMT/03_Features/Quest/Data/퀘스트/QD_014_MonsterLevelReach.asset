@@ -15,7 +15,7 @@ MonoBehaviour:
   questId:
     value: quest_014_monster_level_reach
   displayName: 몬스터 레벨 달성
-  description: 보유 몬스터 중 하나를 목표 레벨까지 성장시키세요.
+  description: 보유 몬스터 중 하나를 {target}레벨까지 성장시키세요.
   questType: 0
   conditionType: 14
   targetValue: 10

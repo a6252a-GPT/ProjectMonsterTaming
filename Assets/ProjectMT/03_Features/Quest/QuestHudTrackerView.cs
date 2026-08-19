@@ -20,10 +20,9 @@ namespace ProjectMT.Features.Quest
 
         private Button claimButton;
         private QuestId trackedQuestId;
-        private QuestConditionType trackedConditionType;
         private bool canClaimTracked;
-        private bool canNavigateTracked;
         private bool isClaiming;
+        private bool loggedMissingIcon;
 
         private void Awake()
         {
@@ -61,17 +60,13 @@ namespace ProjectMT.Features.Quest
                 !QuestRuntime.TryGetTrackedQuest(trackedType, out var definition, out var progress))
             {
                 canClaimTracked = false;
-                canNavigateTracked = false;
                 UpdateClaimButtonState();
                 Apply("메인 임무", "임무를 준비 중입니다.", "준비 중");
                 return;
             }
 
             trackedQuestId = definition.QuestId;
-            trackedConditionType = definition.ConditionType;
             canClaimTracked = progress.Completed && !progress.RewardClaimed;
-            canNavigateTracked = !progress.Completed &&
-                QuestContentNavigationHub.CanNavigate(trackedConditionType);
             UpdateClaimButtonState();
 
             Apply(
@@ -80,22 +75,12 @@ namespace ProjectMT.Features.Quest
                 FormatStatus(progress));
         }
 
-        // 아이콘 클릭 → 완료된 퀘스트면 보상 수령(QuestRuntime.Changed가 갱신을 자동으로 트리거해
-        // 다음 퀘스트로 넘어간 화면이 곧바로 표시된다), 진행 중인 퀘스트면 해당 콘텐츠로 바로 이동시켜준다.
+        // 아이콘 클릭 → 현재 추적 중인 퀘스트 보상 수령 → QuestRuntime.Changed가 갱신을 자동으로 트리거해
+        // 다음 퀘스트로 넘어간 화면이 곧바로 표시된다.
         private async void HandleIconClicked()
         {
-            if (isClaiming || !QuestRuntime.IsReady)
+            if (isClaiming || !canClaimTracked || !QuestRuntime.IsReady)
             {
-                return;
-            }
-
-            if (!canClaimTracked)
-            {
-                if (canNavigateTracked)
-                {
-                    QuestContentNavigationHub.TryNavigate(trackedConditionType);
-                }
-
                 return;
             }
 
@@ -116,7 +101,7 @@ namespace ProjectMT.Features.Quest
         {
             if (claimButton != null)
             {
-                claimButton.interactable = !isClaiming && (canClaimTracked || canNavigateTracked);
+                claimButton.interactable = canClaimTracked && !isClaiming;
             }
         }
 
@@ -129,9 +114,11 @@ namespace ProjectMT.Features.Quest
 
         private static string FormatDescription(QuestDefinition definition, QuestProgressEntryView progress)
         {
-            var body = string.IsNullOrWhiteSpace(definition.Description)
+            // {target} 토큰은 지금 사이클의 실제 목표 수치로 치환되어 문장 안에 바로 노출된다.
+            var resolvedDescription = QuestRuntime.ResolveDescription(definition);
+            var body = string.IsNullOrWhiteSpace(resolvedDescription)
                 ? definition.DisplayName
-                : definition.Description.Trim();
+                : resolvedDescription.Trim();
             // 반복 퀘스트는 사이클마다 목표가 올라가므로 definition.TargetValue(1회차 기준)가 아니라
             // 지금 사이클 기준으로 다시 계산된 값을 보여준다.
             return $"{body} ({progress.CurrentProgress}/{QuestRuntime.ResolveTargetValue(definition)})";
@@ -164,6 +151,13 @@ namespace ProjectMT.Features.Quest
             if (claimIcon == null)
             {
                 claimIcon = FindImage(root, "Icon");
+                if (claimIcon == null && !loggedMissingIcon)
+                {
+                    loggedMissingIcon = true;
+                    Debug.LogWarning(
+                        $"[Quest][HUD] \"Icon\" 오브젝트를 찾지 못해 보상 수령 버튼을 만들 수 없습니다 (root={root?.name}). " +
+                        "HUD 카드 하위에 Icon이라는 이름의 Image가 있는지 확인하세요.", this);
+                }
             }
 
             if (claimIcon != null && claimButton == null)
@@ -176,6 +170,14 @@ namespace ProjectMT.Features.Quest
                 }
 
                 claimButton.targetGraphic = claimIcon;
+            }
+
+            // 몬스터 배치 등 다른 기능이 MainBattleHUD 전체를 SetActive(false)/(true)로 껐다 켜면
+            // OnDisable에서 떼어낸 리스너가 다시 안 붙어 아이콘이 먹통이 되던 문제가 있었다.
+            // claimButton 자체는 최초 1회만 찾아 만들고, 리스너 연결은 매번(OnEnable·RefreshView마다)
+            // Remove 후 Add로 다시 보장해서 몇 번을 껐다 켜도 항상 클릭이 살아있게 한다.
+            if (claimButton != null)
+            {
                 claimButton.onClick.RemoveListener(HandleIconClicked);
                 claimButton.onClick.AddListener(HandleIconClicked);
                 UpdateClaimButtonState();

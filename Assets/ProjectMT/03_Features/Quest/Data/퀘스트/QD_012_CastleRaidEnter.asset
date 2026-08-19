@@ -14,15 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
   questId:
     value: quest_012_castle_raid_enter
-  displayName: 군단의 역습 입장
-  description: 군단의 역습에 1회 입장하세요.
+  isEnabled: 1
+  displayName: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5 \uC785\uC7A5"
+  description: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5\uC5D0 1\uD68C \uC785\uC7A5\uD558\uC138\uC694."
   questType: 0
   conditionType: 12
   targetValue: 1
   prerequisiteQuestId:
     value: quest_011_growth_dungeon_enter
   reward: {fileID: 11400000, guid: f5905a6c883f4dd0902273c6a5c39f1a, type: 2}
-  unlockTargets: []
+  unlockTargets: 
   unlockGateEnabled: 0
   isRepeatingTemplate: 0
   repeatIncrement: 0

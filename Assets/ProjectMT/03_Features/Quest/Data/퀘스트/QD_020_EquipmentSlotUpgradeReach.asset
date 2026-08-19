@@ -15,7 +15,7 @@ MonoBehaviour:
   questId:
     value: quest_020_equipment_slot_upgrade_reach
   displayName: 장비 슬롯 강화
-  description: 아무 장비 슬롯이나 목표 강화 레벨을 달성하세요.
+  description: 아무 장비 슬롯이나 {target}강화를 달성하세요.
   questType: 0
   conditionType: 20
   targetValue: 5

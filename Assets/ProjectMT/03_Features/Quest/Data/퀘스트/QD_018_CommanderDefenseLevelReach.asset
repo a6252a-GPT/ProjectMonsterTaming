@@ -14,15 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
   questId:
     value: quest_018_commander_defense_level_reach
-  displayName: 방어력 강화 달성
-  description: 군단 공용 강화(방어력)를 목표 레벨까지 올리세요.
+  isEnabled: 1
+  displayName: "\uBC29\uC5B4\uB825 \uAC15\uD654 \uB2EC\uC131"
+  description: "\uAD70\uB2E8 \uAC15\uD654(\uBC29\uC5B4\uB825)\uB97C {target}\uB808\uBCA8
+    \uB2EC\uC131"
   questType: 0
   conditionType: 18
   targetValue: 10
   prerequisiteQuestId:
     value: 
   reward: {fileID: 11400000, guid: d78402f1b6ef43e788e89a3c95cc1eb6, type: 2}
-  unlockTargets: []
+  unlockTargets: 
   unlockGateEnabled: 0
   isRepeatingTemplate: 1
   repeatIncrement: 20

@@ -15,9 +15,9 @@ MonoBehaviour:
   questId:
     value: quest_003_monster_level_up
   displayName: "몬스터 강화"
-  description: "몬스터를 10회 레벨업하세요."
+  description: "보유 몬스터 중 하나를 10레벨까지 성장시키세요."
   questType: 0
-  conditionType: 8
+  conditionType: 14
   targetValue: 10
   prerequisiteQuestId:
     value: quest_010_monster_formation

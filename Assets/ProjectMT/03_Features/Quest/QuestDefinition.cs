@@ -12,6 +12,7 @@ namespace ProjectMT.Features.Quest
     public sealed class QuestDefinition : ScriptableObject
     {
         [SerializeField] private QuestId questId;
+        [SerializeField] private bool isEnabled = true; // 꺼두면 이 퀘스트는 선행 체인·반복 풀 순회에서 통째로 건너뛴다(콘텐츠 준비 전 임시 비활성화용).
         [SerializeField] private string displayName;
         [TextArea(2, 5)]
         [SerializeField] private string description;
@@ -29,6 +30,7 @@ namespace ProjectMT.Features.Quest
         [SerializeField] private int repeatMaxOccurrences; // 이 템플릿이 등장할 수 있는 최대 횟수(0 = 제한 없이 계속 등장).
 
         public QuestId QuestId => questId;
+        public bool IsEnabled => isEnabled;
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? questId.Value : displayName.Trim();
         public string Description => description ?? string.Empty;
         public QuestType QuestType => questType;

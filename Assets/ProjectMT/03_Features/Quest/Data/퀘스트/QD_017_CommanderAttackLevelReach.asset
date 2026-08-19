@@ -14,15 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
   questId:
     value: quest_017_commander_attack_level_reach
-  displayName: 공격력 강화 달성
-  description: 군단 공용 강화(공격력)를 목표 레벨까지 올리세요.
+  isEnabled: 1
+  displayName: "\uACF5\uACA9\uB825 \uAC15\uD654 \uB2EC\uC131"
+  description: "\uAD70\uB2E8 \uAC15\uD654(\uACF5\uACA9\uB825)\uB97C {target}\uB808\uBCA8
+    \uB2EC\uC131"
   questType: 0
   conditionType: 17
   targetValue: 10
   prerequisiteQuestId:
     value: 
   reward: {fileID: 11400000, guid: 97d4157dd98448e5a08b900615d26ea5, type: 2}
-  unlockTargets: []
+  unlockTargets: 
   unlockGateEnabled: 0
   isRepeatingTemplate: 1
   repeatIncrement: 20

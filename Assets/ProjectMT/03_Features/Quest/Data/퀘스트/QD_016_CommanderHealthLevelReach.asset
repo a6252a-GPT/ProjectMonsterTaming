@@ -14,15 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
   questId:
     value: quest_016_commander_health_level_reach
-  displayName: 체력 강화 달성
-  description: 군단 공용 강화(체력)를 목표 레벨까지 올리세요.
+  isEnabled: 1
+  displayName: "\uCCB4\uB825 \uAC15\uD654 \uB2EC\uC131"
+  description: "\uAD70\uB2E8 \uAC15\uD654(\uCCB4\uB825)\uB97C {target}\uB808\uBCA8
+    \uB2EC\uC131"
   questType: 0
   conditionType: 16
   targetValue: 10
   prerequisiteQuestId:
     value: 
   reward: {fileID: 11400000, guid: 4a6052caf3464fb8a55460e722b2ac0e, type: 2}
-  unlockTargets: []
+  unlockTargets: 
   unlockGateEnabled: 0
   isRepeatingTemplate: 1
   repeatIncrement: 20

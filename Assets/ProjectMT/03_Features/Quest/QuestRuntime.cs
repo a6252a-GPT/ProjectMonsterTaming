@@ -21,6 +21,10 @@ namespace ProjectMT.Features.Quest
         // 충돌로 거절된 진행도 증가를 최신 값으로 다시 계산해 재시도하는 횟수.
         private const int MaxAdvanceRetryCount = 8;
 
+        // 반복 퀘스트는 사이클마다 목표 수치가 바뀌므로, 에셋 설명에 숫자를 직접 적어두는 대신
+        // 이 토큰을 넣어두면 화면·로그에 표시할 때 지금 사이클의 실제 목표 수치로 바꿔서 보여준다.
+        private const string TargetPlaceholder = "{target}";
+
         private static IGameProgressService progress;
         private static QuestCatalog catalog;
         private static float reportedCommanderPower;
@@ -100,6 +104,24 @@ namespace ProjectMT.Features.Quest
             return definition.IsRepeatingTemplate
                 ? ResolveRepeatingTarget(definition, GetProgress(definition.QuestId).RepeatCycleCount)
                 : definition.TargetValue;
+        }
+
+        // 설명에 {target} 토큰이 있으면 지금 사이클의 실제 목표 수치로 치환해서 돌려준다.
+        // 토큰이 없는 일반 퀘스트는 원본 설명을 그대로 돌려준다.
+        public static string ResolveDescription(QuestDefinition definition)
+        {
+            if (definition == null)
+            {
+                return string.Empty;
+            }
+
+            var description = definition.Description;
+            if (string.IsNullOrEmpty(description) || !description.Contains(TargetPlaceholder))
+            {
+                return description;
+            }
+
+            return description.Replace(TargetPlaceholder, ResolveTargetValue(definition).ToString());
         }
 
         // AppRootHost가 파티(전투력)를 다시 계산할 때마다 최신 값을 보고한다.
@@ -466,7 +488,8 @@ namespace ProjectMT.Features.Quest
             for (var i = 0; i < definitions.Count; i++)
             {
                 var definition = definitions[i];
-                if (definition != null && !definition.IsRepeatingTemplate && definition.ConditionType == conditionType)
+                if (definition != null && definition.IsEnabled && !definition.IsRepeatingTemplate &&
+                    definition.ConditionType == conditionType)
                 {
                     await TryAdvanceProgressAsync(definition.QuestId, amount);
                 }
@@ -552,8 +575,15 @@ namespace ProjectMT.Features.Quest
         // 동시에 RewardClaimed 이벤트로 questId·bundle 값을 내보낸다(우편함 도입 시 그대로 재사용).
         public static async Task<bool> TryClaimRewardAsync(QuestId questId)
         {
-            if (!IsReady || !catalog.TryGet(questId, out var definition))
+            if (!IsReady)
             {
+                Debug.LogWarning($"[Quest] 보상 수령 실패: QuestRuntime이 아직 준비되지 않음 (questId={questId.Value})");
+                return false;
+            }
+
+            if (!catalog.TryGet(questId, out var definition))
+            {
+                Debug.LogWarning($"[Quest] 보상 수령 실패: 카탈로그에 없는 퀘스트 ID (questId={questId.Value})");
                 return false;
             }
 
@@ -572,11 +602,18 @@ namespace ProjectMT.Features.Quest
 
             if (!CanClaimReward(questId))
             {
+                var view = GetProgress(questId);
+                Debug.LogWarning(
+                    $"[Quest] 보상 수령 실패: 완료되지 않았거나 이미 수령함 (questId={questId.Value}, " +
+                    $"진행도={view.CurrentProgress}/{ResolveTargetValue(definition)}, 완료={view.Completed}, 수령={view.RewardClaimed})");
                 return false;
             }
 
             if (!definition.TryCreateRewardBundle(out var bundle))
             {
+                Debug.LogWarning(
+                    $"[Quest] 보상 수령 실패: 보상 정의가 비어있거나 잘못됨 (questId={questId.Value}, " +
+                    $"reward={(definition.Reward != null ? definition.Reward.name : "null")})");
                 return false;
             }
 
@@ -586,6 +623,12 @@ namespace ProjectMT.Features.Quest
                 Debug.Log($"[Quest] 보상 수령: {definition.DisplayName}");
                 LogQuestSnapshot(definition, GetProgress(questId));
                 RewardClaimed?.Invoke(questId, bundle);
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"[Quest] 보상 수령 실패: 저장 적용이 거절됨(questId={questId.Value}). " +
+                    "같은 프레임에 다른 진행도 갱신과 겹쳤을 수 있으니 다시 시도해 보세요.");
             }
 
             return applied;
@@ -700,7 +743,7 @@ namespace ProjectMT.Features.Quest
             var builder = new StringBuilder();
             builder.Append($"[Quest] {definition.DisplayName} ({definition.QuestId.Value})\n");
             builder.Append($" - 종류: {QuestTypeInfo.GetDisplayName(definition.QuestType)}\n");
-            builder.Append($" - 설명: {definition.Description}\n");
+            builder.Append($" - 설명: {ResolveDescription(definition)}\n");
             builder.Append($" - 조건: {QuestConditionTypeInfo.GetDisplayName(definition.ConditionType)}\n");
             builder.Append($" - 목표 수치: {targetValue}\n");
             builder.Append($" - 현재 진행도: {progressView.CurrentProgress} / {targetValue}\n");

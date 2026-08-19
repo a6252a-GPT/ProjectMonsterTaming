@@ -15,7 +15,7 @@ MonoBehaviour:
   questId:
     value: quest_015_commander_level_reach
   displayName: 군단장 레벨 달성
-  description: 군단장을 목표 레벨까지 성장시키세요.
+  description: 군단장을 {target}레벨까지 성장시키세요.
   questType: 0
   conditionType: 15
   targetValue: 10

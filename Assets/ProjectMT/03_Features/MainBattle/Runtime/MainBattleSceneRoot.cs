@@ -95,8 +95,6 @@ namespace ProjectMT.Features.MainBattle
             }
 
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
-            QuestContentNavigationHub.Register(QuestConditionType.CastleRaidEnter, OpenCastleRaid);
-            QuestContentNavigationHub.Register(QuestConditionType.GrowthDungeonEnter, NavigateToGrowthDungeonPage);
             var runtimeRoot = transform.Find("01_MainGameplayRoot/01_RuntimeRoot");
             var commander = runtimeRoot?.Find("CommanderVisual");
             var enemySpawnAnchor = runtimeRoot?.Find("EnemySpawnAnchor");
@@ -172,8 +170,6 @@ namespace ProjectMT.Features.MainBattle
             growthDungeonEntry?.Shutdown();
             foodRiotButton?.onClick.RemoveListener(OpenFoodRiot);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
-            QuestContentNavigationHub.Unregister(QuestConditionType.CastleRaidEnter, OpenCastleRaid);
-            QuestContentNavigationHub.Unregister(QuestConditionType.GrowthDungeonEnter, NavigateToGrowthDungeonPage);
             towerButton?.onClick.RemoveListener(OpenGuardiansTower); // 08.06 안건준 추가
             giantSpellbookButton?.onClick.RemoveListener(OpenGiantSpellbook);
             foodRiotSweepButton?.onClick.RemoveListener(SweepFoodRiot);
@@ -574,12 +570,6 @@ namespace ProjectMT.Features.MainBattle
             }
         }
 
-        // 퀘스트 카드 아이콘 클릭 등, 화면 위치를 모르는 곳에서 성장 던전 팝업만 열고 싶을 때 사용.
-        private void NavigateToGrowthDungeonPage()
-        {
-            managementUi?.OpenGrowthDungeonPage();
-        }
-
         private bool TryOpenContent()
         {
             if (CanOpenContent())
@@ -598,26 +588,6 @@ namespace ProjectMT.Features.MainBattle
             else if (IsInitialized && monsterManagementPage != null && monsterManagementPage.IsOpen)
             {
                 SetStatus("몬스터 관리 화면을 닫은 뒤 콘텐츠에 입장하세요.");
-            }
-            else if (IsInitialized && placementController != null && placementController.IsActive)
-            {
-                SetStatus("배치 편집을 끝낸 뒤 콘텐츠에 입장하세요.");
-            }
-            else if (IsInitialized && context != null && context.ContentLauncher.IsRunning)
-            {
-                SetStatus("다른 콘텐츠가 아직 종료되지 않았습니다. 잠시 후 다시 시도하세요.");
-            }
-            else if (IsInitialized && context != null && context.GrowthDungeonSweep != null && context.GrowthDungeonSweep.IsBusy)
-            {
-                SetStatus("소탕 정산 중입니다. 잠시 후 다시 시도하세요.");
-            }
-            else if (IsInitialized && party == null)
-            {
-                SetStatus("부대 정보를 불러오는 중입니다. 잠시 후 다시 시도하세요.");
-            }
-            else if (!IsInitialized)
-            {
-                SetStatus("씬을 초기화하는 중입니다. 잠시 후 다시 시도하세요.");
             }
 
             return false;

@@ -41521,6 +41521,14 @@ PrefabInstance:
       propertyPath: m_overflowMode
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 3184466985913780472, guid: 52e2b50814030f74eb2b20917d77f2c3, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -0.1499939
+      objectReference: {fileID: 0}
+    - target: {fileID: 3184466986059750278, guid: 52e2b50814030f74eb2b20917d77f2c3, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 570
+      objectReference: {fileID: 0}
     - target: {fileID: 3184466986928451473, guid: 52e2b50814030f74eb2b20917d77f2c3, type: 3}
       propertyPath: m_Name
       value: StatusText
@@ -41530,8 +41538,20 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3184466987073971217, guid: 52e2b50814030f74eb2b20917d77f2c3, type: 3}
+      propertyPath: m_fontSize
+      value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 3184466987073971217, guid: 52e2b50814030f74eb2b20917d77f2c3, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 3184466987073971217, guid: 52e2b50814030f74eb2b20917d77f2c3, type: 3}
       propertyPath: m_overflowMode
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3184466987073971217, guid: 52e2b50814030f74eb2b20917d77f2c3, type: 3}
+      propertyPath: m_enableAutoSizing
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3184466987073971223, guid: 52e2b50814030f74eb2b20917d77f2c3, type: 3}
       propertyPath: m_Name
@@ -41540,6 +41560,10 @@ PrefabInstance:
     - target: {fileID: 3184466987819913693, guid: 52e2b50814030f74eb2b20917d77f2c3, type: 3}
       propertyPath: m_Name
       value: MissionText
+      objectReference: {fileID: 0}
+    - target: {fileID: 3184466987819913695, guid: 52e2b50814030f74eb2b20917d77f2c3, type: 3}
+      propertyPath: m_fontSize
+      value: 18
       objectReference: {fileID: 0}
     - target: {fileID: 3184466987819913695, guid: 52e2b50814030f74eb2b20917d77f2c3, type: 3}
       propertyPath: m_overflowMode

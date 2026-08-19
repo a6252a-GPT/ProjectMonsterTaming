@@ -15,7 +15,7 @@ MonoBehaviour:
   questId:
     value: quest_019_commander_power_reach
   displayName: 군단장 전투력 달성
-  description: 군단장 전투력을 목표 수치까지 올리세요.
+  description: 군단장 전투력을 {target}까지 올리세요.
   questType: 0
   conditionType: 19
   targetValue: 1000

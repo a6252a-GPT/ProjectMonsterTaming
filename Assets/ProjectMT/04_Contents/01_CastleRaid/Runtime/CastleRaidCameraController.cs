@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ProjectMT.Shared.Combat;
 using UnityEngine;
 
 namespace ProjectMT.Contents.CastleRaid
@@ -7,6 +8,8 @@ namespace ProjectMT.Contents.CastleRaid
     [RequireComponent(typeof(Camera))]
     public sealed class CastleRaidCameraController : MonoBehaviour // COC형 드래그·핀치 카메라
     {
+        private const float MinimumPanRange = 2.5f;
+
         [SerializeField] private Camera targetCamera;
         [SerializeField, Min(0.1f)] private float defaultOrthographicSize = 8.5f;
         [SerializeField, Min(0.1f)] private float minimumOrthographicSize = 5f;
@@ -14,7 +17,7 @@ namespace ProjectMT.Contents.CastleRaid
         [SerializeField] private Vector2 worldCenter = Vector2.zero;
         [SerializeField] private Vector2 worldSize = new Vector2(20f, 20f);
         [SerializeField, Min(0f)] private float dragThresholdPixels = 8f;
-        [SerializeField, Min(0.01f)] private float wheelZoomStep = 0.18f;
+        [SerializeField, Min(0.01f)] private float wheelZoomStep = 0.10f;
         [SerializeField, Min(0.01f)] private float movementSmoothTime = 0.08f;
         [SerializeField, Min(0.01f)] private float zoomSmoothTime = 0.1f;
         [SerializeField, Min(0f)] private float inertiaDeceleration = 48f;
@@ -59,6 +62,12 @@ namespace ProjectMT.Contents.CastleRaid
 
         private void Awake()
         {
+            var conflictingImpulse = GetComponent<CameraImpulseRig>();
+            if (conflictingImpulse != null)
+            {
+                conflictingImpulse.enabled = false; // 이동 카메라와 같은 Transform을 덮어쓰는 흔들림 차단
+            }
+
             ResetView();
         }
 
@@ -398,13 +407,11 @@ namespace ProjectMT.Contents.CastleRaid
             var currentSize = Mathf.Max(0.01f, targetCamera.orthographicSize);
             var groundHalfExtents = currentHalfExtents * (orthographicSize / currentSize);
             var worldHalfExtents = Vector2.Max(Vector2.zero, worldSize * 0.5f);
-            var minimumX = worldCenter.x - worldHalfExtents.x + groundHalfExtents.x;
-            var maximumX = worldCenter.x + worldHalfExtents.x - groundHalfExtents.x;
-            var minimumZ = worldCenter.y - worldHalfExtents.y + groundHalfExtents.y;
-            var maximumZ = worldCenter.y + worldHalfExtents.y - groundHalfExtents.y;
+            var panRangeX = ResolvePanRange(worldHalfExtents.x, groundHalfExtents.x);
+            var panRangeZ = ResolvePanRange(worldHalfExtents.y, groundHalfExtents.y);
             return new Vector2(
-                minimumX <= maximumX ? Mathf.Clamp(center.x, minimumX, maximumX) : worldCenter.x,
-                minimumZ <= maximumZ ? Mathf.Clamp(center.y, minimumZ, maximumZ) : worldCenter.y);
+                Mathf.Clamp(center.x, worldCenter.x - panRangeX, worldCenter.x + panRangeX),
+                Mathf.Clamp(center.y, worldCenter.y - panRangeZ, worldCenter.y + panRangeZ));
         }
 
         private void ClampToWorldBounds()
@@ -415,17 +422,16 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             var worldHalfExtents = Vector2.Max(Vector2.zero, worldSize * 0.5f);
-            var minimumX = worldCenter.x - worldHalfExtents.x + groundHalfExtents.x;
-            var maximumX = worldCenter.x + worldHalfExtents.x - groundHalfExtents.x;
-            var minimumZ = worldCenter.y - worldHalfExtents.y + groundHalfExtents.y;
-            var maximumZ = worldCenter.y + worldHalfExtents.y - groundHalfExtents.y;
-
-            var clampedX = minimumX <= maximumX
-                ? Mathf.Clamp(groundCenter.x, minimumX, maximumX)
-                : worldCenter.x;
-            var clampedZ = minimumZ <= maximumZ
-                ? Mathf.Clamp(groundCenter.y, minimumZ, maximumZ)
-                : worldCenter.y;
+            var panRangeX = ResolvePanRange(worldHalfExtents.x, groundHalfExtents.x);
+            var panRangeZ = ResolvePanRange(worldHalfExtents.y, groundHalfExtents.y);
+            var clampedX = Mathf.Clamp(
+                groundCenter.x,
+                worldCenter.x - panRangeX,
+                worldCenter.x + panRangeX);
+            var clampedZ = Mathf.Clamp(
+                groundCenter.y,
+                worldCenter.y - panRangeZ,
+                worldCenter.y + panRangeZ);
             var correction = new Vector2(
                 clampedX - groundCenter.x,
                 clampedZ - groundCenter.y);
@@ -433,6 +439,11 @@ namespace ProjectMT.Contents.CastleRaid
             {
                 targetCamera.transform.position += new Vector3(correction.x, 0f, correction.y);
             }
+        }
+
+        private static float ResolvePanRange(float worldHalfExtent, float viewportHalfExtent)
+        {
+            return Mathf.Max(MinimumPanRange, worldHalfExtent - viewportHalfExtent);
         }
 
         private bool TryResolveViewportGroundBounds(out Vector2 center, out Vector2 halfExtents)

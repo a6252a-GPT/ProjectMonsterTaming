@@ -12,6 +12,7 @@ namespace ProjectMT.Shared.Combat
         [SerializeField] private GameObject hitVfxPrefab; // 공용 타격 이펙트
         [SerializeField] private CameraImpulseRig cameraImpulse; // 카메라 흔들림 장치
         [SerializeField] private FloatingNumberPresenter floatingNumbers; // 풀링 피해 숫자
+        [SerializeField] private WorldHealthBarPresenter worldHealthBars; // 일반 유닛 피격 HP바
         [SerializeField] private SfxPool sfxPool; // 현재 전투 범위 SFX Voice 풀
         [SerializeField] private SfxCue hitSfx; // 일반 피격음
         [SerializeField] private SfxCue deathSfx; // 사망음
@@ -36,6 +37,11 @@ namespace ProjectMT.Shared.Combat
             if (sfxPool == null)
             {
                 sfxPool = GetComponent<SfxPool>();
+            }
+
+            if (worldHealthBars == null)
+            {
+                worldHealthBars = GetComponentInChildren<WorldHealthBarPresenter>(true);
             }
         }
 
@@ -72,6 +78,7 @@ namespace ProjectMT.Shared.Combat
                 preset.TargetHitStop,
                 report.Killed);
             floatingNumbers?.ShowDamage(target, report);
+            worldHealthBars?.ShowDamage(target);
             sfxPool?.Play(hitSfx, report.Request.HitPoint);
             if (poolScope != null && hitVfxPrefab != null && hitVfxThisFrame < maxHitVfxPerFrame)
             {
@@ -141,6 +148,12 @@ namespace ProjectMT.Shared.Combat
             return sfxPool != null && sfxPool.Play(cue, position);
         }
 
+        public void SetDisplayOptions(bool showFloatingNumbers, bool showUnitHealthBars)
+        {
+            floatingNumbers?.SetVisible(showFloatingNumbers);
+            worldHealthBars?.SetVisible(showUnitHealthBars);
+        }
+
         private void PlayImpulse(float strength)
         {
             strength = Mathf.Max(0f, strength);
@@ -205,6 +218,11 @@ namespace ProjectMT.Shared.Combat
         {
             floatingNumbers = numbers;
             sfxPool = audioPool;
+        }
+
+        public void EditorConfigureHealthBars(WorldHealthBarPresenter healthBars)
+        {
+            worldHealthBars = healthBars;
         }
 #endif
     }

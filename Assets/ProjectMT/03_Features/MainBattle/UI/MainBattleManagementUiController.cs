@@ -3,6 +3,7 @@ using ProjectMT.Features.CommanderSkill;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.Formation;
 using ProjectMT.Features.Inventory;
+using ProjectMT.Features.Settings;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -30,6 +31,7 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private CommanderSkillPageController commanderSkillPage;
         [SerializeField] private GameObject growthDungeonPage;
         [SerializeField] private Button growthDungeonCloseButton;
+        [SerializeField] private SettingsPanelController settingsPage;
 
         private int defaultSiblingIndex = -1;
         private FormationPageController formationPage;
@@ -45,6 +47,7 @@ namespace ProjectMT.Features.MainBattle
             (inventoryPage != null && inventoryPage.IsOpen) ||
             (commanderSkillPage != null && commanderSkillPage.IsOpen) ||
             (growthDungeonPage != null && growthDungeonPage.activeSelf) ||
+            (settingsPage != null && settingsPage.IsOpen) ||
             (formationPage != null && formationPage.IsOpen);
 
         private void Awake()
@@ -60,6 +63,11 @@ namespace ProjectMT.Features.MainBattle
 
             defaultSiblingIndex = transform.GetSiblingIndex();
             CloseAllPages();
+            if (settingsPage != null)
+            {
+                settingsPage.OpenStateChanged += HandleSettingsOpenStateChanged;
+            }
+
             commanderGrowthButton.onClick.AddListener(ToggleCommanderGrowthPage);
             shopButton.onClick.AddListener(OpenShopPage);
             shopCloseButton.onClick.AddListener(CloseShopPage);
@@ -87,6 +95,7 @@ namespace ProjectMT.Features.MainBattle
             ConfigureEquipmentSlotUpgradePage(null);
             ConfigureInventoryPage(null);
             ConfigureCommanderSkillPage(null);
+            ConfigureSettingsPage(null);
             if (monsterManagementPage != null)
             {
                 monsterManagementPage.OpenStateChanged -= HandleMonsterManagementOpenStateChanged;
@@ -204,6 +213,33 @@ namespace ProjectMT.Features.MainBattle
             BringToFront();
         }
 
+        public void OpenSettingsPage()
+        {
+            CloseAllPages();
+            settingsPage?.Open();
+        }
+
+        public void ConfigureSettingsPage(SettingsPanelController page)
+        {
+            if (settingsPage == page)
+            {
+                settingsPage?.Close();
+                return;
+            }
+
+            if (settingsPage != null)
+            {
+                settingsPage.OpenStateChanged -= HandleSettingsOpenStateChanged;
+            }
+
+            settingsPage = page;
+            if (settingsPage != null)
+            {
+                settingsPage.OpenStateChanged += HandleSettingsOpenStateChanged;
+                settingsPage.Close();
+            }
+        }
+
         public void ConfigureFormationPage(FormationPageController page)
         {
             if (formationPage == page)
@@ -237,6 +273,7 @@ namespace ProjectMT.Features.MainBattle
             inventoryPage?.Close();
             commanderSkillPage?.Close();
             growthDungeonPage?.SetActive(false);
+            settingsPage?.Close();
             RestoreHudOrder();
         }
 
@@ -317,7 +354,8 @@ namespace ProjectMT.Features.MainBattle
                      (equipmentSlotUpgradePage == null || !equipmentSlotUpgradePage.IsOpen) &&
                      (inventoryPage == null || !inventoryPage.IsOpen) &&
                      (commanderSkillPage == null || !commanderSkillPage.IsOpen) &&
-                     (growthDungeonPage == null || !growthDungeonPage.activeSelf))
+                     (growthDungeonPage == null || !growthDungeonPage.activeSelf) &&
+                     (settingsPage == null || !settingsPage.IsOpen))
             {
                 RestoreHudOrder();
             }
@@ -348,6 +386,18 @@ namespace ProjectMT.Features.MainBattle
         }
 
         private void HandleCommanderSkillOpenStateChanged(bool open)
+        {
+            if (open)
+            {
+                BringToFront();
+            }
+            else if (!IsAnyPageOpen)
+            {
+                RestoreHudOrder();
+            }
+        }
+
+        private void HandleSettingsOpenStateChanged(bool open)
         {
             if (open)
             {

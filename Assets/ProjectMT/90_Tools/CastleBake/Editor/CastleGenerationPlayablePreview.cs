@@ -287,6 +287,7 @@ namespace ProjectMT.EditorTools.CastleBake
                 Mathf.Max(1f, placement.EffectiveHealth),
                 slots,
                 targetObstacle);
+            target.ConfigureGenerationMetadata(placement); // 플레이 프리뷰도 정식 런타임과 같은 목표 규칙 사용
             health.Initialize(Mathf.Max(1f, placement.EffectiveHealth));
             return target;
         }

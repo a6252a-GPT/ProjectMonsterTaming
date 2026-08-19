@@ -18,8 +18,8 @@ MonoBehaviour:
     impactType: 0
     targetPriority: 0
     searchRange: 20
-    baseDamage: 17
-    cooldown: 3.15
+    baseDamage: 8
+    cooldown: 5.4
     projectileCount: 6
     fireSequentially: 1
     projectileVolleySize: 1

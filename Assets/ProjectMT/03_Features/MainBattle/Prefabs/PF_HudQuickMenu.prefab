@@ -3724,6 +3724,7 @@ MonoBehaviour:
   commanderButton: {fileID: 4487454335652208061}
   skillButton: {fileID: 6303066325040967669}
   castleRaidButton: {fileID: 1158466927480973555}
+  settingsButton: {fileID: 6649347449961371762}
   modeButton: {fileID: 7630981825559471461}
   managementUi: {fileID: 0}
   formationPage: {fileID: 0}
@@ -9988,6 +9989,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 8
       objectReference: {fileID: 0}
+    - target: {fileID: 2451502503663593629, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2472023230998689610, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -10254,7 +10259,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7112460734896734438, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Name
-      value: SettingsButton_LOCKED
+      value: SettingsButton
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10308,7 +10313,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 0
+  m_Interactable: 1
   m_TargetGraphic: {fileID: 8922764454712224646}
   m_OnClick:
     m_PersistentCalls:

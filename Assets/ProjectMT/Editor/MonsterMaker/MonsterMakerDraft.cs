@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ProjectMT.Contents.CastleRaid;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
@@ -152,6 +153,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private MonsterBuffStackPolicy specialStackPolicy = MonsterBuffStackPolicy.RefreshDuration;
         [SerializeField] private MonsterStatModifier specialModifier;
 
+        [SerializeField] private CastleRaidAiPattern castleRaidAiPattern = CastleRaidAiPattern.BalancedAdvance;
+        [SerializeField] private CastleRaidSupportFocus castleRaidSupportFocus = CastleRaidSupportFocus.Adaptive;
+        [SerializeField, Min(1f)] private float castleRaidSupportRange = 5f;
+        [SerializeField, Min(0.1f)] private float castleRaidSupportCooldown = 4f;
+        [SerializeField, Min(0.1f)] private float castleRaidSupportDuration = 5f;
+        [SerializeField, Range(0f, 1f)] private float castleRaidHealRatio = 0.24f;
+        [SerializeField, Range(0f, 1f)] private float castleRaidAttackBuffRate = 0.2f;
+        [SerializeField, Range(0.05f, 1f)] private float castleRaidDefenseDamageMultiplier = 0.75f;
+
         [SerializeField] private bool ascensionConfigured;
         [SerializeField] private MonsterStatModifier ascension1;
         [SerializeField] private MonsterMakerAbilityDraft ascension2 = new MonsterMakerAbilityDraft();
@@ -226,6 +236,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public float SpecialDuration => specialDuration;
         public MonsterBuffStackPolicy SpecialStackPolicy => specialStackPolicy;
         public MonsterStatModifier SpecialModifier => specialModifier;
+        public CastleRaidAiPattern CastleRaidAiPattern => castleRaidAiPattern;
+        public CastleRaidSupportFocus CastleRaidSupportFocus => castleRaidSupportFocus;
+        public float CastleRaidSupportRange => castleRaidSupportRange;
+        public float CastleRaidSupportCooldown => castleRaidSupportCooldown;
+        public float CastleRaidSupportDuration => castleRaidSupportDuration;
+        public float CastleRaidHealRatio => castleRaidHealRatio;
+        public float CastleRaidAttackBuffRate => castleRaidAttackBuffRate;
+        public float CastleRaidDefenseDamageMultiplier => castleRaidDefenseDamageMultiplier;
         public bool AscensionConfigured => ascensionConfigured;
         public MonsterStatModifier Ascension1 => ascension1;
         public MonsterMakerAbilityDraft Ascension2 => ascension2;

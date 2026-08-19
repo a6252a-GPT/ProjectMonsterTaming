@@ -47,6 +47,9 @@ namespace ProjectMT.Contents.CastleRaid
         [SerializeField, Range(0.5f, 0.95f)] private float turretHeadFootprintRatio = 0.82f;
         [SerializeField, Range(0.35f, 0.75f)] private float turretBodyHeightRatio = 0.58f;
 
+        [Header("Defender Visuals")]
+        [SerializeField] private CastleDefenderCatalog defenderCatalog; // 미지정이면 Resources 기본 카탈로그 사용
+
         private GameObject currentStageRoot;
         private int currentSeed;
         private CastleLayoutTheme currentTheme;
@@ -273,8 +276,13 @@ namespace ProjectMT.Contents.CastleRaid
             targetCollider = boxCollider;
 
             var health = targetObject.AddComponent<HealthComponent>();
+            if (placement.Kind == CastlePlacementKind.Defender)
+            {
+                var visualFeedback = targetObject.AddComponent<UnitVisualFeedback>();
+                visualFeedback.RefreshRenderers();
+            }
             var slots = targetObject.AddComponent<AttackSlotProvider>();
-            slots.ConfigureSlots(BuildAttackSlots(targetObject.transform, footprint));
+            slots.ConfigureComputedSlots(footprint, SlotPadding); // 보이지 않는 공격 자리 Transform은 만들지 않는다
 
             targetObstacle = null;
             if (placement.Kind != CastlePlacementKind.Defender)
@@ -293,7 +301,17 @@ namespace ProjectMT.Contents.CastleRaid
                 Mathf.Max(1f, placement.EffectiveHealth),
                 slots,
                 targetObstacle);
+            target.ConfigureGenerationMetadata(placement); // 전투 AI가 구역·방어층을 잃지 않게 전달
             health.Initialize(Mathf.Max(1f, placement.EffectiveHealth));
+            if (placement.Kind == CastlePlacementKind.Defender)
+            {
+                var agent = targetObject.AddComponent<NavMeshAgent>();
+                agent.radius = Mathf.Max(0.18f, Mathf.Min(footprint.x, footprint.y) * 0.28f);
+                agent.height = Mathf.Max(1.2f, height * 0.92f);
+                agent.baseOffset = 0f;
+                var defender = targetObject.AddComponent<CastleDefenderUnit>();
+                raidController.ConfigureGeneratedDefender(defender, target, ResolveDefenderSeed(candidate, placement));
+            }
             if (placement.Kind == CastlePlacementKind.DefenseBuilding)
             {
                 var turretVisual = targetObject.GetComponent<CastleTurretVisual>();
@@ -334,8 +352,102 @@ namespace ProjectMT.Contents.CastleRaid
                 return;
             }
 
+            if (placement.Kind == CastlePlacementKind.Defender)
+            {
+                BuildDefenderVisual(candidate, parent, placement);
+                return;
+            }
+
             CreateVisualBox("Body", parent, footprint.x * 0.88f, height * 0.72f, footprint.y * 0.88f, height * 0.36f, material, color);
             CreateVisualBox("Cap", parent, footprint.x * 0.58f, height * 0.28f, footprint.y * 0.58f, height * 0.86f, material, Color.Lerp(color, Color.white, 0.16f));
+        }
+
+        private void BuildDefenderVisual(
+            CastleGenerationCandidate candidate,
+            Transform parent,
+            CastlePlacementData placement)
+        {
+            var catalog = ResolveDefenderCatalog();
+            var appearanceSeed = ResolveDefenderSeed(candidate, placement);
+            var prefab = catalog.Resolve(appearanceSeed, candidate.RequestedDefenseLayerCount);
+            if (prefab == null)
+            {
+                throw new InvalidOperationException("Castle Raid 수비대 카탈로그에서 정식 적 프리팹을 찾지 못했습니다.");
+            }
+
+            var visual = Instantiate(prefab, parent, false);
+            visual.name = $"DefenderVisual_{prefab.name}";
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localScale = Vector3.one;
+
+            var request = new UnitSpawnRequest(
+                $"castle_defender_{placement.PlacementId}",
+                default,
+                UnitTeam.Enemy,
+                canMove: false,
+                canAttack: false,
+                appearanceSeed: appearanceSeed);
+            var preparations = visual.GetComponentsInChildren<MonoBehaviour>(true);
+            for (var index = 0; index < preparations.Length; index++)
+            {
+                if (preparations[index] is IUnitSpawnPreparation preparation && !preparation.PrepareForSpawn(request))
+                {
+                    throw new InvalidOperationException($"정식 적 외형 준비에 실패했습니다. Prefab={prefab.name}");
+                }
+            }
+
+            DisableBorrowedGameplayComponents(visual);
+        }
+
+        private static void DisableBorrowedGameplayComponents(GameObject visual)
+        {
+            var actors = visual.GetComponentsInChildren<UnitActor>(true);
+            for (var index = 0; index < actors.Length; index++)
+            {
+                actors[index].enabled = false; // 원정대 전투 제어 대신 수비대 전용 AI가 소유
+            }
+
+            var healthComponents = visual.GetComponentsInChildren<HealthComponent>(true);
+            for (var index = 0; index < healthComponents.Length; index++)
+            {
+                healthComponents[index].enabled = false; // 판정 체력은 CastleTarget 루트 한 곳만 사용
+            }
+
+            var feedbackComponents = visual.GetComponentsInChildren<UnitVisualFeedback>(true);
+            for (var index = 0; index < feedbackComponents.Length; index++)
+            {
+                feedbackComponents[index].enabled = false; // 루트 피격 연출과 중복 실행 방지
+            }
+        }
+
+        private CastleDefenderCatalog ResolveDefenderCatalog()
+        {
+            if (defenderCatalog == null)
+            {
+                defenderCatalog = Resources.Load<CastleDefenderCatalog>(CastleDefenderCatalog.DefaultResourcesPath);
+            }
+
+            return defenderCatalog != null && defenderCatalog.IsComplete
+                ? defenderCatalog
+                : throw new InvalidOperationException("Castle Raid 기본 수비대 카탈로그가 없거나 비어 있습니다.");
+        }
+
+        private static int ResolveDefenderSeed(
+            CastleGenerationCandidate candidate,
+            CastlePlacementData placement)
+        {
+            unchecked
+            {
+                var hash = candidate.Seed;
+                var id = placement.PlacementId ?? string.Empty;
+                for (var index = 0; index < id.Length; index++)
+                {
+                    hash = hash * 397 ^ id[index];
+                }
+
+                return hash;
+            }
         }
 
         private void BuildTurretVisual(
@@ -430,32 +542,6 @@ namespace ProjectMT.Contents.CastleRaid
                     ? ballistaTurretHeads
                     : fireballTurretHeads;
             return heads[Mathf.Clamp(level, 1, 3) - 1];
-        }
-
-        private static Transform[] BuildAttackSlots(Transform parent, Vector2 footprint)
-        {
-            var halfX = footprint.x * 0.5f + SlotPadding;
-            var halfZ = footprint.y * 0.5f + SlotPadding;
-            var positions = new[]
-            {
-                new Vector3(0f, 0f, halfZ),
-                new Vector3(halfX, 0f, 0f),
-                new Vector3(0f, 0f, -halfZ),
-                new Vector3(-halfX, 0f, 0f),
-                new Vector3(halfX, 0f, halfZ),
-                new Vector3(halfX, 0f, -halfZ),
-                new Vector3(-halfX, 0f, -halfZ),
-                new Vector3(-halfX, 0f, halfZ)
-            };
-            var slots = new Transform[positions.Length];
-            for (var index = 0; index < positions.Length; index++)
-            {
-                var slot = CreateChild($"AttackSlot_{index + 1:00}", parent).transform;
-                slot.localPosition = positions[index];
-                slots[index] = slot;
-            }
-
-            return slots;
         }
 
         private void BuildGround(
@@ -746,6 +832,7 @@ namespace ProjectMT.Contents.CastleRaid
             if (rules == null || raidController == null || cameraController == null || worldRoot == null ||
                 deploymentMaterial == null || wallMaterial == null || buildingMaterial == null || palaceMaterial == null ||
                 turretAttackCatalog == null || !turretAttackCatalog.IsComplete ||
+                ResolveDefenderCatalog() == null ||
                 !HasCompleteTurretHeadSet(cannonTurretHeads) ||
                 !HasCompleteTurretHeadSet(ballistaTurretHeads) ||
                 !HasCompleteTurretHeadSet(fireballTurretHeads))

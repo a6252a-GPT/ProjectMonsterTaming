@@ -1,4 +1,5 @@
 using ProjectMT.Features.Formation;
+using ProjectMT.Features.Settings;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -28,6 +29,7 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private Button commanderButton;
         [SerializeField] private Button skillButton;
         [SerializeField] private Button castleRaidButton;
+        [SerializeField] private Button settingsButton;
         [SerializeField] private Button modeButton;
 
         [Header("실제 기능")]
@@ -53,6 +55,7 @@ namespace ProjectMT.Features.MainBattle
             commanderButton?.onClick.AddListener(OpenCommander);
             skillButton?.onClick.AddListener(OpenCommanderSkill);
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
+            settingsButton?.onClick.AddListener(OpenSettings);
             modeButton?.onClick.AddListener(CloseMenu);
             SetMenuOpen(false);
         }
@@ -71,6 +74,7 @@ namespace ProjectMT.Features.MainBattle
             commanderButton?.onClick.RemoveListener(OpenCommander);
             skillButton?.onClick.RemoveListener(OpenCommanderSkill);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
+            settingsButton?.onClick.RemoveListener(OpenSettings);
             modeButton?.onClick.RemoveListener(CloseMenu);
         }
 
@@ -165,6 +169,12 @@ namespace ProjectMT.Features.MainBattle
             sceneRoot?.OpenCastleRaid();
         }
 
+        private void OpenSettings()
+        {
+            CloseMenu();
+            managementUi?.OpenSettingsPage();
+        }
+
         private void ResolveRuntimeReferences()
         {
             managementUi ??= FindFirstObjectByType<MainBattleManagementUiController>(FindObjectsInactive.Include);
@@ -212,6 +222,11 @@ namespace ProjectMT.Features.MainBattle
             skillButton = openSkillButton;
             castleRaidButton = openCastleRaidButton;
             modeButton = currentModeButton;
+        }
+
+        public void EditorConfigureSettings(Button openSettingsButton)
+        {
+            settingsButton = openSettingsButton;
         }
 #endif
     }

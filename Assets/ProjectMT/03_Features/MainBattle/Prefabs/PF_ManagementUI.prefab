@@ -381,6 +381,7 @@ RectTransform:
   - {fileID: 8597715175903521478}
   - {fileID: 1451782196910360422}
   - {fileID: 3911242545504244782}
+  - {fileID: 6714719959951196555}
   m_Father: {fileID: 9083845738529402641}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -729,6 +730,7 @@ MonoBehaviour:
   commanderSkillPage: {fileID: 6897436567157519051}
   growthDungeonPage: {fileID: 2822647252504443469}
   growthDungeonCloseButton: {fileID: 7575681089933175367}
+  settingsPage: {fileID: 1960053661106040944}
 --- !u!114 &2548689161356961044
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2581,6 +2583,123 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 6701580364318918323, guid: 4189301c28cd86d4ea1bcc140841d844, type: 3}
   m_PrefabInstance: {fileID: 2488714373107656029}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3268465301824224100
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1861541093181856863}
+    m_Modifications:
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8618109568431405748, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_Name
+      value: PF_SettingsPanel
+      objectReference: {fileID: 0}
+    - target: {fileID: 8618109568431405748, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+--- !u!114 &1960053661106040944 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3920499699471207188, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+  m_PrefabInstance: {fileID: 3268465301824224100}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c602b07b674f5f43bebb48d358ea5cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Settings.SettingsPanelController
+--- !u!224 &6714719959951196555 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 8103262045516987119, guid: 24aaa1a8b258ee24eba6e0528c00198a, type: 3}
+  m_PrefabInstance: {fileID: 3268465301824224100}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6377383619336227643
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2794,5 +2913,5 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6bdda6982f44bd74aaf75a53b0a1dfe6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderSkillPageController

@@ -237,7 +237,7 @@ MonoBehaviour:
   worldCenter: {x: 0, y: 0}
   worldSize: {x: 20, y: 20}
   dragThresholdPixels: 8
-  wheelZoomStep: 0.18
+  wheelZoomStep: 0.1
   movementSmoothTime: 0.08
   zoomSmoothTime: 0.1
   inertiaDeceleration: 48

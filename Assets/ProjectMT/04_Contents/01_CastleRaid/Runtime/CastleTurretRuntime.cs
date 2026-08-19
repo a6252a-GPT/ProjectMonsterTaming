@@ -5,6 +5,8 @@ namespace ProjectMT.Contents.CastleRaid
     [DisallowMultipleComponent]
     public sealed class CastleTurretRuntime : MonoBehaviour // 생성 포탑의 조준·장전·발사 실행기
     {
+        private const float TargetRefreshInterval = 0.18f;
+
         private CastleRaidController controller;
         private CastleTarget structure;
         private CastleTurretVisual visual;
@@ -20,6 +22,7 @@ namespace ProjectMT.Contents.CastleRaid
         private int firedProjectileCount;
         private int pendingProjectileCount;
         private float nextVolleyTime;
+        private float nextTargetRefreshTime;
         private float recoilStartedAt = float.NegativeInfinity;
 
         public CastleTurretAttackProfile Profile => profile;
@@ -49,6 +52,7 @@ namespace ProjectMT.Contents.CastleRaid
             cooldownRemaining = attack.cooldown * ResolveInitialCooldownRatio(gameObject.name);
             firedProjectileCount = 0;
             pendingProjectileCount = 0;
+            nextTargetRefreshTime = Time.time + TargetRefreshInterval * ResolveInitialCooldownRatio(gameObject.name);
             ProjectilesFired = 0;
             HitCount = 0;
             RequestedDamage = 0f;
@@ -66,9 +70,14 @@ namespace ProjectMT.Contents.CastleRaid
 
             cooldownRemaining = Mathf.Max(0f, cooldownRemaining - Time.deltaTime);
             RestoreLoadedProjectilesWhenReady();
-            currentTarget = controller.FindTurretTarget(transform.position, attack.searchRange, attack.targetPriority);
+            if (Time.time >= nextTargetRefreshTime || currentTarget != null && !currentTarget.IsAlive)
+            {
+                RefreshTarget();
+            }
+
             if (currentTarget == null)
             {
+                pendingProjectileCount = 0;
                 ApplyAimAndRecoil(null, Time.deltaTime);
                 return;
             }
@@ -88,6 +97,16 @@ namespace ProjectMT.Contents.CastleRaid
             {
                 BeginAttackSequence();
             }
+        }
+
+        private void RefreshTarget()
+        {
+            nextTargetRefreshTime = Time.time + TargetRefreshInterval;
+            currentTarget = controller.FindTurretTarget(
+                visual.Muzzle.position,
+                attack.searchRange,
+                attack.targetPriority,
+                attack.projectileHitRadius);
         }
 
         private void BeginAttackSequence()
@@ -111,6 +130,13 @@ namespace ProjectMT.Contents.CastleRaid
                 : pendingProjectileCount;
             var muzzle = visual.Muzzle;
             var targetPoint = currentTarget.transform.position + Vector3.up * attack.targetAimHeight;
+            if (controller.IsTurretLineBlocked(muzzle.position, targetPoint, attack.projectileHitRadius))
+            {
+                pendingProjectileCount = 0;
+                currentTarget = null;
+                return;
+            }
+
             var baseDirection = (targetPoint - muzzle.position).normalized;
             for (var index = 0; index < volleySize; index++)
             {

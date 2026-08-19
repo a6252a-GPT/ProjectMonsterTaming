@@ -18,8 +18,8 @@ MonoBehaviour:
     impactType: 1
     targetPriority: 1
     searchRange: 28
-    baseDamage: 14
-    cooldown: 4.1
+    baseDamage: 6
+    cooldown: 5.6
     projectileCount: 6
     fireSequentially: 1
     projectileVolleySize: 3
@@ -28,8 +28,8 @@ MonoBehaviour:
     projectileSpeed: 38
     projectileHitRadius: 0.38
     projectileLifetime: 5.2
-    pierceCount: 5
-    piercingDamageRatio: 0.55
+    pierceCount: 3
+    piercingDamageRatio: 0.4
     explosionRadius: 0
     projectileScale: 2.1
     targetAimHeight: 0.55

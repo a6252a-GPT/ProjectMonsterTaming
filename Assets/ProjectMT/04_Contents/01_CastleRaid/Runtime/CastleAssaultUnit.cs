@@ -10,6 +10,10 @@ namespace ProjectMT.Contents.CastleRaid
     [RequireComponent(typeof(NavMeshAgent), typeof(HealthComponent))]
     public sealed class CastleAssaultUnit : MonoBehaviour // NavMesh 기반 성 공격 유닛
     {
+        private const float NavigationRecoveryInterval = 0.25f;
+        private const float NavigationRefreshSpread = 0.08f;
+        private const int PathCornerBufferSize = 64;
+
         [SerializeField] private NavMeshAgent agent; // 길찾기·이동 담당
         [SerializeField] private HealthComponent health; // 공용 체력 부품
         [SerializeField] private UnitVisualFeedback visualFeedback; // 피격·사망 연출
@@ -18,22 +22,49 @@ namespace ProjectMT.Contents.CastleRaid
         private CastleRaidController controller; // 목표·공격 조율자
         private UnitStatsSnapshot stats; // 이번 실행 능력치
         private CastleTarget target; // 현재 공격 대상
-        private Transform leasedSlot; // 대상 주변 공격 자리
+        private int leasedSlotIndex = -1; // 대상 주변 공격 자리 번호
         private float attackCooldown; // 다음 공격 대기
         private MonsterRuntimeAssetSet runtimeAssetSet; // 편성 몬스터 실행 자산
         private bool attackActionRunning; // Marker 기반 공격 재생 중
         private int nextActionSequenceId; // 공격 재생 구분값
         private float deathPresentationDuration = UnitVisualFeedback.DeathPulseDurationSeconds;
         private NavMeshPath navigationPath; // 경로 검사 재사용 버퍼
+        private readonly Vector3[] pathCornerBuffer = new Vector3[PathCornerBufferSize];
         private Vector3 requestedNavigationDestination; // 공격 자리 변경 감지값
         private bool hasNavigationDestination; // 같은 경로를 매 프레임 다시 넣지 않음
         private string unitId = string.Empty; // 포탑 표적 등급 판정용 편성 ID
+        private Predicate<Vector3> slotPathPredicate; // 슬롯 경로 검사 재사용
+        private bool navigationRefreshRequested; // 구조 변경 뒤 분산 갱신 예약
+        private bool forceTargetRefresh; // 돌파 단계 변경 때 목표 우선순위 재평가
+        private float nextNavigationRefreshAt;
+        private float nextRecoveryCheckAt;
+        private CastleRaidAIProfile aiProfile;
+        private CastleRaidSupportDecision supportDecision;
+        private float nextSupportDecisionAt;
+        private float supportCooldownRemaining;
+        private float attackBuffRemaining;
+        private float attackDamageMultiplier = 1f;
+        private float defenseBuffRemaining;
+        private float recentDamagePerSecond;
 
         public bool IsAlive => health != null && health.IsAlive;
         public CastleTarget Target => target;
         public float DeathPresentationDuration => deathPresentationDuration;
         public string UnitId => unitId;
+        public CastleRaidAIProfile AiProfile => aiProfile;
         public float MaxHealth => health == null ? 0f : health.MaxHealth;
+        public float CurrentHealth => health == null ? 0f : health.CurrentHealth;
+        public float HealthRatio => MaxHealth <= 0f ? 0f : Mathf.Clamp01(CurrentHealth / MaxHealth);
+        public float MoveSpeed => Mathf.Max(0.1f, stats.moveSpeed);
+        public float EstimatedDamagePerSecond => Mathf.Max(0.1f, stats.damage * attackDamageMultiplier) /
+                                                  Mathf.Max(0.1f, stats.attackInterval);
+        public float RecentDamagePerSecond => recentDamagePerSecond;
+        public float EstimatedTimeToLive => recentDamagePerSecond <= 0.01f
+            ? float.PositiveInfinity
+            : CurrentHealth / recentDamagePerSecond;
+        public bool HasCombatTarget => target != null && target.IsAlive;
+        public bool HasAttackBuff => attackBuffRemaining > 0f;
+        public bool HasDefenseBuff => defenseBuffRemaining > 0f;
         public float TurretCollisionRadius => agent == null ? 0.35f : Mathf.Max(0.15f, agent.radius);
         public Vector3 TurretHitPoint => transform.position + Vector3.up * (agent == null ? 0.55f : Mathf.Max(0.4f, agent.height * 0.45f));
 
@@ -56,6 +87,7 @@ namespace ProjectMT.Contents.CastleRaid
             ResolveReferences();
             controller = raidController ?? throw new ArgumentNullException(nameof(raidController));
             unitId = unit.UnitId ?? string.Empty;
+            aiProfile = controller.ResolveAIProfile(unitId);
             stats = unit.Stats;
             visualFeedback?.SetTint(unit.VisualTint); // 실제 편성 몬스터 색상 적용
             runtimeAssetSet = unit.RuntimeAssetSet;
@@ -71,7 +103,20 @@ namespace ProjectMT.Contents.CastleRaid
             deathPresentationDuration = UnitVisualFeedback.DeathPulseDurationSeconds;
             navigationPath = new NavMeshPath(); // 풀 인스턴스 초기화 뒤 네이티브 경로 버퍼 준비
             hasNavigationDestination = false;
+            slotPathPredicate ??= HasCompletePath;
+            navigationRefreshRequested = false;
+            forceTargetRefresh = false;
+            nextNavigationRefreshAt = 0f;
+            nextRecoveryCheckAt = Time.time + ResolveNavigationSpread();
+            supportDecision = default;
+            nextSupportDecisionAt = Time.time + ResolveNavigationSpread();
+            supportCooldownRemaining = 0f;
+            attackBuffRemaining = 0f;
+            attackDamageMultiplier = 1f;
+            defenseBuffRemaining = 0f;
+            recentDamagePerSecond = 0f;
             health.Initialize(stats.maxHealth);
+            HideHealthBar(); // 풀 재사용 시 이전 피격 HP바를 숨긴다
             health.Damaged += HandleDamaged;
             health.Died += HandleDied;
 
@@ -97,16 +142,34 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             attackCooldown = Mathf.Max(0f, attackCooldown - deltaTime);
+            TickRuntimeEffects(deltaTime);
             if (attackActionRunning)
             {
                 TickAttackAction(deltaTime);
                 return;
             }
 
-            var desiredTarget = controller.FindPriorityTarget(this); // 열린 경로 기준 목표 재평가
-            if (desiredTarget != target)
+            if (aiProfile != null && aiProfile.Pattern == CastleRaidAiPattern.TacticalSupport &&
+                TickTacticalSupport(deltaTime))
             {
-                SetTarget(desiredTarget);
+                return;
+            }
+
+            if (target == null || !target.IsAlive)
+            {
+                RefreshNavigationPath(true); // 파괴된 목표만 즉시 다시 고른다
+            }
+            else if (navigationRefreshRequested && Time.time >= nextNavigationRefreshAt)
+            {
+                RefreshNavigationPath(forceTargetRefresh);
+            }
+            else if (Time.time >= nextRecoveryCheckAt)
+            {
+                nextRecoveryCheckAt = Time.time + NavigationRecoveryInterval + ResolveNavigationSpread();
+                if (ShouldRecoverNavigation())
+                {
+                    RefreshNavigationPath(false);
+                }
             }
 
             if (target == null || !target.IsAlive)
@@ -115,7 +178,7 @@ namespace ProjectMT.Contents.CastleRaid
                 return;
             }
 
-            var destination = leasedSlot == null ? target.transform.position : leasedSlot.position; // 대여 자리를 우선
+            var destination = ResolveNavigationDestination(); // 대여 자리를 우선
             var distance = PlanarDistance(transform.position, destination);
             var attackDistance = Mathf.Max(0.5f, stats.attackRange);
             if (distance > attackDistance)
@@ -151,11 +214,12 @@ namespace ProjectMT.Contents.CastleRaid
 
             var destination = candidate.transform.position;
             if (candidate.AttackSlots != null &&
-                candidate.AttackSlots.TryResolveAvailableSlot(
+                candidate.AttackSlots.TryResolveAvailablePosition(
                     this,
                     transform.position,
-                    slot => HasCompletePath(slot.position),
-                    out var availableSlot))
+                    slotPathPredicate,
+                    out _,
+                    out _))
             {
                 return true;
             }
@@ -163,14 +227,94 @@ namespace ProjectMT.Contents.CastleRaid
             return HasCompletePath(destination);
         }
 
+        public bool TryMeasurePathToTarget(CastleTarget candidate, out float pathDistance)
+        {
+            pathDistance = float.PositiveInfinity;
+            if (candidate == null || agent == null || !agent.isOnNavMesh)
+            {
+                return false;
+            }
+
+            if (PlanarDistance(transform.position, candidate.transform.position) <= Mathf.Max(0.5f, stats.attackRange))
+            {
+                pathDistance = 0f;
+                return true;
+            }
+
+            var destination = candidate.transform.position;
+            if (candidate.AttackSlots != null &&
+                candidate.AttackSlots.TryResolveAvailablePosition(
+                    this,
+                    transform.position,
+                    slotPathPredicate,
+                    out _,
+                    out var slotPosition))
+            {
+                destination = slotPosition;
+            }
+
+            return TryMeasurePathToPosition(destination, out pathDistance);
+        }
+
+        public bool TryMeasurePathToPosition(Vector3 destination, out float pathDistance)
+        {
+            pathDistance = float.PositiveInfinity;
+            if (agent == null || !agent.isOnNavMesh)
+            {
+                return false;
+            }
+
+            if (navigationPath == null)
+            {
+                navigationPath = new NavMeshPath();
+            }
+
+            if (!agent.CalculatePath(destination, navigationPath) ||
+                navigationPath.status != NavMeshPathStatus.PathComplete)
+            {
+                return false;
+            }
+
+            var cornerCount = navigationPath.GetCornersNonAlloc(pathCornerBuffer);
+            pathDistance = 0f;
+            var previous = agent.nextPosition;
+            for (var index = 0; index < cornerCount; index++)
+            {
+                pathDistance += PlanarDistance(previous, pathCornerBuffer[index]);
+                previous = pathCornerBuffer[index];
+            }
+
+            return true;
+        }
+
         public bool RefreshNavigationPath() // 길막 오브젝트 파괴 뒤 즉시 새 경로 요청
+        {
+            return RefreshNavigationPath(false);
+        }
+
+        public void RequestNavigationRefresh(bool retarget, float delay)
+        {
+            var requestedAt = Time.time + Mathf.Max(0f, delay);
+            if (!navigationRefreshRequested || requestedAt < nextNavigationRefreshAt)
+            {
+                nextNavigationRefreshAt = requestedAt;
+            }
+
+            navigationRefreshRequested = true;
+            forceTargetRefresh |= retarget;
+        }
+
+        private bool RefreshNavigationPath(bool retarget)
         {
             if (!IsAlive || controller == null || agent == null || !agent.isOnNavMesh)
             {
                 return false;
             }
 
-            var desiredTarget = controller.FindPriorityTarget(this);
+            navigationRefreshRequested = false;
+            forceTargetRefresh = false;
+            nextRecoveryCheckAt = Time.time + NavigationRecoveryInterval + ResolveNavigationSpread();
+            var desiredTarget = controller.FindPriorityTarget(this, !retarget);
             if (desiredTarget != target)
             {
                 SetTarget(desiredTarget);
@@ -182,7 +326,7 @@ namespace ProjectMT.Contents.CastleRaid
                 return false;
             }
 
-            var destination = leasedSlot == null ? target.transform.position : leasedSlot.position;
+            var destination = ResolveNavigationDestination();
             agent.ResetPath(); // 제거 전 장애물을 사용한 기존 경로 폐기
             hasNavigationDestination = false;
             return MoveTo(destination);
@@ -196,6 +340,7 @@ namespace ProjectMT.Contents.CastleRaid
                 health.Damaged -= HandleDamaged;
                 health.Died -= HandleDied;
             }
+            HideHealthBar();
 
             if (agent != null && agent.isOnNavMesh)
             {
@@ -205,11 +350,25 @@ namespace ProjectMT.Contents.CastleRaid
 
             controller = null;
             unitId = string.Empty;
+            aiProfile = null;
+            supportDecision = default;
+            nextSupportDecisionAt = 0f;
+            supportCooldownRemaining = 0f;
+            attackBuffRemaining = 0f;
+            attackDamageMultiplier = 1f;
+            defenseBuffRemaining = 0f;
+            recentDamagePerSecond = 0f;
+            health?.SetIncomingDamageMultiplier(1f);
             runtimeAssetSet = null;
             attackActionRunning = false;
             nextActionSequenceId = 0;
             deathPresentationDuration = UnitVisualFeedback.DeathPulseDurationSeconds;
             hasNavigationDestination = false;
+            leasedSlotIndex = -1;
+            navigationRefreshRequested = false;
+            forceTargetRefresh = false;
+            nextNavigationRefreshAt = 0f;
+            nextRecoveryCheckAt = 0f;
             animationDriver?.Shutdown();
             Died = null;
             Damaged = null;
@@ -220,13 +379,15 @@ namespace ProjectMT.Contents.CastleRaid
             ReleaseTarget();
             target = nextTarget;
             hasNavigationDestination = false;
+            leasedSlotIndex = -1;
             if (target != null)
             {
-                target.AttackSlots?.TryLease(
+                target.AttackSlots?.TryLeasePosition(
                     this,
                     transform.position,
-                    slot => HasCompletePath(slot.position),
-                    out leasedSlot); // 실제로 닿는 빈 공격 자리를 확보
+                    slotPathPredicate,
+                    out leasedSlotIndex,
+                    out _); // 실제로 닿는 빈 공격 자리를 확보
             }
         }
 
@@ -238,8 +399,19 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             target = null;
-            leasedSlot = null;
+            leasedSlotIndex = -1;
             hasNavigationDestination = false;
+        }
+
+        private Vector3 ResolveNavigationDestination()
+        {
+            if (target != null && leasedSlotIndex >= 0 && target.AttackSlots != null &&
+                target.AttackSlots.TryGetSlotPosition(leasedSlotIndex, out var slotPosition))
+            {
+                return slotPosition;
+            }
+
+            return target == null ? transform.position : target.transform.position;
         }
 
         private bool MoveTo(Vector3 destination)
@@ -261,7 +433,7 @@ namespace ProjectMT.Contents.CastleRaid
             hasNavigationDestination = false;
             var resolved = destination;
             if (!HasCompletePath(resolved) &&
-                !(controller != null && controller.TryResolveInnerEntry(transform.position, out resolved) && HasCompletePath(resolved)))
+                !(controller != null && controller.TryResolveInnerEntry(this, out resolved) && HasCompletePath(resolved)))
             {
                 StopMoving();
                 return false;
@@ -298,8 +470,11 @@ namespace ProjectMT.Contents.CastleRaid
                 return;
             }
 
-            agent.isStopped = true;
-            agent.ResetPath();
+            if (!agent.isStopped || agent.hasPath || agent.pathPending)
+            {
+                agent.isStopped = true;
+                agent.ResetPath();
+            }
             hasNavigationDestination = false;
             if (!attackActionRunning)
             {
@@ -322,12 +497,15 @@ namespace ProjectMT.Contents.CastleRaid
 
         private void HandleDamaged(DamageReport report)
         {
+            recentDamagePerSecond += report.AppliedDamage / 2.5f;
             visualFeedback?.PlayHit();
+            CastleRaidOverheadHealthBar.ShowDamage(transform, health, true); // 아군은 초록색
             Damaged?.Invoke(this, report);
         }
 
         private void HandleDied(DamageReport report)
         {
+            HideHealthBar();
             visualFeedback?.PlayDeath();
             attackActionRunning = false;
             deathPresentationDuration = Mathf.Max(
@@ -335,6 +513,14 @@ namespace ProjectMT.Contents.CastleRaid
                 animationDriver == null ? 0f : animationDriver.PlayDeath());
             ReleaseTarget();
             Died?.Invoke(this); // Controller가 연출 뒤 풀 반환
+        }
+
+        private void HideHealthBar()
+        {
+            if (TryGetComponent<CastleRaidOverheadHealthBar>(out var healthBar))
+            {
+                healthBar.HideImmediately();
+            }
         }
 
         private void ResolveReferences()
@@ -358,6 +544,23 @@ namespace ProjectMT.Contents.CastleRaid
             {
                 animationDriver = GetComponent<MonsterAnimationDriver>();
             }
+
+            slotPathPredicate ??= HasCompletePath;
+        }
+
+        private bool ShouldRecoverNavigation()
+        {
+            if (target == null || !target.IsAlive || agent == null || !agent.isOnNavMesh || agent.pathPending)
+            {
+                return target == null || !target.IsAlive;
+            }
+
+            return hasNavigationDestination && (!agent.hasPath || agent.pathStatus != NavMeshPathStatus.PathComplete);
+        }
+
+        private float ResolveNavigationSpread()
+        {
+            return Mathf.Abs(GetInstanceID() % 9) / 8f * NavigationRefreshSpread;
         }
 
         private void StartAttack()
@@ -377,7 +580,7 @@ namespace ProjectMT.Contents.CastleRaid
                 attackActionRunning = false;
             }
 
-            controller?.Attack(this, target, stats.damage);
+            controller?.Attack(this, target, stats.damage * attackDamageMultiplier);
         }
 
         private void TickAttackAction(float deltaTime)
@@ -399,7 +602,99 @@ namespace ProjectMT.Contents.CastleRaid
         {
             if (attackActionRunning && target != null && target.IsAlive)
             {
-                controller?.Attack(this, target, stats.damage); // 정식 동작의 실제 타격 시점에 성 피해 적용
+                var markerRatio = marker == null ? 1f : Mathf.Max(0f, marker.PowerRatio);
+                controller?.Attack(
+                    this,
+                    target,
+                    stats.damage * attackDamageMultiplier * markerRatio); // Marker 분배 피해와 지원 버프 반영
+            }
+        }
+
+        private void TickRuntimeEffects(float deltaTime)
+        {
+            supportCooldownRemaining = Mathf.Max(0f, supportCooldownRemaining - deltaTime);
+            recentDamagePerSecond *= Mathf.Exp(-deltaTime / 2.5f);
+
+            if (attackBuffRemaining > 0f)
+            {
+                attackBuffRemaining = Mathf.Max(0f, attackBuffRemaining - deltaTime);
+                if (attackBuffRemaining <= 0f)
+                {
+                    attackDamageMultiplier = 1f;
+                }
+            }
+
+            if (defenseBuffRemaining > 0f)
+            {
+                defenseBuffRemaining = Mathf.Max(0f, defenseBuffRemaining - deltaTime);
+                if (defenseBuffRemaining <= 0f)
+                {
+                    health?.SetIncomingDamageMultiplier(1f);
+                }
+            }
+        }
+
+        private bool TickTacticalSupport(float deltaTime)
+        {
+            if (supportCooldownRemaining > 0f)
+            {
+                supportDecision = default;
+                return false; // 재사용 대기 중에는 기본 진격형으로 전투
+            }
+
+            if (!supportDecision.IsValid || Time.time >= nextSupportDecisionAt)
+            {
+                nextSupportDecisionAt = Time.time + 0.25f + ResolveNavigationSpread();
+                if (!controller.TrySelectSupportDecision(this, out supportDecision))
+                {
+                    supportDecision = default;
+                    return false;
+                }
+
+                ReleaseTarget(); // 지원 이동 중 공격 자리 임대를 점유하지 않는다
+            }
+
+            var supportTarget = supportDecision.Target;
+            var distance = PlanarDistance(transform.position, supportTarget.transform.position);
+            if (distance > supportDecision.Profile.SupportRange)
+            {
+                return MoveTo(supportTarget.transform.position);
+            }
+
+            StopMoving();
+            FaceTowards(supportTarget.transform.position, deltaTime);
+            controller.CommitSupportDecision(this, supportDecision);
+            supportTarget.ApplySupportAction(supportDecision);
+            supportCooldownRemaining = supportDecision.Profile.SupportCooldown;
+            supportDecision = default;
+            animationDriver?.PlayIdle(true);
+            return true;
+        }
+
+        private void ApplySupportAction(CastleRaidSupportDecision decision)
+        {
+            if (!decision.IsValid || decision.Target != this || health == null || !health.IsAlive)
+            {
+                return;
+            }
+
+            switch (decision.Action)
+            {
+                case CastleRaidSupportAction.Heal:
+                    var before = health.CurrentHealth;
+                    health.Heal(health.MaxHealth * decision.Profile.HealRatio);
+                    controller?.PlaySupportFeedback(this, decision.Action, health.CurrentHealth - before);
+                    break;
+                case CastleRaidSupportAction.AttackBuff:
+                    attackDamageMultiplier = Mathf.Max(
+                        attackDamageMultiplier,
+                        1f + decision.Profile.AttackBuffRate);
+                    attackBuffRemaining = Mathf.Max(attackBuffRemaining, decision.Profile.SupportDuration);
+                    break;
+                case CastleRaidSupportAction.DefenseBuff:
+                    health.SetIncomingDamageMultiplier(decision.Profile.DefenseDamageMultiplier);
+                    defenseBuffRemaining = Mathf.Max(defenseBuffRemaining, decision.Profile.SupportDuration);
+                    break;
             }
         }
 

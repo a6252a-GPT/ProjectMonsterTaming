@@ -222,7 +222,13 @@ namespace ProjectMT.Features.Equipment
                 copiedIds.Add(instanceId);
             }
 
-            return await progress.TryApplyAndSaveAsync(GameProgressChange.DismantleEquipment(copiedIds));
+            var saved = await progress.TryApplyAndSaveAsync(GameProgressChange.DismantleEquipment(copiedIds));
+            if (saved)
+            {
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.EquipmentDismantle, copiedIds.Count);
+            }
+
+            return saved;
         }
     }
 }

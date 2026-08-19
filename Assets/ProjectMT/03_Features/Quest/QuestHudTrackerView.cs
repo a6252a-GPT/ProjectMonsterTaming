@@ -20,7 +20,9 @@ namespace ProjectMT.Features.Quest
 
         private Button claimButton;
         private QuestId trackedQuestId;
+        private QuestConditionType trackedConditionType;
         private bool canClaimTracked;
+        private bool canNavigateTracked;
         private bool isClaiming;
 
         private void Awake()
@@ -59,13 +61,17 @@ namespace ProjectMT.Features.Quest
                 !QuestRuntime.TryGetTrackedQuest(trackedType, out var definition, out var progress))
             {
                 canClaimTracked = false;
+                canNavigateTracked = false;
                 UpdateClaimButtonState();
                 Apply("메인 임무", "임무를 준비 중입니다.", "준비 중");
                 return;
             }
 
             trackedQuestId = definition.QuestId;
+            trackedConditionType = definition.ConditionType;
             canClaimTracked = progress.Completed && !progress.RewardClaimed;
+            canNavigateTracked = !progress.Completed &&
+                QuestContentNavigationHub.CanNavigate(trackedConditionType);
             UpdateClaimButtonState();
 
             Apply(
@@ -74,12 +80,22 @@ namespace ProjectMT.Features.Quest
                 FormatStatus(progress));
         }
 
-        // 아이콘 클릭 → 현재 추적 중인 퀘스트 보상 수령 → QuestRuntime.Changed가 갱신을 자동으로 트리거해
-        // 다음 퀘스트로 넘어간 화면이 곧바로 표시된다.
+        // 아이콘 클릭 → 완료된 퀘스트면 보상 수령(QuestRuntime.Changed가 갱신을 자동으로 트리거해
+        // 다음 퀘스트로 넘어간 화면이 곧바로 표시된다), 진행 중인 퀘스트면 해당 콘텐츠로 바로 이동시켜준다.
         private async void HandleIconClicked()
         {
-            if (isClaiming || !canClaimTracked || !QuestRuntime.IsReady)
+            if (isClaiming || !QuestRuntime.IsReady)
             {
+                return;
+            }
+
+            if (!canClaimTracked)
+            {
+                if (canNavigateTracked)
+                {
+                    QuestContentNavigationHub.TryNavigate(trackedConditionType);
+                }
+
                 return;
             }
 
@@ -100,7 +116,7 @@ namespace ProjectMT.Features.Quest
         {
             if (claimButton != null)
             {
-                claimButton.interactable = canClaimTracked && !isClaiming;
+                claimButton.interactable = !isClaiming && (canClaimTracked || canNavigateTracked);
             }
         }
 
@@ -116,7 +132,9 @@ namespace ProjectMT.Features.Quest
             var body = string.IsNullOrWhiteSpace(definition.Description)
                 ? definition.DisplayName
                 : definition.Description.Trim();
-            return $"{body} ({progress.CurrentProgress}/{definition.TargetValue})";
+            // 반복 퀘스트는 사이클마다 목표가 올라가므로 definition.TargetValue(1회차 기준)가 아니라
+            // 지금 사이클 기준으로 다시 계산된 값을 보여준다.
+            return $"{body} ({progress.CurrentProgress}/{QuestRuntime.ResolveTargetValue(definition)})";
         }
 
         // 목표를 채우면 보상 수령 여부와 상관없이 "완료"로 표시하고, 그 전에는 "진행 중"으로 표시한다.

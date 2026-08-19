@@ -273,7 +273,11 @@ namespace ProjectMT.Features.Formation
             var successMessage = isInActiveParty
                 ? "편성 해제 완료 · 다음 전투부터 적용"
                 : $"{GetPartyName(activeParty)} 편성 완료 · 다음 전투부터 적용";
-            await ApplyAndSaveAsync(change, successMessage);
+            var saved = await ApplyAndSaveAsync(change, successMessage);
+            if (saved && !isInActiveParty)
+            {
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.MonsterFormation, 1L);
+            }
         }
 
         private void HandlePositionFormationClicked()

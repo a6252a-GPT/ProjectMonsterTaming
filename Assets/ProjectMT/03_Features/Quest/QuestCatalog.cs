@@ -28,12 +28,14 @@ namespace ProjectMT.Features.Quest
         }
 
         // 특정 종류에서 선행 퀘스트가 없는 첫 퀘스트(체인 시작점). 여러 개면 등록 순서상 첫 항목을 반환한다.
+        // 반복 퀘스트 템플릿은 선형 체인이 아니라 퀘스트 풀에서 뽑히므로 여기서 제외한다.
         public bool TryGetFirst(QuestType type, out QuestDefinition definition)
         {
             for (var i = 0; i < definitions.Count; i++)
             {
                 var candidate = definitions[i];
-                if (candidate != null && candidate.QuestType == type && !candidate.HasPrerequisite)
+                if (candidate != null && candidate.QuestType == type && !candidate.HasPrerequisite &&
+                    !candidate.IsRepeatingTemplate)
                 {
                     definition = candidate;
                     return true;
@@ -50,7 +52,8 @@ namespace ProjectMT.Features.Quest
             for (var i = 0; i < definitions.Count; i++)
             {
                 var candidate = definitions[i];
-                if (candidate != null && candidate.HasPrerequisite && candidate.PrerequisiteQuestId == completedQuestId)
+                if (candidate != null && !candidate.IsRepeatingTemplate && candidate.HasPrerequisite &&
+                    candidate.PrerequisiteQuestId == completedQuestId)
                 {
                     definition = candidate;
                     return true;
@@ -59,6 +62,19 @@ namespace ProjectMT.Features.Quest
 
             definition = null;
             return false;
+        }
+
+        // 반복 퀘스트 풀 대상 목록(QuestType까지 일치). 등록 순서를 그대로 유지해서 호출부가 필터링하기 쉽게 한다.
+        public IEnumerable<QuestDefinition> GetRepeatingTemplates(QuestType type)
+        {
+            for (var i = 0; i < definitions.Count; i++)
+            {
+                var candidate = definitions[i];
+                if (candidate != null && candidate.IsRepeatingTemplate && candidate.QuestType == type)
+                {
+                    yield return candidate;
+                }
+            }
         }
 
         public bool TryValidate(out string error)

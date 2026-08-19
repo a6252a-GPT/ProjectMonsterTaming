@@ -13,6 +13,18 @@ namespace ProjectMT.Shared.Quest
         CommanderLevelUp, // 군단장 성장(레벨업)
         CommanderPotentialUpgrade, // 잠재능력 강화
         MonsterLevelUp, // 몬스터 레벨업
-        MonsterAscension // 몬스터 돌파
+        MonsterAscension, // 몬스터 돌파
+        MonsterFormation, // 몬스터 부대 배치
+        GrowthDungeonEnter, // 성장 던전(식량 대소동 등) 입장
+        CastleRaidEnter, // 군단의 역습 입장
+        EquipmentDismantle, // 장비 분해
+        MonsterLevelReach, // 보유 몬스터 중 최고 레벨 도달(누적 아님, 현재 값 기준)
+        CommanderLevelReach, // 군단장 레벨 도달
+        CommanderHealthLevelReach, // 군단 공용 강화 - 체력 레벨 도달
+        CommanderAttackLevelReach, // 군단 공용 강화 - 공격력 레벨 도달
+        CommanderDefenseLevelReach, // 군단 공용 강화 - 방어력 레벨 도달
+        CommanderPowerReach, // 군단장 전투력 도달
+        EquipmentSlotUpgradeReach, // 장비 슬롯 강화 중 최고 레벨 도달(부위 무관)
+        CommanderPotentialUnlockCount // 잠재능력 슬롯 개방 개수 도달
     }
 }

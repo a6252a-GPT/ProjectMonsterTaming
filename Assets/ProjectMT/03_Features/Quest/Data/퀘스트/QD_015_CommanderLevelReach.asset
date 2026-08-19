@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25a12baf1f1a3d4449770be56d69d3c6, type: 3}
+  m_Name: QD_015_CommanderLevelReach
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
+  questId:
+    value: quest_015_commander_level_reach
+  displayName: 군단장 레벨 달성
+  description: 군단장을 목표 레벨까지 성장시키세요.
+  questType: 0
+  conditionType: 15
+  targetValue: 10
+  prerequisiteQuestId:
+    value: 
+  reward: {fileID: 11400000, guid: 08f3798958db4887b93fb8c760abcf5a, type: 2}
+  unlockTargets: []
+  unlockGateEnabled: 0
+  isRepeatingTemplate: 1
+  repeatIncrement: 20
+  repeatMaxOccurrences: 0

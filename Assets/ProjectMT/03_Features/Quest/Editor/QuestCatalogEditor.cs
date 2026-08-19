@@ -18,6 +18,8 @@ namespace ProjectMT.EditorTools.Quest
     public sealed class QuestCatalogEditor : Editor
     {
         private const string DefaultFolder = "Assets/ProjectMT/03_Features/Quest/Data";
+        private const string QuestSubfolderName = "퀘스트";
+        private const string RewardSubfolderName = "보상";
 
         private readonly struct ItemCatalogEntry
         {
@@ -166,7 +168,7 @@ namespace ProjectMT.EditorTools.Quest
             EditorGUILayout.BeginHorizontal();
             expandedByInstanceId.TryGetValue(key, out var expanded);
             var header = definition != null
-                ? $"{index + 1}. [{definition.QuestId.Value}] {definition.DisplayName}  ({QuestConditionTypeInfo.GetDisplayName(definition.ConditionType)} {definition.TargetValue})"
+                ? $"{index + 1}. [{definition.QuestId.Value}] {definition.DisplayName}{(definition.IsRepeatingTemplate ? " [반복]" : string.Empty)}  ({QuestConditionTypeInfo.GetDisplayName(definition.ConditionType)} {definition.TargetValue})"
                 : $"{index + 1}. (비어 있는 슬롯)";
             var newExpanded = EditorGUILayout.Foldout(expanded, header, true);
             if (newExpanded != expanded)
@@ -225,21 +227,40 @@ namespace ProjectMT.EditorTools.Quest
             var prerequisiteValueProp = so.FindProperty("prerequisiteQuestId").FindPropertyRelative("value");
             var rewardProp = so.FindProperty("reward");
             var unlockListProp = so.FindProperty("unlockTargets");
+            var unlockGateProp = so.FindProperty("unlockGateEnabled");
+            var repeatingProp = so.FindProperty("isRepeatingTemplate");
+            var repeatIncrementProp = so.FindProperty("repeatIncrement");
+            var repeatMaxOccurrencesProp = so.FindProperty("repeatMaxOccurrences");
 
             EditorGUILayout.PropertyField(idProp, new GUIContent("퀘스트 ID"));
             EditorGUILayout.PropertyField(nameProp, new GUIContent("표시 이름"));
             EditorGUILayout.PropertyField(descProp, new GUIContent("설명"));
             DrawEnumPopupKorean<QuestType>(typeProp, "종류", QuestTypeInfo.GetDisplayName);
             DrawEnumPopupKorean<QuestConditionType>(conditionProp, "조건 종류", QuestConditionTypeInfo.GetDisplayName);
-            EditorGUILayout.PropertyField(targetProp, new GUIContent("목표 수치"));
+            EditorGUILayout.PropertyField(
+                targetProp,
+                new GUIContent(repeatingProp.boolValue ? "목표 수치 (1회차 기준)" : "목표 수치"));
 
-            DrawPrerequisitePopup(prerequisiteValueProp, catalog, definition);
+            EditorGUILayout.Space(4f);
+            DrawRepeatingFields(repeatingProp, repeatIncrementProp, repeatMaxOccurrencesProp);
+
+            EditorGUILayout.Space(4f);
+            if (repeatingProp.boolValue)
+            {
+                EditorGUILayout.HelpBox(
+                    "반복 퀘스트 템플릿은 선행 퀘스트 체인 대신 반복 풀에서 무작위로 뽑혀 등장하므로 선행 퀘스트 설정이 무시됩니다.",
+                    MessageType.Info);
+            }
+            else
+            {
+                DrawPrerequisitePopup(prerequisiteValueProp, catalog, definition);
+            }
 
             EditorGUILayout.PropertyField(rewardProp, new GUIContent("보상"));
             DrawRewardInline(definition, rewardProp, catalog);
 
             EditorGUILayout.Space(4f);
-            DrawUnlockTargets(unlockListProp);
+            DrawUnlockTargets(unlockListProp, unlockGateProp);
 
             so.ApplyModifiedProperties();
 
@@ -267,6 +288,29 @@ namespace ProjectMT.EditorTools.Quest
             {
                 enumProp.enumValueIndex = newIndex;
             }
+        }
+
+        // 반복 퀘스트 템플릿 설정. 켜면 선행 체인 대신 반복 풀에서 등장하고, 사이클을 완료할 때마다
+        // repeatIncrement만큼 목표 수치가 올라간다(repeatMaxOccurrences로 등장 횟수를 제한할 수 있음).
+        private static void DrawRepeatingFields(
+            SerializedProperty repeatingProp,
+            SerializedProperty incrementProp,
+            SerializedProperty maxOccurrencesProp)
+        {
+            repeatingProp.boolValue = EditorGUILayout.ToggleLeft("반복 퀘스트 템플릿으로 사용", repeatingProp.boolValue);
+            if (!repeatingProp.boolValue)
+            {
+                return;
+            }
+
+            EditorGUI.indentLevel++;
+            incrementProp.longValue = Math.Max(0L, EditorGUILayout.LongField(
+                new GUIContent("사이클당 목표 증가치", "완료 1회마다 목표 수치에 더할 값. 0이면 매번 같은 목표로 반복됩니다."),
+                incrementProp.longValue));
+            maxOccurrencesProp.intValue = Math.Max(0, EditorGUILayout.IntField(
+                new GUIContent("최대 등장 횟수", "0이면 제한 없이 계속 등장합니다."),
+                maxOccurrencesProp.intValue));
+            EditorGUI.indentLevel--;
         }
 
         private static void DrawPrerequisitePopup(SerializedProperty prerequisiteValueProp, QuestCatalog catalog, QuestDefinition self)
@@ -304,7 +348,7 @@ namespace ProjectMT.EditorTools.Quest
             {
                 if (GUILayout.Button("새 보상 에셋 생성"))
                 {
-                    var created = CreateRewardAsset(definition);
+                    var created = CreateRewardAsset(definition, catalog);
                     rewardProp.objectReferenceValue = created;
                 }
             }
@@ -317,7 +361,7 @@ namespace ProjectMT.EditorTools.Quest
                         MessageType.Warning);
                     if (GUILayout.Button("이 퀘스트 전용 보상으로 분리"))
                     {
-                        var cloned = CloneRewardAsset(definition, reward);
+                        var cloned = CloneRewardAsset(definition, reward, catalog);
                         rewardProp.objectReferenceValue = cloned;
                         reward = cloned;
                     }
@@ -359,9 +403,9 @@ namespace ProjectMT.EditorTools.Quest
             return false;
         }
 
-        private static RewardDefinition CloneRewardAsset(QuestDefinition definition, RewardDefinition source)
+        private static RewardDefinition CloneRewardAsset(QuestDefinition definition, RewardDefinition source, QuestCatalog catalog)
         {
-            var folder = ResolveFolder(AssetDatabase.GetAssetPath(definition));
+            var folder = ResolveRewardFolder(AssetDatabase.GetAssetPath(catalog));
             var safeId = string.IsNullOrWhiteSpace(definition.QuestId.Value) ? "New" : definition.QuestId.Value;
             var path = AssetDatabase.GenerateUniqueAssetPath($"{folder}/RD_Quest_{safeId}.asset");
 
@@ -449,9 +493,9 @@ namespace ProjectMT.EditorTools.Quest
             }
         }
 
-        private static RewardDefinition CreateRewardAsset(QuestDefinition definition)
+        private static RewardDefinition CreateRewardAsset(QuestDefinition definition, QuestCatalog catalog)
         {
-            var folder = ResolveFolder(AssetDatabase.GetAssetPath(definition));
+            var folder = ResolveRewardFolder(AssetDatabase.GetAssetPath(catalog));
             var safeId = string.IsNullOrWhiteSpace(definition.QuestId.Value) ? "New" : definition.QuestId.Value;
             var path = AssetDatabase.GenerateUniqueAssetPath($"{folder}/RD_Quest_{safeId}.asset");
 
@@ -462,10 +506,21 @@ namespace ProjectMT.EditorTools.Quest
             return reward;
         }
 
-        private static void DrawUnlockTargets(SerializedProperty listProp)
+        private static void DrawUnlockTargets(SerializedProperty listProp, SerializedProperty gateEnabledProp)
         {
             EditorGUILayout.LabelField("해금 대상");
             EditorGUI.indentLevel++;
+
+            gateEnabledProp.boolValue = EditorGUILayout.ToggleLeft(
+                "이 퀘스트로 실제 잠금 적용 (기본 꺼짐 = 항상 열림)",
+                gateEnabledProp.boolValue);
+            if (gateEnabledProp.boolValue)
+            {
+                EditorGUILayout.HelpBox(
+                    "보상을 수령하기 전까지 아래 체크한 대상이 QuestRuntime.IsUnlocked()에서 잠금으로 표시됩니다.",
+                    MessageType.Info);
+            }
+
             foreach (QuestUnlockTarget value in Enum.GetValues(typeof(QuestUnlockTarget)))
             {
                 var existingIndex = IndexOfUnlockTarget(listProp, value);
@@ -564,7 +619,7 @@ namespace ProjectMT.EditorTools.Quest
 
         private void AddNewQuest(QuestCatalog catalog)
         {
-            var folder = ResolveFolder(AssetDatabase.GetAssetPath(catalog));
+            var folder = ResolveQuestFolder(AssetDatabase.GetAssetPath(catalog));
             var nextNumber = catalog.Definitions.Count + 1;
             var assetPath = AssetDatabase.GenerateUniqueAssetPath($"{folder}/QD_{nextNumber:000}_New.asset");
             var previous = catalog.Definitions.Count > 0 ? catalog.Definitions[catalog.Definitions.Count - 1] : null;
@@ -584,7 +639,7 @@ namespace ProjectMT.EditorTools.Quest
             AssetDatabase.CreateAsset(newQuest, assetPath);
 
             // 퀘스트 에셋과 함께 이 퀘스트 전용 보상 에셋도 바로 만들어 둔다(다른 퀘스트와 공유되지 않는 새 파일).
-            var reward = CreateRewardAsset(newQuest);
+            var reward = CreateRewardAsset(newQuest, catalog);
             newQuest.EditorSetReward(reward);
             EditorUtility.SetDirty(newQuest);
 
@@ -608,6 +663,52 @@ namespace ProjectMT.EditorTools.Quest
 
             var folder = Path.GetDirectoryName(assetPath)?.Replace('\\', '/');
             return string.IsNullOrEmpty(folder) ? DefaultFolder : folder;
+        }
+
+        // 카탈로그가 있는 폴더 기준 상대 경로로 "퀘스트"/"보상" 하위 폴더를 계산한다.
+        // 카탈로그를 옮기거나 다른 프로젝트로 이전해도 항상 카탈로그 위치를 기준으로 다시 계산되고,
+        // 폴더가 없으면 자동으로 만들어 준다.
+        private static string ResolveQuestFolder(string catalogAssetPath) =>
+            ResolveSubfolder(catalogAssetPath, QuestSubfolderName);
+
+        private static string ResolveRewardFolder(string catalogAssetPath) =>
+            ResolveSubfolder(catalogAssetPath, RewardSubfolderName);
+
+        private static string ResolveSubfolder(string catalogAssetPath, string subfolderName)
+        {
+            var baseFolder = ResolveFolder(catalogAssetPath);
+            EnsureFolderExists(baseFolder);
+
+            var target = $"{baseFolder}/{subfolderName}";
+            if (!AssetDatabase.IsValidFolder(target))
+            {
+                AssetDatabase.CreateFolder(baseFolder, subfolderName);
+            }
+
+            return target;
+        }
+
+        // 상위 폴더부터 순서대로 없는 폴더만 만든다. 새 프로젝트로 옮겨서 Data 폴더 자체가 없어도
+        // 하위 폴더 생성이 항상 성공하도록 자가 복구한다.
+        private static void EnsureFolderExists(string folderPath)
+        {
+            if (string.IsNullOrEmpty(folderPath) || AssetDatabase.IsValidFolder(folderPath))
+            {
+                return;
+            }
+
+            var segments = folderPath.Split('/');
+            var current = segments[0];
+            for (var i = 1; i < segments.Length; i++)
+            {
+                var next = $"{current}/{segments[i]}";
+                if (!AssetDatabase.IsValidFolder(next))
+                {
+                    AssetDatabase.CreateFolder(current, segments[i]);
+                }
+
+                current = next;
+            }
         }
     }
 }

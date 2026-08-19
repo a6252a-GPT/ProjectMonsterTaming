@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25a12baf1f1a3d4449770be56d69d3c6, type: 3}
+  m_Name: QD_024_MonsterOwnedCountRepeat
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
+  questId:
+    value: quest_024_monster_owned_count_repeat
+  displayName: "\uBAAC\uC2A4\uD130 \uC218\uC9D1"
+  description: "\uC11C\uB85C \uB2E4\uB978 \uBAAC\uC2A4\uD130\uB97C \uBAA9\uD45C \uB9C8\uB9AC
+    \uC218\uB9CC\uD07C \uC2E0\uADDC\uB85C \uBCF4\uC720\uD558\uC138\uC694."
+  questType: 0
+  conditionType: 5
+  targetValue: 6
+  prerequisiteQuestId:
+    value: 
+  reward: {fileID: 11400000, guid: 29655ee2f7cb45d0a09b251fa3b826ca, type: 2}
+  unlockTargets: 
+  unlockGateEnabled: 0
+  isRepeatingTemplate: 1
+  repeatIncrement: 3
+  repeatMaxOccurrences: 9

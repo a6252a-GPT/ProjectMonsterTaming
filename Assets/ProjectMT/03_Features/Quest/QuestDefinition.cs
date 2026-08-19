@@ -21,6 +21,12 @@ namespace ProjectMT.Features.Quest
         [SerializeField] private QuestId prerequisiteQuestId; // 비어 있으면 선행 조건 없음(체인 시작 퀘스트)
         [SerializeField] private RewardDefinition reward;
         [SerializeField] private List<QuestUnlockTarget> unlockTargets = new List<QuestUnlockTarget>();
+        [SerializeField] private bool unlockGateEnabled; // 기본 꺼짐(전부 열림). 켜면 QuestRuntime.IsUnlocked가 이 퀘스트 보상 수령 전까지 unlockTargets를 잠금으로 취급한다.
+
+        [Header("반복 퀘스트 템플릿(선형 체인이 끝난 뒤 순환 등장)")]
+        [SerializeField] private bool isRepeatingTemplate; // 켜면 선행 퀘스트 체인 대신 반복 퀘스트 풀에서 무작위로 뽑혀 등장한다.
+        [SerializeField] private long repeatIncrement; // 이 템플릿이 다시 등장할 때마다 targetValue에 더해지는 값(0이면 목표 고정).
+        [SerializeField] private int repeatMaxOccurrences; // 이 템플릿이 등장할 수 있는 최대 횟수(0 = 제한 없이 계속 등장).
 
         public QuestId QuestId => questId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? questId.Value : displayName.Trim();
@@ -33,6 +39,10 @@ namespace ProjectMT.Features.Quest
         public RewardDefinition Reward => reward;
         public IReadOnlyList<QuestUnlockTarget> UnlockTargets =>
             (IReadOnlyList<QuestUnlockTarget>)unlockTargets ?? Array.Empty<QuestUnlockTarget>();
+        public bool UnlockGateEnabled => unlockGateEnabled;
+        public bool IsRepeatingTemplate => isRepeatingTemplate;
+        public long RepeatIncrement => Math.Max(0L, repeatIncrement);
+        public int RepeatMaxOccurrences => Math.Max(0, repeatMaxOccurrences);
 
         // 보상 정의를 실제 지급 단위(RewardBundle)로 변환한다. 보상이 비어 있으면 실패로 취급한다.
         public bool TryCreateRewardBundle(out RewardBundle bundle)
@@ -98,6 +108,13 @@ namespace ProjectMT.Features.Quest
         public void EditorSetReward(RewardDefinition rewardDefinition)
         {
             reward = rewardDefinition;
+        }
+
+        public void EditorSetRepeating(bool repeating, long increment, int maxOccurrences)
+        {
+            isRepeatingTemplate = repeating;
+            repeatIncrement = Math.Max(0L, increment);
+            repeatMaxOccurrences = Math.Max(0, maxOccurrences);
         }
 #endif
     }

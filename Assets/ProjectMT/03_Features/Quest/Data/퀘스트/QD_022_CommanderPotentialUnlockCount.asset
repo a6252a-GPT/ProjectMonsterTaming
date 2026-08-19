@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25a12baf1f1a3d4449770be56d69d3c6, type: 3}
+  m_Name: QD_022_CommanderPotentialUnlockCount
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
+  questId:
+    value: quest_022_commander_potential_unlock_count
+  displayName: 잠재능력 슬롯 개방
+  description: 잠재능력 슬롯을 목표 개수만큼 개방하세요.
+  questType: 0
+  conditionType: 21
+  targetValue: 2
+  prerequisiteQuestId:
+    value: 
+  reward: {fileID: 11400000, guid: 1e592d78a74547f596b7d6096c2364fd, type: 2}
+  unlockTargets: []
+  unlockGateEnabled: 0
+  isRepeatingTemplate: 1
+  repeatIncrement: 1
+  repeatMaxOccurrences: 4

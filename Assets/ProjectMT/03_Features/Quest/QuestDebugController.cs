@@ -75,7 +75,7 @@ namespace ProjectMT.Features.Quest
 
                 var progress = QuestRuntime.GetProgress(definition.QuestId);
                 Debug.Log(
-                    $"[Quest] {definition.DisplayName} 진행도 {progress.CurrentProgress} / {definition.TargetValue} " +
+                    $"[Quest] {definition.DisplayName} 진행도 {progress.CurrentProgress} / {QuestRuntime.ResolveTargetValue(definition)} " +
                     $"(완료: {progress.Completed})");
             }
         }

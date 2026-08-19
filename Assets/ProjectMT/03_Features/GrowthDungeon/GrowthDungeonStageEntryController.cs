@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Features.Quest;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -324,6 +326,10 @@ namespace ProjectMT.Features.GrowthDungeon
             ClosePopup();
             closeManagementPages?.Invoke();
             statusChanged?.Invoke($"{displayName} · {selectedStage}단계 {modeLabel}");
+
+            // 이 컨트롤러가 다루는 4개 성장 던전(식량 대소동·보물정령 숨바꼭질·거대마도서·고대 수호수의 시련)
+            // 중 아무 곳이나 입장에 성공하면 퀘스트 조건을 채운다.
+            _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.GrowthDungeonEnter, 1L);
         }
 
         private async void SweepHighestStage()

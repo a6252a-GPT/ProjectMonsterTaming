@@ -36,6 +36,18 @@ namespace ProjectMT.Features.Quest
                 case QuestConditionType.CommanderPotentialUpgrade: return "잠재능력 강화";
                 case QuestConditionType.MonsterLevelUp: return "몬스터 레벨업";
                 case QuestConditionType.MonsterAscension: return "몬스터 돌파";
+                case QuestConditionType.MonsterFormation: return "몬스터 부대 배치";
+                case QuestConditionType.GrowthDungeonEnter: return "성장 던전 입장";
+                case QuestConditionType.CastleRaidEnter: return "군단의 역습 입장";
+                case QuestConditionType.EquipmentDismantle: return "장비 분해";
+                case QuestConditionType.MonsterLevelReach: return "몬스터 레벨 도달";
+                case QuestConditionType.CommanderLevelReach: return "군단장 레벨 도달";
+                case QuestConditionType.CommanderHealthLevelReach: return "체력 강화 레벨 도달";
+                case QuestConditionType.CommanderAttackLevelReach: return "공격력 강화 레벨 도달";
+                case QuestConditionType.CommanderDefenseLevelReach: return "방어력 강화 레벨 도달";
+                case QuestConditionType.CommanderPowerReach: return "군단장 전투력 도달";
+                case QuestConditionType.EquipmentSlotUpgradeReach: return "장비 슬롯 강화 레벨 도달";
+                case QuestConditionType.CommanderPotentialUnlockCount: return "잠재능력 슬롯 개방";
                 default: return type.ToString();
             }
         }
@@ -50,6 +62,7 @@ namespace ProjectMT.Features.Quest
             {
                 case QuestConditionType.MonsterKill:
                 case QuestConditionType.ExpeditionClear:
+                case QuestConditionType.CastleRaidEnter:
                     return "토벌 임무";
                 default:
                     return "성장 임무";

@@ -8,6 +8,7 @@ using ProjectMT.Contents.Framework;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Features.OfflineReward;
+using ProjectMT.Features.Quest;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Debugging;
 using ProjectMT.Shared.Equipment;
@@ -358,7 +359,9 @@ namespace ProjectMT.Bootstrap
                 gameDataService.View,
                 commanderGrowthConfig,
                 projectConfig.EquipmentBalanceConfig ?? EquipmentBalanceConfig.RuntimeDefault);
-            return partyBuilder.Build(gameDataService.View, modifiers);
+            var snapshot = partyBuilder.Build(gameDataService.View, modifiers);
+            QuestRuntime.ReportCommanderPower(snapshot.TotalPower); // CommanderPowerReach 반복 퀘스트가 참조하는 캐시값 갱신
+            return snapshot;
         }
 
         private void HandleSceneFailed(SceneId failedSceneId, string error)

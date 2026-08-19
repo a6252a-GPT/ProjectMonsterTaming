@@ -123,7 +123,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4000013429264488}
   - component: {fileID: 295945096838610866}
-  - component: {fileID: -5320608835726554261}
   m_Layer: 0
   m_Name: PF_Mimic
   m_TagString: Untagged
@@ -171,21 +170,6 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
---- !u!114 &-5320608835726554261
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000013768157686}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9e98e53c204090a4a967b492849a33d0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ProjectMT.Contents.TreasureSpirit::ProjectMT.Contents.GrowthDungeon.MimicController
-  moveSpeed: 2
-  bounceSpeed: 8
-  bounceHeight: 0.3
 --- !u!1 &1317991654099352
 GameObject:
   m_ObjectHideFlags: 0

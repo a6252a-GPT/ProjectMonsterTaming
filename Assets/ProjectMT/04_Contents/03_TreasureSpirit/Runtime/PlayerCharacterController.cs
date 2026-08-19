@@ -17,11 +17,6 @@ namespace ProjectMT.Contents.TreasureSpirit
         [SerializeField] private Animator animator;
         [SerializeField] private string speedParameter = "Speed";
 
-        [Header("맵 경계 제한 (Boundary)")]
-        [SerializeField] private bool useMapBounds = false;
-        private Vector2 minBounds;
-        private Vector2 maxBounds;
-
         private CharacterController characterController;
         private int speedHash;
         private bool hasSpeedParameter; // 애니메이션 파라미터 안전성 체크 플래그
@@ -65,21 +60,6 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
         }
 
-        /// <summary>
-        /// MazeGenerator 등에서 미로 크기값을 받아 맵 경계를 설정하는 메서드
-        /// </summary>
-        public void SetMapBounds(int width, int height, float cellSize, float padding = 0.5f)
-        {
-            float minX = 0f + padding;
-            float maxX = (width - 1) * cellSize - padding;
-            float minZ = 0f + padding;
-            float maxZ = (height - 1) * cellSize - padding;
-
-            minBounds = new Vector2(minX, minZ);
-            maxBounds = new Vector2(maxX, maxZ);
-            useMapBounds = true;
-        }
-
         private void Update()
         {
             if (!inputEnabled || characterController == null)
@@ -97,13 +77,6 @@ namespace ProjectMT.Contents.TreasureSpirit
                 // 방향 정규화 및 이동 속도 계산
                 Vector3 moveDelta = movement.normalized * (moveSpeed * Time.deltaTime);
 
-                // 2. 안전한 맵 경계 제한 (CharacterController.enabled를 끄지 않고 미리 차단)
-                if (useMapBounds)
-                {
-                    moveDelta = ClampMovementWithinBounds(moveDelta);
-                }
-
-                // 3. 실제 이동
                 characterController.Move(moveDelta);
 
                 // 4. 회전 처리
@@ -121,27 +94,6 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
         }
 
-        /// <summary>
-        /// 이동 벡터를 미리 계산하여 맵 경계를 넘어가지 못하도록 보정
-        /// </summary>
-        private Vector3 ClampMovementWithinBounds(Vector3 moveDelta)
-        {
-            Vector3 targetPos = transform.position + moveDelta;
-
-            // X축 경계 체크
-            if (targetPos.x < minBounds.x && moveDelta.x < 0f) moveDelta.x = 0f;
-            else if (targetPos.x > maxBounds.x && moveDelta.x > 0f) moveDelta.x = 0f;
-
-            // Z축 경계 체크
-            if (targetPos.z < minBounds.y && moveDelta.z < 0f) moveDelta.z = 0f;
-            else if (targetPos.z > maxBounds.y && moveDelta.z > 0f) moveDelta.z = 0f;
-
-            return moveDelta;
-        }
-
-        /// <summary>
-        /// 조이스틱 및 키보드 입력 통합 감지
-        /// </summary>
         private Vector2 ReadDirection()
         {
             Vector2 direction = virtualJoystick != null ? virtualJoystick.Value : Vector2.zero;

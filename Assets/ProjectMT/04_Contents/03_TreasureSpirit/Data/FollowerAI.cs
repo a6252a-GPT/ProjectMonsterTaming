@@ -32,6 +32,7 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         [Header("타겟 참조")]
         [SerializeField] private Transform commander;
+        [SerializeField] private Demo.DemoMimicAI targetMimic;
         [SerializeField] private GuardAI targetGuard;
 
         [Header("SO 프로필 데이터")]
@@ -122,11 +123,26 @@ namespace ProjectMT.Contents.TreasureSpirit
                 }
             }
 
-            // 1. 주변 경비병(GuardAI) 탐색
-            FindNearestGuard();
+            // 1. 주변 적(미믹 우선, 경비병) 탐색
+            FindNearestEnemy();
 
             // 2. 상태별 행동
-            if (targetGuard != null)
+            if (targetMimic != null)
+            {
+                float distanceToEnemy = Vector3.Distance(transform.position, targetMimic.transform.position);
+
+                if (distanceToEnemy <= attackRange)
+                {
+                    currentState = State.AttackEnemy;
+                    AttackMimicBehavior();
+                }
+                else
+                {
+                    currentState = State.ChaseEnemy;
+                    ChaseMimicBehavior();
+                }
+            }
+            else if (targetGuard != null)
             {
                 float distanceToGuard = Vector3.Distance(transform.position, targetGuard.transform.position);
 
@@ -148,8 +164,46 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
         }
 
+        private void FindNearestEnemy()
+        {
+            targetMimic = null;
+            targetGuard = null;
+
+#pragma warning disable CS0618
+            Demo.DemoMimicAI[] mimics = FindObjectsOfType<Demo.DemoMimicAI>();
+#pragma warning restore CS0618
+
+            Demo.DemoMimicAI nearestMimic = null;
+            float nearestMimicDistance = detectEnemyRange;
+
+            for (int i = 0; i < mimics.Length; i++)
+            {
+                Demo.DemoMimicAI mimic = mimics[i];
+                if (mimic == null || !mimic.IsAlive)
+                {
+                    continue;
+                }
+
+                float distance = Vector3.Distance(transform.position, mimic.transform.position);
+                if (distance < nearestMimicDistance)
+                {
+                    nearestMimicDistance = distance;
+                    nearestMimic = mimic;
+                }
+            }
+
+            if (nearestMimic != null)
+            {
+                targetMimic = nearestMimic;
+                return;
+            }
+
+            FindNearestGuard();
+        }
+
         private void FindNearestGuard()
         {
+            targetGuard = null;
 #pragma warning disable CS0618
             GuardAI[] guards = FindObjectsOfType<GuardAI>();
 #pragma warning restore CS0618
@@ -204,6 +258,40 @@ namespace ProjectMT.Contents.TreasureSpirit
                 {
                     agent.isStopped = true;
                 }
+            }
+        }
+
+        private void ChaseMimicBehavior()
+        {
+            if (targetMimic == null)
+            {
+                return;
+            }
+
+            agent.isStopped = false;
+            agent.speed = baseMoveSpeed;
+            agent.SetDestination(targetMimic.transform.position);
+        }
+
+        private void AttackMimicBehavior()
+        {
+            agent.isStopped = true;
+
+            if (targetMimic != null)
+            {
+                Vector3 lookDir = targetMimic.transform.position - transform.position;
+                lookDir.y = 0;
+                if (lookDir != Vector3.zero)
+                {
+                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(lookDir), Time.deltaTime * 10f);
+                }
+            }
+
+            if (Time.time >= lastAttackTime + attackCooldown && targetMimic != null && targetMimic.IsAlive)
+            {
+                targetMimic.TakeDamage(attackDamage);
+                Debug.Log($"⚔️ 팔로워가 {targetMimic.name}을(를) 공격했습니다! (적용 데미지: {attackDamage})");
+                lastAttackTime = Time.time;
             }
         }
 

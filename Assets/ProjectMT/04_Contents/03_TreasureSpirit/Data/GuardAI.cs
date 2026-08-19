@@ -36,6 +36,8 @@ namespace ProjectMT.Contents.TreasureSpirit
         [SerializeField] private float patrolRadius = 8.0f;
         [SerializeField] private float waitAtPatrolPoint = 2.0f;
         private float patrolTimer;
+        private Vector3 patrolOrigin;
+        private bool usePatrolOrigin;
 
         [Header("체력 설정")]
         [SerializeField] private float maxHealth = 100f;
@@ -66,6 +68,13 @@ namespace ProjectMT.Contents.TreasureSpirit
         public void SetTargetPlayer(Transform target)
         {
             commanderTarget = target;
+        }
+
+        public void SetPatrolBounds(Vector3 center, float radius)
+        {
+            patrolOrigin = center;
+            patrolRadius = Mathf.Clamp(radius, 1f, 6f);
+            usePatrolOrigin = true;
         }
 
         private void Update()
@@ -227,13 +236,27 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private void SetRandomPatrolDestination()
         {
+            Vector3 origin = usePatrolOrigin ? patrolOrigin : transform.position;
             Vector3 randomDirection = Random.insideUnitSphere * patrolRadius;
-            randomDirection += transform.position;
+            randomDirection.y = 0f;
+            randomDirection += origin;
 
-            if (NavMesh.SamplePosition(randomDirection, out NavMeshHit hit, patrolRadius, NavMesh.AllAreas))
+            if (NavMesh.SamplePosition(randomDirection, out NavMeshHit hit, patrolRadius * 0.5f, NavMesh.AllAreas))
             {
+                if (usePatrolOrigin && GetHorizontalDistance(hit.position, patrolOrigin) > patrolRadius)
+                {
+                    return;
+                }
+
                 agent.SetDestination(hit.position);
             }
+        }
+
+        private static float GetHorizontalDistance(Vector3 a, Vector3 b)
+        {
+            a.y = 0f;
+            b.y = 0f;
+            return Vector3.Distance(a, b);
         }
 
         private void PerformAttack()
@@ -285,14 +308,10 @@ namespace ProjectMT.Contents.TreasureSpirit
 
             StartCoroutine(DestroyAfterDelay());
 
-            // 씬 내의 DungeonController를 찾아 킬 카운트 +1 전달
-#pragma warning disable CS0618
-            DungeonController dungeonController = FindObjectOfType<DungeonController>();
-#pragma warning restore CS0618
-
-            if (dungeonController != null)
+            Demo.DemoDungeonController demoDungeonController = FindFirstObjectByType<Demo.DemoDungeonController>();
+            if (demoDungeonController != null)
             {
-                dungeonController.AddKillCount();
+                demoDungeonController.AddKillCount();
             }
         }
 

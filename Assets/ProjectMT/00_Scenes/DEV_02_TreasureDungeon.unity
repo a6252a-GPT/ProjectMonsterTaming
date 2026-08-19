@@ -1415,26 +1415,29 @@ MonoBehaviour:
   m_GameObject: {fileID: 1362215472}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 938775d993a87dd45b906bd0323a4c0f, type: 3}
+  m_Script: {fileID: 11500000, guid: b4d562e5848dcea459ba9791dad05524, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ProjectMT.Contents.TreasureSpirit::ProjectMT.Contents.GrowthDungeon.MazeGenerator
-  width: 15
-  height: 15
-  cellSize: 3
-  wallHeight: 2
-  wallThickness: 0.5
-  floorY: 0.1
-  wallPrefab: {fileID: 4190362767171506365, guid: ad0198fbc357de9408fb98992a83a408, type: 3}
-  floorPrefab: {fileID: 1205378017439122977, guid: bfdb00556ecae024587eb3d9c36d7051, type: 3}
-  playerTransform: {fileID: 1433094538}
-  prisonPrefab: {fileID: 1657353520625999579, guid: 2ab4f89d17ba59444a915f7c43d85e0f, type: 3}
-  prisonContentPrefab: {fileID: 1904210629174728, guid: 94c60322659a75c489677560265c672a, type: 3}
-  guardPrefab: {fileID: 9151998103618918405, guid: 7c6491b74c708764a80dcd6a730525e3, type: 3}
-  guardCount: 4
-  treasureChestPrefab: {fileID: 8111757877157432391, guid: a105dc230d1322943bbdff8ecfba2a7e, type: 3}
+  m_EditorClassIdentifier: ProjectMT.Contents.TreasureSpirit.Demo::ProjectMT.Contents.TreasureSpirit.Demo.BakedDungeonLoader
+  dungeonMapPrefabs:
+  - {fileID: 6610685206715039582, guid: 2f86b722492c5ba4abdf70ebc7f3620e, type: 3}
+  - {fileID: 6861597518526568210, guid: 7d7dec4cc6fbe52458bc059e87b907b7, type: 3}
+  - {fileID: 3662517623368511206, guid: cbe773124cd013242aabb6a1f74c70e0, type: 3}
+  - {fileID: 5266390021749569353, guid: 5e796f7386e39aa4689bb40c2ee9da3b, type: 3}
+  - {fileID: 4939918238588314618, guid: 156ab314b017f57469b01f2613ef49ea, type: 3}
+  startMapIndex: 2
+  chestPrefab: {fileID: 8111757877157432391, guid: a105dc230d1322943bbdff8ecfba2a7e, type: 3}
   mimicPrefab: {fileID: 1000013768157686, guid: c87759c4b502f20468a940a9164fa93f, type: 3}
-  treasureChestCount: 3
-  exclusionRadius: 2
+  guardPrefab: {fileID: 9151998103618918405, guid: 7c6491b74c708764a80dcd6a730525e3, type: 3}
+  guardsPerRoom: 2
+  guardSpreadDistance: 1.5
+  chestHeightOffset: 0.05
+  prisonPrefab: {fileID: 1657353520625999579, guid: 2ab4f89d17ba59444a915f7c43d85e0f, type: 3}
+  prisonContentPrefab: {fileID: 8310591983407288224, guid: ea26a331e8a8adc419a8e09a2b800bb6, type: 3}
+  prisonContentLocalOffset: {x: 0, y: 0, z: -1}
+  prisonYawOffset: -90
+  playerTransform: {fileID: 1433094538}
+  playerSpawnHeightOffset: 0.05
+  disablePunctualLightShadows: 1
 --- !u!1 &1399886149
 GameObject:
   m_ObjectHideFlags: 0
@@ -1553,7 +1556,6 @@ MonoBehaviour:
   rotationSpeed: 14
   animator: {fileID: 1123637311}
   speedParameter: Speed
-  useMapBounds: 0
 --- !u!143 &1433094541
 CharacterController:
   m_ObjectHideFlags: 0
@@ -1572,13 +1574,13 @@ CharacterController:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Height: 2
-  m_Radius: 0.5
+  m_Height: 1.4
+  m_Radius: 0.35
   m_SlopeLimit: 45
   m_StepOffset: 0.3
-  m_SkinWidth: 0.08
+  m_SkinWidth: 0.05
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 0.7, z: 0}
 --- !u!54 &1433094542
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1935,12 +1937,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1575771559}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d3567f75355f38d4c9073f36a25408ab, type: 3}
+  m_Script: {fileID: 11500000, guid: f4a8c2d1e3b5476098123abc456def01, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ProjectMT.Contents.TreasureSpirit::ProjectMT.Contents.GrowthDungeon.DungeonController
-  mazeGenerator: {fileID: 1362215474}
-  navMeshSurface: {fileID: 1575771562}
-  combatWorld: {fileID: 1399886151}
+  m_EditorClassIdentifier: ProjectMT.Contents.TreasureSpirit.Demo::ProjectMT.Contents.TreasureSpirit.Demo.DemoDungeonController
+  bakedDungeonLoader: {fileID: 1362215474}
   followerSpawner: {fileID: 2066838566}
   commanderRoot: {fileID: 1433094536}
   commanderMove: {fileID: 1433094540}
@@ -1951,7 +1951,8 @@ MonoBehaviour:
   exitButton: {fileID: 929909576}
   clearOverlay: {fileID: 1111000677}
   timeLimitSeconds: 100
-  nextSceneName: 00_Entry
+  exitSceneName: 00_Entry
+  nextSceneName: DEV_02_TreasureDungeon
 --- !u!114 &1575771562
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2310,6 +2311,7 @@ MonoBehaviour:
   attackDamage: 20
   attackCooldown: 1.2
   commander: {fileID: 1433094538}
+  targetMimic: {fileID: 0}
   targetGuard: {fileID: -4177114305784316184, guid: 7c6491b74c708764a80dcd6a730525e3, type: 3}
 --- !u!136 &2066838569
 CapsuleCollider:

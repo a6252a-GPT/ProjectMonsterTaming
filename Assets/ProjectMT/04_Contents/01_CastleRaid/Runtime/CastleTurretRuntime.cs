@@ -26,6 +26,7 @@ namespace ProjectMT.Contents.CastleRaid
         private float recoilStartedAt = float.NegativeInfinity;
 
         public CastleTurretAttackProfile Profile => profile;
+        public CastleTarget Structure => structure;
         public CastleAssaultUnit CurrentTarget => currentTarget;
         public int ProjectilesFired { get; private set; }
         public int HitCount { get; private set; }

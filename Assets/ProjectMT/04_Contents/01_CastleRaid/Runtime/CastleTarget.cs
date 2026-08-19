@@ -402,6 +402,28 @@ namespace ProjectMT.Contents.CastleRaid
                 : new Vector3(0f, 0f, Mathf.Sign(towardPalace.z));
         }
 
+        public static Vector3 ResolveInwardDirectionFromAttackApproach(
+            Vector3 wallPosition,
+            Vector3 palacePosition,
+            Vector3 attackPosition,
+            CastleWallNeighborMask neighborMask)
+        {
+            var fallback = ResolveInwardDirection(wallPosition, palacePosition, neighborMask);
+            var outsideDirection = attackPosition - wallPosition;
+            outsideDirection.y = 0f;
+            if (outsideDirection.sqrMagnitude <= 0.25f)
+            {
+                return fallback;
+            }
+
+            var attackInward = Mathf.Abs(outsideDirection.x) >= Mathf.Abs(outsideDirection.z)
+                ? new Vector3(-Mathf.Sign(outsideDirection.x), 0f, 0f)
+                : new Vector3(0f, 0f, -Mathf.Sign(outsideDirection.z));
+            var towardPalace = palacePosition - wallPosition;
+            towardPalace.y = 0f;
+            return Vector3.Dot(attackInward, towardPalace) > 0.05f ? attackInward : fallback;
+        }
+
         public static bool AreEndpointsOnOppositeSides(
             Vector3 wallPosition,
             Vector3 inward,
@@ -414,6 +436,16 @@ namespace ProjectMT.Contents.CastleRaid
             insideOffset.y = 0f;
             return Vector3.Dot(outsideOffset, inward) < -0.05f &&
                    Vector3.Dot(insideOffset, inward) > 0.05f;
+        }
+
+        public static Vector3 MoveAtConstantSpeed(
+            Vector3 current,
+            Vector3 destination,
+            float speed,
+            float deltaTime)
+        {
+            var maximumDistance = Mathf.Max(0f, speed) * Mathf.Max(0f, deltaTime);
+            return Vector3.MoveTowards(current, destination, maximumDistance);
         }
     }
 }

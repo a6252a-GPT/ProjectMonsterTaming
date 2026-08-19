@@ -12,6 +12,9 @@ namespace ProjectMT.Contents.CastleRaid
     {
         private const float NavigationRecoveryInterval = 0.25f;
         private const float NavigationRefreshSpread = 0.08f;
+        private const float TargetAwarenessInterval = 0.45f;
+        private const float DefenseThreatAggroSeconds = 3.5f;
+        private const float BreachFlowRadius = 1.35f;
         private const int PathCornerBufferSize = 64;
 
         [SerializeField] private NavMeshAgent agent; // 길찾기·이동 담당
@@ -38,6 +41,7 @@ namespace ProjectMT.Contents.CastleRaid
         private bool forceTargetRefresh; // 돌파 단계 변경 때 목표 우선순위 재평가
         private float nextNavigationRefreshAt;
         private float nextRecoveryCheckAt;
+        private float nextTargetAwarenessAt;
         private CastleRaidAIProfile aiProfile;
         private CastleRaidSupportDecision supportDecision;
         private float nextSupportDecisionAt;
@@ -46,6 +50,15 @@ namespace ProjectMT.Contents.CastleRaid
         private float attackDamageMultiplier = 1f;
         private float defenseBuffRemaining;
         private float recentDamagePerSecond;
+        private CastleTarget recentThreatAggressor;
+        private float recentThreatAggroRemaining;
+        private bool hasDefaultNavigationSettings;
+        private bool defaultAutoTraverseOffMeshLink;
+        private ObstacleAvoidanceType defaultObstacleAvoidanceType;
+        private int defaultAvoidancePriority;
+        private bool breachTraversalActive;
+        private Vector3 breachTraversalDestination;
+        private bool breachFlowModeActive;
 
         public bool IsAlive => health != null && health.IsAlive;
         public CastleTarget Target => target;
@@ -65,8 +78,18 @@ namespace ProjectMT.Contents.CastleRaid
         public bool HasCombatTarget => target != null && target.IsAlive;
         public bool HasAttackBuff => attackBuffRemaining > 0f;
         public bool HasDefenseBuff => defenseBuffRemaining > 0f;
+        public CastleTarget RecentThreatAggressor => recentThreatAggroRemaining > 0f &&
+                                                      recentThreatAggressor != null &&
+                                                      recentThreatAggressor.IsAlive
+            ? recentThreatAggressor
+            : null;
         public float TurretCollisionRadius => agent == null ? 0.35f : Mathf.Max(0.15f, agent.radius);
         public Vector3 TurretHitPoint => transform.position + Vector3.up * (agent == null ? 0.55f : Mathf.Max(0.4f, agent.height * 0.45f));
+        public bool NeedsStrategicDecision => !attackActionRunning &&
+                                              (target == null || !target.IsAlive ||
+                                               navigationRefreshRequested && Time.time >= nextNavigationRefreshAt ||
+                                               Time.time >= nextTargetAwarenessAt ||
+                                               Time.time >= nextRecoveryCheckAt);
 
         public event Action<CastleAssaultUnit> Died;
         public event Action<CastleAssaultUnit, DamageReport> Damaged;
@@ -108,6 +131,7 @@ namespace ProjectMT.Contents.CastleRaid
             forceTargetRefresh = false;
             nextNavigationRefreshAt = 0f;
             nextRecoveryCheckAt = Time.time + ResolveNavigationSpread();
+            nextTargetAwarenessAt = Time.time + TargetAwarenessInterval + ResolveNavigationSpread();
             supportDecision = default;
             nextSupportDecisionAt = Time.time + ResolveNavigationSpread();
             supportCooldownRemaining = 0f;
@@ -115,6 +139,8 @@ namespace ProjectMT.Contents.CastleRaid
             attackDamageMultiplier = 1f;
             defenseBuffRemaining = 0f;
             recentDamagePerSecond = 0f;
+            recentThreatAggressor = null;
+            recentThreatAggroRemaining = 0f;
             health.Initialize(stats.maxHealth);
             HideHealthBar(); // 풀 재사용 시 이전 피격 HP바를 숨긴다
             health.Damaged += HandleDamaged;
@@ -124,6 +150,8 @@ namespace ProjectMT.Contents.CastleRaid
             agent.acceleration = 16f;
             agent.angularSpeed = 720f;
             agent.stoppingDistance = Mathf.Max(0.35f, stats.attackRange * 0.75f);
+            CaptureDefaultNavigationSettings();
+            agent.autoTraverseOffMeshLink = false; // 돌파 링크도 일반 이동 속도로 직접 통과한다
             if (runtimeAssetSet?.BodyProfile != null)
             {
                 agent.radius = Mathf.Max(0.1f, runtimeAssetSet.BodyProfile.BodyRadius);
@@ -136,6 +164,11 @@ namespace ProjectMT.Contents.CastleRaid
 
         public void Tick(float deltaTime)
         {
+            Tick(deltaTime, true);
+        }
+
+        public void Tick(float deltaTime, bool allowStrategicDecision)
+        {
             if (!IsAlive || controller == null)
             {
                 return;
@@ -143,6 +176,12 @@ namespace ProjectMT.Contents.CastleRaid
 
             attackCooldown = Mathf.Max(0f, attackCooldown - deltaTime);
             TickRuntimeEffects(deltaTime);
+            if (TickBreachTraversal(deltaTime))
+            {
+                return;
+            }
+
+            UpdateBreachFlowMode();
             if (attackActionRunning)
             {
                 TickAttackAction(deltaTime);
@@ -157,13 +196,21 @@ namespace ProjectMT.Contents.CastleRaid
 
             if (target == null || !target.IsAlive)
             {
-                RefreshNavigationPath(true); // 파괴된 목표만 즉시 다시 고른다
+                if (allowStrategicDecision)
+                {
+                    RefreshNavigationPath(true); // 무거운 목표 판단은 프레임 예산을 받은 유닛만 수행
+                }
             }
-            else if (navigationRefreshRequested && Time.time >= nextNavigationRefreshAt)
+            else if (allowStrategicDecision && navigationRefreshRequested && Time.time >= nextNavigationRefreshAt)
             {
                 RefreshNavigationPath(forceTargetRefresh);
             }
-            else if (Time.time >= nextRecoveryCheckAt)
+            else if (allowStrategicDecision && Time.time >= nextTargetAwarenessAt)
+            {
+                nextTargetAwarenessAt = Time.time + TargetAwarenessInterval + ResolveNavigationSpread();
+                RefreshTargetAwareness();
+            }
+            else if (allowStrategicDecision && Time.time >= nextRecoveryCheckAt)
             {
                 nextRecoveryCheckAt = Time.time + NavigationRecoveryInterval + ResolveNavigationSpread();
                 if (ShouldRecoverNavigation())
@@ -195,8 +242,18 @@ namespace ProjectMT.Contents.CastleRaid
             }
         }
 
-        public void ApplyDefenderDamage(float damage, Vector3 hitPoint)
+        public void ApplyDefenseDamage(float damage, Vector3 hitPoint, CastleTarget aggressor = null)
         {
+            if (aggressor != null && aggressor.IsAlive &&
+                (aggressor.TargetKind == CastleTargetKind.Defender ||
+                 aggressor.TargetKind == CastleTargetKind.Building &&
+                 aggressor.TryGetComponent<CastleTurretRuntime>(out _)))
+            {
+                recentThreatAggressor = aggressor;
+                recentThreatAggroRemaining = DefenseThreatAggroSeconds;
+                RequestNavigationRefresh(true, 0f); // 실제로 때린 수비대·포탑은 왕궁 경로가 막힌 동안 먼저 반격한다
+            }
+
             health?.ApplyDamage(new DamageRequest(null, damage, hitPoint));
         }
 
@@ -207,24 +264,27 @@ namespace ProjectMT.Contents.CastleRaid
                 return false;
             }
 
-            if (PlanarDistance(transform.position, candidate.transform.position) <= Mathf.Max(0.5f, stats.attackRange))
-            {
-                return true;
-            }
-
-            var destination = candidate.transform.position;
-            if (candidate.AttackSlots != null &&
+            var alreadyInRange = PlanarDistance(transform.position, candidate.transform.position) <=
+                                 Mathf.Max(0.5f, stats.attackRange);
+            var destination = alreadyInRange ? transform.position : candidate.transform.position;
+            if (!alreadyInRange && candidate.AttackSlots != null &&
                 candidate.AttackSlots.TryResolveAvailablePosition(
                     this,
                     transform.position,
                     slotPathPredicate,
                     out _,
-                    out _))
+                    out var slotPosition))
             {
-                return true;
+                destination = slotPosition;
             }
 
-            return HasCompletePath(destination);
+            if (candidate.TargetKind != CastleTargetKind.Wall && controller != null &&
+                controller.IsTurretLineBlocked(destination, candidate.transform.position, 0.04f))
+            {
+                return false; // 경로 끝과 대상 사이에 살아 있는 성벽이 있으면 도달한 것으로 보지 않는다
+            }
+
+            return alreadyInRange || HasCompletePath(destination);
         }
 
         public bool TryMeasurePathToTarget(CastleTarget candidate, out float pathDistance)
@@ -235,14 +295,10 @@ namespace ProjectMT.Contents.CastleRaid
                 return false;
             }
 
-            if (PlanarDistance(transform.position, candidate.transform.position) <= Mathf.Max(0.5f, stats.attackRange))
-            {
-                pathDistance = 0f;
-                return true;
-            }
-
-            var destination = candidate.transform.position;
-            if (candidate.AttackSlots != null &&
+            var alreadyInRange = PlanarDistance(transform.position, candidate.transform.position) <=
+                                 Mathf.Max(0.5f, stats.attackRange);
+            var destination = alreadyInRange ? transform.position : candidate.transform.position;
+            if (!alreadyInRange && candidate.AttackSlots != null &&
                 candidate.AttackSlots.TryResolveAvailablePosition(
                     this,
                     transform.position,
@@ -251,6 +307,18 @@ namespace ProjectMT.Contents.CastleRaid
                     out var slotPosition))
             {
                 destination = slotPosition;
+            }
+
+            if (candidate.TargetKind != CastleTargetKind.Wall && controller != null &&
+                controller.IsTurretLineBlocked(destination, candidate.transform.position, 0.04f))
+            {
+                return false; // 공격 자리와 대상 사이에 살아 있는 성벽이 있으면 주변 목표로 보지 않는다
+            }
+
+            if (alreadyInRange)
+            {
+                pathDistance = 0f;
+                return true;
             }
 
             return TryMeasurePathToPosition(destination, out pathDistance);
@@ -319,6 +387,10 @@ namespace ProjectMT.Contents.CastleRaid
             {
                 SetTarget(desiredTarget);
             }
+            else
+            {
+                TryLeaseTargetSlot(); // Carving 안정화 뒤 같은 목표의 공격 자리를 다시 잡는다
+            }
 
             if (target == null || !target.IsAlive)
             {
@@ -330,6 +402,20 @@ namespace ProjectMT.Contents.CastleRaid
             agent.ResetPath(); // 제거 전 장애물을 사용한 기존 경로 폐기
             hasNavigationDestination = false;
             return MoveTo(destination);
+        }
+
+        private void RefreshTargetAwareness()
+        {
+            if (!IsAlive || controller == null || agent == null || !agent.isOnNavMesh)
+            {
+                return;
+            }
+
+            var desiredTarget = controller.FindPriorityTarget(this, false);
+            if (desiredTarget != target)
+            {
+                SetTarget(desiredTarget); // 왕궁 경로 개통·피격 위협·다음 방어층 변화를 즉시 반영한다
+            }
         }
 
         public void Shutdown()
@@ -348,6 +434,8 @@ namespace ProjectMT.Contents.CastleRaid
                 agent.isStopped = true;
             }
 
+            RestoreDefaultNavigationSettings();
+
             controller = null;
             unitId = string.Empty;
             aiProfile = null;
@@ -358,6 +446,8 @@ namespace ProjectMT.Contents.CastleRaid
             attackDamageMultiplier = 1f;
             defenseBuffRemaining = 0f;
             recentDamagePerSecond = 0f;
+            recentThreatAggressor = null;
+            recentThreatAggroRemaining = 0f;
             health?.SetIncomingDamageMultiplier(1f);
             runtimeAssetSet = null;
             attackActionRunning = false;
@@ -369,6 +459,10 @@ namespace ProjectMT.Contents.CastleRaid
             forceTargetRefresh = false;
             nextNavigationRefreshAt = 0f;
             nextRecoveryCheckAt = 0f;
+            nextTargetAwarenessAt = 0f;
+            breachTraversalActive = false;
+            breachTraversalDestination = default;
+            breachFlowModeActive = false;
             animationDriver?.Shutdown();
             Died = null;
             Damaged = null;
@@ -380,15 +474,22 @@ namespace ProjectMT.Contents.CastleRaid
             target = nextTarget;
             hasNavigationDestination = false;
             leasedSlotIndex = -1;
-            if (target != null)
+            TryLeaseTargetSlot();
+        }
+
+        private void TryLeaseTargetSlot()
+        {
+            if (target == null || leasedSlotIndex >= 0)
             {
-                target.AttackSlots?.TryLeasePosition(
-                    this,
-                    transform.position,
-                    slotPathPredicate,
-                    out leasedSlotIndex,
-                    out _); // 실제로 닿는 빈 공격 자리를 확보
+                return;
             }
+
+            target.AttackSlots?.TryLeasePosition(
+                this,
+                transform.position,
+                slotPathPredicate,
+                out leasedSlotIndex,
+                out _); // 실제로 닿는 빈 공격 자리를 확보
         }
 
         private void ReleaseTarget()
@@ -409,6 +510,11 @@ namespace ProjectMT.Contents.CastleRaid
                 target.AttackSlots.TryGetSlotPosition(leasedSlotIndex, out var slotPosition))
             {
                 return slotPosition;
+            }
+
+            if (controller != null && controller.TryResolveRouteApproach(this, target, out var routeApproach))
+            {
+                return routeApproach; // 논리 경로가 지정한 첫 장애물의 열린 앞 셀
             }
 
             return target == null ? transform.position : target.transform.position;
@@ -432,7 +538,7 @@ namespace ProjectMT.Contents.CastleRaid
 
             hasNavigationDestination = false;
             var resolved = destination;
-            if (!HasCompletePath(resolved) &&
+            if (!CanUseDirectNavigationDestination(resolved) &&
                 !(controller != null && controller.TryResolveInnerEntry(this, out resolved) && HasCompletePath(resolved)))
             {
                 StopMoving();
@@ -450,6 +556,119 @@ namespace ProjectMT.Contents.CastleRaid
             hasNavigationDestination = true;
             animationDriver?.PlayMove();
             return true;
+        }
+
+        private bool TickBreachTraversal(float deltaTime)
+        {
+            if (agent == null || !agent.isOnNavMesh)
+            {
+                breachTraversalActive = false;
+                SetBreachFlowMode(false);
+                return false;
+            }
+
+            if (!breachTraversalActive)
+            {
+                if (!agent.isOnOffMeshLink)
+                {
+                    return false;
+                }
+
+                var linkData = agent.currentOffMeshLinkData;
+                if (!linkData.valid)
+                {
+                    return false;
+                }
+
+                breachTraversalDestination = linkData.endPos + Vector3.up * agent.baseOffset;
+                breachTraversalActive = true;
+                agent.isStopped = false;
+                SetBreachFlowMode(true);
+            }
+
+            transform.position = CastleBreachLinkMath.MoveAtConstantSpeed(
+                transform.position,
+                breachTraversalDestination,
+                MoveSpeed,
+                deltaTime);
+            animationDriver?.PlayMove();
+            if ((transform.position - breachTraversalDestination).sqrMagnitude > 0.0001f)
+            {
+                return true;
+            }
+
+            agent.CompleteOffMeshLink();
+            breachTraversalActive = false;
+            nextRecoveryCheckAt = Time.time + NavigationRecoveryInterval + ResolveNavigationSpread();
+            return true;
+        }
+
+        private void UpdateBreachFlowMode()
+        {
+            var shouldFlow = breachTraversalActive || agent != null && agent.isOnNavMesh &&
+                (agent.isOnOffMeshLink || agent.hasPath && controller != null &&
+                 controller.IsNearActiveBreach(transform.position, BreachFlowRadius));
+            SetBreachFlowMode(shouldFlow);
+        }
+
+        private void SetBreachFlowMode(bool enabled)
+        {
+            if (agent == null || breachFlowModeActive == enabled)
+            {
+                return;
+            }
+
+            breachFlowModeActive = enabled;
+            agent.obstacleAvoidanceType = enabled
+                ? ObstacleAvoidanceType.NoObstacleAvoidance
+                : defaultObstacleAvoidanceType;
+            agent.avoidancePriority = enabled ? 0 : defaultAvoidancePriority;
+        }
+
+        private void CaptureDefaultNavigationSettings()
+        {
+            if (agent == null || hasDefaultNavigationSettings)
+            {
+                return;
+            }
+
+            defaultAutoTraverseOffMeshLink = agent.autoTraverseOffMeshLink;
+            defaultObstacleAvoidanceType = agent.obstacleAvoidanceType;
+            defaultAvoidancePriority = agent.avoidancePriority;
+            hasDefaultNavigationSettings = true;
+        }
+
+        private void RestoreDefaultNavigationSettings()
+        {
+            if (agent == null || !hasDefaultNavigationSettings)
+            {
+                return;
+            }
+
+            agent.autoTraverseOffMeshLink = defaultAutoTraverseOffMeshLink;
+            agent.obstacleAvoidanceType = defaultObstacleAvoidanceType;
+            agent.avoidancePriority = defaultAvoidancePriority;
+        }
+
+        private bool CanUseDirectNavigationDestination(Vector3 destination)
+        {
+            if (!HasCompletePath(destination))
+            {
+                return false;
+            }
+
+            if (target == null || target.TargetKind == CastleTargetKind.Wall)
+            {
+                return true;
+            }
+
+            if (target.AttackSlots != null && leasedSlotIndex < 0)
+            {
+                return false; // 공격 슬롯이 없는 왕궁 앵커를 NavMesh의 외부 근접점으로 오인하지 않는다
+            }
+
+            return controller == null ||
+                   !controller.IsTurretLineBlocked(destination, target.transform.position, 0.04f);
         }
 
         private bool HasCompletePath(Vector3 destination)
@@ -614,6 +833,12 @@ namespace ProjectMT.Contents.CastleRaid
         {
             supportCooldownRemaining = Mathf.Max(0f, supportCooldownRemaining - deltaTime);
             recentDamagePerSecond *= Mathf.Exp(-deltaTime / 2.5f);
+            recentThreatAggroRemaining = Mathf.Max(0f, recentThreatAggroRemaining - deltaTime);
+            if (recentThreatAggroRemaining <= 0f || recentThreatAggressor == null ||
+                !recentThreatAggressor.IsAlive)
+            {
+                recentThreatAggressor = null;
+            }
 
             if (attackBuffRemaining > 0f)
             {

@@ -28,7 +28,7 @@ namespace ProjectMT.Contents.CastleRaid
         private const float BreachEndpointPadding = 0.12f; // 파괴 타일 양쪽 면을 조금만 벗어난다
         private const float BreachMinimumProbeDistance = 1.05f; // Carving 영역 바깥에서 양쪽 NavMesh를 찾는다
         private const float BreachProbeRadius = 0.35f; // 인접 성벽으로 스냅되지 않는 탐색 반경
-        private const float BreachLinkWidth = 0.05f; // 한 칸 틈 중앙만 사용해 옆 성벽을 넘지 않는다
+        private const float BreachLinkWidth = 0.01f; // 한 칸 틈 중앙선만 사용해 반지름 0.5 Agent가 단일 파괴 칸을 통과한다
         private const float BreachMaximumLinkDistance = 2.4f;
         private const int BreachLinkRetryLimit = 20;
         private const int ReachabilityCandidateLimit = 8;
@@ -36,6 +36,11 @@ namespace ProjectMT.Contents.CastleRaid
         private const float WallSpatialCellSize = 1f;
         private const int WallSpatialTraversalLimit = 256;
         private const float BreachCrossingLateralTolerance = 0.9f;
+        private const float IncidentalBuildingClearRadius = 2.35f; // 진격선 바로 옆 건물만 짧게 정리한다
+        private const float ImmediateAdvanceBlockerDistance = 5.5f; // 왕궁 방향 바로 앞의 길막 건물만 선제 철거한다
+        private const float ImmediateAdvanceBlockerPadding = 0.8f;
+        private const int MaximumOuterBreachRoutes = 4; // 외곽 네 방향 이상의 동시 우회 통로는 만들지 않는다
+        private const int StrategicDecisionBudgetPerFrame = 1; // NavMesh 목표 판단을 한 프레임에 모두 실행하지 않는다
 
         private sealed class WallBlockerRecord
         {
@@ -62,6 +67,21 @@ namespace ProjectMT.Contents.CastleRaid
             public Vector3 PreviousPosition;
             public bool HasPreviousPosition;
             public int EnteredDefenseLayer = -1;
+            public int CommittedDefenseLayer = -1;
+            public int CohortId;
+            public int RouteId;
+            public int RouteSector = -1;
+            public string FirstObstaclePlacementId = string.Empty;
+            public Vector3 RouteApproachPosition;
+            public bool HasRouteApproach;
+            public int RouteTopologyVersion = -1;
+
+            public int ProgressDefenseLayer => Mathf.Max(EnteredDefenseLayer, CommittedDefenseLayer);
+        }
+
+        private sealed class ThreatResponseClaim
+        {
+            public readonly Dictionary<int, float> Responders = new Dictionary<int, float>();
         }
 
         private enum TargetCandidateScope
@@ -128,11 +148,24 @@ namespace ProjectMT.Contents.CastleRaid
         private readonly Dictionary<Vector2Int, List<WallBlockerRecord>> wallBlockersByCell =
             new Dictionary<Vector2Int, List<WallBlockerRecord>>();
         private readonly List<BreachRouteRecord> breachRoutes = new List<BreachRouteRecord>();
+        private readonly CastleRaidRouteTopologyCache routeTopologyCache = new CastleRaidRouteTopologyCache();
+        private readonly List<CastleTarget> plannedOuterBreachWalls = new List<CastleTarget>();
+        private readonly HashSet<int> outerBreachAttemptWallIds = new HashSet<int>();
+        private readonly HashSet<int> pendingOuterBreachWallIds = new HashSet<int>();
+        private readonly CastleRaidRouteBreachLedger routeBreachLedger = new CastleRaidRouteBreachLedger();
         private readonly Dictionary<CastleAssaultUnit, AssaultRouteState> assaultRouteStates =
             new Dictionary<CastleAssaultUnit, AssaultRouteState>();
+        private readonly CastleRaidAssaultCoordinator assaultCoordinator = new CastleRaidAssaultCoordinator();
+        private readonly Dictionary<CastleTarget, ThreatResponseClaim> threatResponseClaims =
+            new Dictionary<CastleTarget, ThreatResponseClaim>();
+        private readonly List<int> expiredThreatResponderIds = new List<int>();
+        private readonly Dictionary<CastleTarget, Vector3> lastWallAttackPositions =
+            new Dictionary<CastleTarget, Vector3>();
         private readonly Dictionary<string, float> supportClaims = new Dictionary<string, float>(StringComparer.Ordinal);
         private readonly List<string> expiredSupportClaimKeys = new List<string>();
         private CastleRaidAIProfileCatalog aiProfileCatalog;
+        private CastleRaidNavigationSnapshot navigationSnapshot;
+        private CastleRaidRoutePlanner routePlanner;
         private NavMeshPath innerPathProbe; // 진입 경로 검사 재사용 버퍼
         private ContentContext context; // 결과 반환 통로
         private CastleRaidStartData startData; // 이번 판 시작 정보
@@ -146,6 +179,7 @@ namespace ProjectMT.Contents.CastleRaid
         private bool unitPathRefreshQueued; // 같은 프레임 파괴 경로 갱신 합치기
         private bool unitPathRetargetQueued; // 돌파 단계 변경이면 목표도 다시 고른다
         private bool generationInProgress; // 중복 재생성 입력 차단
+        private int strategicDecisionCursor;
         private CastleTarget mainCastle;
         private bool hasGenerationTargetMetadata;
         private bool hasDestroyedOuterWall;
@@ -162,7 +196,8 @@ namespace ProjectMT.Contents.CastleRaid
         public void ConfigureRuntimeStage(
             CastleDeploymentZone zone,
             Transform pathProbe,
-            CastleTarget[] castleTargets)
+            CastleTarget[] castleTargets,
+            CastleRaidNavigationSnapshot stageNavigationSnapshot = null)
         {
             if (IsRunning)
             {
@@ -174,6 +209,8 @@ namespace ProjectMT.Contents.CastleRaid
             targets = castleTargets != null && castleTargets.Length > 0
                 ? castleTargets
                 : throw new ArgumentException("생성 Stage에는 하나 이상의 목표가 필요합니다.", nameof(castleTargets));
+            navigationSnapshot = stageNavigationSnapshot;
+            routePlanner = navigationSnapshot == null ? null : new CastleRaidRoutePlanner(navigationSnapshot);
         }
 
         public bool TryResolveInnerEntry(Vector3 fromPosition, out Vector3 position)
@@ -217,6 +254,7 @@ namespace ProjectMT.Contents.CastleRaid
             {
                 var route = breachRoutes[index];
                 if (route == null || route.DefenseLayer != expectedLayer ||
+                    !HasCachedStrategicContinuation(route) ||
                     !attacker.TryMeasurePathToPosition(route.OutsidePoint, out var pathDistance) ||
                     pathDistance >= nearestDistance)
                 {
@@ -228,6 +266,26 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             return !float.IsPositiveInfinity(nearestDistance);
+        }
+
+        public bool IsNearActiveBreach(Vector3 worldPosition, float maximumDistance)
+        {
+            var maximumDistanceSquared = Mathf.Max(0f, maximumDistance);
+            maximumDistanceSquared *= maximumDistanceSquared;
+            for (var index = 0; index < breachRoutes.Count; index++)
+            {
+                var route = breachRoutes[index];
+                if (route != null &&
+                    PlanarDistanceSquaredToSegment(
+                        worldPosition,
+                        route.OutsidePoint,
+                        route.InsidePoint) <= maximumDistanceSquared)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void Initialize(ContentContext contentContext)
@@ -282,6 +340,11 @@ namespace ProjectMT.Contents.CastleRaid
                 target.Damaged += HandleTargetDamaged;
                 target.Destroyed += HandleTargetDestroyed;
             }
+            navigationSnapshot?.ResetRuntimeState();
+            routePlanner?.Invalidate();
+            assaultCoordinator.Clear();
+            routeBreachLedger.Clear();
+            threatResponseClaims.Clear();
             RebuildTargetCaches();
 
             BindUnitButtons();
@@ -318,6 +381,9 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             activeUnits.Clear();
+            assaultCoordinator.Clear();
+            threatResponseClaims.Clear();
+            routeBreachLedger.Clear();
             poolScope?.ReturnAll();
             ClearBreachLinks();
             ClearTargetCaches();
@@ -432,6 +498,11 @@ namespace ProjectMT.Contents.CastleRaid
                         mainCastle = null;
                     }
                     break;
+            }
+
+            if (target.TargetKind != CastleTargetKind.Defender)
+            {
+                routeTopologyCache.Invalidate(); // 장애물 제거로 바뀐 연결성은 한 번만 다시 계산한다
             }
         }
 
@@ -558,6 +629,8 @@ namespace ProjectMT.Contents.CastleRaid
                 return;
             }
 
+            var remainingDecisionBudget = StrategicDecisionBudgetPerFrame;
+            var decisionUnit = ResolveNextStrategicDecisionUnit();
             for (var i = activeUnits.Count - 1; i >= 0; i--)
             {
                 var unit = activeUnits[i];
@@ -567,7 +640,12 @@ namespace ProjectMT.Contents.CastleRaid
                 }
 
                 UpdateAssaultRouteProgress(unit);
-                unit.Tick(Time.deltaTime);
+                var allowDecision = remainingDecisionBudget > 0 && unit == decisionUnit;
+                unit.Tick(Time.deltaTime, allowDecision);
+                if (allowDecision)
+                {
+                    remainingDecisionBudget--;
+                }
             }
 
             for (var i = aliveDefenders.Count - 1; i >= 0; i--)
@@ -602,27 +680,144 @@ namespace ProjectMT.Contents.CastleRaid
             var pattern = profile == null ? CastleRaidAiPattern.BalancedAdvance : profile.Pattern;
             var current = attacker.Target;
             var totalLayers = ResolveDefenseLayerCount();
-            var nextLayer = CastleAssaultRouteMath.ResolveNextInternalLayer(
-                routeState.EnteredDefenseLayer,
-                totalLayers);
 
-            if (routeState.EnteredDefenseLayer < 0)
+            if (routePlanner != null && navigationSnapshot != null)
             {
-                if (preferCurrentTarget && IsValidOutsideTarget(attacker, current))
+                return FindLogicalRoutePriorityTarget(attacker, routeState, pattern, preferCurrentTarget);
+            }
+
+            var palace = FindReachableMainCastle(attacker);
+            if (palace != null)
+            {
+                return palace; // 고정 Stage는 기존 NavMesh 계약을 유지한다
+            }
+
+            var reactiveThreat = FindReactiveThreatTarget(attacker);
+            if (reactiveThreat != null)
+            {
+                return reactiveThreat; // 왕궁 경로가 막힌 동안 나를 때리는 수비대·포탑만 생존 위협으로 제거한다
+            }
+
+            if (routeState.ProgressDefenseLayer < 0)
+            {
+                var openedRoute = FindOpenedRouteTarget(attacker, out var openedRouteScore);
+                if (pendingOuterBreachWallIds.Count > 0)
                 {
+                    if (openedRoute != null)
+                    {
+                        TryCommitRoute(attacker, routeState, 0);
+                    }
+
+                    return openedRoute; // 새 통로 준비 중에는 기존 통로로 모이고 외곽벽 추가 파괴를 멈춘다
+                }
+
+                var plannedBreach = FindPlannedOuterBreachTarget(attacker, out var plannedBreachScore);
+
+                if (preferCurrentTarget && IsValidOutsideTarget(
+                        attacker,
+                        current,
+                        openedRoute,
+                        openedRouteScore,
+                        pattern))
+                {
+                    if (current.TargetKind != CastleTargetKind.Wall)
+                    {
+                        TryCommitRoute(attacker, routeState, 0);
+                    }
+
                     return current;
                 }
 
                 var newBreach = FindBestWallForLayer(attacker, 0, null, out var newBreachScore);
-                var openedRoute = FindOpenedRouteTarget(attacker, out var openedRouteScore);
-                if (pattern == CastleRaidAiPattern.WallBreaker)
+                var openedOuterRouteCount = CountBreachRoutesForLayer(0);
+                var newBreachAlreadyPlanned = newBreach != null && plannedOuterBreachWalls.Contains(newBreach);
+                var comparisonScore = openedRoute != null ? openedRouteScore : plannedBreachScore;
+                var occupiedBreachCount = outerBreachAttemptWallIds.Count;
+                var openAdditionalBreach = newBreach != null && newBreach != plannedBreach &&
+                                           CastleAssaultRouteMath.ShouldOpenAdditionalBreach(
+                                               newBreachScore,
+                                               comparisonScore,
+                                               pattern == CastleRaidAiPattern.WallBreaker,
+                                               newBreachAlreadyPlanned
+                                                   ? openedOuterRouteCount
+                                                   : occupiedBreachCount,
+                                               MaximumOuterBreachRoutes,
+                                               pendingOuterBreachWallIds.Count);
+                if (openedRoute != null)
                 {
-                    newBreachScore *= 0.72f;
+                    if (newBreachAlreadyPlanned && CastleAssaultRouteMath.ShouldOpenAdditionalBreach(
+                            newBreachScore,
+                            openedRouteScore,
+                            pattern == CastleRaidAiPattern.WallBreaker,
+                            openedOuterRouteCount,
+                            MaximumOuterBreachRoutes,
+                            pendingOuterBreachWallIds.Count))
+                    {
+                        return newBreach;
+                    }
+
+                    if (!openAdditionalBreach)
+                    {
+                        TryCommitRoute(attacker, routeState, 0);
+                        return openedRoute;
+                    }
+
+                    if (ClaimOuterBreach(newBreach))
+                    {
+                        return newBreach;
+                    }
+
+                    TryCommitRoute(attacker, routeState, 0);
+                    return openedRoute;
                 }
 
-                return openedRoute == null || newBreach != null && newBreachScore < openedRouteScore
-                    ? newBreach
-                    : openedRoute;
+                if (plannedBreach != null && !openAdditionalBreach)
+                {
+                    return plannedBreach;
+                }
+
+                if (newBreach != null && (plannedBreach == null || openAdditionalBreach))
+                {
+                    if (ClaimOuterBreach(newBreach))
+                    {
+                        return newBreach;
+                    }
+                }
+
+                return plannedBreach;
+            }
+
+            // 이미 열린 정확한 다음 방어층은 이 유닛의 왕궁 진격로로 채택한다.
+            // 한 단계가 채택되는 즉시 이전 단계 전체가 해당 유닛의 후보에서 영구 제외된다.
+            for (var guard = 0; guard < totalLayers; guard++)
+            {
+                var openedNextLayer = CastleAssaultRouteMath.ResolveNextInternalLayer(
+                    routeState.ProgressDefenseLayer,
+                    totalLayers);
+                if (openedNextLayer < 0 || !TryCommitRoute(attacker, routeState, openedNextLayer))
+                {
+                    break;
+                }
+
+                palace = FindReachableMainCastle(attacker);
+                if (palace != null)
+                {
+                    return palace;
+                }
+            }
+
+            var nextLayer = CastleAssaultRouteMath.ResolveNextInternalLayer(
+                routeState.ProgressDefenseLayer,
+                totalLayers);
+
+            var incidentalBuilding = FindBestIncidentalBuildingTarget(
+                attacker,
+                routeState.CurrentDistrictIds,
+                IncidentalBuildingClearRadius,
+                out _);
+            if (incidentalBuilding != null)
+            {
+                return incidentalBuilding; // 이동선에 거의 붙은 건물은 길막·충돌 누적 전에 짧게 제거한다
             }
 
             if (preferCurrentTarget && IsCurrentPolicyTargetAllowed(
@@ -635,28 +830,18 @@ namespace ProjectMT.Contents.CastleRaid
                 return current;
             }
 
-            if (pattern == CastleRaidAiPattern.PalaceRush)
-            {
-                var palace = FindReachableMainCastle(attacker);
-                if (palace != null)
-                {
-                    return palace;
-                }
-            }
-
             if (nextLayer < 0)
             {
-                var palace = FindReachableMainCastle(attacker);
-                if (palace != null)
-                {
-                    return palace; // 최종 방어선을 넘은 뒤에는 모든 기본 정책이 왕궁을 최우선한다
-                }
+                return FindBestIncidentalBuildingTarget(
+                    attacker,
+                    routeState.CurrentDistrictIds,
+                    IncidentalBuildingClearRadius,
+                    out _) ?? mainCastle; // 왕궁을 목표로 유지하면 유닛이 열린 링크를 실제 통과하며 진격한다
             }
 
-            CastleTarget localTarget = null;
-            if (pattern != CastleRaidAiPattern.WallBreaker && pattern != CastleRaidAiPattern.PalaceRush)
+            if (UsesSpecializedLocalTargets(pattern))
             {
-                localTarget = FindBestLocalTarget(
+                var localTarget = FindBestLocalTarget(
                     attacker,
                     routeState.CurrentDistrictIds,
                     assaultLocalTargetRadius,
@@ -683,18 +868,13 @@ namespace ProjectMT.Contents.CastleRaid
                 }
             }
 
-            if (pattern != CastleRaidAiPattern.WallBreaker && pattern != CastleRaidAiPattern.PalaceRush)
-            {
-                localTarget = FindBestLocalTarget(
-                    attacker,
-                    routeState.CurrentDistrictIds,
-                    float.PositiveInfinity,
-                    pattern,
-                    out _);
-            }
-
-            return localTarget ?? FindReachableMainCastle(attacker) ??
-                   FindEmergencyReachableTarget(attacker, routeState.EnteredDefenseLayer);
+            return FindBestIncidentalBuildingTarget(
+                       attacker,
+                       routeState.CurrentDistrictIds,
+                       IncidentalBuildingClearRadius,
+                       out _) ??
+                   FindEmergencyReachableTarget(attacker, routeState.ProgressDefenseLayer) ??
+                   mainCastle; // 선택한 링크를 아직 통과하지 못했으면 왕궁을 이동 앵커로 두고 실제 다음 링크까지 간다
         }
 
         public CastleRaidAIProfile ResolveAIProfile(string monsterId)
@@ -820,7 +1000,12 @@ namespace ProjectMT.Contents.CastleRaid
                 target.GetInstanceID());
         }
 
-        private bool IsValidOutsideTarget(CastleAssaultUnit attacker, CastleTarget candidate)
+        private bool IsValidOutsideTarget(
+            CastleAssaultUnit attacker,
+            CastleTarget candidate,
+            CastleTarget openedRoute,
+            float openedRouteScore,
+            CastleRaidAiPattern pattern)
         {
             if (candidate == null || !candidate.IsAlive ||
                 !attacker.TryMeasurePathToTarget(candidate, out _))
@@ -828,8 +1013,372 @@ namespace ProjectMT.Contents.CastleRaid
                 return false;
             }
 
-            return candidate.TargetKind == CastleTargetKind.Wall && candidate.WallDefenseLayer == 0 ||
-                   TargetBelongsToDistricts(candidate, openedDistrictIds);
+            if (openedRoute != null && candidate == openedRoute)
+            {
+                return true;
+            }
+
+            if (candidate.TargetKind != CastleTargetKind.Wall || candidate.WallDefenseLayer != 0)
+            {
+                return false;
+            }
+
+            if (!CanPlanSafeBreach(candidate) || openedRoute == null)
+            {
+                return openedRoute == null && plannedOuterBreachWalls.Contains(candidate) &&
+                       CanPlanSafeBreach(candidate);
+            }
+
+            var openedRouteCount = CountBreachRoutesForLayer(0);
+            return TryScoreTarget(attacker, candidate, true, true, out var currentScore, out _) &&
+                   CastleAssaultRouteMath.ShouldOpenAdditionalBreach(
+                       currentScore,
+                       openedRouteScore,
+                       pattern == CastleRaidAiPattern.WallBreaker,
+                       plannedOuterBreachWalls.Contains(candidate)
+                           ? openedRouteCount
+                           : outerBreachAttemptWallIds.Count,
+                       MaximumOuterBreachRoutes,
+                       pendingOuterBreachWallIds.Count);
+        }
+
+        private CastleTarget FindPlannedOuterBreachTarget(CastleAssaultUnit attacker, out float bestScore)
+        {
+            CastleTarget best = null;
+            bestScore = float.PositiveInfinity;
+            for (var index = plannedOuterBreachWalls.Count - 1; index >= 0; index--)
+            {
+                var wall = plannedOuterBreachWalls[index];
+                if (wall == null || !wall.IsAlive)
+                {
+                    plannedOuterBreachWalls.RemoveAt(index);
+                    continue;
+                }
+
+                if (!TryScoreTarget(attacker, wall, true, true, out var score, out _) || score >= bestScore)
+                {
+                    continue;
+                }
+
+                best = wall;
+                bestScore = score;
+            }
+
+            return best;
+        }
+
+        private bool ClaimOuterBreach(CastleTarget wall)
+        {
+            return ClaimOuterBreach(wall, null);
+        }
+
+        private bool ClaimOuterBreach(CastleTarget wall, AssaultRouteState routeState)
+        {
+            if (wall == null || !wall.IsAlive || wall.WallDefenseLayer != 0)
+            {
+                return false;
+            }
+
+            var wallId = wall.GetInstanceID();
+            if (routeState != null &&
+                routeBreachLedger.HasDifferentReservation(routeState.RouteId, wallId))
+            {
+                return false; // 같은 경로 집단은 동시에 외곽벽 하나만 연다
+            }
+
+            if (!outerBreachAttemptWallIds.Contains(wallId) &&
+                outerBreachAttemptWallIds.Count >= MaximumOuterBreachRoutes)
+            {
+                return false; // 파괴·링크 대기 프레임과 무관하게 한 판의 외곽 돌파 시도 수를 고정한다
+            }
+
+            outerBreachAttemptWallIds.Add(wallId);
+            if (!plannedOuterBreachWalls.Contains(wall))
+            {
+                plannedOuterBreachWalls.Add(wall);
+            }
+
+            if (routeState != null && routeState.RouteId != 0)
+            {
+                routeBreachLedger.TryReserve(routeState.RouteId, wallId);
+            }
+
+            return true;
+        }
+
+        private CastleTarget FindReactiveThreatTarget(CastleAssaultUnit attacker)
+        {
+            var aggressor = attacker == null ? null : attacker.RecentThreatAggressor;
+            return IsActiveDefenseThreat(aggressor) &&
+                   attacker.TryMeasurePathToTarget(aggressor, out _) &&
+                   TryClaimThreatResponse(attacker, aggressor)
+                ? aggressor
+                : null;
+        }
+
+        private CastleTarget FindLogicalRoutePriorityTarget(
+            CastleAssaultUnit attacker,
+            AssaultRouteState routeState,
+            CastleRaidAiPattern pattern,
+            bool preferCurrentTarget)
+        {
+            var routeObstacle = ResolveLogicalRouteObstacle(attacker, routeState, pattern);
+            if (routeObstacle == null)
+            {
+                var palace = FindReachableMainCastle(attacker);
+                if (palace != null)
+                {
+                    return palace; // 논리 장애물과 실제 NavMesh 경로가 모두 열렸을 때만 왕궁을 친다
+                }
+            }
+
+            var reactiveThreat = FindReactiveThreatTarget(attacker);
+            if (reactiveThreat != null)
+            {
+                return reactiveThreat;
+            }
+
+            if (preferCurrentTarget && currentTargetMatchesRoute(attacker.Target, routeState))
+            {
+                return attacker.Target; // 같은 첫 장애물은 공격이 끝날 때까지 유지한다
+            }
+
+            if (UsesSpecializedLocalTargets(pattern))
+            {
+                var specializedTarget = FindBestLocalTarget(
+                    attacker,
+                    null,
+                    assaultLocalTargetRadius,
+                    pattern,
+                    out _);
+                if (specializedTarget != null)
+                {
+                    return specializedTarget;
+                }
+            }
+
+            var incidentalBuilding = FindBestIncidentalBuildingTarget(
+                attacker,
+                null,
+                IncidentalBuildingClearRadius,
+                out _);
+            if (incidentalBuilding != null && incidentalBuilding != routeObstacle)
+            {
+                return incidentalBuilding; // 발밑의 길막 건물만 짧게 정리한다
+            }
+
+            if (routeObstacle != null)
+            {
+                if (routeObstacle.TargetKind != CastleTargetKind.Wall ||
+                    routeObstacle.WallDefenseLayer != 0 ||
+                    ClaimOuterBreach(routeObstacle, routeState))
+                {
+                    return routeObstacle;
+                }
+
+                var openedRoute = FindOpenedRouteTarget(attacker, out _);
+                if (openedRoute != null)
+                {
+                    return openedRoute; // 외곽 경로 상한에 걸리면 이미 열린 통로로 합류한다
+                }
+
+                return FindPlannedOuterBreachTarget(attacker, out _) ?? routeObstacle;
+            }
+
+            return FindEmergencyReachableTarget(attacker, routeState.ProgressDefenseLayer) ?? mainCastle;
+
+            bool currentTargetMatchesRoute(CastleTarget current, AssaultRouteState state)
+            {
+                return current != null && current.IsAlive && state != null &&
+                       string.Equals(
+                           current.PlacementId,
+                           state.FirstObstaclePlacementId,
+                           StringComparison.Ordinal) &&
+                       attacker.TryMeasurePathToTarget(current, out _);
+            }
+        }
+
+        private CastleTarget ResolveLogicalRouteObstacle(
+            CastleAssaultUnit attacker,
+            AssaultRouteState routeState,
+            CastleRaidAiPattern pattern)
+        {
+            if (attacker == null || routeState == null || routePlanner == null || navigationSnapshot == null)
+            {
+                return null;
+            }
+
+            var needsRefresh = routeState.RouteTopologyVersion != navigationSnapshot.TopologyVersion ||
+                               string.IsNullOrWhiteSpace(routeState.FirstObstaclePlacementId) ||
+                               !navigationSnapshot.TryResolveTarget(
+                                   routeState.FirstObstaclePlacementId,
+                                   out var rememberedTarget) ||
+                               rememberedTarget == null || !rememberedTarget.IsAlive;
+            if (needsRefresh)
+            {
+                if (!routePlanner.TryResolveRoute(
+                        attacker.transform.position,
+                        ResolveRoutePolicy(pattern),
+                        out var routePlan))
+                {
+                    routeState.FirstObstaclePlacementId = string.Empty;
+                    routeState.HasRouteApproach = false;
+                    routeState.RouteTopologyVersion = navigationSnapshot.TopologyVersion;
+                    return null;
+                }
+
+                routeState.RouteId = routePlan.RouteId;
+                routeState.RouteSector = routePlan.SectorId;
+                routeState.FirstObstaclePlacementId = routePlan.FirstObstaclePlacementId;
+                routeState.RouteApproachPosition = navigationSnapshot.CellToWorld(routePlan.ApproachCell);
+                routeState.HasRouteApproach = routePlan.HasFirstObstacle;
+                routeState.RouteTopologyVersion = navigationSnapshot.TopologyVersion;
+            }
+
+            return navigationSnapshot.TryResolveTarget(routeState.FirstObstaclePlacementId, out var target) &&
+                   target != null && target.IsAlive
+                ? target
+                : null;
+        }
+
+        private static CastleRaidRoutePolicy ResolveRoutePolicy(CastleRaidAiPattern pattern)
+        {
+            switch (pattern)
+            {
+                case CastleRaidAiPattern.WallBreaker:
+                    return CastleRaidRoutePolicy.WallBreaker;
+                case CastleRaidAiPattern.PalaceRush:
+                    return CastleRaidRoutePolicy.PalaceRush;
+                default:
+                    return CastleRaidRoutePolicy.Balanced;
+            }
+        }
+
+        public bool TryResolveRouteApproach(
+            CastleAssaultUnit attacker,
+            CastleTarget routeTarget,
+            out Vector3 approachPosition)
+        {
+            if (attacker != null && routeTarget != null &&
+                assaultRouteStates.TryGetValue(attacker, out var state) &&
+                state.HasRouteApproach &&
+                string.Equals(
+                    state.FirstObstaclePlacementId,
+                    routeTarget.PlacementId,
+                    StringComparison.Ordinal))
+            {
+                approachPosition = state.RouteApproachPosition;
+                return true;
+            }
+
+            approachPosition = default;
+            return false;
+        }
+
+        private bool TryClaimThreatResponse(CastleAssaultUnit attacker, CastleTarget threat)
+        {
+            if (attacker == null || threat == null)
+            {
+                return false;
+            }
+
+            if (!threatResponseClaims.TryGetValue(threat, out var claim))
+            {
+                claim = new ThreatResponseClaim();
+                threatResponseClaims.Add(threat, claim);
+            }
+
+            var now = Time.time;
+            var attackerId = attacker.GetInstanceID();
+            expiredThreatResponderIds.Clear();
+            foreach (var responder in claim.Responders)
+            {
+                if (responder.Value <= now || !IsActiveUnitInstance(responder.Key))
+                {
+                    expiredThreatResponderIds.Add(responder.Key);
+                }
+            }
+
+            for (var index = 0; index < expiredThreatResponderIds.Count; index++)
+            {
+                claim.Responders.Remove(expiredThreatResponderIds[index]);
+            }
+            expiredThreatResponderIds.Clear();
+
+            if (claim.Responders.ContainsKey(attackerId))
+            {
+                claim.Responders[attackerId] = now + 3.6f;
+                return true;
+            }
+
+            var responderLimit = threat.TargetKind == CastleTargetKind.Defender ? 2 : 3;
+            if (claim.Responders.Count >= responderLimit)
+            {
+                return false; // 한 위협에 전 병력이 돌아서지 않는다
+            }
+
+            claim.Responders.Add(attackerId, now + 3.6f);
+            return true;
+        }
+
+        private bool IsActiveUnitInstance(int unitInstanceId)
+        {
+            for (var index = 0; index < activeUnits.Count; index++)
+            {
+                var unit = activeUnits[index];
+                if (unit != null && unit.IsAlive && unit.GetInstanceID() == unitInstanceId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsActiveDefenseThreat(CastleTarget target)
+        {
+            return target != null && target.IsAlive &&
+                   (target.TargetKind == CastleTargetKind.Defender ||
+                    target.TargetKind == CastleTargetKind.Building &&
+                    target.TryGetComponent<CastleTurretRuntime>(out _));
+        }
+
+        private bool TryCommitRoute(
+            CastleAssaultUnit attacker,
+            AssaultRouteState state,
+            int defenseLayer)
+        {
+            if (attacker == null || state == null || defenseLayer <= state.ProgressDefenseLayer)
+            {
+                return false;
+            }
+
+            BreachRouteRecord bestRoute = null;
+            var bestDistance = float.PositiveInfinity;
+            for (var index = 0; index < breachRoutes.Count; index++)
+            {
+                var route = breachRoutes[index];
+                if (route == null || route.DefenseLayer != defenseLayer ||
+                    !HasCachedStrategicContinuation(route) ||
+                    !attacker.TryMeasurePathToPosition(route.OutsidePoint, out var pathDistance) ||
+                    pathDistance >= bestDistance)
+                {
+                    continue;
+                }
+
+                bestRoute = route;
+                bestDistance = pathDistance;
+            }
+
+            if (bestRoute == null)
+            {
+                return false;
+            }
+
+            state.CommittedDefenseLayer = defenseLayer;
+            state.CurrentDistrictIds.Clear();
+            AddRouteDistricts(bestRoute.Wall, state.KnownDistrictIds, state.CurrentDistrictIds);
+            return true; // 이 진격로를 선택한 뒤에는 같은 방어층 성벽을 다시 후보에 넣지 않는다
         }
 
         private bool IsCurrentPolicyTargetAllowed(
@@ -847,7 +1396,7 @@ namespace ProjectMT.Contents.CastleRaid
 
             if (candidate.TargetKind == CastleTargetKind.MainCastle)
             {
-                return nextLayer < 0 || pattern == CastleRaidAiPattern.PalaceRush;
+                return nextLayer < 0;
             }
 
             if (candidate.TargetKind == CastleTargetKind.Wall)
@@ -856,8 +1405,61 @@ namespace ProjectMT.Contents.CastleRaid
                        TargetBelongsToDistricts(candidate, districtIds);
             }
 
-            return pattern != CastleRaidAiPattern.WallBreaker && pattern != CastleRaidAiPattern.PalaceRush &&
-                   IsLocalTarget(candidate, districtIds);
+            return IsProfileLocalTarget(candidate, districtIds, pattern);
+        }
+
+        private static bool UsesSpecializedLocalTargets(CastleRaidAiPattern pattern)
+        {
+            return pattern == CastleRaidAiPattern.BuildingPriority ||
+                   pattern == CastleRaidAiPattern.DefenseFacilityPriority ||
+                   pattern == CastleRaidAiPattern.DefenderPriority;
+        }
+
+        private static bool IsProfileLocalTarget(
+            CastleTarget candidate,
+            IReadOnlyCollection<string> districtIds,
+            CastleRaidAiPattern pattern)
+        {
+            if (!IsLocalTarget(candidate, districtIds))
+            {
+                return false;
+            }
+
+            var isTurret = candidate.TargetKind == CastleTargetKind.Building &&
+                           candidate.TryGetComponent<CastleTurretRuntime>(out _);
+            return pattern == CastleRaidAiPattern.BuildingPriority &&
+                   candidate.TargetKind == CastleTargetKind.Building && !isTurret ||
+                   pattern == CastleRaidAiPattern.DefenseFacilityPriority && isTurret ||
+                   pattern == CastleRaidAiPattern.DefenderPriority &&
+                   candidate.TargetKind == CastleTargetKind.Defender;
+        }
+
+        private CastleTarget FindBestIncidentalBuildingTarget(
+            CastleAssaultUnit attacker,
+            IReadOnlyCollection<string> districtIds,
+            float maximumDistance,
+            out float bestScore)
+        {
+            CastleTarget best = null;
+            bestScore = float.PositiveInfinity;
+            for (var index = 0; index < aliveBuildings.Count; index++)
+            {
+                var candidate = aliveBuildings[index];
+                if (candidate == null || candidate.TargetKind != CastleTargetKind.Building ||
+                    !IsLocalTarget(candidate, districtIds) ||
+                    !TryScoreTarget(attacker, candidate, false, true, out var score, out var pathDistance) ||
+                    (!CastleAssaultRouteMath.IsIncidentalBuilding(pathDistance, maximumDistance) &&
+                     !IsImmediateAdvanceBlocker(attacker, candidate)) ||
+                    score >= bestScore)
+                {
+                    continue;
+                }
+
+                best = candidate;
+                bestScore = score; // 경로+왕궁 방향이 가장 짧은 접근 가능 건물을 길막 후보로 본다
+            }
+
+            return best;
         }
 
         private CastleTarget FindBestLocalTarget(
@@ -869,40 +1471,21 @@ namespace ProjectMT.Contents.CastleRaid
         {
             CastleTarget best = null;
             var resolvedBestScore = float.PositiveInfinity;
-            ScoreLocalCandidates(aliveDefenders, false);
-            ScoreLocalCandidates(aliveBuildings, true);
+            ScoreLocalCandidates(aliveDefenders);
+            ScoreLocalCandidates(aliveBuildings);
             bestScore = resolvedBestScore;
             return best;
 
-            void ScoreLocalCandidates(IReadOnlyList<CastleTarget> candidates, bool building)
+            void ScoreLocalCandidates(IReadOnlyList<CastleTarget> candidates)
             {
                 for (var index = 0; index < candidates.Count; index++)
                 {
                     var candidate = candidates[index];
-                    if (!IsLocalTarget(candidate, districtIds) ||
+                    if (!IsProfileLocalTarget(candidate, districtIds, pattern) ||
                         !TryScoreTarget(attacker, candidate, false, true, out var score, out var pathDistance) ||
                         pathDistance > maximumDistance)
                     {
                         continue;
-                    }
-
-                    var isTurret = building && candidate.TryGetComponent<CastleTurretRuntime>(out _);
-                    switch (pattern)
-                    {
-                        case CastleRaidAiPattern.BuildingPriority when building && !isTurret:
-                            score *= 0.52f;
-                            break;
-                        case CastleRaidAiPattern.DefenseFacilityPriority when isTurret:
-                            score *= 0.45f;
-                            break;
-                        case CastleRaidAiPattern.DefenderPriority when !building:
-                            score *= 0.5f;
-                            break;
-                        case CastleRaidAiPattern.BuildingPriority:
-                        case CastleRaidAiPattern.DefenseFacilityPriority:
-                        case CastleRaidAiPattern.DefenderPriority:
-                            score *= 1.2f;
-                            break;
                     }
 
                     if (score < resolvedBestScore)
@@ -914,6 +1497,31 @@ namespace ProjectMT.Contents.CastleRaid
             }
         }
 
+        private CastleAssaultUnit ResolveNextStrategicDecisionUnit()
+        {
+            if (activeUnits.Count == 0)
+            {
+                strategicDecisionCursor = 0;
+                return null;
+            }
+
+            strategicDecisionCursor = Mathf.Clamp(strategicDecisionCursor, 0, activeUnits.Count - 1);
+            for (var offset = 0; offset < activeUnits.Count; offset++)
+            {
+                var index = (strategicDecisionCursor + offset) % activeUnits.Count;
+                var unit = activeUnits[index];
+                if (unit == null || !unit.IsAlive || !unit.NeedsStrategicDecision)
+                {
+                    continue;
+                }
+
+                strategicDecisionCursor = (index + 1) % activeUnits.Count;
+                return unit;
+            }
+
+            return null;
+        }
+
         private CastleTarget FindBestWallForLayer(
             CastleAssaultUnit attacker,
             int defenseLayer,
@@ -922,12 +1530,14 @@ namespace ProjectMT.Contents.CastleRaid
         {
             CastleTarget best = null;
             bestScore = float.PositiveInfinity;
-            for (var index = 0; index < aliveWalls.Count; index++)
+            var bufferedCount = CollectNearestWallCandidates(attacker, defenseLayer, districtIds);
+            for (var index = 0; index < bufferedCount; index++)
             {
-                var wall = aliveWalls[index];
-                if (wall == null || wall.WallDefenseLayer != defenseLayer ||
-                    districtIds != null && districtIds.Count > 0 && !TargetBelongsToDistricts(wall, districtIds) ||
-                    !TryScoreTarget(attacker, wall, true, true, out var score, out _))
+                var wall = nearestTargetBuffer[index];
+                if (wall == null ||
+                    defenseLayer == 0 && !CanPlanSafeBreach(wall) ||
+                    !TryScoreTarget(attacker, wall, true, true, out var score, out _) ||
+                    !HasStrategicContinuationAfterWall(wall))
                 {
                     continue;
                 }
@@ -939,7 +1549,206 @@ namespace ProjectMT.Contents.CastleRaid
                 }
             }
 
+            ClearNearestTargetBuffer(bufferedCount);
             return best;
+        }
+
+        private int CollectNearestWallCandidates(
+            CastleAssaultUnit attacker,
+            int defenseLayer,
+            IReadOnlyCollection<string> districtIds)
+        {
+            var bufferedCount = 0;
+            var origin = attacker == null ? Vector3.zero : attacker.transform.position;
+            for (var index = 0; index < aliveWalls.Count; index++)
+            {
+                var wall = aliveWalls[index];
+                if (wall == null || !wall.IsAlive || wall.WallDefenseLayer != defenseLayer ||
+                    districtIds != null && districtIds.Count > 0 && !TargetBelongsToDistricts(wall, districtIds))
+                {
+                    continue;
+                }
+
+                var distance = (wall.transform.position - origin).sqrMagnitude;
+                var insertIndex = bufferedCount;
+                while (insertIndex > 0 && nearestDistanceBuffer[insertIndex - 1] > distance)
+                {
+                    insertIndex--;
+                }
+
+                if (insertIndex >= ReachabilityCandidateLimit)
+                {
+                    continue;
+                }
+
+                var moveEnd = Mathf.Min(bufferedCount, ReachabilityCandidateLimit - 1);
+                for (var moveIndex = moveEnd; moveIndex > insertIndex; moveIndex--)
+                {
+                    nearestTargetBuffer[moveIndex] = nearestTargetBuffer[moveIndex - 1];
+                    nearestDistanceBuffer[moveIndex] = nearestDistanceBuffer[moveIndex - 1];
+                }
+
+                nearestTargetBuffer[insertIndex] = wall;
+                nearestDistanceBuffer[insertIndex] = distance;
+                bufferedCount = Mathf.Min(bufferedCount + 1, ReachabilityCandidateLimit);
+            }
+
+            return bufferedCount;
+        }
+
+        private bool HasStrategicContinuationAfterWall(CastleTarget wall)
+        {
+            if (wall == null || wall.AttackSlots == null || mainCastle == null)
+            {
+                return false;
+            }
+
+            var wallId = wall.GetInstanceID();
+            if (routeTopologyCache.TryGetProspectiveContinuation(wallId, out var hasContinuation))
+            {
+                return hasContinuation;
+            }
+
+            var inward = CastleBreachLinkMath.ResolveInwardDirection(
+                wall.transform.position,
+                mainCastle.transform.position,
+                wall.WallNeighborMask);
+            hasContinuation = TryResolveProspectiveBreachPoints(wall, inward, out _, out var inside) &&
+                              HasStrategicContinuationFromPoint(inside, wall.WallDefenseLayer);
+            routeTopologyCache.StoreProspectiveContinuation(wallId, hasContinuation);
+            return hasContinuation;
+        }
+
+        private bool HasStrategicContinuationFromPoint(Vector3 fromPosition, int openedDefenseLayer)
+        {
+            var nextLayer = CastleAssaultRouteMath.ResolveNextInternalLayer(
+                openedDefenseLayer,
+                ResolveDefenseLayerCount());
+            if (nextLayer < 0)
+            {
+                return CanReachTargetSlotsFromPoint(fromPosition, mainCastle, true);
+            }
+
+            for (var index = 0; index < aliveWalls.Count; index++)
+            {
+                var wall = aliveWalls[index];
+                if (wall != null && wall.IsAlive && wall.WallDefenseLayer == nextLayer &&
+                    CanReachTargetSlotsFromPoint(fromPosition, wall, false))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool HasCachedStrategicContinuation(BreachRouteRecord route)
+        {
+            if (route == null || route.Wall == null)
+            {
+                return false;
+            }
+
+            var routeId = route.Wall.GetInstanceID();
+            if (routeTopologyCache.TryGetContinuation(routeId, out var hasContinuation))
+            {
+                return hasContinuation;
+            }
+
+            hasContinuation = HasStrategicContinuationFromPoint(route.InsidePoint, route.DefenseLayer);
+            routeTopologyCache.StoreContinuation(routeId, hasContinuation);
+            return hasContinuation;
+        }
+
+        private bool CanReachTargetSlotsFromPoint(
+            Vector3 fromPosition,
+            CastleTarget target,
+            bool requireClearAttackLine)
+        {
+            if (target == null || !target.IsAlive || target.AttackSlots == null)
+            {
+                return false;
+            }
+
+            for (var slotIndex = 0; slotIndex < target.AttackSlots.SlotCount; slotIndex++)
+            {
+                if (!target.AttackSlots.TryGetSlotPosition(slotIndex, out var slotPosition) ||
+                    requireClearAttackLine && IsTurretLineBlocked(
+                        slotPosition,
+                        target.transform.position,
+                        0.04f) ||
+                    !TryMeasureNavMeshPath(fromPosition, slotPosition, out _))
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryMeasureNavMeshPath(Vector3 fromPosition, Vector3 toPosition, out float distance)
+        {
+            distance = float.PositiveInfinity;
+            if (!NavMesh.SamplePosition(fromPosition, out var fromHit, BreachProbeRadius, NavMesh.AllAreas) ||
+                !NavMesh.SamplePosition(toPosition, out var toHit, BreachProbeRadius, NavMesh.AllAreas))
+            {
+                return false;
+            }
+
+            innerPathProbe ??= new NavMeshPath();
+            if (!NavMesh.CalculatePath(fromHit.position, toHit.position, NavMesh.AllAreas, innerPathProbe) ||
+                innerPathProbe.status != NavMeshPathStatus.PathComplete)
+            {
+                return false;
+            }
+
+            distance = 0f;
+            var corners = innerPathProbe.corners;
+            for (var cornerIndex = 1; cornerIndex < corners.Length; cornerIndex++)
+            {
+                distance += Vector3.Distance(corners[cornerIndex - 1], corners[cornerIndex]);
+            }
+
+            return true;
+        }
+
+        private bool IsImmediateAdvanceBlocker(CastleAssaultUnit attacker, CastleTarget building)
+        {
+            if (attacker == null || building == null || mainCastle == null)
+            {
+                return false;
+            }
+
+            var towardPalace = mainCastle.transform.position - attacker.transform.position;
+            var towardBuilding = building.transform.position - attacker.transform.position;
+            towardPalace.y = 0f;
+            towardBuilding.y = 0f;
+            var palaceDistance = towardPalace.magnitude;
+            if (palaceDistance <= 0.01f)
+            {
+                return false;
+            }
+
+            var forward = towardPalace / palaceDistance;
+            var forwardDistance = Vector3.Dot(towardBuilding, forward);
+            if (forwardDistance < 0f || forwardDistance > Mathf.Min(palaceDistance, ImmediateAdvanceBlockerDistance))
+            {
+                return false;
+            }
+
+            var lateral = towardBuilding - forward * forwardDistance;
+            var footprintRadius = 0.5f;
+            var blockerCollider = building.GetComponentInChildren<Collider>();
+            if (blockerCollider != null)
+            {
+                var extents = blockerCollider.bounds.extents;
+                footprintRadius = Mathf.Max(extents.x, extents.z);
+            }
+
+            var clearance = footprintRadius + ImmediateAdvanceBlockerPadding;
+            return lateral.sqrMagnitude <= clearance * clearance;
         }
 
         private CastleTarget FindOpenedRouteTarget(CastleAssaultUnit attacker, out float bestScore)
@@ -950,40 +1759,41 @@ namespace ProjectMT.Contents.CastleRaid
                 return null;
             }
 
-            var target = FindBestLocalTarget(
-                attacker,
-                openedDistrictIds,
-                float.PositiveInfinity,
-                CastleRaidAiPattern.BalancedAdvance,
-                out bestScore);
-            if (target != null)
-            {
-                return target;
-            }
-
-            var nextLayer = FindNextAliveWallLayer(0);
-            if (nextLayer >= 0)
-            {
-                target = FindBestWallForLayer(attacker, nextLayer, openedDistrictIds, out bestScore);
-            }
-
-            if (target != null)
-            {
-                return target;
-            }
-
-            target = FindReachableMainCastle(attacker);
+            var target = FindReachableMainCastle(attacker);
             if (target != null)
             {
                 TryScoreTarget(attacker, target, false, false, out bestScore, out _);
+                return target;
             }
 
-            return target;
+            var nextLayer = CastleAssaultRouteMath.ResolveNextInternalLayer(0, ResolveDefenseLayerCount());
+            if (nextLayer >= 0)
+            {
+                target = FindBestWallForLayer(attacker, nextLayer, openedDistrictIds, out bestScore);
+                if (target == null)
+                {
+                    target = FindBestWallForLayer(attacker, nextLayer, null, out bestScore);
+                }
+            }
+
+            if (target != null)
+            {
+                return target;
+            }
+
+            target = FindBestIncidentalBuildingTarget(
+                attacker,
+                openedDistrictIds,
+                float.PositiveInfinity,
+                out bestScore);
+            return target; // 열린 통로 뒤의 다음 목표가 건물에 막혔을 때만 그 건물을 진격 목표로 쓴다
         }
 
-        private CastleTarget FindEmergencyReachableTarget(CastleAssaultUnit attacker, int enteredLayer)
+        private CastleTarget FindEmergencyReachableTarget(CastleAssaultUnit attacker, int progressLayer)
         {
-            var layer = FindNextAliveWallLayer(enteredLayer);
+            var layer = CastleAssaultRouteMath.ResolveNextInternalLayer(
+                progressLayer,
+                ResolveDefenseLayerCount());
             if (layer >= 0)
             {
                 var wall = FindBestWallForLayer(attacker, layer, null, out _);
@@ -993,10 +1803,7 @@ namespace ProjectMT.Contents.CastleRaid
                 }
             }
 
-            return FindNearestReachableTarget(attacker, aliveDefenders) ??
-                   FindNearestReachableTarget(attacker, aliveBuildings) ??
-                   FindNearestReachableTarget(attacker, aliveWalls) ??
-                   FindReachableMainCastle(attacker);
+            return FindReachableMainCastle(attacker); // 실패 시 이미 통과한 층이나 무관한 건물로 후퇴하지 않는다
         }
 
         private bool TryScoreTarget(
@@ -1043,6 +1850,20 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             return best == int.MaxValue ? -1 : best;
+        }
+
+        private int CountBreachRoutesForLayer(int defenseLayer)
+        {
+            var count = 0;
+            for (var index = 0; index < breachRoutes.Count; index++)
+            {
+                if (breachRoutes[index] != null && breachRoutes[index].DefenseLayer == defenseLayer)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private int ResolveDefenseLayerCount()
@@ -1092,17 +1913,23 @@ namespace ProjectMT.Contents.CastleRaid
             {
                 var route = breachRoutes[index];
                 if (route == null || route.DefenseLayer <= state.EnteredDefenseLayer ||
-                    !CastleAssaultRouteMath.HasCrossedInward(
-                        state.PreviousPosition,
-                        currentPosition,
-                        route.WallPosition,
-                        route.Inward,
-                        BreachCrossingLateralTolerance))
+                    (!CastleAssaultRouteMath.HasCrossedInward(
+                         state.PreviousPosition,
+                         currentPosition,
+                         route.WallPosition,
+                         route.Inward,
+                         BreachCrossingLateralTolerance) &&
+                     !CastleAssaultRouteMath.IsAtBreachInside(
+                          currentPosition,
+                          route.WallPosition,
+                          route.Inward,
+                          BreachCrossingLateralTolerance)))
                 {
                     continue;
                 }
 
                 state.EnteredDefenseLayer = route.DefenseLayer;
+                state.CommittedDefenseLayer = Mathf.Max(state.CommittedDefenseLayer, route.DefenseLayer);
                 state.CurrentDistrictIds.Clear();
                 AddRouteDistricts(route.Wall, state.KnownDistrictIds, state.CurrentDistrictIds);
                 attacker.RequestNavigationRefresh(true, 0f);
@@ -1228,6 +2055,21 @@ namespace ProjectMT.Contents.CastleRaid
             left.y = 0f;
             right.y = 0f;
             return Vector3.Distance(left, right);
+        }
+
+        private static float PlanarDistanceSquaredToSegment(Vector3 point, Vector3 start, Vector3 end)
+        {
+            point.y = 0f;
+            start.y = 0f;
+            end.y = 0f;
+            var segment = end - start;
+            if (segment.sqrMagnitude <= 0.0001f)
+            {
+                return (point - start).sqrMagnitude;
+            }
+
+            var progress = Mathf.Clamp01(Vector3.Dot(point - start, segment) / segment.sqrMagnitude);
+            return (point - (start + segment * progress)).sqrMagnitude;
         }
 
         public void ConfigureGeneratedDefender(
@@ -1528,6 +2370,11 @@ namespace ProjectMT.Contents.CastleRaid
                 return;
             }
 
+            if (target.TargetKind == CastleTargetKind.Wall)
+            {
+                lastWallAttackPositions[target] = attacker.transform.position; // 실제로 접근한 쪽을 파괴 링크의 바깥면으로 사용한다
+            }
+
             target.Health.ApplyDamage(new DamageRequest(null, Mathf.Max(0f, damage), target.transform.position));
         }
 
@@ -1815,14 +2662,18 @@ namespace ProjectMT.Contents.CastleRaid
             return target != null;
         }
 
-        public bool ApplyTurretDamage(CastleAssaultUnit target, float damage, Vector3 hitPoint)
+        public bool ApplyTurretDamage(
+            CastleAssaultUnit target,
+            float damage,
+            Vector3 hitPoint,
+            CastleTurretRuntime sourceTurret = null)
         {
             if (!IsRunning || target == null || !target.IsAlive || damage <= 0f)
             {
                 return false;
             }
 
-            target.ApplyDefenderDamage(damage, hitPoint);
+            target.ApplyDefenseDamage(damage, hitPoint, sourceTurret == null ? null : sourceTurret.Structure);
             return true;
         }
 
@@ -1857,7 +2708,7 @@ namespace ProjectMT.Contents.CastleRaid
                 }
 
                 var resolvedDamage = CastleTurretDamageMath.ResolveExplosionDamage(damage, radius, distance);
-                if (ApplyTurretDamage(unit, resolvedDamage, unit.TurretHitPoint))
+                if (ApplyTurretDamage(unit, resolvedDamage, unit.TurretHitPoint, sourceTurret))
                 {
                     sourceTurret?.ReportHit(resolvedDamage);
                     count++;
@@ -1988,6 +2839,7 @@ namespace ProjectMT.Contents.CastleRaid
 
             var deployedIndex = selectedUnitIndex; // 선택 해제 전에 번호 보관
             unit.Initialize(snapshot, this);
+            RegisterSequentialRouteIntent(unit, spawnPosition);
             unit.Damaged += HandleUnitDamaged;
             unit.Died += HandleUnitDied;
             activeUnits.Add(unit);
@@ -2005,6 +2857,7 @@ namespace ProjectMT.Contents.CastleRaid
         {
             unit.Damaged -= HandleUnitDamaged;
             unit.Died -= HandleUnitDied;
+            assaultCoordinator.Remove(unit.GetInstanceID());
             StartCoroutine(ReturnDeadUnitAfterFeedback(unit)); // 사망 연출이 끝난 뒤 풀 반환
             if (AllDeployedUnitsDead() && !HasRemainingDeployments()) // 추가 배치도 불가능할 때만 패배
             {
@@ -2061,6 +2914,11 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             RemoveCachedTarget(target);
+            threatResponseClaims.Remove(target);
+            if (target.HasGenerationMetadata)
+            {
+                navigationSnapshot?.NotifyDestroyed(target.PlacementId);
+            }
             if (target.BlocksNavigation)
             {
                 QueueUnitPathRefresh(target.TargetKind == CastleTargetKind.Wall); // 돌파 때는 목표 단계도 재평가
@@ -2068,7 +2926,12 @@ namespace ProjectMT.Contents.CastleRaid
 
             if (target.TargetKind == CastleTargetKind.Wall)
             {
+                plannedOuterBreachWalls.Remove(target);
                 RegisterDestroyedWall(target);
+                if (target.HasGenerationMetadata && target.WallBand == CastleWallBand.OuterPerimeter)
+                {
+                    pendingOuterBreachWallIds.Add(target.GetInstanceID());
+                }
                 StartCoroutine(CreateBreachLinkAfterCarving(target)); // Carving 제거가 반영된 뒤 양쪽 NavMesh를 찾는다
                 return;
             }
@@ -2087,11 +2950,14 @@ namespace ProjectMT.Contents.CastleRaid
         private IEnumerator CreateBreachLinkAfterCarving(CastleTarget wall)
         {
             var created = false;
+            var pendingWallId = wall == null ? 0 : wall.GetInstanceID();
             for (var attempt = 0; attempt < BreachLinkRetryLimit; attempt++)
             {
                 yield return new WaitForSeconds(0.1f);
                 if (!IsRunning || wall == null)
                 {
+                    pendingOuterBreachWallIds.Remove(pendingWallId);
+                    ReleaseRouteBreachReservation(pendingWallId);
                     yield break;
                 }
 
@@ -2108,6 +2974,9 @@ namespace ProjectMT.Contents.CastleRaid
                 }
             }
 
+            pendingOuterBreachWallIds.Remove(pendingWallId);
+            ReleaseRouteBreachReservation(pendingWallId);
+            lastWallAttackPositions.Remove(wall);
             if (created) // 살아 있는 다음 성벽을 넘지 않는 짧은 연결만 허용
             {
                 openedDefenseLayer = Mathf.Max(openedDefenseLayer, wall.WallDefenseLayer);
@@ -2186,6 +3055,7 @@ namespace ProjectMT.Contents.CastleRaid
                 yield break;
             }
 
+            routeTopologyCache.Invalidate(); // Carving 반영 후의 성 연결 상태를 한 번만 갱신
             var retarget = unitPathRetargetQueued;
             unitPathRetargetQueued = false;
             RequestUnitNavigationRefreshes(retarget);
@@ -2403,7 +3273,7 @@ namespace ProjectMT.Contents.CastleRaid
                 if ((defender.transform.position - victim.transform.position).sqrMagnitude <=
                     defenderDetectionRange * defenderDetectionRange) // 고정 Stage 수비대 호환
                 {
-                    victim.ApplyDefenderDamage(defenderDamage, victim.transform.position);
+                    victim.ApplyDefenseDamage(defenderDamage, victim.transform.position, defender);
                 }
             }
         }
@@ -2574,21 +3444,12 @@ namespace ProjectMT.Contents.CastleRaid
                 return false;
             }
 
-            if (routeEstablished && wall.HasGenerationMetadata &&
-                wall.WallBand == CastleWallBand.OuterPerimeter && !IsTargetInOpenedDistrict(wall))
-            {
-                return false; // 첫 진격로와 무관한 외곽 통로는 추가로 열지 않는다
-            }
-
             if (linkedWallIds.Contains(wall.GetInstanceID()))
             {
                 return true;
             }
 
-            var inward = CastleBreachLinkMath.ResolveInwardDirection(
-                wall.transform.position,
-                innerEntry.position,
-                wall.WallNeighborMask);
+            var inward = ResolveBreachInwardDirection(wall, true);
             if (inward.sqrMagnitude <= 0.5f)
             {
                 return false;
@@ -2674,6 +3535,87 @@ namespace ProjectMT.Contents.CastleRaid
                 Inward = inward,
                 DefenseLayer = Mathf.Max(0, wall.WallDefenseLayer)
             });
+            routeTopologyCache.Invalidate(); // 새 돌파구가 열린 순간에만 공용 경로 상태를 무효화
+            return true;
+        }
+
+        private bool CanPlanSafeBreach(CastleTarget wall)
+        {
+            if (wall == null || innerEntry == null || !wall.IsAlive)
+            {
+                return false;
+            }
+
+            var wallId = wall.GetInstanceID();
+            if (routeTopologyCache.TryGetSafeBreachPlan(wallId, out var isSafe))
+            {
+                return isSafe;
+            }
+
+            var inward = CastleBreachLinkMath.ResolveInwardDirection(
+                wall.transform.position,
+                innerEntry.position,
+                wall.WallNeighborMask);
+            isSafe = TryResolveProspectiveBreachPoints(wall, inward, out _, out _);
+            routeTopologyCache.StoreSafeBreachPlan(wallId, isSafe);
+            return isSafe;
+        }
+
+        private bool TryResolveProspectiveBreachPoints(
+            CastleTarget wall,
+            Vector3 inward,
+            out Vector3 outsidePosition,
+            out Vector3 insidePosition)
+        {
+            outsidePosition = default;
+            insidePosition = default;
+            if (wall == null || !wall.IsAlive || inward.sqrMagnitude <= 0.5f)
+            {
+                return false;
+            }
+
+            var wallHalfExtent = 0.46f;
+            if (wallBlockersByTarget.TryGetValue(wall, out var blocker))
+            {
+                wallHalfExtent = Mathf.Abs(inward.x) > 0.5f
+                    ? blocker.Bounds.extents.x
+                    : blocker.Bounds.extents.z;
+            }
+
+            var endpointDistance = Mathf.Max(BreachMinimumProbeDistance, wallHalfExtent + BreachEndpointPadding);
+            var outsideProbe = wall.transform.position - inward * endpointDistance;
+            var insideProbe = wall.transform.position + inward * endpointDistance;
+            var clearanceRadius = ResolveBreachClearanceRadius() + BreachLinkWidth * 0.5f;
+            if (TryFindAliveWallBlockingBreach(
+                    wall.transform.position,
+                    inward,
+                    outsideProbe,
+                    insideProbe,
+                    clearanceRadius,
+                    out _,
+                    wall) ||
+                !NavMesh.SamplePosition(outsideProbe, out var outside, BreachProbeRadius, NavMesh.AllAreas) ||
+                !NavMesh.SamplePosition(insideProbe, out var inside, BreachProbeRadius, NavMesh.AllAreas) ||
+                !CastleBreachLinkMath.AreEndpointsOnOppositeSides(
+                    wall.transform.position,
+                    inward,
+                    outside.position,
+                    inside.position) ||
+                Vector3.Distance(outside.position, inside.position) > BreachMaximumLinkDistance ||
+                TryFindAliveWallBlockingBreach(
+                    wall.transform.position,
+                    inward,
+                    outside.position,
+                    inside.position,
+                    clearanceRadius,
+                    out _,
+                    wall))
+            {
+                return false;
+            }
+
+            outsidePosition = outside.position;
+            insidePosition = inside.position;
             return true;
         }
 
@@ -2683,13 +3625,34 @@ namespace ProjectMT.Contents.CastleRaid
             return settings.agentRadius > 0f ? settings.agentRadius : 0.5f;
         }
 
+        private Vector3 ResolveBreachInwardDirection(CastleTarget wall, bool preferAttackApproach)
+        {
+            if (preferAttackApproach && wall != null && innerEntry != null &&
+                lastWallAttackPositions.TryGetValue(wall, out var attackPosition))
+            {
+                return CastleBreachLinkMath.ResolveInwardDirectionFromAttackApproach(
+                    wall.transform.position,
+                    innerEntry.position,
+                    attackPosition,
+                    wall.WallNeighborMask); // 실제 바깥면에서 왕궁 쪽 반대편으로 연결한다
+            }
+
+            return wall == null || innerEntry == null
+                ? Vector3.zero
+                : CastleBreachLinkMath.ResolveInwardDirection(
+                    wall.transform.position,
+                    innerEntry.position,
+                    wall.WallNeighborMask);
+        }
+
         private bool TryFindAliveWallBlockingBreach(
             Vector3 breachedWallPosition,
             Vector3 inward,
             Vector3 outside,
             Vector3 inside,
             float clearanceRadius,
-            out CastleTarget blockingWall)
+            out CastleTarget blockingWall,
+            CastleTarget ignoredWall = null)
         {
             blockingWall = null;
             var blocked = false;
@@ -2697,7 +3660,7 @@ namespace ProjectMT.Contents.CastleRaid
             for (var index = 0; index < wallBlockers.Count; index++)
             {
                 var blocker = wallBlockers[index];
-                if (!blocker.Alive || blocker.Target == null ||
+                if (!blocker.Alive || blocker.Target == null || blocker.Target == ignoredWall ||
                     !CastleTurretLineOfFireMath.IntersectsPlanarBounds(
                         outside,
                         inside,
@@ -2743,7 +3706,16 @@ namespace ProjectMT.Contents.CastleRaid
             breachEntryPoints.Clear();
             linkedWallIds.Clear();
             breachRoutes.Clear();
+            routeTopologyCache.Reset();
+            plannedOuterBreachWalls.Clear();
+            outerBreachAttemptWallIds.Clear();
+            pendingOuterBreachWallIds.Clear();
+            routeBreachLedger.Clear();
             assaultRouteStates.Clear();
+            assaultCoordinator.Clear();
+            threatResponseClaims.Clear();
+            expiredThreatResponderIds.Clear();
+            lastWallAttackPositions.Clear();
             supportClaims.Clear();
             expiredSupportClaimKeys.Clear();
             breachFrontierWalls.Clear();
@@ -2751,6 +3723,40 @@ namespace ProjectMT.Contents.CastleRaid
             hasDestroyedOuterWall = false;
             routeEstablished = false;
             openedDefenseLayer = -1;
+            strategicDecisionCursor = 0;
+        }
+
+        private void RegisterSequentialRouteIntent(CastleAssaultUnit unit, Vector3 spawnPosition)
+        {
+            if (unit == null || routePlanner == null || navigationSnapshot == null ||
+                !routePlanner.TryResolveRoute(
+                    spawnPosition,
+                    ResolveRoutePolicy(unit.AiProfile == null
+                        ? CastleRaidAiPattern.BalancedAdvance
+                        : unit.AiProfile.Pattern),
+                    out var routePlan))
+            {
+                return;
+            }
+
+            var state = GetOrCreateAssaultRouteState(unit);
+            var assignment = assaultCoordinator.RegisterSequentialSpawn(
+                unit.GetInstanceID(),
+                spawnPosition,
+                routePlan,
+                Time.time);
+            state.CohortId = assignment.CohortId;
+            state.RouteId = routePlan.RouteId;
+            state.RouteSector = routePlan.SectorId;
+            state.FirstObstaclePlacementId = routePlan.FirstObstaclePlacementId;
+            state.RouteApproachPosition = navigationSnapshot.CellToWorld(routePlan.ApproachCell);
+            state.HasRouteApproach = routePlan.HasFirstObstacle;
+            state.RouteTopologyVersion = navigationSnapshot.TopologyVersion;
+        }
+
+        private void ReleaseRouteBreachReservation(int wallInstanceId)
+        {
+            routeBreachLedger.ReleaseWall(wallInstanceId);
         }
 
         private string ResolveUnitLabel(int unitIndex)

@@ -136,7 +136,7 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             attackCooldown = attackInterval;
-            victim.ApplyDefenderDamage(attackDamage, victim.TurretHitPoint);
+            victim.ApplyDefenseDamage(attackDamage, victim.TurretHitPoint, castleTarget);
         }
 
         public void ShutdownRuntime()

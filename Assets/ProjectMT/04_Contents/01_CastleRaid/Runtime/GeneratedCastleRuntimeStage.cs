@@ -45,6 +45,7 @@ namespace ProjectMT.Contents.CastleRaid
 
         private DebugContentExit debugExit;
         private bool ownsPlaytestContext;
+        private CastleRaidNavigationSnapshot navigationSnapshot;
 
         public CastleTarget[] Targets => targets;
         public CastleDeploymentZone DeploymentZone => deploymentZone;
@@ -70,7 +71,7 @@ namespace ProjectMT.Contents.CastleRaid
                 defaultCameraSize,
                 minimumCameraSize,
                 maximumCameraSize);
-            raidController.ConfigureRuntimeStage(deploymentZone, innerEntry, targets);
+            raidController.ConfigureRuntimeStage(deploymentZone, innerEntry, targets, navigationSnapshot);
         }
 
         private IEnumerator Start()
@@ -342,7 +343,8 @@ namespace ProjectMT.Contents.CastleRaid
             float minimumSize,
             float maximumSize,
             MonsterCatalog monsterCatalog = null,
-            bool seedPlaytest = false)
+            bool seedPlaytest = false,
+            CastleRaidNavigationSnapshot stageNavigationSnapshot = null)
         {
             raidController = controller;
             cameraController = raidCamera;
@@ -360,6 +362,7 @@ namespace ProjectMT.Contents.CastleRaid
             playtestMonsterCatalog = monsterCatalog;
             buildNavigationOnAwake = true;
             initializeSeedPlaytest = seedPlaytest;
+            navigationSnapshot = stageNavigationSnapshot;
         }
 
 #if UNITY_EDITOR
@@ -378,7 +381,8 @@ namespace ProjectMT.Contents.CastleRaid
             float minimumSize,
             float maximumSize,
             MonsterCatalog monsterCatalog,
-            bool seedPlaytest = true)
+            bool seedPlaytest = true,
+            CastleRaidNavigationSnapshot stageNavigationSnapshot = null)
         {
             Configure(
                 controller,
@@ -395,7 +399,8 @@ namespace ProjectMT.Contents.CastleRaid
                 minimumSize,
                 maximumSize,
                 monsterCatalog,
-                seedPlaytest);
+                seedPlaytest,
+                stageNavigationSnapshot);
         }
 
         public void EditorPreparePreviewPresentation(

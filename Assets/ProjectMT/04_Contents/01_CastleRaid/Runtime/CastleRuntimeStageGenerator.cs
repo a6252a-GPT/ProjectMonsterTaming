@@ -229,6 +229,13 @@ namespace ProjectMT.Contents.CastleRaid
 
                 var cameraSize = displaySide * CameraSizePerWorldUnit;
                 var runtimeStage = root.AddComponent<GeneratedCastleRuntimeStage>();
+                var navigationSnapshot = new CastleRaidNavigationSnapshot(
+                    candidate.GridWidth,
+                    candidate.GridHeight,
+                    cellSize,
+                    candidate.Placements,
+                    targets,
+                    root.transform.position);
                 runtimeStage.Configure(
                     raidController,
                     cameraController,
@@ -242,7 +249,8 @@ namespace ProjectMT.Contents.CastleRaid
                     Vector2.one * displaySide,
                     cameraSize,
                     MinimumCameraSize,
-                    Mathf.Max(cameraSize, displaySide * FullMapCameraSizePerWorldUnit));
+                    Mathf.Max(cameraSize, displaySide * FullMapCameraSizePerWorldUnit),
+                    stageNavigationSnapshot: navigationSnapshot);
                 return root;
             }
             catch

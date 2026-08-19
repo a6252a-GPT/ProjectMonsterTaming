@@ -171,6 +171,13 @@ namespace ProjectMT.EditorTools.CastleBake
 
             var cameraSize = CastleGenerationScenePreview.ResolvePreviewCameraSize(candidate, cellSize);
             var runtimeStage = root.AddComponent<GeneratedCastleRuntimeStage>();
+            var navigationSnapshot = new CastleRaidNavigationSnapshot(
+                candidate.GridWidth,
+                candidate.GridHeight,
+                cellSize,
+                candidate.Placements,
+                targets,
+                root.transform.position);
             runtimeStage.EditorConfigure(
                 raidController,
                 cameraController,
@@ -186,7 +193,8 @@ namespace ProjectMT.EditorTools.CastleBake
                 MinimumCameraSize,
                 Mathf.Max(cameraSize, displaySide * FullMapCameraSizePerWorldUnit),
                 monsterCatalog,
-                true);
+                true,
+                navigationSnapshot);
             runtimeStage.EditorPreparePreviewPresentation(
                 existingStage,
                 targetCamera,

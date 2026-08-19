@@ -74,7 +74,7 @@ namespace ProjectMT.Contents.CastleRaid
                 }
                 else
                 {
-                    if (controller.ApplyTurretDamage(directTarget, attack.baseDamage, hitPoint))
+                    if (controller.ApplyTurretDamage(directTarget, attack.baseDamage, hitPoint, sourceTurret))
                     {
                         sourceTurret?.ReportHit(attack.baseDamage);
                     }
@@ -130,7 +130,7 @@ namespace ProjectMT.Contents.CastleRaid
                     ? attack.baseDamage
                     : attack.baseDamage * attack.piercingDamageRatio;
                 hitUnitIds.Add(target.GetInstanceID());
-                if (controller.ApplyTurretDamage(target, damage, hitPoint))
+                if (controller.ApplyTurretDamage(target, damage, hitPoint, sourceTurret))
                 {
                     sourceTurret?.ReportHit(damage);
                 }

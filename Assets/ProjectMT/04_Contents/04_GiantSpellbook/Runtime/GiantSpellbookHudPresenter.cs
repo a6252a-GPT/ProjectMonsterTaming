@@ -1,8 +1,14 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ProjectMT.Contents.GiantSpellbook
 {
+    public interface IBossDungeonHudSource
+    {
+        event Action<GiantSpellbookHudState> HudStateChanged;
+    }
+
     // HUD에 표시할 값을 한 번에 전달하기 위한 데이터 묶음
     public readonly struct GiantSpellbookHudState
     {
@@ -68,26 +74,29 @@ namespace ProjectMT.Contents.GiantSpellbook
         [SerializeField] private Button debugMarkStrikeButton;
         [SerializeField] private Button debugWideBurstButton;
 
+        private IBossDungeonHudSource hudSource;
         private GiantSpellbookController controller;
         private static Font runtimeKoreanFont;
 
         // Controller와 HUD를 연결한다.
         //Controller.Initialize()에서 호출
-        public void Bind(GiantSpellbookController targetController)
+        public void Bind(IBossDungeonHudSource targetController)
         {
             //기존 이벤트 구독을 먼저 해제
             Unbind();
 
-            controller = targetController;
-            if (controller != null)
+            hudSource = targetController;
+            controller = targetController as GiantSpellbookController;
+            if (hudSource != null)
             {
                 // Controller가 HudStateChanged 이벤트를 발생시키면
                 // 이 Presenter의 Render()를 실행한다.
-                controller.HudStateChanged += Render;
+                hudSource.HudStateChanged += Render;
             }
 
             SetVisible(true);
             EnsureRuntimeControls();
+            SetLegacyControlsVisible(controller != null);
             debugTimeoutButton?.onClick.RemoveListener(HandleDebugTimeout);
             debugTimeoutButton?.onClick.AddListener(HandleDebugTimeout);
             debugBasicAttackButton?.onClick.RemoveListener(HandleDebugBasicAttack);
@@ -103,19 +112,32 @@ namespace ProjectMT.Contents.GiantSpellbook
         // Controller와 HUD의 연결을 해제
         public void Unbind()
         {
-            if (controller == null)
+            if (hudSource == null)
             {
                 return;
             }
 
             // Bind()에서 등록했던 Render()를 이벤트에서 제거
-            controller.HudStateChanged -= Render; 
+            hudSource.HudStateChanged -= Render;
+            hudSource = null;
             controller = null;
             debugTimeoutButton?.onClick.RemoveListener(HandleDebugTimeout);
             debugBasicAttackButton?.onClick.RemoveListener(HandleDebugBasicAttack);
             debugHandSlamButton?.onClick.RemoveListener(HandleDebugHandSlam);
             debugMarkStrikeButton?.onClick.RemoveListener(HandleDebugMarkStrike);
             debugWideBurstButton?.onClick.RemoveListener(HandleDebugWideBurst);
+        }
+
+        private void SetLegacyControlsVisible(bool visible)
+        {
+            scoreValue?.gameObject.SetActive(visible);
+            timerValue?.gameObject.SetActive(visible);
+            comboScoreValue?.gameObject.SetActive(visible);
+            debugTimeoutButton?.gameObject.SetActive(visible);
+            debugBasicAttackButton?.gameObject.SetActive(visible);
+            debugHandSlamButton?.gameObject.SetActive(visible);
+            debugMarkStrikeButton?.gameObject.SetActive(visible);
+            debugWideBurstButton?.gameObject.SetActive(visible);
         }
         // HUD 전체의 표시 여부
         public void SetVisible(bool visible)

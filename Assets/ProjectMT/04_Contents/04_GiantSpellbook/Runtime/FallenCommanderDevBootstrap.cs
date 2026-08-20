@@ -21,9 +21,9 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            //ï¿½ï¿½ï¿½ß¿ï¿½ ï¿½â±¸
+            //°³¹ß¿ë Ãâ±¸
             debugExit = new DebugContentExit();
-            //ï¿½ï¿½ï¿½ï¿½ ï¿½Ìºï¿½Æ® ï¿½ï¿½ï¿½ï¿½
+            //Á¾·á ÀÌº¥Æ® ±¸µ¶
             debugExit.Exited += HandleExit;
 
             var startData = new FallenCommanderStartData();
@@ -33,7 +33,7 @@ namespace ProjectMT.Contents.FallenCommander
                 "dev_seed",
                 ContentRunMode.SeedTest);
 
-            //Controller ï¿½Ê±ï¿½È­ï¿½ï¿½ ï¿½ï¿½ï¿½Ø½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½
+            //Controller ÃÊ±âÈ­¿ë ÄÁÅØ½ºÆ® »ý¼º
             var context = new ContentContext(
                 runInfo,
                 startData,

@@ -13,6 +13,7 @@ namespace ProjectMT.Contents.FallenCommander
             MarkStrike,
             WideBurst,
             LineStrike,
+            BreakWideBurst,
             Broken,
             Dead
         }
@@ -64,6 +65,9 @@ namespace ProjectMT.Contents.FallenCommander
 
         // 실제 공격 반지름
         private float markStrikeRadius;
+        private float telegraphStartRadius;
+        private float telegraphEndRadius;
+        private float telegraphDuration;
 
         // 현재 공격이 끝날 때까지 남은 시간
         private float stateTimeRemaining;
@@ -168,6 +172,7 @@ namespace ProjectMT.Contents.FallenCommander
                 case BossState.MarkStrike:
                 case BossState.WideBurst:
                 case BossState.LineStrike:
+                case BossState.BreakWideBurst:
                     TickAttack(deltaTime);
                     break;
 
@@ -179,7 +184,14 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void EnterBroken()
         {
-            if (!isActive || currentState == BossState.Broken)
+            EnterBroken(false);
+        }
+
+        public void EnterBroken(bool triggerWideBurst)
+        {
+            if (!isActive ||
+                currentState == BossState.Broken ||
+                currentState == BossState.BreakWideBurst)
             {
                 return;
             }
@@ -196,15 +208,33 @@ namespace ProjectMT.Contents.FallenCommander
             bossActor.ForceTarget(
                 bossActor.Health,
                 float.PositiveInfinity);
+
+            if (triggerWideBurst)
+            {
+                BeginBreakWideBurst();
+            }
         }
 
-        public void ExitBroken()
+        public void ForceWideBurstDuringBreak()
         {
             if (!isActive || currentState != BossState.Broken)
             {
                 return;
             }
 
+            BeginBreakWideBurst();
+        }
+
+        public void ExitBroken()
+        {
+            if (!isActive ||
+                currentState != BossState.Broken &&
+                currentState != BossState.BreakWideBurst)
+            {
+                return;
+            }
+
+            DestroyActiveTelegraph();
             attackCooldownRemaining = attackInterval;
             currentState = BossState.Idle;
             animationPresenter?.StopPlayback();
@@ -289,6 +319,9 @@ namespace ProjectMT.Contents.FallenCommander
             breakMotion = null;
             breakMotionDuration = 0f;
             markStrikeTelegraphPrefab = null;
+            telegraphStartRadius = 0f;
+            telegraphEndRadius = 0f;
+            telegraphDuration = 0f;
             commanderStunChanged = null;
             attackCooldownRemaining = 0f;
             commanderStunRemaining = 0f;
@@ -412,6 +445,30 @@ namespace ProjectMT.Contents.FallenCommander
             ApplyTelegraphColor(activeTelegraph, LineTelegraphColor);
         }
 
+        private void BeginBreakWideBurst()
+        {
+            var position = bossActor.transform.position;
+            position.y += 0.02f;
+            markStrikePosition = position;
+            stateTimeRemaining = wideBurstCastTime;
+            currentState = BossState.BreakWideBurst;
+            bossFacingSmoother.SetTrackingEnabled(false);
+            bossActor.ForceTarget(
+                bossActor.Health,
+                float.PositiveInfinity);
+            DestroyActiveTelegraph();
+
+            activeTelegraph = Object.Instantiate(
+                markStrikeTelegraphPrefab,
+                position,
+                Quaternion.identity);
+            telegraphStartRadius = wideBurstStartRadius;
+            telegraphEndRadius = wideBurstRadius;
+            telegraphDuration = wideBurstCastTime;
+            SetTelegraphCircleRadius(wideBurstStartRadius);
+            ApplyTelegraphColor(activeTelegraph, WideTelegraphColor);
+        }
+
         private void BeginCircleAttack(
             BossState state,
             Vector3 position,
@@ -432,10 +489,12 @@ namespace ProjectMT.Contents.FallenCommander
                 markStrikeTelegraphPrefab,
                 position,
                 Quaternion.identity);
-            var scale = activeTelegraph.transform.localScale;
-            scale.x = radius * 2f;
-            scale.z = radius * 2f;
-            activeTelegraph.transform.localScale = scale;
+            telegraphStartRadius = Mathf.Min(
+                radius,
+                Mathf.Max(0.25f, radius * 0.25f));
+            telegraphEndRadius = radius;
+            telegraphDuration = castTime;
+            SetTelegraphCircleRadius(telegraphStartRadius);
             ApplyTelegraphColor(activeTelegraph, telegraphColor);
         }
 
@@ -444,13 +503,14 @@ namespace ProjectMT.Contents.FallenCommander
             stateTimeRemaining =
                 Mathf.Max(0f, stateTimeRemaining - deltaTime);
 
-            if (currentState == BossState.WideBurst &&
-                activeTelegraph != null &&
-                wideBurstCastTime > 0f)
+            if (activeTelegraph != null &&
+                telegraphDuration > 0f &&
+                telegraphEndRadius > 0f &&
+                stateTimeRemaining >= 0f)
             {
-                var progress = 1f - stateTimeRemaining / wideBurstCastTime;
+                var progress = 1f - stateTimeRemaining / telegraphDuration;
                 SetTelegraphCircleRadius(
-                    Mathf.Lerp(wideBurstStartRadius, wideBurstRadius, progress));
+                    Mathf.Lerp(telegraphStartRadius, telegraphEndRadius, progress));
             }
 
             if (stateTimeRemaining > 0f)
@@ -477,6 +537,8 @@ namespace ProjectMT.Contents.FallenCommander
                 }
             }
 
+            var keepBrokenAfterAttack =
+                currentState == BossState.BreakWideBurst;
             var motion = GetCurrentMotion();
             animationPresenter.Play(
                 motion?.CastMotion,
@@ -484,6 +546,18 @@ namespace ProjectMT.Contents.FallenCommander
                 durationOverride: motion == null ? 0f : motion.CastMotionDuration);
 
             DestroyActiveTelegraph();
+
+            if (keepBrokenAfterAttack)
+            {
+                stateTimeRemaining = 0f;
+                currentState = BossState.Broken;
+                bossFacingSmoother.SetTrackingEnabled(false);
+                bossActor.ForceTarget(
+                    bossActor.Health,
+                    float.PositiveInfinity);
+                return;
+            }
+
             attackCooldownRemaining = attackInterval;
             currentState = BossState.Idle;
             ResumeBossTracking();
@@ -506,7 +580,8 @@ namespace ProjectMT.Contents.FallenCommander
 
             var radius = currentState == BossState.HandSlam
                 ? basicAttackRadius
-                : currentState == BossState.WideBurst
+                : currentState == BossState.WideBurst ||
+                    currentState == BossState.BreakWideBurst
                     ? wideBurstRadius
                     : markStrikeRadius;
             return IsCommanderInsideCircle(radius);
@@ -518,7 +593,8 @@ namespace ProjectMT.Contents.FallenCommander
                 ? basicAttackMotion == null ? 0f : basicAttackMotion.StunDuration
                 : currentState == BossState.MarkStrike
                     ? markStrikeStunDuration
-                    : currentState == BossState.WideBurst
+                    : currentState == BossState.WideBurst ||
+                        currentState == BossState.BreakWideBurst
                         ? wideBurstStunDuration
                         : currentState == BossState.LineStrike
                             ? lineStrikeStunDuration
@@ -531,7 +607,8 @@ namespace ProjectMT.Contents.FallenCommander
                 ? basicAttackMotion
                 : currentState == BossState.MarkStrike
                     ? markStrikeMotion
-                    : currentState == BossState.WideBurst
+                    : currentState == BossState.WideBurst ||
+                        currentState == BossState.BreakWideBurst
                         ? wideBurstMotion
                         : lineStrikeMotion;
         }
@@ -623,6 +700,9 @@ namespace ProjectMT.Contents.FallenCommander
 
             Object.Destroy(activeTelegraph);
             activeTelegraph = null;
+            telegraphStartRadius = 0f;
+            telegraphEndRadius = 0f;
+            telegraphDuration = 0f;
         }
 
         private void SetTelegraphCircleRadius(float radius)

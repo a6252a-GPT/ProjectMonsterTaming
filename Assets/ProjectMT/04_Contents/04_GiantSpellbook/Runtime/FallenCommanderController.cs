@@ -23,8 +23,6 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField] private CommanderMoveController commanderMove;
         [SerializeField, Min(1)] private int commanderMaxHearts = 5;
         [SerializeField] private Sprite commanderHeartSprite;
-        [SerializeField] private AnimationClip commanderStunMotion;
-        [SerializeField] private AnimationClip commanderDeathMotion;
 
         [Header("Boss")]
         [SerializeField] private FallenCommanderBossConfig bossConfig;
@@ -45,7 +43,6 @@ namespace ProjectMT.Contents.FallenCommander
         private FallenCommanderBossFacingSmoother bossFacingSmoother;
         private FallenCommanderBossAnimationPresenter bossAnimationPresenter;
         private FallenCommanderBossDeathPresentation bossDeathPresentation;
-        private FallenCommanderStunPresenter commanderStunPresenter;
         private FallenCommanderEntryPresenter entryPresenter;
         private FallenCommanderResultPresenter resultPresenter;
         private ICommanderSkillContentBridge commanderSkillBridge;
@@ -57,6 +54,8 @@ namespace ProjectMT.Contents.FallenCommander
         private int score;
         private bool isFinishing;
         private Coroutine deathRoutine;
+        private bool hasTriggeredHealthThresholdWideBurst70;
+        private bool hasTriggeredHealthThresholdWideBurst40;
 
         private const float BreakGaugeDamageScale = 5f;
 
@@ -99,7 +98,6 @@ namespace ProjectMT.Contents.FallenCommander
             commanderMove.SetInputEnabled(true);
 
             InitializeCommanderHealth();
-            InitializeCommanderStunPresenter();
             SpawnBoss();
             InitializeStateMachine();
             ConfigureCommanderSkills();
@@ -134,9 +132,6 @@ namespace ProjectMT.Contents.FallenCommander
 
             bossDeathPresentation?.Release();
             bossDeathPresentation = null;
-
-            commanderStunPresenter?.Release();
-            commanderStunPresenter = null;
 
             if (entryPresenter != null)
             {
@@ -254,22 +249,6 @@ namespace ProjectMT.Contents.FallenCommander
             commanderHealth = null;
         }
 
-        private void InitializeCommanderStunPresenter()
-        {
-            commanderStunPresenter =
-                commanderRoot.GetComponent<FallenCommanderStunPresenter>();
-
-            if (commanderStunPresenter == null)
-            {
-                commanderStunPresenter =
-                    commanderRoot.AddComponent<FallenCommanderStunPresenter>();
-            }
-
-            commanderStunPresenter.Configure(
-                commanderRoot.transform,
-                commanderStunMotion);
-        }
-
         private void SpawnBoss()
         {
             var stats = new UnitStatsSnapshot
@@ -365,18 +344,9 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void HandleCommanderStunChanged(bool isStunned)
         {
-            commanderStunPresenter?.SetStunned(isStunned);
-
-            if (isStunned)
-            {
-                commanderMove?.SetInputEnabled(false);
-                return;
-            }
-
-            if (IsRunning)
-            {
-                commanderMove?.SetInputEnabled(true);
-            }
+            Debug.Log(
+                $"군단장 기절 : {(isStunned ? "시작" : "해제")}",
+                this);
         }
 
         private void ConfigureCommanderSkills()
@@ -415,12 +385,24 @@ namespace ProjectMT.Contents.FallenCommander
 
             score += Mathf.CeilToInt(report.AppliedDamage);
 
+            if (TryTriggerHealthThresholdWideBurst())
+            {
+                if (isBroken)
+                {
+                    stateMachine?.ForceWideBurstDuringBreak();
+                }
+                else
+                {
+                    StartBreak(true);
+                }
+            }
+
             if (!isBroken && bossActor.IsAlive)
             {
                 var breakGaugeDamage = bossConfig.BreakGaugePerHit *
                     bossConfig.BreakGaugeAttackPowerMultiplier *
                     BreakGaugeDamageScale *
-                    GetHealthPhaseBreakGaugeMultiplier();
+                    GetHealthThresholdBreakGaugeMultiplier();
 
                 currentBreakGauge = Mathf.Min(
                     bossConfig.MaxBreakGauge,
@@ -428,16 +410,18 @@ namespace ProjectMT.Contents.FallenCommander
 
                 if (currentBreakGauge >= bossConfig.MaxBreakGauge)
                 {
-                    StartBreak();
+                    StartBreak(true);
                 }
             }
 
             PublishHudState();
         }
 
-        private float GetHealthPhaseBreakGaugeMultiplier()
+        private float GetHealthThresholdBreakGaugeMultiplier()
         {
-            if (bossActor == null || bossActor.Health.MaxHealth <= 0f)
+            if (bossActor == null ||
+                !bossActor.IsAlive ||
+                bossActor.Health.MaxHealth <= 0f)
             {
                 return 1f;
             }
@@ -458,7 +442,36 @@ namespace ProjectMT.Contents.FallenCommander
             return 1f;
         }
 
-        private void StartBreak()
+        private bool TryTriggerHealthThresholdWideBurst()
+        {
+            if (bossActor == null ||
+                !bossActor.IsAlive ||
+                bossActor.Health.MaxHealth <= 0f)
+            {
+                return false;
+            }
+
+            var healthRatio =
+                bossActor.Health.CurrentHealth / bossActor.Health.MaxHealth;
+
+            if (healthRatio <= bossConfig.BreakGaugePhaseThreeHealthRatio &&
+                !hasTriggeredHealthThresholdWideBurst40)
+            {
+                hasTriggeredHealthThresholdWideBurst40 = true;
+                return true;
+            }
+
+            if (healthRatio <= bossConfig.BreakGaugePhaseTwoHealthRatio &&
+                !hasTriggeredHealthThresholdWideBurst70)
+            {
+                hasTriggeredHealthThresholdWideBurst70 = true;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void StartBreak(bool triggerWideBurst)
         {
             if (!IsRunning || isBroken)
             {
@@ -467,7 +480,7 @@ namespace ProjectMT.Contents.FallenCommander
 
             isBroken = true;
             breakRemainingTime = bossConfig.BreakDuration;
-            stateMachine?.EnterBroken();
+            stateMachine?.EnterBroken(triggerWideBurst);
             PublishHudState();
         }
 
@@ -490,6 +503,8 @@ namespace ProjectMT.Contents.FallenCommander
             currentBreakGauge = 0f;
             breakRemainingTime = 0f;
             isBroken = false;
+            hasTriggeredHealthThresholdWideBurst70 = false;
+            hasTriggeredHealthThresholdWideBurst40 = false;
         }
 
         private void InitializeHud()
@@ -558,7 +573,7 @@ namespace ProjectMT.Contents.FallenCommander
         {
             PublishHudState();
             Debug.Log(
-                $"Commander Hearts: {report.RemainingHealth} / {commanderHealth.MaxHealth}",
+                $"군단장 체력: {report.RemainingHealth} / {commanderHealth.MaxHealth}",
                 this);
         }
 
@@ -566,7 +581,7 @@ namespace ProjectMT.Contents.FallenCommander
         {
             BeginDeathSequence(
                 ContentOutcome.Fail,
-                commanderDeathMotion,
+                null,
                 true);
         }
 
@@ -697,7 +712,9 @@ namespace ProjectMT.Contents.FallenCommander
 
             if (isCommanderDeath)
             {
-                commanderStunPresenter?.PlayDeath(motion);
+                Debug.Log(
+                    "Fallen Commander death request: waiting for commander animation API.",
+                    this);
             }
             else
             {

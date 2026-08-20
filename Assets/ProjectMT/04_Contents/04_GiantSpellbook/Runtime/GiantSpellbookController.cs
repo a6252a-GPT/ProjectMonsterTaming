@@ -11,7 +11,7 @@ using UnityEngine.UI;
 namespace ProjectMT.Contents.GiantSpellbook
 {
     [DisallowMultipleComponent]
-    public sealed class GiantSpellbookController : MonoBehaviour, IContentController // 군단장 대 보스 1:1 전투 총괄
+    public sealed class GiantSpellbookController : MonoBehaviour, IContentController, IBossDungeonHudSource, IBossDungeonTimeoutController // 군단장 대 보스 1:1 전투 총괄
     {
         [SerializeField] private CombatWorld combatWorld; // UnitActor 생성·타깃 탐색·공격 Tick·정리를 맡는 공용 전투 공간
         [SerializeField] private GameObject exampleEnemyPrefab; // UnitActor가 붙은 팀원 참고용 임시 적 Prefab
@@ -52,7 +52,6 @@ namespace ProjectMT.Contents.GiantSpellbook
         private UnitActor bossActor; // 생성된 보스를 기억하고 사망 이벤트를 관리
         private ICommanderSkillContentBridge commanderSkillBridge;
         private float difficultyMultiplier = 1f; // 선택 단계에 따른 보스 체력 배율
-        private Quaternion bossFacingRotation;
 
         private float currentBreakGauge; // 내부 판정용으로 현재까지 누적된 브레이크 공격량
 
@@ -141,17 +140,11 @@ namespace ProjectMT.Contents.GiantSpellbook
 
             ConfigureStateMachine();
             ConfigureCommanderSkills();
-            hudPresenter?.Bind(this);
+            hudPresenter?.Bind(
+                this,
+                context.RunInfo.RunMode == ContentRunMode.SeedTest);
             PublishHudState();
 
-        }
-
-        private void LateUpdate()
-        {
-            if (IsRunning && bossActor != null)
-            {
-                bossActor.transform.rotation = bossFacingRotation;
-            }
         }
 
         private void Update()
@@ -317,8 +310,8 @@ namespace ProjectMT.Contents.GiantSpellbook
                 "giant_spellbook_example_enemy",
                 stats,
                 UnitTeam.Enemy,
-                canMove: false, // 고정형 보스이므로 공용 추적 이동을 사용하지 않는다.
-                canAttack: false, // 공격은 추후 보스 전용 패턴에서 실행한다.
+                canMove: true,
+                canAttack: true,
                 visualTint: new Color(1f, 0.65f, 0.65f));
             bossActor = combatWorld.SpawnUnit(
                 exampleEnemyPrefab,
@@ -332,7 +325,6 @@ namespace ProjectMT.Contents.GiantSpellbook
                 return;
             }
 
-            bossFacingRotation = bossActor.transform.rotation;
             bossActor.Health.Damaged += HandleBossDamaged;// 보스 피해 이벤트 구독
             bossActor.Died += HandleBossDied; // 보스 사망 이벤트 구독
 

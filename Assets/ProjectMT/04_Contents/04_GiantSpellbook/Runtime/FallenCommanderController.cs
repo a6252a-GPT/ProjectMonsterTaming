@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Contents.GiantSpellbook;
 using ProjectMT.Shared.CommanderSkill;
@@ -10,7 +11,7 @@ using UnityEngine;
 namespace ProjectMT.Contents.FallenCommander
 {
     [DisallowMultipleComponent]
-    public sealed class FallenCommanderController : MonoBehaviour, IContentController, IBossDungeonHudSource
+    public sealed class FallenCommanderController : MonoBehaviour, IContentController, IBossDungeonHudSource, IBossDungeonTimeoutController, IBossDungeonBossKillController
     {
         [Header("Battle")]
         [SerializeField] private CombatWorld combatWorld;
@@ -21,45 +22,46 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField] private GameObject commanderRoot;
         [SerializeField] private CommanderMoveController commanderMove;
         [SerializeField, Min(1)] private int commanderMaxHearts = 5;
+        [SerializeField] private Sprite commanderHeartSprite;
+        [SerializeField] private AnimationClip commanderStunMotion;
+        [SerializeField] private AnimationClip commanderDeathMotion;
 
         [Header("Boss")]
-        [SerializeField, Min(0.1f)] private float bossAttackInterval = 2f;
-        [SerializeField, Min(0.1f)] private float bossAttackRange = 8f;
-        [SerializeField, Min(1f)] private float bossTurnSpeed = 90f;
+        [SerializeField] private FallenCommanderBossConfig bossConfig;
 
         // 바닥에 보여줄 공격 범위 프리팹
         [Header("Mark Strike")]
-        [SerializeField] private GameObject markStrikeTelegraphPrefab;
-        [SerializeField, Min(0.1f)] private float markStrikeCastTime = 3f;
-        [SerializeField, Min(0.1f)] private float markStrikeRadius = 1.5f;
-        [SerializeField, Min(0.1f)] private float markStrikeStunDuration = 3f;
 
-        [Header("Break System")]
-        [SerializeField, Min(1f)] private float maxBreakGauge = 100f;
-        [SerializeField, Min(0.1f)] private float breakGaugePerHit = 10f;
-        [SerializeField, Range(0.01f, 1f)] private float breakGaugeAttackPowerMultiplier = 0.25f;
-        [SerializeField, Range(0.01f, 1f)] private float breakGaugePhaseTwoHealthRatio = 0.7f;
-        [SerializeField, Range(0.01f, 1f)] private float breakGaugePhaseThreeHealthRatio = 0.4f;
-        [SerializeField, Range(0.01f, 1f)] private float breakGaugePhaseTwoMultiplier = 0.75f;
-        [SerializeField, Range(0.01f, 1f)] private float breakGaugePhaseThreeMultiplier = 0.5f;
-        [SerializeField, Min(0.1f)] private float breakDuration = 5f;
-        [SerializeField, Min(1f)] private float breakDamageMultiplier = 2f;
+
+        [Header("Dungeon")]
+        [SerializeField] private string dungeonName = "타락한 과거의 군단장";
+        [SerializeField, Min(1)] private int dungeonStage = 1;
+        [SerializeField, Min(1f)] private float timeLimitSeconds = 80f;
 
         private ContentContext context;
         private UnitActor bossActor;
         private HealthComponent commanderHealth;
         private FallenCommanderBossStateMachine stateMachine;
         private FallenCommanderBossFacingSmoother bossFacingSmoother;
+        private FallenCommanderBossAnimationPresenter bossAnimationPresenter;
+        private FallenCommanderBossDeathPresentation bossDeathPresentation;
+        private FallenCommanderStunPresenter commanderStunPresenter;
+        private FallenCommanderEntryPresenter entryPresenter;
+        private FallenCommanderResultPresenter resultPresenter;
         private ICommanderSkillContentBridge commanderSkillBridge;
         private GiantSpellbookHudPresenter hudPresenter;
         private float currentBreakGauge;
         private float breakRemainingTime;
         private bool isBroken;
+        private float remainingTime;
+        private int score;
+        private bool isFinishing;
+        private Coroutine deathRoutine;
 
         private const float BreakGaugeDamageScale = 5f;
 
         private float RemainingBreakGauge =>
-            Mathf.Max(0f, maxBreakGauge - currentBreakGauge);
+            Mathf.Max(0f, bossConfig.MaxBreakGauge - currentBreakGauge);
 
         public bool IsRunning { get; private set; }
         public event Action<GiantSpellbookHudState> HudStateChanged;
@@ -73,11 +75,31 @@ namespace ProjectMT.Contents.FallenCommander
 
             ValidateReferences();
 
+            entryPresenter = FallenCommanderEntryPresenter.Create(transform);
+            entryPresenter.Show(
+                dungeonName,
+                dungeonStage,
+                BeginBattle,
+                CancelEntry);
+        }
+
+        private void BeginBattle()
+        {
+            if (context == null || IsRunning)
+            {
+                return;
+            }
+
+            remainingTime = timeLimitSeconds;
+            score = 0;
+            isFinishing = false;
+
             commanderRoot.SetActive(true);
             commanderMove.ResetToInitialPosition();
             commanderMove.SetInputEnabled(true);
 
             InitializeCommanderHealth();
+            InitializeCommanderStunPresenter();
             SpawnBoss();
             InitializeStateMachine();
             ConfigureCommanderSkills();
@@ -87,14 +109,46 @@ namespace ProjectMT.Contents.FallenCommander
             PublishHudState();
         }
 
+        private void CancelEntry()
+        {
+            context?.Exit.Cancel();
+        }
+
         public void Shutdown()
         {
             IsRunning = false;
+
+            if (deathRoutine != null)
+            {
+                StopCoroutine(deathRoutine);
+                deathRoutine = null;
+            }
 
             ShutdownCommanderSkills();
 
             stateMachine?.Shutdown();
             stateMachine = null;
+
+            bossAnimationPresenter?.Stop();
+            bossAnimationPresenter = null;
+
+            bossDeathPresentation?.Release();
+            bossDeathPresentation = null;
+
+            commanderStunPresenter?.Release();
+            commanderStunPresenter = null;
+
+            if (entryPresenter != null)
+            {
+                Destroy(entryPresenter.gameObject);
+                entryPresenter = null;
+            }
+
+            if (resultPresenter != null)
+            {
+                Destroy(resultPresenter.gameObject);
+                resultPresenter = null;
+            }
 
             bossFacingSmoother?.Shutdown();
             bossFacingSmoother = null;
@@ -130,6 +184,13 @@ namespace ProjectMT.Contents.FallenCommander
 
             stateMachine?.Tick(Time.deltaTime);
 
+            remainingTime = Mathf.Max(0f, remainingTime - Time.deltaTime);
+            if (remainingTime <= 0f)
+            {
+                Finish(ContentOutcome.Fail);
+                return;
+            }
+
             if (isBroken)
             {
                 breakRemainingTime = Mathf.Max(
@@ -152,7 +213,8 @@ namespace ProjectMT.Contents.FallenCommander
                 bossSpawnPoint == null ||
                 commanderRoot == null ||
                 commanderMove == null ||
-                markStrikeTelegraphPrefab == null)
+                bossConfig == null ||
+                bossConfig.MarkStrikeTelegraphPrefab == null)
             {
                 throw new InvalidOperationException(
                     "Fallen Commander references are missing.");
@@ -190,6 +252,22 @@ namespace ProjectMT.Contents.FallenCommander
             commanderHealth = null;
         }
 
+        private void InitializeCommanderStunPresenter()
+        {
+            commanderStunPresenter =
+                commanderRoot.GetComponent<FallenCommanderStunPresenter>();
+
+            if (commanderStunPresenter == null)
+            {
+                commanderStunPresenter =
+                    commanderRoot.AddComponent<FallenCommanderStunPresenter>();
+            }
+
+            commanderStunPresenter.Configure(
+                commanderRoot.transform,
+                commanderStunMotion);
+        }
+
         private void SpawnBoss()
         {
             var stats = new UnitStatsSnapshot
@@ -198,7 +276,7 @@ namespace ProjectMT.Contents.FallenCommander
                 damage = 1f,
                 defense = 10f,
                 moveSpeed = 1.6f,
-                attackRange = bossAttackRange,
+                attackRange = bossConfig.AttackRange,
                 attackInterval = 1f,
                 projectileSpeed = 0f,
                 ranged = false,
@@ -228,6 +306,15 @@ namespace ProjectMT.Contents.FallenCommander
             bossActor.Died += HandleBossDied;
             bossActor.Health.Damaged += HandleBossDamaged;
 
+            bossAnimationPresenter =
+                bossActor.GetComponent<FallenCommanderBossAnimationPresenter>();
+            if (bossAnimationPresenter == null)
+            {
+                bossAnimationPresenter =
+                    bossActor.gameObject.AddComponent<FallenCommanderBossAnimationPresenter>();
+            }
+            bossAnimationPresenter.Configure(bossActor.transform);
+
             // 군단장 강제 타깃 지정
             bossActor.ForceTarget(
                 commanderHealth,
@@ -249,7 +336,7 @@ namespace ProjectMT.Contents.FallenCommander
 
             bossFacingSmoother.Configure(
                 commanderRoot.transform,
-                bossTurnSpeed);
+                bossConfig.TurnSpeed);
         }
 
         private void InitializeStateMachine()
@@ -261,17 +348,23 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor,
                 commanderRoot.transform,
                 commanderHealth,
-                bossAttackInterval,
-                markStrikeTelegraphPrefab,
-                markStrikeCastTime,
-                markStrikeRadius,
-                markStrikeStunDuration,
+                bossConfig.AttackInterval,
+                bossAnimationPresenter,
+                bossConfig.BreakMotion,
+                bossConfig.BreakMotionDuration,
+                bossConfig.BasicAttack,
+                bossConfig.MarkStrikeTelegraphPrefab,
+                bossConfig.MarkStrike,
+                bossConfig.WideBurst,
+                bossConfig.LineStrike,
                 HandleCommanderStunChanged,
                 bossFacingSmoother);
         }
 
         private void HandleCommanderStunChanged(bool isStunned)
         {
+            commanderStunPresenter?.SetStunned(isStunned);
+
             if (isStunned)
             {
                 commanderMove?.SetInputEnabled(false);
@@ -302,7 +395,7 @@ namespace ProjectMT.Contents.FallenCommander
                 () => !IsRunning ||
                     commanderMove == null ||
                     !commanderMove.IsInputEnabled,
-                () => isBroken ? breakDamageMultiplier : 1f);
+                () => isBroken ? bossConfig.BreakDamageMultiplier : 1f);
         }
 
         private void ShutdownCommanderSkills()
@@ -318,18 +411,20 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
+            score += Mathf.CeilToInt(report.AppliedDamage);
+
             if (!isBroken && bossActor.IsAlive)
             {
-                var breakGaugeDamage = breakGaugePerHit *
-                    breakGaugeAttackPowerMultiplier *
+                var breakGaugeDamage = bossConfig.BreakGaugePerHit *
+                    bossConfig.BreakGaugeAttackPowerMultiplier *
                     BreakGaugeDamageScale *
                     GetHealthPhaseBreakGaugeMultiplier();
 
                 currentBreakGauge = Mathf.Min(
-                    maxBreakGauge,
+                    bossConfig.MaxBreakGauge,
                     currentBreakGauge + breakGaugeDamage);
 
-                if (currentBreakGauge >= maxBreakGauge)
+                if (currentBreakGauge >= bossConfig.MaxBreakGauge)
                 {
                     StartBreak();
                 }
@@ -348,14 +443,14 @@ namespace ProjectMT.Contents.FallenCommander
             var healthRatio =
                 bossActor.Health.CurrentHealth / bossActor.Health.MaxHealth;
 
-            if (healthRatio <= breakGaugePhaseThreeHealthRatio)
+            if (healthRatio <= bossConfig.BreakGaugePhaseThreeHealthRatio)
             {
-                return breakGaugePhaseThreeMultiplier;
+                return bossConfig.BreakGaugePhaseThreeMultiplier;
             }
 
-            if (healthRatio <= breakGaugePhaseTwoHealthRatio)
+            if (healthRatio <= bossConfig.BreakGaugePhaseTwoHealthRatio)
             {
-                return breakGaugePhaseTwoMultiplier;
+                return bossConfig.BreakGaugePhaseTwoMultiplier;
             }
 
             return 1f;
@@ -369,7 +464,7 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             isBroken = true;
-            breakRemainingTime = breakDuration;
+            breakRemainingTime = bossConfig.BreakDuration;
             stateMachine?.EnterBroken();
             PublishHudState();
         }
@@ -408,7 +503,10 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            hudPresenter.Bind(this);
+            hudPresenter.SetCommanderHeartSprite(commanderHeartSprite);
+            hudPresenter.Bind(
+                this,
+                context.RunInfo.RunMode == ContentRunMode.SeedTest);
         }
 
         private void ReleaseHud()
@@ -434,19 +532,29 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor.Health.CurrentHealth,
                 bossActor.Health.MaxHealth,
                 RemainingBreakGauge,
-                maxBreakGauge,
+                bossConfig.MaxBreakGauge,
                 isBroken,
-                0,
-                0f,
+                score,
+                remainingTime,
                 0,
                 0,
                 0f,
                 breakRemainingTime,
-                breakDuration));
+                bossConfig.BreakDuration,
+                commanderHealth == null
+                    ? 0
+                    : Mathf.CeilToInt(commanderHealth.CurrentHealth),
+                commanderMaxHearts,
+                stateMachine != null && stateMachine.IsCommanderStunned,
+                stateMachine == null
+                    ? 0f
+                    : stateMachine.CommanderStunRemainingTime,
+                bossConfig.MarkStrike.StunDuration));
         }
 
         private void HandleCommanderDamaged(DamageReport report)
         {
+            PublishHudState();
             Debug.Log(
                 $"Commander Hearts: {report.RemainingHealth} / {commanderHealth.MaxHealth}",
                 this);
@@ -454,7 +562,10 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void HandleCommanderDied(DamageReport report)
         {
-            Finish(ContentOutcome.Fail);
+            BeginDeathSequence(
+                ContentOutcome.Fail,
+                commanderDeathMotion,
+                true);
         }
 
         private void HandleBossDied(UnitActor actor)
@@ -464,16 +575,78 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            Finish(ContentOutcome.Complete);
+            BeginDeathSequence(
+                ContentOutcome.Complete,
+                bossConfig.DeathMotion,
+                false);
         }
 
-        private void Finish(ContentOutcome outcome)
+        public void DebugTimeout()
         {
-            if (!IsRunning)
+            if (IsRunning)
+            {
+                Finish(ContentOutcome.Fail);
+            }
+        }
+
+        public void DebugKillBoss()
+        {
+            if (!IsRunning || bossActor == null || !bossActor.IsAlive)
             {
                 return;
             }
 
+            bossActor.Health.ApplyDamage(new DamageRequest(
+                null,
+                bossActor.Health.CurrentHealth,
+                bossActor.transform.position));
+        }
+
+        public bool PreviewBossAttack(FallenCommanderAttackData attack)
+        {
+            if (!Application.isPlaying ||
+                bossActor == null ||
+                bossAnimationPresenter == null ||
+                attack == null)
+            {
+                return false;
+            }
+
+            bossAnimationPresenter.Configure(bossActor.transform);
+            bossAnimationPresenter.PlaySequence(
+                attack.PreCastMotion,
+                attack.PreCastMotionDuration,
+                attack.CastMotion,
+                attack.CastMotionDuration);
+            return true;
+        }
+
+        public bool PreviewBossMotion(AnimationClip motion, float duration)
+        {
+            if (!Application.isPlaying ||
+                bossActor == null ||
+                bossAnimationPresenter == null ||
+                motion == null)
+            {
+                return false;
+            }
+
+            bossAnimationPresenter.Configure(bossActor.transform);
+            bossAnimationPresenter.Play(
+                motion,
+                stopAfterMotion: true,
+                durationOverride: duration);
+            return true;
+        }
+
+        private void Finish(ContentOutcome outcome)
+        {
+            if (!IsRunning || isFinishing)
+            {
+                return;
+            }
+
+            isFinishing = true;
             IsRunning = false;
 
             ShutdownCommanderSkills();
@@ -481,7 +654,88 @@ namespace ProjectMT.Contents.FallenCommander
             commanderMove?.SetInputEnabled(false);
             ReleaseHud();
 
-            var result = new FallenCommanderResult();
+            ShowResult(outcome);
+        }
+
+        private void BeginDeathSequence(
+            ContentOutcome outcome,
+            AnimationClip motion,
+            bool isCommanderDeath)
+        {
+            if (!IsRunning || isFinishing)
+            {
+                return;
+            }
+
+            isFinishing = true;
+            IsRunning = false;
+            ShutdownCommanderSkills();
+            stateMachine?.Shutdown();
+            commanderMove?.SetInputEnabled(false);
+
+            if (isCommanderDeath)
+            {
+                commanderStunPresenter?.PlayDeath(motion);
+            }
+            else
+            {
+                bossDeathPresentation =
+                    FallenCommanderBossDeathPresentation.Create(
+                        bossActor,
+                        transform);
+                if (bossDeathPresentation != null)
+                {
+                    bossDeathPresentation.Play(
+                        motion,
+                        bossConfig.DeathMotionDuration);
+                }
+                else
+                {
+                    bossAnimationPresenter?.Configure(bossActor.transform);
+                    bossAnimationPresenter?.Play(
+                        motion,
+                        stopAfterMotion: true,
+                        durationOverride: bossConfig.DeathMotionDuration);
+                }
+            }
+
+            var motionDuration = isCommanderDeath
+                ? motion == null
+                    ? 0f
+                    : Mathf.Max(0f, motion.length)
+                : bossConfig.DeathMotionDuration;
+            deathRoutine = StartCoroutine(
+                CompleteAfterDeathMotion(outcome, motionDuration));
+        }
+
+        private IEnumerator CompleteAfterDeathMotion(
+            ContentOutcome outcome,
+            float motionDuration)
+        {
+            yield return new WaitForSeconds(motionDuration);
+            bossDeathPresentation?.Release();
+            bossDeathPresentation = null;
+
+            yield return new WaitForSeconds(bossConfig.DeathResultDelay);
+            deathRoutine = null;
+            ReleaseHud();
+            ShowResult(outcome);
+        }
+
+        private void ShowResult(ContentOutcome outcome)
+        {
+            resultPresenter ??= FallenCommanderResultPresenter.Create(
+                transform);
+            resultPresenter.Show(
+                outcome,
+                score,
+                remainingTime,
+                () => ExitContent(outcome));
+        }
+
+        private void ExitContent(ContentOutcome outcome)
+        {
+            var result = new FallenCommanderResult(score, remainingTime);
 
             if (outcome == ContentOutcome.Complete)
             {

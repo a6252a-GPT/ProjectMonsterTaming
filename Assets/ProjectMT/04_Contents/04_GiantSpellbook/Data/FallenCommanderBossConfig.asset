@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c4ca9d7130e2a445b16d5a7f2966f2b, type: 3}
+  m_Name: FallenCommanderBossConfig
+  m_EditorClassIdentifier: ProjectMT.Contents.GiantSpellbook::ProjectMT.Contents.FallenCommander.FallenCommanderBossConfig
+  attackInterval: 2
+  attackRange: 8
+  turnSpeed: 90
+  basicAttack:
+    preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
+    preCastMotionDuration: 0.8750001
+    castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
+    castMotionDuration: 0.875
+    warningDuration: 2
+    radius: 2.5
+    width: 2
+    length: 8
+    stunDuration: 0
+  markStrikeTelegraphPrefab: {fileID: 5939384426542757584, guid: 53a72b40a09905143996a7904cc8c0de, type: 3}
+  markStrike:
+    preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
+    preCastMotionDuration: 0.875
+    castMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
+    castMotionDuration: 0.8750001
+    warningDuration: 3
+    radius: 1.5
+    width: 2
+    length: 8
+    stunDuration: 3
+  wideBurst:
+    preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
+    preCastMotionDuration: 0.8750001
+    castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
+    castMotionDuration: 0.875
+    warningDuration: 5
+    radius: 6
+    width: 2
+    length: 8
+    stunDuration: 3
+  lineStrike:
+    preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
+    preCastMotionDuration: 0.875
+    castMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
+    castMotionDuration: 0.8750001
+    warningDuration: 2.5
+    radius: 2
+    width: 2
+    length: 8
+    stunDuration: 1.5
+  deathMotion: {fileID: 7400000, guid: 7eb365b59b49b5d4fa4ed0da8d2b8804, type: 3}
+  deathMotionDuration: 1.625
+  deathResultDelay: 3
+  maxBreakGauge: 100
+  breakGaugePerHit: 10
+  breakGaugeAttackPowerMultiplier: 0.25
+  breakGaugePhaseTwoHealthRatio: 0.7
+  breakGaugePhaseThreeHealthRatio: 0.4
+  breakGaugePhaseTwoMultiplier: 0.75
+  breakGaugePhaseThreeMultiplier: 0.5
+  breakDuration: 5
+  breakDamageMultiplier: 2
+  breakMotion: {fileID: 7400000, guid: ec3c5725a69975047982eaf81483330d, type: 3}
+  breakMotionDuration: 0.70833397

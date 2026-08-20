@@ -11,7 +11,7 @@ using UnityEngine.UI;
 namespace ProjectMT.Contents.GiantSpellbook
 {
     [DisallowMultipleComponent]
-    public sealed class GiantSpellbookController : MonoBehaviour, IContentController, IBossDungeonHudSource // 군단장 대 보스 1:1 전투 총괄
+    public sealed class GiantSpellbookController : MonoBehaviour, IContentController, IBossDungeonHudSource, IBossDungeonTimeoutController // 군단장 대 보스 1:1 전투 총괄
     {
         [SerializeField] private CombatWorld combatWorld; // UnitActor 생성·타깃 탐색·공격 Tick·정리를 맡는 공용 전투 공간
         [SerializeField] private GameObject exampleEnemyPrefab; // UnitActor가 붙은 팀원 참고용 임시 적 Prefab
@@ -140,7 +140,9 @@ namespace ProjectMT.Contents.GiantSpellbook
 
             ConfigureStateMachine();
             ConfigureCommanderSkills();
-            hudPresenter?.Bind(this);
+            hudPresenter?.Bind(
+                this,
+                context.RunInfo.RunMode == ContentRunMode.SeedTest);
             PublishHudState();
 
         }

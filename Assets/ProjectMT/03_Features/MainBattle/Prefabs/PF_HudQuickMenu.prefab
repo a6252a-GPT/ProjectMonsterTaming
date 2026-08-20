@@ -3710,6 +3710,10 @@ MonoBehaviour:
   contentButton: {fileID: 6718964654035836781}
   summonButton: {fileID: 3241158145764685062}
   shopButton: {fileID: 8960727658361387680}
+  attendanceButton: {fileID: 4106222366129371349}
+  mailboxButton: {fileID: 4851729223228552991}
+  attendanceBadge: {fileID: 6266279926580210017}
+  mailboxBadge: {fileID: 7743945085038892129}
   menuButton: {fileID: 7713695250527569624}
   menuIcon: {fileID: 5469818934029271030}
   closeIcon: {fileID: 8365319042076325140}
@@ -6697,6 +6701,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 8
       objectReference: {fileID: 0}
+    - target: {fileID: 2451502503663593629, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2472023230998689610, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -6783,11 +6791,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2998069830696803749, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 12
+      value: 174
       objectReference: {fileID: 0}
     - target: {fileID: 2998069830696803749, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -214
+      value: -386
       objectReference: {fileID: 0}
     - target: {fileID: 2998069830696803749, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -6963,7 +6971,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7112460734896734438, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Name
-      value: MailButton_LOCKED
+      value: MailboxButton
+      objectReference: {fileID: 0}
+    - target: {fileID: 8984462677980486550, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: m_Name
+      value: MailboxNotificationBadge
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6987,6 +6999,11 @@ MonoBehaviour:
 --- !u!224 &4489091102306439762 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2998069830696803749, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+  m_PrefabInstance: {fileID: 1717907971048476663}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7743945085038892129 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8984462677980486550, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
   m_PrefabInstance: {fileID: 1717907971048476663}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &8458803985514958609 stripped
@@ -7033,7 +7050,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 0
+  m_Interactable: 1
   m_TargetGraphic: {fileID: 3645324975642129658}
   m_OnClick:
     m_PersistentCalls:
@@ -7774,6 +7791,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 8793755748329777017}
     m_Modifications:
+    - target: {fileID: 1343566018246003234, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: m_Interactable
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2451502503663593629, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2998069830696803749, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -7854,9 +7879,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7096273122189735928, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: m_text
+      value: "\uCD9C\uC11D"
+      objectReference: {fileID: 0}
     - target: {fileID: 7112460734896734438, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Name
-      value: EventButton_LOCKED
+      value: AttendanceButton
+      objectReference: {fileID: 0}
+    - target: {fileID: 8984462677980486550, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: m_Name
+      value: AttendanceNotificationBadge
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7866,6 +7899,22 @@ PrefabInstance:
 --- !u!224 &270847031991267154 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2998069830696803749, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+  m_PrefabInstance: {fileID: 3051599211866977015}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4106222366129371349 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1343566018246003234, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+  m_PrefabInstance: {fileID: 3051599211866977015}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+--- !u!1 &6266279926580210017 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8984462677980486550, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
   m_PrefabInstance: {fileID: 3051599211866977015}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3534529562111008272

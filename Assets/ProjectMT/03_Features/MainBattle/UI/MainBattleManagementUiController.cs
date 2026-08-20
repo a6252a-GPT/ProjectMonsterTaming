@@ -1,9 +1,12 @@
 using System;
+using ProjectMT.Features.Attendance;
 using ProjectMT.Features.CommanderSkill;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.Formation;
 using ProjectMT.Features.Inventory;
+using ProjectMT.Features.Mailbox;
 using ProjectMT.Features.Settings;
+using ProjectMT.Shared.Combat;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -32,9 +35,13 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private GameObject growthDungeonPage;
         [SerializeField] private Button growthDungeonCloseButton;
         [SerializeField] private SettingsPanelController settingsPage;
+        [SerializeField] private AttendancePanelController attendancePage;
+        [SerializeField] private MailboxPanelController mailboxPage;
 
         private int defaultSiblingIndex = -1;
+        private int defaultCanvasSortingOrder;
         private FormationPageController formationPage;
+        private Canvas hudCanvas;
 
         public event Action GrowthDungeonPageOpened;
 
@@ -48,6 +55,8 @@ namespace ProjectMT.Features.MainBattle
             (commanderSkillPage != null && commanderSkillPage.IsOpen) ||
             (growthDungeonPage != null && growthDungeonPage.activeSelf) ||
             (settingsPage != null && settingsPage.IsOpen) ||
+            (attendancePage != null && attendancePage.IsOpen) ||
+            (mailboxPage != null && mailboxPage.IsOpen) ||
             (formationPage != null && formationPage.IsOpen);
 
         private void Awake()
@@ -62,10 +71,20 @@ namespace ProjectMT.Features.MainBattle
             }
 
             defaultSiblingIndex = transform.GetSiblingIndex();
+            hudCanvas = GetComponentInParent<Canvas>();
+            defaultCanvasSortingOrder = hudCanvas != null ? hudCanvas.sortingOrder : 0;
             CloseAllPages();
             if (settingsPage != null)
             {
                 settingsPage.OpenStateChanged += HandleSettingsOpenStateChanged;
+            }
+            if (attendancePage != null)
+            {
+                attendancePage.OpenStateChanged += HandleAttendanceOpenStateChanged;
+            }
+            if (mailboxPage != null)
+            {
+                mailboxPage.OpenStateChanged += HandleMailboxOpenStateChanged;
             }
 
             commanderGrowthButton.onClick.AddListener(ToggleCommanderGrowthPage);
@@ -84,6 +103,7 @@ namespace ProjectMT.Features.MainBattle
 
         private void OnDestroy()
         {
+            RestoreCanvasOrder();
             commanderGrowthButton?.onClick.RemoveListener(ToggleCommanderGrowthPage);
             shopButton?.onClick.RemoveListener(OpenShopPage);
             shopCloseButton?.onClick.RemoveListener(CloseShopPage);
@@ -96,6 +116,8 @@ namespace ProjectMT.Features.MainBattle
             ConfigureInventoryPage(null);
             ConfigureCommanderSkillPage(null);
             ConfigureSettingsPage(null);
+            ConfigureAttendancePage(null);
+            ConfigureMailboxPage(null);
             if (monsterManagementPage != null)
             {
                 monsterManagementPage.OpenStateChanged -= HandleMonsterManagementOpenStateChanged;
@@ -219,6 +241,18 @@ namespace ProjectMT.Features.MainBattle
             settingsPage?.Open();
         }
 
+        public void OpenAttendancePage()
+        {
+            CloseAllPages();
+            attendancePage?.Open();
+        }
+
+        public void OpenMailboxPage()
+        {
+            CloseAllPages();
+            mailboxPage?.Open();
+        }
+
         public void ConfigureSettingsPage(SettingsPanelController page)
         {
             if (settingsPage == page)
@@ -237,6 +271,48 @@ namespace ProjectMT.Features.MainBattle
             {
                 settingsPage.OpenStateChanged += HandleSettingsOpenStateChanged;
                 settingsPage.Close();
+            }
+        }
+
+        public void ConfigureAttendancePage(AttendancePanelController page)
+        {
+            if (attendancePage == page)
+            {
+                attendancePage?.Close();
+                return;
+            }
+
+            if (attendancePage != null)
+            {
+                attendancePage.OpenStateChanged -= HandleAttendanceOpenStateChanged;
+            }
+
+            attendancePage = page;
+            if (attendancePage != null)
+            {
+                attendancePage.OpenStateChanged += HandleAttendanceOpenStateChanged;
+                attendancePage.Close();
+            }
+        }
+
+        public void ConfigureMailboxPage(MailboxPanelController page)
+        {
+            if (mailboxPage == page)
+            {
+                mailboxPage?.Close();
+                return;
+            }
+
+            if (mailboxPage != null)
+            {
+                mailboxPage.OpenStateChanged -= HandleMailboxOpenStateChanged;
+            }
+
+            mailboxPage = page;
+            if (mailboxPage != null)
+            {
+                mailboxPage.OpenStateChanged += HandleMailboxOpenStateChanged;
+                mailboxPage.Close();
             }
         }
 
@@ -274,6 +350,8 @@ namespace ProjectMT.Features.MainBattle
             commanderSkillPage?.Close();
             growthDungeonPage?.SetActive(false);
             settingsPage?.Close();
+            attendancePage?.Close();
+            mailboxPage?.Close();
             RestoreHudOrder();
         }
 
@@ -355,7 +433,9 @@ namespace ProjectMT.Features.MainBattle
                      (inventoryPage == null || !inventoryPage.IsOpen) &&
                      (commanderSkillPage == null || !commanderSkillPage.IsOpen) &&
                      (growthDungeonPage == null || !growthDungeonPage.activeSelf) &&
-                     (settingsPage == null || !settingsPage.IsOpen))
+                     (settingsPage == null || !settingsPage.IsOpen) &&
+                     (attendancePage == null || !attendancePage.IsOpen) &&
+                     (mailboxPage == null || !mailboxPage.IsOpen))
             {
                 RestoreHudOrder();
             }
@@ -409,6 +489,30 @@ namespace ProjectMT.Features.MainBattle
             }
         }
 
+        private void HandleAttendanceOpenStateChanged(bool open)
+        {
+            if (open)
+            {
+                BringToFront();
+            }
+            else if (!IsAnyPageOpen)
+            {
+                RestoreHudOrder();
+            }
+        }
+
+        private void HandleMailboxOpenStateChanged(bool open)
+        {
+            if (open)
+            {
+                BringToFront();
+            }
+            else if (!IsAnyPageOpen)
+            {
+                RestoreHudOrder();
+            }
+        }
+
         private void HandleFormationPageOpenStateChanged(bool open)
         {
             if (open)
@@ -420,6 +524,11 @@ namespace ProjectMT.Features.MainBattle
         private void BringToFront()
         {
             transform.SetAsLastSibling();
+            SetCombatDisplayVisible(false); // 관리 팝업 위 전투 숫자·일반 HP바 숨김
+            if (hudCanvas != null)
+            {
+                hudCanvas.sortingOrder = Math.Max(defaultCanvasSortingOrder, 100);
+            }
         }
 
         private void RestoreHudOrder()
@@ -432,6 +541,29 @@ namespace ProjectMT.Features.MainBattle
             }
 
             transform.SetSiblingIndex(Mathf.Min(defaultSiblingIndex, parent.childCount - 1));
+            RestoreCanvasOrder();
+            SetCombatDisplayVisible(true);
+        }
+
+        private void RestoreCanvasOrder()
+        {
+            if (hudCanvas != null)
+            {
+                hudCanvas.sortingOrder = defaultCanvasSortingOrder;
+            }
+        }
+
+        private static void SetCombatDisplayVisible(bool visible)
+        {
+            var settings = visible ? LocalSettingsStore.Load() : null;
+            foreach (var feedback in FindObjectsByType<CombatFeedbackPlayer>(
+                         FindObjectsInactive.Include,
+                         FindObjectsSortMode.None))
+            {
+                feedback.SetDisplayOptions(
+                    visible && settings.damageNumbersVisible,
+                    visible && settings.unitHealthBarsVisible);
+            }
         }
 
 #if UNITY_EDITOR
@@ -472,6 +604,14 @@ namespace ProjectMT.Features.MainBattle
             growthDungeonButton = openGrowthDungeonButton;
             growthDungeonPage = growthDungeonPageRoot;
             growthDungeonCloseButton = closeGrowthDungeonButton;
+        }
+
+        public void EditorConfigureRewardPages(
+            AttendancePanelController attendance,
+            MailboxPanelController mailbox)
+        {
+            attendancePage = attendance;
+            mailboxPage = mailbox;
         }
 #endif
     }

@@ -198,6 +198,8 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private ItemInventoryData items = ItemInventoryData.CreateDefault(); // 일반 아이템 보유 수량
         [SerializeField] private GrowthDungeonProgressData growthDungeons = GrowthDungeonProgressData.CreateDefault(); // 성장 던전 단계·열쇠 기준일
         [SerializeField] private OfflineRewardProgressData offlineRewards = OfflineRewardProgressData.CreateDefault(); // 방치 시작·정산 영수증
+        [SerializeField] private AttendanceProgressData attendance = AttendanceProgressData.CreateDefault(); // 28일 누적 출석
+        [SerializeField] private MailProgressData mail = MailProgressData.CreateDefault(); // 미수령 우편
         [SerializeField] private bool coreBalanceMigrationCompleted = true; // v11 이관 재실행 방지
         [NonSerialized] private ItemInventoryView? itemViewCache; // 변경 전까지 목록 복사 재사용
         [SerializeField] private EquipmentSlotUpgradeData equipmentSlotUpgrade = EquipmentSlotUpgradeData.CreateDefault(); // 부위 슬롯 영구 강화 레벨(장비 보유·장착과 별도 저장)
@@ -237,6 +239,10 @@ namespace ProjectMT.Shared.GameData
             (growthDungeons ?? GrowthDungeonProgressData.CreateDefault()).CreateView();
         public OfflineRewardProgressView OfflineRewards =>
             new OfflineRewardProgressView(offlineRewards ?? OfflineRewardProgressData.CreateDefault());
+        public AttendanceProgressView Attendance =>
+            (attendance ?? AttendanceProgressData.CreateDefault()).CreateView();
+        public MailProgressView Mail =>
+            (mail ?? MailProgressData.CreateDefault()).CreateView();
         public EquipmentSlotUpgradeView EquipmentSlotUpgrade =>
             (equipmentSlotUpgrade ?? EquipmentSlotUpgradeData.CreateDefault()).CreateView();
         public CommanderPotentialView CommanderPotential =>
@@ -274,6 +280,8 @@ namespace ProjectMT.Shared.GameData
                 items = items?.Clone() ?? ItemInventoryData.CreateDefault(),
                 growthDungeons = growthDungeons?.Clone() ?? GrowthDungeonProgressData.CreateDefault(),
                 offlineRewards = offlineRewards?.Clone() ?? OfflineRewardProgressData.CreateDefault(),
+                attendance = attendance?.Clone() ?? AttendanceProgressData.CreateDefault(),
+                mail = mail?.Clone() ?? MailProgressData.CreateDefault(),
                 coreBalanceMigrationCompleted = coreBalanceMigrationCompleted,
                 equipmentSlotUpgrade = equipmentSlotUpgrade?.Clone() ?? EquipmentSlotUpgradeData.CreateDefault(),
                 commanderPotential = commanderPotential?.Clone() ?? CommanderPotentialData.CreateDefault(),
@@ -316,6 +324,32 @@ namespace ProjectMT.Shared.GameData
 
             if (change.HasGrowthDungeonDailyKeyRefresh &&
                 !TryApplyGrowthDungeonDailyKeyRefresh(change, itemCatalog))
+            {
+                return false;
+            }
+
+            if (change.HasAttendanceRefresh && !TryApplyAttendanceRefresh(change))
+            {
+                return false;
+            }
+
+            if (change.HasAttendanceClaim &&
+                !TryApplyAttendanceClaim(change, commanderGrowthConfig, itemCatalog))
+            {
+                return false;
+            }
+
+            if (change.HasAddMail && !TryApplyMailAdd(change))
+            {
+                return false;
+            }
+
+            if (change.HasCleanupExpiredMail && !TryApplyMailCleanup(change))
+            {
+                return false;
+            }
+
+            if (change.HasClaimMail && !TryApplyMailClaim(change, commanderGrowthConfig, itemCatalog))
             {
                 return false;
             }
@@ -927,6 +961,89 @@ namespace ProjectMT.Shared.GameData
             return true;
         }
 
+        private bool TryApplyAttendanceRefresh(GameProgressChange change)
+        {
+            attendance ??= AttendanceProgressData.CreateDefault();
+            var candidate = attendance.Clone();
+            if (!candidate.TryRefresh(change.ExpectedAttendancePeriod, change.AttendancePeriod))
+            {
+                return false;
+            }
+
+            attendance = candidate;
+            return true;
+        }
+
+        private bool TryApplyAttendanceClaim(
+            GameProgressChange change,
+            CommanderGrowthConfig commanderGrowthConfig,
+            ItemCatalog itemCatalog)
+        {
+            if (change.AttendanceReward == null || change.AttendanceReward.IsEmpty)
+            {
+                return false;
+            }
+
+            attendance ??= AttendanceProgressData.CreateDefault();
+            var candidate = attendance.Clone();
+            if (!candidate.TryClaim(change.ExpectedAttendanceDay, change.ExpectedAttendanceClaimPeriod) ||
+                !TryApplyRewards(change.AttendanceReward, commanderGrowthConfig, itemCatalog))
+            {
+                return false;
+            }
+
+            attendance = candidate;
+            return true;
+        }
+
+        private bool TryApplyMailAdd(GameProgressChange change)
+        {
+            mail ??= MailProgressData.CreateDefault();
+            var candidate = mail.Clone();
+            if (!candidate.TryAdd(change.MailToAdd))
+            {
+                return false;
+            }
+
+            mail = candidate;
+            return true;
+        }
+
+        private bool TryApplyMailCleanup(GameProgressChange change)
+        {
+            mail ??= MailProgressData.CreateDefault();
+            var candidate = mail.Clone();
+            if (candidate.RemoveExpired(change.MailOperationUtc) <= 0)
+            {
+                return false;
+            }
+
+            mail = candidate;
+            return true;
+        }
+
+        private bool TryApplyMailClaim(
+            GameProgressChange change,
+            CommanderGrowthConfig commanderGrowthConfig,
+            ItemCatalog itemCatalog)
+        {
+            mail ??= MailProgressData.CreateDefault();
+            var candidate = mail.Clone();
+            if (!candidate.TryCreateClaim(
+                    change.MailClaimIds,
+                    change.MailOperationUtc,
+                    out var rewards,
+                    out var normalizedIds) ||
+                !TryApplyRewards(rewards, commanderGrowthConfig, itemCatalog) ||
+                !candidate.TryRemoveClaimed(normalizedIds))
+            {
+                return false;
+            }
+
+            mail = candidate;
+            return true;
+        }
+
         private bool TryApplyRewards(
             RewardBundle rewards,
             CommanderGrowthConfig commanderGrowthConfig,
@@ -1166,6 +1283,10 @@ namespace ProjectMT.Shared.GameData
             growthDungeons.Repair();
             offlineRewards ??= OfflineRewardProgressData.CreateDefault();
             offlineRewards.Repair();
+            attendance ??= AttendanceProgressData.CreateDefault();
+            attendance.Repair();
+            mail ??= MailProgressData.CreateDefault();
+            mail.Repair();
             equipmentSlotUpgrade ??= EquipmentSlotUpgradeData.CreateDefault();
             equipmentSlotUpgrade.Repair();
             commanderPotential ??= CommanderPotentialData.CreateDefault();
@@ -1246,6 +1367,12 @@ namespace ProjectMT.Shared.GameData
                 commanderSkills = CommanderSkillProgressData.CreateDefault(); // 기존 저장은 초기 2스킬로 시작
             }
 
+            if (sourceDataVersion <= 18)
+            {
+                attendance = AttendanceProgressData.CreateDefault();
+                mail = MailProgressData.CreateDefault();
+            }
+
             Repair();
         }
 
@@ -1277,6 +1404,8 @@ namespace ProjectMT.Shared.GameData
             Items = data.Items;
             GrowthDungeons = data.GrowthDungeons;
             OfflineRewards = data.OfflineRewards;
+            Attendance = data.Attendance;
+            Mail = data.Mail;
             EquipmentSlotUpgrade = data.EquipmentSlotUpgrade;
             CommanderPotential = data.CommanderPotential;
             CommanderLegionGrowth = data.CommanderLegionGrowth;
@@ -1301,6 +1430,8 @@ namespace ProjectMT.Shared.GameData
         public ItemInventoryView Items { get; } // 일반 아이템 보유 수량
         public GrowthDungeonProgressView GrowthDungeons { get; } // 성장 던전 단계·열쇠 기준일
         public OfflineRewardProgressView OfflineRewards { get; } // 방치 시작점·확인 대기 정산
+        public AttendanceProgressView Attendance { get; } // 28일 누적 출석
+        public MailProgressView Mail { get; } // 미수령 우편
         public EquipmentSlotUpgradeView EquipmentSlotUpgrade { get; } // 부위 슬롯 영구 강화 레벨
         public CommanderPotentialView CommanderPotential { get; } // 군단장 잠재능력 5슬롯
         public CommanderLegionGrowthView CommanderLegionGrowth { get; } // 군단 공용 6종 강화
@@ -1330,6 +1461,19 @@ namespace ProjectMT.Shared.GameData
         internal long ExpectedGrowthDungeonDailyKeyPeriod { get; private set; }
         internal long GrowthDungeonDailyKeyPeriod { get; private set; }
         internal IReadOnlyList<ItemAmount> GrowthDungeonDailyKeyTargets { get; private set; }
+        internal bool HasAttendanceRefresh { get; private set; }
+        internal long ExpectedAttendancePeriod { get; private set; }
+        internal long AttendancePeriod { get; private set; }
+        internal bool HasAttendanceClaim { get; private set; }
+        internal int ExpectedAttendanceDay { get; private set; }
+        internal long ExpectedAttendanceClaimPeriod { get; private set; }
+        internal RewardBundle AttendanceReward { get; private set; }
+        internal bool HasAddMail { get; private set; }
+        internal MailEntryData MailToAdd { get; private set; }
+        internal bool HasCleanupExpiredMail { get; private set; }
+        internal bool HasClaimMail { get; private set; }
+        internal IReadOnlyList<string> MailClaimIds { get; private set; }
+        internal DateTime MailOperationUtc { get; private set; }
         internal int FoodRiotBestKills { get; private set; }
         internal int GuardiansTowerBestKills { get; private set; } // 08.06 안건준 추가
         internal bool IncrementGuardiansTowerDifficulty { get; private set; } // 08.07 안건준 추가
@@ -1554,6 +1698,63 @@ namespace ProjectMT.Shared.GameData
                     ? Array.Empty<ItemAmount>()
                     : (ItemAmount[])targetQuantities.Clone()
             };
+        }
+
+        public static GameProgressChange RefreshAttendance(long expectedPeriod, long nextPeriod)
+        {
+            return new GameProgressChange
+            {
+                HasAttendanceRefresh = true,
+                ExpectedAttendancePeriod = expectedPeriod,
+                AttendancePeriod = nextPeriod
+            };
+        }
+
+        public static GameProgressChange ClaimAttendance(
+            int expectedDay,
+            long expectedPeriod,
+            RewardBundle reward)
+        {
+            return new GameProgressChange
+            {
+                HasAttendanceClaim = true,
+                ExpectedAttendanceDay = expectedDay,
+                ExpectedAttendanceClaimPeriod = expectedPeriod,
+                AttendanceReward = reward ?? RewardBundle.Empty
+            };
+        }
+
+        public static GameProgressChange AddMail(MailEntryData mail)
+        {
+            return new GameProgressChange
+            {
+                HasAddMail = true,
+                MailToAdd = mail?.Clone()
+            };
+        }
+
+        public static GameProgressChange CleanupExpiredMail(DateTime utcNow)
+        {
+            return new GameProgressChange
+            {
+                HasCleanupExpiredMail = true,
+                MailOperationUtc = NormalizeUtc(utcNow)
+            };
+        }
+
+        public static GameProgressChange ClaimMail(DateTime utcNow, params string[] mailIds)
+        {
+            return new GameProgressChange
+            {
+                HasClaimMail = true,
+                MailOperationUtc = NormalizeUtc(utcNow),
+                MailClaimIds = mailIds == null ? Array.Empty<string>() : (string[])mailIds.Clone()
+            };
+        }
+
+        private static DateTime NormalizeUtc(DateTime value)
+        {
+            return value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
         }
 
         // 08.06 안건준 추가 - 수호자의 탑 결과 요청 (식량 대소동과 별도 최고기록 집계)

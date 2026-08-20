@@ -161,6 +161,8 @@ namespace ProjectMT.Bootstrap
             CombatWorld.ConfigureSharedStatRules(
                 projectConfig.CombatStatConfig ?? CombatStatConfig.RuntimeDefault);
             await RefreshGrowthDungeonKeysAsync(); // 접속 1회 KST 05:00 기준 충전
+            await RefreshAttendanceAsync(); // 접속 1회 KST 05:00 기준 출석 갱신
+            await CleanupExpiredMailAsync(); // 만료된 미수령 우편 정리
             offlineRewardCoordinator = new OfflineRewardCoordinator(
                 gameDataService,
                 projectConfig.OfflineRewardConfig,
@@ -224,7 +226,8 @@ namespace ProjectMT.Bootstrap
                 ResetGameDataForDebugAsync,
                 DrawMonsterForDebugAsync,
                 AcquireEquipmentForDebugAsync,
-                AcquireAllItemsForDebugAsync);
+                AcquireAllItemsForDebugAsync,
+                SendRandomMailForDebugAsync);
         }
 
         private async Task<bool> ResetGameDataForDebugAsync()
@@ -342,6 +345,109 @@ namespace ProjectMT.Bootstrap
                 ? $"{rewards.Count}종 아이템 1개씩 획득 완료"
                 : "아이템 획득 정보를 저장하지 못했습니다";
         }
+
+        private async Task<string> SendRandomMailForDebugAsync()
+        {
+            if (!initialized || gameDataService == null || contentFlow == null ||
+                contentFlow.IsRunning || sceneLoader == null || sceneLoader.IsTransitioning)
+            {
+                return "현재 우편을 보낼 수 없습니다";
+            }
+
+            if (gameDataService.View.Mail.Entries.Count >= MailProgressData.MaximumStoredMail)
+            {
+                return "우편함이 가득 찼습니다";
+            }
+
+            var catalog = projectConfig.ItemCatalog;
+            if (catalog == null || !catalog.TryValidateRuntimeCatalog(out _))
+            {
+                return "아이템 카탈로그가 올바르지 않습니다";
+            }
+
+            var inventory = gameDataService.View.Items;
+            var candidates = new List<ItemDefinition>();
+            var definitions = catalog.Definitions;
+            for (var index = 0; index < definitions.Count; index++)
+            {
+                var definition = definitions[index];
+                if (definition == null || string.IsNullOrWhiteSpace(definition.ItemId))
+                {
+                    continue;
+                }
+
+                inventory.TryGetQuantity(definition.ItemId, out var currentQuantity);
+                if (currentQuantity < definition.MaxQuantity)
+                {
+                    candidates.Add(definition);
+                }
+            }
+
+            if (candidates.Count == 0)
+            {
+                return "첨부할 수 있는 아이템이 없습니다";
+            }
+
+            var attachmentCount = UnityEngine.Random.Range(1, Math.Min(3, candidates.Count) + 1);
+            var attachments = new List<ItemAmount>(attachmentCount);
+            var rewardNames = new List<string>(attachmentCount);
+            for (var index = 0; index < attachmentCount; index++)
+            {
+                var selectedIndex = UnityEngine.Random.Range(0, candidates.Count);
+                var selected = candidates[selectedIndex];
+                candidates.RemoveAt(selectedIndex);
+                inventory.TryGetQuantity(selected.ItemId, out var currentQuantity);
+                var capacity = Math.Max(0L, selected.MaxQuantity - currentQuantity);
+                var desired = GetDebugMailRewardAmount(selected.Category);
+                var amount = Math.Min(desired, capacity);
+                if (amount <= 0L)
+                {
+                    continue;
+                }
+
+                attachments.Add(new ItemAmount(selected.ItemId, amount));
+                rewardNames.Add($"{selected.DisplayName} {amount:N0}");
+            }
+
+            if (attachments.Count == 0)
+            {
+                return "첨부할 수 있는 아이템이 없습니다";
+            }
+
+            var category = (MailCategory)UnityEngine.Random.Range(0, 3);
+            var titles = new[] { "시스템 점검 보상", "깜짝 이벤트 선물", "원정대 지원 보급" };
+            var bodies = new[]
+            {
+                "안정적인 플레이 환경을 위한 점검 보상입니다. 첨부 보상을 확인해 주세요.",
+                "군단장님을 위해 준비한 깜짝 선물입니다. 우편함에서 보상을 받아 주세요.",
+                "다음 원정을 위한 지원 물자입니다. 전투 준비에 활용해 주세요."
+            };
+            var now = DateTime.UtcNow;
+            var mail = MailEntryData.Create(
+                $"debug_mail_{now:yyyyMMddHHmmssfff}_{Guid.NewGuid():N}",
+                titles[(int)category],
+                bodies[(int)category],
+                category,
+                now,
+                now.AddDays(UnityEngine.Random.Range(3, 31)),
+                attachments);
+            var saved = await gameDataService.TryApplyAndSaveAsync(GameProgressChange.AddMail(mail));
+            return saved
+                ? $"우편 발송 완료: {string.Join(", ", rewardNames)}"
+                : "우편 발송 정보를 저장하지 못했습니다";
+        }
+
+        private static long GetDebugMailRewardAmount(ItemCategory category)
+        {
+            return category switch
+            {
+                ItemCategory.Currency => UnityEngine.Random.Range(100, 501),
+                ItemCategory.UpgradeMaterial => UnityEngine.Random.Range(3, 11),
+                ItemCategory.SummonTicket => UnityEngine.Random.Range(1, 4),
+                ItemCategory.DungeonKey => 1L,
+                _ => UnityEngine.Random.Range(1, 4)
+            };
+        }
 #endif
 
         private ISceneContext CreateSceneContext(SceneId sceneId)
@@ -392,16 +498,19 @@ namespace ProjectMT.Bootstrap
             readySceneId = sceneId;
             if (sceneId == projectConfig.MainBattleSceneId)
             {
-                ShowPendingOfflineRewards(); // 메인 전투 준비 뒤 접속 정산창 표시
+                if (!ShowPendingOfflineRewards())
+                {
+                    ShowPendingAttendance(); // 오프라인 정산이 없으면 출석부터 표시
+                }
             }
         }
 
-        private void ShowPendingOfflineRewards()
+        private bool ShowPendingOfflineRewards()
         {
             if (offlineRewardPresenter == null || offlineRewardCoordinator == null ||
                 !offlineRewardCoordinator.TryGetPendingPresentation(out var presentation))
             {
-                return;
+                return false;
             }
 
             offlineRewardPresenter.Show(
@@ -409,12 +518,27 @@ namespace ProjectMT.Bootstrap
                 projectConfig.ItemCatalog,
                 () => offlineRewardCoordinator.AcknowledgeAsync(presentation.ReceiptIds),
                 HandleOfflineRewardConfirmed);
+            return true;
         }
 
         private void HandleOfflineRewardConfirmed(OfflineRewardPresentation presentation)
         {
             rewardPresenter?.PlayConfirmed(presentation?.CreateAcquirePresentation());
-            ShowPendingOfflineRewards(); // 확인 중 새로 쌓인 영수증만 이어서 표시
+            if (!ShowPendingOfflineRewards())
+            {
+                ShowPendingAttendance(); // 접속 정산을 모두 확인한 뒤 출석 표시
+            }
+        }
+
+        private void ShowPendingAttendance()
+        {
+            if (gameDataService == null || !gameDataService.View.Attendance.HasPendingReward)
+            {
+                return;
+            }
+
+            FindFirstObjectByType<MainBattleManagementUiController>(FindObjectsInactive.Include)
+                ?.OpenAttendancePage();
         }
 
         private async void OnApplicationPause(bool paused)
@@ -509,6 +633,39 @@ namespace ProjectMT.Bootstrap
             if (!saved)
             {
                 throw new InvalidOperationException("Growth dungeon daily keys could not be refreshed.");
+            }
+        }
+
+        private async Task RefreshAttendanceAsync()
+        {
+            var view = gameDataService.View.Attendance;
+            var currentPeriod = GrowthDungeonDailyKeyRules.GetPeriodId(DateTime.UtcNow);
+            if (currentPeriod <= view.LastProcessedPeriod)
+            {
+                return;
+            }
+
+            var saved = await gameDataService.TryApplyAndSaveAsync(
+                GameProgressChange.RefreshAttendance(view.LastProcessedPeriod, currentPeriod));
+            if (!saved)
+            {
+                throw new InvalidOperationException("Attendance could not be refreshed.");
+            }
+        }
+
+        private async Task CleanupExpiredMailAsync()
+        {
+            var utcNow = DateTime.UtcNow;
+            if (!gameDataService.View.Mail.HasExpired(utcNow))
+            {
+                return;
+            }
+
+            var saved = await gameDataService.TryApplyAndSaveAsync(
+                GameProgressChange.CleanupExpiredMail(utcNow));
+            if (!saved)
+            {
+                throw new InvalidOperationException("Expired mail could not be cleaned up.");
             }
         }
 

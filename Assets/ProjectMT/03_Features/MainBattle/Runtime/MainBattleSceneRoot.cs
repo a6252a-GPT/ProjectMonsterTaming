@@ -1,6 +1,7 @@
 using System;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Features.Attendance;
 using ProjectMT.Features.Commander;
 using ProjectMT.Features.CommanderSkill;
 using ProjectMT.Features.Equipment;
@@ -8,6 +9,7 @@ using ProjectMT.Features.Expedition;
 using ProjectMT.Features.Formation;
 using ProjectMT.Features.GrowthDungeon;
 using ProjectMT.Features.Inventory;
+using ProjectMT.Features.Mailbox;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
@@ -61,6 +63,9 @@ namespace ProjectMT.Features.MainBattle
         private CommanderSkillHudView commanderSkillHud; // 우측 하단 AUTO·6슬롯 HUD
         private CommanderSkillPageController commanderSkillPage; // 군단장 스킬 장착·성장 관리창
         private CommanderSkillSummonController commanderSkillSummon; // 상점 전용 스킬 소환
+        private AttendancePanelController attendancePanel; // 28일 출석 팝업
+        private MailboxPanelController mailboxPanel; // 우편 목록·수령 팝업
+        private HudQuickMenuController quickMenu; // 출석·우편 알림 배지
 
         public SceneId SceneId => sceneId;
         public bool IsInitialized { get; private set; }
@@ -154,6 +159,12 @@ namespace ProjectMT.Features.MainBattle
             ConfigureCommanderGrowthPage();
             ConfigureEquipmentSlotUpgrade();
             ConfigureItemInventory();
+            attendancePanel = GetComponentInChildren<AttendancePanelController>(true);
+            attendancePanel?.Configure(context.Progress, context.ItemCatalog);
+            mailboxPanel = GetComponentInChildren<MailboxPanelController>(true);
+            mailboxPanel?.Configure(context.Progress, context.ItemCatalog);
+            quickMenu = GetComponentInChildren<HudQuickMenuController>(true);
+            quickMenu?.ConfigureNotifications(context.Progress);
             ConfigureMonsterDrag();
             ConfigureSpatialMovement();
             ConfigureFormationPlacement();
@@ -190,6 +201,9 @@ namespace ProjectMT.Features.MainBattle
             managementUi?.ConfigureEquipmentSlotUpgradePage(null);
             managementUi?.ConfigureInventoryPage(null);
             managementUi?.ConfigureCommanderSkillPage(null);
+            quickMenu?.ConfigureNotifications(null);
+            attendancePanel?.Configure(null, null);
+            mailboxPanel?.Configure(null, null);
             if (managementUi != null)
             {
                 managementUi.GrowthDungeonPageOpened -= RefreshGrowthDungeonUi;
@@ -229,6 +243,9 @@ namespace ProjectMT.Features.MainBattle
             commanderSkillPage = null;
             commanderSkillRuntime = null;
             commanderSkillSummon = null;
+            attendancePanel = null;
+            mailboxPanel = null;
+            quickMenu = null;
             IsInitialized = false;
         }
 

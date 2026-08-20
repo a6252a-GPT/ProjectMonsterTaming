@@ -1,5 +1,6 @@
 using ProjectMT.Features.Formation;
 using ProjectMT.Features.Settings;
+using ProjectMT.Shared.GameData;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,6 +14,10 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private Button contentButton;
         [SerializeField] private Button summonButton;
         [SerializeField] private Button shopButton;
+        [SerializeField] private Button attendanceButton;
+        [SerializeField] private Button mailboxButton;
+        [SerializeField] private GameObject attendanceBadge;
+        [SerializeField] private GameObject mailboxBadge;
         [SerializeField] private Button menuButton;
         [SerializeField] private GameObject menuIcon;
         [SerializeField] private GameObject closeIcon;
@@ -38,6 +43,8 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private ShopCategoryMenu shopCategoryMenu;
         [SerializeField] private MainBattleSceneRoot sceneRoot;
 
+        private IGameProgressService progress;
+
         public bool IsOpen => expandedRoot != null && expandedRoot.activeSelf;
 
         private void Awake()
@@ -46,6 +53,8 @@ namespace ProjectMT.Features.MainBattle
             contentButton?.onClick.AddListener(OpenContent);
             summonButton?.onClick.AddListener(OpenSummon);
             shopButton?.onClick.AddListener(OpenShop);
+            attendanceButton?.onClick.AddListener(OpenAttendance);
+            mailboxButton?.onClick.AddListener(OpenMailbox);
             menuButton?.onClick.AddListener(ToggleMenu);
             monsterGrowthButton?.onClick.AddListener(OpenMonsterGrowth);
             formationButton?.onClick.AddListener(OpenFormation);
@@ -65,6 +74,8 @@ namespace ProjectMT.Features.MainBattle
             contentButton?.onClick.RemoveListener(OpenContent);
             summonButton?.onClick.RemoveListener(OpenSummon);
             shopButton?.onClick.RemoveListener(OpenShop);
+            attendanceButton?.onClick.RemoveListener(OpenAttendance);
+            mailboxButton?.onClick.RemoveListener(OpenMailbox);
             menuButton?.onClick.RemoveListener(ToggleMenu);
             monsterGrowthButton?.onClick.RemoveListener(OpenMonsterGrowth);
             formationButton?.onClick.RemoveListener(OpenFormation);
@@ -76,6 +87,7 @@ namespace ProjectMT.Features.MainBattle
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
             settingsButton?.onClick.RemoveListener(OpenSettings);
             modeButton?.onClick.RemoveListener(CloseMenu);
+            ConfigureNotifications(null);
         }
 
         public void CloseMenu()
@@ -169,6 +181,18 @@ namespace ProjectMT.Features.MainBattle
             sceneRoot?.OpenCastleRaid();
         }
 
+        private void OpenAttendance()
+        {
+            CloseMenu();
+            managementUi?.OpenAttendancePage();
+        }
+
+        private void OpenMailbox()
+        {
+            CloseMenu();
+            managementUi?.OpenMailboxPage();
+        }
+
         private void OpenSettings()
         {
             CloseMenu();
@@ -181,6 +205,28 @@ namespace ProjectMT.Features.MainBattle
             formationPage ??= FindFirstObjectByType<FormationPageController>(FindObjectsInactive.Include);
             shopCategoryMenu ??= FindFirstObjectByType<ShopCategoryMenu>(FindObjectsInactive.Include);
             sceneRoot ??= FindFirstObjectByType<MainBattleSceneRoot>(FindObjectsInactive.Include);
+        }
+
+        public void ConfigureNotifications(IGameProgressService progressService)
+        {
+            if (progress != null)
+            {
+                progress.Changed -= RefreshBadges;
+            }
+
+            progress = progressService;
+            if (progress != null)
+            {
+                progress.Changed += RefreshBadges;
+            }
+
+            RefreshBadges();
+        }
+
+        private void RefreshBadges()
+        {
+            attendanceBadge?.SetActive(progress != null && progress.View.Attendance.HasPendingReward);
+            mailboxBadge?.SetActive(progress != null && progress.View.Mail.Count > 0);
         }
 
 #if UNITY_EDITOR
@@ -227,6 +273,18 @@ namespace ProjectMT.Features.MainBattle
         public void EditorConfigureSettings(Button openSettingsButton)
         {
             settingsButton = openSettingsButton;
+        }
+
+        public void EditorConfigureRewards(
+            Button openAttendanceButton,
+            Button openMailboxButton,
+            GameObject attendanceNotification,
+            GameObject mailboxNotification)
+        {
+            attendanceButton = openAttendanceButton;
+            mailboxButton = openMailboxButton;
+            attendanceBadge = attendanceNotification;
+            mailboxBadge = mailboxNotification;
         }
 #endif
     }

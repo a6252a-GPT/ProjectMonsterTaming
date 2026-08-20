@@ -16,6 +16,18 @@ namespace ProjectMT.Contents.FallenCommander
 
         public static FallenCommanderEntryPresenter Create(Transform owner)
         {
+            var existingPresenters = owner.GetComponentsInChildren<FallenCommanderEntryPresenter>(true);
+            foreach (var existingPresenter in existingPresenters)
+            {
+                if (existingPresenter == null)
+                {
+                    continue;
+                }
+
+                existingPresenter.gameObject.SetActive(false);
+                Destroy(existingPresenter.gameObject);
+            }
+
             var root = new GameObject("FallenCommanderEntryPresenter_Runtime");
             root.transform.SetParent(owner, false);
 

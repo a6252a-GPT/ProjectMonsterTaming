@@ -11,7 +11,7 @@ using UnityEngine;
 namespace ProjectMT.Contents.FallenCommander
 {
     [DisallowMultipleComponent]
-    public sealed class FallenCommanderController : MonoBehaviour, IContentController, IBossDungeonHudSource, IBossDungeonTimeoutController, IBossDungeonBossKillController
+    public sealed class FallenCommanderController : MonoBehaviour, IContentController, IBossDungeonHudSource, IBossDungeonTimeoutController, IBossDungeonBossKillController, IBossDungeonAttackDebugController
     {
         [Header("Battle")]
         [SerializeField] private CombatWorld combatWorld;
@@ -140,12 +140,14 @@ namespace ProjectMT.Contents.FallenCommander
 
             if (entryPresenter != null)
             {
+                entryPresenter.gameObject.SetActive(false);
                 Destroy(entryPresenter.gameObject);
                 entryPresenter = null;
             }
 
             if (resultPresenter != null)
             {
+                resultPresenter.gameObject.SetActive(false);
                 Destroy(resultPresenter.gameObject);
                 resultPresenter = null;
             }
@@ -600,6 +602,26 @@ namespace ProjectMT.Contents.FallenCommander
                 null,
                 bossActor.Health.CurrentHealth,
                 bossActor.transform.position));
+        }
+
+        public void DebugBasicAttack()
+        {
+            stateMachine?.DebugForceBasicAttack();
+        }
+
+        public void DebugLineStrike()
+        {
+            stateMachine?.DebugForceLineStrike();
+        }
+
+        public void DebugMarkStrike()
+        {
+            stateMachine?.DebugForceMarkStrike();
+        }
+
+        public void DebugWideBurst()
+        {
+            stateMachine?.DebugForceWideBurst();
         }
 
         public bool PreviewBossAttack(FallenCommanderAttackData attack)

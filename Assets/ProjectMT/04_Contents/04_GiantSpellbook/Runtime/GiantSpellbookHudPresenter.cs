@@ -20,6 +20,14 @@ namespace ProjectMT.Contents.GiantSpellbook
         void DebugKillBoss();
     }
 
+    public interface IBossDungeonAttackDebugController
+    {
+        void DebugBasicAttack();
+        void DebugMarkStrike();
+        void DebugWideBurst();
+        void DebugLineStrike();
+    }
+
     // HUD에 표시할 값을 한 번에 전달하기 위한 데이터 묶음
     public readonly struct GiantSpellbookHudState
     {
@@ -105,6 +113,7 @@ namespace ProjectMT.Contents.GiantSpellbook
         private IBossDungeonHudSource hudSource;
         private IBossDungeonTimeoutController timeoutController;
         private IBossDungeonBossKillController bossKillController;
+        private IBossDungeonAttackDebugController attackDebugController;
         private GiantSpellbookController controller;
         private bool showDebugControls;
         private static Font runtimeKoreanFont;
@@ -125,6 +134,7 @@ namespace ProjectMT.Contents.GiantSpellbook
             hudSource = targetController;
             timeoutController = targetController as IBossDungeonTimeoutController;
             bossKillController = targetController as IBossDungeonBossKillController;
+            attackDebugController = targetController as IBossDungeonAttackDebugController;
             controller = targetController as GiantSpellbookController;
             showDebugControls = showDebugButtons;
             if (hudSource != null)
@@ -136,6 +146,7 @@ namespace ProjectMT.Contents.GiantSpellbook
 
             SetVisible(true);
             EnsureRuntimeControls();
+            ConfigureAttackDebugLabels();
             ApplyHudLayout();
             SetControlVisibility();
             debugTimeoutButton?.onClick.RemoveListener(HandleDebugTimeout);
@@ -165,6 +176,7 @@ namespace ProjectMT.Contents.GiantSpellbook
             hudSource = null;
             timeoutController = null;
             bossKillController = null;
+            attackDebugController = null;
             controller = null;
             showDebugControls = false;
             debugTimeoutButton?.onClick.RemoveListener(HandleDebugTimeout);
@@ -179,6 +191,8 @@ namespace ProjectMT.Contents.GiantSpellbook
         {
             var hasTimedBattle = timeoutController != null;
             var hasGiantSpellbookDebugAttacks = controller != null;
+            var hasAttackDebug = attackDebugController != null ||
+                controller != null;
 
             scoreValue?.gameObject.SetActive(hasTimedBattle);
             timerValue?.gameObject.SetActive(hasTimedBattle);
@@ -186,13 +200,13 @@ namespace ProjectMT.Contents.GiantSpellbook
             debugTimeoutButton?.gameObject.SetActive(
                 hasTimedBattle && showDebugControls);
             debugBasicAttackButton?.gameObject.SetActive(
-                hasGiantSpellbookDebugAttacks && showDebugControls);
+                hasAttackDebug && showDebugControls);
             debugHandSlamButton?.gameObject.SetActive(
-                hasGiantSpellbookDebugAttacks && showDebugControls);
+                hasAttackDebug && showDebugControls);
             debugMarkStrikeButton?.gameObject.SetActive(
-                hasGiantSpellbookDebugAttacks && showDebugControls);
+                hasAttackDebug && showDebugControls);
             debugWideBurstButton?.gameObject.SetActive(
-                hasGiantSpellbookDebugAttacks && showDebugControls);
+                hasAttackDebug && showDebugControls);
             debugBossKillButton?.gameObject.SetActive(
                 bossKillController != null && showDebugControls);
         }
@@ -302,27 +316,73 @@ namespace ProjectMT.Contents.GiantSpellbook
 
         private void HandleDebugBasicAttack()
         {
+            if (attackDebugController != null)
+            {
+                attackDebugController.DebugBasicAttack();
+                return;
+            }
+
             controller?.DebugBasicAttack();
         }
 
         private void HandleDebugHandSlam()
         {
+            if (attackDebugController != null)
+            {
+                attackDebugController.DebugLineStrike();
+                return;
+            }
+
             controller?.DebugHandSlam();
         }
 
         private void HandleDebugMarkStrike()
         {
+            if (attackDebugController != null)
+            {
+                attackDebugController.DebugMarkStrike();
+                return;
+            }
+
             controller?.DebugMarkStrike();
         }
 
         private void HandleDebugWideBurst()
         {
+            if (attackDebugController != null)
+            {
+                attackDebugController.DebugWideBurst();
+                return;
+            }
+
             controller?.DebugWideBurst();
         }
 
         private void HandleDebugKillBoss()
         {
             bossKillController?.DebugKillBoss();
+        }
+
+        private void ConfigureAttackDebugLabels()
+        {
+            if (attackDebugController != null && controller == null)
+            {
+                SetButtonLabel(debugHandSlamButton, "직선 공격");
+                return;
+            }
+
+            SetButtonLabel(debugHandSlamButton, "핸드 슬램");
+        }
+
+        private static void SetButtonLabel(Button button, string text)
+        {
+            var label = button == null
+                ? null
+                : button.GetComponentInChildren<Text>(true);
+            if (label != null)
+            {
+                label.text = text;
+            }
         }
 
         private void EnsureRuntimeControls()

@@ -34,6 +34,7 @@ namespace ProjectMT.Contents.FallenCommander
         private float basicAttackRadius;
         private float wideBurstCastTime;
         private float wideBurstRadius;
+        private float wideBurstStartRadius;
         private float wideBurstStunDuration;
         private float lineStrikeCastTime;
         private float lineStrikeWidth;
@@ -70,6 +71,15 @@ namespace ProjectMT.Contents.FallenCommander
         // 처음 지정한 군단장의 위치
         private Vector3 markStrikePosition;
         private Vector3 lineStrikeDirection;
+
+        private static readonly Color BasicTelegraphColor =
+            new Color(1f, 0.25f, 0.05f, 0.75f);
+        private static readonly Color LineTelegraphColor =
+            new Color(0.15f, 0.45f, 1f, 0.75f);
+        private static readonly Color MarkTelegraphColor =
+            new Color(0.9f, 0.15f, 0.8f, 0.75f);
+        private static readonly Color WideTelegraphColor =
+            new Color(1f, 0.75f, 0.05f, 0.75f);
 
         public void Configure(
             CombatWorld world,
@@ -112,6 +122,7 @@ namespace ProjectMT.Contents.FallenCommander
             wideBurstMotion = wideMotion;
             wideBurstCastTime = Mathf.Max(0.1f, wideMotion == null ? 0f : wideMotion.WarningDuration);
             wideBurstRadius = Mathf.Max(0.1f, wideMotion == null ? 0f : wideMotion.Radius);
+            wideBurstStartRadius = Mathf.Min(wideBurstRadius, Mathf.Max(0.25f, wideBurstRadius * 0.25f));
             wideBurstStunDuration = Mathf.Max(0f, wideMotion == null ? 0f : wideMotion.StunDuration);
             lineStrikeMotion = lineMotion;
             lineStrikeCastTime = Mathf.Max(0.1f, lineMotion == null ? 0f : lineMotion.WarningDuration);
@@ -203,6 +214,65 @@ namespace ProjectMT.Contents.FallenCommander
             bossFacingSmoother.SetTrackingEnabled(true);
         }
 
+        public void DebugForceBasicAttack()
+        {
+            if (!PrepareDebugAttack())
+            {
+                return;
+            }
+
+            BeginBasicAttack();
+        }
+
+        public void DebugForceMarkStrike()
+        {
+            if (!PrepareDebugAttack())
+            {
+                return;
+            }
+
+            BeginMarkStrike();
+        }
+
+        public void DebugForceWideBurst()
+        {
+            if (!PrepareDebugAttack())
+            {
+                return;
+            }
+
+            BeginWideBurst();
+        }
+
+        public void DebugForceLineStrike()
+        {
+            if (!PrepareDebugAttack())
+            {
+                return;
+            }
+
+            BeginLineStrike();
+        }
+
+        private bool PrepareDebugAttack()
+        {
+            if (!isActive ||
+                bossActor == null ||
+                !bossActor.IsAlive ||
+                commanderHealth == null ||
+                !commanderHealth.IsAlive ||
+                currentState == BossState.Dead)
+            {
+                return false;
+            }
+
+            DestroyActiveTelegraph();
+            stateTimeRemaining = 0f;
+            currentState = BossState.Idle;
+            attackCooldownRemaining = 0f;
+            return true;
+        }
+
         public void Shutdown()
         {
             DestroyActiveTelegraph();
@@ -223,6 +293,7 @@ namespace ProjectMT.Contents.FallenCommander
             attackCooldownRemaining = 0f;
             commanderStunRemaining = 0f;
             markStrikeStunDuration = 0f;
+            wideBurstStartRadius = 0f;
             stateTimeRemaining = 0f;
             markStrikePosition = Vector3.zero;
             lineStrikeDirection = Vector3.zero;
@@ -263,7 +334,8 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor.transform.position,
                 basicAttackCastTime,
                 basicAttackRadius,
-                basicAttackMotion);
+                basicAttackMotion,
+                BasicTelegraphColor);
         }
 
         private void BeginMarkStrike()
@@ -296,6 +368,7 @@ namespace ProjectMT.Contents.FallenCommander
             telegraphScale.x = markStrikeRadius * 2f;
             telegraphScale.z = markStrikeRadius * 2f;
             activeTelegraph.transform.localScale = telegraphScale;
+            ApplyTelegraphColor(activeTelegraph, MarkTelegraphColor);
         }
 
         private void BeginWideBurst()
@@ -305,7 +378,9 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor.transform.position,
                 wideBurstCastTime,
                 wideBurstRadius,
-                wideBurstMotion);
+                wideBurstMotion,
+                WideTelegraphColor);
+            SetTelegraphCircleRadius(wideBurstStartRadius);
         }
 
         private void BeginLineStrike()
@@ -334,6 +409,7 @@ namespace ProjectMT.Contents.FallenCommander
                 Quaternion.LookRotation(lineStrikeDirection, Vector3.up));
             activeTelegraph.transform.localScale =
                 new Vector3(lineStrikeWidth, 1f, lineStrikeLength);
+            ApplyTelegraphColor(activeTelegraph, LineTelegraphColor);
         }
 
         private void BeginCircleAttack(
@@ -341,7 +417,8 @@ namespace ProjectMT.Contents.FallenCommander
             Vector3 position,
             float castTime,
             float radius,
-            FallenCommanderAttackData motion)
+            FallenCommanderAttackData motion,
+            Color telegraphColor)
         {
             position.y += 0.02f;
             markStrikePosition = position;
@@ -359,12 +436,22 @@ namespace ProjectMT.Contents.FallenCommander
             scale.x = radius * 2f;
             scale.z = radius * 2f;
             activeTelegraph.transform.localScale = scale;
+            ApplyTelegraphColor(activeTelegraph, telegraphColor);
         }
 
         private void TickAttack(float deltaTime)
         {
             stateTimeRemaining =
                 Mathf.Max(0f, stateTimeRemaining - deltaTime);
+
+            if (currentState == BossState.WideBurst &&
+                activeTelegraph != null &&
+                wideBurstCastTime > 0f)
+            {
+                var progress = 1f - stateTimeRemaining / wideBurstCastTime;
+                SetTelegraphCircleRadius(
+                    Mathf.Lerp(wideBurstStartRadius, wideBurstRadius, progress));
+            }
 
             if (stateTimeRemaining > 0f)
             {
@@ -427,13 +514,15 @@ namespace ProjectMT.Contents.FallenCommander
 
         private float GetCurrentStunDuration()
         {
-            return currentState == BossState.MarkStrike
-                ? markStrikeStunDuration
-                : currentState == BossState.WideBurst
-                    ? wideBurstStunDuration
-                    : currentState == BossState.LineStrike
-                        ? lineStrikeStunDuration
-                        : 0f;
+            return currentState == BossState.HandSlam
+                ? basicAttackMotion == null ? 0f : basicAttackMotion.StunDuration
+                : currentState == BossState.MarkStrike
+                    ? markStrikeStunDuration
+                    : currentState == BossState.WideBurst
+                        ? wideBurstStunDuration
+                        : currentState == BossState.LineStrike
+                            ? lineStrikeStunDuration
+                            : 0f;
         }
 
         private FallenCommanderAttackData GetCurrentMotion()
@@ -534,6 +623,47 @@ namespace ProjectMT.Contents.FallenCommander
 
             Object.Destroy(activeTelegraph);
             activeTelegraph = null;
+        }
+
+        private void SetTelegraphCircleRadius(float radius)
+        {
+            if (activeTelegraph == null)
+            {
+                return;
+            }
+
+            var scale = activeTelegraph.transform.localScale;
+            scale.x = radius * 2f;
+            scale.z = radius * 2f;
+            activeTelegraph.transform.localScale = scale;
+        }
+
+        private static void ApplyTelegraphColor(GameObject telegraph, Color color)
+        {
+            if (telegraph == null)
+            {
+                return;
+            }
+
+            foreach (var graphic in telegraph.GetComponentsInChildren<UnityEngine.UI.Graphic>(true))
+            {
+                graphic.color = color;
+            }
+
+            foreach (var lineRenderer in telegraph.GetComponentsInChildren<LineRenderer>(true))
+            {
+                lineRenderer.startColor = color;
+                lineRenderer.endColor = color;
+            }
+
+            foreach (var renderer in telegraph.GetComponentsInChildren<Renderer>(true))
+            {
+                var propertyBlock = new MaterialPropertyBlock();
+                renderer.GetPropertyBlock(propertyBlock);
+                propertyBlock.SetColor("_Color", color);
+                propertyBlock.SetColor("_BaseColor", color);
+                renderer.SetPropertyBlock(propertyBlock);
+            }
         }
     }
 }

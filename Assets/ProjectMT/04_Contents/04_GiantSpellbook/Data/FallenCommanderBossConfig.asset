@@ -21,10 +21,10 @@ MonoBehaviour:
     castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
     castMotionDuration: 0.875
     warningDuration: 2
-    radius: 2.5
+    radius: 5
     width: 2
     length: 8
-    stunDuration: 0
+    stunDuration: 3.5
   markStrikeTelegraphPrefab: {fileID: 5939384426542757584, guid: 53a72b40a09905143996a7904cc8c0de, type: 3}
   markStrike:
     preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
@@ -32,20 +32,20 @@ MonoBehaviour:
     castMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
     castMotionDuration: 0.8750001
     warningDuration: 3
-    radius: 1.5
+    radius: 3
     width: 2
     length: 8
-    stunDuration: 3
+    stunDuration: 3.5
   wideBurst:
     preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
     preCastMotionDuration: 0.8750001
     castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
     castMotionDuration: 0.875
     warningDuration: 5
-    radius: 6
+    radius: 4
     width: 2
     length: 8
-    stunDuration: 3
+    stunDuration: 5
   lineStrike:
     preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
     preCastMotionDuration: 0.875
@@ -53,11 +53,11 @@ MonoBehaviour:
     castMotionDuration: 0.8750001
     warningDuration: 2.5
     radius: 2
-    width: 2
+    width: 3
     length: 8
-    stunDuration: 1.5
+    stunDuration: 3.5
   deathMotion: {fileID: 7400000, guid: 7eb365b59b49b5d4fa4ed0da8d2b8804, type: 3}
-  deathMotionDuration: 1.625
+  deathMotionDuration: 3
   deathResultDelay: 3
   maxBreakGauge: 100
   breakGaugePerHit: 10

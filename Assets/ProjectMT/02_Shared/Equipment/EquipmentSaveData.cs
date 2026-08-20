@@ -15,6 +15,8 @@ namespace ProjectMT.Shared.Equipment
 
         [SerializeField] private List<EquipmentInstanceData> instances = new List<EquipmentInstanceData>();
         [SerializeField] private string[] equippedInstanceIds = new string[PartCount]; // 인덱스 = (int)EquipmentPart
+        [SerializeField] private OfflineAutoDismantlePolicy offlineAutoDismantlePolicy =
+            OfflineAutoDismantlePolicy.Common; // 기존·신규 계정 기본값: 일반 이하
 
         public static EquipmentSaveData CreateDefault()
         {
@@ -29,7 +31,8 @@ namespace ProjectMT.Shared.Equipment
             var clone = new EquipmentSaveData
             {
                 instances = new List<EquipmentInstanceData>(sourceInstances.Count),
-                equippedInstanceIds = new string[PartCount]
+                equippedInstanceIds = new string[PartCount],
+                offlineAutoDismantlePolicy = offlineAutoDismantlePolicy
             };
 
             for (var i = 0; i < sourceInstances.Count; i++)
@@ -51,6 +54,11 @@ namespace ProjectMT.Shared.Equipment
 
         internal void Repair()
         {
+            if (!OfflineAutoDismantlePolicyInfo.IsValid(offlineAutoDismantlePolicy))
+            {
+                offlineAutoDismantlePolicy = OfflineAutoDismantlePolicy.Common;
+            }
+
             instances ??= new List<EquipmentInstanceData>();
             instances.RemoveAll(instance => instance == null || !instance.Repair());
 
@@ -158,6 +166,24 @@ namespace ProjectMT.Shared.Equipment
             return index >= 0 && instances[index].TrySetLocked(expectedValue, nextValue);
         }
 
+        internal bool TrySetOfflineAutoDismantlePolicy(
+            OfflineAutoDismantlePolicy expected,
+            OfflineAutoDismantlePolicy next)
+        {
+            if (!OfflineAutoDismantlePolicyInfo.IsValid(next) || offlineAutoDismantlePolicy != expected)
+            {
+                return false;
+            }
+
+            offlineAutoDismantlePolicy = next;
+            return true;
+        }
+
+        internal void MigrateOfflineAutoDismantlePolicy()
+        {
+            offlineAutoDismantlePolicy = OfflineAutoDismantlePolicy.Common;
+        }
+
         internal bool TryDismantle(IReadOnlyList<string> instanceIds, out long upgradeStoneAmount)
         {
             upgradeStoneAmount = 0L;
@@ -241,6 +267,7 @@ namespace ProjectMT.Shared.Equipment
 
         internal IReadOnlyList<EquipmentInstanceData> Instances => instances;
         internal string[] EquippedInstanceIds => equippedInstanceIds;
+        internal OfflineAutoDismantlePolicy OfflineAutoDismantlePolicy => offlineAutoDismantlePolicy;
     }
 
     // 08.10 안건준 추가 - 외부(UI·능력치 계산)에 전달할 읽기 전용 장비 보유·장착 복사값.
@@ -248,6 +275,7 @@ namespace ProjectMT.Shared.Equipment
     {
         private readonly EquipmentInstanceData[] instances;
         private readonly string[] equippedInstanceIds;
+        private readonly OfflineAutoDismantlePolicy offlineAutoDismantlePolicy;
 
         internal EquipmentSaveDataView(EquipmentSaveData data)
         {
@@ -261,9 +289,11 @@ namespace ProjectMT.Shared.Equipment
             var ids = data.EquippedInstanceIds;
             equippedInstanceIds = new string[ids.Length];
             Array.Copy(ids, equippedInstanceIds, ids.Length);
+            offlineAutoDismantlePolicy = data.OfflineAutoDismantlePolicy;
         }
 
         public IReadOnlyList<EquipmentInstanceData> Instances => instances ?? Array.Empty<EquipmentInstanceData>();
+        public OfflineAutoDismantlePolicy OfflineAutoDismantlePolicy => offlineAutoDismantlePolicy;
 
         public string GetEquippedInstanceId(EquipmentPart part)
         {

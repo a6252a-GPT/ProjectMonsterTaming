@@ -18,6 +18,11 @@ namespace ProjectMT.Features.Expedition
         [SerializeField, Min(0f)] private float enemyHealthGrowthPerStage = 0.11f; // 단계당 체력 증가율
         [SerializeField, Min(0f)] private float enemyDamageGrowthPerStage = 0.07f; // 단계당 공격 증가율
 
+        [Header("Boss Stage")]
+        [SerializeField, Min(1)] private int bossStageInterval = 10;
+        [SerializeField, Min(1f)] private float bossHealthMultiplier = 10f;
+        [SerializeField, Min(1f)] private float bossVisualScaleMultiplier = 2.5f;
+
         [Header("Stage Table")]
         [SerializeField] private ExpeditionStageDefinition[] stages = Array.Empty<ExpeditionStageDefinition>();
 
@@ -38,6 +43,14 @@ namespace ProjectMT.Features.Expedition
         public int EnemyWorldDropQuantity => Mathf.Max(1, enemyWorldDropQuantity);
         public EquipmentDropChestVisualCatalog EquipmentDropChestVisualCatalog => equipmentDropChestVisualCatalog;
         public float NormalEnemyEquipmentDropChance => Mathf.Clamp01(normalEnemyEquipmentDropChance);
+        public int BossStageInterval => Mathf.Max(1, bossStageInterval);
+        public float BossHealthMultiplier => Mathf.Max(1f, bossHealthMultiplier);
+        public float BossVisualScaleMultiplier => Mathf.Max(1f, bossVisualScaleMultiplier);
+
+        public bool IsBossStage(int stage)
+        {
+            return stage > 0 && stage % BossStageInterval == 0;
+        }
 
         public bool ShouldDropNormalEnemyEquipment(float roll)
         {
@@ -64,6 +77,11 @@ namespace ProjectMT.Features.Expedition
 
         public int GetWaveCount(int stage)
         {
+            if (IsBossStage(stage))
+            {
+                return 1;
+            }
+
             return TryResolveStage(stage, out var definition) && definition.WaveCount > 0
                 ? definition.WaveCount
                 : ExpeditionStageRules.LegacyWaveCount;
@@ -71,6 +89,11 @@ namespace ProjectMT.Features.Expedition
 
         public int GetEnemyCount(int stage, int wave)
         {
+            if (IsBossStage(stage))
+            {
+                return wave == 1 ? 1 : 0;
+            }
+
             return TryResolveStage(stage, out var definition) && definition.TryGetWave(wave, out var waveDefinition)
                 ? waveDefinition.ResolveEnemyCount(stage, definition.MinimumStage)
                 : ExpeditionStageRules.GetLegacyEnemiesPerWave(stage);
@@ -104,6 +127,11 @@ namespace ProjectMT.Features.Expedition
 
         public bool IsRangedSlot(int stage, int unitIndex)
         {
+            if (IsBossStage(stage))
+            {
+                return false;
+            }
+
             return TryResolveStage(stage, out var definition)
                 ? definition.IsRangedSlot(unitIndex)
                 : Mathf.Max(1, stage) >= 11 && Mathf.Max(0, unitIndex) % 4 == 3;
@@ -178,7 +206,7 @@ namespace ProjectMT.Features.Expedition
         public UnitStatsSnapshot CreateEnemyStats(int stage, bool ranged)
         {
             var stageOffset = Mathf.Max(0, stage - 1);
-            return new UnitStatsSnapshot
+            var result = new UnitStatsSnapshot
             {
                 maxHealth = enemyBaseHealth * (1f + enemyHealthGrowthPerStage * stageOffset),
                 damage = enemyBaseDamage * (1f + enemyDamageGrowthPerStage * stageOffset),
@@ -188,6 +216,12 @@ namespace ProjectMT.Features.Expedition
                 projectileSpeed = ranged ? 8f : 0f,
                 ranged = ranged
             };
+            if (IsBossStage(stage))
+            {
+                result.maxHealth *= BossHealthMultiplier;
+            }
+
+            return result;
         }
 
 #if UNITY_EDITOR
@@ -212,6 +246,13 @@ namespace ProjectMT.Features.Expedition
         {
             equipmentDropChestVisualCatalog = visualCatalog;
             normalEnemyEquipmentDropChance = Mathf.Clamp01(dropChance);
+        }
+
+        public void EditorConfigureBoss(int interval, float healthMultiplier, float visualScaleMultiplier)
+        {
+            bossStageInterval = Mathf.Max(1, interval);
+            bossHealthMultiplier = Mathf.Max(1f, healthMultiplier);
+            bossVisualScaleMultiplier = Mathf.Max(1f, visualScaleMultiplier);
         }
 #endif
     }

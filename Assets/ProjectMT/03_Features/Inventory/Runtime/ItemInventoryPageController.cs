@@ -773,6 +773,9 @@ namespace ProjectMT.Features.Inventory
             private readonly GameObject lockRoot;
             private readonly GameObject levelRoot;
             private readonly IReadOnlyDictionary<ItemGrade, GameObject> gradeFrameTemplates;
+            private readonly GameObject emptyFrame;
+            private readonly Image[] emptyFrameImages;
+            private readonly Color[] emptyFrameColors;
             private GameObject currentFrame;
             private Image[] frameImages = Array.Empty<Image>();
             private Color[] frameColors = Array.Empty<Color>();
@@ -802,9 +805,19 @@ namespace ProjectMT.Features.Inventory
                 lockRoot = lockObject;
                 levelRoot = levelObject;
                 gradeFrameTemplates = frameTemplates;
-                currentFrame = normalRoot != null && normalRoot.childCount > 0
+                emptyFrame = normalRoot != null && normalRoot.childCount > 0
                     ? normalRoot.GetChild(0).gameObject
                     : null;
+                emptyFrameImages = emptyFrame != null
+                    ? emptyFrame.GetComponentsInChildren<Image>(true)
+                    : Array.Empty<Image>();
+                emptyFrameColors = new Color[emptyFrameImages.Length];
+                for (var index = 0; index < emptyFrameImages.Length; index++)
+                {
+                    emptyFrameColors[index] = emptyFrameImages[index].color;
+                }
+
+                currentFrame = emptyFrame;
                 CacheFrameColors();
             }
 
@@ -841,7 +854,7 @@ namespace ProjectMT.Features.Inventory
                 lockRoot?.SetActive(false);
                 levelRoot?.SetActive(false);
                 selection.SetActive(false);
-                SetFrameDimmed(true);
+                ShowEmptyFrame();
                 icon.sprite = null;
                 icon.enabled = false;
                 quantity.text = string.Empty;
@@ -902,7 +915,10 @@ namespace ProjectMT.Features.Inventory
                 if (currentFrame != null)
                 {
                     currentFrame.SetActive(false);
-                    UnityEngine.Object.Destroy(currentFrame);
+                    if (currentFrame != emptyFrame)
+                    {
+                        UnityEngine.Object.Destroy(currentFrame);
+                    }
                 }
 
                 currentFrame = UnityEngine.Object.Instantiate(template, normalArea);
@@ -920,6 +936,26 @@ namespace ProjectMT.Features.Inventory
 
                 frameDimmed = false;
                 CacheFrameColors();
+            }
+
+            private void ShowEmptyFrame()
+            {
+                if (currentFrame != null && currentFrame != emptyFrame)
+                {
+                    currentFrame.SetActive(false);
+                    UnityEngine.Object.Destroy(currentFrame);
+                }
+
+                currentFrame = emptyFrame;
+                frameImages = emptyFrameImages;
+                frameColors = emptyFrameColors;
+                frameDimmed = false;
+                if (emptyFrame != null)
+                {
+                    emptyFrame.SetActive(true);
+                }
+
+                SetFrameDimmed(true);
             }
 
             private void CacheFrameColors()

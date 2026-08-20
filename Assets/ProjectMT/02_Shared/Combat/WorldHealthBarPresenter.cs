@@ -38,7 +38,7 @@ namespace ProjectMT.Shared.Combat
 
         public void ShowDamage(UnitActor target)
         {
-            if (!visible || target == null || target.Health == null || !target.IsAlive ||
+            if (!visible || target == null || target.IsBoss || target.Health == null || !target.IsAlive ||
                 container == null || viewPrefab == null || !isActiveAndEnabled)
             {
                 return;

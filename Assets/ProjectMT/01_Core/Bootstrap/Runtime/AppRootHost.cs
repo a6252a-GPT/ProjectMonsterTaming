@@ -8,6 +8,7 @@ using ProjectMT.Contents.Framework;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Features.OfflineReward;
+using ProjectMT.Features.Settings;
 using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Debugging;
@@ -30,6 +31,9 @@ namespace ProjectMT.Bootstrap
         [SerializeField] private ContentFinishFeedbackPresenter finishFeedbackPresenter; // 콘텐츠 저장 재시도 표시
         [SerializeField] private ContentResultOverlayPresenter resultOverlayPresenter; // 저장 확정 공통 결과창
         [SerializeField] private OfflineRewardPopupPresenter offlineRewardPresenter; // 접속·복귀 방치 정산창
+        [SerializeField] private SceneLoadingOverlayPresenter sceneLoadingOverlay; // 씬 전환 공통 로딩
+        [SerializeField] private SleepModeController sleepModeController; // 전역 절전 화면
+        [SerializeField] private GlobalAudioController globalAudioController; // Mixer·BGM 전역 소유
 
         private GameDataService gameDataService; // 진행 데이터 관리자
         private ContentFlow contentFlow; // 콘텐츠 실행 흐름
@@ -130,6 +134,7 @@ namespace ProjectMT.Bootstrap
             }
 
             var savePath = Path.Combine(Application.persistentDataPath, "ProjectMT_seed_save.json"); // 시드 저장 위치
+            AccountSessionStore.Prepare(File.Exists(savePath)); // 기존 저장은 최초 1회 게스트 자동 로그인 승계
             var saveService = new SaveService(new AtomicFileStore(), savePath);
             commanderGrowthConfig = projectConfig.CommanderGrowthConfig;
             if (commanderGrowthConfig == null || !commanderGrowthConfig.TryValidate(out _))
@@ -195,8 +200,13 @@ namespace ProjectMT.Bootstrap
                 finishFeedbackPresenter,
                 resultOverlayPresenter);
             sceneLoader.ContextFactory = CreateSceneContext; // 씬별 권한 봉투 생성
+            sceneLoadingOverlay ??= GetComponentInChildren<SceneLoadingOverlayPresenter>(true);
+            sleepModeController ??= GetComponentInChildren<SleepModeController>(true);
+            globalAudioController ??= GetComponentInChildren<GlobalAudioController>(true);
+            sceneLoader.SceneLoadStarted += HandleSceneLoadStarted;
             sceneLoader.SceneReady += HandleSceneReady;
             sceneLoader.SceneFailed += HandleSceneFailed;
+            AccountRuntimeBridge.LogoutRequested += HandleLogoutRequested;
 
             initialized = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -485,6 +495,7 @@ namespace ProjectMT.Bootstrap
 
         private void HandleSceneFailed(SceneId failedSceneId, string error)
         {
+            sceneLoadingOverlay?.Hide();
             Debug.LogError($"Scene flow failed. Scene={failedSceneId}, Error={error}");
             contentFlow?.NotifySceneLoadFailed(failedSceneId); // 별도 콘텐츠 진입 실패 잠금 해제
             if (failedSceneId != projectConfig.EntrySceneId && !sceneLoader.IsTransitioning)
@@ -496,6 +507,7 @@ namespace ProjectMT.Bootstrap
         private void HandleSceneReady(SceneId sceneId)
         {
             readySceneId = sceneId;
+            sceneLoadingOverlay?.Hide();
             if (sceneId == projectConfig.MainBattleSceneId)
             {
                 if (!ShowPendingOfflineRewards())
@@ -503,6 +515,23 @@ namespace ProjectMT.Bootstrap
                     ShowPendingAttendance(); // 오프라인 정산이 없으면 출석부터 표시
                 }
             }
+        }
+
+        private void HandleSceneLoadStarted(SceneId sceneId)
+        {
+            sceneLoadingOverlay?.Show(sceneId);
+        }
+
+        private void HandleLogoutRequested()
+        {
+            if (!initialized || sceneLoader == null || sceneLoader.IsTransitioning ||
+                contentFlow == null || contentFlow.IsRunning)
+            {
+                return;
+            }
+
+            AccountSessionStore.Logout(); // 진행 저장은 유지하고 세션만 종료
+            sceneLoader.Load(projectConfig.EntrySceneId);
         }
 
         private bool ShowPendingOfflineRewards()
@@ -675,9 +704,12 @@ namespace ProjectMT.Bootstrap
             {
                 if (sceneLoader != null)
                 {
+                    sceneLoader.SceneLoadStarted -= HandleSceneLoadStarted;
                     sceneLoader.SceneReady -= HandleSceneReady;
                     sceneLoader.SceneFailed -= HandleSceneFailed;
                 }
+
+                AccountRuntimeBridge.LogoutRequested -= HandleLogoutRequested;
 
                 Instance = null;
             }
@@ -708,6 +740,16 @@ namespace ProjectMT.Bootstrap
         public void EditorConfigureOfflineRewardPresenter(OfflineRewardPopupPresenter presenter)
         {
             offlineRewardPresenter = presenter;
+        }
+
+        public void EditorConfigureGlobalPresentation(
+            SceneLoadingOverlayPresenter loading,
+            SleepModeController sleep,
+            GlobalAudioController audio)
+        {
+            sceneLoadingOverlay = loading;
+            sleepModeController = sleep;
+            globalAudioController = audio;
         }
 #endif
     }

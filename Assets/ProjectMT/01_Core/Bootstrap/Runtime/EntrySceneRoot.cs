@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using ProjectMT.Core.SceneFlow;
+using ProjectMT.Features.Settings;
 using UnityEngine;
 
 namespace ProjectMT.Bootstrap
@@ -24,6 +25,7 @@ namespace ProjectMT.Bootstrap
     public sealed class EntrySceneRoot : MonoBehaviour, ISceneRoot // 시작 씬 초기화 담당
     {
         [SerializeField] private SceneId sceneId = new SceneId("entry"); // Entry 고정 식별자
+        [SerializeField] private TitleScreenController titleScreen; // 타이틀·게스트 진입 화면
 
         public SceneId SceneId => sceneId;
         public bool IsInitialized { get; private set; }
@@ -40,14 +42,44 @@ namespace ProjectMT.Bootstrap
                 throw new ArgumentException("EntrySceneContext is required.", nameof(context));
             }
 
+            titleScreen ??= GetComponentInChildren<TitleScreenController>(true);
+            if (titleScreen == null)
+            {
+                throw new InvalidOperationException("TitleScreenController is missing from Entry scene.");
+            }
+
             IsInitialized = true;
-            StartCoroutine(LoadMainBattleNextFrame(entryContext)); // 한 프레임 뒤 메인 진입
+            titleScreen.Configure(
+                () => LoginAsGuest(entryContext),
+                () => titleScreen.ShowStatus("Google 로그인은 추후 인증 계약 연결 후 제공됩니다."));
+            if (AccountSessionStore.IsLoggedIn)
+            {
+                titleScreen.ShowLoading("저장 데이터를 불러오는 중입니다...");
+                StartCoroutine(LoadMainBattleNextFrame(entryContext));
+            }
+            else
+            {
+                titleScreen.ShowTitle();
+            }
         }
 
         public void Shutdown()
         {
             StopAllCoroutines(); // 예약된 이동 취소
+            titleScreen?.Shutdown();
             IsInitialized = false;
+        }
+
+        private void LoginAsGuest(EntrySceneContext context)
+        {
+            if (!IsInitialized)
+            {
+                return;
+            }
+
+            AccountSessionStore.LoginAsGuest();
+            titleScreen.ShowLoading("게스트 데이터를 준비하는 중입니다...");
+            StartCoroutine(LoadMainBattleNextFrame(context));
         }
 
         private static IEnumerator LoadMainBattleNextFrame(EntrySceneContext context)

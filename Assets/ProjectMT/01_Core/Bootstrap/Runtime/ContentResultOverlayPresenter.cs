@@ -14,6 +14,11 @@ namespace ProjectMT.Bootstrap
         [SerializeField] private TMP_Text summaryText; // 최종 결과 요약
         [SerializeField] private Button confirmButton; // 확인 뒤 복귀 진행
         [SerializeField] private TMP_Text[] rewardSlotTexts; // 최대 3개 확정 보상 카드
+        [SerializeField] private Image[] starImages; // 성공 결과 별 3개
+        [SerializeField] private Sprite filledStarSprite; // 획득 별
+        [SerializeField] private Sprite emptyStarSprite; // 실패 별
+
+        public const int FixedSuccessStarCount = 3; // 조건 시스템 전까지 성공은 3별 고정
 
         private TaskCompletionSource<bool> closeSource;
         private bool confirmed; // 중복 확인 차단
@@ -48,11 +53,12 @@ namespace ProjectMT.Bootstrap
             CompleteClose(); // 비정상 중복 표시가 와도 이전 대기 해제
             closeSource = new TaskCompletionSource<bool>();
             titleText.text = presentation.Outcome == ContentOutcome.Fail
-                ? $"{presentation.DisplayName} 실패"
-                : $"{presentation.DisplayName} 완료";
+                ? "도전 실패"
+                : "클리어!";
             summaryText.text = string.IsNullOrWhiteSpace(presentation.Summary)
-                ? "콘텐츠 완료"
-                : presentation.Summary;
+                ? $"{presentation.DisplayName} 완료"
+                : $"{presentation.DisplayName} · {presentation.Summary}";
+            ApplyStarRating(presentation.Outcome);
             ApplyRewardSlots(presentation);
 
             confirmed = false;
@@ -116,6 +122,27 @@ namespace ProjectMT.Bootstrap
                         : $"외 {presentation.RewardItems.Count - 2}종");
         }
 
+        private void ApplyStarRating(ContentOutcome outcome)
+        {
+            if (starImages == null)
+            {
+                return;
+            }
+
+            var success = outcome != ContentOutcome.Fail;
+            for (var index = 0; index < starImages.Length; index++)
+            {
+                var star = starImages[index];
+                if (star == null)
+                {
+                    continue;
+                }
+
+                star.gameObject.SetActive(index < FixedSuccessStarCount);
+                star.sprite = success ? filledStarSprite : emptyStarSprite;
+            }
+        }
+
         private void SetSlot(int index, string value)
         {
             if (index >= 0 && index < rewardSlotTexts.Length && rewardSlotTexts[index] != null)
@@ -170,6 +197,16 @@ namespace ProjectMT.Bootstrap
             summaryText = summary;
             confirmButton = confirm;
             rewardSlotTexts = rewardSlots;
+        }
+
+        public void EditorConfigureStarRating(
+            Sprite filledSprite,
+            Sprite emptySprite,
+            params Image[] stars)
+        {
+            filledStarSprite = filledSprite;
+            emptyStarSprite = emptySprite;
+            starImages = stars;
         }
 #endif
     }

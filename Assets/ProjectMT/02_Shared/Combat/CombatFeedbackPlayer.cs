@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Pooling;
 using ProjectMT.Shared.Unit;
@@ -26,6 +27,11 @@ namespace ProjectMT.Shared.Combat
         private float strongestImpulseThisFrame; // 같은 프레임의 더 강한 요청은 승격 허용
         private float nextHitImpulseTime;
         private float strongestRecentHitImpulse;
+        private readonly HashSet<int> displaySuppressors = new HashSet<int>();
+        private bool requestedFloatingNumbers = true;
+        private bool requestedUnitHealthBars = true;
+
+        public bool IsDisplaySuppressed => displaySuppressors.Count > 0;
 
         private void Awake()
         {
@@ -150,8 +156,36 @@ namespace ProjectMT.Shared.Combat
 
         public void SetDisplayOptions(bool showFloatingNumbers, bool showUnitHealthBars)
         {
-            floatingNumbers?.SetVisible(showFloatingNumbers);
-            worldHealthBars?.SetVisible(showUnitHealthBars);
+            requestedFloatingNumbers = showFloatingNumbers;
+            requestedUnitHealthBars = showUnitHealthBars;
+            ApplyDisplayOptions();
+        }
+
+        public void SetDisplaySuppressed(Object owner, bool suppressed)
+        {
+            if (owner == null)
+            {
+                return;
+            }
+
+            var ownerId = owner.GetInstanceID();
+            if (suppressed)
+            {
+                displaySuppressors.Add(ownerId);
+            }
+            else
+            {
+                displaySuppressors.Remove(ownerId);
+            }
+
+            ApplyDisplayOptions();
+        }
+
+        private void ApplyDisplayOptions()
+        {
+            var allowed = displaySuppressors.Count == 0;
+            floatingNumbers?.SetVisible(allowed && requestedFloatingNumbers);
+            worldHealthBars?.SetVisible(allowed && requestedUnitHealthBars);
         }
 
         private void PlayImpulse(float strength)

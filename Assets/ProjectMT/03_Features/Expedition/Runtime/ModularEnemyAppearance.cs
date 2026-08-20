@@ -53,7 +53,7 @@ namespace ProjectMT.Features.Expedition
             }
 
             bodyInstance = InstantiatePart(bodyPrefab, visualRoot);
-            bodyInstance.transform.localScale = Vector3.one * profile.VisualScale;
+            bodyInstance.transform.localScale = Vector3.one * profile.VisualScale * request.VisualScaleMultiplier;
             var skinToken = FirstToken(bodyPrefab.name);
             var paletteToken = SecondToken(bodyPrefab.name);
             var headSocket = FindDescendant(bodyInstance.transform, "+ Head");

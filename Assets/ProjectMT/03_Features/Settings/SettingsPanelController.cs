@@ -1,4 +1,5 @@
 using System;
+using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Combat;
 using TMPro;
 using UnityEngine;
@@ -52,7 +53,12 @@ namespace ProjectMT.Features.Settings
         [SerializeField] private Button customerSupportButton;
         [SerializeField] private Button termsButton;
         [SerializeField] private Button privacyButton;
+        [SerializeField] private Button logoutButton;
         [SerializeField] private Button deleteDataButton;
+        [SerializeField] private GameObject deleteConfirmRoot;
+        [SerializeField] private TMP_Text deleteConfirmMessageText;
+        [SerializeField] private Button deleteCancelButton;
+        [SerializeField] private Button deleteConfirmButton;
 
         private static readonly int[] SleepDelayOptions = { 1, 3, 5, 10 };
         private static readonly int[] FrameRateOptions = { 30, 60 };
@@ -74,6 +80,7 @@ namespace ProjectMT.Features.Settings
             BindControls();
             data = LocalSettingsStore.Load();
             ShowTab(Tab.System);
+            deleteConfirmRoot?.SetActive(false);
             RefreshControls();
         }
 
@@ -82,6 +89,7 @@ namespace ProjectMT.Features.Settings
             gameObject.SetActive(true);
             data = LocalSettingsStore.Load();
             ShowTab(Tab.System);
+            deleteConfirmRoot?.SetActive(false);
             ApplyRuntimeSettings();
             RefreshControls();
             SetStatus("현재 기기에 저장된 설정입니다.");
@@ -96,6 +104,7 @@ namespace ProjectMT.Features.Settings
             }
 
             OpenStateChanged?.Invoke(false);
+            deleteConfirmRoot?.SetActive(false);
             gameObject.SetActive(false);
         }
 
@@ -158,6 +167,11 @@ namespace ProjectMT.Features.Settings
             sfxSlider?.onValueChanged.AddListener(value => Change(settings => settings.sfxVolume = value));
             vibrationToggle?.onValueChanged.AddListener(value => Change(settings => settings.vibrationEnabled = value));
             copyUserIdButton?.onClick.AddListener(CopyUserId);
+            googleLinkButton?.onClick.AddListener(() => SetStatus("Google 로그인은 인증 계약 연결 후 활성화됩니다."));
+            logoutButton?.onClick.AddListener(RequestLogout);
+            deleteDataButton?.onClick.AddListener(OpenDeleteConfirmation);
+            deleteCancelButton?.onClick.AddListener(CloseDeleteConfirmation);
+            deleteConfirmButton?.onClick.AddListener(ConfirmDeleteProgress);
         }
 
         private void Change(Action<LocalSettingsData> change)
@@ -174,7 +188,7 @@ namespace ProjectMT.Features.Settings
             ApplyRuntimeSettings();
             RefreshControls();
             SetStatus(activeTab == Tab.Sound
-                ? "음량 값은 저장되었습니다. Audio Mixer 연결 후 채널별로 적용됩니다."
+                ? "BGM·효과음 채널 음량을 즉시 적용했습니다."
                 : "설정을 저장하고 즉시 적용했습니다.");
             SettingsChanged?.Invoke(data.Clone());
         }
@@ -187,6 +201,7 @@ namespace ProjectMT.Features.Settings
             }
 
             Application.targetFrameRate = data.targetFrameRate;
+            AudioRuntimeSettings.Apply(data.bgmVolume, data.sfxVolume, data.vibrationEnabled);
             var names = QualitySettings.names;
             if (names.Length > 0)
             {
@@ -241,20 +256,33 @@ namespace ProjectMT.Features.Settings
 
             if (accountStateText != null)
             {
-                accountStateText.text = "게스트 계정";
+                accountStateText.text = data.accountLoggedIn ? "게스트 계정 · 로그인됨" : "로그아웃 상태";
             }
 
             if (userIdText != null)
             {
-                userIdText.text = "사용자 ID  ·  계정 서비스 연결 전";
+                userIdText.text = $"사용자 ID  ·  {AccountSessionStore.FormatUserId(data.guestUserId)}";
             }
 
-            copyUserIdButton?.gameObject.SetActive(false);
-            SetUnavailable(googleLinkButton);
+            copyUserIdButton?.gameObject.SetActive(true);
+            if (googleLinkButton != null)
+            {
+                googleLinkButton.interactable = true; // 실제 인증 대신 준비 상태 안내
+            }
+
             SetUnavailable(customerSupportButton);
             SetUnavailable(termsButton);
             SetUnavailable(privacyButton);
-            SetUnavailable(deleteDataButton);
+            if (logoutButton != null)
+            {
+                logoutButton.interactable = data.accountLoggedIn;
+            }
+
+            if (deleteDataButton != null)
+            {
+                deleteDataButton.interactable = true;
+            }
+
             refreshing = false;
         }
 
@@ -298,6 +326,66 @@ namespace ProjectMT.Features.Settings
 
             GUIUtility.systemCopyBuffer = userIdText.text;
             SetStatus("사용자 ID를 복사했습니다.");
+        }
+
+        private void RequestLogout()
+        {
+            CloseDeleteConfirmation();
+            SetStatus("로그아웃하고 타이틀 화면으로 이동합니다.");
+            AccountRuntimeBridge.RequestLogout();
+        }
+
+        private void OpenDeleteConfirmation()
+        {
+            if (deleteConfirmRoot == null)
+            {
+                SetStatus("데이터 삭제 확인창 연결이 필요합니다.");
+                return;
+            }
+
+            if (deleteConfirmMessageText != null)
+            {
+                deleteConfirmMessageText.text = "모든 진행 데이터를 초기화합니다. 이 작업은 되돌릴 수 없습니다.";
+            }
+
+            deleteConfirmRoot.SetActive(true); // 첫 번째 삭제 입력은 확인창만 연다
+        }
+
+        private void CloseDeleteConfirmation()
+        {
+            deleteConfirmRoot?.SetActive(false);
+        }
+
+        private async void ConfirmDeleteProgress()
+        {
+            if (deleteConfirmButton != null)
+            {
+                deleteConfirmButton.interactable = false;
+            }
+
+            if (deleteConfirmMessageText != null)
+            {
+                deleteConfirmMessageText.text = "진행 데이터를 초기화하는 중입니다...";
+            }
+
+            var deleted = await AccountRuntimeBridge.RequestDeleteProgressAsync();
+            if (this == null)
+            {
+                return;
+            }
+
+            if (!deleted)
+            {
+                if (deleteConfirmButton != null)
+                {
+                    deleteConfirmButton.interactable = true;
+                }
+
+                SetStatus("진행 데이터를 초기화하지 못했습니다. 잠시 후 다시 시도하세요.");
+                return;
+            }
+
+            CloseDeleteConfirmation();
         }
 
         private static void RefreshSelection(Button[] buttons, int selectedIndex)
@@ -405,6 +493,20 @@ namespace ProjectMT.Features.Settings
             termsButton = termsOfService;
             privacyButton = privacyPolicy;
             deleteDataButton = deleteData;
+        }
+
+        public void EditorConfigureAccountActions(
+            Button logout,
+            GameObject confirmRoot,
+            TMP_Text confirmMessage,
+            Button cancel,
+            Button confirm)
+        {
+            logoutButton = logout;
+            deleteConfirmRoot = confirmRoot;
+            deleteConfirmMessageText = confirmMessage;
+            deleteCancelButton = cancel;
+            deleteConfirmButton = confirm;
         }
 #endif
     }

@@ -709,6 +709,14 @@ namespace ProjectMT.Shared.GameData
                 }
             }
 
+            if (change.HasSetOfflineAutoDismantlePolicy &&
+                !(equipment ??= EquipmentSaveData.CreateDefault()).TrySetOfflineAutoDismantlePolicy(
+                    change.ExpectedOfflineAutoDismantlePolicy,
+                    change.OfflineAutoDismantlePolicy))
+            {
+                return false;
+            }
+
             if (change.HasDiscardItem)
             {
                 if (!ItemInventoryTransactions.TryDiscard(
@@ -1373,6 +1381,13 @@ namespace ProjectMT.Shared.GameData
                 mail = MailProgressData.CreateDefault();
             }
 
+
+            if (sourceDataVersion <= 19)
+            {
+                equipment ??= EquipmentSaveData.CreateDefault();
+                equipment.MigrateOfflineAutoDismantlePolicy(); // 기존 계정은 안전한 기본값으로 시작
+            }
+
             Repair();
         }
 
@@ -1508,6 +1523,9 @@ namespace ProjectMT.Shared.GameData
         internal bool EquipmentLockValue { get; private set; }
         internal bool HasDismantleEquipment { get; private set; }
         internal IReadOnlyList<string> DismantleEquipmentInstanceIds { get; private set; }
+        internal bool HasSetOfflineAutoDismantlePolicy { get; private set; }
+        internal OfflineAutoDismantlePolicy ExpectedOfflineAutoDismantlePolicy { get; private set; }
+        internal OfflineAutoDismantlePolicy OfflineAutoDismantlePolicy { get; private set; }
         internal bool HasStandaloneItemGrant { get; private set; }
         internal bool HasDiscardItem { get; private set; }
         internal bool HasUseItem { get; private set; }
@@ -2018,6 +2036,18 @@ namespace ProjectMT.Shared.GameData
             {
                 HasDismantleEquipment = true,
                 DismantleEquipmentInstanceIds = copiedIds
+            };
+        }
+
+        public static GameProgressChange SetOfflineAutoDismantlePolicy(
+            OfflineAutoDismantlePolicy expected,
+            OfflineAutoDismantlePolicy next)
+        {
+            return new GameProgressChange
+            {
+                HasSetOfflineAutoDismantlePolicy = true,
+                ExpectedOfflineAutoDismantlePolicy = expected,
+                OfflineAutoDismantlePolicy = next
             };
         }
 

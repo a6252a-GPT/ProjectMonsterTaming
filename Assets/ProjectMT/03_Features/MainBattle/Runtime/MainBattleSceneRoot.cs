@@ -66,6 +66,8 @@ namespace ProjectMT.Features.MainBattle
         private AttendancePanelController attendancePanel; // 28일 출석 팝업
         private MailboxPanelController mailboxPanel; // 우편 목록·수령 팝업
         private HudQuickMenuController quickMenu; // 출석·우편 알림 배지
+        private CombatPowerIncreasePresenter combatPowerIncrease; // 총전투력 상승 피드백
+        private float trackedTotalPower; // 마지막 저장 확정 총전투력
 
         public SceneId SceneId => sceneId;
         public bool IsInitialized { get; private set; }
@@ -168,6 +170,9 @@ namespace ProjectMT.Features.MainBattle
             ConfigureMonsterDrag();
             ConfigureSpatialMovement();
             ConfigureFormationPlacement();
+            combatPowerIncrease = GetComponentInChildren<CombatPowerIncreasePresenter>(true);
+            trackedTotalPower = party.TotalPower;
+            context.Progress.Changed += HandleProgressChanged;
             SetStatus("자동 전투");
             IsInitialized = true;
         }
@@ -202,6 +207,10 @@ namespace ProjectMT.Features.MainBattle
             managementUi?.ConfigureInventoryPage(null);
             managementUi?.ConfigureCommanderSkillPage(null);
             quickMenu?.ConfigureNotifications(null);
+            if (context != null)
+            {
+                context.Progress.Changed -= HandleProgressChanged;
+            }
             attendancePanel?.Configure(null, null);
             mailboxPanel?.Configure(null, null);
             if (managementUi != null)
@@ -246,6 +255,9 @@ namespace ProjectMT.Features.MainBattle
             attendancePanel = null;
             mailboxPanel = null;
             quickMenu = null;
+            combatPowerIncrease?.Hide();
+            combatPowerIncrease = null;
+            trackedTotalPower = 0f;
             IsInitialized = false;
         }
 
@@ -735,9 +747,35 @@ namespace ProjectMT.Features.MainBattle
             }
 
             party = updatedParty;
+            trackedTotalPower = updatedParty.TotalPower;
             expedition.SetPartyForNextRun(updatedParty); // 현재 소환 유닛은 유지
             commanderGrowthPage?.SetParty(updatedParty);
             SetStatus("편성 저장 완료 · 다음 전투부터 적용");
+        }
+
+        private void HandleProgressChanged()
+        {
+            if (!IsInitialized || context == null)
+            {
+                return;
+            }
+
+            var updatedParty = context.RefreshParty();
+            if (updatedParty == null || updatedParty.Units.Length == 0)
+            {
+                return;
+            }
+
+            var previousPower = trackedTotalPower;
+            var currentPower = updatedParty.TotalPower;
+            trackedTotalPower = currentPower;
+            party = updatedParty;
+            expedition.SetPartyForNextRun(updatedParty);
+            commanderGrowthPage?.SetParty(updatedParty);
+            if (currentPower > previousPower + 0.5f)
+            {
+                combatPowerIncrease?.ShowIncrease(previousPower, currentPower);
+            }
         }
 
         private void RefreshPartyForNextRun()

@@ -42,6 +42,7 @@ namespace ProjectMT.Features.MainBattle
         private int defaultCanvasSortingOrder;
         private FormationPageController formationPage;
         private Canvas hudCanvas;
+        private bool combatDisplaySuppressed;
 
         public event Action GrowthDungeonPageOpened;
 
@@ -103,6 +104,7 @@ namespace ProjectMT.Features.MainBattle
 
         private void OnDestroy()
         {
+            SetCombatDisplaySuppressed(false);
             RestoreCanvasOrder();
             commanderGrowthButton?.onClick.RemoveListener(ToggleCommanderGrowthPage);
             shopButton?.onClick.RemoveListener(OpenShopPage);
@@ -124,6 +126,21 @@ namespace ProjectMT.Features.MainBattle
             }
 
             ConfigureFormationPage(null);
+        }
+
+        private void OnDisable()
+        {
+            SetCombatDisplaySuppressed(false);
+            RestoreCanvasOrder();
+        }
+
+        private void LateUpdate()
+        {
+            var shouldSuppress = IsAnyPageOpen;
+            if (combatDisplaySuppressed != shouldSuppress)
+            {
+                SetCombatDisplaySuppressed(shouldSuppress);
+            }
         }
 
         public void CloseAllPages()
@@ -524,7 +541,7 @@ namespace ProjectMT.Features.MainBattle
         private void BringToFront()
         {
             transform.SetAsLastSibling();
-            SetCombatDisplayVisible(false); // 관리 팝업 위 전투 숫자·일반 HP바 숨김
+            SetCombatDisplaySuppressed(true); // 관리 팝업 중 전투 표시 억제
             if (hudCanvas != null)
             {
                 hudCanvas.sortingOrder = Math.Max(defaultCanvasSortingOrder, 100);
@@ -533,6 +550,7 @@ namespace ProjectMT.Features.MainBattle
 
         private void RestoreHudOrder()
         {
+            SetCombatDisplaySuppressed(false);
             var parent = transform.parent;
             if (defaultSiblingIndex < 0 || parent == null ||
                 !gameObject.activeInHierarchy || !parent.gameObject.activeInHierarchy)
@@ -542,7 +560,6 @@ namespace ProjectMT.Features.MainBattle
 
             transform.SetSiblingIndex(Mathf.Min(defaultSiblingIndex, parent.childCount - 1));
             RestoreCanvasOrder();
-            SetCombatDisplayVisible(true);
         }
 
         private void RestoreCanvasOrder()
@@ -553,16 +570,14 @@ namespace ProjectMT.Features.MainBattle
             }
         }
 
-        private static void SetCombatDisplayVisible(bool visible)
+        private void SetCombatDisplaySuppressed(bool suppressed)
         {
-            var settings = visible ? LocalSettingsStore.Load() : null;
+            combatDisplaySuppressed = suppressed;
             foreach (var feedback in FindObjectsByType<CombatFeedbackPlayer>(
                          FindObjectsInactive.Include,
                          FindObjectsSortMode.None))
             {
-                feedback.SetDisplayOptions(
-                    visible && settings.damageNumbersVisible,
-                    visible && settings.unitHealthBarsVisible);
+                feedback.SetDisplaySuppressed(this, suppressed);
             }
         }
 

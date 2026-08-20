@@ -124,6 +124,10 @@ namespace ProjectMT.Features.Equipment
         private TMP_Text dismantleButtonText;
         private Transform dismantleClearButtonRoot;
         private Button dismantleClearButton;
+        private Transform offlineAutoDismantleOpenButtonRoot;
+        private Button offlineAutoDismantleOpenButton;
+        private TMP_Text offlineAutoDismantleOpenButtonText;
+        private OfflineAutoDismantleSettingsPanelController offlineAutoDismantleSettingsPanel;
         private GameObject dismantleConfirmRoot;
         private TMP_Text dismantleConfirmSummaryText;
         private Button dismantleConfirmCancelButton;
@@ -140,6 +144,7 @@ namespace ProjectMT.Features.Equipment
         private EquipmentPageMode currentMode = EquipmentPageMode.Equip;
         private bool requestInFlight;
         private Action combatInputSaved;
+        private IGameProgressService progress;
 
         private void Awake()
         {
@@ -165,6 +170,7 @@ namespace ProjectMT.Features.Equipment
         {
             EquipmentInventoryRuntime.Changed -= HandleInventoryChanged;
             CloseDismantleConfirmation();
+            offlineAutoDismantleSettingsPanel?.Close();
         }
 
         // MainBattleSceneRoot가 씬 조립 시점에 진행 데이터 서비스를 주입한다. 실제 보유/장착 데이터는
@@ -180,8 +186,14 @@ namespace ProjectMT.Features.Equipment
             EquipmentBalanceConfig balance,
             Action onCombatInputSaved = null)
         {
+            this.progress = progress;
             combatInputSaved = onCombatInputSaved;
             EquipmentInventoryRuntime.Configure(progress, ResolveCatalog(), balance);
+            offlineAutoDismantleSettingsPanel?.Configure(progress);
+            if (isActiveAndEnabled)
+            {
+                RefreshAll(); // 활성화가 데이터 주입보다 먼저 끝난 경우 버튼 상태를 즉시 복구
+            }
         }
 
         // ---------------------------------------------------------------
@@ -213,6 +225,11 @@ namespace ProjectMT.Features.Equipment
             dismantleAutoSelectButtonRoot = FindDeep(transform, "DismantleAutoSelectButton");
             dismantleButtonRoot = FindDeep(transform, "DismantleButton");
             dismantleClearButtonRoot = FindDeep(transform, "DismantleClearButton");
+            offlineAutoDismantleOpenButtonRoot = FindDeep(transform, "OfflineAutoDismantleOpenButton");
+            var equipmentPageRoot = transform.parent != null ? transform.parent : transform;
+            offlineAutoDismantleSettingsPanel =
+                FindDeep(equipmentPageRoot, "PF_OfflineAutoDismantleSettingsPopup")
+                    ?.GetComponent<OfflineAutoDismantleSettingsPanelController>();
             dismantleConfirmRoot = FindDeep(transform, "DismantleConfirmRoot")?.gameObject;
             dismantleConfirmSummaryText = FindDeep(transform, "DismantleConfirmSummary")?.GetComponent<TMP_Text>();
             dismantleConfirmCancelButton = FindDeep(transform, "DismantleConfirmCancelButton")?.GetComponent<Button>();
@@ -409,6 +426,7 @@ namespace ProjectMT.Features.Equipment
 
             currentMode = mode;
             CloseDismantleConfirmation();
+            offlineAutoDismantleSettingsPanel?.Close();
             if (currentMode == EquipmentPageMode.Equip)
             {
                 ClearDismantleSelection();
@@ -888,6 +906,14 @@ namespace ProjectMT.Features.Equipment
                 });
             }
 
+            if (offlineAutoDismantleOpenButtonRoot != null)
+            {
+                offlineAutoDismantleOpenButton = EnsureButton(offlineAutoDismantleOpenButtonRoot);
+                offlineAutoDismantleOpenButtonText =
+                    offlineAutoDismantleOpenButtonRoot.GetComponentInChildren<TMP_Text>(true);
+                offlineAutoDismantleOpenButton.onClick.AddListener(OpenOfflineAutoDismantleSettings);
+            }
+
             if (dismantleConfirmCancelButton != null)
             {
                 dismantleConfirmCancelButton.onClick.AddListener(CloseDismantleConfirmation);
@@ -921,6 +947,17 @@ namespace ProjectMT.Features.Equipment
             dismantleGradeThreshold = (EquipmentGrade)(((int)dismantleGradeThreshold + 1) % 5);
             ClearDismantleSelection();
             RefreshSelection();
+        }
+
+        private void OpenOfflineAutoDismantleSettings()
+        {
+            if (requestInFlight || offlineAutoDismantleSettingsPanel == null)
+            {
+                return;
+            }
+
+            offlineAutoDismantleSettingsPanel.Configure(progress);
+            offlineAutoDismantleSettingsPanel.Open();
         }
 
         private void ToggleDismantleAutoSelection()
@@ -1468,6 +1505,26 @@ namespace ProjectMT.Features.Equipment
             if (dismantleClearButton != null)
             {
                 dismantleClearButton.interactable = isDismantleMode && dismantleSelection.Count > 0 && !requestInFlight;
+            }
+
+            if (offlineAutoDismantleOpenButtonRoot != null)
+            {
+                offlineAutoDismantleOpenButtonRoot.gameObject.SetActive(isDismantleMode);
+            }
+
+            if (offlineAutoDismantleOpenButtonText != null)
+            {
+                var policy = progress != null && progress.IsLoaded
+                    ? progress.View.Equipment.OfflineAutoDismantlePolicy
+                    : OfflineAutoDismantlePolicy.Common;
+                offlineAutoDismantleOpenButtonText.text =
+                    $"방치 설정\n{OfflineAutoDismantlePolicyInfo.GetDisplayName(policy)}";
+            }
+
+            if (offlineAutoDismantleOpenButton != null)
+            {
+                offlineAutoDismantleOpenButton.interactable =
+                    isDismantleMode && !requestInFlight && progress != null && progress.IsLoaded;
             }
         }
 

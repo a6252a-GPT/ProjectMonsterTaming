@@ -282,21 +282,38 @@ namespace ProjectMT.Features.OfflineReward
             existingDismantleStones = 0L;
             var existing = current.Instances;
             var newEquipment = rolled ?? Array.Empty<EquipmentInstanceData>();
-            var overflow = Math.Max(0, existing.Count + newEquipment.Count - EquipmentSaveData.MaxTotalQuantity);
-            if (overflow == 0)
+            var discardedNewIds = new HashSet<string>(StringComparer.Ordinal);
+            var remainingNewCount = 0;
+            var proactivelyDismantledCount = 0;
+            var hasProactiveThreshold = OfflineAutoDismantlePolicyInfo.TryGetMaximumGrade(
+                current.OfflineAutoDismantlePolicy,
+                out var proactiveMaximumGrade);
+            for (var index = 0; index < newEquipment.Count; index++)
             {
-                for (var index = 0; index < newEquipment.Count; index++)
+                var instance = newEquipment[index];
+                if (instance == null)
                 {
-                    if (newEquipment[index] == null)
-                    {
-                        return false;
-                    }
-
-                    kept.Add(newEquipment[index].Clone());
+                    return false;
                 }
 
-                return true;
+                if (!hasProactiveThreshold || instance.Grade > proactiveMaximumGrade)
+                {
+                    remainingNewCount++;
+                    continue;
+                }
+
+                var stone = EquipmentDismantleRules.GetUpgradeStoneAmount(instance.Grade);
+                if (stone <= 0 || autoDismantleStones > long.MaxValue - stone)
+                {
+                    return false;
+                }
+
+                discardedNewIds.Add(instance.InstanceId);
+                autoDismantleStones += stone;
+                proactivelyDismantledCount++;
             }
+
+            var overflow = Math.Max(0, existing.Count + remainingNewCount - EquipmentSaveData.MaxTotalQuantity);
 
             var equippedIds = new HashSet<string>(StringComparer.Ordinal);
             foreach (EquipmentPart part in Enum.GetValues(typeof(EquipmentPart)))
@@ -320,12 +337,10 @@ namespace ProjectMT.Features.OfflineReward
 
             for (var index = 0; index < newEquipment.Count; index++)
             {
-                if (newEquipment[index] == null)
+                if (!discardedNewIds.Contains(newEquipment[index].InstanceId))
                 {
-                    return false;
+                    candidates.Add(new DismantleCandidate(newEquipment[index], true));
                 }
-
-                candidates.Add(new DismantleCandidate(newEquipment[index], true));
             }
 
             candidates.Sort(CompareCandidates);
@@ -334,7 +349,6 @@ namespace ProjectMT.Features.OfflineReward
                 return false;
             }
 
-            var discardedNewIds = new HashSet<string>(StringComparer.Ordinal);
             for (var index = 0; index < overflow; index++)
             {
                 var candidate = candidates[index];
@@ -364,7 +378,7 @@ namespace ProjectMT.Features.OfflineReward
                 }
             }
 
-            autoDismantledCount = overflow;
+            autoDismantledCount = proactivelyDismantledCount + overflow;
             return true;
         }
 

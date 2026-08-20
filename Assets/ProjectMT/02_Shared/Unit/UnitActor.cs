@@ -21,7 +21,9 @@ namespace ProjectMT.Shared.Unit
             float fixedDamagePerHit = 0f,
             Color visualTint = default,
             MonsterRuntimeAssetSet runtimeAssetSet = null,
-            int appearanceSeed = 0)
+            int appearanceSeed = 0,
+            float visualScaleMultiplier = 1f,
+            bool isBoss = false)
         {
             UnitId = unitId ?? string.Empty;
             Stats = stats;
@@ -32,6 +34,8 @@ namespace ProjectMT.Shared.Unit
             VisualTint = visualTint.a <= 0f ? Color.white : visualTint;
             RuntimeAssetSet = runtimeAssetSet;
             AppearanceSeed = appearanceSeed;
+            VisualScaleMultiplier = Mathf.Max(0.01f, visualScaleMultiplier);
+            IsBoss = isBoss;
         }
 
         public string UnitId { get; }
@@ -43,6 +47,8 @@ namespace ProjectMT.Shared.Unit
         public Color VisualTint { get; }
         public MonsterRuntimeAssetSet RuntimeAssetSet { get; }
         public int AppearanceSeed { get; }
+        public float VisualScaleMultiplier { get; }
+        public bool IsBoss { get; }
     }
 
     [DisallowMultipleComponent]
@@ -100,6 +106,7 @@ namespace ProjectMT.Shared.Unit
         public MonsterAnimationDriver AnimationDriver => animationDriver;
         public bool IsHitStopped => localHitStopRemaining > 0f;
         public bool IsRanged => stats.ranged;
+        public bool IsBoss { get; private set; }
         public UnitStatsSnapshot EffectiveStats => GetEffectiveStats(); // 피격 계산용 현재 Snapshot
 
         public event Action<UnitActor> Died;
@@ -134,6 +141,7 @@ namespace ProjectMT.Shared.Unit
             world = combatWorld;
             feedback = feedbackPlayer;
             runtimeAssetSet = request.RuntimeAssetSet;
+            IsBoss = request.IsBoss;
             if (runtimeAssetSet != null && (animationDriver == null || !animationDriver.Initialize(runtimeAssetSet)))
             {
                 Debug.LogError($"Formal Monster has no valid MonsterAnimationDriver. Unit={request.UnitId}", this);
@@ -344,6 +352,7 @@ namespace ProjectMT.Shared.Unit
             activeMonsterBuffModifier = default;
             animationDriver?.Shutdown();
             runtimeAssetSet = null;
+            IsBoss = false;
             actionTarget = null;
             attackActionRunning = false;
             nextActionSequenceId = 0;

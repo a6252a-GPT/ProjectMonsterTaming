@@ -3,6 +3,7 @@
   "rootNamespace": "ProjectMT.Tests.PlayMode",
   "references": [
     "ProjectMT.Core",
+    "ProjectMT.Bootstrap",
     "ProjectMT.Shared",
     "ProjectMT.Features",
     "ProjectMT.Contents.Framework",

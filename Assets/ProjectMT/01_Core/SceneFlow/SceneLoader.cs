@@ -17,6 +17,7 @@ namespace ProjectMT.Core.SceneFlow
 
         public Func<SceneId, ISceneContext> ContextFactory { get; set; } // 씬별 권한 생성기
         public bool IsTransitioning => isTransitioning;
+        public event Action<SceneId> SceneLoadStarted; // 로딩 화면 표시 시점
         public event Action<SceneId> SceneReady; // 초기화 완료 알림
         public event Action<SceneId, string> SceneFailed; // 전환 실패 알림
 
@@ -71,6 +72,8 @@ namespace ProjectMT.Core.SceneFlow
                 Fail(sceneId, $"Scene is not registered: {sceneId}");
                 yield break;
             }
+
+            SceneLoadStarted?.Invoke(sceneId);
 
             try
             {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ProjectMT.Features.Equipment;
@@ -37,6 +38,8 @@ namespace ProjectMT.Features.Expedition
         [SerializeField] private TMP_Text resultText;
         [SerializeField] private RectTransform progressFill;
         [SerializeField, Min(1f)] private float progressFillMaxWidth = 360f;
+        [SerializeField] private ExpeditionBossHudPresenter bossHud;
+        [SerializeField] private ExpeditionBossIntroPresenter bossIntro;
 
         private IGameProgressService progress; // 진행 조회·저장 계약
         private IRewardPresentationPlayer rewardPresentation; // 저장 확정 보상 표현
@@ -57,6 +60,7 @@ namespace ProjectMT.Features.Expedition
         private bool allWavesSpawned; // 모든 데이터 웨이브 출현 완료
         private bool running; // 전투 Tick 허용
         private bool settling; // 결과 저장 중
+        private Coroutine bossIntroRoutine; // 보스 등장 전 전투 지연
         private int operationVersion; // 늦은 비동기 결과 무효화
         private int runSequence; // 공간 제어용 Run 변경 번호
         private Vector3 formationOrigin; // 맵 중심 기준 배치 원점
@@ -148,6 +152,7 @@ namespace ProjectMT.Features.Expedition
             party = partySnapshot ?? throw new ArgumentNullException(nameof(partySnapshot));
             rewardPresentation = rewardPlayer;
             this.itemCatalog = itemCatalog;
+            bossIntro ??= FindFirstObjectByType<ExpeditionBossIntroPresenter>(FindObjectsInactive.Include);
             equipmentBalanceConfig = equipmentBalance ?? EquipmentBalanceConfig.RuntimeDefault;
             equipmentRandom = new System.Random();
             ConfigureFormationFrame(formationGround);
@@ -187,6 +192,8 @@ namespace ProjectMT.Features.Expedition
             running = false;
             settling = false;
             formationPlacementActive = false;
+            StopBossIntro();
+            bossHud?.Hide();
             ResetWaveTracking();
             ResetPlayerTracking();
             CollectAllWorldDrops(); // 무정산 종료도 남은 드랍을 전부 획득 확정
@@ -221,6 +228,8 @@ namespace ProjectMT.Features.Expedition
             running = false;
             settling = false;
             formationPlacementActive = false;
+            StopBossIntro();
+            bossHud?.Hide();
             if (modeButton != null)
             {
                 modeButton.onClick.RemoveListener(ToggleMode);
@@ -295,9 +304,11 @@ namespace ProjectMT.Features.Expedition
             CollectAllWorldDrops(); // Run 교체 전 남은 드랍 누락 방지
             activeRunParty = party; // 진행 중 편성 변경은 다음 Run부터 반영
             combatWorld.Clear();
-            combatWorld.SetPaused(false);
+            combatWorld.SetPaused(true);
             formationPlacementActive = false;
-            running = true;
+            bossHud?.Hide();
+            StopBossIntro();
+            running = false;
             settling = false;
             currentWave = 1;
             waveElapsed = 0f;
@@ -317,8 +328,46 @@ namespace ProjectMT.Features.Expedition
             }
 
             SpawnParty(false);
-            SpawnWave(1);
+            if (profile.IsBossStage(currentStage) && bossIntro != null)
+            {
+                bossIntroRoutine = StartCoroutine(PlayBossIntroThenBegin(operationVersion));
+            }
+            else
+            {
+                BeginCombatRun();
+            }
+
             UpdateHud();
+        }
+
+        private IEnumerator PlayBossIntroThenBegin(int version)
+        {
+            yield return bossIntro.Play(currentStage);
+            bossIntroRoutine = null;
+            if (this == null || version != operationVersion || settling || formationPlacementActive)
+            {
+                yield break;
+            }
+
+            BeginCombatRun();
+        }
+
+        private void BeginCombatRun()
+        {
+            combatWorld.SetPaused(false);
+            SpawnWave(1);
+            running = true;
+        }
+
+        private void StopBossIntro()
+        {
+            if (bossIntroRoutine != null)
+            {
+                StopCoroutine(bossIntroRoutine);
+                bossIntroRoutine = null;
+            }
+
+            bossIntro?.Hide();
         }
 
         private void SpawnParty(bool placementMode)
@@ -460,13 +509,20 @@ namespace ProjectMT.Features.Expedition
                     ? enemyUnitPrefab
                     : enemyAppearanceSet.ResolvePrefab(profile.ResolveAppearance(currentStage, ranged));
                 var stats = profile.CreateEnemyStats(currentStage, ranged);
+                var boss = profile.IsBossStage(currentStage);
                 var request = new UnitSpawnRequest(
-                    $"enemy_{currentStage}_{wave}_{i}",
+                    boss ? $"boss_{currentStage}" : $"enemy_{currentStage}_{wave}_{i}",
                     stats,
                     UnitTeam.Enemy,
-                    appearanceSeed: CreateEnemyAppearanceSeed(currentStage, wave, i, operationVersion));
+                    appearanceSeed: CreateEnemyAppearanceSeed(currentStage, wave, i, operationVersion),
+                    visualScaleMultiplier: boss ? profile.BossVisualScaleMultiplier : 1f,
+                    isBoss: boss);
                 var actor = combatWorld.SpawnUnit(enemyPrefab, request, position, Quaternion.Euler(0f, 180f, 0f));
                 TrackWaveEnemy(actor, wave);
+                if (boss)
+                {
+                    bossHud?.Show(actor, currentStage);
+                }
             }
         }
 
@@ -946,7 +1002,9 @@ namespace ProjectMT.Features.Expedition
             TMP_Text timer,
             TMP_Text result,
             RectTransform progress = null,
-            float progressWidth = 360f)
+            float progressWidth = 360f,
+            ExpeditionBossHudPresenter bossPresenter = null,
+            ExpeditionBossIntroPresenter bossIntroPresenter = null)
         {
             profile = seedProfile;
             combatWorld = world;
@@ -963,6 +1021,8 @@ namespace ProjectMT.Features.Expedition
             resultText = result;
             progressFill = progress;
             progressFillMaxWidth = Mathf.Max(1f, progressWidth);
+            bossHud = bossPresenter;
+            bossIntro = bossIntroPresenter;
             InvalidateHudCache();
         }
 #endif

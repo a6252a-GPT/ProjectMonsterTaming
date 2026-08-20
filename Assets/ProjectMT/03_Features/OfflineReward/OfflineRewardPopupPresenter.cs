@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ProjectMT.Features.Equipment;
+using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Reward;
@@ -56,6 +57,7 @@ namespace ProjectMT.Features.OfflineReward
         private OfflineRewardPresentation current;
         private ItemCatalog itemCatalog;
         private bool busy;
+        private bool combatDisplaySuppressed;
 
         private GameObject DisplayRoot => displayRootOverride != null ? displayRootOverride : gameObject;
         public bool IsOpen => DisplayRoot.activeSelf;
@@ -80,6 +82,25 @@ namespace ProjectMT.Features.OfflineReward
             DisplayRoot.SetActive(false);
         }
 
+        private void OnDestroy()
+        {
+            SetCombatDisplaySuppressed(false);
+        }
+
+        private void OnDisable()
+        {
+            SetCombatDisplaySuppressed(false);
+        }
+
+        private void LateUpdate()
+        {
+            var shouldSuppress = IsOpen;
+            if (combatDisplaySuppressed != shouldSuppress)
+            {
+                SetCombatDisplaySuppressed(shouldSuppress);
+            }
+        }
+
         public void Show(
             OfflineRewardPresentation presentation,
             ItemCatalog catalog,
@@ -98,6 +119,7 @@ namespace ProjectMT.Features.OfflineReward
             busy = false;
             Bind(presentation);
             DisplayRoot.SetActive(true);
+            SetCombatDisplaySuppressed(true);
             var showNotice = presentation.AutoDismantledEquipmentCount > 0 &&
                              autoDismantleNoticeRoot != null;
             mainPopupRoot?.SetActive(!showNotice);
@@ -411,10 +433,22 @@ namespace ProjectMT.Features.OfflineReward
 
             var completed = current;
             DisplayRoot.SetActive(false);
+            SetCombatDisplaySuppressed(false);
             current = null;
             acknowledge = null;
             confirmed?.Invoke(completed);
             confirmed = null;
+        }
+
+        private void SetCombatDisplaySuppressed(bool suppressed)
+        {
+            combatDisplaySuppressed = suppressed;
+            foreach (var feedback in FindObjectsByType<CombatFeedbackPlayer>(
+                         FindObjectsInactive.Include,
+                         FindObjectsSortMode.None))
+            {
+                feedback.SetDisplaySuppressed(this, suppressed);
+            }
         }
 
         private void HandleAdClicked()

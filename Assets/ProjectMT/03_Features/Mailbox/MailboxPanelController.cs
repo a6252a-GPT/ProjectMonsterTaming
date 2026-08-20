@@ -32,6 +32,7 @@ namespace ProjectMT.Features.Mailbox
         [SerializeField] private MailListItemView[] listItems;
         [SerializeField] private GameObject footerRoot;
         [SerializeField] private GameObject emptyStateRoot;
+        [SerializeField] private TMP_Text emptyStateText;
         [SerializeField] private GameObject detailRoot;
         [SerializeField] private TMP_Text detailTitleText;
         [SerializeField] private TMP_Text detailBodyText;
@@ -51,6 +52,11 @@ namespace ProjectMT.Features.Mailbox
 
         private void Awake()
         {
+            if (emptyStateText == null && emptyStateRoot != null)
+            {
+                emptyStateText = emptyStateRoot.GetComponentInChildren<TMP_Text>(true);
+            }
+
             closeButton?.onClick.AddListener(Close);
             outsideCloseButton?.onClick.AddListener(Close);
             claimSelectedButton?.onClick.AddListener(ClaimSelected);
@@ -157,8 +163,7 @@ namespace ProjectMT.Features.Mailbox
             }
 
             var now = DateTime.UtcNow;
-            var ids = progress.View.Mail.Entries
-                .Where(mail => !mail.IsExpired(now))
+            var ids = FilterEntries(progress.View.Mail.Entries, now)
                 .Select(mail => mail.MailId)
                 .ToArray();
             if (ids.Length > 0)
@@ -200,6 +205,10 @@ namespace ProjectMT.Features.Mailbox
             {
                 selectedMailId = entries[0].MailId;
             }
+            else if (entries.Length == 0)
+            {
+                selectedMailId = string.Empty;
+            }
 
             for (var index = 0; index < listItems?.Length; index++)
             {
@@ -221,17 +230,22 @@ namespace ProjectMT.Features.Mailbox
 
             var hasEntries = filteredEntries.Length > 0;
             emptyStateRoot?.SetActive(!hasEntries);
-            detailRoot?.SetActive(hasEntries);
-            footerRoot?.SetActive(hasEntries);
-            statusText?.gameObject.SetActive(hasEntries);
-            claimAllButton?.gameObject.SetActive(hasEntries);
+            detailRoot?.SetActive(true);
+            footerRoot?.SetActive(true);
+            statusText?.gameObject.SetActive(true);
+            claimAllButton?.gameObject.SetActive(true);
+            if (emptyStateText != null)
+            {
+                emptyStateText.text = GetEmptyStateMessage();
+            }
+
             var selected = entries.FirstOrDefault(mail => mail.MailId == selectedMailId);
             RefreshDetail(selected, now);
             RefreshFilterSelection();
-            RefreshButtons(entries.Length > 0 && !string.IsNullOrWhiteSpace(selected.MailId), entries.Length > 0);
+            RefreshButtons(hasEntries && !string.IsNullOrWhiteSpace(selected.MailId), hasEntries);
             RefreshPaging(pageCount);
             SetStatus(filteredEntries.Length == 0
-                ? "도착한 우편이 없습니다."
+                ? GetEmptyStateMessage()
                 : $"수령 가능한 우편 {filteredEntries.Length}개");
         }
 
@@ -255,6 +269,19 @@ namespace ProjectMT.Features.Mailbox
         {
             if (string.IsNullOrWhiteSpace(mail.MailId))
             {
+                if (detailTitleText != null)
+                {
+                    detailTitleText.text = string.Empty;
+                }
+                if (detailBodyText != null)
+                {
+                    detailBodyText.text = string.Empty;
+                }
+                if (detailRemainingText != null)
+                {
+                    detailRemainingText.text = string.Empty;
+                }
+
                 for (var index = 0; index < attachmentViews?.Length; index++)
                 {
                     attachmentViews[index]?.Clear();
@@ -286,6 +313,17 @@ namespace ProjectMT.Features.Mailbox
                     attachmentViews[index]?.Clear();
                 }
             }
+        }
+
+        private string GetEmptyStateMessage()
+        {
+            return activeFilter switch
+            {
+                Filter.System => "시스템 우편이 없습니다",
+                Filter.Event => "이벤트 우편이 없습니다",
+                Filter.Combat => "전투 우편이 없습니다",
+                _ => "도착한 우편이 없습니다"
+            };
         }
 
         private void RefreshFilterSelection()
@@ -344,14 +382,8 @@ namespace ProjectMT.Features.Mailbox
 
         private void RefreshButtons(bool canClaimSelected, bool canClaimAll)
         {
-            if (claimSelectedButton != null)
-            {
-                claimSelectedButton.interactable = !busy && canClaimSelected;
-            }
-            if (claimAllButton != null)
-            {
-                claimAllButton.interactable = !busy && canClaimAll;
-            }
+            SetButtonEnabled(claimSelectedButton, !busy && canClaimSelected);
+            SetButtonEnabled(claimAllButton, !busy && canClaimAll);
         }
 
         private void RefreshPaging(int pageCount)
@@ -360,13 +392,24 @@ namespace ProjectMT.Features.Mailbox
             {
                 pageText.text = $"{pageIndex + 1} / {pageCount}";
             }
-            if (previousPageButton != null)
+            SetButtonEnabled(previousPageButton, !busy && pageIndex > 0);
+            SetButtonEnabled(nextPageButton, !busy && pageIndex + 1 < pageCount);
+        }
+
+        private static void SetButtonEnabled(Button button, bool enabled)
+        {
+            if (button == null)
             {
-                previousPageButton.interactable = !busy && pageIndex > 0;
+                return;
             }
-            if (nextPageButton != null)
+
+            button.interactable = enabled;
+            var group = button.GetComponent<CanvasGroup>();
+            if (group != null)
             {
-                nextPageButton.interactable = !busy && pageIndex + 1 < pageCount;
+                group.alpha = enabled ? 1f : 0.45f;
+                group.interactable = enabled;
+                group.blocksRaycasts = enabled;
             }
         }
 
@@ -420,6 +463,7 @@ namespace ProjectMT.Features.Mailbox
             filterButtons = filters;
             listItems = rows;
             emptyStateRoot = emptyState;
+            emptyStateText = emptyState?.GetComponentInChildren<TMP_Text>(true);
             detailRoot = detail;
             detailTitleText = detailTitle;
             detailBodyText = detailBody;

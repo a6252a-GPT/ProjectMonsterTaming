@@ -177,7 +177,7 @@ namespace ProjectMT.Shared.GameData
     }
 
     [Serializable]
-    public sealed class GameProgressData // 시드 사용자 진행 원본
+    public sealed partial class GameProgressData // 시드 사용자 진행 원본
     {
         [SerializeField] private int currentChallengeStage = 1; // 현재 도전 단계
         [SerializeField] private int lastClearedStage; // 마지막 성공 단계
@@ -261,7 +261,7 @@ namespace ProjectMT.Shared.GameData
             CommanderSkillBalanceConfig commanderSkillBalanceConfig = null,
             CommanderSkillSummonConfig commanderSkillSummonConfig = null)
         {
-            return new GameProgressData // 변경 전 후보 복사본
+            var clone = new GameProgressData // 변경 전 후보 복사본
             {
                 currentChallengeStage = currentChallengeStage,
                 lastClearedStage = lastClearedStage,
@@ -290,7 +290,20 @@ namespace ProjectMT.Shared.GameData
                     commanderSkillBalanceConfig,
                     commanderSkillSummonConfig) ?? CommanderSkillProgressData.CreateDefault()
             };
+            CopyQuestTo(clone);
+            return clone;
         }
+
+        partial void CopyQuestTo(GameProgressData clone);
+        partial void RepairQuest();
+        partial void RejectInvalidQuestClaim(GameProgressChange change, ref bool rejected);
+        partial void RejectInvalidQuestDailyReset(GameProgressChange change, ref bool rejected);
+        partial void RejectInvalidQuestWeeklyReset(GameProgressChange change, ref bool rejected);
+        partial void ApplyQuestProgress(GameProgressChange change, ref bool rejected);
+        partial void ApplyQuestClaim(GameProgressChange change);
+        partial void ApplyQuestDailyReset(GameProgressChange change);
+        partial void ApplyQuestWeeklyReset(GameProgressChange change);
+        partial void ApplyQuestProgressReset(GameProgressChange change);
 
         internal bool TryApply(
             GameProgressChange change,
@@ -301,6 +314,16 @@ namespace ProjectMT.Shared.GameData
             CommanderSkillSummonConfig commanderSkillSummonConfig = null)
         {
             if (change == null)
+            {
+                return false;
+            }
+
+            var questRejected = false;
+            RejectInvalidQuestClaim(change, ref questRejected);
+            RejectInvalidQuestDailyReset(change, ref questRejected);
+            RejectInvalidQuestWeeklyReset(change, ref questRejected);
+            ApplyQuestProgress(change, ref questRejected);
+            if (questRejected)
             {
                 return false;
             }
@@ -356,9 +379,9 @@ namespace ProjectMT.Shared.GameData
 
             if ((change.HasMarkOfflineInactive || change.HasSettleOfflineReward || change.HasAcknowledgeOfflineRewards) &&
                 !TryApplyOfflineRewardProgress(change))
-            {
-                return false;
-            }
+                {
+                    return false;
+                }
 
             if (change.HasSetCommanderSkillAutoUse)
             {
@@ -481,6 +504,11 @@ namespace ProjectMT.Shared.GameData
             {
                 return false;
             }
+
+            ApplyQuestClaim(change);
+            ApplyQuestDailyReset(change);
+            ApplyQuestWeeklyReset(change);
+            ApplyQuestProgressReset(change);
 
             if (change.HasSettleOfflineReward &&
                 !TryApplyOfflineEquipmentSettlement(change.OfflineReceipt))
@@ -1309,6 +1337,8 @@ namespace ProjectMT.Shared.GameData
             {
                 expeditionMode = ExpeditionRunMode.Challenge; // 손상값·클리어 전 반복 복구
             }
+
+            RepairQuest();
         }
 
         internal void Repair(
@@ -1453,7 +1483,7 @@ namespace ProjectMT.Shared.GameData
         public CommanderSkillProgressView CommanderSkills { get; } // 군단장 스킬 장착·자동사용
     }
 
-    public sealed class GameProgressChange // 한 번에 검증할 진행 변경 묶음
+    public sealed partial class GameProgressChange // 한 번에 검증할 진행 변경 묶음
     {
         private GameProgressChange()
         {

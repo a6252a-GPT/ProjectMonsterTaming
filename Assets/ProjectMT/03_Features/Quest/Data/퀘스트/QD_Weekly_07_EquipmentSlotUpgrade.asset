@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25a12baf1f1a3d4449770be56d69d3c6, type: 3}
+  m_Name: QD_Weekly_07_EquipmentSlotUpgrade
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
+  questId:
+    value: quest_weekly_07_equipment_slot_upgrade
+  isEnabled: 1
+  displayName: 장비 슬롯 5회 강화
+  description: 장비 슬롯을 5회 강화하세요.
+  questType: 2
+  conditionType: 3
+  targetValue: 5
+  prerequisiteQuestId:
+    value: 
+  reward: {fileID: 11400000, guid: fbad489e12e548baafd042dff79c2e99, type: 2}
+  unlockTargets: []
+  unlockGateEnabled: 0
+  isRepeatingTemplate: 0
+  repeatIncrement: 0
+  repeatMaxOccurrences: 0

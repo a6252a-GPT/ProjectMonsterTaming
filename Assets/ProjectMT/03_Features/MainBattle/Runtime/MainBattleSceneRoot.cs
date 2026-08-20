@@ -11,8 +11,10 @@ using ProjectMT.Features.GrowthDungeon;
 using ProjectMT.Features.Inventory;
 using ProjectMT.Features.Mailbox;
 using ProjectMT.Shared.Combat;
+using ProjectMT.Features.Quest;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -644,6 +646,7 @@ namespace ProjectMT.Features.MainBattle
             if (context.ContentLauncher.StartSeparate(castleRaidContentId, party))
             {
                 SetStatus("군단의 역습");
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.CastleRaidEnter, 1L);
             }
             else
             {

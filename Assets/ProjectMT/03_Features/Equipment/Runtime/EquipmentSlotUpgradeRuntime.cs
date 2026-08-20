@@ -1,8 +1,10 @@
 using System;
 using System.Threading.Tasks;
+using ProjectMT.Features.Quest;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.Quest;
 
 namespace ProjectMT.Features.Equipment
 {
@@ -64,7 +66,13 @@ namespace ProjectMT.Features.Equipment
             }
 
             var expectedLevel = GetLevel(part);
-            return await progress.TryApplyAndSaveAsync(GameProgressChange.UpgradeEquipmentSlot(part, expectedLevel));
+            var saved = await progress.TryApplyAndSaveAsync(GameProgressChange.UpgradeEquipmentSlot(part, expectedLevel));
+            if (saved)
+            {
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.EquipmentEnhance, 1L);
+            }
+
+            return saved;
         }
     }
 }

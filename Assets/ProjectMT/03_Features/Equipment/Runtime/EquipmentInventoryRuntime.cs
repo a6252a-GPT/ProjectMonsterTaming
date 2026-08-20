@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ProjectMT.Features.Quest;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Quest;
 
 namespace ProjectMT.Features.Equipment
 {
@@ -172,7 +174,13 @@ namespace ProjectMT.Features.Equipment
                 return false;
             }
 
-            return await progress.TryApplyAndSaveAsync(GameProgressChange.EquipItem(instanceId));
+            var saved = await progress.TryApplyAndSaveAsync(GameProgressChange.EquipItem(instanceId));
+            if (saved)
+            {
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.EquipmentEquip, 1L);
+            }
+
+            return saved;
         }
 
         public static async Task<bool> TryUnequipAsync(EquipmentPart part)
@@ -214,7 +222,13 @@ namespace ProjectMT.Features.Equipment
                 copiedIds.Add(instanceId);
             }
 
-            return await progress.TryApplyAndSaveAsync(GameProgressChange.DismantleEquipment(copiedIds));
+            var saved = await progress.TryApplyAndSaveAsync(GameProgressChange.DismantleEquipment(copiedIds));
+            if (saved)
+            {
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.EquipmentDismantle, copiedIds.Count);
+            }
+
+            return saved;
         }
     }
 }

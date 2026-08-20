@@ -3,11 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ProjectMT.Features.Equipment;
+using ProjectMT.Features.Quest;
 using ProjectMT.Features.WorldDrops;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Unit;
 using TMPro;
@@ -568,6 +570,7 @@ namespace ProjectMT.Features.Expedition
             enemyWaveByActor.Remove(actor);
             aliveEnemiesByWave[wave] = Mathf.Max(0, aliveEnemiesByWave[wave] - 1);
             defeatedEnemyCount = Mathf.Min(runEnemyTotalCount, defeatedEnemyCount + 1);
+            _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.MonsterKill, 1L); // 처치 1마리당 퀘스트 진행
             if (running && profile != null &&
                 profile.CreateEnemyWorldDrops(currentStage, wave, actor.transform.position, worldDropBuffer) > 0)
             {
@@ -719,11 +722,17 @@ namespace ProjectMT.Features.Expedition
                     Debug.LogException(exception); // 표현 실패는 저장을 되돌리지 않음
                 }
 
+                // 도전·반복 모드 관계없이 승리할 때마다 누적되는 일일·주간용 조건(원정대 승리 N회).
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.ExpeditionVictory, 1L);
+
                 if (settledMode == ExpeditionRunMode.Challenge)
                 {
                     SetResult(ExpeditionResultNoticeFormatter.ChallengeVictory(
                         settledStage,
                         RewardPresentationRequest.FromBundle(rewards, itemCatalog)));
+
+                    // 새로운 단계를 처음 클리어했을 때만 "원정대 클리어" 퀘스트 진행(반복 클리어는 제외).
+                    _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.ExpeditionClear, 1L);
                 }
             }
             else

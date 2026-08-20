@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.MainBattle;
+using ProjectMT.Features.Quest;
 using ProjectMT.Shared.Commander;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Stats;
 using ProjectMT.Shared.Unit;
 using TMPro;
@@ -210,7 +212,11 @@ namespace ProjectMT.Features.Commander
             Refresh();
             try
             {
-                await progress.TryApplyAndSaveAsync(GameProgressChange.LevelUpCommander(commander.Level));
+                var saved = await progress.TryApplyAndSaveAsync(GameProgressChange.LevelUpCommander(commander.Level));
+                if (saved)
+                {
+                    _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.CommanderLevelUp, 1L);
+                }
             }
             finally
             {

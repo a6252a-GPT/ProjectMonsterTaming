@@ -10,6 +10,7 @@ using ProjectMT.Features.MainBattle;
 using ProjectMT.Features.OfflineReward;
 using ProjectMT.Features.Settings;
 using ProjectMT.Shared.CommanderSkill;
+using ProjectMT.Features.Quest;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Debugging;
 using ProjectMT.Shared.Equipment;
@@ -340,7 +341,7 @@ namespace ProjectMT.Bootstrap
                 inventory.TryGetQuantity(definition.ItemId, out var currentQuantity);
                 if (currentQuantity < definition.MaxQuantity)
                 {
-                    rewards.Add(new ItemAmount(definition.ItemId, 1L));
+                    rewards.Add(new ItemAmount(definition.ItemId, 200000L)); //0819 안건준 수정
                 }
             }
 
@@ -352,7 +353,7 @@ namespace ProjectMT.Bootstrap
             var saved = await gameDataService.TryApplyAndSaveAsync(
                 GameProgressChange.GrantItems(rewards.ToArray()));
             return saved
-                ? $"{rewards.Count}종 아이템 1개씩 획득 완료"
+                ? $"{rewards.Count}종 아이템 200000개씩 획득 완료"
                 : "아이템 획득 정보를 저장하지 못했습니다";
         }
 
@@ -490,7 +491,9 @@ namespace ProjectMT.Bootstrap
                 gameDataService.View,
                 commanderGrowthConfig,
                 projectConfig.EquipmentBalanceConfig ?? EquipmentBalanceConfig.RuntimeDefault);
-            return partyBuilder.Build(gameDataService.View, modifiers);
+            var snapshot = partyBuilder.Build(gameDataService.View, modifiers);
+            QuestRuntime.ReportCommanderPower(snapshot.TotalPower); // CommanderPowerReach 반복 퀘스트가 참조하는 캐시값 갱신
+            return snapshot;
         }
 
         private void HandleSceneFailed(SceneId failedSceneId, string error)

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ProjectMT.Features.Quest;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -246,9 +248,13 @@ namespace ProjectMT.Features.Formation
                 return;
             }
 
-            await ApplyAndSaveAsync(
+            var saved = await ApplyAndSaveAsync(
                 GameProgressChange.LevelUpMonster(selectedMonsterId, owned.Level),
                 $"{ResolveDisplayName(selectedMonsterId)} 레벨업 완료");
+            if (saved)
+            {
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.MonsterLevelUp, 1L);
+            }
         }
 
         private async void HandleFormationClicked()
@@ -267,7 +273,11 @@ namespace ProjectMT.Features.Formation
             var successMessage = isInActiveParty
                 ? "편성 해제 완료 · 다음 전투부터 적용"
                 : $"{GetPartyName(activeParty)} 편성 완료 · 다음 전투부터 적용";
-            await ApplyAndSaveAsync(change, successMessage);
+            var saved = await ApplyAndSaveAsync(change, successMessage);
+            if (saved && !isInActiveParty)
+            {
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.MonsterFormation, 1L);
+            }
         }
 
         private void HandlePositionFormationClicked()
@@ -278,7 +288,7 @@ namespace ProjectMT.Features.Formation
             }
         }
 
-        private async Task ApplyAndSaveAsync(GameProgressChange change, string successMessage)
+        private async Task<bool> ApplyAndSaveAsync(GameProgressChange change, string successMessage)
         {
             isBusy = true;
             SetControlsInteractable(false);
@@ -304,7 +314,7 @@ namespace ProjectMT.Features.Formation
 
             if (this == null)
             {
-                return;
+                return saved;
             }
 
             SetStatus(saved ? successMessage : "변경을 저장하지 못했습니다");
@@ -312,6 +322,8 @@ namespace ProjectMT.Features.Formation
             {
                 RefreshView();
             }
+
+            return saved;
         }
 
         private void HandleProgressChanged()

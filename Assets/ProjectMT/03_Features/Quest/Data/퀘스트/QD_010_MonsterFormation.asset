@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25a12baf1f1a3d4449770be56d69d3c6, type: 3}
+  m_Name: QD_010_MonsterFormation
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
+  questId:
+    value: quest_010_monster_formation
+  displayName: 몬스터 배치
+  description: 몬스터를 부대에 1회 배치하세요.
+  questType: 0
+  conditionType: 10
+  targetValue: 1
+  prerequisiteQuestId:
+    value: quest_002_monster_summon
+  reward: {fileID: 11400000, guid: 789501d9d2e540bb9a76127269d98d40, type: 2}
+  unlockTargets: []
+  unlockGateEnabled: 0
+  isRepeatingTemplate: 0
+  repeatIncrement: 0
+  repeatMaxOccurrences: 0

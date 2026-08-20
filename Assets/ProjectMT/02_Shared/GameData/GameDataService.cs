@@ -8,7 +8,7 @@ using ProjectMT.Shared.Stats;
 
 namespace ProjectMT.Shared.GameData
 {
-    public interface IGameProgressService // 진행 조회·변경·저장 계약
+    public partial interface IGameProgressService // 진행 조회·변경·저장 계약
     {
         GameProgressView View { get; }
         bool IsLoaded { get; }
@@ -17,7 +17,7 @@ namespace ProjectMT.Shared.GameData
         Task SaveCurrentAsync();
     }
 
-    public sealed class GameDataService : IGameProgressService // 사용자 진행 단일 관리자
+    public sealed partial class GameDataService : IGameProgressService // 사용자 진행 단일 관리자
     {
         private readonly SaveService saveService; // 저장 직렬화 담당
         private readonly CommanderGrowthConfig commanderGrowthConfig; // 군단장 경험치 곡선
@@ -48,6 +48,8 @@ namespace ProjectMT.Shared.GameData
         public bool IsLoaded { get; private set; }
         public event Action Changed;
 
+        partial void NotifyProgressReady();
+
         public async Task LoadAsync()
         {
             await gate.WaitAsync();
@@ -66,6 +68,7 @@ namespace ProjectMT.Shared.GameData
             }
 
             Changed?.Invoke();
+            NotifyProgressReady();
         }
 
         public async Task<bool> TryApplyAndSaveAsync(GameProgressChange change)
@@ -150,6 +153,7 @@ namespace ProjectMT.Shared.GameData
             }
 
             Changed?.Invoke();
+            NotifyProgressReady();
         }
     }
 }

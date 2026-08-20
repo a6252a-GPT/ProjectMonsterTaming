@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25a12baf1f1a3d4449770be56d69d3c6, type: 3}
+  m_Name: QD_008_EquipmentEnhance
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
+  questId:
+    value: quest_008_equipment_enhance
+  displayName: "장비 슬롯 강화"
+  description: "장비 슬롯을 1회 강화하세요."
+  questType: 0
+  conditionType: 3
+  targetValue: 1
+  prerequisiteQuestId:
+    value: quest_007_equipment_equip
+  reward: {fileID: 11400000, guid: fdc85052eaa44fd5ac670be15c3c31f7, type: 2}
+  unlockTargets: []

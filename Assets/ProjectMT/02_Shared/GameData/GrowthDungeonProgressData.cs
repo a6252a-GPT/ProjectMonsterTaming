@@ -31,7 +31,7 @@ namespace ProjectMT.Shared.GameData
     {
         public const string FoodRiot = "food_riot";
         public const string TreasureSpirit = "treasure_spirit";
-        public const string GiantSpellbook = "giant_spellbook";
+        public const string FallenCommander = "fallen_commander";
         public const string GuardiansTower = "guardians_tower";
     }
 
@@ -258,7 +258,7 @@ namespace ProjectMT.Shared.GameData
         {
             ItemIds.FoodRiotKey,
             ItemIds.TreasureSpiritKey,
-            ItemIds.GiantSpellbookKey,
+            ItemIds.FallenCommanderKey,
             ItemIds.GuardiansTowerKey
         };
 

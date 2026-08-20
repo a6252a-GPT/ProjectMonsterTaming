@@ -63,7 +63,7 @@ MonoBehaviour:
     localPosition: {x: 0.008835411, y: 0.04105504, z: 0.0011406536}
     localEulerAngles: {x: 0, y: 0, z: 0}
     localScale: {x: 4.066185, y: 4.066185, z: 4.066185}
-  - itemId: key_giant_spellbook
+  - itemId: key_fallen_commander
     modelPrefab: {fileID: 1673465879083865, guid: e2b6f2e536a1066438471c50693edf9d, type: 3}
     localPosition: {x: 0.0083950255, y: 0.04105504, z: 0.0008983241}
     localEulerAngles: {x: 0, y: 0, z: 0}

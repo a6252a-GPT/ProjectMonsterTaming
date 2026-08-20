@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e4e65517f6e3254f8d77198f9d5aacf, type: 3}
+  m_Name: ContentDefinition_FallenCommander
+  m_EditorClassIdentifier: ProjectMT.Contents.Framework::ProjectMT.Contents.Framework.ContentDefinition
+  contentId:
+    value: fallen_commander
+  displayName: "\uD0C0\uB77D\uD55C \uACFC\uAC70\uC758 \uAD70\uB2E8\uC7A5"
+  openMode: 0
+  sceneId:
+    value: 
+  startDataFactory: {fileID: 11400000, guid: 3cc026d8ed8f3c94781ff8671eede2b5, type: 2}
+  resultAdapter: {fileID: 11400000, guid: 7595dff723d72bf4dbadf5f3ce170b1a, type: 2}
+  dungeonKeyItemId: key_fallen_commander
+  supportsSweep: 1

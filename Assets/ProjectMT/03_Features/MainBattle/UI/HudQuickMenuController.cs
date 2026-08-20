@@ -2,7 +2,6 @@ using ProjectMT.Features.Formation;
 using ProjectMT.Features.Quest;
 using ProjectMT.Features.Settings;
 using ProjectMT.Shared.GameData;
-using ProjectMT.Shared.Quest;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -74,17 +73,6 @@ namespace ProjectMT.Features.MainBattle
             SetMenuOpen(false);
         }
 
-        private void OnEnable()
-        {
-            QuestRuntime.Changed += RefreshUnlocks;
-            RefreshUnlocks();
-        }
-
-        private void OnDisable()
-        {
-            QuestRuntime.Changed -= RefreshUnlocks;
-        }
-
         private void OnDestroy()
         {
             contentButton?.onClick.RemoveListener(OpenContent);
@@ -131,14 +119,12 @@ namespace ProjectMT.Features.MainBattle
 
         private void OpenContent()
         {
-            if (!QuestRuntime.IsUnlocked(QuestUnlockTarget.SpecialContent)) return;
             CloseMenu();
             managementUi?.OpenGrowthDungeonPage();
         }
 
         private void OpenSummon()
         {
-            if (!QuestRuntime.IsUnlocked(QuestUnlockTarget.MonsterSummon)) return;
             CloseMenu();
             managementUi?.OpenShopPage();
             shopCategoryMenu?.ShowMonsterShop();
@@ -153,14 +139,12 @@ namespace ProjectMT.Features.MainBattle
 
         private void OpenMonsterGrowth()
         {
-            if (!QuestRuntime.IsUnlocked(QuestUnlockTarget.MonsterUpgrade)) return;
             CloseMenu();
             managementUi?.OpenMonsterManagementPage();
         }
 
         private void OpenFormation()
         {
-            if (!QuestRuntime.IsUnlocked(QuestUnlockTarget.Formation)) return;
             CloseMenu();
             managementUi?.CloseAllPages();
             formationPage?.OpenPage();
@@ -168,7 +152,6 @@ namespace ProjectMT.Features.MainBattle
 
         private void OpenEquipment()
         {
-            if (!QuestRuntime.IsUnlocked(QuestUnlockTarget.Equipment)) return;
             CloseMenu();
             managementUi?.OpenEquipmentPage();
         }
@@ -181,7 +164,6 @@ namespace ProjectMT.Features.MainBattle
 
         private void OpenEquipmentSlotUpgrade()
         {
-            if (!QuestRuntime.IsUnlocked(QuestUnlockTarget.EquipmentSlotUpgrade)) return;
             CloseMenu();
             managementUi?.OpenEquipmentSlotUpgradePage();
         }
@@ -200,7 +182,6 @@ namespace ProjectMT.Features.MainBattle
 
         private void OpenMission()
         {
-            if (!QuestRuntime.IsUnlocked(QuestUnlockTarget.DailyWeeklyQuest)) return;
             CloseMenu();
             formationPage?.ClosePage();
             PrepareRuntimeQuestPanel();
@@ -223,7 +204,6 @@ namespace ProjectMT.Features.MainBattle
 
         private void OpenCastleRaid()
         {
-            if (!QuestRuntime.IsUnlocked(QuestUnlockTarget.SpecialContent)) return;
             CloseMenu();
             sceneRoot?.OpenCastleRaid();
         }
@@ -291,53 +271,6 @@ namespace ProjectMT.Features.MainBattle
         {
             attendanceBadge?.SetActive(progress != null && progress.View.Attendance.HasPendingReward);
             mailboxBadge?.SetActive(progress != null && progress.View.Mail.Count > 0);
-        }
-
-        private void RefreshUnlocks()
-        {
-            ApplyUnlock(contentButton, QuestUnlockTarget.SpecialContent);
-            ApplyUnlock(summonButton, QuestUnlockTarget.MonsterSummon);
-            ApplyUnlock(monsterGrowthButton, QuestUnlockTarget.MonsterUpgrade);
-            ApplyUnlock(formationButton, QuestUnlockTarget.Formation);
-            ApplyUnlock(equipmentButton, QuestUnlockTarget.Equipment);
-            ApplyUnlock(equipmentSlotUpgradeButton, QuestUnlockTarget.EquipmentSlotUpgrade);
-            ApplyUnlock(missionButton, QuestUnlockTarget.DailyWeeklyQuest);
-            ApplyUnlock(castleRaidButton, QuestUnlockTarget.SpecialContent);
-        }
-
-        private static void ApplyUnlock(Button button, QuestUnlockTarget target)
-        {
-            if (button == null)
-            {
-                return;
-            }
-
-            var unlocked = QuestRuntime.IsUnlocked(target);
-            button.interactable = unlocked;
-            var badge = FindChild(button.transform, "LockBadge");
-            if (badge != null)
-            {
-                badge.gameObject.SetActive(!unlocked);
-            }
-        }
-
-        private static Transform FindChild(Transform root, string objectName)
-        {
-            if (root == null)
-            {
-                return null;
-            }
-
-            var children = root.GetComponentsInChildren<Transform>(true);
-            for (var i = 0; i < children.Length; i++)
-            {
-                if (children[i] != null && children[i].name == objectName)
-                {
-                    return children[i];
-                }
-            }
-
-            return null;
         }
 
 #if UNITY_EDITOR

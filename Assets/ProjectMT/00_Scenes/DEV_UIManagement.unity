@@ -8749,7 +8749,7 @@ GameObject:
   - component: {fileID: 448625595}
   - component: {fileID: 448625594}
   m_Layer: 0
-  m_Name: Label_Slot_PF_GiantSpellbookRuntimeHud
+  m_Name: Label_Slot_PF_FallenCommanderRuntimeHud
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8794,7 +8794,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: GIANT SPELLBOOK HUD / IN-GAME ANCHORS
+  m_text: FALLEN COMMANDER HUD / IN-GAME ANCHORS
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 0ef90f6610383f14eaee22fcc0d1a225, type: 2}
   m_sharedMaterial: {fileID: -6795594386361213347, guid: 0ef90f6610383f14eaee22fcc0d1a225, type: 2}
@@ -14388,7 +14388,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5440967762579022343, guid: 8f3ae42619d458749a343c21dd366ed9, type: 3}
       propertyPath: m_Name
-      value: PF_GrowthDungeonStageEntryPopup_GiantSpellbook_REFERENCE
+      value: PF_GrowthDungeonStageEntryPopup_FallenCommander_REFERENCE
       objectReference: {fileID: 0}
     - target: {fileID: 5499121268114458228, guid: 8f3ae42619d458749a343c21dd366ed9, type: 3}
       propertyPath: m_fontColor32.rgba
@@ -108193,7 +108193,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 649873630842670835, guid: 23596149dad639144aa606e113a1e209, type: 3}
       propertyPath: m_Name
-      value: PF_GiantSpellbookRuntime_REFERENCE
+      value: PF_FallenCommanderRuntime_REFERENCE
       objectReference: {fileID: 0}
     - target: {fileID: 852951471395230462, guid: 23596149dad639144aa606e113a1e209, type: 3}
       propertyPath: m_fontColor32.rgba
@@ -207141,7 +207141,7 @@ GameObject:
   - component: {fileID: 1800215546}
   - component: {fileID: 1800215545}
   m_Layer: 0
-  m_Name: Label_GrowthDungeonStageEntryPopup_GiantSpellbook
+  m_Name: Label_GrowthDungeonStageEntryPopup_FallenCommander
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -207186,7 +207186,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uAC70\uB300 \uB9C8\uB3C4\uC11C \uC785\uC7A5 \uD31D\uC5C5 \xB7 780\xD7780"
+  m_text: "\uD0C0\uB77D\uD55C \uACFC\uAC70\uC758 \uAD70\uB2E8\uC7A5 \uC785\uC7A5
+    \uD31D\uC5C5 \xB7 780\xD7780"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 0ef90f6610383f14eaee22fcc0d1a225, type: 2}
   m_sharedMaterial: {fileID: -6795594386361213347, guid: 0ef90f6610383f14eaee22fcc0d1a225, type: 2}
@@ -209311,7 +209312,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1889680179}
   m_Layer: 0
-  m_Name: Slot_PF_GiantSpellbookRuntimeHud
+  m_Name: Slot_PF_FallenCommanderRuntimeHud
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -253035,7 +253036,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1985985645}
   m_Layer: 0
-  m_Name: Slot_PF_GrowthDungeonStageEntryPopup_GiantSpellbook
+  m_Name: Slot_PF_GrowthDungeonStageEntryPopup_FallenCommander
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

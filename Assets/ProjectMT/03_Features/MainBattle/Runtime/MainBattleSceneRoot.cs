@@ -29,18 +29,18 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private ContentId foodRiotContentId = new ContentId("food_riot"); // Hosted 콘텐츠 ID
         [SerializeField] private ContentId castleRaidContentId = new ContentId("castle_raid"); // 별도 씬 콘텐츠 ID
         [SerializeField] private ContentId guardiansTowerContentId = new ContentId("guardians_tower"); // 08.06 안건준 추가 - 수호자의 탑 Hosted 콘텐츠 ID (식량 대소동과 별도)
-        [SerializeField] private ContentId giantSpellbookContentId = new ContentId("giant_spellbook"); // 거대마도서 Hosted 연결부
+        [SerializeField] private ContentId fallenCommanderContentId = new ContentId("fallen_commander"); // 군단장 보스전 Hosted 연결부
         [SerializeField] private ExpeditionController expedition; // 원정대 진행 담당
         [SerializeField] private MainBattleHostedContentRunner hostedRunner; // 성장 던전 전환 담당
         [SerializeField] private Button foodRiotButton; // 식량 대소동 입장 버튼
         [SerializeField] private Button castleRaidButton; // 군단의 역습 입장 버튼
         [SerializeField] private Button towerButton; // 08.06 안건준 추가 - 수호자의 탑 입장 버튼
-        [SerializeField] private Button giantSpellbookButton; // 거대마도서 입장 버튼
+        [SerializeField] private Button fallenCommanderButton; // 타락한 과거의 군단장 입장 버튼
         [SerializeField] private Button foodRiotSweepButton; // 식량 대소동 1회 소탕
         [SerializeField] private Button towerSweepButton; // 고대 수호수 1회 소탕
         [SerializeField] private TMP_Text foodRiotKeyText; // 식량 열쇠 현재/최대
         [SerializeField] private TMP_Text treasureSpiritKeyText; // 보물 정령 열쇠 현재/최대
-        [SerializeField] private TMP_Text giantSpellbookKeyText; // 마도서 열쇠 현재/최대
+        [SerializeField] private TMP_Text fallenCommanderKeyText; // 군단장 던전 열쇠 현재/최대
         [SerializeField] private TMP_Text towerKeyText; // 수호수 열쇠 현재/최대
         [SerializeField] private TMP_Text statusText; // 현재 플레이 상태
         [SerializeField] private FormationPageController formationPage; // 보유·편성 통합 화면
@@ -102,7 +102,7 @@ namespace ProjectMT.Features.MainBattle
             {
                 foodRiotButton?.onClick.AddListener(OpenFoodRiot); // 신규 컨트롤러 누락 시 기존 진입 보존
                 towerButton?.onClick.AddListener(OpenGuardiansTower);
-                giantSpellbookButton?.onClick.AddListener(OpenGiantSpellbook);
+                fallenCommanderButton?.onClick.AddListener(OpenFallenCommander);
                 foodRiotSweepButton?.onClick.AddListener(SweepFoodRiot);
                 towerSweepButton?.onClick.AddListener(SweepGuardiansTower);
             }
@@ -194,7 +194,7 @@ namespace ProjectMT.Features.MainBattle
             foodRiotButton?.onClick.RemoveListener(OpenFoodRiot);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
             towerButton?.onClick.RemoveListener(OpenGuardiansTower); // 08.06 안건준 추가
-            giantSpellbookButton?.onClick.RemoveListener(OpenGiantSpellbook);
+            fallenCommanderButton?.onClick.RemoveListener(OpenFallenCommander);
             foodRiotSweepButton?.onClick.RemoveListener(SweepFoodRiot);
             towerSweepButton?.onClick.RemoveListener(SweepGuardiansTower);
             ResolveGachaSystem()?.Shutdown();
@@ -590,7 +590,7 @@ namespace ProjectMT.Features.MainBattle
             }
         }
 
-        private void OpenGiantSpellbook()
+        private void OpenFallenCommander()
         {
             managementUi?.CloseAllPages();
             if (!TryOpenContent())
@@ -599,9 +599,9 @@ namespace ProjectMT.Features.MainBattle
             }
 
             party = context.RefreshParty();
-            if (context.ContentLauncher.StartHosted(giantSpellbookContentId, party, hostedRunner))
+            if (context.ContentLauncher.StartHosted(fallenCommanderContentId, party, hostedRunner))
             {
-                SetStatus("거대마도서");
+                SetStatus("타락한 과거의 군단장");
             }
         }
 
@@ -799,7 +799,7 @@ namespace ProjectMT.Features.MainBattle
             var items = context.Progress.View.Items;
             SetKeyText(foodRiotKeyText, items, ItemIds.FoodRiotKey);
             SetKeyText(treasureSpiritKeyText, items, ItemIds.TreasureSpiritKey);
-            SetKeyText(giantSpellbookKeyText, items, ItemIds.GiantSpellbookKey);
+            SetKeyText(fallenCommanderKeyText, items, ItemIds.FallenCommanderKey);
             SetKeyText(towerKeyText, items, ItemIds.GuardiansTowerKey);
 
             var sweepBusy = context.GrowthDungeonSweep != null && context.GrowthDungeonSweep.IsBusy;
@@ -855,7 +855,7 @@ namespace ProjectMT.Features.MainBattle
             MonsterManagementPageController managementController = null,
             ShopPageView shopView = null,
             Button guardiansTowerButton = null,
-            Button giantSpellbookEntryButton = null)
+            Button fallenCommanderEntryButton = null)
         {
             expedition = expeditionController;
             hostedRunner = runner;
@@ -867,7 +867,7 @@ namespace ProjectMT.Features.MainBattle
             monsterManagementPage = managementController;
             shopPageView = shopView;
             towerButton = guardiansTowerButton; // 08.06 안건준 추가
-            giantSpellbookButton = giantSpellbookEntryButton;
+            fallenCommanderButton = fallenCommanderEntryButton;
         }
 
         public void EditorConfigureGrowthDungeonSettlementUi(
@@ -875,14 +875,14 @@ namespace ProjectMT.Features.MainBattle
             Button guardiansSweep,
             TMP_Text foodKey,
             TMP_Text treasureKey,
-            TMP_Text giantKey,
+            TMP_Text fallenCommanderKey,
             TMP_Text guardiansKey)
         {
             foodRiotSweepButton = foodSweep;
             towerSweepButton = guardiansSweep;
             foodRiotKeyText = foodKey;
             treasureSpiritKeyText = treasureKey;
-            giantSpellbookKeyText = giantKey;
+            fallenCommanderKeyText = fallenCommanderKey;
             towerKeyText = guardiansKey;
         }
 #endif

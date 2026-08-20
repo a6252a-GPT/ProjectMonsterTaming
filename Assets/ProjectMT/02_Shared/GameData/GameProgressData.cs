@@ -1859,6 +1859,14 @@ namespace ProjectMT.Shared.GameData
             };
         }
 
+        public static GameProgressChange GrantRewards(RewardBundle rewards)
+        {
+            return new GameProgressChange
+            {
+                Rewards = rewards ?? RewardBundle.Empty
+            };
+        }
+
         public static GameProgressChange DiscardItem(string itemId, long quantity, long expectedQuantity)
         {
             return new GameProgressChange

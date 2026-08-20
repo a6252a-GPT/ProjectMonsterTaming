@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8770d85c1e24f1d4cb24e875a02ff6cf, type: 3}
+  m_Name: FallenCommanderResultAdapter_Seed
+  m_EditorClassIdentifier: ProjectMT.Contents.FallenCommander::ProjectMT.Contents.FallenCommander.FallenCommanderResultAdapter
+  clearReward: {fileID: 11400000, guid: c52beadf73135d040b5acddbe9545bc5, type: 2}
+  stageRewards: {fileID: 11400000, guid: 57b86b284f0a702449ca9033d4d1a95b, type: 2}

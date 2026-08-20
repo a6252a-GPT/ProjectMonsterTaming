@@ -66,7 +66,7 @@ namespace ProjectMT.Features.GrowthDungeon
 
         private static readonly ContentId FoodRiotId = new ContentId("food_riot");
         private static readonly ContentId TreasureSpiritId = new ContentId("treasure_spirit");
-        private static readonly ContentId GiantSpellbookId = new ContentId("giant_spellbook");
+        private static readonly ContentId FallenCommanderId = new ContentId("fallen_commander");
         private static readonly ContentId GuardiansTowerId = new ContentId("guardians_tower");
 
         [Header("카드 버튼")]
@@ -74,15 +74,15 @@ namespace ProjectMT.Features.GrowthDungeon
         [SerializeField] private Button foodRiotSweepButton;
         [SerializeField] private Button treasureSpiritEnterButton;
         [SerializeField] private Button treasureSpiritSweepButton;
-        [SerializeField] private Button giantSpellbookEnterButton;
-        [SerializeField] private Button giantSpellbookSweepButton;
+        [SerializeField] private Button fallenCommanderEnterButton;
+        [SerializeField] private Button fallenCommanderSweepButton;
         [SerializeField] private Button guardiansTowerEnterButton;
         [SerializeField] private Button guardiansTowerSweepButton;
 
         [Header("입장 팝업 원본")]
         [SerializeField] private GameObject foodRiotPopupPrefab;
         [SerializeField] private GameObject treasureSpiritPopupPrefab;
-        [SerializeField] private GameObject giantSpellbookPopupPrefab;
+        [SerializeField] private GameObject fallenCommanderPopupPrefab;
         [SerializeField] private GameObject guardiansTowerPopupPrefab;
 
         private readonly Dictionary<string, GrowthDungeonStageEntryPopupView> popupCache =
@@ -108,8 +108,8 @@ namespace ProjectMT.Features.GrowthDungeon
             foodRiotSweepButton?.onClick.AddListener(OpenFoodRiot);
             treasureSpiritEnterButton?.onClick.AddListener(OpenTreasureSpirit);
             treasureSpiritSweepButton?.onClick.AddListener(OpenTreasureSpirit);
-            giantSpellbookEnterButton?.onClick.AddListener(OpenGiantSpellbook);
-            giantSpellbookSweepButton?.onClick.AddListener(OpenGiantSpellbook);
+            fallenCommanderEnterButton?.onClick.AddListener(OpenFallenCommander);
+            fallenCommanderSweepButton?.onClick.AddListener(OpenFallenCommander);
             guardiansTowerEnterButton?.onClick.AddListener(OpenGuardiansTower);
             guardiansTowerSweepButton?.onClick.AddListener(OpenGuardiansTower);
         }
@@ -130,8 +130,8 @@ namespace ProjectMT.Features.GrowthDungeon
             foodRiotSweepButton?.onClick.RemoveListener(OpenFoodRiot);
             treasureSpiritEnterButton?.onClick.RemoveListener(OpenTreasureSpirit);
             treasureSpiritSweepButton?.onClick.RemoveListener(OpenTreasureSpirit);
-            giantSpellbookEnterButton?.onClick.RemoveListener(OpenGiantSpellbook);
-            giantSpellbookSweepButton?.onClick.RemoveListener(OpenGiantSpellbook);
+            fallenCommanderEnterButton?.onClick.RemoveListener(OpenFallenCommander);
+            fallenCommanderSweepButton?.onClick.RemoveListener(OpenFallenCommander);
             guardiansTowerEnterButton?.onClick.RemoveListener(OpenGuardiansTower);
             guardiansTowerSweepButton?.onClick.RemoveListener(OpenGuardiansTower);
             Shutdown();
@@ -185,7 +185,7 @@ namespace ProjectMT.Features.GrowthDungeon
         {
             RefreshCard(foodRiotEnterButton, foodRiotSweepButton, FoodRiotId, true);
             RefreshCard(treasureSpiritEnterButton, treasureSpiritSweepButton, TreasureSpiritId, false);
-            RefreshCard(giantSpellbookEnterButton, giantSpellbookSweepButton, GiantSpellbookId, true);
+            RefreshCard(fallenCommanderEnterButton, fallenCommanderSweepButton, FallenCommanderId, true);
             RefreshCard(guardiansTowerEnterButton, guardiansTowerSweepButton, GuardiansTowerId, true);
             RefreshPopup();
         }
@@ -204,9 +204,13 @@ namespace ProjectMT.Features.GrowthDungeon
                 treasureSpiritPopupPrefab));
         }
 
-        private void OpenGiantSpellbook()
+        private void OpenFallenCommander()
         {
-            Open(new DungeonBinding(GiantSpellbookId, "거대 마도서", true, giantSpellbookPopupPrefab));
+            Open(new DungeonBinding(
+                FallenCommanderId,
+                "타락한 과거의 군단장",
+                true,
+                fallenCommanderPopupPrefab));
         }
 
         private void OpenGuardiansTower()
@@ -327,7 +331,7 @@ namespace ProjectMT.Features.GrowthDungeon
             closeManagementPages?.Invoke();
             statusChanged?.Invoke($"{displayName} · {selectedStage}단계 {modeLabel}");
 
-            // 이 컨트롤러가 다루는 4개 성장 던전(식량 대소동·보물정령 숨바꼭질·거대마도서·고대 수호수의 시련)
+            // 이 컨트롤러가 다루는 4개 성장 던전(식량 대소동·보물 정령·타락한 과거의 군단장·고대 수호수)
             // 중 아무 곳이나 입장에 성공하면 퀘스트 조건을 채운다.
             _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.GrowthDungeonEnter, 1L);
         }
@@ -479,26 +483,26 @@ namespace ProjectMT.Features.GrowthDungeon
             Button foodSweep,
             Button treasureEnter,
             Button treasureSweep,
-            Button spellbookEnter,
-            Button spellbookSweep,
+            Button fallenCommanderEnter,
+            Button fallenCommanderSweep,
             Button guardiansEnter,
             Button guardiansSweep,
             GameObject foodPopup,
             GameObject treasurePopup,
-            GameObject spellbookPopup,
+            GameObject fallenCommanderPopup,
             GameObject guardiansPopup)
         {
             foodRiotEnterButton = foodEnter;
             foodRiotSweepButton = foodSweep;
             treasureSpiritEnterButton = treasureEnter;
             treasureSpiritSweepButton = treasureSweep;
-            giantSpellbookEnterButton = spellbookEnter;
-            giantSpellbookSweepButton = spellbookSweep;
+            fallenCommanderEnterButton = fallenCommanderEnter;
+            fallenCommanderSweepButton = fallenCommanderSweep;
             guardiansTowerEnterButton = guardiansEnter;
             guardiansTowerSweepButton = guardiansSweep;
             foodRiotPopupPrefab = foodPopup;
             treasureSpiritPopupPrefab = treasurePopup;
-            giantSpellbookPopupPrefab = spellbookPopup;
+            fallenCommanderPopupPrefab = fallenCommanderPopup;
             guardiansTowerPopupPrefab = guardiansPopup;
         }
 #endif

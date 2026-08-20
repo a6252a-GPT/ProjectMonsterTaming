@@ -3564,7 +3564,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4293974386735911772}
   m_Layer: 0
-  m_Name: GiantSpellbookCard_GUIPro
+  m_Name: FallenCommanderCard_GUIPro
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4583,7 +4583,7 @@ GameObject:
   - component: {fileID: 7741644587671047872}
   - component: {fileID: 8166039380763012089}
   m_Layer: 0
-  m_Name: GiantSpellbookCardSlot
+  m_Name: FallenCommanderCardSlot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4769,7 +4769,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uAC70\uB300 \uB9C8\uB3C4\uC11C"
+  m_text: "\uD0C0\uB77D\uD55C \uACFC\uAC70\uC758 \uAD70\uB2E8\uC7A5"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3718a141c8028064eb11791445f163c4, type: 2}
   m_sharedMaterial: {fileID: 2334897706883836998, guid: 3718a141c8028064eb11791445f163c4, type: 2}
@@ -10357,13 +10357,13 @@ MonoBehaviour:
   foodRiotSweepButton: {fileID: 2137591068780031592}
   treasureSpiritEnterButton: {fileID: 7542965265843686281}
   treasureSpiritSweepButton: {fileID: 1445497294973280399}
-  giantSpellbookEnterButton: {fileID: 7414676203000316062}
-  giantSpellbookSweepButton: {fileID: 8346465444515285788}
+  fallenCommanderEnterButton: {fileID: 7414676203000316062}
+  fallenCommanderSweepButton: {fileID: 8346465444515285788}
   guardiansTowerEnterButton: {fileID: 5889954035894364611}
   guardiansTowerSweepButton: {fileID: 8868556331733369980}
   foodRiotPopupPrefab: {fileID: 5440967762579022343, guid: 13269a1a14a489d40ab64ab17b247c80, type: 3}
   treasureSpiritPopupPrefab: {fileID: 5440967762579022343, guid: 53f58d89414d40741ae1ed3f80600023, type: 3}
-  giantSpellbookPopupPrefab: {fileID: 5440967762579022343, guid: 8f3ae42619d458749a343c21dd366ed9, type: 3}
+  fallenCommanderPopupPrefab: {fileID: 5440967762579022343, guid: 8f3ae42619d458749a343c21dd366ed9, type: 3}
   guardiansTowerPopupPrefab: {fileID: 5440967762579022343, guid: 87e87ae7fb54b254dacbf911b2ec61ed, type: 3}
 --- !u!224 &9058511101076501310 stripped
 RectTransform:

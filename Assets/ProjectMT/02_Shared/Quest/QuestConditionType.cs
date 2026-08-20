@@ -25,6 +25,7 @@ namespace ProjectMT.Shared.Quest
         CommanderDefenseLevelReach, // 군단 공용 강화 - 방어력 레벨 도달
         CommanderPowerReach, // 군단장 전투력 도달
         EquipmentSlotUpgradeReach, // 장비 슬롯 강화 중 최고 레벨 도달(부위 무관)
-        CommanderPotentialUnlockCount // 잠재능력 슬롯 개방 개수 도달
+        CommanderPotentialUnlockCount, // 잠재능력 슬롯 개방 개수 도달
+        ExpeditionVictory // 원정대 승리(도전·반복 모드 모두 포함, 매 클리어마다 누적). 일일·주간처럼 반복 승리 횟수가 필요한 퀘스트용.
     }
 }

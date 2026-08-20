@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using ProjectMT.Features.Commander;
 using ProjectMT.Features.Equipment;
@@ -20,6 +21,15 @@ namespace ProjectMT.Features.Quest
         // 같은 프레임에 이벤트가 여러 번 겹칠 때(광역 처치로 여러 마리 동시 사망 등) 낙관적 동시성
         // 충돌로 거절된 진행도 증가를 최신 값으로 다시 계산해 재시도하는 횟수.
         private const int MaxAdvanceRetryCount = 8;
+
+        // 진행도 증가 호출(AdvanceAllOfConditionAsync/TryAdvanceProgressAsync) 전체를 이 게이트로 직렬화한다.
+        // 그렇지 않으면 광역 처치처럼 같은 조건의 이벤트가 짧은 시간에 몰릴 때 같은 퀘스트의 이전 값을 두고
+        // 경쟁하다가 재시도 한도(MaxAdvanceRetryCount)를 넘겨 일부 증가가 누락될 수 있다.
+        private static readonly SemaphoreSlim advanceGate = new SemaphoreSlim(1, 1);
+
+        // 주간 퀘스트는 일일과 같은 일자 ID(GrowthDungeonDailyKeyRules 기준)를 이 값으로 나눠서
+        // 7일 단위로 묶은 기간이 바뀌었는지만 판단한다(특정 요일 고정 없이 "7일 주기" 요구사항을 만족).
+        private const long WeeklyPeriodLengthInDays = 7L;
 
         // 반복 퀘스트는 사이클마다 목표 수치가 바뀌므로, 에셋 설명에 숫자를 직접 적어두는 대신
         // 이 토큰을 넣어두면 화면·로그에 표시할 때 지금 사이클의 실제 목표 수치로 바꿔서 보여준다.
@@ -50,6 +60,14 @@ namespace ProjectMT.Features.Quest
             }
 
             Changed?.Invoke();
+
+            // 로그인·재연결 시점에 KST 05:00 경계(또는 7일 경계)를 이미 넘겼으면 일일·주간 퀘스트를 초기화한다.
+            // AppRootHost의 초기화 순서와 무관하게 항상 "준비 완료 직후"에 걸리도록 여기서 직접 호출한다.
+            if (IsReady)
+            {
+                _ = RefreshDailyQuestsAsync();
+                _ = RefreshWeeklyQuestsAsync();
+            }
         }
 
         public static bool IsReady => progress != null && progress.IsLoaded && catalog != null;
@@ -68,6 +86,30 @@ namespace ProjectMT.Features.Quest
             }
 
             return catalog.TryGet(questId, out definition);
+        }
+
+        // 일일·주간처럼 여러 퀘스트가 동시에 진행되는 화면용 목록 조회. 메인 퀘스트의 선행 체인과 달리
+        // 활성화된 정의를 카탈로그 등록 순서 그대로 전부 돌려준다(반복 퀘스트 템플릿은 별도 풀이므로 제외).
+        public static IReadOnlyList<QuestDefinition> GetQuestsByType(QuestType type)
+        {
+            if (catalog == null)
+            {
+                return Array.Empty<QuestDefinition>();
+            }
+
+            var result = new List<QuestDefinition>();
+            var definitions = catalog.Definitions;
+            for (var i = 0; i < definitions.Count; i++)
+            {
+                var definition = definitions[i];
+                if (definition != null && definition.IsEnabled && !definition.IsRepeatingTemplate &&
+                    definition.QuestType == type)
+                {
+                    result.Add(definition);
+                }
+            }
+
+            return result;
         }
 
         // 저장된 진행 기록이 없으면 0진행 기본값을 돌려준다(퀘스트 최초 조회 시).
@@ -484,23 +526,34 @@ namespace ProjectMT.Features.Quest
                 return;
             }
 
-            var definitions = catalog.Definitions;
-            for (var i = 0; i < definitions.Count; i++)
+            // 이 조건에 해당하는 퀘스트 전체(+반복 템플릿)를 "이 이벤트 1건"으로 묶어서 직렬화한다.
+            // advanceGate를 여기서 한 번만 잡고, 안쪽에서는 게이트를 다시 잡지 않는 Core 메서드만 호출한다.
+            await advanceGate.WaitAsync();
+            try
             {
-                var definition = definitions[i];
-                if (definition != null && definition.IsEnabled && !definition.IsRepeatingTemplate &&
-                    definition.ConditionType == conditionType)
+                var definitions = catalog.Definitions;
+                for (var i = 0; i < definitions.Count; i++)
                 {
-                    await TryAdvanceProgressAsync(definition.QuestId, amount);
+                    var definition = definitions[i];
+                    if (definition != null && definition.IsEnabled && !definition.IsRepeatingTemplate &&
+                        definition.ConditionType == conditionType)
+                    {
+                        await AdvanceProgressCoreAsync(definition.QuestId, definition, amount);
+                    }
                 }
-            }
 
-            await TryAdvanceActiveRepeatingProgressAsync(conditionType, amount);
+                await AdvanceActiveRepeatingProgressCoreAsync(conditionType, amount);
+            }
+            finally
+            {
+                advanceGate.Release();
+            }
         }
 
         // 지금 활성인 반복 템플릿이 이 조건과 같은 카운트형 조건일 때만 진행도를 올린다.
         // 임계값형 조건(레벨 도달 등)은 조회 시점에 현재 값을 바로 읽으므로 이벤트로 누적하지 않는다.
-        private static async Task TryAdvanceActiveRepeatingProgressAsync(QuestConditionType conditionType, long amount)
+        // 호출부(AdvanceAllOfConditionAsync)가 advanceGate를 이미 잡고 있으므로 여기서는 다시 잡지 않는다.
+        private static async Task AdvanceActiveRepeatingProgressCoreAsync(QuestConditionType conditionType, long amount)
         {
             if (IsThresholdCondition(conditionType))
             {
@@ -535,10 +588,8 @@ namespace ProjectMT.Features.Quest
 
         // 실제 게임 이벤트(몬스터 처치 등)가 붙었을 때 진행도를 검증된 방식으로 올리는 진입점.
         // 6.2(진행 이벤트 연결) 단계의 각 시스템 이벤트 핸들러가 이 메서드(또는 AdvanceAllOfConditionAsync)를 호출한다.
-        //
-        // 광역 처치처럼 같은 프레임에 이 메서드가 여러 번 겹쳐 호출되면, 먼저 저장된 호출이 진행도를 올린 뒤
-        // 나중 호출은 "기대했던 이전 값"이 낡아서 거절될 수 있다(GameProgressData의 낙관적 동시성 검증).
-        // 이런 경우 진행도를 잃지 않도록 최신 값을 다시 읽어 재시도한다.
+        // advanceGate로 QuestRuntime을 거치는 모든 진행도 증가 호출을 직렬화해 두었으므로, 여기서는 더 이상
+        // 같은 조건을 공유하는 다른 호출과 경쟁하지 않는다(재시도는 그 밖의 드문 저장 충돌에 대한 안전망).
         public static async Task<bool> TryAdvanceProgressAsync(QuestId questId, long amount)
         {
             if (!IsReady || amount == 0L || !catalog.TryGet(questId, out var definition) ||
@@ -547,6 +598,22 @@ namespace ProjectMT.Features.Quest
                 return false;
             }
 
+            await advanceGate.WaitAsync();
+            try
+            {
+                return await AdvanceProgressCoreAsync(questId, definition, amount);
+            }
+            finally
+            {
+                advanceGate.Release();
+            }
+        }
+
+        // 실제 진행도 읽기-계산-저장 루프(advanceGate를 이미 잡고 있는 호출부에서만 사용).
+        // 저장 시점에 "기대했던 이전 값"이 낡아서 거절되면(GameProgressData의 낙관적 동시성 검증) 최신 값을
+        // 다시 읽어 재시도해서 진행도를 잃지 않는다.
+        private static async Task<bool> AdvanceProgressCoreAsync(QuestId questId, QuestDefinition definition, long amount)
+        {
             for (var attempt = 0; attempt < MaxAdvanceRetryCount; attempt++)
             {
                 var current = GetProgress(questId);
@@ -729,6 +796,105 @@ namespace ProjectMT.Features.Quest
                     saved.CurrentProgress,
                     derived,
                     definition.TargetValue));
+        }
+
+        // 일일 퀘스트 초기화(KST 05:00 경계). GrowthDungeonDailyKeyRules와 같은 기간 ID 계산을 그대로 재사용한다.
+        // Configure가 준비 완료 직후 1회 호출하며, 오늘 안에 이미 초기화했으면 아무 것도 하지 않는다.
+        public static async Task RefreshDailyQuestsAsync()
+        {
+            for (var attempt = 0; attempt < MaxAdvanceRetryCount; attempt++)
+            {
+                if (!IsReady)
+                {
+                    return;
+                }
+
+                var currentPeriod = GrowthDungeonDailyKeyRules.GetPeriodId(DateTime.UtcNow);
+                var previousPeriod = progress.Quests.LastDailyResetPeriod;
+                if (currentPeriod <= previousPeriod)
+                {
+                    return;
+                }
+
+                var dailyQuestIds = new List<QuestId>();
+                var definitions = catalog.Definitions;
+                for (var i = 0; i < definitions.Count; i++)
+                {
+                    var definition = definitions[i];
+                    if (definition != null && definition.QuestType == QuestType.Daily && !definition.IsRepeatingTemplate)
+                    {
+                        dailyQuestIds.Add(definition.QuestId);
+                    }
+                }
+
+                if (await progress.TryApplyAndSaveAsync(
+                        GameProgressChange.RefreshDailyQuests(previousPeriod, currentPeriod, dailyQuestIds)))
+                {
+                    return;
+                }
+            }
+        }
+
+        // 주간 퀘스트 초기화. 일일과 같은 일자 ID를 7일 단위로 묶어서 비교하는 것만 다르고 나머지는 동일하다.
+        // Configure가 준비 완료 직후 1회 호출하며, 이번 주 안에 이미 초기화했으면 아무 것도 하지 않는다.
+        public static async Task RefreshWeeklyQuestsAsync()
+        {
+            for (var attempt = 0; attempt < MaxAdvanceRetryCount; attempt++)
+            {
+                if (!IsReady)
+                {
+                    return;
+                }
+
+                var currentPeriod = GrowthDungeonDailyKeyRules.GetPeriodId(DateTime.UtcNow) / WeeklyPeriodLengthInDays;
+                var previousPeriod = progress.Quests.LastWeeklyResetPeriod;
+                if (currentPeriod <= previousPeriod)
+                {
+                    return;
+                }
+
+                var weeklyQuestIds = new List<QuestId>();
+                var definitions = catalog.Definitions;
+                for (var i = 0; i < definitions.Count; i++)
+                {
+                    var definition = definitions[i];
+                    if (definition != null && definition.QuestType == QuestType.Weekly && !definition.IsRepeatingTemplate)
+                    {
+                        weeklyQuestIds.Add(definition.QuestId);
+                    }
+                }
+
+                if (await progress.TryApplyAndSaveAsync(
+                        GameProgressChange.RefreshWeeklyQuests(previousPeriod, currentPeriod, weeklyQuestIds)))
+                {
+                    return;
+                }
+            }
+        }
+
+        // 디버그/보정용: 일일·주간 퀘스트 진행도만 전부 0으로 되돌린다(메인 스토리 퀘스트·반복 템플릿은 그대로 둔다).
+        // 같은 조건을 공유하는 일일·주간 카운터가 서로 어긋나 있을 때 다시 나란히 맞추고 싶으면
+        // QuestDebugController 등에서 호출한다.
+        public static async Task<bool> ResetDailyAndWeeklyProgressAsync()
+        {
+            if (!IsReady)
+            {
+                return false;
+            }
+
+            var questIds = new List<QuestId>();
+            var definitions = catalog.Definitions;
+            for (var i = 0; i < definitions.Count; i++)
+            {
+                var definition = definitions[i];
+                if (definition != null && !definition.IsRepeatingTemplate &&
+                    (definition.QuestType == QuestType.Daily || definition.QuestType == QuestType.Weekly))
+                {
+                    questIds.Add(definition.QuestId);
+                }
+            }
+
+            return await progress.TryApplyAndSaveAsync(GameProgressChange.ResetQuestProgress(questIds));
         }
 
         // 우편함이 아직 없어서, 퀘스트 이름·설명·조건·진행도·보상·해금 대상을 전부 콘솔에 대신 출력한다.

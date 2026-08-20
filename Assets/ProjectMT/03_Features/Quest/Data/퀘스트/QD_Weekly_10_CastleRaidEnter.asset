@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25a12baf1f1a3d4449770be56d69d3c6, type: 3}
+  m_Name: QD_Weekly_10_CastleRaidEnter
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
+  questId:
+    value: quest_weekly_10_castle_raid_enter
+  isEnabled: 1
+  displayName: 군단의 역습 3회 참여
+  description: 군단의 역습에 3회 입장하세요.
+  questType: 2
+  conditionType: 12
+  targetValue: 3
+  prerequisiteQuestId:
+    value: 
+  reward: {fileID: 11400000, guid: 288da32fd1274c1186705f75a09edee6, type: 2}
+  unlockTargets: []
+  unlockGateEnabled: 0
+  isRepeatingTemplate: 0
+  repeatIncrement: 0
+  repeatMaxOccurrences: 0

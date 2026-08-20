@@ -84,6 +84,15 @@ namespace ProjectMT.Shared.Quest
             completed = false;
             rewardClaimed = false;
         }
+
+        // 일일·주간 퀘스트가 기준 시각을 넘겨 초기화될 때 호출한다. 진행도·완료·수령 여부만
+        // 0으로 되돌리고, 반복 퀘스트 전용 필드(repeatCycleCount)는 일일·주간 퀘스트가 쓰지 않으므로 건드리지 않는다.
+        internal void ResetForPeriodRefresh()
+        {
+            currentProgress = 0L;
+            completed = false;
+            rewardClaimed = false;
+        }
     }
 
     // 전체 퀘스트 진행도 저장 원본. GameProgressData의 필드로 편입되어 저장·복원된다.
@@ -93,6 +102,8 @@ namespace ProjectMT.Shared.Quest
         [SerializeField] private List<QuestProgressEntryData> entries = new List<QuestProgressEntryData>();
         [SerializeField] private QuestId activeRepeatingTemplateId; // 지금 추적 중인 반복 퀘스트 템플릿(선형 체인이 끝난 뒤 사용)
         [SerializeField] private QuestId lastRepeatingTemplateId; // 바로 직전에 활성이었던 템플릿(같은 퀘스트 연속 등장 방지용)
+        [SerializeField] private long lastDailyResetPeriod = -1L; // GrowthDungeonDailyKeyRules와 동일한 KST 05:00 기준 일자 ID(-1 = 아직 초기화 전)
+        [SerializeField] private long lastWeeklyResetPeriod = -1L; // 일일과 같은 일자 ID를 7로 나눈 주간 묶음 ID(-1 = 아직 초기화 전)
 
         public static QuestProgressData CreateDefault()
         {
@@ -102,13 +113,17 @@ namespace ProjectMT.Shared.Quest
         internal IReadOnlyList<QuestProgressEntryData> Entries => entries;
         public QuestId ActiveRepeatingTemplateId => activeRepeatingTemplateId;
         public QuestId LastRepeatingTemplateId => lastRepeatingTemplateId;
+        public long LastDailyResetPeriod => Math.Max(-1L, lastDailyResetPeriod);
+        public long LastWeeklyResetPeriod => Math.Max(-1L, lastWeeklyResetPeriod);
 
         public QuestProgressData Clone()
         {
             var clone = new QuestProgressData
             {
                 activeRepeatingTemplateId = activeRepeatingTemplateId,
-                lastRepeatingTemplateId = lastRepeatingTemplateId
+                lastRepeatingTemplateId = lastRepeatingTemplateId,
+                lastDailyResetPeriod = lastDailyResetPeriod,
+                lastWeeklyResetPeriod = lastWeeklyResetPeriod
             };
             for (var i = 0; i < entries.Count; i++)
             {
@@ -157,8 +172,53 @@ namespace ProjectMT.Shared.Quest
             return entry;
         }
 
+        // 일일 퀘스트 초기화 기준일(KST 05:00 경계)이 실제로 넘어갔을 때만 통과시킨다.
+        // GrowthDungeonDailyKeyRules.GetPeriodId와 같은 방식으로 계산된 기간 ID를 그대로 받아 비교한다.
+        // 통과하면 넘겨받은 퀘스트 ID들의 진행도를 전부 0으로 되돌린다(미완료·완료·수령 모두 포함).
+        internal bool TryAdvanceDailyResetPeriod(long expectedPeriod, long nextPeriod, IReadOnlyList<QuestId> questIds)
+        {
+            if (LastDailyResetPeriod != expectedPeriod || nextPeriod <= LastDailyResetPeriod)
+            {
+                return false;
+            }
+
+            lastDailyResetPeriod = nextPeriod;
+            if (questIds != null)
+            {
+                for (var i = 0; i < questIds.Count; i++)
+                {
+                    GetOrCreateEntry(questIds[i]).ResetForPeriodRefresh();
+                }
+            }
+
+            return true;
+        }
+
+        // 주간 퀘스트 초기화(일일과 같은 일자 ID를 7일 단위로 묶은 기간)가 실제로 넘어갔을 때만 통과시킨다.
+        // 계산 방식은 TryAdvanceDailyResetPeriod와 동일하고, 넘겨받는 기간 ID만 7일 단위로 묶인 값이다.
+        internal bool TryAdvanceWeeklyResetPeriod(long expectedPeriod, long nextPeriod, IReadOnlyList<QuestId> questIds)
+        {
+            if (LastWeeklyResetPeriod != expectedPeriod || nextPeriod <= LastWeeklyResetPeriod)
+            {
+                return false;
+            }
+
+            lastWeeklyResetPeriod = nextPeriod;
+            if (questIds != null)
+            {
+                for (var i = 0; i < questIds.Count; i++)
+                {
+                    GetOrCreateEntry(questIds[i]).ResetForPeriodRefresh();
+                }
+            }
+
+            return true;
+        }
+
         internal void Repair()
         {
+            lastDailyResetPeriod = Math.Max(-1L, lastDailyResetPeriod);
+            lastWeeklyResetPeriod = Math.Max(-1L, lastWeeklyResetPeriod);
             entries ??= new List<QuestProgressEntryData>();
             for (var i = entries.Count - 1; i >= 0; i--)
             {
@@ -213,6 +273,8 @@ namespace ProjectMT.Shared.Quest
             var source = data?.Entries;
             ActiveRepeatingTemplateId = data?.ActiveRepeatingTemplateId ?? default;
             LastRepeatingTemplateId = data?.LastRepeatingTemplateId ?? default;
+            LastDailyResetPeriod = data?.LastDailyResetPeriod ?? -1L;
+            LastWeeklyResetPeriod = data?.LastWeeklyResetPeriod ?? -1L;
             if (source == null || source.Count == 0)
             {
                 entries = Array.Empty<QuestProgressEntryView>();
@@ -235,6 +297,8 @@ namespace ProjectMT.Shared.Quest
         public IReadOnlyList<QuestProgressEntryView> Entries => entries ?? Array.Empty<QuestProgressEntryView>();
         public QuestId ActiveRepeatingTemplateId { get; }
         public QuestId LastRepeatingTemplateId { get; }
+        public long LastDailyResetPeriod { get; }
+        public long LastWeeklyResetPeriod { get; }
 
         public bool TryGet(QuestId id, out QuestProgressEntryView view)
         {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Reward;
@@ -90,6 +91,39 @@ namespace ProjectMT.Shared.GameData
             }
         }
 
+        // 일일 퀘스트 초기화 요청 검증. GrowthDungeonProgressData의 TryAdvanceDailyKeyPeriod와 동일하게
+        // "기대했던 이전 기간"이 지금 저장된 값과 다르면(이미 다른 초기화가 먼저 적용됨) 거절한다.
+        partial void RejectInvalidQuestDailyReset(GameProgressChange change, ref bool rejected)
+        {
+            if (!change.HasQuestDailyReset)
+            {
+                return;
+            }
+
+            quests ??= QuestProgressData.CreateDefault();
+            if (quests.LastDailyResetPeriod != change.ExpectedQuestDailyResetPeriod ||
+                change.QuestDailyResetPeriod <= quests.LastDailyResetPeriod)
+            {
+                rejected = true;
+            }
+        }
+
+        // 주간 퀘스트 초기화 요청 검증. 계산 방식은 일일과 동일하고, 기간 ID만 7일 단위로 묶인 값이다.
+        partial void RejectInvalidQuestWeeklyReset(GameProgressChange change, ref bool rejected)
+        {
+            if (!change.HasQuestWeeklyReset)
+            {
+                return;
+            }
+
+            quests ??= QuestProgressData.CreateDefault();
+            if (quests.LastWeeklyResetPeriod != change.ExpectedQuestWeeklyResetPeriod ||
+                change.QuestWeeklyResetPeriod <= quests.LastWeeklyResetPeriod)
+            {
+                rejected = true;
+            }
+        }
+
         partial void ApplyQuestProgress(GameProgressChange change, ref bool rejected)
         {
             if (!change.HasSetQuestProgress)
@@ -132,6 +166,50 @@ namespace ProjectMT.Shared.GameData
                 quests.SetActiveRepeatingTemplate(change.InitializeActiveRepeatingTemplateId, default);
             }
         }
+
+        partial void ApplyQuestDailyReset(GameProgressChange change)
+        {
+            if (!change.HasQuestDailyReset)
+            {
+                return;
+            }
+
+            quests.TryAdvanceDailyResetPeriod(
+                change.ExpectedQuestDailyResetPeriod,
+                change.QuestDailyResetPeriod,
+                change.QuestDailyResetQuestIds);
+        }
+
+        partial void ApplyQuestWeeklyReset(GameProgressChange change)
+        {
+            if (!change.HasQuestWeeklyReset)
+            {
+                return;
+            }
+
+            quests.TryAdvanceWeeklyResetPeriod(
+                change.ExpectedQuestWeeklyResetPeriod,
+                change.QuestWeeklyResetPeriod,
+                change.QuestWeeklyResetQuestIds);
+        }
+
+        // 디버그/보정용: 넘겨받은 퀘스트 ID들의 진행도·완료·수령 여부만 0으로 되돌린다.
+        // 일일·주간 정기 초기화(ApplyQuestDailyReset/ApplyQuestWeeklyReset)와 달리 기간 ID 검증이 없어
+        // 아무 때나 적용할 수 있고, 넘기지 않은 퀘스트(메인 스토리·반복 템플릿 등)는 건드리지 않는다.
+        partial void ApplyQuestProgressReset(GameProgressChange change)
+        {
+            if (!change.HasResetQuestProgress)
+            {
+                return;
+            }
+
+            quests ??= QuestProgressData.CreateDefault();
+            var ids = change.ResetQuestProgressQuestIds;
+            for (var i = 0; i < ids.Count; i++)
+            {
+                quests.GetOrCreateEntry(ids[i]).ResetForPeriodRefresh();
+            }
+        }
     }
 
     public sealed partial class GameProgressChange
@@ -148,6 +226,16 @@ namespace ProjectMT.Shared.GameData
         internal QuestId NextRepeatingTemplateId { get; private set; }
         internal bool HasInitializeActiveRepeatingTemplate { get; private set; }
         internal QuestId InitializeActiveRepeatingTemplateId { get; private set; }
+        internal bool HasQuestDailyReset { get; private set; }
+        internal long ExpectedQuestDailyResetPeriod { get; private set; }
+        internal long QuestDailyResetPeriod { get; private set; }
+        internal IReadOnlyList<QuestId> QuestDailyResetQuestIds { get; private set; }
+        internal bool HasQuestWeeklyReset { get; private set; }
+        internal long ExpectedQuestWeeklyResetPeriod { get; private set; }
+        internal long QuestWeeklyResetPeriod { get; private set; }
+        internal IReadOnlyList<QuestId> QuestWeeklyResetQuestIds { get; private set; }
+        internal bool HasResetQuestProgress { get; private set; }
+        internal IReadOnlyList<QuestId> ResetQuestProgressQuestIds { get; private set; }
 
         public static GameProgressChange SetQuestProgress(
             QuestId questId,
@@ -198,6 +286,49 @@ namespace ProjectMT.Shared.GameData
             {
                 HasInitializeActiveRepeatingTemplate = true,
                 InitializeActiveRepeatingTemplateId = templateId
+            };
+        }
+
+        // 일일 퀘스트 초기화(GrowthDungeonDailyKeyRules와 동일한 KST 05:00 기준 기간 ID 사용).
+        // questIds에 넘긴 퀘스트들의 진행도·완료·수령 여부를 전부 0/미완료/미수령으로 되돌린다.
+        public static GameProgressChange RefreshDailyQuests(
+            long expectedPeriod,
+            long nextPeriod,
+            IReadOnlyList<QuestId> questIds)
+        {
+            return new GameProgressChange
+            {
+                HasQuestDailyReset = true,
+                ExpectedQuestDailyResetPeriod = expectedPeriod,
+                QuestDailyResetPeriod = nextPeriod,
+                QuestDailyResetQuestIds = questIds ?? Array.Empty<QuestId>()
+            };
+        }
+
+        // 주간 퀘스트 초기화. 계산 방식은 RefreshDailyQuests와 동일하고, 기간 ID만 7일 단위로 묶어서 넘긴다.
+        public static GameProgressChange RefreshWeeklyQuests(
+            long expectedPeriod,
+            long nextPeriod,
+            IReadOnlyList<QuestId> questIds)
+        {
+            return new GameProgressChange
+            {
+                HasQuestWeeklyReset = true,
+                ExpectedQuestWeeklyResetPeriod = expectedPeriod,
+                QuestWeeklyResetPeriod = nextPeriod,
+                QuestWeeklyResetQuestIds = questIds ?? Array.Empty<QuestId>()
+            };
+        }
+
+        // 디버그/보정용: 넘겨받은 퀘스트들의 진행도만 0으로 되돌린다(기간 ID 검증 없음).
+        // 같은 조건을 공유하는 일일/주간 퀘스트의 진행도가 서로 어긋나 있을 때 다시 나란히 맞추고
+        // 싶으면 사용한다(메인 스토리·반복 템플릿 등 넘기지 않은 퀘스트는 그대로 유지).
+        public static GameProgressChange ResetQuestProgress(IReadOnlyList<QuestId> questIds)
+        {
+            return new GameProgressChange
+            {
+                HasResetQuestProgress = true,
+                ResetQuestProgressQuestIds = questIds ?? Array.Empty<QuestId>()
             };
         }
     }

@@ -279,8 +279,13 @@ namespace ProjectMT.Shared.GameData
         partial void CopyQuestTo(GameProgressData clone);
         partial void RepairQuest();
         partial void RejectInvalidQuestClaim(GameProgressChange change, ref bool rejected);
+        partial void RejectInvalidQuestDailyReset(GameProgressChange change, ref bool rejected);
+        partial void RejectInvalidQuestWeeklyReset(GameProgressChange change, ref bool rejected);
         partial void ApplyQuestProgress(GameProgressChange change, ref bool rejected);
         partial void ApplyQuestClaim(GameProgressChange change);
+        partial void ApplyQuestDailyReset(GameProgressChange change);
+        partial void ApplyQuestWeeklyReset(GameProgressChange change);
+        partial void ApplyQuestProgressReset(GameProgressChange change);
 
         internal bool TryApply(
             GameProgressChange change,
@@ -295,6 +300,8 @@ namespace ProjectMT.Shared.GameData
 
             var questRejected = false;
             RejectInvalidQuestClaim(change, ref questRejected);
+            RejectInvalidQuestDailyReset(change, ref questRejected);
+            RejectInvalidQuestWeeklyReset(change, ref questRejected);
             ApplyQuestProgress(change, ref questRejected);
             if (questRejected)
             {
@@ -361,6 +368,9 @@ namespace ProjectMT.Shared.GameData
             }
 
             ApplyQuestClaim(change);
+            ApplyQuestDailyReset(change);
+            ApplyQuestWeeklyReset(change);
+            ApplyQuestProgressReset(change);
 
             if (change.HasSettleOfflineReward &&
                 !TryApplyOfflineEquipmentSettlement(change.OfflineReceipt))

@@ -666,6 +666,9 @@ namespace ProjectMT.Features.Expedition
                     Debug.LogException(exception); // 표현 실패는 저장을 되돌리지 않음
                 }
 
+                // 도전·반복 모드 관계없이 승리할 때마다 누적되는 일일·주간용 조건(원정대 승리 N회).
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.ExpeditionVictory, 1L);
+
                 if (settledMode == ExpeditionRunMode.Challenge)
                 {
                     SetResult(ExpeditionResultNoticeFormatter.ChallengeVictory(

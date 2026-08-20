@@ -48,6 +48,7 @@ namespace ProjectMT.Features.Quest
                 case QuestConditionType.CommanderPowerReach: return "군단장 전투력 도달";
                 case QuestConditionType.EquipmentSlotUpgradeReach: return "장비 슬롯 강화 레벨 도달";
                 case QuestConditionType.CommanderPotentialUnlockCount: return "잠재능력 슬롯 개방";
+                case QuestConditionType.ExpeditionVictory: return "원정대 승리";
                 default: return type.ToString();
             }
         }
@@ -62,6 +63,7 @@ namespace ProjectMT.Features.Quest
             {
                 case QuestConditionType.MonsterKill:
                 case QuestConditionType.ExpeditionClear:
+                case QuestConditionType.ExpeditionVictory:
                 case QuestConditionType.CastleRaidEnter:
                     return "토벌 임무";
                 default:

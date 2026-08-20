@@ -98,6 +98,21 @@ namespace ProjectMT.Features.Quest
             }
         }
 
+        // 일일/주간 퀘스트 중 같은 조건을 공유하는 항목의 누적 수치가 서로 어긋나 있을 때,
+        // 메인 스토리 퀘스트·반복 템플릿은 그대로 두고 일일·주간 진행도만 0으로 되돌려 다시 나란히 맞춘다.
+        [ContextMenu("Quest/Reset Daily+Weekly Progress (Debug)")]
+        private async void ResetDailyAndWeeklyProgress()
+        {
+            if (!QuestRuntime.IsReady)
+            {
+                Debug.LogWarning("QuestDebugController: 진행 데이터가 아직 연결되지 않았습니다(씬 초기화가 끝난 뒤 시도하세요).", this);
+                return;
+            }
+
+            var applied = await QuestRuntime.ResetDailyAndWeeklyProgressAsync();
+            Debug.Log($"[Quest] 일일/주간 진행도 초기화 {(applied ? "완료" : "실패")}");
+        }
+
         private bool TryGetDefinitions(out IReadOnlyList<QuestDefinition> definitions)
         {
             if (catalog == null)

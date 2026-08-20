@@ -5,6 +5,7 @@ using ProjectMT.Features.Equipment;
 using ProjectMT.Features.Formation;
 using ProjectMT.Features.Inventory;
 using ProjectMT.Features.Mailbox;
+using ProjectMT.Features.Quest;
 using ProjectMT.Features.Settings;
 using ProjectMT.Shared.Combat;
 using UnityEngine;
@@ -38,6 +39,8 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private AttendancePanelController attendancePage;
         [SerializeField] private MailboxPanelController mailboxPage;
 
+        private DailyMissionPanelView questPage;
+
         private int defaultSiblingIndex = -1;
         private int defaultCanvasSortingOrder;
         private FormationPageController formationPage;
@@ -58,6 +61,7 @@ namespace ProjectMT.Features.MainBattle
             (settingsPage != null && settingsPage.IsOpen) ||
             (attendancePage != null && attendancePage.IsOpen) ||
             (mailboxPage != null && mailboxPage.IsOpen) ||
+            (questPage != null && questPage.IsOpen) ||
             (formationPage != null && formationPage.IsOpen);
 
         private void Awake()
@@ -120,6 +124,7 @@ namespace ProjectMT.Features.MainBattle
             ConfigureSettingsPage(null);
             ConfigureAttendancePage(null);
             ConfigureMailboxPage(null);
+            ConfigureQuestPage(null);
             if (monsterManagementPage != null)
             {
                 monsterManagementPage.OpenStateChanged -= HandleMonsterManagementOpenStateChanged;
@@ -270,6 +275,16 @@ namespace ProjectMT.Features.MainBattle
             mailboxPage?.Open();
         }
 
+        public void OpenQuestPage()
+        {
+            CloseAllPages();
+            questPage?.Open();
+            if (questPage != null)
+            {
+                BringToFront();
+            }
+        }
+
         public void ConfigureSettingsPage(SettingsPanelController page)
         {
             if (settingsPage == page)
@@ -333,6 +348,26 @@ namespace ProjectMT.Features.MainBattle
             }
         }
 
+        public void ConfigureQuestPage(DailyMissionPanelView page)
+        {
+            if (questPage == page)
+            {
+                return;
+            }
+
+            if (questPage != null)
+            {
+                questPage.OpenStateChanged -= HandleQuestPageOpenStateChanged;
+            }
+
+            questPage = page;
+            if (questPage != null)
+            {
+                questPage.OpenStateChanged += HandleQuestPageOpenStateChanged;
+                questPage.Close();
+            }
+        }
+
         public void ConfigureFormationPage(FormationPageController page)
         {
             if (formationPage == page)
@@ -369,6 +404,7 @@ namespace ProjectMT.Features.MainBattle
             settingsPage?.Close();
             attendancePage?.Close();
             mailboxPage?.Close();
+            questPage?.Close();
             RestoreHudOrder();
         }
 
@@ -452,7 +488,8 @@ namespace ProjectMT.Features.MainBattle
                      (growthDungeonPage == null || !growthDungeonPage.activeSelf) &&
                      (settingsPage == null || !settingsPage.IsOpen) &&
                      (attendancePage == null || !attendancePage.IsOpen) &&
-                     (mailboxPage == null || !mailboxPage.IsOpen))
+                     (mailboxPage == null || !mailboxPage.IsOpen) &&
+                     (questPage == null || !questPage.IsOpen))
             {
                 RestoreHudOrder();
             }
@@ -519,6 +556,18 @@ namespace ProjectMT.Features.MainBattle
         }
 
         private void HandleMailboxOpenStateChanged(bool open)
+        {
+            if (open)
+            {
+                BringToFront();
+            }
+            else if (!IsAnyPageOpen)
+            {
+                RestoreHudOrder();
+            }
+        }
+
+        private void HandleQuestPageOpenStateChanged(bool open)
         {
             if (open)
             {

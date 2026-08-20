@@ -3727,6 +3727,7 @@ MonoBehaviour:
   equipmentSlotUpgradeButton: {fileID: 1156100753307772843}
   commanderButton: {fileID: 4487454335652208061}
   skillButton: {fileID: 6303066325040967669}
+  missionButton: {fileID: 516819309047817406}
   castleRaidButton: {fileID: 1158466927480973555}
   settingsButton: {fileID: 6649347449961371762}
   modeButton: {fileID: 7630981825559471461}
@@ -3734,6 +3735,7 @@ MonoBehaviour:
   formationPage: {fileID: 0}
   shopCategoryMenu: {fileID: 0}
   sceneRoot: {fileID: 0}
+  questPanel: {fileID: 0}
 --- !u!1 &8325521079590375315
 GameObject:
   m_ObjectHideFlags: 0
@@ -5391,6 +5393,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 8
       objectReference: {fileID: 0}
+    - target: {fileID: 2451502503663593629, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2472023230998689610, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -5657,7 +5663,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7112460734896734438, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Name
-      value: MissionButton_LOCKED
+      value: MissionButton
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5727,7 +5733,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 0
+  m_Interactable: 1
   m_TargetGraphic: {fileID: 2385180629021456856}
   m_OnClick:
     m_PersistentCalls:

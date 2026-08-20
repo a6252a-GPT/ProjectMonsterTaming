@@ -25,6 +25,7 @@ MonoBehaviour:
   reward: {fileID: 11400000, guid: f5905a6c883f4dd0902273c6a5c39f1a, type: 2}
   unlockTargets: 
   unlockGateEnabled: 0
+  requiresActiveTracking: 1
   isRepeatingTemplate: 0
   repeatIncrement: 0
   repeatMaxOccurrences: 0

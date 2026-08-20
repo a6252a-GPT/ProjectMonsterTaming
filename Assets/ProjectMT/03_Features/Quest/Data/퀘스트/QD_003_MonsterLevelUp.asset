@@ -14,13 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
   questId:
     value: quest_003_monster_level_up
-  displayName: "몬스터 강화"
-  description: "보유 몬스터 중 하나를 10레벨까지 성장시키세요."
+  isEnabled: 1
+  displayName: "\uBAAC\uC2A4\uD130 \uAC15\uD654"
+  description: "\uBAAC\uC2A4\uD130\uB97C 1\uD68C \uB808\uBCA8\uC5C5\uD558\uC138\uC694."
   questType: 0
-  conditionType: 14
-  targetValue: 10
+  conditionType: 8
+  targetValue: 1
   prerequisiteQuestId:
     value: quest_010_monster_formation
   reward: {fileID: 11400000, guid: b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6a1, type: 2}
-  unlockTargets:
-  - 3
+  unlockTargets: 03000000
+  unlockGateEnabled: 1
+  requiresActiveTracking: 1
+  isRepeatingTemplate: 0
+  repeatIncrement: 0
+  repeatMaxOccurrences: 0

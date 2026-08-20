@@ -14,13 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
   questId:
     value: quest_004_commander_level_up
-  displayName: "군단장 성장"
-  description: "군단장을 3레벨까지 성장시키세요."
+  isEnabled: 1
+  displayName: "\uAD70\uB2E8\uC7A5 \uC131\uC7A5"
+  description: "\uAD70\uB2E8\uC7A5\uC744 1\uD68C \uB808\uBCA8\uC5C5\uD558\uC138\uC694."
   questType: 0
-  conditionType: 15
-  targetValue: 3
+  conditionType: 6
+  targetValue: 1
   prerequisiteQuestId:
     value: quest_003_monster_level_up
   reward: {fileID: 11400000, guid: c3d4e5f6a7b8c9d0e1f2a3b4c5d6a1b2, type: 2}
-  unlockTargets:
-  - 5
+  unlockTargets: 05000000
+  unlockGateEnabled: 1
+  requiresActiveTracking: 1
+  isRepeatingTemplate: 0
+  repeatIncrement: 0
+  repeatMaxOccurrences: 0

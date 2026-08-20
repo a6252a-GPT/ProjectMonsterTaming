@@ -59,6 +59,30 @@ namespace ProjectMT.Shared.GameData
         {
             quests ??= QuestProgressData.CreateDefault();
 
+            if (change.HasClaimQuestRewards)
+            {
+                var ids = change.ClaimQuestRewardQuestIds;
+                var seen = new HashSet<QuestId>();
+                if (ids == null || ids.Count == 0)
+                {
+                    rejected = true;
+                    return;
+                }
+
+                for (var i = 0; i < ids.Count; i++)
+                {
+                    if (!ids[i].IsValid || !seen.Add(ids[i]) ||
+                        !quests.TryGetEntry(ids[i], out var target) ||
+                        !target.Completed || target.RewardClaimed)
+                    {
+                        rejected = true;
+                        return;
+                    }
+                }
+
+                return;
+            }
+
             if (change.HasClaimQuestReward)
             {
                 if (!quests.TryGetEntry(change.ClaimQuestRewardQuestId, out var claimTarget) ||
@@ -126,6 +150,38 @@ namespace ProjectMT.Shared.GameData
 
         partial void ApplyQuestProgress(GameProgressChange change, ref bool rejected)
         {
+            if (change.HasSetQuestProgressBatch)
+            {
+                quests ??= QuestProgressData.CreateDefault();
+                var updates = change.QuestProgressUpdates;
+                var seen = new HashSet<QuestId>();
+                if (updates == null || updates.Count == 0)
+                {
+                    rejected = true;
+                    return;
+                }
+
+                for (var i = 0; i < updates.Count; i++)
+                {
+                    var update = updates[i];
+                    var entry = quests.GetOrCreateEntry(update.QuestId);
+                    if (!update.IsValid || !seen.Add(update.QuestId) || entry.Completed ||
+                        entry.CurrentProgress != update.ExpectedProgress)
+                    {
+                        rejected = true;
+                        return;
+                    }
+                }
+
+                for (var i = 0; i < updates.Count; i++)
+                {
+                    var update = updates[i];
+                    quests.GetOrCreateEntry(update.QuestId).SetProgress(update.NewProgress, update.TargetValue);
+                }
+
+                return;
+            }
+
             if (!change.HasSetQuestProgress)
             {
                 return;
@@ -144,6 +200,17 @@ namespace ProjectMT.Shared.GameData
 
         partial void ApplyQuestClaim(GameProgressChange change)
         {
+            if (change.HasClaimQuestRewards)
+            {
+                var ids = change.ClaimQuestRewardQuestIds;
+                for (var i = 0; i < ids.Count; i++)
+                {
+                    quests.GetOrCreateEntry(ids[i]).TryClaimReward();
+                }
+
+                return;
+            }
+
             if (change.HasClaimQuestReward)
             {
                 quests.GetOrCreateEntry(change.ClaimQuestRewardQuestId).TryClaimReward();
@@ -215,12 +282,16 @@ namespace ProjectMT.Shared.GameData
     public sealed partial class GameProgressChange
     {
         internal bool HasSetQuestProgress { get; private set; }
+        internal bool HasSetQuestProgressBatch { get; private set; }
+        internal IReadOnlyList<QuestProgressUpdate> QuestProgressUpdates { get; private set; }
         internal QuestId QuestProgressQuestId { get; private set; }
         internal long ExpectedQuestProgress { get; private set; }
         internal long NewQuestProgress { get; private set; }
         internal long QuestProgressTargetValue { get; private set; }
         internal bool HasClaimQuestReward { get; private set; }
         internal QuestId ClaimQuestRewardQuestId { get; private set; }
+        internal bool HasClaimQuestRewards { get; private set; }
+        internal IReadOnlyList<QuestId> ClaimQuestRewardQuestIds { get; private set; }
         internal bool HasClaimRepeatingQuestReward { get; private set; }
         internal QuestId ClaimRepeatingQuestRewardTemplateId { get; private set; }
         internal QuestId NextRepeatingTemplateId { get; private set; }
@@ -253,12 +324,31 @@ namespace ProjectMT.Shared.GameData
             };
         }
 
+        public static GameProgressChange SetQuestProgressBatch(IReadOnlyList<QuestProgressUpdate> updates)
+        {
+            return new GameProgressChange
+            {
+                HasSetQuestProgressBatch = true,
+                QuestProgressUpdates = updates ?? Array.Empty<QuestProgressUpdate>()
+            };
+        }
+
         public static GameProgressChange ClaimQuestReward(QuestId questId, RewardBundle reward)
         {
             return new GameProgressChange
             {
                 HasClaimQuestReward = true,
                 ClaimQuestRewardQuestId = questId,
+                Rewards = reward ?? RewardBundle.Empty
+            };
+        }
+
+        public static GameProgressChange ClaimQuestRewards(IReadOnlyList<QuestId> questIds, RewardBundle reward)
+        {
+            return new GameProgressChange
+            {
+                HasClaimQuestRewards = true,
+                ClaimQuestRewardQuestIds = questIds ?? Array.Empty<QuestId>(),
                 Rewards = reward ?? RewardBundle.Empty
             };
         }
@@ -305,7 +395,7 @@ namespace ProjectMT.Shared.GameData
             };
         }
 
-        // 주간 퀘스트 초기화. 계산 방식은 RefreshDailyQuests와 동일하고, 기간 ID만 7일 단위로 묶어서 넘긴다.
+        // 주간 퀘스트 초기화. 월요일 KST 05:00 기준 기간 ID를 넘긴다.
         public static GameProgressChange RefreshWeeklyQuests(
             long expectedPeriod,
             long nextPeriod,

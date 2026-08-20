@@ -14,16 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
   questId:
     value: quest_010_monster_formation
-  displayName: 몬스터 배치
-  description: 몬스터를 부대에 1회 배치하세요.
+  isEnabled: 1
+  displayName: "\uBAAC\uC2A4\uD130 \uBC30\uCE58"
+  description: "\uBAAC\uC2A4\uD130\uB97C \uBD80\uB300\uC5D0 1\uD68C \uBC30\uCE58\uD558\uC138\uC694."
   questType: 0
   conditionType: 10
   targetValue: 1
   prerequisiteQuestId:
     value: quest_002_monster_summon
   reward: {fileID: 11400000, guid: 789501d9d2e540bb9a76127269d98d40, type: 2}
-  unlockTargets: []
-  unlockGateEnabled: 0
+  unlockTargets: 02000000
+  unlockGateEnabled: 1
+  requiresActiveTracking: 1
   isRepeatingTemplate: 0
   repeatIncrement: 0
   repeatMaxOccurrences: 0

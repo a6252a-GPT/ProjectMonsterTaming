@@ -14,4 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Reward.RewardDefinition
   gold: 500
   commanderExperience: 100
-  items: []
+  items:
+  - itemId: ticket_monster_summon
+    amount: 1

@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
   questId:
     value: quest_011_growth_dungeon_enter
+  isEnabled: 1
   displayName: "\uC131\uC7A5 \uB358\uC804 \uC785\uC7A5"
   description: "\uC131\uC7A5 \uB358\uC804 1\uD68C \uC785\uC7A5\uD558\uC138\uC694."
   questType: 0
@@ -24,6 +25,7 @@ MonoBehaviour:
   reward: {fileID: 11400000, guid: 338f511992f6415e996088fab21df5e3, type: 2}
   unlockTargets: 
   unlockGateEnabled: 0
+  requiresActiveTracking: 1
   isRepeatingTemplate: 0
   repeatIncrement: 0
   repeatMaxOccurrences: 0

@@ -1,13 +1,13 @@
 using System;
-using System.Collections.Generic;
 using ProjectMT.Shared.Quest;
+using ProjectMT.Shared.Reward;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ProjectMT.Features.Quest
 {
-    // "Progression_Mission" 패널에 붙여서 일일·주간 퀘스트(각 10개, ListItem_Mission_01~10)를 표시·수령 처리한다.
+    // 프로젝트 표준 임무 팝업에서 일일·주간 퀘스트(각 10개, ListItem_Mission_01~10)를 표시·수령 처리한다.
     // "DailyTab"/"WeeklyTab" 버튼으로 "DailyScrollRect"/"WeeklyScrollRect"를 전환하고,
     // 상단 달성 게이지(Slider_Step_Horizontal_01)는 지금 보고 있는 탭 기준으로 값을 바꿔서 재사용한다.
     // 패널 오브젝트 자체가 SetActive(true)로 열릴 때(OnEnable)마다 항상 "일일" 탭을 기본으로 다시 그린다.
@@ -38,7 +38,19 @@ namespace ProjectMT.Features.Quest
         private Button dailyTabButton;
         private Button weeklyTabButton;
         private Button closeButton;
+        private Button outsideCloseButton;
+        private Button claimAllButton;
+        private TMP_Text panelTitleText;
+        private TMP_Text claimAllButtonText;
+        private bool claimAllBusy;
         private bool slotsBuilt;
+
+        [Header("보상 표시")]
+        [SerializeField] private Sprite goldRewardIcon;
+
+        public event Action<bool> OpenStateChanged;
+
+        public bool IsOpen => gameObject.activeSelf;
 
         private Slider stepSlider;
         private readonly StepMilestone[] stepMilestones = new StepMilestone[StepMilestoneCount];
@@ -55,11 +67,20 @@ namespace ProjectMT.Features.Quest
             ResolveReferences();
             QuestRuntime.Changed += RefreshView;
             RefreshView();
+            OpenStateChanged?.Invoke(true);
         }
 
         private void OnDisable()
         {
             QuestRuntime.Changed -= RefreshView;
+            OpenStateChanged?.Invoke(false);
+        }
+
+        private void OnDestroy()
+        {
+            closeButton?.onClick.RemoveListener(HandleCloseClicked);
+            outsideCloseButton?.onClick.RemoveListener(HandleCloseClicked);
+            claimAllButton?.onClick.RemoveListener(HandleClaimAllClicked);
         }
 
         private void ResolveReferences()
@@ -70,6 +91,7 @@ namespace ProjectMT.Features.Quest
             BuildStepMilestonesIfNeeded();
             ResolveTabButtons();
             ResolveCloseButton();
+            ResolveFooterControls();
         }
 
         // 리스트 항목 하위 오브젝트(제목·슬라이더·진행도 텍스트·버튼·스탬프) 탐색은 무거우므로 1회만 수행한다.
@@ -106,7 +128,19 @@ namespace ProjectMT.Features.Quest
                 var sliderTransform = FindChild(itemTransform, "Slider_02_Orange");
                 slot.ProgressSlider = sliderTransform != null ? sliderTransform.GetComponent<Slider>() : null;
 
-                FindAllText(itemTransform, "Text (TMP)", slot.ProgressTexts);
+                var progressTextTransform = sliderTransform != null
+                    ? FindChild(sliderTransform, "ProgressText") ?? FindChild(sliderTransform, "Text (TMP)")
+                    : null;
+                slot.ProgressText = progressTextTransform != null ? progressTextTransform.GetComponent<TMP_Text>() : null;
+
+                var rewardCountTransform = FindChild(itemTransform, "RewardCountText");
+                slot.RewardCountText = rewardCountTransform != null
+                    ? rewardCountTransform.GetComponent<TMP_Text>()
+                    : null;
+                var rewardIconTransform = rewardCountTransform != null
+                    ? FindChild(rewardCountTransform.parent, "Icon")
+                    : null;
+                slot.RewardIcon = rewardIconTransform != null ? rewardIconTransform.GetComponent<Image>() : null;
 
                 var claimDisabledTransform = FindChild(itemTransform, "Button_ClaimDisabled");
                 slot.ClaimDisabledObject = claimDisabledTransform != null ? claimDisabledTransform.gameObject : null;
@@ -171,6 +205,11 @@ namespace ProjectMT.Features.Quest
                     // 게이지가 실제로 이 아이콘 위치까지 채워지도록, 슬라이더 값 계산에 쓸 위치 기준으로 저장한다.
                     ItemRect = itemTransform as RectTransform
                 };
+
+                if (stepMilestones[i].IconGraphic != null)
+                {
+                    stepMilestones[i].IconGraphic.enabled = false; // 누적 보상은 MVP 제외, 체크 지표만 사용
+                }
             }
 
             stepMilestonesBuilt = true;
@@ -272,11 +311,76 @@ namespace ProjectMT.Features.Quest
                 closeButton.onClick.RemoveListener(HandleCloseClicked);
                 closeButton.onClick.AddListener(HandleCloseClicked);
             }
+
+            if (outsideCloseButton == null)
+            {
+                var found = FindChild(transform, "InputBlocker");
+                outsideCloseButton = found != null ? found.GetComponent<Button>() : null;
+            }
+
+            if (outsideCloseButton != null)
+            {
+                outsideCloseButton.onClick.RemoveListener(HandleCloseClicked);
+                outsideCloseButton.onClick.AddListener(HandleCloseClicked);
+            }
         }
 
         private void HandleCloseClicked()
         {
+            Close();
+        }
+
+        public void Open()
+        {
+            gameObject.SetActive(true);
+            transform.SetAsLastSibling();
+        }
+
+        public void Close()
+        {
             gameObject.SetActive(false);
+        }
+
+        private void ResolveFooterControls()
+        {
+            if (panelTitleText == null)
+            {
+                var found = FindChild(transform, "PanelTitleText");
+                panelTitleText = found != null ? found.GetComponent<TMP_Text>() : null;
+            }
+
+            if (claimAllButton == null)
+            {
+                var found = FindChild(transform, "Button_ClaimAll");
+                claimAllButton = found != null ? found.GetComponent<Button>() : null;
+                claimAllButtonText = found != null ? found.GetComponentInChildren<TMP_Text>(true) : null;
+            }
+
+            if (claimAllButton != null)
+            {
+                claimAllButton.onClick.RemoveListener(HandleClaimAllClicked);
+                claimAllButton.onClick.AddListener(HandleClaimAllClicked);
+            }
+        }
+
+        private async void HandleClaimAllClicked()
+        {
+            if (claimAllBusy || !QuestRuntime.IsReady)
+            {
+                return;
+            }
+
+            claimAllBusy = true;
+            RefreshView();
+            try
+            {
+                await QuestRuntime.TryClaimAllRewardsAsync(currentTab);
+            }
+            finally
+            {
+                claimAllBusy = false;
+                RefreshView();
+            }
         }
 
         private void RefreshView()
@@ -294,6 +398,7 @@ namespace ProjectMT.Features.Quest
 
             var current = currentTab == QuestType.Daily ? dailyResult : weeklyResult;
             ApplyStepMilestones(current.achievedCount, current.totalCount);
+            ApplyClaimAllState(current.claimableCount);
         }
 
         // 일일/주간 탭 중 지금 선택된 쪽의 배경·포커스·스크롤렉트를 활성화한다
@@ -301,6 +406,11 @@ namespace ProjectMT.Features.Quest
         private void ApplyTabFocus()
         {
             var isDaily = currentTab == QuestType.Daily;
+
+            if (panelTitleText != null)
+            {
+                panelTitleText.text = isDaily ? "일일 임무" : "주간 임무";
+            }
 
             if (dailyFocusObject != null)
             {
@@ -330,10 +440,11 @@ namespace ProjectMT.Features.Quest
 
         // 주어진 퀘스트 타입(일일/주간)의 슬롯 10개를 전부 갱신하고, 보상까지 수령 완료한 개수를 세어 돌려준다.
         // 지금 보고 있지 않은 탭도 항상 함께 갱신해서, 탭을 전환하는 순간 바로 최신 상태로 보이게 한다.
-        private (int achievedCount, int totalCount) RefreshSlots(QuestType type, MissionSlot[] slots)
+        private (int achievedCount, int totalCount, int claimableCount) RefreshSlots(QuestType type, MissionSlot[] slots)
         {
             var definitions = QuestRuntime.GetQuestsByType(type);
             var achievedCount = 0;
+            var claimableCount = 0;
             for (var i = 0; i < SlotCount; i++)
             {
                 var slot = slots[i];
@@ -346,6 +457,15 @@ namespace ProjectMT.Features.Quest
                     achievedCount++;
                 }
 
+                if (definition != null)
+                {
+                    var progress = QuestRuntime.GetProgress(definition.QuestId);
+                    if (progress.Completed && !progress.RewardClaimed)
+                    {
+                        claimableCount++;
+                    }
+                }
+
                 if (slot == null)
                 {
                     continue;
@@ -354,7 +474,20 @@ namespace ProjectMT.Features.Quest
                 ApplySlot(slot, definition);
             }
 
-            return (achievedCount, definitions.Count);
+            return (achievedCount, definitions.Count, claimableCount);
+        }
+
+        private void ApplyClaimAllState(int claimableCount)
+        {
+            if (claimAllButton != null)
+            {
+                claimAllButton.interactable = !claimAllBusy && claimableCount > 0;
+            }
+
+            if (claimAllButtonText != null)
+            {
+                claimAllButtonText.text = claimAllBusy ? "수령 중..." : "모두 받기";
+            }
         }
 
         // 완료(달성)한 퀘스트 개수만큼 상단 게이지를 채우고, 2/4/6/8/10개를 달성할 때마다
@@ -495,7 +628,7 @@ namespace ProjectMT.Features.Quest
             return true;
         }
 
-        private static void ApplySlot(MissionSlot slot, QuestDefinition definition)
+        private void ApplySlot(MissionSlot slot, QuestDefinition definition)
         {
             slot.Definition = definition;
 
@@ -512,7 +645,9 @@ namespace ProjectMT.Features.Quest
 
             if (slot.TitleText != null)
             {
-                slot.TitleText.text = definition.DisplayName;
+                slot.TitleText.text = ContainsHangul(definition.DisplayName)
+                    ? definition.DisplayName
+                    : QuestConditionTypeInfo.GetDisplayName(definition.ConditionType);
             }
 
             var progress = QuestRuntime.GetProgress(definition.QuestId);
@@ -526,14 +661,12 @@ namespace ProjectMT.Features.Quest
                 slot.ProgressSlider.value = currentValue;
             }
 
-            var progressLabel = $"{currentValue} / {targetValue}";
-            for (var i = 0; i < slot.ProgressTexts.Count; i++)
+            if (slot.ProgressText != null)
             {
-                if (slot.ProgressTexts[i] != null)
-                {
-                    slot.ProgressTexts[i].text = progressLabel;
-                }
+                slot.ProgressText.text = $"{currentValue} / {targetValue}";
             }
+
+            ApplyReward(slot, definition.Reward);
 
             var completed = progress.Completed;
             var claimed = progress.RewardClaimed;
@@ -593,28 +726,46 @@ namespace ProjectMT.Features.Quest
             return child != null ? child.GetComponent<TMP_Text>() : null;
         }
 
-        private static void FindAllText(Transform root, string objectName, List<TMP_Text> results)
+        private void ApplyReward(MissionSlot slot, RewardDefinition reward)
         {
-            results.Clear();
-            if (root == null)
+            if (slot.RewardIcon != null && goldRewardIcon != null)
+            {
+                slot.RewardIcon.sprite = goldRewardIcon;
+                slot.RewardIcon.preserveAspect = true;
+            }
+
+            if (slot.RewardCountText == null)
             {
                 return;
             }
 
-            var transforms = root.GetComponentsInChildren<Transform>(true);
-            for (var i = 0; i < transforms.Length; i++)
+            if (reward == null)
             {
-                if (transforms[i] == null || transforms[i].name != objectName)
-                {
-                    continue;
-                }
+                slot.RewardCountText.text = "-";
+                return;
+            }
 
-                var text = transforms[i].GetComponent<TMP_Text>();
-                if (text != null)
+            slot.RewardCountText.text = reward.CommanderExperience > 0L
+                ? $"{reward.Gold:N0}\nEXP {reward.CommanderExperience:N0}"
+                : $"{reward.Gold:N0}";
+        }
+
+        private static bool ContainsHangul(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < value.Length; i++)
+            {
+                if (value[i] >= '\uac00' && value[i] <= '\ud7a3')
                 {
-                    results.Add(text);
+                    return true;
                 }
             }
+
+            return false;
         }
 
         // ListItem_Mission_XX 1개에 대응하는 UI 참조 캐시 + 수령 버튼 클릭 처리.
@@ -623,7 +774,9 @@ namespace ProjectMT.Features.Quest
             public GameObject Root;
             public TMP_Text TitleText;
             public Slider ProgressSlider;
-            public readonly List<TMP_Text> ProgressTexts = new List<TMP_Text>();
+            public TMP_Text ProgressText;
+            public Image RewardIcon;
+            public TMP_Text RewardCountText;
             public GameObject ClaimDisabledObject;
             public GameObject ClaimObject;
             public Button ClaimButton;

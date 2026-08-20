@@ -577,9 +577,15 @@ namespace ProjectMT.Bootstrap
         {
             if (paused && initialized)
             {
+                await FlushQuestProgressSafelyAsync(); // 지연 묶음 저장을 백그라운드 전환 전에 확정
                 await SaveOfflineInactiveSafelyAsync(); // 방치 시작점을 진행 데이터와 함께 확정
                 await SaveCurrentSafelyAsync(); // 백그라운드 전환 저장
                 return;
+            }
+
+            if (!paused && initialized)
+            {
+                await RefreshQuestPeriodsSafelyAsync(); // 앱을 켜둔 채 05:00 경계를 넘긴 경우 즉시 초기화
             }
 
             if (!paused && initialized && offlineRewardCoordinator != null)
@@ -603,8 +609,33 @@ namespace ProjectMT.Bootstrap
         {
             if (initialized)
             {
+                await FlushQuestProgressSafelyAsync(); // 종료 직전 대기 중인 전투 이벤트 확정
                 await SaveOfflineInactiveSafelyAsync(); // Pause 누락 환경의 종료시각 보완
                 await SaveCurrentSafelyAsync(); // 앱 종료 직전 저장
+            }
+        }
+
+        private static async Task FlushQuestProgressSafelyAsync()
+        {
+            try
+            {
+                await QuestRuntime.FlushPendingProgressAsync();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+        }
+
+        private static async Task RefreshQuestPeriodsSafelyAsync()
+        {
+            try
+            {
+                await QuestRuntime.RefreshPeriodsAsync(DateTime.UtcNow);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
             }
         }
 

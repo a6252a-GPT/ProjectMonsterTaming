@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.Quest;
 
 namespace ProjectMT.Shared.GameData
 {
@@ -15,6 +16,7 @@ namespace ProjectMT.Shared.GameData
         }
 
         public GameProgressView View => new GameProgressView(current);
+        public QuestProgressView Quests => current.Quests;
         public bool IsLoaded => true;
         public event Action Changed;
 

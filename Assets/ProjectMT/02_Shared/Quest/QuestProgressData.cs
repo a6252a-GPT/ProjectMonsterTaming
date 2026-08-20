@@ -1,9 +1,42 @@
 using System;
 using System.Collections.Generic;
+using ProjectMT.Shared.GameData;
 using UnityEngine;
 
 namespace ProjectMT.Shared.Quest
 {
+    public readonly struct QuestProgressUpdate // 여러 퀘스트 진행도를 한 저장 요청으로 묶는 값
+    {
+        public QuestProgressUpdate(QuestId questId, long expectedProgress, long newProgress, long targetValue)
+        {
+            QuestId = questId;
+            ExpectedProgress = Math.Max(0L, expectedProgress);
+            NewProgress = Math.Max(0L, newProgress);
+            TargetValue = Math.Max(1L, targetValue);
+        }
+
+        public QuestId QuestId { get; }
+        public long ExpectedProgress { get; }
+        public long NewProgress { get; }
+        public long TargetValue { get; }
+        public bool IsValid => QuestId.IsValid;
+    }
+
+    public static class QuestResetPeriodRules // KST 05:00 일·주간 경계 계산
+    {
+        private const long MondayOffsetFromUnixEpoch = 4L; // 1970-01-05 월요일
+        private const long DaysPerWeek = 7L;
+
+        public static long GetDailyPeriodId(DateTime utcNow) =>
+            GrowthDungeonDailyKeyRules.GetPeriodId(utcNow);
+
+        public static long GetWeeklyPeriodId(DateTime utcNow)
+        {
+            var dayId = GetDailyPeriodId(utcNow);
+            return (long)Math.Floor((dayId - MondayOffsetFromUnixEpoch) / (double)DaysPerWeek);
+        }
+    }
+
     // 퀘스트 1개의 진행도·완료 여부·보상 수령 여부 저장 원본.
     // GameProgressData에 편입되어 GameProgressChange·TryApply를 거쳐야만 값이 바뀐다(다른 저장 데이터와 동일).
     [Serializable]
@@ -103,7 +136,7 @@ namespace ProjectMT.Shared.Quest
         [SerializeField] private QuestId activeRepeatingTemplateId; // 지금 추적 중인 반복 퀘스트 템플릿(선형 체인이 끝난 뒤 사용)
         [SerializeField] private QuestId lastRepeatingTemplateId; // 바로 직전에 활성이었던 템플릿(같은 퀘스트 연속 등장 방지용)
         [SerializeField] private long lastDailyResetPeriod = -1L; // GrowthDungeonDailyKeyRules와 동일한 KST 05:00 기준 일자 ID(-1 = 아직 초기화 전)
-        [SerializeField] private long lastWeeklyResetPeriod = -1L; // 일일과 같은 일자 ID를 7로 나눈 주간 묶음 ID(-1 = 아직 초기화 전)
+        [SerializeField] private long lastWeeklyResetPeriod = -1L; // 월요일 KST 05:00 기준 주간 ID(-1 = 아직 초기화 전)
 
         public static QuestProgressData CreateDefault()
         {
@@ -194,8 +227,7 @@ namespace ProjectMT.Shared.Quest
             return true;
         }
 
-        // 주간 퀘스트 초기화(일일과 같은 일자 ID를 7일 단위로 묶은 기간)가 실제로 넘어갔을 때만 통과시킨다.
-        // 계산 방식은 TryAdvanceDailyResetPeriod와 동일하고, 넘겨받는 기간 ID만 7일 단위로 묶인 값이다.
+        // 주간 퀘스트 초기화(월요일 KST 05:00 기준 기간)가 실제로 넘어갔을 때만 통과시킨다.
         internal bool TryAdvanceWeeklyResetPeriod(long expectedPeriod, long nextPeriod, IReadOnlyList<QuestId> questIds)
         {
             if (LastWeeklyResetPeriod != expectedPeriod || nextPeriod <= LastWeeklyResetPeriod)

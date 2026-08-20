@@ -23,6 +23,7 @@ namespace ProjectMT.Features.Quest
         [SerializeField] private RewardDefinition reward;
         [SerializeField] private List<QuestUnlockTarget> unlockTargets = new List<QuestUnlockTarget>();
         [SerializeField] private bool unlockGateEnabled; // 기본 꺼짐(전부 열림). 켜면 QuestRuntime.IsUnlocked가 이 퀘스트 보상 수령 전까지 unlockTargets를 잠금으로 취급한다.
+        [SerializeField] private bool requiresActiveTracking; // 메인 튜토리얼 행동은 이 퀘스트가 현재 목표일 때만 누적
 
         [Header("반복 퀘스트 템플릿(선형 체인이 끝난 뒤 순환 등장)")]
         [SerializeField] private bool isRepeatingTemplate; // 켜면 선행 퀘스트 체인 대신 반복 퀘스트 풀에서 무작위로 뽑혀 등장한다.
@@ -42,6 +43,7 @@ namespace ProjectMT.Features.Quest
         public IReadOnlyList<QuestUnlockTarget> UnlockTargets =>
             (IReadOnlyList<QuestUnlockTarget>)unlockTargets ?? Array.Empty<QuestUnlockTarget>();
         public bool UnlockGateEnabled => unlockGateEnabled;
+        public bool RequiresActiveTracking => requiresActiveTracking;
         public bool IsRepeatingTemplate => isRepeatingTemplate;
         public long RepeatIncrement => Math.Max(0L, repeatIncrement);
         public int RepeatMaxOccurrences => Math.Max(0, repeatMaxOccurrences);
@@ -110,6 +112,19 @@ namespace ProjectMT.Features.Quest
         public void EditorSetReward(RewardDefinition rewardDefinition)
         {
             reward = rewardDefinition;
+        }
+
+        public void EditorSetProgressPolicy(bool activeTrackingRequired)
+        {
+            requiresActiveTracking = activeTrackingRequired;
+        }
+
+        public void EditorSetUnlockGate(bool enabled, IEnumerable<QuestUnlockTarget> targets)
+        {
+            unlockGateEnabled = enabled;
+            unlockTargets = targets == null
+                ? new List<QuestUnlockTarget>()
+                : new List<QuestUnlockTarget>(targets);
         }
 
         public void EditorSetRepeating(bool repeating, long increment, int maxOccurrences)

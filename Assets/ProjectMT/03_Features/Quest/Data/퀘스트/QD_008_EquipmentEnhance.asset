@@ -14,12 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
   questId:
     value: quest_008_equipment_enhance
-  displayName: "장비 슬롯 강화"
-  description: "장비 슬롯을 1회 강화하세요."
+  isEnabled: 1
+  displayName: "\uC7A5\uBE44 \uC2AC\uB86F \uAC15\uD654"
+  description: "\uC7A5\uBE44 \uC2AC\uB86F\uC744 1\uD68C \uAC15\uD654\uD558\uC138\uC694."
   questType: 0
   conditionType: 3
   targetValue: 1
   prerequisiteQuestId:
     value: quest_007_equipment_equip
   reward: {fileID: 11400000, guid: fdc85052eaa44fd5ac670be15c3c31f7, type: 2}
-  unlockTargets: []
+  unlockTargets: 
+  unlockGateEnabled: 0
+  requiresActiveTracking: 1
+  isRepeatingTemplate: 0
+  repeatIncrement: 0
+  repeatMaxOccurrences: 0

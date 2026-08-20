@@ -14,16 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
   questId:
     value: quest_013_equipment_dismantle
-  displayName: 장비 분해
-  description: 장비를 5회 분해하세요.
+  isEnabled: 1
+  displayName: "\uC7A5\uBE44 \uBD84\uD574"
+  description: "\uC7A5\uBE44\uB97C 5\uD68C \uBD84\uD574\uD558\uC138\uC694."
   questType: 0
   conditionType: 13
   targetValue: 5
   prerequisiteQuestId:
     value: quest_012_castle_raid_enter
   reward: {fileID: 11400000, guid: 4ef833d26700495e83bb25a55377b169, type: 2}
-  unlockTargets: []
+  unlockTargets: 
   unlockGateEnabled: 0
+  requiresActiveTracking: 1
   isRepeatingTemplate: 0
   repeatIncrement: 0
   repeatMaxOccurrences: 0

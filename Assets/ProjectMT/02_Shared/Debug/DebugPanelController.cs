@@ -20,6 +20,8 @@ namespace ProjectMT.Shared.Debugging
         [SerializeField] private TMP_Text acquireEquipmentLabel;
         [SerializeField] private Button acquireAllItemsButton; // 일반 아이템 전체 획득
         [SerializeField] private TMP_Text acquireAllItemsLabel;
+        [SerializeField] private Button sendRandomMailButton; // 보상 첨부 테스트 우편 발송
+        [SerializeField] private TMP_Text sendRandomMailLabel;
         [SerializeField] private TMP_Text statusLabel; // 실행 결과 표시
 
         private const float ConfirmDuration = 4f;
@@ -27,6 +29,7 @@ namespace ProjectMT.Shared.Debugging
         private Func<Task<string>> drawMonsterAction; // AppRoot가 제공하는 획득·저장 권한
         private Func<Task<string>> acquireEquipmentAction; // AppRoot가 제공하는 장비 획득 권한
         private Func<Task<string>> acquireAllItemsAction; // AppRoot가 제공하는 아이템 획득 권한
+        private Func<Task<string>> sendRandomMailAction; // AppRoot가 제공하는 우편 발송·저장 권한
         private float confirmUntil;
         private bool isBusy;
 
@@ -37,6 +40,7 @@ namespace ProjectMT.Shared.Debugging
             drawMonsterButton?.onClick.AddListener(HandleDrawMonsterClicked);
             acquireEquipmentButton?.onClick.AddListener(HandleAcquireEquipmentClicked);
             acquireAllItemsButton?.onClick.AddListener(HandleAcquireAllItemsClicked);
+            sendRandomMailButton?.onClick.AddListener(HandleSendRandomMailClicked);
             SetPanelOpen(false);
             ResetConfirmation();
         }
@@ -48,6 +52,7 @@ namespace ProjectMT.Shared.Debugging
             drawMonsterButton?.onClick.RemoveListener(HandleDrawMonsterClicked);
             acquireEquipmentButton?.onClick.RemoveListener(HandleAcquireEquipmentClicked);
             acquireAllItemsButton?.onClick.RemoveListener(HandleAcquireAllItemsClicked);
+            sendRandomMailButton?.onClick.RemoveListener(HandleSendRandomMailClicked);
         }
 
         private void Update()
@@ -62,12 +67,14 @@ namespace ProjectMT.Shared.Debugging
             Func<Task<bool>> resetAction,
             Func<Task<string>> monsterDrawAction = null,
             Func<Task<string>> equipmentAcquireAction = null,
-            Func<Task<string>> allItemsAcquireAction = null)
+            Func<Task<string>> allItemsAcquireAction = null,
+            Func<Task<string>> randomMailSendAction = null)
         {
             resetSaveAction = resetAction;
             drawMonsterAction = monsterDrawAction;
             acquireEquipmentAction = equipmentAcquireAction;
             acquireAllItemsAction = allItemsAcquireAction;
+            sendRandomMailAction = randomMailSendAction;
             if (drawMonsterButton != null)
             {
                 drawMonsterButton.interactable = monsterDrawAction != null;
@@ -81,6 +88,11 @@ namespace ProjectMT.Shared.Debugging
             if (acquireAllItemsButton != null)
             {
                 acquireAllItemsButton.interactable = allItemsAcquireAction != null;
+            }
+
+            if (sendRandomMailButton != null)
+            {
+                sendRandomMailButton.interactable = randomMailSendAction != null;
             }
         }
 
@@ -224,6 +236,34 @@ namespace ProjectMT.Shared.Debugging
             }
         }
 
+        private async void HandleSendRandomMailClicked()
+        {
+            if (isBusy || sendRandomMailAction == null)
+            {
+                return;
+            }
+
+            isBusy = true;
+            ResetConfirmation(false);
+            SetActionButtonsInteractable(false);
+            SetStatus("우편 생성 중...");
+            try
+            {
+                var result = await sendRandomMailAction();
+                SetStatus(string.IsNullOrWhiteSpace(result) ? "현재 우편을 보낼 수 없습니다" : result);
+            }
+            catch (Exception exception)
+            {
+                UnityEngine.Debug.LogException(exception);
+                SetStatus("우편 발송 실패");
+            }
+            finally
+            {
+                isBusy = false;
+                SetActionButtonsInteractable(true);
+            }
+        }
+
         private void ResetConfirmation(bool clearStatus = true)
         {
             confirmUntil = 0f;
@@ -271,6 +311,11 @@ namespace ProjectMT.Shared.Debugging
             {
                 acquireAllItemsButton.interactable = interactable && acquireAllItemsAction != null;
             }
+
+            if (sendRandomMailButton != null)
+            {
+                sendRandomMailButton.interactable = interactable && sendRandomMailAction != null;
+            }
         }
 
 #if UNITY_EDITOR
@@ -286,7 +331,9 @@ namespace ProjectMT.Shared.Debugging
             Button equipmentAcquireButton = null,
             TMP_Text equipmentAcquireText = null,
             Button allItemsAcquireButton = null,
-            TMP_Text allItemsAcquireText = null)
+            TMP_Text allItemsAcquireText = null,
+            Button randomMailButton = null,
+            TMP_Text randomMailText = null)
         {
             panelRoot = toolsPanel;
             toggleButton = toggle;
@@ -299,6 +346,8 @@ namespace ProjectMT.Shared.Debugging
             acquireEquipmentLabel = equipmentAcquireText;
             acquireAllItemsButton = allItemsAcquireButton;
             acquireAllItemsLabel = allItemsAcquireText;
+            sendRandomMailButton = randomMailButton;
+            sendRandomMailLabel = randomMailText;
             statusLabel = statusText;
             SetPanelOpen(false);
             ResetConfirmation();
@@ -315,6 +364,11 @@ namespace ProjectMT.Shared.Debugging
             if (acquireAllItemsLabel != null)
             {
                 acquireAllItemsLabel.text = "모든 아이템 1개씩 획득";
+            }
+
+            if (sendRandomMailLabel != null)
+            {
+                sendRandomMailLabel.text = "랜덤 우편 보내기";
             }
         }
 #endif

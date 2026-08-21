@@ -82,7 +82,7 @@ namespace ProjectMT.Shared.Audio
             source.Stop();
             source.transform.position = position;
             source.clip = clip;
-            source.volume = Mathf.Clamp01(volume);
+            source.volume = Mathf.Clamp01(volume) * (outputGroup == null ? AudioRuntimeSettings.SfxVolume : 1f);
             source.pitch = Mathf.Clamp(pitch, -3f, 3f);
             if (Mathf.Abs(source.pitch) < 0.01f)
             {

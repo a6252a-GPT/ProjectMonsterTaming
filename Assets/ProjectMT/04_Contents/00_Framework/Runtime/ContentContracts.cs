@@ -171,7 +171,9 @@ namespace ProjectMT.Contents.Framework
             ContentId = contentId;
             DisplayName = displayName ?? contentId.Value;
             HighestClearedStage = Math.Max(0, highestClearedStage);
-            NextChallengeStage = HighestClearedStage + 1;
+            NextChallengeStage = GrowthDungeonStageRules.ResolveNextChallengeStage(HighestClearedStage);
+            HasChallengeStage = HighestClearedStage < int.MaxValue;
+            MaximumSelectableStage = NextChallengeStage;
             KeyQuantity = Math.Max(0L, keyQuantity);
             SupportsSweep = supportsSweep;
         }
@@ -180,6 +182,8 @@ namespace ProjectMT.Contents.Framework
         public string DisplayName { get; }
         public int HighestClearedStage { get; }
         public int NextChallengeStage { get; }
+        public int MaximumSelectableStage { get; }
+        public bool HasChallengeStage { get; }
         public long KeyQuantity { get; }
         public bool SupportsSweep { get; }
         public bool CanSweep => SupportsSweep && HighestClearedStage > 0 && KeyQuantity > 0L;

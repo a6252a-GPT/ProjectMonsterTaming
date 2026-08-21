@@ -70,7 +70,7 @@ namespace ProjectMT.Shared.Combat
                 transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime); // 대상 위치 추적
                 if ((transform.position - targetPosition).sqrMagnitude <= 0.04f)
                 {
-                    target.Health.ApplyDamage(new DamageRequest(source, damage, targetPosition)); // 도착 시 한 번 피해
+                    world.ApplyMonsterDamage(source, target.Health, damage); // 도착 시 공용 피해 계산 후 한 번 적용
                     ReturnToPool();
                 }
 

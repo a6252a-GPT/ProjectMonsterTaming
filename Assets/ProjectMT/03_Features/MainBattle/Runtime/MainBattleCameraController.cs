@@ -16,11 +16,11 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private ExpeditionController expedition;
 
         [Header("Perspective Framing")]
-        [SerializeField, Range(20f, 50f)] private float fieldOfView = 32f;
-        [SerializeField, Min(5f)] private float distance = 22f;
-        [SerializeField, Range(25f, 75f)] private float pitch = 48f;
+        [SerializeField, Range(20f, 50f)] private float fieldOfView = 45f;
+        [SerializeField, Min(5f)] private float distance = 18f;
+        [SerializeField, Range(25f, 75f)] private float pitch = 45f;
         [SerializeField, Range(-180f, 180f)] private float yaw = -45f;
-        [SerializeField] private Vector3 focusOffset = new Vector3(0f, 0.45f, 0f);
+        [SerializeField] private Vector3 focusOffset = new Vector3(0f, 1f, 0f);
         [SerializeField, Min(0.01f)] private float nearClipPlane = 0.3f;
         [SerializeField, Min(10f)] private float farClipPlane = 500f;
 

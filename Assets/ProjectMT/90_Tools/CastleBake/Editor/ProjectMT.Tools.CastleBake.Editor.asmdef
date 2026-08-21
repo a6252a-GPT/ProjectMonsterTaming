@@ -1,0 +1,20 @@
+{
+  "name": "ProjectMT.Tools.CastleBake.Editor",
+  "rootNamespace": "ProjectMT.EditorTools.CastleBake",
+  "references": [
+    "ProjectMT.Contents.CastleRaid",
+    "ProjectMT.Shared",
+    "Unity.AI.Navigation"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

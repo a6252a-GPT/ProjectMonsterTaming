@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -20,12 +21,17 @@ namespace ProjectMT.Shared.Input
         [SerializeField] private SeedVirtualJoystick virtualJoystick; // 모바일 입력
         [SerializeField, Min(0f)] private float moveSpeed = 4f; // 초당 이동 거리
         [SerializeField] private Vector2 worldHalfExtents = new Vector2(6f, 4f); // 이동 가능 반경
+        [SerializeField, Min(0f)] private float evadeDistance = 2.4f; // 회피 이동 거리
+        [SerializeField, Min(0.01f)] private float evadeDuration = 0.18f; // 회피 이동 시간
 
         private Vector3 center; // 현재 콘텐츠 이동 중심
         private bool inputEnabled; // 플레이 중 입력 허용
+        private Coroutine evadeRoutine; // 진행 중인 회피 이동
 
         public MoveCommand CurrentCommand { get; private set; }
         public Vector3 InitialPosition { get; private set; } // 08.07 안건준 추가 - 처음 활성화된 위치(리스폰 기준점)
+        public bool IsInputEnabled => inputEnabled && isActiveAndEnabled && controlled != null;
+        public bool IsEvading { get; private set; }
 
         private void Awake()
         {
@@ -48,6 +54,11 @@ namespace ProjectMT.Shared.Input
 
             var direction = ReadDirection();
             CurrentCommand = new MoveCommand(direction);
+            if (IsEvading)
+            {
+                return; // 회피 중에는 일반 이동을 겹치지 않음
+            }
+
             var movement = new Vector3(CurrentCommand.Direction.x, 0f, CurrentCommand.Direction.y);
             var next = controlled.position + movement * (moveSpeed * Time.deltaTime);
             next.x = Mathf.Clamp(next.x, center.x - worldHalfExtents.x, center.x + worldHalfExtents.x);
@@ -66,10 +77,43 @@ namespace ProjectMT.Shared.Input
         public void SetInputEnabled(bool enabled)
         {
             inputEnabled = enabled;
+            if (!enabled)
+            {
+                StopEvade();
+                CurrentCommand = new MoveCommand(Vector2.zero);
+            }
+
             if (enabled && controlled != null)
             {
                 center = controlled.position; // 실행 시작점을 새 중심으로 사용
             }
+        }
+
+        public bool TryEvade()
+        {
+            if (!IsInputEnabled || IsEvading)
+            {
+                return false;
+            }
+
+            var inputDirection = ReadDirection();
+            if (inputDirection.sqrMagnitude < 0.001f)
+            {
+                inputDirection = CurrentCommand.Direction;
+            }
+
+            var evadeDirection = inputDirection.sqrMagnitude >= 0.001f
+                ? new Vector3(inputDirection.x, 0f, inputDirection.y).normalized
+                : GetBackwardDirection();
+            var start = controlled.position;
+            var destination = ClampToBounds(start + evadeDirection * evadeDistance);
+            if ((destination - start).sqrMagnitude < 0.0001f)
+            {
+                return false; // 경계에 완전히 막힌 방향은 실행하지 않음
+            }
+
+            evadeRoutine = StartCoroutine(Evade(start, destination));
+            return true;
         }
 
         // 08.07 안건준 추가 - 이동 가능 범위를 (군단장 시작 위치가 아닌) 외부에서 직접 지정.
@@ -87,10 +131,64 @@ namespace ProjectMT.Shared.Input
         // 이전에 이동했던 위치에서 이어서 시작해버린다. 아무도 호출하지 않으면 기존 동작에 영향이 없다.
         public void ResetToInitialPosition()
         {
+            StopEvade();
             if (controlled != null)
             {
                 controlled.position = InitialPosition;
             }
+        }
+
+        private IEnumerator Evade(Vector3 start, Vector3 destination)
+        {
+            IsEvading = true;
+            var elapsed = 0f;
+            while (elapsed < evadeDuration && inputEnabled && controlled != null)
+            {
+                elapsed += Time.deltaTime;
+                var normalizedTime = Mathf.Clamp01(elapsed / evadeDuration);
+                var easedTime = 1f - Mathf.Pow(1f - normalizedTime, 3f); // 빠르게 출발해 자연스럽게 감속
+                controlled.position = Vector3.LerpUnclamped(start, destination, easedTime);
+                yield return null;
+            }
+
+            if (inputEnabled && controlled != null)
+            {
+                controlled.position = destination;
+            }
+
+            IsEvading = false;
+            evadeRoutine = null;
+        }
+
+        private Vector3 GetBackwardDirection()
+        {
+            var backward = -controlled.forward;
+            backward.y = 0f;
+            return backward.sqrMagnitude > 0.001f ? backward.normalized : Vector3.back;
+        }
+
+        private Vector3 ClampToBounds(Vector3 position)
+        {
+            position.x = Mathf.Clamp(position.x, center.x - worldHalfExtents.x, center.x + worldHalfExtents.x);
+            position.z = Mathf.Clamp(position.z, center.z - worldHalfExtents.y, center.z + worldHalfExtents.y);
+            return position;
+        }
+
+        private void StopEvade()
+        {
+            if (evadeRoutine != null)
+            {
+                StopCoroutine(evadeRoutine);
+                evadeRoutine = null;
+            }
+
+            IsEvading = false;
+        }
+
+        private void OnDisable()
+        {
+            StopEvade();
+            CurrentCommand = new MoveCommand(Vector2.zero);
         }
 
         private Vector2 ReadDirection()

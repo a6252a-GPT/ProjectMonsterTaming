@@ -1,0 +1,19 @@
+{
+    "name": "ProjectMT.Features.Quest.Editor",
+    "rootNamespace": "ProjectMT.EditorTools.Quest",
+    "references": [
+        "ProjectMT.Shared",
+        "ProjectMT.Features"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

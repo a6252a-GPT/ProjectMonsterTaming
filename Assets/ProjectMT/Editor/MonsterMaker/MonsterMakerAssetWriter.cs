@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using ProjectMT.Contents.CastleRaid;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
@@ -45,6 +46,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public const string DataRoot = "Assets/ProjectMT/02_Shared/Unit/Data/Monsters";
         public const string ArtRoot = "Assets/ProjectMT/05_Art/Monsters";
         public const string DraftRoot = "Assets/ProjectMT/Editor/MonsterMaker/Drafts";
+        public const string CastleRaidAIProfileCatalogPath =
+            "Assets/ProjectMT/04_Contents/01_CastleRaid/Resources/CastleRaidAIProfileCatalog.asset";
         public const string DefaultProjectilePrefabPath =
             "Assets/ProjectMT/02_Shared/Combat/Prefabs/PF_SeedProjectile.prefab";
 
@@ -72,8 +75,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var catalogPath = RequirePersistentAssetPath(catalog, "MonsterCatalog");
             var rarityCatalogPath = RequirePersistentAssetPath(rarityCatalog, "MonsterRarityCatalog");
             ValidateProductionDraftOwnership(draft, catalogPath, rarityCatalogPath);
+            var writesProductionAiCatalog =
+                string.Equals(catalogPath, MonsterCatalogPath, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(rarityCatalogPath, MonsterRarityCatalogPath, StringComparison.OrdinalIgnoreCase);
+            var transactionPaths = paths.Concat(new[] { catalogPath, rarityCatalogPath });
+            if (writesProductionAiCatalog)
+            {
+                transactionPaths = transactionPaths.Concat(new[] { CastleRaidAIProfileCatalogPath });
+            }
             var transaction = MonsterMakerWriteTransaction.Capture(
-                paths.Concat(new[] { catalogPath, rarityCatalogPath }),
+                transactionPaths,
                 new[] { dataFolder, artFolder });
 
             try
@@ -82,6 +93,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 EnsureFolder(DataRoot, draft.MonsterId);
                 EnsureFolder("Assets/ProjectMT/05_Art", "Monsters");
                 EnsureFolder(ArtRoot, draft.MonsterId);
+                if (writesProductionAiCatalog)
+                {
+                    EnsureFolder("Assets/ProjectMT/04_Contents/01_CastleRaid", "Resources");
+                }
 
                 var guidBefore = paths.ToDictionary(path => path, AssetDatabase.AssetPathToGUID);
                 var updatedExisting = !string.IsNullOrEmpty(guidBefore[paths[0]]);
@@ -91,6 +106,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 var combat = GetOrCreateAsset<MonsterCombatProfile>(paths[3], "MC_" + draft.MonsterId);
                 var ascension = GetOrCreateAsset<MonsterAscensionProfile>(paths[4], "MA_" + draft.MonsterId);
                 var feedback = GetOrCreateAsset<MonsterFeedbackProfile>(paths[5], "MF_" + draft.MonsterId);
+                var castleRaidAiCatalog = writesProductionAiCatalog
+                    ? GetOrCreateAsset<CastleRaidAIProfileCatalog>(
+                        CastleRaidAIProfileCatalogPath,
+                        "CastleRaidAIProfileCatalog")
+                    : null;
                 var generatedSfx = new MonsterMakerGeneratedSfxWriter(feedback, paths[5], draft.MonsterId);
 
             body.EditorConfigure(
@@ -220,7 +240,36 @@ namespace ProjectMT.EditorTools.MonsterMaker
             definition.EditorConfigureVisualTint(Color.white);
             definition.EditorConfigureFormalRuntime("monster/" + draft.MonsterId, runtime);
 
-            MarkDirty(body, motion, combat, action, ascension, ability2, ability4, feedback, runtime, definition);
+            if (castleRaidAiCatalog != null)
+            {
+                castleRaidAiCatalog.EditorUpsert(
+                    draft.MonsterId,
+                    draft.CastleRaidAiPattern,
+                    draft.CastleRaidSupportFocus,
+                    draft.CastleRaidSupportRange,
+                    draft.CastleRaidSupportCooldown,
+                    draft.CastleRaidSupportDuration,
+                    draft.CastleRaidHealRatio,
+                    draft.CastleRaidAttackBuffRate,
+                    draft.CastleRaidDefenseDamageMultiplier);
+                if (!castleRaidAiCatalog.TryValidate(out var aiCatalogError))
+                {
+                    throw new InvalidOperationException(aiCatalogError);
+                }
+            }
+
+            MarkDirty(
+                body,
+                motion,
+                combat,
+                action,
+                ascension,
+                ability2,
+                ability4,
+                feedback,
+                runtime,
+                definition,
+                castleRaidAiCatalog);
             SaveAssetsIfDirty(
                 body,
                 motion,
@@ -233,7 +282,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 runtime,
                 controller,
                 adapter,
-                definition);
+                definition,
+                castleRaidAiCatalog);
             generatedSfx.SaveIfDirty();
             AssetDatabase.ImportAsset(paths[8], ImportAssetOptions.ForceUpdate);
             AssetDatabase.ImportAsset(paths[7], ImportAssetOptions.ForceUpdate);
@@ -246,7 +296,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             RegisterLast(catalog, rarityCatalog, definition, draft);
-            SaveAssetsIfDirty(catalog, rarityCatalog);
+            SaveAssetsIfDirty(catalog, rarityCatalog, castleRaidAiCatalog);
             AssetDatabase.Refresh();
 
             if (!catalog.TryGet(draft.MonsterId, out var registered) || registered != definition)
@@ -257,6 +307,13 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (!rarityCatalog.TryGetRarity(draft.MonsterId, out var rarity) || rarity != draft.Rarity)
             {
                 throw new InvalidOperationException("생성물 검증 뒤 MonsterRarityCatalog 등록을 확인하지 못했습니다.");
+            }
+
+            var assignedAiProfile = castleRaidAiCatalog?.Resolve(draft.MonsterId);
+            if (castleRaidAiCatalog != null && (assignedAiProfile == null ||
+                assignedAiProfile.Pattern != draft.CastleRaidAiPattern))
+            {
+                throw new InvalidOperationException("생성물 검증 뒤 Castle Raid AI Profile 등록을 확인하지 못했습니다.");
             }
 
             var guidAfter = paths.ToDictionary(path => path, AssetDatabase.AssetPathToGUID);

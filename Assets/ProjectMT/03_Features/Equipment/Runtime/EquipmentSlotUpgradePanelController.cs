@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,14 +21,14 @@ namespace ProjectMT.Features.Equipment
         // 등급별 완성 프레임 이름 접미사.
         private static readonly Dictionary<EquipmentGrade, string> FrameVariantSuffixByGrade = new Dictionary<EquipmentGrade, string>
         {
-            { EquipmentGrade.Common, "Green" },
-            { EquipmentGrade.Rare, "Blue" },
-            { EquipmentGrade.Epic, "Yellow" },
-            { EquipmentGrade.Legendary, "Plum" },
-            { EquipmentGrade.Mythic, "Red" },
+            { EquipmentGrade.Common, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Common) },
+            { EquipmentGrade.Rare, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Rare) },
+            { EquipmentGrade.Epic, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Epic) },
+            { EquipmentGrade.Legendary, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Legendary) },
+            { EquipmentGrade.Mythic, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Mythic) },
         };
 
-        private const string FrameVariantPrefix = "ItemFrame_01_Normal_";
+        private const string FrameVariantPrefix = ItemGradeFramePalette.FrameVariantPrefix;
         private const string EmptySlotBackgroundName = "EmptySlotGrayBg";
         private static readonly Color EmptySlotTintColor = new Color(0.5f, 0.5f, 0.5f, 1f);
 
@@ -49,9 +50,13 @@ namespace ProjectMT.Features.Equipment
         private TMP_Text statText;
         private TMP_Text statText2;
         private TMP_Text totalText;
+        private TMP_Text upgradeMaterialText; // 강화 재료(보유/필요) 표시
+        private TMP_Text upHeaderStatText; // 현재(다음 1강화) 강화 능력 증가율 표시
+        private TMP_Text downHeaderStatText; // 다다음(그 다음 강화) 강화 능력 증가율 표시
 
         private EquipmentPart currentPart = EquipmentPart.Weapon;
         private bool hasSelectedPart;
+        private Action combatInputSaved;
 
         public event Action<bool> OpenStateChanged;
 
@@ -86,8 +91,9 @@ namespace ProjectMT.Features.Equipment
         }
 
         // MainBattleSceneRoot 등 씬 조립 시점에 진행 데이터 서비스를 주입한다.
-        public void Configure(IGameProgressService progress)
+        public void Configure(IGameProgressService progress, Action onCombatInputSaved = null)
         {
+            combatInputSaved = onCombatInputSaved;
             EquipmentSlotUpgradeRuntime.Configure(progress);
         }
 
@@ -145,6 +151,9 @@ namespace ProjectMT.Features.Equipment
             statText = FindDeep(transform, "StatText")?.GetComponent<TMP_Text>();
             statText2 = FindDeep(transform, "StatText2")?.GetComponent<TMP_Text>();
             totalText = FindDeep(transform, "TotalText")?.GetComponent<TMP_Text>();
+            upgradeMaterialText = FindDeep(transform, "UpgradeMaterialText")?.GetComponent<TMP_Text>();
+            upHeaderStatText = FindDeep(transform, "UpHeaderStat")?.GetComponent<TMP_Text>();
+            downHeaderStatText = FindDeep(transform, "DownHeaderStat")?.GetComponent<TMP_Text>();
 
             var upgradeButtonTransform = FindDeep(transform, "UpgradeButton");
             if (upgradeButtonTransform != null)
@@ -396,6 +405,16 @@ namespace ProjectMT.Features.Equipment
                 Debug.LogWarning("EquipmentSlotUpgradePanelController: TotalText를 찾지 못했습니다.", this);
             }
 
+            if (upgradeMaterialText == null)
+            {
+                Debug.LogWarning("EquipmentSlotUpgradePanelController: UpgradeMaterialText를 찾지 못했습니다.", this);
+            }
+
+            if (upHeaderStatText == null || downHeaderStatText == null)
+            {
+                Debug.LogWarning("EquipmentSlotUpgradePanelController: UpHeaderStat/DownHeaderStat 중 일부를 찾지 못했습니다.", this);
+            }
+
             foreach (EquipmentPart part in System.Enum.GetValues(typeof(EquipmentPart)))
             {
                 if (!slotDisplays.ContainsKey(part))
@@ -491,6 +510,64 @@ namespace ProjectMT.Features.Equipment
             {
                 statText2.text = BuildSlotBonusText(currentPart);
             }
+
+            RefreshUpgradeMaterialText(currentPart);
+            RefreshUpgradeRateTexts(currentPart);
+        }
+
+        // "강화 재료" 표시: 부위별 보유 강화석 / 다음 강화에 필요한 강화석 개수.
+        // 강화석은 공용 재화지만, 필요 개수는 부위·현재 레벨에 따라 달라지므로 부위마다 따로 계산한다.
+        private void RefreshUpgradeMaterialText(EquipmentPart part)
+        {
+            if (upgradeMaterialText == null)
+            {
+                return;
+            }
+
+            if (!EquipmentSlotUpgradeCalculator.IsSlotUpgradeSupported(part))
+            {
+                upgradeMaterialText.text = "-";
+                return;
+            }
+
+            var owned = EquipmentSlotUpgradeRuntime.EnhancementStoneBalance;
+            var required = EquipmentSlotUpgradeRuntime.GetNextStoneCost(part);
+            upgradeMaterialText.text = $"{owned} / {required}";
+        }
+
+        // UpHeaderStat("현재 강화 능력 증가율") = 이번 강화(레벨 → 레벨+1)로 오르는 증가율.
+        // DownHeaderStat("다음 강화 능력 증가율") = 그 다음 강화(레벨+1 → 레벨+2)로 오르는 증가율.
+        // 부위마다 현재 레벨이 다르므로 선택된 부위의 레벨을 기준으로 각각 계산한다.
+        private void RefreshUpgradeRateTexts(EquipmentPart part)
+        {
+            if (upHeaderStatText == null && downHeaderStatText == null)
+            {
+                return;
+            }
+
+            if (!EquipmentSlotUpgradeCalculator.IsSlotUpgradeSupported(part))
+            {
+                SetOptionalText(upHeaderStatText, "-");
+                SetOptionalText(downHeaderStatText, "-");
+                return;
+            }
+
+            var level = EquipmentSlotUpgradeRuntime.GetLevel(part);
+            var currentUpgradeRate = EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level + 1)
+                - EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level);
+            var nextUpgradeRate = EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level + 2)
+                - EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level + 1);
+
+            SetOptionalText(upHeaderStatText, $"+{currentUpgradeRate:0.00}%");
+            SetOptionalText(downHeaderStatText, $"+{nextUpgradeRate:0.00}%");
+        }
+
+        private static void SetOptionalText(TMP_Text text, string value)
+        {
+            if (text != null)
+            {
+                text.text = value;
+            }
         }
 
         private static string BuildSlotBonusText(EquipmentPart part)
@@ -549,7 +626,10 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            await EquipmentSlotUpgradeRuntime.TryUpgradeAsync(currentPart);
+            if (await EquipmentSlotUpgradeRuntime.TryUpgradeAsync(currentPart))
+            {
+                combatInputSaved?.Invoke();
+            }
         }
     }
 }

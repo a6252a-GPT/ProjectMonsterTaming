@@ -5,11 +5,33 @@ using UnityEngine;
 
 namespace ProjectMT.Shared.GameData
 {
+    public static class GrowthDungeonStageRules // 성장 던전 공통 단계 규칙
+    {
+        public const float DifficultyStatGrowthPerStage = 0.05f; // 1단계 기준으로 단계당 전투 핵심 수치 +5%p
+
+        public static bool IsValidStage(int stage)
+        {
+            return stage >= 1;
+        }
+
+        public static int ResolveNextChallengeStage(int highestClearedStage)
+        {
+            var highest = Math.Max(0, highestClearedStage);
+            return highest < int.MaxValue ? highest + 1 : int.MaxValue;
+        }
+
+        public static float ResolveDifficultyMultiplier(int stage)
+        {
+            var difficultyLevel = stage <= 1 ? 0 : stage - 1;
+            return 1f + DifficultyStatGrowthPerStage * difficultyLevel;
+        }
+    }
+
     public static class GrowthDungeonProgressIds // 저장에서 사용하는 콘텐츠 고정 ID
     {
         public const string FoodRiot = "food_riot";
         public const string TreasureSpirit = "treasure_spirit";
-        public const string GiantSpellbook = "giant_spellbook";
+        public const string FallenCommander = "fallen_commander";
         public const string GuardiansTower = "guardians_tower";
     }
 
@@ -104,7 +126,7 @@ namespace ProjectMT.Shared.GameData
         internal bool RecordClear(string contentId, int stage)
         {
             var canonicalId = contentId?.Trim();
-            if (string.IsNullOrEmpty(canonicalId) || stage <= 0)
+            if (string.IsNullOrEmpty(canonicalId) || !GrowthDungeonStageRules.IsValidStage(stage))
             {
                 return false;
             }
@@ -236,7 +258,7 @@ namespace ProjectMT.Shared.GameData
         {
             ItemIds.FoodRiotKey,
             ItemIds.TreasureSpiritKey,
-            ItemIds.GiantSpellbookKey,
+            ItemIds.FallenCommanderKey,
             ItemIds.GuardiansTowerKey
         };
 

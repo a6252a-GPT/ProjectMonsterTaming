@@ -15,6 +15,8 @@ namespace ProjectMT.Shared.Equipment
 
         [SerializeField] private List<EquipmentInstanceData> instances = new List<EquipmentInstanceData>();
         [SerializeField] private string[] equippedInstanceIds = new string[PartCount]; // 인덱스 = (int)EquipmentPart
+        [SerializeField] private OfflineAutoDismantlePolicy offlineAutoDismantlePolicy =
+            OfflineAutoDismantlePolicy.Common; // 기존·신규 계정 기본값: 일반 이하
 
         public static EquipmentSaveData CreateDefault()
         {
@@ -29,7 +31,8 @@ namespace ProjectMT.Shared.Equipment
             var clone = new EquipmentSaveData
             {
                 instances = new List<EquipmentInstanceData>(sourceInstances.Count),
-                equippedInstanceIds = new string[PartCount]
+                equippedInstanceIds = new string[PartCount],
+                offlineAutoDismantlePolicy = offlineAutoDismantlePolicy
             };
 
             for (var i = 0; i < sourceInstances.Count; i++)
@@ -51,6 +54,11 @@ namespace ProjectMT.Shared.Equipment
 
         internal void Repair()
         {
+            if (!OfflineAutoDismantlePolicyInfo.IsValid(offlineAutoDismantlePolicy))
+            {
+                offlineAutoDismantlePolicy = OfflineAutoDismantlePolicy.Common;
+            }
+
             instances ??= new List<EquipmentInstanceData>();
             instances.RemoveAll(instance => instance == null || !instance.Repair());
 
@@ -90,27 +98,31 @@ namespace ProjectMT.Shared.Equipment
             }
         }
 
-        // 새로 획득한 장비들을 추가한다. 최대 보유 수량을 넘는 초과분은 조용히 버린다(임시 규칙).
-        internal void Acquire(List<EquipmentInstanceData> newInstances)
+        // 신규 장비 묶음은 일부 유실 없이 전량 검증·전량 추가한다.
+        internal bool TryAcquire(IReadOnlyList<EquipmentInstanceData> newInstances)
         {
-            if (newInstances == null)
+            if (newInstances == null || newInstances.Count == 0 ||
+                instances.Count + newInstances.Count > MaxTotalQuantity)
             {
-                return;
+                return false;
             }
 
+            var accepted = new List<EquipmentInstanceData>(newInstances.Count);
+            var acceptedIds = new HashSet<string>(StringComparer.Ordinal);
             for (var i = 0; i < newInstances.Count; i++)
             {
-                if (instances.Count >= MaxTotalQuantity)
+                var candidate = newInstances[i]?.Clone();
+                if (candidate == null || !candidate.IsValidForAcquire() ||
+                    FindIndex(candidate.InstanceId) >= 0 || !acceptedIds.Add(candidate.InstanceId))
                 {
-                    break;
+                    return false;
                 }
 
-                var candidate = newInstances[i]?.Clone();
-                if (candidate != null && candidate.IsValidForAcquire() && FindIndex(candidate.InstanceId) < 0)
-                {
-                    instances.Add(candidate);
-                }
+                accepted.Add(candidate);
             }
+
+            instances.AddRange(accepted);
+            return true;
         }
 
         internal bool TryEquip(string instanceId)
@@ -148,6 +160,70 @@ namespace ProjectMT.Shared.Equipment
             return true;
         }
 
+        internal bool TrySetLocked(string instanceId, bool expectedValue, bool nextValue)
+        {
+            var index = FindIndex(instanceId);
+            return index >= 0 && instances[index].TrySetLocked(expectedValue, nextValue);
+        }
+
+        internal bool TrySetOfflineAutoDismantlePolicy(
+            OfflineAutoDismantlePolicy expected,
+            OfflineAutoDismantlePolicy next)
+        {
+            if (!OfflineAutoDismantlePolicyInfo.IsValid(next) || offlineAutoDismantlePolicy != expected)
+            {
+                return false;
+            }
+
+            offlineAutoDismantlePolicy = next;
+            return true;
+        }
+
+        internal void MigrateOfflineAutoDismantlePolicy()
+        {
+            offlineAutoDismantlePolicy = OfflineAutoDismantlePolicy.Common;
+        }
+
+        internal bool TryDismantle(IReadOnlyList<string> instanceIds, out long upgradeStoneAmount)
+        {
+            upgradeStoneAmount = 0L;
+            if (instanceIds == null || instanceIds.Count == 0)
+            {
+                return false;
+            }
+
+            var indexes = new List<int>(instanceIds.Count);
+            var uniqueIds = new HashSet<string>(StringComparer.Ordinal);
+            for (var i = 0; i < instanceIds.Count; i++)
+            {
+                var instanceId = instanceIds[i]?.Trim();
+                var index = FindIndex(instanceId);
+                if (index < 0 || !uniqueIds.Add(instanceId) || instances[index].IsLocked || IsEquipped(instanceId))
+                {
+                    upgradeStoneAmount = 0L;
+                    return false;
+                }
+
+                var reward = EquipmentDismantleRules.GetUpgradeStoneAmount(instances[index].Grade);
+                if (reward <= 0 || upgradeStoneAmount > long.MaxValue - reward)
+                {
+                    upgradeStoneAmount = 0L;
+                    return false;
+                }
+
+                upgradeStoneAmount += reward;
+                indexes.Add(index);
+            }
+
+            indexes.Sort((left, right) => right.CompareTo(left));
+            for (var i = 0; i < indexes.Count; i++)
+            {
+                instances.RemoveAt(indexes[i]);
+            }
+
+            return true;
+        }
+
         internal EquipmentSaveDataView CreateView()
         {
             return new EquipmentSaveDataView(this);
@@ -171,8 +247,27 @@ namespace ProjectMT.Shared.Equipment
             return -1;
         }
 
+        private bool IsEquipped(string instanceId)
+        {
+            if (string.IsNullOrEmpty(instanceId) || equippedInstanceIds == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < equippedInstanceIds.Length; i++)
+            {
+                if (string.Equals(equippedInstanceIds[i], instanceId, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         internal IReadOnlyList<EquipmentInstanceData> Instances => instances;
         internal string[] EquippedInstanceIds => equippedInstanceIds;
+        internal OfflineAutoDismantlePolicy OfflineAutoDismantlePolicy => offlineAutoDismantlePolicy;
     }
 
     // 08.10 안건준 추가 - 외부(UI·능력치 계산)에 전달할 읽기 전용 장비 보유·장착 복사값.
@@ -180,6 +275,7 @@ namespace ProjectMT.Shared.Equipment
     {
         private readonly EquipmentInstanceData[] instances;
         private readonly string[] equippedInstanceIds;
+        private readonly OfflineAutoDismantlePolicy offlineAutoDismantlePolicy;
 
         internal EquipmentSaveDataView(EquipmentSaveData data)
         {
@@ -193,9 +289,11 @@ namespace ProjectMT.Shared.Equipment
             var ids = data.EquippedInstanceIds;
             equippedInstanceIds = new string[ids.Length];
             Array.Copy(ids, equippedInstanceIds, ids.Length);
+            offlineAutoDismantlePolicy = data.OfflineAutoDismantlePolicy;
         }
 
         public IReadOnlyList<EquipmentInstanceData> Instances => instances ?? Array.Empty<EquipmentInstanceData>();
+        public OfflineAutoDismantlePolicy OfflineAutoDismantlePolicy => offlineAutoDismantlePolicy;
 
         public string GetEquippedInstanceId(EquipmentPart part)
         {

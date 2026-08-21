@@ -6,6 +6,7 @@
     "ProjectMT.Shared",
     "ProjectMT.Features",
     "ProjectMT.Contents.Framework",
+    "Unity.InputSystem",
     "UnityEngine.UI",
     "Unity.TextMeshPro"
   ],

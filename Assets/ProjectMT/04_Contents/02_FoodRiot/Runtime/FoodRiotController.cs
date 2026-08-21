@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Combat;
+using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Input;
-using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -28,13 +29,14 @@ namespace ProjectMT.Contents.FoodRiot
         [SerializeField] private TMP_Text killText; // 처치 수 표시
         [SerializeField] private TMP_Text resultText; // 조작 안내·결과 문구
         [SerializeField] private Button exitButton; // 콘텐츠 나가기 버튼
-        [SerializeField] private ContentClearOverlay clearOverlay; // 종료 결과 화면
 
         private ContentContext context; // 결과 반환 통로
         private FoodRiotStartData startData; // 이번 판 시작 정보
         private float timeRemaining; // 남은 제한 시간
         private int killCount; // 이번 판 처치 수
         private int spawnSequence; // 야채 고유 번호
+        private float difficultyMultiplier = 1f; // 선택 단계에 따른 야채 체력 배율
+        private ICommanderSkillContentBridge commanderSkillBridge;
 
         public bool IsRunning { get; private set; }
 
@@ -54,7 +56,6 @@ namespace ProjectMT.Contents.FoodRiot
             }
 
             combatWorld.Clear(); // 이전 판의 남은 유닛 제거
-            clearOverlay?.Hide();
             commanderRoot.SetActive(true);
             commanderMove?.ResetToInitialPosition(); // 재입장도 최초 위치에서 시작
             commanderMove?.SetInputEnabled(true);
@@ -62,6 +63,11 @@ namespace ProjectMT.Contents.FoodRiot
             timeRemaining = startData.DurationSeconds;
             killCount = 0;
             spawnSequence = 0;
+            var stage = int.TryParse(context.RunInfo.StageId, out var selectedStage) &&
+                        GrowthDungeonStageRules.IsValidStage(selectedStage)
+                ? selectedStage
+                : 1;
+            difficultyMultiplier = GrowthDungeonStageRules.ResolveDifficultyMultiplier(stage);
             IsRunning = true;
             if (resultText != null)
             {
@@ -74,14 +80,15 @@ namespace ProjectMT.Contents.FoodRiot
                 SpawnVegetable();
             }
 
+            ConfigureCommanderSkills();
             UpdateHud();
         }
 
         public void Shutdown()
         {
             StopAllCoroutines();
-            clearOverlay?.Hide();
             exitButton?.onClick.RemoveListener(Cancel);
+            ShutdownCommanderSkills();
             commanderMove?.SetInputEnabled(false);
             combatWorld?.Clear();
             if (commanderRoot != null)
@@ -91,6 +98,7 @@ namespace ProjectMT.Contents.FoodRiot
 
             context = null;
             startData = null;
+            difficultyMultiplier = 1f;
             IsRunning = false;
         }
 
@@ -149,7 +157,7 @@ namespace ProjectMT.Contents.FoodRiot
             var hitCount = 2 + spawnSequence % 3; // 야채마다 2~4회 타격 필요
             var stats = new UnitStatsSnapshot
             {
-                maxHealth = hitCount,
+                maxHealth = hitCount * difficultyMultiplier,
                 damage = 0f,
                 moveSpeed = 0f,
                 attackRange = 0.5f,
@@ -201,11 +209,12 @@ namespace ProjectMT.Contents.FoodRiot
             }
 
             IsRunning = false;
+            ShutdownCommanderSkills();
             commanderMove?.SetInputEnabled(false);
             combatWorld.Clear();
             if (resultText != null)
             {
-                resultText.text = clearOverlay == null ? $"완료 · 처치 {killCount}" : string.Empty;
+                resultText.text = string.Empty; // 최종 결과는 AppRoot 공통창에서 표시
             }
 
             var result = new FoodRiotResult(killCount); // 최종 처치 수를 보상 계층에 전달
@@ -220,6 +229,7 @@ namespace ProjectMT.Contents.FoodRiot
             }
 
             IsRunning = false;
+            ShutdownCommanderSkills();
             commanderMove?.SetInputEnabled(false);
             combatWorld.Clear();
             context.Exit.Cancel(); // 보상 없이 콘텐츠 종료
@@ -236,6 +246,28 @@ namespace ProjectMT.Contents.FoodRiot
             {
                 killText.text = $"처치 {killCount}";
             }
+        }
+
+        private void ConfigureCommanderSkills()
+        {
+            commanderSkillBridge = CommanderSkillContentBridgeLocator.Find(this);
+            if (commanderSkillBridge == null)
+            {
+                Debug.LogError("Food Riot commander skill bridge is missing.", this);
+                return;
+            }
+
+            commanderSkillBridge.Configure(
+                context.Progress,
+                combatWorld,
+                commanderRoot.transform,
+                () => !IsRunning || commanderMove == null || !commanderMove.IsInputEnabled);
+        }
+
+        private void ShutdownCommanderSkills()
+        {
+            commanderSkillBridge?.Shutdown();
+            commanderSkillBridge = null;
         }
 
 #if UNITY_EDITOR

@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ProjectMT.Features.Quest;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Quest;
 
 namespace ProjectMT.Features.Equipment
 {
@@ -20,6 +22,7 @@ namespace ProjectMT.Features.Equipment
         public EquipmentInstanceData Instance { get; }
         public EquipmentDefinition Definition { get; }
         public bool IsEquipped { get; }
+        public bool IsLocked => Instance?.IsLocked ?? false;
 
         public string InstanceId => Instance?.InstanceId ?? string.Empty;
         public EquipmentPart Part => Instance?.Part ?? default;
@@ -136,6 +139,22 @@ namespace ProjectMT.Features.Equipment
 
         public static bool IsPartEquipped(EquipmentPart part) => TryGetEquipped(part, out _);
 
+        public static IReadOnlyList<string> GetDismantleCandidateIds(EquipmentGrade maximumGrade)
+        {
+            var items = GetItems();
+            var result = new List<string>();
+            for (var index = 0; index < items.Count; index++)
+            {
+                var item = items[index];
+                if (!item.IsEquipped && !item.IsLocked && item.Grade <= maximumGrade)
+                {
+                    result.Add(item.InstanceId);
+                }
+            }
+
+            return result;
+        }
+
         // 장비 드랍 결과(보통 6개)를 인벤토리에 추가한다(최대 보유 수량을 넘는 초과분은 조용히 버림).
         public static async Task<bool> TryAcquireDropAsync(List<EquipmentInstanceData> drops)
         {
@@ -155,7 +174,13 @@ namespace ProjectMT.Features.Equipment
                 return false;
             }
 
-            return await progress.TryApplyAndSaveAsync(GameProgressChange.EquipItem(instanceId));
+            var saved = await progress.TryApplyAndSaveAsync(GameProgressChange.EquipItem(instanceId));
+            if (saved)
+            {
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.EquipmentEquip, 1L);
+            }
+
+            return saved;
         }
 
         public static async Task<bool> TryUnequipAsync(EquipmentPart part)
@@ -166,6 +191,44 @@ namespace ProjectMT.Features.Equipment
             }
 
             return await progress.TryApplyAndSaveAsync(GameProgressChange.UnequipItem(part));
+        }
+
+        public static async Task<bool> TrySetLockedAsync(string instanceId, bool nextValue)
+        {
+            if (!IsReady || !TryGetItem(instanceId, out var item))
+            {
+                return false;
+            }
+
+            if (item.IsLocked == nextValue)
+            {
+                return true;
+            }
+
+            return await progress.TryApplyAndSaveAsync(
+                GameProgressChange.SetEquipmentLock(instanceId, item.IsLocked, nextValue));
+        }
+
+        public static async Task<bool> TryDismantleAsync(IReadOnlyCollection<string> instanceIds)
+        {
+            if (!IsReady || instanceIds == null || instanceIds.Count == 0)
+            {
+                return false;
+            }
+
+            var copiedIds = new List<string>(instanceIds.Count);
+            foreach (var instanceId in instanceIds)
+            {
+                copiedIds.Add(instanceId);
+            }
+
+            var saved = await progress.TryApplyAndSaveAsync(GameProgressChange.DismantleEquipment(copiedIds));
+            if (saved)
+            {
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.EquipmentDismantle, copiedIds.Count);
+            }
+
+            return saved;
         }
     }
 }

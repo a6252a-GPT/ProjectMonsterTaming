@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: Notion monster batch / PlantaQueen
   vendorPrefab: {fileID: 7734291998845522433, guid: 7d8f7b872458fd74fb3fb07ea10187e6, type: 3}
   animatorSource: {fileID: 5556983908013562711, guid: 7d8f7b872458fd74fb3fb07ea10187e6, type: 3}
-  visualScale: {x: 1, y: 1, z: 1}
+  visualScale: {x: 0.9, y: 0.9, z: 0.9}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0
@@ -103,6 +103,14 @@ MonoBehaviour:
     attackSpeedRate: 0
     moveSpeedRate: 0
     attackRangeRate: 0
+  castleRaidAiPattern: 0
+  castleRaidSupportFocus: 0
+  castleRaidSupportRange: 5
+  castleRaidSupportCooldown: 4
+  castleRaidSupportDuration: 5
+  castleRaidHealRatio: 0.24
+  castleRaidAttackBuffRate: 0.2
+  castleRaidDefenseDamageMultiplier: 0.75
   ascensionConfigured: 0
   ascension1:
     healthRate: 0

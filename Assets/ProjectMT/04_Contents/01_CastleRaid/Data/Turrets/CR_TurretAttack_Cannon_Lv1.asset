@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae6c26c557484ff4b8d6c7dffeefbaa7, type: 3}
+  m_Name: CR_TurretAttack_Cannon_Lv1
+  m_EditorClassIdentifier: ProjectMT.Contents.CastleRaid::ProjectMT.Contents.CastleRaid.CastleTurretAttackProfile
+  data:
+    family: 0
+    level: 1
+    impactType: 0
+    targetPriority: 0
+    searchRange: 16
+    baseDamage: 12
+    cooldown: 5
+    projectileCount: 1
+    fireSequentially: 0
+    projectileVolleySize: 1
+    projectileFireDelay: 0.18
+    spreadAngle: 0
+    projectileSpeed: 26
+    projectileHitRadius: 0.5
+    projectileLifetime: 5
+    pierceCount: 1
+    piercingDamageRatio: 1
+    explosionRadius: 0
+    projectileScale: 1
+    targetAimHeight: 0.45
+    headTurnSpeed: 540
+    fireAngleTolerance: 8
+    loadedProjectileReloadRatio: 0.5
+    recoilDistance: 0.15
+    recoilTiltAngle: 4.2
+    recoilKickDuration: 0.07
+    recoilReturnDuration: 0.22
+    recoilSettleDistanceRatio: 0.13
+    recoilSettleTiltRatio: 0.24
+    recoilSettleDuration: 0.14
+    projectilePrefab: {fileID: 6406995630296995695, guid: 4fe45e3034c46bf47a26bfb40dfb743a, type: 3}
+    impactVfxPrefab: {fileID: 872150934463783652, guid: 08660d290c1845349b96b100639c7d28, type: 3}
+    impactVfxLifetime: 2
+    impactVfxScale: 1
+    fireSfx: {fileID: 11400000, guid: bd145491fc71d9b4782ea20efb3d4c99, type: 2}
+    hitSfx: {fileID: 0}
+    explosionSfx: {fileID: 0}

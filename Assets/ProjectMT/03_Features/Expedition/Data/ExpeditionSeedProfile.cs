@@ -18,6 +18,11 @@ namespace ProjectMT.Features.Expedition
         [SerializeField, Min(0f)] private float enemyHealthGrowthPerStage = 0.11f; // 단계당 체력 증가율
         [SerializeField, Min(0f)] private float enemyDamageGrowthPerStage = 0.07f; // 단계당 공격 증가율
 
+        [Header("Boss Stage")]
+        [SerializeField, Min(1)] private int bossStageInterval = 10;
+        [SerializeField, Min(1f)] private float bossHealthMultiplier = 10f;
+        [SerializeField, Min(1f)] private float bossVisualScaleMultiplier = 2.5f;
+
         [Header("Stage Table")]
         [SerializeField] private ExpeditionStageDefinition[] stages = Array.Empty<ExpeditionStageDefinition>();
 
@@ -26,12 +31,31 @@ namespace ProjectMT.Features.Expedition
         [SerializeField] private string enemyWorldDropItemId = ItemIds.Gold; // 적 1기당 시드 드랍
         [SerializeField, Min(1)] private int enemyWorldDropQuantity = 1; // 최종 밸런스 전 최소 수량
 
+        [Header("Equipment Drops")]
+        [SerializeField] private EquipmentDropChestVisualCatalog equipmentDropChestVisualCatalog; // 등급별 상자 외형
+        [SerializeField, Range(0f, 1f)] private float normalEnemyEquipmentDropChance = 0.05f; // 일반 적 임시 파밍값
+
         public float WaveIntervalSeconds => waveIntervalSeconds;
         public float ChallengeTimeLimitSeconds => challengeTimeLimitSeconds;
         public float ResultDelaySeconds => resultDelaySeconds;
         public WorldItemDropVisualCatalog WorldItemDropVisualCatalog => worldItemDropVisualCatalog;
         public string EnemyWorldDropItemId => enemyWorldDropItemId ?? string.Empty;
         public int EnemyWorldDropQuantity => Mathf.Max(1, enemyWorldDropQuantity);
+        public EquipmentDropChestVisualCatalog EquipmentDropChestVisualCatalog => equipmentDropChestVisualCatalog;
+        public float NormalEnemyEquipmentDropChance => Mathf.Clamp01(normalEnemyEquipmentDropChance);
+        public int BossStageInterval => Mathf.Max(1, bossStageInterval);
+        public float BossHealthMultiplier => Mathf.Max(1f, bossHealthMultiplier);
+        public float BossVisualScaleMultiplier => Mathf.Max(1f, bossVisualScaleMultiplier);
+
+        public bool IsBossStage(int stage)
+        {
+            return stage > 0 && stage % BossStageInterval == 0;
+        }
+
+        public bool ShouldDropNormalEnemyEquipment(float roll)
+        {
+            return NormalEnemyEquipmentDropChance >= 1f || Mathf.Clamp01(roll) < NormalEnemyEquipmentDropChance;
+        }
 
         public bool TryResolveStage(int stage, out ExpeditionStageDefinition definition)
         {
@@ -53,6 +77,11 @@ namespace ProjectMT.Features.Expedition
 
         public int GetWaveCount(int stage)
         {
+            if (IsBossStage(stage))
+            {
+                return 1;
+            }
+
             return TryResolveStage(stage, out var definition) && definition.WaveCount > 0
                 ? definition.WaveCount
                 : ExpeditionStageRules.LegacyWaveCount;
@@ -60,6 +89,11 @@ namespace ProjectMT.Features.Expedition
 
         public int GetEnemyCount(int stage, int wave)
         {
+            if (IsBossStage(stage))
+            {
+                return wave == 1 ? 1 : 0;
+            }
+
             return TryResolveStage(stage, out var definition) && definition.TryGetWave(wave, out var waveDefinition)
                 ? waveDefinition.ResolveEnemyCount(stage, definition.MinimumStage)
                 : ExpeditionStageRules.GetLegacyEnemiesPerWave(stage);
@@ -93,6 +127,11 @@ namespace ProjectMT.Features.Expedition
 
         public bool IsRangedSlot(int stage, int unitIndex)
         {
+            if (IsBossStage(stage))
+            {
+                return false;
+            }
+
             return TryResolveStage(stage, out var definition)
                 ? definition.IsRangedSlot(unitIndex)
                 : Mathf.Max(1, stage) >= 11 && Mathf.Max(0, unitIndex) % 4 == 3;
@@ -167,7 +206,7 @@ namespace ProjectMT.Features.Expedition
         public UnitStatsSnapshot CreateEnemyStats(int stage, bool ranged)
         {
             var stageOffset = Mathf.Max(0, stage - 1);
-            return new UnitStatsSnapshot
+            var result = new UnitStatsSnapshot
             {
                 maxHealth = enemyBaseHealth * (1f + enemyHealthGrowthPerStage * stageOffset),
                 damage = enemyBaseDamage * (1f + enemyDamageGrowthPerStage * stageOffset),
@@ -177,6 +216,12 @@ namespace ProjectMT.Features.Expedition
                 projectileSpeed = ranged ? 8f : 0f,
                 ranged = ranged
             };
+            if (IsBossStage(stage))
+            {
+                result.maxHealth *= BossHealthMultiplier;
+            }
+
+            return result;
         }
 
 #if UNITY_EDITOR
@@ -193,6 +238,21 @@ namespace ProjectMT.Features.Expedition
             worldItemDropVisualCatalog = visualCatalog;
             enemyWorldDropItemId = itemId?.Trim();
             enemyWorldDropQuantity = Mathf.Max(1, quantity);
+        }
+
+        public void EditorConfigureEquipmentDrops(
+            EquipmentDropChestVisualCatalog visualCatalog,
+            float dropChance)
+        {
+            equipmentDropChestVisualCatalog = visualCatalog;
+            normalEnemyEquipmentDropChance = Mathf.Clamp01(dropChance);
+        }
+
+        public void EditorConfigureBoss(int interval, float healthMultiplier, float visualScaleMultiplier)
+        {
+            bossStageInterval = Mathf.Max(1, interval);
+            bossHealthMultiplier = Mathf.Max(1f, healthMultiplier);
+            bossVisualScaleMultiplier = Mathf.Max(1f, visualScaleMultiplier);
         }
 #endif
     }

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Pooling;
+using ProjectMT.Shared.Stats;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
 
@@ -21,9 +22,15 @@ namespace ProjectMT.Shared.Combat
         private readonly SpecialActionExecutor specialExecutor = new SpecialActionExecutor();
         private int monsterVfxFrame = -1;
         private int monsterVfxCount;
+        private static CombatStatConfig sharedStatConfig;
 
         public ICombatFeedbackPlayer Feedback => feedbackPlayer;
         public bool IsPaused { get; private set; }
+
+        public static void ConfigureSharedStatRules(CombatStatConfig config)
+        {
+            sharedStatConfig = config ?? CombatStatConfig.RuntimeDefault;
+        }
 
         private void Update()
         {
@@ -195,7 +202,7 @@ namespace ProjectMT.Shared.Combat
                 }
             }
 
-            target.Health.ApplyDamage(new DamageRequest(source, stats.damage, target.transform.position + Vector3.up * 0.4f)); // 투사체 실패 시 즉시 피해
+            ApplyMonsterDamage(source, target.Health, stats.damage); // 투사체 실패 시에도 공용 피해 계산 사용
         }
 
         public bool ExecuteMonsterAction(
@@ -254,14 +261,26 @@ namespace ProjectMT.Shared.Combat
                 return false;
             }
 
-            var appliedDamage = target.ReceiveDamage(source, amount);
+            var resolvedAmount = amount;
+            var component = target as Component;
+            var targetActor = component != null ? component.GetComponent<UnitActor>() : null;
+            if (targetActor != null)
+            {
+                resolvedAmount = CombatDamageCalculator.Calculate(
+                    amount,
+                    source.EffectiveStats,
+                    targetActor.EffectiveStats,
+                    sharedStatConfig ?? CombatStatConfig.RuntimeDefault,
+                    Random.value).Amount;
+            }
+
+            var appliedDamage = target.ReceiveDamage(source, resolvedAmount);
             if (appliedDamage <= 0f)
             {
                 return false;
             }
 
-            var component = target as Component;
-            if (component == null || component.GetComponent<UnitActor>() == null)
+            if (targetActor == null)
             {
                 feedbackPlayer?.PlayDamage(
                     target.Position,

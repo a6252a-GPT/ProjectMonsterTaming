@@ -3,6 +3,15 @@ using UnityEngine;
 
 namespace ProjectMT.Shared.Items
 {
+    public enum ItemGrade // 일반 아이템의 표시 등급
+    {
+        Common,
+        Rare,
+        Epic,
+        Legendary,
+        Mythic
+    }
+
     [CreateAssetMenu(menuName = "ProjectMT/Items/Item Definition", fileName = "ItemDefinition")]
     public sealed class ItemDefinition : ScriptableObject // 일반 아이템 한 종류의 고정 정보
     {
@@ -12,6 +21,7 @@ namespace ProjectMT.Shared.Items
         [SerializeField] private string description;
         [SerializeField] private Sprite icon;
         [SerializeField] private ItemCategory category;
+        [SerializeField] private ItemGrade grade = ItemGrade.Common;
         [SerializeField] private long maxQuantity = long.MaxValue;
         [SerializeField] private bool discardable;
         [SerializeField] private bool allowMultiUse;
@@ -23,6 +33,7 @@ namespace ProjectMT.Shared.Items
         public string Description => description ?? string.Empty;
         public Sprite Icon => icon;
         public ItemCategory Category => category;
+        public ItemGrade Grade => grade;
         public long MaxQuantity => maxQuantity;
         public bool IsUnique => maxQuantity == 1L;
         public bool IsStackable => maxQuantity > 1L;
@@ -43,6 +54,12 @@ namespace ProjectMT.Shared.Items
             if (!Enum.IsDefined(typeof(ItemCategory), category))
             {
                 error = $"Item category is invalid. Item={itemId}";
+                return false;
+            }
+
+            if (!Enum.IsDefined(typeof(ItemGrade), grade))
+            {
+                error = $"Item grade is invalid. Item={itemId}";
                 return false;
             }
 
@@ -77,7 +94,8 @@ namespace ProjectMT.Shared.Items
             bool canDiscard,
             bool canUseMultiple,
             ItemUseEffect effect,
-            int order = 0)
+            int order = 0,
+            ItemGrade? itemGrade = null)
         {
             itemId = id?.Trim();
             displayName = itemName?.Trim();
@@ -87,6 +105,10 @@ namespace ProjectMT.Shared.Items
             allowMultiUse = canUseMultiple;
             useEffect = effect;
             sortOrder = order;
+            if (itemGrade.HasValue)
+            {
+                grade = itemGrade.Value;
+            }
         }
 
         public void EditorSetPresentation(string itemDescription, Sprite itemIcon = null)

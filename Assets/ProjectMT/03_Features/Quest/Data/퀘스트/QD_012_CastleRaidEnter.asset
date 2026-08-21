@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25a12baf1f1a3d4449770be56d69d3c6, type: 3}
+  m_Name: QD_012_CastleRaidEnter
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
+  questId:
+    value: quest_012_castle_raid_enter
+  isEnabled: 1
+  displayName: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5 \uC785\uC7A5"
+  description: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5\uC5D0 1\uD68C \uC785\uC7A5\uD558\uC138\uC694."
+  questType: 0
+  conditionType: 12
+  targetValue: 1
+  prerequisiteQuestId:
+    value: quest_011_growth_dungeon_enter
+  reward: {fileID: 11400000, guid: f5905a6c883f4dd0902273c6a5c39f1a, type: 2}
+  unlockTargets: 
+  unlockGateEnabled: 0
+  requiresActiveTracking: 1
+  isRepeatingTemplate: 0
+  repeatIncrement: 0
+  repeatMaxOccurrences: 0

@@ -10,7 +10,7 @@ using UnityEngine;
 namespace ProjectMT.Features.WorldDrops
 {
     [DisallowMultipleComponent]
-    public sealed class WorldItemDropRuntime : MonoBehaviour // 표시 풀·획득 버퍼·묶음 저장 수명 관리
+    public sealed class WorldItemDropRuntime : MonoBehaviour, IWorldDropPickupOwner // 표시 풀·획득 버퍼·묶음 저장 수명 관리
     {
         private readonly Dictionary<string, GameObject> templates =
             new Dictionary<string, GameObject>(StringComparer.OrdinalIgnoreCase);
@@ -198,6 +198,11 @@ namespace ProjectMT.Features.WorldDrops
             }
 
             pool?.Return(view.gameObject); // 기록을 먼저 끝낸 뒤 풀에 반환
+        }
+
+        void IWorldDropPickupOwner.CommitPickup(WorldItemDropView view)
+        {
+            CommitPickup(view, view == null ? default : view.Payload);
         }
 
         private GameObject GetOrCreateTemplate(WorldItemDropVisualEntry visual)

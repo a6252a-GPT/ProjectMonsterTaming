@@ -5,9 +5,6 @@ namespace ProjectMT.Shared.Equipment
     // 장비 슬롯 강화 비용 규칙(골드·강화석). 레벨은 0부터 시작한다.
     public static class EquipmentSlotUpgradeCostRules
     {
-        // true가 되면 강화 시 골드·강화석을 실제로 차감한다(지금은 무료 강화).
-        public static readonly bool ChargeCurrencyOnUpgrade = false;
-
         private const float GoldCostBase = 100f;
         private const float GoldCostGrowth = 1.12f;
         private const int LevelsPerStoneTier = 10;

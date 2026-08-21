@@ -18,6 +18,7 @@ MonoBehaviour:
     \uC18C\uD658\uAD8C."
   icon: {fileID: 21300000, guid: 406f715c6d26b42e9bc2ba9cb23a962f, type: 3}
   category: 2
+  grade: 2
   maxQuantity: 9223372036854775807
   discardable: 0
   allowMultiUse: 0

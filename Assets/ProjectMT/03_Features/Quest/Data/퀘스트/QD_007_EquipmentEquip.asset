@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25a12baf1f1a3d4449770be56d69d3c6, type: 3}
+  m_Name: QD_007_EquipmentEquip
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
+  questId:
+    value: quest_007_equipment_equip
+  isEnabled: 1
+  displayName: "\uC7A5\uBE44 \uC7A5\uCC29"
+  description: "\uC7A5\uBE44\uB97C 1\uD68C \uC7A5\uCC29\uD558\uC138\uC694."
+  questType: 0
+  conditionType: 2
+  targetValue: 1
+  prerequisiteQuestId:
+    value: quest_006_monster_ascension
+  reward: {fileID: 11400000, guid: 6c5b0d1133164526a03bc57cc924cc55, type: 2}
+  unlockTargets: 04000000
+  unlockGateEnabled: 1
+  requiresActiveTracking: 1
+  isRepeatingTemplate: 0
+  repeatIncrement: 0
+  repeatMaxOccurrences: 0

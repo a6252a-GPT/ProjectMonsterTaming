@@ -3,10 +3,13 @@
   "rootNamespace": "ProjectMT.Tests.PlayMode",
   "references": [
     "ProjectMT.Core",
+    "ProjectMT.Bootstrap",
     "ProjectMT.Shared",
     "ProjectMT.Features",
     "ProjectMT.Contents.Framework",
     "ProjectMT.Contents.FoodRiot",
+    "ProjectMT.Contents.FallenCommander",
+    "ProjectMT.Contents.GuardianTrial",
     "ProjectMT.Contents.CastleRaid",
     "Unity.InputSystem",
     "Unity.InputSystem.TestFramework",

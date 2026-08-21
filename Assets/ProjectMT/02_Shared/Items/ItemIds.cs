@@ -18,7 +18,7 @@ namespace ProjectMT.Shared.Items
 
         public const string FoodRiotKey = "key_food_riot";
         public const string TreasureSpiritKey = "key_treasure_spirit";
-        public const string GiantSpellbookKey = "key_giant_spellbook";
+        public const string FallenCommanderKey = "key_fallen_commander";
         public const string GuardiansTowerKey = "key_guardians_tower";
 
         public const string GoldPouch = "consumable_gold_pouch";
@@ -35,7 +35,7 @@ namespace ProjectMT.Shared.Items
             CommanderSkillSummonTicket,
             FoodRiotKey,
             TreasureSpiritKey,
-            GiantSpellbookKey,
+            FallenCommanderKey,
             GuardiansTowerKey,
             GoldPouch
         };
@@ -86,7 +86,7 @@ namespace ProjectMT.Shared.Items
                     return true;
                 case FoodRiotKey:
                 case TreasureSpiritKey:
-                case GiantSpellbookKey:
+                case FallenCommanderKey:
                 case GuardiansTowerKey:
                     category = ItemCategory.DungeonKey;
                     return true;
@@ -123,8 +123,8 @@ namespace ProjectMT.Shared.Items
                     return "식량 대소동 열쇠";
                 case TreasureSpiritKey:
                     return "보물 정령 열쇠";
-                case GiantSpellbookKey:
-                    return "거대 마도서 열쇠";
+                case FallenCommanderKey:
+                    return "타락한 과거의 군단장 열쇠";
                 case GuardiansTowerKey:
                     return "고대 수호수 열쇠";
                 case GoldPouch:

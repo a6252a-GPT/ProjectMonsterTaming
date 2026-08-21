@@ -1,4 +1,6 @@
 using System;
+using ProjectMT.Shared.Combat;
+using ProjectMT.Shared.Stats;
 using UnityEngine;
 
 namespace ProjectMT.Shared.Unit
@@ -57,13 +59,14 @@ namespace ProjectMT.Shared.Unit
         public float defensePenetrationRate;
         public float damageReductionRate;
 
-        public float EstimatePower() // 시드 총전투력 추정
+        public float EstimatePower() // 기본 설정 기준 안내 전투력
         {
-            var durability = Mathf.Max(1f, maxHealth) * 0.4f;
-            var criticalMultiplier = 1f + Mathf.Clamp01(criticalRate) *
-                (Mathf.Max(1f, criticalDamageMultiplier) - 1f);
-            var offense = Mathf.Max(0f, damage) / Mathf.Max(0.1f, attackInterval) * criticalMultiplier * 4f;
-            return durability + offense;
+            return EstimatePower(CombatStatConfig.RuntimeDefault);
+        }
+
+        public float EstimatePower(CombatStatConfig config)
+        {
+            return CombatPowerCalculator.Calculate(this, config);
         }
     }
 
@@ -118,25 +121,33 @@ namespace ProjectMT.Shared.Unit
         }
 
         public BattlePartySnapshot(BattleUnitSnapshot[] units, BattleUnitSnapshot[] reserveUnits)
+            : this(units, reserveUnits, CombatStatConfig.RuntimeDefault)
+        {
+        }
+
+        public BattlePartySnapshot(
+            BattleUnitSnapshot[] units,
+            BattleUnitSnapshot[] reserveUnits,
+            CombatStatConfig combatStatConfig)
         {
             this.units = units ?? Array.Empty<BattleUnitSnapshot>();
             this.reserveUnits = reserveUnits ?? Array.Empty<BattleUnitSnapshot>();
             totalPower = 0f;
-            AddPower(this.units);
-            AddPower(this.reserveUnits);
+            AddPower(this.units, combatStatConfig ?? CombatStatConfig.RuntimeDefault);
+            AddPower(this.reserveUnits, combatStatConfig ?? CombatStatConfig.RuntimeDefault);
         }
 
         public BattleUnitSnapshot[] Units => units ?? Array.Empty<BattleUnitSnapshot>();
         public BattleUnitSnapshot[] ReserveUnits => reserveUnits ?? Array.Empty<BattleUnitSnapshot>();
         public float TotalPower => totalPower;
 
-        private void AddPower(BattleUnitSnapshot[] partyUnits)
+        private void AddPower(BattleUnitSnapshot[] partyUnits, CombatStatConfig combatStatConfig)
         {
             foreach (var unit in partyUnits)
             {
                 if (unit != null)
                 {
-                    totalPower += unit.Stats.EstimatePower();
+                    totalPower += unit.Stats.EstimatePower(combatStatConfig);
                 }
             }
         }
@@ -171,11 +182,11 @@ namespace ProjectMT.Shared.Unit
 
             return new BattlePartySnapshot(new[]
             {
-                new BattleUnitSnapshot("spike_01", melee, displayName: "스파이크"),
+                new BattleUnitSnapshot("lumi_01", melee, displayName: "루미"),
                 new BattleUnitSnapshot("shell_01", melee, displayName: "쉘"),
                 new BattleUnitSnapshot("aru_01", melee, displayName: "아르"),
                 new BattleUnitSnapshot("ru_01", ranged, displayName: "루"),
-                new BattleUnitSnapshot("lumi_01", ranged, displayName: "루미")
+                new BattleUnitSnapshot("lucy_01", ranged, displayName: "루시")
             });
         }
     }

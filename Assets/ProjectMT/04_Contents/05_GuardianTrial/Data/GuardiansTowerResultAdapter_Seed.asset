@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Contents.GuardianTrial::ProjectMT.Contents.GuardianTrial.GuardiansTowerResultAdapter
   rewardPerKill: {fileID: 11400000, guid: 752dcc24a02753a4b8f6ecdf08ed3db5, type: 2}
   clearReward: {fileID: 11400000, guid: a3a8fa57f925251489c64594bb6b81eb, type: 2}
+  stageRewards: {fileID: 11400000, guid: d4b5e0427196dd14e9357f8b58bb1765, type: 2}

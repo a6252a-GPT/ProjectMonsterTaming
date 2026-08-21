@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Pooling;
 using ProjectMT.Shared.Unit;
@@ -12,6 +13,7 @@ namespace ProjectMT.Shared.Combat
         [SerializeField] private GameObject hitVfxPrefab; // 공용 타격 이펙트
         [SerializeField] private CameraImpulseRig cameraImpulse; // 카메라 흔들림 장치
         [SerializeField] private FloatingNumberPresenter floatingNumbers; // 풀링 피해 숫자
+        [SerializeField] private WorldHealthBarPresenter worldHealthBars; // 일반 유닛 피격 HP바
         [SerializeField] private SfxPool sfxPool; // 현재 전투 범위 SFX Voice 풀
         [SerializeField] private SfxCue hitSfx; // 일반 피격음
         [SerializeField] private SfxCue deathSfx; // 사망음
@@ -25,6 +27,11 @@ namespace ProjectMT.Shared.Combat
         private float strongestImpulseThisFrame; // 같은 프레임의 더 강한 요청은 승격 허용
         private float nextHitImpulseTime;
         private float strongestRecentHitImpulse;
+        private readonly HashSet<int> displaySuppressors = new HashSet<int>();
+        private bool requestedFloatingNumbers = true;
+        private bool requestedUnitHealthBars = true;
+
+        public bool IsDisplaySuppressed => displaySuppressors.Count > 0;
 
         private void Awake()
         {
@@ -36,6 +43,11 @@ namespace ProjectMT.Shared.Combat
             if (sfxPool == null)
             {
                 sfxPool = GetComponent<SfxPool>();
+            }
+
+            if (worldHealthBars == null)
+            {
+                worldHealthBars = GetComponentInChildren<WorldHealthBarPresenter>(true);
             }
         }
 
@@ -72,6 +84,7 @@ namespace ProjectMT.Shared.Combat
                 preset.TargetHitStop,
                 report.Killed);
             floatingNumbers?.ShowDamage(target, report);
+            worldHealthBars?.ShowDamage(target);
             sfxPool?.Play(hitSfx, report.Request.HitPoint);
             if (poolScope != null && hitVfxPrefab != null && hitVfxThisFrame < maxHitVfxPerFrame)
             {
@@ -141,6 +154,40 @@ namespace ProjectMT.Shared.Combat
             return sfxPool != null && sfxPool.Play(cue, position);
         }
 
+        public void SetDisplayOptions(bool showFloatingNumbers, bool showUnitHealthBars)
+        {
+            requestedFloatingNumbers = showFloatingNumbers;
+            requestedUnitHealthBars = showUnitHealthBars;
+            ApplyDisplayOptions();
+        }
+
+        public void SetDisplaySuppressed(Object owner, bool suppressed)
+        {
+            if (owner == null)
+            {
+                return;
+            }
+
+            var ownerId = owner.GetInstanceID();
+            if (suppressed)
+            {
+                displaySuppressors.Add(ownerId);
+            }
+            else
+            {
+                displaySuppressors.Remove(ownerId);
+            }
+
+            ApplyDisplayOptions();
+        }
+
+        private void ApplyDisplayOptions()
+        {
+            var allowed = displaySuppressors.Count == 0;
+            floatingNumbers?.SetVisible(allowed && requestedFloatingNumbers);
+            worldHealthBars?.SetVisible(allowed && requestedUnitHealthBars);
+        }
+
         private void PlayImpulse(float strength)
         {
             strength = Mathf.Max(0f, strength);
@@ -205,6 +252,11 @@ namespace ProjectMT.Shared.Combat
         {
             floatingNumbers = numbers;
             sfxPool = audioPool;
+        }
+
+        public void EditorConfigureHealthBars(WorldHealthBarPresenter healthBars)
+        {
+            worldHealthBars = healthBars;
         }
 #endif
     }

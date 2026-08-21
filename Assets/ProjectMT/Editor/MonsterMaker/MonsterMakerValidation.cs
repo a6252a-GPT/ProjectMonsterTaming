@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectMT.Contents.CastleRaid;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
@@ -59,6 +60,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             ValidateStats(draft, report);
             ValidateMotions(draft, report);
             ValidateCombat(draft, report);
+            ValidateCastleRaidAI(draft, report);
             ValidateAscension(draft, report);
             ValidateFeedback(draft, report);
             return report;
@@ -168,6 +170,29 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 draft.AttackSpeed <= 0f || draft.MoveSpeed < 0f || draft.AttackRange <= 0f)
             {
                 report.Add(MonsterMakerIssueSeverity.Error, "MAKER-STATS", "기본 능력치가 유효하지 않습니다.", draft);
+            }
+        }
+
+        private static void ValidateCastleRaidAI(
+            MonsterMakerDraft draft,
+            MonsterMakerValidationReport report)
+        {
+            if (draft.CastleRaidAiPattern != CastleRaidAiPattern.TacticalSupport)
+            {
+                return;
+            }
+
+            if (draft.CastleRaidSupportRange < 1f || draft.CastleRaidSupportCooldown <= 0f ||
+                draft.CastleRaidSupportDuration <= 0f || draft.CastleRaidHealRatio < 0f ||
+                draft.CastleRaidHealRatio > 1f || draft.CastleRaidAttackBuffRate < 0f ||
+                draft.CastleRaidAttackBuffRate > 1f || draft.CastleRaidDefenseDamageMultiplier < 0.05f ||
+                draft.CastleRaidDefenseDamageMultiplier > 1f)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-CASTLE-AI",
+                    "군단의 역습 지원형 범위·재사용·지속·효과 비율이 유효하지 않습니다.",
+                    draft);
             }
         }
 

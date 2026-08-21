@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: Notion monster batch / SpiderKing
   vendorPrefab: {fileID: 4036688507685142794, guid: 3e15fc27bc204ea498cc283866575d3a, type: 3}
   animatorSource: {fileID: 4228310270145236071, guid: 3e15fc27bc204ea498cc283866575d3a, type: 3}
-  visualScale: {x: 1, y: 1, z: 1}
+  visualScale: {x: 0.6, y: 0.6, z: 0.6}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0
@@ -103,6 +103,14 @@ MonoBehaviour:
     attackSpeedRate: 0
     moveSpeedRate: 0
     attackRangeRate: 0
+  castleRaidAiPattern: 1
+  castleRaidSupportFocus: 0
+  castleRaidSupportRange: 5
+  castleRaidSupportCooldown: 4
+  castleRaidSupportDuration: 5
+  castleRaidHealRatio: 0.24
+  castleRaidAttackBuffRate: 0.2
+  castleRaidDefenseDamageMultiplier: 0.75
   ascensionConfigured: 0
   ascension1:
     healthRate: 0

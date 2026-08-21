@@ -49,7 +49,7 @@ namespace ProjectMT.Features.Equipment
             }
         }
 
-        private static void AppendContributions(
+        internal static void AppendContributions(
             IReadOnlyList<EquipmentStatContribution> contributions,
             string sourceId,
             List<StatModifier> destination)

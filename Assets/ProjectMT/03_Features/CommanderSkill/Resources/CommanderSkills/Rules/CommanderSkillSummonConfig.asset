@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b6c863bfae98024da16cc84f40ba8f1, type: 3}
+  m_Name: CommanderSkillSummonConfig
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.CommanderSkill.CommanderSkillSummonConfig
+  ticketItemId: ticket_commander_skill_summon
+  diamondCostPerMissingTicket: 30
+  levels:
+  - requiredAccumulatedCount: 0
+    pool:
+    - skillId: commander_skill_fireball
+      weight: 100
+    - skillId: commander_skill_ice_crystal_orb
+      weight: 100
+  - requiredAccumulatedCount: 30
+    pool:
+    - skillId: commander_skill_fireball
+      weight: 100
+    - skillId: commander_skill_ice_crystal_orb
+      weight: 100
+  - requiredAccumulatedCount: 100
+    pool:
+    - skillId: commander_skill_fireball
+      weight: 100
+    - skillId: commander_skill_ice_crystal_orb
+      weight: 100
+  offers:
+  - drawCount: 10
+    ticketCost: 10
+  - drawCount: 30
+    ticketCost: 30
+  - drawCount: 300
+    ticketCost: 300

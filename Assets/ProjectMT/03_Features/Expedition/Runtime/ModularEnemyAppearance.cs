@@ -53,7 +53,7 @@ namespace ProjectMT.Features.Expedition
             }
 
             bodyInstance = InstantiatePart(bodyPrefab, visualRoot);
-            bodyInstance.transform.localScale = Vector3.one * profile.VisualScale;
+            bodyInstance.transform.localScale = Vector3.one * profile.VisualScale * request.VisualScaleMultiplier;
             var skinToken = FirstToken(bodyPrefab.name);
             var paletteToken = SecondToken(bodyPrefab.name);
             var headSocket = FindDescendant(bodyInstance.transform, "+ Head");
@@ -110,7 +110,10 @@ namespace ProjectMT.Features.Expedition
                 animator.applyRootMotion = false;
                 animator.runtimeAnimatorController = profile.LocomotionController;
                 animator.Rebind();
-                animator.Update(0f);
+                if (animator.gameObject.activeInHierarchy)
+                {
+                    animator.Update(0f); // 비활성 Stage 조립 중에는 강제 평가하지 않는다
+                }
             }
 
             GetComponent<UnitVisualFeedback>()?.RefreshRenderers();

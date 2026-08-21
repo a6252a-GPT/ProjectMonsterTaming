@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using ProjectMT.Shared.Commander;
+using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.Gacha;
 using ProjectMT.Shared.Items;
@@ -174,7 +177,7 @@ namespace ProjectMT.Shared.GameData
     }
 
     [Serializable]
-    public sealed class GameProgressData // 시드 사용자 진행 원본
+    public sealed partial class GameProgressData // 시드 사용자 진행 원본
     {
         [SerializeField] private int currentChallengeStage = 1; // 현재 도전 단계
         [SerializeField] private int lastClearedStage; // 마지막 성공 단계
@@ -195,9 +198,14 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private ItemInventoryData items = ItemInventoryData.CreateDefault(); // 일반 아이템 보유 수량
         [SerializeField] private GrowthDungeonProgressData growthDungeons = GrowthDungeonProgressData.CreateDefault(); // 성장 던전 단계·열쇠 기준일
         [SerializeField] private OfflineRewardProgressData offlineRewards = OfflineRewardProgressData.CreateDefault(); // 방치 시작·정산 영수증
+        [SerializeField] private AttendanceProgressData attendance = AttendanceProgressData.CreateDefault(); // 28일 누적 출석
+        [SerializeField] private MailProgressData mail = MailProgressData.CreateDefault(); // 미수령 우편
         [SerializeField] private bool coreBalanceMigrationCompleted = true; // v11 이관 재실행 방지
         [NonSerialized] private ItemInventoryView? itemViewCache; // 변경 전까지 목록 복사 재사용
         [SerializeField] private EquipmentSlotUpgradeData equipmentSlotUpgrade = EquipmentSlotUpgradeData.CreateDefault(); // 부위 슬롯 영구 강화 레벨(장비 보유·장착과 별도 저장)
+        [SerializeField] private CommanderPotentialData commanderPotential = CommanderPotentialData.CreateDefault(); // 군단장 잠재능력 5슬롯
+        [SerializeField] private CommanderLegionGrowthData commanderLegionGrowth = CommanderLegionGrowthData.CreateDefault(); // 군단 공용 6종 강화
+        [SerializeField] private CommanderSkillProgressData commanderSkills = CommanderSkillProgressData.CreateDefault(); // 군단장 스킬 보유·장착·자동사용
 
         public int CurrentChallengeStage => currentChallengeStage;
         public int LastClearedStage => lastClearedStage;
@@ -231,17 +239,29 @@ namespace ProjectMT.Shared.GameData
             (growthDungeons ?? GrowthDungeonProgressData.CreateDefault()).CreateView();
         public OfflineRewardProgressView OfflineRewards =>
             new OfflineRewardProgressView(offlineRewards ?? OfflineRewardProgressData.CreateDefault());
+        public AttendanceProgressView Attendance =>
+            (attendance ?? AttendanceProgressData.CreateDefault()).CreateView();
+        public MailProgressView Mail =>
+            (mail ?? MailProgressData.CreateDefault()).CreateView();
         public EquipmentSlotUpgradeView EquipmentSlotUpgrade =>
             (equipmentSlotUpgrade ?? EquipmentSlotUpgradeData.CreateDefault()).CreateView();
+        public CommanderPotentialView CommanderPotential =>
+            (commanderPotential ?? CommanderPotentialData.CreateDefault()).CreateView();
+        public CommanderLegionGrowthView CommanderLegionGrowth =>
+            (commanderLegionGrowth ?? CommanderLegionGrowthData.CreateDefault()).CreateView();
+        public CommanderSkillProgressView CommanderSkills =>
+            (commanderSkills ?? CommanderSkillProgressData.CreateDefault()).CreateView();
 
         public static GameProgressData CreateDefault()
         {
             return new GameProgressData();
         }
 
-        public GameProgressData Clone()
+        public GameProgressData Clone(
+            CommanderSkillBalanceConfig commanderSkillBalanceConfig = null,
+            CommanderSkillSummonConfig commanderSkillSummonConfig = null)
         {
-            return new GameProgressData // 변경 전 후보 복사본
+            var clone = new GameProgressData // 변경 전 후보 복사본
             {
                 currentChallengeStage = currentChallengeStage,
                 lastClearedStage = lastClearedStage,
@@ -260,17 +280,50 @@ namespace ProjectMT.Shared.GameData
                 items = items?.Clone() ?? ItemInventoryData.CreateDefault(),
                 growthDungeons = growthDungeons?.Clone() ?? GrowthDungeonProgressData.CreateDefault(),
                 offlineRewards = offlineRewards?.Clone() ?? OfflineRewardProgressData.CreateDefault(),
+                attendance = attendance?.Clone() ?? AttendanceProgressData.CreateDefault(),
+                mail = mail?.Clone() ?? MailProgressData.CreateDefault(),
                 coreBalanceMigrationCompleted = coreBalanceMigrationCompleted,
-                equipmentSlotUpgrade = equipmentSlotUpgrade?.Clone() ?? EquipmentSlotUpgradeData.CreateDefault()
+                equipmentSlotUpgrade = equipmentSlotUpgrade?.Clone() ?? EquipmentSlotUpgradeData.CreateDefault(),
+                commanderPotential = commanderPotential?.Clone() ?? CommanderPotentialData.CreateDefault(),
+                commanderLegionGrowth = commanderLegionGrowth?.Clone() ?? CommanderLegionGrowthData.CreateDefault(),
+                commanderSkills = commanderSkills?.Clone(
+                    commanderSkillBalanceConfig,
+                    commanderSkillSummonConfig) ?? CommanderSkillProgressData.CreateDefault()
             };
+            CopyQuestTo(clone);
+            return clone;
         }
+
+        partial void CopyQuestTo(GameProgressData clone);
+        partial void RepairQuest();
+        partial void RejectInvalidQuestClaim(GameProgressChange change, ref bool rejected);
+        partial void RejectInvalidQuestDailyReset(GameProgressChange change, ref bool rejected);
+        partial void RejectInvalidQuestWeeklyReset(GameProgressChange change, ref bool rejected);
+        partial void ApplyQuestProgress(GameProgressChange change, ref bool rejected);
+        partial void ApplyQuestClaim(GameProgressChange change);
+        partial void ApplyQuestDailyReset(GameProgressChange change);
+        partial void ApplyQuestWeeklyReset(GameProgressChange change);
+        partial void ApplyQuestProgressReset(GameProgressChange change);
 
         internal bool TryApply(
             GameProgressChange change,
             CommanderGrowthConfig commanderGrowthConfig = null,
-            ItemCatalog itemCatalog = null)
+            ItemCatalog itemCatalog = null,
+            EquipmentBalanceConfig equipmentBalanceConfig = null,
+            CommanderSkillBalanceConfig commanderSkillBalanceConfig = null,
+            CommanderSkillSummonConfig commanderSkillSummonConfig = null)
         {
             if (change == null)
+            {
+                return false;
+            }
+
+            var questRejected = false;
+            RejectInvalidQuestClaim(change, ref questRejected);
+            RejectInvalidQuestDailyReset(change, ref questRejected);
+            RejectInvalidQuestWeeklyReset(change, ref questRejected);
+            ApplyQuestProgress(change, ref questRejected);
+            if (questRejected)
             {
                 return false;
             }
@@ -298,10 +351,128 @@ namespace ProjectMT.Shared.GameData
                 return false;
             }
 
-            if ((change.HasMarkOfflineInactive || change.HasSettleOfflineReward || change.HasAcknowledgeOfflineRewards) &&
-                !TryApplyOfflineRewardProgress(change))
+            if (change.HasAttendanceRefresh && !TryApplyAttendanceRefresh(change))
             {
                 return false;
+            }
+
+            if (change.HasAttendanceClaim &&
+                !TryApplyAttendanceClaim(change, commanderGrowthConfig, itemCatalog))
+            {
+                return false;
+            }
+
+            if (change.HasAddMail && !TryApplyMailAdd(change))
+            {
+                return false;
+            }
+
+            if (change.HasCleanupExpiredMail && !TryApplyMailCleanup(change))
+            {
+                return false;
+            }
+
+            if (change.HasClaimMail && !TryApplyMailClaim(change, commanderGrowthConfig, itemCatalog))
+            {
+                return false;
+            }
+
+            if ((change.HasMarkOfflineInactive || change.HasSettleOfflineReward || change.HasAcknowledgeOfflineRewards) &&
+                !TryApplyOfflineRewardProgress(change))
+                {
+                    return false;
+                }
+
+            if (change.HasSetCommanderSkillAutoUse)
+            {
+                commanderSkills ??= CommanderSkillProgressData.CreateDefault();
+                if (!commanderSkills.TrySetAutoUse(
+                        change.ExpectedCommanderSkillAutoUse,
+                        change.NewCommanderSkillAutoUse))
+                {
+                    return false;
+                }
+            }
+
+            if (change.HasEquipCommanderSkill)
+            {
+                commanderSkills ??= CommanderSkillProgressData.CreateDefault();
+                if (!commanderSkills.TryEquip(
+                        change.CommanderSkillSlotIndex,
+                        change.ExpectedCommanderSkillId,
+                        change.NewCommanderSkillId,
+                        commanderSkillBalanceConfig))
+                {
+                    return false;
+                }
+            }
+
+            if (change.HasRecordCommanderSkillSummon)
+            {
+                commanderSkills ??= CommanderSkillProgressData.CreateDefault();
+                var summonConfig = commanderSkillSummonConfig ?? CommanderSkillSummonConfig.RuntimeDefault;
+                var summonedSkillIds = change.SummonedCommanderSkillIds;
+                if (summonedSkillIds == null || summonedSkillIds.Count == 0)
+                {
+                    return false;
+                }
+
+                if (change.CommanderSkillSummonRequiresPayment)
+                {
+                    if (!summonConfig.TryGetOffer(
+                            change.CommanderSkillSummonDrawCount,
+                            out var offer) ||
+                        offer.DrawCount != summonedSkillIds.Count)
+                    {
+                        return false;
+                    }
+
+                    var availableTickets = items.GetQuantity(summonConfig.TicketItemId);
+                    var payment = summonConfig.CalculatePayment(offer, availableTickets);
+                    var costs = new List<ItemAmount>(2);
+                    if (payment.TicketCost > 0)
+                    {
+                        costs.Add(new ItemAmount(summonConfig.TicketItemId, payment.TicketCost));
+                    }
+
+                    if (payment.DiamondCost > 0L)
+                    {
+                        costs.Add(new ItemAmount(ItemIds.Diamond, payment.DiamondCost));
+                    }
+
+                    if (!ItemInventoryTransactions.TrySpend(
+                            items,
+                            costs,
+                            itemCatalog,
+                            out var spentCommanderSkillPayment))
+                    {
+                        return false;
+                    }
+
+                    items = spentCommanderSkillPayment; // 소환권·다이아·결과를 같은 후보에서만 반영
+                }
+
+                if (!commanderSkills.TryRecordSummons(
+                        change.ExpectedCommanderSkillSummonCount,
+                        summonedSkillIds,
+                        commanderSkillBalanceConfig,
+                        summonConfig))
+                {
+                    return false;
+                }
+            }
+
+            if (change.HasLevelUpCommanderSkill)
+            {
+                commanderSkills ??= CommanderSkillProgressData.CreateDefault();
+                if (!commanderSkills.TryLevelUp(
+                        change.CommanderSkillToLevelUpId,
+                        change.ExpectedCommanderSkillLevel,
+                        change.ExpectedCommanderSkillDuplicateCount,
+                        commanderSkillBalanceConfig))
+                {
+                    return false;
+                }
             }
 
             if (change.ItemCosts != null && change.ItemCosts.Count > 0)
@@ -330,6 +501,17 @@ namespace ProjectMT.Shared.GameData
             }
 
             if (!TryApplyRewards(change.Rewards, commanderGrowthConfig, itemCatalog))
+            {
+                return false;
+            }
+
+            ApplyQuestClaim(change);
+            ApplyQuestDailyReset(change);
+            ApplyQuestWeeklyReset(change);
+            ApplyQuestProgressReset(change);
+
+            if (change.HasSettleOfflineReward &&
+                !TryApplyOfflineEquipmentSettlement(change.OfflineReceipt))
             {
                 return false;
             }
@@ -376,6 +558,56 @@ namespace ProjectMT.Shared.GameData
                 {
                     return false;
                 }
+
+                commanderLegionGrowth ??= CommanderLegionGrowthData.CreateDefault();
+                commanderLegionGrowth.GrantTrainingPoints(1); // 저장된 수동 레벨업 1회당 1포인트
+            }
+
+            if (change.HasUpgradeCommanderLegionStat)
+            {
+                var growthConfig = commanderGrowthConfig ?? CommanderGrowthConfig.RuntimeDefault;
+                commanderLegionGrowth ??= CommanderLegionGrowthData.CreateDefault();
+                var nextGrowth = commanderLegionGrowth.Clone();
+                var currentLevel = nextGrowth.GetLevel(change.CommanderLegionStatToUpgrade);
+                var maxLevel = growthConfig.GetLegionGrowthMaxLevel(change.CommanderLegionStatToUpgrade);
+                if (currentLevel != change.ExpectedCommanderLegionStatLevel || currentLevel >= maxLevel)
+                {
+                    return false;
+                }
+
+                var nextItems = items;
+                if (growthConfig.UsesGoldForLegionGrowth(change.CommanderLegionStatToUpgrade))
+                {
+                    var goldCost = growthConfig.GetLegionGrowthGoldCost(
+                        change.CommanderLegionStatToUpgrade,
+                        currentLevel);
+                    if (!ItemInventoryTransactions.TrySpend(
+                            items,
+                            new[] { new ItemAmount(ItemIds.Gold, goldCost) },
+                            itemCatalog,
+                            out nextItems))
+                    {
+                        return false;
+                    }
+                }
+                else if (!nextGrowth.TrySpendTrainingPoints(
+                             growthConfig.GetLegionGrowthTrainingPointCost(
+                                 change.CommanderLegionStatToUpgrade,
+                                 currentLevel)))
+                {
+                    return false;
+                }
+
+                if (!nextGrowth.TryLevelUp(
+                        change.CommanderLegionStatToUpgrade,
+                        change.ExpectedCommanderLegionStatLevel,
+                        maxLevel))
+                {
+                    return false;
+                }
+
+                items = nextItems;
+                commanderLegionGrowth = nextGrowth;
             }
 
             if (change.HasAcquireMonster &&
@@ -463,7 +695,10 @@ namespace ProjectMT.Shared.GameData
             if (change.HasAcquireEquipment)
             {
                 equipment ??= EquipmentSaveData.CreateDefault();
-                equipment.Acquire(change.AcquireEquipmentInstances);
+                if (!equipment.TryAcquire(change.AcquireEquipmentInstances))
+                {
+                    return false;
+                }
             }
 
             if (change.HasEquipItem &&
@@ -475,6 +710,37 @@ namespace ProjectMT.Shared.GameData
 
             if (change.HasUnequipItem &&
                 !(equipment ??= EquipmentSaveData.CreateDefault()).TryUnequip(change.UnequipItemPart))
+            {
+                return false;
+            }
+
+            if (change.HasSetEquipmentLock &&
+                (string.IsNullOrEmpty(change.EquipmentLockInstanceId) ||
+                 !(equipment ??= EquipmentSaveData.CreateDefault()).TrySetLocked(
+                     change.EquipmentLockInstanceId,
+                     change.ExpectedEquipmentLockValue,
+                     change.EquipmentLockValue)))
+            {
+                return false;
+            }
+
+            if (change.HasDismantleEquipment)
+            {
+                equipment ??= EquipmentSaveData.CreateDefault();
+                if (!equipment.TryDismantle(change.DismantleEquipmentInstanceIds, out var upgradeStoneAmount) ||
+                    !TryApplyRewards(
+                        RewardBundle.FromItems(new ItemAmount(ItemIds.EquipmentSlotUpgradeStone, upgradeStoneAmount)),
+                        commanderGrowthConfig,
+                        itemCatalog))
+                {
+                    return false;
+                }
+            }
+
+            if (change.HasSetOfflineAutoDismantlePolicy &&
+                !(equipment ??= EquipmentSaveData.CreateDefault()).TrySetOfflineAutoDismantlePolicy(
+                    change.ExpectedOfflineAutoDismantlePolicy,
+                    change.OfflineAutoDismantlePolicy))
             {
                 return false;
             }
@@ -526,21 +792,17 @@ namespace ProjectMT.Shared.GameData
                     return false; // 요청 시점과 처리 시점 사이에 레벨이 달라짐(중복 클릭 등)
                 }
 
-                var slotUpgradeItems = items;
-                if (EquipmentSlotUpgradeCostRules.ChargeCurrencyOnUpgrade)
+                var goldCost = EquipmentSlotUpgradeCostRules.GetNextGoldCost(currentLevel);
+                var stoneCost = EquipmentSlotUpgradeCostRules.GetNextStoneCost(currentLevel);
+                var costs = new[]
                 {
-                    var goldCost = EquipmentSlotUpgradeCostRules.GetNextGoldCost(currentLevel);
-                    var stoneCost = EquipmentSlotUpgradeCostRules.GetNextStoneCost(currentLevel);
-                    var costs = new[]
-                    {
-                        new ItemAmount(ItemIds.Gold, goldCost),
-                        new ItemAmount(ItemIds.EquipmentSlotUpgradeStone, stoneCost)
-                    };
+                    new ItemAmount(ItemIds.Gold, goldCost),
+                    new ItemAmount(ItemIds.EquipmentSlotUpgradeStone, stoneCost)
+                };
 
-                    if (!ItemInventoryTransactions.TrySpend(items, costs, itemCatalog, out slotUpgradeItems))
-                    {
-                        return false; // 재화 부족
-                    }
+                if (!ItemInventoryTransactions.TrySpend(items, costs, itemCatalog, out var slotUpgradeItems))
+                {
+                    return false; // 재화 부족
                 }
 
                 if (!equipmentSlotUpgrade.TryLevelUp(change.UpgradeEquipmentSlotPart, change.ExpectedEquipmentSlotLevel))
@@ -551,7 +813,149 @@ namespace ProjectMT.Shared.GameData
                 items = slotUpgradeItems;
             }
 
-            Repair(commanderGrowthConfig); // 변경 후 불변식 재확인
+            // 잠재능력 슬롯 최초 배정. 이미 값이 있으면 실패해 중복 배정을 막는다.
+            if (change.HasAssignCommanderPotentialSlot)
+            {
+                commanderPotential ??= CommanderPotentialData.CreateDefault();
+                if (!commanderPotential.TryAssignSlot(
+                        change.CommanderPotentialSlotIndex,
+                        change.CommanderPotentialOptionType,
+                        change.CommanderPotentialGrade,
+                        change.CommanderPotentialValue))
+                {
+                    return false;
+                }
+            }
+
+            // "잠재 능력 변경": 강화석 1개 차감 후 잠기지 않은 대상 슬롯들을 새 옵션으로 교체.
+            // 해금됐지만 아직 비어있는("대기 중") 슬롯도 이 버튼으로 함께 처음 배정된다(값 있는 슬롯은 교체, 빈 슬롯은 신규 배정).
+            if (change.HasRerollCommanderPotentialSlots)
+            {
+                var entries = change.CommanderPotentialRerollEntries;
+                if (entries == null || entries.Count == 0)
+                {
+                    return false;
+                }
+
+                commanderPotential ??= CommanderPotentialData.CreateDefault();
+
+                // 유효 슬롯·잠금·중복 대상·같은 옵션 최대 2개를 차감 전에 한 번에 검증한다.
+                if (!commanderPotential.CanApplyOptionReroll(entries, 2))
+                {
+                    return false;
+                }
+
+                if (!ItemInventoryTransactions.TrySpend(
+                        items,
+                        new[] { new ItemAmount(ItemIds.LegionPotentialUpgradeStone, 1) },
+                        itemCatalog,
+                        out var rerollItems))
+                {
+                    return false; // 잠재능력 강화석 부족
+                }
+
+                for (var i = 0; i < entries.Count; i++)
+                {
+                    var entry = entries[i];
+                    var target = commanderPotential.GetSlot(entry.SlotIndex);
+                    if (target != null && target.HasValue)
+                    {
+                        commanderPotential.TryReplaceSlot(entry.SlotIndex, entry.OptionType, entry.Grade, entry.Value);
+                    }
+                    else
+                    {
+                        commanderPotential.TryAssignSlot(entry.SlotIndex, entry.OptionType, entry.Grade, entry.Value);
+                    }
+                }
+
+                // "잠재 능력 변경" 1회 성공마다 "수호자의 힘" 경험치 +10, 100 채우면 다음 단계로 승급.
+                commanderPotential.AddExperience(CommanderPotentialData.ExperiencePerReroll);
+
+                items = rerollItems;
+            }
+
+            // "옵션 스탯 변경": 강화석 1개 차감 후 옵션 종류·등급은 그대로 두고 수치만 교체.
+            // 잠금은 옵션 자체가 바뀌는 "잠재 능력 변경"만 막는 용도라, 여기서는 잠긴 슬롯도 대상이 된다(값만 있으면 됨).
+            if (change.HasRerollCommanderPotentialValues)
+            {
+                var valueEntries = change.CommanderPotentialValueRerollEntries;
+                if (valueEntries == null || valueEntries.Count == 0)
+                {
+                    return false;
+                }
+
+                commanderPotential ??= CommanderPotentialData.CreateDefault();
+
+                if (!commanderPotential.CanApplyValueReroll(
+                        valueEntries,
+                        equipmentBalanceConfig ?? EquipmentBalanceConfig.RuntimeDefault))
+                {
+                    return false;
+                }
+
+                if (!ItemInventoryTransactions.TrySpend(
+                        items,
+                        new[] { new ItemAmount(ItemIds.LegionPotentialUpgradeStone, 1) },
+                        itemCatalog,
+                        out var valueRerollItems))
+                {
+                    return false; // 잠재능력 강화석 부족
+                }
+
+                for (var i = 0; i < valueEntries.Count; i++)
+                {
+                    var entry = valueEntries[i];
+                    if (!commanderPotential.TryRerollSlotValue(entry.SlotIndex, entry.Value))
+                    {
+                        return false;
+                    }
+                }
+
+                // "옵션 스탯 변경" 1회 성공마다 "수호자의 힘" 경험치 +10.
+                commanderPotential.AddExperience(CommanderPotentialData.ExperiencePerReroll);
+
+                items = valueRerollItems;
+            }
+
+            // 자물쇠 아이콘 클릭으로 재추첨 대상 제외 여부를 토글. 잠그는 경우에만 강화석을
+            // 소모하며(해제는 무료), 이미 잠긴 슬롯 수에 따라 비용이 1→2→4→8→16개로 2배씩 늘어난다.
+            if (change.HasSetCommanderPotentialLocked)
+            {
+                commanderPotential ??= CommanderPotentialData.CreateDefault();
+
+                var lockTarget = commanderPotential.GetSlot(change.CommanderPotentialLockSlotIndex);
+                if (lockTarget == null || !lockTarget.HasValue ||
+                    lockTarget.Locked != change.ExpectedCommanderPotentialLocked)
+                {
+                    return false;
+                }
+
+                if (change.NewCommanderPotentialLocked)
+                {
+                    var alreadyLockedCount = commanderPotential.CountLockedSlots();
+                    var lockCost = CommanderPotentialData.GetLockStoneCost(alreadyLockedCount);
+                    if (!ItemInventoryTransactions.TrySpend(
+                            items,
+                            new[] { new ItemAmount(ItemIds.LegionPotentialUpgradeStone, lockCost) },
+                            itemCatalog,
+                            out var lockItems))
+                    {
+                        return false; // 잠재능력 강화석 부족
+                    }
+
+                    items = lockItems;
+                }
+
+                commanderPotential.TrySetSlotLocked(
+                    change.CommanderPotentialLockSlotIndex,
+                    change.ExpectedCommanderPotentialLocked,
+                    change.NewCommanderPotentialLocked);
+            }
+
+            Repair(
+                commanderGrowthConfig,
+                commanderSkillBalanceConfig,
+                commanderSkillSummonConfig); // 변경 후 불변식 재확인
             return true;
         }
 
@@ -590,6 +994,89 @@ namespace ProjectMT.Shared.GameData
 
             items = candidateItems;
             itemViewCache = null;
+            return true;
+        }
+
+        private bool TryApplyAttendanceRefresh(GameProgressChange change)
+        {
+            attendance ??= AttendanceProgressData.CreateDefault();
+            var candidate = attendance.Clone();
+            if (!candidate.TryRefresh(change.ExpectedAttendancePeriod, change.AttendancePeriod))
+            {
+                return false;
+            }
+
+            attendance = candidate;
+            return true;
+        }
+
+        private bool TryApplyAttendanceClaim(
+            GameProgressChange change,
+            CommanderGrowthConfig commanderGrowthConfig,
+            ItemCatalog itemCatalog)
+        {
+            if (change.AttendanceReward == null || change.AttendanceReward.IsEmpty)
+            {
+                return false;
+            }
+
+            attendance ??= AttendanceProgressData.CreateDefault();
+            var candidate = attendance.Clone();
+            if (!candidate.TryClaim(change.ExpectedAttendanceDay, change.ExpectedAttendanceClaimPeriod) ||
+                !TryApplyRewards(change.AttendanceReward, commanderGrowthConfig, itemCatalog))
+            {
+                return false;
+            }
+
+            attendance = candidate;
+            return true;
+        }
+
+        private bool TryApplyMailAdd(GameProgressChange change)
+        {
+            mail ??= MailProgressData.CreateDefault();
+            var candidate = mail.Clone();
+            if (!candidate.TryAdd(change.MailToAdd))
+            {
+                return false;
+            }
+
+            mail = candidate;
+            return true;
+        }
+
+        private bool TryApplyMailCleanup(GameProgressChange change)
+        {
+            mail ??= MailProgressData.CreateDefault();
+            var candidate = mail.Clone();
+            if (candidate.RemoveExpired(change.MailOperationUtc) <= 0)
+            {
+                return false;
+            }
+
+            mail = candidate;
+            return true;
+        }
+
+        private bool TryApplyMailClaim(
+            GameProgressChange change,
+            CommanderGrowthConfig commanderGrowthConfig,
+            ItemCatalog itemCatalog)
+        {
+            mail ??= MailProgressData.CreateDefault();
+            var candidate = mail.Clone();
+            if (!candidate.TryCreateClaim(
+                    change.MailClaimIds,
+                    change.MailOperationUtc,
+                    out var rewards,
+                    out var normalizedIds) ||
+                !TryApplyRewards(rewards, commanderGrowthConfig, itemCatalog) ||
+                !candidate.TryRemoveClaimed(normalizedIds))
+            {
+                return false;
+            }
+
+            mail = candidate;
             return true;
         }
 
@@ -684,17 +1171,65 @@ namespace ProjectMT.Shared.GameData
                 return false;
             }
 
-            if (receipt.UpgradeStone <= 0L)
+            var expected = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+            AddExpectedItem(expected, ItemIds.EquipmentSlotUpgradeStone, receipt.TotalEquipmentSlotUpgradeStone);
+            AddExpectedItem(expected, ItemIds.CommanderSkillUpgradeStone, receipt.CommanderSkillUpgradeStone);
+            AddExpectedItem(expected, ItemIds.LegionPotentialUpgradeStone, receipt.LegionPotentialUpgradeStone);
+            if (rewards.Items.Count != expected.Count)
             {
-                return rewards.Items.Count == 0;
+                return false;
             }
 
-            return rewards.Items.Count == 1 &&
-                   string.Equals(
-                       rewards.Items[0].ItemId,
-                       ItemIds.EquipmentSlotUpgradeStone,
-                       StringComparison.OrdinalIgnoreCase) &&
-                   rewards.Items[0].Amount == receipt.UpgradeStone;
+            var matched = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (var index = 0; index < rewards.Items.Count; index++)
+            {
+                var item = rewards.Items[index];
+                if (!item.IsValid || !matched.Add(item.ItemId) ||
+                    !expected.TryGetValue(item.ItemId, out var amount) || amount != item.Amount)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool TryApplyOfflineEquipmentSettlement(OfflineRewardReceiptData receipt)
+        {
+            if (receipt == null || !receipt.IsValid)
+            {
+                return false;
+            }
+
+            equipment ??= EquipmentSaveData.CreateDefault();
+            if (receipt.ExistingAutoDismantleInstanceIds.Count > 0)
+            {
+                if (!equipment.TryDismantle(
+                        receipt.ExistingAutoDismantleInstanceIds,
+                        out var existingDismantleStones) ||
+                    existingDismantleStones != receipt.ExistingAutoDismantleUpgradeStone)
+                {
+                    return false;
+                }
+            }
+            else if (receipt.ExistingAutoDismantleUpgradeStone != 0L)
+            {
+                return false;
+            }
+
+            return receipt.EquipmentRewards.Count == 0 ||
+                   equipment.TryAcquire(receipt.EquipmentRewards);
+        }
+
+        private static void AddExpectedItem(
+            IDictionary<string, long> expected,
+            string itemId,
+            long amount)
+        {
+            if (amount > 0L)
+            {
+                expected.Add(itemId, amount);
+            }
         }
 
         private bool TryApplyExpeditionFirstClear(GameProgressChange change)
@@ -756,7 +1291,9 @@ namespace ProjectMT.Shared.GameData
             return true;
         }
 
-        internal void Repair()
+        internal void Repair(
+            CommanderSkillBalanceConfig commanderSkillBalanceConfig = null,
+            CommanderSkillSummonConfig commanderSkillSummonConfig = null)
         {
             currentChallengeStage = Math.Max(1, currentChallengeStage);
             lastClearedStage = Math.Max(0, Math.Min(lastClearedStage, currentChallengeStage - 1));
@@ -782,20 +1319,36 @@ namespace ProjectMT.Shared.GameData
             growthDungeons.Repair();
             offlineRewards ??= OfflineRewardProgressData.CreateDefault();
             offlineRewards.Repair();
+            attendance ??= AttendanceProgressData.CreateDefault();
+            attendance.Repair();
+            mail ??= MailProgressData.CreateDefault();
+            mail.Repair();
             equipmentSlotUpgrade ??= EquipmentSlotUpgradeData.CreateDefault();
             equipmentSlotUpgrade.Repair();
+            commanderPotential ??= CommanderPotentialData.CreateDefault();
+            commanderPotential.Repair();
+            commanderLegionGrowth ??= CommanderLegionGrowthData.CreateDefault();
+            commanderLegionGrowth.Repair();
+            commanderSkills ??= CommanderSkillProgressData.CreateDefault();
+            commanderSkills.Repair(commanderSkillBalanceConfig, commanderSkillSummonConfig);
 
             if (!IsValidExpeditionMode(expeditionMode) ||
                 (lastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat))
             {
                 expeditionMode = ExpeditionRunMode.Challenge; // 손상값·클리어 전 반복 복구
             }
+
+            RepairQuest();
         }
 
-        internal void Repair(CommanderGrowthConfig commanderGrowthConfig)
+        internal void Repair(
+            CommanderGrowthConfig commanderGrowthConfig,
+            CommanderSkillBalanceConfig commanderSkillBalanceConfig = null,
+            CommanderSkillSummonConfig commanderSkillSummonConfig = null)
         {
-            Repair();
+            Repair(commanderSkillBalanceConfig, commanderSkillSummonConfig);
             commander.Repair(commanderGrowthConfig);
+            commanderLegionGrowth.Repair(commanderGrowthConfig);
         }
 
         internal void MigrateFromVersion(int sourceDataVersion)
@@ -814,10 +1367,10 @@ namespace ProjectMT.Shared.GameData
                 coreBalanceMigrationCompleted = true; // 백업값은 보존하고 원본 권한만 ItemInventory로 이동
             }
 
-            if (sourceDataVersion <= 11)
+            if (sourceDataVersion <= 16)
             {
                 monsters ??= MonsterRosterData.CreateDefault();
-                monsters.MigrateRetiredMonsterIds(); // 기존 보유·성장·편성 순서를 정식 몬스터로 보존
+                monsters.MigrateRetiredMonsterIds(); // 두부·스파이크 보유 진행과 편성을 현재 정식 ID로 보존
             }
 
             if (sourceDataVersion <= 12)
@@ -839,6 +1392,30 @@ namespace ProjectMT.Shared.GameData
             if (sourceDataVersion <= 13)
             {
                 offlineRewards = OfflineRewardProgressData.CreateDefault(); // 기존 저장은 소급 보상 없이 현재부터 기록
+            }
+
+            if (sourceDataVersion <= 15)
+            {
+                commanderLegionGrowth ??= CommanderLegionGrowthData.CreateDefault();
+                commanderLegionGrowth.SetMigratedTrainingPoints(Math.Max(0, (commander?.Level ?? 1) - 1));
+            }
+
+            if (sourceDataVersion <= 17)
+            {
+                commanderSkills = CommanderSkillProgressData.CreateDefault(); // 기존 저장은 초기 2스킬로 시작
+            }
+
+            if (sourceDataVersion <= 18)
+            {
+                attendance = AttendanceProgressData.CreateDefault();
+                mail = MailProgressData.CreateDefault();
+            }
+
+
+            if (sourceDataVersion <= 19)
+            {
+                equipment ??= EquipmentSaveData.CreateDefault();
+                equipment.MigrateOfflineAutoDismantlePolicy(); // 기존 계정은 안전한 기본값으로 시작
             }
 
             Repair();
@@ -872,7 +1449,12 @@ namespace ProjectMT.Shared.GameData
             Items = data.Items;
             GrowthDungeons = data.GrowthDungeons;
             OfflineRewards = data.OfflineRewards;
+            Attendance = data.Attendance;
+            Mail = data.Mail;
             EquipmentSlotUpgrade = data.EquipmentSlotUpgrade;
+            CommanderPotential = data.CommanderPotential;
+            CommanderLegionGrowth = data.CommanderLegionGrowth;
+            CommanderSkills = data.CommanderSkills;
         }
 
         public int CurrentChallengeStage { get; }
@@ -893,10 +1475,15 @@ namespace ProjectMT.Shared.GameData
         public ItemInventoryView Items { get; } // 일반 아이템 보유 수량
         public GrowthDungeonProgressView GrowthDungeons { get; } // 성장 던전 단계·열쇠 기준일
         public OfflineRewardProgressView OfflineRewards { get; } // 방치 시작점·확인 대기 정산
+        public AttendanceProgressView Attendance { get; } // 28일 누적 출석
+        public MailProgressView Mail { get; } // 미수령 우편
         public EquipmentSlotUpgradeView EquipmentSlotUpgrade { get; } // 부위 슬롯 영구 강화 레벨
+        public CommanderPotentialView CommanderPotential { get; } // 군단장 잠재능력 5슬롯
+        public CommanderLegionGrowthView CommanderLegionGrowth { get; } // 군단 공용 6종 강화
+        public CommanderSkillProgressView CommanderSkills { get; } // 군단장 스킬 장착·자동사용
     }
 
-    public sealed class GameProgressChange // 한 번에 검증할 진행 변경 묶음
+    public sealed partial class GameProgressChange // 한 번에 검증할 진행 변경 묶음
     {
         private GameProgressChange()
         {
@@ -919,6 +1506,19 @@ namespace ProjectMT.Shared.GameData
         internal long ExpectedGrowthDungeonDailyKeyPeriod { get; private set; }
         internal long GrowthDungeonDailyKeyPeriod { get; private set; }
         internal IReadOnlyList<ItemAmount> GrowthDungeonDailyKeyTargets { get; private set; }
+        internal bool HasAttendanceRefresh { get; private set; }
+        internal long ExpectedAttendancePeriod { get; private set; }
+        internal long AttendancePeriod { get; private set; }
+        internal bool HasAttendanceClaim { get; private set; }
+        internal int ExpectedAttendanceDay { get; private set; }
+        internal long ExpectedAttendanceClaimPeriod { get; private set; }
+        internal RewardBundle AttendanceReward { get; private set; }
+        internal bool HasAddMail { get; private set; }
+        internal MailEntryData MailToAdd { get; private set; }
+        internal bool HasCleanupExpiredMail { get; private set; }
+        internal bool HasClaimMail { get; private set; }
+        internal IReadOnlyList<string> MailClaimIds { get; private set; }
+        internal DateTime MailOperationUtc { get; private set; }
         internal int FoodRiotBestKills { get; private set; }
         internal int GuardiansTowerBestKills { get; private set; } // 08.06 안건준 추가
         internal bool IncrementGuardiansTowerDifficulty { get; private set; } // 08.07 안건준 추가
@@ -947,6 +1547,15 @@ namespace ProjectMT.Shared.GameData
         internal string EquipItemInstanceId { get; private set; }
         internal bool HasUnequipItem { get; private set; }
         internal EquipmentPart UnequipItemPart { get; private set; }
+        internal bool HasSetEquipmentLock { get; private set; }
+        internal string EquipmentLockInstanceId { get; private set; }
+        internal bool ExpectedEquipmentLockValue { get; private set; }
+        internal bool EquipmentLockValue { get; private set; }
+        internal bool HasDismantleEquipment { get; private set; }
+        internal IReadOnlyList<string> DismantleEquipmentInstanceIds { get; private set; }
+        internal bool HasSetOfflineAutoDismantlePolicy { get; private set; }
+        internal OfflineAutoDismantlePolicy ExpectedOfflineAutoDismantlePolicy { get; private set; }
+        internal OfflineAutoDismantlePolicy OfflineAutoDismantlePolicy { get; private set; }
         internal bool HasStandaloneItemGrant { get; private set; }
         internal bool HasDiscardItem { get; private set; }
         internal bool HasUseItem { get; private set; }
@@ -956,9 +1565,25 @@ namespace ProjectMT.Shared.GameData
         internal long CommanderExperience { get; private set; }
         internal bool HasLevelUpCommander { get; private set; }
         internal int ExpectedCommanderLevel { get; private set; }
+        internal bool HasUpgradeCommanderLegionStat { get; private set; }
+        internal CommanderLegionStat CommanderLegionStatToUpgrade { get; private set; }
+        internal int ExpectedCommanderLegionStatLevel { get; private set; }
         internal bool HasUpgradeEquipmentSlot { get; private set; }
         internal EquipmentPart UpgradeEquipmentSlotPart { get; private set; }
         internal int ExpectedEquipmentSlotLevel { get; private set; }
+        internal bool HasAssignCommanderPotentialSlot { get; private set; }
+        internal int CommanderPotentialSlotIndex { get; private set; }
+        internal EquipmentOptionType CommanderPotentialOptionType { get; private set; }
+        internal EquipmentGrade CommanderPotentialGrade { get; private set; }
+        internal float CommanderPotentialValue { get; private set; }
+        internal bool HasRerollCommanderPotentialSlots { get; private set; } // "잠재 능력 변경"
+        internal IReadOnlyList<CommanderPotentialRerollEntry> CommanderPotentialRerollEntries { get; private set; }
+        internal bool HasRerollCommanderPotentialValues { get; private set; } // "옵션 스탯 변경"(잠금 무시)
+        internal IReadOnlyList<CommanderPotentialRerollEntry> CommanderPotentialValueRerollEntries { get; private set; }
+        internal bool HasSetCommanderPotentialLocked { get; private set; } // 자물쇠 아이콘 토글
+        internal int CommanderPotentialLockSlotIndex { get; private set; }
+        internal bool ExpectedCommanderPotentialLocked { get; private set; }
+        internal bool NewCommanderPotentialLocked { get; private set; }
         internal bool HasMarkOfflineInactive { get; private set; }
         internal bool HasSettleOfflineReward { get; private set; }
         internal bool HasAcknowledgeOfflineRewards { get; private set; }
@@ -968,6 +1593,22 @@ namespace ProjectMT.Shared.GameData
         internal OfflineRewardReceiptData OfflineReceipt { get; private set; }
         internal IReadOnlyList<string> OfflineReceiptIds { get; private set; }
         internal bool SuppressChangedNotification => HasMarkOfflineInactive; // Pause·Quit 저장은 파괴 중 UI를 갱신하지 않음
+        internal bool HasSetCommanderSkillAutoUse { get; private set; }
+        internal bool ExpectedCommanderSkillAutoUse { get; private set; }
+        internal bool NewCommanderSkillAutoUse { get; private set; }
+        internal bool HasEquipCommanderSkill { get; private set; }
+        internal int CommanderSkillSlotIndex { get; private set; }
+        internal string ExpectedCommanderSkillId { get; private set; }
+        internal string NewCommanderSkillId { get; private set; }
+        internal bool HasRecordCommanderSkillSummon { get; private set; }
+        internal int ExpectedCommanderSkillSummonCount { get; private set; }
+        internal IReadOnlyList<string> SummonedCommanderSkillIds { get; private set; }
+        internal bool CommanderSkillSummonRequiresPayment { get; private set; }
+        internal int CommanderSkillSummonDrawCount { get; private set; }
+        internal bool HasLevelUpCommanderSkill { get; private set; }
+        internal string CommanderSkillToLevelUpId { get; private set; }
+        internal int ExpectedCommanderSkillLevel { get; private set; }
+        internal int ExpectedCommanderSkillDuplicateCount { get; private set; }
 
         public static GameProgressChange SetExpeditionMode(ExpeditionRunMode mode)
         {
@@ -1107,6 +1748,63 @@ namespace ProjectMT.Shared.GameData
             };
         }
 
+        public static GameProgressChange RefreshAttendance(long expectedPeriod, long nextPeriod)
+        {
+            return new GameProgressChange
+            {
+                HasAttendanceRefresh = true,
+                ExpectedAttendancePeriod = expectedPeriod,
+                AttendancePeriod = nextPeriod
+            };
+        }
+
+        public static GameProgressChange ClaimAttendance(
+            int expectedDay,
+            long expectedPeriod,
+            RewardBundle reward)
+        {
+            return new GameProgressChange
+            {
+                HasAttendanceClaim = true,
+                ExpectedAttendanceDay = expectedDay,
+                ExpectedAttendanceClaimPeriod = expectedPeriod,
+                AttendanceReward = reward ?? RewardBundle.Empty
+            };
+        }
+
+        public static GameProgressChange AddMail(MailEntryData mail)
+        {
+            return new GameProgressChange
+            {
+                HasAddMail = true,
+                MailToAdd = mail?.Clone()
+            };
+        }
+
+        public static GameProgressChange CleanupExpiredMail(DateTime utcNow)
+        {
+            return new GameProgressChange
+            {
+                HasCleanupExpiredMail = true,
+                MailOperationUtc = NormalizeUtc(utcNow)
+            };
+        }
+
+        public static GameProgressChange ClaimMail(DateTime utcNow, params string[] mailIds)
+        {
+            return new GameProgressChange
+            {
+                HasClaimMail = true,
+                MailOperationUtc = NormalizeUtc(utcNow),
+                MailClaimIds = mailIds == null ? Array.Empty<string>() : (string[])mailIds.Clone()
+            };
+        }
+
+        private static DateTime NormalizeUtc(DateTime value)
+        {
+            return value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
+        }
+
         // 08.06 안건준 추가 - 수호자의 탑 결과 요청 (식량 대소동과 별도 최고기록 집계)
         // 08.07 안건준 추가 - 성공적으로 클리어했을 때만 난이도를 1 올려서 다음 판 적 수·건물 체력 스케일링에 사용한다.
         // 08.07 안건준 수정 - 실패(전멸·시간초과)한 판까지 난이도가 오르면 테스트를 반복할수록 건물 체력이
@@ -1161,6 +1859,14 @@ namespace ProjectMT.Shared.GameData
             };
         }
 
+        public static GameProgressChange GrantRewards(RewardBundle rewards)
+        {
+            return new GameProgressChange
+            {
+                Rewards = rewards ?? RewardBundle.Empty
+            };
+        }
+
         public static GameProgressChange DiscardItem(string itemId, long quantity, long expectedQuantity)
         {
             return new GameProgressChange
@@ -1189,6 +1895,18 @@ namespace ProjectMT.Shared.GameData
             {
                 HasLevelUpCommander = true,
                 ExpectedCommanderLevel = expectedLevel
+            };
+        }
+
+        public static GameProgressChange UpgradeCommanderLegionStat(
+            CommanderLegionStat stat,
+            int expectedLevel)
+        {
+            return new GameProgressChange
+            {
+                HasUpgradeCommanderLegionStat = true,
+                CommanderLegionStatToUpgrade = stat,
+                ExpectedCommanderLegionStatLevel = expectedLevel
             };
         }
 
@@ -1327,6 +2045,50 @@ namespace ProjectMT.Shared.GameData
             };
         }
 
+        public static GameProgressChange SetEquipmentLock(
+            string instanceId,
+            bool expectedValue,
+            bool nextValue)
+        {
+            return new GameProgressChange
+            {
+                HasSetEquipmentLock = true,
+                EquipmentLockInstanceId = instanceId?.Trim(),
+                ExpectedEquipmentLockValue = expectedValue,
+                EquipmentLockValue = nextValue
+            };
+        }
+
+        public static GameProgressChange DismantleEquipment(IReadOnlyList<string> instanceIds)
+        {
+            var copiedIds = new List<string>(instanceIds?.Count ?? 0);
+            if (instanceIds != null)
+            {
+                for (var index = 0; index < instanceIds.Count; index++)
+                {
+                    copiedIds.Add(instanceIds[index]?.Trim());
+                }
+            }
+
+            return new GameProgressChange
+            {
+                HasDismantleEquipment = true,
+                DismantleEquipmentInstanceIds = copiedIds
+            };
+        }
+
+        public static GameProgressChange SetOfflineAutoDismantlePolicy(
+            OfflineAutoDismantlePolicy expected,
+            OfflineAutoDismantlePolicy next)
+        {
+            return new GameProgressChange
+            {
+                HasSetOfflineAutoDismantlePolicy = true,
+                ExpectedOfflineAutoDismantlePolicy = expected,
+                OfflineAutoDismantlePolicy = next
+            };
+        }
+
         // 장비 부위 슬롯을 +1 강화한다.
         public static GameProgressChange UpgradeEquipmentSlot(EquipmentPart part, int expectedLevel)
         {
@@ -1335,6 +2097,128 @@ namespace ProjectMT.Shared.GameData
                 HasUpgradeEquipmentSlot = true,
                 UpgradeEquipmentSlotPart = part,
                 ExpectedEquipmentSlotLevel = expectedLevel
+            };
+        }
+
+        // 군단장 잠재능력 슬롯에 랜덤으로 뽑힌 옵션 1개를 최초로 배정한다.
+        // 이미 값이 있는 슬롯이면 TryApply에서 실패 처리된다.
+        public static GameProgressChange AssignCommanderPotentialSlot(
+            int slotIndex,
+            EquipmentOptionType optionType,
+            EquipmentGrade grade,
+            float value)
+        {
+            return new GameProgressChange
+            {
+                HasAssignCommanderPotentialSlot = true,
+                CommanderPotentialSlotIndex = slotIndex,
+                CommanderPotentialOptionType = optionType,
+                CommanderPotentialGrade = grade,
+                CommanderPotentialValue = value
+            };
+        }
+
+        // "잠재 능력 변경": 강화석 1개를 소모해 잠기지 않은 슬롯들을 새로 뽑은 옵션으로 교체한다.
+        // 추첨(랜덤)은 호출 전에 이미 끝나 있고, 여기서는 그 결과를 결정론적으로 반영만 한다.
+        public static GameProgressChange RerollCommanderPotentialSlots(
+            IReadOnlyList<CommanderPotentialRerollEntry> entries)
+        {
+            return new GameProgressChange
+            {
+                HasRerollCommanderPotentialSlots = true,
+                CommanderPotentialRerollEntries = entries
+            };
+        }
+
+        // "옵션 스탯 변경": 강화석 1개를 소모해 옵션 종류·등급은 유지하고 수치만 다시 뽑는다.
+        // 잠금은 옵션 자체가 바뀌는 "잠재 능력 변경"만 막는 용도라 잠긴 슬롯도 여기서는 대상이 된다.
+        public static GameProgressChange RerollCommanderPotentialValues(
+            IReadOnlyList<CommanderPotentialRerollEntry> entries)
+        {
+            return new GameProgressChange
+            {
+                HasRerollCommanderPotentialValues = true,
+                CommanderPotentialValueRerollEntries = entries
+            };
+        }
+
+        // 잠재능력 슬롯의 자물쇠 아이콘 클릭 시 잠금/해제를 토글한다.
+        public static GameProgressChange SetCommanderPotentialLocked(int slotIndex, bool expectedLocked, bool newLocked)
+        {
+            return new GameProgressChange
+            {
+                HasSetCommanderPotentialLocked = true,
+                CommanderPotentialLockSlotIndex = slotIndex,
+                ExpectedCommanderPotentialLocked = expectedLocked,
+                NewCommanderPotentialLocked = newLocked
+            };
+        }
+
+        public static GameProgressChange SetCommanderSkillAutoUse(bool expectedValue, bool newValue)
+        {
+            return new GameProgressChange
+            {
+                HasSetCommanderSkillAutoUse = true,
+                ExpectedCommanderSkillAutoUse = expectedValue,
+                NewCommanderSkillAutoUse = newValue
+            };
+        }
+
+        public static GameProgressChange EquipCommanderSkill(
+            int slotIndex,
+            string expectedSkillId,
+            string newSkillId)
+        {
+            return new GameProgressChange
+            {
+                HasEquipCommanderSkill = true,
+                CommanderSkillSlotIndex = slotIndex,
+                ExpectedCommanderSkillId = expectedSkillId?.Trim() ?? string.Empty,
+                NewCommanderSkillId = newSkillId?.Trim() ?? string.Empty
+            };
+        }
+
+        public static GameProgressChange RecordCommanderSkillSummon(
+            int expectedSummonCount,
+            string summonedSkillId)
+        {
+            return new GameProgressChange
+            {
+                HasRecordCommanderSkillSummon = true,
+                ExpectedCommanderSkillSummonCount = expectedSummonCount,
+                SummonedCommanderSkillIds = new[] { summonedSkillId?.Trim() ?? string.Empty }
+            };
+        }
+
+        public static GameProgressChange RecordPaidCommanderSkillSummons(
+            int expectedSummonCount,
+            int drawCount,
+            IReadOnlyList<string> summonedSkillIds)
+        {
+            var copiedIds = summonedSkillIds == null
+                ? Array.Empty<string>()
+                : summonedSkillIds.Select(id => id?.Trim() ?? string.Empty).ToArray();
+            return new GameProgressChange
+            {
+                HasRecordCommanderSkillSummon = true,
+                ExpectedCommanderSkillSummonCount = expectedSummonCount,
+                SummonedCommanderSkillIds = copiedIds,
+                CommanderSkillSummonRequiresPayment = true,
+                CommanderSkillSummonDrawCount = drawCount
+            };
+        }
+
+        public static GameProgressChange LevelUpCommanderSkill(
+            string skillId,
+            int expectedLevel,
+            int expectedDuplicateCount)
+        {
+            return new GameProgressChange
+            {
+                HasLevelUpCommanderSkill = true,
+                CommanderSkillToLevelUpId = skillId?.Trim() ?? string.Empty,
+                ExpectedCommanderSkillLevel = expectedLevel,
+                ExpectedCommanderSkillDuplicateCount = expectedDuplicateCount
             };
         }
     }

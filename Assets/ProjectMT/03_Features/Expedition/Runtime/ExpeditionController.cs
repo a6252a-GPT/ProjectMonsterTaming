@@ -1,10 +1,15 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ProjectMT.Features.Equipment;
+using ProjectMT.Features.Quest;
 using ProjectMT.Features.WorldDrops;
 using ProjectMT.Shared.Combat;
+using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Unit;
 using TMPro;
@@ -35,11 +40,16 @@ namespace ProjectMT.Features.Expedition
         [SerializeField] private TMP_Text resultText;
         [SerializeField] private RectTransform progressFill;
         [SerializeField, Min(1f)] private float progressFillMaxWidth = 360f;
+        [SerializeField] private ExpeditionBossHudPresenter bossHud;
+        [SerializeField] private ExpeditionBossIntroPresenter bossIntro;
 
         private IGameProgressService progress; // 진행 조회·저장 계약
         private IRewardPresentationPlayer rewardPresentation; // 저장 확정 보상 표현
         private ItemCatalog itemCatalog; // 결과 안내의 아이템 이름 조회
         private WorldItemDropRuntime worldItemDrops; // 원정대 전용 표시 풀·획득 버퍼
+        private EquipmentWorldDropRuntime equipmentWorldDrops; // 고유 장비 상자·저장 버퍼
+        private EquipmentBalanceConfig equipmentBalanceConfig; // 장비 등급·옵션 원본
+        private System.Random equipmentRandom; // 한 Run 안에서 연속 장비 판정 공유
         private BattlePartySnapshot party; // 다음 Run에 사용할 최신 부대 사진
         private BattlePartySnapshot activeRunParty; // 현재 Run 시작 때 고정한 부대 사진
         private ExpeditionRunMode currentMode; // 도전·반복 상태
@@ -52,6 +62,7 @@ namespace ProjectMT.Features.Expedition
         private bool allWavesSpawned; // 모든 데이터 웨이브 출현 완료
         private bool running; // 전투 Tick 허용
         private bool settling; // 결과 저장 중
+        private Coroutine bossIntroRoutine; // 보스 등장 전 전투 지연
         private int operationVersion; // 늦은 비동기 결과 무효화
         private int runSequence; // 공간 제어용 Run 변경 번호
         private Vector3 formationOrigin; // 맵 중심 기준 배치 원점
@@ -134,7 +145,8 @@ namespace ProjectMT.Features.Expedition
             IRewardPresentationPlayer rewardPlayer = null,
             Collider formationGround = null,
             ItemCatalog itemCatalog = null,
-            Transform worldDropPickupTarget = null)
+            Transform worldDropPickupTarget = null,
+            EquipmentBalanceConfig equipmentBalance = null)
         {
             Shutdown();
             InvalidateHudCache();
@@ -142,8 +154,12 @@ namespace ProjectMT.Features.Expedition
             party = partySnapshot ?? throw new ArgumentNullException(nameof(partySnapshot));
             rewardPresentation = rewardPlayer;
             this.itemCatalog = itemCatalog;
+            bossIntro ??= FindFirstObjectByType<ExpeditionBossIntroPresenter>(FindObjectsInactive.Include);
+            equipmentBalanceConfig = equipmentBalance ?? EquipmentBalanceConfig.RuntimeDefault;
+            equipmentRandom = new System.Random();
             ConfigureFormationFrame(formationGround);
             ConfigureWorldItemDrops(itemCatalog, worldDropPickupTarget);
+            ConfigureEquipmentWorldDrops(worldDropPickupTarget);
             if (modeButton != null)
             {
                 modeButton.onClick.AddListener(ToggleMode);
@@ -178,9 +194,11 @@ namespace ProjectMT.Features.Expedition
             running = false;
             settling = false;
             formationPlacementActive = false;
+            StopBossIntro();
+            bossHud?.Hide();
             ResetWaveTracking();
             ResetPlayerTracking();
-            worldItemDrops?.CollectAllActive(); // 무정산 종료도 남은 드랍을 전부 획득 확정
+            CollectAllWorldDrops(); // 무정산 종료도 남은 드랍을 전부 획득 확정
             _ = FlushWorldDropsCheckpointAsync(); // 전체 획득분은 콘텐츠 전환 전 출구 체크포인트 저장
             combatWorld?.Clear();
             UpdateHud();
@@ -212,6 +230,8 @@ namespace ProjectMT.Features.Expedition
             running = false;
             settling = false;
             formationPlacementActive = false;
+            StopBossIntro();
+            bossHud?.Hide();
             if (modeButton != null)
             {
                 modeButton.onClick.RemoveListener(ToggleMode);
@@ -219,16 +239,20 @@ namespace ProjectMT.Features.Expedition
 
             ResetWaveTracking();
             ResetPlayerTracking();
-            worldItemDrops?.CollectAllActive(); // 씬 종료 전에 남은 드랍을 전부 획득 확정
+            CollectAllWorldDrops(); // 씬 종료 전에 남은 드랍을 전부 획득 확정
             _ = FlushWorldDropsCheckpointAsync(); // 씬 종료 뒤에도 시작한 저장 Task가 획득분을 확정
             worldItemDrops?.Initialize(null, null, null, null);
+            equipmentWorldDrops?.Initialize(null, null, null, null);
             combatWorld?.Clear();
             progress = null;
             rewardPresentation = null;
             itemCatalog = null;
+            equipmentBalanceConfig = null;
+            equipmentRandom = null;
             party = null;
             activeRunParty = null;
             worldItemDrops = null;
+            equipmentWorldDrops = null;
             formationFrameConfigured = false;
             InvalidateHudCache();
         }
@@ -279,12 +303,14 @@ namespace ProjectMT.Features.Expedition
             runSequence++;
             ResetWaveTracking();
             ResetPlayerTracking();
-            worldItemDrops?.CollectAllActive(); // Run 교체 전 남은 드랍 누락 방지
+            CollectAllWorldDrops(); // Run 교체 전 남은 드랍 누락 방지
             activeRunParty = party; // 진행 중 편성 변경은 다음 Run부터 반영
             combatWorld.Clear();
-            combatWorld.SetPaused(false);
+            combatWorld.SetPaused(true);
             formationPlacementActive = false;
-            running = true;
+            bossHud?.Hide();
+            StopBossIntro();
+            running = false;
             settling = false;
             currentWave = 1;
             waveElapsed = 0f;
@@ -304,8 +330,46 @@ namespace ProjectMT.Features.Expedition
             }
 
             SpawnParty(false);
-            SpawnWave(1);
+            if (profile.IsBossStage(currentStage) && bossIntro != null)
+            {
+                bossIntroRoutine = StartCoroutine(PlayBossIntroThenBegin(operationVersion));
+            }
+            else
+            {
+                BeginCombatRun();
+            }
+
             UpdateHud();
+        }
+
+        private IEnumerator PlayBossIntroThenBegin(int version)
+        {
+            yield return bossIntro.Play(currentStage);
+            bossIntroRoutine = null;
+            if (this == null || version != operationVersion || settling || formationPlacementActive)
+            {
+                yield break;
+            }
+
+            BeginCombatRun();
+        }
+
+        private void BeginCombatRun()
+        {
+            combatWorld.SetPaused(false);
+            SpawnWave(1);
+            running = true;
+        }
+
+        private void StopBossIntro()
+        {
+            if (bossIntroRoutine != null)
+            {
+                StopCoroutine(bossIntroRoutine);
+                bossIntroRoutine = null;
+            }
+
+            bossIntro?.Hide();
         }
 
         private void SpawnParty(bool placementMode)
@@ -447,13 +511,20 @@ namespace ProjectMT.Features.Expedition
                     ? enemyUnitPrefab
                     : enemyAppearanceSet.ResolvePrefab(profile.ResolveAppearance(currentStage, ranged));
                 var stats = profile.CreateEnemyStats(currentStage, ranged);
+                var boss = profile.IsBossStage(currentStage);
                 var request = new UnitSpawnRequest(
-                    $"enemy_{currentStage}_{wave}_{i}",
+                    boss ? $"boss_{currentStage}" : $"enemy_{currentStage}_{wave}_{i}",
                     stats,
                     UnitTeam.Enemy,
-                    appearanceSeed: CreateEnemyAppearanceSeed(currentStage, wave, i, operationVersion));
+                    appearanceSeed: CreateEnemyAppearanceSeed(currentStage, wave, i, operationVersion),
+                    visualScaleMultiplier: boss ? profile.BossVisualScaleMultiplier : 1f,
+                    isBoss: boss);
                 var actor = combatWorld.SpawnUnit(enemyPrefab, request, position, Quaternion.Euler(0f, 180f, 0f));
                 TrackWaveEnemy(actor, wave);
+                if (boss)
+                {
+                    bossHud?.Show(actor, currentStage);
+                }
             }
         }
 
@@ -499,6 +570,7 @@ namespace ProjectMT.Features.Expedition
             enemyWaveByActor.Remove(actor);
             aliveEnemiesByWave[wave] = Mathf.Max(0, aliveEnemiesByWave[wave] - 1);
             defeatedEnemyCount = Mathf.Min(runEnemyTotalCount, defeatedEnemyCount + 1);
+            _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.MonsterKill, 1L); // 처치 1마리당 퀘스트 진행
             if (running && profile != null &&
                 profile.CreateEnemyWorldDrops(currentStage, wave, actor.transform.position, worldDropBuffer) > 0)
             {
@@ -507,6 +579,8 @@ namespace ProjectMT.Features.Expedition
                     worldItemDrops?.TrySpawn(worldDropBuffer[index]); // 보상 원본과 분리된 표시 요청
                 }
             }
+
+            TrySpawnNormalEnemyEquipment(actor.transform.position);
 
             if (!running || aliveEnemiesByWave[wave] != 0 || climaxPlayedByWave[wave])
             {
@@ -556,7 +630,7 @@ namespace ProjectMT.Features.Expedition
             settling = true;
             ResetWaveTracking();
             ResetPlayerTracking();
-            worldItemDrops?.CollectAllActive(); // 모드 변경 전 남은 드랍을 전부 획득 확정
+            CollectAllWorldDrops(); // 모드 변경 전 남은 드랍을 전부 획득 확정
             combatWorld.Clear();
             SetResult("모드 변경 중...");
             await FlushWorldDropsCheckpointAsync(); // 모드 변경도 현재 Run의 전체 획득분 저장
@@ -587,7 +661,7 @@ namespace ProjectMT.Features.Expedition
 
             running = false;
             settling = true;
-            worldItemDrops?.CollectAllActive(); // 전투 종료 시 남은 표현도 획득으로 확정
+            CollectAllWorldDrops(); // 전투 종료 시 남은 표현도 획득으로 확정
             combatWorld.SetPaused(true); // 결과 연출 동안 전투 정지
             SetResult(currentMode == ExpeditionRunMode.Challenge ? "승리 정산 중..." : string.Empty);
             _ = ResolveVictoryAsync(++operationVersion); // 저장 후 새 Run 시작
@@ -648,11 +722,17 @@ namespace ProjectMT.Features.Expedition
                     Debug.LogException(exception); // 표현 실패는 저장을 되돌리지 않음
                 }
 
+                // 도전·반복 모드 관계없이 승리할 때마다 누적되는 일일·주간용 조건(원정대 승리 N회).
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.ExpeditionVictory, 1L);
+
                 if (settledMode == ExpeditionRunMode.Challenge)
                 {
                     SetResult(ExpeditionResultNoticeFormatter.ChallengeVictory(
                         settledStage,
                         RewardPresentationRequest.FromBundle(rewards, itemCatalog)));
+
+                    // 새로운 단계를 처음 클리어했을 때만 "원정대 클리어" 퀘스트 진행(반복 클리어는 제외).
+                    _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.ExpeditionClear, 1L);
                 }
             }
             else
@@ -683,7 +763,7 @@ namespace ProjectMT.Features.Expedition
 
             running = false;
             settling = true;
-            worldItemDrops?.CollectAllActive(); // 패배도 남은 드랍을 전부 획득 확정
+            CollectAllWorldDrops(); // 패배도 남은 드랍을 전부 획득 확정
             combatWorld.SetPaused(true);
             SetResult(currentMode == ExpeditionRunMode.Challenge ? "도전 실패" : string.Empty);
             _ = ResolveDefeatAsync(++operationVersion); // 실패 단계에서 반복 전환
@@ -759,15 +839,73 @@ namespace ProjectMT.Features.Expedition
             worldItemDrops.Initialize(progress, itemCatalog, visualCatalog, pickupTarget, Camera.main);
         }
 
-        private async Task FlushWorldDropsCheckpointAsync()
+        private void ConfigureEquipmentWorldDrops(Transform pickupTarget)
         {
-            if (worldItemDrops == null || worldItemDrops.PendingItemTypeCount == 0)
+            var visualCatalog = profile == null ? null : profile.EquipmentDropChestVisualCatalog;
+            if (visualCatalog == null || pickupTarget == null)
+            {
+                equipmentWorldDrops = null;
+                return;
+            }
+
+            equipmentWorldDrops = GetComponentInChildren<EquipmentWorldDropRuntime>(true);
+            if (equipmentWorldDrops == null)
+            {
+                equipmentWorldDrops = EquipmentWorldDropRuntime.Create(
+                    transform,
+                    progress,
+                    visualCatalog,
+                    pickupTarget,
+                    Camera.main);
+                return;
+            }
+
+            equipmentWorldDrops.Initialize(progress, visualCatalog, pickupTarget, Camera.main);
+        }
+
+        private void TrySpawnNormalEnemyEquipment(Vector3 position)
+        {
+            if (!running || profile == null || equipmentWorldDrops == null ||
+                equipmentWorldDrops.AvailableCapacity <= 0 || equipmentBalanceConfig == null)
             {
                 return;
             }
 
-            var saved = await worldItemDrops.FlushAsync();
-            if (!saved && this != null)
+            equipmentRandom ??= new System.Random();
+            if (!profile.ShouldDropNormalEnemyEquipment((float)equipmentRandom.NextDouble()))
+            {
+                return;
+            }
+
+            var instance = EquipmentDropRoller.RollSingle(equipmentBalanceConfig, equipmentRandom);
+            equipmentWorldDrops.TrySpawn(new EquipmentWorldDropRequest(instance, position));
+        }
+
+        private void CollectAllWorldDrops()
+        {
+            worldItemDrops?.CollectAllActive();
+            equipmentWorldDrops?.CollectAllActive();
+        }
+
+        private async Task FlushWorldDropsCheckpointAsync()
+        {
+            var itemDrops = worldItemDrops;
+            var equipmentDrops = equipmentWorldDrops;
+            if ((itemDrops == null || itemDrops.PendingItemTypeCount == 0) &&
+                (equipmentDrops == null || equipmentDrops.PendingCount == 0))
+            {
+                return;
+            }
+
+            var itemFlush = itemDrops == null || itemDrops.PendingItemTypeCount == 0
+                ? Task.FromResult(true)
+                : itemDrops.FlushAsync();
+            var equipmentFlush = equipmentDrops == null || equipmentDrops.PendingCount == 0
+                ? Task.FromResult(true)
+                : equipmentDrops.FlushAsync(); // Shutdown 참조 해제 전 두 저장 계약을 먼저 고정
+            var itemSaved = await itemFlush;
+            var equipmentSaved = await equipmentFlush;
+            if ((!itemSaved || !equipmentSaved) && this != null)
             {
                 Debug.LogWarning("월드 드랍 획득분 저장을 다음 체크포인트에서 다시 시도합니다.");
             }
@@ -873,7 +1011,9 @@ namespace ProjectMT.Features.Expedition
             TMP_Text timer,
             TMP_Text result,
             RectTransform progress = null,
-            float progressWidth = 360f)
+            float progressWidth = 360f,
+            ExpeditionBossHudPresenter bossPresenter = null,
+            ExpeditionBossIntroPresenter bossIntroPresenter = null)
         {
             profile = seedProfile;
             combatWorld = world;
@@ -890,6 +1030,8 @@ namespace ProjectMT.Features.Expedition
             resultText = result;
             progressFill = progress;
             progressFillMaxWidth = Mathf.Max(1f, progressWidth);
+            bossHud = bossPresenter;
+            bossIntro = bossIntroPresenter;
             InvalidateHudCache();
         }
 #endif

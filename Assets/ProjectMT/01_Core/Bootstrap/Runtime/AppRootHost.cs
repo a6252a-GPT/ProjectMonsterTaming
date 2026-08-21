@@ -8,7 +8,12 @@ using ProjectMT.Contents.Framework;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Features.OfflineReward;
+using ProjectMT.Features.Settings;
+using ProjectMT.Shared.CommanderSkill;
+using ProjectMT.Features.Quest;
+using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Debugging;
+using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Stats;
@@ -27,6 +32,9 @@ namespace ProjectMT.Bootstrap
         [SerializeField] private ContentFinishFeedbackPresenter finishFeedbackPresenter; // 콘텐츠 저장 재시도 표시
         [SerializeField] private ContentResultOverlayPresenter resultOverlayPresenter; // 저장 확정 공통 결과창
         [SerializeField] private OfflineRewardPopupPresenter offlineRewardPresenter; // 접속·복귀 방치 정산창
+        [SerializeField] private SceneLoadingOverlayPresenter sceneLoadingOverlay; // 씬 전환 공통 로딩
+        [SerializeField] private SleepModeController sleepModeController; // 전역 절전 화면
+        [SerializeField] private GlobalAudioController globalAudioController; // Mixer·BGM 전역 소유
 
         private GameDataService gameDataService; // 진행 데이터 관리자
         private ContentFlow contentFlow; // 콘텐츠 실행 흐름
@@ -127,6 +135,7 @@ namespace ProjectMT.Bootstrap
             }
 
             var savePath = Path.Combine(Application.persistentDataPath, "ProjectMT_seed_save.json"); // 시드 저장 위치
+            AccountSessionStore.Prepare(File.Exists(savePath)); // 기존 저장은 최초 1회 게스트 자동 로그인 승계
             var saveService = new SaveService(new AtomicFileStore(), savePath);
             commanderGrowthConfig = projectConfig.CommanderGrowthConfig;
             if (commanderGrowthConfig == null || !commanderGrowthConfig.TryValidate(out _))
@@ -134,21 +143,45 @@ namespace ProjectMT.Bootstrap
                 commanderGrowthConfig = CommanderGrowthConfig.RuntimeDefault; // 미할당·손상 설정 안전 복구
             }
 
+            var commanderSkillBalanceConfig = projectConfig.CommanderSkillBalanceConfig;
+            if (commanderSkillBalanceConfig == null || !commanderSkillBalanceConfig.TryValidate(out _))
+            {
+                commanderSkillBalanceConfig = CommanderSkillBalanceConfig.RuntimeDefault; // SO 누락 시 현재 2종 시드 유지
+            }
+
+            var commanderSkillSummonConfig = projectConfig.CommanderSkillSummonConfig;
+            if (commanderSkillSummonConfig == null ||
+                !commanderSkillSummonConfig.TryValidate(commanderSkillBalanceConfig, out _))
+            {
+                commanderSkillSummonConfig = CommanderSkillSummonConfig.RuntimeDefault; // 전용 소환 시드 복구
+            }
+
             gameDataService = new GameDataService(
                 saveService,
                 commanderGrowthConfig,
-                projectConfig.ItemCatalog);
+                projectConfig.ItemCatalog,
+                projectConfig.EquipmentBalanceConfig,
+                commanderSkillBalanceConfig,
+                commanderSkillSummonConfig);
             await gameDataService.LoadAsync(); // 씬 초기화 전 저장 로드
+            CombatWorld.ConfigureSharedStatRules(
+                projectConfig.CombatStatConfig ?? CombatStatConfig.RuntimeDefault);
             await RefreshGrowthDungeonKeysAsync(); // 접속 1회 KST 05:00 기준 충전
+            await RefreshAttendanceAsync(); // 접속 1회 KST 05:00 기준 출석 갱신
+            await CleanupExpiredMailAsync(); // 만료된 미수령 우편 정리
             offlineRewardCoordinator = new OfflineRewardCoordinator(
                 gameDataService,
-                projectConfig.OfflineRewardConfig);
+                projectConfig.OfflineRewardConfig,
+                null,
+                projectConfig.EquipmentBalanceConfig);
             if (!await offlineRewardCoordinator.PrepareOnLoginAsync())
             {
                 throw new InvalidOperationException("Offline reward login settlement could not be saved.");
             }
 
-            partyBuilder = new BattlePartySnapshotBuilder(projectConfig.MonsterCatalog);
+            partyBuilder = new BattlePartySnapshotBuilder(
+                projectConfig.MonsterCatalog,
+                projectConfig.CombatStatConfig ?? CombatStatConfig.RuntimeDefault);
 
             sceneLoader.Configure(projectConfig.SceneCatalog);
             contentFlow = new ContentFlow(
@@ -168,8 +201,13 @@ namespace ProjectMT.Bootstrap
                 finishFeedbackPresenter,
                 resultOverlayPresenter);
             sceneLoader.ContextFactory = CreateSceneContext; // 씬별 권한 봉투 생성
+            sceneLoadingOverlay ??= GetComponentInChildren<SceneLoadingOverlayPresenter>(true);
+            sleepModeController ??= GetComponentInChildren<SleepModeController>(true);
+            globalAudioController ??= GetComponentInChildren<GlobalAudioController>(true);
+            sceneLoader.SceneLoadStarted += HandleSceneLoadStarted;
             sceneLoader.SceneReady += HandleSceneReady;
             sceneLoader.SceneFailed += HandleSceneFailed;
+            AccountRuntimeBridge.LogoutRequested += HandleLogoutRequested;
 
             initialized = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -199,7 +237,8 @@ namespace ProjectMT.Bootstrap
                 ResetGameDataForDebugAsync,
                 DrawMonsterForDebugAsync,
                 AcquireEquipmentForDebugAsync,
-                AcquireAllItemsForDebugAsync);
+                AcquireAllItemsForDebugAsync,
+                SendRandomMailForDebugAsync);
         }
 
         private async Task<bool> ResetGameDataForDebugAsync()
@@ -302,7 +341,7 @@ namespace ProjectMT.Bootstrap
                 inventory.TryGetQuantity(definition.ItemId, out var currentQuantity);
                 if (currentQuantity < definition.MaxQuantity)
                 {
-                    rewards.Add(new ItemAmount(definition.ItemId, 1L));
+                    rewards.Add(new ItemAmount(definition.ItemId, 200000L)); //0819 안건준 수정
                 }
             }
 
@@ -314,8 +353,111 @@ namespace ProjectMT.Bootstrap
             var saved = await gameDataService.TryApplyAndSaveAsync(
                 GameProgressChange.GrantItems(rewards.ToArray()));
             return saved
-                ? $"{rewards.Count}종 아이템 1개씩 획득 완료"
+                ? $"{rewards.Count}종 아이템 200000개씩 획득 완료"
                 : "아이템 획득 정보를 저장하지 못했습니다";
+        }
+
+        private async Task<string> SendRandomMailForDebugAsync()
+        {
+            if (!initialized || gameDataService == null || contentFlow == null ||
+                contentFlow.IsRunning || sceneLoader == null || sceneLoader.IsTransitioning)
+            {
+                return "현재 우편을 보낼 수 없습니다";
+            }
+
+            if (gameDataService.View.Mail.Entries.Count >= MailProgressData.MaximumStoredMail)
+            {
+                return "우편함이 가득 찼습니다";
+            }
+
+            var catalog = projectConfig.ItemCatalog;
+            if (catalog == null || !catalog.TryValidateRuntimeCatalog(out _))
+            {
+                return "아이템 카탈로그가 올바르지 않습니다";
+            }
+
+            var inventory = gameDataService.View.Items;
+            var candidates = new List<ItemDefinition>();
+            var definitions = catalog.Definitions;
+            for (var index = 0; index < definitions.Count; index++)
+            {
+                var definition = definitions[index];
+                if (definition == null || string.IsNullOrWhiteSpace(definition.ItemId))
+                {
+                    continue;
+                }
+
+                inventory.TryGetQuantity(definition.ItemId, out var currentQuantity);
+                if (currentQuantity < definition.MaxQuantity)
+                {
+                    candidates.Add(definition);
+                }
+            }
+
+            if (candidates.Count == 0)
+            {
+                return "첨부할 수 있는 아이템이 없습니다";
+            }
+
+            var attachmentCount = UnityEngine.Random.Range(1, Math.Min(3, candidates.Count) + 1);
+            var attachments = new List<ItemAmount>(attachmentCount);
+            var rewardNames = new List<string>(attachmentCount);
+            for (var index = 0; index < attachmentCount; index++)
+            {
+                var selectedIndex = UnityEngine.Random.Range(0, candidates.Count);
+                var selected = candidates[selectedIndex];
+                candidates.RemoveAt(selectedIndex);
+                inventory.TryGetQuantity(selected.ItemId, out var currentQuantity);
+                var capacity = Math.Max(0L, selected.MaxQuantity - currentQuantity);
+                var desired = GetDebugMailRewardAmount(selected.Category);
+                var amount = Math.Min(desired, capacity);
+                if (amount <= 0L)
+                {
+                    continue;
+                }
+
+                attachments.Add(new ItemAmount(selected.ItemId, amount));
+                rewardNames.Add($"{selected.DisplayName} {amount:N0}");
+            }
+
+            if (attachments.Count == 0)
+            {
+                return "첨부할 수 있는 아이템이 없습니다";
+            }
+
+            var category = (MailCategory)UnityEngine.Random.Range(0, 3);
+            var titles = new[] { "시스템 점검 보상", "깜짝 이벤트 선물", "원정대 지원 보급" };
+            var bodies = new[]
+            {
+                "안정적인 플레이 환경을 위한 점검 보상입니다. 첨부 보상을 확인해 주세요.",
+                "군단장님을 위해 준비한 깜짝 선물입니다. 우편함에서 보상을 받아 주세요.",
+                "다음 원정을 위한 지원 물자입니다. 전투 준비에 활용해 주세요."
+            };
+            var now = DateTime.UtcNow;
+            var mail = MailEntryData.Create(
+                $"debug_mail_{now:yyyyMMddHHmmssfff}_{Guid.NewGuid():N}",
+                titles[(int)category],
+                bodies[(int)category],
+                category,
+                now,
+                now.AddDays(UnityEngine.Random.Range(3, 31)),
+                attachments);
+            var saved = await gameDataService.TryApplyAndSaveAsync(GameProgressChange.AddMail(mail));
+            return saved
+                ? $"우편 발송 완료: {string.Join(", ", rewardNames)}"
+                : "우편 발송 정보를 저장하지 못했습니다";
+        }
+
+        private static long GetDebugMailRewardAmount(ItemCategory category)
+        {
+            return category switch
+            {
+                ItemCategory.Currency => UnityEngine.Random.Range(100, 501),
+                ItemCategory.UpgradeMaterial => UnityEngine.Random.Range(3, 11),
+                ItemCategory.SummonTicket => UnityEngine.Random.Range(1, 4),
+                ItemCategory.DungeonKey => 1L,
+                _ => UnityEngine.Random.Range(1, 4)
+            };
         }
 #endif
 
@@ -335,7 +477,7 @@ namespace ProjectMT.Bootstrap
                     projectConfig.ItemCatalog,
                     commanderGrowthConfig,
                     projectConfig.EquipmentBalanceConfig,
-                    () => partyBuilder.Build(gameDataService.View), // 저장 확정 시 새 부대 사진 생성
+                    BuildCurrentParty, // 저장 확정 시 모든 군단 보너스로 새 부대 사진 생성
                     rewardPresenter,
                     growthDungeonSweepService);
             }
@@ -343,8 +485,20 @@ namespace ProjectMT.Bootstrap
             return contentFlow.CreateSeparateSceneContext(sceneId); // 별도 콘텐츠 실행 봉투
         }
 
+        private BattlePartySnapshot BuildCurrentParty()
+        {
+            var modifiers = LegionStatModifierProvider.Build(
+                gameDataService.View,
+                commanderGrowthConfig,
+                projectConfig.EquipmentBalanceConfig ?? EquipmentBalanceConfig.RuntimeDefault);
+            var snapshot = partyBuilder.Build(gameDataService.View, modifiers);
+            QuestRuntime.ReportCommanderPower(snapshot.TotalPower); // CommanderPowerReach 반복 퀘스트가 참조하는 캐시값 갱신
+            return snapshot;
+        }
+
         private void HandleSceneFailed(SceneId failedSceneId, string error)
         {
+            sceneLoadingOverlay?.Hide();
             Debug.LogError($"Scene flow failed. Scene={failedSceneId}, Error={error}");
             contentFlow?.NotifySceneLoadFailed(failedSceneId); // 별도 콘텐츠 진입 실패 잠금 해제
             if (failedSceneId != projectConfig.EntrySceneId && !sceneLoader.IsTransitioning)
@@ -356,39 +510,82 @@ namespace ProjectMT.Bootstrap
         private void HandleSceneReady(SceneId sceneId)
         {
             readySceneId = sceneId;
+            sceneLoadingOverlay?.Hide();
             if (sceneId == projectConfig.MainBattleSceneId)
             {
-                ShowPendingOfflineRewards(); // 메인 전투 준비 뒤 접속 정산창 표시
+                if (!ShowPendingOfflineRewards())
+                {
+                    ShowPendingAttendance(); // 오프라인 정산이 없으면 출석부터 표시
+                }
             }
         }
 
-        private void ShowPendingOfflineRewards()
+        private void HandleSceneLoadStarted(SceneId sceneId)
         {
-            if (offlineRewardPresenter == null || offlineRewardCoordinator == null ||
-                !offlineRewardCoordinator.TryGetPendingPresentation(out var presentation))
+            sceneLoadingOverlay?.Show(sceneId);
+        }
+
+        private void HandleLogoutRequested()
+        {
+            if (!initialized || sceneLoader == null || sceneLoader.IsTransitioning ||
+                contentFlow == null || contentFlow.IsRunning)
             {
                 return;
             }
 
+            AccountSessionStore.Logout(); // 진행 저장은 유지하고 세션만 종료
+            sceneLoader.Load(projectConfig.EntrySceneId);
+        }
+
+        private bool ShowPendingOfflineRewards()
+        {
+            if (offlineRewardPresenter == null || offlineRewardCoordinator == null ||
+                !offlineRewardCoordinator.TryGetPendingPresentation(out var presentation))
+            {
+                return false;
+            }
+
             offlineRewardPresenter.Show(
                 presentation,
+                projectConfig.ItemCatalog,
                 () => offlineRewardCoordinator.AcknowledgeAsync(presentation.ReceiptIds),
                 HandleOfflineRewardConfirmed);
+            return true;
         }
 
         private void HandleOfflineRewardConfirmed(OfflineRewardPresentation presentation)
         {
             rewardPresenter?.PlayConfirmed(presentation?.CreateAcquirePresentation());
-            ShowPendingOfflineRewards(); // 확인 중 새로 쌓인 영수증만 이어서 표시
+            if (!ShowPendingOfflineRewards())
+            {
+                ShowPendingAttendance(); // 접속 정산을 모두 확인한 뒤 출석 표시
+            }
+        }
+
+        private void ShowPendingAttendance()
+        {
+            if (gameDataService == null || !gameDataService.View.Attendance.HasPendingReward)
+            {
+                return;
+            }
+
+            FindFirstObjectByType<MainBattleManagementUiController>(FindObjectsInactive.Include)
+                ?.OpenAttendancePage();
         }
 
         private async void OnApplicationPause(bool paused)
         {
             if (paused && initialized)
             {
+                await FlushQuestProgressSafelyAsync(); // 지연 묶음 저장을 백그라운드 전환 전에 확정
                 await SaveOfflineInactiveSafelyAsync(); // 방치 시작점을 진행 데이터와 함께 확정
                 await SaveCurrentSafelyAsync(); // 백그라운드 전환 저장
                 return;
+            }
+
+            if (!paused && initialized)
+            {
+                await RefreshQuestPeriodsSafelyAsync(); // 앱을 켜둔 채 05:00 경계를 넘긴 경우 즉시 초기화
             }
 
             if (!paused && initialized && offlineRewardCoordinator != null)
@@ -412,8 +609,33 @@ namespace ProjectMT.Bootstrap
         {
             if (initialized)
             {
+                await FlushQuestProgressSafelyAsync(); // 종료 직전 대기 중인 전투 이벤트 확정
                 await SaveOfflineInactiveSafelyAsync(); // Pause 누락 환경의 종료시각 보완
                 await SaveCurrentSafelyAsync(); // 앱 종료 직전 저장
+            }
+        }
+
+        private static async Task FlushQuestProgressSafelyAsync()
+        {
+            try
+            {
+                await QuestRuntime.FlushPendingProgressAsync();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+        }
+
+        private static async Task RefreshQuestPeriodsSafelyAsync()
+        {
+            try
+            {
+                await QuestRuntime.RefreshPeriodsAsync(DateTime.UtcNow);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
             }
         }
 
@@ -477,15 +699,51 @@ namespace ProjectMT.Bootstrap
             }
         }
 
+        private async Task RefreshAttendanceAsync()
+        {
+            var view = gameDataService.View.Attendance;
+            var currentPeriod = GrowthDungeonDailyKeyRules.GetPeriodId(DateTime.UtcNow);
+            if (currentPeriod <= view.LastProcessedPeriod)
+            {
+                return;
+            }
+
+            var saved = await gameDataService.TryApplyAndSaveAsync(
+                GameProgressChange.RefreshAttendance(view.LastProcessedPeriod, currentPeriod));
+            if (!saved)
+            {
+                throw new InvalidOperationException("Attendance could not be refreshed.");
+            }
+        }
+
+        private async Task CleanupExpiredMailAsync()
+        {
+            var utcNow = DateTime.UtcNow;
+            if (!gameDataService.View.Mail.HasExpired(utcNow))
+            {
+                return;
+            }
+
+            var saved = await gameDataService.TryApplyAndSaveAsync(
+                GameProgressChange.CleanupExpiredMail(utcNow));
+            if (!saved)
+            {
+                throw new InvalidOperationException("Expired mail could not be cleaned up.");
+            }
+        }
+
         private void OnDestroy()
         {
             if (Instance == this)
             {
                 if (sceneLoader != null)
                 {
+                    sceneLoader.SceneLoadStarted -= HandleSceneLoadStarted;
                     sceneLoader.SceneReady -= HandleSceneReady;
                     sceneLoader.SceneFailed -= HandleSceneFailed;
                 }
+
+                AccountRuntimeBridge.LogoutRequested -= HandleLogoutRequested;
 
                 Instance = null;
             }
@@ -516,6 +774,16 @@ namespace ProjectMT.Bootstrap
         public void EditorConfigureOfflineRewardPresenter(OfflineRewardPopupPresenter presenter)
         {
             offlineRewardPresenter = presenter;
+        }
+
+        public void EditorConfigureGlobalPresentation(
+            SceneLoadingOverlayPresenter loading,
+            SleepModeController sleep,
+            GlobalAudioController audio)
+        {
+            sceneLoadingOverlay = loading;
+            sleepModeController = sleep;
+            globalAudioController = audio;
         }
 #endif
     }

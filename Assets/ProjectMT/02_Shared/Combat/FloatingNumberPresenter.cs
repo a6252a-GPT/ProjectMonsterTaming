@@ -42,9 +42,11 @@ namespace ProjectMT.Shared.Combat
         private int activeNumberCount; // 현재 풀에서 재생 중인 숫자
         private int uniqueKeySeed = int.MinValue; // 합산하지 않을 요청 식별자
         private uint presentationSequence; // 반복 숫자의 좌우 방향 교대
+        private bool visible = true; // 환경설정 연결 전 기본 표시
 
         public int ActiveNumberCount => activeNumberCount;
         public int PendingNumberCount => pending.Count;
+        public bool IsVisible => visible;
 
         private void LateUpdate()
         {
@@ -76,7 +78,7 @@ namespace ProjectMT.Shared.Combat
 
         public void Queue(Vector3 position, float amount, FloatingNumberStyle style, int mergeKey = 0)
         {
-            if (amount <= 0f || poolScope == null || numberPrefab == null || !isActiveAndEnabled)
+            if (!visible || amount <= 0f || poolScope == null || numberPrefab == null || !isActiveAndEnabled)
             {
                 return;
             }
@@ -112,6 +114,16 @@ namespace ProjectMT.Shared.Combat
                 ReleaseAt = now + mergeWindow,
                 Style = style
             });
+        }
+
+        public void SetVisible(bool value)
+        {
+            visible = value;
+            if (!visible)
+            {
+                pending.Clear(); // 비표시 전환 뒤 늦게 숫자가 뜨지 않게 한다
+                readyKeys.Clear();
+            }
         }
 
         private void FlushReadyNumbers()

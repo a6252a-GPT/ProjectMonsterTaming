@@ -3,12 +3,16 @@
   "rootNamespace": "ProjectMT.Tests.EditMode",
   "references": [
     "ProjectMT.Core",
+    "ProjectMT.Bootstrap",
     "ProjectMT.Shared",
     "ProjectMT.Features",
     "ProjectMT.Contents.Framework",
     "ProjectMT.Contents.FoodRiot",
+    "ProjectMT.Contents.FallenCommander",
     "ProjectMT.Contents.CastleRaid",
-    "ProjectMT.Contents.GuardianTrial"
+    "ProjectMT.Contents.GuardianTrial",
+    "ProjectMT.Tools.CastleBake.Editor",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [
     "Editor"

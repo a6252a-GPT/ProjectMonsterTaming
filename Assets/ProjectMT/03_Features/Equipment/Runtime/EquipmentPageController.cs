@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,6 +25,12 @@ namespace ProjectMT.Features.Equipment
         private const string EquipButtonEquipText = "장착";
         private const string EquipButtonUnequipText = "해제";
 
+        private enum EquipmentPageMode
+        {
+            Equip,
+            Dismantle
+        }
+
         // 인벤토리 슬롯 1개에 대한 런타임 바인딩 정보. InventorySlot_01~20 각각에 대해 하나씩 만든다.
         private sealed class SlotView
         {
@@ -33,9 +41,17 @@ namespace ProjectMT.Features.Equipment
             public GameObject AddIndicator; // 비어있을 때 표시하는 "+" 표시(Add_1)
             public GameObject TextLevel; // 슬롯이 비어있을 때는 숨겨야 하는 목업 레벨 텍스트(값은 건드리지 않음)
             public GameObject CheckObject;
+            public GameObject LockObject;
             public TMP_Text EquippedLabelText; // 장착 중인 아이템을 인벤토리에서도 구분할 수 있도록 아이콘 아래 "[장착]" 표시
             public Button ClickButton;
             public string BoundInstanceId; // 이 슬롯이 현재 표시 중인 인스턴스 ID (없으면 null → 빈 슬롯)
+        }
+
+        private sealed class DismantlePreviewSlot
+        {
+            public GameObject Root;
+            public Image Frame;
+            public Image Icon;
         }
 
         [SerializeField] private EquipmentCatalog catalog;
@@ -50,17 +66,20 @@ namespace ProjectMT.Features.Equipment
         private readonly Dictionary<EquipmentPart, Sprite> partIconSprites = new Dictionary<EquipmentPart, Sprite>();
 
         // 테두리 색은 런타임 tint가 아니라, 목업에 있는 등급별 완성 프레임
-        // (ItemFrame_01_Normal_Green/Blue/Yellow/Plum/Red)을 그대로 재사용한다.
+        // (ItemFrame_01_Normal_Gray/Blue/Plum/Yellow/Red)을 그대로 재사용한다.
         private static readonly Dictionary<EquipmentGrade, string> FrameVariantSuffixByGrade = new Dictionary<EquipmentGrade, string>
         {
-            { EquipmentGrade.Common, "Green" },
-            { EquipmentGrade.Rare, "Blue" },
-            { EquipmentGrade.Epic, "Yellow" },
-            { EquipmentGrade.Legendary, "Plum" },
-            { EquipmentGrade.Mythic, "Red" },
+            { EquipmentGrade.Common, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Common) },
+            { EquipmentGrade.Rare, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Rare) },
+            { EquipmentGrade.Epic, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Epic) },
+            { EquipmentGrade.Legendary, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Legendary) },
+            { EquipmentGrade.Mythic, ItemGradeFramePalette.GetSuffix(EquipmentGrade.Mythic) },
         };
 
-        private const string FrameVariantPrefix = "ItemFrame_01_Normal_";
+        private static readonly Color SelectedFilterColor = new Color32(244, 197, 72, 255);
+        private static readonly Color NormalFilterColor = new Color32(236, 232, 225, 255);
+
+        private const string FrameVariantPrefix = ItemGradeFramePalette.FrameVariantPrefix;
         private readonly Dictionary<string, GameObject> frameVariantTemplates = new Dictionary<string, GameObject>();
         private Transform frameVariantTemplateStorage;
 
@@ -77,6 +96,42 @@ namespace ProjectMT.Features.Equipment
         private Transform equipButtonRoot;
         private Button equipButton;
         private TMP_Text equipButtonText;
+        private Transform lockButtonRoot;
+        private Button lockButton;
+        private TMP_Text lockButtonText;
+        private Transform equipModeTabRoot;
+        private Button equipModeTabButton;
+        private Image equipModeTabImage;
+        private Transform dismantleModeTabRoot;
+        private Button dismantleModeTabButton;
+        private Image dismantleModeTabImage;
+        private GameObject equipmentModeContentRoot;
+        private GameObject dismantleSummaryRoot;
+        private GameObject equipmentActionRoot;
+        private GameObject dismantleActionRoot;
+        private TMP_Text dismantleSummaryCountText;
+        private TMP_Text dismantleSummaryRewardText;
+        private TMP_Text dismantleBottomSummaryText;
+        private readonly List<DismantlePreviewSlot> dismantlePreviewSlots = new List<DismantlePreviewSlot>();
+        private Transform dismantleGradeButtonRoot;
+        private Button dismantleGradeButton;
+        private TMP_Text dismantleGradeButtonText;
+        private Transform dismantleAutoSelectButtonRoot;
+        private Button dismantleAutoSelectButton;
+        private TMP_Text dismantleAutoSelectButtonText;
+        private Transform dismantleButtonRoot;
+        private Button dismantleButton;
+        private TMP_Text dismantleButtonText;
+        private Transform dismantleClearButtonRoot;
+        private Button dismantleClearButton;
+        private Transform offlineAutoDismantleOpenButtonRoot;
+        private Button offlineAutoDismantleOpenButton;
+        private TMP_Text offlineAutoDismantleOpenButtonText;
+        private OfflineAutoDismantleSettingsPanelController offlineAutoDismantleSettingsPanel;
+        private GameObject dismantleConfirmRoot;
+        private TMP_Text dismantleConfirmSummaryText;
+        private Button dismantleConfirmCancelButton;
+        private Button dismantleConfirmAcceptButton;
         private ScrollRect inventoryScrollRect;
         private RectTransform inventoryContentRoot;
         private GameObject inventorySlotCellTemplate;
@@ -84,19 +139,29 @@ namespace ProjectMT.Features.Equipment
         private EquipmentPart? currentFilter; // null = 전체
         private bool sortGradeDescending = true;
         private string selectedInstanceId; // 현재 상세 영역에 표시 중인 장비 인스턴스 ID
+        private EquipmentGrade dismantleGradeThreshold = EquipmentGrade.Common;
+        private readonly HashSet<string> dismantleSelection = new HashSet<string>();
+        private EquipmentPageMode currentMode = EquipmentPageMode.Equip;
+        private bool requestInFlight;
+        private Action combatInputSaved;
+        private IGameProgressService progress;
 
         private void Awake()
         {
             CacheReferences();
+            BuildModeTabs();
             BuildFilterButtons();
             BuildSortButton();
             BuildInventorySlots();
             BuildEquipButton();
+            BuildDismantleControls();
+            BuildLockButton();
         }
 
         private void OnEnable()
         {
             EquipmentInventoryRuntime.Changed += HandleInventoryChanged;
+            SetPageMode(EquipmentPageMode.Equip, false);
             RefreshAll();
             ResetInventoryScrollPosition();
         }
@@ -104,6 +169,8 @@ namespace ProjectMT.Features.Equipment
         private void OnDisable()
         {
             EquipmentInventoryRuntime.Changed -= HandleInventoryChanged;
+            CloseDismantleConfirmation();
+            offlineAutoDismantleSettingsPanel?.Close();
         }
 
         // MainBattleSceneRoot가 씬 조립 시점에 진행 데이터 서비스를 주입한다. 실제 보유/장착 데이터는
@@ -111,12 +178,22 @@ namespace ProjectMT.Features.Equipment
         // 카탈로그를 연결해주기만 하면 된다.
         public void Configure(IGameProgressService progress)
         {
-            Configure(progress, EquipmentBalanceConfig.RuntimeDefault);
+            Configure(progress, EquipmentBalanceConfig.RuntimeDefault, null);
         }
 
-        public void Configure(IGameProgressService progress, EquipmentBalanceConfig balance)
+        public void Configure(
+            IGameProgressService progress,
+            EquipmentBalanceConfig balance,
+            Action onCombatInputSaved = null)
         {
+            this.progress = progress;
+            combatInputSaved = onCombatInputSaved;
             EquipmentInventoryRuntime.Configure(progress, ResolveCatalog(), balance);
+            offlineAutoDismantleSettingsPanel?.Configure(progress);
+            if (isActiveAndEnabled)
+            {
+                RefreshAll(); // 활성화가 데이터 주입보다 먼저 끝난 경우 버튼 상태를 즉시 복구
+            }
         }
 
         // ---------------------------------------------------------------
@@ -134,6 +211,46 @@ namespace ProjectMT.Features.Equipment
             // 추가 랜덤옵션 전용 칸: 새 이름(SelectedItemNext) 우선, 예전 이름도 후보로 유지한다.
             selectedItemRandomOptionStat = FindDeepAny(transform, "SelectedItemNext", "SelectedItemRandomOptionStat");
             equipButtonRoot = FindDeep(transform, "EquipButton");
+            lockButtonRoot = FindDeep(transform, "EquipmentLockButton");
+            equipModeTabRoot = FindDeep(transform, "EquipModeTabButton");
+            dismantleModeTabRoot = FindDeep(transform, "DismantleModeTabButton");
+            equipmentModeContentRoot = FindDeep(transform, "EquipmentModeContentRoot")?.gameObject;
+            dismantleSummaryRoot = FindDeep(transform, "DismantleSummaryRoot")?.gameObject;
+            equipmentActionRoot = FindDeep(transform, "SelectedEquipmentAction")?.gameObject;
+            dismantleActionRoot = FindDeep(transform, "DismantleActionRoot")?.gameObject;
+            dismantleSummaryCountText = FindDeep(transform, "DismantleSummaryCount")?.GetComponent<TMP_Text>();
+            dismantleSummaryRewardText = FindDeep(transform, "DismantleSummaryReward")?.GetComponent<TMP_Text>();
+            dismantleBottomSummaryText = FindDeep(transform, "DismantleBottomSummary")?.GetComponent<TMP_Text>();
+            dismantleGradeButtonRoot = FindDeep(transform, "DismantleGradeButton");
+            dismantleAutoSelectButtonRoot = FindDeep(transform, "DismantleAutoSelectButton");
+            dismantleButtonRoot = FindDeep(transform, "DismantleButton");
+            dismantleClearButtonRoot = FindDeep(transform, "DismantleClearButton");
+            offlineAutoDismantleOpenButtonRoot = FindDeep(transform, "OfflineAutoDismantleOpenButton");
+            var equipmentPageRoot = transform.parent != null ? transform.parent : transform;
+            offlineAutoDismantleSettingsPanel =
+                FindDeep(equipmentPageRoot, "PF_OfflineAutoDismantleSettingsPopup")
+                    ?.GetComponent<OfflineAutoDismantleSettingsPanelController>();
+            dismantleConfirmRoot = FindDeep(transform, "DismantleConfirmRoot")?.gameObject;
+            dismantleConfirmSummaryText = FindDeep(transform, "DismantleConfirmSummary")?.GetComponent<TMP_Text>();
+            dismantleConfirmCancelButton = FindDeep(transform, "DismantleConfirmCancelButton")?.GetComponent<Button>();
+            dismantleConfirmAcceptButton = FindDeep(transform, "DismantleConfirmAcceptButton")?.GetComponent<Button>();
+
+            dismantlePreviewSlots.Clear();
+            for (var index = 1; index <= 8; index++)
+            {
+                var previewRoot = FindDeep(transform, $"DismantlePreview_{index:00}");
+                if (previewRoot == null)
+                {
+                    continue;
+                }
+
+                dismantlePreviewSlots.Add(new DismantlePreviewSlot
+                {
+                    Root = previewRoot.gameObject,
+                    Frame = previewRoot.GetComponent<Image>(),
+                    Icon = previewRoot.Find("Icon")?.GetComponent<Image>()
+                });
+            }
 
             commanderSlots[EquipmentPart.Weapon] = FindDeep(transform, "WeaponSlot");
             commanderSlots[EquipmentPart.Helmet] = FindDeep(transform, "HelmetSlot");
@@ -280,9 +397,93 @@ namespace ProjectMT.Features.Equipment
         }
 
         // ---------------------------------------------------------------
-        // 부위 필터 탭 - 필터 UI 목업에는 Button이 연결돼 있지 않아 런타임에 추가한다.
-        // 목업 탭(전체/무기/방패/방어구/장신구/신발) 5분류를 우리 6부위에 맞춰 대응시킨다.
-        // 장갑(Glove)은 전용 탭이 없어 "전체"에서만 표시된다.
+        // 상단 장착/분해 탭
+        // ---------------------------------------------------------------
+
+        private void BuildModeTabs()
+        {
+            if (equipModeTabRoot != null)
+            {
+                equipModeTabButton = EnsureButton(equipModeTabRoot);
+                equipModeTabImage = equipModeTabRoot.GetComponent<Image>();
+                equipModeTabButton.onClick.AddListener(() => SetPageMode(EquipmentPageMode.Equip));
+            }
+
+            if (dismantleModeTabRoot != null)
+            {
+                dismantleModeTabButton = EnsureButton(dismantleModeTabRoot);
+                dismantleModeTabImage = dismantleModeTabRoot.GetComponent<Image>();
+                dismantleModeTabButton.onClick.AddListener(() => SetPageMode(EquipmentPageMode.Dismantle));
+            }
+        }
+
+        private void SetPageMode(EquipmentPageMode mode, bool refresh = true)
+        {
+            if (requestInFlight)
+            {
+                return;
+            }
+
+            currentMode = mode;
+            CloseDismantleConfirmation();
+            offlineAutoDismantleSettingsPanel?.Close();
+            if (currentMode == EquipmentPageMode.Equip)
+            {
+                ClearDismantleSelection();
+            }
+            else
+            {
+                selectedInstanceId = null;
+            }
+
+            if (equipmentModeContentRoot != null)
+            {
+                equipmentModeContentRoot.SetActive(currentMode == EquipmentPageMode.Equip);
+            }
+
+            if (dismantleSummaryRoot != null)
+            {
+                dismantleSummaryRoot.SetActive(currentMode == EquipmentPageMode.Dismantle);
+            }
+
+            if (equipmentActionRoot != null)
+            {
+                equipmentActionRoot.SetActive(currentMode == EquipmentPageMode.Equip);
+            }
+
+            if (dismantleActionRoot != null)
+            {
+                dismantleActionRoot.SetActive(currentMode == EquipmentPageMode.Dismantle);
+            }
+
+            RefreshModeTabVisuals();
+            if (refresh)
+            {
+                RefreshAll();
+                ResetInventoryScrollPosition();
+            }
+        }
+
+        private void RefreshModeTabVisuals()
+        {
+            var equipSelected = currentMode == EquipmentPageMode.Equip;
+            if (equipModeTabImage != null)
+            {
+                equipModeTabImage.color = equipSelected
+                    ? new Color32(105, 177, 53, 255)
+                    : new Color32(46, 44, 49, 255);
+            }
+
+            if (dismantleModeTabImage != null)
+            {
+                dismantleModeTabImage.color = equipSelected
+                    ? new Color32(46, 44, 49, 255)
+                    : new Color32(105, 177, 53, 255);
+            }
+        }
+
+        // ---------------------------------------------------------------
+        // 부위 필터 탭 - 6부위를 아이콘 없이 한글 텍스트로 구분한다.
         // ---------------------------------------------------------------
 
         private void BuildFilterButtons()
@@ -291,11 +492,13 @@ namespace ProjectMT.Features.Equipment
             AddFilterTab("Filter_Weapon", EquipmentPart.Weapon);
             AddFilterTab("Filter_Shield", EquipmentPart.Helmet);
             AddFilterTab("Filter_Armor", EquipmentPart.Armor);
-            AddFilterTab("Filter_Accessory", EquipmentPart.Ring);
             AddFilterTab("Filter_Boots", EquipmentPart.Boots);
+            AddFilterTab("Filter_Glove", EquipmentPart.Glove);
+            AddFilterTab("Filter_Accessory", EquipmentPart.Ring);
 
             if (allFilterTab != null)
             {
+                ConfigureTextFilterTab(allFilterTab, "전체");
                 var button = EnsureButton(allFilterTab);
                 button.onClick.AddListener(() => SetFilter(null));
             }
@@ -310,8 +513,22 @@ namespace ProjectMT.Features.Equipment
             }
 
             filterTabs[part] = tab;
+            ConfigureTextFilterTab(tab, EquipmentPartInfo.GetDisplayName(part));
             var button = EnsureButton(tab);
             button.onClick.AddListener(() => SetFilter(part));
+        }
+
+        private static void ConfigureTextFilterTab(Transform tab, string labelText)
+        {
+            var label = tab.GetComponentInChildren<TMP_Text>(true);
+            if (label != null)
+            {
+                label.text = labelText;
+                label.gameObject.SetActive(true);
+            }
+
+            var icon = tab.Find("Icon");
+            icon?.gameObject.SetActive(false); // 부위 필터는 텍스트만 표시
         }
 
         private void SetFilter(EquipmentPart? part)
@@ -325,19 +542,25 @@ namespace ProjectMT.Features.Equipment
         // 각 탭의 "Focus" 하위 오브젝트를 선택 상태 표시로 사용한다(활성=선택됨).
         private void RefreshFilterHighlight()
         {
-            SetFocusActive(allFilterTab, currentFilter == null);
+            SetFilterVisual(allFilterTab, currentFilter == null);
             foreach (var pair in filterTabs)
             {
-                SetFocusActive(pair.Value, currentFilter == pair.Key);
+                SetFilterVisual(pair.Value, currentFilter == pair.Key);
             }
         }
 
-        private static void SetFocusActive(Transform tab, bool active)
+        private static void SetFilterVisual(Transform tab, bool selected)
         {
             var focus = tab != null ? tab.Find("Focus") : null;
             if (focus != null)
             {
-                focus.gameObject.SetActive(active);
+                focus.gameObject.SetActive(selected);
+            }
+
+            var label = tab != null ? tab.GetComponentInChildren<TMP_Text>(true) : null;
+            if (label != null)
+            {
+                label.color = selected ? SelectedFilterColor : NormalFilterColor;
             }
         }
 
@@ -446,7 +669,8 @@ namespace ProjectMT.Features.Equipment
                 NormalArea = FindDeep(slotRoot, "NormalArea"),
                 AddIndicator = FindDeep(slotRoot, "Add_1")?.gameObject,
                 TextLevel = FindDeep(slotRoot, "Text_Level")?.gameObject,
-                CheckObject = FindDeep(slotRoot, "Check")?.gameObject
+                CheckObject = FindDeep(slotRoot, "Check")?.gameObject,
+                LockObject = FindDeep(slotRoot, "Lock")?.gameObject
             };
 
             view.EquippedLabelText = CreateEquippedLabel(slotRoot);
@@ -562,6 +786,20 @@ namespace ProjectMT.Features.Equipment
                 button.transition = Selectable.Transition.None; // 목업 비주얼을 그대로 유지, 클릭 판정만 추가
             }
 
+            var hitArea = target.GetComponent<Graphic>();
+            if (hitArea == null)
+            {
+                var image = target.gameObject.AddComponent<Image>();
+                image.color = Color.clear;
+                hitArea = image;
+            }
+
+            hitArea.raycastTarget = true;
+            if (button.targetGraphic == null)
+            {
+                button.targetGraphic = hitArea;
+            }
+
             return button;
         }
 
@@ -570,6 +808,25 @@ namespace ProjectMT.Features.Equipment
             if (string.IsNullOrEmpty(view.BoundInstanceId))
             {
                 return; // 빈 슬롯
+            }
+
+            if (currentMode == EquipmentPageMode.Dismantle)
+            {
+                if (!EquipmentInventoryRuntime.TryGetItem(view.BoundInstanceId, out var dismantleItem) ||
+                    dismantleItem.IsEquipped || dismantleItem.IsLocked)
+                {
+                    return;
+                }
+
+                if (!dismantleSelection.Add(view.BoundInstanceId))
+                {
+                    dismantleSelection.Remove(view.BoundInstanceId);
+                }
+
+                selectedInstanceId = null;
+                CloseDismantleConfirmation();
+                RefreshSelection();
+                return;
             }
 
             selectedInstanceId = view.BoundInstanceId;
@@ -594,7 +851,7 @@ namespace ProjectMT.Features.Equipment
 
         private async void HandleEquipButtonClicked()
         {
-            if (string.IsNullOrEmpty(selectedInstanceId) ||
+            if (currentMode != EquipmentPageMode.Equip || string.IsNullOrEmpty(selectedInstanceId) ||
                 !EquipmentInventoryRuntime.TryGetItem(selectedInstanceId, out var item))
             {
                 return;
@@ -602,11 +859,246 @@ namespace ProjectMT.Features.Equipment
 
             if (item.IsEquipped)
             {
-                await EquipmentInventoryRuntime.TryUnequipAsync(item.Part);
+                if (await EquipmentInventoryRuntime.TryUnequipAsync(item.Part))
+                {
+                    combatInputSaved?.Invoke();
+                }
             }
             else
             {
-                await EquipmentInventoryRuntime.TryEquipAsync(selectedInstanceId);
+                if (await EquipmentInventoryRuntime.TryEquipAsync(selectedInstanceId))
+                {
+                    combatInputSaved?.Invoke();
+                }
+            }
+        }
+
+        private void BuildDismantleControls()
+        {
+            if (dismantleGradeButtonRoot != null)
+            {
+                dismantleGradeButton = EnsureButton(dismantleGradeButtonRoot);
+                dismantleGradeButtonText = dismantleGradeButtonRoot.GetComponentInChildren<TMP_Text>(true);
+                dismantleGradeButton.onClick.AddListener(CycleDismantleGradeThreshold);
+            }
+
+            if (dismantleAutoSelectButtonRoot != null)
+            {
+                dismantleAutoSelectButton = EnsureButton(dismantleAutoSelectButtonRoot);
+                dismantleAutoSelectButtonText = dismantleAutoSelectButtonRoot.GetComponentInChildren<TMP_Text>(true);
+                dismantleAutoSelectButton.onClick.AddListener(ToggleDismantleAutoSelection);
+            }
+
+            if (dismantleButtonRoot != null)
+            {
+                dismantleButton = EnsureButton(dismantleButtonRoot);
+                dismantleButtonText = dismantleButtonRoot.GetComponentInChildren<TMP_Text>(true);
+                dismantleButton.onClick.AddListener(HandleDismantleButtonClicked);
+            }
+
+            if (dismantleClearButtonRoot != null)
+            {
+                dismantleClearButton = EnsureButton(dismantleClearButtonRoot);
+                dismantleClearButton.onClick.AddListener(() =>
+                {
+                    ClearDismantleSelection();
+                    RefreshSelection();
+                });
+            }
+
+            if (offlineAutoDismantleOpenButtonRoot != null)
+            {
+                offlineAutoDismantleOpenButton = EnsureButton(offlineAutoDismantleOpenButtonRoot);
+                offlineAutoDismantleOpenButtonText =
+                    offlineAutoDismantleOpenButtonRoot.GetComponentInChildren<TMP_Text>(true);
+                offlineAutoDismantleOpenButton.onClick.AddListener(OpenOfflineAutoDismantleSettings);
+            }
+
+            if (dismantleConfirmCancelButton != null)
+            {
+                dismantleConfirmCancelButton.onClick.AddListener(CloseDismantleConfirmation);
+            }
+
+            if (dismantleConfirmAcceptButton != null)
+            {
+                dismantleConfirmAcceptButton.onClick.AddListener(HandleDismantleConfirmed);
+            }
+        }
+
+        private void BuildLockButton()
+        {
+            if (lockButtonRoot == null)
+            {
+                return;
+            }
+
+            lockButton = EnsureButton(lockButtonRoot);
+            lockButtonText = lockButtonRoot.GetComponentInChildren<TMP_Text>(true);
+            lockButton.onClick.AddListener(HandleLockButtonClicked);
+        }
+
+        private void CycleDismantleGradeThreshold()
+        {
+            if (requestInFlight)
+            {
+                return;
+            }
+
+            dismantleGradeThreshold = (EquipmentGrade)(((int)dismantleGradeThreshold + 1) % 5);
+            ClearDismantleSelection();
+            RefreshSelection();
+        }
+
+        private void OpenOfflineAutoDismantleSettings()
+        {
+            if (requestInFlight || offlineAutoDismantleSettingsPanel == null)
+            {
+                return;
+            }
+
+            offlineAutoDismantleSettingsPanel.Configure(progress);
+            offlineAutoDismantleSettingsPanel.Open();
+        }
+
+        private void ToggleDismantleAutoSelection()
+        {
+            if (requestInFlight)
+            {
+                return;
+            }
+
+            if (dismantleSelection.Count > 0)
+            {
+                ClearDismantleSelection();
+                RefreshSelection();
+                return;
+            }
+
+            var candidates = EquipmentInventoryRuntime.GetDismantleCandidateIds(dismantleGradeThreshold);
+            for (var index = 0; index < candidates.Count; index++)
+            {
+                dismantleSelection.Add(candidates[index]);
+            }
+
+            if (dismantleSelection.Count > 0)
+            {
+                selectedInstanceId = null;
+            }
+
+            CloseDismantleConfirmation();
+            RefreshSelection();
+        }
+
+        private async void HandleLockButtonClicked()
+        {
+            if (requestInFlight || currentMode != EquipmentPageMode.Equip ||
+                string.IsNullOrEmpty(selectedInstanceId) ||
+                !EquipmentInventoryRuntime.TryGetItem(selectedInstanceId, out var item))
+            {
+                return;
+            }
+
+            requestInFlight = true;
+            RefreshSelection();
+            try
+            {
+                await EquipmentInventoryRuntime.TrySetLockedAsync(selectedInstanceId, !item.IsLocked);
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+            finally
+            {
+                requestInFlight = false;
+                RefreshAll();
+            }
+        }
+
+        private void HandleDismantleButtonClicked()
+        {
+            PruneDismantleSelection();
+            if (requestInFlight || currentMode != EquipmentPageMode.Dismantle || dismantleSelection.Count == 0)
+            {
+                RefreshSelection();
+                return;
+            }
+
+            OpenDismantleConfirmation();
+        }
+
+        private async void HandleDismantleConfirmed()
+        {
+            PruneDismantleSelection();
+            if (requestInFlight || currentMode != EquipmentPageMode.Dismantle || dismantleSelection.Count == 0)
+            {
+                CloseDismantleConfirmation();
+                RefreshSelection();
+                return;
+            }
+
+            var targets = dismantleSelection.ToArray();
+            requestInFlight = true;
+            CloseDismantleConfirmation();
+            RefreshSelection();
+            try
+            {
+                if (await EquipmentInventoryRuntime.TryDismantleAsync(targets))
+                {
+                    dismantleSelection.Clear();
+                    selectedInstanceId = null;
+                }
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+            finally
+            {
+                requestInFlight = false;
+                CloseDismantleConfirmation();
+                RefreshAll();
+            }
+        }
+
+        private void OpenDismantleConfirmation()
+        {
+            if (dismantleConfirmRoot == null)
+            {
+                HandleDismantleConfirmed();
+                return;
+            }
+
+            if (dismantleConfirmSummaryText != null)
+            {
+                dismantleConfirmSummaryText.text =
+                    $"선택 장비 {dismantleSelection.Count}개를 분해하고\n장비 슬롯 강화석 {CalculateSelectedDismantleReward():N0}개를 획득합니다.";
+            }
+
+            dismantleConfirmRoot.SetActive(true);
+        }
+
+        private void ClearDismantleSelection()
+        {
+            dismantleSelection.Clear();
+            CloseDismantleConfirmation();
+        }
+
+        private void CloseDismantleConfirmation()
+        {
+            if (dismantleConfirmRoot != null)
+            {
+                dismantleConfirmRoot.SetActive(false);
+            }
+        }
+
+        private void PruneDismantleSelection()
+        {
+            dismantleSelection.RemoveWhere(instanceId =>
+                !EquipmentInventoryRuntime.TryGetItem(instanceId, out var item) || item.IsEquipped || item.IsLocked);
+            if (dismantleSelection.Count == 0)
+            {
+                CloseDismantleConfirmation();
             }
         }
 
@@ -655,6 +1147,8 @@ namespace ProjectMT.Features.Equipment
                 selectedInstanceId = null;
             }
 
+            PruneDismantleSelection();
+
             RefreshCapacityText();
             RebuildInventoryLayout();
             RefreshSelection();
@@ -685,7 +1179,9 @@ namespace ProjectMT.Features.Equipment
                     view.ItemIcon.sprite = partSprite;
                 }
 
-                view.ItemIcon.color = Color.white; // 아이콘 고유 색은 그대로 유지
+                view.ItemIcon.color = currentMode == EquipmentPageMode.Dismantle && (item.IsEquipped || item.IsLocked)
+                    ? new Color32(125, 125, 125, 255)
+                    : Color.white; // 분해 보호 장비만 어둡게 표시
             }
 
             ApplyFrameVariant(view.NormalArea, item.Grade); // 등급에 맞는 기존 프레임(테두리)으로 교체
@@ -703,7 +1199,20 @@ namespace ProjectMT.Features.Equipment
 
             if (view.CheckObject != null)
             {
-                view.CheckObject.SetActive(item.InstanceId == selectedInstanceId);
+                view.CheckObject.SetActive(currentMode == EquipmentPageMode.Dismantle
+                    ? dismantleSelection.Contains(item.InstanceId)
+                    : item.InstanceId == selectedInstanceId);
+            }
+
+            if (view.LockObject != null)
+            {
+                view.LockObject.SetActive(item.IsLocked);
+            }
+
+            if (view.ClickButton != null)
+            {
+                view.ClickButton.interactable = currentMode != EquipmentPageMode.Dismantle ||
+                                                (!item.IsEquipped && !item.IsLocked);
             }
         }
 
@@ -741,6 +1250,16 @@ namespace ProjectMT.Features.Equipment
             {
                 view.CheckObject.SetActive(false);
             }
+
+            if (view.LockObject != null)
+            {
+                view.LockObject.SetActive(false);
+            }
+
+            if (view.ClickButton != null)
+            {
+                view.ClickButton.interactable = false;
+            }
         }
 
         private void RefreshCapacityText()
@@ -753,17 +1272,22 @@ namespace ProjectMT.Features.Equipment
 
         private void RefreshSelection()
         {
+            PruneDismantleSelection();
             for (var i = 0; i < slots.Count; i++)
             {
                 var view = slots[i];
                 if (view.CheckObject != null)
                 {
-                    view.CheckObject.SetActive(view.BoundInstanceId != null && view.BoundInstanceId == selectedInstanceId);
+                    view.CheckObject.SetActive(view.BoundInstanceId != null &&
+                        (currentMode == EquipmentPageMode.Dismantle
+                            ? dismantleSelection.Contains(view.BoundInstanceId)
+                            : view.BoundInstanceId == selectedInstanceId));
                 }
             }
 
             EquipmentItemView selectedItem = default;
-            var hasSelection = !string.IsNullOrEmpty(selectedInstanceId) &&
+            var hasSelection = currentMode == EquipmentPageMode.Equip &&
+                                !string.IsNullOrEmpty(selectedInstanceId) &&
                                 EquipmentInventoryRuntime.TryGetItem(selectedInstanceId, out selectedItem);
 
             var nameText = selectedItemName?.GetComponent<TMP_Text>();
@@ -819,7 +1343,7 @@ namespace ProjectMT.Features.Equipment
 
             if (equipButton != null)
             {
-                equipButton.interactable = hasSelection;
+                equipButton.interactable = hasSelection && !requestInFlight;
             }
 
             if (equipButtonText != null)
@@ -827,6 +1351,180 @@ namespace ProjectMT.Features.Equipment
                 equipButtonText.text = hasSelection && selectedItem.IsEquipped
                     ? EquipButtonUnequipText
                     : EquipButtonEquipText;
+            }
+
+            if (equipButtonRoot != null)
+            {
+                equipButtonRoot.gameObject.SetActive(currentMode == EquipmentPageMode.Equip);
+            }
+
+            var showLock = currentMode == EquipmentPageMode.Equip && hasSelection;
+            if (lockButtonRoot != null)
+            {
+                lockButtonRoot.gameObject.SetActive(showLock);
+            }
+
+            if (lockButton != null)
+            {
+                lockButton.interactable = showLock && !requestInFlight;
+            }
+
+            if (lockButtonText != null)
+            {
+                lockButtonText.text = hasSelection && selectedItem.IsLocked ? "해제" : "잠금";
+            }
+
+            RefreshDismantleSummary();
+            RefreshDismantleControls();
+        }
+
+        private long CalculateSelectedDismantleReward()
+        {
+            var result = 0L;
+            foreach (var instanceId in dismantleSelection)
+            {
+                if (EquipmentInventoryRuntime.TryGetItem(instanceId, out var item))
+                {
+                    result += EquipmentDismantleRules.GetUpgradeStoneAmount(item.Grade);
+                }
+            }
+
+            return result;
+        }
+
+        private void RefreshDismantleSummary()
+        {
+            var stoneAmount = CalculateSelectedDismantleReward();
+            if (dismantleSummaryCountText != null)
+            {
+                dismantleSummaryCountText.text = $"선택 장비 {dismantleSelection.Count}개";
+            }
+
+            if (dismantleSummaryRewardText != null)
+            {
+                dismantleSummaryRewardText.text = $"획득 강화석 {stoneAmount:N0}개";
+            }
+
+            if (dismantleBottomSummaryText != null)
+            {
+                dismantleBottomSummaryText.text = $"선택 {dismantleSelection.Count}개 / 강화석 {stoneAmount:N0}개";
+            }
+
+            var selectedItems = dismantleSelection
+                .Select(instanceId => EquipmentInventoryRuntime.TryGetItem(instanceId, out var item) ? item : default)
+                .Where(item => !string.IsNullOrEmpty(item.InstanceId))
+                .Take(dismantlePreviewSlots.Count)
+                .ToList();
+            for (var index = 0; index < dismantlePreviewSlots.Count; index++)
+            {
+                var preview = dismantlePreviewSlots[index];
+                var visible = index < selectedItems.Count;
+                preview.Root.SetActive(visible);
+                if (!visible)
+                {
+                    continue;
+                }
+
+                var item = selectedItems[index];
+                if (preview.Icon != null && partIconSprites.TryGetValue(item.Part, out var icon))
+                {
+                    preview.Icon.sprite = icon;
+                    preview.Icon.color = Color.white;
+                }
+
+                if (preview.Frame != null)
+                {
+                    preview.Frame.color = GetGradeColor(item.Grade);
+                }
+            }
+        }
+
+        private static Color GetGradeColor(EquipmentGrade grade)
+        {
+            return grade switch
+            {
+                EquipmentGrade.Common => new Color32(56, 131, 91, 255),
+                EquipmentGrade.Rare => new Color32(52, 112, 175, 255),
+                EquipmentGrade.Epic => new Color32(194, 162, 62, 255),
+                EquipmentGrade.Legendary => new Color32(126, 68, 159, 255),
+                EquipmentGrade.Mythic => new Color32(183, 55, 55, 255),
+                _ => new Color32(78, 76, 80, 255)
+            };
+        }
+
+        private void RefreshDismantleControls()
+        {
+            var isDismantleMode = currentMode == EquipmentPageMode.Dismantle;
+            if (dismantleGradeButtonRoot != null)
+            {
+                dismantleGradeButtonRoot.gameObject.SetActive(isDismantleMode);
+            }
+
+            if (dismantleGradeButtonText != null)
+            {
+                dismantleGradeButtonText.text = $"{EquipmentGradeInfo.GetDisplayName(dismantleGradeThreshold)} 이하";
+            }
+
+            if (dismantleGradeButton != null)
+            {
+                dismantleGradeButton.interactable = isDismantleMode && !requestInFlight;
+            }
+
+            if (dismantleAutoSelectButtonRoot != null)
+            {
+                dismantleAutoSelectButtonRoot.gameObject.SetActive(isDismantleMode);
+            }
+
+            if (dismantleAutoSelectButtonText != null)
+            {
+                dismantleAutoSelectButtonText.text = dismantleSelection.Count > 0 ? "선택 해제" : "이하 전체 선택";
+            }
+
+            if (dismantleAutoSelectButton != null)
+            {
+                dismantleAutoSelectButton.interactable = isDismantleMode && !requestInFlight;
+            }
+
+            if (dismantleButtonRoot != null)
+            {
+                dismantleButtonRoot.gameObject.SetActive(isDismantleMode);
+            }
+
+            if (dismantleButton != null)
+            {
+                dismantleButton.interactable = isDismantleMode && dismantleSelection.Count > 0 && !requestInFlight;
+            }
+
+            if (dismantleButtonText != null)
+            {
+                dismantleButtonText.text = requestInFlight
+                    ? "처리 중"
+                    : "분해";
+            }
+
+            if (dismantleClearButton != null)
+            {
+                dismantleClearButton.interactable = isDismantleMode && dismantleSelection.Count > 0 && !requestInFlight;
+            }
+
+            if (offlineAutoDismantleOpenButtonRoot != null)
+            {
+                offlineAutoDismantleOpenButtonRoot.gameObject.SetActive(isDismantleMode);
+            }
+
+            if (offlineAutoDismantleOpenButtonText != null)
+            {
+                var policy = progress != null && progress.IsLoaded
+                    ? progress.View.Equipment.OfflineAutoDismantlePolicy
+                    : OfflineAutoDismantlePolicy.Common;
+                offlineAutoDismantleOpenButtonText.text =
+                    $"방치 설정\n{OfflineAutoDismantlePolicyInfo.GetDisplayName(policy)}";
+            }
+
+            if (offlineAutoDismantleOpenButton != null)
+            {
+                offlineAutoDismantleOpenButton.interactable =
+                    isDismantleMode && !requestInFlight && progress != null && progress.IsLoaded;
             }
         }
 

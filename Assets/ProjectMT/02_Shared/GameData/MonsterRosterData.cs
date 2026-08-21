@@ -122,14 +122,15 @@ namespace ProjectMT.Shared.GameData
     [Serializable]
     public sealed class MonsterRosterData // 보유·본부대·예비 부대 저장 원본
     {
-        public const int MainPartySlotCount = 5;
+        public const int MainPartySlotCount = 10;
         public const int ReservePartySlotCount = 2;
-        public const string StarterMonsterId = "spike_01";
+        public const string StarterMonsterId = "lumi_01";
 
         private static readonly Dictionary<string, string> RetiredMonsterIds =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                { "tofu_01", "spike_01" },
+                { "spike_01", "lumi_01" },
+                { "tofu_01", "lumi_01" },
                 { "tofu_02", "shell_01" },
                 { "tofu_03", "ru_01" },
                 { "tofu_04", "aru_01" },

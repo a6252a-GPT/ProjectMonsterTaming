@@ -44,6 +44,7 @@ namespace ProjectMT.EditorTools.StageMapSlicer
 
         [SerializeField] private string stageName = "Stage_01";
         [SerializeField] private string outputRoot = DefaultOutputRoot;
+        [SerializeField] private float outputScale = 1f;
         [SerializeField] private Vector2 centerXZ;
         [SerializeField] private Vector2 sizeXZ = new Vector2(100f, 100f);
         [SerializeField] private SliceShape sliceShape = SliceShape.Rectangle;
@@ -57,7 +58,7 @@ namespace ProjectMT.EditorTools.StageMapSlicer
         [SerializeField] private bool enableVegetationDistanceCulling;
         [SerializeField] private float vegetationCullDistance = 28f;
         [SerializeField] private float vegetationCullCellSize = 6f;
-        [SerializeField] private bool enableTerrainDrawInstanced = true;
+        [SerializeField] private bool enableTerrainDrawInstanced; // Player Terrain 검게 빠짐 방지를 위해 기본 비활성
         [SerializeField] private bool overrideTerrainDistances;
         [SerializeField] private float terrainDetailDistance = 35f;
         [SerializeField] private float terrainTreeDistance = 100f;
@@ -107,7 +108,7 @@ namespace ProjectMT.EditorTools.StageMapSlicer
 
             EditorGUILayout.LabelField("Stage Map Slicer", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "회전 가능한 사각형/육각형 안의 프리팹 인스턴스는 연결을 유지한 채 포함하고, Terrain과 평면형 물만 도형 경계로 잘라 바로 배치 가능한 단일 맵 프리팹을 생성합니다. 원본 씬은 수정하거나 저장하지 않습니다.",
+                "회전 가능한 사각형/육각형에 경계가 조금이라도 겹치는 프리팹 인스턴스는 연결을 유지한 채 통째로 포함하고, Terrain과 평면형 물·용암만 도형 경계로 잘라 바로 배치 가능한 단일 맵 프리팹을 생성합니다. 원본 씬은 수정하거나 저장하지 않습니다.",
                 MessageType.Info);
 
             using (new EditorGUI.DisabledScope(true))
@@ -120,6 +121,17 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             EditorGUILayout.LabelField("출력 설정", EditorStyles.boldLabel);
             stageName = EditorGUILayout.TextField("스테이지 이름", stageName);
             outputRoot = EditorGUILayout.TextField("출력 루트", outputRoot);
+            EditorGUI.BeginChangeCheck();
+            outputScale = EditorGUILayout.FloatField(
+                new GUIContent("출력 배율", "절단 영역 안의 Terrain, 모델, 물을 이 배율로 축소해 저장합니다."),
+                outputScale);
+            if (EditorGUI.EndChangeCheck())
+            {
+                outputScale = Mathf.Max(0.01f, outputScale);
+                ClearPreview();
+                SceneView.RepaintAll();
+            }
+
             DrawGeneratedStageList();
 
             EditorGUILayout.Space(8f);
@@ -141,6 +153,11 @@ namespace ProjectMT.EditorTools.StageMapSlicer
                 sizeXZ.y = Mathf.Max(0.1f, sizeXZ.y);
                 ClearPreview();
                 SceneView.RepaintAll();
+            }
+
+            using (new EditorGUI.DisabledScope(true))
+            {
+                EditorGUILayout.Vector2Field("저장 결과 크기 X / Z", sizeXZ * Mathf.Max(0.01f, outputScale));
             }
 
             EditorGUILayout.Space(8f);
@@ -186,7 +203,7 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             terrainDetailDistance = Mathf.Max(0f, terrainDetailDistance);
             terrainTreeDistance = Mathf.Max(0f, terrainTreeDistance);
             EditorGUILayout.HelpBox(
-                "풀/꽃 식별은 프리팹·오브젝트·Material 이름을 사용합니다. GPU Instancing은 스테이지 전용 Material과 런타임 적용 컴포넌트를 만들고, 해당 식생 Renderer만 SRP Batcher에서 제외해 실제 Instancing 경로를 사용합니다. 전역 SRP Batcher·원본 Shader·원본 Material은 수정하지 않으며, 프리팹 연결과 Terrain Detail/Tree 데이터는 항상 유지합니다.",
+                "풀/꽃 식별은 프리팹·오브젝트·Material 이름을 사용합니다. GPU Instancing은 스테이지 전용 Material과 런타임 적용 컴포넌트를 만들고, 해당 식생 Renderer만 SRP Batcher에서 제외해 실제 Instancing 경로를 사용합니다. Terrain Draw Instanced는 Player 빌드 화면을 확인한 경우에만 켭니다. 전역 SRP Batcher·원본 Shader·원본 Material은 수정하지 않으며, 프리팹 연결과 Terrain Detail/Tree 데이터는 항상 유지합니다.",
                 MessageType.None);
 
             EditorGUILayout.BeginHorizontal();
@@ -233,15 +250,15 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             if (previewRoots.Count > 0 || previewTerrainCount > 0 || previewWaterCrops.Count > 0 || previewLightingCount > 0)
             {
                 EditorGUILayout.LabelField("선택 루트", previewRoots.Count.ToString("N0"));
-                EditorGUILayout.LabelField("영역 내 Renderer", previewRendererCount.ToString("N0"));
+                EditorGUILayout.LabelField("영역 교차 Renderer", previewRendererCount.ToString("N0"));
                 EditorGUILayout.LabelField("잘릴 Terrain", previewTerrainCount.ToString("N0"));
-                EditorGUILayout.LabelField("잘릴 물 Plane", previewWaterCrops.Count.ToString("N0"));
+                EditorGUILayout.LabelField("잘릴 물/용암 Plane", previewWaterCrops.Count.ToString("N0"));
                 EditorGUILayout.LabelField("포함 조명/프로브", previewLightingCount.ToString("N0"));
             }
 
             EditorGUILayout.Space(8f);
             EditorGUILayout.HelpBox(
-                "일반 모델 프리팹은 자르거나 Unpack하지 않습니다. 원본 프리팹 연결과 오버라이드를 유지하며, Water 레이어 또는 물 Material을 사용한 수평 Plane만 선택 도형 경계로 별도 크롭합니다.",
+                "일반 모델 프리팹은 Renderer 경계가 선택 영역에 닿으면 통째로 포함하며 자르거나 Unpack하지 않습니다. 원본 프리팹 연결과 오버라이드를 유지하며, Water 레이어 또는 물·용암 Material을 사용한 실제 수평 Plane만 선택 도형 경계로 별도 크롭합니다.",
                 MessageType.Warning);
             EditorGUILayout.HelpBox(
                 "생성 프리팹은 원본 씬(.unity)을 참조하지 않도록 검사합니다. 모델 Mesh/Material과 원본 모델 프리팹 등 프로젝트 에셋 의존성은 유지합니다.",
@@ -384,7 +401,10 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             Handles.color = new Color(0.1f, 0.8f, 1f, 0.95f);
             Handles.DrawAAPolyLine(2f, corners.Concat(new[] { corners[0] }).ToArray());
             Handles.color = previousColor;
-            Handles.Label(corners[0], $"  {stageName}  {GetShapeLabel(sliceShape)}  {sizeXZ.x:0.##} x {sizeXZ.y:0.##}  Y {rotationY:0.#}°");
+            Vector2 outputSize = sizeXZ * Mathf.Max(0.01f, outputScale);
+            Handles.Label(
+                corners[0],
+                $"  {stageName}  {GetShapeLabel(sliceShape)}  원본 {sizeXZ.x:0.##} x {sizeXZ.y:0.##}  → 저장 {outputSize.x:0.##} x {outputSize.y:0.##}  Y {rotationY:0.#}°");
         }
 
         private void DrawPreviewBounds()
@@ -430,6 +450,7 @@ namespace ProjectMT.EditorTools.StageMapSlicer
                    && !EditorApplication.isPlayingOrWillChangePlaymode
                    && sizeXZ.x > 0.01f
                    && sizeXZ.y > 0.01f
+                   && outputScale > 0.001f
                    && !string.IsNullOrWhiteSpace(stageName);
         }
 
@@ -530,7 +551,7 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             }
 
             lastSummary =
-                $"미리보기 완료: 프리팹/모델 루트 {previewRoots.Count:N0}개, 영역 내 Renderer {previewRendererCount:N0}개, Terrain {previewTerrainCount:N0}개, 물 Plane {previewWaterCrops.Count:N0}개, 환경/효과 {previewLightingCount:N0}개";
+                $"미리보기 완료: 프리팹/모델 루트 {previewRoots.Count:N0}개, 영역 교차 Renderer {previewRendererCount:N0}개, Terrain {previewTerrainCount:N0}개, 물/용암 Plane {previewWaterCrops.Count:N0}개, 환경/효과 {previewLightingCount:N0}개";
             Debug.Log($"[StageMapSlicer] {lastSummary}");
 
             if (showDialogOnEmpty
@@ -539,7 +560,7 @@ namespace ProjectMT.EditorTools.StageMapSlicer
                 && previewWaterCrops.Count == 0
                 && previewLightingCount == 0)
             {
-                EditorUtility.DisplayDialog("Stage Map Slicer", "지정 영역 안에서 모델이나 Terrain을 찾지 못했습니다.", "확인");
+                EditorUtility.DisplayDialog("Stage Map Slicer", "지정 영역과 겹치는 모델이나 Terrain을 찾지 못했습니다.", "확인");
             }
 
             SceneView.RepaintAll();
@@ -558,7 +579,7 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             lastSummary = "영역이 변경되었습니다. 미리보기를 다시 실행하세요.";
         }
 
-        private void BuildStagePrefab(Scene sourceScene)
+        private void BuildStagePrefab(Scene sourceScene, bool showResultDialog = true)
         {
             if (!CanBuild(sourceScene))
             {
@@ -655,7 +676,8 @@ namespace ProjectMT.EditorTools.StageMapSlicer
                         : waterCrops.Min(crop => crop.WorldY);
                 StageSpace stageSpace = new StageSpace(
                     new Vector3(centerXZ.x, originY, centerXZ.y),
-                    rotationY);
+                    rotationY,
+                    outputScale);
                 Dictionary<UnityEngine.Object, UnityEngine.Object> objectMap =
                     new Dictionary<UnityEngine.Object, UnityEngine.Object>();
                 int linkedPrefabCount = 0;
@@ -725,8 +747,8 @@ namespace ProjectMT.EditorTools.StageMapSlicer
                         modelsRoot.transform,
                         previewScene,
                         vegetationRoots,
-                        vegetationCullDistance,
-                        vegetationCullCellSize)
+                        vegetationCullDistance * stageSpace.Scale,
+                        vegetationCullCellSize * stageSpace.Scale)
                     : 0;
 
                 Light clonedSun = null;
@@ -774,7 +796,8 @@ namespace ProjectMT.EditorTools.StageMapSlicer
                         false,
                         overrideTerrainDistances,
                         terrainDetailDistance,
-                        terrainTreeDistance);
+                        terrainTreeDistance,
+                        stageSpace.Scale);
                 }
 
                 if (gpuInstancingMaterials.Length > 0
@@ -791,7 +814,7 @@ namespace ProjectMT.EditorTools.StageMapSlicer
                     {
                         EditorUtility.DisplayProgressBar(
                             "Stage Map Slicer",
-                            $"물 Plane 크롭 중 ({i + 1}/{waterCrops.Length})",
+                            $"물/용암 Plane 크롭 중 ({i + 1}/{waterCrops.Length})",
                             0.77f + (float)i / Mathf.Max(1, waterCrops.Length) * 0.13f);
                         string waterMeshPath = $"{stageFolder}/{safeStageName}_WaterMesh_{i + 1:00}.asset";
                         CreateCroppedWater(waterCrops[i], waterMeshPath, waterRoot.transform, previewScene, stageSpace);
@@ -824,7 +847,8 @@ namespace ProjectMT.EditorTools.StageMapSlicer
                     enableTerrainDrawInstanced,
                     overrideTerrainDistances,
                     terrainDetailDistance,
-                    terrainTreeDistance);
+                    terrainTreeDistance,
+                    stageSpace.Scale);
 
                 string[] sceneDependencies = AssetDatabase.GetDependencies(prefabPath, true)
                     .Where(path => path.EndsWith(".unity", StringComparison.OrdinalIgnoreCase))
@@ -838,18 +862,24 @@ namespace ProjectMT.EditorTools.StageMapSlicer
                 int missingScripts = CountMissingScripts(exportRoot);
                 int missingMaterials = CountMissingMaterials(exportRoot);
                 lastSummary =
-                    $"생성 완료: {prefabPath}\n{GetShapeLabel(sliceShape)} / Y {rotationY:0.#}° / 연결 프리팹 {linkedPrefabCount:N0}개 / 내장 모델 {embeddedModelCount:N0}개 / Terrain {terrainCrops.Length:N0}개 / 물 {waterCrops.Length:N0}개 / 환경·효과 {environmentRoots.Length:N0}개 / Collider 비활성 {disabledColliderCount:N0}개 / 그림자 해제 Renderer {disabledShadowRendererCount:N0}개 / 실제 Instancing Material {stageInstancedMaterialPaths.Count:N0}개 / SRP 우회 Renderer {gpuInstancedRendererCount:N0}개 / 식생 컬링 셀 {vegetationCullCellCount:N0}개 / 씬 참조 정리 {remappedSceneReferences:N0}개 / Missing Script {missingScripts:N0} / 활성 누락 Material {missingMaterials:N0}";
+                    $"생성 완료: {prefabPath}\n{GetShapeLabel(sliceShape)} / 출력 배율 x{stageSpace.Scale:0.###} / 원본 {sizeXZ.x:0.##} x {sizeXZ.y:0.##} → 저장 {sizeXZ.x * stageSpace.Scale:0.##} x {sizeXZ.y * stageSpace.Scale:0.##} / Y {rotationY:0.#}° / 연결 프리팹 {linkedPrefabCount:N0}개 / 내장 모델 {embeddedModelCount:N0}개 / Terrain {terrainCrops.Length:N0}개 / 물·용암 {waterCrops.Length:N0}개 / 환경·효과 {environmentRoots.Length:N0}개 / Collider 비활성 {disabledColliderCount:N0}개 / 그림자 해제 Renderer {disabledShadowRendererCount:N0}개 / 실제 Instancing Material {stageInstancedMaterialPaths.Count:N0}개 / SRP 우회 Renderer {gpuInstancedRendererCount:N0}개 / 식생 컬링 셀 {vegetationCullCellCount:N0}개 / 씬 참조 정리 {remappedSceneReferences:N0}개 / Missing Script {missingScripts:N0} / 활성 누락 Material {missingMaterials:N0}";
                 Debug.Log($"[StageMapSlicer] {lastSummary}");
 
                 EditorGUIUtility.PingObject(prefab);
                 success = true;
-                EditorUtility.DisplayDialog("Stage Map Slicer", lastSummary, "확인");
+                if (showResultDialog)
+                {
+                    EditorUtility.DisplayDialog("Stage Map Slicer", lastSummary, "확인");
+                }
             }
             catch (Exception exception)
             {
                 Debug.LogException(exception);
                 lastSummary = $"생성 실패: {exception.Message}";
-                EditorUtility.DisplayDialog("Stage Map Slicer", lastSummary, "확인");
+                if (showResultDialog)
+                {
+                    EditorUtility.DisplayDialog("Stage Map Slicer", lastSummary, "확인");
+                }
             }
             finally
             {
@@ -893,7 +923,7 @@ namespace ProjectMT.EditorTools.StageMapSlicer
 
                 if (renderer is ParticleSystemRenderer
                     || IsCroppableWaterRenderer(renderer)
-                    || !region.Contains(record.Center.x, record.Center.z))
+                    || !region.Intersects(record.Bounds))
                 {
                     continue;
                 }
@@ -977,7 +1007,10 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             bool horizontal = Mathf.Abs(Vector3.Dot(transform.up, Vector3.up)) > 0.999f;
             float xAlignment = Mathf.Abs(Vector3.Dot(transform.right, Vector3.right));
             float zAlignment = Mathf.Abs(Vector3.Dot(transform.right, Vector3.forward));
-            return horizontal && Mathf.Max(xAlignment, zAlignment) > 0.999f;
+            Vector3 boundsSize = renderer.bounds.size;
+            float horizontalSize = Mathf.Max(0.0001f, Mathf.Min(boundsSize.x, boundsSize.z));
+            bool flatSurface = boundsSize.y <= Mathf.Max(0.05f, horizontalSize * 0.01f);
+            return horizontal && Mathf.Max(xAlignment, zAlignment) > 0.999f && flatSurface;
         }
 
         private static bool IsWaterRenderer(Renderer renderer)
@@ -997,7 +1030,9 @@ namespace ProjectMT.EditorTools.StageMapSlicer
                 string materialName = material.name;
                 string shaderName = material.shader != null ? material.shader.name : string.Empty;
                 if (materialName.IndexOf("water", StringComparison.OrdinalIgnoreCase) >= 0
-                    || shaderName.IndexOf("water", StringComparison.OrdinalIgnoreCase) >= 0)
+                    || shaderName.IndexOf("water", StringComparison.OrdinalIgnoreCase) >= 0
+                    || materialName.IndexOf("lava", StringComparison.OrdinalIgnoreCase) >= 0
+                    || shaderName.IndexOf("lava", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     return true;
                 }
@@ -1715,9 +1750,32 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             clone.transform.SetLocalPositionAndRotation(
                 stageSpace.WorldToLocalPosition(source.transform.position),
                 stageSpace.WorldToLocalRotation(source.transform.rotation));
-            clone.transform.localScale = source.transform.lossyScale;
+            clone.transform.localScale = source.transform.lossyScale * stageSpace.Scale;
+            ScaleAbsoluteWorldUnitComponents(clone, stageSpace.Scale);
             clone.SetActive(source.activeSelf);
             return clone;
+        }
+
+        private static void ScaleAbsoluteWorldUnitComponents(GameObject root, float outputScale)
+        {
+            foreach (Light light in root.GetComponentsInChildren<Light>(true))
+            {
+                if (light.type != LightType.Directional)
+                {
+                    light.range *= outputScale;
+                }
+            }
+
+            foreach (AudioSource audioSource in root.GetComponentsInChildren<AudioSource>(true))
+            {
+                audioSource.minDistance *= outputScale;
+                audioSource.maxDistance *= outputScale;
+            }
+
+            foreach (WindZone windZone in root.GetComponentsInChildren<WindZone>(true))
+            {
+                windZone.radius *= outputScale;
+            }
         }
 
         private static void CopyAddedComponentOverrides(GameObject sourceRoot, GameObject destinationRoot)
@@ -2117,17 +2175,22 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             bool drawInstanced,
             bool applyDistanceOverrides,
             float detailDistance,
-            float treeDistance)
+            float treeDistance,
+            float outputScale)
         {
             Terrain sourceTerrain = crop.Terrain;
             TerrainData sourceData = sourceTerrain.terrainData;
+            TerrainLayer[] outputTerrainLayers = CreateOutputTerrainLayers(
+                sourceData.terrainLayers,
+                terrainAssetPath,
+                outputScale);
             TerrainData destinationData = new TerrainData
             {
                 name = Path.GetFileNameWithoutExtension(terrainAssetPath)
             };
             AssetDatabase.CreateAsset(destinationData, terrainAssetPath); // splat 서브에셋을 먼저 고정
 
-            CopyTerrainSettings(sourceTerrain, destinationData, crop);
+            CopyTerrainSettings(sourceTerrain, destinationData, crop, outputScale, outputTerrainLayers);
 
             GameObject terrainObject = new GameObject($"{sourceTerrain.name}_Cropped");
             SceneManager.MoveGameObjectToScene(terrainObject, destinationScene);
@@ -2138,9 +2201,9 @@ namespace ProjectMT.EditorTools.StageMapSlicer
                 terrainObject,
                 GameObjectUtility.GetStaticEditorFlags(sourceTerrain.gameObject));
             terrainObject.transform.position = new Vector3(
-                crop.MinLocalX,
-                sourceTerrain.transform.position.y - stageSpace.Origin.y,
-                crop.MinLocalZ);
+                crop.MinLocalX * outputScale,
+                (sourceTerrain.transform.position.y - stageSpace.Origin.y) * outputScale,
+                crop.MinLocalZ * outputScale);
 
             Terrain destinationTerrain = terrainObject.AddComponent<Terrain>();
             TerrainCollider destinationCollider = terrainObject.AddComponent<TerrainCollider>();
@@ -2148,10 +2211,11 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             destinationCollider.terrainData = destinationData;
             CopyTerrainComponentSettings(sourceTerrain, destinationTerrain, destinationCollider);
             destinationTerrain.drawInstanced = drawInstanced;
+            ScaleTerrainWorldDistances(destinationTerrain, outputScale);
             if (applyDistanceOverrides)
             {
-                destinationTerrain.detailObjectDistance = Mathf.Max(0f, detailDistance);
-                destinationTerrain.treeDistance = Mathf.Max(0f, treeDistance);
+                destinationTerrain.detailObjectDistance = Mathf.Max(0f, detailDistance * outputScale);
+                destinationTerrain.treeDistance = Mathf.Max(0f, treeDistance * outputScale);
                 destinationTerrain.treeBillboardDistance = Mathf.Min(
                     destinationTerrain.treeBillboardDistance,
                     destinationTerrain.treeDistance);
@@ -2163,7 +2227,9 @@ namespace ProjectMT.EditorTools.StageMapSlicer
         private static void CopyTerrainSettings(
             Terrain sourceTerrain,
             TerrainData destination,
-            TerrainCrop crop)
+            TerrainCrop crop,
+            float outputScale,
+            TerrainLayer[] outputTerrainLayers)
         {
             TerrainData source = sourceTerrain.terrainData;
             float normalizedWidth = crop.Width / Mathf.Max(0.0001f, source.size.x);
@@ -2172,10 +2238,13 @@ namespace ProjectMT.EditorTools.StageMapSlicer
 
             int heightResolution = source.heightmapResolution;
             destination.heightmapResolution = heightResolution;
-            destination.size = new Vector3(crop.Width, source.size.y, crop.Depth);
+            destination.size = new Vector3(
+                crop.Width * outputScale,
+                source.size.y * outputScale,
+                crop.Depth * outputScale);
             destination.SetHeights(0, 0, CropAndResampleHeights(sourceTerrain, crop, heightResolution));
 
-            destination.terrainLayers = source.terrainLayers;
+            destination.terrainLayers = outputTerrainLayers;
             if (source.alphamapLayers > 0 && source.alphamapResolution > 0)
             {
                 int alphaResolution = source.alphamapResolution;
@@ -2185,14 +2254,52 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             }
 
             CopyHoles(sourceTerrain, destination, crop);
-            CopyDetails(sourceTerrain, destination, crop, normalizedMaxSize);
-            CopyTrees(sourceTerrain, destination, crop);
+            CopyDetails(sourceTerrain, destination, crop, normalizedMaxSize, outputScale);
+            CopyTrees(sourceTerrain, destination, crop, outputScale);
 
             destination.wavingGrassAmount = source.wavingGrassAmount;
             destination.wavingGrassSpeed = source.wavingGrassSpeed;
             destination.wavingGrassStrength = source.wavingGrassStrength;
             destination.wavingGrassTint = source.wavingGrassTint;
             destination.SetBaseMapDirty();
+        }
+
+        private static TerrainLayer[] CreateOutputTerrainLayers(
+            IReadOnlyList<TerrainLayer> sourceLayers,
+            string terrainAssetPath,
+            float outputScale)
+        {
+            if (sourceLayers == null || sourceLayers.Count == 0)
+            {
+                return Array.Empty<TerrainLayer>();
+            }
+
+            if (Mathf.Approximately(outputScale, 1f))
+            {
+                return sourceLayers.ToArray();
+            }
+
+            string folder = Path.GetDirectoryName(terrainAssetPath)?.Replace('\\', '/');
+            string terrainName = Path.GetFileNameWithoutExtension(terrainAssetPath);
+            TerrainLayer[] outputLayers = new TerrainLayer[sourceLayers.Count];
+            for (int i = 0; i < sourceLayers.Count; i++)
+            {
+                TerrainLayer sourceLayer = sourceLayers[i];
+                if (sourceLayer == null)
+                {
+                    continue;
+                }
+
+                TerrainLayer outputLayer = UnityEngine.Object.Instantiate(sourceLayer);
+                outputLayer.name = $"{sourceLayer.name}_Scaled";
+                outputLayer.tileSize = sourceLayer.tileSize * outputScale;
+                outputLayer.tileOffset = sourceLayer.tileOffset * outputScale;
+                string layerPath = $"{folder}/{terrainName}_TerrainLayer_{i + 1:00}.terrainlayer";
+                AssetDatabase.CreateAsset(outputLayer, layerPath);
+                outputLayers[i] = outputLayer;
+            }
+
+            return outputLayers;
         }
 
         private static float[,] CropAndResampleHeights(
@@ -2310,10 +2417,23 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             Terrain sourceTerrain,
             TerrainData destination,
             TerrainCrop crop,
-            float normalizedMaxSize)
+            float normalizedMaxSize,
+            float outputScale)
         {
             TerrainData source = sourceTerrain.terrainData;
-            DetailPrototype[] prototypes = source.detailPrototypes;
+            DetailPrototype[] prototypes = source.detailPrototypes
+                .Select(prototype =>
+                {
+                    DetailPrototype scaled = new DetailPrototype(prototype)
+                    {
+                        minWidth = prototype.minWidth * outputScale,
+                        maxWidth = prototype.maxWidth * outputScale,
+                        minHeight = prototype.minHeight * outputScale,
+                        maxHeight = prototype.maxHeight * outputScale
+                    };
+                    return scaled;
+                })
+                .ToArray();
             if (prototypes == null || prototypes.Length == 0 || source.detailResolution <= 0)
             {
                 return;
@@ -2364,7 +2484,11 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             }
         }
 
-        private static void CopyTrees(Terrain sourceTerrain, TerrainData destination, TerrainCrop crop)
+        private static void CopyTrees(
+            Terrain sourceTerrain,
+            TerrainData destination,
+            TerrainCrop crop,
+            float outputScale)
         {
             TerrainData source = sourceTerrain.terrainData;
             destination.treePrototypes = source.treePrototypes;
@@ -2387,6 +2511,8 @@ namespace ProjectMT.EditorTools.StageMapSlicer
                     Mathf.Clamp01((local.x - crop.MinLocalX) / crop.Width),
                     position.y,
                     Mathf.Clamp01((local.y - crop.MinLocalZ) / crop.Depth));
+                destinationInstance.widthScale *= outputScale;
+                destinationInstance.heightScale *= outputScale;
                 instances.Add(destinationInstance);
             }
 
@@ -2473,6 +2599,15 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             {
                 CopySerializedComponentSettings(sourceCollider, destinationCollider, "m_TerrainData");
             }
+        }
+
+        private static void ScaleTerrainWorldDistances(Terrain terrain, float outputScale)
+        {
+            terrain.detailObjectDistance *= outputScale;
+            terrain.treeDistance *= outputScale;
+            terrain.treeBillboardDistance *= outputScale;
+            terrain.treeCrossFadeLength *= outputScale;
+            terrain.basemapDistance *= outputScale;
         }
 
         private static void CopySerializedComponentSettings(
@@ -2756,7 +2891,8 @@ namespace ProjectMT.EditorTools.StageMapSlicer
             bool expectedDrawInstanced,
             bool expectedDistanceOverrides,
             float expectedDetailDistance,
-            float expectedTreeDistance)
+            float expectedTreeDistance,
+            float expectedOutputScale)
         {
             if (prefab == null)
             {
@@ -2886,14 +3022,65 @@ namespace ProjectMT.EditorTools.StageMapSlicer
                     throw new InvalidOperationException($"Terrain {i + 1} Detail/Tree 데이터 보존 검증 실패");
                 }
 
+                Vector3 expectedSize = new Vector3(
+                    terrainCrops[i].Width * expectedOutputScale,
+                    sourceData.size.y * expectedOutputScale,
+                    terrainCrops[i].Depth * expectedOutputScale);
+                if (Vector3.Distance(destinationData.size, expectedSize) > 0.001f)
+                {
+                    throw new InvalidOperationException(
+                        $"Terrain {i + 1} 출력 배율 검증 실패: 예상 {expectedSize}, 저장 {destinationData.size}");
+                }
+
+                TerrainLayer[] sourceLayers = sourceData.terrainLayers;
+                TerrainLayer[] destinationLayers = destinationData.terrainLayers;
+                if (sourceLayers.Length != destinationLayers.Length)
+                {
+                    throw new InvalidOperationException($"Terrain {i + 1} Layer 개수 검증 실패");
+                }
+
+                for (int layerIndex = 0; layerIndex < sourceLayers.Length; layerIndex++)
+                {
+                    TerrainLayer sourceLayer = sourceLayers[layerIndex];
+                    TerrainLayer destinationLayer = destinationLayers[layerIndex];
+                    if (sourceLayer == null || destinationLayer == null)
+                    {
+                        if (sourceLayer != destinationLayer)
+                        {
+                            throw new InvalidOperationException($"Terrain {i + 1} Layer {layerIndex + 1} 누락");
+                        }
+
+                        continue;
+                    }
+
+                    Vector2 expectedTileSize = sourceLayer.tileSize * expectedOutputScale;
+                    Vector2 expectedTileOffset = sourceLayer.tileOffset * expectedOutputScale;
+                    if (Vector2.Distance(destinationLayer.tileSize, expectedTileSize) > 0.001f
+                        || Vector2.Distance(destinationLayer.tileOffset, expectedTileOffset) > 0.001f)
+                    {
+                        throw new InvalidOperationException(
+                            $"Terrain {i + 1} Layer {layerIndex + 1} 출력 배율 검증 실패");
+                    }
+
+                    if (!Mathf.Approximately(expectedOutputScale, 1f) && sourceLayer == destinationLayer)
+                    {
+                        throw new InvalidOperationException(
+                            $"Terrain {i + 1} Layer {layerIndex + 1} 원본 공유 감지");
+                    }
+                }
+
                 if (destination.drawInstanced)
                 {
                     throw new InvalidOperationException($"Terrain {i + 1} DX12 Editor 안전값 저장 검증 실패");
                 }
 
                 if (expectedDistanceOverrides
-                    && (!Mathf.Approximately(destination.detailObjectDistance, expectedDetailDistance)
-                        || !Mathf.Approximately(destination.treeDistance, expectedTreeDistance)))
+                    && (!Mathf.Approximately(
+                            destination.detailObjectDistance,
+                            expectedDetailDistance * expectedOutputScale)
+                        || !Mathf.Approximately(
+                            destination.treeDistance,
+                            expectedTreeDistance * expectedOutputScale)))
                 {
                     throw new InvalidOperationException($"Terrain {i + 1} 식생 거리 저장 검증 실패");
                 }
@@ -3068,7 +3255,7 @@ namespace ProjectMT.EditorTools.StageMapSlicer
                     new Vector2(bounds.min.x, bounds.max.z)
                 };
                 List<Vector2> intersection = ClipConvexPolygon(WorldPolygon, boundsPolygon);
-                return intersection.Count >= 3 && Mathf.Abs(SignedArea(intersection)) > 0.0001f;
+                return intersection.Count > 0;
             }
 
             public float DistanceSquared(float x, float z)
@@ -3116,19 +3303,21 @@ namespace ProjectMT.EditorTools.StageMapSlicer
         {
             private readonly Quaternion inverseRotation;
 
-            public StageSpace(Vector3 origin, float rotationY)
+            public StageSpace(Vector3 origin, float rotationY, float scale)
             {
                 Origin = origin;
                 RotationY = rotationY;
+                Scale = Mathf.Max(0.01f, scale);
                 inverseRotation = Quaternion.Inverse(Quaternion.Euler(0f, rotationY, 0f));
             }
 
             public Vector3 Origin { get; }
             public float RotationY { get; }
+            public float Scale { get; }
 
             public Vector3 WorldToLocalPosition(Vector3 worldPosition)
             {
-                return inverseRotation * (worldPosition - Origin);
+                return inverseRotation * (worldPosition - Origin) * Scale;
             }
 
             public Quaternion WorldToLocalRotation(Quaternion worldRotation)

@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: EquipmentBalanceConfig
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Equipment.EquipmentBalanceConfig
   dropWeights:
-  - 68
-  - 20
-  - 8
-  - 3
+  - 45
+  - 30
+  - 19
+  - 5
   - 1
   coreStatBudgetPercent:
   - 3

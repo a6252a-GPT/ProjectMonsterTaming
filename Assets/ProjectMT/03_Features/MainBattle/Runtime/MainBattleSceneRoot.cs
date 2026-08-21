@@ -1,14 +1,20 @@
 using System;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Features.Attendance;
 using ProjectMT.Features.Commander;
+using ProjectMT.Features.CommanderSkill;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Features.Expedition;
 using ProjectMT.Features.Formation;
 using ProjectMT.Features.GrowthDungeon;
 using ProjectMT.Features.Inventory;
+using ProjectMT.Features.Mailbox;
+using ProjectMT.Shared.Combat;
+using ProjectMT.Features.Quest;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -23,18 +29,18 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private ContentId foodRiotContentId = new ContentId("food_riot"); // Hosted 콘텐츠 ID
         [SerializeField] private ContentId castleRaidContentId = new ContentId("castle_raid"); // 별도 씬 콘텐츠 ID
         [SerializeField] private ContentId guardiansTowerContentId = new ContentId("guardians_tower"); // 08.06 안건준 추가 - 수호자의 탑 Hosted 콘텐츠 ID (식량 대소동과 별도)
-        [SerializeField] private ContentId giantSpellbookContentId = new ContentId("giant_spellbook"); // 거대마도서 Hosted 연결부
+        [SerializeField] private ContentId fallenCommanderContentId = new ContentId("fallen_commander"); // 군단장 보스전 Hosted 연결부
         [SerializeField] private ExpeditionController expedition; // 원정대 진행 담당
         [SerializeField] private MainBattleHostedContentRunner hostedRunner; // 성장 던전 전환 담당
         [SerializeField] private Button foodRiotButton; // 식량 대소동 입장 버튼
         [SerializeField] private Button castleRaidButton; // 군단의 역습 입장 버튼
         [SerializeField] private Button towerButton; // 08.06 안건준 추가 - 수호자의 탑 입장 버튼
-        [SerializeField] private Button giantSpellbookButton; // 거대마도서 입장 버튼
+        [SerializeField] private Button fallenCommanderButton; // 타락한 과거의 군단장 입장 버튼
         [SerializeField] private Button foodRiotSweepButton; // 식량 대소동 1회 소탕
         [SerializeField] private Button towerSweepButton; // 고대 수호수 1회 소탕
         [SerializeField] private TMP_Text foodRiotKeyText; // 식량 열쇠 현재/최대
         [SerializeField] private TMP_Text treasureSpiritKeyText; // 보물 정령 열쇠 현재/최대
-        [SerializeField] private TMP_Text giantSpellbookKeyText; // 마도서 열쇠 현재/최대
+        [SerializeField] private TMP_Text fallenCommanderKeyText; // 군단장 던전 열쇠 현재/최대
         [SerializeField] private TMP_Text towerKeyText; // 수호수 열쇠 현재/최대
         [SerializeField] private TMP_Text statusText; // 현재 플레이 상태
         [SerializeField] private FormationPageController formationPage; // 보유·편성 통합 화면
@@ -54,6 +60,16 @@ namespace ProjectMT.Features.MainBattle
         private MainBattleManagementUiController managementUi; // 관리창 상호 배타 제어
         private MainBattleHudProgressView hudProgressView; // 상단 계정·재화 표시
         private GrowthDungeonStageEntryController growthDungeonEntry; // 단계 선택·파밍 입장
+        private CommanderGrowthPageView commanderGrowthPage; // 저장 편성 총전투력 표시
+        private CommanderSkillRuntime commanderSkillRuntime; // 군단장 스킬 실행
+        private CommanderSkillHudView commanderSkillHud; // 우측 하단 AUTO·6슬롯 HUD
+        private CommanderSkillPageController commanderSkillPage; // 군단장 스킬 장착·성장 관리창
+        private CommanderSkillSummonController commanderSkillSummon; // 상점 전용 스킬 소환
+        private AttendancePanelController attendancePanel; // 28일 출석 팝업
+        private MailboxPanelController mailboxPanel; // 우편 목록·수령 팝업
+        private HudQuickMenuController quickMenu; // 출석·우편 알림 배지
+        private CombatPowerIncreasePresenter combatPowerIncrease; // 총전투력 상승 피드백
+        private float trackedTotalPower; // 마지막 저장 확정 총전투력
 
         public SceneId SceneId => sceneId;
         public bool IsInitialized { get; private set; }
@@ -86,7 +102,7 @@ namespace ProjectMT.Features.MainBattle
             {
                 foodRiotButton?.onClick.AddListener(OpenFoodRiot); // 신규 컨트롤러 누락 시 기존 진입 보존
                 towerButton?.onClick.AddListener(OpenGuardiansTower);
-                giantSpellbookButton?.onClick.AddListener(OpenGiantSpellbook);
+                fallenCommanderButton?.onClick.AddListener(OpenFallenCommander);
                 foodRiotSweepButton?.onClick.AddListener(SweepFoodRiot);
                 towerSweepButton?.onClick.AddListener(SweepGuardiansTower);
             }
@@ -107,13 +123,15 @@ namespace ProjectMT.Features.MainBattle
                 context.RewardPresentation,
                 formationGround,
                 context.ItemCatalog,
-                commander);
+                commander,
+                context.EquipmentBalanceConfig);
             formationPage.PartyChanged += HandlePartyChanged;
             formationPage.OpenStateChanged += HandleFormationPageOpenStateChanged;
             formationPage.PositionFormationRequested += HandlePositionFormationRequested;
             formationPage.Configure(context.Progress, context.MonsterCatalog, context.RefreshParty);
             managementUi = GetComponentInChildren<MainBattleManagementUiController>(true);
             managementUi?.ConfigureFormationPage(formationPage);
+            ConfigureCommanderSkills(commander);
             growthDungeonEntry?.Configure(
                 context.Progress,
                 context.ContentLauncher,
@@ -145,9 +163,18 @@ namespace ProjectMT.Features.MainBattle
             ConfigureCommanderGrowthPage();
             ConfigureEquipmentSlotUpgrade();
             ConfigureItemInventory();
+            attendancePanel = GetComponentInChildren<AttendancePanelController>(true);
+            attendancePanel?.Configure(context.Progress, context.ItemCatalog);
+            mailboxPanel = GetComponentInChildren<MailboxPanelController>(true);
+            mailboxPanel?.Configure(context.Progress, context.ItemCatalog);
+            quickMenu = GetComponentInChildren<HudQuickMenuController>(true);
+            quickMenu?.ConfigureNotifications(context.Progress);
             ConfigureMonsterDrag();
             ConfigureSpatialMovement();
             ConfigureFormationPlacement();
+            combatPowerIncrease = GetComponentInChildren<CombatPowerIncreasePresenter>(true);
+            trackedTotalPower = party.TotalPower;
+            context.Progress.Changed += HandleProgressChanged;
             SetStatus("자동 전투");
             IsInitialized = true;
         }
@@ -167,15 +194,27 @@ namespace ProjectMT.Features.MainBattle
             foodRiotButton?.onClick.RemoveListener(OpenFoodRiot);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
             towerButton?.onClick.RemoveListener(OpenGuardiansTower); // 08.06 안건준 추가
-            giantSpellbookButton?.onClick.RemoveListener(OpenGiantSpellbook);
+            fallenCommanderButton?.onClick.RemoveListener(OpenFallenCommander);
             foodRiotSweepButton?.onClick.RemoveListener(SweepFoodRiot);
             towerSweepButton?.onClick.RemoveListener(SweepGuardiansTower);
             ResolveGachaSystem()?.Shutdown();
             ResolveShopPageView()?.Shutdown();
             hudProgressView?.Shutdown();
+            commanderSkillHud?.Shutdown();
+            commanderSkillPage?.Shutdown();
+            commanderSkillSummon?.Shutdown();
+            commanderSkillRuntime?.Shutdown();
             managementUi?.ConfigureFormationPage(null);
             managementUi?.ConfigureEquipmentSlotUpgradePage(null);
             managementUi?.ConfigureInventoryPage(null);
+            managementUi?.ConfigureCommanderSkillPage(null);
+            quickMenu?.ConfigureNotifications(null);
+            if (context != null)
+            {
+                context.Progress.Changed -= HandleProgressChanged;
+            }
+            attendancePanel?.Configure(null, null);
+            mailboxPanel?.Configure(null, null);
             if (managementUi != null)
             {
                 managementUi.GrowthDungeonPageOpened -= RefreshGrowthDungeonUi;
@@ -208,9 +247,59 @@ namespace ProjectMT.Features.MainBattle
             spatialController = null;
             placementController = null;
             managementUi = null;
+            commanderGrowthPage = null;
             hudProgressView = null;
             growthDungeonEntry = null;
+            commanderSkillHud = null;
+            commanderSkillPage = null;
+            commanderSkillRuntime = null;
+            commanderSkillSummon = null;
+            attendancePanel = null;
+            mailboxPanel = null;
+            quickMenu = null;
+            combatPowerIncrease?.Hide();
+            combatPowerIncrease = null;
+            trackedTotalPower = 0f;
             IsInitialized = false;
+        }
+
+        private void ConfigureCommanderSkills(Transform commander)
+        {
+            var catalog = Resources.Load<CommanderSkillCatalog>("CommanderSkills/CommanderSkillCatalog");
+            var combatWorld = expedition.GetComponentInChildren<CombatWorld>(true);
+            commanderSkillHud = GetComponentInChildren<CommanderSkillHudView>(true);
+            var catalogError = catalog == null ? "Catalog asset is missing." : string.Empty;
+            if (catalog == null || !catalog.TryValidate(out catalogError))
+            {
+                Debug.LogError($"Commander skill catalog is missing or invalid: {catalogError}", this);
+                return;
+            }
+
+            commanderSkillSummon = GetComponentInChildren<CommanderSkillSummonController>(true);
+            commanderSkillSummon?.Configure(context.Progress, catalog);
+
+            if (combatWorld == null || commanderSkillHud == null)
+            {
+                Debug.LogWarning("Commander skill combat world or HUD is missing.", this);
+                return;
+            }
+
+            commanderSkillRuntime = GetComponent<CommanderSkillRuntime>();
+            if (commanderSkillRuntime == null)
+            {
+                commanderSkillRuntime = gameObject.AddComponent<CommanderSkillRuntime>(); // 신규 신 참조를 요구하지 않는 런타임 소유
+            }
+
+            commanderSkillRuntime.Configure(
+                context.Progress,
+                catalog,
+                combatWorld,
+                commander,
+                () => managementUi != null && managementUi.IsAnyPageOpen);
+            commanderSkillHud.Configure(context.Progress, catalog, commanderSkillRuntime);
+            commanderSkillPage = GetComponentInChildren<CommanderSkillPageController>(true);
+            commanderSkillPage?.Configure(context.Progress, catalog);
+            managementUi?.ConfigureCommanderSkillPage(commanderSkillPage);
         }
 
         // GachaSystem은 비활성 MonsterShop에 두면 프리팹 오버라이드 참조가 Missing으로 깨질 수 있다.
@@ -261,7 +350,10 @@ namespace ProjectMT.Features.MainBattle
         // 다시 찾아 연결한다.
         private void ConfigureEquipmentPage()
         {
-            ResolveEquipmentPage()?.Configure(context.Progress);
+            ResolveEquipmentPage()?.Configure(
+                context.Progress,
+                context.EquipmentBalanceConfig,
+                RefreshPartyForNextRun);
         }
 
         private EquipmentPageController ResolveEquipmentPage()
@@ -287,15 +379,20 @@ namespace ProjectMT.Features.MainBattle
                 return;
             }
 
-            var page = GetComponentInChildren<CommanderGrowthPageView>(true);
-            page?.Configure(context.Progress, context.CommanderGrowthConfig);
+            commanderGrowthPage = GetComponentInChildren<CommanderGrowthPageView>(true);
+            commanderGrowthPage?.Configure(
+                context.Progress,
+                context.CommanderGrowthConfig,
+                context.EquipmentBalanceConfig,
+                RefreshPartyForNextRun);
+            commanderGrowthPage?.SetParty(party);
         }
 
         // 장비 슬롯 강화 패널을 진행 데이터 및 메인 관리 UI에 연결한다.
         private void ConfigureEquipmentSlotUpgrade()
         {
             var panel = ResolveEquipmentSlotUpgradePanel();
-            panel?.Configure(context.Progress);
+            panel?.Configure(context.Progress, RefreshPartyForNextRun);
             managementUi?.ConfigureEquipmentSlotUpgradePage(panel);
         }
 
@@ -493,7 +590,7 @@ namespace ProjectMT.Features.MainBattle
             }
         }
 
-        private void OpenGiantSpellbook()
+        private void OpenFallenCommander()
         {
             managementUi?.CloseAllPages();
             if (!TryOpenContent())
@@ -502,9 +599,9 @@ namespace ProjectMT.Features.MainBattle
             }
 
             party = context.RefreshParty();
-            if (context.ContentLauncher.StartHosted(giantSpellbookContentId, party, hostedRunner))
+            if (context.ContentLauncher.StartHosted(fallenCommanderContentId, party, hostedRunner))
             {
-                SetStatus("거대마도서");
+                SetStatus("타락한 과거의 군단장");
             }
         }
 
@@ -549,6 +646,7 @@ namespace ProjectMT.Features.MainBattle
             if (context.ContentLauncher.StartSeparate(castleRaidContentId, party))
             {
                 SetStatus("군단의 역습");
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.CastleRaidEnter, 1L);
             }
             else
             {
@@ -652,8 +750,43 @@ namespace ProjectMT.Features.MainBattle
             }
 
             party = updatedParty;
+            trackedTotalPower = updatedParty.TotalPower;
             expedition.SetPartyForNextRun(updatedParty); // 현재 소환 유닛은 유지
+            commanderGrowthPage?.SetParty(updatedParty);
             SetStatus("편성 저장 완료 · 다음 전투부터 적용");
+        }
+
+        private void HandleProgressChanged()
+        {
+            if (!IsInitialized || context == null)
+            {
+                return;
+            }
+
+            var updatedParty = context.RefreshParty();
+            if (updatedParty == null || updatedParty.Units.Length == 0)
+            {
+                return;
+            }
+
+            var previousPower = trackedTotalPower;
+            var currentPower = updatedParty.TotalPower;
+            trackedTotalPower = currentPower;
+            party = updatedParty;
+            expedition.SetPartyForNextRun(updatedParty);
+            commanderGrowthPage?.SetParty(updatedParty);
+            if (currentPower > previousPower + 0.5f)
+            {
+                combatPowerIncrease?.ShowIncrease(previousPower, currentPower);
+            }
+        }
+
+        private void RefreshPartyForNextRun()
+        {
+            if (context != null)
+            {
+                HandlePartyChanged(context.RefreshParty());
+            }
         }
 
         private void RefreshGrowthDungeonKeyUi()
@@ -666,7 +799,7 @@ namespace ProjectMT.Features.MainBattle
             var items = context.Progress.View.Items;
             SetKeyText(foodRiotKeyText, items, ItemIds.FoodRiotKey);
             SetKeyText(treasureSpiritKeyText, items, ItemIds.TreasureSpiritKey);
-            SetKeyText(giantSpellbookKeyText, items, ItemIds.GiantSpellbookKey);
+            SetKeyText(fallenCommanderKeyText, items, ItemIds.FallenCommanderKey);
             SetKeyText(towerKeyText, items, ItemIds.GuardiansTowerKey);
 
             var sweepBusy = context.GrowthDungeonSweep != null && context.GrowthDungeonSweep.IsBusy;
@@ -722,7 +855,7 @@ namespace ProjectMT.Features.MainBattle
             MonsterManagementPageController managementController = null,
             ShopPageView shopView = null,
             Button guardiansTowerButton = null,
-            Button giantSpellbookEntryButton = null)
+            Button fallenCommanderEntryButton = null)
         {
             expedition = expeditionController;
             hostedRunner = runner;
@@ -734,7 +867,7 @@ namespace ProjectMT.Features.MainBattle
             monsterManagementPage = managementController;
             shopPageView = shopView;
             towerButton = guardiansTowerButton; // 08.06 안건준 추가
-            giantSpellbookButton = giantSpellbookEntryButton;
+            fallenCommanderButton = fallenCommanderEntryButton;
         }
 
         public void EditorConfigureGrowthDungeonSettlementUi(
@@ -742,14 +875,14 @@ namespace ProjectMT.Features.MainBattle
             Button guardiansSweep,
             TMP_Text foodKey,
             TMP_Text treasureKey,
-            TMP_Text giantKey,
+            TMP_Text fallenCommanderKey,
             TMP_Text guardiansKey)
         {
             foodRiotSweepButton = foodSweep;
             towerSweepButton = guardiansSweep;
             foodRiotKeyText = foodKey;
             treasureSpiritKeyText = treasureKey;
-            giantSpellbookKeyText = giantKey;
+            fallenCommanderKeyText = fallenCommanderKey;
             towerKeyText = guardiansKey;
         }
 #endif

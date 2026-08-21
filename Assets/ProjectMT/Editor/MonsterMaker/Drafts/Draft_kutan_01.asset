@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: Notion monster batch / FirePig_02
   vendorPrefab: {fileID: 1309761604126423416, guid: eae19874a2557b74d90d443fa3167079, type: 3}
   animatorSource: {fileID: 8914724647756743742, guid: eae19874a2557b74d90d443fa3167079, type: 3}
-  visualScale: {x: 1, y: 1, z: 1}
+  visualScale: {x: 1.2, y: 1.2, z: 1.2}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0
@@ -103,6 +103,14 @@ MonoBehaviour:
     attackSpeedRate: 0
     moveSpeedRate: 0
     attackRangeRate: 0
+  castleRaidAiPattern: 4
+  castleRaidSupportFocus: 0
+  castleRaidSupportRange: 5
+  castleRaidSupportCooldown: 4
+  castleRaidSupportDuration: 5
+  castleRaidHealRatio: 0.24
+  castleRaidAttackBuffRate: 0.2
+  castleRaidDefenseDamageMultiplier: 0.75
   ascensionConfigured: 0
   ascension1:
     healthRate: 0

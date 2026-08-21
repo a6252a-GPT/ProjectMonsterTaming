@@ -12,6 +12,7 @@ namespace ProjectMT.Shared.Stats
         [SerializeField, Min(1f)] private float baseCriticalDamageMultiplier = 1.5f;
         [SerializeField, Min(0.01f)] private float minimumDamage = 1f;
         [SerializeField, Min(0.01f)] private float defenseK = 100f;
+        [SerializeField, Min(0.01f)] private float combatPowerDisplayScale = 4f;
 
         [Header("최종 상한")]
         [SerializeField, Range(0f, 1f)] private float criticalRateCap = 0.75f;
@@ -30,6 +31,7 @@ namespace ProjectMT.Shared.Stats
             CriticalDamageMultiplierCap);
         public float MinimumDamage => Mathf.Max(0.01f, minimumDamage);
         public float DefenseK => Mathf.Max(0.01f, defenseK);
+        public float CombatPowerDisplayScale => Mathf.Max(0.01f, combatPowerDisplayScale);
         public float CriticalRateCap => Mathf.Clamp01(criticalRateCap);
         public float CriticalDamageMultiplierCap => Mathf.Max(1f, criticalDamageMultiplierCap);
         public float AttackSpeedBonusRateCap => Mathf.Max(0f, attackSpeedBonusRateCap);
@@ -55,7 +57,7 @@ namespace ProjectMT.Shared.Stats
 
         public bool TryValidate(out string error)
         {
-            if (defenseK <= 0f || minimumDamage <= 0f ||
+            if (defenseK <= 0f || minimumDamage <= 0f || combatPowerDisplayScale <= 0f ||
                 baseCriticalDamageMultiplier < 1f || criticalDamageMultiplierCap < 1f ||
                 baseCriticalDamageMultiplier > criticalDamageMultiplierCap ||
                 baseCriticalRate < 0f || baseCriticalRate > criticalRateCap)

@@ -1,4 +1,7 @@
 using ProjectMT.Features.Formation;
+using ProjectMT.Features.Quest;
+using ProjectMT.Features.Settings;
+using ProjectMT.Shared.GameData;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,6 +15,10 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private Button contentButton;
         [SerializeField] private Button summonButton;
         [SerializeField] private Button shopButton;
+        [SerializeField] private Button attendanceButton;
+        [SerializeField] private Button mailboxButton;
+        [SerializeField] private GameObject attendanceBadge;
+        [SerializeField] private GameObject mailboxBadge;
         [SerializeField] private Button menuButton;
         [SerializeField] private GameObject menuIcon;
         [SerializeField] private GameObject closeIcon;
@@ -26,7 +33,10 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private Button inventoryButton;
         [SerializeField] private Button equipmentSlotUpgradeButton;
         [SerializeField] private Button commanderButton;
+        [SerializeField] private Button skillButton;
+        [SerializeField] private Button missionButton;
         [SerializeField] private Button castleRaidButton;
+        [SerializeField] private Button settingsButton;
         [SerializeField] private Button modeButton;
 
         [Header("실제 기능")]
@@ -34,6 +44,9 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private FormationPageController formationPage;
         [SerializeField] private ShopCategoryMenu shopCategoryMenu;
         [SerializeField] private MainBattleSceneRoot sceneRoot;
+        [SerializeField] private DailyMissionPanelView questPanel;
+
+        private IGameProgressService progress;
 
         public bool IsOpen => expandedRoot != null && expandedRoot.activeSelf;
 
@@ -43,6 +56,8 @@ namespace ProjectMT.Features.MainBattle
             contentButton?.onClick.AddListener(OpenContent);
             summonButton?.onClick.AddListener(OpenSummon);
             shopButton?.onClick.AddListener(OpenShop);
+            attendanceButton?.onClick.AddListener(OpenAttendance);
+            mailboxButton?.onClick.AddListener(OpenMailbox);
             menuButton?.onClick.AddListener(ToggleMenu);
             monsterGrowthButton?.onClick.AddListener(OpenMonsterGrowth);
             formationButton?.onClick.AddListener(OpenFormation);
@@ -50,7 +65,10 @@ namespace ProjectMT.Features.MainBattle
             inventoryButton?.onClick.AddListener(OpenInventory);
             equipmentSlotUpgradeButton?.onClick.AddListener(OpenEquipmentSlotUpgrade);
             commanderButton?.onClick.AddListener(OpenCommander);
+            skillButton?.onClick.AddListener(OpenCommanderSkill);
+            missionButton?.onClick.AddListener(OpenMission);
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
+            settingsButton?.onClick.AddListener(OpenSettings);
             modeButton?.onClick.AddListener(CloseMenu);
             SetMenuOpen(false);
         }
@@ -60,6 +78,8 @@ namespace ProjectMT.Features.MainBattle
             contentButton?.onClick.RemoveListener(OpenContent);
             summonButton?.onClick.RemoveListener(OpenSummon);
             shopButton?.onClick.RemoveListener(OpenShop);
+            attendanceButton?.onClick.RemoveListener(OpenAttendance);
+            mailboxButton?.onClick.RemoveListener(OpenMailbox);
             menuButton?.onClick.RemoveListener(ToggleMenu);
             monsterGrowthButton?.onClick.RemoveListener(OpenMonsterGrowth);
             formationButton?.onClick.RemoveListener(OpenFormation);
@@ -67,8 +87,12 @@ namespace ProjectMT.Features.MainBattle
             inventoryButton?.onClick.RemoveListener(OpenInventory);
             equipmentSlotUpgradeButton?.onClick.RemoveListener(OpenEquipmentSlotUpgrade);
             commanderButton?.onClick.RemoveListener(OpenCommander);
+            skillButton?.onClick.RemoveListener(OpenCommanderSkill);
+            missionButton?.onClick.RemoveListener(OpenMission);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
+            settingsButton?.onClick.RemoveListener(OpenSettings);
             modeButton?.onClick.RemoveListener(CloseMenu);
+            ConfigureNotifications(null);
         }
 
         public void CloseMenu()
@@ -150,10 +174,56 @@ namespace ProjectMT.Features.MainBattle
             managementUi?.OpenCommanderGrowthPage();
         }
 
+        private void OpenCommanderSkill()
+        {
+            CloseMenu();
+            managementUi?.OpenCommanderSkillPage();
+        }
+
+        private void OpenMission()
+        {
+            CloseMenu();
+            formationPage?.ClosePage();
+            PrepareRuntimeQuestPanel();
+            if (questPanel != null)
+            {
+                if (managementUi != null)
+                {
+                    managementUi.OpenQuestPage();
+                }
+                else
+                {
+                    questPanel.Open();
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[Quest][UI] 정식 퀘스트 패널을 찾지 못했습니다.", this);
+            }
+        }
+
         private void OpenCastleRaid()
         {
             CloseMenu();
             sceneRoot?.OpenCastleRaid();
+        }
+
+        private void OpenAttendance()
+        {
+            CloseMenu();
+            managementUi?.OpenAttendancePage();
+        }
+
+        private void OpenMailbox()
+        {
+            CloseMenu();
+            managementUi?.OpenMailboxPage();
+        }
+
+        private void OpenSettings()
+        {
+            CloseMenu();
+            managementUi?.OpenSettingsPage();
         }
 
         private void ResolveRuntimeReferences()
@@ -162,6 +232,45 @@ namespace ProjectMT.Features.MainBattle
             formationPage ??= FindFirstObjectByType<FormationPageController>(FindObjectsInactive.Include);
             shopCategoryMenu ??= FindFirstObjectByType<ShopCategoryMenu>(FindObjectsInactive.Include);
             sceneRoot ??= FindFirstObjectByType<MainBattleSceneRoot>(FindObjectsInactive.Include);
+            questPanel ??= FindFirstObjectByType<DailyMissionPanelView>(FindObjectsInactive.Include);
+            PrepareRuntimeQuestPanel();
+        }
+
+        private void PrepareRuntimeQuestPanel()
+        {
+            if (managementUi == null || questPanel == null)
+            {
+                return;
+            }
+
+            if (!questPanel.transform.IsChildOf(managementUi.transform))
+            {
+                questPanel = QuestPanelRuntimeFactory.Create(questPanel, managementUi.transform);
+            }
+
+            managementUi.ConfigureQuestPage(questPanel);
+        }
+
+        public void ConfigureNotifications(IGameProgressService progressService)
+        {
+            if (progress != null)
+            {
+                progress.Changed -= RefreshBadges;
+            }
+
+            progress = progressService;
+            if (progress != null)
+            {
+                progress.Changed += RefreshBadges;
+            }
+
+            RefreshBadges();
+        }
+
+        private void RefreshBadges()
+        {
+            attendanceBadge?.SetActive(progress != null && progress.View.Attendance.HasPendingReward);
+            mailboxBadge?.SetActive(progress != null && progress.View.Mail.Count > 0);
         }
 
 #if UNITY_EDITOR
@@ -181,6 +290,7 @@ namespace ProjectMT.Features.MainBattle
             Button openInventoryButton,
             Button openEquipmentSlotUpgradeButton,
             Button openCommanderButton,
+            Button openSkillButton,
             Button openCastleRaidButton,
             Button currentModeButton)
         {
@@ -199,8 +309,32 @@ namespace ProjectMT.Features.MainBattle
             inventoryButton = openInventoryButton;
             equipmentSlotUpgradeButton = openEquipmentSlotUpgradeButton;
             commanderButton = openCommanderButton;
+            skillButton = openSkillButton;
             castleRaidButton = openCastleRaidButton;
             modeButton = currentModeButton;
+        }
+
+        public void EditorConfigureSettings(Button openSettingsButton)
+        {
+            settingsButton = openSettingsButton;
+        }
+
+        public void EditorConfigureQuest(Button openMissionButton, DailyMissionPanelView panel)
+        {
+            missionButton = openMissionButton;
+            questPanel = panel;
+        }
+
+        public void EditorConfigureRewards(
+            Button openAttendanceButton,
+            Button openMailboxButton,
+            GameObject attendanceNotification,
+            GameObject mailboxNotification)
+        {
+            attendanceButton = openAttendanceButton;
+            mailboxButton = openMailboxButton;
+            attendanceBadge = attendanceNotification;
+            mailboxBadge = mailboxNotification;
         }
 #endif
     }

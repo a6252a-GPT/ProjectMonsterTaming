@@ -73,6 +73,16 @@ namespace ProjectMT.Contents.Framework
         {
             return TryCreateRewardPresentation(result, out presentation); // 기존 Adapter 호환
         }
+
+        public virtual bool TryCreateRewardPresentation(
+            IContentResultData result,
+            GameProgressView progress,
+            ContentRunInfo runInfo,
+            ItemCatalog itemCatalog,
+            out RewardPresentationRequest presentation)
+        {
+            return TryCreateRewardPresentation(result, progress, itemCatalog, out presentation);
+        }
     }
 
     public abstract class ContentStartDataFactory : ScriptableObject // 부대 사진으로 시작값 생성

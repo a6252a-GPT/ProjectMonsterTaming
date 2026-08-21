@@ -19,6 +19,8 @@ MonoBehaviour:
   combatStatConfig: {fileID: 11400000, guid: e3fe862709cca3e4384f834bd1b4942d, type: 2}
   commanderGrowthConfig: {fileID: 11400000, guid: 70faaebd425ec634688a149e0c9eebc5, type: 2}
   equipmentBalanceConfig: {fileID: 11400000, guid: be2ba100346b1664d8bcdbc024dd7b0f, type: 2}
+  commanderSkillBalanceConfig: {fileID: 11400000, guid: 2407a88cd75a1594a8691043327768f7, type: 2}
+  commanderSkillSummonConfig: {fileID: 11400000, guid: 49e65f2766cbb2949a2ba93cc3ebaddb, type: 2}
   offlineRewardConfig: {fileID: 11400000, guid: f63a652d2c08109478a91b9cbf34d2cb, type: 2}
   entrySceneId:
     value: entry

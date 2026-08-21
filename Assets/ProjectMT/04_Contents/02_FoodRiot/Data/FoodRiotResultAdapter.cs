@@ -10,6 +10,7 @@ namespace ProjectMT.Contents.FoodRiot
     public sealed class FoodRiotResultAdapter : ContentResultAdapter // 처치 결과를 저장 변화로 변환
     {
         [SerializeField] private RewardDefinition rewardPerKill; // 처치 수 배수 보상
+        [SerializeField] private GrowthDungeonRewardTable stageRewards; // 5단계 Farming·Challenge 보상표
 
         public override bool TryCreateProgressChange(IContentResultData result, out GameProgressChange change)
         {
@@ -29,7 +30,20 @@ namespace ProjectMT.Contents.FoodRiot
             ContentRunInfo runInfo,
             out GameProgressChange change)
         {
-            return TryCreateProgressChange(result, out change);
+            if (!(result is FoodRiotResult foodResult) ||
+                !TryCreateRewards(foodResult, runInfo, out var rewards))
+            {
+                change = null;
+                return false;
+            }
+
+            change = GameProgressChange.RecordFoodRiot(foodResult.KillCount, rewards);
+            return true;
+        }
+
+        public override bool IsSuccessfulResult(IContentResultData result)
+        {
+            return result is FoodRiotResult foodResult && foodResult.KillCount > 0;
         }
 
         public override string CreateResultSummary(
@@ -75,6 +89,24 @@ namespace ProjectMT.Contents.FoodRiot
             return true;
         }
 
+        public override bool TryCreateRewardPresentation(
+            IContentResultData result,
+            GameProgressView progress,
+            ContentRunInfo runInfo,
+            ItemCatalog itemCatalog,
+            out RewardPresentationRequest presentation)
+        {
+            if (!(result is FoodRiotResult foodResult) ||
+                !TryCreateRewards(foodResult, runInfo, out var rewards) || rewards.IsEmpty)
+            {
+                presentation = null;
+                return false;
+            }
+
+            presentation = RewardPresentationRequest.FromBundle(rewards, itemCatalog);
+            return true;
+        }
+
         private bool TryCreateRewards(FoodRiotResult result, out RewardBundle rewards)
         {
             rewards = null;
@@ -93,10 +125,32 @@ namespace ProjectMT.Contents.FoodRiot
             return rewardPerKill.TryCreate(killCount, out rewards);
         }
 
+        private bool TryCreateRewards(
+            FoodRiotResult result,
+            ContentRunInfo runInfo,
+            out RewardBundle rewards)
+        {
+            rewards = null;
+            if (result == null || result.KillCount <= 0)
+            {
+                return false;
+            }
+
+            if (stageRewards != null && int.TryParse(runInfo.StageId, out var stage))
+            {
+                return stageRewards.TryCreate(stage, runInfo.RunMode, out rewards);
+            }
+
+            return TryCreateRewards(result, out rewards);
+        }
+
 #if UNITY_EDITOR
-        public void EditorConfigureReward(RewardDefinition perKill)
+        public void EditorConfigureReward(
+            RewardDefinition perKill,
+            GrowthDungeonRewardTable rewardTable = null)
         {
             rewardPerKill = perKill;
+            stageRewards = rewardTable;
         }
 #endif
     }

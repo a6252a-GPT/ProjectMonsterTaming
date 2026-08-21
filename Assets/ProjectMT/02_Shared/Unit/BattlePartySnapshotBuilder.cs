@@ -49,7 +49,7 @@ namespace ProjectMT.Shared.Unit
                 throw new InvalidOperationException("The saved main party has no valid owned monster.");
             }
 
-            return new BattlePartySnapshot(mainUnits.ToArray(), reserveUnits.ToArray());
+            return new BattlePartySnapshot(mainUnits.ToArray(), reserveUnits.ToArray(), statConfig);
         }
 
         private void AppendPartyUnits(

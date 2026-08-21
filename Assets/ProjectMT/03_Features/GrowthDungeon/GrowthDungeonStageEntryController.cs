@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Features.Quest;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -13,12 +15,13 @@ namespace ProjectMT.Features.GrowthDungeon
     {
         public static int ClampStage(GrowthDungeonEntryState state, int requestedStage)
         {
-            return Mathf.Clamp(requestedStage, 1, Mathf.Max(1, state.NextChallengeStage));
+            return Mathf.Clamp(requestedStage, 1, state.MaximumSelectableStage);
         }
 
         public static ContentRunMode ResolveMode(GrowthDungeonEntryState state, int selectedStage)
         {
-            return ClampStage(state, selectedStage) == state.NextChallengeStage
+            return state.HasChallengeStage &&
+                   ClampStage(state, selectedStage) == state.NextChallengeStage
                 ? ContentRunMode.Challenge
                 : ContentRunMode.Farming;
         }
@@ -31,7 +34,7 @@ namespace ProjectMT.Features.GrowthDungeon
             }
 
             var stage = ClampStage(state, selectedStage);
-            return stage == state.NextChallengeStage ||
+            return (state.HasChallengeStage && stage == state.NextChallengeStage) ||
                    (stage <= state.HighestClearedStage && state.KeyQuantity > 0L);
         }
     }
@@ -39,6 +42,8 @@ namespace ProjectMT.Features.GrowthDungeon
     [DisallowMultipleComponent]
     public sealed class GrowthDungeonStageEntryController : MonoBehaviour // 성장 던전 입장 팝업 조율
     {
+        private const float PopupHorizontalGap = 40f;
+
         private sealed class DungeonBinding
         {
             public DungeonBinding(
@@ -61,7 +66,7 @@ namespace ProjectMT.Features.GrowthDungeon
 
         private static readonly ContentId FoodRiotId = new ContentId("food_riot");
         private static readonly ContentId TreasureSpiritId = new ContentId("treasure_spirit");
-        private static readonly ContentId GiantSpellbookId = new ContentId("giant_spellbook");
+        private static readonly ContentId FallenCommanderId = new ContentId("fallen_commander");
         private static readonly ContentId GuardiansTowerId = new ContentId("guardians_tower");
 
         [Header("카드 버튼")]
@@ -69,15 +74,15 @@ namespace ProjectMT.Features.GrowthDungeon
         [SerializeField] private Button foodRiotSweepButton;
         [SerializeField] private Button treasureSpiritEnterButton;
         [SerializeField] private Button treasureSpiritSweepButton;
-        [SerializeField] private Button giantSpellbookEnterButton;
-        [SerializeField] private Button giantSpellbookSweepButton;
+        [SerializeField] private Button fallenCommanderEnterButton;
+        [SerializeField] private Button fallenCommanderSweepButton;
         [SerializeField] private Button guardiansTowerEnterButton;
         [SerializeField] private Button guardiansTowerSweepButton;
 
         [Header("입장 팝업 원본")]
         [SerializeField] private GameObject foodRiotPopupPrefab;
         [SerializeField] private GameObject treasureSpiritPopupPrefab;
-        [SerializeField] private GameObject giantSpellbookPopupPrefab;
+        [SerializeField] private GameObject fallenCommanderPopupPrefab;
         [SerializeField] private GameObject guardiansTowerPopupPrefab;
 
         private readonly Dictionary<string, GrowthDungeonStageEntryPopupView> popupCache =
@@ -103,8 +108,8 @@ namespace ProjectMT.Features.GrowthDungeon
             foodRiotSweepButton?.onClick.AddListener(OpenFoodRiot);
             treasureSpiritEnterButton?.onClick.AddListener(OpenTreasureSpirit);
             treasureSpiritSweepButton?.onClick.AddListener(OpenTreasureSpirit);
-            giantSpellbookEnterButton?.onClick.AddListener(OpenGiantSpellbook);
-            giantSpellbookSweepButton?.onClick.AddListener(OpenGiantSpellbook);
+            fallenCommanderEnterButton?.onClick.AddListener(OpenFallenCommander);
+            fallenCommanderSweepButton?.onClick.AddListener(OpenFallenCommander);
             guardiansTowerEnterButton?.onClick.AddListener(OpenGuardiansTower);
             guardiansTowerSweepButton?.onClick.AddListener(OpenGuardiansTower);
         }
@@ -125,8 +130,8 @@ namespace ProjectMT.Features.GrowthDungeon
             foodRiotSweepButton?.onClick.RemoveListener(OpenFoodRiot);
             treasureSpiritEnterButton?.onClick.RemoveListener(OpenTreasureSpirit);
             treasureSpiritSweepButton?.onClick.RemoveListener(OpenTreasureSpirit);
-            giantSpellbookEnterButton?.onClick.RemoveListener(OpenGiantSpellbook);
-            giantSpellbookSweepButton?.onClick.RemoveListener(OpenGiantSpellbook);
+            fallenCommanderEnterButton?.onClick.RemoveListener(OpenFallenCommander);
+            fallenCommanderSweepButton?.onClick.RemoveListener(OpenFallenCommander);
             guardiansTowerEnterButton?.onClick.RemoveListener(OpenGuardiansTower);
             guardiansTowerSweepButton?.onClick.RemoveListener(OpenGuardiansTower);
             Shutdown();
@@ -180,7 +185,7 @@ namespace ProjectMT.Features.GrowthDungeon
         {
             RefreshCard(foodRiotEnterButton, foodRiotSweepButton, FoodRiotId, true);
             RefreshCard(treasureSpiritEnterButton, treasureSpiritSweepButton, TreasureSpiritId, false);
-            RefreshCard(giantSpellbookEnterButton, giantSpellbookSweepButton, GiantSpellbookId, false);
+            RefreshCard(fallenCommanderEnterButton, fallenCommanderSweepButton, FallenCommanderId, true);
             RefreshCard(guardiansTowerEnterButton, guardiansTowerSweepButton, GuardiansTowerId, true);
             RefreshPopup();
         }
@@ -199,9 +204,13 @@ namespace ProjectMT.Features.GrowthDungeon
                 treasureSpiritPopupPrefab));
         }
 
-        private void OpenGiantSpellbook()
+        private void OpenFallenCommander()
         {
-            Open(new DungeonBinding(GiantSpellbookId, "거대 마도서", false, giantSpellbookPopupPrefab));
+            Open(new DungeonBinding(
+                FallenCommanderId,
+                "타락한 과거의 군단장",
+                true,
+                fallenCommanderPopupPrefab));
         }
 
         private void OpenGuardiansTower()
@@ -235,7 +244,8 @@ namespace ProjectMT.Features.GrowthDungeon
 
             if (!popupCache.TryGetValue(binding.ContentId.Value, out currentPopup) || currentPopup == null)
             {
-                var popupObject = Instantiate(binding.PopupPrefab, transform);
+                var popupParent = transform.parent != null ? transform.parent : transform;
+                var popupObject = Instantiate(binding.PopupPrefab, popupParent); // 캔버스 기준 좌표를 한 번만 적용
                 popupObject.name = binding.PopupPrefab.name;
                 currentPopup = popupObject.GetComponent<GrowthDungeonStageEntryPopupView>();
                 if (currentPopup == null)
@@ -252,6 +262,7 @@ namespace ProjectMT.Features.GrowthDungeon
                 popupCache[binding.ContentId.Value] = currentPopup;
             }
 
+            AlignPopupLeftOfPage(currentPopup.transform as RectTransform);
             currentPopup.gameObject.SetActive(true);
             currentPopup.transform.SetAsLastSibling();
             RefreshPopup();
@@ -319,6 +330,10 @@ namespace ProjectMT.Features.GrowthDungeon
             ClosePopup();
             closeManagementPages?.Invoke();
             statusChanged?.Invoke($"{displayName} · {selectedStage}단계 {modeLabel}");
+
+            // 이 컨트롤러가 다루는 4개 성장 던전(식량 대소동·보물 정령·타락한 과거의 군단장·고대 수호수)
+            // 중 아무 곳이나 입장에 성공하면 퀘스트 조건을 채운다.
+            _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.GrowthDungeonEnter, 1L);
         }
 
         private async void SweepHighestStage()
@@ -440,6 +455,19 @@ namespace ProjectMT.Features.GrowthDungeon
             currentBinding = null;
         }
 
+        private void AlignPopupLeftOfPage(RectTransform popupRect)
+        {
+            var pageRect = transform as RectTransform;
+            if (popupRect == null || pageRect == null || popupRect.parent != pageRect.parent)
+            {
+                return;
+            }
+
+            var popupX = pageRect.anchoredPosition.x -
+                (pageRect.rect.width + popupRect.rect.width) * 0.5f - PopupHorizontalGap;
+            popupRect.anchoredPosition = new Vector2(popupX, pageRect.anchoredPosition.y); // 인벤토리와 같은 좌우 2열
+        }
+
         private static void SetButtonText(Button button, string value)
         {
             var text = button == null ? null : button.GetComponentInChildren<TMP_Text>(true);
@@ -455,26 +483,26 @@ namespace ProjectMT.Features.GrowthDungeon
             Button foodSweep,
             Button treasureEnter,
             Button treasureSweep,
-            Button spellbookEnter,
-            Button spellbookSweep,
+            Button fallenCommanderEnter,
+            Button fallenCommanderSweep,
             Button guardiansEnter,
             Button guardiansSweep,
             GameObject foodPopup,
             GameObject treasurePopup,
-            GameObject spellbookPopup,
+            GameObject fallenCommanderPopup,
             GameObject guardiansPopup)
         {
             foodRiotEnterButton = foodEnter;
             foodRiotSweepButton = foodSweep;
             treasureSpiritEnterButton = treasureEnter;
             treasureSpiritSweepButton = treasureSweep;
-            giantSpellbookEnterButton = spellbookEnter;
-            giantSpellbookSweepButton = spellbookSweep;
+            fallenCommanderEnterButton = fallenCommanderEnter;
+            fallenCommanderSweepButton = fallenCommanderSweep;
             guardiansTowerEnterButton = guardiansEnter;
             guardiansTowerSweepButton = guardiansSweep;
             foodRiotPopupPrefab = foodPopup;
             treasureSpiritPopupPrefab = treasurePopup;
-            giantSpellbookPopupPrefab = spellbookPopup;
+            fallenCommanderPopupPrefab = fallenCommanderPopup;
             guardiansTowerPopupPrefab = guardiansPopup;
         }
 #endif
@@ -533,7 +561,7 @@ namespace ProjectMT.Features.GrowthDungeon
                 : "준비 중");
             SetText(stageValue, Mathf.Max(1, selectedStage).ToString());
             SetText(rewardTitle, runtimeAvailable
-                ? (isChallenge ? "도전 보상" : "파밍 보상")
+                ? (isChallenge ? "도전 클리어 보상 · 200%" : "파밍 보상 · 100%")
                 : displayName);
             SetText(rewardAmount, runtimeAvailable ? "클리어 결과 기준" : "콘텐츠 준비 중");
             SetText(
@@ -548,7 +576,8 @@ namespace ProjectMT.Features.GrowthDungeon
 
             if (nextButton != null)
             {
-                nextButton.interactable = runtimeAvailable && !busy && selectedStage < state.NextChallengeStage;
+                nextButton.interactable = runtimeAvailable && !busy &&
+                    selectedStage < state.MaximumSelectableStage;
             }
 
             if (enterButton != null)

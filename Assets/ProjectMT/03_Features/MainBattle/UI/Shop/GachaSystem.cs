@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectMT.Features.Quest;
 using ProjectMT.Shared.Gacha;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -178,6 +180,24 @@ namespace ProjectMT.Features.MainBattle
                     return;
                 }
 
+                // 실제 뽑기가 저장까지 성공한 경우에만 "몬스터 뽑기" 종류 퀘스트 진행도를 올린다(뽑은 마리 수만큼).
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.MonsterSummon, plannedPulls.Count);
+
+                // 이번에 신규로 보유하게 된 몬스터 수만큼 "몬스터 보유" 종류 퀘스트 진행도도 함께 올린다.
+                var newlyOwnedCount = 0;
+                for (var index = 0; index < plannedPulls.Count; index++)
+                {
+                    if (plannedPulls[index].WasNew)
+                    {
+                        newlyOwnedCount++;
+                    }
+                }
+
+                if (newlyOwnedCount > 0)
+                {
+                    _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.MonsterOwnedCount, newlyOwnedCount);
+                }
+
                 BuildPullSummaries(plannedPulls, out var order, out var summaries);
                 var detailText = BuildResultText(order, summaries);
                 var paymentText = BuildPaymentSummary(payment);
@@ -320,7 +340,7 @@ namespace ProjectMT.Features.MainBattle
             spawnedResultItems.Clear();
         }
 
-        // 예: "(New 스파이크 / 등급 : 일반 / 수량 : 3) , (루미 / 등급 : 영웅 / 수량 : 1)"
+        // 예: "(New 쉘 / 등급 : 일반 / 수량 : 3) , (루미 / 등급 : 영웅 / 수량 : 1)"
         // 몬스터 3개마다 줄바꿈 + 빈 줄을 넣어서 한 줄이 너무 길어 잘리지 않도록 한다.
         private static string BuildResultText(List<string> order, Dictionary<string, PullSummary> summaries)
         {
@@ -348,7 +368,7 @@ namespace ProjectMT.Features.MainBattle
         }
 
         // 예: "보유 몬스터 (총 8마리) / 전용 재화 : 2개
-        //      (스파이크 : 일반 · 1돌파) , (쉘 : 일반) , (루미 : 영웅)"
+        //      (쉘 : 일반 · 1돌파) , (루미 : 영웅) , (아르 : 일반)"
         // (몬스터 3개마다 줄바꿈 + 빈 줄)
         private void LogOwnedRosterDebug()
         {
@@ -403,7 +423,7 @@ namespace ProjectMT.Features.MainBattle
             Debug.Log(builder.ToString());
         }
 
-        // 몬스터별 데이터를 서로 구분하기 쉽도록 앞뒤에 괄호를 붙인다. 예: "(스파이크 / 등급 : 일반 / 수량 : 1)"
+        // 몬스터별 데이터를 서로 구분하기 쉽도록 앞뒤에 괄호를 붙인다. 예: "(루미 / 등급 : 영웅 / 수량 : 1)"
         private static string WrapWithParens(string content)
         {
             return "(" + content + ")";

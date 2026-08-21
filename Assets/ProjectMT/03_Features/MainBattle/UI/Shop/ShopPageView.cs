@@ -1,7 +1,9 @@
 using System;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Items;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace ProjectMT.Features.MainBattle
@@ -41,11 +43,22 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private TMP_Text diamondValueText;
         [SerializeField] private TMP_Text ascensionCurrencyValueText;
 
+        [Header("테스트 다이아 지급")]
+        [SerializeField] private Button[] diamondTestGrantButtons = Array.Empty<Button>();
+
         private IGameProgressService progress;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static readonly long[] DiamondTestGrantAmounts = { 10L, 50L, 200L, 400L, 800L, 1000L };
+        private UnityAction[] diamondTestGrantActions = Array.Empty<UnityAction>();
+        private bool diamondGrantPending;
+#endif
 
         private void Awake()
         {
             AddListeners();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            AddDiamondTestGrantListeners();
+#endif
         }
 
         private void OnEnable()
@@ -61,6 +74,9 @@ namespace ProjectMT.Features.MainBattle
         private void OnDestroy()
         {
             RemoveListeners();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RemoveDiamondTestGrantListeners();
+#endif
             UnsubscribeProgress();
         }
 
@@ -80,6 +96,9 @@ namespace ProjectMT.Features.MainBattle
             }
 
             RefreshCurrency();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RefreshDiamondTestGrantButtons();
+#endif
         }
 
         public void Shutdown()
@@ -110,6 +129,77 @@ namespace ProjectMT.Features.MainBattle
             RemoveListener(packageSubTabButtons, 0, ShowPackagePage);
             RemoveListener(packageSubTabButtons, 1, ShowMonthlyPage);
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void AddDiamondTestGrantListeners()
+        {
+            var count = Mathf.Min(diamondTestGrantButtons?.Length ?? 0, DiamondTestGrantAmounts.Length);
+            diamondTestGrantActions = new UnityAction[count];
+            for (var index = 0; index < count; index++)
+            {
+                var button = diamondTestGrantButtons[index];
+                var amount = DiamondTestGrantAmounts[index];
+                UnityAction action = () => GrantDiamondsForTest(amount);
+                diamondTestGrantActions[index] = action;
+                button?.onClick.AddListener(action);
+            }
+
+            RefreshDiamondTestGrantButtons();
+        }
+
+        private void RemoveDiamondTestGrantListeners()
+        {
+            var count = Mathf.Min(diamondTestGrantButtons?.Length ?? 0, diamondTestGrantActions.Length);
+            for (var index = 0; index < count; index++)
+            {
+                diamondTestGrantButtons[index]?.onClick.RemoveListener(diamondTestGrantActions[index]);
+            }
+
+            diamondTestGrantActions = Array.Empty<UnityAction>();
+        }
+
+        private async void GrantDiamondsForTest(long amount)
+        {
+            if (diamondGrantPending || progress == null || amount <= 0L)
+            {
+                return;
+            }
+
+            diamondGrantPending = true;
+            RefreshDiamondTestGrantButtons();
+            try
+            {
+                var granted = await progress.TryApplyAndSaveAsync(
+                    GameProgressChange.GrantItems(new ItemAmount(ItemIds.Diamond, amount)));
+                if (!granted)
+                {
+                    Debug.LogWarning($"Test diamond grant was rejected. Amount={amount}", this);
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception, this);
+            }
+            finally
+            {
+                diamondGrantPending = false;
+                RefreshDiamondTestGrantButtons();
+            }
+        }
+
+        private void RefreshDiamondTestGrantButtons()
+        {
+            var interactable = progress != null && !diamondGrantPending;
+            var count = Mathf.Min(diamondTestGrantButtons?.Length ?? 0, DiamondTestGrantAmounts.Length);
+            for (var index = 0; index < count; index++)
+            {
+                if (diamondTestGrantButtons[index] != null)
+                {
+                    diamondTestGrantButtons[index].interactable = interactable;
+                }
+            }
+        }
+#endif
 
         private void ShowMonsterPage()
         {
@@ -242,7 +332,8 @@ namespace ProjectMT.Features.MainBattle
             GameObject[] pageRoots,
             TMP_Text gold,
             TMP_Text diamond,
-            TMP_Text ascensionCurrency)
+            TMP_Text ascensionCurrency,
+            Button[] diamondGrantButtons = null)
         {
             mainTabButtons = mainButtons ?? Array.Empty<Button>();
             mainTabNormalVisuals = mainNormal ?? Array.Empty<GameObject>();
@@ -259,6 +350,7 @@ namespace ProjectMT.Features.MainBattle
             goldValueText = gold;
             diamondValueText = diamond;
             ascensionCurrencyValueText = ascensionCurrency;
+            diamondTestGrantButtons = diamondGrantButtons ?? Array.Empty<Button>();
         }
 #endif
     }

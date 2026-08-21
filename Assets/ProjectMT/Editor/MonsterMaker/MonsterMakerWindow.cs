@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using ProjectMT.Contents.CastleRaid;
 using ProjectMT.Shared.Audio;
 using UnityEditor;
 using UnityEngine;
@@ -36,6 +37,23 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private static readonly string[] InstantHitModeLabels = { "단일", "범위" };
         private static readonly string[] TargetTeamLabels = { "아군", "적" };
         private static readonly string[] AbilityModeLabels = { "패시브", "자동 액티브" };
+        private static readonly string[] CastleRaidAiPatternLabels =
+        {
+            "균형 진격형",
+            "건물 우선형",
+            "방어 시설 우선형",
+            "수비대 우선형",
+            "방벽 파괴형",
+            "왕궁 돌격형",
+            "전술 지원형"
+        };
+        private static readonly string[] CastleRaidSupportFocusLabels =
+        {
+            "상황 적응",
+            "공격 강화",
+            "방어 강화",
+            "회복 집중"
+        };
 
         private MonsterMakerDraft draft;
         private SerializedObject serializedDraft;
@@ -298,12 +316,21 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             var portraitRect = new Rect(rowRect.x + 6f, rowRect.y + 6f, 40f, 40f);
             EditorGUI.DrawRect(portraitRect, new Color(0.075f, 0.08f, 0.09f, 1f));
-            var thumbnail = definition.Portrait != null
-                ? AssetPreview.GetMiniThumbnail(definition.Portrait)
-                : AssetPreview.GetMiniThumbnail(definition);
-            if (thumbnail != null)
+            if (TryResolvePortraitPreview(definition.Portrait, out var portraitTexture, out var portraitUv))
             {
-                GUI.DrawTexture(portraitRect, thumbnail, ScaleMode.ScaleToFit, true);
+                var fittedRect = FitTextureRect(
+                    portraitRect,
+                    portraitUv.width * portraitTexture.width,
+                    portraitUv.height * portraitTexture.height);
+                GUI.DrawTextureWithTexCoords(fittedRect, portraitTexture, portraitUv, true);
+            }
+            else
+            {
+                var fallback = AssetPreview.GetMiniThumbnail(definition);
+                if (fallback != null)
+                {
+                    GUI.DrawTexture(portraitRect, fallback, ScaleMode.ScaleToFit, true);
+                }
             }
 
             var textX = portraitRect.xMax + 7f;
@@ -341,6 +368,55 @@ namespace ProjectMT.EditorTools.MonsterMaker
             ShowNotification(new GUIContent("기존 호환 Monster입니다. Maker Draft는 자동 생성하지 않습니다."));
         }
 
+        private static bool TryResolvePortraitPreview(
+            Sprite portrait,
+            out Texture2D texture,
+            out Rect uvRect)
+        {
+            texture = portrait == null ? null : portrait.texture;
+            if (texture == null || texture.width <= 0 || texture.height <= 0)
+            {
+                uvRect = default;
+                return false;
+            }
+
+            Rect sourceRect;
+            try
+            {
+                sourceRect = portrait.textureRect;
+            }
+            catch (InvalidOperationException)
+            {
+                sourceRect = portrait.rect; // Tight Atlas도 원본 Sprite 영역으로 복귀
+            }
+
+            uvRect = new Rect(
+                sourceRect.x / texture.width,
+                sourceRect.y / texture.height,
+                sourceRect.width / texture.width,
+                sourceRect.height / texture.height);
+            return uvRect.width > 0f && uvRect.height > 0f;
+        }
+
+        private static Rect FitTextureRect(Rect bounds, float width, float height)
+        {
+            if (width <= 0f || height <= 0f)
+            {
+                return bounds;
+            }
+
+            var sourceAspect = width / height;
+            var boundsAspect = bounds.width / bounds.height;
+            if (sourceAspect > boundsAspect)
+            {
+                var fittedHeight = bounds.width / sourceAspect;
+                return new Rect(bounds.x, bounds.center.y - fittedHeight * 0.5f, bounds.width, fittedHeight);
+            }
+
+            var fittedWidth = bounds.height * sourceAspect;
+            return new Rect(bounds.center.x - fittedWidth * 0.5f, bounds.y, fittedWidth, bounds.height);
+        }
+
         private string GetRarityLabel(Shared.Unit.MonsterDefinition definition)
         {
             if (monsterRarityCatalog == null || definition == null ||
@@ -373,6 +449,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     DrawStatsSection();
                     DrawAnimationSection();
                     DrawCombatSection();
+                    DrawCastleRaidAiSection();
                     DrawAscensionSection();
                     EditorGUILayout.EndScrollView();
                     if (EditorGUI.EndChangeCheck())
@@ -529,7 +606,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     }
 
                     GUILayout.Space(10f);
-                    DrawSectionHeader("검증 · 게임 편입");
+                    DrawSectionHeader("검증 · 신규 편입/수정 반영");
                     if (GUILayout.Button("검증", compactButtonStyle, GUILayout.Height(32f)))
                     {
                         ValidateDraft();
@@ -541,7 +618,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     {
                         var previousBackground = GUI.backgroundColor;
                         GUI.backgroundColor = currentReport.HasErrors ? Color.white : new Color(0.48f, 0.7f, 1f, 1f);
-                        if (GUILayout.Button("몬스터 생성 및 게임 편입", primaryButtonStyle, GUILayout.Height(42f)))
+                        var actionLabel = IsEditingExistingMonster()
+                            ? "기존 몬스터 수정 반영"
+                            : "신규 몬스터 생성 및 게임 편입";
+                        if (GUILayout.Button(actionLabel, primaryButtonStyle, GUILayout.Height(42f)))
                         {
                             BuildAndRegister();
                         }
@@ -1019,7 +1099,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawAscensionSection()
         {
-            DrawSectionHeader("6. 돌파 옵션");
+            DrawSectionHeader("7. 돌파 옵션");
             var configured = serializedDraft.FindProperty("ascensionConfigured");
             EditorGUILayout.PropertyField(configured, new GUIContent("돌파 옵션 사용"));
             if (!configured.boolValue)
@@ -1035,6 +1115,30 @@ namespace ProjectMT.EditorTools.MonsterMaker
             DrawStatModifier(serializedDraft.FindProperty("ascension3"), "3돌파 능력치");
             DrawAbility(serializedDraft.FindProperty("ascension4"), "4돌파 스킬");
             DrawStatModifier(serializedDraft.FindProperty("ascension5"), "5돌파 능력치");
+        }
+
+        private void DrawCastleRaidAiSection()
+        {
+            DrawSectionHeader("6. 군단의 역습 AI");
+            var pattern = (CastleRaidAiPattern)DrawEnumProperty(
+                "castleRaidAiPattern",
+                "행동 패턴",
+                CastleRaidAiPatternLabels);
+            EditorGUILayout.HelpBox(
+                "군단의 역습에서만 사용하는 목표 선택 규칙입니다. 메인 전투 AI에는 영향을 주지 않습니다.",
+                MessageType.None);
+            if (pattern != CastleRaidAiPattern.TacticalSupport)
+            {
+                return;
+            }
+
+            DrawEnumProperty("castleRaidSupportFocus", "지원 성향", CastleRaidSupportFocusLabels);
+            DrawProperty("castleRaidSupportRange", "지원 범위");
+            DrawProperty("castleRaidSupportCooldown", "지원 재사용 시간");
+            DrawProperty("castleRaidSupportDuration", "강화 지속 시간");
+            DrawProperty("castleRaidHealRatio", "최대 체력 회복 비율");
+            DrawProperty("castleRaidAttackBuffRate", "공격력 증가 비율");
+            DrawProperty("castleRaidDefenseDamageMultiplier", "받는 피해 배율");
         }
 
         private void DrawStatModifier(SerializedProperty modifier, string label)
@@ -1229,9 +1333,23 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             var id = string.IsNullOrWhiteSpace(draft.MonsterId) ? "ID 미입력" : draft.MonsterId;
-            return EditorUtility.IsPersistent(draft)
-                ? $"{id}  ·  저장된 Draft"
-                : $"{id}  ·  저장 전 Draft";
+            if (!EditorUtility.IsPersistent(draft))
+            {
+                return $"{id}  ·  신규 제작 모드";
+            }
+
+            return IsEditingExistingMonster()
+                ? $"{id}  ·  기존 몬스터 수정 모드 (GUID 유지)"
+                : $"{id}  ·  저장된 신규 Draft";
+        }
+
+        private bool IsEditingExistingMonster()
+        {
+            return draft != null && EditorUtility.IsPersistent(draft) && catalogDefinitions.Any(
+                definition => definition != null && string.Equals(
+                    definition.MonsterId,
+                    draft.MonsterId,
+                    StringComparison.OrdinalIgnoreCase));
         }
 
         private void ApplyWindowConstraints()

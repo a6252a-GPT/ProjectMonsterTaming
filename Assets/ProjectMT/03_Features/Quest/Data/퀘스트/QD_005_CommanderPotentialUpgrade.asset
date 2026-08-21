@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25a12baf1f1a3d4449770be56d69d3c6, type: 3}
+  m_Name: QD_005_CommanderPotentialUpgrade
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
+  questId:
+    value: quest_005_commander_potential_upgrade
+  isEnabled: 1
+  displayName: "\uC7A0\uC7AC\uB2A5\uB825 \uAC15\uD654"
+  description: "\uAD70\uB2E8\uC7A5 \uC7A0\uC7AC\uB2A5\uB825\uC744 1\uD68C \uAC15\uD654\uD558\uC138\uC694."
+  questType: 0
+  conditionType: 7
+  targetValue: 1
+  prerequisiteQuestId:
+    value: quest_004_commander_level_up
+  reward: {fileID: 11400000, guid: d4e5f6a7b8c9d0e1f2a3b4c5d6a1b2c3, type: 2}
+  unlockTargets: 06000000
+  unlockGateEnabled: 1
+  requiresActiveTracking: 1
+  isRepeatingTemplate: 0
+  repeatIncrement: 0
+  repeatMaxOccurrences: 0

@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4d05f142161ca548b99ac8f8ce709b4, type: 3}
   m_Name: CastleRaidStartDataFactory_Seed
   m_EditorClassIdentifier: ProjectMT.Contents.CastleRaid::ProjectMT.Contents.CastleRaid.CastleRaidStartDataFactory
-  deploymentLimit: 5
+  summonsPerSlot: 3

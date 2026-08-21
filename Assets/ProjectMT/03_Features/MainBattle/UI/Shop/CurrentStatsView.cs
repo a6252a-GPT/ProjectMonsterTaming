@@ -60,17 +60,10 @@ namespace ProjectMT.Features.MainBattle
             SetStatText(attackSpeedText, "공격속도", bonus.AttackSpeedRate);
             SetStatText(moveSpeedText, "이동속도", bonus.MoveSpeedRate);
 
-            // 전투력은 아직 공식 확정 전이라 6종 합을 임시 표시
+            // 별도 전투력 텍스트가 연결된 구 UI만 임시 슬롯을 비운다.
             if (combatPowerText != null)
             {
-                var tempPower =
-                    bonus.HealthRate +
-                    bonus.AttackRate +
-                    bonus.DefenseRate +
-                    bonus.AttackRangeRate +
-                    bonus.AttackSpeedRate +
-                    bonus.MoveSpeedRate;
-                combatPowerText.text = $"전투력 : {tempPower:0.00}";
+                combatPowerText.text = string.Empty;
             }
         }
 

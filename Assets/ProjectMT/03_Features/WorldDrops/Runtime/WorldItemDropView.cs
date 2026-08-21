@@ -3,8 +3,13 @@ using UnityEngine;
 
 namespace ProjectMT.Features.WorldDrops
 {
+    public interface IWorldDropPickupOwner
+    {
+        void CommitPickup(WorldItemDropView view);
+    }
+
     [DisallowMultipleComponent]
-    public sealed class WorldItemDropView : MonoBehaviour // 투척·대기·흡수만 담당하는 풀 객체
+    public sealed class WorldItemDropView : MonoBehaviour // 일반 아이템·장비 공용 투척·대기·흡수 풀 객체
     {
         private const float TossDuration = 0.38f;
         private const float TossHeight = 0.52f;
@@ -25,7 +30,7 @@ namespace ProjectMT.Features.WorldDrops
         [SerializeField] private SpriteRenderer iconRenderer;
         [SerializeField] private Vector3 modelBaseEulerAngles;
 
-        private WorldItemDropRuntime owner;
+        private IWorldDropPickupOwner owner;
         private Transform pickupTarget;
         private Camera worldCamera;
         private ItemAmount payload;
@@ -66,6 +71,22 @@ namespace ProjectMT.Features.WorldDrops
             iconRenderer.sortingOrder = 20;
         }
 
+        internal void BuildTemplate(EquipmentDropChestVisualEntry visual)
+        {
+            if (visual == null || visual.ModelPrefab == null)
+            {
+                return;
+            }
+
+            var model = Instantiate(visual.ModelPrefab, transform);
+            model.name = "Model";
+            model.transform.localPosition = visual.LocalPosition;
+            model.transform.localRotation = visual.LocalRotation;
+            model.transform.localScale = visual.LocalScale;
+            modelRoot = model.transform;
+            modelBaseEulerAngles = modelRoot.localEulerAngles;
+        }
+
         internal void Activate(
             WorldItemDropRuntime runtimeOwner,
             ItemAmount itemAmount,
@@ -75,8 +96,30 @@ namespace ProjectMT.Features.WorldDrops
             int sequence,
             Sprite icon)
         {
-            owner = runtimeOwner;
+            ActivateCommon(runtimeOwner, position, target, camera, sequence, icon);
             payload = itemAmount;
+        }
+
+        internal void ActivateEquipment(
+            IWorldDropPickupOwner runtimeOwner,
+            Vector3 position,
+            Transform target,
+            Camera camera,
+            int sequence)
+        {
+            ActivateCommon(runtimeOwner, position, target, camera, sequence, null);
+            payload = default;
+        }
+
+        private void ActivateCommon(
+            IWorldDropPickupOwner runtimeOwner,
+            Vector3 position,
+            Transform target,
+            Camera camera,
+            int sequence,
+            Sprite icon)
+        {
+            owner = runtimeOwner;
             pickupTarget = target;
             worldCamera = camera;
             collectionCommitted = false;
@@ -225,7 +268,7 @@ namespace ProjectMT.Features.WorldDrops
             }
 
             collectionCommitted = true; // 같은 풀 객체의 중복 획득 차단
-            owner.CommitPickup(this, payload);
+            owner.CommitPickup(this);
         }
 
         private void ResizeIcon(Sprite icon)

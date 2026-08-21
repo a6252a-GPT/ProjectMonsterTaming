@@ -15,23 +15,27 @@ namespace ProjectMT.Shared.Equipment
         [SerializeField] private EquipmentPart part;
         [SerializeField] private EquipmentGrade grade;
         [SerializeField] private List<EquipmentOptionRollData> randomOptions = new List<EquipmentOptionRollData>();
+        [SerializeField] private bool isLocked;
 
         public EquipmentInstanceData(
             string instanceId,
             EquipmentPart part,
             EquipmentGrade grade,
-            List<EquipmentOptionRollData> randomOptions)
+            List<EquipmentOptionRollData> randomOptions,
+            bool isLocked = false)
         {
             this.instanceId = instanceId;
             this.part = part;
             this.grade = grade;
             this.randomOptions = randomOptions ?? new List<EquipmentOptionRollData>();
+            this.isLocked = isLocked;
         }
 
         public string InstanceId => instanceId;
         public EquipmentPart Part => part;
         public EquipmentGrade Grade => grade;
         public IReadOnlyList<EquipmentOptionRollData> RandomOptions => randomOptions;
+        public bool IsLocked => isLocked;
 
         public EquipmentInstanceData Clone()
         {
@@ -45,7 +49,18 @@ namespace ProjectMT.Shared.Equipment
                 }
             }
 
-            return new EquipmentInstanceData(instanceId, part, grade, clonedOptions);
+            return new EquipmentInstanceData(instanceId, part, grade, clonedOptions, isLocked);
+        }
+
+        internal bool TrySetLocked(bool expectedValue, bool nextValue)
+        {
+            if (isLocked != expectedValue)
+            {
+                return false;
+            }
+
+            isLocked = nextValue;
+            return true;
         }
 
         internal bool Repair()

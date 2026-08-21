@@ -21,7 +21,7 @@ MonoBehaviour:
   productionMemo: Notion monster batch / Spider_01
   vendorPrefab: {fileID: 4430548658674262411, guid: c55556d8783d684409b586376a69eae8, type: 3}
   animatorSource: {fileID: 3481616375186896877, guid: c55556d8783d684409b586376a69eae8, type: 3}
-  visualScale: {x: 1, y: 1, z: 1}
+  visualScale: {x: 1.8, y: 1.8, z: 1.8}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0
@@ -103,6 +103,14 @@ MonoBehaviour:
     attackSpeedRate: 0
     moveSpeedRate: 0
     attackRangeRate: 0
+  castleRaidAiPattern: 3
+  castleRaidSupportFocus: 0
+  castleRaidSupportRange: 5
+  castleRaidSupportCooldown: 4
+  castleRaidSupportDuration: 5
+  castleRaidHealRatio: 0.24
+  castleRaidAttackBuffRate: 0.2
+  castleRaidDefenseDamageMultiplier: 0.75
   ascensionConfigured: 0
   ascension1:
     healthRate: 0

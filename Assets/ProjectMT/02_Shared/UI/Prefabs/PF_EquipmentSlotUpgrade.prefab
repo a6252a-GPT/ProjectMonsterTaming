@@ -508,7 +508,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.64705884, g: 0.5254902, b: 0.16470589, a: 1}
+  m_Color: {r: 0.3764706, g: 0.16862746, b: 0.50980395, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3272,7 +3272,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4792660537547434976}
   m_Layer: 0
-  m_Name: ItemFrame_01_Normal_Yellow
+  m_Name: ItemFrame_01_Normal_Plum
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3815,7 +3815,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.9058824, g: 0.72156864, b: 0.20000002, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3993,7 +3993,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.79215693, g: 0.6901961, b: 0.27450982, a: 1}
+  m_Color: {r: 0.56078434, g: 0.2901961, b: 0.7411765, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -5851,7 +5851,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9058824, g: 0.82745105, b: 0.2901961, a: 1}
+  m_Color: {r: 0.70980394, g: 0.3647059, b: 0.83921576, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -6373,7 +6373,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.8396226, g: 0.8396226, b: 0.8396226, a: 1}
+  m_Color: {r: 0.9058824, g: 0.82745105, b: 0.2901961, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -7557,7 +7557,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.22352943, g: 0.5921569, b: 0.3529412, a: 1}
+  m_Color: {r: 0.45098042, g: 0.4431373, b: 0.45098042, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -8386,7 +8386,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: -165, y: -30}
-  m_SizeDelta: {x: 100, y: 50}
+  m_SizeDelta: {x: 150, y: 50}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &4755530456933938019
 CanvasRenderer:
@@ -8498,7 +8498,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1931257121168044583}
   m_Layer: 0
-  m_Name: ItemFrame_01_Normal_Plum
+  m_Name: ItemFrame_01_Normal_Yellow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8886,7 +8886,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.93725497, b: 0.5176471, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -11708,7 +11708,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.56078434, g: 0.2901961, b: 0.7411765, a: 1}
+  m_Color: {r: 0.79215693, g: 0.6901961, b: 0.27450982, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -12449,7 +12449,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9058824, g: 0.72156864, b: 0.20000002, a: 1}
+  m_Color: {r: 0.5176471, g: 0.23529412, b: 0.6784314, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -13464,7 +13464,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.93725497, b: 0.5176471, a: 1}
+  m_Color: {r: 0.84313726, g: 0.47843137, b: 0.9529412, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -15262,7 +15262,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.7169812, g: 0.6345166, b: 0.24012107, a: 1}
+  m_Color: {r: 0.48294762, g: 0.24510503, b: 0.6415094, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -15412,7 +15412,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.48294762, g: 0.24510503, b: 0.6415094, a: 1}
+  m_Color: {r: 0.7169812, g: 0.6345166, b: 0.24012107, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -16835,7 +16835,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.70980394, g: 0.3647059, b: 0.83921576, a: 1}
+  m_Color: {r: 0.9058824, g: 0.82745105, b: 0.2901961, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -17512,7 +17512,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.10586506, g: 0.3679245, b: 0.25044963, a: 1}
+  m_Color: {r: 0.26415092, g: 0.24822988, b: 0.23549303, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -17587,7 +17587,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9058824, g: 0.82745105, b: 0.2901961, a: 1}
+  m_Color: {r: 0.60784316, g: 0.29411766, b: 0.76862746, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -18276,7 +18276,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9245283, g: 0.9245283, b: 0.9245283, a: 1}
+  m_Color: {r: 0.64705884, g: 0.5254902, b: 0.16470589, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -19565,7 +19565,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7871462029629252534}
   m_Layer: 0
-  m_Name: ItemFrame_01_Normal_Green
+  m_Name: ItemFrame_01_Normal_Gray
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -24260,7 +24260,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.14509805, g: 0.48627454, b: 0.33333334, a: 1}
+  m_Color: {r: 0.38823533, g: 0.36862746, b: 0.3529412, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -30699,6 +30699,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 1266246204367025323, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1314054841227970710, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: serializeData2.initData.localHash
       value: 145348
@@ -35279,9 +35283,21 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 2081872024368542791, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2176210945525550116, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: m_Layer
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2486447873003018724, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2601264363112086452, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2935918903422519285, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: serializeData2.initData.localHash
@@ -38643,6 +38659,10 @@ PrefabInstance:
       propertyPath: serializeData2.initData.clothSetupDataList.Array.data[0].transformLocalRotations.Array.data[38].value.z
       value: -0.000000030908623
       objectReference: {fileID: 0}
+    - target: {fileID: 3027901108834953358, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3082729398398575885, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: serializeData2.initData.clothType
       value: 1
@@ -40531,6 +40551,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 3892574859171752353, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3907377933421599932, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: serializeData2.initData.clothType
       value: 1
@@ -42150,6 +42174,14 @@ PrefabInstance:
     - target: {fileID: 3907377933421599932, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: serializeData2.initData.clothSetupDataList.Array.data[0].transformLocalRotations.Array.data[13].value.w
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4136531302311929145, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4749355648213643613, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4980384368179118954, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: m_Layer
@@ -43999,9 +44031,17 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 5693434712619513586, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5704387303604331603, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: m_Layer
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5889363575294871480, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6203532743332314250, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: m_RotationOffset.x
@@ -45094,6 +45134,10 @@ PrefabInstance:
     - target: {fileID: 6319875131015971837, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: serializeData2.initData.clothSetupDataList.Array.data[0].transformLocalRotations.Array.data[7].value.w
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6462074622903728342, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6623742870982923864, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: m_Controller
@@ -55451,6 +55495,18 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 7854358374713834298, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7856188122647964917, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7939946760869652806, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7946734262084704817, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: m_RotationOffset.x
       value: -57.518772
@@ -55470,6 +55526,10 @@ PrefabInstance:
     - target: {fileID: 8552813248592835669, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: m_Layer
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8729568232717574257, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8795238465918856632, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: m_Layer
@@ -57007,9 +57067,17 @@ PrefabInstance:
       propertyPath: serializeData2.initData.clothSetupDataList.Array.data[0].transformLocalRotations.Array.data[12].value.w
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8895771518103176810, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8930986376116122865, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: m_Layer
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8945690429309920686, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9034781698992787132, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: m_Layer
@@ -64862,6 +64930,10 @@ PrefabInstance:
     - target: {fileID: 9060238285547822422, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
       propertyPath: serializeData2.initData.clothSetupDataList.Array.data[1].transformLocalRotations.Array.data[29].value.z
       value: -0.000000030908623
+      objectReference: {fileID: 0}
+    - target: {fileID: 9144781501901485773, guid: 54731545d8f9893448354fa83d416fa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -20,6 +20,11 @@ namespace ProjectMT.Contents.FallenCommander
         void DebugKillBoss();
     }
 
+    public interface IBossDungeonBossHealthDebugController
+    {
+        void DebugDamageBossTenPercent();
+    }
+
     public interface IBossDungeonAttackDebugController
     {
         void DebugBasicAttack();
@@ -108,11 +113,13 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField] private Button debugMarkStrikeButton;
         [SerializeField] private Button debugWideBurstButton;
         [SerializeField] private Button debugBossKillButton;
+        [SerializeField] private Button debugBossHealthButton;
         [SerializeField] private Sprite commanderHeartSprite;
 
         private IBossDungeonHudSource hudSource;
         private IBossDungeonTimeoutController timeoutController;
         private IBossDungeonBossKillController bossKillController;
+        private IBossDungeonBossHealthDebugController bossHealthDebugController;
         private IBossDungeonAttackDebugController attackDebugController;
         private bool showDebugControls;
         private static Font runtimeKoreanFont;
@@ -133,6 +140,7 @@ namespace ProjectMT.Contents.FallenCommander
             hudSource = targetController;
             timeoutController = targetController as IBossDungeonTimeoutController;
             bossKillController = targetController as IBossDungeonBossKillController;
+            bossHealthDebugController = targetController as IBossDungeonBossHealthDebugController;
             attackDebugController = targetController as IBossDungeonAttackDebugController;
             showDebugControls = showDebugButtons;
             if (hudSource != null)
@@ -159,6 +167,8 @@ namespace ProjectMT.Contents.FallenCommander
             debugWideBurstButton?.onClick.AddListener(HandleDebugWideBurst);
             debugBossKillButton?.onClick.RemoveListener(HandleDebugKillBoss);
             debugBossKillButton?.onClick.AddListener(HandleDebugKillBoss);
+            debugBossHealthButton?.onClick.RemoveListener(HandleDebugBossHealth);
+            debugBossHealthButton?.onClick.AddListener(HandleDebugBossHealth);
         }
 
         // Controller와 HUD의 연결을 해제
@@ -174,6 +184,7 @@ namespace ProjectMT.Contents.FallenCommander
             hudSource = null;
             timeoutController = null;
             bossKillController = null;
+            bossHealthDebugController = null;
             attackDebugController = null;
             showDebugControls = false;
             debugTimeoutButton?.onClick.RemoveListener(HandleDebugTimeout);
@@ -182,6 +193,7 @@ namespace ProjectMT.Contents.FallenCommander
             debugMarkStrikeButton?.onClick.RemoveListener(HandleDebugMarkStrike);
             debugWideBurstButton?.onClick.RemoveListener(HandleDebugWideBurst);
             debugBossKillButton?.onClick.RemoveListener(HandleDebugKillBoss);
+            debugBossHealthButton?.onClick.RemoveListener(HandleDebugBossHealth);
         }
 
         private void SetControlVisibility()
@@ -204,6 +216,8 @@ namespace ProjectMT.Contents.FallenCommander
                 hasAttackDebug && showDebugControls);
             debugBossKillButton?.gameObject.SetActive(
                 bossKillController != null && showDebugControls);
+            debugBossHealthButton?.gameObject.SetActive(
+                bossHealthDebugController != null && showDebugControls);
         }
         // HUD 전체의 표시 여부
         public void SetVisible(bool visible)
@@ -334,9 +348,15 @@ namespace ProjectMT.Contents.FallenCommander
             bossKillController?.DebugKillBoss();
         }
 
+        private void HandleDebugBossHealth()
+        {
+            bossHealthDebugController?.DebugDamageBossTenPercent();
+        }
+
         private void ConfigureAttackDebugLabels()
         {
             SetButtonLabel(debugHandSlamButton, "직선 공격");
+            SetButtonLabel(debugBossHealthButton, "보스 체력 -10%");
         }
 
         private static void SetButtonLabel(Button button, string text)
@@ -451,6 +471,21 @@ namespace ProjectMT.Contents.FallenCommander
                 "보스 처치",
                 new Vector2(196f, -150f),
                 new Color(0.65f, 0.18f, 0.18f, 1f));
+
+            if (debugBossHealthButton == null)
+            {
+                var editorButton = hudRoot.transform.Find(
+                    "BossStatusPanel/Testbutton/DebugBossHealthButton_Editor");
+                debugBossHealthButton = editorButton == null
+                    ? null
+                    : editorButton.GetComponent<Button>();
+            }
+
+            debugBossHealthButton ??= CreateRuntimeButton(
+                "DebugBossHealthButton_Runtime",
+                "보스 체력 -10%",
+                new Vector2(196f, -182f),
+                new Color(0.65f, 0.45f, 0.18f, 1f));
         }
 
         private Button CreateRuntimeButton(string name, string labelText, Vector2 position, Color color)
@@ -602,25 +637,6 @@ namespace ProjectMT.Contents.FallenCommander
             if (buttonRect.parent is RectTransform container &&
                 container.name == "Testbutton")
             {
-                if (container.TryGetComponent<GridLayoutGroup>(out var layout))
-                {
-                    layout.cellSize = new Vector2(110f, 32f);
-                    layout.spacing = Vector2.zero;
-                    layout.padding = new RectOffset();
-                    layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-                    layout.constraintCount = 1;
-                }
-
-                SetTopRight(
-                    container,
-                    new Vector2(350f, -90f),
-                    new Vector2(110f, 32f));
-                buttonRect.anchorMin = Vector2.zero;
-                buttonRect.anchorMax = Vector2.one;
-                buttonRect.pivot = new Vector2(0.5f, 0.5f);
-                buttonRect.anchoredPosition = Vector2.zero;
-                buttonRect.sizeDelta = Vector2.zero;
-                buttonRect.localScale = Vector3.one;
                 return;
             }
 

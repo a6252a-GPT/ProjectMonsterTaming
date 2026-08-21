@@ -65,7 +65,6 @@ namespace ProjectMT.Contents.FallenCommander
             MarkStrike,
             WideBurst,
             LineStrike,
-            BreakWideBurst,
             Broken,
             Dead
         }
@@ -109,9 +108,6 @@ namespace ProjectMT.Contents.FallenCommander
         public float CommanderStunRemainingTime => commanderStunRemaining;
         public FallenCommanderAttackPattern LastSelectedAttack { get; private set; }
         public FallenCommanderTelegraphView ActiveTelegraph => activeTelegraph;
-        public bool CanForceWideBurstDuringBreak =>
-            isActive && currentState == BossState.Broken;
-
         // 위치 공격 범위로 사용할 프리팹
         private GameObject markStrikeTelegraphPrefab;
 
@@ -234,7 +230,6 @@ namespace ProjectMT.Contents.FallenCommander
                 case BossState.MarkStrike:
                 case BossState.WideBurst:
                 case BossState.LineStrike:
-                case BossState.BreakWideBurst:
                     TickAttack(deltaTime);
                     break;
 
@@ -246,14 +241,8 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void EnterBroken()
         {
-            EnterBroken(false);
-        }
-
-        public void EnterBroken(bool triggerWideBurst)
-        {
             if (!isActive ||
-                currentState == BossState.Broken ||
-                currentState == BossState.BreakWideBurst)
+                currentState == BossState.Broken)
             {
                 return;
             }
@@ -270,28 +259,12 @@ namespace ProjectMT.Contents.FallenCommander
             bossActor.ForceTarget(
                 bossActor.Health,
                 float.PositiveInfinity);
-
-            if (triggerWideBurst)
-            {
-                BeginBreakWideBurst();
-            }
-        }
-
-        public void ForceWideBurstDuringBreak()
-        {
-            if (!isActive || currentState != BossState.Broken)
-            {
-                return;
-            }
-
-            BeginBreakWideBurst();
         }
 
         public void ExitBroken()
         {
             if (!isActive ||
-                currentState != BossState.Broken &&
-                currentState != BossState.BreakWideBurst)
+                currentState != BossState.Broken)
             {
                 return;
             }
@@ -329,6 +302,21 @@ namespace ProjectMT.Contents.FallenCommander
         public void DebugForceWideBurst()
         {
             if (!PrepareDebugAttack())
+            {
+                return;
+            }
+
+            BeginWideBurst();
+        }
+
+        public void ForceWideBurst()
+        {
+            if (!isActive ||
+                bossActor == null ||
+                !bossActor.IsAlive ||
+                currentState == BossState.Broken ||
+                currentState == BossState.Dead ||
+                currentState == BossState.WideBurst)
             {
                 return;
             }
@@ -515,27 +503,6 @@ namespace ProjectMT.Contents.FallenCommander
             telegraphDuration = lineStrikeCastTime;
         }
 
-        private void BeginBreakWideBurst()
-        {
-            var position = bossActor.transform.position;
-            markStrikePosition = position;
-            stateTimeRemaining = wideBurstCastTime;
-            currentState = BossState.BreakWideBurst;
-            bossFacingSmoother.SetTrackingEnabled(false);
-            bossActor.ForceTarget(
-                bossActor.Health,
-                float.PositiveInfinity);
-            DestroyActiveTelegraph();
-
-            activeTelegraph = FallenCommanderTelegraphView.CreateCircle(
-                markStrikeTelegraphPrefab,
-                bossActor.transform.parent,
-                position,
-                wideBurstRadius,
-                WideTelegraphColor);
-            telegraphDuration = wideBurstCastTime;
-        }
-
         private void BeginCircleAttack(
             BossState state,
             Vector3 position,
@@ -597,8 +564,6 @@ namespace ProjectMT.Contents.FallenCommander
                 }
             }
 
-            var keepBrokenAfterAttack =
-                currentState == BossState.BreakWideBurst;
             var motion = GetCurrentMotion();
             animationPresenter.Play(
                 motion?.CastMotion,
@@ -606,17 +571,6 @@ namespace ProjectMT.Contents.FallenCommander
                 durationOverride: motion == null ? 0f : motion.CastMotionDuration);
 
             DestroyActiveTelegraph();
-
-            if (keepBrokenAfterAttack)
-            {
-                stateTimeRemaining = 0f;
-                currentState = BossState.Broken;
-                bossFacingSmoother.SetTrackingEnabled(false);
-                bossActor.ForceTarget(
-                    bossActor.Health,
-                    float.PositiveInfinity);
-                return;
-            }
 
             attackCooldownRemaining = attackInterval;
             currentState = BossState.Idle;
@@ -640,8 +594,7 @@ namespace ProjectMT.Contents.FallenCommander
 
             var radius = currentState == BossState.HandSlam
                 ? basicAttackRadius
-                : currentState == BossState.WideBurst ||
-                    currentState == BossState.BreakWideBurst
+                : currentState == BossState.WideBurst
                     ? wideBurstRadius
                     : markStrikeRadius;
             return IsCommanderInsideCircle(radius);
@@ -653,8 +606,7 @@ namespace ProjectMT.Contents.FallenCommander
                 ? basicAttackMotion == null ? 0f : basicAttackMotion.StunDuration
                 : currentState == BossState.MarkStrike
                     ? markStrikeStunDuration
-                    : currentState == BossState.WideBurst ||
-                        currentState == BossState.BreakWideBurst
+                    : currentState == BossState.WideBurst
                         ? wideBurstStunDuration
                         : currentState == BossState.LineStrike
                             ? lineStrikeStunDuration
@@ -667,8 +619,7 @@ namespace ProjectMT.Contents.FallenCommander
                 ? basicAttackMotion
                 : currentState == BossState.MarkStrike
                     ? markStrikeMotion
-                    : currentState == BossState.WideBurst ||
-                        currentState == BossState.BreakWideBurst
+                    : currentState == BossState.WideBurst
                         ? wideBurstMotion
                         : lineStrikeMotion;
         }

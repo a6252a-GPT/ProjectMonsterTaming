@@ -20,14 +20,15 @@ namespace ProjectMT.Contents.FallenCommander
             ref bool phaseTwoTriggered,
             ref bool phaseThreeTriggered)
         {
+            const float thresholdEpsilon = 0.0001f;
             var count = 0;
-            if (healthRatio <= phaseTwoRatio && !phaseTwoTriggered)
+            if (healthRatio <= phaseTwoRatio + thresholdEpsilon && !phaseTwoTriggered)
             {
                 phaseTwoTriggered = true;
                 count++;
             }
 
-            if (healthRatio <= phaseThreeRatio && !phaseThreeTriggered)
+            if (healthRatio <= phaseThreeRatio + thresholdEpsilon && !phaseThreeTriggered)
             {
                 phaseThreeTriggered = true;
                 count++;
@@ -38,7 +39,7 @@ namespace ProjectMT.Contents.FallenCommander
     }
 
     [DisallowMultipleComponent]
-    public sealed class FallenCommanderController : MonoBehaviour, IContentController, IBossDungeonHudSource, IBossDungeonTimeoutController, IBossDungeonBossKillController, IBossDungeonAttackDebugController
+    public sealed class FallenCommanderController : MonoBehaviour, IContentController, IBossDungeonHudSource, IBossDungeonTimeoutController, IBossDungeonBossKillController, IBossDungeonBossHealthDebugController, IBossDungeonAttackDebugController
     {
         [Header("Battle")]
         [SerializeField] private CombatWorld combatWorld;
@@ -81,6 +82,7 @@ namespace ProjectMT.Contents.FallenCommander
         private bool hasTriggeredHealthThresholdWideBurst40;
         private int pendingThresholdWideBurstCount;
         private bool isCommanderStunned;
+        private int lastLoggedBossHealthPercent;
 
         private const float BreakGaugeDamageScale = 5f;
 
@@ -340,6 +342,9 @@ namespace ProjectMT.Contents.FallenCommander
             bossFacingSmoother.Configure(
                 commanderRoot.transform,
                 bossConfig.TurnSpeed);
+
+            lastLoggedBossHealthPercent = 100;
+            Debug.Log("보스 체력: 100%", this);
         }
 
         private void InitializeStateMachine()
@@ -412,11 +417,12 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             score += Mathf.CeilToInt(report.AppliedDamage);
+            LogBossHealthThresholds();
 
-            QueueHealthThresholdWideBursts();
+            var thresholdWideBurstCount = QueueHealthThresholdWideBursts();
             TryDispatchPendingThresholdWideBurst();
 
-            if (!isBroken && bossActor.IsAlive)
+            if (thresholdWideBurstCount <= 0 && !isBroken && bossActor.IsAlive)
             {
                 var breakGaugeDamage = bossConfig.BreakGaugePerHit *
                     bossConfig.BreakGaugeAttackPowerMultiplier *
@@ -429,7 +435,7 @@ namespace ProjectMT.Contents.FallenCommander
 
                 if (currentBreakGauge >= bossConfig.MaxBreakGauge)
                 {
-                    StartBreak(true);
+                    StartBreak();
                 }
             }
 
@@ -461,25 +467,26 @@ namespace ProjectMT.Contents.FallenCommander
             return 1f;
         }
 
-        private void QueueHealthThresholdWideBursts()
+        private int QueueHealthThresholdWideBursts()
         {
             if (bossActor == null ||
                 !bossActor.IsAlive ||
                 bossActor.Health.MaxHealth <= 0f)
             {
-                return;
+                return 0;
             }
 
             var healthRatio =
                 bossActor.Health.CurrentHealth / bossActor.Health.MaxHealth;
 
-            pendingThresholdWideBurstCount +=
-                FallenCommanderHealthThresholdRules.CountNewWideBursts(
-                    healthRatio,
-                    bossConfig.BreakGaugePhaseTwoHealthRatio,
-                    bossConfig.BreakGaugePhaseThreeHealthRatio,
-                    ref hasTriggeredHealthThresholdWideBurst70,
-                    ref hasTriggeredHealthThresholdWideBurst40);
+            var newBurstCount = FallenCommanderHealthThresholdRules.CountNewWideBursts(
+                healthRatio,
+                bossConfig.BreakGaugePhaseTwoHealthRatio,
+                bossConfig.BreakGaugePhaseThreeHealthRatio,
+                ref hasTriggeredHealthThresholdWideBurst70,
+                ref hasTriggeredHealthThresholdWideBurst40);
+            pendingThresholdWideBurstCount += newBurstCount;
+            return newBurstCount;
         }
 
         private void TryDispatchPendingThresholdWideBurst()
@@ -489,26 +496,17 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            if (!isBroken)
+            if (isBroken)
             {
-                pendingThresholdWideBurstCount--;
-                StartBreak(true);
+                pendingThresholdWideBurstCount = 0;
                 return;
             }
 
-            if (stateMachine == null || !stateMachine.CanForceWideBurstDuringBreak)
-            {
-                return;
-            }
-
-            pendingThresholdWideBurstCount--;
-            breakRemainingTime = Mathf.Max(
-                breakRemainingTime,
-                bossConfig.WideBurst.WarningDuration);
-            stateMachine.ForceWideBurstDuringBreak();
+            pendingThresholdWideBurstCount = 0;
+            stateMachine?.ForceWideBurst();
         }
 
-        private void StartBreak(bool triggerWideBurst)
+        private void StartBreak()
         {
             if (!IsRunning || isBroken)
             {
@@ -517,7 +515,7 @@ namespace ProjectMT.Contents.FallenCommander
 
             isBroken = true;
             breakRemainingTime = bossConfig.BreakDuration;
-            stateMachine?.EnterBroken(triggerWideBurst);
+            stateMachine?.EnterBroken();
             PublishHudState();
         }
 
@@ -654,6 +652,45 @@ namespace ProjectMT.Contents.FallenCommander
                 null,
                 bossActor.Health.CurrentHealth,
                 bossActor.transform.position));
+        }
+
+        public void DebugDamageBossTenPercent()
+        {
+            if (!IsRunning || bossActor == null || !bossActor.IsAlive)
+            {
+                return;
+            }
+
+            bossActor.Health.ApplyDamage(new DamageRequest(
+                null,
+                bossActor.Health.MaxHealth * 0.1f,
+                bossActor.transform.position));
+        }
+
+        private void LogBossHealthThresholds()
+        {
+            if (bossActor == null || bossActor.Health.MaxHealth <= 0f)
+            {
+                return;
+            }
+
+            var healthRatio = Mathf.Clamp01(
+                bossActor.Health.CurrentHealth / bossActor.Health.MaxHealth);
+            var currentHealthPercent = Mathf.Clamp(
+                Mathf.FloorToInt(healthRatio * 10f) * 10,
+                0,
+                100);
+
+            for (var percent = lastLoggedBossHealthPercent - 10;
+                 percent >= currentHealthPercent;
+                 percent -= 10)
+            {
+                Debug.Log($"보스 체력: {percent}%", this);
+            }
+
+            lastLoggedBossHealthPercent = Mathf.Min(
+                lastLoggedBossHealthPercent,
+                currentHealthPercent);
         }
 
         public void DebugBasicAttack()

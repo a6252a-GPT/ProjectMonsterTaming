@@ -42,7 +42,7 @@ MonoBehaviour:
     castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
     castMotionDuration: 0.875
     warningDuration: 5
-    radius: 4
+    radius: 10
     width: 2
     length: 8
     stunDuration: 5

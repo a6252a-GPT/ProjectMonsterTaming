@@ -57,9 +57,44 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             agent.autoTraverseOffMeshLink = false;
         }
 
+        private bool TryEnsureAgentOnNavMesh()
+        {
+            if (agent == null)
+            {
+                return false;
+            }
+
+            if (!agent.enabled)
+            {
+                agent.enabled = true;
+            }
+
+            if (!agent.isActiveAndEnabled)
+            {
+                return false;
+            }
+
+            if (agent.isOnNavMesh)
+            {
+                return true;
+            }
+
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 8f, NavMesh.AllAreas))
+            {
+                agent.Warp(hit.position);
+            }
+
+            return agent.isOnNavMesh;
+        }
+
         private void Update()
         {
             if (isDead)
+            {
+                return;
+            }
+
+            if (!TryEnsureAgentOnNavMesh())
             {
                 return;
             }

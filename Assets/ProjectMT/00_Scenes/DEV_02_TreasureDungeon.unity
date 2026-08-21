@@ -421,8 +421,8 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 35a36547c184d5b459531fe7c57156bc, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: ProjectMT.Contents.TreasureSpirit::ProjectMT.Contents.GrowthDungeon.MazeCameraFollow
-  target: {fileID: 8766329082880862259, guid: bf480e14d4541984eaa06214d0517b43, type: 3}
+  m_EditorClassIdentifier: ProjectMT.Contents.TreasureSpirit::ProjectMT.Contents.TreasureSpirit.MazeCameraFollow
+  target: {fileID: 1433094538}
   offset: {x: 0, y: 5, z: -2}
   followSpeed: 10
 --- !u!1 &166381484
@@ -1424,7 +1424,7 @@ MonoBehaviour:
   - {fileID: 3662517623368511206, guid: cbe773124cd013242aabb6a1f74c70e0, type: 3}
   - {fileID: 5266390021749569353, guid: 5e796f7386e39aa4689bb40c2ee9da3b, type: 3}
   - {fileID: 4939918238588314618, guid: 156ab314b017f57469b01f2613ef49ea, type: 3}
-  startMapIndex: 2
+  startMapIndex: 3
   chestPrefab: {fileID: 8111757877157432391, guid: a105dc230d1322943bbdff8ecfba2a7e, type: 3}
   mimicPrefab: {fileID: 1000013768157686, guid: c87759c4b502f20468a940a9164fa93f, type: 3}
   guardPrefab: {fileID: 9151998103618918405, guid: 7c6491b74c708764a80dcd6a730525e3, type: 3}

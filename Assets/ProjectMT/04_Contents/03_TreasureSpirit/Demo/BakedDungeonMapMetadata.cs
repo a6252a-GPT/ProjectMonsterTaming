@@ -16,7 +16,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return;
             }
 
-            playerSpawnPoint = DemoMapUtil.FindDeepChild(mapRoot, "StartRoom")
+            playerSpawnPoint = DemoMapUtil.FindStartPoint(mapRoot)
                 ?? DemoMapUtil.FindDeepChild(mapRoot, "PlayerSpawn")
                 ?? DemoMapUtil.FindDeepChild(mapRoot, "StartPoint");
         }

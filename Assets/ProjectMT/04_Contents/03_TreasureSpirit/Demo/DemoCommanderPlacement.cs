@@ -46,7 +46,16 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             sensorCollider.isTrigger = true;
-            sensorCollider.radius = 0.85f;
+            sensorCollider.radius = 1.1f;
+
+            Rigidbody sensorBody = sensorObject.GetComponent<Rigidbody>();
+            if (sensorBody == null)
+            {
+                sensorBody = sensorObject.AddComponent<Rigidbody>();
+            }
+
+            sensorBody.isKinematic = true;
+            sensorBody.useGravity = false;
 
             DemoPlayerInteractSensor sensor = sensorObject.GetComponent<DemoPlayerInteractSensor>();
             if (sensor == null)

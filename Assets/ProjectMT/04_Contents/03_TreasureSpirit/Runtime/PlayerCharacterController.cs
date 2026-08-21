@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.InputSystem;
 using ProjectMT.Shared.Input;
 
@@ -19,8 +20,9 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private CharacterController characterController;
         private int speedHash;
-        private bool hasSpeedParameter; // 애니메이션 파라미터 안전성 체크 플래그
+        private bool hasSpeedParameter;
         private bool inputEnabled = true;
+        private float verticalVelocity;
 
         public bool InputEnabled => inputEnabled;
 
@@ -71,26 +73,73 @@ namespace ProjectMT.Contents.TreasureSpirit
             // 1. 입력 감지
             Vector2 inputDirection = ReadDirection();
             Vector3 movement = new Vector3(inputDirection.x, 0f, inputDirection.y);
+            Vector3 moveDelta = Vector3.zero;
 
             if (movement.sqrMagnitude > 0.001f)
             {
-                // 방향 정규화 및 이동 속도 계산
-                Vector3 moveDelta = movement.normalized * (moveSpeed * Time.deltaTime);
+                moveDelta = movement.normalized * (moveSpeed * Time.deltaTime);
 
-                characterController.Move(moveDelta);
-
-                // 4. 회전 처리
-                if (moveDelta.sqrMagnitude > 0.0001f)
-                {
-                    Quaternion targetRotation = Quaternion.LookRotation(moveDelta.normalized, Vector3.up);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-                }
-
+                Quaternion targetRotation = Quaternion.LookRotation(moveDelta.normalized, Vector3.up);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
                 UpdateAnimation(1f);
             }
             else
             {
                 UpdateAnimation(0f);
+            }
+
+            if (characterController.isGrounded && verticalVelocity < 0f)
+            {
+                verticalVelocity = -2f;
+            }
+            else
+            {
+                verticalVelocity += Physics.gravity.y * Time.deltaTime;
+            }
+
+            ClampHorizontalMoveToNavMesh(ref moveDelta);
+            moveDelta.y = verticalVelocity * Time.deltaTime;
+            characterController.Move(moveDelta);
+        }
+
+        private void ClampHorizontalMoveToNavMesh(ref Vector3 moveDelta)
+        {
+            Vector3 horizontal = new Vector3(moveDelta.x, 0f, moveDelta.z);
+            if (horizontal.sqrMagnitude < 0.0000001f)
+            {
+                return;
+            }
+
+            Vector3 origin = transform.position;
+            if (NavMesh.SamplePosition(origin, out NavMeshHit onMesh, 1.5f, NavMesh.AllAreas))
+            {
+                origin = onMesh.position;
+            }
+
+            Vector3 destination = origin + horizontal;
+            if (NavMesh.SamplePosition(destination, out NavMeshHit sampled, 0.55f, NavMesh.AllAreas))
+            {
+                Vector3 allowed = sampled.position - origin;
+                allowed.y = 0f;
+                if (allowed.sqrMagnitude > 0.0000001f)
+                {
+                    moveDelta.x = allowed.x;
+                    moveDelta.z = allowed.z;
+                    return;
+                }
+            }
+
+            if (NavMesh.Raycast(origin, destination, out NavMeshHit blocked, NavMesh.AllAreas))
+            {
+                Vector3 allowed = blocked.position - origin;
+                allowed.y = 0f;
+                moveDelta.x = allowed.x;
+                moveDelta.z = allowed.z;
+            }
+            else
+            {
+                moveDelta.x = 0f;
+                moveDelta.z = 0f;
             }
         }
 

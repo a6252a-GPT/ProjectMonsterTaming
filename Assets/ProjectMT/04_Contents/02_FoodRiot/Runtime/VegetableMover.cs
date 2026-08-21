@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace ProjectMT.Contents.FoodRiot
 {
@@ -48,7 +49,7 @@ namespace ProjectMT.Contents.FoodRiot
             }
 
             // --- [테스트용 코드] 키보드 Space 키나 마우스 우클릭 시 강제 피격(도망) 테스트 ---
-            if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(1))
+            if (WasDebugHitPressed())
             {
                 // 현재 야채 위치의 약간 앞쪽을 공격자 위치로 가정하고 도망 신호 전달
                 OnDamaged(transform.position + transform.forward);
@@ -89,6 +90,18 @@ namespace ProjectMT.Contents.FoodRiot
                     Quaternion.LookRotation(direction, Vector3.up),
                     (isFleeing ? 12f : 6f) * Time.deltaTime); // 도망 시 빠르게 회전
             }
+        }
+
+        private static bool WasDebugHitPressed()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            Mouse mouse = Mouse.current;
+            return mouse != null && mouse.rightButton.wasPressedThisFrame;
         }
 
         /// <summary>

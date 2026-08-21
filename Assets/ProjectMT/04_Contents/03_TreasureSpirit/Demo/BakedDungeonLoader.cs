@@ -61,16 +61,13 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 nextMapIndex = Mathf.Clamp(startMapIndex, 0, prefabs.Length - 1);
             }
 
-            int selectedIndex = nextMapIndex;
-            nextMapIndex = (nextMapIndex + 1) % prefabs.Length;
-
-            GameObject selectedPrefab = prefabs[selectedIndex];
-
-            if (!TryResolvePrefab(selectedPrefab, out GameObject prefabRoot))
+            if (!TrySelectValidPrefab(prefabs, out int selectedIndex, out GameObject prefabRoot))
             {
-                Debug.LogError($"[BakedDungeonLoader] 인덱스 {selectedIndex} 프리팹 참조가 올바르지 않습니다.");
+                Debug.LogError("[BakedDungeonLoader] 로드할 수 있는 던전 맵 프리팹이 없습니다.");
                 return;
             }
+
+            nextMapIndex = (selectedIndex + 1) % prefabs.Length;
 
             activeMapInstance = Instantiate(
                 prefabRoot,
@@ -78,6 +75,24 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 transform.rotation,
                 transform);
             activeMapInstance.name = $"{prefabRoot.name}_Runtime";
+            PrepareLoadedMap();
+
+            Debug.Log(
+                $"[BakedDungeonLoader] 맵 로드: {prefabRoot.name} (index={selectedIndex + 1}/{prefabs.Length}, 다음={nextMapIndex + 1}) " +
+                $"Start_pt={DemoMapUtil.CollectMarkers(activeMapInstance.transform, DemoMapUtil.StartMarkerName).Count} " +
+                $"Prison_pt={DemoMapUtil.CollectMarkers(activeMapInstance.transform, DemoMapUtil.PrisonMarkerName).Count} " +
+                $"Chest_pt={DemoMapUtil.CollectMarkers(activeMapInstance.transform, DemoMapUtil.ChestMarkerName).Count} " +
+                $"Guard_pt={DemoMapUtil.CollectMarkers(activeMapInstance.transform, DemoMapUtil.GuardMarkerName).Count}");
+        }
+
+        private void PrepareLoadedMap()
+        {
+            if (activeMapInstance == null)
+            {
+                return;
+            }
+
+            PrepareMapVisuals(activeMapInstance);
 
             activeMetadata = activeMapInstance.GetComponent<BakedDungeonMapMetadata>();
             if (activeMetadata == null)
@@ -93,8 +108,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             hasKey = false;
-
-            Debug.Log($"[BakedDungeonLoader] 맵 로드: {prefabRoot.name} (index={selectedIndex + 1}/{prefabs.Length}, 다음={nextMapIndex + 1})");
         }
 
         public void PlaceCommander()
@@ -145,27 +158,84 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         {
             hasKey = false;
             activeMetadata = null;
+            ClearRuntimeMap();
+        }
 
+        private void ClearRuntimeMap()
+        {
             if (activeMapInstance != null)
             {
                 DemoNavMeshBuilder.DestroyExistingProxies(activeMapInstance.transform);
+                if (Application.isPlaying)
+                {
+                    Destroy(activeMapInstance);
+                }
+                else
+                {
+                    DestroyImmediate(activeMapInstance);
+                }
+
+                activeMapInstance = null;
             }
 
-            if (activeMapInstance == null)
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                Transform child = transform.GetChild(i);
+                if (child == null)
+                {
+                    continue;
+                }
+
+                if (!child.name.Contains("DungeonGenerator_Baked") && !child.name.EndsWith("_Runtime"))
+                {
+                    continue;
+                }
+
+                if (Application.isPlaying)
+                {
+                    Destroy(child.gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(child.gameObject);
+                }
+            }
+        }
+
+        private static void PrepareMapVisuals(GameObject mapRoot)
+        {
+            if (mapRoot == null)
             {
                 return;
             }
 
-            if (Application.isPlaying)
+            Transform[] transforms = mapRoot.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < transforms.Length; i++)
             {
-                Destroy(activeMapInstance);
-            }
-            else
-            {
-                DestroyImmediate(activeMapInstance);
+                if (transforms[i] != null)
+                {
+                    transforms[i].gameObject.isStatic = false;
+                }
             }
 
-            activeMapInstance = null;
+            Renderer[] renderers = mapRoot.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                renderer.enabled = true;
+                renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.BlendProbes;
+
+                MeshRenderer meshRenderer = renderer as MeshRenderer;
+                if (meshRenderer != null)
+                {
+                    meshRenderer.receiveGI = ReceiveGI.LightProbes;
+                }
+            }
         }
 
         public void GrantKey()
@@ -206,17 +276,30 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private GameObject[] ResolvePrefabList()
         {
-            if (HasValidPrefabList(dungeonMapPrefabs))
+            GameObject[] defaults = BakedDungeonPrefabRegistry.LoadDefaultPrefabs();
+            if (!HasValidPrefabList(dungeonMapPrefabs))
+            {
+                if (HasValidPrefabList(defaults))
+                {
+                    Debug.LogWarning("[BakedDungeonLoader] Inspector 참조가 깨져 기본 DungeonBakes 프리팹을 사용합니다.");
+                    dungeonMapPrefabs = defaults;
+                    return defaults;
+                }
+
+                return dungeonMapPrefabs;
+            }
+
+            if (!HasValidPrefabList(defaults))
             {
                 return dungeonMapPrefabs;
             }
 
-            GameObject[] defaults = BakedDungeonPrefabRegistry.LoadDefaultPrefabs();
-            if (HasValidPrefabList(defaults))
+            for (int i = 0; i < dungeonMapPrefabs.Length && i < defaults.Length; i++)
             {
-                Debug.LogWarning("[BakedDungeonLoader] Inspector 참조가 깨져 기본 DungeonBakes 프리팹을 사용합니다.");
-                dungeonMapPrefabs = defaults;
-                return defaults;
+                if (!TryResolvePrefab(dungeonMapPrefabs[i], out _))
+                {
+                    dungeonMapPrefabs[i] = defaults[i];
+                }
             }
 
             return dungeonMapPrefabs;
@@ -272,10 +355,10 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
             else if (!DemoSpawnResolver.TryGetSpawnPosition(activeMapInstance.transform, playerSpawnHeightOffset, out spawnPosition))
             {
-                return;
+                spawnPosition = activeMapInstance.transform.position + Vector3.up * playerSpawnHeightOffset;
             }
 
-            DemoSpawnResolver.TrySnapToNavMesh(ref spawnPosition, 6f);
+            DemoSpawnResolver.TrySnapToNavMesh(ref spawnPosition, 12f);
             DemoCommanderPlacement.PlaceOnSurface(playerTransform, spawnPosition, playerSpawnHeightOffset);
         }
 
@@ -295,8 +378,30 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             MazeCameraFollow cameraFollow = mainCamera.GetComponent<MazeCameraFollow>();
             if (cameraFollow != null)
             {
-                cameraFollow.target = playerTransform;
+                cameraFollow.BindTarget(playerTransform, true);
             }
+        }
+
+        private bool TrySelectValidPrefab(
+            GameObject[] prefabs,
+            out int selectedIndex,
+            out GameObject prefabRoot)
+        {
+            selectedIndex = -1;
+            prefabRoot = null;
+
+            int startIndex = Mathf.Clamp(nextMapIndex, 0, prefabs.Length - 1);
+            for (int offset = 0; offset < prefabs.Length; offset++)
+            {
+                int index = (startIndex + offset) % prefabs.Length;
+                if (TryResolvePrefab(prefabs[index], out prefabRoot))
+                {
+                    selectedIndex = index;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void DisablePunctualLightShadows(GameObject mapRoot)

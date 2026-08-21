@@ -29,8 +29,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return;
             }
 
-            Transform prisonPoint = DemoMapUtil.FindDeepChild(mapRoot, PrisonMarkerName);
-            Transform endRoom = DemoMapUtil.FindDeepChild(mapRoot, EndRoomName);
+            Transform prisonPoint = DemoMapUtil.FindDeepChild(mapRoot, DemoMapUtil.PrisonMarkerName);
+            Transform endRoom = DemoMapUtil.FindEndRoom(mapRoot);
             Transform parent = prisonPoint != null ? prisonPoint.parent : endRoom;
 
             if (parent == null)
@@ -60,8 +60,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 Debug.LogWarning($"[DemoEndRoomSpawner] '{PrisonMarkerName}'이 없어 부모 Transform 위치에 배치합니다.");
             }
 
+            spawnPosition = SnapPositionToFloor(prisonPoint != null ? prisonPoint : parent, spawnPosition);
+
             GameObject prisonObject = Object.Instantiate(prisonPrefab, spawnPosition, spawnRotation, parent);
             prisonObject.name = "PF_Prison_Runtime";
+            AlignPrisonBottomToFloor(prisonObject, spawnPosition.y);
 
             SpawnPrisonVisualContent(prisonObject, prisonContentPrefab, prisonContentLocalOffset);
             ConfigurePrisonDoor(prisonObject, keyState, controller);
@@ -155,6 +158,52 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             demoDoor?.Configure(rotateTarget, keyState, controller);
+        }
+
+        private static Vector3 SnapPositionToFloor(Transform markerOrRoom, Vector3 position)
+        {
+            Transform room = DemoMapUtil.FindRoomRoot(markerOrRoom) ?? markerOrRoom;
+            if (DemoFloorBounds.TryGetSurface(room, out Vector3 floorPoint))
+            {
+                position.y = floorPoint.y;
+                return position;
+            }
+
+            if (NavMesh.SamplePosition(position, out NavMeshHit hit, 8f, NavMesh.AllAreas))
+            {
+                position.y = hit.position.y;
+            }
+
+            return position;
+        }
+
+        private static void AlignPrisonBottomToFloor(GameObject prisonObject, float floorY)
+        {
+            if (prisonObject == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = prisonObject.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0)
+            {
+                return;
+            }
+
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null)
+                {
+                    bounds.Encapsulate(renderers[i].bounds);
+                }
+            }
+
+            float deltaY = floorY - bounds.min.y;
+            if (Mathf.Abs(deltaY) > 0.001f)
+            {
+                prisonObject.transform.position += new Vector3(0f, deltaY, 0f);
+            }
         }
     }
 }

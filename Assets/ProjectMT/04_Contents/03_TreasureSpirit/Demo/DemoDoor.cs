@@ -14,6 +14,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         public void Configure(Transform pivot)
         {
             doorPivot = pivot != null ? pivot : transform;
+            DisableBlockingColliders();
             EnsureTriggerVolume();
         }
 
@@ -56,28 +57,12 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private Vector3 GetTriggerSize()
         {
-            Renderer renderer = doorPivot.GetComponent<Renderer>();
-            if (renderer == null)
-            {
-                return new Vector3(2.5f, 2.5f, 2.5f);
-            }
-
-            Vector3 localSize = doorPivot.InverseTransformVector(renderer.bounds.size);
-            localSize.x = Mathf.Max(Mathf.Abs(localSize.x), 1.5f);
-            localSize.y = Mathf.Max(Mathf.Abs(localSize.y), 2f);
-            localSize.z = Mathf.Max(Mathf.Abs(localSize.z), 1.5f);
-            return localSize;
+            return new Vector3(2.4f, 2.6f, 2.4f);
         }
 
         private Vector3 GetTriggerCenter()
         {
-            Renderer renderer = doorPivot.GetComponent<Renderer>();
-            if (renderer == null)
-            {
-                return Vector3.zero;
-            }
-
-            return doorPivot.InverseTransformPoint(renderer.bounds.center);
+            return new Vector3(0f, 1.2f, 0f);
         }
 
         private void OpenDoor()

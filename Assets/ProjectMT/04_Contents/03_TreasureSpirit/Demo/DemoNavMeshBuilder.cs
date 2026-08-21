@@ -1,4 +1,4 @@
-using Unity.AI.Navigation;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -6,44 +6,89 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 {
     internal static class DemoNavMeshBuilder
     {
-        private const string ProxyRootName = "DemoNavMeshProxies";
+        private static NavMeshDataInstance navMeshInstance;
 
-        public static NavMeshSurface BuildForMap(GameObject mapInstance)
+        public static bool BuildForMap(GameObject mapInstance)
         {
             if (mapInstance == null)
             {
-                return null;
+                return false;
             }
 
-            DestroyExistingProxies(mapInstance.transform);
+            RemoveNavMesh();
+            DemoMapColliderBaker.Bake(mapInstance.transform);
 
-            Transform proxyRoot = CreateProxyRoot(mapInstance.transform);
-            int proxyCount = CreateFloorBoxProxies(mapInstance.transform, proxyRoot);
-
-            if (proxyCount == 0)
+            List<NavMeshBuildSource> sources = new List<NavMeshBuildSource>();
+            CollectFloorSources(mapInstance.transform, sources);
+            CollectDoorwaySources(mapInstance.transform, sources);
+            if (sources.Count == 0)
             {
-                Debug.LogWarning("[DemoNavMeshBuilder] Floor_Flat 프록시가 없습니다. NavMesh 품질이 떨어질 수 있습니다.");
+                Debug.LogError("[DemoNavMeshBuilder] Floor 메시를 찾지 못해 NavMesh를 만들 수 없습니다.");
+                return false;
             }
 
-            NavMeshSurface surface = proxyRoot.GetComponent<NavMeshSurface>();
-            if (surface == null)
+            Bounds bounds = CalculateFloorBounds(mapInstance.transform);
+            bounds.Expand(new Vector3(2f, 4f, 2f));
+
+            NavMeshBuildSettings settings = NavMesh.GetSettingsByID(0);
+            settings.agentRadius = 0.2f;
+            settings.agentHeight = 1.6f;
+            settings.agentSlope = 50f;
+            settings.agentClimb = 0.5f;
+            settings.minRegionArea = 0.1f;
+            settings.overrideVoxelSize = true;
+            settings.voxelSize = 0.06f;
+
+            NavMeshData navMeshData = NavMeshBuilder.BuildNavMeshData(
+                settings,
+                sources,
+                bounds,
+                mapInstance.transform.position,
+                mapInstance.transform.rotation);
+
+            if (navMeshData == null)
             {
-                surface = proxyRoot.gameObject.AddComponent<NavMeshSurface>();
+                Debug.LogError("[DemoNavMeshBuilder] NavMesh 데이터 생성에 실패했습니다.");
+                return false;
             }
 
-            ConfigureSurface(surface, proxyCount);
-            surface.BuildNavMesh();
-            return surface;
+            navMeshInstance = NavMesh.AddNavMeshData(
+                navMeshData,
+                mapInstance.transform.position,
+                mapInstance.transform.rotation);
+
+            NavMeshTriangulation triangulation = NavMesh.CalculateTriangulation();
+            int vertexCount = triangulation.vertices != null ? triangulation.vertices.Length : 0;
+            if (vertexCount == 0)
+            {
+                Debug.LogError("[DemoNavMeshBuilder] NavMesh 삼각형이 없습니다.");
+                return false;
+            }
+
+            Debug.Log($"[DemoNavMeshBuilder] NavMesh 베이크 완료 (floors={sources.Count}, verts={vertexCount})");
+            return true;
+        }
+
+        public static void RemoveNavMesh()
+        {
+            if (navMeshInstance.valid)
+            {
+                navMeshInstance.Remove();
+            }
+
+            navMeshInstance = default;
         }
 
         public static void DestroyExistingProxies(Transform mapRoot)
         {
+            RemoveNavMesh();
+
             if (mapRoot == null)
             {
                 return;
             }
 
-            Transform existing = mapRoot.Find(ProxyRootName);
+            Transform existing = mapRoot.Find("DemoNavMeshProxies");
             if (existing == null)
             {
                 return;
@@ -59,109 +104,94 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
         }
 
-        private static Transform CreateProxyRoot(Transform mapRoot)
+        private static void CollectFloorSources(Transform mapRoot, List<NavMeshBuildSource> sources)
         {
-            GameObject proxyRootObject = new GameObject(ProxyRootName);
-            Transform proxyRoot = proxyRootObject.transform;
-            proxyRoot.SetParent(mapRoot, false);
-            proxyRoot.localPosition = Vector3.zero;
-            proxyRoot.localRotation = Quaternion.identity;
-            proxyRoot.localScale = Vector3.one;
-            return proxyRoot;
+            MeshFilter[] meshFilters = mapRoot.GetComponentsInChildren<MeshFilter>(true);
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                MeshFilter meshFilter = meshFilters[i];
+                if (meshFilter == null ||
+                    meshFilter.sharedMesh == null ||
+                    !meshFilter.gameObject.name.StartsWith(DemoFloorBounds.FloorNamePrefix))
+                {
+                    continue;
+                }
+
+                NavMeshBuildSource source = new NavMeshBuildSource
+                {
+                    shape = NavMeshBuildSourceShape.Mesh,
+                    sourceObject = meshFilter.sharedMesh,
+                    transform = meshFilter.transform.localToWorldMatrix,
+                    area = 0
+                };
+                sources.Add(source);
+            }
         }
 
-        private static int CreateFloorBoxProxies(Transform mapRoot, Transform proxyRoot)
+        private static void CollectDoorwaySources(Transform mapRoot, List<NavMeshBuildSource> sources)
         {
-            Renderer[] renderers = mapRoot.GetComponentsInChildren<Renderer>(true);
-            int count = 0;
+            Transform[] allTransforms = mapRoot.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < allTransforms.Length; i++)
+            {
+                Transform door = allTransforms[i];
+                if (door == null || !IsDoorwayName(door.name))
+                {
+                    continue;
+                }
+
+                Vector3 center = door.position;
+                if (DemoFloorBounds.TryGetSurface(door.parent != null ? door.parent : door, out Vector3 floorPoint))
+                {
+                    center.y = floorPoint.y + 0.05f;
+                }
+                else
+                {
+                    center.y += 0.05f;
+                }
+
+                NavMeshBuildSource source = new NavMeshBuildSource
+                {
+                    shape = NavMeshBuildSourceShape.Box,
+                    size = new Vector3(2.6f, 0.25f, 2.6f),
+                    transform = Matrix4x4.TRS(center, Quaternion.identity, Vector3.one),
+                    area = 0
+                };
+                sources.Add(source);
+            }
+        }
+
+        private static bool IsDoorwayName(string objectName)
+        {
+            return objectName == "NorthDoor" ||
+                   objectName == "SouthDoor" ||
+                   objectName == "EastDoor" ||
+                   objectName == "WestDoor";
+        }
+
+        private static Bounds CalculateFloorBounds(Transform mapRoot)
+        {
+            MeshRenderer[] renderers = mapRoot.GetComponentsInChildren<MeshRenderer>(true);
+            Bounds bounds = new Bounds(mapRoot.position, Vector3.one);
+            bool initialized = false;
 
             for (int i = 0; i < renderers.Length; i++)
             {
-                Renderer renderer = renderers[i];
+                MeshRenderer renderer = renderers[i];
                 if (renderer == null || !renderer.gameObject.name.StartsWith(DemoFloorBounds.FloorNamePrefix))
-                {
-                    continue;
-                }
-
-                Bounds bounds = renderer.bounds;
-                if (bounds.size.sqrMagnitude <= 0.001f)
-                {
-                    continue;
-                }
-
-                GameObject proxyObject = new GameObject($"Proxy_{renderer.gameObject.name}_{count}");
-                Transform proxyTransform = proxyObject.transform;
-                proxyTransform.SetParent(proxyRoot, false);
-                proxyTransform.position = bounds.center;
-                proxyTransform.rotation = Quaternion.identity;
-
-                BoxCollider boxCollider = proxyObject.AddComponent<BoxCollider>();
-                boxCollider.size = bounds.size;
-                boxCollider.center = Vector3.zero;
-
-                count++;
-            }
-
-            return count;
-        }
-
-        private static void ConfigureSurface(NavMeshSurface surface, int proxyCount)
-        {
-            surface.agentTypeID = 0;
-            surface.collectObjects = CollectObjects.Children;
-            surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
-            surface.defaultArea = 0;
-            surface.layerMask = ~0;
-            surface.ignoreNavMeshAgent = true;
-            surface.ignoreNavMeshObstacle = true;
-
-            Transform proxyRoot = surface.transform;
-            Bounds bounds = CalculateBounds(proxyRoot);
-            if (proxyCount > 0 && bounds.size.sqrMagnitude > 0.001f)
-            {
-                surface.center = proxyRoot.InverseTransformPoint(bounds.center);
-                surface.size = bounds.size;
-            }
-            else
-            {
-                surface.center = Vector3.zero;
-                surface.size = new Vector3(80f, 10f, 80f);
-            }
-        }
-
-        private static Bounds CalculateBounds(Transform root)
-        {
-            Collider[] colliders = root.GetComponentsInChildren<Collider>(true);
-            Bounds bounds = default;
-            bool initialized = false;
-
-            for (int i = 0; i < colliders.Length; i++)
-            {
-                if (colliders[i] == null)
                 {
                     continue;
                 }
 
                 if (!initialized)
                 {
-                    bounds = colliders[i].bounds;
+                    bounds = renderer.bounds;
                     initialized = true;
                 }
                 else
                 {
-                    bounds.Encapsulate(colliders[i].bounds);
+                    bounds.Encapsulate(renderer.bounds);
                 }
             }
-
-            if (!initialized)
-            {
-                bounds = new Bounds(root.position, Vector3.one);
-            }
-
-            bounds.size = new Vector3(
-                Mathf.Max(bounds.size.x, 1f),
-                Mathf.Max(bounds.size.y, 1f),
-                Mathf.Max(bounds.size.z, 1f));
 
             return bounds;
         }

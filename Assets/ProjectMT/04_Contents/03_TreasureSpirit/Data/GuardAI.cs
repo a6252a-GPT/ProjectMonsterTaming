@@ -52,6 +52,41 @@ namespace ProjectMT.Contents.TreasureSpirit
         private NavMeshAgent agent;
         private Animator animator;
 
+        private bool IsAgentReady()
+        {
+            return agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
+        }
+
+        private bool TryEnsureAgentOnNavMesh()
+        {
+            if (agent == null)
+            {
+                return false;
+            }
+
+            if (!agent.enabled)
+            {
+                agent.enabled = true;
+            }
+
+            if (!agent.isActiveAndEnabled)
+            {
+                return false;
+            }
+
+            if (agent.isOnNavMesh)
+            {
+                return true;
+            }
+
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 8f, NavMesh.AllAreas))
+            {
+                agent.Warp(hit.position);
+            }
+
+            return agent.isOnNavMesh;
+        }
+
         private void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
@@ -79,7 +114,15 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private void Update()
         {
-            if (isDead) return;
+            if (isDead)
+            {
+                return;
+            }
+
+            if (!TryEnsureAgentOnNavMesh())
+            {
+                return;
+            }
 
             if (animator != null)
             {
@@ -221,7 +264,10 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private void PatrolBehavior()
         {
-            if (agent.pathPending) return;
+            if (!IsAgentReady() || agent.pathPending)
+            {
+                return;
+            }
 
             if (agent.remainingDistance <= agent.stoppingDistance)
             {
@@ -236,6 +282,11 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private void SetRandomPatrolDestination()
         {
+            if (!IsAgentReady())
+            {
+                return;
+            }
+
             Vector3 origin = usePatrolOrigin ? patrolOrigin : transform.position;
             Vector3 randomDirection = Random.insideUnitSphere * patrolRadius;
             randomDirection.y = 0f;

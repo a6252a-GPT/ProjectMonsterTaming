@@ -5,8 +5,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 {
     internal static class DemoSpawnResolver
     {
-        private const string StartRoomName = "StartRoom";
-
         public static bool TryGetSpawnPosition(Transform mapRoot, float heightOffset, out Vector3 spawnPosition)
         {
             spawnPosition = default;
@@ -16,20 +14,26 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return false;
             }
 
-            Transform startRoom = DemoMapUtil.FindDeepChild(mapRoot, StartRoomName);
-            if (startRoom == null)
+            Transform startPoint = DemoMapUtil.FindStartPoint(mapRoot);
+            if (startPoint == null)
             {
-                Debug.LogWarning($"[DemoSpawnResolver] 프리팹에서 '{StartRoomName}'을 찾지 못했습니다.");
+                Debug.LogWarning("[DemoSpawnResolver] Start_pt를 찾지 못했습니다.");
                 return false;
             }
 
-            if (DemoFloorBounds.TryGetSurface(startRoom, out Vector3 roomFloorSurface))
+            if (startPoint.name == DemoMapUtil.StartMarkerName)
+            {
+                spawnPosition = ApplyHeight(startPoint.position, heightOffset);
+                return true;
+            }
+
+            if (DemoFloorBounds.TryGetSurface(startPoint, out Vector3 roomFloorSurface))
             {
                 spawnPosition = ApplyHeight(roomFloorSurface, heightOffset);
                 return true;
             }
 
-            spawnPosition = ApplyHeight(startRoom.position, heightOffset);
+            spawnPosition = ApplyHeight(startPoint.position, heightOffset);
             return true;
         }
 

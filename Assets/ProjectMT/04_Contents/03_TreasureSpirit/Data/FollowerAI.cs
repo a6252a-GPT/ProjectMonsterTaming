@@ -41,6 +41,36 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private NavMeshAgent agent;
 
+        private bool TryEnsureAgentOnNavMesh()
+        {
+            if (agent == null)
+            {
+                return false;
+            }
+
+            if (!agent.enabled)
+            {
+                agent.enabled = true;
+            }
+
+            if (!agent.isActiveAndEnabled)
+            {
+                return false;
+            }
+
+            if (agent.isOnNavMesh)
+            {
+                return true;
+            }
+
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 8f, NavMesh.AllAreas))
+            {
+                agent.Warp(hit.position);
+            }
+
+            return agent.isOnNavMesh;
+        }
+
         private void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
@@ -121,6 +151,11 @@ namespace ProjectMT.Contents.TreasureSpirit
                 {
                     return;
                 }
+            }
+
+            if (!TryEnsureAgentOnNavMesh())
+            {
+                return;
             }
 
             // 1. 주변 적(미믹 우선, 경비병) 탐색

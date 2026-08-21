@@ -82,25 +82,32 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             yield return null;
 
             GameObject mapInstance = bakedDungeonLoader.ActiveMapInstance;
-            DemoDoorBinder.Bind(mapInstance.transform);
-            bakedDungeonLoader.KeyGranted += OnKeyGranted;
-
-            if (DemoNavMeshBuilder.BuildForMap(mapInstance) == null)
+            if (mapInstance == null)
             {
-                Debug.LogError("[DemoDungeonController] NavMesh 빌드에 실패했습니다.");
                 yield break;
             }
 
-            bakedDungeonLoader.PlaceCommander();
-            bakedDungeonLoader.SpawnRoomContents();
-            bakedDungeonLoader.SpawnEndRoomPrison(this);
+            DemoDoorBinder.Bind(mapInstance.transform);
+            bakedDungeonLoader.KeyGranted += OnKeyGranted;
 
-            clearOverlay?.Hide();
+            if (!DemoNavMeshBuilder.BuildForMap(mapInstance))
+            {
+                Debug.LogError("[DemoDungeonController] NavMesh 빌드에 실패했습니다.");
+            }
+
+            yield return new WaitForFixedUpdate();
+
+            bakedDungeonLoader.PlaceCommander();
 
             if (commanderRoot != null)
             {
                 commanderRoot.SetActive(true);
             }
+
+            bakedDungeonLoader.SpawnRoomContents();
+            bakedDungeonLoader.SpawnEndRoomPrison(this);
+
+            clearOverlay?.Hide();
 
             commanderMove?.SetInputEnabled(true);
 
@@ -235,6 +242,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             if (resultText != null)
             {
+                resultText.gameObject.SetActive(true);
                 resultText.text = summary;
             }
 
@@ -276,7 +284,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private void OnDestroy()
         {
             exitButton?.onClick.RemoveListener(OnExitButtonClicked);
-            ShutdownInternal();
         }
     }
 }

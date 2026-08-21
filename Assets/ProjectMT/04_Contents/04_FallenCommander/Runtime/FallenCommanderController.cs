@@ -58,6 +58,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         [Header("Dungeon")]
         [SerializeField, Min(1f)] private float timeLimitSeconds = 80f;
+        [SerializeField, Min(0f)] private float battleStartDelaySeconds = 2f;
 
         private ContentContext context;
         private UnitActor bossActor;
@@ -78,6 +79,8 @@ namespace ProjectMT.Contents.FallenCommander
         private int score;
         private bool isFinishing;
         private Coroutine deathRoutine;
+        private float battleStartDelayRemaining;
+        private bool isBattleStartDelay;
         private bool hasTriggeredHealthThresholdWideBurst70;
         private bool hasTriggeredHealthThresholdWideBurst40;
         private int pendingThresholdWideBurstCount;
@@ -118,6 +121,8 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             remainingTime = timeLimitSeconds;
+            battleStartDelayRemaining = Mathf.Max(0f, battleStartDelaySeconds);
+            isBattleStartDelay = battleStartDelayRemaining > 0f;
             score = 0;
             isFinishing = false;
             var stage = int.TryParse(context.RunInfo.StageId, out var selectedStage) &&
@@ -145,6 +150,8 @@ namespace ProjectMT.Contents.FallenCommander
         public void Shutdown()
         {
             IsRunning = false;
+            battleStartDelayRemaining = 0f;
+            isBattleStartDelay = false;
 
             if (deathRoutine != null)
             {
@@ -199,6 +206,22 @@ namespace ProjectMT.Contents.FallenCommander
         {
             if (!IsRunning)
             {
+                return;
+            }
+
+            if (isBattleStartDelay)
+            {
+                battleStartDelayRemaining = Mathf.Max(
+                    0f,
+                    battleStartDelayRemaining - Time.deltaTime);
+                PublishHudState();
+
+                if (battleStartDelayRemaining <= 0f)
+                {
+                    isBattleStartDelay = false;
+                    PublishHudState();
+                }
+
                 return;
             }
 
@@ -397,6 +420,7 @@ namespace ProjectMT.Contents.FallenCommander
                 combatWorld,
                 commanderRoot.transform,
                 () => !IsRunning ||
+                    isBattleStartDelay ||
                     commanderMove == null ||
                     !commanderMove.IsInputEnabled ||
                     isCommanderStunned,
@@ -695,21 +719,41 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugBasicAttack()
         {
+            if (!IsRunning || isBattleStartDelay)
+            {
+                return;
+            }
+
             stateMachine?.DebugForceBasicAttack();
         }
 
         public void DebugLineStrike()
         {
+            if (!IsRunning || isBattleStartDelay)
+            {
+                return;
+            }
+
             stateMachine?.DebugForceLineStrike();
         }
 
         public void DebugMarkStrike()
         {
+            if (!IsRunning || isBattleStartDelay)
+            {
+                return;
+            }
+
             stateMachine?.DebugForceMarkStrike();
         }
 
         public void DebugWideBurst()
         {
+            if (!IsRunning || isBattleStartDelay)
+            {
+                return;
+            }
+
             stateMachine?.DebugForceWideBurst();
         }
 

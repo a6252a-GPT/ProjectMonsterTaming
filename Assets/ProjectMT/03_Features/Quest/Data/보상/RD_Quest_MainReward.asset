@@ -17,3 +17,5 @@ MonoBehaviour:
   items:
   - itemId: ticket_monster_summon
     amount: 1
+  - itemId: currency_gold
+    amount: 1

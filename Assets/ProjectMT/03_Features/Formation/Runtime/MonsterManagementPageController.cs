@@ -284,6 +284,8 @@ namespace ProjectMT.Features.Formation
             }
 
             var nextStage = owned.AscensionLevel + 1;
+            // 0으로 비워두면 갱신 시 다음 미완료 단계가 자동 선택돼 "돌파"가 계속 이어진다.
+            selectedBreakthroughStage = 0;
             var saved = await ApplyAndSaveAsync(
                 GameProgressChange.AscendMonster(selectedMonsterId, owned.AscensionLevel),
                 $"{ResolveDisplayName(selectedMonsterId)} {nextStage}단계 돌파 완료");

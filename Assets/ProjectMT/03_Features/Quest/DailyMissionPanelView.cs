@@ -208,7 +208,9 @@ namespace ProjectMT.Features.Quest
 
                 if (stepMilestones[i].IconGraphic != null)
                 {
-                    stepMilestones[i].IconGraphic.enabled = false; // 누적 보상은 MVP 제외, 체크 지표만 사용
+                    // 프리팹 원본에서 이 Image가 기본적으로 꺼져 있어(enabled: false) 항상 켜준다.
+                    // 달성 여부 표시는 ApplyStepMilestones에서 알파값으로만 구분한다.
+                    stepMilestones[i].IconGraphic.enabled = true;
                 }
             }
 
@@ -508,6 +510,7 @@ namespace ProjectMT.Features.Quest
 
                 if (milestone.IconGraphic != null)
                 {
+                    milestone.IconGraphic.enabled = true;
                     var color = milestone.IconGraphic.color;
                     color.a = reached ? StepIconAlphaAchieved : StepIconAlphaDefault;
                     milestone.IconGraphic.color = color;

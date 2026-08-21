@@ -1,6 +1,5 @@
 using System.Collections;
 using ProjectMT.Contents.TreasureSpirit;
-using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -28,7 +27,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         [SerializeField] private TMP_Text killCountText;
         [SerializeField] private TMP_Text resultText;
         [SerializeField] private Button exitButton;
-        [SerializeField] private ContentClearOverlay clearOverlay;
 
         [Header("던전 설정")]
         [SerializeField] private float timeLimitSeconds = 100f;
@@ -107,8 +105,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             bakedDungeonLoader.SpawnRoomContents();
             bakedDungeonLoader.SpawnEndRoomPrison(this);
 
-            clearOverlay?.Hide();
-
             commanderMove?.SetInputEnabled(true);
 
             timeRemaining = timeLimitSeconds;
@@ -124,7 +120,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         {
             IsRunning = false;
             StopAllCoroutines();
-            clearOverlay?.Hide();
             commanderMove?.SetInputEnabled(false);
 
             if (keyState != null)
@@ -243,18 +238,17 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             if (resultText != null)
             {
                 resultText.gameObject.SetActive(true);
-                resultText.text = summary;
+                resultText.text = string.IsNullOrWhiteSpace(reward)
+                    ? summary
+                    : $"{summary}\n{reward}";
             }
 
-            if (clearOverlay != null && clearOverlay.TryShow(
-                summary,
-                reward,
-                OnConfirmAndReload,
-                isSuccess ? "클리어" : "실패"))
-            {
-                return;
-            }
+            StartCoroutine(ReloadAfterDelay());
+        }
 
+        private IEnumerator ReloadAfterDelay()
+        {
+            yield return new WaitForSecondsRealtime(2f);
             OnConfirmAndReload();
         }
 

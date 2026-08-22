@@ -22,7 +22,7 @@ MonoBehaviour:
   defense: 0
   attackSpeed: 1
   moveSpeed: 2.5
-  attackRange: 1.2
+  attackRange: 2
   ranged: 0
   runtimeAssetKey: monster/dubi_01
   runtimeAssetSet: {fileID: 11400000, guid: 5dea30b2a6729fd42a1e2807878f2fc1, type: 2}

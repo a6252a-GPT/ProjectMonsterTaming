@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ba24edda31e98848b3134f8c253ebab, type: 3}
   m_Name: Melee_fryar_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MeleeActionDefinition
-  mode: 0
-  areaCenter: 1
-  areaRadius: 1.5
-  maxTargets: 4
+  basicAttackProfile: {fileID: 11400000, guid: fa3959036ddd4404f93133df9c13b4e7, type: 2}
+  mode: 1
+  areaCenter: 0
+  areaRadius: 0.35
+  maxTargets: 3
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30,5 +31,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterCombatProfile
   combatType: 0
   action: {fileID: -6101467260411673120}
-  impactStrength: 0
-  reactionWeight: 0
+  impactStrength: 1
+  reactionWeight: 2

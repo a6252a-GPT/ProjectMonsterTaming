@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a6d69d254fe2224f86750625f474cdf, type: 3}
+  m_Name: MS_active_spin_attack
+  m_EditorClassIdentifier: ProjectMT.Shared:ProjectMT.Shared.Unit:GenericMonsterActiveSkill
+  skillId: active_spin_attack
+  displayName: "\uD68C\uC804 \uACF5\uACA9"
+  description: "\uC790\uC2E0 \uC8FC\uBCC0 \uC801\uC744 \uD55C \uBC88\uC529 \uD0C0\uACA9\uD569\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  presentationTier: 2
+  recipe:
+    trigger: 11
+    triggerCount: 1
+    internalCooldown: 0
+    conditions: []
+    target: 13
+    delivery: 0
+    shape: 1
+    effects:
+    - effectId: spin_damage
+      type: 0
+      valueSource: 1
+      magnitude: 1.5
+      duration: 0
+      delay: 0
+      radius: 1.6
+      maxTargets: 4
+      repeatCount: 1
+      stackPolicy: 1
+  authoringEnabled: 1
+  energyCost: 1000

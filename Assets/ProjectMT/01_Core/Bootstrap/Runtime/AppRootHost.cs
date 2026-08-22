@@ -166,6 +166,7 @@ namespace ProjectMT.Bootstrap
             await gameDataService.LoadAsync(); // 씬 초기화 전 저장 로드
             CombatWorld.ConfigureSharedStatRules(
                 projectConfig.CombatStatConfig ?? CombatStatConfig.RuntimeDefault);
+            CombatImpactTuning.Configure(projectConfig.CombatTuningConfig);
             await RefreshGrowthDungeonKeysAsync(); // 접속 1회 KST 05:00 기준 충전
             await RefreshAttendanceAsync(); // 접속 1회 KST 05:00 기준 출석 갱신
             await CleanupExpiredMailAsync(); // 만료된 미수령 우편 정리

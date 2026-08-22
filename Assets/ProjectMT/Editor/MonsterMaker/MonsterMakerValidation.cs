@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectMT.Contents.CastleRaid;
+using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
@@ -56,10 +57,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             ValidateIdentity(draft, report);
+            ValidateSkills(draft, report);
             ValidateBody(draft, report);
             ValidateStats(draft, report);
             ValidateMotions(draft, report);
             ValidateCombat(draft, report);
+            ValidateMainBattleAI(draft, report);
             ValidateCastleRaidAI(draft, report);
             ValidateAscension(draft, report);
             ValidateFeedback(draft, report);
@@ -196,6 +199,160 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
         }
 
+        private static void ValidateSkills(MonsterMakerDraft draft, MonsterMakerValidationReport report)
+        {
+            if (!draft.SkillLoadoutConfigured)
+            {
+                if (draft.RarityPassiveSkill != null || draft.RarityActiveSkill != null)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-SKILL-CONFIG-DISABLED",
+                        "범용 스킬 참조가 있지만 스킬 구성 사용이 꺼져 있습니다.",
+                        draft);
+                }
+
+                return;
+            }
+
+            var catalog = AssetDatabase.LoadAssetAtPath<MonsterSkillCatalog>(MonsterSkillCatalog.DefaultAssetPath);
+            var catalogError = string.Empty;
+            if (catalog == null || !catalog.TryValidate(out catalogError))
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-CATALOG",
+                    "범용 Monster Skill Catalog이 없거나 유효하지 않습니다. " + catalogError,
+                    catalog);
+                return;
+            }
+
+            if (draft.RarityPassiveSkill == null)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-PASSIVE-MISSING",
+                    "범용 패시브가 아직 선택되지 않았습니다.",
+                    draft);
+            }
+            else if (!draft.RarityPassiveSkill.TryValidate(out var passiveError))
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-PASSIVE-INVALID",
+                    passiveError,
+                    draft.RarityPassiveSkill);
+            }
+            else if (!catalog.Contains(draft.RarityPassiveSkill))
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-PASSIVE-UNREGISTERED",
+                    "선택한 패시브가 Monster Skill Catalog에 등록되지 않았습니다.",
+                    draft.RarityPassiveSkill);
+            }
+            else if (!draft.RarityPassiveSkill.AuthoringEnabled)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-PASSIVE-DISABLED",
+                    "선택한 패시브는 현재 P0 고도화 대상이 아니어서 Monster Maker에서 비활성 상태입니다.",
+                    draft.RarityPassiveSkill);
+            }
+
+            var active = draft.RarityActiveSkill;
+            if (draft.Rarity < MonsterRarity.Epic)
+            {
+                if (active != null)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-SKILL-ACTIVE-RARITY",
+                        "일반·희귀 등급은 액티브를 연결할 수 없습니다.",
+                        active);
+                }
+
+                return;
+            }
+
+            if (active == null)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-ACTIVE-MISSING",
+                    "영웅 이상 등급의 액티브가 아직 선택되지 않았습니다.",
+                    draft);
+                return;
+            }
+
+            if (!active.TryValidate(out var activeError))
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-ACTIVE-INVALID",
+                    activeError,
+                    active);
+            }
+            else if (!catalog.Contains(active))
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-ACTIVE-UNREGISTERED",
+                    "선택한 액티브가 Monster Skill Catalog에 등록되지 않았습니다.",
+                    active);
+            }
+            else if (!active.AuthoringEnabled)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-ACTIVE-DISABLED",
+                    "선택한 액티브는 현재 P0 고도화 대상이 아니어서 Monster Maker에서 비활성 상태입니다.",
+                    active);
+            }
+
+            if (draft.Rarity != MonsterRarity.Mythic &&
+                active.ExecutionKind == MonsterActiveExecutionKind.DedicatedMythic)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-DEDICATED-RARITY",
+                    "신화 전용 액티브는 신화 등급에만 연결할 수 있습니다.",
+                    active);
+            }
+        }
+
+        private static void ValidateMainBattleAI(
+            MonsterMakerDraft draft,
+            MonsterMakerValidationReport report)
+        {
+            if (!Enum.IsDefined(typeof(MonsterImpactStrength), draft.ImpactStrength) ||
+                !Enum.IsDefined(typeof(MonsterReactionWeight), draft.ReactionWeight) ||
+                !Enum.IsDefined(typeof(MainBattleMonsterRole), draft.MainBattleRole) ||
+                !Enum.IsDefined(typeof(UnitTargetPriority), draft.MainBattleTargetPriority))
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-MAIN-AI-ENUM",
+                    "공격 무게·피격 체급 또는 MainBattle 역할 AI 분류가 유효하지 않습니다.",
+                    draft);
+                return;
+            }
+
+            if (draft.MainBattlePreferredRangeRatio < 0.2f ||
+                draft.MainBattlePreferredRangeRatio > 1f ||
+                draft.MainBattleRetreatRangeRatio < 0f ||
+                draft.MainBattleRetreatRangeRatio >= draft.MainBattlePreferredRangeRatio ||
+                draft.MainBattleRetargetInterval < 0.08f ||
+                draft.MainBattleRetargetInterval > 1f)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-MAIN-AI-RANGE",
+                    "MainBattle 후퇴 거리는 희망 거리보다 짧아야 하며 재탐색 값은 0.08~1초여야 합니다.",
+                    draft);
+            }
+        }
+
         private static void ValidateMotions(MonsterMakerDraft draft, MonsterMakerValidationReport report)
         {
             ValidateRequiredClip(draft.IdleClip, "Idle", true, report, draft);
@@ -294,6 +451,69 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private static void ValidateCombat(MonsterMakerDraft draft, MonsterMakerValidationReport report)
         {
+            var basicAttack = draft.BasicAttackProfile;
+            if (basicAttack == null)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-BASIC-ATTACK",
+                    "15종 공용 기본공격 프로필 중 하나를 선택해야 합니다.",
+                    draft);
+            }
+            else
+            {
+                if (!basicAttack.TryValidate(out var basicAttackError))
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-BASIC-ATTACK",
+                        basicAttackError,
+                        basicAttack);
+                }
+
+                if (draft.CombatType != basicAttack.CombatType)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-BASIC-ATTACK-TYPE",
+                        $"Draft 공격 종류와 기본공격 프로필이 다릅니다. Draft={draft.CombatType}, Profile={basicAttack.CombatType}",
+                        draft);
+                }
+
+                if (basicAttack.CombatType == MonsterCombatType.Ranged)
+                {
+                    if (draft.ProjectileLaunchRecoilDistance < 0f || draft.ProjectileLaunchRecoilDuration <= 0f)
+                    {
+                        report.Add(
+                            MonsterMakerIssueSeverity.Error,
+                            "MAKER-PROJECTILE-RECOIL",
+                            "원거리 발사 반동은 0 이상의 거리와 양수 시간이 필요합니다.",
+                            draft);
+                    }
+
+                    if (basicAttack.UsesProjectileVisual)
+                    {
+                        var projectileVisual = draft.ProjectilePrefab;
+                        if (projectileVisual == null)
+                        {
+                            projectileVisual = AssetDatabase.LoadAssetAtPath<GameObject>(
+                                MonsterMakerAssetWriter.DefaultProjectilePrefabPath);
+                        }
+                        if (projectileVisual == null ||
+                            draft.ProjectileSpeed <= 0f || draft.ProjectileLifetime <= 0f)
+                        {
+                            report.Add(
+                                MonsterMakerIssueSeverity.Error,
+                                "MAKER-PROJECTILE",
+                                "투사체형 기본공격은 투사체 VFX 또는 공용 임시 구슬과 양수 속도·수명이 필요합니다.",
+                                draft.ProjectilePrefab);
+                        }
+                    }
+                }
+
+                return;
+            }
+
             switch (draft.CombatType)
             {
                 case MonsterCombatType.Melee:
@@ -305,6 +525,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
                     break;
                 case MonsterCombatType.Ranged:
+                    if (draft.ProjectileLaunchRecoilDistance < 0f || draft.ProjectileLaunchRecoilDuration <= 0f)
+                    {
+                        report.Add(
+                            MonsterMakerIssueSeverity.Error,
+                            "MAKER-PROJECTILE-RECOIL",
+                            "원거리 발사 반동은 0 이상의 거리와 양수 시간이 필요합니다.",
+                            draft);
+                    }
+
                     if (draft.RangedDeliveryMode == MonsterRangedDeliveryMode.Projectile)
                     {
                         var projectileVisual = draft.ProjectilePrefab;
@@ -385,8 +614,40 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     draft);
             }
 
-            ValidateAbility(draft.Ascension2, 2, report, draft);
-            ValidateAbility(draft.Ascension4, 4, report, draft);
+            if (!draft.SkillLoadoutConfigured)
+            {
+                ValidateLegacyAbility(draft.Ascension2, 2, report, draft);
+                ValidateLegacyAbility(draft.Ascension4, 4, report, draft);
+                return;
+            }
+
+            ValidateAbility(draft.Ascension2, 2, MonsterSkillAugmentTarget.Passive, report, draft);
+            ValidateAbility(
+                draft.Ascension4,
+                4,
+                draft.Rarity >= MonsterRarity.Epic
+                    ? MonsterSkillAugmentTarget.Active
+                    : MonsterSkillAugmentTarget.Passive,
+                report,
+                draft);
+
+            if (draft.RarityPassiveSkill == null)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ASCENSION-PASSIVE-TARGET",
+                    "돌파 강화 대상인 범용 패시브를 먼저 선택하세요.",
+                    draft);
+            }
+
+            if (draft.Rarity >= MonsterRarity.Epic && draft.RarityActiveSkill == null)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ASCENSION-ACTIVE-TARGET",
+                    "4돌파 강화 대상인 액티브를 먼저 선택하세요.",
+                    draft);
+            }
         }
 
         private static void ValidateFeedback(MonsterMakerDraft draft, MonsterMakerValidationReport report)
@@ -500,6 +761,49 @@ namespace ProjectMT.EditorTools.MonsterMaker
         }
 
         private static void ValidateAbility(
+            MonsterMakerAbilityDraft ability,
+            int milestone,
+            MonsterSkillAugmentTarget target,
+            MonsterMakerValidationReport report,
+            UnityEngine.Object context)
+        {
+            if (ability == null || string.IsNullOrWhiteSpace(ability.AbilityId) || !UsesSafeId(ability.AbilityId))
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ASCENSION-ABILITY",
+                    $"돌파 {milestone} 스킬 강화 ID를 입력하세요.",
+                    context);
+                return;
+            }
+
+            if (!Enum.IsDefined(typeof(MonsterSkillAugmentOperation), ability.AugmentOperation))
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ASCENSION-AUGMENT",
+                    $"돌파 {milestone}의 스킬 강화 방식이 유효하지 않습니다.",
+                    context);
+                return;
+            }
+
+            var usesScalar = ability.AugmentOperation == MonsterSkillAugmentOperation.MagnitudeMultiplier ||
+                             ability.AugmentOperation == MonsterSkillAugmentOperation.DurationBonusSeconds ||
+                             ability.AugmentOperation == MonsterSkillAugmentOperation.CooldownReductionRate;
+            var scalarInvalid = ability.AugmentScalarValue <= 0f ||
+                                (ability.AugmentOperation == MonsterSkillAugmentOperation.CooldownReductionRate &&
+                                 ability.AugmentScalarValue >= 1f);
+            if ((usesScalar && scalarInvalid) || (!usesScalar && ability.AugmentIntegerValue > 5))
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ASCENSION-AUGMENT-VALUE",
+                    $"돌파 {milestone}의 {target} 강화값이 유효하지 않습니다.",
+                    context);
+            }
+        }
+
+        private static void ValidateLegacyAbility(
             MonsterMakerAbilityDraft ability,
             int milestone,
             MonsterMakerValidationReport report,

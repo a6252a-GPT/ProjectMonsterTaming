@@ -12,16 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3468f1cd999e99a4ca82955b5e695459, type: 3}
   m_Name: Ranged_floria_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.ProjectileActionDefinition
-  deliveryMode: 0
+  basicAttackProfile: {fileID: 11400000, guid: 55a2d5ec4b4315c4db0ca6926d2daf50, type: 2}
+  deliveryMode: 1
   mode: 0
-  projectilePrefab: {fileID: 8900597983205870692, guid: 7d0df7a31c4b87e4e867d3dc816c56ed, type: 3}
+  projectilePrefab: {fileID: 0}
   launchSfx: {fileID: 0}
   speed: 9
   lifetime: 3
-  hitRadius: 0.25
-  maxPiercingTargets: 2
-  impactRadius: 1.5
+  hitRadius: 0.28
+  maxPiercingTargets: 4
+  impactRadius: 0.28
   maxImpactTargets: 4
+  launchRecoilDistance: 0
+  launchRecoilDuration: 0.12
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0

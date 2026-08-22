@@ -69,6 +69,7 @@ namespace ProjectMT.Features.MainBattle
         private MailboxPanelController mailboxPanel; // 우편 목록·수령 팝업
         private HudQuickMenuController quickMenu; // 출석·우편 알림 배지
         private CombatPowerIncreasePresenter combatPowerIncrease; // 총전투력 상승 피드백
+        private CombatFeedbackPlayer mainBattleFeedback; // 메인전투 전용 일반 피격 밀림 조절
         private float trackedTotalPower; // 마지막 저장 확정 총전투력
 
         public SceneId SceneId => sceneId;
@@ -109,10 +110,12 @@ namespace ProjectMT.Features.MainBattle
 
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
             var runtimeRoot = transform.Find("01_MainGameplayRoot/01_RuntimeRoot");
+            var playerFormationAnchor = runtimeRoot?.Find("PlayerFormationAnchor");
             var commander = runtimeRoot?.Find("CommanderVisual");
             var enemySpawnAnchor = runtimeRoot?.Find("EnemySpawnAnchor");
             var formationGround = transform.Find("01_MainGameplayRoot/00_WorldRoot/Ground")?.GetComponent<Collider>();
-            if (commander == null || enemySpawnAnchor == null || formationGround == null)
+            if (playerFormationAnchor == null || commander == null || enemySpawnAnchor == null ||
+                formationGround == null)
             {
                 throw new InvalidOperationException("MainBattle formation frame references are missing.");
             }
@@ -124,7 +127,18 @@ namespace ProjectMT.Features.MainBattle
                 formationGround,
                 context.ItemCatalog,
                 commander,
-                context.EquipmentBalanceConfig);
+                context.EquipmentBalanceConfig,
+                playerFormationAnchor);
+            mainBattleFeedback = expedition.GetComponentInChildren<CombatFeedbackPlayer>(true);
+            mainBattleFeedback?.SetRecoilScale(1f); // 먼 쿼터뷰에서도 평타 반응이 읽히게 유지
+            var combatTuning = CombatImpactTuning.ActiveConfig;
+            mainBattleFeedback?.ConfigureActualKnockback(
+                combatTuning.MainBattleActualKnockbackDistanceMultiplier,
+                combatTuning.MainBattleActualKnockbackMaxDistance,
+                combatTuning.MainBattleActualKnockbackDurationMultiplier,
+                combatTuning.MainBattleLightPostKnockbackStagger,
+                combatTuning.MainBattleStandardPostKnockbackStagger,
+                combatTuning.MainBattleHeavyPostKnockbackStagger);
             formationPage.PartyChanged += HandlePartyChanged;
             formationPage.OpenStateChanged += HandleFormationPageOpenStateChanged;
             formationPage.PositionFormationRequested += HandlePositionFormationRequested;
@@ -239,6 +253,9 @@ namespace ProjectMT.Features.MainBattle
                 hostedRunner.CloseWithoutRestart(); // 씬 종료 중 원정대 재시작 금지
             }
 
+            mainBattleFeedback?.SetRecoilScale(1f);
+            mainBattleFeedback?.ConfigureActualKnockback(0f, 0f, 1f);
+            mainBattleFeedback = null;
             expedition?.Shutdown();
             context = null;
             party = null;
@@ -488,8 +505,9 @@ namespace ProjectMT.Features.MainBattle
             var runtimeRoot = transform.Find("01_MainGameplayRoot/01_RuntimeRoot");
             var ground = transform.Find("01_MainGameplayRoot/00_WorldRoot/Ground")?.GetComponent<Collider>();
             var commander = runtimeRoot?.Find("CommanderVisual");
+            var playerFormationAnchor = runtimeRoot?.Find("PlayerFormationAnchor");
             var enemySpawnAnchor = runtimeRoot?.Find("EnemySpawnAnchor");
-            if (ground == null || commander == null || enemySpawnAnchor == null)
+            if (ground == null || commander == null || playerFormationAnchor == null || enemySpawnAnchor == null)
             {
                 throw new InvalidOperationException("MainBattle spatial references are missing.");
             }
@@ -500,7 +518,7 @@ namespace ProjectMT.Features.MainBattle
                 spatialController = expedition.gameObject.AddComponent<MainBattleSpatialController>();
             }
 
-            spatialController.Configure(expedition, ground, commander, enemySpawnAnchor);
+            spatialController.Configure(expedition, ground, commander, playerFormationAnchor, enemySpawnAnchor);
         }
 
         private void ConfigureFormationPlacement()
@@ -509,12 +527,13 @@ namespace ProjectMT.Features.MainBattle
             var runtimeRoot = gameplayRoot?.Find("01_RuntimeRoot");
             var worldCamera = gameplayRoot?.Find("02_CameraRoot/MainBattleCamera")?.GetComponent<Camera>();
             var ground = gameplayRoot?.Find("00_WorldRoot/Ground")?.GetComponent<Collider>();
+            var playerFormationAnchor = runtimeRoot?.Find("PlayerFormationAnchor");
             var commander = runtimeRoot?.Find("CommanderVisual");
             var enemySpawnAnchor = runtimeRoot?.Find("EnemySpawnAnchor");
             var uiRoot = gameplayRoot?.Find("04_UIRoot");
             var hudRoot = uiRoot?.Find("MainBattleHUD")?.gameObject;
-            if (worldCamera == null || ground == null || commander == null || enemySpawnAnchor == null ||
-                uiRoot == null || hudRoot == null)
+            if (worldCamera == null || ground == null || playerFormationAnchor == null || commander == null ||
+                enemySpawnAnchor == null || uiRoot == null || hudRoot == null)
             {
                 throw new InvalidOperationException("MainBattle formation placement references are missing.");
             }
@@ -532,6 +551,7 @@ namespace ProjectMT.Features.MainBattle
                 monsterDrag,
                 worldCamera,
                 ground,
+                playerFormationAnchor,
                 commander,
                 uiRoot,
                 hudRoot);

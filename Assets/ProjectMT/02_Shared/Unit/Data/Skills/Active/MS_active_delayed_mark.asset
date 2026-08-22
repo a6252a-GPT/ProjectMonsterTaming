@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a6d69d254fe2224f86750625f474cdf, type: 3}
+  m_Name: MS_active_delayed_mark
+  m_EditorClassIdentifier: ProjectMT.Shared:ProjectMT.Shared.Unit:GenericMonsterActiveSkill
+  skillId: active_delayed_mark
+  displayName: "\uC9C0\uC5F0 \uD3ED\uD30C \uD45C\uC2DD"
+  description: "\uD45C\uC2DD\uC744 \uB0A8\uAE34 \uB4A4 \uC7A0\uC2DC \uD6C4 \uD3ED\uBC1C\uC2DC\uD0B5\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  presentationTier: 2
+  recipe:
+    trigger: 11
+    triggerCount: 1
+    internalCooldown: 0
+    conditions: []
+    target: 7
+    delivery: 8
+    shape: 2
+    effects:
+    - effectId: delayed_mark
+      type: 11
+      valueSource: 0
+      magnitude: 1
+      duration: 2
+      delay: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 1
+    - effectId: delayed_mark_burst
+      type: 0
+      valueSource: 1
+      magnitude: 1.8
+      duration: 0
+      delay: 2
+      radius: 1.2
+      maxTargets: 3
+      repeatCount: 1
+      stackPolicy: 1
+  authoringEnabled: 0
+  energyCost: 1000

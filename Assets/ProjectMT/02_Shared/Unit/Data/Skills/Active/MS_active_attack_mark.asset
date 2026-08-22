@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a6d69d254fe2224f86750625f474cdf, type: 3}
+  m_Name: MS_active_attack_mark
+  m_EditorClassIdentifier: ProjectMT.Shared:ProjectMT.Shared.Unit:GenericMonsterActiveSkill
+  skillId: active_attack_mark
+  displayName: "\uACF5\uACA9 \uD45C\uC2DD"
+  description: "\uC704\uD5D8\uD55C \uC801\uC744 \uD45C\uC2DD\uD574 \uC544\uAD70\uC758
+    \uC9D1\uC911 \uACF5\uACA9\uC744 \uB3D5\uC2B5\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  presentationTier: 2
+  recipe:
+    trigger: 11
+    triggerCount: 1
+    internalCooldown: 0
+    conditions: []
+    target: 7
+    delivery: 8
+    shape: 0
+    effects:
+    - effectId: attack_mark
+      type: 11
+      valueSource: 0
+      magnitude: 1
+      duration: 5
+      delay: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 1
+    - effectId: attack_mark_defense_down
+      type: 8
+      valueSource: 1
+      magnitude: 0.15
+      duration: 5
+      delay: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 1
+  authoringEnabled: 1
+  energyCost: 1000

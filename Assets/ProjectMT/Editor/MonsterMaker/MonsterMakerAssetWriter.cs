@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ProjectMT.Contents.CastleRaid;
+using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
@@ -48,6 +49,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public const string DraftRoot = "Assets/ProjectMT/Editor/MonsterMaker/Drafts";
         public const string CastleRaidAIProfileCatalogPath =
             "Assets/ProjectMT/04_Contents/01_CastleRaid/Resources/CastleRaidAIProfileCatalog.asset";
+        public const string MainBattleAIProfileCatalogPath =
+            "Assets/ProjectMT/03_Features/MainBattle/Resources/MainBattleAIProfileCatalog.asset";
         public const string DefaultProjectilePrefabPath =
             "Assets/ProjectMT/02_Shared/Combat/Prefabs/PF_SeedProjectile.prefab";
 
@@ -81,7 +84,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var transactionPaths = paths.Concat(new[] { catalogPath, rarityCatalogPath });
             if (writesProductionAiCatalog)
             {
-                transactionPaths = transactionPaths.Concat(new[] { CastleRaidAIProfileCatalogPath });
+                transactionPaths = transactionPaths.Concat(new[]
+                {
+                    CastleRaidAIProfileCatalogPath,
+                    MainBattleAIProfileCatalogPath
+                });
             }
             var transaction = MonsterMakerWriteTransaction.Capture(
                 transactionPaths,
@@ -96,6 +103,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 if (writesProductionAiCatalog)
                 {
                     EnsureFolder("Assets/ProjectMT/04_Contents/01_CastleRaid", "Resources");
+                    EnsureFolder("Assets/ProjectMT/03_Features/MainBattle", "Resources");
                 }
 
                 var guidBefore = paths.ToDictionary(path => path, AssetDatabase.AssetPathToGUID);
@@ -110,6 +118,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     ? GetOrCreateAsset<CastleRaidAIProfileCatalog>(
                         CastleRaidAIProfileCatalogPath,
                         "CastleRaidAIProfileCatalog")
+                    : null;
+                var mainBattleAiCatalog = writesProductionAiCatalog
+                    ? GetOrCreateAsset<MainBattleAIProfileCatalog>(
+                        MainBattleAIProfileCatalogPath,
+                        "MainBattleAIProfileCatalog")
                     : null;
                 var generatedSfx = new MonsterMakerGeneratedSfxWriter(feedback, paths[5], draft.MonsterId);
 
@@ -178,24 +191,49 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             motion.EditorConfigure(idle, move, attacks, death);
             var action = ConfigureCombatAction(combat, paths[3], draft, generatedSfx);
-            combat.EditorConfigure(draft.CombatType, action);
+            combat.EditorConfigure(
+                draft.BasicAttackProfile != null ? draft.BasicAttackProfile.CombatType : draft.CombatType,
+                action);
+            combat.EditorSetImpact(draft.ImpactStrength, draft.ReactionWeight);
 
             MonsterAbilityDefinition ability2 = null;
             MonsterAbilityDefinition ability4 = null;
             if (draft.AscensionConfigured)
             {
                 ability2 = GetOrCreateAbility(ascension, paths[4], "Ability_" + draft.MonsterId + "_A2");
-                ability2.EditorConfigure(
-                    draft.Ascension2.AbilityId,
-                    draft.Ascension2.DisplayName,
-                    draft.Ascension2.Mode,
-                    draft.Ascension2.TriggerPolicyId);
                 ability4 = GetOrCreateAbility(ascension, paths[4], "Ability_" + draft.MonsterId + "_A4");
-                ability4.EditorConfigure(
-                    draft.Ascension4.AbilityId,
-                    draft.Ascension4.DisplayName,
-                    draft.Ascension4.Mode,
-                    draft.Ascension4.TriggerPolicyId);
+                if (draft.SkillLoadoutConfigured)
+                {
+                    ability2.EditorConfigureSkillAugment(
+                        draft.Ascension2.AbilityId,
+                        draft.Ascension2.DisplayName,
+                        MonsterSkillAugmentTarget.Passive,
+                        draft.Ascension2.AugmentOperation,
+                        draft.Ascension2.AugmentScalarValue,
+                        draft.Ascension2.AugmentIntegerValue);
+                    ability4.EditorConfigureSkillAugment(
+                        draft.Ascension4.AbilityId,
+                        draft.Ascension4.DisplayName,
+                        draft.Rarity >= MonsterRarity.Epic
+                            ? MonsterSkillAugmentTarget.Active
+                            : MonsterSkillAugmentTarget.Passive,
+                        draft.Ascension4.AugmentOperation,
+                        draft.Ascension4.AugmentScalarValue,
+                        draft.Ascension4.AugmentIntegerValue);
+                }
+                else
+                {
+                    ability2.EditorConfigure(
+                        draft.Ascension2.AbilityId,
+                        draft.Ascension2.DisplayName,
+                        draft.Ascension2.Mode,
+                        draft.Ascension2.TriggerPolicyId);
+                    ability4.EditorConfigure(
+                        draft.Ascension4.AbilityId,
+                        draft.Ascension4.DisplayName,
+                        draft.Ascension4.Mode,
+                        draft.Ascension4.TriggerPolicyId);
+                }
             }
 
             ascension.EditorConfigure(
@@ -258,6 +296,21 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 }
             }
 
+            if (mainBattleAiCatalog != null)
+            {
+                mainBattleAiCatalog.EditorUpsert(
+                    draft.MonsterId,
+                    draft.MainBattleRole,
+                    draft.MainBattleTargetPriority,
+                    draft.MainBattlePreferredRangeRatio,
+                    draft.MainBattleRetreatRangeRatio,
+                    draft.MainBattleRetargetInterval);
+                if (!mainBattleAiCatalog.TryValidate(out var mainBattleAiError))
+                {
+                    throw new InvalidOperationException(mainBattleAiError);
+                }
+            }
+
             MarkDirty(
                 body,
                 motion,
@@ -269,7 +322,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 feedback,
                 runtime,
                 definition,
-                castleRaidAiCatalog);
+                castleRaidAiCatalog,
+                mainBattleAiCatalog);
             SaveAssetsIfDirty(
                 body,
                 motion,
@@ -283,7 +337,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 controller,
                 adapter,
                 definition,
-                castleRaidAiCatalog);
+                castleRaidAiCatalog,
+                mainBattleAiCatalog);
             generatedSfx.SaveIfDirty();
             AssetDatabase.ImportAsset(paths[8], ImportAssetOptions.ForceUpdate);
             AssetDatabase.ImportAsset(paths[7], ImportAssetOptions.ForceUpdate);
@@ -296,7 +351,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             RegisterLast(catalog, rarityCatalog, definition, draft);
-            SaveAssetsIfDirty(catalog, rarityCatalog, castleRaidAiCatalog);
+            SaveAssetsIfDirty(catalog, rarityCatalog, castleRaidAiCatalog, mainBattleAiCatalog);
             AssetDatabase.Refresh();
 
             if (!catalog.TryGet(draft.MonsterId, out var registered) || registered != definition)
@@ -314,6 +369,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 assignedAiProfile.Pattern != draft.CastleRaidAiPattern))
             {
                 throw new InvalidOperationException("생성물 검증 뒤 Castle Raid AI Profile 등록을 확인하지 못했습니다.");
+            }
+
+            if (mainBattleAiCatalog != null &&
+                (!mainBattleAiCatalog.TryResolve(draft.MonsterId, out var mainBattleProfile) ||
+                 mainBattleProfile.Role != draft.MainBattleRole ||
+                 mainBattleProfile.TargetPriority != draft.MainBattleTargetPriority))
+            {
+                throw new InvalidOperationException("생성물 검증 뒤 MainBattle AI Profile 등록을 확인하지 못했습니다.");
             }
 
             var guidAfter = paths.ToDictionary(path => path, AssetDatabase.AssetPathToGUID);
@@ -428,7 +491,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
             MonsterMakerDraft draft,
             MonsterMakerGeneratedSfxWriter generatedSfx)
         {
-            var desiredType = draft.CombatType switch
+            var resolvedCombatType = draft.BasicAttackProfile != null
+                ? draft.BasicAttackProfile.CombatType
+                : draft.CombatType;
+            var desiredType = resolvedCombatType switch
             {
                 MonsterCombatType.Melee => typeof(MeleeActionDefinition),
                 MonsterCombatType.Ranged => typeof(ProjectileActionDefinition),
@@ -447,7 +513,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (existing == null)
             {
                 existing = (MonsterActionDefinition)ScriptableObject.CreateInstance(desiredType);
-                existing.name = draft.CombatType + "_" + draft.MonsterId;
+                existing.name = resolvedCombatType + "_" + draft.MonsterId;
                 AssetDatabase.AddObjectToAsset(existing, combat);
             }
 
@@ -461,19 +527,31 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         draft.MeleeAreaCenter);
                     break;
                 case ProjectileActionDefinition projectile:
-                    var projectileVisual = draft.RangedDeliveryMode == MonsterRangedDeliveryMode.Projectile
+                    var usesProjectileVisual = draft.BasicAttackProfile != null
+                        ? draft.BasicAttackProfile.UsesProjectileVisual
+                        : draft.RangedDeliveryMode == MonsterRangedDeliveryMode.Projectile;
+                    var resolvedDelivery = usesProjectileVisual
+                        ? MonsterRangedDeliveryMode.Projectile
+                        : MonsterRangedDeliveryMode.Instant;
+                    var resolvedMode = draft.BasicAttackProfile == null
+                        ? draft.ProjectileMode
+                        : draft.BasicAttackProfile.Shape == MonsterBasicAttackShape.Circle
+                            ? MonsterProjectileAttackMode.Area
+                            : draft.BasicAttackProfile.ProjectileTravel == MonsterBasicAttackProjectileTravel.Straight
+                                ? MonsterProjectileAttackMode.Piercing
+                                : MonsterProjectileAttackMode.Single;
+                    var projectileVisual = usesProjectileVisual
                         ? draft.ProjectilePrefab
                         : null;
-                    if (draft.RangedDeliveryMode == MonsterRangedDeliveryMode.Projectile &&
-                        projectileVisual == null)
+                    if (usesProjectileVisual && projectileVisual == null)
                     {
                         projectileVisual = AssetDatabase.LoadAssetAtPath<GameObject>(DefaultProjectilePrefabPath);
                     }
                     projectile.EditorConfigure(
-                        draft.RangedDeliveryMode,
-                        draft.ProjectileMode,
+                        resolvedDelivery,
+                        resolvedMode,
                         projectileVisual,
-                        draft.RangedDeliveryMode == MonsterRangedDeliveryMode.Projectile
+                        usesProjectileVisual
                             ? generatedSfx.Resolve(draft.ProjectileLaunchSound, "ProjectileLaunch")
                             : null,
                         draft.ProjectileSpeed,
@@ -481,7 +559,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         draft.ProjectileHitRadius,
                         draft.ProjectileMaxPiercingTargets,
                         draft.ProjectileImpactRadius,
-                        draft.ProjectileMaxImpactTargets);
+                        draft.ProjectileMaxImpactTargets,
+                        draft.ProjectileLaunchRecoilDistance,
+                        draft.ProjectileLaunchRecoilDuration);
                     break;
                 case SpecialActionDefinition special:
                     special.EditorConfigure(
@@ -495,6 +575,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     break;
             }
 
+            existing.EditorSetBasicAttackProfile(draft.BasicAttackProfile);
             EditorUtility.SetDirty(existing);
             return existing;
         }
@@ -858,10 +939,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var entry = target.GetArrayElementAtIndex(target.arraySize - 1);
             entry.FindPropertyRelative("monster").objectReferenceValue = definition;
             entry.FindPropertyRelative("rarity").enumValueIndex = (int)draft.Rarity;
-            entry.FindPropertyRelative("passiveSkill").objectReferenceValue = draft.RarityPassiveSkill;
-            if (isLegendary)
+            entry.FindPropertyRelative("passiveSkill").objectReferenceValue =
+                draft.SkillLoadoutConfigured ? draft.RarityPassiveSkill : null;
+            var activeSkill = entry.FindPropertyRelative("activeSkill");
+            if (activeSkill != null)
             {
-                entry.FindPropertyRelative("activeSkill").objectReferenceValue = draft.RarityActiveSkill;
+                activeSkill.objectReferenceValue = draft.SkillLoadoutConfigured ? draft.RarityActiveSkill : null;
             }
 
             serialized.ApplyModifiedPropertiesWithoutUndo();

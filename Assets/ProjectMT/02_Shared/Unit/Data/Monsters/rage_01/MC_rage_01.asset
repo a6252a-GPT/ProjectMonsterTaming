@@ -28,7 +28,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ba24edda31e98848b3134f8c253ebab, type: 3}
   m_Name: Melee_rage_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MeleeActionDefinition
+  basicAttackProfile: {fileID: 11400000, guid: d6be405325d5a00459045db04dcf44d7, type: 2}
   mode: 0
   areaCenter: 1
-  areaRadius: 1.5
-  maxTargets: 4
+  areaRadius: 0.35
+  maxTargets: 1

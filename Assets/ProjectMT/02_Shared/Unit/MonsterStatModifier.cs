@@ -56,5 +56,17 @@ namespace ProjectMT.Shared.Unit
                 left.moveSpeedRate + right.moveSpeedRate,
                 left.attackRangeRate + right.attackRangeRate);
         }
+
+        public static MonsterStatModifier operator *(MonsterStatModifier source, float multiplier)
+        {
+            multiplier = Mathf.Max(0f, multiplier);
+            return new MonsterStatModifier(
+                source.healthRate * multiplier,
+                source.attackRate * multiplier,
+                source.defenseRate * multiplier,
+                source.attackSpeedRate * multiplier,
+                source.moveSpeedRate * multiplier,
+                source.attackRangeRate * multiplier);
+        }
     }
 }

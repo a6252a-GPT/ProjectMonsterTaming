@@ -168,17 +168,21 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: e469d8d8cf446e047907f38dfddf79d1, type: 2}
+    - target: {fileID: 5556983908017644951, guid: 7d8f7b872458fd74fb3fb07ea10187e6, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e940c68b7cfaa154eae46c75135661cf, type: 2}
     - target: {fileID: 5649412212751748248, guid: 7d8f7b872458fd74fb3fb07ea10187e6, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.9
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: 5649412212751748248, guid: 7d8f7b872458fd74fb3fb07ea10187e6, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.9
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: 5649412212751748248, guid: 7d8f7b872458fd74fb3fb07ea10187e6, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.9
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: 5649412212751748248, guid: 7d8f7b872458fd74fb3fb07ea10187e6, type: 3}
       propertyPath: m_LocalPosition.x

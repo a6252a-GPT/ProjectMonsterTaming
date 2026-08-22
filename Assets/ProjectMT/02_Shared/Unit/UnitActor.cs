@@ -23,7 +23,8 @@ namespace ProjectMT.Shared.Unit
             MonsterRuntimeAssetSet runtimeAssetSet = null,
             int appearanceSeed = 0,
             float visualScaleMultiplier = 1f,
-            bool isBoss = false)
+            bool isBoss = false,
+            float supportOutputMultiplier = 1f)
         {
             UnitId = unitId ?? string.Empty;
             Stats = stats;
@@ -36,6 +37,7 @@ namespace ProjectMT.Shared.Unit
             AppearanceSeed = appearanceSeed;
             VisualScaleMultiplier = Mathf.Max(0.01f, visualScaleMultiplier);
             IsBoss = isBoss;
+            SupportOutputMultiplier = Mathf.Max(0f, supportOutputMultiplier);
         }
 
         public string UnitId { get; }
@@ -49,6 +51,7 @@ namespace ProjectMT.Shared.Unit
         public int AppearanceSeed { get; }
         public float VisualScaleMultiplier { get; }
         public bool IsBoss { get; }
+        public float SupportOutputMultiplier { get; }
     }
 
     [DisallowMultipleComponent]
@@ -85,11 +88,21 @@ namespace ProjectMT.Shared.Unit
         private readonly System.Collections.Generic.List<ActiveMonsterBuff> monsterBuffs =
             new System.Collections.Generic.List<ActiveMonsterBuff>();
         private MonsterStatModifier activeMonsterBuffModifier;
+        private float supportOutputMultiplier = 1f; // 회복·버프 출력 배율
         private MonsterRuntimeAssetSet runtimeAssetSet;
+        private UnitCombatBehavior combatBehavior;
+        private bool combatReady;
         private IDamageable actionTarget;
         private bool attackActionRunning;
         private int nextActionSequenceId;
         private float localHitStopRemaining;
+        private Vector3 combatKnockbackDirection;
+        private float combatKnockbackDistance;
+        private float combatKnockbackDuration;
+        private float combatKnockbackElapsed;
+        private float combatKnockbackAppliedDistance;
+        private float combatPostKnockbackStaggerDuration;
+        private float combatStaggerRemaining;
         private Animator[] fallbackHitStopAnimators = Array.Empty<Animator>();
         private float[] fallbackAnimatorSpeeds = Array.Empty<float>();
         private bool fallbackAnimatorsPaused;
@@ -105,9 +118,16 @@ namespace ProjectMT.Shared.Unit
         public MonsterRuntimeAssetSet RuntimeAssetSet => runtimeAssetSet;
         public MonsterAnimationDriver AnimationDriver => animationDriver;
         public bool IsHitStopped => localHitStopRemaining > 0f;
+        public bool IsKnockedBack => combatKnockbackDistance > 0f;
+        public bool IsHitStaggered => combatStaggerRemaining > 0f;
+        public bool IsInHitReaction => IsKnockedBack || IsHitStaggered;
         public bool IsRanged => stats.ranged;
         public bool IsBoss { get; private set; }
+        public bool IsCombatReady => combatReady;
+        public UnitCombatBehavior CombatBehavior => combatBehavior;
         public UnitStatsSnapshot EffectiveStats => GetEffectiveStats(); // 피격 계산용 현재 Snapshot
+        public float BodyRadius => Mathf.Max(0.1f, runtimeAssetSet?.BodyProfile?.BodyRadius ?? 0.45f);
+        public float SupportOutputMultiplier => supportOutputMultiplier;
 
         public event Action<UnitActor> Died;
 
@@ -141,6 +161,9 @@ namespace ProjectMT.Shared.Unit
             world = combatWorld;
             feedback = feedbackPlayer;
             runtimeAssetSet = request.RuntimeAssetSet;
+            supportOutputMultiplier = request.SupportOutputMultiplier;
+            combatBehavior = UnitCombatBehavior.Default;
+            combatReady = true;
             IsBoss = request.IsBoss;
             if (runtimeAssetSet != null && (animationDriver == null || !animationDriver.Initialize(runtimeAssetSet)))
             {
@@ -184,6 +207,29 @@ namespace ProjectMT.Shared.Unit
             followAnchor = null;
             followOffset = Vector3.zero;
             hasLastAnchorPosition = false; // 08.07 안건준 추가 - 다음 추종 대상 기준으로 새로 측정하도록 초기화
+        }
+
+        public void SetCombatBehavior(UnitCombatBehavior behavior)
+        {
+            combatBehavior = behavior;
+            SetCombatTarget(null);
+            retargetCooldown = 0f; // 새 역할은 다음 Tick부터 즉시 반영
+        }
+
+        public void SetCombatReady(bool ready)
+        {
+            combatReady = ready;
+            SetCombatTarget(null);
+            retargetCooldown = 0f;
+            if (ready)
+            {
+                return;
+            }
+
+            attackActionRunning = false;
+            actionTarget = null;
+            CancelCombatHitReaction();
+            animationDriver?.PlayIdle(true); // 입장 이동은 콘텐츠 Controller가 별도로 재생
         }
 
         // 08.07 안건준 추가 - 콘텐츠 전용 스크립트가 일정 시간 동안 이 유닛의 공격을 특정 대상에 강제한다.
@@ -231,14 +277,15 @@ namespace ProjectMT.Shared.Unit
             }
 
             isManuallyHeld = true;
-            Target = null; // 잡힌 동안 자기 이동·공격·재탐색만 정지
+            CancelCombatHitReaction();
+            SetCombatTarget(null); // 잡힌 동안 자기 이동·공격·재탐색만 정지
             return true;
         }
 
         public void EndManualReposition()
         {
             isManuallyHeld = false;
-            Target = null;
+            SetCombatTarget(null);
             retargetCooldown = 0f; // 착지 직후 새 위치에서 다시 탐색
         }
 
@@ -249,12 +296,30 @@ namespace ProjectMT.Shared.Unit
                 return;
             }
 
+            if (TickCombatKnockback(deltaTime))
+            {
+                animationDriver?.PlayIdle();
+                return; // 실제 밀림 중에는 자기 이동·공격을 겹치지 않음
+            }
+
+            if (TickCombatStagger(deltaTime))
+            {
+                animationDriver?.PlayIdle();
+                return; // 밀림이 끝난 뒤 짧은 경직 동안 즉시 재접근하지 않음
+            }
+
             if (!IsAlive || world == null)
             {
                 return;
             }
 
             TickMonsterBuffs(deltaTime);
+
+            if (!combatReady)
+            {
+                SetCombatTarget(null);
+                return; // 입장 중에는 외부 행군만 허용
+            }
 
             if (isManuallyHeld)
             {
@@ -274,6 +339,7 @@ namespace ProjectMT.Shared.Unit
             // 08.07 안건준 추가 - 강제 지정된 대상이 있으면 일반 추종/탐색 로직보다 우선한다.
             if (forcedTarget != null)
             {
+                SetCombatTarget(null);
                 forcedTargetTimer -= deltaTime;
                 if (forcedTargetTimer > 0f && forcedTarget.IsAlive)
                 {
@@ -290,17 +356,23 @@ namespace ProjectMT.Shared.Unit
                 var anchorIsMoving = IsAnchorMoving(deltaTime); // 08.07 안건준 추가
                 if (anchorIsMoving || PlanarDistance(transform.position, anchorPosition) > followLeashRange)
                 {
-                    Target = null; // 08.07 안건준 수정 - 군단장이 이동 중이거나 대형에서 멀어졌으면 전투보다 복귀·추종 우선
+                    SetCombatTarget(null); // 군단장 이동 중에는 대형 복귀 우선
                     MoveTowards(anchorPosition, deltaTime);
                     return;
                 }
             }
 
-            if (Target == null || !Target.IsAlive || retargetCooldown <= 0f)
+            var targetInvalid = Target == null || !Target.IsAlive;
+            var allowLiveRetarget = combatBehavior.TargetLoadPenalty <= 0f && retargetCooldown <= 0f;
+            if (targetInvalid || allowLiveRetarget)
             {
                 var range = followAnchor == null ? float.PositiveInfinity : followDetectionRange;
-                Target = world.FindNearestOpponent(this, range); // 일정 간격으로 최근접 적 탐색
-                retargetCooldown = 0.2f;
+                SetCombatTarget(world.FindOpponent(
+                    this,
+                    range,
+                    combatBehavior.TargetPriority,
+                    combatBehavior.TargetLoadPenalty)); // 역할과 쏠림을 함께 반영
+                retargetCooldown = combatBehavior.RetargetInterval;
             }
 
             if (Target == null)
@@ -318,7 +390,16 @@ namespace ProjectMT.Shared.Unit
             }
 
             var distance = PlanarDistance(transform.position, Target.transform.position);
-            if (distance > Mathf.Max(0.2f, GetEffectiveStats().attackRange))
+            var attackRange = Mathf.Max(0.2f, GetEffectiveStats().attackRange);
+            var retreatRange = attackRange * combatBehavior.RetreatRangeRatio;
+            if (combatBehavior.UsesRetreat && distance < retreatRange)
+            {
+                MoveAwayFrom(Target.transform.position, deltaTime);
+                return;
+            }
+
+            var preferredRange = ResolvePreferredRange(Target, attackRange);
+            if (distance > Mathf.Max(0.2f, preferredRange))
             {
                 MoveTowards(Target.transform.position, deltaTime);
                 return;
@@ -350,8 +431,11 @@ namespace ProjectMT.Shared.Unit
             damageMultiplier = 1f;
             monsterBuffs.Clear();
             activeMonsterBuffModifier = default;
+            supportOutputMultiplier = 1f;
             animationDriver?.Shutdown();
             runtimeAssetSet = null;
+            combatBehavior = UnitCombatBehavior.Default;
+            combatReady = false;
             IsBoss = false;
             actionTarget = null;
             attackActionRunning = false;
@@ -367,6 +451,7 @@ namespace ProjectMT.Shared.Unit
             forcedTarget = null; // 08.07 안건준 추가 - 풀 재사용 전 강제 지정 상태 초기화
             forcedTargetTimer = 0f;
             localHitStopRemaining = 0f;
+            CancelCombatHitReaction();
             SetLocalAnimationPaused(false);
             fallbackHitStopAnimators = Array.Empty<Animator>();
             fallbackAnimatorSpeeds = Array.Empty<float>();
@@ -386,6 +471,80 @@ namespace ProjectMT.Shared.Unit
             SetLocalAnimationPaused(true);
         }
 
+        public float AdvanceForBasicAttack(
+            Vector3 destination,
+            float maxDistance,
+            float stopDistance,
+            float visualDuration)
+        {
+            if (!IsAlive || !combatReady || isManuallyHeld || maxDistance <= 0f)
+            {
+                return 0f;
+            }
+
+            var direction = destination - transform.position;
+            direction.y = 0f;
+            var distance = direction.magnitude;
+            if (distance <= 0.001f)
+            {
+                return 0f;
+            }
+
+            direction /= distance;
+            var advance = Mathf.Min(Mathf.Max(0f, maxDistance), Mathf.Max(0f, distance - Mathf.Max(0.05f, stopDistance)));
+            if (advance <= 0f)
+            {
+                return 0f;
+            }
+
+            transform.position += direction * advance; // 전투 중 슬롯 고정 없이 실제 XZ 전진
+            visualFeedback?.PlayAttackLunge(direction, Mathf.Min(0.3f, advance * 0.35f), visualDuration);
+            return advance;
+        }
+
+        public bool TryApplyCombatKnockback(
+            Vector3 worldDirection,
+            float distance,
+            float duration,
+            float postKnockbackStagger = 0f)
+        {
+            if (Team == UnitTeam.Player || !IsAlive || IsBoss || !combatReady || isManuallyHeld || distance <= 0f)
+            {
+                return false; // 아군은 판정 루트를 밀지 않고 Visual 반동만 사용
+            }
+
+            worldDirection.y = 0f;
+            if (worldDirection.sqrMagnitude < 0.0001f)
+            {
+                return false;
+            }
+
+            distance = Mathf.Clamp(distance, 0f, 0.6f);
+            duration = Mathf.Clamp(duration, 0.05f, 0.24f);
+            postKnockbackStagger = Mathf.Clamp(postKnockbackStagger, 0f, 0.3f);
+            if (IsKnockedBack && combatKnockbackElapsed < combatKnockbackDuration * 0.75f)
+            {
+                combatPostKnockbackStaggerDuration = Mathf.Max(
+                    combatPostKnockbackStaggerDuration,
+                    postKnockbackStagger);
+                if (distance <= combatKnockbackDistance)
+                {
+                    return true; // 다단히트가 같은 밀림을 누적·재시작하지 않음
+                }
+
+                distance = Mathf.Max(0f, distance - combatKnockbackAppliedDistance); // 강한 요청만 남은 거리로 승격
+            }
+
+            combatKnockbackDirection = worldDirection.normalized;
+            combatKnockbackDistance = distance;
+            combatKnockbackDuration = duration;
+            combatKnockbackElapsed = 0f;
+            combatKnockbackAppliedDistance = 0f;
+            combatPostKnockbackStaggerDuration = postKnockbackStagger;
+            combatStaggerRemaining = 0f; // 새 타격은 남아 있던 이전 경직을 대체
+            return distance > 0f;
+        }
+
         private bool TickLocalHitStop()
         {
             if (localHitStopRemaining <= 0f)
@@ -401,6 +560,65 @@ namespace ProjectMT.Shared.Unit
             }
 
             return true;
+        }
+
+        private bool TickCombatKnockback(float deltaTime)
+        {
+            if (!IsKnockedBack)
+            {
+                return false;
+            }
+
+            combatKnockbackElapsed = Mathf.Min(
+                combatKnockbackDuration,
+                combatKnockbackElapsed + Mathf.Max(0f, deltaTime));
+            var ratio = combatKnockbackDuration <= 0f ? 1f : combatKnockbackElapsed / combatKnockbackDuration;
+            var pushRatio = Mathf.Clamp01(ratio / 0.65f);
+            var easedPush = 1f - Mathf.Pow(1f - pushRatio, 3f); // 앞 65%에 퍽 밀고 뒤 35%는 정지
+            var desiredDistance = combatKnockbackDistance * easedPush;
+            var stepDistance = Mathf.Max(0f, desiredDistance - combatKnockbackAppliedDistance);
+            if (stepDistance > 0f)
+            {
+                var nextPosition = transform.position + combatKnockbackDirection * stepDistance;
+                nextPosition.y = transform.position.y; // 실제 Y는 지형 기준을 유지
+                transform.position = nextPosition;
+                combatKnockbackAppliedDistance = desiredDistance;
+            }
+
+            if (ratio >= 1f)
+            {
+                combatStaggerRemaining = combatPostKnockbackStaggerDuration;
+                CompleteCombatKnockback();
+            }
+
+            return true;
+        }
+
+        private bool TickCombatStagger(float deltaTime)
+        {
+            if (!IsHitStaggered)
+            {
+                return false;
+            }
+
+            combatStaggerRemaining = Mathf.Max(0f, combatStaggerRemaining - Mathf.Max(0f, deltaTime));
+            return true;
+        }
+
+        private void CompleteCombatKnockback()
+        {
+            combatKnockbackDirection = Vector3.zero;
+            combatKnockbackDistance = 0f;
+            combatKnockbackDuration = 0f;
+            combatKnockbackElapsed = 0f;
+            combatKnockbackAppliedDistance = 0f;
+            combatPostKnockbackStaggerDuration = 0f;
+        }
+
+        private void CancelCombatHitReaction()
+        {
+            CompleteCombatKnockback();
+            combatStaggerRemaining = 0f;
         }
 
         private void SetLocalAnimationPaused(bool paused)
@@ -522,6 +740,11 @@ namespace ProjectMT.Shared.Unit
             RebuildMonsterBuffModifier();
         }
 
+        public float ScaleSupportOutput(float amount)
+        {
+            return Mathf.Max(0f, amount) * supportOutputMultiplier;
+        }
+
         private void StartAttack(IDamageable target)
         {
             if (target == null || !target.IsAlive || world == null)
@@ -591,6 +814,15 @@ namespace ProjectMT.Shared.Unit
             if (actionTarget == null || !actionTarget.IsAlive || runtimeAssetSet == null)
             {
                 return;
+            }
+
+            if (runtimeAssetSet.CombatProfile?.Action is ProjectileActionDefinition projectileAction)
+            {
+                var launchDirection = actionTarget.Position - transform.position;
+                VisualFeedback?.PlayAttackRecoil(
+                    launchDirection,
+                    projectileAction.LaunchRecoilDistance,
+                    projectileAction.LaunchRecoilDuration);
             }
 
             world?.ExecuteMonsterAction(
@@ -705,6 +937,41 @@ namespace ProjectMT.Shared.Unit
             animationDriver?.PlayMove();
         }
 
+        private float ResolvePreferredRange(UnitActor target, float attackRange)
+        {
+            var configuredRange = attackRange * combatBehavior.PreferredRangeRatio;
+            if (IsRanged || target == null)
+            {
+                return configuredRange;
+            }
+
+            var bodyRange = (BodyRadius + target.BodyRadius) * 0.9f;
+            return Mathf.Min(attackRange * 0.94f, Mathf.Max(configuredRange, bodyRange));
+        }
+
+        private void SetCombatTarget(UnitActor target)
+        {
+            if (Target == target)
+            {
+                return;
+            }
+
+            Target = target;
+        }
+
+        private void MoveAwayFrom(Vector3 dangerPosition, float deltaTime)
+        {
+            var direction = transform.position - dangerPosition;
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f)
+            {
+                direction = -transform.forward;
+                direction.y = 0f;
+            }
+
+            MoveTowards(transform.position + direction.normalized, deltaTime);
+        }
+
         private void FaceTowards(Vector3 destination, float deltaTime)
         {
             var direction = destination - transform.position;
@@ -736,6 +1003,7 @@ namespace ProjectMT.Shared.Unit
             feedback?.PlayDeath(this, report);
             attackActionRunning = false;
             actionTarget = null;
+            CancelCombatHitReaction();
             var returnDelay = (animationDriver?.PlayDeath() ?? 0.38f) + localHitStopRemaining;
             if (runtimeAssetSet != null)
             {

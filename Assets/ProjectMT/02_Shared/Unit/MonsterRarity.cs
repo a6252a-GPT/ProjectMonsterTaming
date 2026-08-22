@@ -13,38 +13,19 @@ namespace ProjectMT.Shared.Unit
         Mythic = 4
     }
 
-    // 패시브 스킬 자리표시자. 실제 스킬 내용은 아직 미정이라
-    // 이 클래스를 상속하는 구체 스킬 ScriptableObject를 나중에 스킬 시스템 쪽에서 만들면 된다.
-    public abstract class MonsterPassiveSkill : ScriptableObject
-    {
-        [SerializeField] private string skillId;
-        [SerializeField] private string displayName;
-
-        public string SkillId => skillId;
-        public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? skillId : displayName;
-    }
-
-    // 액티브 스킬 자리표시자. 전설·신화 등급 몬스터만 사용한다.
-    public abstract class MonsterActiveSkill : ScriptableObject
-    {
-        [SerializeField] private string skillId;
-        [SerializeField] private string displayName;
-
-        public string SkillId => skillId;
-        public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? skillId : displayName;
-    }
-
-    // 일반~영웅 등급 몬스터 한 종류. 패시브 칸은 스킬 시스템 구현 전까지 비워둘 수 있다.
+    // 일반~영웅 등급 몬스터 한 종류. 영웅만 범용 액티브를 추가로 사용한다.
     [Serializable]
     public sealed class MonsterCommonRarityEntry
     {
         [SerializeField] private MonsterDefinition monster;
         [SerializeField] private MonsterRarity rarity = MonsterRarity.Common; // Common/Rare/Epic 중 하나
         [SerializeField] private MonsterPassiveSkill passiveSkill; // 고정 패시브 1개
+        [SerializeField] private MonsterActiveSkill activeSkill; // 영웅 범용 액티브 1개
 
         public MonsterDefinition Monster => monster;
         public MonsterRarity Rarity => rarity;
         public MonsterPassiveSkill PassiveSkill => passiveSkill;
+        public MonsterActiveSkill ActiveSkill => activeSkill;
 
         public bool TryValidate(out string error)
         {
@@ -76,6 +57,34 @@ namespace ProjectMT.Shared.Unit
             if (passiveSkill == null)
             {
                 error = $"Monster Rarity Entry has no passive skill. Monster={monster.MonsterId}";
+                return false;
+            }
+
+            if (!passiveSkill.TryValidate(out error))
+            {
+                return false;
+            }
+
+            if (rarity == MonsterRarity.Epic && activeSkill == null)
+            {
+                error = $"영웅 등급은 범용 액티브 스킬이 필요합니다. Monster={monster.MonsterId}";
+                return false;
+            }
+
+            if (activeSkill != null && !activeSkill.TryValidate(out error))
+            {
+                return false;
+            }
+
+            if (rarity != MonsterRarity.Epic && activeSkill != null)
+            {
+                error = $"일반·희귀 등급은 액티브 스킬을 사용할 수 없습니다. Monster={monster.MonsterId}";
+                return false;
+            }
+
+            if (activeSkill != null && activeSkill.ExecutionKind == MonsterActiveExecutionKind.DedicatedMythic)
+            {
+                error = $"신화 전용 액티브는 영웅 이하 등급에 연결할 수 없습니다. Monster={monster.MonsterId}";
                 return false;
             }
 
@@ -140,6 +149,18 @@ namespace ProjectMT.Shared.Unit
             if (activeSkill == null)
             {
                 error = $"전설·신화 등급은 액티브 스킬도 필요합니다. Monster={monster.MonsterId}";
+                return false;
+            }
+
+            if (!passiveSkill.TryValidate(out error) || !activeSkill.TryValidate(out error))
+            {
+                return false;
+            }
+
+            if (rarity != MonsterRarity.Mythic &&
+                activeSkill.ExecutionKind == MonsterActiveExecutionKind.DedicatedMythic)
+            {
+                error = $"신화 전용 액티브는 신화 등급에만 연결할 수 있습니다. Monster={monster.MonsterId}";
                 return false;
             }
 

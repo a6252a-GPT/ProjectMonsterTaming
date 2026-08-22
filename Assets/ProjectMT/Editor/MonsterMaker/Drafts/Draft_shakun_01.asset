@@ -16,12 +16,13 @@ MonoBehaviour:
   displayName: "\uC0E4\uD0C1"
   rarity: 2
   portrait: {fileID: 21300000, guid: 2fc87330825ffc743825f441275219ae, type: 3}
+  skillLoadoutConfigured: 0
   rarityPassiveSkill: {fileID: 0}
   rarityActiveSkill: {fileID: 0}
   productionMemo: 'Notion role: melee attacker. Two selected attack motions.'
   vendorPrefab: {fileID: 1570828918066367699, guid: b09df87619ccd494e8b611937b711c11, type: 3}
   animatorSource: {fileID: 5860672640100319977, guid: b09df87619ccd494e8b611937b711c11, type: 3}
-  visualScale: {x: 0.9, y: 0.9, z: 0.9}
+  visualScale: {x: 1, y: 1, z: 1}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0.145
   facingYawOffset: 0
@@ -41,7 +42,14 @@ MonoBehaviour:
   defense: 7
   attackSpeed: 1.05
   moveSpeed: 2.7
-  attackRange: 1.2
+  attackRange: 2
+  impactStrength: 2
+  reactionWeight: 0
+  mainBattleRole: 2
+  mainBattleTargetPriority: 1
+  mainBattlePreferredRangeRatio: 0.68
+  mainBattleRetreatRangeRatio: 0
+  mainBattleRetargetInterval: 0.28
   idleClip: {fileID: 7400000, guid: 11e48f0819fff5a4787ef3082958c5b6, type: 3}
   idleSpeed: 1
   moveClip: {fileID: 7400000, guid: f9c804a9dfa34e242b16a6ac9bb1adca, type: 3}
@@ -49,9 +57,9 @@ MonoBehaviour:
   attacks:
   - motionId: attack01
     clip: {fileID: 7400000, guid: 913c0eb78264c504c9f31b66038457c3, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
+    playbackSpeed: 1.25
+    crossFadeDuration: 0.04
+    weight: 3
     preventImmediateRepeat: 1
     attackStartFeedback:
       sound: {fileID: 0}
@@ -62,7 +70,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
     markers:
-    - normalizedTime: 0.3
+    - normalizedTime: 0.26
       powerRatio: 1
       socketOverride: 
       feedback:
@@ -75,8 +83,8 @@ MonoBehaviour:
         scale: 1
   - motionId: attack02
     clip: {fileID: 7400000, guid: ce9e3aa98317196499acfa6cfeb450ec, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
+    playbackSpeed: 1.15
+    crossFadeDuration: 0.05
     weight: 1
     preventImmediateRepeat: 1
     attackStartFeedback:
@@ -88,7 +96,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
     markers:
-    - normalizedTime: 0.55
+    - normalizedTime: 0.42
       powerRatio: 1
       socketOverride: 
       feedback:
@@ -102,6 +110,7 @@ MonoBehaviour:
   deathClip: {fileID: 7400000, guid: ec416615e23387a41b092b5b4249a35f, type: 3}
   deathSpeed: 1
   combatType: 0
+  basicAttackProfile: {fileID: 11400000, guid: 6afe6c47cd7c43d48b71952eb7e80c35, type: 2}
   meleeMode: 0
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5
@@ -116,6 +125,8 @@ MonoBehaviour:
   projectileMaxPiercingTargets: 2
   projectileImpactRadius: 1.5
   projectileMaxImpactTargets: 4
+  projectileLaunchRecoilDistance: 0
+  projectileLaunchRecoilDuration: 0.12
   specialEffectId: 
   specialTargetTeam: 0
   specialRadius: 2
@@ -150,6 +161,9 @@ MonoBehaviour:
     displayName: 
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension3:
     healthRate: 0
     attackRate: 0
@@ -162,6 +176,9 @@ MonoBehaviour:
     displayName: 
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension5:
     healthRate: 0
     attackRate: 0

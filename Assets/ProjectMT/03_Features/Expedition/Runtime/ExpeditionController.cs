@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ProjectMT.Features.Equipment;
+using ProjectMT.Features.MainBattle;
 using ProjectMT.Features.Quest;
 using ProjectMT.Features.WorldDrops;
 using ProjectMT.Shared.Combat;
@@ -27,8 +28,11 @@ namespace ProjectMT.Features.Expedition
         [SerializeField] private GameObject playerUnitPrefab; // 아군 원본
         [SerializeField] private EnemyStageAppearanceSet enemyAppearanceSet; // 단계별 모듈러 적 원본
         [SerializeField, HideInInspector] private GameObject enemyUnitPrefab; // 기존 테스트용 단일 적 Fallback
-        [SerializeField] private Transform[] playerSpawnPoints; // 아군 시작 위치
-        [SerializeField] private Transform enemySpawnAnchor; // 적 진형 기준점
+        [SerializeField] private Transform playerFormationAnchor; // 아군 진형 전체 기준점
+        [SerializeField] private Transform[] playerSpawnPoints; // 아군 기본 5자리
+        [SerializeField] private Transform enemySpawnAnchor; // 적 도착 진형 기준점
+        [SerializeField] private Transform[] enemyEntryPoints; // 적 실제 등장 위치 3곳
+        [SerializeField] private MainBattleAIProfileCatalog mainBattleAIProfiles; // 첫 편성 역할 AI
 
         [Header("HUD")]
         [SerializeField] private Button modeButton;
@@ -42,6 +46,7 @@ namespace ProjectMT.Features.Expedition
         [SerializeField, Min(1f)] private float progressFillMaxWidth = 360f;
         [SerializeField] private ExpeditionBossHudPresenter bossHud;
         [SerializeField] private ExpeditionBossIntroPresenter bossIntro;
+        [SerializeField] private TMP_Text reinforcementWarningText;
 
         private IGameProgressService progress; // 진행 조회·저장 계약
         private IRewardPresentationPlayer rewardPresentation; // 저장 확정 보상 표현
@@ -65,11 +70,12 @@ namespace ProjectMT.Features.Expedition
         private Coroutine bossIntroRoutine; // 보스 등장 전 전투 지연
         private int operationVersion; // 늦은 비동기 결과 무효화
         private int runSequence; // 공간 제어용 Run 변경 번호
-        private Vector3 formationOrigin; // 맵 중심 기준 배치 원점
+        private Vector3 formationOrigin; // 아군 기준 오브젝트 기반 배치 원점
         private bool formationFrameConfigured;
         private bool formationPlacementActive;
         private readonly Dictionary<UnitActor, int> enemyWaveByActor = new Dictionary<UnitActor, int>(); // 적별 소속 웨이브
         private readonly Dictionary<UnitActor, int> playerSlotByActor = new Dictionary<UnitActor, int>(); // 아군별 본부대 자리
+        private readonly List<EnemyArrivalUnit> arrivingEnemies = new List<EnemyArrivalUnit>(8);
         private int[] aliveEnemiesByWave = new int[ExpeditionStageRules.LegacyWaveCount + 1]; // 웨이브별 생존 적
         private bool[] climaxPlayedByWave = new bool[ExpeditionStageRules.LegacyWaveCount + 1]; // 웨이브당 한 번만 재생
         private readonly List<WorldItemDropRequest> worldDropBuffer = new List<WorldItemDropRequest>(4); // 사망 1회 드랍 재사용 버퍼
@@ -87,11 +93,24 @@ namespace ProjectMT.Features.Expedition
         private int displayedDefeatedEnemyCount;
         private int displayedRunEnemyTotalCount;
         private bool displayedModeInteractable;
+        private bool waveArrivalActive;
+        private bool firstWaveReady;
+        private int arrivalWave;
+        private int arrivalTotalCount;
+        private int arrivalNextSpawnIndex;
+        private float arrivalSpawnTimer;
+        private bool reinforcementWarningActive;
+        private int reinforcementWarningWave;
+        private float reinforcementWarningRemaining;
+        private float reinforcementNoticeRemaining;
+        private bool ownsRuntimeReinforcementWarning;
 
         public bool IsRunning => running;
         public bool IsSettling => settling;
         public int RunSequence => runSequence;
         public bool IsFormationPlacementActive => formationPlacementActive;
+        public bool IsWaveArrivalActive => waveArrivalActive;
+        public bool IsReinforcementWarningActive => reinforcementWarningActive;
 
         public void SetPartyForNextRun(BattlePartySnapshot partySnapshot)
         {
@@ -113,7 +132,7 @@ namespace ProjectMT.Features.Expedition
             destination.Clear();
             foreach (var pair in playerSlotByActor)
             {
-                if (pair.Key != null && pair.Key.IsAlive)
+                if (pair.Key != null && pair.Key.IsAlive && pair.Key.IsCombatReady)
                 {
                     destination.Add(pair.Key);
                 }
@@ -121,7 +140,7 @@ namespace ProjectMT.Features.Expedition
 
             foreach (var pair in enemyWaveByActor)
             {
-                if (pair.Key != null && pair.Key.IsAlive)
+                if (pair.Key != null && pair.Key.IsAlive && pair.Key.IsCombatReady)
                 {
                     destination.Add(pair.Key);
                 }
@@ -146,7 +165,8 @@ namespace ProjectMT.Features.Expedition
             Collider formationGround = null,
             ItemCatalog itemCatalog = null,
             Transform worldDropPickupTarget = null,
-            EquipmentBalanceConfig equipmentBalance = null)
+            EquipmentBalanceConfig equipmentBalance = null,
+            Transform formationAnchor = null)
         {
             Shutdown();
             InvalidateHudCache();
@@ -155,8 +175,11 @@ namespace ProjectMT.Features.Expedition
             rewardPresentation = rewardPlayer;
             this.itemCatalog = itemCatalog;
             bossIntro ??= FindFirstObjectByType<ExpeditionBossIntroPresenter>(FindObjectsInactive.Include);
+            mainBattleAIProfiles ??= MainBattleAIProfileCatalog.LoadDefault();
+            EnsureReinforcementWarningText();
             equipmentBalanceConfig = equipmentBalance ?? EquipmentBalanceConfig.RuntimeDefault;
             equipmentRandom = new System.Random();
+            playerFormationAnchor = formationAnchor ?? playerFormationAnchor;
             ConfigureFormationFrame(formationGround);
             ConfigureWorldItemDrops(itemCatalog, worldDropPickupTarget);
             ConfigureEquipmentWorldDrops(worldDropPickupTarget);
@@ -254,6 +277,7 @@ namespace ProjectMT.Features.Expedition
             worldItemDrops = null;
             equipmentWorldDrops = null;
             formationFrameConfigured = false;
+            ReleaseRuntimeReinforcementWarningText();
             InvalidateHudCache();
         }
 
@@ -264,21 +288,26 @@ namespace ProjectMT.Features.Expedition
                 return;
             }
 
-            waveElapsed += Time.deltaTime;
-            if (currentMode == ExpeditionRunMode.Challenge)
+            var deltaTime = Time.deltaTime;
+            TickReinforcementNotice(deltaTime);
+            TickReinforcementWarning(deltaTime);
+            TickWaveArrival(deltaTime);
+            if (!firstWaveReady)
             {
-                challengeTimeRemaining = Mathf.Max(0f, challengeTimeRemaining - Time.deltaTime);
+                UpdateHud();
+                return; // 첫 웨이브 Ready 전에는 전투 시간도 시작하지 않음
             }
 
-            if (!allWavesSpawned && nextWaveToSpawn <= waveCount &&
-                (waveElapsed >= profile.GetWaveSpawnDelay(currentStage, nextWaveToSpawn) ||
-                 combatWorld.CountAlive(UnitTeam.Enemy) == 0))
+            waveElapsed += deltaTime;
+            if (currentMode == ExpeditionRunMode.Challenge)
             {
-                SpawnWave(nextWaveToSpawn); // 데이터 간격 또는 전멸 시 다음 웨이브
-                currentWave = nextWaveToSpawn;
-                nextWaveToSpawn++;
-                waveElapsed = 0f;
-                allWavesSpawned = nextWaveToSpawn > waveCount;
+                challengeTimeRemaining = Mathf.Max(0f, challengeTimeRemaining - deltaTime);
+            }
+
+            if (!allWavesSpawned && !waveArrivalActive && !reinforcementWarningActive &&
+                nextWaveToSpawn <= waveCount)
+            {
+                TryScheduleNextWave();
             }
 
             if (combatWorld.CountAlive(UnitTeam.Player) == 0 ||
@@ -357,8 +386,8 @@ namespace ProjectMT.Features.Expedition
         private void BeginCombatRun()
         {
             combatWorld.SetPaused(false);
-            SpawnWave(1);
             running = true;
+            StartWaveArrival(1); // 첫 웨이브는 행군 완료 뒤 동시에 전투 시작
         }
 
         private void StopBossIntro()
@@ -377,40 +406,102 @@ namespace ProjectMT.Features.Expedition
             var units = activeRunParty.Units;
             for (var i = 0; i < units.Length && i < 5; i++) // 시드 본부대 최대 5기
             {
-                var position = ResolvePlayerSpawnPosition(i);
+                var formationOffset = ResolvePlayerFormationOffset(i);
+                var position = ResolvePlayerSpawnPosition(i, formationOffset);
+                var formationStats = MainBattleFormationBuffRules.ApplyStats(units[i].Stats, formationOffset);
                 var request = new UnitSpawnRequest(
                     units[i].UnitId,
-                    units[i].Stats,
+                    formationStats,
                     UnitTeam.Player,
                     canMove: !placementMode,
                     canAttack: !placementMode,
                     visualTint: units[i].VisualTint,
-                    runtimeAssetSet: units[i].RuntimeAssetSet);
-                TrackPlayerUnit(combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity), i);
+                    runtimeAssetSet: units[i].RuntimeAssetSet,
+                    supportOutputMultiplier: MainBattleFormationBuffRules.GetSupportOutputMultiplier(formationOffset));
+                var actor = combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity);
+                ApplyPlayerAIProfile(actor, units[i].UnitId);
+                TrackPlayerUnit(actor, i);
             }
         }
 
-        private Vector3 ResolvePlayerSpawnPosition(int slotIndex)
+        private Vector2 ResolvePlayerFormationOffset(int slotIndex)
         {
-            if (formationFrameConfigured && progress != null &&
-                progress.View.MainBattleFormation.TryGetSlotOffset(slotIndex, out var offset))
+            if (progress != null &&
+                progress.View.MainBattleFormation.TryGetSlotOffset(slotIndex, out var savedOffset))
             {
-                var spawnY = playerSpawnPoints != null && slotIndex < playerSpawnPoints.Length &&
-                             playerSpawnPoints[slotIndex] != null
-                    ? playerSpawnPoints[slotIndex].position.y
-                    : transform.position.y;
-                return new Vector3(formationOrigin.x + offset.x, spawnY, formationOrigin.z + offset.y);
+                return MainBattleFormationRules.IsHexPosition(savedOffset)
+                    ? savedOffset
+                    : MainBattleFormationRules.SnapToHex(savedOffset);
             }
 
-            return playerSpawnPoints != null && slotIndex < playerSpawnPoints.Length &&
-                   playerSpawnPoints[slotIndex] != null
-                ? playerSpawnPoints[slotIndex].position
-                : transform.position + new Vector3(slotIndex * 0.8f, 0f, 0f);
+            return MainBattleFormationRules.GetDefaultOffset(slotIndex);
+        }
+
+        private Vector3 ResolvePlayerSpawnPosition(int slotIndex, Vector2 formationOffset)
+        {
+            if (formationFrameConfigured)
+            {
+                var spawnY = ResolvePlayerSpawnHeight(slotIndex);
+                return new Vector3(
+                    formationOrigin.x + formationOffset.x,
+                    spawnY,
+                    formationOrigin.z + formationOffset.y);
+            }
+
+            if (playerSpawnPoints != null && slotIndex >= 0 && slotIndex < playerSpawnPoints.Length &&
+                playerSpawnPoints[slotIndex] != null)
+            {
+                return playerSpawnPoints[slotIndex].position;
+            }
+
+            var fallbackOrigin = playerFormationAnchor == null ? transform.position : playerFormationAnchor.position;
+            return new Vector3(
+                fallbackOrigin.x + formationOffset.x,
+                fallbackOrigin.y,
+                fallbackOrigin.z + formationOffset.y);
+        }
+
+        private float ResolvePlayerSpawnHeight(int slotIndex)
+        {
+            if (playerSpawnPoints != null && slotIndex >= 0 && slotIndex < playerSpawnPoints.Length &&
+                playerSpawnPoints[slotIndex] != null)
+            {
+                return playerSpawnPoints[slotIndex].position.y;
+            }
+
+            return playerFormationAnchor == null ? transform.position.y : playerFormationAnchor.position.y;
+        }
+
+        private void ApplyPlayerAIProfile(UnitActor actor, string monsterId)
+        {
+            if (actor != null && mainBattleAIProfiles != null &&
+                mainBattleAIProfiles.TryResolve(monsterId, out var profile))
+            {
+                actor.SetCombatBehavior(profile.CreateBehavior());
+            }
+        }
+
+        private static void ApplyEnemyAIProfile(UnitActor actor, bool ranged)
+        {
+            if (actor == null)
+            {
+                return;
+            }
+
+            actor.SetCombatBehavior(CombatImpactTuning.ActiveConfig.CreateMainBattleEnemyBehavior(ranged));
         }
 
         private void ConfigureFormationFrame(Collider formationGround)
         {
             formationFrameConfigured = false;
+            if (playerFormationAnchor != null)
+            {
+                var anchorPosition = playerFormationAnchor.position;
+                formationOrigin = new Vector3(anchorPosition.x, 0f, anchorPosition.z);
+                formationFrameConfigured = true;
+                return;
+            }
+
             if (formationGround == null)
             {
                 return;
@@ -472,6 +563,7 @@ namespace ProjectMT.Features.Expedition
                     continue;
                 }
 
+                ApplyPlayerAIProfile(actor, reserve.UnitId);
                 TrackPlayerUnit(actor, slotIndex);
                 return true;
             }
@@ -493,39 +585,363 @@ namespace ProjectMT.Features.Expedition
             nextReserveIndex = 0;
         }
 
-        private void SpawnWave(int wave)
+        private void TryScheduleNextWave()
         {
-            var count = profile.GetEnemyCount(currentStage, wave);
-            var anchor = enemySpawnAnchor == null ? transform.position + new Vector3(4f, 0f, 4f) : enemySpawnAnchor.position;
-            var formationRight = enemySpawnAnchor == null ? Vector3.right : enemySpawnAnchor.right;
-            var formationForward = enemySpawnAnchor == null ? Vector3.forward : enemySpawnAnchor.forward;
-            for (var i = 0; i < count; i++)
+            var previousWave = Mathf.Clamp(nextWaveToSpawn - 1, 1, waveCount);
+            var alive = previousWave < aliveEnemiesByWave.Length ? aliveEnemiesByWave[previousWave] : 0;
+            if (alive <= 0)
             {
-                var formationOffset = ExpeditionStageRules.GetFormationOffset(i, count); // 실제 인원 기준 중앙 정렬
-                var position = anchor +
-                               formationRight * formationOffset.x +
-                               formationForward * (formationOffset.y + profile.GetWaveForwardOffset(currentStage, wave));
-                var unitIndex = i + wave * 10;
-                var ranged = profile.IsRangedSlot(currentStage, unitIndex);
-                var enemyPrefab = enemyAppearanceSet == null
-                    ? enemyUnitPrefab
-                    : enemyAppearanceSet.ResolvePrefab(profile.ResolveAppearance(currentStage, ranged));
-                var stats = profile.CreateEnemyStats(currentStage, ranged);
-                var boss = profile.IsBossStage(currentStage);
-                var request = new UnitSpawnRequest(
-                    boss ? $"boss_{currentStage}" : $"enemy_{currentStage}_{wave}_{i}",
-                    stats,
-                    UnitTeam.Enemy,
-                    appearanceSeed: CreateEnemyAppearanceSeed(currentStage, wave, i, operationVersion),
-                    visualScaleMultiplier: boss ? profile.BossVisualScaleMultiplier : 1f,
-                    isBoss: boss);
-                var actor = combatWorld.SpawnUnit(enemyPrefab, request, position, Quaternion.Euler(0f, 180f, 0f));
-                TrackWaveEnemy(actor, wave);
-                if (boss)
+                StartWaveArrival(nextWaveToSpawn); // 전멸 시 대기 없이 증원 행군 시작
+                return;
+            }
+
+            var initialCount = Mathf.Max(1, profile.GetEnemyCount(currentStage, previousWave));
+            var aliveRatio = (float)alive / initialCount;
+            var minimumDelay = Mathf.Max(
+                profile.ReinforcementMinimumDelaySeconds,
+                profile.GetWaveSpawnDelay(currentStage, nextWaveToSpawn));
+            var warningLead = profile.ReinforcementWarningSeconds;
+            var forceWarningTime = Mathf.Max(
+                minimumDelay,
+                profile.ReinforcementForceDelaySeconds - warningLead);
+            var weakened = waveElapsed >= minimumDelay && aliveRatio <= profile.ReinforcementAliveRatio;
+            var forced = waveElapsed >= forceWarningTime;
+            if (weakened || forced)
+            {
+                BeginReinforcementWarning(nextWaveToSpawn);
+            }
+        }
+
+        private void BeginReinforcementWarning(int wave)
+        {
+            reinforcementWarningActive = true;
+            reinforcementWarningWave = wave;
+            reinforcementWarningRemaining = profile.ReinforcementWarningSeconds;
+            reinforcementNoticeRemaining = Mathf.Max(0.35f, reinforcementWarningRemaining + 0.15f);
+            ShowReinforcementWarning(true);
+            if (reinforcementWarningRemaining <= 0f)
+            {
+                reinforcementWarningActive = false;
+                StartWaveArrival(wave);
+            }
+        }
+
+        private void TickReinforcementWarning(float deltaTime)
+        {
+            if (!reinforcementWarningActive)
+            {
+                return;
+            }
+
+            reinforcementWarningRemaining = Mathf.Max(0f, reinforcementWarningRemaining - deltaTime);
+            if (reinforcementWarningRemaining > 0f)
+            {
+                return;
+            }
+
+            var wave = reinforcementWarningWave;
+            reinforcementWarningActive = false;
+            reinforcementWarningWave = 0;
+            StartWaveArrival(wave);
+        }
+
+        private void TickReinforcementNotice(float deltaTime)
+        {
+            if (reinforcementNoticeRemaining <= 0f)
+            {
+                return;
+            }
+
+            reinforcementNoticeRemaining = Mathf.Max(0f, reinforcementNoticeRemaining - deltaTime);
+            if (reinforcementNoticeRemaining <= 0f)
+            {
+                ShowReinforcementWarning(false);
+            }
+        }
+
+        private void StartWaveArrival(int wave)
+        {
+            if (profile == null || combatWorld == null || wave <= 0 || wave > waveCount)
+            {
+                return;
+            }
+
+            waveArrivalActive = true;
+            arrivalWave = wave;
+            arrivalTotalCount = Mathf.Max(0, profile.GetEnemyCount(currentStage, wave));
+            arrivalNextSpawnIndex = 0;
+            arrivalSpawnTimer = 0f;
+            arrivingEnemies.Clear();
+            currentWave = wave;
+            nextWaveToSpawn = wave + 1;
+            allWavesSpawned = nextWaveToSpawn > waveCount;
+            waveElapsed = 0f;
+
+            if (wave > 1)
+            {
+                reinforcementNoticeRemaining = Mathf.Max(
+                    reinforcementNoticeRemaining,
+                    Mathf.Max(0.35f, profile.ReinforcementWarningSeconds));
+                ShowReinforcementWarning(true);
+                ResolveEnemyFormationAxes(out _, out var formationForward);
+                var cuePosition = ResolveEnemyEntryCuePosition(formationForward);
+                combatWorld.PlayClimax(cuePosition, CombatClimaxStrength.Weak); // 기존 VFX/SFX로 증원 방향 강조
+            }
+
+            if (arrivalTotalCount <= 0)
+            {
+                CompleteWaveArrival();
+                return;
+            }
+
+            SpawnNextArrivalEnemy(); // 첫 기는 경고 종료와 동시에 보이게 함
+            arrivalSpawnTimer = profile.EnemySpawnIntervalSeconds;
+        }
+
+        private void TickWaveArrival(float deltaTime)
+        {
+            if (!waveArrivalActive)
+            {
+                return;
+            }
+
+            arrivalSpawnTimer -= Mathf.Max(0f, deltaTime);
+            while (arrivalNextSpawnIndex < arrivalTotalCount && arrivalSpawnTimer <= 0f)
+            {
+                SpawnNextArrivalEnemy();
+                arrivalSpawnTimer += profile.EnemySpawnIntervalSeconds;
+                if (profile.EnemySpawnIntervalSeconds <= 0f)
                 {
-                    bossHud?.Show(actor, currentStage);
+                    arrivalSpawnTimer = 0f;
                 }
             }
+
+            var allReached = arrivalNextSpawnIndex >= arrivalTotalCount;
+            for (var index = 0; index < arrivingEnemies.Count; index++)
+            {
+                var arrival = arrivingEnemies[index];
+                if (arrival.Actor == null || arrival.Reached)
+                {
+                    continue;
+                }
+
+                arrival.Elapsed += Mathf.Max(0f, deltaTime);
+                var ratio = Mathf.Clamp01(arrival.Elapsed / arrival.Duration);
+                var eased = ratio * ratio * (3f - 2f * ratio);
+                arrival.Actor.transform.position = Vector3.Lerp(arrival.EntryPosition, arrival.ReadyPosition, eased);
+                var direction = arrival.ReadyPosition - arrival.Actor.transform.position;
+                direction.y = 0f;
+                if (direction.sqrMagnitude > 0.0001f)
+                {
+                    arrival.Actor.transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+                }
+
+                if (ratio < 1f)
+                {
+                    arrival.Actor.AnimationDriver?.PlayMove();
+                    allReached = false;
+                    continue;
+                }
+
+                arrival.Reached = true;
+                arrival.Actor.AnimationDriver?.PlayIdle(true);
+            }
+
+            if (allReached)
+            {
+                CompleteWaveArrival();
+            }
+        }
+
+        private void SpawnNextArrivalEnemy()
+        {
+            if (arrivalNextSpawnIndex >= arrivalTotalCount)
+            {
+                return;
+            }
+
+            var index = arrivalNextSpawnIndex++;
+            var readyPosition = ResolveEnemyFormationPosition(arrivalWave, index, arrivalTotalCount);
+            var readyLaneOffset = ExpeditionStageRules.GetFormationOffset(index, arrivalTotalCount).x;
+            ResolveEnemyFormationAxes(out var formationRight, out var formationForward);
+            var entryPosition = ResolveEnemyEntryPosition(
+                readyPosition,
+                readyLaneOffset,
+                formationRight,
+                formationForward);
+            var unitIndex = index + arrivalWave * 10;
+            var ranged = profile.IsRangedSlot(currentStage, unitIndex);
+            var enemyPrefab = enemyAppearanceSet == null
+                ? enemyUnitPrefab
+                : enemyAppearanceSet.ResolvePrefab(profile.ResolveAppearance(currentStage, ranged));
+            var boss = profile.IsBossStage(currentStage);
+            var request = new UnitSpawnRequest(
+                boss ? $"boss_{currentStage}" : $"enemy_{currentStage}_{arrivalWave}_{index}",
+                profile.CreateEnemyStats(currentStage, ranged),
+                UnitTeam.Enemy,
+                appearanceSeed: CreateEnemyAppearanceSeed(currentStage, arrivalWave, index, operationVersion),
+                visualScaleMultiplier: boss ? profile.BossVisualScaleMultiplier : 1f,
+                isBoss: boss);
+            var direction = readyPosition - entryPosition;
+            direction.y = 0f;
+            var rotation = direction.sqrMagnitude > 0.0001f
+                ? Quaternion.LookRotation(direction.normalized, Vector3.up)
+                : Quaternion.identity;
+            var actor = combatWorld.SpawnUnit(enemyPrefab, request, entryPosition, rotation);
+            if (actor == null)
+            {
+                return;
+            }
+
+            ApplyEnemyAIProfile(actor, ranged);
+            actor.SetCombatReady(false);
+            actor.AnimationDriver?.PlayMove();
+            TrackWaveEnemy(actor, arrivalWave);
+            arrivingEnemies.Add(new EnemyArrivalUnit(
+                actor,
+                entryPosition,
+                readyPosition,
+                profile.EnemyMarchDurationSeconds,
+                boss));
+        }
+
+        private Vector3 ResolveEnemyEntryPosition(
+            Vector3 readyPosition,
+            float readyLaneOffset,
+            Vector3 formationRight,
+            Vector3 formationForward)
+        {
+            if (TryResolveEnemyEntryPoint(readyLaneOffset, formationRight, out var entryPosition))
+            {
+                return entryPosition;
+            }
+
+            return readyPosition + formationForward * profile.EnemyEntryDistance;
+        }
+
+        private Vector3 ResolveEnemyEntryCuePosition(Vector3 formationForward)
+        {
+            var total = Vector3.zero;
+            var count = 0;
+            if (enemyEntryPoints != null)
+            {
+                for (var index = 0; index < enemyEntryPoints.Length; index++)
+                {
+                    if (enemyEntryPoints[index] == null)
+                    {
+                        continue;
+                    }
+
+                    total += enemyEntryPoints[index].position;
+                    count++;
+                }
+            }
+
+            if (count > 0)
+            {
+                return total / count;
+            }
+
+            return enemySpawnAnchor == null
+                ? transform.position
+                : enemySpawnAnchor.position + formationForward * profile.EnemyEntryDistance;
+        }
+
+        private bool TryResolveEnemyEntryPoint(
+            float readyLaneOffset,
+            Vector3 formationRight,
+            out Vector3 position)
+        {
+            var anchorPosition = enemySpawnAnchor == null ? transform.position : enemySpawnAnchor.position;
+            var sideThreshold = ExpeditionStageRules.FormationSpacing * 0.75f;
+            var bestScore = float.PositiveInfinity;
+            position = default;
+            var found = false;
+            if (enemyEntryPoints != null)
+            {
+                for (var index = 0; index < enemyEntryPoints.Length; index++)
+                {
+                    var entryPoint = enemyEntryPoints[index];
+                    if (entryPoint == null)
+                    {
+                        continue;
+                    }
+
+                    var entryLane = Vector3.Dot(entryPoint.position - anchorPosition, formationRight);
+                    var score = readyLaneOffset < -sideThreshold
+                        ? entryLane
+                        : readyLaneOffset > sideThreshold
+                            ? -entryLane
+                            : Mathf.Abs(entryLane);
+                    if (score >= bestScore)
+                    {
+                        continue;
+                    }
+
+                    bestScore = score;
+                    position = entryPoint.position;
+                    found = true;
+                }
+            }
+
+            return found; // 좌·중·우 Ready 열과 같은 입장선을 골라 행군선 교차 방지
+        }
+
+        private Vector3 ResolveEnemyFormationPosition(int wave, int index, int count)
+        {
+            var anchor = enemySpawnAnchor == null
+                ? transform.position + new Vector3(4f, 0f, 4f)
+                : enemySpawnAnchor.position;
+            ResolveEnemyFormationAxes(out var formationRight, out var formationForward);
+            var tuning = CombatImpactTuning.ActiveConfig;
+            var spawnSpread = profile.EnemyFormationSpread *
+                              (tuning == null ? 1f : tuning.MainBattleEnemySpawnSpreadMultiplier);
+            var formationOffset = ExpeditionStageRules.GetFormationOffset(index, count) * spawnSpread;
+            return anchor +
+                   formationRight * formationOffset.x +
+                   formationForward * (formationOffset.y + profile.GetWaveForwardOffset(currentStage, wave));
+        }
+
+        private void ResolveEnemyFormationAxes(out Vector3 formationRight, out Vector3 formationForward)
+        {
+            var fallbackForward = enemySpawnAnchor == null ? Vector3.forward : enemySpawnAnchor.forward;
+            var anchorPosition = enemySpawnAnchor == null
+                ? transform.position + new Vector3(4f, 0f, 4f)
+                : enemySpawnAnchor.position;
+            formationForward = ExpeditionStageRules.ResolveBattleForward(
+                formationFrameConfigured ? formationOrigin : transform.position,
+                anchorPosition,
+                fallbackForward);
+            formationRight = Vector3.Cross(Vector3.up, formationForward).normalized;
+        }
+
+        private void CompleteWaveArrival()
+        {
+            for (var index = 0; index < arrivingEnemies.Count; index++)
+            {
+                var arrival = arrivingEnemies[index];
+                if (arrival.Actor == null || !arrival.Actor.IsAlive)
+                {
+                    continue;
+                }
+
+                arrival.Actor.transform.position = arrival.ReadyPosition;
+                arrival.Actor.SetCombatReady(true);
+                arrival.Actor.AnimationDriver?.PlayIdle(true);
+                if (arrival.IsBoss)
+                {
+                    bossHud?.Show(arrival.Actor, currentStage); // Ready 시점부터 보스 HUD 표시
+                }
+            }
+
+            arrivingEnemies.Clear();
+            waveArrivalActive = false;
+            firstWaveReady = true;
+            arrivalWave = 0;
+            arrivalTotalCount = 0;
+            arrivalNextSpawnIndex = 0;
+            arrivalSpawnTimer = 0f;
+            waveElapsed = 0f;
         }
 
         private static int CreateEnemyAppearanceSeed(int stage, int wave, int index, int runVersion)
@@ -594,6 +1010,7 @@ namespace ProjectMT.Features.Expedition
 
         private void ResetWaveTracking()
         {
+            ResetArrivalState();
             foreach (var pair in enemyWaveByActor)
             {
                 if (pair.Key != null)
@@ -607,6 +1024,22 @@ namespace ProjectMT.Features.Expedition
             Array.Clear(climaxPlayedByWave, 0, climaxPlayedByWave.Length);
             runEnemyTotalCount = 0;
             defeatedEnemyCount = 0;
+        }
+
+        private void ResetArrivalState()
+        {
+            arrivingEnemies.Clear();
+            waveArrivalActive = false;
+            firstWaveReady = false;
+            arrivalWave = 0;
+            arrivalTotalCount = 0;
+            arrivalNextSpawnIndex = 0;
+            arrivalSpawnTimer = 0f;
+            reinforcementWarningActive = false;
+            reinforcementWarningWave = 0;
+            reinforcementWarningRemaining = 0f;
+            reinforcementNoticeRemaining = 0f;
+            ShowReinforcementWarning(false);
         }
 
         private async void ToggleMode()
@@ -911,6 +1344,71 @@ namespace ProjectMT.Features.Expedition
             }
         }
 
+        private void EnsureReinforcementWarningText()
+        {
+            if (reinforcementWarningText != null || waveText == null || waveText.canvas == null)
+            {
+                return;
+            }
+
+            var warningObject = new GameObject(
+                "ReinforcementWarning",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(TextMeshProUGUI));
+            warningObject.layer = waveText.gameObject.layer;
+            warningObject.transform.SetParent(waveText.canvas.transform, false);
+            warningObject.transform.SetAsLastSibling();
+            var rect = warningObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 1f);
+            rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = new Vector2(0f, -260f); // 상단 HUD보다 아래인 실제 전투 안전 영역
+            rect.sizeDelta = new Vector2(420f, 58f);
+
+            reinforcementWarningText = warningObject.GetComponent<TextMeshProUGUI>();
+            reinforcementWarningText.text = "증원 접근!";
+            reinforcementWarningText.font = waveText.font; // 필요한 글리프가 포함된 정식 Font Asset을 그대로 사용
+            reinforcementWarningText.fontSize = Mathf.Max(32f, waveText.fontSize + 10f);
+            reinforcementWarningText.fontStyle = FontStyles.Bold;
+            reinforcementWarningText.alignment = TextAlignmentOptions.Center;
+            reinforcementWarningText.color = new Color(1f, 0.68f, 0.2f, 1f);
+            reinforcementWarningText.raycastTarget = false;
+            warningObject.SetActive(false);
+            ownsRuntimeReinforcementWarning = true;
+        }
+
+        private void ShowReinforcementWarning(bool visible)
+        {
+            if (visible)
+            {
+                EnsureReinforcementWarningText();
+            }
+
+            if (reinforcementWarningText != null)
+            {
+                reinforcementWarningText.gameObject.SetActive(visible);
+            }
+        }
+
+        private void ReleaseRuntimeReinforcementWarningText()
+        {
+            if (!ownsRuntimeReinforcementWarning || reinforcementWarningText == null)
+            {
+                ShowReinforcementWarning(false);
+                return;
+            }
+
+            var warningObject = reinforcementWarningText.gameObject;
+            reinforcementWarningText = null;
+            ownsRuntimeReinforcementWarning = false;
+            if (Application.isPlaying)
+            {
+                Destroy(warningObject);
+            }
+            // Play Mode 종료 중에는 Unity가 생성한 경고 UI를 함께 정리한다.
+        }
+
         private void UpdateHud()
         {
             var modeChanged = !hudCacheValid || displayedMode != currentMode;
@@ -993,6 +1491,31 @@ namespace ProjectMT.Features.Expedition
             }
 
             UpdateHud();
+        }
+
+        private sealed class EnemyArrivalUnit
+        {
+            public EnemyArrivalUnit(
+                UnitActor actor,
+                Vector3 entryPosition,
+                Vector3 readyPosition,
+                float duration,
+                bool isBoss)
+            {
+                Actor = actor;
+                EntryPosition = entryPosition;
+                ReadyPosition = readyPosition;
+                Duration = Mathf.Max(0.1f, duration);
+                IsBoss = isBoss;
+            }
+
+            public UnitActor Actor { get; }
+            public Vector3 EntryPosition { get; }
+            public Vector3 ReadyPosition { get; }
+            public float Duration { get; }
+            public bool IsBoss { get; }
+            public float Elapsed { get; set; }
+            public bool Reached { get; set; }
         }
 
 #if UNITY_EDITOR

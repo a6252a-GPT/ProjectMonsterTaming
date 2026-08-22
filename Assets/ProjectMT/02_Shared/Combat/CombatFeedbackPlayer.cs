@@ -30,8 +30,36 @@ namespace ProjectMT.Shared.Combat
         private readonly HashSet<int> displaySuppressors = new HashSet<int>();
         private bool requestedFloatingNumbers = true;
         private bool requestedUnitHealthBars = true;
+        private float recoilScale = 1f;
+        private float actualKnockbackDistanceMultiplier;
+        private float actualKnockbackMaxDistance;
+        private float actualKnockbackDurationMultiplier = 1f;
+        private float lightPostKnockbackStagger;
+        private float standardPostKnockbackStagger;
+        private float heavyPostKnockbackStagger;
 
         public bool IsDisplaySuppressed => displaySuppressors.Count > 0;
+
+        public void SetRecoilScale(float scale)
+        {
+            recoilScale = Mathf.Clamp01(scale);
+        }
+
+        public void ConfigureActualKnockback(
+            float distanceMultiplier,
+            float maxDistance,
+            float durationMultiplier,
+            float lightStagger = 0f,
+            float standardStagger = 0f,
+            float heavyStagger = 0f)
+        {
+            actualKnockbackDistanceMultiplier = Mathf.Clamp(distanceMultiplier, 0f, 1.5f);
+            actualKnockbackMaxDistance = Mathf.Clamp(maxDistance, 0f, 0.6f);
+            actualKnockbackDurationMultiplier = Mathf.Clamp(durationMultiplier, 0.25f, 1.5f);
+            lightPostKnockbackStagger = Mathf.Clamp(lightStagger, 0f, 0.3f);
+            standardPostKnockbackStagger = Mathf.Clamp(standardStagger, 0f, 0.3f);
+            heavyPostKnockbackStagger = Mathf.Clamp(heavyStagger, 0f, 0.3f);
+        }
 
         private void Awake()
         {
@@ -71,18 +99,45 @@ namespace ProjectMT.Shared.Combat
                 ? target.transform.position - source.transform.position
                 : Vector3.zero;
 
-            target?.ApplyLocalHitStop(preset.TargetHitStop);
+            var visualOnlyTargetReaction = target != null && target.Team == UnitTeam.Player;
+            if (!visualOnlyTargetReaction)
+            {
+                target?.ApplyLocalHitStop(preset.TargetHitStop);
+            }
+
             if (!ranged)
             {
                 source?.ApplyLocalHitStop(preset.AttackerHitStop);
             }
 
+            var actualKnockbackApplied = false;
+            if (!visualOnlyTargetReaction &&
+                actualKnockbackDistanceMultiplier > 0f && actualKnockbackMaxDistance > 0f)
+            {
+                var actualDistance = Mathf.Min(
+                    preset.RecoilDistance * recoilScale * actualKnockbackDistanceMultiplier,
+                    actualKnockbackMaxDistance);
+                actualKnockbackApplied = target != null && target.TryApplyCombatKnockback(
+                    direction,
+                    actualDistance,
+                    preset.RecoilDuration * actualKnockbackDurationMultiplier,
+                    ResolvePostKnockbackStagger(strength));
+            }
+
             target?.VisualFeedback?.PlayImpact(
                 direction,
-                preset.RecoilDistance,
+                actualKnockbackApplied ? 0f : preset.RecoilDistance * recoilScale,
+                preset.RecoilHeight * recoilScale,
                 preset.RecoilDuration,
-                preset.TargetHitStop,
+                visualOnlyTargetReaction ? 0f : preset.TargetHitStop,
                 report.Killed);
+            if (!ranged)
+            {
+                source?.VisualFeedback?.PlayAttackLunge(
+                    direction,
+                    preset.AttackerLungeDistance * recoilScale,
+                    preset.AttackerLungeDuration);
+            }
             floatingNumbers?.ShowDamage(target, report);
             worldHealthBars?.ShowDamage(target);
             sfxPool?.Play(hitSfx, report.Request.HitPoint);
@@ -186,6 +241,16 @@ namespace ProjectMT.Shared.Combat
             var allowed = displaySuppressors.Count == 0;
             floatingNumbers?.SetVisible(allowed && requestedFloatingNumbers);
             worldHealthBars?.SetVisible(allowed && requestedUnitHealthBars);
+        }
+
+        private float ResolvePostKnockbackStagger(MonsterImpactStrength strength)
+        {
+            return strength switch
+            {
+                MonsterImpactStrength.Light => lightPostKnockbackStagger,
+                MonsterImpactStrength.Heavy => heavyPostKnockbackStagger,
+                _ => standardPostKnockbackStagger
+            };
         }
 
         private void PlayImpulse(float strength)

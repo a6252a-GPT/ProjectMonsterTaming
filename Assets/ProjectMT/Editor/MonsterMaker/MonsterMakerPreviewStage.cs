@@ -27,6 +27,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private readonly List<PreviewFloatingNumber> activeFloatingNumbers = new List<PreviewFloatingNumber>();
         private readonly List<PreviewHitVfx> activeHitVfx = new List<PreviewHitVfx>();
         private readonly List<PreviewProjectile> activeProjectiles = new List<PreviewProjectile>();
+        private readonly List<MonsterAttackAreaIndicator> activeHitAreas = new List<MonsterAttackAreaIndicator>();
         private readonly PreviewCombatFeedbackPlayer combatFeedbackPlayer;
         private MonsterMakerDraft draft;
         private AnimationClip currentClip;
@@ -84,6 +85,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public int ActiveHitVfxCount => activeHitVfx.Count;
         public int ActiveMarkerVfxCount => activeVfx.Count;
         public int ActiveProjectileCount => activeProjectiles.Count;
+        public int ActiveHitAreaCount => activeHitAreas.Count;
         public string CombatStatus => combatStatus;
 
         public void SetDraft(MonsterMakerDraft source)
@@ -153,6 +155,35 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public void SetView(float yaw, float pitch, float distanceScale = 1f)
         {
             stage.SetView(yaw, pitch, distanceScale);
+        }
+
+        public bool ShowBasicAttackArea()
+        {
+            if (draft?.BasicAttackProfile == null || stage.PreviewRoot == null || !HasCombatTarget)
+            {
+                combatStatus = "기본공격 Profile 또는 표준 적이 없습니다";
+                return false;
+            }
+
+            for (var index = activeHitAreas.Count - 1; index >= 0; index--)
+            {
+                var indicator = activeHitAreas[index];
+                if (indicator != null)
+                {
+                    stage.RemoveAuxiliary(indicator.gameObject);
+                }
+            }
+            activeHitAreas.Clear();
+
+            ShowPreviewHitArea(draft.BasicAttackProfile, null);
+            var visible = activeHitAreas.Count > 0;
+            if (visible)
+            {
+                combatStatus = $"판정 표시 · [{draft.BasicAttackProfile.AttackId}] " +
+                               $"{draft.BasicAttackProfile.Shape}";
+                lastTickTime = EditorApplication.timeSinceStartup;
+            }
+            return visible;
         }
 
         public void HandleInput(Rect rect, Event current)
@@ -474,18 +505,71 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var feedback = markerDraft.Feedback?.HasAny == true
                 ? markerDraft.Feedback
                 : draft.AttackMarkerFeedback;
-            if (draft.CombatType == MonsterCombatType.Ranged &&
-                draft.RangedDeliveryMode == MonsterRangedDeliveryMode.Projectile)
+            var profile = draft.BasicAttackProfile;
+            if (profile != null)
+            {
+                ShowPreviewHitArea(profile, markerDraft);
+            }
+
+            var usesProjectile = profile != null
+                ? profile.UsesProjectileVisual
+                : draft.CombatType == MonsterCombatType.Ranged &&
+                  draft.RangedDeliveryMode == MonsterRangedDeliveryMode.Projectile;
+            if (usesProjectile)
             {
                 PlaySound(draft.ProjectileLaunchSound);
-                SpawnPreviewProjectile(markerDraft, damage, feedback);
+                SpawnPreviewProjectile(markerDraft, damage, feedback, profile);
                 return;
             }
 
-            if (ApplyPreviewDamage(damage))
+            var hitCount = profile?.HitCount ?? 1;
+            var applied = false;
+            for (var hitIndex = 0; hitIndex < hitCount; hitIndex++)
+            {
+                applied |= ApplyPreviewDamage(damage * (profile?.ResolveDamageRatio(hitIndex) ?? 1f));
+            }
+
+            if (applied)
             {
                 PlayFeedback(feedback, markerDraft.SocketOverride);
             }
+        }
+
+        private void ShowPreviewHitArea(
+            MonsterBasicAttackProfile profile,
+            MonsterMakerMarkerDraft markerDraft)
+        {
+            if (profile == null || stage.PreviewRoot == null || !HasCombatTarget)
+            {
+                return;
+            }
+
+            var socket = ResolvePreviewSocket(markerDraft?.SocketOverride);
+            var origin = socket == null ? stage.PreviewRoot.transform.position : socket.position;
+            var target = ResolveCombatTargetHitPoint();
+            var forward = target - origin;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f)
+            {
+                forward = stage.PreviewRoot.transform.forward;
+            }
+
+            var indicator = MonsterAttackAreaIndicator.Create(
+                null,
+                profile,
+                origin,
+                forward,
+                target,
+                draft.AttackRange,
+                new Color(0.1f, 0.9f, 1f, 0.78f),
+                false);
+            if (indicator == null)
+            {
+                return;
+            }
+
+            stage.AddAuxiliary(indicator.gameObject);
+            activeHitAreas.Add(indicator);
         }
 
         private void PlayFeedback(MonsterMakerFeedbackDraft feedback, string socketPath)
@@ -551,7 +635,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private void SpawnPreviewProjectile(
             MonsterMakerMarkerDraft markerDraft,
             float damage,
-            MonsterMakerFeedbackDraft impactFeedback)
+            MonsterMakerFeedbackDraft impactFeedback,
+            MonsterBasicAttackProfile profile)
         {
             var projectileVisual = draft?.ProjectilePrefab;
             if (projectileVisual == null)
@@ -569,25 +654,47 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var origin = socket == null ? stage.PreviewRoot.transform.position : socket.position;
             var targetPosition = ResolveCombatTargetHitPoint();
             var direction = targetPosition - origin;
-            var rotation = direction.sqrMagnitude < 0.0001f
-                ? Quaternion.identity
-                : Quaternion.LookRotation(direction.normalized, Vector3.up);
-            var instance = UnityEngine.Object.Instantiate(projectileVisual);
-            instance.name = "[Monster Preview Projectile] " + projectileVisual.name;
-            instance.transform.SetPositionAndRotation(origin, rotation);
-            var runtimeActor = instance.GetComponent<MonsterProjectileActor>();
-            if (runtimeActor != null)
+            direction.y = 0f;
+            direction = direction.sqrMagnitude < 0.0001f ? Vector3.forward : direction.normalized;
+            var projectileCount = profile?.ProjectileCount ?? 1;
+            for (var index = 0; index < projectileCount; index++)
             {
-                runtimeActor.enabled = false; // Preview가 Editor delta로 같은 이동을 진행
-            }
+                var spreadRatio = projectileCount <= 1
+                    ? 0f
+                    : index / (float)(projectileCount - 1) - 0.5f;
+                var shotDirection = Quaternion.Euler(
+                    0f,
+                    spreadRatio * (profile?.ProjectileSpreadAngle ?? 0f),
+                    0f) * direction;
+                var rotation = Quaternion.LookRotation(shotDirection, Vector3.up);
+                var instance = UnityEngine.Object.Instantiate(projectileVisual);
+                instance.name = "[Monster Preview Projectile] " + projectileVisual.name;
+                instance.transform.SetPositionAndRotation(origin, rotation);
+                var runtimeActor = instance.GetComponent<MonsterProjectileActor>();
+                if (runtimeActor != null)
+                {
+                    runtimeActor.enabled = false; // Preview가 Editor delta로 같은 이동을 진행
+                }
 
-            stage.AddAuxiliary(instance);
-            activeProjectiles.Add(new PreviewProjectile(
-                instance,
-                damage,
-                Mathf.Max(0.01f, draft.ProjectileSpeed),
-                Mathf.Max(0.01f, draft.ProjectileLifetime),
-                impactFeedback));
+                var basicRuntimeActor = instance.GetComponent<MonsterBasicAttackProjectileActor>();
+                if (basicRuntimeActor != null)
+                {
+                    basicRuntimeActor.enabled = false;
+                }
+
+                stage.AddAuxiliary(instance);
+                activeProjectiles.Add(new PreviewProjectile(
+                    instance,
+                    damage,
+                    Mathf.Max(0.01f, draft.ProjectileSpeed),
+                    Mathf.Max(0.01f, draft.ProjectileLifetime),
+                    impactFeedback,
+                    profile,
+                    origin,
+                    targetPosition,
+                    shotDirection,
+                    index == projectileCount / 2));
+            }
             combatStatus = "투사체 이동 중";
         }
 
@@ -820,8 +927,23 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 }
             }
 
+            for (var index = activeHitAreas.Count - 1; index >= 0; index--)
+            {
+                var indicator = activeHitAreas[index];
+                if (indicator != null && indicator.Tick(deltaTime))
+                {
+                    continue;
+                }
+
+                if (indicator != null)
+                {
+                    stage.RemoveAuxiliary(indicator.gameObject);
+                }
+                activeHitAreas.RemoveAt(index);
+            }
+
             return targetPulseActive || pendingFloatingNumber.Active || activeFloatingNumbers.Count > 0 ||
-                   activeHitVfx.Count > 0 || activeProjectiles.Count > 0;
+                   activeHitVfx.Count > 0 || activeProjectiles.Count > 0 || activeHitAreas.Count > 0;
         }
 
         private static void ApplyPreviewTextOrientation(GameObject instance)
@@ -857,15 +979,67 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     continue;
                 }
 
-                var targetPosition = ResolveCombatTargetHitPoint();
-                projectile.Instance.transform.position = Vector3.MoveTowards(
-                    projectile.Instance.transform.position,
-                    targetPosition,
-                    projectile.Speed * deltaTime);
-                var direction = targetPosition - projectile.Instance.transform.position;
-                if (direction.sqrMagnitude > 0.0001f)
+                var travel = projectile.Profile?.ProjectileTravel ??
+                             MonsterBasicAttackProjectileTravel.Homing;
+                var previous = projectile.Instance.transform.position;
+                if (travel == MonsterBasicAttackProjectileTravel.Homing)
                 {
-                    projectile.Instance.transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+                    projectile.TargetPosition = ResolveCombatTargetHitPoint();
+                    MovePreviewProjectile(projectile, projectile.TargetPosition, deltaTime);
+                    if ((projectile.Instance.transform.position - projectile.TargetPosition).sqrMagnitude <= 0.04f)
+                    {
+                        ApplyPreviewProjectileDamage(projectile, 0, projectile.TargetPosition);
+                        RemovePreviewProjectile(index, projectile);
+                        continue;
+                    }
+                }
+                else if (travel == MonsterBasicAttackProjectileTravel.Returning)
+                {
+                    var destination = projectile.Returning
+                        ? projectile.Origin
+                        : projectile.TargetPosition;
+                    MovePreviewProjectile(projectile, destination, deltaTime);
+                    if (projectile.Returning && !projectile.ReturnDamageApplied &&
+                        Vector3.Distance(projectile.Instance.transform.position, projectile.TargetPosition) >= 0.2f)
+                    {
+                        projectile.ReturnDamageApplied = true;
+                        ApplyPreviewProjectileDamage(projectile, 1, projectile.TargetPosition);
+                    }
+
+                    if ((projectile.Instance.transform.position - destination).sqrMagnitude <= 0.04f)
+                    {
+                        if (!projectile.Returning)
+                        {
+                            ApplyPreviewProjectileDamage(projectile, 0, projectile.TargetPosition);
+                            projectile.Returning = true;
+                        }
+                        else
+                        {
+                            RemovePreviewProjectile(index, projectile);
+                            continue;
+                        }
+                    }
+                }
+                else
+                {
+                    var step = projectile.Speed * deltaTime;
+                    projectile.Instance.transform.position += projectile.Direction * step;
+                    projectile.Instance.transform.rotation = Quaternion.LookRotation(projectile.Direction, Vector3.up);
+                    projectile.Traveled += step;
+                    if (!projectile.DamageApplied && projectile.CanDamage &&
+                        HasPassedPoint(previous, projectile.Instance.transform.position, projectile.TargetPosition))
+                    {
+                        projectile.DamageApplied = true;
+                        ApplyPreviewProjectileDamage(projectile, 0, projectile.TargetPosition);
+                    }
+
+                    var maxDistance = projectile.Profile?.ResolveRange(draft.AttackRange) ??
+                                      Vector3.Distance(projectile.Origin, projectile.TargetPosition);
+                    if (projectile.Traveled >= maxDistance)
+                    {
+                        RemovePreviewProjectile(index, projectile);
+                        continue;
+                    }
                 }
 
                 var particles = projectile.Instance.GetComponentsInChildren<ParticleSystem>(true);
@@ -873,22 +1047,46 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 {
                     particles[particleIndex].Simulate(projectile.Elapsed, true, true);
                 }
-
-                if ((projectile.Instance.transform.position - targetPosition).sqrMagnitude > 0.04f)
-                {
-                    continue;
-                }
-
-                if (ApplyPreviewDamage(projectile.Damage))
-                {
-                    PlayFeedbackAt(
-                        projectile.ImpactFeedback,
-                        targetPosition,
-                        Quaternion.identity);
-                }
-
-                RemovePreviewProjectile(index, projectile);
             }
+        }
+
+        private static void MovePreviewProjectile(
+            PreviewProjectile projectile,
+            Vector3 destination,
+            float deltaTime)
+        {
+            var direction = destination - projectile.Instance.transform.position;
+            if (direction.sqrMagnitude > 0.0001f)
+            {
+                projectile.Instance.transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+            }
+            projectile.Instance.transform.position = Vector3.MoveTowards(
+                projectile.Instance.transform.position,
+                destination,
+                projectile.Speed * deltaTime);
+        }
+
+        private void ApplyPreviewProjectileDamage(
+            PreviewProjectile projectile,
+            int passIndex,
+            Vector3 position)
+        {
+            if (!projectile.CanDamage)
+            {
+                return;
+            }
+
+            var ratio = projectile.Profile?.ResolveDamageRatio(passIndex) ?? 1f;
+            if (ApplyPreviewDamage(projectile.Damage * ratio))
+            {
+                PlayFeedbackAt(projectile.ImpactFeedback, position, Quaternion.identity);
+            }
+        }
+
+        private static bool HasPassedPoint(Vector3 previous, Vector3 current, Vector3 point)
+        {
+            return Vector3.Dot(point - previous, point - current) <= 0f ||
+                   (current - point).sqrMagnitude <= 0.09f;
         }
 
         private void RemovePreviewProjectile(int index, PreviewProjectile projectile)
@@ -1219,6 +1417,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             activeProjectiles.Clear();
+            for (var index = activeHitAreas.Count - 1; index >= 0; index--)
+            {
+                var indicator = activeHitAreas[index];
+                if (indicator != null)
+                {
+                    stage.RemoveAuxiliary(indicator.gameObject);
+                }
+            }
+
+            activeHitAreas.Clear();
         }
 
         private void DestroyCombatTarget()
@@ -1284,13 +1492,23 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 float damage,
                 float speed,
                 float lifetime,
-                MonsterMakerFeedbackDraft impactFeedback)
+                MonsterMakerFeedbackDraft impactFeedback,
+                MonsterBasicAttackProfile profile,
+                Vector3 origin,
+                Vector3 targetPosition,
+                Vector3 direction,
+                bool canDamage)
             {
                 Instance = instance;
                 Damage = damage;
                 Speed = speed;
                 Lifetime = lifetime;
                 ImpactFeedback = impactFeedback;
+                Profile = profile;
+                Origin = origin;
+                TargetPosition = targetPosition;
+                Direction = direction.sqrMagnitude < 0.0001f ? Vector3.forward : direction.normalized;
+                CanDamage = canDamage;
             }
 
             public GameObject Instance { get; }
@@ -1298,7 +1516,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
             public float Speed { get; }
             public float Lifetime { get; }
             public MonsterMakerFeedbackDraft ImpactFeedback { get; }
+            public MonsterBasicAttackProfile Profile { get; }
+            public Vector3 Origin { get; }
+            public Vector3 Direction { get; }
+            public bool CanDamage { get; }
+            public Vector3 TargetPosition { get; set; }
             public float Elapsed { get; set; }
+            public float Traveled { get; set; }
+            public bool Returning { get; set; }
+            public bool DamageApplied { get; set; }
+            public bool ReturnDamageApplied { get; set; }
         }
 
         private struct PendingFloatingNumber

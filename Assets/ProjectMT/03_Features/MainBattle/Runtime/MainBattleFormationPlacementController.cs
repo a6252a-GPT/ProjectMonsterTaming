@@ -12,11 +12,18 @@ namespace ProjectMT.Features.MainBattle
     [DisallowMultipleComponent]
     public sealed class MainBattleFormationPlacementController : MonoBehaviour // 본부대 시작 위치 편집
     {
+        private const float WorldVisualHeight = 0.2f;
+
         private sealed class SlotVisual
         {
             public int SlotIndex;
             public UnitActor Unit;
             public LineRenderer Ring;
+            public RectTransform BuffBadge;
+            public Image BuffBadgeBackground;
+            public TMP_Text BuffLabel;
+            public float BuffBadgeHeight;
+            public MainBattleFormationLine Line;
             public bool PreviewOverride;
             public Vector3 PreviewPosition;
         }
@@ -28,6 +35,8 @@ namespace ProjectMT.Features.MainBattle
         private MainBattleMonsterDragController drag;
         private Camera worldCamera;
         private Collider ground;
+        private Terrain placementTerrain;
+        private Transform formationAnchor;
         private Transform commander;
         private Transform uiRoot;
         private GameObject normalHudRoot;
@@ -65,6 +74,7 @@ namespace ProjectMT.Features.MainBattle
             MainBattleMonsterDragController dragController,
             Camera camera,
             Collider groundCollider,
+            Transform formationAnchorRoot,
             Transform commanderRoot,
             Transform runtimeUiRoot,
             GameObject hudRoot)
@@ -75,14 +85,16 @@ namespace ProjectMT.Features.MainBattle
             drag = dragController ?? throw new ArgumentNullException(nameof(dragController));
             worldCamera = camera ?? throw new ArgumentNullException(nameof(camera));
             ground = groundCollider ?? throw new ArgumentNullException(nameof(groundCollider));
+            placementTerrain = FindPlacementTerrain();
+            formationAnchor = formationAnchorRoot ?? throw new ArgumentNullException(nameof(formationAnchorRoot));
             commander = commanderRoot ?? throw new ArgumentNullException(nameof(commanderRoot));
             uiRoot = runtimeUiRoot ?? throw new ArgumentNullException(nameof(runtimeUiRoot));
             normalHudRoot = hudRoot ?? throw new ArgumentNullException(nameof(hudRoot));
             uiFont = normalHudRoot.GetComponentInChildren<TMP_Text>(true)?.font;
 
             commanderStartPosition = commander.position;
-            var groundCenter = ground.bounds.center;
-            mapCenter = new Vector3(groundCenter.x, commanderStartPosition.y, groundCenter.z);
+            var anchorPosition = formationAnchor.position;
+            mapCenter = new Vector3(anchorPosition.x, commanderStartPosition.y, anchorPosition.z);
             enabled = false;
         }
 
@@ -93,8 +105,8 @@ namespace ProjectMT.Features.MainBattle
                 return false;
             }
 
-            workingOffsets = progress.View.MainBattleFormation.CopyOffsets();
-            if (!MainBattleFormationRules.IsValid(workingOffsets))
+            var savedOffsets = progress.View.MainBattleFormation.CopyOffsets();
+            if (!MainBattleFormationRules.TryCreateSnappedOffsets(savedOffsets, out workingOffsets))
             {
                 workingOffsets = MainBattleFormationRules.CreateDefaultOffsets();
             }
@@ -125,12 +137,13 @@ namespace ProjectMT.Features.MainBattle
 
             IsActive = true;
             saving = false;
-            SetStatus(string.Empty);
+            SetStatus("몬스터를 드래그해 빈 육각 칸에 배치하세요");
             drag.ConfigurePlacement(
                 worldCamera,
                 ground,
                 () => IsActive && !saving,
                 CanSelectUnit,
+                ResolveHexWorldPosition,
                 CanDropUnit,
                 HandleDragPreviewChanged,
                 HandleDragReleased);
@@ -176,6 +189,8 @@ namespace ProjectMT.Features.MainBattle
             drag = null;
             worldCamera = null;
             ground = null;
+            placementTerrain = null;
+            formationAnchor = null;
             commander = null;
             uiRoot = null;
             normalHudRoot = null;
@@ -203,6 +218,7 @@ namespace ProjectMT.Features.MainBattle
             }
 
             UpdateRingPositions();
+            UpdateBuffBadgePositions();
             if (lastScreenWidth != Screen.width || lastScreenHeight != Screen.height || lastSafeArea != Screen.safeArea)
             {
                 RefreshSafeArea();
@@ -224,7 +240,7 @@ namespace ProjectMT.Features.MainBattle
             }
 
             var candidate = WorldToOffset(worldPosition);
-            if (!MainBattleFormationRules.IsInsideArea(candidate))
+            if (!MainBattleFormationRules.IsHexPosition(candidate))
             {
                 return false;
             }
@@ -251,6 +267,13 @@ namespace ProjectMT.Features.MainBattle
             visual.PreviewOverride = true;
             visual.PreviewPosition = worldPosition;
             SetRingColor(visual.Ring, valid ? ValidColor : InvalidColor);
+            if (valid)
+            {
+                UpdateSlotBuffVisual(
+                    visual,
+                    MainBattleFormationRules.SnapToHex(WorldToOffset(worldPosition)),
+                    false);
+            }
         }
 
         private void HandleDragReleased(UnitActor unit, Vector3 worldPosition, bool valid)
@@ -263,11 +286,11 @@ namespace ProjectMT.Features.MainBattle
 
             if (valid)
             {
-                workingOffsets[visual.SlotIndex] = WorldToOffset(worldPosition);
+                workingOffsets[visual.SlotIndex] = MainBattleFormationRules.SnapToHex(WorldToOffset(worldPosition));
             }
 
             visual.PreviewOverride = false;
-            SetRingColor(visual.Ring, NeutralColor);
+            UpdateSlotBuffVisual(visual, workingOffsets[visual.SlotIndex], true);
         }
 
         private void HandleResetClicked()
@@ -285,7 +308,7 @@ namespace ProjectMT.Features.MainBattle
                 {
                     visual.Unit.transform.position = OffsetToWorld(workingOffsets[visual.SlotIndex]);
                     visual.PreviewOverride = false;
-                    SetRingColor(visual.Ring, NeutralColor);
+                    UpdateSlotBuffVisual(visual, workingOffsets[visual.SlotIndex], true);
                 }
             }
 
@@ -295,7 +318,7 @@ namespace ProjectMT.Features.MainBattle
         private async void HandleSaveClicked()
         {
             if (!IsActive || saving || drag == null || drag.IsInteracting ||
-                !MainBattleFormationRules.IsValid(workingOffsets))
+                !MainBattleFormationRules.IsHexFormation(workingOffsets))
             {
                 return;
             }
@@ -341,12 +364,23 @@ namespace ProjectMT.Features.MainBattle
                     continue;
                 }
 
-                slotVisuals.Add(new SlotVisual
+                if (slotIndex >= 0 && slotIndex < workingOffsets.Length)
+                {
+                    var snappedPosition = OffsetToWorld(workingOffsets[slotIndex]);
+                    snappedPosition.y = unit.transform.position.y;
+                    unit.transform.position = snappedPosition;
+                }
+
+                var visual = new SlotVisual
                 {
                     SlotIndex = slotIndex,
                     Unit = unit,
-                    Ring = CreateRing($"PlacementRing_{slotIndex + 1:00}")
-                });
+                    Ring = CreateRing($"PlacementRing_{slotIndex + 1:00}"),
+                    BuffBadgeHeight = ResolveBuffBadgeHeight(unit)
+                };
+                CreateBuffBadge(visual);
+                UpdateSlotBuffVisual(visual, workingOffsets[slotIndex], true);
+                slotVisuals.Add(visual);
             }
         }
 
@@ -374,7 +408,7 @@ namespace ProjectMT.Features.MainBattle
                 hideFlags = HideFlags.DontSave
             };
 
-            var corners = GetAreaWorldCorners(0.025f);
+            var corners = GetAreaWorldCorners(WorldVisualHeight);
             areaMesh = new Mesh
             {
                 name = "Runtime_MainBattlePlacementAreaMesh",
@@ -390,27 +424,48 @@ namespace ProjectMT.Features.MainBattle
             fill.GetComponent<MeshFilter>().sharedMesh = areaMesh;
             fill.GetComponent<MeshRenderer>().sharedMaterial = worldFillMaterial;
 
-            var outline = CreateLineRenderer("PlacementAreaOutline", 0.065f);
+            var outline = CreateLineRenderer("PlacementAreaOutline", 0.08f);
             outline.loop = true;
             outline.positionCount = corners.Length;
             outline.SetPositions(corners);
             SetRingColor(outline, new Color(0.24f, 1f, 0.82f, 0.95f));
+            BuildHexGuide();
+        }
+
+        private void BuildHexGuide()
+        {
+            var offsets = MainBattleFormationRules.CopyHexOffsets();
+            for (var hexIndex = 0; hexIndex < offsets.Length; hexIndex++)
+            {
+                var line = CreateLineRenderer($"PlacementHex_{hexIndex + 1:000}", 0.036f);
+                line.loop = true;
+                line.useWorldSpace = true;
+                line.positionCount = 6;
+                var center = OffsetToWorld(offsets[hexIndex]);
+                for (var corner = 0; corner < 6; corner++)
+                {
+                    var angle = (30f + corner * 60f) * Mathf.Deg2Rad;
+                    var point = center + new Vector3(
+                        Mathf.Cos(angle) * MainBattleFormationRules.HexVisualRadius,
+                        0f,
+                        Mathf.Sin(angle) * MainBattleFormationRules.HexVisualRadius);
+                    line.SetPosition(corner, ProjectToGroundSurface(point, WorldVisualHeight));
+                }
+
+                SetRingColor(line, GetLineColor(MainBattleFormationRules.GetLine(offsets[hexIndex]), 0.54f));
+            }
         }
 
         private LineRenderer CreateRing(string objectName)
         {
             const int segmentCount = 64;
-            var ring = CreateLineRenderer(objectName, 0.045f);
+            var ring = CreateLineRenderer(objectName, 0.065f);
             ring.loop = true;
             ring.positionCount = segmentCount;
-            ring.useWorldSpace = false;
+            ring.useWorldSpace = true;
             for (var index = 0; index < segmentCount; index++)
             {
-                var angle = index * Mathf.PI * 2f / segmentCount;
-                ring.SetPosition(index, new Vector3(
-                    Mathf.Cos(angle) * MainBattleFormationRules.UnitRadius,
-                    0f,
-                    Mathf.Sin(angle) * MainBattleFormationRules.UnitRadius));
+                ring.SetPosition(index, Vector3.zero);
             }
 
             SetRingColor(ring, NeutralColor);
@@ -444,9 +499,128 @@ namespace ProjectMT.Features.MainBattle
                 }
 
                 var position = visual.PreviewOverride ? visual.PreviewPosition : visual.Unit.transform.position;
-                position.y = commanderStartPosition.y + 0.04f;
-                visual.Ring.transform.position = position;
+                for (var segment = 0; segment < visual.Ring.positionCount; segment++)
+                {
+                    var angle = segment * Mathf.PI * 2f / visual.Ring.positionCount;
+                    var point = position + new Vector3(
+                        Mathf.Cos(angle) * MainBattleFormationRules.UnitRadius,
+                        0f,
+                        Mathf.Sin(angle) * MainBattleFormationRules.UnitRadius);
+                    visual.Ring.SetPosition(segment, ProjectToGroundSurface(point, WorldVisualHeight));
+                }
             }
+        }
+
+        private void CreateBuffBadge(SlotVisual visual)
+        {
+            var badgeObject = new GameObject(
+                $"PlacementBuffBadge_{visual.SlotIndex + 1:00}",
+                typeof(RectTransform),
+                typeof(Canvas));
+            badgeObject.transform.SetParent(worldVisualRoot.transform, false);
+            var badgeRect = badgeObject.GetComponent<RectTransform>();
+            badgeRect.sizeDelta = new Vector2(250f, 100f);
+            badgeRect.localScale = Vector3.one * 0.0062f;
+            var canvas = badgeObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.WorldSpace;
+            canvas.worldCamera = worldCamera;
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = 1200 + visual.SlotIndex;
+
+            var background = CreateImage("Background", badgeRect, new Color(0.015f, 0.025f, 0.04f, 0.95f));
+            Stretch(background.rectTransform);
+            var label = CreateText("BuffName", badgeRect, string.Empty, 29f, FontStyles.Bold);
+            Stretch(label.rectTransform, 8f);
+            label.textWrappingMode = TextWrappingModes.Normal;
+            label.lineSpacing = -8f;
+
+            visual.BuffBadge = badgeRect;
+            visual.BuffBadgeBackground = background;
+            visual.BuffLabel = label;
+        }
+
+        private void UpdateBuffBadgePositions()
+        {
+            for (var index = 0; index < slotVisuals.Count; index++)
+            {
+                var visual = slotVisuals[index];
+                if (visual.Unit == null || visual.BuffBadge == null)
+                {
+                    continue;
+                }
+
+                var position = visual.PreviewOverride ? visual.PreviewPosition : visual.Unit.transform.position;
+                visual.BuffBadge.position = position + Vector3.up * visual.BuffBadgeHeight;
+                if (worldCamera != null)
+                {
+                    visual.BuffBadge.rotation = worldCamera.transform.rotation;
+                }
+            }
+        }
+
+        private void UpdateSlotBuffVisual(SlotVisual visual, Vector2 offset, bool updateRing)
+        {
+            if (visual == null)
+            {
+                return;
+            }
+
+            visual.Line = MainBattleFormationRules.GetLine(offset);
+            var color = GetLineColor(visual.Line, 0.96f);
+            if (visual.BuffBadgeBackground != null)
+            {
+                visual.BuffBadgeBackground.color = Color.Lerp(
+                    new Color(0.015f, 0.025f, 0.04f, 0.96f),
+                    color,
+                    0.24f);
+            }
+
+            if (visual.BuffLabel != null)
+            {
+                visual.BuffLabel.text = GetLineBuffLabel(visual.Line);
+            }
+
+            if (updateRing)
+            {
+                SetRingColor(visual.Ring, GetLineColor(visual.Line, 0.88f));
+            }
+        }
+
+        private static float ResolveBuffBadgeHeight(UnitActor unit)
+        {
+            var highestPoint = unit.transform.position.y + 1.25f;
+            var renderers = unit.GetComponentsInChildren<Renderer>(true);
+            for (var index = 0; index < renderers.Length; index++)
+            {
+                if (renderers[index] != null)
+                {
+                    highestPoint = Mathf.Max(highestPoint, renderers[index].bounds.max.y);
+                }
+            }
+
+            return Mathf.Clamp(highestPoint - unit.transform.position.y + 0.58f, 1.6f, 3.2f);
+        }
+
+        private static string GetLineBuffLabel(MainBattleFormationLine line)
+        {
+            return line switch
+            {
+                MainBattleFormationLine.Front => "전열\n방어력 +20%",
+                MainBattleFormationLine.Middle => "중열\n공격력 +20%",
+                _ => "후열\n버프 +20%"
+            };
+        }
+
+        private static Color GetLineColor(MainBattleFormationLine line, float alpha)
+        {
+            var color = line switch
+            {
+                MainBattleFormationLine.Front => FrontLineColor,
+                MainBattleFormationLine.Middle => MiddleLineColor,
+                _ => RearLineColor
+            };
+            color.a = alpha;
+            return color;
         }
 
         private void BuildPlacementUi()
@@ -478,7 +652,7 @@ namespace ProjectMT.Features.MainBattle
 
             var titleBackdrop = CreateImage("TitleBackdrop", safeAreaRoot, new Color(0.03f, 0.08f, 0.10f, 0.88f));
             SetRect(titleBackdrop.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(380f, 82f));
-            var title = CreateText("Title", titleBackdrop.transform, "배치 모드", 38f, FontStyles.Bold);
+            var title = CreateText("Title", titleBackdrop.transform, "육각 배치 모드", 38f, FontStyles.Bold);
             Stretch(title.rectTransform);
 
             statusLabel = CreateText("Status", safeAreaRoot, string.Empty, 23f, FontStyles.Normal);
@@ -535,22 +709,21 @@ namespace ProjectMT.Features.MainBattle
 
         private Vector3[] GetAreaWorldCorners(float yOffset)
         {
-            var bounds = ground.bounds;
-            var minZ = bounds.min.z;
-            var maxZ = bounds.center.z;
-            if (commanderStartPosition.z > bounds.center.z)
-            {
-                minZ = bounds.center.z;
-                maxZ = bounds.max.z;
-            }
-
             var y = commanderStartPosition.y + yOffset;
+            var minX = mapCenter.x + MainBattleFormationRules.AreaCenterX -
+                       MainBattleFormationRules.AreaWidth * 0.5f;
+            var maxX = mapCenter.x + MainBattleFormationRules.AreaCenterX +
+                       MainBattleFormationRules.AreaWidth * 0.5f;
+            var minZ = mapCenter.z + MainBattleFormationRules.AreaCenterZ -
+                       MainBattleFormationRules.AreaDepth * 0.5f;
+            var maxZ = mapCenter.z + MainBattleFormationRules.AreaCenterZ +
+                       MainBattleFormationRules.AreaDepth * 0.5f;
             return new[]
             {
-                new Vector3(bounds.min.x, y, minZ),
-                new Vector3(bounds.min.x, y, maxZ),
-                new Vector3(bounds.max.x, y, maxZ),
-                new Vector3(bounds.max.x, y, minZ)
+                new Vector3(minX, y, minZ),
+                new Vector3(minX, y, maxZ),
+                new Vector3(maxX, y, maxZ),
+                new Vector3(maxX, y, minZ)
             };
         }
 
@@ -565,6 +738,56 @@ namespace ProjectMT.Features.MainBattle
                 mapCenter.x + offset.x,
                 commanderStartPosition.y,
                 mapCenter.z + offset.y);
+        }
+
+        private Vector3 ResolveHexWorldPosition(UnitActor unit, Vector3 worldPosition)
+        {
+            var snapped = OffsetToWorld(MainBattleFormationRules.SnapToHex(WorldToOffset(worldPosition)));
+            snapped.y = unit != null ? unit.transform.position.y : worldPosition.y;
+            return snapped;
+        }
+
+        private Terrain FindPlacementTerrain()
+        {
+            var terrains = FindObjectsByType<Terrain>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            for (var index = 0; index < terrains.Length; index++)
+            {
+                if (terrains[index] != null && terrains[index].gameObject.scene == gameObject.scene)
+                {
+                    return terrains[index];
+                }
+            }
+
+            return null;
+        }
+
+        private Vector3 ProjectToGroundSurface(Vector3 point, float lift)
+        {
+            if (placementTerrain != null && placementTerrain.terrainData != null)
+            {
+                var local = point - placementTerrain.transform.position;
+                var size = placementTerrain.terrainData.size;
+                if (local.x >= 0f && local.x <= size.x && local.z >= 0f && local.z <= size.z)
+                {
+                    point.y = placementTerrain.SampleHeight(point) + placementTerrain.transform.position.y + lift;
+                    return point;
+                }
+            }
+
+            if (ground != null)
+            {
+                var bounds = ground.bounds;
+                var rayHeight = bounds.max.y + 5f;
+                var ray = new Ray(new Vector3(point.x, rayHeight, point.z), Vector3.down);
+                if (ground.Raycast(ray, out var hit, bounds.size.y + 10f))
+                {
+                    point.y = hit.point.y + lift;
+                    return point;
+                }
+            }
+
+            point.y = commanderStartPosition.y + lift;
+            return point;
         }
 
         private SlotVisual FindSlotVisual(UnitActor unit)
@@ -729,6 +952,9 @@ namespace ProjectMT.Features.MainBattle
         private static readonly Color NeutralColor = new Color(0.35f, 0.88f, 1f, 0.78f);
         private static readonly Color ValidColor = new Color(0.25f, 1f, 0.42f, 0.98f);
         private static readonly Color InvalidColor = new Color(1f, 0.22f, 0.18f, 0.98f);
+        private static readonly Color FrontLineColor = new Color(0.22f, 0.64f, 1f, 1f);
+        private static readonly Color MiddleLineColor = new Color(1f, 0.48f, 0.18f, 1f);
+        private static readonly Color RearLineColor = new Color(0.34f, 0.88f, 0.5f, 1f);
 
         private void OnDestroy()
         {

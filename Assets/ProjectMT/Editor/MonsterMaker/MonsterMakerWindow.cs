@@ -3,7 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using ProjectMT.Contents.CastleRaid;
+using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Audio;
+using ProjectMT.Shared.Unit;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,15 +18,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private const float DraftHeaderHeight = 112f;
         private const float OuterMargin = 8f;
         private const float ColumnGap = 8f;
+        private const float ColumnPadding = 10f;
+        private const float ActionDockPadding = 9f;
+        private const float ActionGap = 6f;
         private const float CatalogColumnWidth = 230f;
         private const float CatalogRowHeight = 52f;
         private const float LeftColumnWidth = 430f;
-        private const float RightColumnWidth = 285f;
-        private const float RightColumnContentWidth = 240f;
         private const float PreviewColumnMinWidth = 420f;
         private const float ControlHeight = 26f;
         private const float MinimumWindowWidth = 1180f;
-        private const float MinimumWindowHeight = 680f;
+        private const float MinimumWindowHeight = 760f;
         private static readonly Color AccentColor = new Color(0.38f, 0.66f, 1f, 1f);
         private static readonly string[] EnvironmentLabels = Enumerable.Range(0, PrefabPreviewStage.EnvironmentCount)
             .Select(PrefabPreviewStage.GetEnvironmentLabel)
@@ -36,7 +39,51 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private static readonly string[] RangedHitModeLabels = { "단일", "관통", "범위" };
         private static readonly string[] InstantHitModeLabels = { "단일", "범위" };
         private static readonly string[] TargetTeamLabels = { "아군", "적" };
-        private static readonly string[] AbilityModeLabels = { "패시브", "자동 액티브" };
+        private static readonly string[] SkillCategoryLabels =
+        {
+            "전체",
+            "공격",
+            "방어",
+            "지원",
+            "제어",
+            "기동",
+            "소환"
+        };
+        private static readonly string[] SkillAugmentOperationLabels =
+        {
+            "효과량 증가율",
+            "지속 시간 추가(초)",
+            "내부 쿨다운 감소율",
+            "필요 발동 횟수 감소",
+            "최대 대상 수 증가",
+            "반복 횟수 증가"
+        };
+        private static readonly string[] ImpactStrengthLabels =
+        {
+            "중간 공격 (Standard)",
+            "빠르고 약한 공격 (Light)",
+            "느리고 강한 공격 (Heavy)"
+        };
+        private static readonly string[] ReactionWeightLabels =
+        {
+            "보통 체급 (Standard)",
+            "가벼운 체급 (Light)",
+            "무거운 체급 (Heavy)"
+        };
+        private static readonly string[] MainBattleRoleLabels =
+        {
+            "선봉 (Vanguard)",
+            "수호 (Guardian)",
+            "마무리 (Finisher)",
+            "사수 (Marksman)",
+            "후열 추적 (Backline Hunter)"
+        };
+        private static readonly string[] TargetPriorityLabels =
+        {
+            "가장 가까운 적",
+            "체력이 낮은 적",
+            "원거리 적 우선"
+        };
         private static readonly string[] CastleRaidAiPatternLabels =
         {
             "균형 진격형",
@@ -62,12 +109,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private MonsterMakerWriteResult lastWriteResult;
         private Shared.Unit.MonsterCatalog monsterCatalog;
         private Shared.Unit.MonsterRarityCatalog monsterRarityCatalog;
+        private Shared.Unit.MonsterSkillCatalog monsterSkillCatalog;
         private Shared.Unit.MonsterDefinition[] catalogDefinitions =
             Array.Empty<Shared.Unit.MonsterDefinition>();
         private Shared.Unit.MonsterDefinition selectedCatalogDefinition;
         private Vector2 catalogScroll;
         private Vector2 leftScroll;
-        private Vector2 rightScroll;
+        private Vector2 animationButtonScroll;
+        private Vector2 usageGuideScroll;
         private Vector2 issueScroll;
         private bool ownsTransientDraft;
         private bool initializedPreview;
@@ -75,7 +124,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private string loadedDraftMonsterId = string.Empty;
         private string loadedDraftFingerprint = string.Empty;
         [SerializeField] private bool showMonsterCatalog = true;
-        private bool showUsageGuide = true;
+        [SerializeField] private bool showModelAdvancedSettings;
+        [SerializeField] private int passiveSkillCategoryFilter;
+        [SerializeField] private int activeSkillCategoryFilter;
+        private bool showUsageGuide;
         private double lastRepaintTime;
         private GUIStyle headerTitleStyle;
         private GUIStyle headerMetaStyle;
@@ -84,7 +136,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private GUIStyle columnMetaStyle;
         private GUIStyle sectionTitleStyle;
         private GUIStyle compactButtonStyle;
-        private GUIStyle primaryButtonStyle;
+        private GUIStyle actionButtonStyle;
+        private GUIStyle actionPrimaryButtonStyle;
+        private GUIStyle workspacePanelStyle;
+        private GUIStyle actionDockStyle;
+        private GUIStyle actionStatusStyle;
         private GUIStyle centeredLabelStyle;
         private GUIStyle usageLeadStyle;
         private GUIStyle usageStepTitleStyle;
@@ -153,26 +209,49 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             serializedDraft.UpdateIfRequiredOrScript();
-            var previewColumnWidth = Mathf.Max(
-                PreviewColumnMinWidth,
-                position.width - OuterMargin * 2f - ColumnGap * 2f - LeftColumnWidth - RightColumnWidth -
-                (showMonsterCatalog ? CatalogColumnWidth + ColumnGap : 0f));
-            using (new EditorGUILayout.HorizontalScope(GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true)))
-            {
-                GUILayout.Space(OuterMargin);
-                if (showMonsterCatalog)
-                {
-                    DrawCatalogColumn();
-                    GUILayout.Space(ColumnGap);
-                }
+            var workspaceRect = CalculateWorkspaceRect(position.width, position.height);
+            var previewColumnWidth = CalculateCenterColumnWidth(workspaceRect.width, showMonsterCatalog);
 
-                DrawLeftColumn();
-                GUILayout.Space(ColumnGap);
-                DrawCenterColumn(previewColumnWidth);
-                GUILayout.Space(ColumnGap);
-                DrawRightColumn();
-                GUILayout.Space(OuterMargin);
+            GUILayout.BeginArea(workspaceRect);
+            try
+            {
+                using (new EditorGUILayout.HorizontalScope(GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true)))
+                {
+                    if (showMonsterCatalog)
+                    {
+                        DrawCatalogColumn();
+                        GUILayout.Space(ColumnGap);
+                    }
+
+                    DrawLeftColumn();
+                    GUILayout.Space(ColumnGap);
+                    DrawCenterColumn(previewColumnWidth);
+                }
             }
+            finally
+            {
+                GUILayout.EndArea();
+            }
+        }
+
+        private static Rect CalculateWorkspaceRect(float windowWidth, float windowHeight)
+        {
+            return new Rect(
+                OuterMargin,
+                0f,
+                Mathf.Max(1f, windowWidth - OuterMargin * 2f),
+                Mathf.Max(1f, windowHeight));
+        }
+
+        private static float CalculateCenterColumnWidth(float workspaceWidth, bool catalogVisible)
+        {
+            var occupiedWidth = LeftColumnWidth + ColumnGap;
+            if (catalogVisible)
+            {
+                occupiedWidth += CatalogColumnWidth + ColumnGap;
+            }
+
+            return Mathf.Max(1f, workspaceWidth - occupiedWidth);
         }
 
         private void DrawDraftHeader()
@@ -303,11 +382,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 CatalogRowHeight,
                 GUILayout.ExpandWidth(true),
                 GUILayout.Height(CatalogRowHeight));
-            var background = selected
-                ? new Color(0.16f, 0.27f, 0.41f, 1f)
-                : canEdit
-                    ? new Color(0.13f, 0.145f, 0.17f, 1f)
-                    : new Color(0.11f, 0.115f, 0.125f, 1f);
+            var background = GetCatalogRowBackground(definition, selected, canEdit);
             EditorGUI.DrawRect(rowRect, background);
             if (selected)
             {
@@ -419,14 +494,62 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private string GetRarityLabel(Shared.Unit.MonsterDefinition definition)
         {
-            if (monsterRarityCatalog == null || definition == null ||
-                !monsterRarityCatalog.TryGetRarity(definition.MonsterId, out var rarity))
+            if (!TryGetCatalogRarity(definition, out var rarity))
             {
                 return "등급 미지정";
             }
 
             var index = (int)rarity;
             return index >= 0 && index < RarityLabels.Length ? RarityLabels[index] : rarity.ToString();
+        }
+
+        private Color GetCatalogRowBackground(
+            Shared.Unit.MonsterDefinition definition,
+            bool selected,
+            bool canEdit)
+        {
+            var baseColor = canEdit
+                ? new Color(0.13f, 0.145f, 0.17f, 1f)
+                : new Color(0.11f, 0.115f, 0.125f, 1f);
+            if (!TryGetCatalogRarity(definition, out var rarity))
+            {
+                return selected ? new Color(0.16f, 0.27f, 0.41f, 1f) : baseColor;
+            }
+
+            var rarityColor = GetCatalogRarityColor(rarity);
+            var blend = selected ? 0.58f : 0.38f;
+            if (!canEdit)
+            {
+                blend *= 0.82f;
+            }
+
+            return Color.Lerp(baseColor, rarityColor, blend); // 카드 등급색을 목록 가독성에 맞게 완화
+        }
+
+        private bool TryGetCatalogRarity(
+            Shared.Unit.MonsterDefinition definition,
+            out MonsterRarity rarity)
+        {
+            if (monsterRarityCatalog != null && definition != null &&
+                monsterRarityCatalog.TryGetRarity(definition.MonsterId, out rarity))
+            {
+                return true;
+            }
+
+            rarity = MonsterRarity.Common;
+            return false;
+        }
+
+        private static Color GetCatalogRarityColor(MonsterRarity rarity)
+        {
+            return rarity switch
+            {
+                MonsterRarity.Rare => new Color32(0x31, 0x5E, 0xA2, 0xFF),
+                MonsterRarity.Epic => new Color32(0x84, 0x45, 0xB0, 0xFF),
+                MonsterRarity.Legendary => new Color32(0xCA, 0xB0, 0x46, 0xFF),
+                MonsterRarity.Mythic => new Color32(0x9B, 0x1F, 0x1B, 0xFF),
+                _ => new Color32(0x54, 0x51, 0x4D, 0xFF)
+            };
         }
 
         private void DrawLeftColumn()
@@ -447,8 +570,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     DrawIdentitySection();
                     DrawModelSection();
                     DrawStatsSection();
-                    DrawAnimationSection();
+                    DrawCombatIdentitySection();
+                    DrawMainBattleAiSection();
+                    DrawSkillSection();
                     DrawCombatSection();
+                    DrawAnimationSection();
                     DrawCastleRaidAiSection();
                     DrawAscensionSection();
                     EditorGUILayout.EndScrollView();
@@ -465,52 +591,38 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawCenterColumn(float previewColumnWidth)
         {
-            using (new EditorGUILayout.VerticalScope(
+            using (var centerPanel = new EditorGUILayout.VerticalScope(
                        columnStyle,
                        GUILayout.Width(previewColumnWidth),
                        GUILayout.ExpandWidth(false),
                        GUILayout.ExpandHeight(true)))
             {
-                DrawColumnHeader("Live Preview", "창 너비에 맞춰 확장");
-                GUILayout.Space(4f);
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    GUILayout.Label(preview.CurrentClipName, headerMetaStyle, GUILayout.MinWidth(120f));
-                    GUILayout.FlexibleSpace();
-                    var environment = EditorGUILayout.Popup(
-                        preview.EnvironmentIndex,
-                        EnvironmentLabels,
-                        GUILayout.Width(88f),
-                        GUILayout.Height(ControlHeight));
-                    if (environment != preview.EnvironmentIndex)
-                    {
-                        preview.SetEnvironment(environment);
-                    }
+                DrawPreviewPanel();
+                GUILayout.Space(6f);
+                DrawTimeline();
+                GUILayout.Space(6f);
+                var contentWidth = Mathf.Max(1f, previewColumnWidth - columnStyle.padding.horizontal);
+                DrawBottomActionPanel(contentWidth);
+                DrawPanelOutline(centerPanel.rect);
+            }
+        }
 
-                    if (GUILayout.Button("정면", compactButtonStyle, GUILayout.Width(46f), GUILayout.Height(ControlHeight)))
-                    {
-                        preview.SetView(180f, 8f);
-                    }
-
-                    if (GUILayout.Button("측면", compactButtonStyle, GUILayout.Width(46f), GUILayout.Height(ControlHeight)))
-                    {
-                        preview.SetView(90f, 8f);
-                    }
-
-                    if (GUILayout.Button("사선", compactButtonStyle, GUILayout.Width(46f), GUILayout.Height(ControlHeight)))
-                    {
-                        preview.SetView(145f, 10f);
-                    }
-                }
-
-                GUILayout.Space(4f);
+        private void DrawPreviewPanel()
+        {
+            using (new EditorGUILayout.VerticalScope(
+                       workspacePanelStyle,
+                       GUILayout.ExpandWidth(true),
+                       GUILayout.ExpandHeight(true)))
+            {
+                DrawPreviewToolbar();
+                GUILayout.Space(6f);
                 var previewFrameRect = GUILayoutUtility.GetRect(
                     360f,
                     10000f,
-                    Mathf.Max(300f, position.height - 285f),
-                    Mathf.Max(300f, position.height - 285f),
+                    showUsageGuide ? 140f : 220f,
+                    10000f,
                     GUILayout.ExpandWidth(true),
-                    GUILayout.ExpandHeight(false));
+                    GUILayout.ExpandHeight(true));
                 EditorGUI.DrawRect(previewFrameRect, new Color(0.025f, 0.03f, 0.04f, 1f));
                 var previewRect = new Rect(
                     previewFrameRect.x + 2f,
@@ -526,192 +638,368 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 }
                 else
                 {
-                    GUI.Label(previewRect, "Vendor Prefab을 수동으로 지정하세요.", centeredLabelStyle);
+                    DrawPreviewEmptyState(previewRect);
                 }
 
+                DrawPreviewInputHint(previewRect);
                 preview.HandleInput(previewRect, Event.current);
-                DrawTimeline();
-                DrawValidationIssues();
             }
         }
 
-        private void DrawRightColumn()
+        private static void DrawPanelOutline(Rect rect)
         {
-            using (new EditorGUILayout.VerticalScope(
-                       columnStyle,
-                       GUILayout.Width(RightColumnWidth),
-                       GUILayout.ExpandWidth(false),
-                       GUILayout.ExpandHeight(true)))
+            if (Event.current.type != EventType.Repaint || rect.width <= 1f || rect.height <= 1f)
             {
-                DrawColumnHeader("동작 · 완성", "미리보기 · 검증");
-                GUILayout.Space(4f);
-                rightScroll.x = 0f;
-                rightScroll = EditorGUILayout.BeginScrollView(rightScroll);
-                using (new EditorGUILayout.VerticalScope(GUILayout.Width(RightColumnContentWidth)))
+                return;
+            }
+
+            var color = EditorGUIUtility.isProSkin
+                ? new Color(0.08f, 0.085f, 0.095f, 1f)
+                : new Color(0.42f, 0.42f, 0.42f, 1f);
+            EditorGUI.DrawRect(new Rect(rect.x, rect.y, rect.width, 1f), color);
+            EditorGUI.DrawRect(new Rect(rect.x, rect.yMax - 1f, rect.width, 1f), color);
+            EditorGUI.DrawRect(new Rect(rect.x, rect.y, 1f, rect.height), color);
+            EditorGUI.DrawRect(new Rect(rect.xMax - 1f, rect.y, 1f, rect.height), color);
+        }
+
+        private void DrawPreviewToolbar()
+        {
+            var previewState = draft.VendorPrefab == null
+                ? "모델 미지정"
+                : string.IsNullOrWhiteSpace(preview.CurrentClipName)
+                    ? $"{draft.VendorPrefab.name} · 모션 대기"
+                    : $"{draft.VendorPrefab.name} · {preview.CurrentClipName}";
+            DrawColumnHeader("Live Preview", previewState);
+            GUILayout.Space(4f);
+            var toolbarRect = GUILayoutUtility.GetRect(
+                1f,
+                ControlHeight,
+                GUILayout.ExpandWidth(true),
+                GUILayout.Height(ControlHeight));
+            GUI.Label(
+                new Rect(toolbarRect.x, toolbarRect.y, 54f, toolbarRect.height),
+                "보기 설정",
+                headerMetaStyle);
+
+            const float environmentWidth = 94f;
+            const float viewButtonWidth = 54f;
+            const float gap = 4f;
+            var controlsWidth = environmentWidth + viewButtonWidth * 3f + gap * 3f;
+            var controlX = Mathf.Max(toolbarRect.x + 62f, toolbarRect.xMax - controlsWidth);
+            var environmentRect = new Rect(controlX, toolbarRect.y, environmentWidth, toolbarRect.height);
+            var environment = EditorGUI.Popup(
+                environmentRect,
+                preview.EnvironmentIndex,
+                EnvironmentLabels);
+            if (environment != preview.EnvironmentIndex)
+            {
+                preview.SetEnvironment(environment);
+            }
+
+            controlX = environmentRect.xMax + gap;
+            if (GUI.Button(
+                    new Rect(controlX, toolbarRect.y, viewButtonWidth, toolbarRect.height),
+                    "정면",
+                    compactButtonStyle))
+            {
+                preview.SetView(180f, 8f);
+            }
+
+            controlX += viewButtonWidth + gap;
+            if (GUI.Button(
+                    new Rect(controlX, toolbarRect.y, viewButtonWidth, toolbarRect.height),
+                    "측면",
+                    compactButtonStyle))
+            {
+                preview.SetView(90f, 8f);
+            }
+
+            controlX += viewButtonWidth + gap;
+            if (GUI.Button(
+                    new Rect(controlX, toolbarRect.y, viewButtonWidth, toolbarRect.height),
+                    "사선",
+                    compactButtonStyle))
+            {
+                preview.SetView(145f, 10f);
+            }
+        }
+
+        private void DrawPreviewEmptyState(Rect previewRect)
+        {
+            GUI.Label(
+                previewRect,
+                "3D 모델 프리팹을 지정하세요.\n왼쪽 2. 모델 설정에서 모델과 Animator를 선택하면 Preview가 시작됩니다.",
+                centeredLabelStyle);
+        }
+
+        private void DrawPreviewInputHint(Rect previewRect)
+        {
+            const float width = 190f;
+            const float height = 24f;
+            var rect = new Rect(previewRect.xMax - width - 10f, previewRect.yMax - height - 10f, width, height);
+            EditorGUI.DrawRect(rect, new Color(0.035f, 0.045f, 0.06f, 0.82f));
+            GUI.Label(rect, "우클릭 회전  ·  휠 확대/축소", EditorStyles.centeredGreyMiniLabel);
+        }
+
+        private void DrawBottomActionPanel(float centerContentWidth)
+        {
+            using (new EditorGUILayout.VerticalScope(actionDockStyle, GUILayout.ExpandWidth(true)))
+            {
+                DrawCommandDockHeader();
+
+                GUILayout.Space(7f);
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    DrawSectionHeader("애니메이션 재생");
-                    if (GUILayout.Button("대기 (Idle)", compactButtonStyle, GUILayout.Height(28f)))
-                    {
-                        preview.PlayIdle();
-                    }
-
-                    if (GUILayout.Button("이동 (Move)", compactButtonStyle, GUILayout.Height(28f)))
-                    {
-                        preview.PlayMove();
-                    }
-
-                    GUILayout.Space(3f);
-                    var attackCount = draft.Attacks.Count;
-                    for (var index = 0; index < attackCount; index++)
-                    {
-                        var attack = draft.Attacks[index];
-                        var label = attack?.Clip == null
-                            ? $"공격 {index + 1:00}"
-                            : $"공격 {index + 1:00} · {attack.Clip.name}";
-                        var selectedIndex = index;
-                        if (GUILayout.Button(label, compactButtonStyle, GUILayout.Height(28f)))
-                        {
-                            preview.PlayAttack(selectedIndex);
-                        }
-                    }
-
-                    if (attackCount > 1 &&
-                        GUILayout.Button("무작위 공격 시험", compactButtonStyle, GUILayout.Height(26f)))
-                    {
-                        preview.PlayRandomAttack();
-                    }
-
-                    EditorGUILayout.HelpBox(
-                        "공격 버튼은 중앙의 표준 적에게 실제 피해를 적용합니다. Marker 순간의 피격 펄스·공용 타격 VFX·게임용 데미지 플로팅을 보며 시점을 맞추세요.",
-                        MessageType.Info);
-
-                    if (GUILayout.Button("사망 (Death)", compactButtonStyle, GUILayout.Height(28f)))
-                    {
-                        preview.PlayDeath();
-                    }
-
+                    GUILayout.Label("모션 미리보기", sectionTitleStyle, GUILayout.Width(90f));
                     GUILayout.Space(8f);
-                    DrawSectionHeader("재생 제어");
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        if (GUILayout.Button(preview.IsPlaying ? "정지" : "재생", compactButtonStyle, GUILayout.Height(ControlHeight)))
-                        {
-                            preview.TogglePause();
-                        }
-
-                        if (GUILayout.Button("처음부터", compactButtonStyle, GUILayout.Height(ControlHeight)))
-                        {
-                            preview.Restart();
-                        }
-                    }
-
-                    GUILayout.Space(10f);
-                    DrawSectionHeader("검증 · 신규 편입/수정 반영");
-                    if (GUILayout.Button("검증", compactButtonStyle, GUILayout.Height(32f)))
-                    {
-                        ValidateDraft();
-                    }
-
-                    GUILayout.Space(8f);
-                    var currentReport = validation ?? MonsterMakerValidator.Validate(draft);
-                    using (new EditorGUI.DisabledScope(currentReport.HasErrors))
-                    {
-                        var previousBackground = GUI.backgroundColor;
-                        GUI.backgroundColor = currentReport.HasErrors ? Color.white : new Color(0.48f, 0.7f, 1f, 1f);
-                        var actionLabel = IsEditingExistingMonster()
-                            ? "기존 몬스터 수정 반영"
-                            : "신규 몬스터 생성 및 게임 편입";
-                        if (GUILayout.Button(actionLabel, primaryButtonStyle, GUILayout.Height(42f)))
-                        {
-                            BuildAndRegister();
-                        }
-
-                        GUI.backgroundColor = previousBackground;
-                    }
-
-                    if (currentReport.HasErrors)
-                    {
-                        EditorGUILayout.HelpBox("오류를 해결해야 편입할 수 있습니다.", MessageType.Error);
-                    }
-                    else if (lastWriteResult != null)
-                    {
-                        var mode = lastWriteResult.UpdatedExisting ? "GUID 유지 갱신" : "신규 생성";
-                        EditorGUILayout.HelpBox($"{mode} 완료\n{lastWriteResult.Definition.MonsterId}", MessageType.Info);
-                    }
-
-                    DrawUsageGuide();
+                    GUILayout.Label("모션·Marker 피해·피격 연출을 함께 확인", headerMetaStyle);
                 }
+
+                GUILayout.Space(3f);
+                var actionContentWidth = Mathf.Max(
+                    1f,
+                    centerContentWidth - actionDockStyle.padding.horizontal);
+                DrawMotionPlaybackRow(actionContentWidth);
+                GUILayout.Space(7f);
+
+                var separatorRect = GUILayoutUtility.GetRect(1f, 1f, GUILayout.ExpandWidth(true));
+                EditorGUI.DrawRect(separatorRect, new Color(0.2f, 0.24f, 0.3f, 1f));
+                GUILayout.Space(7f);
+
+                var currentReport = validation ?? MonsterMakerValidator.Validate(draft);
+                DrawCommandActionRow(currentReport);
+
+                DrawValidationIssues();
+                DrawUsageGuide();
+            }
+        }
+
+        private void DrawCommandDockHeader()
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Label("미리보기 · 반영", columnTitleStyle);
+                GUILayout.Space(8f);
+                GUILayout.Label("모션 확인 → 입력 검증 → 게임 반영", columnMetaStyle);
+                GUILayout.FlexibleSpace();
+                var guideButtonLabel = showUsageGuide ? "도움말 닫기 ▲" : "도움말 ▼";
+                if (GUILayout.Button(guideButtonLabel, compactButtonStyle, GUILayout.Width(106f), GUILayout.Height(26f)))
+                {
+                    showUsageGuide = !showUsageGuide;
+                }
+            }
+        }
+
+        private string BuildCommandStatus(MonsterMakerValidationReport currentReport)
+        {
+            if (currentReport.HasErrors)
+            {
+                var errorCount = currentReport.Issues.Count(issue =>
+                    issue.Severity == MonsterMakerIssueSeverity.Error);
+                return $"입력 오류 {errorCount}개 · 왼쪽 항목을 수정하세요";
+            }
+
+            if (lastWriteResult != null)
+            {
+                var mode = lastWriteResult.UpdatedExisting ? "GUID 유지 갱신 완료" : "신규 생성 완료";
+                return $"{mode} · {lastWriteResult.Definition.MonsterId}";
+            }
+
+            return "입력 검증 후 게임에 반영합니다";
+        }
+
+        private void DrawMotionPlaybackRow(float availableWidth)
+        {
+            var attackCount = draft.Attacks.Count;
+            var buttonCount = 3 + attackCount + (attackCount > 1 ? 1 : 0);
+            const float minimumButtonWidth = 132f;
+            var fittedWidth = (availableWidth - ActionGap * (buttonCount - 1)) / Mathf.Max(1, buttonCount);
+            var needsScroll = fittedWidth < minimumButtonWidth;
+            var buttonWidth = needsScroll ? minimumButtonWidth : fittedWidth;
+
+            if (needsScroll)
+            {
+                animationButtonScroll.y = 0f;
+                animationButtonScroll = EditorGUILayout.BeginScrollView(
+                    animationButtonScroll,
+                    true,
+                    false,
+                    GUILayout.Height(56f));
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                DrawLargeActionButton("대기 모션", Color.white, buttonWidth, preview.PlayIdle);
+                GUILayout.Space(ActionGap);
+                DrawLargeActionButton("이동 모션", Color.white, buttonWidth, preview.PlayMove);
+                for (var index = 0; index < attackCount; index++)
+                {
+                    GUILayout.Space(ActionGap);
+                    var selectedIndex = index;
+                    DrawLargeActionButton(
+                        $"공격 {index + 1:00} 재생",
+                        new Color(0.72f, 0.84f, 1f, 1f),
+                        buttonWidth,
+                        () => preview.PlayAttack(selectedIndex));
+                }
+
+                if (attackCount > 1)
+                {
+                    GUILayout.Space(ActionGap);
+                    DrawLargeActionButton(
+                        "무작위 공격",
+                        new Color(0.78f, 0.86f, 1f, 1f),
+                        buttonWidth,
+                        preview.PlayRandomAttack);
+                }
+
+                GUILayout.Space(ActionGap);
+                DrawLargeActionButton("사망 모션", new Color(0.94f, 0.84f, 0.84f, 1f), buttonWidth, preview.PlayDeath);
+            }
+
+            if (needsScroll)
+            {
                 EditorGUILayout.EndScrollView();
             }
         }
 
-        private void DrawUsageGuide()
+        private void DrawCommandActionRow(MonsterMakerValidationReport currentReport)
         {
-            GUILayout.Space(12f);
-            DrawSectionHeader("처음 사용하는 제작자용 사용법");
-            GUILayout.Label("왼쪽 입력  →  중앙 확인  →  검증  →  게임 편입", usageLeadStyle);
-            GUILayout.Space(4f);
+            var rowRect = GUILayoutUtility.GetRect(
+                1f,
+                42f,
+                GUILayout.ExpandWidth(true),
+                GUILayout.Height(42f));
+            const float sectionGap = 10f;
+            const float publishGap = 8f;
+            var totalGap = ActionGap + sectionGap * 2f + publishGap;
+            var availableWidth = Mathf.Max(1f, rowRect.width - totalGap);
 
-            var guideButtonLabel = showUsageGuide ? "상세 사용법 접기  ▲" : "상세 사용법 펼치기  ▼";
-            if (GUILayout.Button(guideButtonLabel, compactButtonStyle, GUILayout.Height(30f)))
+            const float pauseWeight = 1.1f;
+            const float restartWeight = 1.2f;
+            const float statusWeight = 2f;
+            const float validateWeight = 1.5f;
+            const float publishWeight = 2.7f;
+            const float totalWeight = pauseWeight + restartWeight + statusWeight + validateWeight + publishWeight;
+
+            var x = rowRect.x;
+            var pauseWidth = availableWidth * pauseWeight / totalWeight;
+            var restartWidth = availableWidth * restartWeight / totalWeight;
+            var statusWidth = availableWidth * statusWeight / totalWeight;
+            var validateWidth = availableWidth * validateWeight / totalWeight;
+            var publishWidth = availableWidth - pauseWidth - restartWidth - statusWidth - validateWidth;
+
+            DrawRectActionButton(
+                new Rect(x, rowRect.y, pauseWidth, rowRect.height),
+                preview.IsPlaying ? "일시정지" : "계속 재생",
+                Color.white,
+                actionButtonStyle,
+                preview.TogglePause);
+            x += pauseWidth + ActionGap;
+            DrawRectActionButton(
+                new Rect(x, rowRect.y, restartWidth, rowRect.height),
+                "처음부터 다시",
+                Color.white,
+                actionButtonStyle,
+                preview.Restart);
+            x += restartWidth + sectionGap;
+
+            GUI.Label(
+                new Rect(x, rowRect.y, statusWidth, rowRect.height),
+                BuildCommandStatus(currentReport),
+                actionStatusStyle);
+            x += statusWidth + sectionGap;
+
+            DrawRectActionButton(
+                new Rect(x, rowRect.y, validateWidth, rowRect.height),
+                "1. 입력 검증",
+                new Color(1f, 0.88f, 0.62f, 1f),
+                actionButtonStyle,
+                ValidateDraft);
+            x += validateWidth + publishGap;
+
+            using (new EditorGUI.DisabledScope(currentReport.HasErrors))
             {
-                showUsageGuide = !showUsageGuide;
+                var actionLabel = IsEditingExistingMonster()
+                    ? "2. 수정 내용 게임 반영"
+                    : "2. 신규 몬스터 게임 편입";
+                DrawRectActionButton(
+                    new Rect(x, rowRect.y, publishWidth, rowRect.height),
+                    actionLabel,
+                    currentReport.HasErrors ? Color.white : new Color(0.68f, 0.82f, 1f, 1f),
+                    actionPrimaryButtonStyle,
+                    BuildAndRegister);
+            }
+        }
+
+        private void DrawLargeActionButton(string label, Color tint, float width, Action action)
+        {
+            var previousBackground = GUI.backgroundColor;
+            GUI.backgroundColor = tint;
+            if (GUILayout.Button(label, actionButtonStyle, GUILayout.Width(width), GUILayout.Height(40f)))
+            {
+                action();
             }
 
+            GUI.backgroundColor = previousBackground;
+        }
+
+        private static void DrawRectActionButton(
+            Rect rect,
+            string label,
+            Color tint,
+            GUIStyle style,
+            Action action)
+        {
+            var previousBackground = GUI.backgroundColor;
+            GUI.backgroundColor = tint;
+            if (GUI.Button(rect, label, style))
+            {
+                action();
+            }
+
+            GUI.backgroundColor = previousBackground;
+        }
+
+        private void DrawUsageGuide()
+        {
             if (!showUsageGuide)
             {
                 return;
             }
 
+            GUILayout.Space(8f);
+            GUILayout.Label("왼쪽 입력  →  중앙 확인  →  오류 검증  →  게임 반영", usageLeadStyle);
             GUILayout.Space(5f);
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            usageGuideScroll.x = 0f;
+            usageGuideScroll = EditorGUILayout.BeginScrollView(usageGuideScroll, GUILayout.Height(184f));
+            using (new EditorGUILayout.HorizontalScope())
             {
-                DrawUsageStep(
-                    "1",
-                    "Draft를 준비합니다",
-                    "새 Monster는 상단의 [새 Draft], 기존 Monster 수정은 [기존 항목 열기]로 시작합니다. 작업 중에는 [Draft 저장]으로 입력값을 먼저 보관하세요.");
-                DrawUsageStep(
-                    "2",
-                    "이름과 모델을 넣습니다",
-                    "왼쪽 1~2번에서 ID·표시 이름·등급·카드 초상화를 입력합니다. ID에는 영문·숫자·밑줄(_)·하이픈(-)만 씁니다. 프로젝트에 저장된 원본 프리팹과 그 프리팹 안에서 실제 몸을 움직이는 애니메이터를 제작자가 직접 지정합니다.");
-                DrawUsageStep(
-                    "3",
-                    "크기·능력치·공격 방식을 정합니다",
-                    "모델 크기·위치·바닥·정면·공격 기준점·피격 기준점을 중앙 화면으로 확인하며 맞춥니다. 체력·공격·방어·공속·이속·사거리를 입력합니다. 원거리는 투사체 또는 즉발 마법을 고른 뒤 화면에 나타난 세부 값만 채웁니다. 즉발 마법은 현재 단일·범위만 사용합니다.");
-                DrawUsageStep(
-                    "4",
-                    "전용 Animation을 직접 지정합니다",
-                    "대기·이동·공격 1개 이상·사망에 해당 몬스터 팩의 전용 애니메이션 클립을 넣습니다. 이 도구는 클립을 검색하거나 역할을 자동 배치하지 않으며 In Place도 자동 추천하지 않습니다. 대기·이동은 반복, 공격·사망은 비반복이 맞는지 눈으로 확인하세요.");
-                DrawUsageStep(
-                    "5",
-                    "실제 타격·발사 Marker를 맞춥니다",
-                    "근거리·즉발은 손·발·입·마법이 맞는 순간, 투사체는 실제로 발사되는 순간을 0~1 값으로 직접 입력합니다. 공격 ID는 도구가 내부에서 자동 관리합니다. 투사체는 Marker에서 출발하고 실제 도착 뒤에 피해·명중 사운드·VFX·데미지 플로팅이 나옵니다. 시점이 여러 개면 피해 비율 합계가 1이 되게 맞춥니다.");
-                DrawUsageStep(
-                    "6",
-                    "필요한 선택 사운드·VFX를 연결합니다",
-                    "돌파가 기획되지 않은 Monster는 [돌파 옵션 사용]을 끈 채 비워 둡니다. 공격 동작 사운드는 애니메이션 시작, 투사체 발사 사운드는 Marker 발사, 타격·명중 사운드는 실제 피해 순간에 재생됩니다. 투사체 VFX가 있으면 넣고 없으면 비워 두면 공용 임시 구슬이 나옵니다. 제작자는 AudioClip만 넣으면 되고 SFX Cue는 편입 때 자동 생성됩니다.");
-                DrawUsageStep(
-                    "7",
-                    "오른쪽 버튼으로 모두 확인합니다",
-                    "대기·이동·각 공격·무작위 공격·사망을 차례로 누릅니다. 공격 시작, 투사체 발사, 실제 명중 사운드가 각각 맞는 순간에 들리는지 구분합니다. 투사체는 표준 적에게 도착하기 전 피해 숫자가 나오면 안 됩니다. 중앙에서는 우클릭 회전, 휠 확대, 환경·정면·측면·사선, 재생 위치와 [재생/정지]·[처음부터]를 사용합니다.");
-                DrawUsageStep(
-                    "8",
-                    "검증 결과를 읽고 고칩니다",
-                    "[검증]은 Asset과 Catalog를 바꾸지 않습니다. Error가 있으면 아래 결과를 읽고 왼쪽 입력을 고쳐야 하며 편입 버튼도 비활성입니다. 사운드와 VFX는 선택 항목이므로 비어 있어도 Warning이 아닙니다.");
-                DrawUsageStep(
-                    "9",
-                    "게임에 편입하고 실제 전투를 봅니다",
-                    "오류가 0이면 [몬스터 생성 및 게임 편입]을 누릅니다. 지정한 AudioClip은 공격 시작·발사·명중 등 역할별 SFX Cue로 자동 생성·갱신되고, 같은 ID는 기존 에셋 GUID를 유지합니다. 완료 뒤에는 반드시 00_Entry → 01_MainBattle에서 이동·발사체·각 사운드·피해·사망을 다시 확인하세요.");
-
-                GUILayout.Label(
-                    "중요: 카드 초상화와 3D 모델은 서로 다른 자산입니다. Vendor 원본은 수정하지 않으며, Maker Preview 통과가 실제 전투 검증 완료를 뜻하지 않습니다.",
-                    usageCautionStyle);
-                GUILayout.Space(6f);
-                if (GUILayout.Button("동작 버튼 맨 위로", compactButtonStyle, GUILayout.Height(28f)))
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox, GUILayout.MinWidth(220f), GUILayout.ExpandWidth(true)))
                 {
-                    rightScroll.y = 0f;
+                    DrawUsageStep("1", "Draft를 준비합니다", "새 Monster는 [새 Draft], 기존 Monster는 [기존 항목 열기]로 시작하고 작업 중 입력은 [Draft 저장]으로 보관합니다.");
+                    DrawUsageStep("2", "이름과 모델을 넣습니다", "ID·표시 이름·등급·초상화와 프로젝트의 원본 프리팹·실제 Animator를 직접 지정합니다.");
+                    DrawUsageStep("3", "전투 기본값을 정합니다", "상세 모델 보정, 능력치, 공격 무게·피격 체급, MainBattle 역할 AI와 공격 방식을 확인합니다.");
+                }
+
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox, GUILayout.MinWidth(220f), GUILayout.ExpandWidth(true)))
+                {
+                    DrawUsageStep("4", "전용 Animation을 지정합니다", "대기·이동·공격·사망 Clip을 직접 넣고 Loop와 In Place 적합성을 눈으로 확인합니다.");
+                    DrawUsageStep("5", "타격·발사 Marker를 맞춥니다", "근거리·즉발의 접촉 순간과 투사체 발사 순간을 0~1 값으로 지정합니다.");
+                    DrawUsageStep("6", "선택 사운드·VFX를 연결합니다", "필요한 항목만 연결합니다. 공란은 정상이며 AudioClip은 편입 때 역할별 Cue로 생성됩니다.");
+                }
+
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox, GUILayout.MinWidth(220f), GUILayout.ExpandWidth(true)))
+                {
+                    DrawUsageStep("7", "아래 작업대에서 확인합니다", "대기·이동·공격·사망과 재생 제어를 사용해 Preview 타이밍과 실제 표준 적 피해를 봅니다.");
+                    DrawUsageStep("8", "검증 결과를 고칩니다", "검증은 Asset을 바꾸지 않습니다. Error가 있으면 왼쪽 입력을 고쳐야 편입할 수 있습니다.");
+                    DrawUsageStep("9", "편입 뒤 실제 전투를 봅니다", "GUID 유지 반영 뒤 00_Entry → 01_MainBattle에서 이동·공격·피해·사망을 다시 확인합니다.");
                 }
             }
+            EditorGUILayout.EndScrollView();
+            GUILayout.Label(
+                "카드 초상화와 3D 모델은 다른 자산입니다. Vendor 원본은 수정하지 않으며 Maker Preview 통과가 실제 전투 검증 완료를 뜻하지 않습니다.",
+                usageCautionStyle);
         }
 
         private void DrawUsageStep(string number, string title, string body)
@@ -723,19 +1011,30 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawTimeline()
         {
-            using (new EditorGUILayout.HorizontalScope())
+            using (new EditorGUILayout.VerticalScope(workspacePanelStyle))
             {
-                GUILayout.Label("재생 위치", headerMetaStyle, GUILayout.Width(64f));
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Label("재생 위치", sectionTitleStyle, GUILayout.Width(64f));
+                    var clipLabel = string.IsNullOrWhiteSpace(preview.CurrentClipName)
+                        ? "모션 미선택"
+                        : preview.CurrentClipName;
+                    GUILayout.Label(clipLabel, headerMetaStyle);
+                    GUILayout.FlexibleSpace();
+                    GUILayout.Label(preview.NormalizedTime.ToString("0.000"), headerMetaStyle, GUILayout.Width(42f));
+                }
+
                 EditorGUI.BeginChangeCheck();
                 var normalized = EditorGUILayout.Slider(preview.NormalizedTime, 0f, 1f);
                 if (EditorGUI.EndChangeCheck())
                 {
                     preview.Scrub(normalized);
                 }
-            }
 
-            EditorGUILayout.LabelField("0 ─────────────── 타격 Marker ─────────────── 1", EditorStyles.centeredGreyMiniLabel);
-            EditorGUILayout.LabelField("공격 버튼 = 실제 적 피해·플로팅·피격 피드백 · Marker는 수동 지정", EditorStyles.centeredGreyMiniLabel);
+                GUILayout.Label(
+                    "0                         타격 Marker · 왼쪽 Animation에서 수동 지정                         1",
+                    EditorStyles.centeredGreyMiniLabel);
+            }
         }
 
         private void DrawCombatPreviewOverlay(Rect previewRect)
@@ -771,28 +1070,39 @@ namespace ProjectMT.EditorTools.MonsterMaker
         {
             if (validation == null)
             {
-                EditorGUILayout.HelpBox("검증 버튼은 Asset을 만들거나 Catalog를 바꾸지 않습니다.", MessageType.None);
                 return;
             }
 
             var errors = validation.Issues.Count(issue => issue.Severity == MonsterMakerIssueSeverity.Error);
             var warnings = validation.Issues.Count - errors;
-            var type = errors > 0 ? MessageType.Error : warnings > 0 ? MessageType.Warning : MessageType.Info;
-            EditorGUILayout.HelpBox($"검증 결과: 오류 {errors} / 경고 {warnings}", type);
-            issueScroll = EditorGUILayout.BeginScrollView(issueScroll, GUILayout.Height(88f));
-            if (validation.Issues.Count == 0)
+            GUILayout.Space(8f);
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                GUILayout.Label("필수 검증을 통과했습니다.");
-            }
-            else
-            {
-                foreach (var issue in validation.Issues)
+                var resultColor = errors > 0
+                    ? new Color(1f, 0.48f, 0.42f, 1f)
+                    : warnings > 0
+                        ? new Color(1f, 0.76f, 0.34f, 1f)
+                        : new Color(0.42f, 0.82f, 0.62f, 1f);
+                var previousColor = GUI.contentColor;
+                GUI.contentColor = resultColor;
+                GUILayout.Label($"검증 결과  ·  오류 {errors}  /  경고 {warnings}", sectionTitleStyle);
+                GUI.contentColor = previousColor;
+
+                if (validation.Issues.Count == 0)
                 {
-                    GUILayout.Label($"[{issue.Severity}] {issue.Code} · {issue.Message}", EditorStyles.wordWrappedMiniLabel);
+                    GUILayout.Label("필수 검증을 통과했습니다. 게임 반영 버튼을 사용할 수 있습니다.", EditorStyles.wordWrappedMiniLabel);
+                }
+                else
+                {
+                    issueScroll = EditorGUILayout.BeginScrollView(issueScroll, GUILayout.Height(72f));
+                    foreach (var issue in validation.Issues)
+                    {
+                        GUILayout.Label($"[{issue.Severity}] {issue.Code} · {issue.Message}", EditorStyles.wordWrappedMiniLabel);
+                    }
+
+                    EditorGUILayout.EndScrollView();
                 }
             }
-
-            EditorGUILayout.EndScrollView();
         }
 
         private void DrawIdentitySection()
@@ -814,17 +1124,178 @@ namespace ProjectMT.EditorTools.MonsterMaker
             DrawProperty("productionMemo", "제작 메모");
         }
 
+        private void DrawSkillSection()
+        {
+            DrawSectionHeader("6. 범용 스킬");
+            var rarity = (MonsterRarity)serializedDraft.FindProperty("rarity").enumValueIndex;
+            var configured = serializedDraft.FindProperty("skillLoadoutConfigured");
+            EditorGUILayout.PropertyField(configured, new GUIContent("범용 스킬 구성 사용"));
+            if (!configured.boolValue)
+            {
+                EditorGUILayout.HelpBox(
+                    "기존 운영 Monster 호환 모드입니다. 스킬을 배정하려면 이 옵션을 켜세요.",
+                    MessageType.None);
+                return;
+            }
+
+            if (monsterSkillCatalog == null)
+            {
+                EditorGUILayout.HelpBox(
+                    "MonsterSkillCatalog을 찾을 수 없습니다. JC Tool/Monster/Rebuild Generic Skill Presets를 실행하세요.",
+                    MessageType.Error);
+                return;
+            }
+
+            var passiveProperty = serializedDraft.FindProperty("rarityPassiveSkill");
+            var passiveOptions = FilterSkillCategory(
+                monsterSkillCatalog.PassiveSkills.Cast<MonsterSkillDefinitionBase>(),
+                ref passiveSkillCategoryFilter,
+                "패시브 분류");
+            DrawSkillPopup(
+                passiveProperty,
+                "범용 패시브",
+                passiveOptions);
+
+            var activeProperty = serializedDraft.FindProperty("rarityActiveSkill");
+            if (rarity < MonsterRarity.Epic)
+            {
+                if (activeProperty.objectReferenceValue != null)
+                {
+                    EditorGUILayout.HelpBox("일반·희귀 등급은 액티브를 연결할 수 없습니다.", MessageType.Error);
+                    DrawSkillPopup(activeProperty, "제거할 액티브", Array.Empty<MonsterSkillDefinitionBase>());
+                }
+                else
+                {
+                    GUILayout.Label("일반·희귀 등급은 패시브 1개만 사용합니다.", EditorStyles.wordWrappedMiniLabel);
+                }
+
+                return;
+            }
+
+            var allowedActiveOptions = monsterSkillCatalog.ActiveSkills
+                .Where(skill => skill != null &&
+                                (rarity == MonsterRarity.Mythic ||
+                                 skill.ExecutionKind == MonsterActiveExecutionKind.Generic))
+                .Cast<MonsterSkillDefinitionBase>()
+                .ToArray();
+            var activeOptions = FilterSkillCategory(
+                allowedActiveOptions,
+                ref activeSkillCategoryFilter,
+                "액티브 분류");
+            DrawSkillPopup(activeProperty, rarity == MonsterRarity.Mythic ? "액티브" : "범용 액티브", activeOptions);
+            GUILayout.Label(
+                rarity == MonsterRarity.Mythic
+                    ? "신화는 범용 액티브와 신화 전용 액티브를 모두 선택할 수 있습니다."
+                    : "영웅·전설은 공용 Recipe로 만든 범용 액티브만 선택할 수 있습니다.",
+                EditorStyles.wordWrappedMiniLabel);
+        }
+
+        private static MonsterSkillDefinitionBase[] FilterSkillCategory(
+            System.Collections.Generic.IEnumerable<MonsterSkillDefinitionBase> source,
+            ref int filter,
+            string label)
+        {
+            filter = Mathf.Clamp(filter, 0, SkillCategoryLabels.Length - 1);
+            filter = EditorGUILayout.Popup(label, filter, SkillCategoryLabels);
+            var skills = (source ?? Enumerable.Empty<MonsterSkillDefinitionBase>())
+                .Where(skill => skill != null && skill.AuthoringEnabled);
+            if (filter > 0)
+            {
+                var category = (MonsterSkillCategory)(filter - 1);
+                skills = skills.Where(skill => skill.Category == category);
+            }
+
+            var result = skills
+                .OrderBy(skill => skill.Category)
+                .ThenBy(skill => skill.DisplayName, StringComparer.CurrentCulture)
+                .ToArray();
+            GUILayout.Label($"표시 중 {result.Length}개", EditorStyles.miniLabel);
+            return result;
+        }
+
+        private static void DrawSkillPopup(
+            SerializedProperty property,
+            string label,
+            MonsterSkillDefinitionBase[] catalogOptions)
+        {
+            var current = property.objectReferenceValue as MonsterSkillDefinitionBase;
+            var options = new MonsterSkillDefinitionBase[] { null }
+                .Concat(catalogOptions ?? Array.Empty<MonsterSkillDefinitionBase>())
+                .Distinct()
+                .ToList();
+            if (current != null && !options.Contains(current))
+            {
+                options.Add(current);
+            }
+
+            var labels = options
+                .Select(skill => skill == null
+                    ? "<미설정>"
+                    : $"[{SkillCategoryLabels[(int)skill.Category + 1]}] {skill.DisplayName}  [{skill.SkillId}]" +
+                      (!skill.AuthoringEnabled ? " · 비활성" : string.Empty) +
+                      (skill is MonsterActiveSkill active &&
+                       active.ExecutionKind == MonsterActiveExecutionKind.DedicatedMythic
+                          ? " · 신화 전용"
+                          : string.Empty))
+                .ToArray();
+            var currentIndex = Mathf.Max(0, options.IndexOf(current));
+            var selectedIndex = EditorGUILayout.Popup(label, currentIndex, labels);
+            property.objectReferenceValue = options[Mathf.Clamp(selectedIndex, 0, options.Count - 1)];
+
+            var selected = property.objectReferenceValue as MonsterSkillDefinitionBase;
+            if (selected == null)
+            {
+                return;
+            }
+
+            if (!selected.AuthoringEnabled)
+            {
+                EditorGUILayout.HelpBox(
+                    "현재 P0 고도화 대상이 아닌 비활성 스킬입니다. 다른 스킬로 바꾸거나 제거해야 저장할 수 있습니다.",
+                    MessageType.Warning);
+            }
+
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                if (!string.IsNullOrWhiteSpace(selected.Description))
+                {
+                    GUILayout.Label(selected.Description, EditorStyles.wordWrappedMiniLabel);
+                }
+
+                GUILayout.Label(selected.RecipeSummary, EditorStyles.wordWrappedMiniLabel);
+            }
+        }
+
         private void DrawModelSection()
         {
             DrawSectionHeader("2. 모델 설정");
             DrawProperty("vendorPrefab", "3D 모델 프리팹");
             DrawProperty("animatorSource", "모델 애니메이터");
-            DrawProperty("visualScale", "모델 크기");
-            DrawProperty("visualLocalPosition", "모델 위치");
-            DrawProperty("groundOffset", "바닥 높이 보정");
-            DrawProperty("facingYawOffset", "정면 회전 보정");
-            DrawProperty("attackOriginLocalPosition", "공격 기준점 위치");
-            DrawProperty("hitCenterLocalPosition", "피격 기준점 위치");
+
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                showModelAdvancedSettings = EditorGUILayout.Foldout(
+                    showModelAdvancedSettings,
+                    "모델 상세 보정 (필요할 때만)",
+                    true);
+                if (showModelAdvancedSettings)
+                {
+                    EditorGUI.indentLevel++;
+                    DrawProperty("visualScale", "모델 크기");
+                    DrawProperty("visualLocalPosition", "모델 위치");
+                    DrawProperty("groundOffset", "바닥 높이 보정");
+                    DrawProperty("facingYawOffset", "정면 회전 보정");
+                    DrawProperty("attackOriginLocalPosition", "공격 기준점 위치");
+                    DrawProperty("hitCenterLocalPosition", "피격 기준점 위치");
+                    EditorGUI.indentLevel--;
+                }
+                else
+                {
+                    GUILayout.Label(
+                        "크기·위치·바닥·정면·공격/피격 기준점",
+                        EditorStyles.wordWrappedMiniLabel);
+                }
+            }
         }
 
         private void DrawStatsSection()
@@ -840,7 +1311,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawAnimationSection()
         {
-            DrawSectionHeader("4. 애니메이션 지정");
+            DrawSectionHeader("8. 애니메이션 · 타격 Marker");
             DrawProperty("idleClip", "대기 애니메이션");
             DrawProperty("moveClip", "이동 애니메이션");
             DrawAttackList();
@@ -1038,68 +1509,72 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawCombatSection()
         {
-            DrawSectionHeader("5. 공격 방식");
-            var combatType = (Shared.Unit.MonsterCombatType)DrawEnumProperty(
-                "combatType",
-                "공격 종류",
-                CombatTypeLabels);
-            switch (combatType)
+            DrawSectionHeader("7. 공용 기본공격");
+            var profileProperty = serializedDraft.FindProperty("basicAttackProfile");
+            EditorGUILayout.PropertyField(profileProperty, new GUIContent("기본공격 프로필"));
+            var profile = profileProperty.objectReferenceValue as MonsterBasicAttackProfile;
+            if (profile == null)
             {
-                case Shared.Unit.MonsterCombatType.Melee:
-                    var meleeMode = (Shared.Unit.MonsterMeleeAttackMode)DrawEnumProperty(
-                        "meleeMode",
-                        "근거리 방식",
-                        MeleeModeLabels);
-                    if (meleeMode == Shared.Unit.MonsterMeleeAttackMode.Area)
-                    {
-                        DrawProperty("meleeAreaRadius", "범위 반경");
-                        DrawProperty("meleeMaxTargets", "최대 대상 수");
-                    }
-                    break;
-                case Shared.Unit.MonsterCombatType.Ranged:
-                    var deliveryMode = (Shared.Unit.MonsterRangedDeliveryMode)DrawEnumProperty(
-                        "rangedDeliveryMode",
-                        "전달 방식",
-                        RangedDeliveryLabels);
-                    var projectileMode = DrawRangedHitMode(deliveryMode);
-                    if (deliveryMode == Shared.Unit.MonsterRangedDeliveryMode.Projectile)
-                    {
-                        DrawProperty("projectilePrefab", "투사체 VFX (선택)");
-                        DrawProperty("projectileLaunchSound", "투사체 발사 사운드 (선택)");
-                        DrawProperty("projectileSpeed", "투사체 속도");
-                        EditorGUILayout.HelpBox(
-                            "투사체 VFX를 비우면 공용 임시 원형 구슬을 자동 사용합니다. VFX를 지정하면 임시 구슬은 나오지 않습니다.",
-                            MessageType.None);
-                    }
-
-                    if (projectileMode == Shared.Unit.MonsterProjectileAttackMode.Piercing)
-                    {
-                        DrawProperty("projectileMaxPiercingTargets", "최대 관통 수");
-                    }
-                    else if (projectileMode == Shared.Unit.MonsterProjectileAttackMode.Area)
-                    {
-                        var areaLabel = deliveryMode == Shared.Unit.MonsterRangedDeliveryMode.Projectile
-                            ? "폭발"
-                            : "범위";
-                        DrawProperty("projectileImpactRadius", areaLabel + " 반경");
-                        DrawProperty("projectileMaxImpactTargets", "최대 대상 수");
-                    }
-                    break;
-                case Shared.Unit.MonsterCombatType.Special:
-                    EditorGUILayout.HelpBox("특수형은 현재 범위 버프의 최소 규격만 사용합니다.", MessageType.Info);
-                    DrawProperty("specialEffectId", "효과 ID");
-                    DrawEnumProperty("specialTargetTeam", "적용 대상", TargetTeamLabels);
-                    DrawProperty("specialRadius", "적용 반경");
-                    DrawProperty("specialMaxTargets", "최대 대상 수");
-                    DrawProperty("specialDuration", "지속 시간");
-                    DrawStatModifier(serializedDraft.FindProperty("specialModifier"), "버프 능력치");
-                    break;
+                EditorGUILayout.HelpBox(
+                    "BA01~BA15 중 하나를 선택해야 정식 편입할 수 있습니다. 패시브·액티브·시그니처와는 별도입니다.",
+                    MessageType.Warning);
+                return;
             }
+
+            serializedDraft.FindProperty("combatType").enumValueIndex = (int)profile.CombatType;
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                GUILayout.Label($"[{profile.AttackId}] {profile.DisplayName}", EditorStyles.boldLabel);
+                GUILayout.Label(
+                    $"{profile.CombatType} · {profile.Delivery} · {profile.Shape} · 최대 {profile.MaxTargets}명 · " +
+                    $"피해 단계 {profile.HitCount}",
+                    EditorStyles.wordWrappedMiniLabel);
+                GUILayout.Label(
+                    $"판정 길이 ×{profile.RangeMultiplier:0.##} · 반경 {profile.Radius:0.##}m · " +
+                    $"폭 {profile.LineWidth:0.##}m · 각도 {profile.Angle:0.#}°",
+                    EditorStyles.wordWrappedMiniLabel);
+            }
+
+            using (new EditorGUI.DisabledScope(!preview.HasCombatTarget))
+            {
+                if (GUILayout.Button("3D 판정범위 보기", GUILayout.Height(28f)))
+                {
+                    preview.ShowBasicAttackArea();
+                }
+            }
+
+            if (profile.CombatType == MonsterCombatType.Ranged)
+            {
+                DrawProperty("projectileLaunchRecoilDistance", "발사 반동 거리");
+                DrawProperty("projectileLaunchRecoilDuration", "발사 반동 시간");
+            }
+
+            if (profile.UsesProjectileVisual)
+            {
+                DrawProperty("projectilePrefab", "투사체 VFX (선택)");
+                DrawProperty("projectileLaunchSound", "투사체 발사 사운드 (선택)");
+                DrawProperty("projectileSpeed", "투사체 속도");
+                DrawProperty("projectileLifetime", "투사체 수명");
+                EditorGUILayout.HelpBox(
+                    "비우면 현재 공용 임시 구슬을 사용합니다. 최종 VFX/SFX는 몬스터별로 나중에 교체합니다.",
+                    MessageType.None);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox(
+                    "이 프로필은 실제 투사체 이동 없이 Marker 시점에 공용 판정을 즉시 실행합니다.",
+                    MessageType.None);
+            }
+
+            EditorGUILayout.HelpBox(
+                "위 버튼 또는 공격 재생으로 BA01~BA15의 실제 XZ 판정 외곽선을 확인할 수 있습니다. " +
+                "표시는 Profile의 길이·폭·각도·반경과 같은 값을 사용합니다.",
+                MessageType.Info);
         }
 
         private void DrawAscensionSection()
         {
-            DrawSectionHeader("7. 돌파 옵션");
+            DrawSectionHeader("10. 돌파 옵션");
             var configured = serializedDraft.FindProperty("ascensionConfigured");
             EditorGUILayout.PropertyField(configured, new GUIContent("돌파 옵션 사용"));
             if (!configured.boolValue)
@@ -1111,15 +1586,29 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             DrawStatModifier(serializedDraft.FindProperty("ascension1"), "1돌파 능력치");
-            DrawAbility(serializedDraft.FindProperty("ascension2"), "2돌파 스킬");
+            if (!serializedDraft.FindProperty("skillLoadoutConfigured").boolValue)
+            {
+                EditorGUILayout.HelpBox(
+                    "기존 운영 Monster의 2·4돌파 Ability 값은 숨긴 채 보존합니다. 범용 스킬 구성을 켜면 기존 스킬 강화로 전환됩니다.",
+                    MessageType.None);
+                DrawStatModifier(serializedDraft.FindProperty("ascension3"), "3돌파 능력치");
+                DrawStatModifier(serializedDraft.FindProperty("ascension5"), "5돌파 능력치");
+                return;
+            }
+
+            DrawSkillAugment(serializedDraft.FindProperty("ascension2"), "2돌파 · 패시브 강화", false);
             DrawStatModifier(serializedDraft.FindProperty("ascension3"), "3돌파 능력치");
-            DrawAbility(serializedDraft.FindProperty("ascension4"), "4돌파 스킬");
+            var rarity = (MonsterRarity)serializedDraft.FindProperty("rarity").enumValueIndex;
+            DrawSkillAugment(
+                serializedDraft.FindProperty("ascension4"),
+                rarity >= MonsterRarity.Epic ? "4돌파 · 액티브 강화" : "4돌파 · 패시브 추가 강화",
+                rarity >= MonsterRarity.Epic);
             DrawStatModifier(serializedDraft.FindProperty("ascension5"), "5돌파 능력치");
         }
 
         private void DrawCastleRaidAiSection()
         {
-            DrawSectionHeader("6. 군단의 역습 AI");
+            DrawSectionHeader("9. 군단의 역습 AI");
             var pattern = (CastleRaidAiPattern)DrawEnumProperty(
                 "castleRaidAiPattern",
                 "행동 패턴",
@@ -1141,6 +1630,42 @@ namespace ProjectMT.EditorTools.MonsterMaker
             DrawProperty("castleRaidDefenseDamageMultiplier", "받는 피해 배율");
         }
 
+        private void DrawCombatIdentitySection()
+        {
+            DrawSectionHeader("4. 공격 무게 · 피격 체급");
+            DrawEnumProperty("impactStrength", "공격 무게", ImpactStrengthLabels);
+            DrawEnumProperty("reactionWeight", "피격 체급", ReactionWeightLabels);
+            EditorGUILayout.HelpBox(
+                "공격 무게는 Light < Standard < Heavy 순으로 넉백·에어본·경직 강도를 결정합니다. 피격 체급은 이 몬스터가 맞았을 때 얼마나 튕기는지를 정합니다.",
+                MessageType.None);
+        }
+
+        private void DrawMainBattleAiSection()
+        {
+            DrawSectionHeader("5. MainBattle 역할 AI");
+            var role = (MainBattleMonsterRole)DrawEnumProperty(
+                "mainBattleRole",
+                "전투 역할",
+                MainBattleRoleLabels);
+            DrawEnumProperty("mainBattleTargetPriority", "대상 우선순위", TargetPriorityLabels);
+            DrawProperty("mainBattlePreferredRangeRatio", "희망 거리 비율");
+            DrawProperty("mainBattleRetreatRangeRatio", "후퇴 시작 비율");
+            DrawProperty("mainBattleRetargetInterval", "대상 재탐색 간격");
+            EditorGUILayout.HelpBox(ResolveMainBattleRoleHelp(role), MessageType.None);
+        }
+
+        private static string ResolveMainBattleRoleHelp(MainBattleMonsterRole role)
+        {
+            return role switch
+            {
+                MainBattleMonsterRole.Guardian => "수호: 전열을 지키며 대상이 한 곳에 몰리지 않게 분산합니다.",
+                MainBattleMonsterRole.Finisher => "마무리: 체력이 낮은 적을 우선해 전투 수를 빠르게 줄이는 역할입니다.",
+                MainBattleMonsterRole.Marksman => "사수: 원거리 희망 거리를 유지하며 적이 너무 가까우면 후퇴합니다.",
+                MainBattleMonsterRole.BacklineHunter => "후열 추적: 원거리 적을 우선 선택하고 안전거리를 유지합니다.",
+                _ => "선봉: 가까운 적에게 빠르게 접근해 전투선을 먼저 형성합니다."
+            };
+        }
+
         private void DrawStatModifier(SerializedProperty modifier, string label)
         {
             modifier.isExpanded = EditorGUILayout.Foldout(modifier.isExpanded, label, true);
@@ -1159,7 +1684,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             EditorGUI.indentLevel--;
         }
 
-        private void DrawAbility(SerializedProperty ability, string label)
+        private void DrawSkillAugment(SerializedProperty ability, string label, bool targetsActive)
         {
             ability.isExpanded = EditorGUILayout.Foldout(ability.isExpanded, label, true);
             if (!ability.isExpanded)
@@ -1169,11 +1694,29 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             EditorGUI.indentLevel++;
             DrawRelativeProperty(ability, "abilityId", "스킬 ID");
-            DrawRelativeProperty(ability, "displayName", "스킬 이름");
-            var mode = DrawRelativeEnumProperty(ability, "mode", "스킬 방식", AbilityModeLabels);
-            if ((Shared.Unit.MonsterAbilityMode)mode == Shared.Unit.MonsterAbilityMode.AutoActive)
+            DrawRelativeProperty(ability, "displayName", "강화 이름");
+            GUILayout.Label(
+                targetsActive ? "대상: 현재 선택한 액티브" : "대상: 현재 선택한 패시브",
+                EditorStyles.wordWrappedMiniLabel);
+            var operation = (MonsterSkillAugmentOperation)DrawRelativeEnumProperty(
+                ability,
+                "augmentOperation",
+                "강화 방식",
+                SkillAugmentOperationLabels);
+            switch (operation)
             {
-                DrawRelativeProperty(ability, "triggerPolicyId", "자동 발동 조건 ID");
+                case MonsterSkillAugmentOperation.MagnitudeMultiplier:
+                    DrawRelativeProperty(ability, "augmentScalarValue", "효과량 증가율");
+                    break;
+                case MonsterSkillAugmentOperation.DurationBonusSeconds:
+                    DrawRelativeProperty(ability, "augmentScalarValue", "추가 지속 시간(초)");
+                    break;
+                case MonsterSkillAugmentOperation.CooldownReductionRate:
+                    DrawRelativeProperty(ability, "augmentScalarValue", "쿨다운 감소율");
+                    break;
+                default:
+                    DrawRelativeProperty(ability, "augmentIntegerValue", "증감 횟수");
+                    break;
             }
             EditorGUI.indentLevel--;
         }
@@ -1376,6 +1919,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 MonsterMakerAssetWriter.MonsterCatalogPath);
             monsterRarityCatalog = AssetDatabase.LoadAssetAtPath<Shared.Unit.MonsterRarityCatalog>(
                 MonsterMakerAssetWriter.MonsterRarityCatalogPath);
+            monsterSkillCatalog = AssetDatabase.LoadAssetAtPath<Shared.Unit.MonsterSkillCatalog>(
+                Shared.Unit.MonsterSkillCatalog.DefaultAssetPath);
             catalogDefinitions = monsterCatalog == null
                 ? Array.Empty<Shared.Unit.MonsterDefinition>()
                 : monsterCatalog.Definitions.Where(candidate => candidate != null).ToArray();
@@ -1745,9 +2290,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void EnsureStyles()
         {
-            if (columnStyle != null && usageLeadStyle != null && usageStepTitleStyle != null &&
-                usageBodyStyle != null && usageCautionStyle != null && catalogRowTitleStyle != null &&
-                catalogRowMetaStyle != null && catalogRowStateStyle != null)
+            if (columnStyle != null && workspacePanelStyle != null && actionDockStyle != null && actionButtonStyle != null &&
+                actionPrimaryButtonStyle != null && actionStatusStyle != null && usageLeadStyle != null &&
+                usageStepTitleStyle != null && usageBodyStyle != null && usageCautionStyle != null &&
+                catalogRowTitleStyle != null && catalogRowMetaStyle != null && catalogRowStateStyle != null)
             {
                 return;
             }
@@ -1768,7 +2314,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
             columnStyle = new GUIStyle(EditorStyles.helpBox)
             {
                 margin = new RectOffset(0, 0, 0, 0),
-                padding = new RectOffset(10, 10, 8, 10)
+                padding = new RectOffset(
+                    Mathf.RoundToInt(ColumnPadding),
+                    Mathf.RoundToInt(ColumnPadding),
+                    8,
+                    10)
             };
 
             columnTitleStyle = new GUIStyle(EditorStyles.boldLabel)
@@ -1800,12 +2350,49 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 margin = new RectOffset(1, 1, 0, 0)
             };
 
-            primaryButtonStyle = new GUIStyle(GUI.skin.button)
+            actionButtonStyle = new GUIStyle(GUI.skin.button)
             {
                 alignment = TextAnchor.MiddleCenter,
                 fontSize = 12,
                 fontStyle = FontStyle.Bold,
-                normal = { textColor = new Color(0.93f, 0.97f, 1f, 1f) }
+                margin = new RectOffset(0, 0, 0, 0),
+                padding = new RectOffset(8, 8, 6, 6),
+                normal = { textColor = new Color(0.95f, 0.97f, 1f, 1f) }
+            };
+
+            actionPrimaryButtonStyle = new GUIStyle(GUI.skin.button)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = 13,
+                fontStyle = FontStyle.Bold,
+                margin = new RectOffset(0, 0, 0, 0),
+                padding = new RectOffset(10, 10, 6, 6),
+                normal = { textColor = Color.white }
+            };
+
+            workspacePanelStyle = new GUIStyle(EditorStyles.helpBox)
+            {
+                margin = new RectOffset(0, 0, 0, 0),
+                padding = new RectOffset(8, 8, 7, 8)
+            };
+
+            actionDockStyle = new GUIStyle(EditorStyles.helpBox)
+            {
+                margin = new RectOffset(0, 0, 0, 0),
+                padding = new RectOffset(
+                    Mathf.RoundToInt(ActionDockPadding),
+                    Mathf.RoundToInt(ActionDockPadding),
+                    8,
+                    9)
+            };
+
+            actionStatusStyle = new GUIStyle(EditorStyles.miniLabel)
+            {
+                fontSize = 10,
+                alignment = TextAnchor.MiddleLeft,
+                clipping = TextClipping.Clip,
+                padding = new RectOffset(6, 6, 4, 4),
+                normal = { textColor = new Color(0.74f, 0.82f, 0.92f, 1f) }
             };
 
             centeredLabelStyle = new GUIStyle(EditorStyles.centeredGreyMiniLabel)

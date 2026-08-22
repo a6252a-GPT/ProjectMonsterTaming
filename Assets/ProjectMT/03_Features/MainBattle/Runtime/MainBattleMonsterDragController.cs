@@ -31,6 +31,7 @@ namespace ProjectMT.Features.MainBattle
         private Collider groundCollider;
         private Func<bool> canInteract;
         private Func<UnitActor, bool> canSelectUnit;
+        private Func<UnitActor, Vector3, Vector3> dropPositionResolver;
         private Func<UnitActor, Vector3, bool> canDropAt;
         private Action<UnitActor, Vector3, bool> dragPreviewChanged;
         private Action<UnitActor, Vector3, bool> dragReleased;
@@ -42,6 +43,7 @@ namespace ProjectMT.Features.MainBattle
 
         private UnitActor activeUnit;
         private Vector3 originalPosition;
+        private Vector3 lastPointerGroundPosition;
         private Vector3 lastGroundPosition;
         private Quaternion restingRotation;
         private bool currentGroundValid;
@@ -69,6 +71,7 @@ namespace ProjectMT.Features.MainBattle
             groundCollider = ground != null ? ground : throw new ArgumentNullException(nameof(ground));
             canInteract = interactionGate;
             canSelectUnit = null;
+            dropPositionResolver = null;
             canDropAt = null;
             dragPreviewChanged = previewChanged;
             dragReleased = released;
@@ -82,12 +85,14 @@ namespace ProjectMT.Features.MainBattle
             Collider ground,
             Func<bool> interactionGate,
             Func<UnitActor, bool> selectionGate,
+            Func<UnitActor, Vector3, Vector3> positionResolver,
             Func<UnitActor, Vector3, bool> dropValidator,
             Action<UnitActor, Vector3, bool> previewChanged,
             Action<UnitActor, Vector3, bool> released)
         {
             Configure(camera, ground, interactionGate);
             canSelectUnit = selectionGate;
+            dropPositionResolver = positionResolver;
             canDropAt = dropValidator;
             dragPreviewChanged = previewChanged;
             dragReleased = released;
@@ -99,6 +104,7 @@ namespace ProjectMT.Features.MainBattle
             configured = false;
             canInteract = null;
             canSelectUnit = null;
+            dropPositionResolver = null;
             canDropAt = null;
             dragPreviewChanged = null;
             dragReleased = null;
@@ -327,6 +333,7 @@ namespace ProjectMT.Features.MainBattle
 
             activeUnit = unit;
             originalPosition = unit.transform.position;
+            lastPointerGroundPosition = originalPosition;
             lastGroundPosition = originalPosition;
             restingRotation = unit.transform.rotation;
             activeUnit.Died += HandleActiveUnitDied;
@@ -334,7 +341,8 @@ namespace ProjectMT.Features.MainBattle
             if (projected)
             {
                 groundPosition.y = originalPosition.y;
-                lastGroundPosition = groundPosition;
+                lastPointerGroundPosition = groundPosition;
+                lastGroundPosition = ResolveDropPosition(groundPosition);
             }
 
             currentGroundValid = projected && (canDropAt == null || canDropAt(activeUnit, lastGroundPosition));
@@ -352,7 +360,8 @@ namespace ProjectMT.Features.MainBattle
             if (projected)
             {
                 groundPosition.y = originalPosition.y;
-                lastGroundPosition = groundPosition;
+                lastPointerGroundPosition = groundPosition;
+                lastGroundPosition = ResolveDropPosition(groundPosition);
             }
 
             currentGroundValid = projected && (canDropAt == null || canDropAt(activeUnit, lastGroundPosition));
@@ -360,7 +369,7 @@ namespace ProjectMT.Features.MainBattle
 
             var phase = Time.unscaledTime * wiggleSpeed;
             var bob = Mathf.Abs(Mathf.Sin(phase * 0.5f)) * 0.08f;
-            var liftedPosition = lastGroundPosition + Vector3.up * (liftHeight + bob);
+            var liftedPosition = lastPointerGroundPosition + Vector3.up * (liftHeight + bob);
             var follow = 1f - Mathf.Exp(-followSharpness * Time.unscaledDeltaTime);
             activeUnit.transform.position = Vector3.Lerp(activeUnit.transform.position, liftedPosition, follow);
             activeUnit.transform.rotation = restingRotation * Quaternion.Euler(
@@ -380,6 +389,18 @@ namespace ProjectMT.Features.MainBattle
 
             groundPosition = default;
             return false;
+        }
+
+        private Vector3 ResolveDropPosition(Vector3 groundPosition)
+        {
+            if (activeUnit == null || dropPositionResolver == null)
+            {
+                return groundPosition;
+            }
+
+            var resolved = dropPositionResolver(activeUnit, groundPosition);
+            resolved.y = originalPosition.y;
+            return resolved;
         }
 
         private void ReleasePointer(bool validGround)

@@ -19,10 +19,10 @@ MonoBehaviour:
   visualTint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 100
   attackPower: 10
-  defense: 0
+  defense: 6
   attackSpeed: 1
-  moveSpeed: 2.5
-  attackRange: 1.2
+  moveSpeed: 2
+  attackRange: 3
   ranged: 0
   runtimeAssetKey: monster/mingyu_mythic_01
   runtimeAssetSet: {fileID: 11400000, guid: 84980a171ab232e459d968c6960efa65, type: 2}

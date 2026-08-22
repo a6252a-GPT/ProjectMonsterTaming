@@ -18,11 +18,11 @@ MonoBehaviour:
   previewPrefab: {fileID: 1081702471385307465, guid: 4d42fbf58f69f7b42a933730260b9ea0, type: 3}
   visualTint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 100
-  attackPower: 10
-  defense: 0
-  attackSpeed: 1
-  moveSpeed: 2.5
-  attackRange: 4
-  ranged: 1
+  attackPower: 6
+  defense: 6
+  attackSpeed: 2
+  moveSpeed: 1.5
+  attackRange: 3
+  ranged: 0
   runtimeAssetKey: monster/kimhyeona_01
   runtimeAssetSet: {fileID: 11400000, guid: 178d563a44d45cb42aa5c86ebdcc71f3, type: 2}

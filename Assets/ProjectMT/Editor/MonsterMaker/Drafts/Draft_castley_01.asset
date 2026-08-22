@@ -16,12 +16,13 @@ MonoBehaviour:
   displayName: "\uCE90\uC2AC\uB9AC"
   rarity: 3
   portrait: {fileID: 21300000, guid: 99bd7cc490d590c48bfe9df0a0e9f4de, type: 3}
+  skillLoadoutConfigured: 0
   rarityPassiveSkill: {fileID: 0}
   rarityActiveSkill: {fileID: 0}
   productionMemo: Notion monster batch / Castle
   vendorPrefab: {fileID: 8610135130089982903, guid: bd904672fab68744a9b53f2e9f2c9cd7, type: 3}
   animatorSource: {fileID: 3404111632907148839, guid: bd904672fab68744a9b53f2e9f2c9cd7, type: 3}
-  visualScale: {x: 0.5, y: 0.5, z: 0.5}
+  visualScale: {x: 0.6, y: 0.6, z: 0.6}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0
@@ -37,11 +38,18 @@ MonoBehaviour:
   previewScale: 1
   vfxScale: 1
   maxHealth: 100
-  attackPower: 10
-  defense: 0
-  attackSpeed: 1
-  moveSpeed: 2.5
-  attackRange: 1.2
+  attackPower: 20
+  defense: 6
+  attackSpeed: 0.8
+  moveSpeed: 1.5
+  attackRange: 2.4
+  impactStrength: 2
+  reactionWeight: 2
+  mainBattleRole: 0
+  mainBattleTargetPriority: 0
+  mainBattlePreferredRangeRatio: 0.72
+  mainBattleRetreatRangeRatio: 0
+  mainBattleRetargetInterval: 0.2
   idleClip: {fileID: 1827226128182048838, guid: a03603756ea50944b991e9f6222b47b7, type: 3}
   idleSpeed: 1
   moveClip: {fileID: 1827226128182048838, guid: eca8877568df01841bd2ac9357a5ed2b, type: 3}
@@ -76,9 +84,10 @@ MonoBehaviour:
   deathClip: {fileID: 1827226128182048838, guid: d36b9abdef359f243b5514a8e7b07505, type: 3}
   deathSpeed: 1
   combatType: 0
-  meleeMode: 0
+  basicAttackProfile: {fileID: 11400000, guid: 9e07c9e2d5598db489272352afcd4263, type: 2}
+  meleeMode: 1
   meleeAreaCenter: 1
-  meleeAreaRadius: 1.5
+  meleeAreaRadius: 3
   meleeMaxTargets: 4
   rangedDeliveryMode: 0
   projectileMode: 0
@@ -90,6 +99,8 @@ MonoBehaviour:
   projectileMaxPiercingTargets: 2
   projectileImpactRadius: 1.5
   projectileMaxImpactTargets: 4
+  projectileLaunchRecoilDistance: 0
+  projectileLaunchRecoilDuration: 0.12
   specialEffectId: 
   specialTargetTeam: 0
   specialRadius: 2
@@ -124,6 +135,9 @@ MonoBehaviour:
     displayName: 
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension3:
     healthRate: 0
     attackRate: 0
@@ -136,6 +150,9 @@ MonoBehaviour:
     displayName: 
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension5:
     healthRate: 0
     attackRate: 0

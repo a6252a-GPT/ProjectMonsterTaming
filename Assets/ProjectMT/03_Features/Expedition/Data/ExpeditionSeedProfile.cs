@@ -17,6 +17,18 @@ namespace ProjectMT.Features.Expedition
         [SerializeField, Min(0.1f)] private float enemyBaseDamage = 4f; // 1단계 적 공격력
         [SerializeField, Min(0f)] private float enemyHealthGrowthPerStage = 0.11f; // 단계당 체력 증가율
         [SerializeField, Min(0f)] private float enemyDamageGrowthPerStage = 0.07f; // 단계당 공격 증가율
+        [SerializeField, Min(0.2f)] private float enemyMeleeAttackRange = 2f; // 근접 적 기본 사거리
+        [SerializeField, Min(0.2f)] private float enemyRangedAttackRange = 4.1f; // 원거리 적 기본 사거리
+
+        [Header("Enemy Arrival")]
+        [SerializeField, Min(0.5f)] private float enemyEntryDistance = 3.2f;
+        [SerializeField, Min(0f)] private float enemySpawnIntervalSeconds = 0.16f;
+        [SerializeField, Min(0.1f)] private float enemyMarchDurationSeconds = 1f;
+        [SerializeField, Range(1f, 2f)] private float enemyFormationSpread = 1.3f;
+        [SerializeField, Min(0f)] private float reinforcementWarningSeconds = 0.6f;
+        [SerializeField, Min(0f)] private float reinforcementMinimumDelaySeconds = 3f;
+        [SerializeField, Min(0.1f)] private float reinforcementForceDelaySeconds = 10f;
+        [SerializeField, Range(0f, 1f)] private float reinforcementAliveRatio = 0.4f;
 
         [Header("Boss Stage")]
         [SerializeField, Min(1)] private int bossStageInterval = 10;
@@ -43,6 +55,16 @@ namespace ProjectMT.Features.Expedition
         public int EnemyWorldDropQuantity => Mathf.Max(1, enemyWorldDropQuantity);
         public EquipmentDropChestVisualCatalog EquipmentDropChestVisualCatalog => equipmentDropChestVisualCatalog;
         public float NormalEnemyEquipmentDropChance => Mathf.Clamp01(normalEnemyEquipmentDropChance);
+        public float EnemyEntryDistance => Mathf.Max(0.5f, enemyEntryDistance);
+        public float EnemySpawnIntervalSeconds => Mathf.Max(0f, enemySpawnIntervalSeconds);
+        public float EnemyMarchDurationSeconds => Mathf.Max(0.1f, enemyMarchDurationSeconds);
+        public float EnemyFormationSpread => Mathf.Clamp(enemyFormationSpread, 1f, 2f);
+        public float ReinforcementWarningSeconds => Mathf.Max(0f, reinforcementWarningSeconds);
+        public float ReinforcementMinimumDelaySeconds => Mathf.Max(0f, reinforcementMinimumDelaySeconds);
+        public float ReinforcementForceDelaySeconds => Mathf.Max(
+            ReinforcementMinimumDelaySeconds,
+            reinforcementForceDelaySeconds);
+        public float ReinforcementAliveRatio => Mathf.Clamp01(reinforcementAliveRatio);
         public int BossStageInterval => Mathf.Max(1, bossStageInterval);
         public float BossHealthMultiplier => Mathf.Max(1f, bossHealthMultiplier);
         public float BossVisualScaleMultiplier => Mathf.Max(1f, bossVisualScaleMultiplier);
@@ -211,7 +233,7 @@ namespace ProjectMT.Features.Expedition
                 maxHealth = enemyBaseHealth * (1f + enemyHealthGrowthPerStage * stageOffset),
                 damage = enemyBaseDamage * (1f + enemyDamageGrowthPerStage * stageOffset),
                 moveSpeed = ranged ? 1.9f : 2.15f,
-                attackRange = ranged ? 4.1f : 1f,
+                attackRange = ranged ? enemyRangedAttackRange : enemyMeleeAttackRange,
                 attackInterval = ranged ? 1.2f : 1f,
                 projectileSpeed = ranged ? 8f : 0f,
                 ranged = ranged
@@ -254,6 +276,26 @@ namespace ProjectMT.Features.Expedition
             bossHealthMultiplier = Mathf.Max(1f, healthMultiplier);
             bossVisualScaleMultiplier = Mathf.Max(1f, visualScaleMultiplier);
         }
+
+        public void EditorConfigureArrival(
+            float entryDistance,
+            float spawnInterval,
+            float marchDuration,
+            float warningSeconds,
+            float minimumDelay,
+            float forceDelay,
+            float aliveRatio,
+            float formationSpread = 1.3f)
+        {
+            enemyEntryDistance = Mathf.Max(0.5f, entryDistance);
+            enemySpawnIntervalSeconds = Mathf.Max(0f, spawnInterval);
+            enemyMarchDurationSeconds = Mathf.Max(0.1f, marchDuration);
+            enemyFormationSpread = Mathf.Clamp(formationSpread, 1f, 2f);
+            reinforcementWarningSeconds = Mathf.Max(0f, warningSeconds);
+            reinforcementMinimumDelaySeconds = Mathf.Max(0f, minimumDelay);
+            reinforcementForceDelaySeconds = Mathf.Max(reinforcementMinimumDelaySeconds, forceDelay);
+            reinforcementAliveRatio = Mathf.Clamp01(aliveRatio);
+        }
 #endif
     }
 
@@ -292,6 +334,22 @@ namespace ProjectMT.Features.Expedition
 
             var centeredColumn = column - (rowCount - 1) * 0.5f; // 덜 찬 마지막 행 중앙 정렬
             return new Vector2(centeredColumn * FormationSpacing, row * FormationSpacing);
+        }
+
+        public static Vector3 ResolveBattleForward(
+            Vector3 playerFormationOrigin,
+            Vector3 enemyFormationAnchor,
+            Vector3 fallbackForward)
+        {
+            var forward = enemyFormationAnchor - playerFormationOrigin;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f)
+            {
+                forward = fallbackForward;
+                forward.y = 0f;
+            }
+
+            return forward.sqrMagnitude < 0.0001f ? Vector3.forward : forward.normalized;
         }
     }
 }

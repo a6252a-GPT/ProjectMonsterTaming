@@ -1,35 +1,33 @@
 using System;
 using System.Collections.Generic;
 using ProjectMT.Features.Expedition;
+using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
 
 namespace ProjectMT.Features.MainBattle
 {
     [DisallowMultipleComponent]
-    public sealed class MainBattleSpatialController : MonoBehaviour // 메인전투 간격·군단장 추종
+    public sealed class MainBattleSpatialController : MonoBehaviour // 메인전투 실시간 간격·군단장 추종
     {
         [Header("Soft Separation")]
-        [SerializeField, Min(0f)] private float playerPairDistance = 0.82f;
-        [SerializeField, Min(0f)] private float enemyPairDistance = 0.75f;
-        [SerializeField, Min(0f)] private float opposingPairDistance = 0.62f;
-        [SerializeField, Min(0f)] private float maxPairSeparationSpeed = 0.9f;
-        [SerializeField, Min(0f)] private float maxUnitCorrectionSpeed = 0.45f;
+        [SerializeField, Min(0f)] private float playerPairDistance = 0.85f;
+        [SerializeField, Min(0f)] private float enemyPairDistance = 0.8f;
+        [SerializeField, Min(0f)] private float opposingPairDistance = 0.65f;
+        [SerializeField, Min(0f)] private float maxPairSeparationSpeed = 0.65f;
+        [SerializeField, Min(0f)] private float maxUnitCorrectionSpeed = 0.28f;
         [SerializeField, Min(0f)] private float edgePadding = 0.35f;
         [SerializeField, Min(0.001f)] private float maxSolverDeltaTime = 0.05f;
 
         [Header("Commander Follow")]
-        [SerializeField, Min(0f)] private float commanderRearOffset = 1.8f;
-        [SerializeField, Min(0f)] private float commanderFollowDeadZone = 0.3f;
+        [SerializeField, Min(0f)] private float commanderFollowDistance = 3f;
+        [SerializeField, Min(0f)] private float commanderFollowStartDistance = 4f;
         [SerializeField, Min(0f)] private float commanderFollowSpeed = 2.4f;
-        [SerializeField, Min(0f)] private float commanderCatchUpDistance = 2.8f;
-        [SerializeField, Min(0f)] private float commanderCatchUpSpeed = 3.5f;
+        [SerializeField, Min(0f)] private float commanderRearSwitchMargin = 0.75f;
 
         [Header("Commander Facing")]
-        [SerializeField, Min(0f)] private float commanderMoveTurnSpeed = 720f;
-        [SerializeField, Min(0f)] private float commanderEnemyTurnSpeed = 360f;
-        [SerializeField, Min(0f)] private float commanderEnemySettleDistance = 0.14f;
-        [SerializeField, Min(0f)] private float commanderEnemySettleSpeed = 0.85f;
+        [SerializeField, Min(0.01f)] private float commanderTurnSmoothTime = 0.28f;
+        [SerializeField, Min(0f)] private float commanderMaxTurnSpeed = 210f;
 
         private readonly List<UnitActor> units = new List<UnitActor>(32);
         private Vector3[] positions = new Vector3[32];
@@ -41,10 +39,12 @@ namespace ProjectMT.Features.MainBattle
         private MainBattleCommanderFootIkLock commanderFootIk;
         private Vector3 commanderStartPosition;
         private Quaternion commanderStartRotation;
+        private Quaternion commanderFacingOffset;
         private Vector3 battleForward;
         private bool commanderFootIkOriginalEnabled;
-        private bool commanderWasFollowing;
-        private float commanderSettleDistanceRemaining;
+        private UnitActor commanderRearUnit;
+        private bool commanderFollowing;
+        private float commanderYawVelocity;
         private int observedRunSequence;
         private bool configured;
 
@@ -52,9 +52,11 @@ namespace ProjectMT.Features.MainBattle
             ExpeditionController expeditionController,
             Collider groundCollider,
             Transform commanderRoot,
+            Transform playerFormationAnchor,
             Transform enemySpawnAnchor)
         {
             Shutdown();
+            ApplyCombatTuning(CombatImpactTuning.ActiveConfig);
             expedition = expeditionController != null
                 ? expeditionController
                 : throw new ArgumentNullException(nameof(expeditionController));
@@ -69,9 +71,15 @@ namespace ProjectMT.Features.MainBattle
                 throw new ArgumentNullException(nameof(enemySpawnAnchor));
             }
 
+            if (playerFormationAnchor == null)
+            {
+                throw new ArgumentNullException(nameof(playerFormationAnchor));
+            }
+
             commanderStartPosition = commander.position;
             commanderStartRotation = commander.rotation;
-            battleForward = enemySpawnAnchor.position - commanderStartPosition;
+            commanderFacingOffset = commanderStartRotation; // 루트 회전은 모델의 로컬 정면 보정값
+            battleForward = enemySpawnAnchor.position - playerFormationAnchor.position;
             battleForward.y = 0f;
             if (battleForward.sqrMagnitude < 0.0001f)
             {
@@ -86,6 +94,20 @@ namespace ProjectMT.Features.MainBattle
             enabled = true;
         }
 
+        private void ApplyCombatTuning(CombatTuningConfig tuning)
+        {
+            if (tuning == null)
+            {
+                return;
+            }
+
+            playerPairDistance = tuning.MainBattlePlayerPairDistance;
+            enemyPairDistance = tuning.MainBattleEnemyPairDistance;
+            opposingPairDistance = tuning.MainBattleOpposingPairDistance;
+            maxPairSeparationSpeed = tuning.MainBattlePairSeparationSpeed;
+            maxUnitCorrectionSpeed = tuning.MainBattleUnitCorrectionSpeed;
+        }
+
         public void Shutdown()
         {
             RestoreCommanderFootIk();
@@ -94,8 +116,10 @@ namespace ProjectMT.Features.MainBattle
             ground = null;
             commander = null;
             commanderFootIk = null;
-            commanderWasFollowing = false;
-            commanderSettleDistanceRemaining = 0f;
+            commanderFacingOffset = Quaternion.identity;
+            commanderRearUnit = null;
+            commanderFollowing = false;
+            commanderYawVelocity = 0f;
             observedRunSequence = 0;
             configured = false;
             enabled = false;
@@ -147,7 +171,8 @@ namespace ProjectMT.Features.MainBattle
         {
             for (var index = 0; index < units.Count; index++)
             {
-                positions[index] = units[index].transform.position;
+                var unit = units[index];
+                positions[index] = unit.transform.position;
                 corrections[index] = Vector3.zero;
             }
         }
@@ -170,7 +195,7 @@ namespace ProjectMT.Features.MainBattle
                         continue;
                     }
 
-                    var desiredDistance = GetDesiredDistance(left.Team, right.Team);
+                    var desiredDistance = GetDesiredDistance(left, right);
                     var pairMove = CalculatePairMove(
                         left,
                         right,
@@ -234,8 +259,70 @@ namespace ProjectMT.Features.MainBattle
 
         private void UpdateCommander(float deltaTime)
         {
-            UnitActor rearmostPlayer = null;
-            var rearmostProgress = float.PositiveInfinity;
+            commanderRearUnit = ResolveCommanderRearUnit();
+            if (commanderRearUnit == null)
+            {
+                commanderFollowing = false;
+                commanderYawVelocity = 0f;
+                SetCommanderMoving(false);
+                return;
+            }
+
+            var targetPosition = commanderRearUnit.transform.position;
+            targetPosition.y = commander.position.y;
+            var distance = PlanarDistance(commander.position, targetPosition);
+            if (!commanderFollowing)
+            {
+                if (distance <= Mathf.Max(commanderFollowDistance, commanderFollowStartDistance))
+                {
+                    SetCommanderMoving(false);
+                    return;
+                }
+
+                commanderFollowing = true;
+            }
+
+            if (distance <= commanderFollowDistance)
+            {
+                commanderFollowing = false;
+                commanderYawVelocity = 0f;
+                SetCommanderMoving(false);
+                return;
+            }
+
+            var requestedMove = Mathf.Min(
+                commanderFollowSpeed * deltaTime,
+                distance - commanderFollowDistance);
+            var direction = targetPosition - commander.position;
+            direction.y = 0f;
+            if (requestedMove <= 0f || direction.sqrMagnitude <= 0.0001f)
+            {
+                commanderFollowing = false;
+                commanderYawVelocity = 0f;
+                SetCommanderMoving(false);
+                return;
+            }
+
+            var nextPosition = ClampToGround(commander.position + direction.normalized * requestedMove);
+            nextPosition.y = commander.position.y;
+            var moveDirection = nextPosition - commander.position;
+            moveDirection.y = 0f;
+            var moved = moveDirection.sqrMagnitude > 0.00000001f;
+            commander.position = nextPosition;
+            if (moved)
+            {
+                SmoothTurnCommander(moveDirection, deltaTime);
+            }
+
+            SetCommanderMoving(moved);
+        }
+
+        private UnitActor ResolveCommanderRearUnit()
+        {
+            UnitActor candidate = null;
+            var candidateProgress = float.PositiveInfinity;
+            var trackedProgress = float.PositiveInfinity;
+            var trackedValid = false;
             for (var index = 0; index < units.Count; index++)
             {
                 var unit = units[index];
@@ -245,120 +332,48 @@ namespace ProjectMT.Features.MainBattle
                 }
 
                 var progress = Vector3.Dot(unit.transform.position - commanderStartPosition, battleForward);
-                if (progress < rearmostProgress)
+                if (unit == commanderRearUnit)
                 {
-                    rearmostProgress = progress;
-                    rearmostPlayer = unit;
+                    trackedProgress = progress;
+                    trackedValid = true;
+                }
+
+                if (progress < candidateProgress)
+                {
+                    candidate = unit;
+                    candidateProgress = progress;
                 }
             }
 
-            if (rearmostPlayer == null)
+            if (!trackedValid || candidate == null || candidate == commanderRearUnit)
             {
-                FaceCommanderTowardEnemies(deltaTime, false);
-                SetCommanderMoving(false);
-                return;
+                return candidate;
             }
 
-            var target = rearmostPlayer.transform.position - battleForward * commanderRearOffset;
-            target.y = commander.position.y;
-            target = ClampToGround(target);
-            var distance = PlanarDistance(commander.position, target);
-            if (distance <= commanderFollowDeadZone)
-            {
-                if (commanderWasFollowing)
-                {
-                    commanderWasFollowing = false;
-                    commanderSettleDistanceRemaining = Mathf.Min(
-                        commanderEnemySettleDistance,
-                        commanderFollowDeadZone * 0.8f);
-                }
-
-                var settling = FaceCommanderTowardEnemies(deltaTime, true);
-                SetCommanderMoving(settling);
-                return;
-            }
-
-            var speed = distance >= commanderCatchUpDistance
-                ? commanderCatchUpSpeed
-                : commanderFollowSpeed;
-            var nextPosition = Vector3.MoveTowards(commander.position, target, speed * deltaTime);
-            var moveDirection = nextPosition - commander.position;
-            moveDirection.y = 0f;
-            var moved = moveDirection.sqrMagnitude > 0.00000001f;
-            commander.position = nextPosition;
-            if (moved)
-            {
-                RotateCommanderTowards(moveDirection, commanderMoveTurnSpeed, deltaTime);
-                commanderWasFollowing = true;
-                commanderSettleDistanceRemaining = 0f;
-            }
-
-            SetCommanderMoving(moved);
+            return candidateProgress + commanderRearSwitchMargin < trackedProgress
+                ? candidate
+                : commanderRearUnit; // 근소한 앞뒤 교차에는 추종 대상을 유지
         }
 
-        private bool FaceCommanderTowardEnemies(float deltaTime, bool allowSettleMove)
-        {
-            var direction = ResolveEnemyFacingDirection();
-            RotateCommanderTowards(direction, commanderEnemyTurnSpeed, deltaTime);
-            if (!allowSettleMove || commanderSettleDistanceRemaining <= 0f || commanderEnemySettleSpeed <= 0f)
-            {
-                return false;
-            }
-
-            var requestedDistance = Mathf.Min(
-                commanderSettleDistanceRemaining,
-                commanderEnemySettleSpeed * deltaTime);
-            var previousPosition = commander.position;
-            var nextPosition = ClampToGround(previousPosition + direction * requestedDistance);
-            nextPosition.y = previousPosition.y;
-            commander.position = nextPosition;
-            var movedDistance = PlanarDistance(previousPosition, nextPosition);
-            commanderSettleDistanceRemaining = Mathf.Max(0f, commanderSettleDistanceRemaining - movedDistance);
-            if (movedDistance <= 0.0001f)
-            {
-                commanderSettleDistanceRemaining = 0f;
-                return false;
-            }
-
-            return true;
-        }
-
-        private Vector3 ResolveEnemyFacingDirection()
-        {
-            var enemyCenter = Vector3.zero;
-            var enemyCount = 0;
-            for (var index = 0; index < units.Count; index++)
-            {
-                var unit = units[index];
-                if (unit == null || !unit.IsAlive || unit.Team != UnitTeam.Enemy)
-                {
-                    continue;
-                }
-
-                enemyCenter += unit.transform.position;
-                enemyCount++;
-            }
-
-            var direction = enemyCount > 0
-                ? enemyCenter / enemyCount - commander.position
-                : battleForward;
-            direction.y = 0f;
-            return direction.sqrMagnitude > 0.0001f ? direction.normalized : battleForward;
-        }
-
-        private void RotateCommanderTowards(Vector3 direction, float turnSpeed, float deltaTime)
+        private void SmoothTurnCommander(Vector3 direction, float deltaTime)
         {
             direction.y = 0f;
-            if (direction.sqrMagnitude <= 0.0001f || turnSpeed <= 0f)
+            if (direction.sqrMagnitude <= 0.0001f || commanderMaxTurnSpeed <= 0f)
             {
                 return;
             }
 
-            var targetRotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
-            commander.rotation = Quaternion.RotateTowards(
-                commander.rotation,
-                targetRotation,
-                turnSpeed * deltaTime);
+            var logicalRotation = commander.rotation * Quaternion.Inverse(commanderFacingOffset);
+            var currentYaw = logicalRotation.eulerAngles.y;
+            var targetYaw = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+            var nextYaw = Mathf.SmoothDampAngle(
+                currentYaw,
+                targetYaw,
+                ref commanderYawVelocity,
+                commanderTurnSmoothTime,
+                commanderMaxTurnSpeed,
+                deltaTime);
+            commander.rotation = Quaternion.Euler(0f, nextYaw, 0f) * commanderFacingOffset;
         }
 
         private void ResetCommander()
@@ -369,8 +384,9 @@ namespace ProjectMT.Features.MainBattle
                 commander.rotation = commanderStartRotation;
             }
 
-            commanderWasFollowing = false;
-            commanderSettleDistanceRemaining = 0f;
+            commanderRearUnit = null;
+            commanderFollowing = false;
+            commanderYawVelocity = 0f;
             SetCommanderMoving(false);
         }
 
@@ -402,19 +418,21 @@ namespace ProjectMT.Features.MainBattle
             return position;
         }
 
-        private float GetDesiredDistance(UnitTeam leftTeam, UnitTeam rightTeam)
+        private float GetDesiredDistance(UnitActor left, UnitActor right)
         {
-            if (leftTeam != rightTeam)
+            if (left.Team != right.Team)
             {
-                return opposingPairDistance;
+                return Mathf.Max(opposingPairDistance, (left.BodyRadius + right.BodyRadius) * 0.9f);
             }
 
-            return leftTeam == UnitTeam.Player ? playerPairDistance : enemyPairDistance;
+            var configuredDistance = left.Team == UnitTeam.Player ? playerPairDistance : enemyPairDistance;
+            return Mathf.Max(configuredDistance, left.BodyRadius + right.BodyRadius + 0.06f);
         }
 
         private static bool CanSeparate(UnitActor unit)
         {
-            return unit != null && unit.IsAlive && !unit.IsManuallyHeld;
+            return unit != null && unit.IsAlive && unit.IsCombatReady &&
+                   !unit.IsManuallyHeld && !unit.IsInHitReaction; // 넉백·후경직을 간격 보정이 상쇄하지 않음
         }
 
         private static Vector3 GetStableFallbackDirection(UnitActor left, UnitActor right)

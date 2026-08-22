@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f0bc2c8d3774b74385d208cf1805b2a, type: 3}
+  m_Name: MP_passive_last_stand
+  m_EditorClassIdentifier: ProjectMT.Shared:ProjectMT.Shared.Unit:GenericMonsterPassiveSkill
+  skillId: passive_last_stand
+  displayName: "\uCD5C\uD6C4\uC758 \uBC84\uD300"
+  description: "\uC804\uD22C\uB2F9 \uD55C \uBC88 \uC704\uAE30 \uCCB4\uB825\uC5D0\uC11C
+    \uBCF4\uD638\uB9C9\uC744 \uC5BB\uC2B5\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  presentationTier: 0
+  recipe:
+    trigger: 7
+    triggerCount: 1
+    internalCooldown: 0
+    conditions:
+    - type: 1
+      value: 0.2
+      count: 1
+      referenceId: 
+    - type: 15
+      value: 0
+      count: 1
+      referenceId: 
+    target: 0
+    delivery: 0
+    shape: 0
+    effects:
+    - effectId: last_stand_shield
+      type: 2
+      valueSource: 2
+      magnitude: 0.2
+      duration: 4
+      delay: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 1
+  authoringEnabled: 1

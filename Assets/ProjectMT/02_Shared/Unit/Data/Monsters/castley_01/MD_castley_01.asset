@@ -18,11 +18,11 @@ MonoBehaviour:
   previewPrefab: {fileID: 8610135130089982903, guid: bd904672fab68744a9b53f2e9f2c9cd7, type: 3}
   visualTint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 100
-  attackPower: 10
-  defense: 0
-  attackSpeed: 1
-  moveSpeed: 2.5
-  attackRange: 1.2
+  attackPower: 20
+  defense: 6
+  attackSpeed: 0.8
+  moveSpeed: 1.5
+  attackRange: 2.4
   ranged: 0
   runtimeAssetKey: monster/castley_01
   runtimeAssetSet: {fileID: 11400000, guid: 0ce127842231ff64aaba37ca0a65ff49, type: 2}

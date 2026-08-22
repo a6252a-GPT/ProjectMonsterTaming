@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a6d69d254fe2224f86750625f474cdf, type: 3}
+  m_Name: MS_active_leap_impact
+  m_EditorClassIdentifier: ProjectMT.Shared:ProjectMT.Shared.Unit:GenericMonsterActiveSkill
+  skillId: active_leap_impact
+  displayName: "\uB3C4\uC57D \uAC15\uC2B5"
+  description: "\uC801 \uBC00\uC9D1 \uC9C0\uC5ED\uC73C\uB85C \uB3C4\uC57D\uD574 \uBC94\uC704
+    \uD53C\uD574\uC640 \uACBD\uC9C1\uC744 \uC90D\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  presentationTier: 2
+  recipe:
+    trigger: 11
+    triggerCount: 1
+    internalCooldown: 0
+    conditions: []
+    target: 14
+    delivery: 2
+    shape: 2
+    effects:
+    - effectId: leap_damage
+      type: 0
+      valueSource: 1
+      magnitude: 1.6
+      duration: 0
+      delay: 0
+      radius: 1.5
+      maxTargets: 3
+      repeatCount: 1
+      stackPolicy: 1
+    - effectId: leap_stagger
+      type: 13
+      valueSource: 0
+      magnitude: 0.2
+      duration: 0.2
+      delay: 0
+      radius: 1.5
+      maxTargets: 3
+      repeatCount: 1
+      stackPolicy: 1
+  authoringEnabled: 0
+  energyCost: 1000

@@ -20,22 +20,15 @@ namespace ProjectMT.Shared.UI
     // 각 컨트롤러는 기존 SetActive(true/false) 호출을 이 클래스의 정적 메서드로 바꾸기만 하면 된다.
     //
     // - pivot이 (0.5, 0.5)가 아닌 패널도 항상 "중앙 기준"으로 확대/이동하도록 pivot을 정규화한다.
-    //   (패널마다 pivot이 달라 서로 다른 방향에서 펼쳐지는 것처럼 보이는 문제 방지)
-    // - 딤(InputBlocker)은 그 형제 오브젝트(실제 콘텐츠)만 연출 대상으로 삼아 제외한다. InputBlocker가
-    //   루트의 직계 자식이 아니라 통과용 래퍼 한두 겹 아래에 있어도(예: 상태 관리 패널들의 표준 팝업
-    //   틀) 그 래퍼를 따라 내려가며 InputBlocker를 찾으므로, 딤은 항상 애니메이션 없이 즉시 표시/숨김
-    //   되고 실제 콘텐츠만 등장/퇴장 연출 대상이 된다. InputBlocker 옆에 OutsideCloseArea나
-    //   DeleteConfirmRoot 같은 부가 오브젝트가 더 있어도 "PF_UIStandard_" 접두사를 가진 실제 콘텐츠
-    //   틀을 이름으로 바로 찾아내므로 영향받지 않는다.
+    // - 딤(InputBlocker)은 애니메이션 대상에서 제외하고 즉시 표시/숨김한다. 실제 연출 대상을 찾는
+    //   방식은 ResolveAnimationTarget 참고.
     [DisallowMultipleComponent]
     public sealed class UIPanelPopAnimator : MonoBehaviour
     {
         private const string InputBlockerName = "InputBlocker";
 
-        // 표준 팝업 틀(PF_UIStandard_PopupMedium/Vertical/Wide 등)은 항상 이 접두사로 시작한다.
-        // InputBlocker의 형제가 이것 하나뿐이 아니라(예: OutsideCloseArea, DeleteConfirmRoot 같은
-        // 부가 오브젝트가 더 있는 패널) "형제가 정확히 하나"라는 가정이 깨져도, 이름으로 실제
-        // 콘텐츠 틀을 바로 찾아낼 수 있게 한다.
+        // 표준 팝업 틀(PF_UIStandard_PopupMedium/Vertical/Wide 등)의 공통 접두사.
+        // ResolveAnimationTarget이 이 이름으로 실제 콘텐츠 틀을 찾는다.
         private const string ContentFramePrefix = "PF_UIStandard_";
 
         private const float StandardOpenDuration = 0.28f;
@@ -95,16 +88,13 @@ namespace ProjectMT.Shared.UI
             sequence = null;
         }
 
-        // "InputBlocker"라는 이름의 딤 자식이 있으면 그 형제 쪽을 연출 대상으로 쓰고 InputBlocker는
-        // 제외한다. 형제가 여럿이면(예: OutsideCloseArea, DeleteConfirmRoot 등 부가 오브젝트가 같이
-        // 있는 패널) 그중 "PF_UIStandard_" 접두사를 가진 실제 콘텐츠 틀을 우선 찾아 그것만 연출
-        // 대상으로 쓴다 - 형제가 정확히 하나일 때만 동작하던 예전 방식은 부가 오브젝트가 하나라도
-        // 더 있으면 InputBlocker까지 포함한 전체를 그대로 연출해버리는 문제가 있었다.
-        // 이름 매칭도 실패하고 형제가 정확히 하나뿐이면 그 형제를 쓰고, 그렇지 않으면(형제가 여러 개인데
-        // 어느 것이 콘텐츠인지 못 정하면) 현재 노드를 그대로 쓴다.
-        // InputBlocker가 없고 자식이 정확히 하나뿐인 통과용 래퍼면 그 안쪽으로 내려가며 다시 확인한다
-        // (예: 표준 팝업 틀처럼 실제로는 한 겹 더 안쪽에 InputBlocker+콘텐츠가 있는 구조).
-        // InputBlocker를 못 찾으면(원래 딤이 없는 패널) 현재 노드를 그대로 연출 대상으로 쓴다.
+        // "InputBlocker" 자식이 있으면 그 형제 중 실제 콘텐츠만 연출 대상으로 삼아 딤을 제외한다.
+        // 형제가 여럿이면(OutsideCloseArea, DeleteConfirmRoot 등 부가 오브젝트 포함) "PF_UIStandard_"
+        // 접두사로 콘텐츠 틀을 우선 찾고, 못 찾으면 형제가 정확히 하나일 때만 그것을 쓴다(그 외에는
+        // 안전하게 현재 노드를 그대로 사용).
+        // InputBlocker가 안 보이고 자식이 하나뿐인 통과용 래퍼라면 한 단계 더 내려가며 다시 찾는다
+        // (표준 팝업 틀처럼 한 겹 더 안쪽에 InputBlocker+콘텐츠가 있는 구조 대응).
+        // 끝까지 못 찾으면(원래 딤이 없는 패널) 원본 루트를 그대로 쓴다.
         private static Transform ResolveAnimationTarget(Transform root)
         {
             var current = root;
@@ -150,21 +140,19 @@ namespace ProjectMT.Shared.UI
                     continue;
                 }
 
-                // 어디서도 InputBlocker를 못 찾았다: 안쪽 래퍼가 아니라 원래 루트를 그대로 연출
-                // 대상으로 쓴다(딤이 없는 기존 패널들의 동작을 바꾸지 않기 위해).
+                // 못 찾았으면 원본 루트를 그대로 쓴다(딤 없는 기존 패널 동작 유지).
                 return root;
             }
         }
 
-        // 패널 프리팹마다 pivot이 달라(0,0 / 0.5,0.5 등) 스케일 연출이 서로 다른 방향에서
-        // 확대되는 것처럼 보이는 문제를 막기 위해 pivot을 (0.5, 0.5)로 정규화한다.
-        // 위치를 함께 보정하므로 화면상 위치는 그대로 유지된다.
+        // 패널마다 pivot이 달라(0,0 / 0.5,0.5 등) 스케일 연출이 서로 다른 방향에서 확대되는 것처럼
+        // 보이는 문제를 막기 위해 pivot을 (0.5, 0.5)로 정규화한다. 위치도 함께 보정해 화면상 위치는
+        // 그대로 유지된다.
         //
-        // 주의: 앵커가 늘어난(stretch, anchorMin != anchorMax) 축에서는 앵커 보간 항과 pivot 항이
-        // 서로 상쇄되어 실제 위치는 sizeDelta에만 좌우된다(상점처럼 sizeDelta가 0인 완전 풀스크린
-        // 패널은 pivot이 바뀌어도 화면상 위치가 변하지 않아야 한다). 그래서 rect.rect.size(실제 해석된
-        // 크기)가 아니라 sizeDelta를 기준으로 보정해야 한다. rect.rect.size를 쓰면 풀스크린 패널이
-        // 절반만큼 옆으로 밀려버리는 버그가 생긴다.
+        // 주의: 앵커가 늘어난(stretch) 축에서는 앵커 보간 항과 pivot 항이 상쇄되어 실제 위치가
+        // sizeDelta에만 좌우된다(풀스크린 패널은 sizeDelta가 0이라 pivot이 바뀌어도 위치가 변하면
+        // 안 된다). 그래서 rect.rect.size가 아니라 sizeDelta로 보정해야 하며, rect.rect.size를 쓰면
+        // 풀스크린 패널이 옆으로 밀리는 버그가 생긴다.
         private static void NormalizePivotToCenter(RectTransform rect)
         {
             var desiredPivot = new Vector2(0.5f, 0.5f);
@@ -210,9 +198,7 @@ namespace ProjectMT.Shared.UI
                     moveOffsetY = FullScreenMoveOffsetY;
                     break;
                 case UIPanelPopStyle.FadeOnly:
-                    // 스케일·위치를 전혀 건드리지 않는다: 내부 3D 프리뷰 스테이지가 부모 트랜스폼을
-                    // 그대로 물려받으므로, 스케일/이동 트윈을 쓰면 그 프리뷰의 IK 발 고정 캡처 시점과
-                    // 어긋나 캐릭터가 붕 뜬 것처럼 보이는 문제가 생긴다(군단장 성장/장비/편성 공용).
+                    // 3D 프리뷰 IK 보호용 - 이유는 위 enum 주석 참고.
                     startScale = 1f;
                     openDuration = FullScreenOpenDuration;
                     fadeDuration = FullScreenFadeDuration;

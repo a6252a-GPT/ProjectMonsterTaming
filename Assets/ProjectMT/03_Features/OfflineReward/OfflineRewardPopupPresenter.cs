@@ -118,7 +118,7 @@ namespace ProjectMT.Features.OfflineReward
             confirmed = onConfirmed;
             busy = false;
             Bind(presentation);
-            DisplayRoot.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(DisplayRoot, UIPanelPopStyle.RewardPopup);
             SetCombatDisplaySuppressed(true);
             var showNotice = presentation.AutoDismantledEquipmentCount > 0 &&
                              autoDismantleNoticeRoot != null;
@@ -432,12 +432,13 @@ namespace ProjectMT.Features.OfflineReward
             }
 
             var completed = current;
-            DisplayRoot.SetActive(false);
-            SetCombatDisplaySuppressed(false);
             current = null;
             acknowledge = null;
-            confirmed?.Invoke(completed);
-            confirmed = null;
+            UIPanelPopAnimator.RequestClose(DisplayRoot, () =>
+            {
+                confirmed?.Invoke(completed);
+                confirmed = null;
+            });
         }
 
         private void SetCombatDisplaySuppressed(bool suppressed)

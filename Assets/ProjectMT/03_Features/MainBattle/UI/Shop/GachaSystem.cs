@@ -7,6 +7,7 @@ using ProjectMT.Shared.Gacha;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Quest;
+using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -316,14 +317,13 @@ namespace ProjectMT.Features.MainBattle
                 resultTitleText.text = $"{drawLabel} · 최고 {RarityLabel(highestRarity)}";
             }
 
-            resultOverlay.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(resultOverlay, UIPanelPopStyle.RewardPopup);
             LayoutRebuilder.ForceRebuildLayoutImmediate(resultItemsRoot);
         }
 
         private void HideResults()
         {
-            resultOverlay?.SetActive(false);
-            ClearResultItems();
+            UIPanelPopAnimator.RequestClose(resultOverlay, ClearResultItems);
         }
 
         private void ClearResultItems()

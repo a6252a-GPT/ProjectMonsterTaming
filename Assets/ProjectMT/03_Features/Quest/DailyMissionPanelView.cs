@@ -1,6 +1,7 @@
 using System;
 using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Reward;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -334,13 +335,13 @@ namespace ProjectMT.Features.Quest
 
         public void Open()
         {
-            gameObject.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(gameObject);
             transform.SetAsLastSibling();
         }
 
         public void Close()
         {
-            gameObject.SetActive(false);
+            UIPanelPopAnimator.RequestClose(gameObject);
         }
 
         private void ResolveFooterControls()

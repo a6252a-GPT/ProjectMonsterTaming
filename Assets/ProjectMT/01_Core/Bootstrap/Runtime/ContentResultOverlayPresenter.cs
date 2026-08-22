@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -63,7 +64,7 @@ namespace ProjectMT.Bootstrap
 
             confirmed = false;
             confirmButton.interactable = true;
-            panelRoot.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(panelRoot, UIPanelPopStyle.RewardPopup);
             panelRoot.transform.SetAsLastSibling();
 
             return closeSource.Task;
@@ -78,8 +79,7 @@ namespace ProjectMT.Bootstrap
 
             confirmed = true;
             confirmButton.interactable = false;
-            panelRoot.SetActive(false);
-            CompleteClose();
+            UIPanelPopAnimator.RequestClose(panelRoot, CompleteClose);
         }
 
         private void ApplyRewardSlots(ContentResultPresentation presentation)

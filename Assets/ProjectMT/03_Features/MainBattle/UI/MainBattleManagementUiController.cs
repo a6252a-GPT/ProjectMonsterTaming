@@ -8,6 +8,7 @@ using ProjectMT.Features.Mailbox;
 using ProjectMT.Features.Quest;
 using ProjectMT.Features.Settings;
 using ProjectMT.Shared.Combat;
+using ProjectMT.Shared.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -160,14 +161,14 @@ namespace ProjectMT.Features.MainBattle
         public void OpenCommanderGrowthPage()
         {
             CloseAllPages();
-            commanderGrowthPage?.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(commanderGrowthPage, UIPanelPopStyle.FullScreenPage);
             BringToFront();
         }
 
         public void OpenEquipmentPage()
         {
             CloseAllPages();
-            equipmentPage?.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(equipmentPage);
             BringToFront();
         }
 
@@ -255,7 +256,7 @@ namespace ProjectMT.Features.MainBattle
         public void OpenGrowthDungeonPage()
         {
             CloseAllPages();
-            growthDungeonPage?.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(growthDungeonPage);
             GrowthDungeonPageOpened?.Invoke();
             BringToFront();
         }
@@ -415,9 +416,9 @@ namespace ProjectMT.Features.MainBattle
         {
             var shouldOpen = commanderGrowthPage != null && !commanderGrowthPage.activeSelf;
             CloseAllPages();
-            commanderGrowthPage?.SetActive(shouldOpen);
             if (shouldOpen)
             {
+                UIPanelPopAnimator.RequestOpen(commanderGrowthPage, UIPanelPopStyle.FullScreenPage);
                 BringToFront();
             }
         }
@@ -425,13 +426,13 @@ namespace ProjectMT.Features.MainBattle
         public void OpenShopPage()
         {
             CloseAllPages();
-            shopPage?.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(shopPage, UIPanelPopStyle.FullScreenPage);
             BringToFront();
         }
 
         private void CloseShopPage()
         {
-            shopPage?.SetActive(false);
+            UIPanelPopAnimator.RequestClose(shopPage);
             RestoreHudOrder();
         }
 
@@ -445,16 +446,16 @@ namespace ProjectMT.Features.MainBattle
         {
             var shouldOpen = equipmentPage != null && !equipmentPage.activeSelf;
             CloseAllPages();
-            equipmentPage?.SetActive(shouldOpen);
             if (shouldOpen)
             {
+                UIPanelPopAnimator.RequestOpen(equipmentPage);
                 BringToFront();
             }
         }
 
         private void CloseEquipmentPage()
         {
-            equipmentPage?.SetActive(false);
+            UIPanelPopAnimator.RequestClose(equipmentPage);
             RestoreHudOrder();
         }
 
@@ -462,9 +463,9 @@ namespace ProjectMT.Features.MainBattle
         {
             var shouldOpen = growthDungeonPage != null && !growthDungeonPage.activeSelf;
             CloseAllPages();
-            growthDungeonPage?.SetActive(shouldOpen);
             if (shouldOpen)
             {
+                UIPanelPopAnimator.RequestOpen(growthDungeonPage);
                 GrowthDungeonPageOpened?.Invoke();
                 BringToFront();
             }
@@ -472,7 +473,7 @@ namespace ProjectMT.Features.MainBattle
 
         private void CloseGrowthDungeonPage()
         {
-            growthDungeonPage?.SetActive(false);
+            UIPanelPopAnimator.RequestClose(growthDungeonPage);
             RestoreHudOrder();
         }
 

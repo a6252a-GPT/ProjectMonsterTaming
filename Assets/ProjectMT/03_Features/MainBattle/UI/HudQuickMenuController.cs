@@ -2,6 +2,7 @@ using ProjectMT.Features.Formation;
 using ProjectMT.Features.Quest;
 using ProjectMT.Features.Settings;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -75,6 +76,13 @@ namespace ProjectMT.Features.MainBattle
             settingsButton?.onClick.AddListener(OpenSettings);
             modeButton?.onClick.AddListener(CloseMenu);
             SetMenuOpen(false);
+
+            UIButtonClickPunch.EnsureOn(contentButton?.gameObject);
+            UIButtonClickPunch.EnsureOn(summonButton?.gameObject);
+            UIButtonClickPunch.EnsureOn(shopButton?.gameObject);
+            UIButtonClickPunch.EnsureOn(attendanceButton?.gameObject);
+            UIButtonClickPunch.EnsureOn(mailboxButton?.gameObject);
+            UIButtonClickPunch.EnsureOn(menuButton?.gameObject);
         }
 
         private void OnDestroy()
@@ -140,7 +148,15 @@ namespace ProjectMT.Features.MainBattle
         private void SetMenuOpen(bool open)
         {
             outsideTapRoot?.SetActive(open);
-            expandedRoot?.SetActive(open);
+            if (open)
+            {
+                UIPanelPopAnimator.RequestOpen(expandedRoot);
+            }
+            else
+            {
+                UIPanelPopAnimator.RequestClose(expandedRoot);
+            }
+
             menuIcon?.SetActive(!open);
             closeIcon?.SetActive(open);
             if (menuLabelText != null)

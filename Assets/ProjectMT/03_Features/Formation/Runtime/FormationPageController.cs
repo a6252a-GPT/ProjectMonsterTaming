@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ProjectMT.Features.Quest;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Quest;
+using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -183,7 +184,18 @@ namespace ProjectMT.Features.Formation
         private void SetPageOpen(bool open)
         {
             var wasOpen = IsOpen;
-            pageRoot?.SetActive(open);
+            if (pageRoot != null)
+            {
+                if (open)
+                {
+                    UIPanelPopAnimator.RequestOpen(pageRoot);
+                }
+                else
+                {
+                    UIPanelPopAnimator.RequestClose(pageRoot);
+                }
+            }
+
             if (openButton != null)
             {
                 openButton.gameObject.SetActive(showStandaloneOpenButton && !open);
@@ -205,9 +217,9 @@ namespace ProjectMT.Features.Formation
                 ClearFormationPreview();
             }
 
-            if (wasOpen != IsOpen)
+            if (wasOpen != open)
             {
-                OpenStateChanged?.Invoke(IsOpen);
+                OpenStateChanged?.Invoke(open);
             }
         }
 
@@ -360,6 +372,10 @@ namespace ProjectMT.Features.Formation
 
             RefreshOwnedCards(roster);
             RefreshSelectedDetails(view);
+            if (pageRoot != null)
+            {
+                UIButtonClickPunch.ApplyToAllButtonsUnder(pageRoot.transform); // 새로 생성된 몬스터 카드 버튼도 포함
+            }
         }
 
         private void UpdateTabState(MonsterRosterView roster)

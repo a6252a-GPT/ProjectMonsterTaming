@@ -8,6 +8,7 @@ using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Stats;
+using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -126,7 +127,7 @@ namespace ProjectMT.Features.Commander
 
         public void Close()
         {
-            gameObject.SetActive(false);
+            UIPanelPopAnimator.RequestClose(gameObject);
         }
 
         private void Refresh()

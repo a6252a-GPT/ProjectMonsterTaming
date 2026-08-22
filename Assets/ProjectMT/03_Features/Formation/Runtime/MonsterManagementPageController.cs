@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ProjectMT.Features.Quest;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Quest;
+using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -195,7 +196,7 @@ namespace ProjectMT.Features.Formation
             var wasOpen = IsOpen;
             if (open && !gameObject.activeSelf)
             {
-                gameObject.SetActive(true);
+                UIPanelPopAnimator.RequestOpen(gameObject);
             }
 
             if (previewCamera != null)
@@ -221,7 +222,7 @@ namespace ProjectMT.Features.Formation
 
             if (!open && gameObject.activeSelf)
             {
-                gameObject.SetActive(false);
+                UIPanelPopAnimator.RequestClose(gameObject);
             }
         }
 
@@ -356,6 +357,7 @@ namespace ProjectMT.Features.Formation
             UpdateTabState();
             RefreshRoster(progress.View.Monsters);
             RefreshSelectedDetails(progress.View);
+            UIButtonClickPunch.ApplyToAllButtonsUnder(transform); // 새로 생성된 몬스터 카드 버튼도 포함
         }
 
         private void UpdateTabState()

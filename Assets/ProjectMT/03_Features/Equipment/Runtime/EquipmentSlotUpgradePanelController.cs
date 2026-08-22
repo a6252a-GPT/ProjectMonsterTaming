@@ -106,7 +106,7 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            gameObject.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(gameObject);
             OpenStateChanged?.Invoke(true);
         }
 
@@ -117,8 +117,7 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            gameObject.SetActive(false);
-            OpenStateChanged?.Invoke(false);
+            UIPanelPopAnimator.RequestClose(gameObject, () => OpenStateChanged?.Invoke(false));
         }
 
         public void SelectPart(EquipmentPart part)

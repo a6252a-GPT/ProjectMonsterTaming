@@ -148,7 +148,7 @@ namespace ProjectMT.Features.Inventory
             }
 
             var changed = !gameObject.activeSelf;
-            gameObject.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(gameObject);
             inventoryPanel?.SetActive(true);
             Refresh();
             if (changed)
@@ -163,11 +163,13 @@ namespace ProjectMT.Features.Inventory
             selectedItemId = null;
             detailPanel?.SetActive(false);
             SetSlotSelection(-1);
-            gameObject.SetActive(false);
-            if (changed)
+            UIPanelPopAnimator.RequestClose(gameObject, () =>
             {
-                OpenStateChanged?.Invoke(false);
-            }
+                if (changed)
+                {
+                    OpenStateChanged?.Invoke(false);
+                }
+            });
         }
 
         private void EnsureReferences()

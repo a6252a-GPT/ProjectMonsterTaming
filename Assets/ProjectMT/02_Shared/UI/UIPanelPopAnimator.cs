@@ -5,12 +5,14 @@ using UnityEngine;
 namespace ProjectMT.Shared.UI
 {
     // Mobile_UI_Panel_Animation_Patterns.md에서 정한 통일 연출 스타일.
-    // 프로젝트 전체 패널이 같은 느낌을 갖도록 세 가지 패턴만 사용한다.
+    // 프로젝트 전체 패널이 같은 느낌을 갖도록 네 가지 패턴만 사용한다.
     public enum UIPanelPopStyle
     {
         Standard,      // 일반 관리 패널: 딤 페이드 + 0.96→1.0 스케일 + 16px 위로 이동, OutCubic
         RewardPopup,   // 보상/완료 팝업: 0.85→1.0 스케일 중심, 약한 OutBack
-        FullScreenPage // 상점처럼 화면 전체를 채우는 페이지: 스케일 없이 페이드 + 아래에서 위로 슬라이드
+        FullScreenPage, // 상점처럼 화면 전체를 채우는 페이지: 스케일 없이 페이드 + 아래에서 위로 슬라이드
+        FadeOnly       // 스케일/위치 이동 없이 페이드만: 내부에 3D 프리뷰(군단장 모델 등)를 물고 있어
+                       // 스케일·위치 트윈이 그 프리뷰의 IK/카메라 기준점을 흔들면 안 되는 패널 전용
     }
 
     // 패널 오브젝트가 SetActive(true)로 켜질 때마다(OnEnable) 등장 연출을 자동 재생하고,
@@ -19,12 +21,22 @@ namespace ProjectMT.Shared.UI
     //
     // - pivot이 (0.5, 0.5)가 아닌 패널도 항상 "중앙 기준"으로 확대/이동하도록 pivot을 정규화한다.
     //   (패널마다 pivot이 달라 서로 다른 방향에서 펼쳐지는 것처럼 보이는 문제 방지)
-    // - 루트 아래에 딤(InputBlocker)과 콘텐츠 프레임(PF_UIStandard_Popup*)이 형제로 있는 구조라면
-    //   딤은 애니메이션 없이 즉시 표시/숨김되고, 콘텐츠 프레임만 등장/퇴장 연출 대상이 된다.
+    // - 딤(InputBlocker)은 그 형제 오브젝트(실제 콘텐츠)만 연출 대상으로 삼아 제외한다. InputBlocker가
+    //   루트의 직계 자식이 아니라 통과용 래퍼 한두 겹 아래에 있어도(예: 상태 관리 패널들의 표준 팝업
+    //   틀) 그 래퍼를 따라 내려가며 InputBlocker를 찾으므로, 딤은 항상 애니메이션 없이 즉시 표시/숨김
+    //   되고 실제 콘텐츠만 등장/퇴장 연출 대상이 된다. InputBlocker 옆에 OutsideCloseArea나
+    //   DeleteConfirmRoot 같은 부가 오브젝트가 더 있어도 "PF_UIStandard_" 접두사를 가진 실제 콘텐츠
+    //   틀을 이름으로 바로 찾아내므로 영향받지 않는다.
     [DisallowMultipleComponent]
     public sealed class UIPanelPopAnimator : MonoBehaviour
     {
-        private const string ContentFrameNamePrefix = "PF_UIStandard_Popup";
+        private const string InputBlockerName = "InputBlocker";
+
+        // 표준 팝업 틀(PF_UIStandard_PopupMedium/Vertical/Wide 등)은 항상 이 접두사로 시작한다.
+        // InputBlocker의 형제가 이것 하나뿐이 아니라(예: OutsideCloseArea, DeleteConfirmRoot 같은
+        // 부가 오브젝트가 더 있는 패널) "형제가 정확히 하나"라는 가정이 깨져도, 이름으로 실제
+        // 콘텐츠 틀을 바로 찾아낼 수 있게 한다.
+        private const string ContentFramePrefix = "PF_UIStandard_";
 
         private const float StandardOpenDuration = 0.28f;
         private const float StandardFadeDuration = 0.16f;
@@ -83,21 +95,65 @@ namespace ProjectMT.Shared.UI
             sequence = null;
         }
 
-        // 딤(InputBlocker) 자식과 실제 콘텐츠 프레임(PF_UIStandard_Popup*) 자식이 형제로 있는 구조에서는
-        // 딤을 애니메이션 대상에서 제외하고 콘텐츠 프레임만 등장/퇴장 연출한다.
-        // 그런 자식이 없으면(딤이 없는 일반 패널) 자기 자신을 그대로 연출 대상으로 쓴다.
+        // "InputBlocker"라는 이름의 딤 자식이 있으면 그 형제 쪽을 연출 대상으로 쓰고 InputBlocker는
+        // 제외한다. 형제가 여럿이면(예: OutsideCloseArea, DeleteConfirmRoot 등 부가 오브젝트가 같이
+        // 있는 패널) 그중 "PF_UIStandard_" 접두사를 가진 실제 콘텐츠 틀을 우선 찾아 그것만 연출
+        // 대상으로 쓴다 - 형제가 정확히 하나일 때만 동작하던 예전 방식은 부가 오브젝트가 하나라도
+        // 더 있으면 InputBlocker까지 포함한 전체를 그대로 연출해버리는 문제가 있었다.
+        // 이름 매칭도 실패하고 형제가 정확히 하나뿐이면 그 형제를 쓰고, 그렇지 않으면(형제가 여러 개인데
+        // 어느 것이 콘텐츠인지 못 정하면) 현재 노드를 그대로 쓴다.
+        // InputBlocker가 없고 자식이 정확히 하나뿐인 통과용 래퍼면 그 안쪽으로 내려가며 다시 확인한다
+        // (예: 표준 팝업 틀처럼 실제로는 한 겹 더 안쪽에 InputBlocker+콘텐츠가 있는 구조).
+        // InputBlocker를 못 찾으면(원래 딤이 없는 패널) 현재 노드를 그대로 연출 대상으로 쓴다.
         private static Transform ResolveAnimationTarget(Transform root)
         {
-            for (var i = 0; i < root.childCount; i++)
+            var current = root;
+            while (true)
             {
-                var child = root.GetChild(i);
-                if (child.name.StartsWith(ContentFrameNamePrefix, StringComparison.Ordinal))
-                {
-                    return child;
-                }
-            }
+                Transform otherChild = null;
+                Transform namedContentChild = null;
+                var hasInputBlocker = false;
+                var otherChildCount = 0;
 
-            return root;
+                for (var i = 0; i < current.childCount; i++)
+                {
+                    var child = current.GetChild(i);
+                    if (string.Equals(child.name, InputBlockerName, StringComparison.Ordinal))
+                    {
+                        hasInputBlocker = true;
+                        continue;
+                    }
+
+                    otherChildCount++;
+                    otherChild = child;
+
+                    if (namedContentChild == null &&
+                        child.name.StartsWith(ContentFramePrefix, StringComparison.Ordinal))
+                    {
+                        namedContentChild = child;
+                    }
+                }
+
+                if (hasInputBlocker)
+                {
+                    if (namedContentChild != null)
+                    {
+                        return namedContentChild;
+                    }
+
+                    return otherChildCount == 1 ? otherChild : current;
+                }
+
+                if (otherChildCount == 1 && current.childCount == 1)
+                {
+                    current = otherChild;
+                    continue;
+                }
+
+                // 어디서도 InputBlocker를 못 찾았다: 안쪽 래퍼가 아니라 원래 루트를 그대로 연출
+                // 대상으로 쓴다(딤이 없는 기존 패널들의 동작을 바꾸지 않기 위해).
+                return root;
+            }
         }
 
         // 패널 프리팹마다 pivot이 달라(0,0 / 0.5,0.5 등) 스케일 연출이 서로 다른 방향에서
@@ -152,6 +208,15 @@ namespace ProjectMT.Shared.UI
                     openDuration = FullScreenOpenDuration;
                     fadeDuration = FullScreenFadeDuration;
                     moveOffsetY = FullScreenMoveOffsetY;
+                    break;
+                case UIPanelPopStyle.FadeOnly:
+                    // 스케일·위치를 전혀 건드리지 않는다: 내부 3D 프리뷰 스테이지가 부모 트랜스폼을
+                    // 그대로 물려받으므로, 스케일/이동 트윈을 쓰면 그 프리뷰의 IK 발 고정 캡처 시점과
+                    // 어긋나 캐릭터가 붕 뜬 것처럼 보이는 문제가 생긴다(군단장 성장/장비/편성 공용).
+                    startScale = 1f;
+                    openDuration = FullScreenOpenDuration;
+                    fadeDuration = FullScreenFadeDuration;
+                    moveOffsetY = 0f;
                     break;
                 default:
                     startScale = StandardStartScale;
@@ -218,6 +283,11 @@ namespace ProjectMT.Shared.UI
                     endScale = 1f;
                     closeMoveDuration = FullScreenCloseMoveDuration;
                     moveOffsetY = FullScreenMoveOffsetY;
+                    break;
+                case UIPanelPopStyle.FadeOnly:
+                    endScale = 1f;
+                    closeMoveDuration = FullScreenCloseMoveDuration;
+                    moveOffsetY = 0f;
                     break;
                 default:
                     endScale = StandardStartScale;

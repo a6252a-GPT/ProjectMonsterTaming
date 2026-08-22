@@ -161,14 +161,14 @@ namespace ProjectMT.Features.MainBattle
         public void OpenCommanderGrowthPage()
         {
             CloseAllPages();
-            UIPanelPopAnimator.RequestOpen(commanderGrowthPage, UIPanelPopStyle.FullScreenPage);
+            UIPanelPopAnimator.RequestOpen(commanderGrowthPage, UIPanelPopStyle.FadeOnly);
             BringToFront();
         }
 
         public void OpenEquipmentPage()
         {
             CloseAllPages();
-            UIPanelPopAnimator.RequestOpen(equipmentPage);
+            UIPanelPopAnimator.RequestOpen(equipmentPage, UIPanelPopStyle.FadeOnly);
             BringToFront();
         }
 
@@ -397,14 +397,17 @@ namespace ProjectMT.Features.MainBattle
 
         private void CloseManagementPages()
         {
-            commanderGrowthPage?.SetActive(false);
-            shopPage?.SetActive(false);
+            // SetActive(false)를 직접 호출하면 UIPanelPopAnimator.OnDisable이 진행 중이던 오픈 트윈을
+            // 중간값에서 그대로 죽여버려(스케일/위치가 목표치로 정리되지 않음) 다음에 열 때 잔상이
+            // 남을 수 있다. 항상 RequestClose를 통해 애니메이터가 스스로 정리하게 한다.
+            UIPanelPopAnimator.RequestClose(commanderGrowthPage);
+            UIPanelPopAnimator.RequestClose(shopPage);
             monsterManagementPage?.ClosePage();
-            equipmentPage?.SetActive(false);
+            UIPanelPopAnimator.RequestClose(equipmentPage);
             equipmentSlotUpgradePage?.Close();
             inventoryPage?.Close();
             commanderSkillPage?.Close();
-            growthDungeonPage?.SetActive(false);
+            UIPanelPopAnimator.RequestClose(growthDungeonPage);
             settingsPage?.Close();
             attendancePage?.Close();
             mailboxPage?.Close();
@@ -418,7 +421,9 @@ namespace ProjectMT.Features.MainBattle
             CloseAllPages();
             if (shouldOpen)
             {
-                UIPanelPopAnimator.RequestOpen(commanderGrowthPage, UIPanelPopStyle.FullScreenPage);
+                // 이 페이지는 군단장 3D 프리뷰(발 IK 고정)를 포함하므로 스케일/이동 없는
+                // FadeOnly를 쓴다. 자세한 이유는 UIPanelPopStyle.FadeOnly 주석 참고.
+                UIPanelPopAnimator.RequestOpen(commanderGrowthPage, UIPanelPopStyle.FadeOnly);
                 BringToFront();
             }
         }
@@ -448,7 +453,9 @@ namespace ProjectMT.Features.MainBattle
             CloseAllPages();
             if (shouldOpen)
             {
-                UIPanelPopAnimator.RequestOpen(equipmentPage);
+                // 이 페이지도 군단장 3D 프리뷰(발 IK 고정)를 포함하므로 스케일/이동 없는
+                // FadeOnly를 쓴다. 자세한 이유는 UIPanelPopStyle.FadeOnly 주석 참고.
+                UIPanelPopAnimator.RequestOpen(equipmentPage, UIPanelPopStyle.FadeOnly);
                 BringToFront();
             }
         }

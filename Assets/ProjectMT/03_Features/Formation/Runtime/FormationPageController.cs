@@ -188,7 +188,9 @@ namespace ProjectMT.Features.Formation
             {
                 if (open)
                 {
-                    UIPanelPopAnimator.RequestOpen(pageRoot);
+                    // 이 페이지는 군단장 3D 프리뷰(발 IK 고정)를 포함하므로 스케일/이동 없는
+                    // FadeOnly를 쓴다. 자세한 이유는 UIPanelPopStyle.FadeOnly 주석 참고.
+                    UIPanelPopAnimator.RequestOpen(pageRoot, UIPanelPopStyle.FadeOnly);
                 }
                 else
                 {

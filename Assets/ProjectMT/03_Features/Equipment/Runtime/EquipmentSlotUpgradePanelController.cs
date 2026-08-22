@@ -106,7 +106,9 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            UIPanelPopAnimator.RequestOpen(gameObject);
+            // 이 패널도 군단장 3D 프리뷰(발 IK 고정)를 포함하므로 스케일/이동 없는 FadeOnly를
+            // 쓴다. 자세한 이유는 UIPanelPopStyle.FadeOnly 주석 참고.
+            UIPanelPopAnimator.RequestOpen(gameObject, UIPanelPopStyle.FadeOnly);
             OpenStateChanged?.Invoke(true);
         }
 

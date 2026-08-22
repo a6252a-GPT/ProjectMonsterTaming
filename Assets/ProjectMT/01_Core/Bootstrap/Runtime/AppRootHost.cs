@@ -345,7 +345,12 @@ namespace ProjectMT.Bootstrap
                 inventory.TryGetQuantity(definition.ItemId, out var currentQuantity);
                 if (currentQuantity < definition.MaxQuantity)
                 {
-                    rewards.Add(new ItemAmount(definition.ItemId, 200000L)); //0819 안건준 수정
+                    // 던전 열쇠류처럼 MaxQuantity가 작은 아이템(예: 3개)이 섞여 있으면 200000을 그대로
+                    // 지급하려다 한도를 넘겨서, ItemInventoryData.TryGrant가 배치 전체를 통째로
+                    // 거부해버린다(한 종류라도 한도 초과면 전부 실패). 남은 여유만큼만 지급해 항상
+                    // 한도 이내로 들어오게 한다.
+                    var amount = Math.Min(200000L, definition.MaxQuantity - currentQuantity);
+                    rewards.Add(new ItemAmount(definition.ItemId, amount));
                 }
             }
 
@@ -357,7 +362,7 @@ namespace ProjectMT.Bootstrap
             var saved = await gameDataService.TryApplyAndSaveAsync(
                 GameProgressChange.GrantItems(rewards.ToArray()));
             return saved
-                ? $"{rewards.Count}종 아이템 200000개씩 획득 완료"
+                ? $"{rewards.Count}종 아이템 획득 완료(최대 200000개씩)"
                 : "아이템 획득 정보를 저장하지 못했습니다";
         }
 

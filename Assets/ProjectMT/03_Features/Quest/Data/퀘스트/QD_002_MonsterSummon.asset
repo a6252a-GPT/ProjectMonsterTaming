@@ -16,7 +16,7 @@ MonoBehaviour:
     value: quest_002_monster_summon
   isEnabled: 1
   displayName: "\uCCAB \uBAAC\uC2A4\uD130 \uBF51\uAE30"
-  description: "\uBAAC\uC2A4\uD130\uB97C 1\uD68C \uBF51\uC73C\uC138\uC694."
+  description: "\uBAAC\uC2A4\uD130\uB97C 10\uD68C \uBF51\uC73C\uC138\uC694."
   questType: 0
   conditionType: 1
   targetValue: 1

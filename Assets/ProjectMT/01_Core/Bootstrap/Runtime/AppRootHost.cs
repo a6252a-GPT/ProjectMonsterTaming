@@ -16,6 +16,7 @@ using ProjectMT.Shared.Debugging;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Stats;
 using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
@@ -91,6 +92,9 @@ namespace ProjectMT.Bootstrap
             {
                 throw new InvalidOperationException($"ItemCatalog is invalid. {itemCatalogError}");
             }
+
+            ItemCatalogHub.Bind(projectConfig.ItemCatalog); // Bootstrap↔Features 순환 참조 없이 카탈로그 공유
+            RewardPresentationHub.Bind(rewardPresenter); // Bootstrap↔Features 순환 참조 없이 보상 연출 공유
 
             if (sceneLoader == null)
             {

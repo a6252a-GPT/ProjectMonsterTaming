@@ -15,5 +15,5 @@ MonoBehaviour:
   gold: 500
   commanderExperience: 100
   items:
-  - itemId: ticket_monster_summon
-    amount: 1
+  - itemId: material_legion_potential_upgrade_stone
+    amount: 3

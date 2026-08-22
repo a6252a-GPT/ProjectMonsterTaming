@@ -53,6 +53,10 @@ namespace ProjectMT.Features.MainBattle
         private void Awake()
         {
             ResolveRuntimeReferences();
+            if (managementUi != null)
+            {
+                managementUi.AnyPageOpenChanged += HandleAnyPageOpenChanged;
+            }
             contentButton?.onClick.AddListener(OpenContent);
             summonButton?.onClick.AddListener(OpenSummon);
             shopButton?.onClick.AddListener(OpenShop);
@@ -75,6 +79,10 @@ namespace ProjectMT.Features.MainBattle
 
         private void OnDestroy()
         {
+            if (managementUi != null)
+            {
+                managementUi.AnyPageOpenChanged -= HandleAnyPageOpenChanged;
+            }
             contentButton?.onClick.RemoveListener(OpenContent);
             summonButton?.onClick.RemoveListener(OpenSummon);
             shopButton?.onClick.RemoveListener(OpenShop);
@@ -98,6 +106,30 @@ namespace ProjectMT.Features.MainBattle
         public void CloseMenu()
         {
             SetMenuOpen(false);
+        }
+
+        // 상점 등 다른 페이지가 열려 있는 동안에는 고정 바로가기 버튼이 그 뒤에서 눌리지 않도록 막는다.
+        private void HandleAnyPageOpenChanged(bool anyPageOpen)
+        {
+            var interactable = !anyPageOpen;
+            SetButtonInteractable(contentButton, interactable);
+            SetButtonInteractable(summonButton, interactable);
+            SetButtonInteractable(shopButton, interactable);
+            SetButtonInteractable(attendanceButton, interactable);
+            SetButtonInteractable(mailboxButton, interactable);
+            SetButtonInteractable(menuButton, interactable);
+            if (anyPageOpen)
+            {
+                CloseMenu();
+            }
+        }
+
+        private static void SetButtonInteractable(Button button, bool interactable)
+        {
+            if (button != null)
+            {
+                button.interactable = interactable;
+            }
         }
 
         private void ToggleMenu()

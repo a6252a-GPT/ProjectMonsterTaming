@@ -1,5 +1,6 @@
 using ProjectMT.Contents.Framework;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace ProjectMT.Contents.FallenCommander
 {
@@ -14,11 +15,19 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, Min(1f)] private float turnSpeed = 90f;
 
         [Header("Basic Attack")]
-        [SerializeField] private FallenCommanderAttackData basicAttack = new FallenCommanderAttackData();
+        [SerializeField] private FallenCommanderBasicAttackData projectileBasicAttack = new FallenCommanderBasicAttackData();
+
+        [Header("Melee Attack")]
+        [FormerlySerializedAs("basicAttack")]
+        [SerializeField] private FallenCommanderAttackData meleeAttack = new FallenCommanderAttackData();
 
         [Header("Mark Strike")]
         [SerializeField] private GameObject markStrikeTelegraphPrefab;
         [SerializeField] private FallenCommanderAttackData markStrike = new FallenCommanderAttackData();
+
+        [Header("Tracking Mark")]
+        [SerializeField] private FallenCommanderAttackData trackingMark = new FallenCommanderAttackData();
+        [SerializeField, Min(0.1f)] private float trackingMarkLockDuration = 2f;
 
         [Header("Wide Burst")]
         [SerializeField] private FallenCommanderAttackData wideBurst = new FallenCommanderAttackData();
@@ -26,10 +35,19 @@ namespace ProjectMT.Contents.FallenCommander
         [Header("Line Strike")]
         [SerializeField] private FallenCommanderAttackData lineStrike = new FallenCommanderAttackData();
 
+        [Header("Corruption Ring")]
+        [SerializeField] private FallenCommanderAttackData corruptionRing = new FallenCommanderAttackData();
+        [SerializeField, Min(0.1f)] private float corruptionRingSafeRadius = 3.5f;
+
         [Header("Attack Selection")]
         [SerializeField, Min(0.1f)] private float closeAttackDistance = 3f;
         [SerializeField, Min(0.1f)] private float lineStrikeMinimumDistance = 5f;
         [SerializeField, Range(-1f, 1f)] private float lineStrikeAlignmentThreshold = 0.7f;
+
+        [Header("Attack Phases")]
+        [SerializeField, Range(0.01f, 1f)] private float phaseTwoHealthRatio = 0.7f;
+        [SerializeField, Range(0.01f, 1f)] private float phaseThreeHealthRatio = 0.4f;
+        [SerializeField, Min(0.1f)] private float phaseTransitionDuration = 1f;
 
         [Header("Death")]
         [SerializeField] private AnimationClip deathMotion;
@@ -54,14 +72,22 @@ namespace ProjectMT.Contents.FallenCommander
         public float AttackInterval => attackInterval;
         public float AttackRange => attackRange;
         public float TurnSpeed => turnSpeed;
-        public FallenCommanderAttackData BasicAttack => basicAttack;
+        public FallenCommanderBasicAttackData BasicAttack => projectileBasicAttack;
+        public FallenCommanderAttackData MeleeAttack => meleeAttack;
         public GameObject MarkStrikeTelegraphPrefab => markStrikeTelegraphPrefab;
         public FallenCommanderAttackData MarkStrike => markStrike;
+        public FallenCommanderAttackData TrackingMark => trackingMark;
+        public float TrackingMarkLockDuration => trackingMarkLockDuration;
         public FallenCommanderAttackData WideBurst => wideBurst;
         public FallenCommanderAttackData LineStrike => lineStrike;
+        public FallenCommanderAttackData CorruptionRing => corruptionRing;
+        public float CorruptionRingSafeRadius => corruptionRingSafeRadius;
         public float CloseAttackDistance => closeAttackDistance;
         public float LineStrikeMinimumDistance => lineStrikeMinimumDistance;
         public float LineStrikeAlignmentThreshold => lineStrikeAlignmentThreshold;
+        public float PhaseTwoHealthRatio => phaseTwoHealthRatio;
+        public float PhaseThreeHealthRatio => phaseThreeHealthRatio;
+        public float PhaseTransitionDuration => phaseTransitionDuration;
         public AnimationClip DeathMotion => deathMotion;
         public float DeathMotionDuration => ResolveDuration(deathMotion, deathMotionDuration);
         public AnimationClip CommanderDeathMotion => commanderDeathMotion;
@@ -89,6 +115,26 @@ namespace ProjectMT.Contents.FallenCommander
                     ? 0f
                     : Mathf.Max(0.01f, motion.length);
         }
+    }
+
+    [System.Serializable]
+    public sealed class FallenCommanderBasicAttackData
+    {
+        [SerializeField, Min(0.1f)] private float warningDuration = 0.4f;
+        [SerializeField, Min(0.1f)] private float projectileSpeed = 8f;
+        [SerializeField, Min(0.1f)] private float projectileRadius = 0.5f;
+        [SerializeField, Min(0.1f)] private float maxDistance = 12f;
+        [SerializeField, Min(0f)] private float projectileHeight = 1f;
+        [SerializeField, Min(0.1f)] private float repeatInterval = 4.5f;
+        [SerializeField, Min(0f)] private float patternOverlapDelay = 0.5f;
+
+        public float WarningDuration => warningDuration;
+        public float ProjectileSpeed => projectileSpeed;
+        public float ProjectileRadius => projectileRadius;
+        public float MaxDistance => maxDistance;
+        public float ProjectileHeight => projectileHeight;
+        public float RepeatInterval => repeatInterval;
+        public float PatternOverlapDelay => patternOverlapDelay;
     }
 
     [System.Serializable]

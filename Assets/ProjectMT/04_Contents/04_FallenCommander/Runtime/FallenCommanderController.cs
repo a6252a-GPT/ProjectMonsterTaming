@@ -11,33 +11,6 @@ using UnityEngine.UI;
 
 namespace ProjectMT.Contents.FallenCommander
 {
-    public static class FallenCommanderHealthThresholdRules
-    {
-        public static int CountNewWideBursts(
-            float healthRatio,
-            float phaseTwoRatio,
-            float phaseThreeRatio,
-            ref bool phaseTwoTriggered,
-            ref bool phaseThreeTriggered)
-        {
-            const float thresholdEpsilon = 0.0001f;
-            var count = 0;
-            if (healthRatio <= phaseTwoRatio + thresholdEpsilon && !phaseTwoTriggered)
-            {
-                phaseTwoTriggered = true;
-                count++;
-            }
-
-            if (healthRatio <= phaseThreeRatio + thresholdEpsilon && !phaseThreeTriggered)
-            {
-                phaseThreeTriggered = true;
-                count++;
-            }
-
-            return count;
-        }
-    }
-
     [DisallowMultipleComponent]
     public sealed class FallenCommanderController : MonoBehaviour, IContentController, IBossDungeonHudSource, IBossDungeonTimeoutController, IBossDungeonBossKillController, IBossDungeonBossHealthDebugController, IBossDungeonAttackDebugController
     {
@@ -59,6 +32,11 @@ namespace ProjectMT.Contents.FallenCommander
         [Header("Dungeon")]
         [SerializeField, Min(1f)] private float timeLimitSeconds = 80f;
         [SerializeField, Min(0f)] private float battleStartDelaySeconds = 2f;
+        [SerializeField, Range(0.01f, 1f)] private float finalChargeHealthRatio = 0.3f;
+        [SerializeField, Min(0.1f)] private float finalChargeDuration = 12f;
+        [SerializeField, Min(0f)] private float timeoutWipeWarningDuration = 0.8f;
+        [SerializeField, Min(0f)] private float timeoutWipeDeathResultDelay = 2f;
+        [SerializeField, Min(0f)] private float timeoutWarningStartSeconds = 5f;
 
         private ContentContext context;
         private UnitActor bossActor;
@@ -81,13 +59,24 @@ namespace ProjectMT.Contents.FallenCommander
         private Coroutine deathRoutine;
         private float battleStartDelayRemaining;
         private bool isBattleStartDelay;
-        private bool hasTriggeredHealthThresholdWideBurst70;
-        private bool hasTriggeredHealthThresholdWideBurst40;
-        private int pendingThresholdWideBurstCount;
+        private float finalChargeRemainingTime;
+        private bool isFinalChargeActive;
+        private bool hasTriggeredFinalCharge;
+        private FallenCommanderTelegraphView finalChargeTelegraph;
+        private bool isTimeoutWipeActive;
+        private Coroutine timeoutWipeRoutine;
+        private float timeoutWipeStartedRealtime = -1f;
+        private FallenCommanderBossPhase currentBossPhase;
+        private FallenCommanderAttackPattern pendingPhaseAttack;
+        private float phaseTransitionRemainingTime;
+        private bool isPhaseTransitionActive;
+        private bool isDebugPhaseJump;
         private bool isCommanderStunned;
         private int lastLoggedBossHealthPercent;
 
         private const float BreakGaugeDamageScale = 5f;
+        private static readonly Color FinalChargeTelegraphColor =
+            new Color(0.9f, 0.08f, 0.12f, 0.85f);
 
         private float RemainingBreakGauge =>
             Mathf.Max(0f, bossConfig.MaxBreakGauge - currentBreakGauge);
@@ -123,6 +112,17 @@ namespace ProjectMT.Contents.FallenCommander
             remainingTime = timeLimitSeconds;
             battleStartDelayRemaining = Mathf.Max(0f, battleStartDelaySeconds);
             isBattleStartDelay = battleStartDelayRemaining > 0f;
+            finalChargeRemainingTime = 0f;
+            isFinalChargeActive = false;
+            hasTriggeredFinalCharge = false;
+            DestroyFinalChargeTelegraph();
+            currentBossPhase = FallenCommanderBossPhase.Phase1;
+            pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
+            phaseTransitionRemainingTime = 0f;
+            isPhaseTransitionActive = false;
+            isDebugPhaseJump = false;
+            isTimeoutWipeActive = false;
+            timeoutWipeStartedRealtime = -1f;
             score = 0;
             isFinishing = false;
             var stage = int.TryParse(context.RunInfo.StageId, out var selectedStage) &&
@@ -152,6 +152,23 @@ namespace ProjectMT.Contents.FallenCommander
             IsRunning = false;
             battleStartDelayRemaining = 0f;
             isBattleStartDelay = false;
+            finalChargeRemainingTime = 0f;
+            isFinalChargeActive = false;
+            hasTriggeredFinalCharge = false;
+            DestroyFinalChargeTelegraph();
+            currentBossPhase = FallenCommanderBossPhase.Phase1;
+            pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
+            phaseTransitionRemainingTime = 0f;
+            isPhaseTransitionActive = false;
+            isDebugPhaseJump = false;
+            isTimeoutWipeActive = false;
+            timeoutWipeStartedRealtime = -1f;
+
+            if (timeoutWipeRoutine != null)
+            {
+                StopCoroutine(timeoutWipeRoutine);
+                timeoutWipeRoutine = null;
+            }
 
             if (deathRoutine != null)
             {
@@ -225,15 +242,50 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            stateMachine?.Tick(Time.deltaTime);
-            TryDispatchPendingThresholdWideBurst();
-
             remainingTime = Mathf.Max(0f, remainingTime - Time.deltaTime);
             if (remainingTime <= 0f)
             {
-                Finish(ContentOutcome.Fail);
+                BeginTimeoutWipeSequence();
                 return;
             }
+
+            if (isFinalChargeActive)
+            {
+                finalChargeRemainingTime = Mathf.Max(
+                    0f,
+                    finalChargeRemainingTime - Time.deltaTime);
+                finalChargeTelegraph?.SetProgress(
+                    finalChargeDuration <= 0f
+                        ? 1f
+                        : 1f - finalChargeRemainingTime / finalChargeDuration);
+                if (finalChargeRemainingTime <= 0f)
+                {
+                    ResolveFinalCharge();
+                    return;
+                }
+
+                PublishHudState();
+                return;
+            }
+
+            if (isPhaseTransitionActive)
+            {
+                stateMachine?.Tick(Time.deltaTime);
+                phaseTransitionRemainingTime = Mathf.Max(
+                    0f,
+                    phaseTransitionRemainingTime - Time.deltaTime);
+                if (phaseTransitionRemainingTime <= 0f)
+                {
+                    isPhaseTransitionActive = false;
+                    stateMachine?.CompletePhaseTransition(pendingPhaseAttack);
+                    pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
+                }
+
+                PublishHudState();
+                return;
+            }
+
+            stateMachine?.Tick(Time.deltaTime);
 
             if (isBroken)
             {
@@ -384,15 +436,21 @@ namespace ProjectMT.Contents.FallenCommander
                 bossConfig.BreakMotion,
                 bossConfig.BreakMotionDuration,
                 bossConfig.BasicAttack,
+                bossConfig.MeleeAttack,
                 bossConfig.MarkStrikeTelegraphPrefab,
                 bossConfig.MarkStrike,
+                bossConfig.TrackingMark,
+                bossConfig.TrackingMarkLockDuration,
                 bossConfig.WideBurst,
                 bossConfig.LineStrike,
+                bossConfig.CorruptionRing,
+                bossConfig.CorruptionRingSafeRadius,
                 bossConfig.CloseAttackDistance,
                 bossConfig.LineStrikeMinimumDistance,
                 bossConfig.LineStrikeAlignmentThreshold,
                 HandleCommanderStunChanged,
                 bossFacingSmoother);
+            stateMachine.SetPhase(currentBossPhase);
         }
 
         private void HandleCommanderStunChanged(bool isStunned)
@@ -421,6 +479,7 @@ namespace ProjectMT.Contents.FallenCommander
                 commanderRoot.transform,
                 () => !IsRunning ||
                     isBattleStartDelay ||
+                    isTimeoutWipeActive ||
                     commanderMove == null ||
                     !commanderMove.IsInputEnabled ||
                     isCommanderStunned,
@@ -440,13 +499,27 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            score += Mathf.CeilToInt(report.AppliedDamage);
+            if (!isDebugPhaseJump)
+            {
+                score += Mathf.CeilToInt(report.AppliedDamage);
+            }
             LogBossHealthThresholds();
 
-            var thresholdWideBurstCount = QueueHealthThresholdWideBursts();
-            TryDispatchPendingThresholdWideBurst();
+            var phaseChanged = TryAdvanceBossPhase();
 
-            if (thresholdWideBurstCount <= 0 && !isBroken && bossActor.IsAlive)
+            if (TryStartFinalCharge())
+            {
+                PublishHudState();
+                return;
+            }
+
+            if (phaseChanged || isPhaseTransitionActive)
+            {
+                PublishHudState();
+                return;
+            }
+
+            if (!isBroken && bossActor.IsAlive)
             {
                 var breakGaugeDamage = bossConfig.BreakGaugePerHit *
                     bossConfig.BreakGaugeAttackPowerMultiplier *
@@ -464,6 +537,188 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             PublishHudState();
+        }
+
+        private bool TryAdvanceBossPhase()
+        {
+            if (bossActor == null ||
+                !bossActor.IsAlive ||
+                bossActor.Health.MaxHealth <= 0f)
+            {
+                return false;
+            }
+
+            var healthRatio =
+                bossActor.Health.CurrentHealth / bossActor.Health.MaxHealth;
+            var nextPhase = healthRatio <= bossConfig.PhaseThreeHealthRatio
+                ? FallenCommanderBossPhase.Phase3
+                : healthRatio <= bossConfig.PhaseTwoHealthRatio
+                    ? FallenCommanderBossPhase.Phase2
+                    : FallenCommanderBossPhase.Phase1;
+            if (nextPhase <= currentBossPhase)
+            {
+                return false;
+            }
+
+            currentBossPhase = nextPhase;
+            pendingPhaseAttack = nextPhase == FallenCommanderBossPhase.Phase2
+                ? FallenCommanderAttackPattern.Wide
+                : FallenCommanderAttackPattern.TrackingMark;
+            phaseTransitionRemainingTime = bossConfig.PhaseTransitionDuration;
+            isPhaseTransitionActive = true;
+            isBroken = false;
+            breakRemainingTime = 0f;
+            currentBreakGauge = 0f;
+            stateMachine?.BeginPhaseTransition(
+                currentBossPhase,
+                phaseTransitionRemainingTime);
+            Debug.Log($"보스 {((int)currentBossPhase)} 페이즈 진입", this);
+            return true;
+        }
+
+        private void ResolveFinalCharge()
+        {
+            isFinalChargeActive = false;
+            finalChargeRemainingTime = 0f;
+            DestroyFinalChargeTelegraph();
+
+            if (commanderHealth != null && commanderHealth.IsAlive)
+            {
+                commanderHealth.ApplyDamage(new DamageRequest(
+                    bossActor,
+                    1f,
+                    commanderRoot.transform.position));
+                Debug.Log("충전 광역 공격 적중: 하트 1개 피해", this);
+            }
+
+            if (!IsRunning || commanderHealth == null || !commanderHealth.IsAlive)
+            {
+                return;
+            }
+
+            InitializeStateMachine();
+            PublishHudState();
+        }
+
+        private void BeginTimeoutWipeSequence()
+        {
+            if (!IsRunning || isFinishing || isTimeoutWipeActive)
+            {
+                return;
+            }
+
+            isTimeoutWipeActive = true;
+            timeoutWipeStartedRealtime = Time.realtimeSinceStartup;
+            isFinalChargeActive = false;
+            finalChargeRemainingTime = 0f;
+            isPhaseTransitionActive = false;
+            phaseTransitionRemainingTime = 0f;
+            pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
+            DestroyFinalChargeTelegraph();
+            ShutdownCommanderSkills();
+            stateMachine?.Shutdown();
+            commanderMove?.SetInputEnabled(false);
+            PublishHudState();
+            timeoutWipeRoutine = StartCoroutine(CompleteTimeoutWipe());
+        }
+
+        private IEnumerator CompleteTimeoutWipe()
+        {
+            yield return new WaitForSeconds(timeoutWipeWarningDuration);
+            timeoutWipeRoutine = null;
+
+            while (commanderHealth != null && commanderHealth.IsAlive)
+            {
+                commanderHealth.ApplyDamage(new DamageRequest(
+                    bossActor,
+                    1f,
+                    commanderRoot.transform.position));
+            }
+
+            isTimeoutWipeActive = false;
+            PublishHudState();
+            BeginDeathSequence(
+                ContentOutcome.Fail,
+                true,
+                timeoutWipeDeathResultDelay);
+        }
+
+        private bool TryStartFinalCharge()
+        {
+            if (hasTriggeredFinalCharge ||
+                bossActor == null ||
+                !bossActor.IsAlive ||
+                bossActor.Health.MaxHealth <= 0f)
+            {
+                return false;
+            }
+
+            var healthRatio =
+                bossActor.Health.CurrentHealth / bossActor.Health.MaxHealth;
+            if (healthRatio > finalChargeHealthRatio)
+            {
+                return false;
+            }
+
+            return StartFinalCharge();
+        }
+
+        private bool StartFinalCharge()
+        {
+            if (isFinalChargeActive ||
+                isTimeoutWipeActive ||
+                isFinishing ||
+                bossActor == null ||
+                !bossActor.IsAlive)
+            {
+                return false;
+            }
+
+            hasTriggeredFinalCharge = true;
+            isFinalChargeActive = true;
+            finalChargeRemainingTime = finalChargeDuration;
+            isBroken = false;
+            breakRemainingTime = 0f;
+            currentBreakGauge = 0f;
+            isPhaseTransitionActive = false;
+            phaseTransitionRemainingTime = 0f;
+            pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
+            stateMachine?.Shutdown();
+            CreateFinalChargeTelegraph();
+            Debug.Log(
+                $"충전 광역 공격 준비 시작: {finalChargeDuration:0.0}초",
+                this);
+            return true;
+        }
+
+        private void CreateFinalChargeTelegraph()
+        {
+            DestroyFinalChargeTelegraph();
+            if (bossActor == null ||
+                bossConfig == null ||
+                bossConfig.MarkStrikeTelegraphPrefab == null)
+            {
+                return;
+            }
+
+            finalChargeTelegraph = FallenCommanderTelegraphView.CreateCircle(
+                bossConfig.MarkStrikeTelegraphPrefab,
+                bossActor.transform.parent,
+                bossActor.transform.position,
+                bossConfig.WideBurst.Radius,
+                FinalChargeTelegraphColor);
+            finalChargeTelegraph?.SetProgress(0f);
+        }
+
+        private void DestroyFinalChargeTelegraph()
+        {
+            if (finalChargeTelegraph == null)
+            {
+                return;
+            }
+
+            Destroy(finalChargeTelegraph.gameObject);
+            finalChargeTelegraph = null;
         }
 
         private float GetHealthThresholdBreakGaugeMultiplier()
@@ -489,45 +744,6 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             return 1f;
-        }
-
-        private int QueueHealthThresholdWideBursts()
-        {
-            if (bossActor == null ||
-                !bossActor.IsAlive ||
-                bossActor.Health.MaxHealth <= 0f)
-            {
-                return 0;
-            }
-
-            var healthRatio =
-                bossActor.Health.CurrentHealth / bossActor.Health.MaxHealth;
-
-            var newBurstCount = FallenCommanderHealthThresholdRules.CountNewWideBursts(
-                healthRatio,
-                bossConfig.BreakGaugePhaseTwoHealthRatio,
-                bossConfig.BreakGaugePhaseThreeHealthRatio,
-                ref hasTriggeredHealthThresholdWideBurst70,
-                ref hasTriggeredHealthThresholdWideBurst40);
-            pendingThresholdWideBurstCount += newBurstCount;
-            return newBurstCount;
-        }
-
-        private void TryDispatchPendingThresholdWideBurst()
-        {
-            if (!IsRunning || pendingThresholdWideBurstCount <= 0)
-            {
-                return;
-            }
-
-            if (isBroken)
-            {
-                pendingThresholdWideBurstCount = 0;
-                return;
-            }
-
-            pendingThresholdWideBurstCount = 0;
-            stateMachine?.ForceWideBurst();
         }
 
         private void StartBreak()
@@ -562,9 +778,10 @@ namespace ProjectMT.Contents.FallenCommander
             currentBreakGauge = 0f;
             breakRemainingTime = 0f;
             isBroken = false;
-            hasTriggeredHealthThresholdWideBurst70 = false;
-            hasTriggeredHealthThresholdWideBurst40 = false;
-            pendingThresholdWideBurstCount = 0;
+            currentBossPhase = FallenCommanderBossPhase.Phase1;
+            pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
+            phaseTransitionRemainingTime = 0f;
+            isPhaseTransitionActive = false;
             isCommanderStunned = false;
         }
 
@@ -627,7 +844,18 @@ namespace ProjectMT.Contents.FallenCommander
                 stateMachine == null
                     ? 0f
                     : stateMachine.CommanderStunRemainingTime,
-                bossConfig.MarkStrike.StunDuration));
+                bossConfig.MarkStrike.StunDuration,
+                isFinalChargeActive,
+                finalChargeRemainingTime,
+                finalChargeDuration,
+                isTimeoutWipeActive,
+                !isBattleStartDelay &&
+                !isTimeoutWipeActive &&
+                    remainingTime > 0f &&
+                    remainingTime <= timeoutWarningStartSeconds,
+                timeoutWarningStartSeconds,
+                isPhaseTransitionActive,
+                (int)currentBossPhase));
         }
 
         private void HandleCommanderDamaged(DamageReport report)
@@ -640,6 +868,11 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void HandleCommanderDied(DamageReport report)
         {
+            if (isTimeoutWipeActive)
+            {
+                return;
+            }
+
             BeginDeathSequence(
                 ContentOutcome.Fail,
                 true);
@@ -652,6 +885,19 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
+            if (isTimeoutWipeActive)
+            {
+                return;
+            }
+
+            isFinalChargeActive = false;
+            finalChargeRemainingTime = 0f;
+            isPhaseTransitionActive = false;
+            phaseTransitionRemainingTime = 0f;
+            pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
+            DestroyFinalChargeTelegraph();
+            PublishHudState();
+
             BeginDeathSequence(
                 ContentOutcome.Complete,
                 false);
@@ -661,13 +907,32 @@ namespace ProjectMT.Contents.FallenCommander
         {
             if (IsRunning)
             {
-                Finish(ContentOutcome.Fail);
+                remainingTime = 0f;
+                BeginTimeoutWipeSequence();
+            }
+        }
+
+        public void DebugReduceTimeTenSeconds()
+        {
+            if (!IsRunning || isFinishing || isTimeoutWipeActive)
+            {
+                return;
+            }
+
+            remainingTime = Mathf.Max(0f, remainingTime - 10f);
+            PublishHudState();
+            if (remainingTime <= 0f)
+            {
+                BeginTimeoutWipeSequence();
             }
         }
 
         public void DebugKillBoss()
         {
-            if (!IsRunning || bossActor == null || !bossActor.IsAlive)
+            if (!IsRunning ||
+                isTimeoutWipeActive ||
+                bossActor == null ||
+                !bossActor.IsAlive)
             {
                 return;
             }
@@ -680,7 +945,10 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugDamageBossTenPercent()
         {
-            if (!IsRunning || bossActor == null || !bossActor.IsAlive)
+            if (!IsRunning ||
+                isTimeoutWipeActive ||
+                bossActor == null ||
+                !bossActor.IsAlive)
             {
                 return;
             }
@@ -689,6 +957,55 @@ namespace ProjectMT.Contents.FallenCommander
                 null,
                 bossActor.Health.MaxHealth * 0.1f,
                 bossActor.transform.position));
+        }
+
+        public void DebugSetBossPhase(int phaseNumber)
+        {
+            if (!IsRunning ||
+                isBattleStartDelay ||
+                isTimeoutWipeActive ||
+                isFinishing ||
+                bossActor == null ||
+                !bossActor.IsAlive)
+            {
+                return;
+            }
+
+            var targetPhase = (FallenCommanderBossPhase)Mathf.Clamp(
+                phaseNumber,
+                (int)FallenCommanderBossPhase.Phase1,
+                (int)FallenCommanderBossPhase.Phase3);
+            isFinalChargeActive = false;
+            hasTriggeredFinalCharge = false;
+            finalChargeRemainingTime = 0f;
+            DestroyFinalChargeTelegraph();
+            stateMachine?.Shutdown();
+            ResetBreakState();
+            bossActor.Health.Heal(bossActor.Health.MaxHealth);
+            InitializeStateMachine();
+
+            if (targetPhase == FallenCommanderBossPhase.Phase1)
+            {
+                PublishHudState();
+                return;
+            }
+
+            var targetRatio = targetPhase == FallenCommanderBossPhase.Phase2
+                ? bossConfig.PhaseTwoHealthRatio
+                : bossConfig.PhaseThreeHealthRatio;
+            var debugDamage = bossActor.Health.MaxHealth * (1f - targetRatio);
+            isDebugPhaseJump = true;
+            try
+            {
+                bossActor.Health.ApplyDamage(new DamageRequest(
+                    bossActor,
+                    debugDamage,
+                    bossActor.transform.position));
+            }
+            finally
+            {
+                isDebugPhaseJump = false;
+            }
         }
 
         private void LogBossHealthThresholds()
@@ -719,7 +1036,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugBasicAttack()
         {
-            if (!IsRunning || isBattleStartDelay)
+            if (!IsRunning || isBattleStartDelay || isFinalChargeActive || isTimeoutWipeActive)
             {
                 return;
             }
@@ -727,9 +1044,19 @@ namespace ProjectMT.Contents.FallenCommander
             stateMachine?.DebugForceBasicAttack();
         }
 
+        public void DebugMeleeAttack()
+        {
+            if (!IsRunning || isBattleStartDelay || isFinalChargeActive || isTimeoutWipeActive)
+            {
+                return;
+            }
+
+            stateMachine?.DebugForceMeleeAttack();
+        }
+
         public void DebugLineStrike()
         {
-            if (!IsRunning || isBattleStartDelay)
+            if (!IsRunning || isBattleStartDelay || isFinalChargeActive || isTimeoutWipeActive)
             {
                 return;
             }
@@ -737,9 +1064,19 @@ namespace ProjectMT.Contents.FallenCommander
             stateMachine?.DebugForceLineStrike();
         }
 
+        public void DebugCorruptionRing()
+        {
+            if (!IsRunning || isBattleStartDelay || isFinalChargeActive || isTimeoutWipeActive)
+            {
+                return;
+            }
+
+            stateMachine?.DebugForceCorruptionRing();
+        }
+
         public void DebugMarkStrike()
         {
-            if (!IsRunning || isBattleStartDelay)
+            if (!IsRunning || isBattleStartDelay || isFinalChargeActive || isTimeoutWipeActive)
             {
                 return;
             }
@@ -747,14 +1084,34 @@ namespace ProjectMT.Contents.FallenCommander
             stateMachine?.DebugForceMarkStrike();
         }
 
+        public void DebugTrackingMark()
+        {
+            if (!IsRunning || isBattleStartDelay || isFinalChargeActive || isTimeoutWipeActive)
+            {
+                return;
+            }
+
+            stateMachine?.DebugForceTrackingMark();
+        }
+
         public void DebugWideBurst()
         {
-            if (!IsRunning || isBattleStartDelay)
+            if (!IsRunning || isBattleStartDelay || isFinalChargeActive || isTimeoutWipeActive)
             {
                 return;
             }
 
             stateMachine?.DebugForceWideBurst();
+        }
+
+        public void DebugChargedWideBurst()
+        {
+            if (!IsRunning || isBattleStartDelay || isTimeoutWipeActive)
+            {
+                return;
+            }
+
+            StartFinalCharge();
         }
 
         public bool PreviewBossAttack(FallenCommanderAttackData attack)
@@ -815,7 +1172,8 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void BeginDeathSequence(
             ContentOutcome outcome,
-            bool isCommanderDeath)
+            bool isCommanderDeath,
+            float resultDelayOverride = -1f)
         {
             if (!IsRunning || isFinishing)
             {
@@ -867,13 +1225,18 @@ namespace ProjectMT.Contents.FallenCommander
                 }
             }
 
+            var resultDelay = resultDelayOverride >= 0f
+                ? resultDelayOverride
+                : bossConfig.DeathResultDelay;
             deathRoutine = StartCoroutine(
-                CompleteAfterDeath(outcome));
+                CompleteAfterDeath(outcome, resultDelay));
         }
 
-        private IEnumerator CompleteAfterDeath(ContentOutcome outcome)
+        private IEnumerator CompleteAfterDeath(
+            ContentOutcome outcome,
+            float resultDelay)
         {
-            yield return new WaitForSeconds(bossConfig.DeathResultDelay);
+            yield return new WaitForSeconds(resultDelay);
             bossDeathPresentation?.Release();
             bossDeathPresentation = null;
             commanderDeathAnimationPresenter?.Stop();
@@ -885,6 +1248,14 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void ExitContent(ContentOutcome outcome)
         {
+            if (timeoutWipeStartedRealtime >= 0f)
+            {
+                Debug.Log(
+                    $"시간 종료 전멸 연출 완료: {Time.realtimeSinceStartup - timeoutWipeStartedRealtime:0.00}초",
+                    this);
+                timeoutWipeStartedRealtime = -1f;
+            }
+
             var result = new FallenCommanderResult(
                 score,
                 remainingTime,

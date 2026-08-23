@@ -41,7 +41,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     : "Edit Mode: preview creates a temporary boss in the Scene view.",
                 MessageType.None);
 
-            DrawAttackPreview("Basic Attack", config.BasicAttack);
+            DrawAttackPreview("Melee Attack", config.MeleeAttack);
             DrawAttackPreview("Mark Strike", config.MarkStrike);
             DrawAttackPreview("Wide Burst", config.WideBurst);
             DrawAttackPreview("Line Strike", config.LineStrike);

@@ -15,7 +15,15 @@ MonoBehaviour:
   attackInterval: 2
   attackRange: 8
   turnSpeed: 90
-  basicAttack:
+  projectileBasicAttack:
+    warningDuration: 0.4
+    projectileSpeed: 8
+    projectileRadius: 0.5
+    maxDistance: 12
+    projectileHeight: 1
+    repeatInterval: 4.5
+    patternOverlapDelay: 0.5
+  meleeAttack:
     preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
     preCastMotionDuration: 0.8750001
     castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
@@ -36,6 +44,17 @@ MonoBehaviour:
     width: 2
     length: 8
     stunDuration: 3.5
+  trackingMark:
+    preCastMotion: {fileID: 0}
+    preCastMotionDuration: 0
+    castMotion: {fileID: 0}
+    castMotionDuration: 0
+    warningDuration: 4
+    radius: 2.5
+    width: 2
+    length: 8
+    stunDuration: 0
+  trackingMarkLockDuration: 2
   wideBurst:
     preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
     preCastMotionDuration: 0.8750001
@@ -56,9 +75,23 @@ MonoBehaviour:
     width: 3
     length: 8
     stunDuration: 3.5
+  corruptionRing:
+    preCastMotion: {fileID: 0}
+    preCastMotionDuration: 0
+    castMotion: {fileID: 0}
+    castMotionDuration: 0
+    warningDuration: 2.5
+    radius: 10
+    width: 2
+    length: 8
+    stunDuration: 0
+  corruptionRingSafeRadius: 3.5
   closeAttackDistance: 3
   lineStrikeMinimumDistance: 5
   lineStrikeAlignmentThreshold: 0.7
+  phaseTwoHealthRatio: 0.7
+  phaseThreeHealthRatio: 0.4
+  phaseTransitionDuration: 1
   deathMotion: {fileID: 7400000, guid: 7eb365b59b49b5d4fa4ed0da8d2b8804, type: 3}
   deathMotionDuration: 3
   commanderDeathMotion: {fileID: 8993902097722301239, guid: 1b07e913704cec342817275ba1b2bb81, type: 3}

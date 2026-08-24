@@ -26,10 +26,8 @@ namespace ProjectMT.Features.Quest
         private const float StepIconAlphaDefault = 1f; // 미달성 상태 아이콘 색상(255/255)
         private const float StepIconAlphaAchieved = 100f / 255f; // 달성 상태로 바뀌면 연하게(100/255)
 
-        // 슬롯 밝기는 "보상 수령(RewardClaimed)" 기준으로만 결정한다.
-        // 진행중이거나 달성만 하고 아직 받기 버튼을 안 누른 상태는 항상 밝게 유지한다.
-        // GUIPro 데모 프리팹은 슬롯마다 배경·텍스트·게이지 알파가 제각각 박혀 있어,
-        // 매 갱신마다 코드에서 밝은 기준색을 덮어쓴 뒤 수령한 슬롯만 어둡게 만든다.
+        // 슬롯 밝기는 "보상 수령" 여부로만 정한다(진행중·미수령 달성은 항상 밝게). 프리팹 원본 알파가
+        // 슬롯마다 제각각이라, 매 갱신마다 코드에서 기준색을 덮어쓰고 수령한 슬롯만 어둡게 만든다.
         private const float SlotDimmedAlpha = 76f / 255f;
         private const float SlotNormalAlpha = 1f;
 
@@ -730,10 +728,8 @@ namespace ProjectMT.Features.Quest
             }
         }
 
-        // 받기 버튼을 눌러 보상을 실제로 수령하기 전까지는 진행중/달성 구분 없이 항상 밝게 유지하고,
-        // 수령을 마친 슬롯만 살짝 어둡게 표시한다. 패널의 박스 배경(ListFrame_01 등)은 절대 건드리지
-        // 않고, 제목·진행 게이지·보상 아이콘 등 "내용물" 그래픽만 대상으로 삼는다 - 배경까지 같이
-        // 어두워지면 슬롯 테두리 자체가 안 보이게 되어(이전 시도에서 발생한 문제) 안 된다.
+        // 진행중이든 달성만 했든 받기 전까지는 항상 밝게 유지하고, 수령한 슬롯만 살짝 어둡게 만든다.
+        // 배경(ListFrame_01)은 건드리지 않고 제목·게이지·아이콘 등 "내용물"만 대상으로 삼는다.
         private void ApplySlotDimming(MissionSlot slot, bool claimed)
         {
             var alpha = claimed ? SlotDimmedAlpha : SlotNormalAlpha;
@@ -857,8 +853,7 @@ namespace ProjectMT.Features.Quest
                     ClaimButton.interactable = false;
                 }
 
-                // 수령 성공 시 QuestRuntime.Changed가 슬롯을 다시 그리므로, 연출에 쓸 보상 정보는
-                // 수령 전에 미리 만들어 둔다(메인 퀘스트 HUD의 QuestHudTrackerView와 동일한 패턴).
+                // 연출용 보상 정보는 수령 전에 미리 만든다(성공 시 QuestRuntime.Changed가 슬롯을 다시 그려 사라지므로).
                 var presentation = Definition.TryCreateRewardBundle(out var bundle)
                     ? RewardPresentationRequest.FromBundle(bundle, ItemCatalogHub.Current)
                     : null;

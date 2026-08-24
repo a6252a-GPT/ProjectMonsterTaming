@@ -449,13 +449,10 @@ namespace ProjectMT.Features.Quest
             return highest;
         }
 
-        // 다음에 추적할 반복 템플릿을 "셔플백" 방식으로 고른다: 이번 라운드에 아직 한 번도 안 나온
-        // 후보 중에서만 무작위로 뽑아, 후보 전부가 한 번씩 등장하기 전에는 같은 템플릿이 먼저
-        // 두 번 나오지 않게 한다. excludeId(방금 끝난 템플릿)는 새 라운드가 시작되는 경우에도
-        // 바로 다시 뽑히지 않도록 별도로 제외하고, 이미 최대 등장 횟수를 채운 템플릿과 선행
-        // 반복 템플릿(RepeatPrerequisiteQuestIds)을 아직 못 채운 템플릿은 완전히 뺀다.
-        // startsNewCycle이 true로 나오면 이번 선택으로 라운드 후보를 모두 소진했다는 뜻이므로,
-        // 호출부는 저장 시 셔플백 목록을 비우고 새로 시작해야 한다(GameProgressChange 참고).
+        // 다음 반복 템플릿을 "셔플백" 방식으로 고른다: 이번 라운드에 안 나온 후보 중에서만 뽑아
+        // 전부 한 번씩 나오기 전엔 같은 템플릿이 먼저 두 번 나오지 않게 한다. excludeId·소진된
+        // 템플릿·선행 조건(RepeatPrerequisiteQuestIds) 미충족 템플릿은 제외하며, startsNewCycle이
+        // true면 호출부가 저장 시 셔플백 목록을 비워야 한다(GameProgressChange 참고).
         private static bool TryPickRepeatingTemplate(
             QuestType type,
             QuestId excludeId,
@@ -479,8 +476,7 @@ namespace ProjectMT.Features.Quest
 
             if (candidates.Count == 0)
             {
-                // 이번 라운드 후보를 모두 써버렸으면(=전부 한 번씩 등장 완료) 새 라운드를 시작한다.
-                // 방금 끝난 템플릿만 제외하고, 소진되지 않고 선행 조건도 채운 후보 전체를 다시 후보로 삼는다.
+                // 라운드 후보를 모두 소진했으면 방금 끝난 템플릿만 제외하고 새 라운드를 시작한다.
                 startsNewCycle = true;
                 foreach (var candidate in catalog.GetRepeatingTemplates(type))
                 {
@@ -494,9 +490,8 @@ namespace ProjectMT.Features.Quest
 
             if (candidates.Count == 0)
             {
-                // 최후 안전장치: 선행 조건까지 전부 만족하는 후보가 하나도 없으면(설정 문제 포함)
-                // 선행 조건은 잠시 무시하고 소진되지 않은 템플릿 중에서만 다시 고른다.
-                // 반복 풀 자체가 멈춰버리는 것보다는 선행 조건을 한 번 건너뛰는 편이 안전하다.
+                // 안전장치: 선행 조건을 만족하는 후보가 없으면(설정 문제 포함) 조건을 잠시 무시하고
+                // 소진되지 않은 템플릿 중에서 고른다(풀이 멈추는 것보다 안전).
                 foreach (var candidate in catalog.GetRepeatingTemplates(type))
                 {
                     if (candidate.QuestId != excludeId && !IsRepeatingTemplateExhausted(candidate))
@@ -528,8 +523,7 @@ namespace ProjectMT.Features.Quest
             return true;
         }
 
-        // template.RepeatPrerequisiteQuestIds에 적힌 반복 템플릿들이 전부 한 번 이상 완료(사이클 1회 이상)
-        // 되었는지 확인한다. 비어 있으면(선행 조건 없음) 항상 통과.
+        // RepeatPrerequisiteQuestIds에 적힌 템플릿들이 전부 한 번 이상 완료됐는지 확인한다(비어 있으면 항상 통과).
         private static bool AreRepeatPrerequisitesMet(QuestDefinition template)
         {
             var prerequisites = template.RepeatPrerequisiteQuestIds;
@@ -975,8 +969,7 @@ namespace ProjectMT.Features.Quest
         }
 
         // 현재 탭에서 수령 가능한 퀘스트의 보상과 수령 상태를 한 저장으로 함께 확정한다.
-        // 반환된 Reward는 호출부가 일괄 수령 연출(RewardPresentationRequest)을 만들 때 쓴다(비동기 메서드는
-        // out 매개변수를 쓸 수 없어 튜플로 반환한다).
+        // 반환된 Reward는 호출부가 수령 연출을 만들 때 쓴다(비동기라 out 대신 튜플로 반환).
         public static async Task<(bool Success, RewardBundle Reward)> TryClaimAllRewardsAsync(QuestType type)
         {
             if (!IsReady || (type != QuestType.Daily && type != QuestType.Weekly))

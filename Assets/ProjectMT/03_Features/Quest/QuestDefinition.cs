@@ -29,9 +29,7 @@ namespace ProjectMT.Features.Quest
         [SerializeField] private bool isRepeatingTemplate; // 켜면 선행 퀘스트 체인 대신 반복 퀘스트 풀에서 무작위로 뽑혀 등장한다.
         [SerializeField] private long repeatIncrement; // 이 템플릿이 다시 등장할 때마다 targetValue에 더해지는 값(0이면 목표 고정).
         [SerializeField] private int repeatMaxOccurrences; // 이 템플릿이 등장할 수 있는 최대 횟수(0 = 제한 없이 계속 등장).
-        // 여기 적힌 반복 템플릿들이 각각 한 번 이상 완료(보상 수령)되기 전까지는 이 템플릿이 반복 풀 후보에서 제외된다.
-        // 비어 있으면 제한 없이 처음부터 후보가 된다(다른 반복 템플릿과 순서 관계가 필요할 때만 사용).
-        [SerializeField] private List<QuestId> repeatPrerequisiteQuestIds = new List<QuestId>();
+        [SerializeField] private List<QuestId> repeatPrerequisiteQuestIds = new List<QuestId>(); // 여기 적힌 템플릿이 한 번 이상 완료되기 전까지 반복 풀 후보에서 제외(비어 있으면 제한 없음).
 
         public QuestId QuestId => questId;
         public bool IsEnabled => isEnabled;

@@ -338,9 +338,8 @@ namespace ProjectMT.EditorTools.Quest
             EditorGUI.indentLevel--;
         }
 
-        // 반복 풀 안에서의 순서 제약: 여기 체크한 다른 반복 템플릿들이 각각 한 번 이상 완료(보상 수령)
-        // 되기 전까지는 이 템플릿이 셔플백 후보에 들어가지 않는다(예: "전투력 달성"이 "체력/공격력/방어력
-        // 강화"보다 먼저 나오지 않도록 막을 때 사용).
+        // 반복 풀 순서 제약: 여기 체크한 템플릿들이 한 번 이상 완료되기 전까지는 이 템플릿이 셔플백
+        // 후보에 들어가지 않는다(예: "전투력 달성"을 "체력/공격력/방어력 강화"보다 뒤에 두고 싶을 때).
         private static void DrawRepeatPrerequisites(
             SerializedProperty prerequisiteListProp,
             QuestDefinition self,

@@ -89,10 +89,8 @@ namespace ProjectMT.Shared.UI
             sequence = null;
             isClosing = false;
 
-            // 조상 오브젝트가 먼저 SetActive(false)되면 닫힘 트윈이 OnComplete 전에 여기서 끊긴다.
-            // activeSelf가 true인 채로 남으면 조상이 나중에 다시 켜질 때 이 패널도 원치 않게
-            // 함께 되살아나 버리므로(예: 던전 진입으로 화면 전환 중 조상이 비활성화되는 경우),
-            // 닫히는 중이었다면 실제로 꺼진 상태로 맞춰준다.
+            // 조상이 먼저 비활성화되면 닫힘 트윈이 중간에 끊겨 activeSelf가 true로 남을 수 있다.
+            // 그대로 두면 조상이 다시 켜질 때 이 패널도 함께 되살아나므로, 닫히는 중이었다면 확실히 꺼준다.
             if (wasClosing && gameObject.activeSelf)
             {
                 gameObject.SetActive(false);

@@ -135,9 +135,8 @@ namespace ProjectMT.Shared.Quest
         [SerializeField] private List<QuestProgressEntryData> entries = new List<QuestProgressEntryData>();
         [SerializeField] private QuestId activeRepeatingTemplateId; // 지금 추적 중인 반복 퀘스트 템플릿(선형 체인이 끝난 뒤 사용)
         [SerializeField] private QuestId lastRepeatingTemplateId; // 바로 직전에 활성이었던 템플릿(같은 퀘스트 연속 등장 방지용)
-        // 반복 퀘스트 "셔플백": 지금 라운드에서 이미 한 번 등장한 템플릿 ID 목록. 후보 전체가 여기 담기면
-        // (=전부 한 번씩 등장 완료) 다음 선택 때 비우고 새 라운드를 시작해, 같은 템플릿이 다른 템플릿보다
-        // 먼저 두 번 나오는 일이 없게 한다.
+        // 반복 퀘스트 셔플백: 이번 라운드에 이미 나온 템플릿 목록. 후보 전체가 담기면 다음 선택 때
+        // 비우고 새 라운드를 시작해 같은 템플릿이 먼저 두 번 나오지 않게 한다.
         [SerializeField] private List<QuestId> repeatCycleUsedTemplateIds = new List<QuestId>();
         [SerializeField] private long lastDailyResetPeriod = -1L; // GrowthDungeonDailyKeyRules와 동일한 KST 05:00 기준 일자 ID(-1 = 아직 초기화 전)
         [SerializeField] private long lastWeeklyResetPeriod = -1L; // 월요일 KST 05:00 기준 주간 ID(-1 = 아직 초기화 전)
@@ -177,8 +176,7 @@ namespace ProjectMT.Shared.Quest
 
         // 다음 사이클로 넘어갈 때 활성 템플릿을 교체한다. previous가 곧 lastRepeatingTemplateId가 되어
         // 다음 선택에서 같은 템플릿이 연속으로 뽑히지 않게 막는 데 쓰인다.
-        // startNewCycle이 true면(셔플백 후보를 모두 소진해 새 라운드를 시작하는 경우) 목록을 비운 뒤
-        // next 하나만 새로 담고, false면 기존 목록에 next만 추가한다.
+        // startNewCycle이 true면 목록을 비우고 next만 새로 담고, false면 기존 목록에 next를 추가한다.
         internal void SetActiveRepeatingTemplate(QuestId next, QuestId previous, bool startNewCycle)
         {
             lastRepeatingTemplateId = previous;

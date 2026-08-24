@@ -9,18 +9,12 @@ namespace ProjectMT.Shared.UI
     // 개별 버튼에 수동으로 붙이지 않고, UIPanelPopAnimator.OnEnable이 하위 버튼 전체에 자동으로 붙여준다.
     // 상시 노출되는 HUD 고정 버튼은 EnsureOn(...)으로 직접 붙인다.
     //
-    // button.onClick.AddListener(...)를 Awake()에서 거는 대신 IPointerDownHandler를 직접 구현한다.
-    // 이유 1) 비활성 오브젝트에 AddComponent로 붙으면 Unity가 Awake 호출 자체를 그 오브젝트가
-    // 처음 활성화될 때까지 미루는데, 그 타이밍은 호출부마다 달라 보장하기 어렵다. 클릭 이벤트는
-    // 오브젝트가 반드시 활성 상태여야만 발생하므로(비활성 UI는 클릭할 수 없다), 포인터 이벤트
-    // 시점에는 Awake가 항상 이미 끝나 있음이 보장된다.
-    // 이유 2) OnPointerClick(뗄 때) 대신 OnPointerDown(누를 때)을 쓴다. 저장 로직이 있는 버튼들은
-    // onClick 리스너 안에서 중복 클릭 방지를 위해 button.interactable을 즉시 false로 바꾸는데,
-    // Unity는 한 오브젝트에 여러 IPointerClickHandler가 있으면 먼저 붙은 컴포넌트 순서대로
-    // 호출한다(Button이 먼저, 나중에 AddComponent된 이 스크립트가 나중). 그래서 OnPointerClick을
-    // 쓰면 Button의 onClick(=interactable을 false로 바꾸는 로직)이 먼저 실행된 뒤에 이 스크립트가
-    // 호출되어, interactable 체크에 걸려 펀치가 재생되지 않는 문제가 있었다. 누르는 순간(Down)에
-    // 반응하면 그 문제와 무관하게 항상 먼저 재생된다.
+    // Awake()에서 onClick.AddListener로 거는 대신 IPointerDownHandler를 직접 구현한다.
+    // 1) 비활성 오브젝트에 AddComponent하면 Awake 호출이 활성화 시점까지 미뤄지는데, 포인터
+    //    이벤트는 오브젝트가 활성 상태여야만 발생하므로 그 시점엔 Awake가 항상 끝나 있다.
+    // 2) OnPointerClick 대신 OnPointerDown을 쓴다. Button의 onClick이 먼저 실행되어 저장 로직이
+    //    interactable을 false로 바꾸면, 나중에 실행되는 OnPointerClick에서는 펀치가 재생되지
+    //    않는 문제가 있었다. 누르는 순간(Down)에 반응하면 그 문제와 무관하게 항상 먼저 재생된다.
     [DisallowMultipleComponent]
     public sealed class UIButtonClickPunch : MonoBehaviour, IPointerDownHandler
     {
@@ -65,8 +59,7 @@ namespace ProjectMT.Shared.UI
             PlayPunch();
         }
 
-        // Awake가 지연될 수 있으므로(클래스 주석 참고), 실제로 필요한 시점(클릭)에 한 번 더
-        // 안전하게 값을 채운다. 이미 채워져 있으면 아무 것도 하지 않는다.
+        // Awake 지연에 대비해(클래스 주석 참고) 클릭 시점에 한 번 더 안전하게 채운다(이미 채워졌으면 무시).
         private void CaptureState()
         {
             if (baseScaleCaptured)
@@ -93,9 +86,8 @@ namespace ProjectMT.Shared.UI
             sequence.Append(visualTarget.DOScale(baseScale, UpDuration).SetEase(Ease.OutBack));
         }
 
-        // 버튼 배경과 강조 이미지가 형제 오브젝트로 분리돼 있어(예: Button_02_Red 위에
-        // Button_02_Gray가 따로 있는 구조) 버튼 자신만 확대/축소하면 배경만 그대로 남아 어색해
-        // 보이는 경우, visualTarget을 지정해 그 상위(둘을 함께 담은 부모)를 대신 움직인다.
+        // 버튼 배경이 형제 오브젝트로 분리된 경우(예: Button_02_Red + Button_02_Gray) 버튼만
+        // 확대되면 배경이 그대로 남아 어색하므로, 둘을 담은 부모를 대신 움직이게 지정한다.
         public void SetVisualTarget(Transform target)
         {
             if (target == null || target == visualTarget)

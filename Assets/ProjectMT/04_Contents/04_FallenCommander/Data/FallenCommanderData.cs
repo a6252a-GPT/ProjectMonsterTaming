@@ -14,28 +14,28 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, Min(0.1f)] private float attackRange = 8f;
         [SerializeField, Min(1f)] private float turnSpeed = 90f;
 
-        [Header("Basic Attack")]
+        [Header("1. 기본 공격 - 원거리 투사체")]
         [SerializeField] private FallenCommanderBasicAttackData projectileBasicAttack = new FallenCommanderBasicAttackData();
 
-        [Header("Melee Attack")]
+        [Header("2. 근접 공격")]
         [FormerlySerializedAs("basicAttack")]
         [SerializeField] private FallenCommanderAttackData meleeAttack = new FallenCommanderAttackData();
 
-        [Header("Mark Strike")]
+        [Header("3. 위치 공격")]
         [SerializeField] private GameObject markStrikeTelegraphPrefab;
         [SerializeField] private FallenCommanderAttackData markStrike = new FallenCommanderAttackData();
 
-        [Header("Tracking Mark")]
+        [Header("4. 추적 낙인")]
         [SerializeField] private FallenCommanderAttackData trackingMark = new FallenCommanderAttackData();
         [SerializeField, Min(0.1f)] private float trackingMarkLockDuration = 2f;
 
-        [Header("Wide Burst")]
+        [Header("5. 광역기")]
         [SerializeField] private FallenCommanderAttackData wideBurst = new FallenCommanderAttackData();
 
-        [Header("Line Strike")]
+        [Header("6. 직선 공격")]
         [SerializeField] private FallenCommanderAttackData lineStrike = new FallenCommanderAttackData();
 
-        [Header("Corruption Ring")]
+        [Header("7. 타락의 고리")]
         [SerializeField] private FallenCommanderAttackData corruptionRing = new FallenCommanderAttackData();
         [SerializeField, Min(0.1f)] private float corruptionRingSafeRadius = 3.5f;
 
@@ -44,10 +44,8 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, Min(0.1f)] private float lineStrikeMinimumDistance = 5f;
         [SerializeField, Range(-1f, 1f)] private float lineStrikeAlignmentThreshold = 0.7f;
 
-        [Header("Attack Phases")]
-        [SerializeField, Range(0.01f, 1f)] private float phaseTwoHealthRatio = 0.7f;
-        [SerializeField, Range(0.01f, 1f)] private float phaseThreeHealthRatio = 0.4f;
-        [SerializeField, Min(0.1f)] private float phaseTransitionDuration = 1f;
+        [Header("Phase Data")]
+        [SerializeField] private FallenCommanderPhaseConfig phaseConfig;
 
         [Header("Death")]
         [SerializeField] private AnimationClip deathMotion;
@@ -60,8 +58,6 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, Min(1f)] private float maxBreakGauge = 100f;
         [SerializeField, Min(0.1f)] private float breakGaugePerHit = 10f;
         [SerializeField, Range(0.01f, 1f)] private float breakGaugeAttackPowerMultiplier = 0.25f;
-        [SerializeField, Range(0.01f, 1f)] private float breakGaugePhaseTwoHealthRatio = 0.7f;
-        [SerializeField, Range(0.01f, 1f)] private float breakGaugePhaseThreeHealthRatio = 0.4f;
         [SerializeField, Range(0.01f, 1f)] private float breakGaugePhaseTwoMultiplier = 0.75f;
         [SerializeField, Range(0.01f, 1f)] private float breakGaugePhaseThreeMultiplier = 0.5f;
         [SerializeField, Min(0.1f)] private float breakDuration = 5f;
@@ -85,9 +81,7 @@ namespace ProjectMT.Contents.FallenCommander
         public float CloseAttackDistance => closeAttackDistance;
         public float LineStrikeMinimumDistance => lineStrikeMinimumDistance;
         public float LineStrikeAlignmentThreshold => lineStrikeAlignmentThreshold;
-        public float PhaseTwoHealthRatio => phaseTwoHealthRatio;
-        public float PhaseThreeHealthRatio => phaseThreeHealthRatio;
-        public float PhaseTransitionDuration => phaseTransitionDuration;
+        public FallenCommanderPhaseConfig PhaseConfig => phaseConfig;
         public AnimationClip DeathMotion => deathMotion;
         public float DeathMotionDuration => ResolveDuration(deathMotion, deathMotionDuration);
         public AnimationClip CommanderDeathMotion => commanderDeathMotion;
@@ -98,8 +92,6 @@ namespace ProjectMT.Contents.FallenCommander
         public float MaxBreakGauge => maxBreakGauge;
         public float BreakGaugePerHit => breakGaugePerHit;
         public float BreakGaugeAttackPowerMultiplier => breakGaugeAttackPowerMultiplier;
-        public float BreakGaugePhaseTwoHealthRatio => breakGaugePhaseTwoHealthRatio;
-        public float BreakGaugePhaseThreeHealthRatio => breakGaugePhaseThreeHealthRatio;
         public float BreakGaugePhaseTwoMultiplier => breakGaugePhaseTwoMultiplier;
         public float BreakGaugePhaseThreeMultiplier => breakGaugePhaseThreeMultiplier;
         public float BreakDuration => breakDuration;

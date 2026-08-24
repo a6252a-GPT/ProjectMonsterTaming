@@ -72,8 +72,10 @@ namespace ProjectMT.Contents.FallenCommander
         private FallenCommanderBossPhase requestedBossPhase;
         private FallenCommanderAttackPattern pendingPhaseAttack;
         private float phaseTransitionRemainingTime;
+        private float phaseIntroNoticeRemainingTime;
         private bool isPhaseTransitionActive;
         private bool isWaitingForPhaseSignature;
+        private string phaseTransitionMessage = string.Empty;
         private bool isDebugPhaseJump;
         private bool isCommanderStunned;
         private int lastLoggedBossHealthPercent;
@@ -126,8 +128,10 @@ namespace ProjectMT.Contents.FallenCommander
             requestedBossPhase = FallenCommanderBossPhase.Phase1;
             pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
             phaseTransitionRemainingTime = 0f;
+            phaseIntroNoticeRemainingTime = 0f;
             isPhaseTransitionActive = false;
             isWaitingForPhaseSignature = false;
+            phaseTransitionMessage = string.Empty;
             isDebugPhaseJump = false;
             isTimeoutWipeActive = false;
             timeoutWipeStartedRealtime = -1f;
@@ -150,6 +154,7 @@ namespace ProjectMT.Contents.FallenCommander
             InitializeStateMachine();
             ConfigureCommanderSkills();
             InitializeHud();
+            PresentInitialPhase();
 
             IsRunning = true;
             PublishHudState();
@@ -170,8 +175,10 @@ namespace ProjectMT.Contents.FallenCommander
             requestedBossPhase = FallenCommanderBossPhase.Phase1;
             pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
             phaseTransitionRemainingTime = 0f;
+            phaseIntroNoticeRemainingTime = 0f;
             isPhaseTransitionActive = false;
             isWaitingForPhaseSignature = false;
+            phaseTransitionMessage = string.Empty;
             isDebugPhaseJump = false;
             isTimeoutWipeActive = false;
             timeoutWipeStartedRealtime = -1f;
@@ -238,6 +245,10 @@ namespace ProjectMT.Contents.FallenCommander
             {
                 return;
             }
+
+            phaseIntroNoticeRemainingTime = Mathf.Max(
+                0f,
+                phaseIntroNoticeRemainingTime - Time.deltaTime);
 
             if (isBattleStartDelay)
             {
@@ -338,13 +349,21 @@ namespace ProjectMT.Contents.FallenCommander
                 commanderRoot == null ||
                 commanderMove == null ||
                 bossConfig == null ||
+                bossConfig.PhaseConfig == null ||
                 bossConfig.MarkStrikeTelegraphPrefab == null)
             {
                 throw new InvalidOperationException(
                     "Fallen Commander references are missing.");
             }
 
-            if (bossConfig.PhaseTwoHealthRatio <= bossConfig.PhaseThreeHealthRatio ||
+            if (!bossConfig.PhaseConfig.TryValidate(out var phaseError))
+            {
+                throw new InvalidOperationException(
+                    $"Fallen Commander phase settings are invalid: {phaseError}");
+            }
+
+            if (bossConfig.TrackingMark == null ||
+                bossConfig.CorruptionRing == null ||
                 bossConfig.TrackingMarkLockDuration >= bossConfig.TrackingMark.WarningDuration ||
                 bossConfig.CorruptionRingSafeRadius >= bossConfig.CorruptionRing.Radius)
             {
@@ -458,6 +477,7 @@ namespace ProjectMT.Contents.FallenCommander
             Debug.Log("보스 체력: 100%", this);
         }
 
+        // 보스 설정과 분리된 페이즈 데이터를 새 공격 상태 머신에 주입한다.
         private void InitializeStateMachine()
         {
             stateMachine = new FallenCommanderBossStateMachine();
@@ -484,6 +504,7 @@ namespace ProjectMT.Contents.FallenCommander
                 bossConfig.CloseAttackDistance,
                 bossConfig.LineStrikeMinimumDistance,
                 bossConfig.LineStrikeAlignmentThreshold,
+                bossConfig.PhaseConfig,
                 HandleCommanderStunChanged,
                 bossFacingSmoother);
             stateMachine.SetPhase(currentBossPhase);
@@ -587,11 +608,9 @@ namespace ProjectMT.Contents.FallenCommander
 
             var healthRatio =
                 bossActor.Health.CurrentHealth / bossActor.Health.MaxHealth;
-            var targetPhase = healthRatio <= bossConfig.PhaseThreeHealthRatio
-                ? FallenCommanderBossPhase.Phase3
-                : healthRatio <= bossConfig.PhaseTwoHealthRatio
-                    ? FallenCommanderBossPhase.Phase2
-                    : FallenCommanderBossPhase.Phase1;
+            var targetPhase = bossConfig.PhaseConfig
+                .GetPhaseForHealthRatio(healthRatio)
+                .Phase;
             if (targetPhase <= requestedBossPhase)
             {
                 return false;
@@ -616,10 +635,13 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             currentBossPhase = (FallenCommanderBossPhase)((int)currentBossPhase + 1);
-            pendingPhaseAttack = currentBossPhase == FallenCommanderBossPhase.Phase2
-                ? FallenCommanderAttackPattern.Wide
-                : FallenCommanderAttackPattern.TrackingMark;
-            phaseTransitionRemainingTime = bossConfig.PhaseTransitionDuration;
+            var phaseData = bossConfig.PhaseConfig.GetPhase(currentBossPhase);
+            pendingPhaseAttack = phaseData.HasSignatureAttack
+                ? phaseData.SignatureAttack
+                : FallenCommanderAttackPattern.Basic;
+            phaseTransitionRemainingTime = phaseData.TransitionDuration;
+            phaseIntroNoticeRemainingTime = 0f;
+            phaseTransitionMessage = phaseData.TransitionMessage;
             isPhaseTransitionActive = true;
             isBroken = false;
             breakRemainingTime = 0f;
@@ -627,8 +649,34 @@ namespace ProjectMT.Contents.FallenCommander
             stateMachine?.BeginPhaseTransition(
                 currentBossPhase,
                 phaseTransitionRemainingTime);
+            PlayPhaseTransitionSound(phaseData);
             Debug.Log($"보스 {((int)currentBossPhase)} 페이즈 진입", this);
             return true;
+        }
+
+        // 전투 준비시간 안에 1페이즈 문구와 선택 사운드를 재생한다.
+        private void PresentInitialPhase()
+        {
+            var phaseData = bossConfig.PhaseConfig.GetPhase(
+                FallenCommanderBossPhase.Phase1);
+            phaseIntroNoticeRemainingTime = battleStartDelayRemaining > 0f
+                ? Mathf.Min(battleStartDelayRemaining, phaseData.TransitionDuration)
+                : phaseData.TransitionDuration;
+            phaseTransitionMessage = phaseData.TransitionMessage;
+            PlayPhaseTransitionSound(phaseData);
+        }
+
+        // 페이즈에 사운드가 지정된 경우 보스 위치에서 한 번 재생한다.
+        private void PlayPhaseTransitionSound(FallenCommanderPhaseData phaseData)
+        {
+            if (phaseData?.TransitionSound == null || bossActor == null)
+            {
+                return;
+            }
+
+            AudioSource.PlayClipAtPoint(
+                phaseData.TransitionSound,
+                bossActor.transform.position);
         }
 
         // 충전 종료 시 표시된 원형 범위 안의 군단장에게만 하트 1개 피해를 적용한다.
@@ -815,6 +863,7 @@ namespace ProjectMT.Contents.FallenCommander
             finalChargeTelegraph = null;
         }
 
+        // 현재 페이즈에 맞는 브레이크 게이지 획득 배율을 반환한다.
         private float GetHealthThresholdBreakGaugeMultiplier()
         {
             if (bossActor == null ||
@@ -824,15 +873,12 @@ namespace ProjectMT.Contents.FallenCommander
                 return 1f;
             }
 
-            var healthRatio =
-                bossActor.Health.CurrentHealth / bossActor.Health.MaxHealth;
-
-            if (healthRatio <= bossConfig.BreakGaugePhaseThreeHealthRatio)
+            if (currentBossPhase == FallenCommanderBossPhase.Phase3)
             {
                 return bossConfig.BreakGaugePhaseThreeMultiplier;
             }
 
-            if (healthRatio <= bossConfig.BreakGaugePhaseTwoHealthRatio)
+            if (currentBossPhase == FallenCommanderBossPhase.Phase2)
             {
                 return bossConfig.BreakGaugePhaseTwoMultiplier;
             }
@@ -877,8 +923,10 @@ namespace ProjectMT.Contents.FallenCommander
             requestedBossPhase = FallenCommanderBossPhase.Phase1;
             pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
             phaseTransitionRemainingTime = 0f;
+            phaseIntroNoticeRemainingTime = 0f;
             isPhaseTransitionActive = false;
             isWaitingForPhaseSignature = false;
+            phaseTransitionMessage = string.Empty;
             isCommanderStunned = false;
         }
 
@@ -913,6 +961,7 @@ namespace ProjectMT.Contents.FallenCommander
             hudPresenter = null;
         }
 
+        // 현재 전투 값과 페이즈 전환 문구를 HUD에 전달한다.
         private void PublishHudState()
         {
             if (bossActor == null)
@@ -951,8 +1000,9 @@ namespace ProjectMT.Contents.FallenCommander
                     remainingTime > 0f &&
                     remainingTime <= timeoutWarningStartSeconds,
                 timeoutWarningStartSeconds,
-                isPhaseTransitionActive,
-                (int)currentBossPhase));
+                isPhaseTransitionActive || phaseIntroNoticeRemainingTime > 0f,
+                (int)currentBossPhase,
+                phaseTransitionMessage));
         }
 
         private void HandleCommanderDamaged(DamageReport report)
@@ -1089,9 +1139,9 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            var targetRatio = targetPhase == FallenCommanderBossPhase.Phase2
-                ? bossConfig.PhaseTwoHealthRatio
-                : bossConfig.PhaseThreeHealthRatio;
+            var targetRatio = bossConfig.PhaseConfig
+                .GetPhase(targetPhase)
+                .HealthRatio;
             var debugDamage = bossActor.Health.MaxHealth * (1f - targetRatio);
             isDebugPhaseJump = true;
             try

@@ -67,7 +67,8 @@ namespace ProjectMT.Contents.FallenCommander
             bool isTimeoutWarningActive = false,
             float timeoutWarningDuration = 0f,
             bool isPhaseTransitionActive = false,
-            int bossPhase = 1)
+            int bossPhase = 1,
+            string phaseTransitionMessage = "")
         {
             BossHealth = bossHealth;
             BossMaxHealth = bossMaxHealth;
@@ -94,6 +95,7 @@ namespace ProjectMT.Contents.FallenCommander
             TimeoutWarningDuration = timeoutWarningDuration;
             IsPhaseTransitionActive = isPhaseTransitionActive;
             BossPhase = bossPhase;
+            PhaseTransitionMessage = phaseTransitionMessage;
         }
 
         public float BossHealth { get; }
@@ -121,6 +123,7 @@ namespace ProjectMT.Contents.FallenCommander
         public float TimeoutWarningDuration { get; }
         public bool IsPhaseTransitionActive { get; }
         public int BossPhase { get; }
+        public string PhaseTransitionMessage { get; }
     }
 
     // 같은 GameObject에 이 컴포넌트를 여러 개 추가하지 못하게 막는다.
@@ -378,6 +381,7 @@ namespace ProjectMT.Contents.FallenCommander
             Unbind();
         }
         // Controller가 새로운 HUD 상태를 전달하면 호출
+        // 전달받은 전투 상태를 체력·게이지·경고·페이즈 UI에 반영한다.
         private void Render(FallenCommanderHudState state)
         {
             // 현재 체력을 0~1 비율로 계산한다.
@@ -418,7 +422,10 @@ namespace ProjectMT.Contents.FallenCommander
                 phaseTransitionNotice.gameObject.SetActive(state.IsPhaseTransitionActive);
                 if (state.IsPhaseTransitionActive)
                 {
-                    phaseTransitionNotice.text = $"{state.BossPhase} 페이즈";
+                    phaseTransitionNotice.text = string.IsNullOrWhiteSpace(
+                        state.PhaseTransitionMessage)
+                            ? $"{state.BossPhase} 페이즈"
+                            : state.PhaseTransitionMessage;
                 }
             }
 

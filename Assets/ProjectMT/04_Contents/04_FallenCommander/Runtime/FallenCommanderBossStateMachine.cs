@@ -13,12 +13,19 @@ namespace ProjectMT.Contents.FallenCommander
 
     public enum FallenCommanderAttackPattern
     {
+        [InspectorName("기본 공격 - 원거리 투사체")]
         Basic,
+        [InspectorName("근접 공격")]
         Melee,
+        [InspectorName("위치 공격")]
         Mark,
+        [InspectorName("추적 낙인")]
         TrackingMark,
+        [InspectorName("광역기")]
         Wide,
+        [InspectorName("직선 공격")]
         Line,
+        [InspectorName("타락의 고리")]
         Ring
     }
 
@@ -130,6 +137,7 @@ namespace ProjectMT.Contents.FallenCommander
         private bool isBasicProjectileActive;
         private bool isPhaseTransitionActive;
         private FallenCommanderBossPhase currentPhase = FallenCommanderBossPhase.Phase1;
+        private FallenCommanderPhaseConfig phaseConfig;
 
         private FallenCommanderBasicAttackData basicAttack;
         private FallenCommanderAttackData meleeAttackMotion;
@@ -192,6 +200,7 @@ namespace ProjectMT.Contents.FallenCommander
         private static readonly Color CorruptionRingSafeColor =
             new Color(0.1f, 0.9f, 0.45f, 0.8f);
 
+        // 전투 참조와 보스 공격·페이즈 데이터를 런타임 상태 머신에 연결한다.
         public void Configure(
             CombatWorld world,
             UnitActor boss,
@@ -214,6 +223,7 @@ namespace ProjectMT.Contents.FallenCommander
             float closeDistance,
             float lineMinimumDistance,
             float lineAlignmentThreshold,
+            FallenCommanderPhaseConfig phases,
             System.Action<bool> stunChanged,
             FallenCommanderBossFacingSmoother facingSmoother)
         {
@@ -266,6 +276,7 @@ namespace ProjectMT.Contents.FallenCommander
             closeAttackDistance = Mathf.Max(0.1f, closeDistance);
             lineStrikeMinimumDistance = Mathf.Max(closeAttackDistance, lineMinimumDistance);
             lineStrikeAlignmentThreshold = Mathf.Clamp(lineAlignmentThreshold, -1f, 1f);
+            phaseConfig = phases;
             commanderStunChanged = stunChanged;
 
             attackCooldownRemaining = attackInterval;
@@ -281,6 +292,7 @@ namespace ProjectMT.Contents.FallenCommander
                 meleeAttackMotion != null &&
                 trackingMarkMotion != null &&
                 corruptionRingMotion != null &&
+                phaseConfig != null &&
                 markStrikeTelegraphPrefab != null &&
                 animationPresenter != null &&
                 bossFacingSmoother != null &&
@@ -406,6 +418,7 @@ namespace ProjectMT.Contents.FallenCommander
             PauseBossTracking();
         }
 
+        // 전환을 끝내고 페이즈 데이터에 지정된 대표 공격을 시작한다.
         public void CompletePhaseTransition(FallenCommanderAttackPattern signatureAttack)
         {
             if (!isActive || !isPhaseTransitionActive)
@@ -414,19 +427,7 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             isPhaseTransitionActive = false;
-            switch (signatureAttack)
-            {
-                case FallenCommanderAttackPattern.Wide:
-                    BeginWideBurst();
-                    break;
-                case FallenCommanderAttackPattern.TrackingMark:
-                    BeginTrackingMark();
-                    break;
-                default:
-                    attackCooldownRemaining = 0f;
-                    ResumeBossTracking();
-                    break;
-            }
+            BeginPatternAttack(signatureAttack);
         }
 
         public void DebugForceMeleeAttack()
@@ -524,6 +525,7 @@ namespace ProjectMT.Contents.FallenCommander
             return true;
         }
 
+        // 생성된 공격 표시와 런타임 참조를 모두 정리한다.
         public void Shutdown()
         {
             DestroyActiveTelegraph();
@@ -536,6 +538,7 @@ namespace ProjectMT.Contents.FallenCommander
             bossActor = null;
             commanderRoot = null;
             commanderHealth = null;
+            phaseConfig = null;
             bossFacingSmoother = null;
             animationPresenter = null;
             breakMotion = null;
@@ -562,6 +565,7 @@ namespace ProjectMT.Contents.FallenCommander
             currentState = BossState.Idle;
         }
 
+        // 대기 중 공격 간격을 갱신하고 거리 조건에 맞는 다음 페이즈 공격을 시작한다.
         private void TickIdle(float deltaTime)
         {
             attackCooldownRemaining =
@@ -590,25 +594,17 @@ namespace ProjectMT.Contents.FallenCommander
                 LastSelectedAttack);
             selected = ResolvePhaseAttack(selected);
 
+            BeginPatternAttack(selected);
+        }
+
+        // 선택된 패턴에 대응하는 실제 공격 상태를 시작한다.
+        private void BeginPatternAttack(FallenCommanderAttackPattern selected)
+        {
             switch (selected)
             {
                 case FallenCommanderAttackPattern.Basic:
-                    if (LastSelectedAttack == FallenCommanderAttackPattern.Mark)
-                    {
-                        BeginWideBurst();
-                    }
-                    else if (LastSelectedAttack == FallenCommanderAttackPattern.Wide)
-                    {
-                        BeginCorruptionRing();
-                    }
-                    else if (LastSelectedAttack == FallenCommanderAttackPattern.Ring)
-                    {
-                        BeginTrackingMark();
-                    }
-                    else
-                    {
-                        BeginMarkStrike();
-                    }
+                    attackCooldownRemaining = 0f;
+                    ResumeBossTracking();
                     break;
                 case FallenCommanderAttackPattern.Melee:
                     BeginMeleeAttack();
@@ -631,53 +627,14 @@ namespace ProjectMT.Contents.FallenCommander
             }
         }
 
+        // 현재 페이즈 데이터의 스킬 장바구니로 공격 후보를 보정한다.
         private FallenCommanderAttackPattern ResolvePhaseAttack(
             FallenCommanderAttackPattern selected)
         {
-            FallenCommanderAttackPattern resolved;
-            switch (currentPhase)
-            {
-                case FallenCommanderBossPhase.Phase1:
-                    resolved = selected == FallenCommanderAttackPattern.Wide ||
-                        selected == FallenCommanderAttackPattern.Basic ||
-                        selected == FallenCommanderAttackPattern.Ring ||
-                        selected == FallenCommanderAttackPattern.TrackingMark
-                            ? FallenCommanderAttackPattern.Mark
-                            : selected;
-                    break;
-
-                case FallenCommanderBossPhase.Phase2:
-                    resolved = selected == FallenCommanderAttackPattern.Basic
-                        ? FallenCommanderAttackPattern.Ring
-                        : selected == FallenCommanderAttackPattern.TrackingMark
-                            ? FallenCommanderAttackPattern.Mark
-                            : selected;
-                    break;
-
-                default:
-                    resolved = selected == FallenCommanderAttackPattern.Mark
-                        ? FallenCommanderAttackPattern.TrackingMark
-                        : selected == FallenCommanderAttackPattern.Basic
-                            ? FallenCommanderAttackPattern.Ring
-                            : selected == FallenCommanderAttackPattern.Wide &&
-                                LastSelectedAttack == FallenCommanderAttackPattern.Ring
-                                ? FallenCommanderAttackPattern.TrackingMark
-                                : selected;
-                    break;
-            }
-
-            if (resolved != LastSelectedAttack)
-            {
-                return resolved;
-            }
-
-            return currentPhase == FallenCommanderBossPhase.Phase1
-                ? resolved == FallenCommanderAttackPattern.Mark
-                    ? FallenCommanderAttackPattern.Line
-                    : FallenCommanderAttackPattern.Mark
-                : resolved == FallenCommanderAttackPattern.Ring
-                    ? FallenCommanderAttackPattern.Wide
-                    : FallenCommanderAttackPattern.Ring;
+            var phase = phaseConfig?.GetPhase(currentPhase);
+            return phase == null
+                ? selected
+                : phase.ResolveAttack(selected, LastSelectedAttack);
         }
 
         private void BeginBasicAttack()
@@ -863,9 +820,11 @@ namespace ProjectMT.Contents.FallenCommander
             telegraphDuration = castTime;
         }
 
+        // 페이즈에서 허용한 경우 다른 패턴과 별개로 기본 투사체 공격을 갱신한다.
         private void TickOverlappingBasicAttack(float deltaTime)
         {
             if (!isActive ||
+                phaseConfig?.GetPhase(currentPhase)?.AllowOverlappingBasicAttack != true ||
                 currentState == BossState.Broken ||
                 currentState == BossState.Dead ||
                 currentState == BossState.CorruptionRing ||

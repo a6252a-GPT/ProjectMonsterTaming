@@ -110,7 +110,7 @@ namespace ProjectMT.Contents.FallenCommander
     public sealed class FallenCommanderPhaseData
     {
         [SerializeField] private FallenCommanderBossPhase phase = FallenCommanderBossPhase.Phase1;
-        [SerializeField, Range(0.01f, 1f)] private float healthRatio = 1f;
+        [SerializeField, ReadOnlyInInspector] private float healthRatio = 1f;
         [SerializeField] private List<FallenCommanderAttackPattern> availableAttacks = new();
         [SerializeField] private bool allowOverlappingBasicAttack = true;
         [SerializeField] private bool hasSignatureAttack;

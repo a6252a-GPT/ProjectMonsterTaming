@@ -119,6 +119,14 @@ namespace ProjectMT.Features.OfflineReward
             busy = false;
             Bind(presentation);
             UIPanelPopAnimator.RequestOpen(DisplayRoot, UIPanelPopStyle.RewardPopup);
+
+            // DisplayRoot는 기본적으로 비활성 상태이므로, Awake() 시점에 EnsureOn으로 붙이면
+            // Unity가 그 컴포넌트의 Awake 호출을 나중으로 미룬다. DisplayRoot가 막 활성화된
+            // 직후인 여기서 붙여야 즉시 초기화되어 클릭 연출이 확실히 동작한다.
+            UIButtonClickPunch.EnsureOn(adButton?.gameObject);
+            UIButtonClickPunch.EnsureOn(claimButton?.gameObject);
+            UIButtonClickPunch.EnsureOn(closeButton?.gameObject);
+
             SetCombatDisplaySuppressed(true);
             var showNotice = presentation.AutoDismantledEquipmentCount > 0 &&
                              autoDismantleNoticeRoot != null;

@@ -1,4 +1,5 @@
 using System;
+using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.UI;
@@ -24,6 +25,13 @@ namespace ProjectMT.Features.Quest
         private const string StepMilestoneNamePrefix = "LIst_";
         private const float StepIconAlphaDefault = 1f; // 미달성 상태 아이콘 색상(255/255)
         private const float StepIconAlphaAchieved = 100f / 255f; // 달성 상태로 바뀌면 연하게(100/255)
+
+        // 슬롯 밝기는 "보상 수령(RewardClaimed)" 기준으로만 결정한다.
+        // 진행중이거나 달성만 하고 아직 받기 버튼을 안 누른 상태는 항상 밝게 유지한다.
+        // GUIPro 데모 프리팹은 슬롯마다 배경·텍스트·게이지 알파가 제각각 박혀 있어,
+        // 매 갱신마다 코드에서 밝은 기준색을 덮어쓴 뒤 수령한 슬롯만 어둡게 만든다.
+        private const float SlotDimmedAlpha = 76f / 255f;
+        private const float SlotNormalAlpha = 1f;
 
         private static readonly int[] StepMilestoneThresholds = { 2, 4, 6, 8, 10 };
 
@@ -133,6 +141,12 @@ namespace ProjectMT.Features.Quest
                     ? FindChild(sliderTransform, "ProgressText") ?? FindChild(sliderTransform, "Text (TMP)")
                     : null;
                 slot.ProgressText = progressTextTransform != null ? progressTextTransform.GetComponent<TMP_Text>() : null;
+
+                var sliderTrackTransform = sliderTransform != null ? FindChild(sliderTransform, "Bg") : null;
+                slot.ProgressTrackImage = sliderTrackTransform != null ? sliderTrackTransform.GetComponent<Image>() : null;
+
+                var sliderFillTransform = sliderTransform != null ? FindChild(sliderTransform, "Fill") : null;
+                slot.ProgressFillImage = sliderFillTransform != null ? sliderFillTransform.GetComponent<Image>() : null;
 
                 var rewardCountTransform = FindChild(itemTransform, "RewardCountText");
                 slot.RewardCountText = rewardCountTransform != null
@@ -375,9 +389,16 @@ namespace ProjectMT.Features.Quest
 
             claimAllBusy = true;
             RefreshView();
+            var spawnPosition = claimAllButton != null ? claimAllButton.transform.position : transform.position;
             try
             {
-                await QuestRuntime.TryClaimAllRewardsAsync(currentTab);
+                var (success, reward) = await QuestRuntime.TryClaimAllRewardsAsync(currentTab);
+                if (success && !reward.IsEmpty)
+                {
+                    // 개별 수령과 동일한 연출(PF_RewardAcquireItem)을 일괄 수령한 보상 합계로 한 번만 재생한다.
+                    var presentation = RewardPresentationRequest.FromBundle(reward, ItemCatalogHub.Current);
+                    RewardPresentationHub.Current?.PlayConfirmed(presentation, spawnPosition);
+                }
             }
             finally
             {
@@ -663,6 +684,8 @@ namespace ProjectMT.Features.Quest
                 slot.ProgressSlider.minValue = 0f;
                 slot.ProgressSlider.maxValue = targetValue;
                 slot.ProgressSlider.value = currentValue;
+                slot.ProgressSlider.interactable = false;
+                slot.ProgressSlider.transition = Selectable.Transition.None;
             }
 
             if (slot.ProgressText != null)
@@ -690,6 +713,8 @@ namespace ProjectMT.Features.Quest
                 slot.StampObject.SetActive(claimed);
             }
 
+            ApplySlotDimming(slot, claimed);
+
             if (slot.ClaimButton != null)
             {
                 // 패널이 몇 번을 열려도, 갱신될 때마다 리스너가 항상 살아있도록 매번 다시 붙인다.
@@ -703,6 +728,33 @@ namespace ProjectMT.Features.Quest
                     slot.ClaimButton.interactable = true;
                 }
             }
+        }
+
+        // 받기 버튼을 눌러 보상을 실제로 수령하기 전까지는 진행중/달성 구분 없이 항상 밝게 유지하고,
+        // 수령을 마친 슬롯만 살짝 어둡게 표시한다. 패널의 박스 배경(ListFrame_01 등)은 절대 건드리지
+        // 않고, 제목·진행 게이지·보상 아이콘 등 "내용물" 그래픽만 대상으로 삼는다 - 배경까지 같이
+        // 어두워지면 슬롯 테두리 자체가 안 보이게 되어(이전 시도에서 발생한 문제) 안 된다.
+        private void ApplySlotDimming(MissionSlot slot, bool claimed)
+        {
+            var alpha = claimed ? SlotDimmedAlpha : SlotNormalAlpha;
+            SetGraphicAlpha(slot.TitleText, alpha);
+            SetGraphicAlpha(slot.ProgressText, alpha);
+            SetGraphicAlpha(slot.RewardCountText, alpha);
+            SetGraphicAlpha(slot.RewardIcon, alpha);
+            SetGraphicAlpha(slot.ProgressTrackImage, alpha);
+            SetGraphicAlpha(slot.ProgressFillImage, alpha);
+        }
+
+        private static void SetGraphicAlpha(Graphic graphic, float alpha)
+        {
+            if (graphic == null)
+            {
+                return;
+            }
+
+            var color = graphic.color;
+            color.a = alpha;
+            graphic.color = color;
         }
 
         private static Transform FindChild(Transform root, string objectName)
@@ -779,6 +831,8 @@ namespace ProjectMT.Features.Quest
             public TMP_Text TitleText;
             public Slider ProgressSlider;
             public TMP_Text ProgressText;
+            public Image ProgressTrackImage;
+            public Image ProgressFillImage;
             public Image RewardIcon;
             public TMP_Text RewardCountText;
             public GameObject ClaimDisabledObject;
@@ -803,11 +857,23 @@ namespace ProjectMT.Features.Quest
                     ClaimButton.interactable = false;
                 }
 
+                // 수령 성공 시 QuestRuntime.Changed가 슬롯을 다시 그리므로, 연출에 쓸 보상 정보는
+                // 수령 전에 미리 만들어 둔다(메인 퀘스트 HUD의 QuestHudTrackerView와 동일한 패턴).
+                var presentation = Definition.TryCreateRewardBundle(out var bundle)
+                    ? RewardPresentationRequest.FromBundle(bundle, ItemCatalogHub.Current)
+                    : null;
+                var spawnPosition = ClaimButton != null ? ClaimButton.transform.position : Root.transform.position;
+
                 try
                 {
                     // 성공하면 QuestRuntime.Changed가 발생해 DailyMissionPanelView.RefreshView가
                     // 자동으로 다시 그린다(Claim 버튼 숨김 · Stamp 표시 · 상단 달성 게이지 갱신 포함).
-                    await QuestRuntime.TryClaimRewardAsync(Definition.QuestId);
+                    var claimed = await QuestRuntime.TryClaimRewardAsync(Definition.QuestId);
+                    if (claimed && presentation != null)
+                    {
+                        // 필드 아이템 획득·메인 퀘스트 보상과 동일한 연출을 클릭한 버튼 위치에서 시작시킨다.
+                        RewardPresentationHub.Current?.PlayConfirmed(presentation, spawnPosition);
+                    }
                 }
                 finally
                 {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ProjectMT.Shared.Commander;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Stats;
+using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -69,6 +70,16 @@ namespace ProjectMT.Features.MainBattle
             EnsureFullRectHitArea(attackSpeedButton);
             EnsureFullRectHitArea(moveSpeedButton);
             EnsureFullRectHitArea(attackRangeButton);
+
+            // 버튼(Button_02_Red)과 배경 강조 이미지(Button_02_Gray)가 같은 부모(ButtonArea) 아래
+            // 형제로 분리돼 있어, 버튼 자신만 펀치 애니메이션을 타면 배경은 그대로 남아 어색해
+            // 보인다. 부모 전체를 시각적 대상으로 지정해 두 이미지가 함께 움직이게 한다.
+            ApplyClickPunch(healthButton);
+            ApplyClickPunch(attackButton);
+            ApplyClickPunch(defenseButton);
+            ApplyClickPunch(attackSpeedButton);
+            ApplyClickPunch(moveSpeedButton);
+            ApplyClickPunch(attackRangeButton);
 
             healthButton?.onClick.AddListener(UpgradeHealth);
             attackButton?.onClick.AddListener(UpgradeAttack);
@@ -278,6 +289,17 @@ namespace ProjectMT.Features.MainBattle
             {
                 target.text = value;
             }
+        }
+
+        private static void ApplyClickPunch(Button button)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var visualRoot = button.transform.parent != null ? button.transform.parent : button.transform;
+            UIButtonClickPunch.EnsureOn(button.gameObject, visualRoot);
         }
 
         private static void EnsureFullRectHitArea(Button button)

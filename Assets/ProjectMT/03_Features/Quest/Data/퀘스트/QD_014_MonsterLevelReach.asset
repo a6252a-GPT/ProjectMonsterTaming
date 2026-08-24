@@ -14,16 +14,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Quest.QuestDefinition
   questId:
     value: quest_014_monster_level_reach
-  displayName: 몬스터 레벨 달성
-  description: 보유 몬스터 중 하나를 {target}레벨까지 성장시키세요.
+  isEnabled: 1
+  displayName: "\uBAAC\uC2A4\uD130 \uB808\uBCA8 \uB2EC\uC131"
+  description: "\uBCF4\uC720 \uBAAC\uC2A4\uD130 \uC911 \uD558\uB098\uB97C {target}\uB808\uBCA8\uAE4C\uC9C0
+    \uC131\uC7A5\uC2DC\uD0A4\uC138\uC694."
   questType: 0
   conditionType: 14
   targetValue: 10
   prerequisiteQuestId:
     value: 
   reward: {fileID: 11400000, guid: 8089bcde6cdc4eb4997140360587d2eb, type: 2}
-  unlockTargets: []
+  unlockTargets: 
   unlockGateEnabled: 0
+  requiresActiveTracking: 0
   isRepeatingTemplate: 1
-  repeatIncrement: 20
+  repeatIncrement: 10
   repeatMaxOccurrences: 0

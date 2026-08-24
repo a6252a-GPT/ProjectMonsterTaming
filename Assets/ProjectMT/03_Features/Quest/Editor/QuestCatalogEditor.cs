@@ -232,6 +232,7 @@ namespace ProjectMT.EditorTools.Quest
             var repeatingProp = so.FindProperty("isRepeatingTemplate");
             var repeatIncrementProp = so.FindProperty("repeatIncrement");
             var repeatMaxOccurrencesProp = so.FindProperty("repeatMaxOccurrences");
+            var repeatPrerequisiteListProp = so.FindProperty("repeatPrerequisiteQuestIds");
 
             enabledProp.boolValue = EditorGUILayout.ToggleLeft(
                 new GUIContent("퀘스트 사용", "꺼두면 이 퀘스트는 선행 체인·반복 풀에서 통째로 건너뛰고, 화면에도 표시되지 않습니다. 콘텐츠가 아직 준비되지 않았을 때 임시로 꺼두는 용도입니다."),
@@ -260,7 +261,7 @@ namespace ProjectMT.EditorTools.Quest
                 new GUIContent(repeatingProp.boolValue ? "목표 수치 (1회차 기준)" : "목표 수치"));
 
             EditorGUILayout.Space(4f);
-            DrawRepeatingFields(repeatingProp, repeatIncrementProp, repeatMaxOccurrencesProp);
+            DrawRepeatingFields(repeatingProp, repeatIncrementProp, repeatMaxOccurrencesProp, repeatPrerequisiteListProp, definition, catalog);
 
             EditorGUILayout.Space(4f);
             if (repeatingProp.boolValue)
@@ -313,7 +314,10 @@ namespace ProjectMT.EditorTools.Quest
         private static void DrawRepeatingFields(
             SerializedProperty repeatingProp,
             SerializedProperty incrementProp,
-            SerializedProperty maxOccurrencesProp)
+            SerializedProperty maxOccurrencesProp,
+            SerializedProperty prerequisiteListProp,
+            QuestDefinition self,
+            QuestCatalog catalog)
         {
             repeatingProp.boolValue = EditorGUILayout.ToggleLeft("반복 퀘스트 템플릿으로 사용", repeatingProp.boolValue);
             if (!repeatingProp.boolValue)
@@ -328,7 +332,71 @@ namespace ProjectMT.EditorTools.Quest
             maxOccurrencesProp.intValue = Math.Max(0, EditorGUILayout.IntField(
                 new GUIContent("최대 등장 횟수", "0이면 제한 없이 계속 등장합니다."),
                 maxOccurrencesProp.intValue));
+
+            EditorGUILayout.Space(4f);
+            DrawRepeatPrerequisites(prerequisiteListProp, self, catalog);
             EditorGUI.indentLevel--;
+        }
+
+        // 반복 풀 안에서의 순서 제약: 여기 체크한 다른 반복 템플릿들이 각각 한 번 이상 완료(보상 수령)
+        // 되기 전까지는 이 템플릿이 셔플백 후보에 들어가지 않는다(예: "전투력 달성"이 "체력/공격력/방어력
+        // 강화"보다 먼저 나오지 않도록 막을 때 사용).
+        private static void DrawRepeatPrerequisites(
+            SerializedProperty prerequisiteListProp,
+            QuestDefinition self,
+            QuestCatalog catalog)
+        {
+            EditorGUILayout.LabelField(new GUIContent(
+                "선행 반복 퀘스트",
+                "여기 체크한 반복 템플릿들이 각각 한 번 이상 완료(보상 수령)되기 전까지는 이 템플릿이 반복 풀에서 뽑히지 않습니다. 아무것도 체크하지 않으면 처음부터 후보가 됩니다."));
+            EditorGUI.indentLevel++;
+
+            var candidates = catalog.Definitions
+                .Where(d => d != null && d != self && d.IsRepeatingTemplate)
+                .ToList();
+
+            if (candidates.Count == 0)
+            {
+                EditorGUILayout.HelpBox("선행 조건으로 지정할 다른 반복 퀘스트 템플릿이 아직 없습니다.", MessageType.None);
+            }
+
+            foreach (var candidate in candidates)
+            {
+                var existingIndex = IndexOfPrerequisite(prerequisiteListProp, candidate.QuestId.Value);
+                var has = existingIndex >= 0;
+                var newHas = EditorGUILayout.ToggleLeft($"[{candidate.QuestId.Value}] {candidate.DisplayName}", has);
+                if (newHas == has)
+                {
+                    continue;
+                }
+
+                if (newHas)
+                {
+                    prerequisiteListProp.arraySize++;
+                    prerequisiteListProp.GetArrayElementAtIndex(prerequisiteListProp.arraySize - 1)
+                        .FindPropertyRelative("value").stringValue = candidate.QuestId.Value;
+                }
+                else
+                {
+                    prerequisiteListProp.DeleteArrayElementAtIndex(existingIndex);
+                }
+            }
+
+            EditorGUI.indentLevel--;
+        }
+
+        private static int IndexOfPrerequisite(SerializedProperty listProp, string questIdValue)
+        {
+            for (var i = 0; i < listProp.arraySize; i++)
+            {
+                var value = listProp.GetArrayElementAtIndex(i).FindPropertyRelative("value").stringValue;
+                if (string.Equals(value, questIdValue, StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         private static void DrawPrerequisitePopup(SerializedProperty prerequisiteValueProp, QuestCatalog catalog, QuestDefinition self)

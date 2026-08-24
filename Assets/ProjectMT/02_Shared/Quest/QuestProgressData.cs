@@ -135,6 +135,10 @@ namespace ProjectMT.Shared.Quest
         [SerializeField] private List<QuestProgressEntryData> entries = new List<QuestProgressEntryData>();
         [SerializeField] private QuestId activeRepeatingTemplateId; // 지금 추적 중인 반복 퀘스트 템플릿(선형 체인이 끝난 뒤 사용)
         [SerializeField] private QuestId lastRepeatingTemplateId; // 바로 직전에 활성이었던 템플릿(같은 퀘스트 연속 등장 방지용)
+        // 반복 퀘스트 "셔플백": 지금 라운드에서 이미 한 번 등장한 템플릿 ID 목록. 후보 전체가 여기 담기면
+        // (=전부 한 번씩 등장 완료) 다음 선택 때 비우고 새 라운드를 시작해, 같은 템플릿이 다른 템플릿보다
+        // 먼저 두 번 나오는 일이 없게 한다.
+        [SerializeField] private List<QuestId> repeatCycleUsedTemplateIds = new List<QuestId>();
         [SerializeField] private long lastDailyResetPeriod = -1L; // GrowthDungeonDailyKeyRules와 동일한 KST 05:00 기준 일자 ID(-1 = 아직 초기화 전)
         [SerializeField] private long lastWeeklyResetPeriod = -1L; // 월요일 KST 05:00 기준 주간 ID(-1 = 아직 초기화 전)
 
@@ -146,6 +150,7 @@ namespace ProjectMT.Shared.Quest
         internal IReadOnlyList<QuestProgressEntryData> Entries => entries;
         public QuestId ActiveRepeatingTemplateId => activeRepeatingTemplateId;
         public QuestId LastRepeatingTemplateId => lastRepeatingTemplateId;
+        public IReadOnlyList<QuestId> RepeatCycleUsedTemplateIds => repeatCycleUsedTemplateIds;
         public long LastDailyResetPeriod => Math.Max(-1L, lastDailyResetPeriod);
         public long LastWeeklyResetPeriod => Math.Max(-1L, lastWeeklyResetPeriod);
 
@@ -155,6 +160,7 @@ namespace ProjectMT.Shared.Quest
             {
                 activeRepeatingTemplateId = activeRepeatingTemplateId,
                 lastRepeatingTemplateId = lastRepeatingTemplateId,
+                repeatCycleUsedTemplateIds = new List<QuestId>(repeatCycleUsedTemplateIds),
                 lastDailyResetPeriod = lastDailyResetPeriod,
                 lastWeeklyResetPeriod = lastWeeklyResetPeriod
             };
@@ -171,10 +177,21 @@ namespace ProjectMT.Shared.Quest
 
         // 다음 사이클로 넘어갈 때 활성 템플릿을 교체한다. previous가 곧 lastRepeatingTemplateId가 되어
         // 다음 선택에서 같은 템플릿이 연속으로 뽑히지 않게 막는 데 쓰인다.
-        internal void SetActiveRepeatingTemplate(QuestId next, QuestId previous)
+        // startNewCycle이 true면(셔플백 후보를 모두 소진해 새 라운드를 시작하는 경우) 목록을 비운 뒤
+        // next 하나만 새로 담고, false면 기존 목록에 next만 추가한다.
+        internal void SetActiveRepeatingTemplate(QuestId next, QuestId previous, bool startNewCycle)
         {
             lastRepeatingTemplateId = previous;
             activeRepeatingTemplateId = next;
+            if (startNewCycle)
+            {
+                repeatCycleUsedTemplateIds.Clear();
+            }
+
+            if (next.IsValid && !repeatCycleUsedTemplateIds.Contains(next))
+            {
+                repeatCycleUsedTemplateIds.Add(next);
+            }
         }
 
         internal bool TryGetEntry(QuestId id, out QuestProgressEntryData entry)
@@ -252,6 +269,7 @@ namespace ProjectMT.Shared.Quest
             lastDailyResetPeriod = Math.Max(-1L, lastDailyResetPeriod);
             lastWeeklyResetPeriod = Math.Max(-1L, lastWeeklyResetPeriod);
             entries ??= new List<QuestProgressEntryData>();
+            repeatCycleUsedTemplateIds ??= new List<QuestId>();
             for (var i = entries.Count - 1; i >= 0; i--)
             {
                 if (entries[i] == null || !entries[i].QuestId.IsValid)
@@ -305,6 +323,7 @@ namespace ProjectMT.Shared.Quest
             var source = data?.Entries;
             ActiveRepeatingTemplateId = data?.ActiveRepeatingTemplateId ?? default;
             LastRepeatingTemplateId = data?.LastRepeatingTemplateId ?? default;
+            RepeatCycleUsedTemplateIds = data?.RepeatCycleUsedTemplateIds ?? Array.Empty<QuestId>();
             LastDailyResetPeriod = data?.LastDailyResetPeriod ?? -1L;
             LastWeeklyResetPeriod = data?.LastWeeklyResetPeriod ?? -1L;
             if (source == null || source.Count == 0)
@@ -329,6 +348,7 @@ namespace ProjectMT.Shared.Quest
         public IReadOnlyList<QuestProgressEntryView> Entries => entries ?? Array.Empty<QuestProgressEntryView>();
         public QuestId ActiveRepeatingTemplateId { get; }
         public QuestId LastRepeatingTemplateId { get; }
+        public IReadOnlyList<QuestId> RepeatCycleUsedTemplateIds { get; }
         public long LastDailyResetPeriod { get; }
         public long LastWeeklyResetPeriod { get; }
 

@@ -191,6 +191,13 @@ namespace ProjectMT.Features.Formation
                     // 이 페이지는 군단장 3D 프리뷰(발 IK 고정)를 포함하므로 스케일/이동 없는
                     // FadeOnly를 쓴다. 자세한 이유는 UIPanelPopStyle.FadeOnly 주석 참고.
                     UIPanelPopAnimator.RequestOpen(pageRoot, UIPanelPopStyle.FadeOnly);
+
+                    // PageRoot는 기본적으로 비활성 상태로 저장되어 있어, 그 하위의 버튼에
+                    // Awake() 시점(=PageRoot가 아직 비활성일 때)에 EnsureOn으로 컴포넌트를 붙이면
+                    // Unity가 Awake 호출 자체를 나중으로 미룬다. 여기서(PageRoot가 막 활성화된
+                    // 직후) 붙여야 즉시 초기화되어 클릭 연출이 확실히 동작한다.
+                    UIButtonClickPunch.EnsureOn(formationButton?.gameObject);
+                    UIButtonClickPunch.EnsureOn(positionFormationButton?.gameObject);
                 }
                 else
                 {

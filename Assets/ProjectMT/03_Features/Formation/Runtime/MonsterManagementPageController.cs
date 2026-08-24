@@ -98,6 +98,7 @@ namespace ProjectMT.Features.Formation
             levelUpButton?.onClick.AddListener(HandleLevelUpClicked);
             ConfigureStageActions();
             breakthroughActionButton?.onClick.AddListener(HandleBreakthroughClicked);
+            UIButtonClickPunch.EnsureOn(levelUpButton?.gameObject);
             var previewMask = 1 << PreviewLayer;
             if (previewCamera != null)
             {

@@ -84,8 +84,19 @@ namespace ProjectMT.Shared.UI
 
         private void OnDisable()
         {
+            var wasClosing = isClosing;
             sequence?.Kill();
             sequence = null;
+            isClosing = false;
+
+            // 조상 오브젝트가 먼저 SetActive(false)되면 닫힘 트윈이 OnComplete 전에 여기서 끊긴다.
+            // activeSelf가 true인 채로 남으면 조상이 나중에 다시 켜질 때 이 패널도 원치 않게
+            // 함께 되살아나 버리므로(예: 던전 진입으로 화면 전환 중 조상이 비활성화되는 경우),
+            // 닫히는 중이었다면 실제로 꺼진 상태로 맞춰준다.
+            if (wasClosing && gameObject.activeSelf)
+            {
+                gameObject.SetActive(false);
+            }
         }
 
         // "InputBlocker" 자식이 있으면 그 형제 중 실제 콘텐츠만 연출 대상으로 삼아 딤을 제외한다.

@@ -4,6 +4,7 @@ using ProjectMT.Contents.Framework;
 using ProjectMT.Features.Quest;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Quest;
+using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -112,6 +113,11 @@ namespace ProjectMT.Features.GrowthDungeon
             fallenCommanderSweepButton?.onClick.AddListener(OpenFallenCommander);
             guardiansTowerEnterButton?.onClick.AddListener(OpenGuardiansTower);
             guardiansTowerSweepButton?.onClick.AddListener(OpenGuardiansTower);
+
+            UIButtonClickPunch.EnsureOn(foodRiotEnterButton?.gameObject);
+            UIButtonClickPunch.EnsureOn(treasureSpiritEnterButton?.gameObject);
+            UIButtonClickPunch.EnsureOn(fallenCommanderEnterButton?.gameObject);
+            UIButtonClickPunch.EnsureOn(guardiansTowerEnterButton?.gameObject);
         }
 
         private void OnEnable()
@@ -258,12 +264,12 @@ namespace ProjectMT.Features.GrowthDungeon
                     SelectNextStage,
                     StartSelectedStage,
                     SweepHighestStage,
-                    ClosePopup);
+                    () => ClosePopup());
                 popupCache[binding.ContentId.Value] = currentPopup;
             }
 
             AlignPopupLeftOfPage(currentPopup.transform as RectTransform);
-            currentPopup.gameObject.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(currentPopup.gameObject, UIPanelPopStyle.Standard);
             currentPopup.transform.SetAsLastSibling();
             RefreshPopup();
         }
@@ -327,7 +333,7 @@ namespace ProjectMT.Features.GrowthDungeon
 
             var displayName = state.DisplayName;
             var modeLabel = mode == ContentRunMode.Challenge ? "도전" : "파밍";
-            ClosePopup();
+            ClosePopup(animate: false);
             closeManagementPages?.Invoke();
             statusChanged?.Invoke($"{displayName} · {selectedStage}단계 {modeLabel}");
 
@@ -378,7 +384,7 @@ namespace ProjectMT.Features.GrowthDungeon
 
             if (saved)
             {
-                ClosePopup();
+                ClosePopup(animate: false);
                 closeManagementPages?.Invoke();
                 statusChanged?.Invoke($"{state.DisplayName} 소탕 완료");
             }
@@ -444,11 +450,22 @@ namespace ProjectMT.Features.GrowthDungeon
             }
         }
 
-        private void ClosePopup()
+        // animate=false는 던전 입장처럼 화면 자체가 곧바로 크게 전환되는 경로 전용이다.
+        // launcher.StartHosted가 메인 게임플레이 루트를 비활성화하는 것과 겹치면 닫힘 트윈이
+        // 중간에 끊겨 팝업이 activeSelf=true인 채로 남을 수 있어, 이 경로에서는 애니메이션 없이
+        // 즉시 비활성화해 확실하게 닫는다.
+        private void ClosePopup(bool animate = true)
         {
             if (currentPopup != null)
             {
-                currentPopup.gameObject.SetActive(false);
+                if (animate)
+                {
+                    UIPanelPopAnimator.RequestClose(currentPopup.gameObject);
+                }
+                else
+                {
+                    currentPopup.gameObject.SetActive(false);
+                }
             }
 
             currentPopup = null;

@@ -16,4 +16,4 @@ MonoBehaviour:
   commanderExperience: 100
   items:
   - itemId: material_equipment_slot_upgrade_stone
-    amount: 3
+    amount: 10

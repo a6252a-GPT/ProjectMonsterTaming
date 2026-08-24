@@ -27,3 +27,7 @@ MonoBehaviour:
   isRepeatingTemplate: 1
   repeatIncrement: 500
   repeatMaxOccurrences: 0
+  repeatPrerequisiteQuestIds:
+  - value: quest_016_commander_health_level_reach
+  - value: quest_017_commander_attack_level_reach
+  - value: quest_018_commander_defense_level_reach

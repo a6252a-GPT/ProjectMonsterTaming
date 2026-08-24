@@ -140,3 +140,7 @@ InitTestScene*.unity*
 
 # Local Codex backups, diagnostics, and temporary outputs.
 /_Temp/
+
+# AI 어시스턴트가 분석/디버깅용으로 만드는 임시 스크립트·출력물 (예: 프리팹 YAML 파싱 스크립트).
+# 게임 실행이나 빌드에 필요 없는 일회성 조사 파일이라 저장소에 들어가면 안 된다.
+/_tmp_*

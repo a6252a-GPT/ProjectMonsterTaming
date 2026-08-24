@@ -334,7 +334,21 @@ namespace ProjectMT.Contents.FallenCommander
                 commanderMove == null ||
                 bossConfig == null ||
                 bossConfig.PhaseConfig == null ||
-                bossConfig.MarkStrikeTelegraphPrefab == null)
+                bossConfig.BasicAttack == null ||
+                bossConfig.BasicAttack.TelegraphPrefab == null ||
+                bossConfig.MeleeAttack == null ||
+                bossConfig.MeleeAttack.TelegraphPrefab == null ||
+                bossConfig.MarkStrike == null ||
+                bossConfig.MarkStrike.TelegraphPrefab == null ||
+                bossConfig.TrackingMark == null ||
+                bossConfig.TrackingMark.TelegraphPrefab == null ||
+                bossConfig.WideBurst == null ||
+                bossConfig.WideBurst.TelegraphPrefab == null ||
+                bossConfig.LineStrike == null ||
+                bossConfig.LineStrike.TelegraphPrefab == null ||
+                bossConfig.CorruptionRing == null ||
+                bossConfig.CorruptionRing.TelegraphPrefab == null ||
+                bossConfig.FinalChargeTelegraphPrefab == null)
             {
                 throw new InvalidOperationException(
                     "Fallen Commander references are missing.");
@@ -477,7 +491,6 @@ namespace ProjectMT.Contents.FallenCommander
                 bossConfig.BreakMotionDuration,
                 bossConfig.BasicAttack,
                 bossConfig.MeleeAttack,
-                bossConfig.MarkStrikeTelegraphPrefab,
                 bossConfig.MarkStrike,
                 bossConfig.TrackingMark,
                 bossConfig.TrackingMarkLockDuration,
@@ -785,7 +798,7 @@ namespace ProjectMT.Contents.FallenCommander
             if (!finalChargePattern.Begin(
                     bossActor.transform,
                     commanderRoot.transform,
-                    bossConfig.MarkStrikeTelegraphPrefab,
+                    bossConfig.FinalChargeTelegraphPrefab,
                     finalChargeDuration,
                     finalChargeRadius))
             {

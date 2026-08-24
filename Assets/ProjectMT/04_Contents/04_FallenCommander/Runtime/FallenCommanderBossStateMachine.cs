@@ -155,9 +155,6 @@ namespace ProjectMT.Contents.FallenCommander
             currentState == BossState.Idle;
         public FallenCommanderAttackPattern LastSelectedAttack { get; private set; }
         public FallenCommanderTelegraphView ActiveTelegraph => activeTelegraph;
-        // 위치 공격 범위로 사용할 프리팹
-        private GameObject markStrikeTelegraphPrefab;
-
         // 현재 바닥에 생성되어 있는 범위 오브젝트
         private FallenCommanderTelegraphView activeTelegraph;
         private FallenCommanderTelegraphView activeRingSafeTelegraph;
@@ -212,7 +209,6 @@ namespace ProjectMT.Contents.FallenCommander
             float brokenMotionDuration,
             FallenCommanderBasicAttackData basicAttackData,
             FallenCommanderAttackData meleeMotion,
-            GameObject telegraphPrefab,
             FallenCommanderAttackData markMotion,
             FallenCommanderAttackData trackingMotion,
             float trackingLockDuration,
@@ -251,7 +247,6 @@ namespace ProjectMT.Contents.FallenCommander
             meleeAttackMotion = meleeMotion;
             meleeAttackCastTime = Mathf.Max(0.1f, meleeMotion == null ? 0f : meleeMotion.WarningDuration);
             meleeAttackRadius = Mathf.Max(0.1f, meleeMotion == null ? 0f : meleeMotion.Radius);
-            markStrikeTelegraphPrefab = telegraphPrefab;
             markStrikeMotion = markMotion;
             markStrikeCastTime = Mathf.Max(0.1f, markMotion == null ? 0f : markMotion.WarningDuration);
             markStrikeRadius = Mathf.Max(0.1f, markMotion == null ? 0f : markMotion.Radius);
@@ -289,11 +284,20 @@ namespace ProjectMT.Contents.FallenCommander
                 commanderRoot != null &&
                 commanderHealth != null &&
                 basicAttack != null &&
+                basicAttack.TelegraphPrefab != null &&
                 meleeAttackMotion != null &&
+                meleeAttackMotion.TelegraphPrefab != null &&
+                markStrikeMotion != null &&
+                markStrikeMotion.TelegraphPrefab != null &&
                 trackingMarkMotion != null &&
+                trackingMarkMotion.TelegraphPrefab != null &&
+                wideBurstMotion != null &&
+                wideBurstMotion.TelegraphPrefab != null &&
+                lineStrikeMotion != null &&
+                lineStrikeMotion.TelegraphPrefab != null &&
                 corruptionRingMotion != null &&
+                corruptionRingMotion.TelegraphPrefab != null &&
                 phaseConfig != null &&
-                markStrikeTelegraphPrefab != null &&
                 animationPresenter != null &&
                 bossFacingSmoother != null &&
                 commanderStunChanged != null;
@@ -543,7 +547,6 @@ namespace ProjectMT.Contents.FallenCommander
             animationPresenter = null;
             breakMotion = null;
             breakMotionDuration = 0f;
-            markStrikeTelegraphPrefab = null;
             telegraphDuration = 0f;
             commanderStunChanged = null;
             attackCooldownRemaining = 0f;
@@ -654,9 +657,14 @@ namespace ProjectMT.Contents.FallenCommander
             isBasicWindupActive = true;
             isBasicProjectileActive = false;
             DestroyActiveBasicTelegraph();
+            FallenCommanderAttackEffectPlayer.PlayStart(
+                basicAttack.Effects,
+                basicProjectilePosition,
+                basicProjectileDirection,
+                bossActor.transform.parent);
 
             activeBasicTelegraph = FallenCommanderTelegraphView.CreateLine(
-                markStrikeTelegraphPrefab,
+                basicAttack.TelegraphPrefab,
                 bossActor.transform.parent,
                 origin,
                 basicProjectileDirection,
@@ -692,12 +700,17 @@ namespace ProjectMT.Contents.FallenCommander
             currentState = BossState.MarkStrike;
             PauseBossTracking();
             animationPresenter.Play(markStrikeMotion?.PreCastMotion);
+            FallenCommanderAttackEffectPlayer.PlayStart(
+                markStrikeMotion?.Effects,
+                markStrikePosition,
+                bossActor.transform.forward,
+                bossActor.transform.parent);
 
             // 이전 공격 표시 제거
             DestroyActiveTelegraph();
 
             activeTelegraph = FallenCommanderTelegraphView.CreateCircle(
-                markStrikeTelegraphPrefab,
+                markStrikeMotion.TelegraphPrefab,
                 bossActor.transform.parent,
                 markStrikePosition,
                 markStrikeRadius,
@@ -714,10 +727,15 @@ namespace ProjectMT.Contents.FallenCommander
             currentState = BossState.TrackingMark;
             PauseBossTracking();
             animationPresenter.Play(trackingMarkMotion?.PreCastMotion);
+            FallenCommanderAttackEffectPlayer.PlayStart(
+                trackingMarkMotion?.Effects,
+                markStrikePosition,
+                bossActor.transform.forward,
+                bossActor.transform.parent);
             DestroyActiveTelegraph();
 
             activeTelegraph = FallenCommanderTelegraphView.CreateCircle(
-                markStrikeTelegraphPrefab,
+                trackingMarkMotion.TelegraphPrefab,
                 bossActor.transform.parent,
                 markStrikePosition,
                 trackingMarkRadius,
@@ -755,10 +773,15 @@ namespace ProjectMT.Contents.FallenCommander
             currentState = BossState.LineStrike;
             PauseBossTracking();
             animationPresenter.Play(lineStrikeMotion?.PreCastMotion);
+            FallenCommanderAttackEffectPlayer.PlayStart(
+                lineStrikeMotion?.Effects,
+                origin,
+                lineStrikeDirection,
+                bossActor.transform.parent);
             DestroyActiveTelegraph();
 
             activeTelegraph = FallenCommanderTelegraphView.CreateLine(
-                markStrikeTelegraphPrefab,
+                lineStrikeMotion.TelegraphPrefab,
                 bossActor.transform.parent,
                 origin,
                 lineStrikeDirection,
@@ -778,16 +801,21 @@ namespace ProjectMT.Contents.FallenCommander
             currentState = BossState.CorruptionRing;
             PauseBossTracking();
             animationPresenter.Play(corruptionRingMotion?.PreCastMotion);
+            FallenCommanderAttackEffectPlayer.PlayStart(
+                corruptionRingMotion?.Effects,
+                markStrikePosition,
+                bossActor.transform.forward,
+                bossActor.transform.parent);
             DestroyActiveTelegraph();
 
             activeTelegraph = FallenCommanderTelegraphView.CreateCircle(
-                markStrikeTelegraphPrefab,
+                corruptionRingMotion.TelegraphPrefab,
                 bossActor.transform.parent,
                 markStrikePosition,
                 corruptionRingOuterRadius,
                 CorruptionRingTelegraphColor);
             activeRingSafeTelegraph = FallenCommanderTelegraphView.CreateCircle(
-                markStrikeTelegraphPrefab,
+                corruptionRingMotion.TelegraphPrefab,
                 bossActor.transform.parent,
                 markStrikePosition + Vector3.up * 0.035f,
                 corruptionRingSafeRadius,
@@ -809,10 +837,15 @@ namespace ProjectMT.Contents.FallenCommander
             currentState = state;
             PauseBossTracking();
             animationPresenter.Play(motion?.PreCastMotion);
+            FallenCommanderAttackEffectPlayer.PlayStart(
+                motion?.Effects,
+                position,
+                bossActor.transform.forward,
+                bossActor.transform.parent);
             DestroyActiveTelegraph();
 
             activeTelegraph = FallenCommanderTelegraphView.CreateCircle(
-                markStrikeTelegraphPrefab,
+                motion.TelegraphPrefab,
                 bossActor.transform.parent,
                 position,
                 radius,
@@ -877,7 +910,6 @@ namespace ProjectMT.Contents.FallenCommander
 
             DestroyActiveBasicTelegraph();
             activeBasicProjectile = FallenCommanderBasicProjectileView.Create(
-                markStrikeTelegraphPrefab,
                 bossActor.transform.parent,
                 basicProjectilePosition,
                 basicProjectileRadius,
@@ -905,6 +937,11 @@ namespace ProjectMT.Contents.FallenCommander
 
             if (hitCommander)
             {
+                FallenCommanderAttackEffectPlayer.PlayResolve(
+                    basicAttack.Effects,
+                    basicProjectilePosition,
+                    basicProjectileDirection,
+                    bossActor.transform.parent);
                 combatWorld.AttackDamageable(
                     bossActor,
                     commanderHealth,
@@ -1007,7 +1044,7 @@ namespace ProjectMT.Contents.FallenCommander
                     basicAttackCooldownRemaining = basicAttackRepeatInterval;
                     DestroyActiveTelegraph();
                     activeTelegraph = FallenCommanderTelegraphView.CreateCircle(
-                        markStrikeTelegraphPrefab,
+                        trackingMarkMotion.TelegraphPrefab,
                         bossActor.transform.parent,
                         markStrikePosition,
                         trackingMarkRadius,
@@ -1029,6 +1066,19 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
+            var motion = GetCurrentMotion();
+            var effectPosition = currentState == BossState.LineStrike
+                ? bossActor.transform.position
+                : markStrikePosition;
+            var effectDirection = currentState == BossState.LineStrike
+                ? lineStrikeDirection
+                : bossActor.transform.forward;
+            FallenCommanderAttackEffectPlayer.PlayResolve(
+                motion?.Effects,
+                effectPosition,
+                effectDirection,
+                bossActor.transform.parent);
+
             if (IsCommanderInsideCurrentAttack())
             {
                 var stunDuration = GetCurrentStunDuration();
@@ -1048,7 +1098,6 @@ namespace ProjectMT.Contents.FallenCommander
                 }
             }
 
-            var motion = GetCurrentMotion();
             animationPresenter.Play(
                 motion?.CastMotion,
                 stopAfterMotion: true,
@@ -1080,9 +1129,13 @@ namespace ProjectMT.Contents.FallenCommander
                 var sideDistance = Mathf.Abs(Vector3.Dot(
                     offset,
                     Vector3.Cross(Vector3.up, lineStrikeDirection)));
+                var allowedHalfWidth = FallenCommanderTelegraphView.CalculateLineHalfWidth(
+                    lineStrikeWidth,
+                    lineStrikeLength,
+                    forwardDistance);
                 return forwardDistance >= 0f &&
                     forwardDistance <= lineStrikeLength &&
-                    sideDistance <= lineStrikeWidth * 0.5f;
+                    sideDistance <= allowedHalfWidth;
             }
 
             var radius = currentState == BossState.Melee

@@ -5,8 +5,8 @@ namespace ProjectMT.Contents.FallenCommander
     [DisallowMultipleComponent]
     public sealed class FallenCommanderBasicProjectileView : MonoBehaviour
     {
+        // 기본 공격용 단색 구체를 생성하고 충돌체를 제거한다.
         public static FallenCommanderBasicProjectileView Create(
-            GameObject visualSource,
             Transform parent,
             Vector3 position,
             float radius,
@@ -16,7 +16,8 @@ namespace ProjectMT.Contents.FallenCommander
             projectile.name = "FallenCommanderBasicProjectile";
             projectile.transform.SetParent(parent, true);
             projectile.transform.position = position;
-            projectile.transform.localScale = Vector3.one * Mathf.Max(0.1f, radius * 2f);
+            projectile.transform.localScale =
+                Vector3.one * Mathf.Max(0.1f, radius * 2f);
 
             var collider = projectile.GetComponent<Collider>();
             if (collider != null)
@@ -25,16 +26,8 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             var renderer = projectile.GetComponent<Renderer>();
-            var sourceRenderer = visualSource == null
-                ? null
-                : visualSource.GetComponentInChildren<Renderer>(true);
             if (renderer != null)
             {
-                if (sourceRenderer != null && sourceRenderer.sharedMaterial != null)
-                {
-                    renderer.sharedMaterial = sourceRenderer.sharedMaterial;
-                }
-
                 var propertyBlock = new MaterialPropertyBlock();
                 renderer.GetPropertyBlock(propertyBlock);
                 propertyBlock.SetColor("_Color", color);
@@ -45,6 +38,7 @@ namespace ProjectMT.Contents.FallenCommander
             return projectile.AddComponent<FallenCommanderBasicProjectileView>();
         }
 
+        // 기본 공격 구체를 다음 위치로 이동시킨다.
         public void MoveTo(Vector3 position)
         {
             transform.position = position;

@@ -16,6 +16,13 @@ MonoBehaviour:
   attackRange: 8
   turnSpeed: 90
   projectileBasicAttack:
+    telegraphPrefab: {fileID: 5939384426542757584, guid: 4f2e0a6235579d848969926c9a9bc0f5, type: 3}
+    effects:
+      startVfxPrefab: {fileID: 0}
+      resolveVfxPrefab: {fileID: 0}
+      startSfx: {fileID: 0}
+      resolveSfx: {fileID: 0}
+      sfxVolume: 1
     warningDuration: 0.4
     projectileSpeed: 8
     projectileRadius: 0.5
@@ -24,6 +31,13 @@ MonoBehaviour:
     repeatInterval: 4.5
     patternOverlapDelay: 0.5
   meleeAttack:
+    telegraphPrefab: {fileID: 5939384426542757584, guid: 476965fe028ef2c498972bd793419dd1, type: 3}
+    effects:
+      startVfxPrefab: {fileID: 0}
+      resolveVfxPrefab: {fileID: 0}
+      startSfx: {fileID: 0}
+      resolveSfx: {fileID: 0}
+      sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
     preCastMotionDuration: 0.8750001
     castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
@@ -33,8 +47,14 @@ MonoBehaviour:
     width: 2
     length: 8
     stunDuration: 3.5
-  markStrikeTelegraphPrefab: {fileID: 5939384426542757584, guid: 53a72b40a09905143996a7904cc8c0de, type: 3}
   markStrike:
+    telegraphPrefab: {fileID: 5939384426542757584, guid: a07f2a7e8d36d25418bcd0d37f25e1fc, type: 3}
+    effects:
+      startVfxPrefab: {fileID: 0}
+      resolveVfxPrefab: {fileID: 0}
+      startSfx: {fileID: 0}
+      resolveSfx: {fileID: 0}
+      sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
     preCastMotionDuration: 0.875
     castMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
@@ -45,6 +65,13 @@ MonoBehaviour:
     length: 8
     stunDuration: 3.5
   trackingMark:
+    telegraphPrefab: {fileID: 5939384426542757584, guid: f2394fc61e6be904681d2da6c3f5c207, type: 3}
+    effects:
+      startVfxPrefab: {fileID: 0}
+      resolveVfxPrefab: {fileID: 0}
+      startSfx: {fileID: 0}
+      resolveSfx: {fileID: 0}
+      sfxVolume: 1
     preCastMotion: {fileID: 0}
     preCastMotionDuration: 0
     castMotion: {fileID: 0}
@@ -56,6 +83,13 @@ MonoBehaviour:
     stunDuration: 0
   trackingMarkLockDuration: 2
   wideBurst:
+    telegraphPrefab: {fileID: 5939384426542757584, guid: 8a95b41ce36931c4686846c593b9c711, type: 3}
+    effects:
+      startVfxPrefab: {fileID: 0}
+      resolveVfxPrefab: {fileID: 0}
+      startSfx: {fileID: 0}
+      resolveSfx: {fileID: 0}
+      sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
     preCastMotionDuration: 0.8750001
     castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
@@ -66,6 +100,13 @@ MonoBehaviour:
     length: 8
     stunDuration: 5
   lineStrike:
+    telegraphPrefab: {fileID: 5939384426542757584, guid: 948fcdf6ed8511143a58dc45b4bcc3d4, type: 3}
+    effects:
+      startVfxPrefab: {fileID: 0}
+      resolveVfxPrefab: {fileID: 0}
+      startSfx: {fileID: 0}
+      resolveSfx: {fileID: 0}
+      sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
     preCastMotionDuration: 0.875
     castMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
@@ -76,6 +117,13 @@ MonoBehaviour:
     length: 8
     stunDuration: 3.5
   corruptionRing:
+    telegraphPrefab: {fileID: 5939384426542757584, guid: 3110342697accbf4d989d628077fbdf3, type: 3}
+    effects:
+      startVfxPrefab: {fileID: 0}
+      resolveVfxPrefab: {fileID: 0}
+      startSfx: {fileID: 0}
+      resolveSfx: {fileID: 0}
+      sfxVolume: 1
     preCastMotion: {fileID: 0}
     preCastMotionDuration: 0
     castMotion: {fileID: 0}
@@ -86,6 +134,7 @@ MonoBehaviour:
     length: 8
     stunDuration: 0
   corruptionRingSafeRadius: 3.5
+  finalChargeTelegraphPrefab: {fileID: 5939384426542757584, guid: 8798d2c2bd4635941be031039cf5686d, type: 3}
   closeAttackDistance: 3
   lineStrikeMinimumDistance: 5
   lineStrikeAlignmentThreshold: 0.7

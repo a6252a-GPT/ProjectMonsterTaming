@@ -7,6 +7,7 @@ namespace ProjectMT.Contents.FallenCommander
     {
         private const int CircleSegments = 64;
         private const float GroundOffset = 0.025f;
+        private const float LineNearWidthRatio = 0.12f;
 
         private Transform progressFill;
         private float progressFillYScale;
@@ -22,6 +23,21 @@ namespace ProjectMT.Contents.FallenCommander
         public float MaximumWidth => maximumWidth;
         public float MaximumLength => maximumLength;
         public float Progress { get; private set; }
+
+        // 직선 공격의 진행 거리에 따라 좁은 시작점에서 넓은 끝점까지 반폭을 계산한다.
+        public static float CalculateLineHalfWidth(
+            float width,
+            float length,
+            float forwardDistance)
+        {
+            var safeWidth = Mathf.Max(0.1f, width);
+            var safeLength = Mathf.Max(0.1f, length);
+            var progress = Mathf.Clamp01(forwardDistance / safeLength);
+            return Mathf.Lerp(
+                safeWidth * 0.5f * LineNearWidthRatio,
+                safeWidth * 0.5f,
+                progress);
+        }
 
         public static FallenCommanderTelegraphView CreateCircle(
             GameObject fillPrefab,
@@ -155,18 +171,27 @@ namespace ProjectMT.Contents.FallenCommander
             SetProgress(0f);
         }
 
+        // 직선 공격 전조를 바깥쪽으로 넓어지는 쐐기형 외곽선으로 구성한다.
         private void ConfigureLine(float width, float length, Color color)
         {
             isLine = true;
             maximumRadius = 0f;
             maximumWidth = Mathf.Max(0.1f, width);
             maximumLength = Mathf.Max(0.1f, length);
+            var nearHalfWidth = CalculateLineHalfWidth(
+                maximumWidth,
+                maximumLength,
+                0f);
+            var farHalfWidth = CalculateLineHalfWidth(
+                maximumWidth,
+                maximumLength,
+                maximumLength);
             maximumOutline.widthMultiplier = Mathf.Clamp(maximumWidth * 0.04f, 0.06f, 0.14f);
             maximumOutline.positionCount = 4;
-            maximumOutline.SetPosition(0, new Vector3(-maximumWidth * 0.5f, 0.03f, 0f));
-            maximumOutline.SetPosition(1, new Vector3(-maximumWidth * 0.5f, 0.03f, maximumLength));
-            maximumOutline.SetPosition(2, new Vector3(maximumWidth * 0.5f, 0.03f, maximumLength));
-            maximumOutline.SetPosition(3, new Vector3(maximumWidth * 0.5f, 0.03f, 0f));
+            maximumOutline.SetPosition(0, new Vector3(-nearHalfWidth, 0.03f, 0f));
+            maximumOutline.SetPosition(1, new Vector3(-farHalfWidth, 0.03f, maximumLength));
+            maximumOutline.SetPosition(2, new Vector3(farHalfWidth, 0.03f, maximumLength));
+            maximumOutline.SetPosition(3, new Vector3(nearHalfWidth, 0.03f, 0f));
             ApplyColor(maximumOutline.gameObject, color);
             SetProgress(0f);
         }

@@ -22,7 +22,6 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField] private FallenCommanderAttackData meleeAttack = new FallenCommanderAttackData();
 
         [Header("3. 위치 공격")]
-        [SerializeField] private GameObject markStrikeTelegraphPrefab;
         [SerializeField] private FallenCommanderAttackData markStrike = new FallenCommanderAttackData();
 
         [Header("4. 추적 낙인")]
@@ -38,6 +37,9 @@ namespace ProjectMT.Contents.FallenCommander
         [Header("7. 타락의 고리")]
         [SerializeField] private FallenCommanderAttackData corruptionRing = new FallenCommanderAttackData();
         [SerializeField, Min(0.1f)] private float corruptionRingSafeRadius = 3.5f;
+
+        [Header("8. 충전 광역기")]
+        [SerializeField, InspectorName("공격 범위 프리팹")] private GameObject finalChargeTelegraphPrefab;
 
         [Header("Attack Selection")]
         [SerializeField, Min(0.1f)] private float closeAttackDistance = 3f;
@@ -70,7 +72,6 @@ namespace ProjectMT.Contents.FallenCommander
         public float TurnSpeed => turnSpeed;
         public FallenCommanderBasicAttackData BasicAttack => projectileBasicAttack;
         public FallenCommanderAttackData MeleeAttack => meleeAttack;
-        public GameObject MarkStrikeTelegraphPrefab => markStrikeTelegraphPrefab;
         public FallenCommanderAttackData MarkStrike => markStrike;
         public FallenCommanderAttackData TrackingMark => trackingMark;
         public float TrackingMarkLockDuration => trackingMarkLockDuration;
@@ -78,6 +79,7 @@ namespace ProjectMT.Contents.FallenCommander
         public FallenCommanderAttackData LineStrike => lineStrike;
         public FallenCommanderAttackData CorruptionRing => corruptionRing;
         public float CorruptionRingSafeRadius => corruptionRingSafeRadius;
+        public GameObject FinalChargeTelegraphPrefab => finalChargeTelegraphPrefab;
         public float CloseAttackDistance => closeAttackDistance;
         public float LineStrikeMinimumDistance => lineStrikeMinimumDistance;
         public float LineStrikeAlignmentThreshold => lineStrikeAlignmentThreshold;
@@ -112,6 +114,8 @@ namespace ProjectMT.Contents.FallenCommander
     [System.Serializable]
     public sealed class FallenCommanderBasicAttackData
     {
+        [SerializeField, InspectorName("공격 범위 프리팹")] private GameObject telegraphPrefab;
+        [SerializeField] private FallenCommanderAttackEffectData effects = new();
         [SerializeField, Min(0.1f)] private float warningDuration = 0.4f;
         [SerializeField, Min(0.1f)] private float projectileSpeed = 8f;
         [SerializeField, Min(0.1f)] private float projectileRadius = 0.5f;
@@ -120,6 +124,8 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, Min(0.1f)] private float repeatInterval = 4.5f;
         [SerializeField, Min(0f)] private float patternOverlapDelay = 0.5f;
 
+        public GameObject TelegraphPrefab => telegraphPrefab;
+        public FallenCommanderAttackEffectData Effects => effects;
         public float WarningDuration => warningDuration;
         public float ProjectileSpeed => projectileSpeed;
         public float ProjectileRadius => projectileRadius;
@@ -132,6 +138,8 @@ namespace ProjectMT.Contents.FallenCommander
     [System.Serializable]
     public sealed class FallenCommanderAttackData
     {
+        [SerializeField, InspectorName("공격 범위 프리팹")] private GameObject telegraphPrefab;
+        [SerializeField] private FallenCommanderAttackEffectData effects = new();
         [SerializeField] private AnimationClip preCastMotion;
         [SerializeField, Min(0f)] private float preCastMotionDuration;
         [SerializeField] private AnimationClip castMotion;
@@ -142,6 +150,8 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, Min(0.1f)] private float length = 8f;
         [SerializeField, Min(0f)] private float stunDuration;
 
+        public GameObject TelegraphPrefab => telegraphPrefab;
+        public FallenCommanderAttackEffectData Effects => effects;
         public AnimationClip PreCastMotion => preCastMotion;
         public AnimationClip CastMotion => castMotion;
         public float PreCastMotionDuration => ResolveDuration(preCastMotion, preCastMotionDuration);
@@ -160,6 +170,22 @@ namespace ProjectMT.Contents.FallenCommander
                     ? 0f
                     : Mathf.Max(0.01f, motion.length);
         }
+    }
+
+    [System.Serializable]
+    public sealed class FallenCommanderAttackEffectData
+    {
+        [SerializeField, InspectorName("시전 VFX")] private GameObject startVfxPrefab;
+        [SerializeField, InspectorName("적중 VFX")] private GameObject resolveVfxPrefab;
+        [SerializeField, InspectorName("시전 SFX")] private AudioClip startSfx;
+        [SerializeField, InspectorName("적중 SFX")] private AudioClip resolveSfx;
+        [SerializeField, InspectorName("SFX 볼륨"), Range(0f, 1f)] private float sfxVolume = 1f;
+
+        public GameObject StartVfxPrefab => startVfxPrefab;
+        public GameObject ResolveVfxPrefab => resolveVfxPrefab;
+        public AudioClip StartSfx => startSfx;
+        public AudioClip ResolveSfx => resolveSfx;
+        public float SfxVolume => sfxVolume;
     }
 
     public sealed class FallenCommanderStartData : IContentStartData

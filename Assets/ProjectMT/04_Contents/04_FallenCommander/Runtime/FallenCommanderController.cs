@@ -34,6 +34,7 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, Min(0f)] private float battleStartDelaySeconds = 2f;
         [SerializeField, Range(0.01f, 1f)] private float finalChargeHealthRatio = 0.3f;
         [SerializeField, Min(0.1f)] private float finalChargeDuration = 12f;
+        [SerializeField, Min(0.1f)] private float finalChargeRadius = 10f;
         [SerializeField, Min(0f)] private float timeoutWipeWarningDuration = 0.8f;
         [SerializeField, Min(0f)] private float timeoutWipeDeathResultDelay = 2f;
         [SerializeField, Min(0f)] private float timeoutWarningStartSeconds = 5f;
@@ -62,14 +63,17 @@ namespace ProjectMT.Contents.FallenCommander
         private float finalChargeRemainingTime;
         private bool isFinalChargeActive;
         private bool hasTriggeredFinalCharge;
+        private bool isFinalChargePending;
         private FallenCommanderTelegraphView finalChargeTelegraph;
         private bool isTimeoutWipeActive;
         private Coroutine timeoutWipeRoutine;
         private float timeoutWipeStartedRealtime = -1f;
         private FallenCommanderBossPhase currentBossPhase;
+        private FallenCommanderBossPhase requestedBossPhase;
         private FallenCommanderAttackPattern pendingPhaseAttack;
         private float phaseTransitionRemainingTime;
         private bool isPhaseTransitionActive;
+        private bool isWaitingForPhaseSignature;
         private bool isDebugPhaseJump;
         private bool isCommanderStunned;
         private int lastLoggedBossHealthPercent;
@@ -102,6 +106,7 @@ namespace ProjectMT.Contents.FallenCommander
             BeginBattle();
         }
 
+        // 전투에 필요한 런타임 상태를 초기화하고 보스·군단장·HUD를 준비한다.
         private void BeginBattle()
         {
             if (context == null || IsRunning)
@@ -115,11 +120,14 @@ namespace ProjectMT.Contents.FallenCommander
             finalChargeRemainingTime = 0f;
             isFinalChargeActive = false;
             hasTriggeredFinalCharge = false;
+            isFinalChargePending = false;
             DestroyFinalChargeTelegraph();
             currentBossPhase = FallenCommanderBossPhase.Phase1;
+            requestedBossPhase = FallenCommanderBossPhase.Phase1;
             pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
             phaseTransitionRemainingTime = 0f;
             isPhaseTransitionActive = false;
+            isWaitingForPhaseSignature = false;
             isDebugPhaseJump = false;
             isTimeoutWipeActive = false;
             timeoutWipeStartedRealtime = -1f;
@@ -147,6 +155,7 @@ namespace ProjectMT.Contents.FallenCommander
             PublishHudState();
         }
 
+        // 진행 중인 전투 상태와 이벤트·연출·입력 연결을 안전하게 정리한다.
         public void Shutdown()
         {
             IsRunning = false;
@@ -155,11 +164,14 @@ namespace ProjectMT.Contents.FallenCommander
             finalChargeRemainingTime = 0f;
             isFinalChargeActive = false;
             hasTriggeredFinalCharge = false;
+            isFinalChargePending = false;
             DestroyFinalChargeTelegraph();
             currentBossPhase = FallenCommanderBossPhase.Phase1;
+            requestedBossPhase = FallenCommanderBossPhase.Phase1;
             pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
             phaseTransitionRemainingTime = 0f;
             isPhaseTransitionActive = false;
+            isWaitingForPhaseSignature = false;
             isDebugPhaseJump = false;
             isTimeoutWipeActive = false;
             timeoutWipeStartedRealtime = -1f;
@@ -219,6 +231,7 @@ namespace ProjectMT.Contents.FallenCommander
             isCommanderStunned = false;
         }
 
+        // 전투 준비·타이머·특수 패턴·보스 FSM을 매 프레임 순서대로 갱신한다.
         private void Update()
         {
             if (!IsRunning)
@@ -278,6 +291,8 @@ namespace ProjectMT.Contents.FallenCommander
                 {
                     isPhaseTransitionActive = false;
                     stateMachine?.CompletePhaseTransition(pendingPhaseAttack);
+                    isWaitingForPhaseSignature =
+                        pendingPhaseAttack != FallenCommanderAttackPattern.Basic;
                     pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
                 }
 
@@ -286,6 +301,18 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             stateMachine?.Tick(Time.deltaTime);
+
+            if (isWaitingForPhaseSignature && stateMachine != null && stateMachine.IsIdle)
+            {
+                isWaitingForPhaseSignature = false;
+            }
+
+            if (!isWaitingForPhaseSignature &&
+                (TryStartNextPhaseTransition() || TryStartPendingFinalCharge()))
+            {
+                PublishHudState();
+                return;
+            }
 
             if (isBroken)
             {
@@ -302,6 +329,7 @@ namespace ProjectMT.Contents.FallenCommander
             PublishHudState();
         }
 
+        // 전투 시작에 필요한 참조와 서로 의존하는 보스 설정값을 검증한다.
         private void ValidateReferences()
         {
             if (combatWorld == null ||
@@ -314,6 +342,14 @@ namespace ProjectMT.Contents.FallenCommander
             {
                 throw new InvalidOperationException(
                     "Fallen Commander references are missing.");
+            }
+
+            if (bossConfig.PhaseTwoHealthRatio <= bossConfig.PhaseThreeHealthRatio ||
+                bossConfig.TrackingMarkLockDuration >= bossConfig.TrackingMark.WarningDuration ||
+                bossConfig.CorruptionRingSafeRadius >= bossConfig.CorruptionRing.Radius)
+            {
+                throw new InvalidOperationException(
+                    "Fallen Commander phase or attack range settings are invalid.");
             }
         }
 
@@ -492,6 +528,7 @@ namespace ProjectMT.Contents.FallenCommander
             commanderSkillBridge = null;
         }
 
+        // 보스 피격 점수·페이즈·충전 광역기·브레이크 처리를 우선순위대로 수행한다.
         private void HandleBossDamaged(DamageReport report)
         {
             if (!IsRunning || bossActor == null)
@@ -506,14 +543,13 @@ namespace ProjectMT.Contents.FallenCommander
             LogBossHealthThresholds();
 
             var phaseChanged = TryAdvanceBossPhase();
+            var finalChargeScheduled = TryStartFinalCharge();
 
-            if (TryStartFinalCharge())
-            {
-                PublishHudState();
-                return;
-            }
-
-            if (phaseChanged || isPhaseTransitionActive)
+            if (phaseChanged ||
+                isPhaseTransitionActive ||
+                requestedBossPhase > currentBossPhase ||
+                finalChargeScheduled ||
+                isFinalChargePending)
             {
                 PublishHudState();
                 return;
@@ -539,6 +575,7 @@ namespace ProjectMT.Contents.FallenCommander
             PublishHudState();
         }
 
+        // 현재 체력으로 도달한 최종 페이즈를 예약하고 한 단계씩 순차 전환한다.
         private bool TryAdvanceBossPhase()
         {
             if (bossActor == null ||
@@ -550,18 +587,36 @@ namespace ProjectMT.Contents.FallenCommander
 
             var healthRatio =
                 bossActor.Health.CurrentHealth / bossActor.Health.MaxHealth;
-            var nextPhase = healthRatio <= bossConfig.PhaseThreeHealthRatio
+            var targetPhase = healthRatio <= bossConfig.PhaseThreeHealthRatio
                 ? FallenCommanderBossPhase.Phase3
                 : healthRatio <= bossConfig.PhaseTwoHealthRatio
                     ? FallenCommanderBossPhase.Phase2
                     : FallenCommanderBossPhase.Phase1;
-            if (nextPhase <= currentBossPhase)
+            if (targetPhase <= requestedBossPhase)
             {
                 return false;
             }
 
-            currentBossPhase = nextPhase;
-            pendingPhaseAttack = nextPhase == FallenCommanderBossPhase.Phase2
+            requestedBossPhase = targetPhase;
+            TryStartNextPhaseTransition();
+            return true;
+        }
+
+        // 예약된 다음 페이즈가 있으면 현재 페이즈에서 정확히 한 단계만 전환한다.
+        private bool TryStartNextPhaseTransition()
+        {
+            if (isPhaseTransitionActive ||
+                isWaitingForPhaseSignature ||
+                isFinalChargeActive ||
+                requestedBossPhase <= currentBossPhase ||
+                bossActor == null ||
+                !bossActor.IsAlive)
+            {
+                return false;
+            }
+
+            currentBossPhase = (FallenCommanderBossPhase)((int)currentBossPhase + 1);
+            pendingPhaseAttack = currentBossPhase == FallenCommanderBossPhase.Phase2
                 ? FallenCommanderAttackPattern.Wide
                 : FallenCommanderAttackPattern.TrackingMark;
             phaseTransitionRemainingTime = bossConfig.PhaseTransitionDuration;
@@ -576,13 +631,16 @@ namespace ProjectMT.Contents.FallenCommander
             return true;
         }
 
+        // 충전 종료 시 표시된 원형 범위 안의 군단장에게만 하트 1개 피해를 적용한다.
         private void ResolveFinalCharge()
         {
             isFinalChargeActive = false;
             finalChargeRemainingTime = 0f;
             DestroyFinalChargeTelegraph();
 
-            if (commanderHealth != null && commanderHealth.IsAlive)
+            if (commanderHealth != null &&
+                commanderHealth.IsAlive &&
+                IsCommanderInsideFinalCharge())
             {
                 commanderHealth.ApplyDamage(new DamageRequest(
                     bossActor,
@@ -598,6 +656,20 @@ namespace ProjectMT.Contents.FallenCommander
 
             InitializeStateMachine();
             PublishHudState();
+        }
+
+        // 군단장이 충전 광역기의 실제 원형 판정 안에 있는지 확인한다.
+        private bool IsCommanderInsideFinalCharge()
+        {
+            if (bossActor == null || commanderRoot == null)
+            {
+                return false;
+            }
+
+            var offset = commanderRoot.transform.position - bossActor.transform.position;
+            offset.y = 0f;
+            var radius = Mathf.Max(0.1f, finalChargeRadius);
+            return offset.sqrMagnitude <= radius * radius;
         }
 
         private void BeginTimeoutWipeSequence()
@@ -622,9 +694,10 @@ namespace ProjectMT.Contents.FallenCommander
             timeoutWipeRoutine = StartCoroutine(CompleteTimeoutWipe());
         }
 
+        // 실제 시간 기준 경고가 끝나면 군단장의 남은 하트를 제거하고 실패 연출을 시작한다.
         private IEnumerator CompleteTimeoutWipe()
         {
-            yield return new WaitForSeconds(timeoutWipeWarningDuration);
+            yield return new WaitForSecondsRealtime(timeoutWipeWarningDuration);
             timeoutWipeRoutine = null;
 
             while (commanderHealth != null && commanderHealth.IsAlive)
@@ -643,6 +716,7 @@ namespace ProjectMT.Contents.FallenCommander
                 timeoutWipeDeathResultDelay);
         }
 
+        // 체력 조건에 도달하면 충전 광역기를 예약하고 선행 페이즈 연출이 없을 때 시작한다.
         private bool TryStartFinalCharge()
         {
             if (hasTriggeredFinalCharge ||
@@ -660,9 +734,26 @@ namespace ProjectMT.Contents.FallenCommander
                 return false;
             }
 
+            isFinalChargePending = true;
+            TryStartPendingFinalCharge();
+            return true;
+        }
+
+        // 예약된 페이즈와 보장 패턴이 끝난 뒤 대기 중인 충전 광역기를 시작한다.
+        private bool TryStartPendingFinalCharge()
+        {
+            if (!isFinalChargePending ||
+                isPhaseTransitionActive ||
+                isWaitingForPhaseSignature ||
+                requestedBossPhase > currentBossPhase)
+            {
+                return false;
+            }
+
             return StartFinalCharge();
         }
 
+        // 일반 보스 패턴을 중지하고 충전 광역기 상태와 범위 전조를 시작한다.
         private bool StartFinalCharge()
         {
             if (isFinalChargeActive ||
@@ -675,12 +766,14 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             hasTriggeredFinalCharge = true;
+            isFinalChargePending = false;
             isFinalChargeActive = true;
             finalChargeRemainingTime = finalChargeDuration;
             isBroken = false;
             breakRemainingTime = 0f;
             currentBreakGauge = 0f;
             isPhaseTransitionActive = false;
+            isWaitingForPhaseSignature = false;
             phaseTransitionRemainingTime = 0f;
             pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
             stateMachine?.Shutdown();
@@ -691,6 +784,7 @@ namespace ProjectMT.Contents.FallenCommander
             return true;
         }
 
+        // 충전 광역기의 전용 반지름으로 보스 중심 원형 전조를 생성한다.
         private void CreateFinalChargeTelegraph()
         {
             DestroyFinalChargeTelegraph();
@@ -705,7 +799,7 @@ namespace ProjectMT.Contents.FallenCommander
                 bossConfig.MarkStrikeTelegraphPrefab,
                 bossActor.transform.parent,
                 bossActor.transform.position,
-                bossConfig.WideBurst.Radius,
+                finalChargeRadius,
                 FinalChargeTelegraphColor);
             finalChargeTelegraph?.SetProgress(0f);
         }
@@ -773,15 +867,18 @@ namespace ProjectMT.Contents.FallenCommander
             PublishHudState();
         }
 
+        // 브레이크와 페이즈 예약 상태를 최초 전투 상태로 되돌린다.
         private void ResetBreakState()
         {
             currentBreakGauge = 0f;
             breakRemainingTime = 0f;
             isBroken = false;
             currentBossPhase = FallenCommanderBossPhase.Phase1;
+            requestedBossPhase = FallenCommanderBossPhase.Phase1;
             pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
             phaseTransitionRemainingTime = 0f;
             isPhaseTransitionActive = false;
+            isWaitingForPhaseSignature = false;
             isCommanderStunned = false;
         }
 
@@ -959,6 +1056,7 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor.transform.position));
         }
 
+        // DEV 버튼에서 지정한 페이즈 체력으로 보스를 초기화하고 정상 전환 절차를 실행한다.
         public void DebugSetBossPhase(int phaseNumber)
         {
             if (!IsRunning ||
@@ -977,6 +1075,7 @@ namespace ProjectMT.Contents.FallenCommander
                 (int)FallenCommanderBossPhase.Phase3);
             isFinalChargeActive = false;
             hasTriggeredFinalCharge = false;
+            isFinalChargePending = false;
             finalChargeRemainingTime = 0f;
             DestroyFinalChargeTelegraph();
             stateMachine?.Shutdown();
@@ -1232,11 +1331,12 @@ namespace ProjectMT.Contents.FallenCommander
                 CompleteAfterDeath(outcome, resultDelay));
         }
 
+        // 사망 연출의 결과 대기 시간을 실제 시간 기준으로 보낸 뒤 콘텐츠 결과를 반환한다.
         private IEnumerator CompleteAfterDeath(
             ContentOutcome outcome,
             float resultDelay)
         {
-            yield return new WaitForSeconds(resultDelay);
+            yield return new WaitForSecondsRealtime(resultDelay);
             bossDeathPresentation?.Release();
             bossDeathPresentation = null;
             commanderDeathAnimationPresenter?.Stop();

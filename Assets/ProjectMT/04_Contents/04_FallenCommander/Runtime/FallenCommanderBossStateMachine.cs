@@ -141,6 +141,10 @@ namespace ProjectMT.Contents.FallenCommander
 
         public bool IsCommanderStunned => isCommanderStunned;
         public float CommanderStunRemainingTime => commanderStunRemaining;
+        // 예약된 페이즈나 특수 패턴을 안전하게 시작할 수 있는 기본 대기 상태인지 알려준다.
+        public bool IsIdle => isActive &&
+            !isPhaseTransitionActive &&
+            currentState == BossState.Idle;
         public FallenCommanderAttackPattern LastSelectedAttack { get; private set; }
         public FallenCommanderTelegraphView ActiveTelegraph => activeTelegraph;
         // 위치 공격 범위로 사용할 프리팹

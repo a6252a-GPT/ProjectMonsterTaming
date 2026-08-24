@@ -60,11 +60,9 @@ namespace ProjectMT.Contents.FallenCommander
         private Coroutine deathRoutine;
         private float battleStartDelayRemaining;
         private bool isBattleStartDelay;
-        private float finalChargeRemainingTime;
-        private bool isFinalChargeActive;
         private bool hasTriggeredFinalCharge;
         private bool isFinalChargePending;
-        private FallenCommanderTelegraphView finalChargeTelegraph;
+        private readonly FallenCommanderFinalChargePattern finalChargePattern = new();
         private bool isTimeoutWipeActive;
         private Coroutine timeoutWipeRoutine;
         private float timeoutWipeStartedRealtime = -1f;
@@ -81,9 +79,6 @@ namespace ProjectMT.Contents.FallenCommander
         private int lastLoggedBossHealthPercent;
 
         private const float BreakGaugeDamageScale = 5f;
-        private static readonly Color FinalChargeTelegraphColor =
-            new Color(0.9f, 0.08f, 0.12f, 0.85f);
-
         private float RemainingBreakGauge =>
             Mathf.Max(0f, bossConfig.MaxBreakGauge - currentBreakGauge);
 
@@ -119,11 +114,9 @@ namespace ProjectMT.Contents.FallenCommander
             remainingTime = timeLimitSeconds;
             battleStartDelayRemaining = Mathf.Max(0f, battleStartDelaySeconds);
             isBattleStartDelay = battleStartDelayRemaining > 0f;
-            finalChargeRemainingTime = 0f;
-            isFinalChargeActive = false;
             hasTriggeredFinalCharge = false;
             isFinalChargePending = false;
-            DestroyFinalChargeTelegraph();
+            finalChargePattern.Cancel();
             currentBossPhase = FallenCommanderBossPhase.Phase1;
             requestedBossPhase = FallenCommanderBossPhase.Phase1;
             pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
@@ -166,11 +159,9 @@ namespace ProjectMT.Contents.FallenCommander
             IsRunning = false;
             battleStartDelayRemaining = 0f;
             isBattleStartDelay = false;
-            finalChargeRemainingTime = 0f;
-            isFinalChargeActive = false;
             hasTriggeredFinalCharge = false;
             isFinalChargePending = false;
-            DestroyFinalChargeTelegraph();
+            finalChargePattern.Cancel();
             currentBossPhase = FallenCommanderBossPhase.Phase1;
             requestedBossPhase = FallenCommanderBossPhase.Phase1;
             pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
@@ -273,16 +264,9 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            if (isFinalChargeActive)
+            if (finalChargePattern.IsActive)
             {
-                finalChargeRemainingTime = Mathf.Max(
-                    0f,
-                    finalChargeRemainingTime - Time.deltaTime);
-                finalChargeTelegraph?.SetProgress(
-                    finalChargeDuration <= 0f
-                        ? 1f
-                        : 1f - finalChargeRemainingTime / finalChargeDuration);
-                if (finalChargeRemainingTime <= 0f)
+                if (finalChargePattern.Tick(Time.deltaTime))
                 {
                     ResolveFinalCharge();
                     return;
@@ -626,7 +610,7 @@ namespace ProjectMT.Contents.FallenCommander
         {
             if (isPhaseTransitionActive ||
                 isWaitingForPhaseSignature ||
-                isFinalChargeActive ||
+                finalChargePattern.IsActive ||
                 requestedBossPhase <= currentBossPhase ||
                 bossActor == null ||
                 !bossActor.IsAlive)
@@ -682,13 +666,14 @@ namespace ProjectMT.Contents.FallenCommander
         // 충전 종료 시 표시된 원형 범위 안의 군단장에게만 하트 1개 피해를 적용한다.
         private void ResolveFinalCharge()
         {
-            isFinalChargeActive = false;
-            finalChargeRemainingTime = 0f;
-            DestroyFinalChargeTelegraph();
+            if (!finalChargePattern.Complete(out var commanderInside))
+            {
+                return;
+            }
 
             if (commanderHealth != null &&
                 commanderHealth.IsAlive &&
-                IsCommanderInsideFinalCharge())
+                commanderInside)
             {
                 commanderHealth.ApplyDamage(new DamageRequest(
                     bossActor,
@@ -706,20 +691,6 @@ namespace ProjectMT.Contents.FallenCommander
             PublishHudState();
         }
 
-        // 군단장이 충전 광역기의 실제 원형 판정 안에 있는지 확인한다.
-        private bool IsCommanderInsideFinalCharge()
-        {
-            if (bossActor == null || commanderRoot == null)
-            {
-                return false;
-            }
-
-            var offset = commanderRoot.transform.position - bossActor.transform.position;
-            offset.y = 0f;
-            var radius = Mathf.Max(0.1f, finalChargeRadius);
-            return offset.sqrMagnitude <= radius * radius;
-        }
-
         private void BeginTimeoutWipeSequence()
         {
             if (!IsRunning || isFinishing || isTimeoutWipeActive)
@@ -729,12 +700,10 @@ namespace ProjectMT.Contents.FallenCommander
 
             isTimeoutWipeActive = true;
             timeoutWipeStartedRealtime = Time.realtimeSinceStartup;
-            isFinalChargeActive = false;
-            finalChargeRemainingTime = 0f;
+            finalChargePattern.Cancel();
             isPhaseTransitionActive = false;
             phaseTransitionRemainingTime = 0f;
             pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
-            DestroyFinalChargeTelegraph();
             ShutdownCommanderSkills();
             stateMachine?.Shutdown();
             commanderMove?.SetInputEnabled(false);
@@ -804,7 +773,7 @@ namespace ProjectMT.Contents.FallenCommander
         // 일반 보스 패턴을 중지하고 충전 광역기 상태와 범위 전조를 시작한다.
         private bool StartFinalCharge()
         {
-            if (isFinalChargeActive ||
+            if (finalChargePattern.IsActive ||
                 isTimeoutWipeActive ||
                 isFinishing ||
                 bossActor == null ||
@@ -813,10 +782,18 @@ namespace ProjectMT.Contents.FallenCommander
                 return false;
             }
 
+            if (!finalChargePattern.Begin(
+                    bossActor.transform,
+                    commanderRoot.transform,
+                    bossConfig.MarkStrikeTelegraphPrefab,
+                    finalChargeDuration,
+                    finalChargeRadius))
+            {
+                return false;
+            }
+
             hasTriggeredFinalCharge = true;
             isFinalChargePending = false;
-            isFinalChargeActive = true;
-            finalChargeRemainingTime = finalChargeDuration;
             isBroken = false;
             breakRemainingTime = 0f;
             currentBreakGauge = 0f;
@@ -825,42 +802,10 @@ namespace ProjectMT.Contents.FallenCommander
             phaseTransitionRemainingTime = 0f;
             pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
             stateMachine?.Shutdown();
-            CreateFinalChargeTelegraph();
             Debug.Log(
                 $"충전 광역 공격 준비 시작: {finalChargeDuration:0.0}초",
                 this);
             return true;
-        }
-
-        // 충전 광역기의 전용 반지름으로 보스 중심 원형 전조를 생성한다.
-        private void CreateFinalChargeTelegraph()
-        {
-            DestroyFinalChargeTelegraph();
-            if (bossActor == null ||
-                bossConfig == null ||
-                bossConfig.MarkStrikeTelegraphPrefab == null)
-            {
-                return;
-            }
-
-            finalChargeTelegraph = FallenCommanderTelegraphView.CreateCircle(
-                bossConfig.MarkStrikeTelegraphPrefab,
-                bossActor.transform.parent,
-                bossActor.transform.position,
-                finalChargeRadius,
-                FinalChargeTelegraphColor);
-            finalChargeTelegraph?.SetProgress(0f);
-        }
-
-        private void DestroyFinalChargeTelegraph()
-        {
-            if (finalChargeTelegraph == null)
-            {
-                return;
-            }
-
-            Destroy(finalChargeTelegraph.gameObject);
-            finalChargeTelegraph = null;
         }
 
         // 현재 페이즈에 맞는 브레이크 게이지 획득 배율을 반환한다.
@@ -991,9 +936,11 @@ namespace ProjectMT.Contents.FallenCommander
                     ? 0f
                     : stateMachine.CommanderStunRemainingTime,
                 bossConfig.MarkStrike.StunDuration,
-                isFinalChargeActive,
-                finalChargeRemainingTime,
-                finalChargeDuration,
+                finalChargePattern.IsActive,
+                finalChargePattern.RemainingTime,
+                finalChargePattern.IsActive
+                    ? finalChargePattern.Duration
+                    : finalChargeDuration,
                 isTimeoutWipeActive,
                 !isBattleStartDelay &&
                 !isTimeoutWipeActive &&
@@ -1037,12 +984,10 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            isFinalChargeActive = false;
-            finalChargeRemainingTime = 0f;
+            finalChargePattern.Cancel();
             isPhaseTransitionActive = false;
             phaseTransitionRemainingTime = 0f;
             pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
-            DestroyFinalChargeTelegraph();
             PublishHudState();
 
             BeginDeathSequence(
@@ -1123,11 +1068,9 @@ namespace ProjectMT.Contents.FallenCommander
                 phaseNumber,
                 (int)FallenCommanderBossPhase.Phase1,
                 (int)FallenCommanderBossPhase.Phase3);
-            isFinalChargeActive = false;
+            finalChargePattern.Cancel();
             hasTriggeredFinalCharge = false;
             isFinalChargePending = false;
-            finalChargeRemainingTime = 0f;
-            DestroyFinalChargeTelegraph();
             stateMachine?.Shutdown();
             ResetBreakState();
             bossActor.Health.Heal(bossActor.Health.MaxHealth);
@@ -1185,7 +1128,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugBasicAttack()
         {
-            if (!IsRunning || isBattleStartDelay || isFinalChargeActive || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || isTimeoutWipeActive)
             {
                 return;
             }
@@ -1195,7 +1138,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugMeleeAttack()
         {
-            if (!IsRunning || isBattleStartDelay || isFinalChargeActive || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || isTimeoutWipeActive)
             {
                 return;
             }
@@ -1205,7 +1148,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugLineStrike()
         {
-            if (!IsRunning || isBattleStartDelay || isFinalChargeActive || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || isTimeoutWipeActive)
             {
                 return;
             }
@@ -1215,7 +1158,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugCorruptionRing()
         {
-            if (!IsRunning || isBattleStartDelay || isFinalChargeActive || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || isTimeoutWipeActive)
             {
                 return;
             }
@@ -1225,7 +1168,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugMarkStrike()
         {
-            if (!IsRunning || isBattleStartDelay || isFinalChargeActive || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || isTimeoutWipeActive)
             {
                 return;
             }
@@ -1235,7 +1178,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugTrackingMark()
         {
-            if (!IsRunning || isBattleStartDelay || isFinalChargeActive || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || isTimeoutWipeActive)
             {
                 return;
             }
@@ -1245,7 +1188,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugWideBurst()
         {
-            if (!IsRunning || isBattleStartDelay || isFinalChargeActive || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || isTimeoutWipeActive)
             {
                 return;
             }

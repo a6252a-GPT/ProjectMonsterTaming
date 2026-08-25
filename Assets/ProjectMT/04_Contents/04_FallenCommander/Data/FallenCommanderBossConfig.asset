@@ -105,13 +105,13 @@ MonoBehaviour:
     length: 8
     stunDuration: 0
   trackingMarkLockDuration: 0.8
-  wideBurst:
+  blackHole:
     telegraphPrefab: {fileID: 5939384426542757584, guid: 8a95b41ce36931c4686846c593b9c711, type: 3}
     effects:
       startVfxPrefab: {fileID: 1187270765252648731, guid: ce12a47334d76aa4ea9d06483d8641dc, type: 3}
-      startVfxDuration: 5
-      resolveVfxPrefab: {fileID: 344858183500810125, guid: 6083b5b842a6ac44889a2d9ebebabae8, type: 3}
-      resolveVfxDuration: 1.8
+      startVfxDuration: 1.5
+      resolveVfxPrefab: {fileID: 6258482674219099290, guid: 5d9ec90da4013ec40a319d8432b07519, type: 3}
+      resolveVfxDuration: 3.5
       startSfx: {fileID: 0}
       startSfxDuration: 5
       resolveSfx: {fileID: 0}
@@ -123,11 +123,52 @@ MonoBehaviour:
     castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
     castMotionSpeed: 1
     castMotionDuration: 0.875
-    warningDuration: 5
-    radius: 10
+    warningDuration: 1.5
+    radius: 3.5
     width: 2
     length: 8
-    stunDuration: 5
+    stunDuration: 0
+  blackHoleActiveDuration: 3.5
+  blackHoleCoreRadius: 1.2
+  blackHoleSpawnMinDistance: 1.5
+  blackHoleSpawnMaxDistance: 3.5
+  blackHoleOuterPullSpeed: 1.5
+  blackHoleInnerPullSpeed: 4
+  blackHolePullStrengthCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  blackHoleArenaHalfExtents: {x: 6, y: 4}
+  blackHoleEndEffects:
+    startVfxPrefab: {fileID: 0}
+    startVfxDuration: 0
+    resolveVfxPrefab: {fileID: 6909954905928057147, guid: be310100dd74466468712278ac4229d2, type: 3}
+    resolveVfxDuration: 1.5
+    startSfx: {fileID: 0}
+    startSfxDuration: 0
+    resolveSfx: {fileID: 0}
+    resolveSfxDuration: 0
+    sfxVolume: 1
   lineStrike:
     telegraphPrefab: {fileID: 5939384426542757584, guid: 948fcdf6ed8511143a58dc45b4bcc3d4, type: 3}
     effects:
@@ -178,9 +219,9 @@ MonoBehaviour:
   finalChargeTelegraphPrefab: {fileID: 5939384426542757584, guid: 8798d2c2bd4635941be031039cf5686d, type: 3}
   finalChargeEffects:
     startVfxPrefab: {fileID: 3090182719152197242, guid: 72a58d6b485ceaa43a825cf9fcfa6aa0, type: 3}
-    startVfxDuration: 3
-    resolveVfxPrefab: {fileID: 0}
-    resolveVfxDuration: 0
+    startVfxDuration: 1
+    resolveVfxPrefab: {fileID: 344858183500810125, guid: 6083b5b842a6ac44889a2d9ebebabae8, type: 3}
+    resolveVfxDuration: 15
     startSfx: {fileID: 0}
     startSfxDuration: 0
     resolveSfx: {fileID: 0}

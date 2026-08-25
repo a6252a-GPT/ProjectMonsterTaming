@@ -6,8 +6,11 @@ namespace ProjectMT.Contents.FallenCommander
 {
     public enum FallenCommanderBossPhase
     {
+        [InspectorName("1 페이즈")]
         Phase1 = 1,
+        [InspectorName("2 페이즈")]
         Phase2 = 2,
+        [InspectorName("3 페이즈")]
         Phase3 = 3
     }
 
@@ -21,8 +24,8 @@ namespace ProjectMT.Contents.FallenCommander
         Mark,
         [InspectorName("추적 낙인")]
         TrackingMark,
-        [InspectorName("광역기")]
-        Wide,
+        [InspectorName("블랙홀")]
+        BlackHole,
         [InspectorName("직선 공격")]
         Line,
         [InspectorName("타락의 고리")]
@@ -35,7 +38,7 @@ namespace ProjectMT.Contents.FallenCommander
             float distance,
             float forwardAlignment,
             float closeAttackDistance,
-            float wideBurstRadius,
+            float blackHoleRadius,
             float lineStrikeMinimumDistance,
             float lineStrikeAlignmentThreshold,
             FallenCommanderAttackPattern previousAttack)
@@ -49,7 +52,7 @@ namespace ProjectMT.Contents.FallenCommander
             if (safeDistance <= closeDistance)
             {
                 return previousAttack == FallenCommanderAttackPattern.Melee
-                    ? FallenCommanderAttackPattern.Wide
+                    ? FallenCommanderAttackPattern.BlackHole
                     : FallenCommanderAttackPattern.Melee;
             }
 
@@ -66,9 +69,9 @@ namespace ProjectMT.Contents.FallenCommander
                 return FallenCommanderAttackPattern.Mark;
             }
 
-            return safeDistance <= Mathf.Max(closeDistance, wideBurstRadius) &&
-                   previousAttack != FallenCommanderAttackPattern.Wide
-                ? FallenCommanderAttackPattern.Wide
+            return safeDistance <= Mathf.Max(closeDistance, blackHoleRadius) &&
+                   previousAttack != FallenCommanderAttackPattern.BlackHole
+                ? FallenCommanderAttackPattern.BlackHole
                 : FallenCommanderAttackPattern.Basic;
         }
     }
@@ -81,7 +84,7 @@ namespace ProjectMT.Contents.FallenCommander
             Melee,
             MarkStrike,
             TrackingMark,
-            WideBurst,
+            BlackHole,
             LineStrike,
             CorruptionRing,
             Broken,
@@ -116,9 +119,7 @@ namespace ProjectMT.Contents.FallenCommander
         private float basicWindupRemaining;
         private float meleeAttackCastTime;
         private float meleeAttackRadius;
-        private float wideBurstCastTime;
-        private float wideBurstRadius;
-        private float wideBurstStunDuration;
+        private float blackHoleRadius;
         private float lineStrikeCastTime;
         private float lineStrikeWidth;
         private float lineStrikeLength;
@@ -143,7 +144,8 @@ namespace ProjectMT.Contents.FallenCommander
         private FallenCommanderAttackData meleeAttackMotion;
         private FallenCommanderAttackData markStrikeMotion;
         private FallenCommanderAttackData trackingMarkMotion;
-        private FallenCommanderAttackData wideBurstMotion;
+        private FallenCommanderAttackData blackHoleMotion;
+        private readonly FallenCommanderBlackHolePattern blackHolePattern = new();
         private FallenCommanderAttackData lineStrikeMotion;
         private FallenCommanderAttackData corruptionRingMotion;
 
@@ -154,7 +156,8 @@ namespace ProjectMT.Contents.FallenCommander
             !isPhaseTransitionActive &&
             currentState == BossState.Idle;
         public FallenCommanderAttackPattern LastSelectedAttack { get; private set; }
-        public FallenCommanderTelegraphView ActiveTelegraph => activeTelegraph;
+        public FallenCommanderTelegraphView ActiveTelegraph =>
+            blackHolePattern.ActiveTelegraph ?? activeTelegraph;
         // 현재 바닥에 생성되어 있는 범위 오브젝트
         private FallenCommanderTelegraphView activeTelegraph;
         private FallenCommanderTelegraphView activeRingSafeTelegraph;
@@ -188,8 +191,8 @@ namespace ProjectMT.Contents.FallenCommander
             new Color(0.9f, 0.15f, 0.8f, 0.75f);
         private static readonly Color TrackingMarkTelegraphColor =
             new Color(0.25f, 0.75f, 1f, 0.75f);
-        private static readonly Color WideTelegraphColor =
-            new Color(1f, 0.75f, 0.05f, 0.75f);
+        private static readonly Color BlackHoleTelegraphColor =
+            new Color(0.55f, 0.1f, 0.85f, 0.8f);
         private static readonly Color CorruptionRingTelegraphColor =
             new Color(0.65f, 0.05f, 0.15f, 0.8f);
         private static readonly Color CorruptionRingSafeColor =
@@ -210,7 +213,17 @@ namespace ProjectMT.Contents.FallenCommander
             FallenCommanderAttackData markMotion,
             FallenCommanderAttackData trackingMotion,
             float trackingLockDuration,
-            FallenCommanderAttackData wideMotion,
+            FallenCommanderAttackData blackHoleAttack,
+            float blackHoleActiveDuration,
+            float blackHoleCoreRadius,
+            float blackHoleSpawnMinDistance,
+            float blackHoleSpawnMaxDistance,
+            float blackHoleOuterPullSpeed,
+            float blackHoleInnerPullSpeed,
+            AnimationCurve blackHolePullStrengthCurve,
+            Vector3 blackHoleArenaCenter,
+            Vector2 blackHoleArenaHalfExtents,
+            FallenCommanderAttackEffectData blackHoleEndingEffects,
             FallenCommanderAttackData lineMotion,
             FallenCommanderAttackData ringMotion,
             float ringSafeRadius,
@@ -253,10 +266,21 @@ namespace ProjectMT.Contents.FallenCommander
             trackingMarkCastTime = Mathf.Max(0.1f, trackingMotion == null ? 0f : trackingMotion.WarningDuration);
             trackingMarkLockDuration = Mathf.Clamp(trackingLockDuration, 0.1f, trackingMarkCastTime);
             trackingMarkRadius = Mathf.Max(0.1f, trackingMotion == null ? 0f : trackingMotion.Radius);
-            wideBurstMotion = wideMotion;
-            wideBurstCastTime = Mathf.Max(0.1f, wideMotion == null ? 0f : wideMotion.WarningDuration);
-            wideBurstRadius = Mathf.Max(0.1f, wideMotion == null ? 0f : wideMotion.Radius);
-            wideBurstStunDuration = Mathf.Max(0f, wideMotion == null ? 0f : wideMotion.StunDuration);
+            blackHoleMotion = blackHoleAttack;
+            blackHoleRadius = Mathf.Max(0.1f, blackHoleAttack == null ? 0f : blackHoleAttack.Radius);
+            blackHolePattern.Configure(
+                blackHoleAttack,
+                blackHoleActiveDuration,
+                blackHoleCoreRadius,
+                blackHoleSpawnMinDistance,
+                blackHoleSpawnMaxDistance,
+                blackHoleOuterPullSpeed,
+                blackHoleInnerPullSpeed,
+                blackHolePullStrengthCurve,
+                blackHoleArenaCenter,
+                blackHoleArenaHalfExtents,
+                blackHoleEndingEffects,
+                BlackHoleTelegraphColor);
             lineStrikeMotion = lineMotion;
             lineStrikeCastTime = Mathf.Max(0.1f, lineMotion == null ? 0f : lineMotion.WarningDuration);
             lineStrikeWidth = Mathf.Max(0.1f, lineMotion == null ? 0f : lineMotion.Width);
@@ -289,8 +313,8 @@ namespace ProjectMT.Contents.FallenCommander
                 markStrikeMotion.TelegraphPrefab != null &&
                 trackingMarkMotion != null &&
                 trackingMarkMotion.TelegraphPrefab != null &&
-                wideBurstMotion != null &&
-                wideBurstMotion.TelegraphPrefab != null &&
+                blackHoleMotion != null &&
+                blackHoleMotion.TelegraphPrefab != null &&
                 lineStrikeMotion != null &&
                 lineStrikeMotion.TelegraphPrefab != null &&
                 corruptionRingMotion != null &&
@@ -328,10 +352,13 @@ namespace ProjectMT.Contents.FallenCommander
                 case BossState.Melee:
                 case BossState.MarkStrike:
                 case BossState.TrackingMark:
-                case BossState.WideBurst:
                 case BossState.LineStrike:
                 case BossState.CorruptionRing:
                     TickAttack(deltaTime);
+                    break;
+
+                case BossState.BlackHole:
+                    TickBlackHole(deltaTime);
                     break;
 
                 case BossState.Broken:
@@ -462,29 +489,29 @@ namespace ProjectMT.Contents.FallenCommander
             BeginTrackingMark();
         }
 
-        public void DebugForceWideBurst()
+        public void DebugForceBlackHole()
         {
             if (!PrepareDebugAttack())
             {
                 return;
             }
 
-            BeginWideBurst();
+            BeginBlackHole();
         }
 
-        public void ForceWideBurst()
+        public void ForceBlackHole()
         {
             if (!isActive ||
                 bossActor == null ||
                 !bossActor.IsAlive ||
                 currentState == BossState.Broken ||
                 currentState == BossState.Dead ||
-                currentState == BossState.WideBurst)
+                currentState == BossState.BlackHole)
             {
                 return;
             }
 
-            BeginWideBurst();
+            BeginBlackHole();
         }
 
         public void DebugForceLineStrike()
@@ -544,6 +571,7 @@ namespace ProjectMT.Contents.FallenCommander
             bossFacingSmoother = null;
             animationPresenter = null;
             breakMotion = null;
+            blackHoleMotion = null;
             breakMotionDuration = 0f;
             telegraphDuration = 0f;
             commanderStunChanged = null;
@@ -589,7 +617,7 @@ namespace ProjectMT.Contents.FallenCommander
                 distance,
                 alignment,
                 closeAttackDistance,
-                wideBurstRadius,
+                blackHoleRadius,
                 lineStrikeMinimumDistance,
                 lineStrikeAlignmentThreshold,
                 LastSelectedAttack);
@@ -616,8 +644,8 @@ namespace ProjectMT.Contents.FallenCommander
                 case FallenCommanderAttackPattern.TrackingMark:
                     BeginTrackingMark();
                     break;
-                case FallenCommanderAttackPattern.Wide:
-                    BeginWideBurst();
+                case FallenCommanderAttackPattern.BlackHole:
+                    BeginBlackHole();
                     break;
                 case FallenCommanderAttackPattern.Ring:
                     BeginCorruptionRing();
@@ -745,17 +773,27 @@ namespace ProjectMT.Contents.FallenCommander
             telegraphDuration = trackingMarkCastTime;
         }
 
-        private void BeginWideBurst()
+        // 플레이어 근처에 고정되는 블랙홀 경고와 흡입 패턴을 시작한다.
+        private void BeginBlackHole()
         {
-            LastSelectedAttack = FallenCommanderAttackPattern.Wide;
+            LastSelectedAttack = FallenCommanderAttackPattern.BlackHole;
             DelayNextBasicAttackForPatternStart();
-            BeginCircleAttack(
-                BossState.WideBurst,
-                bossActor.transform.position,
-                wideBurstCastTime,
-                wideBurstRadius,
-                wideBurstMotion,
-                WideTelegraphColor);
+            CancelOverlappingBasicAttack();
+            DestroyActiveTelegraph();
+            currentState = BossState.BlackHole;
+            PauseBossTracking();
+            if (!blackHolePattern.Begin(
+                    bossActor,
+                    commanderRoot,
+                    commanderHealth,
+                    combatWorld,
+                    animationPresenter,
+                    bossActor.transform.parent))
+            {
+                attackCooldownRemaining = attackInterval;
+                currentState = BossState.Idle;
+                ResumeBossTracking();
+            }
         }
 
         private void BeginLineStrike()
@@ -868,6 +906,7 @@ namespace ProjectMT.Contents.FallenCommander
                 phaseConfig?.GetPhase(currentPhase)?.AllowOverlappingBasicAttack != true ||
                 currentState == BossState.Broken ||
                 currentState == BossState.Dead ||
+                currentState == BossState.BlackHole ||
                 currentState == BossState.CorruptionRing ||
                 currentState == BossState.TrackingMark &&
                 stateTimeRemaining <= trackingMarkLockDuration)
@@ -1006,6 +1045,7 @@ namespace ProjectMT.Contents.FallenCommander
                 commanderHealth.IsAlive &&
                 currentState != BossState.Broken &&
                 currentState != BossState.Dead &&
+                currentState != BossState.BlackHole &&
                 currentState != BossState.CorruptionRing &&
                 !(currentState == BossState.TrackingMark &&
                     stateTimeRemaining <= trackingMarkLockDuration) &&
@@ -1027,6 +1067,28 @@ namespace ProjectMT.Contents.FallenCommander
             isBasicWindupActive = false;
             isBasicProjectileActive = false;
             basicWindupRemaining = 0f;
+        }
+
+        // 블랙홀의 경고·흡입·피해가 끝나면 보스를 일반 대기 상태로 돌린다.
+        private void TickBlackHole(float deltaTime)
+        {
+            if (!blackHolePattern.Tick(deltaTime))
+            {
+                return;
+            }
+
+            if (!isActive ||
+                bossActor == null ||
+                commanderHealth == null ||
+                !commanderHealth.IsAlive ||
+                bossFacingSmoother == null)
+            {
+                return;
+            }
+
+            attackCooldownRemaining = attackInterval;
+            currentState = BossState.Idle;
+            ResumeBossTracking();
         }
 
         private void TickAttack(float deltaTime)
@@ -1142,9 +1204,7 @@ namespace ProjectMT.Contents.FallenCommander
 
             var radius = currentState == BossState.Melee
                 ? meleeAttackRadius
-                : currentState == BossState.WideBurst
-                    ? wideBurstRadius
-                    : currentState == BossState.TrackingMark
+                : currentState == BossState.TrackingMark
                         ? trackingMarkRadius
                         : markStrikeRadius;
             return IsCommanderInsideCircle(radius);
@@ -1158,9 +1218,7 @@ namespace ProjectMT.Contents.FallenCommander
                     ? markStrikeStunDuration
                     : currentState == BossState.TrackingMark
                         ? 0f
-                    : currentState == BossState.WideBurst
-                        ? wideBurstStunDuration
-                        : currentState == BossState.LineStrike
+                    : currentState == BossState.LineStrike
                             ? lineStrikeStunDuration
                             : 0f;
         }
@@ -1171,11 +1229,9 @@ namespace ProjectMT.Contents.FallenCommander
                 ? meleeAttackMotion
                 : currentState == BossState.MarkStrike
                     ? markStrikeMotion
-                    : currentState == BossState.TrackingMark
+                : currentState == BossState.TrackingMark
                         ? trackingMarkMotion
-                    : currentState == BossState.WideBurst
-                    ? wideBurstMotion
-                        : currentState == BossState.LineStrike
+                    : currentState == BossState.LineStrike
                             ? lineStrikeMotion
                             : corruptionRingMotion;
         }
@@ -1260,6 +1316,8 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void DestroyActiveTelegraph()
         {
+            blackHolePattern.Cancel();
+
             if (activeTelegraph != null)
             {
                 Object.Destroy(activeTelegraph.gameObject);

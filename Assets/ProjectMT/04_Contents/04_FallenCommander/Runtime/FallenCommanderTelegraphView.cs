@@ -200,7 +200,15 @@ namespace ProjectMT.Contents.FallenCommander
         {
             if (outlineMaterial != null)
             {
-                Destroy(outlineMaterial);
+                if (Application.isPlaying)
+                {
+                    Destroy(outlineMaterial);
+                }
+                else
+                {
+                    DestroyImmediate(outlineMaterial);
+                }
+
                 outlineMaterial = null;
             }
         }

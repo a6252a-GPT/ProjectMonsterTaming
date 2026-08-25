@@ -655,6 +655,7 @@ namespace ProjectMT.Contents.FallenCommander
             SetButtonLabel(debugHandSlamButton, "근접 공격");
             SetButtonLabel(debugLineStrikeButton, "직선 공격");
             SetButtonLabel(debugTrackingMarkButton, "추적 낙인");
+            SetButtonLabel(debugWideBurstButton, "블랙홀");
             SetButtonLabel(debugChargedWideBurstButton, "충전 광역기");
             SetButtonLabel(debugCorruptionRingButton, "타락의 고리");
             SetButtonLabel(debugBossHealthButton, "보스 체력 -10%");
@@ -856,7 +857,7 @@ namespace ProjectMT.Contents.FallenCommander
                 new Color(0.3f, 0.65f, 0.8f, 1f));
             debugWideBurstButton ??= CreateRuntimeButton(
                 "DebugWideBurstButton_Runtime",
-                "광역기",
+                "블랙홀",
                 new Vector2(328f, -182f),
                 new Color(0.7f, 0.25f, 0.75f, 1f));
             debugChargedWideBurstButton ??= CreateRuntimeButton(

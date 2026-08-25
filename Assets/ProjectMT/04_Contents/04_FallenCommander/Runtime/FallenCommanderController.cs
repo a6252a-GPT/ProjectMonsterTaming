@@ -342,8 +342,8 @@ namespace ProjectMT.Contents.FallenCommander
                 bossConfig.MarkStrike.TelegraphPrefab == null ||
                 bossConfig.TrackingMark == null ||
                 bossConfig.TrackingMark.TelegraphPrefab == null ||
-                bossConfig.WideBurst == null ||
-                bossConfig.WideBurst.TelegraphPrefab == null ||
+                bossConfig.BlackHole == null ||
+                bossConfig.BlackHole.TelegraphPrefab == null ||
                 bossConfig.LineStrike == null ||
                 bossConfig.LineStrike.TelegraphPrefab == null ||
                 bossConfig.CorruptionRing == null ||
@@ -363,7 +363,9 @@ namespace ProjectMT.Contents.FallenCommander
             if (bossConfig.TrackingMark == null ||
                 bossConfig.CorruptionRing == null ||
                 bossConfig.TrackingMarkLockDuration >= bossConfig.TrackingMark.WarningDuration ||
-                bossConfig.CorruptionRingSafeRadius >= bossConfig.CorruptionRing.Radius)
+                bossConfig.CorruptionRingSafeRadius >= bossConfig.CorruptionRing.Radius ||
+                bossConfig.BlackHoleCoreRadius >= bossConfig.BlackHole.Radius ||
+                bossConfig.BlackHoleSpawnMinDistance > bossConfig.BlackHoleSpawnMaxDistance)
             {
                 throw new InvalidOperationException(
                     "Fallen Commander phase or attack range settings are invalid.");
@@ -494,7 +496,17 @@ namespace ProjectMT.Contents.FallenCommander
                 bossConfig.MarkStrike,
                 bossConfig.TrackingMark,
                 bossConfig.TrackingMarkLockDuration,
-                bossConfig.WideBurst,
+                bossConfig.BlackHole,
+                bossConfig.BlackHoleActiveDuration,
+                bossConfig.BlackHoleCoreRadius,
+                bossConfig.BlackHoleSpawnMinDistance,
+                bossConfig.BlackHoleSpawnMaxDistance,
+                bossConfig.BlackHoleOuterPullSpeed,
+                bossConfig.BlackHoleInnerPullSpeed,
+                bossConfig.BlackHolePullStrengthCurve,
+                commanderMove.InitialPosition,
+                bossConfig.BlackHoleArenaHalfExtents,
+                bossConfig.BlackHoleEndEffects,
                 bossConfig.LineStrike,
                 bossConfig.CorruptionRing,
                 bossConfig.CorruptionRingSafeRadius,
@@ -1222,7 +1234,7 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            stateMachine?.DebugForceWideBurst();
+            stateMachine?.DebugForceBlackHole();
         }
 
         public void DebugChargedWideBurst()

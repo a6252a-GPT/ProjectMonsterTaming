@@ -6,7 +6,7 @@ namespace ProjectMT.Contents.FallenCommander
     public static class FallenCommanderAttackEffectPlayer
     {
         // 공격 시전 슬롯에 지정된 VFX와 SFX를 재생한다.
-        public static void PlayStart(
+        public static GameObject PlayStart(
             FallenCommanderAttackEffectData effects,
             Vector3 position,
             Vector3 direction,
@@ -14,10 +14,10 @@ namespace ProjectMT.Contents.FallenCommander
         {
             if (effects == null)
             {
-                return;
+                return null;
             }
 
-            PlayVfx(
+            var instance = PlayVfx(
                 effects.StartVfxPrefab,
                 effects.StartVfxDuration,
                 position,
@@ -28,10 +28,11 @@ namespace ProjectMT.Contents.FallenCommander
                 effects.StartSfxDuration,
                 position,
                 effects.SfxVolume);
+            return instance;
         }
 
         // 공격 적중 슬롯에 지정된 VFX와 SFX를 재생한다.
-        public static void PlayResolve(
+        public static GameObject PlayResolve(
             FallenCommanderAttackEffectData effects,
             Vector3 position,
             Vector3 direction,
@@ -39,10 +40,10 @@ namespace ProjectMT.Contents.FallenCommander
         {
             if (effects == null)
             {
-                return;
+                return null;
             }
 
-            PlayVfx(
+            var instance = PlayVfx(
                 effects.ResolveVfxPrefab,
                 effects.ResolveVfxDuration,
                 position,
@@ -53,10 +54,11 @@ namespace ProjectMT.Contents.FallenCommander
                 effects.ResolveSfxDuration,
                 position,
                 effects.SfxVolume);
+            return instance;
         }
 
         // VFX 프리팹을 공격 방향으로 생성하고 파티클 재생시간 뒤 제거한다.
-        private static void PlayVfx(
+        private static GameObject PlayVfx(
             GameObject prefab,
             float duration,
             Vector3 position,
@@ -65,7 +67,7 @@ namespace ProjectMT.Contents.FallenCommander
         {
             if (prefab == null)
             {
-                return;
+                return null;
             }
 
             var rotation = direction.sqrMagnitude > 0.0001f
@@ -73,6 +75,7 @@ namespace ProjectMT.Contents.FallenCommander
                 : Quaternion.identity;
             var instance = Object.Instantiate(prefab, position, rotation, parent);
             Object.Destroy(instance, ResolveVfxLifetime(instance, duration));
+            return instance;
         }
 
         // 지정된 AudioClip을 공격 위치에서 재생하고 설정된 유지시간 뒤 제거한다.

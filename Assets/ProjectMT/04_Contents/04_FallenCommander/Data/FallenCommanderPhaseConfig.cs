@@ -5,10 +5,11 @@ namespace ProjectMT.Contents.FallenCommander
 {
     [CreateAssetMenu(
         fileName = "FallenCommanderPhaseConfig",
-        menuName = "ProjectMT/Fallen Commander/Phase Config")]
+        menuName = "ProjectMT/타락한 과거의 군단장/페이즈 설정 데이터")]
     public sealed class FallenCommanderPhaseConfig : ScriptableObject
     {
-        [SerializeField] private List<FallenCommanderPhaseData> phases = new();
+        [SerializeField, InspectorName("페이즈 목록")]
+        private List<FallenCommanderPhaseData> phases = new();
 
         public IReadOnlyList<FallenCommanderPhaseData> Phases => phases;
 
@@ -58,14 +59,14 @@ namespace ProjectMT.Contents.FallenCommander
 
             if (phaseOne == null || phaseTwo == null || phaseThree == null)
             {
-                error = "Phase1, Phase2, Phase3 data are all required.";
+                error = "1·2·3 페이즈 데이터가 모두 필요합니다.";
                 return false;
             }
 
             if (phaseOne.HealthRatio <= phaseTwo.HealthRatio ||
                 phaseTwo.HealthRatio <= phaseThree.HealthRatio)
             {
-                error = "Phase health ratios must be ordered Phase1 > Phase2 > Phase3.";
+                error = "진입 체력 비율은 1페이즈 > 2페이즈 > 3페이즈 순서여야 합니다.";
                 return false;
             }
 
@@ -73,13 +74,13 @@ namespace ProjectMT.Contents.FallenCommander
             {
                 if (phases[index] == null || phases[index].AvailableAttacks.Count == 0)
                 {
-                    error = "Every phase needs at least one attack.";
+                    error = "모든 페이즈에는 공격이 하나 이상 필요합니다.";
                     return false;
                 }
 
                 if (phases[index].Allows(FallenCommanderAttackPattern.Basic))
                 {
-                    error = "Basic projectile is controlled by Allow Overlapping Basic Attack.";
+                    error = "기본 투사체는 '기본 투사체 중복 공격 허용' 항목으로 설정해 주세요.";
                     return false;
                 }
 
@@ -88,7 +89,7 @@ namespace ProjectMT.Contents.FallenCommander
                     if (phases[otherIndex] != null &&
                         phases[index].Phase == phases[otherIndex].Phase)
                     {
-                        error = $"Duplicate phase data: {phases[index].Phase}.";
+                        error = $"같은 페이즈 데이터가 중복되었습니다: {phases[index].Phase}.";
                         return false;
                     }
                 }
@@ -96,7 +97,7 @@ namespace ProjectMT.Contents.FallenCommander
                 if (phases[index].HasSignatureAttack &&
                     !phases[index].Allows(phases[index].SignatureAttack))
                 {
-                    error = $"{phases[index].Phase} signature attack must be in its attack list.";
+                    error = $"{phases[index].Phase} 대표 공격은 사용할 공격 목록에도 포함되어야 합니다.";
                     return false;
                 }
             }
@@ -109,15 +110,24 @@ namespace ProjectMT.Contents.FallenCommander
     [System.Serializable]
     public sealed class FallenCommanderPhaseData
     {
-        [SerializeField] private FallenCommanderBossPhase phase = FallenCommanderBossPhase.Phase1;
-        [SerializeField, ReadOnlyInInspector] private float healthRatio = 1f;
-        [SerializeField] private List<FallenCommanderAttackPattern> availableAttacks = new();
-        [SerializeField] private bool allowOverlappingBasicAttack = true;
-        [SerializeField] private bool hasSignatureAttack;
-        [SerializeField] private FallenCommanderAttackPattern signatureAttack;
-        [SerializeField] private string transitionMessage = "1 페이즈";
-        [SerializeField] private AudioClip transitionSound;
-        [SerializeField, Min(0.1f)] private float transitionDuration = 1f;
+        [SerializeField, InspectorName("페이즈")]
+        private FallenCommanderBossPhase phase = FallenCommanderBossPhase.Phase1;
+        [SerializeField, InspectorName("진입 체력 비율 (읽기 전용)"), ReadOnlyInInspector]
+        private float healthRatio = 1f;
+        [SerializeField, InspectorName("사용할 공격 목록")]
+        private List<FallenCommanderAttackPattern> availableAttacks = new();
+        [SerializeField, InspectorName("기본 투사체 중복 공격 허용")]
+        private bool allowOverlappingBasicAttack = true;
+        [SerializeField, InspectorName("페이즈 대표 공격 사용")]
+        private bool hasSignatureAttack;
+        [SerializeField, InspectorName("페이즈 대표 공격")]
+        private FallenCommanderAttackPattern signatureAttack;
+        [SerializeField, InspectorName("페이즈 전환 문구")]
+        private string transitionMessage = "1 페이즈";
+        [SerializeField, InspectorName("페이즈 전환 사운드")]
+        private AudioClip transitionSound;
+        [SerializeField, InspectorName("페이즈 전환시간"), Min(0.1f)]
+        private float transitionDuration = 1f;
 
         public FallenCommanderBossPhase Phase => phase;
         public float HealthRatio => healthRatio;
@@ -140,7 +150,7 @@ namespace ProjectMT.Contents.FallenCommander
             FallenCommanderAttackPattern selected,
             FallenCommanderAttackPattern previous)
         {
-            if (selected == FallenCommanderAttackPattern.Wide &&
+            if (selected == FallenCommanderAttackPattern.BlackHole &&
                 previous == FallenCommanderAttackPattern.Ring &&
                 Allows(FallenCommanderAttackPattern.TrackingMark))
             {

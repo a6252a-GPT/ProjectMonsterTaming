@@ -27,31 +27,31 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             serializedObject.ApplyModifiedProperties();
 
             EditorGUILayout.Space(8f);
-            EditorGUILayout.LabelField("Boss Motion Preview", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("보스 모션 미리보기", EditorStyles.boldLabel);
 
             var config = bossConfigProperty.objectReferenceValue as FallenCommanderBossConfig;
             if (config == null)
             {
                 EditorGUILayout.HelpBox(
-                    "Assign a Fallen Commander Boss Config to enable motion previews.",
+                    "보스 설정 데이터를 연결하면 모션을 미리 볼 수 있어용.",
                     MessageType.Info);
                 return;
             }
 
             EditorGUILayout.HelpBox(
                 Application.isPlaying
-                    ? "Play Mode: preview plays on the spawned boss."
-                    : "Edit Mode: preview creates a temporary boss in the Scene view.",
+                    ? "게임 실행 중: 현재 생성된 보스가 모션을 재생해용."
+                    : "편집 중: 현재 씬에 임시 보스를 만들어 모션을 보여줘용.",
                 MessageType.None);
 
-            DrawAttackPreview("Melee Attack", config.MeleeAttack);
-            DrawAttackPreview("Mark Strike", config.MarkStrike);
-            DrawAttackPreview("Wide Burst", config.WideBurst);
-            DrawAttackPreview("Line Strike", config.LineStrike);
-            DrawMotionPreview("Boss Break", config.BreakMotion, config.BreakMotionDuration);
-            DrawMotionPreview("Boss Death", config.DeathMotion, config.DeathMotionDuration);
+            DrawAttackPreview("근접 공격", config.MeleeAttack);
+            DrawAttackPreview("위치 공격", config.MarkStrike);
+            DrawAttackPreview("블랙홀", config.BlackHole);
+            DrawAttackPreview("직선 공격", config.LineStrike);
+            DrawMotionPreview("보스 브레이크", config.BreakMotion, config.BreakMotionDuration);
+            DrawMotionPreview("보스 사망", config.DeathMotion, config.DeathMotionDuration);
 
-            if (GUILayout.Button("Stop Motion Preview"))
+            if (GUILayout.Button("모션 미리보기 종료"))
             {
                 FallenCommanderBossEditorPreview.Stop();
             }
@@ -65,17 +65,18 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
 
             EditorGUILayout.LabelField(
-                $"{label}  (x{attack.PreCastMotionSpeed:0.##} / {attack.PreCastMotionDuration:0.###}s → x{attack.CastMotionSpeed:0.##} / {attack.CastMotionDuration:0.###}s)",
+                $"{label}  (시전 속도 x{attack.PreCastMotionSpeed:0.##} / {attack.PreCastMotionDuration:0.###}초 → " +
+                $"공격 속도 x{attack.CastMotionSpeed:0.##} / {attack.CastMotionDuration:0.###}초)",
                 EditorStyles.miniLabel);
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button($"▶ {label}: Pre Cast → Cast"))
+                if (GUILayout.Button($"▶ {label}: 시전 → 공격"))
                 {
                     PreviewAttack(attack);
                 }
 
-                if (GUILayout.Button("Pre Cast", GUILayout.Width(72f)))
+                if (GUILayout.Button("시전 보기", GUILayout.Width(72f)))
                 {
                     PreviewMotion(
                         attack.PreCastMotion,
@@ -83,7 +84,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         attack.PreCastMotionSpeed);
                 }
 
-                if (GUILayout.Button("Cast", GUILayout.Width(52f)))
+                if (GUILayout.Button("공격 보기", GUILayout.Width(72f)))
                 {
                     PreviewMotion(
                         attack.CastMotion,
@@ -103,7 +104,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             using (new EditorGUILayout.HorizontalScope())
             {
                 EditorGUILayout.LabelField(
-                    $"{label} ({duration:0.###}s)",
+                    $"{label} ({duration:0.###}초)",
                     GUILayout.Width(190f));
                 if (GUILayout.Button($"▶ {label}"))
                 {
@@ -119,9 +120,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 if (!((FallenCommanderController)target).PreviewBossAttack(attack))
                 {
                     EditorUtility.DisplayDialog(
-                        "Boss Motion Preview",
-                        "Enter the dungeon first so the boss can be spawned.",
-                        "OK");
+                        "보스 모션 미리보기",
+                        "보스가 생성되도록 던전에 먼저 입장해 주세요.",
+                        "확인");
                 }
 
                 return;
@@ -157,9 +158,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     playbackSpeed))
                 {
                     EditorUtility.DisplayDialog(
-                        "Boss Motion Preview",
-                        "Enter the dungeon first so the boss can be spawned.",
-                        "OK");
+                        "보스 모션 미리보기",
+                        "보스가 생성되도록 던전에 먼저 입장해 주세요.",
+                        "확인");
                 }
 
                 return;
@@ -227,6 +228,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             float secondPlaybackSpeed)
         {
             Stop();
+            FallenCommanderAttackEditorPreview.Stop();
             if (PrefabStageUtility.GetCurrentPrefabStage() != null ||
                 prefab == null ||
                 (first == null && second == null))
@@ -240,7 +242,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 return;
             }
 
-            previewRoot.name = $"[Motion Preview] {prefab.name}";
+            previewRoot.name = $"[모션 미리보기] {prefab.name}";
             previewRoot.hideFlags = HideFlags.DontSave;
             if (spawnPoint != null)
             {

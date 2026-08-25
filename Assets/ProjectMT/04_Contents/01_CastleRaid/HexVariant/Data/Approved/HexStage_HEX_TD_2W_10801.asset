@@ -1,0 +1,6321 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c39ae93a5b7dc434ba7fc5e8f06af998, type: 3}
+  m_Name: HexStage_HEX_TD_2W_10801
+  m_EditorClassIdentifier: ProjectMT.Contents.CastleRaidHex::ProjectMT.Contents.CastleRaidHex.HexCastleStageLayout
+  stageId: HEX_TD_2W_10801
+  rulesVersion: 1008
+  seed: 10801
+  theme: 3
+  defenseLayerCount: 2
+  battlefieldRadius: 8
+  buildRadius: 6
+  palaceRadius: 1
+  structureSignature: 3452B6D177471659
+  layoutSignature: FDB5B7A6DC7EFC43
+  difficultyScore: 178.02208
+  suggestedStage: 10
+  wallRadii: 0300000005000000
+  cells:
+  - q: -8
+    r: 0
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -8
+    r: 1
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -8
+    r: 2
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -8
+    r: 3
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -8
+    r: 4
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -8
+    r: 5
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -8
+    r: 6
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -8
+    r: 7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -8
+    r: 8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -7
+    r: -1
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -7
+    r: 0
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -7
+    r: 1
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -7
+    r: 2
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -7
+    r: 3
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -7
+    r: 4
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -7
+    r: 5
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -7
+    r: 6
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -7
+    r: 7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -7
+    r: 8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -6
+    r: -2
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -6
+    r: -1
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -6
+    r: 0
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -6
+    r: 1
+    kind: 6
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 4
+    rewardValue: 0
+    wallConnectionMask: 34
+    hasExtendedState: 1
+    regionId: 4
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 17
+    placementId: CELL_-6_1
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -6
+    r: 2
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 4
+    rewardValue: 0
+    wallConnectionMask: 36
+    hasExtendedState: 1
+    regionId: 4
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 18
+    placementId: CELL_-6_2
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -6
+    r: 3
+    kind: 6
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 4
+    rewardValue: 0
+    wallConnectionMask: 36
+    hasExtendedState: 1
+    regionId: 4
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 19
+    placementId: CELL_-6_3
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -6
+    r: 4
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 5
+    rewardValue: 0
+    wallConnectionMask: 36
+    hasExtendedState: 1
+    regionId: 5
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 20
+    placementId: CELL_-6_4
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -6
+    r: 5
+    kind: 6
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 5
+    rewardValue: 0
+    wallConnectionMask: 5
+    hasExtendedState: 1
+    regionId: 5
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 21
+    placementId: CELL_-6_5
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -6
+    r: 6
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -6
+    r: 7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -6
+    r: 8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -5
+    r: -3
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -5
+    r: -2
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -5
+    r: -1
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -5
+    r: 0
+    kind: 6
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 4
+    rewardValue: 0
+    wallConnectionMask: 50
+    hasExtendedState: 1
+    regionId: 4
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 16
+    placementId: CELL_-5_0
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -5
+    r: 1
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 100
+    wallRole: 4
+    districtId: 4
+    rewardValue: 0
+    wallConnectionMask: 5
+    hasExtendedState: 1
+    regionId: 4
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 1
+    lootKind: 0
+    pathId: PARTITION_B01_D3
+    pathIndex: 4
+    placementId: CELL_-5_1
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -5
+    r: 2
+    kind: 3
+    defenseLayer: 1
+    hitPoints: 170
+    wallRole: 0
+    districtId: 4
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 4
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R04_Blocker_010
+    visualVariantId: building_home_B_blue
+    buildingRole: 9
+    placementDensity: 1
+    buildingGrade: 2
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -5
+    r: 3
+    kind: 3
+    defenseLayer: 1
+    hitPoints: 180
+    wallRole: 0
+    districtId: 5
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 5
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R05_TrainingYard_007
+    visualVariantId: building_archeryrange_blue
+    buildingRole: 4
+    placementDensity: 1
+    buildingGrade: 2
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -5
+    r: 4
+    kind: 3
+    defenseLayer: 1
+    hitPoints: 180
+    wallRole: 0
+    districtId: 5
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 5
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R05_Church_008
+    visualVariantId: building_church_blue
+    buildingRole: 5
+    placementDensity: 1
+    buildingGrade: 2
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -5
+    r: 5
+    kind: 6
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 5
+    rewardValue: 0
+    wallConnectionMask: 11
+    hasExtendedState: 1
+    regionId: 5
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 22
+    placementId: CELL_-5_5
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -5
+    r: 6
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -5
+    r: 7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -5
+    r: 8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -4
+    r: -4
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -4
+    r: -3
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -4
+    r: -2
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -4
+    r: -1
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 4
+    rewardValue: 0
+    wallConnectionMask: 18
+    hasExtendedState: 1
+    regionId: 4
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 15
+    placementId: CELL_-4_-1
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -4
+    r: 0
+    kind: 3
+    defenseLayer: 1
+    hitPoints: 240
+    wallRole: 0
+    districtId: 4
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 4
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R04_Blocker_011
+    visualVariantId: building_windmill_blue
+    buildingRole: 9
+    placementDensity: 1
+    buildingGrade: 3
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -4
+    r: 1
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 4
+    rewardValue: 0
+    wallConnectionMask: 42
+    hasExtendedState: 1
+    regionId: 4
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 11
+    placementId: CELL_-4_1
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -4
+    r: 2
+    kind: 7
+    defenseLayer: 1
+    hitPoints: 240
+    wallRole: 3
+    districtId: 4
+    rewardValue: 0
+    wallConnectionMask: 36
+    hasExtendedState: 1
+    regionId: 4
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 12
+    placementId: CELL_-4_2
+    visualVariantId: GateClosedDoubleSided
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 1
+    gateRole: 1
+    gatePassageMask: 0
+  - q: -4
+    r: 3
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 5
+    rewardValue: 0
+    wallConnectionMask: 5
+    hasExtendedState: 1
+    regionId: 5
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 13
+    placementId: CELL_-4_3
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -4
+    r: 4
+    kind: 2
+    defenseLayer: 1
+    hitPoints: 100
+    wallRole: 4
+    districtId: 5
+    rewardValue: 0
+    wallConnectionMask: 18
+    hasExtendedState: 1
+    regionId: 5
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 1
+    lootKind: 0
+    pathId: PARTITION_B01_D4
+    pathIndex: 1
+    placementId: CELL_-4_4
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -4
+    r: 5
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 5
+    rewardValue: 0
+    wallConnectionMask: 9
+    hasExtendedState: 1
+    regionId: 5
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 23
+    placementId: CELL_-4_5
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -4
+    r: 6
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -4
+    r: 7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -4
+    r: 8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -3
+    r: -5
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -3
+    r: -4
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -3
+    r: -3
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -3
+    r: -2
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 4
+    rewardValue: 0
+    wallConnectionMask: 18
+    hasExtendedState: 1
+    regionId: 4
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 14
+    placementId: CELL_-3_-2
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -3
+    r: -1
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 100
+    wallRole: 4
+    districtId: 3
+    rewardValue: 0
+    wallConnectionMask: 34
+    hasExtendedState: 1
+    regionId: 3
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 1
+    lootKind: 0
+    pathId: PARTITION_B01_D2
+    pathIndex: 1
+    placementId: CELL_-3_-1
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -3
+    r: 0
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 4
+    rewardValue: 0
+    wallConnectionMask: 22
+    hasExtendedState: 1
+    regionId: 4
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 10
+    placementId: CELL_-3_0
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -3
+    r: 1
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -3
+    r: 2
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -3
+    r: 3
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 5
+    rewardValue: 0
+    wallConnectionMask: 25
+    hasExtendedState: 1
+    regionId: 5
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 14
+    placementId: CELL_-3_3
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -3
+    r: 4
+    kind: 4
+    defenseLayer: 1
+    hitPoints: 220
+    wallRole: 0
+    districtId: 5
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 5
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R05_Turret_006
+    visualVariantId: building_tower_base_blue
+    buildingRole: 3
+    placementDensity: 1
+    buildingGrade: 1
+    turretWeaponKind: 2
+    hasTurretCombatState: 1
+    turretRangeCells: 3
+    turretCanAttackAcrossWalls: 1
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -3
+    r: 5
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 5
+    rewardValue: 0
+    wallConnectionMask: 9
+    hasExtendedState: 1
+    regionId: 5
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 24
+    placementId: CELL_-3_5
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -3
+    r: 6
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -3
+    r: 7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -3
+    r: 8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: -6
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: -5
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: -4
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: -3
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 3
+    rewardValue: 0
+    wallConnectionMask: 18
+    hasExtendedState: 1
+    regionId: 3
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 13
+    placementId: CELL_-2_-3
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: -2
+    kind: 2
+    defenseLayer: 1
+    hitPoints: 100
+    wallRole: 4
+    districtId: 3
+    rewardValue: 0
+    wallConnectionMask: 18
+    hasExtendedState: 1
+    regionId: 3
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 1
+    lootKind: 0
+    pathId: PARTITION_B01_D2
+    pathIndex: 2
+    placementId: CELL_-2_-2
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: -1
+    kind: 2
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 4
+    rewardValue: 0
+    wallConnectionMask: 18
+    hasExtendedState: 1
+    regionId: 4
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 9
+    placementId: CELL_-2_-1
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: 0
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: 1
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: 2
+    kind: 4
+    defenseLayer: 0
+    hitPoints: 220
+    wallRole: 0
+    districtId: 5
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 5
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B00_S_R05_Turret_002
+    visualVariantId: building_tower_base_blue
+    buildingRole: 3
+    placementDensity: 2
+    buildingGrade: 1
+    turretWeaponKind: 1
+    hasTurretCombatState: 1
+    turretRangeCells: 2
+    turretCanAttackAcrossWalls: 1
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: 3
+    kind: 2
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 5
+    rewardValue: 0
+    wallConnectionMask: 9
+    hasExtendedState: 1
+    regionId: 5
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 15
+    placementId: CELL_-2_3
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: 4
+    kind: 3
+    defenseLayer: 1
+    hitPoints: 230
+    wallRole: 0
+    districtId: 5
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 5
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R05_Blocker_009
+    visualVariantId: building_townhall_blue
+    buildingRole: 9
+    placementDensity: 1
+    buildingGrade: 3
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: 5
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 6
+    rewardValue: 0
+    wallConnectionMask: 9
+    hasExtendedState: 1
+    regionId: 6
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 25
+    placementId: CELL_-2_5
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: 6
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: 7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -2
+    r: 8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: -7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: -6
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: -5
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: -4
+    kind: 6
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 3
+    rewardValue: 0
+    wallConnectionMask: 50
+    hasExtendedState: 1
+    regionId: 3
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 12
+    placementId: CELL_-1_-4
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: -3
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 100
+    wallRole: 4
+    districtId: 3
+    rewardValue: 0
+    wallConnectionMask: 20
+    hasExtendedState: 1
+    regionId: 3
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 1
+    lootKind: 0
+    pathId: PARTITION_B01_D2
+    pathIndex: 3
+    placementId: CELL_-1_-3
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: -2
+    kind: 2
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 3
+    rewardValue: 0
+    wallConnectionMask: 18
+    hasExtendedState: 1
+    regionId: 3
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 8
+    placementId: CELL_-1_-2
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: -1
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: 0
+    kind: 5
+    defenseLayer: 0
+    hitPoints: 700
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: PALACE_001_C-1_0
+    visualVariantId: PalaceFootprint
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: 1
+    kind: 5
+    defenseLayer: 0
+    hitPoints: 700
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: PALACE_001_C-1_1
+    visualVariantId: PalaceFootprint
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: 2
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: 3
+    kind: 7
+    defenseLayer: 1
+    hitPoints: 240
+    wallRole: 3
+    districtId: 6
+    rewardValue: 0
+    wallConnectionMask: 9
+    hasExtendedState: 1
+    regionId: 6
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 16
+    placementId: CELL_-1_3
+    visualVariantId: GateClosedDoubleSided
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 1
+    gateRole: 1
+    gatePassageMask: 0
+  - q: -1
+    r: 4
+    kind: 4
+    defenseLayer: 1
+    hitPoints: 220
+    wallRole: 0
+    districtId: 6
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 6
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R06_Turret_005
+    visualVariantId: building_tower_base_blue
+    buildingRole: 3
+    placementDensity: 1
+    buildingGrade: 1
+    turretWeaponKind: 1
+    hasTurretCombatState: 1
+    turretRangeCells: 2
+    turretCanAttackAcrossWalls: 1
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: 5
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 6
+    rewardValue: 0
+    wallConnectionMask: 9
+    hasExtendedState: 1
+    regionId: 6
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 26
+    placementId: CELL_-1_5
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: 6
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: 7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: -1
+    r: 8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: -8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: -7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: -6
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: -5
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 3
+    rewardValue: 0
+    wallConnectionMask: 18
+    hasExtendedState: 1
+    regionId: 3
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 11
+    placementId: CELL_0_-5
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: -4
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: -3
+    kind: 2
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 3
+    rewardValue: 0
+    wallConnectionMask: 18
+    hasExtendedState: 1
+    regionId: 3
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 7
+    placementId: CELL_0_-3
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: -2
+    kind: 4
+    defenseLayer: 0
+    hitPoints: 220
+    wallRole: 0
+    districtId: 3
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 3
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B00_S_R03_Turret_001
+    visualVariantId: building_tower_base_blue
+    buildingRole: 3
+    placementDensity: 2
+    buildingGrade: 1
+    turretWeaponKind: 3
+    hasTurretCombatState: 1
+    turretRangeCells: 3
+    turretCanAttackAcrossWalls: 1
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: -1
+    kind: 5
+    defenseLayer: 0
+    hitPoints: 700
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: PALACE_001_C0_-1
+    visualVariantId: PalaceFootprint
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: 0
+    kind: 5
+    defenseLayer: 0
+    hitPoints: 700
+    wallRole: 0
+    districtId: 0
+    rewardValue: 500
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: PALACE_001_C0_0
+    visualVariantId: building_castle_blue
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: 1
+    kind: 5
+    defenseLayer: 0
+    hitPoints: 700
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: PALACE_001_C0_1
+    visualVariantId: PalaceFootprint
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: 2
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: 3
+    kind: 2
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 6
+    rewardValue: 0
+    wallConnectionMask: 9
+    hasExtendedState: 1
+    regionId: 6
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 17
+    placementId: CELL_0_3
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: 4
+    kind: 3
+    defenseLayer: 1
+    hitPoints: 100
+    wallRole: 0
+    districtId: 6
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 6
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R06_Blocker_014
+    visualVariantId: building_stage_B
+    buildingRole: 9
+    placementDensity: 1
+    buildingGrade: 1
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: 5
+    kind: 6
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 6
+    rewardValue: 0
+    wallConnectionMask: 11
+    hasExtendedState: 1
+    regionId: 6
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 27
+    placementId: CELL_0_5
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: 6
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: 7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 0
+    r: 8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: -8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: -7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: -6
+    kind: 6
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 3
+    rewardValue: 0
+    wallConnectionMask: 49
+    hasExtendedState: 1
+    regionId: 3
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 10
+    placementId: CELL_1_-6
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: -5
+    kind: 7
+    defenseLayer: 1
+    hitPoints: 100
+    wallRole: 4
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: 36
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 1
+    lootKind: 0
+    pathId: PARTITION_B01_D0
+    pathIndex: 1
+    placementId: CELL_1_-5
+    visualVariantId: GateOpenDoubleSided
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 1
+    gateRole: 2
+    gatePassageMask: 17
+  - q: 1
+    r: -4
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 3
+    rewardValue: 0
+    wallConnectionMask: 21
+    hasExtendedState: 1
+    regionId: 3
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 6
+    placementId: CELL_1_-4
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: -3
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: -2
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: -1
+    kind: 5
+    defenseLayer: 0
+    hitPoints: 700
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: PALACE_001_C1_-1
+    visualVariantId: PalaceFootprint
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: 0
+    kind: 5
+    defenseLayer: 0
+    hitPoints: 700
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: PALACE_001_C1_0
+    visualVariantId: PalaceFootprint
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: 1
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: 2
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: 3
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 6
+    rewardValue: 0
+    wallConnectionMask: 42
+    hasExtendedState: 1
+    regionId: 6
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 18
+    placementId: CELL_1_3
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: 4
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 100
+    wallRole: 4
+    districtId: 6
+    rewardValue: 0
+    wallConnectionMask: 20
+    hasExtendedState: 1
+    regionId: 6
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 1
+    lootKind: 0
+    pathId: PARTITION_B01_D5
+    pathIndex: 4
+    placementId: CELL_1_4
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: 5
+    kind: 6
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 6
+    rewardValue: 0
+    wallConnectionMask: 10
+    hasExtendedState: 1
+    regionId: 6
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 28
+    placementId: CELL_1_5
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: 6
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 1
+    r: 7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: -8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: -7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: -6
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 3
+    rewardValue: 0
+    wallConnectionMask: 9
+    hasExtendedState: 1
+    regionId: 3
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 9
+    placementId: CELL_2_-6
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: -5
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: -4
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 2
+    rewardValue: 0
+    wallConnectionMask: 9
+    hasExtendedState: 1
+    regionId: 2
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 5
+    placementId: CELL_2_-4
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: -3
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: -2
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: -1
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: 0
+    kind: 3
+    defenseLayer: 0
+    hitPoints: 180
+    wallRole: 0
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B00_S_R01_KnightBarracks_000
+    visualVariantId: building_barracks_blue
+    buildingRole: 1
+    placementDensity: 2
+    buildingGrade: 2
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: 1
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: 2
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: 18
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 19
+    placementId: CELL_2_2
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: 3
+    kind: 3
+    defenseLayer: 1
+    hitPoints: 240
+    wallRole: 0
+    districtId: 6
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 6
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R06_Blocker_015
+    visualVariantId: building_windmill_blue
+    buildingRole: 9
+    placementDensity: 1
+    buildingGrade: 3
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: 4
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 6
+    rewardValue: 0
+    wallConnectionMask: 18
+    hasExtendedState: 1
+    regionId: 6
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 29
+    placementId: CELL_2_4
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: 5
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 2
+    r: 6
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 3
+    r: -8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 3
+    r: -7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 3
+    r: -6
+    kind: 6
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 2
+    rewardValue: 0
+    wallConnectionMask: 9
+    hasExtendedState: 1
+    regionId: 2
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 8
+    placementId: CELL_3_-6
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 3
+    r: -5
+    kind: 8
+    defenseLayer: 1
+    hitPoints: 160
+    wallRole: 0
+    districtId: 2
+    rewardValue: 30
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 2
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 3
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R02_KeyVault_002
+    visualVariantId: building_mine_red
+    buildingRole: 8
+    placementDensity: 1
+    buildingGrade: 2
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 3
+    r: -4
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 2
+    rewardValue: 0
+    wallConnectionMask: 40
+    hasExtendedState: 1
+    regionId: 2
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 4
+    placementId: CELL_3_-4
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 3
+    r: -3
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 2
+    rewardValue: 0
+    wallConnectionMask: 38
+    hasExtendedState: 1
+    regionId: 2
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 3
+    placementId: CELL_3_-3
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 3
+    r: -2
+    kind: 2
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 2
+    rewardValue: 0
+    wallConnectionMask: 36
+    hasExtendedState: 1
+    regionId: 2
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 2
+    placementId: CELL_3_-2
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 3
+    r: -1
+    kind: 2
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: 36
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 1
+    placementId: CELL_3_-1
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 3
+    r: 0
+    kind: 2
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: 36
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 0
+    placementId: CELL_3_0
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 3
+    r: 1
+    kind: 6
+    defenseLayer: 1
+    hitPoints: 300
+    wallRole: 3
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: 20
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 3
+    lootKind: 0
+    pathId: WALL_RING_L01
+    pathIndex: 20
+    placementId: CELL_3_1
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 3
+    r: 2
+    kind: 3
+    defenseLayer: 1
+    hitPoints: 170
+    wallRole: 0
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R01_Blocker_016
+    visualVariantId: building_home_B_blue
+    buildingRole: 9
+    placementDensity: 1
+    buildingGrade: 2
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 3
+    r: 3
+    kind: 6
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: 18
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 30
+    placementId: CELL_3_3
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 3
+    r: 4
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 3
+    r: 5
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 4
+    r: -8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 4
+    r: -7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 4
+    r: -6
+    kind: 7
+    defenseLayer: 2
+    hitPoints: 144
+    wallRole: 1
+    districtId: 2
+    rewardValue: 0
+    wallConnectionMask: 9
+    hasExtendedState: 1
+    regionId: 2
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 7
+    placementId: CELL_4_-6
+    visualVariantId: GateClosedDoubleSided
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 1
+    gateRole: 1
+    gatePassageMask: 0
+  - q: 4
+    r: -5
+    kind: 8
+    defenseLayer: 1
+    hitPoints: 160
+    wallRole: 0
+    districtId: 2
+    rewardValue: 30
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 2
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 1
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R02_GoldStorage_000
+    visualVariantId: building_market_yellow
+    buildingRole: 6
+    placementDensity: 1
+    buildingGrade: 2
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 4
+    r: -4
+    kind: 2
+    defenseLayer: 1
+    hitPoints: 100
+    wallRole: 4
+    districtId: 2
+    rewardValue: 0
+    wallConnectionMask: 18
+    hasExtendedState: 1
+    regionId: 2
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 1
+    lootKind: 0
+    pathId: PARTITION_B01_D1
+    pathIndex: 1
+    placementId: CELL_4_-4
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 4
+    r: -3
+    kind: 8
+    defenseLayer: 1
+    hitPoints: 160
+    wallRole: 0
+    districtId: 2
+    rewardValue: 60
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 2
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 2
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R02_EquipmentForge_001
+    visualVariantId: building_blacksmith_green
+    buildingRole: 7
+    placementDensity: 1
+    buildingGrade: 2
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 4
+    r: -2
+    kind: 4
+    defenseLayer: 1
+    hitPoints: 220
+    wallRole: 0
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R01_Turret_003
+    visualVariantId: building_tower_base_blue
+    buildingRole: 3
+    placementDensity: 1
+    buildingGrade: 1
+    turretWeaponKind: 2
+    hasTurretCombatState: 1
+    turretRangeCells: 3
+    turretCanAttackAcrossWalls: 1
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 4
+    r: -1
+    kind: 3
+    defenseLayer: 1
+    hitPoints: 230
+    wallRole: 0
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R01_Blocker_013
+    visualVariantId: building_townhall_blue
+    buildingRole: 9
+    placementDensity: 1
+    buildingGrade: 3
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 4
+    r: 0
+    kind: 3
+    defenseLayer: 1
+    hitPoints: 110
+    wallRole: 0
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R01_Blocker_012
+    visualVariantId: building_stage_C
+    buildingRole: 9
+    placementDensity: 1
+    buildingGrade: 1
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 4
+    r: 1
+    kind: 4
+    defenseLayer: 1
+    hitPoints: 220
+    wallRole: 0
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: T1_B01_D_R01_Turret_004
+    visualVariantId: building_tower_base_blue
+    buildingRole: 3
+    placementDensity: 1
+    buildingGrade: 1
+    turretWeaponKind: 3
+    hasTurretCombatState: 1
+    turretRangeCells: 3
+    turretCanAttackAcrossWalls: 1
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 4
+    r: 2
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: 18
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 31
+    placementId: CELL_4_2
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 4
+    r: 3
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 4
+    r: 4
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 5
+    r: -8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 5
+    r: -7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 5
+    r: -6
+    kind: 6
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 2
+    rewardValue: 0
+    wallConnectionMask: 40
+    hasExtendedState: 1
+    regionId: 2
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 6
+    placementId: CELL_5_-6
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 5
+    r: -5
+    kind: 6
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 2
+    rewardValue: 0
+    wallConnectionMask: 52
+    hasExtendedState: 1
+    regionId: 2
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 5
+    placementId: CELL_5_-5
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 5
+    r: -4
+    kind: 7
+    defenseLayer: 2
+    hitPoints: 144
+    wallRole: 1
+    districtId: 2
+    rewardValue: 0
+    wallConnectionMask: 36
+    hasExtendedState: 1
+    regionId: 2
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 4
+    placementId: CELL_5_-4
+    visualVariantId: GateClosedDoubleSided
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 1
+    gateRole: 1
+    gatePassageMask: 0
+  - q: 5
+    r: -3
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 2
+    rewardValue: 0
+    wallConnectionMask: 36
+    hasExtendedState: 1
+    regionId: 2
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 3
+    placementId: CELL_5_-3
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 5
+    r: -2
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: 36
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 2
+    placementId: CELL_5_-2
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 5
+    r: -1
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: 36
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 1
+    placementId: CELL_5_-1
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 5
+    r: 0
+    kind: 2
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: 36
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 0
+    placementId: CELL_5_0
+    visualVariantId: Auto
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 5
+    r: 1
+    kind: 6
+    defenseLayer: 2
+    hitPoints: 180
+    wallRole: 1
+    districtId: 1
+    rewardValue: 0
+    wallConnectionMask: 20
+    hasExtendedState: 1
+    regionId: 1
+    initialBlocked: 1
+    noDeploy: 1
+    wallTier: 2
+    lootKind: 0
+    pathId: WALL_RING_L02
+    pathIndex: 32
+    placementId: CELL_5_1
+    visualVariantId: TowerHub
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 5
+    r: 2
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 5
+    r: 3
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 6
+    r: -8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 6
+    r: -7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 6
+    r: -6
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 6
+    r: -5
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 6
+    r: -4
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 6
+    r: -3
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 6
+    r: -2
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 6
+    r: -1
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 6
+    r: 0
+    kind: 0
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 1
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 6
+    r: 1
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 6
+    r: 2
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 7
+    r: -8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 7
+    r: -7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 7
+    r: -6
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 7
+    r: -5
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 7
+    r: -4
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 7
+    r: -3
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 7
+    r: -2
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 7
+    r: -1
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 7
+    r: 0
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 7
+    r: 1
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 8
+    r: -8
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 8
+    r: -7
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 8
+    r: -6
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 8
+    r: -5
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 8
+    r: -4
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 8
+    r: -3
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 8
+    r: -2
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 8
+    r: -1
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0
+  - q: 8
+    r: 0
+    kind: 1
+    defenseLayer: 0
+    hitPoints: 0
+    wallRole: 0
+    districtId: 0
+    rewardValue: 0
+    wallConnectionMask: -1
+    hasExtendedState: 1
+    regionId: 0
+    initialBlocked: 0
+    noDeploy: 0
+    wallTier: 0
+    lootKind: 0
+    pathId: 
+    pathIndex: -1
+    placementId: 
+    visualVariantId: 
+    buildingRole: 0
+    placementDensity: 0
+    buildingGrade: 0
+    turretWeaponKind: 0
+    hasTurretCombatState: 0
+    turretRangeCells: 0
+    turretCanAttackAcrossWalls: 0
+    hasGateState: 0
+    gateRole: 0
+    gatePassageMask: 0

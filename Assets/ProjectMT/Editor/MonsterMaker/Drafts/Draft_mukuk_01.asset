@@ -33,7 +33,7 @@ MonoBehaviour:
   hpBarHeight: 1.12
   attackOriginPath: AttackOrigin
   hitCenterPath: HitCenter
-  attackOriginLocalPosition: {x: 0, y: 0.5394, z: 0.63}
+  attackOriginLocalPosition: {x: 0.12064865, y: 0.5394, z: 0.63}
   hitCenterLocalPosition: {x: 0, y: 0.465, z: 0}
   rigMode: 0
   previewScale: 1
@@ -94,6 +94,7 @@ MonoBehaviour:
   projectileMode: 0
   projectilePrefab: {fileID: 0}
   projectileLaunchSound: {fileID: 0}
+  overrideProjectileTuning: 0
   projectileSpeed: 8
   projectileLifetime: 3
   projectileHitRadius: 0.25

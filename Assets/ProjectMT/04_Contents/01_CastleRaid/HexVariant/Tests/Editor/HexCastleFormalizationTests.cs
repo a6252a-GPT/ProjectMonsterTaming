@@ -1,0 +1,211 @@
+using System.Linq;
+using NUnit.Framework;
+using ProjectMT.Contents.CastleRaidHex.Editor;
+using ProjectMT.Contents.Framework;
+using ProjectMT.Core.Config;
+using ProjectMT.Core.SceneFlow;
+using ProjectMT.Features.MainBattle;
+using ProjectMT.Shared.Combat;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
+{
+    public sealed class HexCastleFormalizationTests
+    {
+        [Test]
+        public void ProductionCastleRaidResultAdapter_AcceptsHexObjectiveResult()
+        {
+            var definition = AssetDatabase.LoadAssetAtPath<ContentDefinition>(
+                HexCastleProductionSceneSetupUtility.ContentDefinitionPath);
+
+            Assert.That(definition, Is.Not.Null);
+            Assert.That(definition.ResultAdapter, Is.Not.Null);
+            Assert.That(
+                definition.ResultAdapter.TryCreateProgressChange(new HexCastleRaidResult(true), out var change),
+                Is.True);
+            Assert.That(change, Is.Not.Null);
+            Assert.That(
+                definition.ResultAdapter.TryCreateProgressChange(new HexCastleRaidResult(false), out _),
+                Is.False);
+        }
+
+        [Test]
+        public void CastleRaidDefinition_ResolvesSquareAndHexToSeparateScenes()
+        {
+            var definition = AssetDatabase.LoadAssetAtPath<ContentDefinition>(
+                HexCastleProductionSceneSetupUtility.ContentDefinitionPath);
+
+            Assert.That(definition, Is.Not.Null);
+            Assert.That(
+                definition.TryResolveSceneId(CastleRaidGridModeDialog.SquareVariant, out var squareScene),
+                Is.True);
+            Assert.That(squareScene, Is.EqualTo(new SceneId("castle_raid")));
+            Assert.That(
+                definition.TryResolveSceneId(CastleRaidGridModeDialog.HexVariant, out var hexScene),
+                Is.True);
+            Assert.That(hexScene, Is.EqualTo(new SceneId("castle_raid_hex")));
+        }
+
+        [Test]
+        public void SceneCatalogAndBuildSettings_ContainProductionHexScene()
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<SceneCatalog>(
+                HexCastleProductionSceneSetupUtility.SceneCatalogPath);
+
+            Assert.That(catalog, Is.Not.Null);
+            Assert.That(catalog.TryGet(new SceneId("castle_raid_hex"), out var entry), Is.True);
+            Assert.That(entry.ScenePath, Is.EqualTo(HexCastleProductionSceneSetupUtility.HexScenePath));
+            Assert.That(entry.SceneKind, Is.EqualTo(SceneKind.SeparateContent));
+            Assert.That(EditorBuildSettings.scenes.Any(value =>
+                    value.enabled && value.path == HexCastleProductionSceneSetupUtility.HexScenePath),
+                Is.True);
+        }
+
+        [Test]
+        public void ProductionHexRuntimeVisualSet_IsCompleteWithoutBakedCatalog()
+        {
+            var visualSet = AssetDatabase.LoadAssetAtPath<HexCastleVisualSet>(
+                HexCastleRuntimeVisualSetAssetUtility.AssetPath);
+
+            Assert.That(visualSet, Is.Not.Null);
+            Assert.That(visualSet.IsRuntimeComplete, Is.True);
+            Assert.That(AssetDatabase.IsValidFolder(
+                "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Data/Baked"), Is.False);
+            Assert.That(AssetDatabase.IsValidFolder(
+                "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Prefabs/Baked"), Is.False);
+        }
+
+        [Test]
+        public void ProductionHexScene_HasCompleteRuntimeAndSharedHudWiring()
+        {
+            var scene = EditorSceneManager.OpenPreviewScene(HexCastleProductionSceneSetupUtility.HexScenePath);
+            try
+            {
+                var roots = scene.GetRootGameObjects();
+                var sceneRoot = roots.SelectMany(value =>
+                        value.GetComponentsInChildren<HexCastleRaidSceneRoot>(true))
+                    .Single();
+                var controller = roots.SelectMany(value =>
+                        value.GetComponentsInChildren<HexCastleRaidController>(true))
+                    .Single();
+                var camera = roots.SelectMany(value => value.GetComponentsInChildren<Camera>(true)).Single();
+                var inputSurface = roots.SelectMany(value =>
+                        value.GetComponentsInChildren<HexCastleDeploymentInputSurface>(true))
+                    .Single();
+                var controllerData = new SerializedObject(controller);
+                var inputData = new SerializedObject(inputSurface);
+                var rootData = new SerializedObject(sceneRoot);
+
+                AssertReference(rootData, "controller");
+                AssertReference(controllerData, "themeRules");
+                AssertReference(controllerData, "visualSet");
+                AssertReference(controllerData, "turretAttackCatalog");
+                AssertReference(controllerData, "stageAnchor");
+                AssertReference(controllerData, "deploymentCamera");
+                AssertReference(controllerData, "cameraController");
+                AssertReference(controllerData, "poolScope");
+                AssertReference(controllerData, "sfxPool");
+                AssertReference(controllerData, "combatFeedback");
+                AssertReference(controllerData, "deploymentText");
+                AssertReference(controllerData, "statusText");
+                AssertReference(controllerData, "castleInfoText");
+                AssertReference(controllerData, "aiDescriptionPanel");
+                AssertReference(controllerData, "aiDescriptionText");
+                AssertReference(controllerData, "regenerateCastleButton");
+                AssertReference(controllerData, "rotateCameraLeftButton");
+                AssertReference(controllerData, "rotateCameraRightButton");
+                AssertReference(controllerData, "exitButton");
+                AssertReference(controllerData, "inputSurface");
+                AssertReference(inputData, "cameraController");
+                Assert.That(controllerData.FindProperty("unitButtons").arraySize, Is.EqualTo(8));
+                Assert.That(controllerData.FindProperty("unitButtonLabels").arraySize, Is.EqualTo(8));
+                Assert.That(controllerData.FindProperty("unitAiTagButtons").arraySize, Is.EqualTo(8));
+                Assert.That(controllerData.FindProperty("unitAiTagLabels").arraySize, Is.EqualTo(8));
+                Assert.That(controllerData.FindProperty("difficultyButtons").arraySize, Is.EqualTo(10));
+                Assert.That(roots.SelectMany(value => value.GetComponentsInChildren<Button>(true))
+                    .Count(value => value.name == "AITag"), Is.EqualTo(8));
+                Assert.That(roots.SelectMany(value => value.GetComponentsInChildren<Button>(true))
+                    .Single(value => value.name == "UnitButton_9").gameObject.activeSelf, Is.False);
+                Assert.That(roots.SelectMany(value => value.GetComponentsInChildren<Button>(true))
+                    .Single(value => value.name == "UnitButton_10").gameObject.activeSelf, Is.False);
+                Assert.That(controllerData.FindProperty("difficultyLevel").intValue, Is.EqualTo(4));
+                Assert.That(controllerData.FindProperty("generationSeed").intValue, Is.EqualTo(10801));
+                Assert.That(camera.orthographic, Is.False);
+                Assert.That(roots.SelectMany(value => value.GetComponentsInChildren<Button>(true))
+                    .Count(value => value.name == "RotateCameraLeftButton" || value.name == "RotateCameraRightButton"),
+                    Is.EqualTo(2));
+                Assert.That(roots.SelectMany(value => value.GetComponentsInChildren<HexCastleCameraHoldButton>(true)).Count(),
+                    Is.EqualTo(2));
+                var combatFeedback = roots.SelectMany(value =>
+                        value.GetComponentsInChildren<CombatFeedbackPlayer>(true))
+                    .Single();
+                var floatingNumbers = combatFeedback.GetComponent<FloatingNumberPresenter>();
+                Assert.That(floatingNumbers, Is.Not.Null);
+                var feedbackData = new SerializedObject(combatFeedback);
+                var floatingData = new SerializedObject(floatingNumbers);
+                AssertReference(feedbackData, "floatingNumbers");
+                AssertReference(floatingData, "poolScope");
+                AssertReference(floatingData, "numberPrefab");
+                AssertReference(floatingData, "worldCamera");
+                var generationControls = roots.SelectMany(value => value.GetComponentsInChildren<Transform>(true))
+                    .Single(value => value.name == "GenerationControls");
+                Assert.That(generationControls.gameObject.activeSelf, Is.True);
+                Assert.That(Enumerable.Range(1, 10)
+                    .All(level => generationControls.Find($"Difficulty{level}Button")?.GetComponent<Button>() != null),
+                    Is.True);
+                Assert.That(generationControls.Find("RegenerateCastleButton")?.GetComponent<Button>(), Is.Not.Null);
+                Assert.That(inputSurface, Is.InstanceOf<IPointerDownHandler>());
+                Assert.That(inputSurface, Is.InstanceOf<IPointerUpHandler>());
+                Assert.That(inputSurface, Is.InstanceOf<IDragHandler>());
+                Assert.That(inputSurface, Is.InstanceOf<IScrollHandler>());
+                Assert.That(scene.isDirty, Is.False);
+            }
+            finally
+            {
+                EditorSceneManager.ClosePreviewScene(scene);
+            }
+        }
+
+        [Test]
+        public void MainBattleScene_HasInactiveAndCompleteGridModeDialog()
+        {
+            var scene = EditorSceneManager.OpenPreviewScene(HexCastleProductionSceneSetupUtility.MainBattleScenePath);
+            try
+            {
+                var roots = scene.GetRootGameObjects();
+                var sceneRoot = roots.SelectMany(value => value.GetComponentsInChildren<MainBattleSceneRoot>(true))
+                    .Single();
+                var dialog = roots.SelectMany(value =>
+                        value.GetComponentsInChildren<CastleRaidGridModeDialog>(true))
+                    .Single();
+                var rootData = new SerializedObject(sceneRoot);
+                var dialogData = new SerializedObject(dialog);
+
+                AssertReference(rootData, "castleRaidGridModeDialog");
+                AssertReference(dialogData, "dialogRoot");
+                AssertReference(dialogData, "titleText");
+                AssertReference(dialogData, "squareButton");
+                AssertReference(dialogData, "hexButton");
+                AssertReference(dialogData, "cancelButton");
+                Assert.That(dialog.gameObject.activeSelf, Is.False);
+                Assert.That(dialog.transform.parent.name, Is.EqualTo("MainBattleHUD"));
+                Assert.That(scene.isDirty, Is.False);
+            }
+            finally
+            {
+                EditorSceneManager.ClosePreviewScene(scene);
+            }
+        }
+
+        private static void AssertReference(SerializedObject serialized, string propertyName)
+        {
+            var property = serialized.FindProperty(propertyName);
+            Assert.That(property, Is.Not.Null, propertyName);
+            Assert.That(property.objectReferenceValue, Is.Not.Null, propertyName);
+        }
+    }
+}

@@ -535,11 +535,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         : MonsterRangedDeliveryMode.Instant;
                     var resolvedMode = draft.BasicAttackProfile == null
                         ? draft.ProjectileMode
-                        : draft.BasicAttackProfile.Shape == MonsterBasicAttackShape.Circle
-                            ? MonsterProjectileAttackMode.Area
-                            : draft.BasicAttackProfile.ProjectileTravel == MonsterBasicAttackProjectileTravel.Straight
-                                ? MonsterProjectileAttackMode.Piercing
-                                : MonsterProjectileAttackMode.Single;
+                        : draft.BasicAttackProfile.LegacyProjectileMode;
+                    var resolvedPiercingTargets = draft.BasicAttackProfile == null
+                        ? draft.ProjectileMaxPiercingTargets
+                        : draft.BasicAttackProfile.MaxTargets;
+                    var resolvedImpactRadius = draft.BasicAttackProfile == null
+                        ? draft.ProjectileImpactRadius
+                        : draft.BasicAttackProfile.Radius;
+                    var resolvedImpactTargets = draft.BasicAttackProfile == null
+                        ? draft.ProjectileMaxImpactTargets
+                        : draft.BasicAttackProfile.MaxTargets;
                     var projectileVisual = usesProjectileVisual
                         ? draft.ProjectilePrefab
                         : null;
@@ -554,14 +559,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         usesProjectileVisual
                             ? generatedSfx.Resolve(draft.ProjectileLaunchSound, "ProjectileLaunch")
                             : null,
-                        draft.ProjectileSpeed,
-                        draft.ProjectileLifetime,
-                        draft.ProjectileHitRadius,
-                        draft.ProjectileMaxPiercingTargets,
-                        draft.ProjectileImpactRadius,
-                        draft.ProjectileMaxImpactTargets,
+                        draft.ResolvedProjectileSpeed,
+                        draft.ResolvedProjectileLifetime,
+                        draft.ResolvedProjectileHitRadius,
+                        resolvedPiercingTargets,
+                        resolvedImpactRadius,
+                        resolvedImpactTargets,
                         draft.ProjectileLaunchRecoilDistance,
-                        draft.ProjectileLaunchRecoilDuration);
+                        draft.ProjectileLaunchRecoilDuration,
+                        draft.OverrideProjectileTuning);
                     break;
                 case SpecialActionDefinition special:
                     special.EditorConfigure(

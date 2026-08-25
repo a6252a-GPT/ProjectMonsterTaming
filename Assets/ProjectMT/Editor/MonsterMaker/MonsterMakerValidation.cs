@@ -399,12 +399,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         attack.Clip);
                 }
 
-                if (attack.Markers.Count == 0)
+                if (attack.Markers.Count != 1)
                 {
                     report.Add(
                         MonsterMakerIssueSeverity.Error,
-                        "MAKER-MARKER-NONE",
-                        $"Attack {attack.MotionId}에 수동 Marker가 없습니다.",
+                        "MAKER-BASIC-ATTACK-MARKER",
+                        $"Attack {attack.MotionId}은 기본공격 Recipe를 시작하는 Marker가 정확히 1개여야 합니다.",
                         attack.Clip);
                     continue;
                 }
@@ -500,13 +500,29 @@ namespace ProjectMT.EditorTools.MonsterMaker
                                 MonsterMakerAssetWriter.DefaultProjectilePrefabPath);
                         }
                         if (projectileVisual == null ||
-                            draft.ProjectileSpeed <= 0f || draft.ProjectileLifetime <= 0f)
+                            draft.ResolvedProjectileSpeed <= 0f || draft.ResolvedProjectileLifetime <= 0f)
                         {
                             report.Add(
                                 MonsterMakerIssueSeverity.Error,
                                 "MAKER-PROJECTILE",
                                 "투사체형 기본공격은 투사체 VFX 또는 공용 임시 구슬과 양수 속도·수명이 필요합니다.",
                                 draft.ProjectilePrefab);
+                        }
+
+                        var requiredTravelDistance = basicAttack.ProjectileTravel switch
+                        {
+                            MonsterBasicAttackProjectileTravel.Homing => draft.AttackRange,
+                            MonsterBasicAttackProjectileTravel.Returning => draft.AttackRange * 2f,
+                            _ => basicAttack.ResolveRange(draft.AttackRange)
+                        };
+                        var travelCapacity = draft.ResolvedProjectileSpeed * draft.ResolvedProjectileLifetime;
+                        if (travelCapacity + 0.001f < requiredTravelDistance)
+                        {
+                            report.Add(
+                                MonsterMakerIssueSeverity.Error,
+                                "MAKER-PROJECTILE-RANGE",
+                                $"투사체 속도×수명({travelCapacity:0.##}m)이 필요한 최대 이동 거리({requiredTravelDistance:0.##}m)보다 짧습니다.",
+                                draft);
                         }
                     }
                 }

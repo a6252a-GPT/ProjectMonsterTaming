@@ -1,0 +1,164 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5e3f4eb749dd0a49b47761aa85af2f4, type: 3}
+  m_Name: HexCastleTheme1Rules
+  m_EditorClassIdentifier: ProjectMT.Contents.CastleRaidHex::ProjectMT.Contents.CastleRaidHex.HexCastleThemeOneRules
+  readiness: 2
+  tuning:
+    draftVersion: 8
+    denseOccupancy: 1
+    sparseOccupancy: 0.28
+    palaceHealth: 700
+    palaceRewardValue: 500
+    wallTier1Health: 100
+    wallTier2Health: 180
+    wallTier3Health: 300
+    closedGateHealthMultiplier: 0.8
+    closedGateCountPerWallRing: 2
+    closedGateMaximumPerFace: 2
+    openPartitionGateCountPerBand: 1
+    openPartitionAdditionalGateChance: 0.8
+    openPartitionGateMaximumPerBand: 2
+    rewardBuildingHealth: 160
+    specialBuildingHealth: 180
+    defenseBuildingHealth: 220
+    goldRewardValue: 30
+    equipmentRewardValue: 60
+    keyRewardValue: 30
+    knightRefillInterval: 20
+    knightSearchRadius: 10
+    knightMaximumNearbyCount: 8
+    knightsPerRefill: 1
+    farmerSpawnInterval: 20
+    farmerSearchRadius: 10
+    farmerMaximumNearbyCount: 8
+    farmersPerSpawn: 1
+    knightHealth: 180
+    knightAttackDamage: 18
+    knightAttackInterval: 1.1
+    knightMoveSpeed: 2.2
+    knightDetectionRangeCells: 4
+    knightLeashRangeCells: 7
+    farmerHealth: 90
+    farmerAttackDamage: 8
+    farmerAttackInterval: 1.4
+    farmerMoveSpeed: 2.2
+    farmerDetectionRangeCells: 3
+    farmerLeashRangeCells: 5
+    garrisonPatrolRadiusCells: 2
+    garrisonMinimumTargetSearchInterval: 1
+    garrisonMaximumTargetSearchInterval: 2
+    garrisonMinimumResponseDelay: 0.4
+    garrisonMaximumResponseDelay: 1.5
+    garrisonMaximumRespondersPerTarget: 4
+    garrisonStructureAlertSeconds: 4
+    knightBlockerJumpDuration: 0.42
+    knightBlockerJumpHeight: 0.48
+    trainingAttackMultiplier: 1.1
+    churchRageMoveSpeedMultiplier: 1.2
+    minimumBarracksDefenseLayer: 2
+    minimumBarracksOpenNeighbors: 2
+    preferredBarracksSeparationCells: 6
+    minimumBarracksSeparationCells: 4
+    innerBandTurretShare: 0.6666667
+    turretMinimumRangeCells: 2
+    turretMaximumRangeCells: 4
+    turretsCanAttackAcrossWalls: 1
+    cannonMaximumLevel: 2
+    ballistaMaximumLevel: 2
+    fireballMaximumLevel: 3
+    layerQuotas:
+    - defenseLayerCount: 2
+      knightBarracksCount: 0
+      farmerBarracksCount: 0
+      turretCount: 4
+      trainingYardCount: 1
+      churchCount: 1
+      minimumBlockerGradeSum: 3
+      futureTrapCount: 0
+      futureInitialDefenderCount: 0
+    - defenseLayerCount: 3
+      knightBarracksCount: 1
+      farmerBarracksCount: 1
+      turretCount: 4
+      trainingYardCount: 1
+      churchCount: 1
+      minimumBlockerGradeSum: 12
+      futureTrapCount: 0
+      futureInitialDefenderCount: 0
+    - defenseLayerCount: 4
+      knightBarracksCount: 2
+      farmerBarracksCount: 2
+      turretCount: 6
+      trainingYardCount: 2
+      churchCount: 1
+      minimumBlockerGradeSum: 24
+      futureTrapCount: 0
+      futureInitialDefenderCount: 0
+    blockerVariants:
+    - id: StageB
+      visualVariantId: building_stage_B
+      grade: 1
+      health: 100
+    - id: StageC
+      visualVariantId: building_stage_C
+      grade: 1
+      health: 110
+    - id: HomeA
+      visualVariantId: building_home_A_blue
+      grade: 1
+      health: 120
+    - id: HomeB
+      visualVariantId: building_home_B_blue
+      grade: 2
+      health: 170
+    - id: Shrine
+      visualVariantId: building_shrine_blue
+      grade: 2
+      health: 160
+    - id: Townhall
+      visualVariantId: building_townhall_blue
+      grade: 3
+      health: 230
+    - id: Windmill
+      visualVariantId: building_windmill_blue
+      grade: 3
+      health: 240
+    fixedBuildingGrades:
+    - role: 1
+      grade: 2
+    - role: 2
+      grade: 1
+    - role: 4
+      grade: 2
+    - role: 5
+      grade: 2
+    - role: 6
+      grade: 2
+    - role: 7
+      grade: 2
+    - role: 8
+      grade: 2
+    turretWeaponCycle: 010000000200000003000000
+    turretBandLevels:
+    - defenseLayerCount: 2
+      firstBandLevel: 1
+      secondBandLevel: 1
+      thirdBandLevel: 1
+    - defenseLayerCount: 3
+      firstBandLevel: 2
+      secondBandLevel: 1
+      thirdBandLevel: 1
+    - defenseLayerCount: 4
+      firstBandLevel: 3
+      secondBandLevel: 2
+      thirdBandLevel: 1

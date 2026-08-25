@@ -8,8 +8,83 @@ using UnityEngine;
 
 namespace ProjectMT.EditorTools.MonsterMaker
 {
+    internal enum MonsterPreviewPositionAxis
+    {
+        X,
+        Y,
+        Z
+    }
+
+    internal enum MonsterMakerPreviewAnchor
+    {
+        Root,
+        AttackOrigin,
+        HitCenter,
+        Socket
+    }
+
+    internal static class MonsterPreviewPositionHandleUtility // 두 Maker Preview가 같은 좌표 변환 규칙을 사용
+    {
+        public static bool TryWorldToGuiPoint(Camera camera, Rect rect, Vector3 worldPosition, out Vector2 guiPoint)
+        {
+            guiPoint = Vector2.zero;
+            if (camera == null || rect.width <= 1f || rect.height <= 1f)
+            {
+                return false;
+            }
+
+            var viewport = camera.WorldToViewportPoint(worldPosition);
+            if (viewport.z <= 0f)
+            {
+                return false;
+            }
+
+            guiPoint = new Vector2(
+                rect.x + viewport.x * rect.width,
+                rect.y + (1f - viewport.y) * rect.height);
+            return true;
+        }
+
+        public static bool TryGuiPointToHorizontalPlane(
+            Camera camera,
+            Rect rect,
+            Vector2 guiPoint,
+            float planeHeight,
+            out Vector3 worldPosition)
+        {
+            worldPosition = Vector3.zero;
+            if (camera == null || rect.width <= 1f || rect.height <= 1f)
+            {
+                return false;
+            }
+
+            var viewport = new Vector3(
+                Mathf.Clamp01((guiPoint.x - rect.x) / rect.width),
+                Mathf.Clamp01(1f - (guiPoint.y - rect.y) / rect.height),
+                0f);
+            var ray = camera.ViewportPointToRay(viewport);
+            var plane = new Plane(Vector3.up, new Vector3(0f, planeHeight, 0f));
+            if (!plane.Raycast(ray, out var distance) || distance < 0f)
+            {
+                return false;
+            }
+
+            worldPosition = ray.GetPoint(distance);
+            return true;
+        }
+
+        public static Vector3 ApplyHeightDrag(Vector3 startValue, float mouseDeltaY, float unitsPerPixel = 0.01f)
+        {
+            startValue.y -= mouseDeltaY * Mathf.Max(0.0001f, unitsPerPixel);
+            return startValue;
+        }
+
+    }
+
     internal sealed class MonsterMakerPreviewStage : IDisposable // 수동 Clip·Marker와 Runtime 평가기를 함께 사용
     {
+        private const float CameraInteractionRenderScale = 0.6f;
+        private const float AnimationPlaybackRenderScale = 0.7f;
         private const string CombatTargetPrefabPath =
             "Assets/ProjectMT/03_Features/Expedition/Prefabs/PF_Enemy_Peasant.prefab";
         private const string FloatingNumberPrefabPath =
@@ -27,6 +102,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private readonly List<PreviewFloatingNumber> activeFloatingNumbers = new List<PreviewFloatingNumber>();
         private readonly List<PreviewHitVfx> activeHitVfx = new List<PreviewHitVfx>();
         private readonly List<PreviewProjectile> activeProjectiles = new List<PreviewProjectile>();
+        private readonly List<PendingPreviewHit> pendingHits = new List<PendingPreviewHit>();
         private readonly List<MonsterAttackAreaIndicator> activeHitAreas = new List<MonsterAttackAreaIndicator>();
         private readonly PreviewCombatFeedbackPlayer combatFeedbackPlayer;
         private MonsterMakerDraft draft;
@@ -58,6 +134,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private int previewHitCount;
         private uint floatingNumberSequence;
         private string combatStatus = "표준 적 준비 전";
+        private Texture lastRenderedTexture;
+        private Vector2Int lastRenderedSize;
+        private bool renderDirty = true;
+        private bool cameraInteractionActive;
+        private bool targetFeedbackActive;
 
         public MonsterMakerPreviewStage()
         {
@@ -65,8 +146,47 @@ namespace ProjectMT.EditorTools.MonsterMaker
             stage.SetView(115f, 10f, 1.2f); // 공격자와 표준 적이 겹치지 않는 타격 확인용 기본 시점
         }
 
-        public Texture Render(Rect rect) => stage.Render(rect);
+        public Texture Render(Rect rect)
+        {
+            return RenderInternal(rect, false);
+        }
+
+        public Texture RenderAfterInput(Rect rect, bool forceRender)
+        {
+            return RenderInternal(rect, forceRender);
+        }
+
+        private Texture RenderInternal(Rect rect, bool forceRender)
+        {
+            var renderScale = cameraInteractionActive
+                ? CameraInteractionRenderScale
+                : playing
+                    ? AnimationPlaybackRenderScale
+                    : 1f;
+            var renderSize = new Vector2Int(
+                Mathf.Max(1, Mathf.RoundToInt(rect.width * renderScale)),
+                Mathf.Max(1, Mathf.RoundToInt(rect.height * renderScale)));
+            var renderRect = new Rect(0f, 0f, renderSize.x, renderSize.y);
+            var eventType = Event.current?.type;
+            var renderEvent = Event.current == null ||
+                              eventType == EventType.Layout ||
+                              eventType == EventType.Repaint;
+            var sizeChanged = renderSize != lastRenderedSize;
+            if (forceRender ||
+                (renderEvent && (renderDirty || lastRenderedTexture == null || sizeChanged)))
+            {
+                lastRenderedTexture = stage.Render(renderRect);
+                lastRenderedSize = renderSize;
+                renderDirty = false;
+            }
+
+            return lastRenderedTexture;
+        }
         public bool IsPlaying => playing;
+        public bool RequiresContinuousTick => playing || targetFeedbackActive || pendingFloatingNumber.Active ||
+                                               activeVfx.Count > 0 || activeFloatingNumbers.Count > 0 ||
+                                               activeHitVfx.Count > 0 || activeProjectiles.Count > 0 ||
+                                               pendingHits.Count > 0 || activeHitAreas.Count > 0;
         public float NormalizedTime => currentClip == null || currentClip.length <= 0f
             ? 0f
             : Mathf.Clamp01(playbackTime / currentClip.length);
@@ -87,9 +207,78 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public int ActiveProjectileCount => activeProjectiles.Count;
         public int ActiveHitAreaCount => activeHitAreas.Count;
         public string CombatStatus => combatStatus;
+        public Camera Camera => stage.Camera;
+
+        public bool TryGetWorldPoint(
+            MonsterMakerPreviewAnchor anchor,
+            string socketPath,
+            Vector3 localPosition,
+            out Vector3 worldPosition)
+        {
+            var anchorTransform = ResolvePositionAnchor(anchor, socketPath);
+            if (anchorTransform == null)
+            {
+                worldPosition = Vector3.zero;
+                return false;
+            }
+
+            worldPosition = anchorTransform.TransformPoint(localPosition);
+            return true;
+        }
+
+        public bool TryGetLocalPoint(
+            MonsterMakerPreviewAnchor anchor,
+            string socketPath,
+            Vector3 worldPosition,
+            out Vector3 localPosition)
+        {
+            var anchorTransform = ResolvePositionAnchor(anchor, socketPath);
+            if (anchorTransform == null)
+            {
+                localPosition = Vector3.zero;
+                return false;
+            }
+
+            localPosition = anchorTransform.InverseTransformPoint(worldPosition);
+            return true;
+        }
+
+        public void ApplyDraftPositionOverrides()
+        {
+            if (draft == null || stage.PreviewRoot == null)
+            {
+                return;
+            }
+
+            var root = stage.PreviewRoot.transform;
+            var visual = root.Find("Visual");
+            if (visual != null)
+            {
+                visual.localPosition = draft.VisualLocalPosition + Vector3.up * draft.GroundOffset;
+            }
+
+            var attackOrigin = root.Find(draft.AttackOriginPath);
+            if (attackOrigin != null)
+            {
+                attackOrigin.localPosition = draft.AttackOriginLocalPosition;
+            }
+
+            var hitCenter = root.Find(draft.HitCenterPath);
+            if (hitCenter != null)
+            {
+                hitCenter.localPosition = draft.HitCenterLocalPosition;
+            }
+
+            renderDirty = true;
+        }
+
 
         public void SetDraft(MonsterMakerDraft source)
         {
+            lastRenderedTexture = null;
+            lastRenderedSize = default;
+            renderDirty = true;
+            cameraInteractionActive = false;
             StopFeedback();
             DestroyCombatTarget();
             draft = source;
@@ -150,11 +339,13 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public void SetEnvironment(int index)
         {
             stage.SetEnvironment(index);
+            renderDirty = true;
         }
 
         public void SetView(float yaw, float pitch, float distanceScale = 1f)
         {
             stage.SetView(yaw, pitch, distanceScale);
+            renderDirty = true;
         }
 
         public bool ShowBasicAttackArea()
@@ -182,13 +373,42 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 combatStatus = $"판정 표시 · [{draft.BasicAttackProfile.AttackId}] " +
                                $"{draft.BasicAttackProfile.Shape}";
                 lastTickTime = EditorApplication.timeSinceStartup;
+                renderDirty = true;
             }
             return visible;
         }
 
-        public void HandleInput(Rect rect, Event current)
+        public bool HandleInput(Rect rect, Event current)
         {
+            if (current == null)
+            {
+                return false;
+            }
+
+            var insidePreview = rect.Contains(current.mousePosition);
+            if (insidePreview && current.type == EventType.MouseDown && current.button == 1)
+            {
+                cameraInteractionActive = true;
+            }
+
+            var cameraChanged = insidePreview &&
+                                ((current.type == EventType.MouseDrag && current.button == 1) ||
+                                 current.type == EventType.ScrollWheel);
+            var cameraInteractionEnded = cameraInteractionActive &&
+                                         ((current.type == EventType.MouseUp && current.button == 1) ||
+                                          current.type == EventType.MouseLeaveWindow);
             stage.HandleInput(rect, current);
+            if (cameraInteractionEnded)
+            {
+                cameraInteractionActive = false;
+            }
+
+            if (cameraChanged || cameraInteractionEnded)
+            {
+                renderDirty = true;
+            }
+
+            return cameraChanged || cameraInteractionEnded;
         }
 
         public void PlayIdle()
@@ -430,11 +650,20 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             var combatChanged = TickCombatPresentation(deltaTime);
-            return animationChanged || combatChanged || activeVfx.Count > 0;
+            var changed = animationChanged || combatChanged || activeVfx.Count > 0;
+            if (changed)
+            {
+                renderDirty = true;
+            }
+            return changed;
         }
 
         public void Dispose()
         {
+            lastRenderedTexture = null;
+            lastRenderedSize = default;
+            renderDirty = true;
+            cameraInteractionActive = false;
             StopFeedback();
             DestroyCombatTarget();
             stage.Dispose();
@@ -484,13 +713,18 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 return;
             }
 
-            currentClip.SampleAnimation(animationSampleRoot != null ? animationSampleRoot : stage.PreviewRoot, playbackTime);
+            currentClip.SampleAnimation(
+                animationSampleRoot != null ? animationSampleRoot : stage.PreviewRoot,
+                playbackTime);
+
             if (previewMotionRoot != null)
             {
                 previewMotionRoot.localPosition = previewBasePosition;
                 previewMotionRoot.localRotation = previewBaseRotation;
                 previewMotionRoot.localScale = previewBaseScale;
             }
+
+            renderDirty = true;
         }
 
         private void HandleMarkerPassed(int index, MonsterAttackMarker marker)
@@ -502,10 +736,27 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             var markerDraft = markerDraftBuffer[index];
             var damage = Mathf.Max(0f, draft.AttackPower) * Mathf.Max(0f, marker.PowerRatio);
-            var feedback = markerDraft.Feedback?.HasAny == true
-                ? markerDraft.Feedback
-                : draft.AttackMarkerFeedback;
             var profile = draft.BasicAttackProfile;
+            var socket = ResolvePreviewSocket(markerDraft.SocketOverride);
+            var origin = socket == null ? stage.PreviewRoot.transform.position : socket.position;
+            var targetPosition = ResolveCombatTargetHitPoint();
+            var forward = targetPosition - origin;
+            forward.y = 0f;
+            forward = forward.sqrMagnitude < 0.0001f
+                ? stage.PreviewRoot.transform.forward
+                : forward.normalized;
+            var attackRotation = Quaternion.LookRotation(forward, Vector3.up);
+            PlayProfileFeedbackAt(profile?.LaunchFeedback, origin, attackRotation);
+
+            var markerFeedback = markerDraft.Feedback?.HasAny == true
+                ? markerDraft.Feedback
+                : null;
+            var profileImpactFeedback = markerFeedback == null &&
+                                        profile?.ImpactFeedback?.HasAnyFeedback == true
+                ? profile.ImpactFeedback
+                : null;
+            var fallbackFeedback = markerFeedback ??
+                                   (profileImpactFeedback == null ? draft.AttackMarkerFeedback : null);
             if (profile != null)
             {
                 ShowPreviewHitArea(profile, markerDraft);
@@ -517,21 +768,42 @@ namespace ProjectMT.EditorTools.MonsterMaker
                   draft.RangedDeliveryMode == MonsterRangedDeliveryMode.Projectile;
             if (usesProjectile)
             {
-                PlaySound(draft.ProjectileLaunchSound);
-                SpawnPreviewProjectile(markerDraft, damage, feedback, profile);
+                SpawnPreviewProjectile(
+                    markerDraft,
+                    damage,
+                    fallbackFeedback,
+                    profileImpactFeedback,
+                    profile);
                 return;
             }
 
             var hitCount = profile?.HitCount ?? 1;
-            var applied = false;
             for (var hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
-                applied |= ApplyPreviewDamage(damage * (profile?.ResolveDamageRatio(hitIndex) ?? 1f));
-            }
+                var hitDamage = damage * (profile?.ResolveDamageRatio(hitIndex) ?? 1f);
+                var playImpactFeedback = hitIndex == 0 || profile?.RepeatImpactFeedback != false;
+                if (hitIndex == 0)
+                {
+                    if (ApplyPreviewDamage(hitDamage) && playImpactFeedback)
+                    {
+                        PlayResolvedImpactFeedback(
+                            fallbackFeedback,
+                            profileImpactFeedback,
+                            ResolvePreviewImpactPosition(profile, origin),
+                            attackRotation);
+                    }
+                    continue;
+                }
 
-            if (applied)
-            {
-                PlayFeedback(feedback, markerDraft.SocketOverride);
+                pendingHits.Add(new PendingPreviewHit(
+                    previewClock + hitIndex * (profile?.RepeatHitInterval ?? 0.08f),
+                    hitDamage,
+                    fallbackFeedback,
+                    profileImpactFeedback,
+                    profile,
+                    origin,
+                    attackRotation,
+                    playImpactFeedback));
             }
         }
 
@@ -617,6 +889,59 @@ namespace ProjectMT.EditorTools.MonsterMaker
             activeVfx.Add(new PreviewVfx(instance, feedback.VfxLifetime));
         }
 
+        private void PlayProfileFeedbackAt(
+            MonsterFeedbackCue feedback,
+            Vector3 position,
+            Quaternion rotation)
+        {
+            if (feedback == null || !feedback.HasAnyFeedback)
+            {
+                return;
+            }
+
+            if (feedback.Sfx != null && feedback.Sfx.TrySelectClip(out var clip) && clip != null)
+            {
+                SfxEditorAudioPreview.Play(clip, 0, false, feedback.Sfx.SelectVolume());
+            }
+            if (feedback.VfxPrefab == null || stage.PreviewRoot == null)
+            {
+                return;
+            }
+
+            var instance = UnityEngine.Object.Instantiate(feedback.VfxPrefab);
+            instance.name = "[Basic Attack Profile VFX] " + feedback.VfxPrefab.name;
+            position += rotation * feedback.LocalPosition;
+            rotation *= feedback.LocalRotation;
+            instance.transform.SetPositionAndRotation(position, rotation);
+            instance.transform.localScale = feedback.VfxPrefab.transform.localScale *
+                                            feedback.Scale * Mathf.Max(0.01f, draft.VfxScale);
+            stage.AddAuxiliary(instance);
+            activeVfx.Add(new PreviewVfx(instance, feedback.VfxLifetime));
+        }
+
+        private void PlayResolvedImpactFeedback(
+            MonsterMakerFeedbackDraft draftFeedback,
+            MonsterFeedbackCue profileFeedback,
+            Vector3 position,
+            Quaternion rotation)
+        {
+            if (draftFeedback?.HasAny == true)
+            {
+                PlayFeedbackAt(draftFeedback, position, rotation);
+                return;
+            }
+
+            PlayProfileFeedbackAt(profileFeedback, position, rotation);
+        }
+
+        private Vector3 ResolvePreviewImpactPosition(MonsterBasicAttackProfile profile, Vector3 origin)
+        {
+            return profile != null && profile.Shape == MonsterBasicAttackShape.Circle &&
+                   profile.Center == MonsterBasicAttackCenter.Source
+                ? origin + Vector3.up * 0.4f
+                : ResolveCombatTargetHitPoint();
+        }
+
         private static void PlaySound(AudioClip sound)
         {
             if (sound != null)
@@ -636,9 +961,13 @@ namespace ProjectMT.EditorTools.MonsterMaker
             MonsterMakerMarkerDraft markerDraft,
             float damage,
             MonsterMakerFeedbackDraft impactFeedback,
+            MonsterFeedbackCue profileImpactFeedback,
             MonsterBasicAttackProfile profile)
         {
-            var projectileVisual = draft?.ProjectilePrefab;
+            var projectilePresentation = profile?.ProjectileFeedback;
+            var projectileVisual = projectilePresentation?.VfxPrefab != null
+                ? projectilePresentation.VfxPrefab
+                : draft?.ProjectilePrefab;
             if (projectileVisual == null)
             {
                 projectileVisual = AssetDatabase.LoadAssetAtPath<GameObject>(
@@ -657,6 +986,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             direction.y = 0f;
             direction = direction.sqrMagnitude < 0.0001f ? Vector3.forward : direction.normalized;
             var projectileCount = profile?.ProjectileCount ?? 1;
+            var spawned = false;
             for (var index = 0; index < projectileCount; index++)
             {
                 var spreadRatio = projectileCount <= 1
@@ -667,9 +997,21 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     spreadRatio * (profile?.ProjectileSpreadAngle ?? 0f),
                     0f) * direction;
                 var rotation = Quaternion.LookRotation(shotDirection, Vector3.up);
+                var spawnPosition = origin;
+                if (projectilePresentation != null)
+                {
+                    spawnPosition += rotation * projectilePresentation.LocalPosition;
+                    rotation *= projectilePresentation.LocalRotation;
+                }
                 var instance = UnityEngine.Object.Instantiate(projectileVisual);
                 instance.name = "[Monster Preview Projectile] " + projectileVisual.name;
-                instance.transform.SetPositionAndRotation(origin, rotation);
+                instance.transform.SetPositionAndRotation(spawnPosition, rotation);
+                if (projectilePresentation != null)
+                {
+                    instance.transform.localScale = projectileVisual.transform.localScale *
+                                                    projectilePresentation.Scale *
+                                                    Mathf.Max(0.01f, draft.VfxScale);
+                }
                 var runtimeActor = instance.GetComponent<MonsterProjectileActor>();
                 if (runtimeActor != null)
                 {
@@ -686,14 +1028,33 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 activeProjectiles.Add(new PreviewProjectile(
                     instance,
                     damage,
-                    Mathf.Max(0.01f, draft.ProjectileSpeed),
-                    Mathf.Max(0.01f, draft.ProjectileLifetime),
+                    Mathf.Max(0.01f, draft.ResolvedProjectileSpeed),
+                    Mathf.Max(0.01f, draft.ResolvedProjectileLifetime),
                     impactFeedback,
+                    profileImpactFeedback,
                     profile,
-                    origin,
+                    spawnPosition,
                     targetPosition,
                     shotDirection,
                     index == projectileCount / 2));
+                spawned = true;
+            }
+            if (spawned)
+            {
+                if (projectilePresentation?.Sfx != null &&
+                    projectilePresentation.Sfx.TrySelectClip(out var projectileClip) &&
+                    projectileClip != null)
+                {
+                    SfxEditorAudioPreview.Play(
+                        projectileClip,
+                        0,
+                        false,
+                        projectilePresentation.Sfx.SelectVolume());
+                }
+                else if (profile?.LaunchFeedback?.Sfx == null)
+                {
+                    PlaySound(draft.ProjectileLaunchSound);
+                }
             }
             combatStatus = "투사체 이동 중";
         }
@@ -742,6 +1103,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private void HandlePreviewHit(UnitActor target, DamageReport report)
         {
             target?.VisualFeedback?.PlayHit();
+            targetFeedbackActive = true;
             lastAppliedDamage = report.AppliedDamage;
             previewHitCount++;
             combatStatus = $"타격 {previewHitCount}회 · 피해 {Mathf.RoundToInt(report.AppliedDamage):N0}";
@@ -756,6 +1118,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private void HandlePreviewDeath(UnitActor target, DamageReport report)
         {
             target?.VisualFeedback?.PlayDeath();
+            targetFeedbackActive = true;
             combatStatus = $"표준 적 처치 · 피해 {Mathf.RoundToInt(report.AppliedDamage):N0}";
         }
 
@@ -880,19 +1243,27 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private bool TickCombatPresentation(float deltaTime)
         {
-            for (var index = 0; index < dummyTargetAnimators.Length; index++)
+            if (playing || targetFeedbackActive || pendingFloatingNumber.Active ||
+                activeFloatingNumbers.Count > 0 || activeHitVfx.Count > 0 || activeProjectiles.Count > 0 ||
+                pendingHits.Count > 0 || activeHitAreas.Count > 0)
             {
-                var animator = dummyTargetAnimators[index];
-                if (animator != null && animator.enabled && animator.gameObject.activeInHierarchy &&
-                    animator.runtimeAnimatorController != null)
+                for (var index = 0; index < dummyTargetAnimators.Length; index++)
                 {
-                    animator.Update(deltaTime);
+                    var animator = dummyTargetAnimators[index];
+                    if (animator != null && animator.enabled && animator.gameObject.activeInHierarchy &&
+                        animator.runtimeAnimatorController != null)
+                    {
+                        animator.Update(deltaTime);
+                    }
                 }
             }
 
+            TickPendingHits();
             TickPreviewProjectiles(deltaTime);
             FlushFloatingNumber();
-            var targetPulseActive = dummyTargetVisualFeedback?.Tick(deltaTime) ?? false;
+            var targetPulseActive = targetFeedbackActive &&
+                                    (dummyTargetVisualFeedback?.Tick(deltaTime) ?? false);
+            targetFeedbackActive = targetPulseActive;
 
             for (var index = activeFloatingNumbers.Count - 1; index >= 0; index--)
             {
@@ -943,7 +1314,30 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             return targetPulseActive || pendingFloatingNumber.Active || activeFloatingNumbers.Count > 0 ||
-                   activeHitVfx.Count > 0 || activeProjectiles.Count > 0 || activeHitAreas.Count > 0;
+                   activeHitVfx.Count > 0 || activeProjectiles.Count > 0 || pendingHits.Count > 0 ||
+                   activeHitAreas.Count > 0;
+        }
+
+        private void TickPendingHits()
+        {
+            for (var index = pendingHits.Count - 1; index >= 0; index--)
+            {
+                var pending = pendingHits[index];
+                if (previewClock < pending.ApplyAt)
+                {
+                    continue;
+                }
+
+                if (ApplyPreviewDamage(pending.Damage) && pending.PlayFeedback)
+                {
+                    PlayResolvedImpactFeedback(
+                        pending.DraftFeedback,
+                        pending.ProfileFeedback,
+                        ResolvePreviewImpactPosition(pending.Profile, pending.Origin),
+                        pending.Rotation);
+                }
+                pendingHits.RemoveAt(index);
+            }
         }
 
         private static void ApplyPreviewTextOrientation(GameObject instance)
@@ -1079,7 +1473,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var ratio = projectile.Profile?.ResolveDamageRatio(passIndex) ?? 1f;
             if (ApplyPreviewDamage(projectile.Damage * ratio))
             {
-                PlayFeedbackAt(projectile.ImpactFeedback, position, Quaternion.identity);
+                PlayResolvedImpactFeedback(
+                    projectile.ImpactFeedback,
+                    projectile.ProfileImpactFeedback,
+                    position,
+                    projectile.Instance == null ? Quaternion.identity : projectile.Instance.transform.rotation);
             }
         }
 
@@ -1120,6 +1518,25 @@ namespace ProjectMT.EditorTools.MonsterMaker
             return !string.IsNullOrWhiteSpace(fallbackPath)
                 ? stage.PreviewRoot.transform.Find(fallbackPath) ?? stage.PreviewRoot.transform
                 : stage.PreviewRoot.transform;
+        }
+
+        private Transform ResolvePositionAnchor(MonsterMakerPreviewAnchor anchor, string socketPath)
+        {
+            if (stage.PreviewRoot == null)
+            {
+                return null;
+            }
+
+            var root = stage.PreviewRoot.transform;
+            return anchor switch
+            {
+                MonsterMakerPreviewAnchor.AttackOrigin =>
+                    root.Find(draft?.AttackOriginPath ?? string.Empty) ?? root,
+                MonsterMakerPreviewAnchor.HitCenter =>
+                    root.Find(draft?.HitCenterPath ?? string.Empty) ?? root,
+                MonsterMakerPreviewAnchor.Socket => ResolvePreviewSocket(socketPath),
+                _ => root
+            };
         }
 
         private static GameObject CreatePreviewAdapterTemplate(MonsterMakerDraft source)
@@ -1389,7 +1806,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void ClearCombatPresentation()
         {
+            targetFeedbackActive = false;
             pendingFloatingNumber = default;
+            pendingHits.Clear();
             for (var index = activeFloatingNumbers.Count - 1; index >= 0; index--)
             {
                 if (activeFloatingNumbers[index].Instance != null)
@@ -1493,6 +1912,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 float speed,
                 float lifetime,
                 MonsterMakerFeedbackDraft impactFeedback,
+                MonsterFeedbackCue profileImpactFeedback,
                 MonsterBasicAttackProfile profile,
                 Vector3 origin,
                 Vector3 targetPosition,
@@ -1504,6 +1924,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 Speed = speed;
                 Lifetime = lifetime;
                 ImpactFeedback = impactFeedback;
+                ProfileImpactFeedback = profileImpactFeedback;
                 Profile = profile;
                 Origin = origin;
                 TargetPosition = targetPosition;
@@ -1516,6 +1937,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             public float Speed { get; }
             public float Lifetime { get; }
             public MonsterMakerFeedbackDraft ImpactFeedback { get; }
+            public MonsterFeedbackCue ProfileImpactFeedback { get; }
             public MonsterBasicAttackProfile Profile { get; }
             public Vector3 Origin { get; }
             public Vector3 Direction { get; }
@@ -1526,6 +1948,38 @@ namespace ProjectMT.EditorTools.MonsterMaker
             public bool Returning { get; set; }
             public bool DamageApplied { get; set; }
             public bool ReturnDamageApplied { get; set; }
+        }
+
+        private sealed class PendingPreviewHit
+        {
+            public PendingPreviewHit(
+                float applyAt,
+                float damage,
+                MonsterMakerFeedbackDraft draftFeedback,
+                MonsterFeedbackCue profileFeedback,
+                MonsterBasicAttackProfile profile,
+                Vector3 origin,
+                Quaternion rotation,
+                bool playFeedback)
+            {
+                ApplyAt = applyAt;
+                Damage = damage;
+                DraftFeedback = draftFeedback;
+                ProfileFeedback = profileFeedback;
+                Profile = profile;
+                Origin = origin;
+                Rotation = rotation;
+                PlayFeedback = playFeedback;
+            }
+
+            public float ApplyAt { get; }
+            public float Damage { get; }
+            public MonsterMakerFeedbackDraft DraftFeedback { get; }
+            public MonsterFeedbackCue ProfileFeedback { get; }
+            public MonsterBasicAttackProfile Profile { get; }
+            public Vector3 Origin { get; }
+            public Quaternion Rotation { get; }
+            public bool PlayFeedback { get; }
         }
 
         private struct PendingFloatingNumber

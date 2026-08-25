@@ -17,9 +17,10 @@ MonoBehaviour:
   mode: 2
   projectilePrefab: {fileID: 8900597983205870692, guid: 7d0df7a31c4b87e4e867d3dc816c56ed, type: 3}
   launchSfx: {fileID: 0}
+  overrideBasicAttackProfileTuning: 0
   speed: 9
   lifetime: 3
-  hitRadius: 1.55
+  hitRadius: 0.25
   maxPiercingTargets: 4
   impactRadius: 1.55
   maxImpactTargets: 4

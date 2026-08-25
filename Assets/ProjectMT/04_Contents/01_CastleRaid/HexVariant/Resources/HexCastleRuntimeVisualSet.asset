@@ -1,0 +1,106 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f6c4efa5c8701349bc6f82bdd4d82d9, type: 3}
+  m_Name: HexCastleRuntimeVisualSet
+  m_EditorClassIdentifier: ProjectMT.Contents.CastleRaidHex::ProjectMT.Contents.CastleRaidHex.HexCastleVisualSet
+  visualThemeId: KayKitSpringProcedural
+  groundTile: {fileID: 0}
+  straightWall: {fileID: 7309631060159751726, guid: 59c210fedd7e3d546896674376d028fd, type: 3}
+  cornerAInside: {fileID: 6201204344608103014, guid: 5692f23b23c8ee74d973b2da27e69666, type: 3}
+  cornerAOutside: {fileID: 6201204344608103014, guid: 5692f23b23c8ee74d973b2da27e69666, type: 3}
+  cornerBInside: {fileID: 7892818227224348585, guid: 03108acfc6f8e4442920009941c0f700, type: 3}
+  cornerBOutside: {fileID: 7892818227224348585, guid: 03108acfc6f8e4442920009941c0f700, type: 3}
+  straightGate: {fileID: 3076934990642590728, guid: 4918b0d9e5f9bdd4186d069cef83f7dc, type: 3}
+  cornerAGate: {fileID: 0}
+  wallStub: {fileID: 9170611495127810384, guid: 12cc7149c2ef254449b246172366f878, type: 3}
+  closedGate: {fileID: 3076934990642590728, guid: 4918b0d9e5f9bdd4186d069cef83f7dc, type: 3}
+  openGate: {fileID: 2525170719396358023, guid: b5f316c6e8da13943b1398cb24ce8e0d, type: 3}
+  towerOverlay: {fileID: 919132149155446097, guid: 6d10e1d543b836742a0f7287f947d2ea, type: 3}
+  palace: {fileID: 919132149155446097, guid: aa5e47304b9a3e842854a935ccd279a6, type: 3}
+  kayKitMaterial: {fileID: 2100000, guid: bff58d62bb9e7684eb595816c671cf19, type: 2}
+  buildingVisuals:
+  - visualVariantId: building_barracks_blue
+    prefab: {fileID: 919132149155446097, guid: f428515d2dbd75c4ea1e2b8ec7d0eeb7, type: 3}
+  - visualVariantId: building_tent_blue
+    prefab: {fileID: 919132149155446097, guid: ba961fd2589ee8e42ac31c315ab389f1, type: 3}
+  - visualVariantId: building_archeryrange_blue
+    prefab: {fileID: 919132149155446097, guid: bdf80fdfe6d3fdb46918e183bfbbe08e, type: 3}
+  - visualVariantId: building_church_blue
+    prefab: {fileID: 919132149155446097, guid: a90ca0bb9af6e5b42babb0924b2728ef, type: 3}
+  - visualVariantId: building_market_yellow
+    prefab: {fileID: 919132149155446097, guid: 464f742ca04075d428b5540b41ff7cb0, type: 3}
+  - visualVariantId: building_blacksmith_green
+    prefab: {fileID: 919132149155446097, guid: 1e823b3b2413d734ea60d14b11b9548a, type: 3}
+  - visualVariantId: building_mine_red
+    prefab: {fileID: 919132149155446097, guid: c8dde972240900043a394c67fd5d7a2e, type: 3}
+  - visualVariantId: building_tower_base_blue
+    prefab: {fileID: 919132149155446097, guid: ab61e815521ec1541804ea51b7b6c879, type: 3}
+  - visualVariantId: building_stage_B
+    prefab: {fileID: 919132149155446097, guid: 354d1b08bfba3d94b82f9ebcdbcc7b9f, type: 3}
+  - visualVariantId: building_stage_C
+    prefab: {fileID: 919132149155446097, guid: 0d0ac843c32604d4bbd49974b6041285, type: 3}
+  - visualVariantId: building_home_A_blue
+    prefab: {fileID: 919132149155446097, guid: b4c27096f893f324ca10ba6422301a23, type: 3}
+  - visualVariantId: building_home_B_blue
+    prefab: {fileID: 919132149155446097, guid: c4fbceaa602d55d4495d0357692c5008, type: 3}
+  - visualVariantId: building_shrine_blue
+    prefab: {fileID: 919132149155446097, guid: 9573d75c4bc14574fafab37054d1ceea, type: 3}
+  - visualVariantId: building_townhall_blue
+    prefab: {fileID: 919132149155446097, guid: 9887d51b10bac59479f85a9d60d49d09, type: 3}
+  - visualVariantId: building_windmill_blue
+    prefab: {fileID: 919132149155446097, guid: 7ee0e3b9c13823441a7f8d17aee1820f, type: 3}
+  turretHeadVisuals:
+  - weaponKind: 1
+    level: 1
+    prefab: {fileID: 5587118630968250512, guid: a1ae107bb131ba94595a686ab59bd8ca, type: 3}
+  - weaponKind: 1
+    level: 2
+    prefab: {fileID: 9038195600159228464, guid: c2d2f1dced7ae724394b5424e56eb770, type: 3}
+  - weaponKind: 1
+    level: 3
+    prefab: {fileID: 7841240873355212477, guid: cbeaaaf13f9148247b4fec46893f4f0c, type: 3}
+  - weaponKind: 2
+    level: 1
+    prefab: {fileID: 5401822020959080341, guid: dc96b67954f3d784781281405d79e890, type: 3}
+  - weaponKind: 2
+    level: 2
+    prefab: {fileID: 6439229621509109357, guid: c76c3a7a8e05ae74bad815acdad522c4, type: 3}
+  - weaponKind: 3
+    level: 1
+    prefab: {fileID: 6095896801538245040, guid: 8b61e1feddaca574e8c369a6ada4814f, type: 3}
+  - weaponKind: 3
+    level: 2
+    prefab: {fileID: 8119026202672893265, guid: 4db1d1f9047b29247bcdf8d9bd5c733e, type: 3}
+  - weaponKind: 3
+    level: 3
+    prefab: {fileID: 1213838234147632810, guid: b3587fba88316904ea9e4441100b6439, type: 3}
+  trapVisuals:
+  - trapType: 0
+    visualVariantId: BearSnare
+    prefab: {fileID: 6982223581210336158, guid: 5ec277cc6625d3a42b51264f5c3008db, type: 3}
+    materialOverride: {fileID: 2100000, guid: 1b75c3825c68b084bb9fad77b6278923, type: 2}
+    animationStateName: Trap_01
+  - trapType: 1
+    visualVariantId: RisingSpikes
+    prefab: {fileID: 7378289950093894111, guid: 15f88331b6e6da54eb5be9089054a7c1, type: 3}
+    materialOverride: {fileID: 2100000, guid: 1788553c76f79674d8dcaab88ed58560, type: 2}
+    animationStateName: Traps_03New
+  - trapType: 1
+    visualVariantId: SawBlades
+    prefab: {fileID: 4718685787998212786, guid: 5c28ae7716a67904dacb5460bbd84040, type: 3}
+    materialOverride: {fileID: 2100000, guid: bf8e21041e8d39440902eba5b7af30d0, type: 2}
+    animationStateName: Dimanic_01
+  - trapType: 1
+    visualVariantId: SpikePress
+    prefab: {fileID: 1341545284068440527, guid: 35e41d6bd53bad94097bb5bfba96d64c, type: 3}
+    materialOverride: {fileID: 2100000, guid: 1851f5eff0e2d6043b935724e1aeec32, type: 2}
+    animationStateName: Dynamic

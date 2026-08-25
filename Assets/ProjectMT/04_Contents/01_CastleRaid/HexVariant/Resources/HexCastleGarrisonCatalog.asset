@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f151958ec4189e84bbc9ef9db1af37c7, type: 3}
+  m_Name: HexCastleGarrisonCatalog
+  m_EditorClassIdentifier: ProjectMT.Contents.CastleRaidHex::ProjectMT.Contents.CastleRaidHex.HexCastleGarrisonCatalog
+  knightPrefabs:
+  - {fileID: 4394103326726674520, guid: b4976709e2126a543930fc714dbf2d3f, type: 3}
+  - {fileID: 3444096644756631153, guid: 25c058a75ed55fe42ab71b11a9bba202, type: 3}
+  - {fileID: 9126498133870226212, guid: 24a9786343680f643b998d278864a4f1, type: 3}
+  farmerPrefab: {fileID: 9062414073023458585, guid: 23a92f32bd895e74299a9228ebb41615, type: 3}

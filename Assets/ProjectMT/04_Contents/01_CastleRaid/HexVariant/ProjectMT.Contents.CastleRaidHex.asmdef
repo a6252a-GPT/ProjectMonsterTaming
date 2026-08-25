@@ -1,0 +1,23 @@
+{
+  "name": "ProjectMT.Contents.CastleRaidHex",
+  "rootNamespace": "ProjectMT.Contents.CastleRaidHex",
+  "references": [
+    "Unity.InputSystem",
+    "Unity.AI.Navigation",
+    "UnityEngine.UI",
+    "Unity.TextMeshPro",
+    "ProjectMT.Core",
+    "ProjectMT.Shared",
+    "ProjectMT.Contents.Framework",
+    "MoreMountains.Tools"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

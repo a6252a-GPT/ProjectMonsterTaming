@@ -3,6 +3,13 @@ using UnityEngine;
 
 namespace ProjectMT.Shared.Combat
 {
+    [System.Flags]
+    public enum DamageFeedbackFlags
+    {
+        None = 0,
+        BasicAttackFeelTargetMotion = 1 << 0
+    }
+
     public readonly struct DamageRequest // 피해 적용 전 요청값
     {
         public DamageRequest(UnitActor source, float amount, Vector3 hitPoint)
@@ -11,17 +18,29 @@ namespace ProjectMT.Shared.Combat
         }
 
         public DamageRequest(UnitActor source, float amount, Vector3 hitPoint, bool isCritical)
+            : this(source, amount, hitPoint, isCritical, DamageFeedbackFlags.None)
+        {
+        }
+
+        public DamageRequest(
+            UnitActor source,
+            float amount,
+            Vector3 hitPoint,
+            bool isCritical,
+            DamageFeedbackFlags feedbackFlags)
         {
             Source = source;
             Amount = amount;
             HitPoint = hitPoint;
             IsCritical = isCritical;
+            FeedbackFlags = feedbackFlags;
         }
 
         public UnitActor Source { get; } // 공격 주체
         public float Amount { get; } // 요청 피해량
         public Vector3 HitPoint { get; } // 연출 발생 위치
         public bool IsCritical { get; } // 치명타 피드백 구분
+        public DamageFeedbackFlags FeedbackFlags { get; } // 이번 피해만의 피드백 소유권
     }
 
     public readonly struct DamageReport // 피해 적용 후 확정값

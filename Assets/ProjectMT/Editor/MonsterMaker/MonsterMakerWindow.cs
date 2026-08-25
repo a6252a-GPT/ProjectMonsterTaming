@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -11,6 +12,52 @@ using UnityEngine;
 
 namespace ProjectMT.EditorTools.MonsterMaker
 {
+    internal enum MonsterMakerPreviewPositionValueMode
+    {
+        RootLocal,
+        VisualLocal,
+        AnchorOffset
+    }
+
+    internal enum MonsterMakerPreviewReference
+    {
+        None,
+        Model,
+        Attack,
+        Hit
+    }
+
+    internal sealed class MonsterMakerPreviewPositionBinding
+    {
+        public MonsterMakerPreviewPositionBinding(
+            string propertyPath,
+            string label,
+            MonsterMakerPreviewPositionValueMode valueMode,
+            MonsterMakerPreviewAnchor anchor,
+            string socketPath = null)
+        {
+            PropertyPath = propertyPath ?? string.Empty;
+            Label = label ?? "위치";
+            ValueMode = valueMode;
+            Anchor = anchor;
+            SocketPath = socketPath ?? string.Empty;
+        }
+
+        public string PropertyPath { get; }
+        public string Label { get; }
+        public MonsterMakerPreviewPositionValueMode ValueMode { get; }
+        public MonsterMakerPreviewAnchor Anchor { get; }
+        public string SocketPath { get; }
+
+        public bool Matches(SerializedProperty property)
+        {
+            return property != null && string.Equals(
+                PropertyPath,
+                property.propertyPath,
+                StringComparison.Ordinal);
+        }
+    }
+
     public sealed class MonsterMakerWindow : EditorWindow // 수동 입력·Preview·검증·편입을 한 창에서 처리
     {
         private const string MenuPath = "JC Tool/Monster/Monster Maker";
@@ -23,9 +70,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private const float ActionGap = 6f;
         private const float CatalogColumnWidth = 230f;
         private const float CatalogRowHeight = 52f;
+        private const float CatalogRowSpacing = 3f;
         private const float LeftColumnWidth = 430f;
         private const float PreviewColumnMinWidth = 420f;
         private const float ControlHeight = 26f;
+        private const float PreviewOverlayMargin = 10f;
+        private const float PreviewOverlayGap = 6f;
+        private const float CombatPreviewOverlayHeight = 49f;
+        private const float PositionPreviewToolbarHeight = 48f;
         private const float MinimumWindowWidth = 1180f;
         private const float MinimumWindowHeight = 760f;
         private static readonly Color AccentColor = new Color(0.38f, 0.66f, 1f, 1f);
@@ -101,8 +153,33 @@ namespace ProjectMT.EditorTools.MonsterMaker
             "방어 강화",
             "회복 집중"
         };
+        private static readonly MonsterMakerPreviewPositionBinding AttackOriginPreviewBinding =
+            new MonsterMakerPreviewPositionBinding(
+                "attackOriginLocalPosition",
+                "총구/공격 기준점",
+                MonsterMakerPreviewPositionValueMode.RootLocal,
+                MonsterMakerPreviewAnchor.Root);
+        private static readonly MonsterMakerPreviewPositionBinding ModelOriginPreviewBinding =
+            new MonsterMakerPreviewPositionBinding(
+                "visualLocalPosition",
+                "모델 기준점",
+                MonsterMakerPreviewPositionValueMode.VisualLocal,
+                MonsterMakerPreviewAnchor.Root);
+        private static readonly MonsterMakerPreviewPositionBinding HitCenterPreviewBinding =
+            new MonsterMakerPreviewPositionBinding(
+                "hitCenterLocalPosition",
+                "피격 기준점",
+                MonsterMakerPreviewPositionValueMode.RootLocal,
+                MonsterMakerPreviewAnchor.Root);
+        private static readonly MonsterPreviewPositionAxis[] PreviewPositionAxes =
+        {
+            MonsterPreviewPositionAxis.X,
+            MonsterPreviewPositionAxis.Y,
+            MonsterPreviewPositionAxis.Z
+        };
 
         private MonsterMakerDraft draft;
+        private MonsterMakerDraft initialDraftSnapshot;
         private SerializedObject serializedDraft;
         private MonsterMakerPreviewStage preview;
         private MonsterMakerValidationReport validation;
@@ -112,6 +189,13 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private Shared.Unit.MonsterSkillCatalog monsterSkillCatalog;
         private Shared.Unit.MonsterDefinition[] catalogDefinitions =
             Array.Empty<Shared.Unit.MonsterDefinition>();
+        private readonly Dictionary<string, MonsterMakerDraft> catalogDraftsById =
+            new Dictionary<string, MonsterMakerDraft>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, MonsterRarity> catalogRaritiesById =
+            new Dictionary<string, MonsterRarity>(StringComparer.OrdinalIgnoreCase);
+        private MonsterSkillPopupData[] passiveSkillPopups = Array.Empty<MonsterSkillPopupData>();
+        private MonsterSkillPopupData[] genericActiveSkillPopups = Array.Empty<MonsterSkillPopupData>();
+        private MonsterSkillPopupData[] mythicActiveSkillPopups = Array.Empty<MonsterSkillPopupData>();
         private Shared.Unit.MonsterDefinition selectedCatalogDefinition;
         private Vector2 catalogScroll;
         private Vector2 leftScroll;
@@ -125,6 +209,20 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private string loadedDraftFingerprint = string.Empty;
         [SerializeField] private bool showMonsterCatalog = true;
         [SerializeField] private bool showModelAdvancedSettings;
+        [SerializeField] private bool showBasicAttackAdvancedSettings;
+        [SerializeField] private bool showPreviewModelReference = true;
+        [SerializeField] private bool showPreviewAttackReference = true;
+        [SerializeField] private bool showPreviewHitReference = true;
+        private MonsterMakerPreviewReference selectedPreviewReference;
+        private double previewReferenceInfoExpiresAt;
+        private MonsterMakerPreviewPositionBinding activePreviewPosition;
+        private MonsterPreviewPositionAxis previewPositionAxis = MonsterPreviewPositionAxis.X;
+        private bool previewPositionDragging;
+        private Vector2 previewPositionDragMouseStart;
+        private Vector3 previewPositionDragStartValue;
+        private Vector2 previewPositionDragScreenDirection = Vector2.right;
+        private float previewPositionDragPixelsPerValueUnit = 40f;
+        private int previewPositionHotControl;
         [SerializeField] private int passiveSkillCategoryFilter;
         [SerializeField] private int activeSkillCategoryFilter;
         private bool showUsageGuide;
@@ -175,6 +273,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             ReloadCatalogEntries();
             EditorApplication.update += OnEditorUpdate;
             EditorApplication.projectChanged += OnProjectChanged;
+            Undo.undoRedoPerformed += OnUndoRedoPerformed;
             if (Selection.activeObject is MonsterMakerDraft selected)
             {
                 SetDraft(selected, false);
@@ -191,10 +290,13 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void OnDisable()
         {
+            ReleasePreviewPositionControl();
             EditorApplication.update -= OnEditorUpdate;
             EditorApplication.projectChanged -= OnProjectChanged;
+            Undo.undoRedoPerformed -= OnUndoRedoPerformed;
             preview?.Dispose();
             preview = null;
+            ReleaseInitialDraftSnapshot();
             ReleaseTransientDraft();
         }
 
@@ -352,36 +454,79 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     return;
                 }
 
-                catalogScroll = EditorGUILayout.BeginScrollView(catalogScroll);
-                for (var index = 0; index < catalogDefinitions.Length; index++)
-                {
-                    DrawCatalogRow(catalogDefinitions[index], index + 1);
-                    GUILayout.Space(3f);
-                }
-
-                EditorGUILayout.EndScrollView();
+                var listRect = GUILayoutUtility.GetRect(
+                    1f,
+                    1f,
+                    GUILayout.ExpandWidth(true),
+                    GUILayout.ExpandHeight(true));
+                DrawVirtualizedCatalogList(listRect);
             }
         }
 
-        private void DrawCatalogRow(Shared.Unit.MonsterDefinition definition, int displayIndex)
+        private void DrawVirtualizedCatalogList(Rect listRect)
+        {
+            var rowStride = CatalogRowHeight + CatalogRowSpacing;
+            var contentHeight = Mathf.Max(
+                listRect.height,
+                catalogDefinitions.Length <= 0
+                    ? 0f
+                    : catalogDefinitions.Length * rowStride - CatalogRowSpacing);
+            var contentRect = new Rect(
+                0f,
+                0f,
+                Mathf.Max(1f, listRect.width - GUI.skin.verticalScrollbar.fixedWidth),
+                contentHeight);
+            catalogScroll = GUI.BeginScrollView(listRect, catalogScroll, contentRect);
+            try
+            {
+                var visibleRange = CalculateVisibleCatalogRange(
+                    catalogScroll.y,
+                    listRect.height,
+                    catalogDefinitions.Length);
+                for (var index = visibleRange.x; index < visibleRange.y; index++)
+                {
+                    DrawCatalogRow(
+                        catalogDefinitions[index],
+                        index + 1,
+                        new Rect(0f, index * rowStride, contentRect.width, CatalogRowHeight));
+                }
+            }
+            finally
+            {
+                GUI.EndScrollView();
+            }
+        }
+
+        private static Vector2Int CalculateVisibleCatalogRange(float scrollY, float viewportHeight, int itemCount)
+        {
+            if (itemCount <= 0)
+            {
+                return Vector2Int.zero;
+            }
+
+            var rowStride = CatalogRowHeight + CatalogRowSpacing;
+            var first = Mathf.Clamp(Mathf.FloorToInt(Mathf.Max(0f, scrollY) / rowStride), 0, itemCount - 1);
+            var visibleCount = Mathf.Max(1, Mathf.CeilToInt(Mathf.Max(1f, viewportHeight) / rowStride) + 1);
+            return new Vector2Int(first, Mathf.Min(itemCount, first + visibleCount));
+        }
+
+        private void DrawCatalogRow(
+            Shared.Unit.MonsterDefinition definition,
+            int displayIndex,
+            Rect rowRect)
         {
             if (definition == null)
             {
                 return;
             }
 
-            var makerDraft = LoadDraftForDefinition(definition);
+            catalogDraftsById.TryGetValue(definition.MonsterId, out var makerDraft);
             var canEdit = makerDraft != null;
             var selected = selectedCatalogDefinition == definition ||
                            draft != null && string.Equals(
                                draft.MonsterId,
                                definition.MonsterId,
                                StringComparison.OrdinalIgnoreCase);
-            var rowRect = GUILayoutUtility.GetRect(
-                CatalogColumnWidth - 22f,
-                CatalogRowHeight,
-                GUILayout.ExpandWidth(true),
-                GUILayout.Height(CatalogRowHeight));
             var background = GetCatalogRowBackground(definition, selected, canEdit);
             EditorGUI.DrawRect(rowRect, background);
             if (selected)
@@ -530,8 +675,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             Shared.Unit.MonsterDefinition definition,
             out MonsterRarity rarity)
         {
-            if (monsterRarityCatalog != null && definition != null &&
-                monsterRarityCatalog.TryGetRarity(definition.MonsterId, out rarity))
+            if (definition != null && catalogRaritiesById.TryGetValue(definition.MonsterId, out rarity))
             {
                 return true;
             }
@@ -630,11 +774,13 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     Mathf.Max(1f, previewFrameRect.width - 4f),
                     Mathf.Max(1f, previewFrameRect.height - 4f));
                 EditorGUI.DrawRect(previewRect, new Color(0.055f, 0.06f, 0.075f, 1f));
-                var texture = preview.Render(previewRect);
+                var cameraChanged = preview.HandleInput(previewRect, Event.current);
+                var texture = preview.RenderAfterInput(previewRect, cameraChanged);
                 if (texture != null)
                 {
                     GUI.DrawTexture(previewRect, texture, ScaleMode.StretchToFill, false);
                     DrawCombatPreviewOverlay(previewRect);
+                    DrawPreviewPositionOverlay(previewRect);
                 }
                 else
                 {
@@ -642,7 +788,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 }
 
                 DrawPreviewInputHint(previewRect);
-                preview.HandleInput(previewRect, Event.current);
+                if (cameraChanged)
+                {
+                    Repaint();
+                }
             }
         }
 
@@ -684,7 +833,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             const float environmentWidth = 94f;
             const float viewButtonWidth = 54f;
             const float gap = 4f;
-            var controlsWidth = environmentWidth + viewButtonWidth * 3f + gap * 3f;
+            var controlsWidth = environmentWidth + viewButtonWidth * 4f + gap * 4f;
             var controlX = Mathf.Max(toolbarRect.x + 62f, toolbarRect.xMax - controlsWidth);
             var environmentRect = new Rect(controlX, toolbarRect.y, environmentWidth, toolbarRect.height);
             var environment = EditorGUI.Popup(
@@ -730,6 +879,684 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 previewRect,
                 "3D 모델 프리팹을 지정하세요.\n왼쪽 2. 모델 설정에서 모델과 Animator를 선택하면 Preview가 시작됩니다.",
                 centeredLabelStyle);
+        }
+
+        private void DrawPreviewPositionOverlay(Rect previewRect)
+        {
+            if (preview == null || serializedDraft == null)
+            {
+                return;
+            }
+
+            var toolbarRect = MonsterPositionReferenceOverlay.DrawVisibilityToolbar(
+                previewRect,
+                255f,
+                ref showPreviewModelReference,
+                ref showPreviewAttackReference,
+                ref showPreviewHitReference);
+            DrawPreviewReferencePoint(
+                previewRect,
+                ModelOriginPreviewBinding,
+                MonsterMakerPreviewReference.Model,
+                MonsterPositionReferenceOverlay.ModelColor,
+                showPreviewModelReference);
+            DrawPreviewReferencePoint(
+                previewRect,
+                AttackOriginPreviewBinding,
+                MonsterMakerPreviewReference.Attack,
+                MonsterPositionReferenceOverlay.AttackColor,
+                showPreviewAttackReference);
+            DrawPreviewReferencePoint(
+                previewRect,
+                HitCenterPreviewBinding,
+                MonsterMakerPreviewReference.Hit,
+                MonsterPositionReferenceOverlay.HitColor,
+                showPreviewHitReference);
+            DrawPreviewReferenceInfoCard(previewRect, toolbarRect);
+        }
+
+        private void DrawPreviewReferencePoint(
+            Rect previewRect,
+            MonsterMakerPreviewPositionBinding binding,
+            MonsterMakerPreviewReference reference,
+            Color color,
+            bool visible)
+        {
+            if (!visible || !TryGetPreviewPositionWorld(binding, out var worldPosition) ||
+                !MonsterPositionReferenceOverlay.TryGetGuiPoint(
+                    preview.Camera,
+                    previewRect,
+                    worldPosition,
+                    out var guiPoint))
+            {
+                return;
+            }
+
+            var selected = selectedPreviewReference == reference &&
+                           EditorApplication.timeSinceStartup < previewReferenceInfoExpiresAt;
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 0 &&
+                Vector2.Distance(Event.current.mousePosition, guiPoint) <= 10f)
+            {
+                selectedPreviewReference = reference;
+                previewReferenceInfoExpiresAt = EditorApplication.timeSinceStartup + 3d;
+                selected = true;
+                Event.current.Use();
+                Repaint();
+            }
+
+            MonsterPositionReferenceOverlay.DrawPoint(guiPoint, color, selected);
+        }
+
+        private void DrawPreviewReferenceInfoCard(Rect previewRect, Rect toolbarRect)
+        {
+            if (selectedPreviewReference == MonsterMakerPreviewReference.None ||
+                EditorApplication.timeSinceStartup >= previewReferenceInfoExpiresAt ||
+                !TryGetSelectedPreviewReference(out var label, out var value, out var color))
+            {
+                return;
+            }
+
+            var width = Mathf.Min(232f, Mathf.Max(120f, previewRect.width - PreviewOverlayMargin * 2f));
+            var cardRect = new Rect(
+                previewRect.xMax - PreviewOverlayMargin - width,
+                toolbarRect.yMax + 6f,
+                width,
+                42f);
+            EditorGUI.DrawRect(cardRect, new Color(0.025f, 0.035f, 0.05f, 0.9f));
+            EditorGUI.DrawRect(new Rect(cardRect.x, cardRect.y, 3f, cardRect.height), color);
+            GUI.Label(
+                new Rect(cardRect.x + 9f, cardRect.y + 3f, cardRect.width - 14f, 17f),
+                label,
+                EditorStyles.miniBoldLabel);
+            GUI.Label(
+                new Rect(cardRect.x + 9f, cardRect.y + 21f, cardRect.width - 14f, 17f),
+                $"X {value.x:0.###}  ·  Y {value.y:0.###}  ·  Z {value.z:0.###}",
+                EditorStyles.miniLabel);
+        }
+
+        private bool TryGetSelectedPreviewReference(out string label, out Vector3 value, out Color color)
+        {
+            MonsterMakerPreviewPositionBinding binding;
+            switch (selectedPreviewReference)
+            {
+                case MonsterMakerPreviewReference.Model:
+                    binding = ModelOriginPreviewBinding;
+                    label = "모델 기준";
+                    color = MonsterPositionReferenceOverlay.ModelColor;
+                    break;
+                case MonsterMakerPreviewReference.Attack:
+                    binding = AttackOriginPreviewBinding;
+                    label = "공격 기준";
+                    color = MonsterPositionReferenceOverlay.AttackColor;
+                    break;
+                case MonsterMakerPreviewReference.Hit:
+                    binding = HitCenterPreviewBinding;
+                    label = "피격 기준";
+                    color = MonsterPositionReferenceOverlay.HitColor;
+                    break;
+                default:
+                    label = string.Empty;
+                    value = Vector3.zero;
+                    color = Color.clear;
+                    return false;
+            }
+
+            return TryGetPreviewPositionValue(binding, out value);
+        }
+
+        private void DrawPreviewPositionToolbar(Rect previewRect)
+        {
+            var toolbar = CalculatePreviewPositionToolbarRect(
+                previewRect,
+                activePreviewPosition != null);
+            EditorGUI.DrawRect(toolbar, new Color(0.025f, 0.035f, 0.05f, 0.9f));
+            GUI.Label(
+                new Rect(toolbar.x + 8f, toolbar.y + 3f, toolbar.width - 16f, 18f),
+                activePreviewPosition == null
+                    ? "청록 총구는 항상 표시 · 점을 눌러 축 조절"
+                    : $"조절 중 · {activePreviewPosition.Label} · 화살표를 끌어 이동",
+                EditorStyles.miniBoldLabel);
+            if (activePreviewPosition == null)
+            {
+                return;
+            }
+
+            var x = toolbar.x + 8f;
+            var y = toolbar.y + 23f;
+            GUI.Label(
+                new Rect(x, y, 246f, 20f),
+                "빨강 X  ·  초록 Y  ·  파랑 Z  ·  축을 직접 드래그",
+                EditorStyles.miniLabel);
+            x += 254f;
+            if (GUI.Button(new Rect(x, y, 82f, 20f), "편집 종료", EditorStyles.miniButtonRight))
+            {
+                activePreviewPosition = null;
+                ReleasePreviewPositionControl();
+                Repaint();
+            }
+        }
+
+        private static Rect CalculatePreviewPositionToolbarRect(Rect previewRect, bool isEditing)
+        {
+            var preferredWidth = isEditing ? 360f : 294f;
+            var availableWidth = Mathf.Max(1f, previewRect.width - PreviewOverlayMargin * 2f);
+            return new Rect(
+                previewRect.x + PreviewOverlayMargin,
+                previewRect.y + PreviewOverlayMargin + CombatPreviewOverlayHeight + PreviewOverlayGap,
+                Mathf.Min(preferredWidth, availableWidth),
+                PositionPreviewToolbarHeight);
+        }
+
+        private void HandlePreviewPositionInput(Rect previewRect, Event current)
+        {
+            if (current == null || preview.Camera == null)
+            {
+                return;
+            }
+
+            if (previewPositionDragging)
+            {
+                if (current.rawType == EventType.MouseUp || current.type == EventType.MouseLeaveWindow)
+                {
+                    ReleasePreviewPositionControl();
+                    current.Use();
+                    Repaint();
+                    return;
+                }
+
+                if (current.type != EventType.MouseDrag || activePreviewPosition == null)
+                {
+                    return;
+                }
+
+                var signedPixelDelta = Vector2.Dot(
+                    current.mousePosition - previewPositionDragMouseStart,
+                    previewPositionDragScreenDirection);
+                var value = CalculatePreviewAxisDragValue(
+                    previewPositionDragStartValue,
+                    previewPositionAxis,
+                    signedPixelDelta,
+                    previewPositionDragPixelsPerValueUnit);
+                ApplyPreviewPositionValue(activePreviewPosition, value);
+                current.Use();
+                return;
+            }
+
+            if (current.type != EventType.MouseDown || current.button != 0 ||
+                !previewRect.Contains(current.mousePosition))
+            {
+                return;
+            }
+
+            if (activePreviewPosition != null &&
+                TryResolvePreviewPositionAxis(
+                    previewRect,
+                    activePreviewPosition,
+                    current.mousePosition,
+                    out var selectedAxis))
+            {
+                BeginPreviewPositionAxisDrag(
+                    previewRect,
+                    activePreviewPosition,
+                    selectedAxis,
+                    current);
+                return;
+            }
+
+            var binding = ResolveClosestPreviewPositionBinding(previewRect, current.mousePosition);
+            if (binding != null)
+            {
+                if (preview.IsPlaying)
+                {
+                    preview.TogglePause();
+                }
+                activePreviewPosition = binding;
+                previewPositionAxis = MonsterPreviewPositionAxis.X;
+                ReleasePreviewPositionControl();
+                current.Use();
+                Repaint();
+            }
+        }
+
+        private void BeginPreviewPositionAxisDrag(
+            Rect previewRect,
+            MonsterMakerPreviewPositionBinding binding,
+            MonsterPreviewPositionAxis axis,
+            Event current)
+        {
+            if (!TryGetPreviewPositionValue(binding, out var startValue) ||
+                !TryGetPreviewPositionAxisScreenData(
+                    previewRect,
+                    binding,
+                    axis,
+                    out _,
+                    out var screenDirection,
+                    out var pixelsPerValueUnit))
+            {
+                return;
+            }
+
+            if (preview.IsPlaying)
+            {
+                preview.TogglePause();
+            }
+            serializedDraft.ApplyModifiedProperties();
+            Undo.RecordObject(draft, $"{binding.Label} {axis}축 위치 조절");
+            previewPositionAxis = axis;
+            previewPositionDragMouseStart = current.mousePosition;
+            previewPositionDragStartValue = startValue;
+            previewPositionDragScreenDirection = screenDirection;
+            previewPositionDragPixelsPerValueUnit = pixelsPerValueUnit;
+            previewPositionDragging = true;
+            previewPositionHotControl = GUIUtility.GetControlID(
+                "MonsterMakerPositionAxisHandle".GetHashCode(),
+                FocusType.Passive);
+            GUIUtility.hotControl = previewPositionHotControl;
+            current.Use();
+            Repaint();
+        }
+
+        private void DrawPreviewPositionAxisHandles(
+            Rect previewRect,
+            MonsterMakerPreviewPositionBinding binding)
+        {
+            Handles.BeginGUI();
+            try
+            {
+                for (var index = 0; index < PreviewPositionAxes.Length; index++)
+                {
+                    var axis = PreviewPositionAxes[index];
+                    if (!TryGetPreviewPositionAxisScreenData(
+                            previewRect,
+                            binding,
+                            axis,
+                            out var origin,
+                            out var direction,
+                            out _))
+                    {
+                        continue;
+                    }
+
+                    var selected = previewPositionAxis == axis;
+                    var length = CalculatePreviewAxisHandleLength(previewRect, origin, direction);
+                    var end = origin + direction * length;
+                    var perpendicular = new Vector2(-direction.y, direction.x);
+                    var color = GetPreviewPositionAxisColor(axis);
+                    Handles.color = selected ? Color.Lerp(color, Color.white, 0.25f) : color;
+                    Handles.DrawAAPolyLine(selected ? 5f : 4f, origin, end);
+                    Handles.DrawAAConvexPolygon(
+                        end,
+                        end - direction * 13f + perpendicular * 6f,
+                        end - direction * 13f - perpendicular * 6f);
+
+                    var labelRect = new Rect(end.x - 9f, end.y - 9f, 18f, 18f);
+                    labelRect.x = Mathf.Clamp(labelRect.x, previewRect.x, previewRect.xMax - labelRect.width);
+                    labelRect.y = Mathf.Clamp(labelRect.y, previewRect.y, previewRect.yMax - labelRect.height);
+                    EditorGUI.DrawRect(labelRect, new Color(0.02f, 0.025f, 0.035f, 0.9f));
+                    var previousColor = GUI.color;
+                    GUI.color = color;
+                    GUI.Label(labelRect, axis.ToString(), EditorStyles.centeredGreyMiniLabel);
+                    GUI.color = previousColor;
+                }
+            }
+            finally
+            {
+                Handles.EndGUI();
+            }
+        }
+
+        private bool TryResolvePreviewPositionAxis(
+            Rect previewRect,
+            MonsterMakerPreviewPositionBinding binding,
+            Vector2 mousePosition,
+            out MonsterPreviewPositionAxis axis)
+        {
+            axis = previewPositionAxis;
+            var closestDistance = 15f;
+            var found = false;
+            for (var index = 0; index < PreviewPositionAxes.Length; index++)
+            {
+                var candidate = PreviewPositionAxes[index];
+                if (!TryGetPreviewPositionAxisScreenData(
+                        previewRect,
+                        binding,
+                        candidate,
+                        out var origin,
+                        out var direction,
+                        out _))
+                {
+                    continue;
+                }
+
+                var length = CalculatePreviewAxisHandleLength(previewRect, origin, direction);
+                var end = origin + direction * length;
+                var distance = DistanceToSegment(mousePosition, origin + direction * 5f, end);
+                if (distance > closestDistance)
+                {
+                    continue;
+                }
+
+                axis = candidate;
+                closestDistance = distance;
+                found = true;
+            }
+
+            return found;
+        }
+
+        private bool TryGetPreviewPositionAxisScreenData(
+            Rect previewRect,
+            MonsterMakerPreviewPositionBinding binding,
+            MonsterPreviewPositionAxis axis,
+            out Vector2 origin,
+            out Vector2 direction,
+            out float pixelsPerValueUnit)
+        {
+            origin = Vector2.zero;
+            direction = GetPreviewPositionAxisFallbackDirection(axis);
+            pixelsPerValueUnit = 40f;
+            if (!TryGetPreviewPositionValue(binding, out var value) ||
+                !TryGetPreviewPositionWorld(binding, value, out var worldOrigin) ||
+                !MonsterPreviewPositionHandleUtility.TryWorldToGuiPoint(
+                    preview.Camera,
+                    previewRect,
+                    worldOrigin,
+                    out origin))
+            {
+                return false;
+            }
+
+            const float sampleValue = 0.25f;
+            var sampledValue = value + GetPreviewPositionAxisVector(axis) * sampleValue;
+            if (!TryGetPreviewPositionWorld(binding, sampledValue, out var worldEnd) ||
+                !MonsterPreviewPositionHandleUtility.TryWorldToGuiPoint(
+                    preview.Camera,
+                    previewRect,
+                    worldEnd,
+                    out var sampledGui))
+            {
+                return true;
+            }
+
+            var projectedPerValueUnit = (sampledGui - origin) / sampleValue;
+            if (projectedPerValueUnit.sqrMagnitude < 16f)
+            {
+                return true;
+            }
+
+            direction = projectedPerValueUnit.normalized;
+            pixelsPerValueUnit = Mathf.Clamp(projectedPerValueUnit.magnitude, 24f, 240f);
+            return true;
+        }
+
+        private static float CalculatePreviewAxisHandleLength(
+            Rect previewRect,
+            Vector2 origin,
+            Vector2 direction)
+        {
+            const float preferredLength = 64f;
+            const float edgeMargin = 10f;
+            var available = preferredLength;
+            if (direction.x > 0.0001f)
+            {
+                available = Mathf.Min(available, (previewRect.xMax - edgeMargin - origin.x) / direction.x);
+            }
+            else if (direction.x < -0.0001f)
+            {
+                available = Mathf.Min(available, (previewRect.x + edgeMargin - origin.x) / direction.x);
+            }
+            if (direction.y > 0.0001f)
+            {
+                available = Mathf.Min(available, (previewRect.yMax - edgeMargin - origin.y) / direction.y);
+            }
+            else if (direction.y < -0.0001f)
+            {
+                available = Mathf.Min(available, (previewRect.y + edgeMargin - origin.y) / direction.y);
+            }
+
+            return Mathf.Clamp(available, 8f, preferredLength);
+        }
+
+        private static Vector3 CalculatePreviewAxisDragValue(
+            Vector3 startValue,
+            MonsterPreviewPositionAxis axis,
+            float signedPixelDelta,
+            float pixelsPerValueUnit)
+        {
+            return startValue + GetPreviewPositionAxisVector(axis) *
+                (signedPixelDelta / Mathf.Max(1f, pixelsPerValueUnit));
+        }
+
+        private static float DistanceToSegment(Vector2 point, Vector2 start, Vector2 end)
+        {
+            var segment = end - start;
+            var lengthSquared = segment.sqrMagnitude;
+            if (lengthSquared <= 0.0001f)
+            {
+                return Vector2.Distance(point, start);
+            }
+
+            var t = Mathf.Clamp01(Vector2.Dot(point - start, segment) / lengthSquared);
+            return Vector2.Distance(point, start + segment * t);
+        }
+
+        private static Vector2 GetPreviewPositionAxisFallbackDirection(MonsterPreviewPositionAxis axis)
+        {
+            switch (axis)
+            {
+                case MonsterPreviewPositionAxis.Y:
+                    return Vector2.down;
+                case MonsterPreviewPositionAxis.Z:
+                    return new Vector2(0.7f, 0.7f).normalized;
+                default:
+                    return Vector2.right;
+            }
+        }
+
+        private static Vector3 GetPreviewPositionAxisVector(MonsterPreviewPositionAxis axis)
+        {
+            switch (axis)
+            {
+                case MonsterPreviewPositionAxis.Y:
+                    return Vector3.up;
+                case MonsterPreviewPositionAxis.Z:
+                    return Vector3.forward;
+                default:
+                    return Vector3.right;
+            }
+        }
+
+        private static Color GetPreviewPositionAxisColor(MonsterPreviewPositionAxis axis)
+        {
+            switch (axis)
+            {
+                case MonsterPreviewPositionAxis.Y:
+                    return new Color(0.35f, 0.95f, 0.38f, 1f);
+                case MonsterPreviewPositionAxis.Z:
+                    return new Color(0.3f, 0.62f, 1f, 1f);
+                default:
+                    return new Color(1f, 0.3f, 0.28f, 1f);
+            }
+        }
+
+        private MonsterMakerPreviewPositionBinding ResolveClosestPreviewPositionBinding(
+            Rect previewRect,
+            Vector2 mousePosition)
+        {
+            MonsterMakerPreviewPositionBinding closest = null;
+            var closestDistance = 14f;
+            var candidates = activePreviewPosition == null ||
+                             string.Equals(
+                                 activePreviewPosition.PropertyPath,
+                                 AttackOriginPreviewBinding.PropertyPath,
+                                 StringComparison.Ordinal)
+                ? new[] { AttackOriginPreviewBinding }
+                : new[] { activePreviewPosition, AttackOriginPreviewBinding };
+            foreach (var candidate in candidates)
+            {
+                if (!TryGetPreviewPositionWorld(candidate, out var worldPosition) ||
+                    !MonsterPreviewPositionHandleUtility.TryWorldToGuiPoint(
+                        preview.Camera,
+                        previewRect,
+                        worldPosition,
+                        out var guiPoint))
+                {
+                    continue;
+                }
+
+                var distance = Vector2.Distance(mousePosition, guiPoint);
+                if (distance <= closestDistance)
+                {
+                    closest = candidate;
+                    closestDistance = distance;
+                }
+            }
+
+            return closest;
+        }
+
+        private void DrawPreviewPositionMarker(
+            Rect previewRect,
+            MonsterMakerPreviewPositionBinding binding,
+            Color color,
+            bool alwaysVisible)
+        {
+            if (!TryGetPreviewPositionWorld(binding, out var worldPosition) ||
+                !MonsterPreviewPositionHandleUtility.TryWorldToGuiPoint(
+                    preview.Camera,
+                    previewRect,
+                    worldPosition,
+                    out var guiPoint) ||
+                !previewRect.Contains(guiPoint))
+            {
+                return;
+            }
+
+            var selected = activePreviewPosition != null &&
+                           string.Equals(
+                               activePreviewPosition.PropertyPath,
+                               binding.PropertyPath,
+                               StringComparison.Ordinal);
+            Handles.BeginGUI();
+            Handles.color = selected ? Color.white : color;
+            Handles.DrawSolidDisc(guiPoint, Vector3.forward, selected ? 7f : 5f);
+            Handles.color = Color.black;
+            Handles.DrawWireDisc(guiPoint, Vector3.forward, selected ? 8f : 6f);
+            Handles.EndGUI();
+
+            if (!alwaysVisible && !selected)
+            {
+                return;
+            }
+
+            TryGetPreviewPositionValue(binding, out var value);
+            var label = $"{binding.Label} ({value.x:0.##}, {value.y:0.##}, {value.z:0.##})";
+            var labelRect = new Rect(guiPoint.x + 9f, guiPoint.y - 9f, 224f, 18f);
+            EditorGUI.DrawRect(labelRect, new Color(0.02f, 0.025f, 0.035f, 0.82f));
+            GUI.Label(labelRect, label, EditorStyles.miniLabel);
+        }
+
+        private bool TryGetPreviewPositionWorld(
+            MonsterMakerPreviewPositionBinding binding,
+            out Vector3 worldPosition)
+        {
+            worldPosition = Vector3.zero;
+            if (!TryGetPreviewPositionValue(binding, out var value))
+            {
+                return false;
+            }
+
+            return TryGetPreviewPositionWorld(binding, value, out worldPosition);
+        }
+
+        private bool TryGetPreviewPositionWorld(
+            MonsterMakerPreviewPositionBinding binding,
+            Vector3 value,
+            out Vector3 worldPosition)
+        {
+            worldPosition = Vector3.zero;
+            if (binding == null)
+            {
+                return false;
+            }
+
+            if (binding.ValueMode == MonsterMakerPreviewPositionValueMode.VisualLocal)
+            {
+                value += Vector3.up * (serializedDraft.FindProperty("groundOffset")?.floatValue ?? 0f);
+                return preview.TryGetWorldPoint(MonsterMakerPreviewAnchor.Root, string.Empty, value, out worldPosition);
+            }
+            if (binding.ValueMode == MonsterMakerPreviewPositionValueMode.RootLocal)
+            {
+                return preview.TryGetWorldPoint(MonsterMakerPreviewAnchor.Root, string.Empty, value, out worldPosition);
+            }
+
+            return preview.TryGetWorldPoint(binding.Anchor, binding.SocketPath, value, out worldPosition);
+        }
+
+        private bool TryConvertPreviewWorldToValue(
+            MonsterMakerPreviewPositionBinding binding,
+            Vector3 worldPosition,
+            out Vector3 value)
+        {
+            if (binding.ValueMode == MonsterMakerPreviewPositionValueMode.AnchorOffset)
+            {
+                return preview.TryGetLocalPoint(binding.Anchor, binding.SocketPath, worldPosition, out value);
+            }
+
+            if (!preview.TryGetLocalPoint(MonsterMakerPreviewAnchor.Root, string.Empty, worldPosition, out value))
+            {
+                return false;
+            }
+            if (binding.ValueMode == MonsterMakerPreviewPositionValueMode.VisualLocal)
+            {
+                value -= Vector3.up * (serializedDraft.FindProperty("groundOffset")?.floatValue ?? 0f);
+            }
+            return true;
+        }
+
+        private bool TryGetPreviewPositionValue(
+            MonsterMakerPreviewPositionBinding binding,
+            out Vector3 value)
+        {
+            var property = binding == null ? null : serializedDraft.FindProperty(binding.PropertyPath);
+            if (property == null || property.propertyType != SerializedPropertyType.Vector3)
+            {
+                value = Vector3.zero;
+                return false;
+            }
+
+            value = property.vector3Value;
+            return true;
+        }
+
+        private void ApplyPreviewPositionValue(
+            MonsterMakerPreviewPositionBinding binding,
+            Vector3 value)
+        {
+            var property = binding == null ? null : serializedDraft.FindProperty(binding.PropertyPath);
+            if (property == null || property.propertyType != SerializedPropertyType.Vector3)
+            {
+                return;
+            }
+
+            property.vector3Value = value;
+            serializedDraft.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(draft);
+            validation = null;
+            lastWriteResult = null;
+            preview.ApplyDraftPositionOverrides();
+            Repaint();
+        }
+
+        private void ReleasePreviewPositionControl()
+        {
+            if (previewPositionHotControl != 0 && GUIUtility.hotControl == previewPositionHotControl)
+            {
+                GUIUtility.hotControl = 0;
+            }
+
+            previewPositionHotControl = 0;
+            previewPositionDragging = false;
         }
 
         private void DrawPreviewInputHint(Rect previewRect)
@@ -786,6 +1613,39 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 if (GUILayout.Button(guideButtonLabel, compactButtonStyle, GUILayout.Width(106f), GUILayout.Height(26f)))
                 {
                     showUsageGuide = !showUsageGuide;
+                }
+            }
+
+            GUILayout.Space(4f);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Label("편집 기록", headerMetaStyle, GUILayout.Width(64f));
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button(
+                        "↶ 수정 되돌리기",
+                        compactButtonStyle,
+                        GUILayout.Width(112f),
+                        GUILayout.Height(26f)))
+                {
+                    PerformMakerUndo(false);
+                }
+                GUILayout.Space(4f);
+                if (GUILayout.Button(
+                        "↷ 다시 적용",
+                        compactButtonStyle,
+                        GUILayout.Width(96f),
+                        GUILayout.Height(26f)))
+                {
+                    PerformMakerUndo(true);
+                }
+                GUILayout.Space(4f);
+                if (GUILayout.Button(
+                        "↺ 초기 상태 복원",
+                        compactButtonStyle,
+                        GUILayout.Width(112f),
+                        GUILayout.Height(26f)))
+                {
+                    RestoreInitialDraftSnapshot();
                 }
             }
         }
@@ -894,14 +1754,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 preview.IsPlaying ? "일시정지" : "계속 재생",
                 Color.white,
                 actionButtonStyle,
-                preview.TogglePause);
+                TogglePreviewPause);
             x += pauseWidth + ActionGap;
             DrawRectActionButton(
                 new Rect(x, rowRect.y, restartWidth, rowRect.height),
                 "처음부터 다시",
                 Color.white,
                 actionButtonStyle,
-                preview.Restart);
+                RestartPreview);
             x += restartWidth + sectionGap;
 
             GUI.Label(
@@ -938,10 +1798,90 @@ namespace ProjectMT.EditorTools.MonsterMaker
             GUI.backgroundColor = tint;
             if (GUILayout.Button(label, actionButtonStyle, GUILayout.Width(width), GUILayout.Height(40f)))
             {
-                action();
+                action?.Invoke();
+                Repaint();
             }
 
             GUI.backgroundColor = previousBackground;
+        }
+
+        private void TogglePreviewPause()
+        {
+            preview?.TogglePause();
+        }
+
+        private void PerformMakerUndo(bool redo)
+        {
+            ReleasePreviewPositionControl();
+            serializedDraft?.ApplyModifiedProperties();
+            if (redo)
+            {
+                Undo.PerformRedo();
+            }
+            else
+            {
+                Undo.PerformUndo();
+            }
+        }
+
+        private void OnUndoRedoPerformed()
+        {
+            if (draft == null)
+            {
+                return;
+            }
+
+            serializedDraft = new SerializedObject(draft);
+            validation = null;
+            lastWriteResult = null;
+            initializedPreview = false;
+            RefreshPreview();
+            Repaint();
+        }
+
+        private void RestoreInitialDraftSnapshot()
+        {
+            if (initialDraftSnapshot == null || draft == null ||
+                !EditorUtility.DisplayDialog(
+                    "초기 상태 복원",
+                    "현재 Draft의 모든 제작 값을 Maker에서 처음 열었을 때 상태로 되돌립니다.\n복원 후에도 '수정 되돌리기'로 다시 복구할 수 있습니다.",
+                    "초기 상태로 복원",
+                    "취소"))
+            {
+                return;
+            }
+
+            ApplyInitialDraftSnapshot();
+        }
+
+        private void ApplyInitialDraftSnapshot()
+        {
+            if (initialDraftSnapshot == null || draft == null)
+            {
+                return;
+            }
+
+            serializedDraft?.ApplyModifiedProperties();
+            Undo.RegisterCompleteObjectUndo(draft, "Monster Maker · 초기 상태 복원");
+            var draftName = draft.name;
+            var draftHideFlags = draft.hideFlags;
+            EditorUtility.CopySerialized(initialDraftSnapshot, draft);
+            draft.name = draftName;
+            draft.hideFlags = draftHideFlags;
+            EditorUtility.SetDirty(draft);
+            activePreviewPosition = null;
+            ReleasePreviewPositionControl();
+            serializedDraft = new SerializedObject(draft);
+            validation = null;
+            lastWriteResult = null;
+            initializedPreview = false;
+            RefreshPreview();
+            Repaint();
+        }
+
+        private void RestartPreview()
+        {
+            preview?.Restart();
         }
 
         private static void DrawRectActionButton(
@@ -979,14 +1919,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 {
                     DrawUsageStep("1", "Draft를 준비합니다", "새 Monster는 [새 Draft], 기존 Monster는 [기존 항목 열기]로 시작하고 작업 중 입력은 [Draft 저장]으로 보관합니다.");
                     DrawUsageStep("2", "이름과 모델을 넣습니다", "ID·표시 이름·등급·초상화와 프로젝트의 원본 프리팹·실제 Animator를 직접 지정합니다.");
-                    DrawUsageStep("3", "전투 기본값을 정합니다", "상세 모델 보정, 능력치, 공격 무게·피격 체급, MainBattle 역할 AI와 공격 방식을 확인합니다.");
+                    DrawUsageStep("3", "전투 기본값을 정합니다", "능력치, 타격 강도·피격 체급과 MainBattle 역할 AI를 정합니다. 여기서는 공격 모양이나 투사체 방식을 고르지 않습니다.");
                 }
 
                 using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox, GUILayout.MinWidth(220f), GUILayout.ExpandWidth(true)))
                 {
-                    DrawUsageStep("4", "전용 Animation을 지정합니다", "대기·이동·공격·사망 Clip을 직접 넣고 Loop와 In Place 적합성을 눈으로 확인합니다.");
-                    DrawUsageStep("5", "타격·발사 Marker를 맞춥니다", "근거리·즉발의 접촉 순간과 투사체 발사 순간을 0~1 값으로 지정합니다.");
-                    DrawUsageStep("6", "선택 사운드·VFX를 연결합니다", "필요한 항목만 연결합니다. 공란은 정상이며 AudioClip은 편입 때 역할별 Cue로 생성됩니다.");
+                    DrawUsageStep("4", "기본공격 하나를 고릅니다", "저장된 프리셋을 선택하거나 [기본공격 조립소]에서 방식·판정·연타·투사체·공용 VFX/SFX를 한 번만 조립합니다.");
+                    DrawUsageStep("5", "공격 동작과 발생 시점을 맞춥니다", "공격 Clip을 넣고 근접 접촉 또는 투사체 발사 순간을 Motion마다 0~1 값 하나로 지정합니다.");
+                    DrawUsageStep("6", "나머지 Motion을 지정합니다", "대기·이동·사망 Clip을 넣습니다. 몬스터 하나만 다른 연출이 필요할 때만 기본공격의 고급 예외 보정을 펼칩니다.");
                 }
 
                 using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox, GUILayout.MinWidth(220f), GUILayout.ExpandWidth(true)))
@@ -1031,8 +1971,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     preview.Scrub(normalized);
                 }
 
+                var profile = draft?.BasicAttackProfile;
+                var timingName = profile != null && profile.UsesProjectileVisual ? "발사" : "타격";
                 GUILayout.Label(
-                    "0                         타격 Marker · 왼쪽 Animation에서 수동 지정                         1",
+                    $"0                         {timingName} Marker · 왼쪽 기본공격 Motion에서 수동 지정                         1",
                     EditorStyles.centeredGreyMiniLabel);
             }
         }
@@ -1040,12 +1982,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private void DrawCombatPreviewOverlay(Rect previewRect)
         {
             const float overlayWidth = 255f;
-            const float overlayHeight = 49f;
             var overlayRect = new Rect(
-                previewRect.x + 10f,
-                previewRect.y + 10f,
-                Mathf.Min(overlayWidth, previewRect.width - 20f),
-                overlayHeight);
+                previewRect.x + PreviewOverlayMargin,
+                previewRect.y + PreviewOverlayMargin,
+                Mathf.Min(overlayWidth, previewRect.width - PreviewOverlayMargin * 2f),
+                CombatPreviewOverlayHeight);
             if (overlayRect.width <= 60f)
             {
                 return;
@@ -1147,8 +2088,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             var passiveProperty = serializedDraft.FindProperty("rarityPassiveSkill");
-            var passiveOptions = FilterSkillCategory(
-                monsterSkillCatalog.PassiveSkills.Cast<MonsterSkillDefinitionBase>(),
+            var passiveOptions = DrawSkillCategoryFilter(
+                passiveSkillPopups,
                 ref passiveSkillCategoryFilter,
                 "패시브 분류");
             DrawSkillPopup(
@@ -1162,7 +2103,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 if (activeProperty.objectReferenceValue != null)
                 {
                     EditorGUILayout.HelpBox("일반·희귀 등급은 액티브를 연결할 수 없습니다.", MessageType.Error);
-                    DrawSkillPopup(activeProperty, "제거할 액티브", Array.Empty<MonsterSkillDefinitionBase>());
+                    DrawSkillPopup(activeProperty, "제거할 액티브", MonsterSkillPopupData.Empty);
                 }
                 else
                 {
@@ -1172,14 +2113,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 return;
             }
 
-            var allowedActiveOptions = monsterSkillCatalog.ActiveSkills
-                .Where(skill => skill != null &&
-                                (rarity == MonsterRarity.Mythic ||
-                                 skill.ExecutionKind == MonsterActiveExecutionKind.Generic))
-                .Cast<MonsterSkillDefinitionBase>()
-                .ToArray();
-            var activeOptions = FilterSkillCategory(
-                allowedActiveOptions,
+            var activeOptions = DrawSkillCategoryFilter(
+                rarity == MonsterRarity.Mythic ? mythicActiveSkillPopups : genericActiveSkillPopups,
                 ref activeSkillCategoryFilter,
                 "액티브 분류");
             DrawSkillPopup(activeProperty, rarity == MonsterRarity.Mythic ? "액티브" : "범용 액티브", activeOptions);
@@ -1190,57 +2125,44 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 EditorStyles.wordWrappedMiniLabel);
         }
 
-        private static MonsterSkillDefinitionBase[] FilterSkillCategory(
-            System.Collections.Generic.IEnumerable<MonsterSkillDefinitionBase> source,
+        private static MonsterSkillPopupData DrawSkillCategoryFilter(
+            MonsterSkillPopupData[] cachedPopups,
             ref int filter,
             string label)
         {
             filter = Mathf.Clamp(filter, 0, SkillCategoryLabels.Length - 1);
             filter = EditorGUILayout.Popup(label, filter, SkillCategoryLabels);
-            var skills = (source ?? Enumerable.Empty<MonsterSkillDefinitionBase>())
-                .Where(skill => skill != null && skill.AuthoringEnabled);
-            if (filter > 0)
-            {
-                var category = (MonsterSkillCategory)(filter - 1);
-                skills = skills.Where(skill => skill.Category == category);
-            }
-
-            var result = skills
-                .OrderBy(skill => skill.Category)
-                .ThenBy(skill => skill.DisplayName, StringComparer.CurrentCulture)
-                .ToArray();
-            GUILayout.Label($"표시 중 {result.Length}개", EditorStyles.miniLabel);
-            return result;
+            var popup = cachedPopups != null && filter < cachedPopups.Length
+                ? cachedPopups[filter]
+                : MonsterSkillPopupData.Empty;
+            GUILayout.Label($"표시 중 {Mathf.Max(0, popup.Options.Length - 1)}개", EditorStyles.miniLabel);
+            return popup;
         }
 
         private static void DrawSkillPopup(
             SerializedProperty property,
             string label,
-            MonsterSkillDefinitionBase[] catalogOptions)
+            MonsterSkillPopupData popup)
         {
             var current = property.objectReferenceValue as MonsterSkillDefinitionBase;
-            var options = new MonsterSkillDefinitionBase[] { null }
-                .Concat(catalogOptions ?? Array.Empty<MonsterSkillDefinitionBase>())
-                .Distinct()
-                .ToList();
-            if (current != null && !options.Contains(current))
+            var options = popup?.Options ?? MonsterSkillPopupData.Empty.Options;
+            var labels = popup?.Labels ?? MonsterSkillPopupData.Empty.Labels;
+            var currentIndex = Array.IndexOf(options, current);
+            if (current != null && currentIndex < 0)
             {
-                options.Add(current);
+                var expandedOptions = new MonsterSkillDefinitionBase[options.Length + 1];
+                var expandedLabels = new string[labels.Length + 1];
+                Array.Copy(options, expandedOptions, options.Length);
+                Array.Copy(labels, expandedLabels, labels.Length);
+                expandedOptions[expandedOptions.Length - 1] = current;
+                expandedLabels[expandedLabels.Length - 1] = BuildSkillPopupLabel(current);
+                options = expandedOptions;
+                labels = expandedLabels;
+                currentIndex = expandedOptions.Length - 1;
             }
-
-            var labels = options
-                .Select(skill => skill == null
-                    ? "<미설정>"
-                    : $"[{SkillCategoryLabels[(int)skill.Category + 1]}] {skill.DisplayName}  [{skill.SkillId}]" +
-                      (!skill.AuthoringEnabled ? " · 비활성" : string.Empty) +
-                      (skill is MonsterActiveSkill active &&
-                       active.ExecutionKind == MonsterActiveExecutionKind.DedicatedMythic
-                          ? " · 신화 전용"
-                          : string.Empty))
-                .ToArray();
-            var currentIndex = Mathf.Max(0, options.IndexOf(current));
+            currentIndex = Mathf.Max(0, currentIndex);
             var selectedIndex = EditorGUILayout.Popup(label, currentIndex, labels);
-            property.objectReferenceValue = options[Mathf.Clamp(selectedIndex, 0, options.Count - 1)];
+            property.objectReferenceValue = options[Mathf.Clamp(selectedIndex, 0, options.Length - 1)];
 
             var selected = property.objectReferenceValue as MonsterSkillDefinitionBase;
             if (selected == null)
@@ -1266,6 +2188,21 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
         }
 
+        private static string BuildSkillPopupLabel(MonsterSkillDefinitionBase skill)
+        {
+            if (skill == null)
+            {
+                return "<미설정>";
+            }
+
+            return $"[{SkillCategoryLabels[(int)skill.Category + 1]}] {skill.DisplayName}  [{skill.SkillId}]" +
+                   (!skill.AuthoringEnabled ? " · 비활성" : string.Empty) +
+                   (skill is MonsterActiveSkill active &&
+                    active.ExecutionKind == MonsterActiveExecutionKind.DedicatedMythic
+                       ? " · 신화 전용"
+                       : string.Empty);
+        }
+
         private void DrawModelSection()
         {
             DrawSectionHeader("2. 모델 설정");
@@ -1282,11 +2219,26 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 {
                     EditorGUI.indentLevel++;
                     DrawProperty("visualScale", "모델 크기");
-                    DrawProperty("visualLocalPosition", "모델 위치");
+                    DrawPositionPropertyWithPreviewHandle(
+                        "visualLocalPosition",
+                        "모델 위치",
+                        "모델 위치",
+                        MonsterMakerPreviewPositionValueMode.VisualLocal,
+                        MonsterMakerPreviewAnchor.Root);
                     DrawProperty("groundOffset", "바닥 높이 보정");
                     DrawProperty("facingYawOffset", "정면 회전 보정");
-                    DrawProperty("attackOriginLocalPosition", "공격 기준점 위치");
-                    DrawProperty("hitCenterLocalPosition", "피격 기준점 위치");
+                    DrawPositionPropertyWithPreviewHandle(
+                        "attackOriginLocalPosition",
+                        "공격 기준점 위치",
+                        "총구/공격 기준점",
+                        MonsterMakerPreviewPositionValueMode.RootLocal,
+                        MonsterMakerPreviewAnchor.Root);
+                    DrawPositionPropertyWithPreviewHandle(
+                        "hitCenterLocalPosition",
+                        "피격 기준점 위치",
+                        "피격 중심",
+                        MonsterMakerPreviewPositionValueMode.RootLocal,
+                        MonsterMakerPreviewAnchor.Root);
                     EditorGUI.indentLevel--;
                 }
                 else
@@ -1306,21 +2258,24 @@ namespace ProjectMT.EditorTools.MonsterMaker
             DrawProperty("defense", "방어력");
             DrawProperty("attackSpeed", "공격 속도");
             DrawProperty("moveSpeed", "이동 속도");
-            DrawProperty("attackRange", "공격 사거리");
+            DrawProperty("attackRange", "기준 공격 거리");
+            EditorGUILayout.HelpBox(
+                "여기는 몬스터의 전투 수치입니다. 공격 모양·연타·투사체·판정 배율은 7번 기본공격 프리셋에서 정하며, 최종 판정 거리는 이 기준 공격 거리에 프리셋 배율을 적용합니다.",
+                MessageType.None);
         }
 
         private void DrawAnimationSection()
         {
-            DrawSectionHeader("8. 애니메이션 · 타격 Marker");
+            DrawSectionHeader("8. 대기 · 이동 · 사망 Motion");
             DrawProperty("idleClip", "대기 애니메이션");
             DrawProperty("moveClip", "이동 애니메이션");
-            DrawAttackList();
             DrawProperty("deathClip", "사망 애니메이션");
             DrawOptionalAnimationFeedback(
                 serializedDraft.FindProperty("deathFeedback"),
                 "사망 애니메이션 시작",
                 "사망 사운드",
-                "사망 사운드는 사망 애니메이션을 시작할 때 재생됩니다. AudioClip만 지정하면 게임 편입 때 SFX Cue를 자동 생성합니다.");
+                "사망 사운드는 사망 애니메이션을 시작할 때 재생됩니다. AudioClip만 지정하면 게임 편입 때 SFX Cue를 자동 생성합니다.",
+                MonsterMakerPreviewAnchor.HitCenter);
         }
 
         private void DrawAttackList()
@@ -1365,11 +2320,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 DrawRelativeProperty(attack, "clip", "공격 애니메이션");
-                DrawOptionalAnimationFeedback(
-                    attack.FindPropertyRelative("attackStartFeedback"),
-                    "공격 동작 시작",
-                    "공격 동작 사운드",
-                    "공격 동작 사운드는 공격 애니메이션을 시작할 때 재생됩니다. AudioClip만 지정하면 게임 편입 때 SFX Cue를 자동 생성합니다.");
+                DrawRelativeProperty(attack, "playbackSpeed", "재생 속도");
+                if (canRemove)
+                {
+                    DrawRelativeProperty(attack, "weight", "무작위 선택 비중");
+                    DrawRelativeProperty(attack, "preventImmediateRepeat", "같은 동작 연속 방지");
+                }
                 DrawAttackMarkers(attack.FindPropertyRelative("markers"));
                 if (canRemove)
                 {
@@ -1385,53 +2341,59 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawAttackMarkers(SerializedProperty markers)
         {
-            var isProjectile = draft != null &&
-                               draft.CombatType == Shared.Unit.MonsterCombatType.Ranged &&
-                               draft.RangedDeliveryMode == Shared.Unit.MonsterRangedDeliveryMode.Projectile;
+            var profile = serializedDraft.FindProperty("basicAttackProfile")?.objectReferenceValue as
+                MonsterBasicAttackProfile;
+            var isProjectile = profile != null && profile.UsesProjectileVisual;
             var timingName = isProjectile ? "발사" : "타격";
             GUILayout.Space(3f);
-            GUILayout.Label(timingName + " 시점", EditorStyles.boldLabel);
-            for (var markerIndex = 0; markerIndex < markers.arraySize; markerIndex++)
+            GUILayout.Label("Recipe 실행 시점", EditorStyles.boldLabel);
+            if (markers.arraySize != 1)
             {
-                var marker = markers.GetArrayElementAtIndex(markerIndex);
-                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                EditorGUILayout.HelpBox(
+                    "기본공격 Motion마다 Recipe를 시작하는 Marker가 정확히 1개 필요합니다.",
+                    MessageType.Error);
+                if (GUILayout.Button("실행 Marker 1개로 정리", compactButtonStyle, GUILayout.Height(22f)))
                 {
-                    GUILayout.Label($"{timingName} {markerIndex + 1}", EditorStyles.miniBoldLabel);
-                    DrawRelativeProperty(marker, "normalizedTime", timingName + " 시점 (0~1)");
-                    if (markers.arraySize > 1)
+                    if (markers.arraySize == 0)
                     {
-                        DrawRelativeProperty(marker, "powerRatio", "피해 비율");
+                        AddMarker(markers);
                     }
-
-                    DrawOptionalAnimationFeedback(
-                        marker.FindPropertyRelative("feedback"),
-                        isProjectile ? "투사체 명중" : "타격 순간",
-                        isProjectile ? "명중 사운드" : "타격 사운드",
-                        isProjectile
-                            ? "명중 사운드는 Marker에서 발사된 투사체가 실제 대상에 도착할 때 재생됩니다. AudioClip만 지정하면 게임 편입 때 SFX Cue를 자동 생성합니다."
-                            : "타격 사운드는 이 Marker의 피해와 함께 재생됩니다. AudioClip만 지정하면 게임 편입 때 SFX Cue를 자동 생성합니다.");
-                    if (markers.arraySize > 1)
+                    while (markers.arraySize > 1)
                     {
-                        if (GUILayout.Button($"이 {timingName} 시점 삭제", compactButtonStyle, GUILayout.Height(20f)))
-                        {
-                            markers.DeleteArrayElementAtIndex(markerIndex);
-                            break;
-                        }
+                        markers.DeleteArrayElementAtIndex(markers.arraySize - 1);
+                    }
+                    if (markers.arraySize == 1)
+                    {
+                        markers.GetArrayElementAtIndex(0).FindPropertyRelative("powerRatio").floatValue = 1f;
                     }
                 }
+                return;
             }
 
-            if (GUILayout.Button(timingName + " 시점 추가", compactButtonStyle, GUILayout.Height(22f)))
+            var marker = markers.GetArrayElementAtIndex(0);
+            marker.FindPropertyRelative("powerRatio").floatValue = 1f;
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                AddMarker(markers);
+                GUILayout.Label($"{timingName} 시점", EditorStyles.miniBoldLabel);
+                DrawRelativeProperty(marker, "normalizedTime", "동작 진행률 (0~1)");
             }
+
+            EditorGUILayout.HelpBox(
+                isProjectile
+                    ? "이 값은 애니메이션의 실제 발사 순간입니다. 피해는 이 지점이 아니라 투사체가 닿을 때 발생하며, 이동 속도·수명은 기본공격 프리셋이 소유합니다."
+                    : profile != null && profile.HitCount > 1
+                        ? $"이 값은 첫 타격 순간입니다. 이후 {profile.HitCount - 1}회는 기본공격 프리셋의 타격 간격으로 이어집니다."
+                        : "이 값은 애니메이션의 실제 타격 순간입니다. 공격 방식과 판정은 기본공격 프리셋이 소유합니다.",
+                MessageType.None);
         }
 
         private void DrawOptionalAnimationFeedback(
             SerializedProperty feedback,
             string timingLabel,
             string soundLabel,
-            string helpText)
+            string helpText,
+            MonsterMakerPreviewAnchor positionAnchor,
+            string socketPath = null)
         {
             if (feedback == null)
             {
@@ -1476,7 +2438,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (hasVfx)
             {
                 DrawRelativeProperty(feedback, "vfxLifetime", "VFX 유지 시간");
+                var localPosition = feedback.FindPropertyRelative("localPosition");
                 DrawRelativeProperty(feedback, "localPosition", "VFX 위치 보정");
+                DrawPreviewPositionButton(
+                    localPosition,
+                    timingLabel + " VFX",
+                    MonsterMakerPreviewPositionValueMode.AnchorOffset,
+                    positionAnchor,
+                    socketPath);
                 DrawRelativeProperty(feedback, "localEulerAngles", "VFX 회전 보정");
                 DrawRelativeProperty(feedback, "scale", "VFX 크기");
             }
@@ -1509,67 +2478,156 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawCombatSection()
         {
-            DrawSectionHeader("7. 공용 기본공격");
+            DrawSectionHeader("7. 기본공격 제작");
             var profileProperty = serializedDraft.FindProperty("basicAttackProfile");
-            EditorGUILayout.PropertyField(profileProperty, new GUIContent("기본공격 프로필"));
-            var profile = profileProperty.objectReferenceValue as MonsterBasicAttackProfile;
+            var editorResult = MonsterBasicAttackRecipeEditor.Draw(profileProperty, draft);
+            var profile = profileProperty.objectReferenceValue as MonsterBasicAttackProfile ?? editorResult.Profile;
             if (profile == null)
             {
                 EditorGUILayout.HelpBox(
-                    "BA01~BA15 중 하나를 선택해야 정식 편입할 수 있습니다. 패시브·액티브·시그니처와는 별도입니다.",
+                    "먼저 저장된 기본공격을 선택하거나 조립소에서 새 프리셋을 만들어야 합니다.",
                     MessageType.Warning);
-                return;
+            }
+            else
+            {
+                serializedDraft.FindProperty("combatType").enumValueIndex = (int)profile.CombatType;
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    GUILayout.Label($"현재 기본공격 · [{profile.AttackId}] {profile.DisplayName}", EditorStyles.boldLabel);
+                    GUILayout.Label(BuildBasicAttackKoreanSummary(profile), EditorStyles.wordWrappedMiniLabel);
+                    if (!string.IsNullOrWhiteSpace(profile.DesignMemo))
+                    {
+                        GUILayout.Label("기획 의도 · " + profile.DesignMemo, EditorStyles.wordWrappedMiniLabel);
+                    }
+                }
             }
 
-            serializedDraft.FindProperty("combatType").enumValueIndex = (int)profile.CombatType;
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-            {
-                GUILayout.Label($"[{profile.AttackId}] {profile.DisplayName}", EditorStyles.boldLabel);
-                GUILayout.Label(
-                    $"{profile.CombatType} · {profile.Delivery} · {profile.Shape} · 최대 {profile.MaxTargets}명 · " +
-                    $"피해 단계 {profile.HitCount}",
-                    EditorStyles.wordWrappedMiniLabel);
-                GUILayout.Label(
-                    $"판정 길이 ×{profile.RangeMultiplier:0.##} · 반경 {profile.Radius:0.##}m · " +
-                    $"폭 {profile.LineWidth:0.##}m · 각도 {profile.Angle:0.#}°",
-                    EditorStyles.wordWrappedMiniLabel);
-            }
+            GUILayout.Space(5f);
+            GUILayout.Label("공격 동작 · 실제 발생 시점", EditorStyles.boldLabel);
+            DrawAttackList();
 
-            using (new EditorGUI.DisabledScope(!preview.HasCombatTarget))
+            using (new EditorGUI.DisabledScope(profile == null || !preview.HasCombatTarget))
             {
-                if (GUILayout.Button("3D 판정범위 보기", GUILayout.Height(28f)))
+                if (GUILayout.Button("현재 기본공격 판정범위 표시", GUILayout.Height(28f)))
                 {
                     preview.ShowBasicAttackArea();
                 }
             }
 
+            showBasicAttackAdvancedSettings = EditorGUILayout.Foldout(
+                showBasicAttackAdvancedSettings,
+                "몬스터별 추가 연출 · 예외 보정 (고급)",
+                true);
+            if (showBasicAttackAdvancedSettings)
+            {
+                DrawBasicAttackAdvancedOverrides(profile);
+            }
+
+            EditorGUILayout.HelpBox(
+                "공격 동작은 애니메이션과 발생 시점만 정합니다. 공격 방식·판정·연타·돌진·투사체 이동과 공용 VFX/SFX는 기본공격 프리셋 한 곳에서 정합니다.",
+                MessageType.Info);
+        }
+
+        private void DrawBasicAttackAdvancedOverrides(MonsterBasicAttackProfile profile)
+        {
+            EditorGUILayout.HelpBox(
+                "비워두면 기본공격 프리셋의 공용 연출과 수치를 그대로 사용합니다. 이 몬스터만 달라야 할 때만 펼쳐서 설정합니다.",
+                MessageType.None);
+
+            var attacks = serializedDraft.FindProperty("attacks");
+            for (var index = 0; attacks != null && index < attacks.arraySize; index++)
+            {
+                var attack = attacks.GetArrayElementAtIndex(index);
+                var clip = attack.FindPropertyRelative("clip").objectReferenceValue;
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    GUILayout.Label(
+                        $"공격 동작 {index + 1:00} · {(clip == null ? "미지정" : clip.name)}",
+                        EditorStyles.miniBoldLabel);
+                    DrawRelativeProperty(attack, "crossFadeDuration", "전환 시간");
+                    DrawOptionalAnimationFeedback(
+                        attack.FindPropertyRelative("attackStartFeedback"),
+                        "동작 시작 추가 연출",
+                        "동작 시작 사운드",
+                        "Motion 시작 순간에 별도 연출이 꼭 필요할 때만 추가합니다. 프리셋의 발사 연출은 실제 공격 발생 시점에 재생됩니다.",
+                        MonsterMakerPreviewAnchor.AttackOrigin);
+                    var markers = attack.FindPropertyRelative("markers");
+                    if (markers != null && markers.arraySize == 1)
+                    {
+                        DrawOptionalAnimationFeedback(
+                            markers.GetArrayElementAtIndex(0).FindPropertyRelative("feedback"),
+                            "타격 연출 덮어쓰기",
+                            "타격 사운드",
+                            "기본공격 프리셋의 명중/폭발 연출보다 이 Motion 전용 연출을 우선할 때만 사용합니다.",
+                            MonsterMakerPreviewAnchor.Socket,
+                            markers.GetArrayElementAtIndex(0)
+                                .FindPropertyRelative("socketOverride")
+                                .stringValue);
+                    }
+                }
+            }
+
+            if (profile == null)
+            {
+                return;
+            }
             if (profile.CombatType == MonsterCombatType.Ranged)
             {
                 DrawProperty("projectileLaunchRecoilDistance", "발사 반동 거리");
                 DrawProperty("projectileLaunchRecoilDuration", "발사 반동 시간");
             }
-
-            if (profile.UsesProjectileVisual)
+            if (!profile.UsesProjectileVisual)
             {
-                DrawProperty("projectilePrefab", "투사체 VFX (선택)");
-                DrawProperty("projectileLaunchSound", "투사체 발사 사운드 (선택)");
-                DrawProperty("projectileSpeed", "투사체 속도");
-                DrawProperty("projectileLifetime", "투사체 수명");
-                EditorGUILayout.HelpBox(
-                    "비우면 현재 공용 임시 구슬을 사용합니다. 최종 VFX/SFX는 몬스터별로 나중에 교체합니다.",
-                    MessageType.None);
+                return;
+            }
+
+            DrawProperty("projectilePrefab", "몬스터 전용 투사체 VFX");
+            DrawProperty("projectileLaunchSound", "몬스터 전용 발사 사운드");
+            GUILayout.Label(
+                "프리셋에 공용 투사체 VFX/SFX가 지정되어 있으면 공용값을 사용하고, 비어 있을 때 이 몬스터 전용값을 사용합니다.",
+                EditorStyles.wordWrappedMiniLabel);
+            var overrideTuning = serializedDraft.FindProperty("overrideProjectileTuning");
+            EditorGUILayout.PropertyField(overrideTuning, new GUIContent("몬스터 전용 투사체 수치 사용"));
+            if (overrideTuning.boolValue)
+            {
+                DrawProperty("projectileSpeed", "이동 속도");
+                DrawProperty("projectileLifetime", "수명");
+                DrawProperty("projectileHitRadius", "충돌 반경");
             }
             else
             {
-                EditorGUILayout.HelpBox(
-                    "이 프로필은 실제 투사체 이동 없이 Marker 시점에 공용 판정을 즉시 실행합니다.",
-                    MessageType.None);
+                GUILayout.Label(
+                    $"프리셋 수치 · 속도 {profile.ProjectileSpeed:0.##} · 수명 {profile.ProjectileLifetime:0.##}초 · " +
+                    $"충돌 반경 {profile.ProjectileCollisionRadius:0.##}m",
+                    EditorStyles.wordWrappedMiniLabel);
             }
+        }
 
-            EditorGUILayout.HelpBox(
-                "위 버튼 또는 공격 재생으로 BA01~BA15의 실제 XZ 판정 외곽선을 확인할 수 있습니다. " +
-                "표시는 Profile의 길이·폭·각도·반경과 같은 값을 사용합니다.",
-                MessageType.Info);
+        private static string BuildBasicAttackKoreanSummary(MonsterBasicAttackProfile profile)
+        {
+            var family = profile.AttackId.StartsWith("BA_S_", StringComparison.OrdinalIgnoreCase)
+                ? "특수"
+                : profile.CombatType == MonsterCombatType.Melee ? "근거리" : "원거리";
+            var delivery = profile.PresentationKind switch
+            {
+                MonsterBasicAttackPresentationKind.Returning => "왕복 투사체",
+                MonsterBasicAttackPresentationKind.Breath => "브레스",
+                MonsterBasicAttackPresentationKind.Beam => "빔",
+                MonsterBasicAttackPresentationKind.Wave => "진행 파동",
+                MonsterBasicAttackPresentationKind.Instant => "즉발",
+                _ when profile.UsesProjectileVisual => "투사체",
+                _ => "직접 타격"
+            };
+            var shape = profile.Shape switch
+            {
+                MonsterBasicAttackShape.Fan => "부채꼴",
+                MonsterBasicAttackShape.Line => "직선",
+                MonsterBasicAttackShape.Circle => "원형",
+                _ => "단일"
+            };
+            var hit = profile.HitCount > 1 ? $"{profile.HitCount}타" : "단타";
+            var movement = profile.MovementModule == MonsterBasicAttackMovementModule.Dash ? " · 실제 돌진" : string.Empty;
+            return $"{family} · {delivery} · {shape} · {hit}{movement} · 최대 {profile.MaxTargets}명";
         }
 
         private void DrawAscensionSection()
@@ -1632,11 +2690,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawCombatIdentitySection()
         {
-            DrawSectionHeader("4. 공격 무게 · 피격 체급");
-            DrawEnumProperty("impactStrength", "공격 무게", ImpactStrengthLabels);
+            DrawSectionHeader("4. 타격감 · 피격 반응");
+            DrawEnumProperty("impactStrength", "타격 강도", ImpactStrengthLabels);
             DrawEnumProperty("reactionWeight", "피격 체급", ReactionWeightLabels);
             EditorGUILayout.HelpBox(
-                "공격 무게는 Light < Standard < Heavy 순으로 넉백·에어본·경직 강도를 결정합니다. 피격 체급은 이 몬스터가 맞았을 때 얼마나 튕기는지를 정합니다.",
+                "타격 강도는 공격 방식이 아니라 맞은 적의 넉백·에어본·경직 세기를 정합니다. 피격 체급은 이 몬스터가 맞았을 때 얼마나 튕기는지를 정합니다.",
                 MessageType.None);
         }
 
@@ -1728,6 +2786,91 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 EditorGUILayout.PropertyField(property, new GUIContent(label), true);
             }
+        }
+
+        private void DrawPositionPropertyWithPreviewHandle(
+            string propertyName,
+            string label,
+            string previewLabel,
+            MonsterMakerPreviewPositionValueMode valueMode,
+            MonsterMakerPreviewAnchor anchor)
+        {
+            var property = serializedDraft.FindProperty(propertyName);
+            if (property == null)
+            {
+                return;
+            }
+
+            EditorGUILayout.PropertyField(property, new GUIContent(label), true);
+            DrawPreviewPositionButton(property, previewLabel, valueMode, anchor);
+        }
+
+        private void DrawPreviewPositionButton(
+            SerializedProperty property,
+            string label,
+            MonsterMakerPreviewPositionValueMode valueMode,
+            MonsterMakerPreviewAnchor anchor,
+            string socketPath = null)
+        {
+            if (property == null || property.propertyType != SerializedPropertyType.Vector3)
+            {
+                return;
+            }
+
+            var isPlaying = preview?.IsPlaying == true;
+            var canOpen = MonsterPositionAdjustWindow.CanOpen(draft) && !isPlaying;
+            using (new EditorGUI.DisabledScope(!canOpen))
+            {
+                var buttonLabel = isPlaying
+                    ? "재생 중 · 먼저 일시정지"
+                    : $"직접 조절 · {label}";
+                if (GUILayout.Button(buttonLabel, compactButtonStyle, GUILayout.Height(22f)))
+                {
+                    serializedDraft.ApplyModifiedProperties();
+                    var targetDraft = draft;
+                    var binding = new MonsterMakerPreviewPositionBinding(
+                        property.propertyPath,
+                        label,
+                        valueMode,
+                        anchor,
+                        socketPath);
+                    MonsterPositionAdjustWindow.Open(
+                        this,
+                        targetDraft,
+                        binding,
+                        property.vector3Value,
+                        value => ApplyPopupPositionValue(targetDraft, binding, value));
+                }
+            }
+        }
+
+        private bool ApplyPopupPositionValue(
+            MonsterMakerDraft targetDraft,
+            MonsterMakerPreviewPositionBinding binding,
+            Vector3 value)
+        {
+            if (targetDraft == null || draft != targetDraft || serializedDraft == null ||
+                preview?.IsPlaying == true)
+            {
+                return false;
+            }
+
+            serializedDraft.UpdateIfRequiredOrScript();
+            var property = serializedDraft.FindProperty(binding.PropertyPath);
+            if (property == null || property.propertyType != SerializedPropertyType.Vector3)
+            {
+                return false;
+            }
+
+            Undo.RecordObject(targetDraft, $"{binding.Label} 좌표 조절");
+            property.vector3Value = value;
+            serializedDraft.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(targetDraft);
+            validation = null;
+            lastWriteResult = null;
+            preview.ApplyDraftPositionOverrides();
+            Repaint();
+            return true;
         }
 
         private int DrawEnumProperty(string propertyName, string label, string[] labels)
@@ -1921,9 +3064,22 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 MonsterMakerAssetWriter.MonsterRarityCatalogPath);
             monsterSkillCatalog = AssetDatabase.LoadAssetAtPath<Shared.Unit.MonsterSkillCatalog>(
                 Shared.Unit.MonsterSkillCatalog.DefaultAssetPath);
+            RebuildSkillPopupCaches();
             catalogDefinitions = monsterCatalog == null
                 ? Array.Empty<Shared.Unit.MonsterDefinition>()
                 : monsterCatalog.Definitions.Where(candidate => candidate != null).ToArray();
+            catalogDraftsById.Clear();
+            catalogRaritiesById.Clear();
+            for (var index = 0; index < catalogDefinitions.Length; index++)
+            {
+                var definition = catalogDefinitions[index];
+                catalogDraftsById[definition.MonsterId] = LoadDraftForDefinition(definition);
+                if (monsterRarityCatalog != null &&
+                    monsterRarityCatalog.TryGetRarity(definition.MonsterId, out var rarity))
+                {
+                    catalogRaritiesById[definition.MonsterId] = rarity;
+                }
+            }
 
             if (draft != null)
             {
@@ -1938,6 +3094,65 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             Repaint();
+        }
+
+        private void RebuildSkillPopupCaches()
+        {
+            if (monsterSkillCatalog == null)
+            {
+                passiveSkillPopups = Array.Empty<MonsterSkillPopupData>();
+                genericActiveSkillPopups = Array.Empty<MonsterSkillPopupData>();
+                mythicActiveSkillPopups = Array.Empty<MonsterSkillPopupData>();
+                return;
+            }
+
+            passiveSkillPopups = BuildSkillPopupCache(
+                monsterSkillCatalog.PassiveSkills.Cast<MonsterSkillDefinitionBase>());
+            genericActiveSkillPopups = BuildSkillPopupCache(
+                monsterSkillCatalog.ActiveSkills
+                    .Where(skill => skill != null && skill.ExecutionKind == MonsterActiveExecutionKind.Generic)
+                    .Cast<MonsterSkillDefinitionBase>());
+            mythicActiveSkillPopups = BuildSkillPopupCache(
+                monsterSkillCatalog.ActiveSkills.Cast<MonsterSkillDefinitionBase>());
+        }
+
+        private static MonsterSkillPopupData[] BuildSkillPopupCache(
+            IEnumerable<MonsterSkillDefinitionBase> source)
+        {
+            var enabledSkills = (source ?? Enumerable.Empty<MonsterSkillDefinitionBase>())
+                .Where(skill => skill != null && skill.AuthoringEnabled)
+                .OrderBy(skill => skill.Category)
+                .ThenBy(skill => skill.DisplayName, StringComparer.CurrentCulture)
+                .ToArray();
+            var result = new MonsterSkillPopupData[SkillCategoryLabels.Length];
+            for (var filter = 0; filter < result.Length; filter++)
+            {
+                var filtered = filter <= 0
+                    ? enabledSkills
+                    : enabledSkills.Where(skill => skill.Category == (MonsterSkillCategory)(filter - 1)).ToArray();
+                var options = new MonsterSkillDefinitionBase[filtered.Length + 1];
+                Array.Copy(filtered, 0, options, 1, filtered.Length);
+                result[filter] = new MonsterSkillPopupData(
+                    options,
+                    options.Select(BuildSkillPopupLabel).ToArray());
+            }
+            return result;
+        }
+
+        private sealed class MonsterSkillPopupData
+        {
+            public static readonly MonsterSkillPopupData Empty = new MonsterSkillPopupData(
+                new MonsterSkillDefinitionBase[] { null },
+                new[] { "<미설정>" });
+
+            public MonsterSkillPopupData(MonsterSkillDefinitionBase[] options, string[] labels)
+            {
+                Options = options ?? Empty.Options;
+                Labels = labels ?? Empty.Labels;
+            }
+
+            public MonsterSkillDefinitionBase[] Options { get; }
+            public string[] Labels { get; }
         }
 
         private void OnProjectChanged()
@@ -2201,9 +3416,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 return;
             }
 
+            ReleaseInitialDraftSnapshot();
             ReleaseTransientDraft();
+            activePreviewPosition = null;
+            selectedPreviewReference = MonsterMakerPreviewReference.None;
+            previewReferenceInfoExpiresAt = 0d;
+            ReleasePreviewPositionControl();
             draft = source;
             ownsTransientDraft = transient && source != null;
+            CaptureInitialDraftSnapshot();
             serializedDraft = source == null ? null : new SerializedObject(source);
             validation = null;
             lastWriteResult = null;
@@ -2217,6 +3438,27 @@ namespace ProjectMT.EditorTools.MonsterMaker
             CapturePersistentDraftIdentity();
             RefreshPreview();
             Repaint();
+        }
+
+        private void CaptureInitialDraftSnapshot()
+        {
+            if (draft == null)
+            {
+                return;
+            }
+
+            initialDraftSnapshot = Instantiate(draft);
+            initialDraftSnapshot.name = draft.name + " [Maker Initial Snapshot]";
+            initialDraftSnapshot.hideFlags = HideFlags.HideAndDontSave;
+        }
+
+        private void ReleaseInitialDraftSnapshot()
+        {
+            if (initialDraftSnapshot != null)
+            {
+                DestroyImmediate(initialDraftSnapshot);
+                initialDraftSnapshot = null;
+            }
         }
 
         private void ReleaseTransientDraft()
@@ -2236,6 +3478,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void RefreshPreview()
         {
+            if (serializedDraft != null)
+            {
+                serializedDraft.ApplyModifiedProperties();
+            }
+
             if (preview == null)
             {
                 return;
@@ -2259,6 +3506,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             var needsRepaint = preview.Tick();
             var now = EditorApplication.timeSinceStartup;
+            if (selectedPreviewReference != MonsterMakerPreviewReference.None &&
+                now >= previewReferenceInfoExpiresAt)
+            {
+                selectedPreviewReference = MonsterMakerPreviewReference.None;
+                needsRepaint = true;
+            }
             if (needsRepaint || now - lastRepaintTime > 0.2d)
             {
                 lastRepaintTime = now;

@@ -13,7 +13,7 @@ namespace ProjectMT.Contents.CastleRaid
 
         public override bool TryCreateProgressChange(IContentResultData result, out GameProgressChange change)
         {
-            if (!(result is CastleRaidResult castleResult) || !castleResult.MainCastleDestroyed)
+            if (!(result is IObjectiveCompletionResultData castleResult) || !castleResult.ObjectiveCompleted)
             {
                 change = null;
                 return false;
@@ -28,7 +28,7 @@ namespace ProjectMT.Contents.CastleRaid
             GameProgressView progress,
             out GameProgressChange change)
         {
-            if (!(result is CastleRaidResult castleResult) || !castleResult.MainCastleDestroyed)
+            if (!(result is IObjectiveCompletionResultData castleResult) || !castleResult.ObjectiveCompleted)
             {
                 change = null;
                 return false;
@@ -52,7 +52,7 @@ namespace ProjectMT.Contents.CastleRaid
             ItemCatalog itemCatalog,
             out RewardPresentationRequest presentation)
         {
-            if (!(result is CastleRaidResult castleResult) || !castleResult.MainCastleDestroyed ||
+            if (!(result is IObjectiveCompletionResultData castleResult) || !castleResult.ObjectiveCompleted ||
                 progress.CastleRaidFirstClear || firstClearReward == null ||
                 !firstClearReward.TryCreate(1L, out var rewards) || rewards.IsEmpty)
             {

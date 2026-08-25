@@ -30,9 +30,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.ProjectileActionDefinition
   basicAttackProfile: {fileID: 11400000, guid: 41702aed9ca465540b77938847649334, type: 2}
   deliveryMode: 0
-  mode: 1
+  mode: 0
   projectilePrefab: {fileID: 8900597983205870692, guid: 7d0df7a31c4b87e4e867d3dc816c56ed, type: 3}
   launchSfx: {fileID: 0}
+  overrideBasicAttackProfileTuning: 0
   speed: 9
   lifetime: 3
   hitRadius: 0.25

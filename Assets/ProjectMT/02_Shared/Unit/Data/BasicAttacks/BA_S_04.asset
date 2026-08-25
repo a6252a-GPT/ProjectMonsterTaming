@@ -1,0 +1,88 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbe2dec93cbcbf6438c7e81097a0a9b7, type: 3}
+  m_Name: BA_S_04
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterBasicAttackProfile
+  attackId: BA_S_04
+  displayName: "\uC774\uB3D9 \uD30C\uB3D9"
+  designMemo: "\uD3ED\uC744 \uAC00\uC9C4 \uD310\uC815 \uC9C0\uB300\uAC00 \uC804\uBC29\uC73C\uB85C
+    \uC774\uB3D9\uD558\uBA70 \uACBD\uB85C\uC758 \uC801\uC744 \uD1B5\uACFC \uD0C0\uACA9."
+  combatType: 1
+  launchFeedback:
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  projectileFeedback:
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1.1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  impactFeedback:
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 0.21
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  launchFeel:
+    prefab: {fileID: 0}
+    lifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  projectileFeel:
+    prefab: {fileID: 0}
+    lifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  impactFeel:
+    prefab: {fileID: 7220257174886157722, guid: 51ad963a22e935d4abe5b08a7e084e58, type: 3}
+    lifetime: 0.85
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  recipeVersion: 1
+  deliveryModule: 2
+  collisionModule: 4
+  sequenceModule: 0
+  movementModule: 0
+  presentationKind: 13
+  shape: 2
+  center: 0
+  projectileTravel: 2
+  sweepDirection: 0
+  rangeMultiplier: 1.3
+  radius: 0.6
+  angle: 20
+  lineWidth: 1.2
+  maxTargets: 4
+  projectileCount: 1
+  projectileSpreadAngle: 0
+  projectileSpeed: 8
+  projectileLifetime: 3
+  projectileCollisionRadius: 0.25
+  damageRatios:
+  - 1
+  secondaryDamageRatio: 0.7
+  repeatHitInterval: 0.08
+  repeatImpactFeedback: 1
+  dashDistance: 0
+  dashDuration: 0.1
+  hitAreaVisibleDuration: 0.42
+  delivery: 8
+  stopOnFirstTarget: 0

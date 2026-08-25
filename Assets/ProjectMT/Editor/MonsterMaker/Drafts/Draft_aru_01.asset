@@ -119,6 +119,7 @@ MonoBehaviour:
   projectileMode: 0
   projectilePrefab: {fileID: 0}
   projectileLaunchSound: {fileID: 0}
+  overrideProjectileTuning: 0
   projectileSpeed: 9
   projectileLifetime: 3
   projectileHitRadius: 0.25

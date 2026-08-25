@@ -95,6 +95,8 @@ namespace ProjectMT.Shared.Combat
                 ranged,
                 report.Request.IsCritical,
                 report.Killed);
+            var feelOwnsTargetMotion =
+                (report.Request.FeedbackFlags & DamageFeedbackFlags.BasicAttackFeelTargetMotion) != 0;
             var direction = source != null && target != null
                 ? target.transform.position - source.transform.position
                 : Vector3.zero;
@@ -124,13 +126,20 @@ namespace ProjectMT.Shared.Combat
                     ResolvePostKnockbackStagger(strength));
             }
 
-            target?.VisualFeedback?.PlayImpact(
-                direction,
-                actualKnockbackApplied ? 0f : preset.RecoilDistance * recoilScale,
-                preset.RecoilHeight * recoilScale,
-                preset.RecoilDuration,
-                visualOnlyTargetReaction ? 0f : preset.TargetHitStop,
-                report.Killed);
+            if (feelOwnsTargetMotion)
+            {
+                target?.VisualFeedback?.PlayHit(); // FEEL이 Visual 위치·회전·스케일을 소유
+            }
+            else
+            {
+                target?.VisualFeedback?.PlayImpact(
+                    direction,
+                    actualKnockbackApplied ? 0f : preset.RecoilDistance * recoilScale,
+                    preset.RecoilHeight * recoilScale,
+                    preset.RecoilDuration,
+                    visualOnlyTargetReaction ? 0f : preset.TargetHitStop,
+                    report.Killed);
+            }
             if (!ranged)
             {
                 source?.VisualFeedback?.PlayAttackLunge(

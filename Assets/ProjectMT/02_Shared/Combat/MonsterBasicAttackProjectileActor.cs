@@ -30,12 +30,15 @@ namespace ProjectMT.Shared.Combat
         private MonsterBasicAttackProfile profile;
         private MonsterBasicAttackProjectileVolley volley;
         private MonsterFeedbackCue impactFeedback;
+        private GameObject projectileFeelInstance;
         private Vector3 origin;
         private Vector3 targetPosition;
         private Vector3 direction;
         private float baseDamage;
         private float attackRange;
         private float impactVfxScale = 1f;
+        private float resolvedSpeed;
+        private float resolvedHitRadius;
         private float remainingLifetime;
         private float traveled;
         private int passIndex;
@@ -73,12 +76,23 @@ namespace ProjectMT.Shared.Combat
             direction = launchDirection.sqrMagnitude < 0.0001f
                 ? transform.forward
                 : launchDirection.normalized;
-            remainingLifetime = actionDefinition != null ? actionDefinition.Lifetime : 0f;
+            resolvedSpeed = actionDefinition != null ? actionDefinition.ResolvedSpeed : 0f;
+            resolvedHitRadius = actionDefinition != null ? actionDefinition.ResolvedHitRadius : 0f;
+            remainingLifetime = actionDefinition != null ? actionDefinition.ResolvedLifetime : 0f;
             traveled = 0f;
             passIndex = 0;
             returning = false;
             passHitTargetIds.Clear();
             running = world != null && source != null && action != null && profile != null;
+            AttachProjectileFeel(profile?.ProjectileFeel);
+        }
+
+        private void LateUpdate()
+        {
+            if (running && projectileFeelInstance != null)
+            {
+                SyncProjectileFeel(profile?.ProjectileFeel);
+            }
         }
 
         private void Update()
@@ -130,23 +144,25 @@ namespace ProjectMT.Shared.Combat
                 return;
             }
 
-            var applied = profile.Shape == MonsterBasicAttackShape.Circle
+            var applied = profile.CollisionModule == MonsterBasicAttackCollisionModule.AreaImpact
                 ? ApplyAreaImpact(targetPosition, 0)
                 : ApplyPrimaryImpact(0);
             if (applied)
             {
-                PlayImpactFeedback(targetPosition);
+                PlayImpactFeedback(targetPosition, ResolveTargetGameObject(primaryTarget));
             }
             ReturnToPool();
         }
 
         private void TickStraight(float deltaTime)
         {
-            var step = action.Speed * deltaTime;
+            var previous = transform.position;
+            var remainingRange = Mathf.Max(0f, profile.ResolveRange(attackRange) - traveled);
+            var step = Mathf.Min(resolvedSpeed * deltaTime, remainingRange);
             transform.position += direction * step;
             transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
             traveled += step;
-            var hitAny = ApplyPassContacts(0);
+            var hitAny = ApplyPassContacts(previous, transform.position, 0);
             if ((profile.StopOnFirstTarget && hitAny) ||
                 volley.HitCount >= profile.MaxTargets ||
                 traveled >= profile.ResolveRange(attackRange))
@@ -167,7 +183,7 @@ namespace ProjectMT.Shared.Combat
             var previous = transform.position;
             MoveTowards(destination, deltaTime);
             traveled += Vector3.Distance(previous, transform.position);
-            ApplyPassContacts(passIndex);
+            ApplyPassContacts(previous, transform.position, passIndex);
             if ((transform.position - destination).sqrMagnitude > 0.04f)
             {
                 return;
@@ -192,14 +208,26 @@ namespace ProjectMT.Shared.Combat
             {
                 transform.rotation = Quaternion.LookRotation(movement.normalized, Vector3.up);
             }
-            transform.position = Vector3.MoveTowards(transform.position, destination, action.Speed * deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, destination, resolvedSpeed * deltaTime);
         }
 
-        private bool ApplyPassContacts(int damagePass)
+        private bool ApplyPassContacts(Vector3 segmentStart, Vector3 segmentEnd, int damagePass)
         {
             var opponentTeam = source.Team == UnitTeam.Player ? UnitTeam.Enemy : UnitTeam.Player;
-            var hitRadius = Mathf.Max(profile.Radius, profile.LineWidth * 0.5f, action.HitRadius);
-            world.CollectUnits(opponentTeam, transform.position, hitRadius, profile.MaxTargets, nearbyTargets);
+            var recipeRadius = profile.DeliveryModule == MonsterBasicAttackDeliveryModule.TravelingArea
+                ? profile.Radius
+                : profile.ProjectileCollisionRadius;
+            var hitRadius = Mathf.Max(recipeRadius, profile.LineWidth * 0.5f, resolvedHitRadius);
+            var segment = segmentEnd - segmentStart;
+            segment.y = 0f;
+            world.CollectUnitsInLine(
+                opponentTeam,
+                segmentStart,
+                segment,
+                segment.magnitude,
+                hitRadius * 2f,
+                profile.MaxTargets + passHitTargetIds.Count,
+                nearbyTargets);
             var applied = false;
             for (var index = 0; index < nearbyTargets.Count; index++)
             {
@@ -220,12 +248,18 @@ namespace ProjectMT.Shared.Combat
                 }
 
                 var ratio = IsPrimary(target) ? 1f : profile.SecondaryDamageRatio;
+                var feelTarget = ResolveTargetGameObject(target.Health);
+                var feelOwnsTargetMotion = world.WillPlayBasicAttackFeelTargetMotion(
+                    profile.ImpactFeel,
+                    feelTarget,
+                    ResolveFeelIntensity());
                 if (world.ApplyMonsterDamage(
                         source,
                         target.Health,
-                        baseDamage * profile.ResolveDamageRatio(damagePass) * ratio))
+                        baseDamage * profile.ResolveDamageRatio(damagePass) * ratio,
+                        ResolveFeelTargetMotionFlags(feelOwnsTargetMotion)))
                 {
-                    PlayImpactFeedback(target.transform.position + Vector3.up * 0.4f);
+                    PlayImpactFeedback(target.transform.position + Vector3.up * 0.4f, feelTarget);
                     applied = true;
                 }
             }
@@ -246,10 +280,16 @@ namespace ProjectMT.Shared.Combat
                 passHitTargetIds.Add(actor.GetInstanceID());
                 volley.TryClaim(actor, profile.MaxTargets);
             }
+            var feelTarget = ResolveTargetGameObject(primaryTarget);
+            var feelOwnsTargetMotion = world.WillPlayBasicAttackFeelTargetMotion(
+                profile.ImpactFeel,
+                feelTarget,
+                ResolveFeelIntensity());
             return world.ApplyMonsterDamage(
                 source,
                 primaryTarget,
-                baseDamage * profile.ResolveDamageRatio(damagePass));
+                baseDamage * profile.ResolveDamageRatio(damagePass),
+                ResolveFeelTargetMotionFlags(feelOwnsTargetMotion));
         }
 
         private bool ApplyPrimaryFallback(int damagePass)
@@ -263,7 +303,9 @@ namespace ProjectMT.Shared.Combat
             var applied = ApplyPrimaryImpact(damagePass);
             if (applied)
             {
-                PlayImpactFeedback(primaryTarget.Position + Vector3.up * 0.4f);
+                PlayImpactFeedback(
+                    primaryTarget.Position + Vector3.up * 0.4f,
+                    ResolveTargetGameObject(primaryTarget));
             }
             return applied;
         }
@@ -288,6 +330,11 @@ namespace ProjectMT.Shared.Combat
             }
 
             var applied = false;
+            var feelTarget = ResolveTargetGameObject(primaryTarget);
+            var feelOwnsTargetMotion = world.WillPlayBasicAttackFeelTargetMotion(
+                profile.ImpactFeel,
+                feelTarget,
+                ResolveFeelIntensity());
             for (var index = 0; index < nearbyTargets.Count; index++)
             {
                 var target = nearbyTargets[index];
@@ -295,7 +342,8 @@ namespace ProjectMT.Shared.Combat
                 applied |= world.ApplyMonsterDamage(
                     source,
                     target.Health,
-                    baseDamage * profile.ResolveDamageRatio(damagePass) * ratio);
+                    baseDamage * profile.ResolveDamageRatio(damagePass) * ratio,
+                    ResolveFeelTargetMotionFlags(feelOwnsTargetMotion && target == primaryActor));
             }
 
             if (primaryActor == null && primaryTarget != null && primaryTarget.IsAlive)
@@ -319,17 +367,103 @@ namespace ProjectMT.Shared.Combat
             return component != null ? component.GetComponent<UnitActor>() : null;
         }
 
-        private void PlayImpactFeedback(Vector3 position)
+        private static DamageFeedbackFlags ResolveFeelTargetMotionFlags(bool feelOwnsTargetMotion)
+        {
+            return feelOwnsTargetMotion
+                ? DamageFeedbackFlags.BasicAttackFeelTargetMotion
+                : DamageFeedbackFlags.None;
+        }
+
+        private static GameObject ResolveTargetGameObject(IDamageable target)
+        {
+            var actor = ResolveActor(target);
+            if (actor == null)
+            {
+                return (target as Component)?.gameObject;
+            }
+
+            var visual = actor.transform.Find("Visual") ?? actor.transform.Find("VisualRoot");
+            return visual != null ? visual.gameObject : actor.gameObject;
+        }
+
+        private void PlayImpactFeedback(Vector3 position, GameObject target)
         {
             world?.PlayMonsterFeedbackAt(
                 impactFeedback,
                 position,
-                Quaternion.identity,
+                transform.rotation,
                 impactVfxScale);
+            world?.PlayBasicAttackFeelAt(
+                profile?.ImpactFeel,
+                position,
+                transform.rotation,
+                impactVfxScale,
+                target,
+                ResolveFeelIntensity());
+        }
+
+        private void AttachProjectileFeel(BasicAttackFeelCue cue)
+        {
+            ReleaseProjectileFeel();
+            if (world == null || cue == null || !cue.HasFeel)
+            {
+                return;
+            }
+
+            var position = transform.TransformPoint(cue.LocalPosition);
+            var rotation = transform.rotation * cue.LocalRotation;
+            projectileFeelInstance = world.RentMonsterObject(cue.Prefab, position, rotation);
+            if (projectileFeelInstance == null)
+            {
+                return;
+            }
+
+            projectileFeelInstance.transform.localScale = cue.Prefab.transform.localScale *
+                cue.Scale * Mathf.Max(0.01f, impactVfxScale);
+            var visual = transform.Find("Visual") ?? transform.Find("VisualRoot");
+            world.PlayBasicAttackFeelRuntime(
+                projectileFeelInstance,
+                visual != null ? visual.gameObject : gameObject,
+                ResolveFeelIntensity());
+        }
+
+        private float ResolveFeelIntensity()
+        {
+            return source?.RuntimeAssetSet?.CombatProfile?.ImpactStrength switch
+            {
+                MonsterImpactStrength.Light => 0.62f,
+                MonsterImpactStrength.Heavy => 1.45f,
+                _ => 1f
+            };
+        }
+
+        private void SyncProjectileFeel(BasicAttackFeelCue cue)
+        {
+            if (cue == null || projectileFeelInstance == null)
+            {
+                return;
+            }
+
+            projectileFeelInstance.transform.SetPositionAndRotation(
+                transform.TransformPoint(cue.LocalPosition),
+                transform.rotation * cue.LocalRotation);
+        }
+
+        private void ReleaseProjectileFeel()
+        {
+            if (projectileFeelInstance == null)
+            {
+                return;
+            }
+
+            var instance = projectileFeelInstance;
+            projectileFeelInstance = null;
+            world?.ReturnMonsterObject(instance);
         }
 
         private void OnDisable()
         {
+            ReleaseProjectileFeel();
             running = false;
             world = null;
             source = null;
@@ -338,6 +472,9 @@ namespace ProjectMT.Shared.Combat
             profile = null;
             volley = null;
             impactFeedback = null;
+            resolvedSpeed = 0f;
+            resolvedHitRadius = 0f;
+            remainingLifetime = 0f;
             nearbyTargets.Clear();
             passHitTargetIds.Clear();
         }
@@ -351,6 +488,7 @@ namespace ProjectMT.Shared.Combat
 
             running = false;
             var owner = world;
+            ReleaseProjectileFeel();
             world = null;
             owner?.ReturnMonsterObject(gameObject);
         }

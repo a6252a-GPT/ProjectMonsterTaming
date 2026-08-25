@@ -53,6 +53,50 @@ namespace ProjectMT.Contents.Framework
         }
     }
 
+    [Serializable]
+    public struct ContentVariantId : IEquatable<ContentVariantId> // 같은 콘텐츠의 공간 규칙 식별자
+    {
+        [SerializeField] private string value;
+
+        public ContentVariantId(string value)
+        {
+            this.value = value == null ? string.Empty : value.Trim();
+        }
+
+        public string Value => value ?? string.Empty;
+        public bool IsValid => !string.IsNullOrWhiteSpace(Value);
+
+        public bool Equals(ContentVariantId other)
+        {
+            return StringComparer.OrdinalIgnoreCase.Equals(Value, other.Value);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is ContentVariantId other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return StringComparer.OrdinalIgnoreCase.GetHashCode(Value);
+        }
+
+        public override string ToString()
+        {
+            return Value;
+        }
+
+        public static bool operator ==(ContentVariantId left, ContentVariantId right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(ContentVariantId left, ContentVariantId right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
     public enum ContentRunMode // 콘텐츠 실행 방식
     {
         Challenge,
@@ -79,8 +123,21 @@ namespace ProjectMT.Contents.Framework
     {
     }
 
+    public interface IPartyDeploymentStartData : IContentStartData // 그리드와 무관한 부대 투입 시작값
+    {
+        BattlePartySnapshot Party { get; }
+        int UnitSlotCount { get; }
+        int SummonsPerSlot { get; }
+        int DeploymentLimit { get; }
+    }
+
     public interface IContentResultData // 타입 결과 데이터 표식
     {
+    }
+
+    public interface IObjectiveCompletionResultData : IContentResultData // 변형 씬이 공유하는 목표 완료 결과
+    {
+        bool ObjectiveCompleted { get; }
     }
 
     public interface IContentExit // 결과를 한 번 돌려주는 출구
@@ -114,6 +171,7 @@ namespace ProjectMT.Contents.Framework
             ContentRunMode runMode,
             int stage);
         bool StartSeparate(ContentId contentId, BattlePartySnapshot party);
+        bool StartSeparate(ContentId contentId, BattlePartySnapshot party, ContentVariantId variantId);
         bool TryGetGrowthDungeonState(ContentId contentId, out GrowthDungeonEntryState state);
     }
 
@@ -192,15 +250,26 @@ namespace ProjectMT.Contents.Framework
     public readonly struct ContentRunInfo // 한 판의 고정 식별 정보
     {
         public ContentRunInfo(ContentId contentId, string stageId, ContentRunMode runMode)
+            : this(contentId, stageId, runMode, default)
+        {
+        }
+
+        public ContentRunInfo(
+            ContentId contentId,
+            string stageId,
+            ContentRunMode runMode,
+            ContentVariantId variantId)
         {
             ContentId = contentId;
             StageId = stageId ?? string.Empty;
             RunMode = runMode;
+            VariantId = variantId;
         }
 
         public ContentId ContentId { get; }
         public string StageId { get; }
         public ContentRunMode RunMode { get; }
+        public ContentVariantId VariantId { get; }
     }
 
     public sealed class ContentContext // 시작값과 출구를 담은 봉투

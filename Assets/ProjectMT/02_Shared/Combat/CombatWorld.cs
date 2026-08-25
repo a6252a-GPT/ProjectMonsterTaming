@@ -15,6 +15,7 @@ namespace ProjectMT.Shared.Combat
         [SerializeField] private CombatFeedbackPlayer feedbackPlayer; // 공용 전투 연출
         [SerializeField] private GameObject projectilePrefab; // 원거리 공격 투사체
         [SerializeField, Min(1)] private int maxMonsterVfxPerFrame = 6; // 전용 Marker VFX 예산
+        [SerializeField, Min(1)] private int maxMonsterFeelPerFrame = 6; // FEEL 프리셋 독립 예산
         [SerializeField] private bool showMonsterBasicAttackHitAreas = true; // VFX 확정 전 실제 XZ 판정 확인
 
         private readonly List<UnitActor> units = new List<UnitActor>(); // 현재 등록 유닛
@@ -24,6 +25,8 @@ namespace ProjectMT.Shared.Combat
         private readonly SpecialActionExecutor specialExecutor = new SpecialActionExecutor();
         private int monsterVfxFrame = -1;
         private int monsterVfxCount;
+        private int monsterFeelFrame = -1;
+        private int monsterFeelCount;
         private static CombatStatConfig sharedStatConfig;
 
         public ICombatFeedbackPlayer Feedback => feedbackPlayer;
@@ -304,7 +307,11 @@ namespace ProjectMT.Shared.Combat
             return executed;
         }
 
-        public bool ApplyMonsterDamage(UnitActor source, IDamageable target, float amount)
+        public bool ApplyMonsterDamage(
+            UnitActor source,
+            IDamageable target,
+            float amount,
+            DamageFeedbackFlags feedbackFlags = DamageFeedbackFlags.None)
         {
             if (source == null || target == null || !source.IsAlive || !target.IsAlive || amount <= 0f)
             {
@@ -329,7 +336,19 @@ namespace ProjectMT.Shared.Combat
                     Random.value).Amount;
             }
 
-            var appliedDamage = target.ReceiveDamage(source, resolvedAmount);
+            float appliedDamage;
+            var health = component != null ? component.GetComponent<HealthComponent>() : null;
+            if (health != null)
+            {
+                var hitPoint = target.Position + Vector3.up * 0.4f;
+                health.ApplyDamage(
+                    new DamageRequest(source, resolvedAmount, hitPoint, false, feedbackFlags),
+                    out appliedDamage);
+            }
+            else
+            {
+                appliedDamage = target.ReceiveDamage(source, resolvedAmount);
+            }
             if (appliedDamage <= 0f)
             {
                 return false;
@@ -605,6 +624,91 @@ namespace ProjectMT.Shared.Combat
             var scale = cue.Scale * Mathf.Max(0.01f, vfxScale);
             instance.transform.localScale = cue.VfxPrefab.transform.localScale * scale;
             StartCoroutine(ReturnMonsterObjectAfter(instance, cue.VfxLifetime));
+        }
+
+        public bool WillPlayBasicAttackFeelTargetMotion(
+            BasicAttackFeelCue cue,
+            GameObject target,
+            float intensity = 1f)
+        {
+            if (cue == null || !cue.HasFeel || target == null || poolScope == null)
+            {
+                return false;
+            }
+
+            RefreshMonsterFeelFrameBudget();
+            if (monsterFeelCount >= Mathf.Max(1, maxMonsterFeelPerFrame))
+            {
+                return false;
+            }
+
+            var runtime = cue.Prefab.GetComponent(typeof(IBasicAttackFeelRuntime)) as IBasicAttackFeelRuntime;
+            return runtime?.IsBasicAttackFeelConfigured == true &&
+                   runtime.HasBasicAttackTargetMotion(intensity);
+        }
+
+        public void PlayBasicAttackFeelAt(
+            BasicAttackFeelCue cue,
+            Vector3 position,
+            Quaternion rotation,
+            float bodyScale = 1f,
+            GameObject target = null,
+            float intensity = 1f)
+        {
+            if (cue == null || !cue.HasFeel)
+            {
+                return;
+            }
+
+            RefreshMonsterFeelFrameBudget();
+
+            if (monsterFeelCount >= Mathf.Max(1, maxMonsterFeelPerFrame))
+            {
+                return;
+            }
+
+            monsterFeelCount++;
+            position += rotation * cue.LocalPosition;
+            rotation *= cue.LocalRotation;
+            var instance = RentMonsterObject(cue.Prefab, position, rotation);
+            if (instance == null)
+            {
+                return;
+            }
+
+            instance.transform.localScale = cue.Prefab.transform.localScale *
+                cue.Scale * Mathf.Max(0.01f, bodyScale);
+            PlayBasicAttackFeelRuntime(instance, target, intensity);
+            StartCoroutine(ReturnMonsterObjectAfter(instance, cue.Lifetime));
+        }
+
+        private void RefreshMonsterFeelFrameBudget()
+        {
+            var frame = Time.frameCount;
+            if (monsterFeelFrame == frame)
+            {
+                return;
+            }
+            monsterFeelFrame = frame;
+            monsterFeelCount = 0;
+        }
+
+        public void PlayBasicAttackFeelRuntime(
+            GameObject instance,
+            GameObject target = null,
+            float intensity = 1f)
+        {
+            if (instance == null)
+            {
+                return;
+            }
+
+            var feelRuntime = instance.GetComponent(typeof(IBasicAttackFeelRuntime)) as IBasicAttackFeelRuntime;
+            feelRuntime?.PlayBasicAttackFeel(
+                instance.transform.position,
+                target,
+                intensity,
+                BasicAttackFeelPlaybackOptions.None); // 실전 전역 카메라·히트스탑은 공용 전투 계층만 소유
         }
 
         public void PlayMonsterSfx(SfxCue cue, Vector3 position)

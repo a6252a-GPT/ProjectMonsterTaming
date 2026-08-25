@@ -157,6 +157,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private MonsterProjectileAttackMode projectileMode = MonsterProjectileAttackMode.Single;
         [SerializeField] private GameObject projectilePrefab;
         [SerializeField] private AudioClip projectileLaunchSound;
+        [SerializeField] private bool overrideProjectileTuning;
         [SerializeField, Min(0.01f)] private float projectileSpeed = 9f;
         [SerializeField, Min(0.01f)] private float projectileLifetime = 3f;
         [SerializeField, Min(0.01f)] private float projectileHitRadius = 0.25f;
@@ -255,9 +256,19 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public MonsterProjectileAttackMode ProjectileMode => projectileMode;
         public GameObject ProjectilePrefab => projectilePrefab;
         public AudioClip ProjectileLaunchSound => projectileLaunchSound;
+        public bool OverrideProjectileTuning => overrideProjectileTuning;
         public float ProjectileSpeed => projectileSpeed;
         public float ProjectileLifetime => projectileLifetime;
         public float ProjectileHitRadius => projectileHitRadius;
+        public float ResolvedProjectileSpeed => overrideProjectileTuning || basicAttackProfile == null
+            ? ProjectileSpeed
+            : basicAttackProfile.ProjectileSpeed;
+        public float ResolvedProjectileLifetime => overrideProjectileTuning || basicAttackProfile == null
+            ? ProjectileLifetime
+            : basicAttackProfile.ProjectileLifetime;
+        public float ResolvedProjectileHitRadius => overrideProjectileTuning || basicAttackProfile == null
+            ? ProjectileHitRadius
+            : basicAttackProfile.ProjectileCollisionRadius;
         public int ProjectileMaxPiercingTargets => projectileMaxPiercingTargets;
         public float ProjectileImpactRadius => projectileImpactRadius;
         public int ProjectileMaxImpactTargets => projectileMaxImpactTargets;
@@ -299,6 +310,33 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 combatType = profile.CombatType;
             }
+        }
+
+        public void EditorPreserveLegacyProjectileTuning()
+        {
+            if (basicAttackProfile == null || !basicAttackProfile.UsesProjectileVisual)
+            {
+                overrideProjectileTuning = false;
+                return;
+            }
+
+            overrideProjectileTuning =
+                Mathf.Abs(projectileSpeed - basicAttackProfile.ProjectileSpeed) > 0.001f ||
+                Mathf.Abs(projectileLifetime - basicAttackProfile.ProjectileLifetime) > 0.001f ||
+                Mathf.Abs(projectileHitRadius - basicAttackProfile.ProjectileCollisionRadius) > 0.001f;
+        }
+
+        public void EditorAdoptBasicAttackProfileTuning()
+        {
+            overrideProjectileTuning = false;
+            if (basicAttackProfile == null || !basicAttackProfile.UsesProjectileVisual)
+            {
+                return;
+            }
+
+            projectileSpeed = basicAttackProfile.ProjectileSpeed;
+            projectileLifetime = basicAttackProfile.ProjectileLifetime;
+            projectileHitRadius = basicAttackProfile.ProjectileCollisionRadius;
         }
 #endif
     }

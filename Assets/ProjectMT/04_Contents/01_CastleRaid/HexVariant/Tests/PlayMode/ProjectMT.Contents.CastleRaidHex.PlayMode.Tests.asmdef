@@ -1,0 +1,24 @@
+{
+  "name": "ProjectMT.Contents.CastleRaidHex.PlayMode.Tests",
+  "rootNamespace": "ProjectMT.Contents.CastleRaidHex.PlayMode.Tests",
+  "references": [
+    "ProjectMT.Contents.CastleRaidHex",
+    "ProjectMT.Contents.Framework",
+    "ProjectMT.Core",
+    "ProjectMT.Shared",
+    "UnityEngine.UI",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

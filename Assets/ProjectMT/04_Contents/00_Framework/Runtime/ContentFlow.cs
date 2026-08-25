@@ -167,14 +167,19 @@ namespace ProjectMT.Contents.Framework
 
         public bool StartSeparate(ContentId contentId, BattlePartySnapshot party)
         {
+            return StartSeparate(contentId, party, default);
+        }
+
+        public bool StartSeparate(ContentId contentId, BattlePartySnapshot party, ContentVariantId variantId)
+        {
             if (IsRunning || !TryGetDefinition(contentId, ContentOpenMode.SeparateScene, out var definition))
             {
                 return false;
             }
 
-            if (!definition.SceneId.IsValid)
+            if (!definition.TryResolveSceneId(variantId, out var targetSceneId))
             {
-                Debug.LogError($"Separate content has no SceneId. Content={contentId}");
+                Debug.LogError($"Separate content variant has no SceneId. Content={contentId}, Variant={variantId}");
                 return false;
             }
 
@@ -188,14 +193,15 @@ namespace ProjectMT.Contents.Framework
                 definition,
                 startData,
                 null,
-                new ContentRunInfo(contentId, "seed", ContentRunMode.SeedTest)); // 씬 이동 전 실행 등록
-            sceneNavigator.Load(definition.SceneId);
+                new ContentRunInfo(contentId, "seed", ContentRunMode.SeedTest, variantId),
+                targetSceneId); // 씬 이동 전 실행 등록
+            sceneNavigator.Load(targetSceneId);
             return true;
         }
 
         public ContentSceneContext CreateSeparateSceneContext(SceneId sceneId)
         {
-            if (activeRun == null || activeRun.Definition.OpenMode != ContentOpenMode.SeparateScene || activeRun.Definition.SceneId != sceneId)
+            if (activeRun == null || activeRun.Definition.OpenMode != ContentOpenMode.SeparateScene || activeRun.SceneId != sceneId)
             {
                 return null;
             }
@@ -208,7 +214,7 @@ namespace ProjectMT.Contents.Framework
         {
             if (activeRun == null || Phase != ContentFlowPhase.Entering ||
                 activeRun.Definition.OpenMode != ContentOpenMode.SeparateScene ||
-                activeRun.Definition.SceneId != sceneId)
+                activeRun.SceneId != sceneId)
             {
                 return false;
             }
@@ -223,9 +229,10 @@ namespace ProjectMT.Contents.Framework
             ContentDefinition definition,
             IContentStartData startData,
             IHostedContentRunner runner,
-            ContentRunInfo runInfo)
+            ContentRunInfo runInfo,
+            SceneId sceneId = default)
         {
-            var run = new ActiveRun(definition, runner);
+            var run = new ActiveRun(definition, runner, sceneId);
             var exit = new ContentExitGate( // 현재 Run 전용 비공개 출구
                 result => _ = HandleExitAsync(run, ContentOutcome.Complete, result),
                 result => _ = HandleExitAsync(run, ContentOutcome.Fail, result),
@@ -544,14 +551,16 @@ namespace ProjectMT.Contents.Framework
 
         private sealed class ActiveRun // 현재 한 판의 내부 상태
         {
-            public ActiveRun(ContentDefinition definition, IHostedContentRunner runner)
+            public ActiveRun(ContentDefinition definition, IHostedContentRunner runner, SceneId sceneId)
             {
                 Definition = definition;
                 Runner = runner;
+                SceneId = sceneId;
             }
 
             public ContentDefinition Definition { get; }
             public IHostedContentRunner Runner { get; }
+            public SceneId SceneId { get; }
             public ContentContext Context { get; set; }
             public GameProgressChange PendingChange { get; set; } // 저장 성공까지 보존할 동일 변경
             public RewardPresentationRequest PendingPresentation { get; set; } // 저장 성공 뒤 한 번 표시

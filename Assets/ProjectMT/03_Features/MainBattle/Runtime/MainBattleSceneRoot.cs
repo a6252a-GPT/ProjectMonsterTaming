@@ -131,6 +131,7 @@ namespace ProjectMT.Features.MainBattle
             formationPage.Configure(context.Progress, context.MonsterCatalog, context.RefreshParty);
             managementUi = GetComponentInChildren<MainBattleManagementUiController>(true);
             managementUi?.ConfigureFormationPage(formationPage);
+            managementUi?.ConfigureMonsterCollectionData(context.Progress);
             ConfigureCommanderSkills(commander);
             growthDungeonEntry?.Configure(
                 context.Progress,
@@ -205,6 +206,7 @@ namespace ProjectMT.Features.MainBattle
             commanderSkillSummon?.Shutdown();
             commanderSkillRuntime?.Shutdown();
             managementUi?.ConfigureFormationPage(null);
+            managementUi?.ConfigureMonsterCollectionData(null);
             managementUi?.ConfigureEquipmentSlotUpgradePage(null);
             managementUi?.ConfigureInventoryPage(null);
             managementUi?.ConfigureCommanderSkillPage(null);

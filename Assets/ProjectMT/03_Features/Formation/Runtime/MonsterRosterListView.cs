@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,6 +15,8 @@ namespace ProjectMT.Features.Formation
         [SerializeField] private MonsterCardView cardPrefab;
 
         private readonly List<MonsterCardView> cards = new List<MonsterCardView>();
+        private TMP_Text countLabel;
+        private bool countLabelResolved;
 
         public IReadOnlyList<MonsterCardView> Cards
         {
@@ -61,6 +64,21 @@ namespace ProjectMT.Features.Formation
             }
 
             return availableCount;
+        }
+
+        // 등급별 도감 진행률 표시. 루트 하위의 "Count" 자식 오브젝트를 찾아 텍스트만 갱신한다.
+        public void SetCountText(string text)
+        {
+            if (!countLabelResolved)
+            {
+                countLabelResolved = true;
+                countLabel = transform.Find("Count")?.GetComponent<TMP_Text>();
+            }
+
+            if (countLabel != null)
+            {
+                countLabel.text = text;
+            }
         }
 
         public void SetCardsInteractable(bool interactable)

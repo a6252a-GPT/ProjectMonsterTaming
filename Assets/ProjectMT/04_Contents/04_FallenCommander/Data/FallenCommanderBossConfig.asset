@@ -17,11 +17,16 @@ MonoBehaviour:
   turnSpeed: 90
   projectileBasicAttack:
     telegraphPrefab: {fileID: 5939384426542757584, guid: 4f2e0a6235579d848969926c9a9bc0f5, type: 3}
+    projectilePrefab: {fileID: 1850910852090788313, guid: 159bd577af07b324096272fb36975101, type: 3}
     effects:
       startVfxPrefab: {fileID: 0}
-      resolveVfxPrefab: {fileID: 0}
+      startVfxDuration: 0
+      resolveVfxPrefab: {fileID: 470645583430424332, guid: d49a95270485c4e49827569d31c73a6a, type: 3}
+      resolveVfxDuration: 0
       startSfx: {fileID: 0}
+      startSfxDuration: 0
       resolveSfx: {fileID: 0}
+      resolveSfxDuration: 0
       sfxVolume: 1
     warningDuration: 0.4
     projectileSpeed: 8
@@ -33,10 +38,14 @@ MonoBehaviour:
   meleeAttack:
     telegraphPrefab: {fileID: 5939384426542757584, guid: 476965fe028ef2c498972bd793419dd1, type: 3}
     effects:
-      startVfxPrefab: {fileID: 0}
-      resolveVfxPrefab: {fileID: 0}
+      startVfxPrefab: {fileID: 3090182719152197242, guid: 72a58d6b485ceaa43a825cf9fcfa6aa0, type: 3}
+      startVfxDuration: 2
+      resolveVfxPrefab: {fileID: 4497473641098484015, guid: b2e4dc7e90fe6054884f2daf9aba3555, type: 3}
+      resolveVfxDuration: 1
       startSfx: {fileID: 0}
+      startSfxDuration: 2
       resolveSfx: {fileID: 0}
+      resolveSfxDuration: 1
       sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
     preCastMotionDuration: 0.8750001
@@ -50,10 +59,14 @@ MonoBehaviour:
   markStrike:
     telegraphPrefab: {fileID: 5939384426542757584, guid: a07f2a7e8d36d25418bcd0d37f25e1fc, type: 3}
     effects:
-      startVfxPrefab: {fileID: 0}
-      resolveVfxPrefab: {fileID: 0}
+      startVfxPrefab: {fileID: 4671078854636446704, guid: cf89c35f520ddc34e8a51dc0938df8ac, type: 3}
+      startVfxDuration: 3
+      resolveVfxPrefab: {fileID: 8023403893727423613, guid: 59e539ff0672d2344b7a8b35f9f6fbc0, type: 3}
+      resolveVfxDuration: 1.2
       startSfx: {fileID: 0}
+      startSfxDuration: 3
       resolveSfx: {fileID: 0}
+      resolveSfxDuration: 1.2
       sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
     preCastMotionDuration: 0.875
@@ -68,27 +81,35 @@ MonoBehaviour:
     telegraphPrefab: {fileID: 5939384426542757584, guid: f2394fc61e6be904681d2da6c3f5c207, type: 3}
     effects:
       startVfxPrefab: {fileID: 0}
-      resolveVfxPrefab: {fileID: 0}
+      startVfxDuration: 0
+      resolveVfxPrefab: {fileID: 8897071228384316925, guid: e432d4f1310f4704c81a01bf480843cc, type: 3}
+      resolveVfxDuration: 0
       startSfx: {fileID: 0}
+      startSfxDuration: 0
       resolveSfx: {fileID: 0}
+      resolveSfxDuration: 0
       sfxVolume: 1
     preCastMotion: {fileID: 0}
     preCastMotionDuration: 0
     castMotion: {fileID: 0}
     castMotionDuration: 0
-    warningDuration: 4
-    radius: 2.5
+    warningDuration: 2
+    radius: 1.5
     width: 2
     length: 8
     stunDuration: 0
-  trackingMarkLockDuration: 2
+  trackingMarkLockDuration: 0.8
   wideBurst:
     telegraphPrefab: {fileID: 5939384426542757584, guid: 8a95b41ce36931c4686846c593b9c711, type: 3}
     effects:
-      startVfxPrefab: {fileID: 0}
-      resolveVfxPrefab: {fileID: 0}
+      startVfxPrefab: {fileID: 1187270765252648731, guid: ce12a47334d76aa4ea9d06483d8641dc, type: 3}
+      startVfxDuration: 5
+      resolveVfxPrefab: {fileID: 344858183500810125, guid: 6083b5b842a6ac44889a2d9ebebabae8, type: 3}
+      resolveVfxDuration: 1.8
       startSfx: {fileID: 0}
+      startSfxDuration: 5
       resolveSfx: {fileID: 0}
+      resolveSfxDuration: 1.8
       sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
     preCastMotionDuration: 0.8750001
@@ -102,10 +123,14 @@ MonoBehaviour:
   lineStrike:
     telegraphPrefab: {fileID: 5939384426542757584, guid: 948fcdf6ed8511143a58dc45b4bcc3d4, type: 3}
     effects:
-      startVfxPrefab: {fileID: 0}
-      resolveVfxPrefab: {fileID: 0}
+      startVfxPrefab: {fileID: 7276037009419760238, guid: 46d61a38af42fea47b54eae26ec93e8d, type: 3}
+      startVfxDuration: 2.5
+      resolveVfxPrefab: {fileID: 6794211593868074654, guid: 41e16059ffb359b429a19bcc6c2ace43, type: 3}
+      resolveVfxDuration: 1.2
       startSfx: {fileID: 0}
+      startSfxDuration: 2.5
       resolveSfx: {fileID: 0}
+      resolveSfxDuration: 1.2
       sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
     preCastMotionDuration: 0.875
@@ -119,10 +144,14 @@ MonoBehaviour:
   corruptionRing:
     telegraphPrefab: {fileID: 5939384426542757584, guid: 3110342697accbf4d989d628077fbdf3, type: 3}
     effects:
-      startVfxPrefab: {fileID: 0}
-      resolveVfxPrefab: {fileID: 0}
+      startVfxPrefab: {fileID: 347788217132506165, guid: 1bde8c2900e5fa34f8e08eb668bbfa07, type: 3}
+      startVfxDuration: 2.5
+      resolveVfxPrefab: {fileID: 917792888290565687, guid: c8368c448a7e9e24681033ada41f9dcc, type: 3}
+      resolveVfxDuration: 1.5
       startSfx: {fileID: 0}
+      startSfxDuration: 2.5
       resolveSfx: {fileID: 0}
+      resolveSfxDuration: 1.5
       sfxVolume: 1
     preCastMotion: {fileID: 0}
     preCastMotionDuration: 0

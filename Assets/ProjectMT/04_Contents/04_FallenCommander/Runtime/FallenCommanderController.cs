@@ -1233,12 +1233,17 @@ namespace ProjectMT.Contents.FallenCommander
             bossAnimationPresenter.PlaySequence(
                 attack.PreCastMotion,
                 attack.PreCastMotionDuration,
+                attack.PreCastMotionSpeed,
                 attack.CastMotion,
-                attack.CastMotionDuration);
+                attack.CastMotionDuration,
+                attack.CastMotionSpeed);
             return true;
         }
 
-        public bool PreviewBossMotion(AnimationClip motion, float duration)
+        public bool PreviewBossMotion(
+            AnimationClip motion,
+            float duration,
+            float playbackSpeed = 1f)
         {
             if (!Application.isPlaying ||
                 bossActor == null ||
@@ -1252,7 +1257,8 @@ namespace ProjectMT.Contents.FallenCommander
             bossAnimationPresenter.Play(
                 motion,
                 stopAfterMotion: true,
-                durationOverride: duration);
+                durationOverride: duration,
+                playbackSpeed: playbackSpeed);
             return true;
         }
 

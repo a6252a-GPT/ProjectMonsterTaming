@@ -142,6 +142,7 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField] private Image breakDurationFill;
         [SerializeField] private Button debugTimeoutButton;
         [SerializeField] private Button debugReduceTimeButton;
+        [SerializeField] private Button debugRestartBattleButton;
         [SerializeField] private Button debugBasicAttackButton;
         [SerializeField] private Button debugHandSlamButton;
         [SerializeField] private Button debugLineStrikeButton;
@@ -170,12 +171,15 @@ namespace ProjectMT.Contents.FallenCommander
         private IBossDungeonBossHealthDebugController bossHealthDebugController;
         private IBossDungeonAttackDebugController attackDebugController;
         private bool showDebugControls;
+        private bool keepRestartVisibleWhenUnbound;
         private static Font runtimeKoreanFont;
         private RectTransform commanderHeartRoot;
         private Text commanderStunNotice;
         private CanvasGroup finalChargeCanvasGroup;
         private bool isTimeoutWarningPulsing;
         private readonly List<Graphic> commanderHeartGraphics = new List<Graphic>();
+        private readonly Dictionary<GameObject, bool> hiddenHudRootChildren =
+            new Dictionary<GameObject, bool>();
         private int renderedCommanderMaxHearts = -1;
 
         // Controller와 HUD를 연결한다.
@@ -193,6 +197,7 @@ namespace ProjectMT.Contents.FallenCommander
             bossHealthDebugController = targetController as IBossDungeonBossHealthDebugController;
             attackDebugController = targetController as IBossDungeonAttackDebugController;
             showDebugControls = showDebugButtons;
+            keepRestartVisibleWhenUnbound = showDebugButtons;
             if (hudSource != null)
             {
                 // Controller가 HudStateChanged 이벤트를 발생시키면
@@ -290,6 +295,8 @@ namespace ProjectMT.Contents.FallenCommander
                 hasTimedBattle && showDebugControls);
             debugReduceTimeButton?.gameObject.SetActive(
                 hasTimedBattle && showDebugControls);
+            debugRestartBattleButton?.gameObject.SetActive(
+                keepRestartVisibleWhenUnbound);
             debugBasicAttackButton?.gameObject.SetActive(
                 hasAttackDebug && showDebugControls);
             debugHandSlamButton?.gameObject.SetActive(
@@ -333,7 +340,21 @@ namespace ProjectMT.Contents.FallenCommander
                     parent = parent.parent;
                 }
 
-                hudRoot.SetActive(visible);
+                if (visible)
+                {
+                    hudRoot.SetActive(true);
+                    RestoreHudRootChildren();
+                }
+                else if (CanKeepRestartVisible())
+                {
+                    hudRoot.SetActive(true);
+                    HideHudRootChildrenExceptRestart();
+                }
+                else
+                {
+                    hiddenHudRootChildren.Clear();
+                    hudRoot.SetActive(false);
+                }
             }
 
             if (!visible && commanderHeartRoot != null)
@@ -361,6 +382,45 @@ namespace ProjectMT.Contents.FallenCommander
             {
                 phaseTransitionNotice?.gameObject.SetActive(false);
             }
+        }
+
+        // DEV 재시작 버튼이 HUD Canvas의 직접 자식일 때 종료 후에도 표시한다.
+        private bool CanKeepRestartVisible()
+        {
+            return keepRestartVisibleWhenUnbound &&
+                debugRestartBattleButton != null &&
+                debugRestartBattleButton.transform.parent == hudRoot.transform;
+        }
+
+        // 재시작 버튼을 제외한 HUD Canvas의 직접 자식 상태를 저장하고 숨긴다.
+        private void HideHudRootChildrenExceptRestart()
+        {
+            hiddenHudRootChildren.Clear();
+            foreach (Transform child in hudRoot.transform)
+            {
+                if (child == debugRestartBattleButton.transform)
+                {
+                    child.gameObject.SetActive(true);
+                    continue;
+                }
+
+                hiddenHudRootChildren[child.gameObject] = child.gameObject.activeSelf;
+                child.gameObject.SetActive(false);
+            }
+        }
+
+        // 재시작 전에 저장했던 HUD Canvas 자식 활성 상태를 복원한다.
+        private void RestoreHudRootChildren()
+        {
+            foreach (var entry in hiddenHudRootChildren)
+            {
+                if (entry.Key != null)
+                {
+                    entry.Key.SetActive(entry.Value);
+                }
+            }
+
+            hiddenHudRootChildren.Clear();
         }
 
         private void Update()
@@ -602,6 +662,7 @@ namespace ProjectMT.Contents.FallenCommander
             SetButtonLabel(debugPhase2Button, "2 페이즈");
             SetButtonLabel(debugPhase3Button, "3 페이즈");
             SetButtonLabel(debugReduceTimeButton, "시간 -10초");
+            SetButtonLabel(debugRestartBattleButton, "전투 재시작");
         }
 
         private static void SetButtonLabel(Button button, string text)
@@ -708,6 +769,15 @@ namespace ProjectMT.Contents.FallenCommander
                 var editorButton = hudRoot.transform.Find(
                     "BossStatusPanel/Testbutton/DebugReduceTimeButton_Editor");
                 debugReduceTimeButton = editorButton == null
+                    ? null
+                    : editorButton.GetComponent<Button>();
+            }
+
+            if (debugRestartBattleButton == null)
+            {
+                var editorButton = hudRoot.transform.Find(
+                    "DebugRestartBattleButton_Editor");
+                debugRestartBattleButton = editorButton == null
                     ? null
                     : editorButton.GetComponent<Button>();
             }

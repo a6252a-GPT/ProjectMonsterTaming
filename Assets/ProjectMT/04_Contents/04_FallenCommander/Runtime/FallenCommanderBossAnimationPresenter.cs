@@ -15,6 +15,7 @@ namespace ProjectMT.Contents.FallenCommander
         private bool stopWhenFinished;
         private AnimationClip sequenceNextMotion;
         private float sequenceNextDuration;
+        private float sequenceNextSpeed = 1f;
         private bool sequenceWaiting;
 
         public bool IsPlaying => playableGraph.IsValid();
@@ -38,7 +39,8 @@ namespace ProjectMT.Contents.FallenCommander
         public void Play(
             AnimationClip motion,
             bool stopAfterMotion = false,
-            float durationOverride = 0f)
+            float durationOverride = 0f,
+            float playbackSpeed = 1f)
         {
             if (animator == null || motion == null)
             {
@@ -46,18 +48,20 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             StopGraph();
-            PlayGraph(motion);
+            PlayGraph(motion, playbackSpeed);
             stopWhenFinished = stopAfterMotion;
             playbackRemaining = stopAfterMotion
-                ? ResolveDuration(motion, durationOverride)
+                ? ResolveDuration(motion, durationOverride, playbackSpeed)
                 : 0f;
         }
 
         public void PlaySequence(
             AnimationClip firstMotion,
             float firstDuration,
+            float firstSpeed,
             AnimationClip secondMotion,
-            float secondDuration)
+            float secondDuration,
+            float secondSpeed)
         {
             if (animator == null)
             {
@@ -66,17 +70,18 @@ namespace ProjectMT.Contents.FallenCommander
 
             if (firstMotion == null)
             {
-                Play(secondMotion, true, secondDuration);
+                Play(secondMotion, true, secondDuration, secondSpeed);
                 return;
             }
 
             StopGraph();
-            PlayGraph(firstMotion);
+            PlayGraph(firstMotion, firstSpeed);
             sequenceNextMotion = secondMotion;
             sequenceNextDuration = secondDuration;
+            sequenceNextSpeed = secondSpeed;
             sequenceWaiting = secondMotion != null;
             stopWhenFinished = secondMotion == null;
-            playbackRemaining = ResolveDuration(firstMotion, firstDuration);
+            playbackRemaining = ResolveDuration(firstMotion, firstDuration, firstSpeed);
         }
 
         public void Stop()
@@ -108,10 +113,12 @@ namespace ProjectMT.Contents.FallenCommander
                     {
                         var nextMotion = sequenceNextMotion;
                         var nextDuration = sequenceNextDuration;
+                        var nextSpeed = sequenceNextSpeed;
                         sequenceWaiting = false;
                         sequenceNextMotion = null;
                         sequenceNextDuration = 0f;
-                        Play(nextMotion, true, nextDuration);
+                        sequenceNextSpeed = 1f;
+                        Play(nextMotion, true, nextDuration, nextSpeed);
                     }
                 }
 
@@ -138,26 +145,29 @@ namespace ProjectMT.Contents.FallenCommander
             stopWhenFinished = false;
             sequenceNextMotion = null;
             sequenceNextDuration = 0f;
+            sequenceNextSpeed = 1f;
             sequenceWaiting = false;
             CurrentMotionName = string.Empty;
         }
 
-        private void PlayGraph(AnimationClip motion)
+        private void PlayGraph(AnimationClip motion, float playbackSpeed)
         {
-            AnimationPlayableUtilities.PlayClip(
+            var playable = AnimationPlayableUtilities.PlayClip(
                 animator,
                 motion,
                 out playableGraph);
+            playable.SetSpeed(Mathf.Max(0.01f, playbackSpeed));
             CurrentMotionName = motion.name;
         }
 
         private static float ResolveDuration(
             AnimationClip motion,
-            float durationOverride)
+            float durationOverride,
+            float playbackSpeed)
         {
             return durationOverride > 0f
                 ? durationOverride
-                : Mathf.Max(0.01f, motion.length);
+                : Mathf.Max(0.01f, motion.length / Mathf.Max(0.01f, playbackSpeed));
         }
     }
 }

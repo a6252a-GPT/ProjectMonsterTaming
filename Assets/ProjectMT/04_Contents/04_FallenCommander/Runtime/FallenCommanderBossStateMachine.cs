@@ -188,8 +188,6 @@ namespace ProjectMT.Contents.FallenCommander
             new Color(0.9f, 0.15f, 0.8f, 0.75f);
         private static readonly Color TrackingMarkTelegraphColor =
             new Color(0.25f, 0.75f, 1f, 0.75f);
-        private static readonly Color TrackingMarkLockedColor =
-            new Color(1f, 0.2f, 0.15f, 0.85f);
         private static readonly Color WideTelegraphColor =
             new Color(1f, 0.75f, 0.05f, 0.75f);
         private static readonly Color CorruptionRingTelegraphColor =
@@ -699,7 +697,9 @@ namespace ProjectMT.Contents.FallenCommander
             // FSM의 현재 상태를 위치 공격으로 변경
             currentState = BossState.MarkStrike;
             PauseBossTracking();
-            animationPresenter.Play(markStrikeMotion?.PreCastMotion);
+            animationPresenter.Play(
+                markStrikeMotion?.PreCastMotion,
+                playbackSpeed: markStrikeMotion == null ? 1f : markStrikeMotion.PreCastMotionSpeed);
             FallenCommanderAttackEffectPlayer.PlayStart(
                 markStrikeMotion?.Effects,
                 markStrikePosition,
@@ -726,7 +726,9 @@ namespace ProjectMT.Contents.FallenCommander
             stateTimeRemaining = trackingMarkCastTime;
             currentState = BossState.TrackingMark;
             PauseBossTracking();
-            animationPresenter.Play(trackingMarkMotion?.PreCastMotion);
+            animationPresenter.Play(
+                trackingMarkMotion?.PreCastMotion,
+                playbackSpeed: trackingMarkMotion == null ? 1f : trackingMarkMotion.PreCastMotionSpeed);
             FallenCommanderAttackEffectPlayer.PlayStart(
                 trackingMarkMotion?.Effects,
                 markStrikePosition,
@@ -772,7 +774,9 @@ namespace ProjectMT.Contents.FallenCommander
             stateTimeRemaining = lineStrikeCastTime;
             currentState = BossState.LineStrike;
             PauseBossTracking();
-            animationPresenter.Play(lineStrikeMotion?.PreCastMotion);
+            animationPresenter.Play(
+                lineStrikeMotion?.PreCastMotion,
+                playbackSpeed: lineStrikeMotion == null ? 1f : lineStrikeMotion.PreCastMotionSpeed);
             FallenCommanderAttackEffectPlayer.PlayStart(
                 lineStrikeMotion?.Effects,
                 origin,
@@ -800,7 +804,9 @@ namespace ProjectMT.Contents.FallenCommander
             stateTimeRemaining = corruptionRingCastTime;
             currentState = BossState.CorruptionRing;
             PauseBossTracking();
-            animationPresenter.Play(corruptionRingMotion?.PreCastMotion);
+            animationPresenter.Play(
+                corruptionRingMotion?.PreCastMotion,
+                playbackSpeed: corruptionRingMotion == null ? 1f : corruptionRingMotion.PreCastMotionSpeed);
             FallenCommanderAttackEffectPlayer.PlayStart(
                 corruptionRingMotion?.Effects,
                 markStrikePosition,
@@ -836,7 +842,9 @@ namespace ProjectMT.Contents.FallenCommander
             stateTimeRemaining = castTime;
             currentState = state;
             PauseBossTracking();
-            animationPresenter.Play(motion?.PreCastMotion);
+            animationPresenter.Play(
+                motion?.PreCastMotion,
+                playbackSpeed: motion == null ? 1f : motion.PreCastMotionSpeed);
             FallenCommanderAttackEffectPlayer.PlayStart(
                 motion?.Effects,
                 position,
@@ -910,6 +918,7 @@ namespace ProjectMT.Contents.FallenCommander
 
             DestroyActiveBasicTelegraph();
             activeBasicProjectile = FallenCommanderBasicProjectileView.Create(
+                basicAttack.ProjectilePrefab,
                 bossActor.transform.parent,
                 basicProjectilePosition,
                 basicProjectileRadius,
@@ -1042,14 +1051,6 @@ namespace ProjectMT.Contents.FallenCommander
                 {
                     CancelOverlappingBasicAttack();
                     basicAttackCooldownRemaining = basicAttackRepeatInterval;
-                    DestroyActiveTelegraph();
-                    activeTelegraph = FallenCommanderTelegraphView.CreateCircle(
-                        trackingMarkMotion.TelegraphPrefab,
-                        bossActor.transform.parent,
-                        markStrikePosition,
-                        trackingMarkRadius,
-                        TrackingMarkLockedColor);
-                    telegraphDuration = trackingMarkLockDuration;
                 }
             }
 
@@ -1101,7 +1102,8 @@ namespace ProjectMT.Contents.FallenCommander
             animationPresenter.Play(
                 motion?.CastMotion,
                 stopAfterMotion: true,
-                durationOverride: motion == null ? 0f : motion.CastMotionDuration);
+                durationOverride: motion == null ? 0f : motion.CastMotionDuration,
+                playbackSpeed: motion == null ? 1f : motion.CastMotionSpeed);
 
             DestroyActiveTelegraph();
 

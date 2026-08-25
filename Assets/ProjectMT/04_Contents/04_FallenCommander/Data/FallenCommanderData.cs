@@ -115,6 +115,9 @@ namespace ProjectMT.Contents.FallenCommander
     public sealed class FallenCommanderBasicAttackData
     {
         [SerializeField, InspectorName("공격 범위 프리팹")] private GameObject telegraphPrefab;
+        [SerializeField, InspectorName("투사체 프리팹")]
+        [Tooltip("비어 있으면 안전장치로 Unity 기본 구체를 사용합니다.")]
+        private GameObject projectilePrefab;
         [SerializeField] private FallenCommanderAttackEffectData effects = new();
         [SerializeField, Min(0.1f)] private float warningDuration = 0.4f;
         [SerializeField, Min(0.1f)] private float projectileSpeed = 8f;
@@ -125,6 +128,7 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, Min(0f)] private float patternOverlapDelay = 0.5f;
 
         public GameObject TelegraphPrefab => telegraphPrefab;
+        public GameObject ProjectilePrefab => projectilePrefab;
         public FallenCommanderAttackEffectData Effects => effects;
         public float WarningDuration => warningDuration;
         public float ProjectileSpeed => projectileSpeed;
@@ -141,8 +145,10 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("공격 범위 프리팹")] private GameObject telegraphPrefab;
         [SerializeField] private FallenCommanderAttackEffectData effects = new();
         [SerializeField] private AnimationClip preCastMotion;
+        [SerializeField, InspectorName("시전 모션 속도"), Min(0.01f)] private float preCastMotionSpeed = 1f;
         [SerializeField, Min(0f)] private float preCastMotionDuration;
         [SerializeField] private AnimationClip castMotion;
+        [SerializeField, InspectorName("공격 모션 속도"), Min(0.01f)] private float castMotionSpeed = 1f;
         [SerializeField, Min(0f)] private float castMotionDuration;
         [SerializeField, Min(0.1f)] private float warningDuration = 2f;
         [SerializeField, Min(0.1f)] private float radius = 2.5f;
@@ -154,21 +160,32 @@ namespace ProjectMT.Contents.FallenCommander
         public FallenCommanderAttackEffectData Effects => effects;
         public AnimationClip PreCastMotion => preCastMotion;
         public AnimationClip CastMotion => castMotion;
-        public float PreCastMotionDuration => ResolveDuration(preCastMotion, preCastMotionDuration);
-        public float CastMotionDuration => ResolveDuration(castMotion, castMotionDuration);
+        public float PreCastMotionSpeed => Mathf.Max(0.01f, preCastMotionSpeed);
+        public float CastMotionSpeed => Mathf.Max(0.01f, castMotionSpeed);
+        public float PreCastMotionDuration => ResolveDuration(
+            preCastMotion,
+            preCastMotionDuration,
+            PreCastMotionSpeed);
+        public float CastMotionDuration => ResolveDuration(
+            castMotion,
+            castMotionDuration,
+            CastMotionSpeed);
         public float WarningDuration => warningDuration;
         public float Radius => radius;
         public float Width => width;
         public float Length => length;
         public float StunDuration => stunDuration;
 
-        private static float ResolveDuration(AnimationClip motion, float overrideDuration)
+        private static float ResolveDuration(
+            AnimationClip motion,
+            float overrideDuration,
+            float playbackSpeed)
         {
             return overrideDuration > 0f
                 ? overrideDuration
                 : motion == null
                     ? 0f
-                    : Mathf.Max(0.01f, motion.length);
+                    : Mathf.Max(0.01f, motion.length / Mathf.Max(0.01f, playbackSpeed));
         }
     }
 
@@ -176,15 +193,23 @@ namespace ProjectMT.Contents.FallenCommander
     public sealed class FallenCommanderAttackEffectData
     {
         [SerializeField, InspectorName("시전 VFX")] private GameObject startVfxPrefab;
+        [SerializeField, InspectorName("시전 VFX 유지시간 (0 = 자동)"), Min(0f)] private float startVfxDuration;
         [SerializeField, InspectorName("적중 VFX")] private GameObject resolveVfxPrefab;
+        [SerializeField, InspectorName("적중 VFX 유지시간 (0 = 자동)"), Min(0f)] private float resolveVfxDuration;
         [SerializeField, InspectorName("시전 SFX")] private AudioClip startSfx;
+        [SerializeField, InspectorName("시전 SFX 유지시간 (0 = 자동)"), Min(0f)] private float startSfxDuration;
         [SerializeField, InspectorName("적중 SFX")] private AudioClip resolveSfx;
+        [SerializeField, InspectorName("적중 SFX 유지시간 (0 = 자동)"), Min(0f)] private float resolveSfxDuration;
         [SerializeField, InspectorName("SFX 볼륨"), Range(0f, 1f)] private float sfxVolume = 1f;
 
         public GameObject StartVfxPrefab => startVfxPrefab;
+        public float StartVfxDuration => startVfxDuration;
         public GameObject ResolveVfxPrefab => resolveVfxPrefab;
+        public float ResolveVfxDuration => resolveVfxDuration;
         public AudioClip StartSfx => startSfx;
+        public float StartSfxDuration => startSfxDuration;
         public AudioClip ResolveSfx => resolveSfx;
+        public float ResolveSfxDuration => resolveSfxDuration;
         public float SfxVolume => sfxVolume;
     }
 

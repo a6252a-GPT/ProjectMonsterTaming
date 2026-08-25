@@ -17,8 +17,17 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            PlayVfx(effects.StartVfxPrefab, position, direction, parent);
-            PlaySfx(effects.StartSfx, position, effects.SfxVolume);
+            PlayVfx(
+                effects.StartVfxPrefab,
+                effects.StartVfxDuration,
+                position,
+                direction,
+                parent);
+            PlaySfx(
+                effects.StartSfx,
+                effects.StartSfxDuration,
+                position,
+                effects.SfxVolume);
         }
 
         // 공격 적중 슬롯에 지정된 VFX와 SFX를 재생한다.
@@ -33,13 +42,23 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            PlayVfx(effects.ResolveVfxPrefab, position, direction, parent);
-            PlaySfx(effects.ResolveSfx, position, effects.SfxVolume);
+            PlayVfx(
+                effects.ResolveVfxPrefab,
+                effects.ResolveVfxDuration,
+                position,
+                direction,
+                parent);
+            PlaySfx(
+                effects.ResolveSfx,
+                effects.ResolveSfxDuration,
+                position,
+                effects.SfxVolume);
         }
 
         // VFX 프리팹을 공격 방향으로 생성하고 파티클 재생시간 뒤 제거한다.
         private static void PlayVfx(
             GameObject prefab,
+            float duration,
             Vector3 position,
             Vector3 direction,
             Transform parent)
@@ -53,11 +72,15 @@ namespace ProjectMT.Contents.FallenCommander
                 ? Quaternion.LookRotation(direction.normalized, Vector3.up)
                 : Quaternion.identity;
             var instance = Object.Instantiate(prefab, position, rotation, parent);
-            Object.Destroy(instance, ResolveLifetime(instance));
+            Object.Destroy(instance, ResolveVfxLifetime(instance, duration));
         }
 
-        // 지정된 AudioClip을 공격 위치에서 일회성으로 재생한다.
-        private static void PlaySfx(AudioClip clip, Vector3 position, float volume)
+        // 지정된 AudioClip을 공격 위치에서 재생하고 설정된 유지시간 뒤 제거한다.
+        private static void PlaySfx(
+            AudioClip clip,
+            float duration,
+            Vector3 position,
+            float volume)
         {
             if (clip == null)
             {
@@ -65,10 +88,16 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             EnsureAudioListener();
-            AudioSource.PlayClipAtPoint(
-                clip,
-                position,
-                Mathf.Clamp01(volume));
+            var audioObject = new GameObject($"FallenCommanderSfx_{clip.name}");
+            audioObject.transform.position = position;
+
+            var audioSource = audioObject.AddComponent<AudioSource>();
+            audioSource.clip = clip;
+            audioSource.volume = Mathf.Clamp01(volume);
+            audioSource.spatialBlend = 1f;
+            audioSource.Play();
+
+            Object.Destroy(audioObject, ResolveSfxLifetime(clip, duration));
         }
 
         // 활성 AudioListener가 없을 때만 현재 카메라에 런타임 Listener를 추가한다.
@@ -86,9 +115,14 @@ namespace ProjectMT.Contents.FallenCommander
             }
         }
 
-        // 자식 파티클이 끝날 때까지 유지할 최대 시간을 계산한다.
-        private static float ResolveLifetime(GameObject instance)
+        // 설정값이 있으면 사용하고 없으면 자식 파티클의 최대 재생시간을 계산한다.
+        private static float ResolveVfxLifetime(GameObject instance, float overrideDuration)
         {
+            if (overrideDuration > 0f)
+            {
+                return Mathf.Max(0.01f, overrideDuration);
+            }
+
             var lifetime = 2f;
             foreach (var particle in instance.GetComponentsInChildren<ParticleSystem>(true))
             {
@@ -99,6 +133,15 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             return Mathf.Clamp(lifetime, 0.1f, 10f);
+        }
+
+        // 설정값이 있으면 클립 길이 안에서 제한하고 없으면 전체 클립 길이를 사용한다.
+        private static float ResolveSfxLifetime(AudioClip clip, float overrideDuration)
+        {
+            var clipDuration = Mathf.Max(0.01f, clip.length);
+            return overrideDuration > 0f
+                ? Mathf.Clamp(overrideDuration, 0.01f, clipDuration)
+                : clipDuration;
         }
     }
 }

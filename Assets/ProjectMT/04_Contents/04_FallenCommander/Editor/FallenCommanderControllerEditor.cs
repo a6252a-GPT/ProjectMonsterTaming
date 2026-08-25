@@ -62,7 +62,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
 
             EditorGUILayout.LabelField(
-                $"{label}  ({attack.PreCastMotionDuration:0.###}s → {attack.CastMotionDuration:0.###}s)",
+                $"{label}  (x{attack.PreCastMotionSpeed:0.##} / {attack.PreCastMotionDuration:0.###}s → x{attack.CastMotionSpeed:0.##} / {attack.CastMotionDuration:0.###}s)",
                 EditorStyles.miniLabel);
 
             using (new EditorGUILayout.HorizontalScope())
@@ -74,12 +74,18 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
                 if (GUILayout.Button("Pre Cast", GUILayout.Width(72f)))
                 {
-                    PreviewMotion(attack.PreCastMotion, attack.PreCastMotionDuration);
+                    PreviewMotion(
+                        attack.PreCastMotion,
+                        attack.PreCastMotionDuration,
+                        attack.PreCastMotionSpeed);
                 }
 
                 if (GUILayout.Button("Cast", GUILayout.Width(52f)))
                 {
-                    PreviewMotion(attack.CastMotion, attack.CastMotionDuration);
+                    PreviewMotion(
+                        attack.CastMotion,
+                        attack.CastMotionDuration,
+                        attack.CastMotionSpeed);
                 }
             }
         }
@@ -123,11 +129,16 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 GetSpawnPoint(),
                 attack.PreCastMotion,
                 attack.PreCastMotionDuration,
+                attack.PreCastMotionSpeed,
                 attack.CastMotion,
-                attack.CastMotionDuration);
+                attack.CastMotionDuration,
+                attack.CastMotionSpeed);
         }
 
-        private void PreviewMotion(AnimationClip motion, float duration)
+        private void PreviewMotion(
+            AnimationClip motion,
+            float duration,
+            float playbackSpeed = 1f)
         {
             if (motion == null)
             {
@@ -136,7 +147,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
             if (Application.isPlaying)
             {
-                if (!((FallenCommanderController)target).PreviewBossMotion(motion, duration))
+                if (!((FallenCommanderController)target).PreviewBossMotion(
+                    motion,
+                    duration,
+                    playbackSpeed))
                 {
                     EditorUtility.DisplayDialog(
                         "Boss Motion Preview",
@@ -152,8 +166,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 GetSpawnPoint(),
                 motion,
                 duration,
+                playbackSpeed,
                 null,
-                0f);
+                0f,
+                1f);
         }
 
         private GameObject GetBossPrefab()
@@ -175,6 +191,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private static AnimationClip secondMotion;
         private static float firstDuration;
         private static float secondDuration;
+        private static float firstSpeed = 1f;
+        private static float secondSpeed = 1f;
         private static double lastTime;
         private static float elapsed;
 
@@ -190,8 +208,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             Transform spawnPoint,
             AnimationClip first,
             float firstLength,
+            float firstPlaybackSpeed,
             AnimationClip second,
-            float secondLength)
+            float secondLength,
+            float secondPlaybackSpeed)
         {
             Stop();
             if (prefab == null || (first == null && second == null))
@@ -221,6 +241,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
             firstMotion = first == null ? second : first;
             secondMotion = first == null ? null : second;
+            firstSpeed = Mathf.Max(
+                0.01f,
+                first == null ? secondPlaybackSpeed : firstPlaybackSpeed);
+            secondSpeed = Mathf.Max(0.01f, secondPlaybackSpeed);
             firstDuration = ResolveDuration(
                 firstMotion,
                 first == null ? secondLength : firstLength);
@@ -231,7 +255,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             lastTime = EditorApplication.timeSinceStartup;
 
             AnimationMode.StartAnimationMode();
-            Sample(firstMotion, 0f);
+            Sample(firstMotion, 0f, firstSpeed);
             SceneView.RepaintAll();
         }
 
@@ -255,6 +279,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             secondMotion = null;
             firstDuration = 0f;
             secondDuration = 0f;
+            firstSpeed = 1f;
+            secondSpeed = 1f;
             elapsed = 0f;
             SceneView.RepaintAll();
         }
@@ -273,11 +299,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
             if (elapsed < firstDuration)
             {
-                Sample(firstMotion, elapsed);
+                Sample(firstMotion, elapsed, firstSpeed);
             }
             else if (secondMotion != null && elapsed < firstDuration + secondDuration)
             {
-                Sample(secondMotion, elapsed - firstDuration);
+                Sample(secondMotion, elapsed - firstDuration, secondSpeed);
             }
             else
             {
@@ -287,7 +313,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             SceneView.RepaintAll();
         }
 
-        private static void Sample(AnimationClip motion, float time)
+        private static void Sample(
+            AnimationClip motion,
+            float time,
+            float playbackSpeed)
         {
             if (previewRoot == null || motion == null)
             {
@@ -304,7 +333,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             AnimationMode.SampleAnimationClip(
                 animators[0].gameObject,
                 motion,
-                Mathf.Clamp(time, 0f, motion.length));
+                Mathf.Clamp(time * Mathf.Max(0.01f, playbackSpeed), 0f, motion.length));
             AnimationMode.EndSampling();
         }
 

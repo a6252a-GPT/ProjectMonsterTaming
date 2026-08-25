@@ -48,8 +48,10 @@ MonoBehaviour:
       resolveSfxDuration: 1
       sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
+    preCastMotionSpeed: 1
     preCastMotionDuration: 0.8750001
     castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
+    castMotionSpeed: 1
     castMotionDuration: 0.875
     warningDuration: 2
     radius: 5
@@ -69,8 +71,10 @@ MonoBehaviour:
       resolveSfxDuration: 1.2
       sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
+    preCastMotionSpeed: 1
     preCastMotionDuration: 0.875
     castMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
+    castMotionSpeed: 1
     castMotionDuration: 0.8750001
     warningDuration: 3
     radius: 3
@@ -90,8 +94,10 @@ MonoBehaviour:
       resolveSfxDuration: 0
       sfxVolume: 1
     preCastMotion: {fileID: 0}
+    preCastMotionSpeed: 1
     preCastMotionDuration: 0
     castMotion: {fileID: 0}
+    castMotionSpeed: 1
     castMotionDuration: 0
     warningDuration: 2
     radius: 1.5
@@ -112,8 +118,10 @@ MonoBehaviour:
       resolveSfxDuration: 1.8
       sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
+    preCastMotionSpeed: 1
     preCastMotionDuration: 0.8750001
     castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
+    castMotionSpeed: 1
     castMotionDuration: 0.875
     warningDuration: 5
     radius: 10
@@ -133,8 +141,10 @@ MonoBehaviour:
       resolveSfxDuration: 1.2
       sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
+    preCastMotionSpeed: 1
     preCastMotionDuration: 0.875
     castMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
+    castMotionSpeed: 1
     castMotionDuration: 0.8750001
     warningDuration: 2.5
     radius: 2
@@ -154,8 +164,10 @@ MonoBehaviour:
       resolveSfxDuration: 1.5
       sfxVolume: 1
     preCastMotion: {fileID: 0}
+    preCastMotionSpeed: 1
     preCastMotionDuration: 0
     castMotion: {fileID: 0}
+    castMotionSpeed: 1
     castMotionDuration: 0
     warningDuration: 2.5
     radius: 10
@@ -164,6 +176,17 @@ MonoBehaviour:
     stunDuration: 0
   corruptionRingSafeRadius: 3.5
   finalChargeTelegraphPrefab: {fileID: 5939384426542757584, guid: 8798d2c2bd4635941be031039cf5686d, type: 3}
+  finalChargeEffects:
+    startVfxPrefab: {fileID: 3090182719152197242, guid: 72a58d6b485ceaa43a825cf9fcfa6aa0, type: 3}
+    startVfxDuration: 3
+    resolveVfxPrefab: {fileID: 0}
+    resolveVfxDuration: 0
+    startSfx: {fileID: 0}
+    startSfxDuration: 0
+    resolveSfx: {fileID: 0}
+    resolveSfxDuration: 0
+    sfxVolume: 1
+  finalChargeStartEffectOffset: {x: 0, y: 1.5, z: 0}
   closeAttackDistance: 3
   lineStrikeMinimumDistance: 5
   lineStrikeAlignmentThreshold: 0.7

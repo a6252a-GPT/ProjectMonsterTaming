@@ -18,6 +18,7 @@ namespace ProjectMT.Contents.FallenCommander
         public float RemainingTime { get; private set; }
         public float Duration => duration;
         public float Radius => radius;
+        public Vector3 CenterPosition => centerPosition;
 
         // 필요한 참조와 수치를 저장하고 보스 중심에 충전 전조를 생성한다.
         public bool Begin(

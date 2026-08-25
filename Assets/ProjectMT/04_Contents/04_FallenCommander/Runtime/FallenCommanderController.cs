@@ -679,10 +679,20 @@ namespace ProjectMT.Contents.FallenCommander
         // 충전 종료 시 표시된 원형 범위 안의 군단장에게만 하트 1개 피해를 적용한다.
         private void ResolveFinalCharge()
         {
+            var effectPosition = finalChargePattern.CenterPosition;
+            var effectDirection = bossActor == null
+                ? Vector3.forward
+                : bossActor.transform.forward;
             if (!finalChargePattern.Complete(out var commanderInside))
             {
                 return;
             }
+
+            FallenCommanderAttackEffectPlayer.PlayResolve(
+                bossConfig.FinalChargeEffects,
+                effectPosition,
+                effectDirection,
+                bossActor == null ? null : bossActor.transform.parent);
 
             if (commanderHealth != null &&
                 commanderHealth.IsAlive &&
@@ -815,6 +825,12 @@ namespace ProjectMT.Contents.FallenCommander
             phaseTransitionRemainingTime = 0f;
             pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
             stateMachine?.Shutdown();
+            FallenCommanderAttackEffectPlayer.PlayStart(
+                bossConfig.FinalChargeEffects,
+                bossActor.transform.TransformPoint(
+                    bossConfig.FinalChargeStartEffectOffset),
+                bossActor.transform.forward,
+                bossActor.transform);
             Debug.Log(
                 $"충전 광역 공격 준비 시작: {finalChargeDuration:0.0}초",
                 this);

@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace ProjectMT.Contents.FallenCommander.Editor
@@ -9,12 +10,14 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private SerializedProperty bossPrefabProperty;
         private SerializedProperty bossSpawnPointProperty;
         private SerializedProperty bossConfigProperty;
+        private SerializedProperty commanderRootProperty;
 
         private void OnEnable()
         {
             bossPrefabProperty = serializedObject.FindProperty("bossPrefab");
             bossSpawnPointProperty = serializedObject.FindProperty("bossSpawnPoint");
             bossConfigProperty = serializedObject.FindProperty("bossConfig");
+            commanderRootProperty = serializedObject.FindProperty("commanderRoot");
         }
 
         public override void OnInspectorGUI()
@@ -127,6 +130,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             FallenCommanderBossEditorPreview.PlaySequence(
                 GetBossPrefab(),
                 GetSpawnPoint(),
+                GetFacingTarget(),
                 attack.PreCastMotion,
                 attack.PreCastMotionDuration,
                 attack.PreCastMotionSpeed,
@@ -164,6 +168,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             FallenCommanderBossEditorPreview.PlaySequence(
                 GetBossPrefab(),
                 GetSpawnPoint(),
+                GetFacingTarget(),
                 motion,
                 duration,
                 playbackSpeed,
@@ -180,6 +185,13 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private Transform GetSpawnPoint()
         {
             return bossSpawnPointProperty.objectReferenceValue as Transform;
+        }
+
+        // 편집 모드 미리보기 보스가 바라볼 군단장 Transform을 반환한다.
+        private Transform GetFacingTarget()
+        {
+            var commanderRoot = commanderRootProperty.objectReferenceValue as GameObject;
+            return commanderRoot == null ? null : commanderRoot.transform;
         }
     }
 
@@ -206,6 +218,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         public static void PlaySequence(
             GameObject prefab,
             Transform spawnPoint,
+            Transform facingTarget,
             AnimationClip first,
             float firstLength,
             float firstPlaybackSpeed,
@@ -214,7 +227,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             float secondPlaybackSpeed)
         {
             Stop();
-            if (prefab == null || (first == null && second == null))
+            if (PrefabStageUtility.GetCurrentPrefabStage() != null ||
+                prefab == null ||
+                (first == null && second == null))
             {
                 return;
             }
@@ -233,6 +248,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     spawnPoint.position,
                     spawnPoint.rotation);
             }
+
+            FaceTarget(previewRoot.transform, facingTarget);
 
             foreach (var behaviour in previewRoot.GetComponentsInChildren<MonoBehaviour>(true))
             {
@@ -344,6 +361,26 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 : motion == null
                     ? 0f
                     : Mathf.Max(0.01f, motion.length);
+        }
+
+        // 임시 보스를 생성 즉시 군단장 방향으로 회전시킨다.
+        private static void FaceTarget(Transform bossTransform, Transform facingTarget)
+        {
+            if (bossTransform == null || facingTarget == null)
+            {
+                return;
+            }
+
+            var direction = facingTarget.position - bossTransform.position;
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f)
+            {
+                return;
+            }
+
+            bossTransform.rotation = Quaternion.LookRotation(
+                direction.normalized,
+                Vector3.up);
         }
     }
 }

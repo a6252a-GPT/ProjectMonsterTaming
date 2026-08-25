@@ -40,6 +40,10 @@ namespace ProjectMT.Contents.FallenCommander
 
         [Header("8. 충전 광역기")]
         [SerializeField, InspectorName("공격 범위 프리팹")] private GameObject finalChargeTelegraphPrefab;
+        [SerializeField, InspectorName("연출 (VFX / SFX)")]
+        private FallenCommanderAttackEffectData finalChargeEffects = new();
+        [SerializeField, InspectorName("시전 연출 위치 오프셋")]
+        private Vector3 finalChargeStartEffectOffset = new Vector3(0f, 2f, 0f);
 
         [Header("Attack Selection")]
         [SerializeField, Min(0.1f)] private float closeAttackDistance = 3f;
@@ -80,6 +84,8 @@ namespace ProjectMT.Contents.FallenCommander
         public FallenCommanderAttackData CorruptionRing => corruptionRing;
         public float CorruptionRingSafeRadius => corruptionRingSafeRadius;
         public GameObject FinalChargeTelegraphPrefab => finalChargeTelegraphPrefab;
+        public FallenCommanderAttackEffectData FinalChargeEffects => finalChargeEffects;
+        public Vector3 FinalChargeStartEffectOffset => finalChargeStartEffectOffset;
         public float CloseAttackDistance => closeAttackDistance;
         public float LineStrikeMinimumDistance => lineStrikeMinimumDistance;
         public float LineStrikeAlignmentThreshold => lineStrikeAlignmentThreshold;

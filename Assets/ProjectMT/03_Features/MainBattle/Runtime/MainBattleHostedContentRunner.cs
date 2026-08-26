@@ -15,6 +15,8 @@ namespace ProjectMT.Features.MainBattle
 
         private readonly List<GameObject> stageMapRoots = new List<GameObject>();
         private readonly List<bool> stageMapActiveStates = new List<bool>();
+        private GameObject globalDebugPanel;
+        private bool globalDebugPanelWasActive;
 
         public bool IsOpen { get; private set; }
 
@@ -28,12 +30,14 @@ namespace ProjectMT.Features.MainBattle
             expedition.StopWithoutResult(); // 보상 없이 현재 Run 종료
             mainGameplayRoot.SetActive(false); // 메인 플레이 영역 전체 비활성
             CacheAndHideStageMapRoots(); // Hosted 전용 배경과 겹치지 않게 숨긴다.
+            CacheAndHideGlobalDebugPanel(); // DEV 전용 HUD와 겹치는 전역 디버그 버튼 숨김
             if (growthDungeonHost.Open(context))
             {
                 IsOpen = true;
                 return true;
             }
 
+            RestoreGlobalDebugPanel(); // 열기 실패 시 전역 디버그 버튼 복구
             RestoreStageMapRoots(); // 열기 실패 시 원래 활성 상태 복구
             mainGameplayRoot.SetActive(true); // 열기 실패 시 메인 복구
             expedition.StartFromSavedMode(); // 저장된 모드로 새 Run
@@ -59,6 +63,7 @@ namespace ProjectMT.Features.MainBattle
 
             growthDungeonHost.Close(); // Controller 종료 후 Prefab 비활성
             IsOpen = false;
+            RestoreGlobalDebugPanel(); // Hosted 종료 뒤 전역 디버그 버튼 복구
             RestoreStageMapRoots(); // 메인 카메라가 켜지기 전에 배경 복구
             if (mainGameplayRoot != null)
             {
@@ -106,6 +111,40 @@ namespace ProjectMT.Features.MainBattle
 
             stageMapRoots.Clear();
             stageMapActiveStates.Clear();
+        }
+
+        private void CacheAndHideGlobalDebugPanel()
+        {
+            globalDebugPanel = null;
+            globalDebugPanelWasActive = false;
+            var transforms = FindObjectsByType<Transform>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (var index = 0; index < transforms.Length; index++)
+            {
+                var candidate = transforms[index];
+                if (candidate == null || candidate.name != "DebugPanel" ||
+                    candidate.gameObject.scene.name != "DontDestroyOnLoad")
+                {
+                    continue;
+                }
+
+                globalDebugPanel = candidate.gameObject;
+                globalDebugPanelWasActive = globalDebugPanel.activeSelf;
+                globalDebugPanel.SetActive(false);
+                return;
+            }
+        }
+
+        private void RestoreGlobalDebugPanel()
+        {
+            if (globalDebugPanel != null)
+            {
+                globalDebugPanel.SetActive(globalDebugPanelWasActive);
+            }
+
+            globalDebugPanel = null;
+            globalDebugPanelWasActive = false;
         }
 
 #if UNITY_EDITOR

@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12aa874c8f1d7774284c1e28b5c71157, type: 3}
+  m_Name: FallenCommanderPhaseConfig
+  m_EditorClassIdentifier: ProjectMT.Contents.FallenCommander::ProjectMT.Contents.FallenCommander.FallenCommanderPhaseConfig
+  phases:
+  - phase: 1
+    healthRatio: 1
+    availableAttacks: 020000000500000001000000
+    allowOverlappingBasicAttack: 1
+    hasSignatureAttack: 0
+    signatureAttack: 0
+    transitionMessage: "1 \uD398\uC774\uC988"
+    transitionSound: {fileID: 0}
+    transitionDuration: 1
+  - phase: 2
+    healthRatio: 0.7
+    availableAttacks: 0400000006000000020000000500000001000000
+    allowOverlappingBasicAttack: 1
+    hasSignatureAttack: 1
+    signatureAttack: 4
+    transitionMessage: "2 \uD398\uC774\uC988"
+    transitionSound: {fileID: 0}
+    transitionDuration: 1
+  - phase: 3
+    healthRatio: 0.4
+    availableAttacks: 0400000006000000030000000500000001000000
+    allowOverlappingBasicAttack: 1
+    hasSignatureAttack: 1
+    signatureAttack: 3
+    transitionMessage: "3 \uD398\uC774\uC988"
+    transitionSound: {fileID: 0}
+    transitionDuration: 1

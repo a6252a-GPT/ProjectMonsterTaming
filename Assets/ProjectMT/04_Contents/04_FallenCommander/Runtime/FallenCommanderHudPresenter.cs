@@ -13,6 +13,7 @@ namespace ProjectMT.Contents.FallenCommander
     public interface IBossDungeonTimeoutController
     {
         void DebugTimeout();
+        void DebugReduceTimeTenSeconds();
     }
 
     public interface IBossDungeonBossKillController
@@ -20,12 +21,22 @@ namespace ProjectMT.Contents.FallenCommander
         void DebugKillBoss();
     }
 
+    public interface IBossDungeonBossHealthDebugController
+    {
+        void DebugDamageBossTenPercent();
+        void DebugSetBossPhase(int phaseNumber);
+    }
+
     public interface IBossDungeonAttackDebugController
     {
         void DebugBasicAttack();
+        void DebugMeleeAttack();
         void DebugMarkStrike();
+        void DebugTrackingMark();
         void DebugWideBurst();
+        void DebugChargedWideBurst();
         void DebugLineStrike();
+        void DebugCorruptionRing();
     }
 
     // HUD에 표시할 값을 한 번에 전달하기 위한 데이터 묶음
@@ -48,7 +59,18 @@ namespace ProjectMT.Contents.FallenCommander
             int commanderMaxHearts = 0,
             bool isCommanderStunned = false,
             float commanderStunRemainingTime = 0f,
-            float commanderStunDuration = 0f)
+            float commanderStunDuration = 0f,
+            bool isFinalChargeActive = false,
+            float finalChargeRemainingTime = 0f,
+            float finalChargeDuration = 0f,
+            bool isTimeoutWipeActive = false,
+            bool isTimeoutWarningActive = false,
+            float timeoutWarningDuration = 0f,
+            bool isPhaseTransitionActive = false,
+            int bossPhase = 1,
+            string phaseTransitionMessage = "",
+            string timeoutWipeMessage = "",
+            float timeoutWipePulseInterval = 0.45f)
         {
             BossHealth = bossHealth;
             BossMaxHealth = bossMaxHealth;
@@ -67,6 +89,17 @@ namespace ProjectMT.Contents.FallenCommander
             IsCommanderStunned = isCommanderStunned;
             CommanderStunRemainingTime = commanderStunRemainingTime;
             CommanderStunDuration = commanderStunDuration;
+            IsFinalChargeActive = isFinalChargeActive;
+            FinalChargeRemainingTime = finalChargeRemainingTime;
+            FinalChargeDuration = finalChargeDuration;
+            IsTimeoutWipeActive = isTimeoutWipeActive;
+            IsTimeoutWarningActive = isTimeoutWarningActive;
+            TimeoutWarningDuration = timeoutWarningDuration;
+            IsPhaseTransitionActive = isPhaseTransitionActive;
+            BossPhase = bossPhase;
+            PhaseTransitionMessage = phaseTransitionMessage;
+            TimeoutWipeMessage = timeoutWipeMessage;
+            TimeoutWipePulseInterval = timeoutWipePulseInterval;
         }
 
         public float BossHealth { get; }
@@ -86,6 +119,17 @@ namespace ProjectMT.Contents.FallenCommander
         public bool IsCommanderStunned { get; }
         public float CommanderStunRemainingTime { get; }
         public float CommanderStunDuration { get; }
+        public bool IsFinalChargeActive { get; }
+        public float FinalChargeRemainingTime { get; }
+        public float FinalChargeDuration { get; }
+        public bool IsTimeoutWipeActive { get; }
+        public bool IsTimeoutWarningActive { get; }
+        public float TimeoutWarningDuration { get; }
+        public bool IsPhaseTransitionActive { get; }
+        public int BossPhase { get; }
+        public string PhaseTransitionMessage { get; }
+        public string TimeoutWipeMessage { get; }
+        public float TimeoutWipePulseInterval { get; }
     }
 
     // 같은 GameObject에 이 컴포넌트를 여러 개 추가하지 못하게 막는다.
@@ -103,22 +147,46 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField] private Text comboScoreValue;
         [SerializeField] private Image breakDurationFill;
         [SerializeField] private Button debugTimeoutButton;
+        [SerializeField] private Button debugReduceTimeButton;
+        [SerializeField] private Button debugRestartBattleButton;
         [SerializeField] private Button debugBasicAttackButton;
         [SerializeField] private Button debugHandSlamButton;
+        [SerializeField] private Button debugLineStrikeButton;
         [SerializeField] private Button debugMarkStrikeButton;
+        [SerializeField] private Button debugTrackingMarkButton;
         [SerializeField] private Button debugWideBurstButton;
+        [SerializeField] private Button debugChargedWideBurstButton;
+        [SerializeField] private Button debugCorruptionRingButton;
         [SerializeField] private Button debugBossKillButton;
+        [SerializeField] private Button debugBossHealthButton;
+        [SerializeField] private Button debugPhase1Button;
+        [SerializeField] private Button debugPhase2Button;
+        [SerializeField] private Button debugPhase3Button;
         [SerializeField] private Sprite commanderHeartSprite;
+        [SerializeField] private GameObject finalChargeRoot;
+        [SerializeField] private Image finalChargeFill;
+        [SerializeField] private Text finalChargeWarning;
+        [SerializeField] private Text finalChargeTimeValue;
+        [SerializeField] private Text phaseTransitionNotice;
+        [SerializeField, Range(0f, 1f)] private float timeoutWarningMinAlpha = 0.35f;
+        [SerializeField, Min(0.05f)] private float timeoutWarningPulseInterval = 0.45f;
 
         private IBossDungeonHudSource hudSource;
         private IBossDungeonTimeoutController timeoutController;
         private IBossDungeonBossKillController bossKillController;
+        private IBossDungeonBossHealthDebugController bossHealthDebugController;
         private IBossDungeonAttackDebugController attackDebugController;
         private bool showDebugControls;
+        private bool keepRestartVisibleWhenUnbound;
         private static Font runtimeKoreanFont;
         private RectTransform commanderHeartRoot;
         private Text commanderStunNotice;
+        private CanvasGroup finalChargeCanvasGroup;
+        private bool isTimeoutWarningPulsing;
+        private float activeTimeoutWarningPulseInterval = 0.45f;
         private readonly List<Graphic> commanderHeartGraphics = new List<Graphic>();
+        private readonly Dictionary<GameObject, bool> hiddenHudRootChildren =
+            new Dictionary<GameObject, bool>();
         private int renderedCommanderMaxHearts = -1;
 
         // Controller와 HUD를 연결한다.
@@ -133,8 +201,10 @@ namespace ProjectMT.Contents.FallenCommander
             hudSource = targetController;
             timeoutController = targetController as IBossDungeonTimeoutController;
             bossKillController = targetController as IBossDungeonBossKillController;
+            bossHealthDebugController = targetController as IBossDungeonBossHealthDebugController;
             attackDebugController = targetController as IBossDungeonAttackDebugController;
             showDebugControls = showDebugButtons;
+            keepRestartVisibleWhenUnbound = showDebugButtons;
             if (hudSource != null)
             {
                 // Controller가 HudStateChanged 이벤트를 발생시키면
@@ -143,22 +213,48 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             SetVisible(true);
+            finalChargeCanvasGroup = finalChargeRoot == null
+                ? null
+                : finalChargeRoot.GetComponent<CanvasGroup>();
+            finalChargeRoot?.SetActive(false);
+            phaseTransitionNotice?.gameObject.SetActive(false);
             EnsureRuntimeControls();
             ConfigureAttackDebugLabels();
             ApplyHudLayout();
             SetControlVisibility();
             debugTimeoutButton?.onClick.RemoveListener(HandleDebugTimeout);
             debugTimeoutButton?.onClick.AddListener(HandleDebugTimeout);
+            debugReduceTimeButton?.onClick.RemoveListener(HandleDebugReduceTime);
+            debugReduceTimeButton?.onClick.AddListener(HandleDebugReduceTime);
             debugBasicAttackButton?.onClick.RemoveListener(HandleDebugBasicAttack);
             debugBasicAttackButton?.onClick.AddListener(HandleDebugBasicAttack);
             debugHandSlamButton?.onClick.RemoveListener(HandleDebugHandSlam);
             debugHandSlamButton?.onClick.AddListener(HandleDebugHandSlam);
+            debugLineStrikeButton?.onClick.RemoveListener(HandleDebugLineStrike);
+            debugLineStrikeButton?.onClick.AddListener(HandleDebugLineStrike);
             debugMarkStrikeButton?.onClick.RemoveListener(HandleDebugMarkStrike);
             debugMarkStrikeButton?.onClick.AddListener(HandleDebugMarkStrike);
+            debugTrackingMarkButton?.onClick.RemoveListener(HandleDebugTrackingMark);
+            debugTrackingMarkButton?.onClick.AddListener(HandleDebugTrackingMark);
             debugWideBurstButton?.onClick.RemoveListener(HandleDebugWideBurst);
             debugWideBurstButton?.onClick.AddListener(HandleDebugWideBurst);
+            debugChargedWideBurstButton?.onClick.RemoveListener(HandleDebugChargedWideBurst);
+            debugChargedWideBurstButton?.onClick.AddListener(HandleDebugChargedWideBurst);
+            debugCorruptionRingButton?.onClick.RemoveListener(HandleDebugCorruptionRing);
+            debugCorruptionRingButton?.onClick.AddListener(HandleDebugCorruptionRing);
             debugBossKillButton?.onClick.RemoveListener(HandleDebugKillBoss);
             debugBossKillButton?.onClick.AddListener(HandleDebugKillBoss);
+            debugBossHealthButton?.onClick.RemoveListener(HandleDebugBossHealth);
+            debugPhase1Button?.onClick.RemoveListener(HandleDebugPhase1);
+            debugPhase1Button?.onClick.AddListener(HandleDebugPhase1);
+            debugPhase2Button?.onClick.RemoveListener(HandleDebugPhase2);
+            debugPhase2Button?.onClick.AddListener(HandleDebugPhase2);
+            debugPhase3Button?.onClick.RemoveListener(HandleDebugPhase3);
+            debugPhase3Button?.onClick.AddListener(HandleDebugPhase3);
+            phaseTransitionNotice?.gameObject.SetActive(false);
+            isTimeoutWarningPulsing = false;
+            SetFinalChargeAlpha(1f);
+            debugBossHealthButton?.onClick.AddListener(HandleDebugBossHealth);
         }
 
         // Controller와 HUD의 연결을 해제
@@ -174,14 +270,24 @@ namespace ProjectMT.Contents.FallenCommander
             hudSource = null;
             timeoutController = null;
             bossKillController = null;
+            bossHealthDebugController = null;
             attackDebugController = null;
             showDebugControls = false;
             debugTimeoutButton?.onClick.RemoveListener(HandleDebugTimeout);
+            debugReduceTimeButton?.onClick.RemoveListener(HandleDebugReduceTime);
             debugBasicAttackButton?.onClick.RemoveListener(HandleDebugBasicAttack);
             debugHandSlamButton?.onClick.RemoveListener(HandleDebugHandSlam);
+            debugLineStrikeButton?.onClick.RemoveListener(HandleDebugLineStrike);
             debugMarkStrikeButton?.onClick.RemoveListener(HandleDebugMarkStrike);
+            debugTrackingMarkButton?.onClick.RemoveListener(HandleDebugTrackingMark);
             debugWideBurstButton?.onClick.RemoveListener(HandleDebugWideBurst);
+            debugChargedWideBurstButton?.onClick.RemoveListener(HandleDebugChargedWideBurst);
+            debugCorruptionRingButton?.onClick.RemoveListener(HandleDebugCorruptionRing);
             debugBossKillButton?.onClick.RemoveListener(HandleDebugKillBoss);
+            debugBossHealthButton?.onClick.RemoveListener(HandleDebugBossHealth);
+            debugPhase1Button?.onClick.RemoveListener(HandleDebugPhase1);
+            debugPhase2Button?.onClick.RemoveListener(HandleDebugPhase2);
+            debugPhase3Button?.onClick.RemoveListener(HandleDebugPhase3);
         }
 
         private void SetControlVisibility()
@@ -194,16 +300,36 @@ namespace ProjectMT.Contents.FallenCommander
             comboScoreValue?.gameObject.SetActive(false);
             debugTimeoutButton?.gameObject.SetActive(
                 hasTimedBattle && showDebugControls);
+            debugReduceTimeButton?.gameObject.SetActive(
+                hasTimedBattle && showDebugControls);
+            debugRestartBattleButton?.gameObject.SetActive(
+                keepRestartVisibleWhenUnbound);
             debugBasicAttackButton?.gameObject.SetActive(
                 hasAttackDebug && showDebugControls);
             debugHandSlamButton?.gameObject.SetActive(
                 hasAttackDebug && showDebugControls);
+            debugLineStrikeButton?.gameObject.SetActive(
+                hasAttackDebug && showDebugControls);
             debugMarkStrikeButton?.gameObject.SetActive(
+                hasAttackDebug && showDebugControls);
+            debugTrackingMarkButton?.gameObject.SetActive(
                 hasAttackDebug && showDebugControls);
             debugWideBurstButton?.gameObject.SetActive(
                 hasAttackDebug && showDebugControls);
+            debugChargedWideBurstButton?.gameObject.SetActive(
+                hasAttackDebug && showDebugControls);
+            debugCorruptionRingButton?.gameObject.SetActive(
+                hasAttackDebug && showDebugControls);
             debugBossKillButton?.gameObject.SetActive(
                 bossKillController != null && showDebugControls);
+            debugBossHealthButton?.gameObject.SetActive(
+                bossHealthDebugController != null && showDebugControls);
+            debugPhase1Button?.gameObject.SetActive(
+                bossHealthDebugController != null && showDebugControls);
+            debugPhase2Button?.gameObject.SetActive(
+                bossHealthDebugController != null && showDebugControls);
+            debugPhase3Button?.gameObject.SetActive(
+                bossHealthDebugController != null && showDebugControls);
         }
         // HUD 전체의 표시 여부
         public void SetVisible(bool visible)
@@ -221,7 +347,21 @@ namespace ProjectMT.Contents.FallenCommander
                     parent = parent.parent;
                 }
 
-                hudRoot.SetActive(visible);
+                if (visible)
+                {
+                    hudRoot.SetActive(true);
+                    RestoreHudRootChildren();
+                }
+                else if (CanKeepRestartVisible())
+                {
+                    hudRoot.SetActive(true);
+                    HideHudRootChildrenExceptRestart();
+                }
+                else
+                {
+                    hiddenHudRootChildren.Clear();
+                    hudRoot.SetActive(false);
+                }
             }
 
             if (!visible && commanderHeartRoot != null)
@@ -233,6 +373,74 @@ namespace ProjectMT.Contents.FallenCommander
             {
                 commanderStunNotice.gameObject.SetActive(false);
             }
+
+            if (!visible && finalChargeRoot != null)
+            {
+                finalChargeRoot.SetActive(false);
+            }
+
+            if (!visible)
+            {
+                isTimeoutWarningPulsing = false;
+                SetFinalChargeAlpha(1f);
+            }
+
+            if (!visible)
+            {
+                phaseTransitionNotice?.gameObject.SetActive(false);
+            }
+        }
+
+        // DEV 재시작 버튼이 HUD Canvas의 직접 자식일 때 종료 후에도 표시한다.
+        private bool CanKeepRestartVisible()
+        {
+            return keepRestartVisibleWhenUnbound &&
+                debugRestartBattleButton != null &&
+                debugRestartBattleButton.transform.parent == hudRoot.transform;
+        }
+
+        // 재시작 버튼을 제외한 HUD Canvas의 직접 자식 상태를 저장하고 숨긴다.
+        private void HideHudRootChildrenExceptRestart()
+        {
+            hiddenHudRootChildren.Clear();
+            foreach (Transform child in hudRoot.transform)
+            {
+                if (child == debugRestartBattleButton.transform)
+                {
+                    child.gameObject.SetActive(true);
+                    continue;
+                }
+
+                hiddenHudRootChildren[child.gameObject] = child.gameObject.activeSelf;
+                child.gameObject.SetActive(false);
+            }
+        }
+
+        // 재시작 전에 저장했던 HUD Canvas 자식 활성 상태를 복원한다.
+        private void RestoreHudRootChildren()
+        {
+            foreach (var entry in hiddenHudRootChildren)
+            {
+                if (entry.Key != null)
+                {
+                    entry.Key.SetActive(entry.Value);
+                }
+            }
+
+            hiddenHudRootChildren.Clear();
+        }
+
+        private void Update()
+        {
+            if (!isTimeoutWarningPulsing || finalChargeCanvasGroup == null)
+            {
+                return;
+            }
+
+            var pulse = Mathf.PingPong(
+                Time.unscaledTime / Mathf.Max(0.05f, activeTimeoutWarningPulseInterval),
+                1f);
+            SetFinalChargeAlpha(Mathf.Lerp(timeoutWarningMinAlpha, 1f, pulse));
         }
 
         private void OnDestroy()
@@ -240,6 +448,7 @@ namespace ProjectMT.Contents.FallenCommander
             Unbind();
         }
         // Controller가 새로운 HUD 상태를 전달하면 호출
+        // 전달받은 전투 상태를 체력·게이지·경고·페이즈 UI에 반영한다.
         private void Render(FallenCommanderHudState state)
         {
             // 현재 체력을 0~1 비율로 계산한다.
@@ -258,7 +467,72 @@ namespace ProjectMT.Contents.FallenCommander
             SetHorizontalFill(bossHealthFill, healthRatio);
             SetHorizontalFill(breakGaugeFill, breakRatio);
             SetHorizontalFill(breakDurationFill, state.IsBroken ? breakDurationRatio : 0f);
+            var finalChargeRatio = state.FinalChargeDuration > 0f
+                ? 1f - state.FinalChargeRemainingTime / state.FinalChargeDuration
+                : 0f;
+            var timeoutWarningRatio = state.TimeoutWarningDuration > 0f
+                ? 1f - state.RemainingTime / state.TimeoutWarningDuration
+                : 0f;
+            SetHorizontalFill(
+                finalChargeFill,
+                state.IsTimeoutWipeActive
+                    ? 1f
+                    : state.IsTimeoutWarningActive
+                        ? timeoutWarningRatio
+                    : state.IsFinalChargeActive
+                        ? finalChargeRatio
+                        : 0f);
             RenderCommanderHearts(state.CommanderCurrentHearts, state.CommanderMaxHearts);
+
+            if (phaseTransitionNotice != null)
+            {
+                phaseTransitionNotice.gameObject.SetActive(state.IsPhaseTransitionActive);
+                if (state.IsPhaseTransitionActive)
+                {
+                    phaseTransitionNotice.text = string.IsNullOrWhiteSpace(
+                        state.PhaseTransitionMessage)
+                            ? $"{state.BossPhase} 페이즈"
+                            : state.PhaseTransitionMessage;
+                }
+            }
+
+            if (finalChargeRoot != null)
+            {
+                finalChargeRoot.SetActive(
+                    state.IsFinalChargeActive ||
+                    state.IsTimeoutWarningActive ||
+                    state.IsTimeoutWipeActive);
+            }
+
+            isTimeoutWarningPulsing =
+                state.IsTimeoutWarningActive || state.IsTimeoutWipeActive;
+            activeTimeoutWarningPulseInterval = state.TimeoutWipePulseInterval > 0f
+                ? state.TimeoutWipePulseInterval
+                : timeoutWarningPulseInterval;
+            if (!isTimeoutWarningPulsing)
+            {
+                SetFinalChargeAlpha(1f);
+            }
+
+            if (finalChargeWarning != null)
+            {
+                finalChargeWarning.text = state.IsTimeoutWipeActive
+                    ? string.IsNullOrWhiteSpace(state.TimeoutWipeMessage)
+                        ? "시간 종료! 전멸 공격이 발동됩니다!"
+                        : state.TimeoutWipeMessage
+                    : state.IsTimeoutWarningActive
+                        ? "경고! 곧 전멸 공격이 발동됩니다!"
+                        : "경고! 보스가 강력한 광역 공격을 준비합니다!";
+            }
+
+            if (finalChargeTimeValue != null)
+            {
+                finalChargeTimeValue.text = state.IsTimeoutWipeActive
+                    ? "전멸 공격 발동!"
+                    : state.IsTimeoutWarningActive
+                        ? $"전멸까지 {state.RemainingTime:0.0}초"
+                        : $"광역 공격까지 {state.FinalChargeRemainingTime:0.0}초";
+            }
 
             if (commanderStunNotice != null)
             {
@@ -309,12 +583,30 @@ namespace ProjectMT.Contents.FallenCommander
             timeoutController?.DebugTimeout();
         }
 
+        private void HandleDebugReduceTime()
+        {
+            timeoutController?.DebugReduceTimeTenSeconds();
+        }
+
         private void HandleDebugBasicAttack()
         {
             attackDebugController?.DebugBasicAttack();
         }
 
         private void HandleDebugHandSlam()
+        {
+            attackDebugController?.DebugMeleeAttack();
+        }
+
+        private void SetFinalChargeAlpha(float alpha)
+        {
+            if (finalChargeCanvasGroup != null)
+            {
+                finalChargeCanvasGroup.alpha = Mathf.Clamp01(alpha);
+            }
+        }
+
+        private void HandleDebugLineStrike()
         {
             attackDebugController?.DebugLineStrike();
         }
@@ -324,9 +616,24 @@ namespace ProjectMT.Contents.FallenCommander
             attackDebugController?.DebugMarkStrike();
         }
 
+        private void HandleDebugTrackingMark()
+        {
+            attackDebugController?.DebugTrackingMark();
+        }
+
         private void HandleDebugWideBurst()
         {
             attackDebugController?.DebugWideBurst();
+        }
+
+        private void HandleDebugChargedWideBurst()
+        {
+            attackDebugController?.DebugChargedWideBurst();
+        }
+
+        private void HandleDebugCorruptionRing()
+        {
+            attackDebugController?.DebugCorruptionRing();
         }
 
         private void HandleDebugKillBoss()
@@ -334,9 +641,41 @@ namespace ProjectMT.Contents.FallenCommander
             bossKillController?.DebugKillBoss();
         }
 
+        private void HandleDebugBossHealth()
+        {
+            bossHealthDebugController?.DebugDamageBossTenPercent();
+        }
+
+        private void HandleDebugPhase1()
+        {
+            bossHealthDebugController?.DebugSetBossPhase(1);
+        }
+
+        private void HandleDebugPhase2()
+        {
+            bossHealthDebugController?.DebugSetBossPhase(2);
+        }
+
+        private void HandleDebugPhase3()
+        {
+            bossHealthDebugController?.DebugSetBossPhase(3);
+        }
+
         private void ConfigureAttackDebugLabels()
         {
-            SetButtonLabel(debugHandSlamButton, "직선 공격");
+            SetButtonLabel(debugBasicAttackButton, "기본 공격");
+            SetButtonLabel(debugHandSlamButton, "근접 공격");
+            SetButtonLabel(debugLineStrikeButton, "직선 공격");
+            SetButtonLabel(debugTrackingMarkButton, "추적 낙인");
+            SetButtonLabel(debugWideBurstButton, "블랙홀");
+            SetButtonLabel(debugChargedWideBurstButton, "충전 광역기");
+            SetButtonLabel(debugCorruptionRingButton, "타락의 고리");
+            SetButtonLabel(debugBossHealthButton, "보스 체력 -10%");
+            SetButtonLabel(debugPhase1Button, "1 페이즈");
+            SetButtonLabel(debugPhase2Button, "2 페이즈");
+            SetButtonLabel(debugPhase3Button, "3 페이즈");
+            SetButtonLabel(debugReduceTimeButton, "시간 -10초");
+            SetButtonLabel(debugRestartBattleButton, "전투 재시작");
         }
 
         private static void SetButtonLabel(Button button, string text)
@@ -382,6 +721,34 @@ namespace ProjectMT.Contents.FallenCommander
                     new Color(0.2f, 0.8f, 1f, 1f));
             }
 
+            if (phaseTransitionNotice == null)
+            {
+                var editorNotice = hudRoot.transform.Find(
+                    "BossPhaseNotice_Editor");
+                phaseTransitionNotice = editorNotice == null
+                    ? null
+                    : editorNotice.GetComponent<Text>();
+            }
+
+            if (phaseTransitionNotice == null)
+            {
+                phaseTransitionNotice = CreateRuntimeText(
+                    "BossPhaseNotice_Runtime",
+                    new Vector2(0f, 80f),
+                    new Vector2(500f, 100f),
+                    hudRoot.transform);
+                var rect = phaseTransitionNotice.rectTransform;
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.anchoredPosition = new Vector2(0f, 80f);
+                phaseTransitionNotice.alignment = TextAnchor.MiddleCenter;
+                phaseTransitionNotice.fontSize = 48;
+                phaseTransitionNotice.fontStyle = FontStyle.Bold;
+                phaseTransitionNotice.color = new Color(1f, 0.75f, 0.2f, 1f);
+                phaseTransitionNotice.text = "2 페이즈";
+            }
+
             if (showDebugControls && debugTimeoutButton == null)
             {
                 var buttonObject = new GameObject("DebugTimeoutButton_Runtime");
@@ -410,6 +777,69 @@ namespace ProjectMT.Contents.FallenCommander
                 debugTimeoutButton.onClick.AddListener(HandleDebugTimeout);
             }
 
+            if (debugReduceTimeButton == null)
+            {
+                var editorButton = hudRoot.transform.Find(
+                    "BossStatusPanel/Testbutton/DebugReduceTimeButton_Editor");
+                debugReduceTimeButton = editorButton == null
+                    ? null
+                    : editorButton.GetComponent<Button>();
+            }
+
+            if (debugRestartBattleButton == null)
+            {
+                var editorButton = hudRoot.transform.Find(
+                    "DebugRestartBattleButton_Editor");
+                debugRestartBattleButton = editorButton == null
+                    ? null
+                    : editorButton.GetComponent<Button>();
+            }
+
+            if (debugCorruptionRingButton == null)
+            {
+                var editorButton = hudRoot.transform.Find(
+                    "BossStatusPanel/Testbutton/DebugCorruptionRingButton_Editor");
+                debugCorruptionRingButton = editorButton == null
+                    ? null
+                    : editorButton.GetComponent<Button>();
+            }
+
+            if (debugTrackingMarkButton == null)
+            {
+                var editorButton = hudRoot.transform.Find(
+                    "BossStatusPanel/Testbutton/DebugTrackingMarkButton_Editor");
+                debugTrackingMarkButton = editorButton == null
+                    ? null
+                    : editorButton.GetComponent<Button>();
+            }
+
+            if (debugPhase1Button == null)
+            {
+                var editorButton = hudRoot.transform.Find(
+                    "PhaseDebugButtons_Editor/DebugPhase1Button_Editor");
+                debugPhase1Button = editorButton == null
+                    ? null
+                    : editorButton.GetComponent<Button>();
+            }
+
+            if (debugPhase2Button == null)
+            {
+                var editorButton = hudRoot.transform.Find(
+                    "PhaseDebugButtons_Editor/DebugPhase2Button_Editor");
+                debugPhase2Button = editorButton == null
+                    ? null
+                    : editorButton.GetComponent<Button>();
+            }
+
+            if (debugPhase3Button == null)
+            {
+                var editorButton = hudRoot.transform.Find(
+                    "PhaseDebugButtons_Editor/DebugPhase3Button_Editor");
+                debugPhase3Button = editorButton == null
+                    ? null
+                    : editorButton.GetComponent<Button>();
+            }
+
             EnsureCommanderHeartRoot();
 
             if (!showDebugControls)
@@ -427,6 +857,11 @@ namespace ProjectMT.Contents.FallenCommander
                 "내려찍기",
                 new Vector2(128f, -182f),
                 new Color(0.85f, 0.35f, 0.2f, 1f));
+            debugLineStrikeButton ??= CreateRuntimeButton(
+                "DebugLineStrikeButton_Runtime",
+                "직선 공격",
+                new Vector2(428f, -182f),
+                new Color(0.25f, 0.45f, 0.85f, 1f));
             debugMarkStrikeButton ??= CreateRuntimeButton(
                 "DebugMarkStrikeButton_Runtime",
                 "위치 공격",
@@ -434,9 +869,29 @@ namespace ProjectMT.Contents.FallenCommander
                 new Color(0.3f, 0.65f, 0.8f, 1f));
             debugWideBurstButton ??= CreateRuntimeButton(
                 "DebugWideBurstButton_Runtime",
-                "광역기",
+                "블랙홀",
                 new Vector2(328f, -182f),
                 new Color(0.7f, 0.25f, 0.75f, 1f));
+            debugChargedWideBurstButton ??= CreateRuntimeButton(
+                "DebugChargedWideBurstButton_Runtime",
+                "충전 광역기",
+                new Vector2(528f, -182f),
+                new Color(0.75f, 0.18f, 0.18f, 1f));
+            debugCorruptionRingButton ??= CreateRuntimeButton(
+                "DebugCorruptionRingButton_Runtime",
+                "타락의 고리",
+                new Vector2(628f, -182f),
+                new Color(0.55f, 0.08f, 0.2f, 1f));
+            debugTrackingMarkButton ??= CreateRuntimeButton(
+                "DebugTrackingMarkButton_Runtime",
+                "추적 낙인",
+                new Vector2(728f, -182f),
+                new Color(0.15f, 0.55f, 0.8f, 1f));
+            debugReduceTimeButton ??= CreateRuntimeButton(
+                "DebugReduceTimeButton_Runtime",
+                "시간 -10초",
+                new Vector2(128f, -150f),
+                new Color(0.8f, 0.35f, 0.15f, 1f));
             if (debugBossKillButton == null)
             {
                 var editorButton =
@@ -451,12 +906,75 @@ namespace ProjectMT.Contents.FallenCommander
                 "보스 처치",
                 new Vector2(196f, -150f),
                 new Color(0.65f, 0.18f, 0.18f, 1f));
+
+            if (debugBossHealthButton == null)
+            {
+                var editorButton = hudRoot.transform.Find(
+                    "BossStatusPanel/Testbutton/DebugBossHealthButton_Editor");
+                debugBossHealthButton = editorButton == null
+                    ? null
+                    : editorButton.GetComponent<Button>();
+            }
+
+            debugBossHealthButton ??= CreateRuntimeButton(
+                "DebugBossHealthButton_Runtime",
+                "보스 체력 -10%",
+                new Vector2(196f, -182f),
+                new Color(0.65f, 0.45f, 0.18f, 1f));
+
+            if (debugPhase1Button == null ||
+                debugPhase2Button == null ||
+                debugPhase3Button == null)
+            {
+                var phaseRoot = hudRoot.transform.Find("PhaseDebugButtons_Runtime");
+                if (phaseRoot == null)
+                {
+                    var phaseRootObject = new GameObject("PhaseDebugButtons_Runtime");
+                    phaseRootObject.transform.SetParent(hudRoot.transform, false);
+                    var phaseRect = phaseRootObject.AddComponent<RectTransform>();
+                    phaseRect.anchorMin = new Vector2(0f, 1f);
+                    phaseRect.anchorMax = new Vector2(0f, 1f);
+                    phaseRect.pivot = new Vector2(0f, 1f);
+                    phaseRect.anchoredPosition = new Vector2(28f, -180f);
+                    phaseRect.sizeDelta = new Vector2(110f, 108f);
+                    var grid = phaseRootObject.AddComponent<GridLayoutGroup>();
+                    grid.cellSize = new Vector2(110f, 32f);
+                    grid.spacing = new Vector2(0f, 6f);
+                    grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                    grid.constraintCount = 1;
+                    phaseRoot = phaseRootObject.transform;
+                }
+
+                debugPhase1Button ??= CreateRuntimeButton(
+                    "DebugPhase1Button_Runtime",
+                    "1 페이즈",
+                    Vector2.zero,
+                    new Color(0.25f, 0.55f, 0.8f, 1f),
+                    phaseRoot);
+                debugPhase2Button ??= CreateRuntimeButton(
+                    "DebugPhase2Button_Runtime",
+                    "2 페이즈",
+                    Vector2.zero,
+                    new Color(0.7f, 0.45f, 0.15f, 1f),
+                    phaseRoot);
+                debugPhase3Button ??= CreateRuntimeButton(
+                    "DebugPhase3Button_Runtime",
+                    "3 페이즈",
+                    Vector2.zero,
+                    new Color(0.65f, 0.15f, 0.2f, 1f),
+                    phaseRoot);
+            }
         }
 
-        private Button CreateRuntimeButton(string name, string labelText, Vector2 position, Color color)
+        private Button CreateRuntimeButton(
+            string name,
+            string labelText,
+            Vector2 position,
+            Color color,
+            Transform parent = null)
         {
             var buttonObject = new GameObject(name);
-            buttonObject.transform.SetParent(hudRoot.transform, false);
+            buttonObject.transform.SetParent(parent == null ? hudRoot.transform : parent, false);
             var rect = buttonObject.AddComponent<RectTransform>();
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(0f, 1f);
@@ -602,25 +1120,6 @@ namespace ProjectMT.Contents.FallenCommander
             if (buttonRect.parent is RectTransform container &&
                 container.name == "Testbutton")
             {
-                if (container.TryGetComponent<GridLayoutGroup>(out var layout))
-                {
-                    layout.cellSize = new Vector2(110f, 32f);
-                    layout.spacing = Vector2.zero;
-                    layout.padding = new RectOffset();
-                    layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-                    layout.constraintCount = 1;
-                }
-
-                SetTopRight(
-                    container,
-                    new Vector2(350f, -90f),
-                    new Vector2(110f, 32f));
-                buttonRect.anchorMin = Vector2.zero;
-                buttonRect.anchorMax = Vector2.one;
-                buttonRect.pivot = new Vector2(0.5f, 0.5f);
-                buttonRect.anchoredPosition = Vector2.zero;
-                buttonRect.sizeDelta = Vector2.zero;
-                buttonRect.localScale = Vector3.one;
                 return;
             }
 

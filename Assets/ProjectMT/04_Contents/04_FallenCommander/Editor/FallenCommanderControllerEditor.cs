@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace ProjectMT.Contents.FallenCommander.Editor
@@ -9,12 +10,14 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private SerializedProperty bossPrefabProperty;
         private SerializedProperty bossSpawnPointProperty;
         private SerializedProperty bossConfigProperty;
+        private SerializedProperty commanderRootProperty;
 
         private void OnEnable()
         {
             bossPrefabProperty = serializedObject.FindProperty("bossPrefab");
             bossSpawnPointProperty = serializedObject.FindProperty("bossSpawnPoint");
             bossConfigProperty = serializedObject.FindProperty("bossConfig");
+            commanderRootProperty = serializedObject.FindProperty("commanderRoot");
         }
 
         public override void OnInspectorGUI()
@@ -24,31 +27,31 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             serializedObject.ApplyModifiedProperties();
 
             EditorGUILayout.Space(8f);
-            EditorGUILayout.LabelField("Boss Motion Preview", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("보스 모션 미리보기", EditorStyles.boldLabel);
 
             var config = bossConfigProperty.objectReferenceValue as FallenCommanderBossConfig;
             if (config == null)
             {
                 EditorGUILayout.HelpBox(
-                    "Assign a Fallen Commander Boss Config to enable motion previews.",
+                    "보스 설정 데이터를 연결하면 모션을 미리 볼 수 있습니다.",
                     MessageType.Info);
                 return;
             }
 
             EditorGUILayout.HelpBox(
                 Application.isPlaying
-                    ? "Play Mode: preview plays on the spawned boss."
-                    : "Edit Mode: preview creates a temporary boss in the Scene view.",
+                    ? "게임 실행 중: 현재 생성된 보스가 모션을 재생합니다."
+                    : "편집 중: 현재 씬에 임시 보스를 생성하여 모션을 표시합니다.",
                 MessageType.None);
 
-            DrawAttackPreview("Basic Attack", config.BasicAttack);
-            DrawAttackPreview("Mark Strike", config.MarkStrike);
-            DrawAttackPreview("Wide Burst", config.WideBurst);
-            DrawAttackPreview("Line Strike", config.LineStrike);
-            DrawMotionPreview("Boss Break", config.BreakMotion, config.BreakMotionDuration);
-            DrawMotionPreview("Boss Death", config.DeathMotion, config.DeathMotionDuration);
+            DrawAttackPreview("근접 공격", config.MeleeAttack);
+            DrawAttackPreview("위치 공격", config.MarkStrike);
+            DrawAttackPreview("블랙홀", config.BlackHole);
+            DrawAttackPreview("직선 공격", config.LineStrike);
+            DrawMotionPreview("보스 브레이크", config.BreakMotion, config.BreakMotionDuration);
+            DrawMotionPreview("보스 사망", config.DeathMotion, config.DeathMotionDuration);
 
-            if (GUILayout.Button("Stop Motion Preview"))
+            if (GUILayout.Button("모션 미리보기 종료"))
             {
                 FallenCommanderBossEditorPreview.Stop();
             }
@@ -62,24 +65,31 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
 
             EditorGUILayout.LabelField(
-                $"{label}  ({attack.PreCastMotionDuration:0.###}s → {attack.CastMotionDuration:0.###}s)",
+                $"{label}  (시전 속도 x{attack.PreCastMotionSpeed:0.##} / {attack.PreCastMotionDuration:0.###}초 → " +
+                $"공격 속도 x{attack.CastMotionSpeed:0.##} / {attack.CastMotionDuration:0.###}초)",
                 EditorStyles.miniLabel);
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button($"▶ {label}: Pre Cast → Cast"))
+                if (GUILayout.Button($"▶ {label}: 시전 → 공격"))
                 {
                     PreviewAttack(attack);
                 }
 
-                if (GUILayout.Button("Pre Cast", GUILayout.Width(72f)))
+                if (GUILayout.Button("시전 보기", GUILayout.Width(72f)))
                 {
-                    PreviewMotion(attack.PreCastMotion, attack.PreCastMotionDuration);
+                    PreviewMotion(
+                        attack.PreCastMotion,
+                        attack.PreCastMotionDuration,
+                        attack.PreCastMotionSpeed);
                 }
 
-                if (GUILayout.Button("Cast", GUILayout.Width(52f)))
+                if (GUILayout.Button("공격 보기", GUILayout.Width(72f)))
                 {
-                    PreviewMotion(attack.CastMotion, attack.CastMotionDuration);
+                    PreviewMotion(
+                        attack.CastMotion,
+                        attack.CastMotionDuration,
+                        attack.CastMotionSpeed);
                 }
             }
         }
@@ -94,7 +104,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             using (new EditorGUILayout.HorizontalScope())
             {
                 EditorGUILayout.LabelField(
-                    $"{label} ({duration:0.###}s)",
+                    $"{label} ({duration:0.###}초)",
                     GUILayout.Width(190f));
                 if (GUILayout.Button($"▶ {label}"))
                 {
@@ -110,9 +120,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 if (!((FallenCommanderController)target).PreviewBossAttack(attack))
                 {
                     EditorUtility.DisplayDialog(
-                        "Boss Motion Preview",
-                        "Enter the dungeon first so the boss can be spawned.",
-                        "OK");
+                        "보스 모션 미리보기",
+                        "보스가 생성되도록 던전에 먼저 입장해 주세요.",
+                        "확인");
                 }
 
                 return;
@@ -121,13 +131,19 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             FallenCommanderBossEditorPreview.PlaySequence(
                 GetBossPrefab(),
                 GetSpawnPoint(),
+                GetFacingTarget(),
                 attack.PreCastMotion,
                 attack.PreCastMotionDuration,
+                attack.PreCastMotionSpeed,
                 attack.CastMotion,
-                attack.CastMotionDuration);
+                attack.CastMotionDuration,
+                attack.CastMotionSpeed);
         }
 
-        private void PreviewMotion(AnimationClip motion, float duration)
+        private void PreviewMotion(
+            AnimationClip motion,
+            float duration,
+            float playbackSpeed = 1f)
         {
             if (motion == null)
             {
@@ -136,12 +152,15 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
             if (Application.isPlaying)
             {
-                if (!((FallenCommanderController)target).PreviewBossMotion(motion, duration))
+                if (!((FallenCommanderController)target).PreviewBossMotion(
+                    motion,
+                    duration,
+                    playbackSpeed))
                 {
                     EditorUtility.DisplayDialog(
-                        "Boss Motion Preview",
-                        "Enter the dungeon first so the boss can be spawned.",
-                        "OK");
+                        "보스 모션 미리보기",
+                        "보스가 생성되도록 던전에 먼저 입장해 주세요.",
+                        "확인");
                 }
 
                 return;
@@ -150,10 +169,13 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             FallenCommanderBossEditorPreview.PlaySequence(
                 GetBossPrefab(),
                 GetSpawnPoint(),
+                GetFacingTarget(),
                 motion,
                 duration,
+                playbackSpeed,
                 null,
-                0f);
+                0f,
+                1f);
         }
 
         private GameObject GetBossPrefab()
@@ -165,6 +187,13 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         {
             return bossSpawnPointProperty.objectReferenceValue as Transform;
         }
+
+        // 편집 모드 미리보기 보스가 바라볼 군단장 Transform을 반환한다.
+        private Transform GetFacingTarget()
+        {
+            var commanderRoot = commanderRootProperty.objectReferenceValue as GameObject;
+            return commanderRoot == null ? null : commanderRoot.transform;
+        }
     }
 
     [InitializeOnLoad]
@@ -175,6 +204,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private static AnimationClip secondMotion;
         private static float firstDuration;
         private static float secondDuration;
+        private static float firstSpeed = 1f;
+        private static float secondSpeed = 1f;
         private static double lastTime;
         private static float elapsed;
 
@@ -185,54 +216,95 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             AssemblyReloadEvents.beforeAssemblyReload += Stop;
         }
 
+        // 임시 보스를 안전하게 생성하고 지정된 모션들을 순서대로 미리 재생한다.
         public static void PlaySequence(
             GameObject prefab,
             Transform spawnPoint,
+            Transform facingTarget,
             AnimationClip first,
             float firstLength,
+            float firstPlaybackSpeed,
             AnimationClip second,
-            float secondLength)
+            float secondLength,
+            float secondPlaybackSpeed)
         {
             Stop();
-            if (prefab == null || (first == null && second == null))
+            FallenCommanderAttackEditorPreview.Stop();
+            if (PrefabStageUtility.GetCurrentPrefabStage() != null ||
+                prefab == null ||
+                (first == null && second == null))
             {
                 return;
             }
 
-            previewRoot = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
-            if (previewRoot == null)
+            GameObject createdRoot = null;
+            var initialized = false;
+            try
             {
-                return;
-            }
+                createdRoot = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+                if (createdRoot == null)
+                {
+                    return;
+                }
 
-            previewRoot.name = $"[Motion Preview] {prefab.name}";
-            previewRoot.hideFlags = HideFlags.DontSave;
-            if (spawnPoint != null)
+                createdRoot.name = $"[모션 미리보기] {prefab.name}";
+                createdRoot.hideFlags = HideFlags.HideAndDontSave;
+                if (spawnPoint != null)
+                {
+                    createdRoot.transform.SetPositionAndRotation(
+                        spawnPoint.position,
+                        spawnPoint.rotation);
+                }
+
+                FaceTarget(createdRoot.transform, facingTarget);
+
+                foreach (var behaviour in createdRoot.GetComponentsInChildren<MonoBehaviour>(true))
+                {
+                    behaviour.enabled = false;
+                }
+
+                var resolvedFirstMotion = first == null ? second : first;
+                var resolvedSecondMotion = first == null ? null : second;
+                var resolvedFirstSpeed = Mathf.Max(
+                    0.01f,
+                    first == null ? secondPlaybackSpeed : firstPlaybackSpeed);
+                var resolvedSecondSpeed = Mathf.Max(0.01f, secondPlaybackSpeed);
+                var resolvedFirstDuration = ResolveDuration(
+                    resolvedFirstMotion,
+                    first == null ? secondLength : firstLength);
+                var resolvedSecondDuration = resolvedSecondMotion == null
+                    ? 0f
+                    : ResolveDuration(resolvedSecondMotion, secondLength);
+
+                previewRoot = createdRoot;
+                firstMotion = resolvedFirstMotion;
+                secondMotion = resolvedSecondMotion;
+                firstSpeed = resolvedFirstSpeed;
+                secondSpeed = resolvedSecondSpeed;
+                firstDuration = resolvedFirstDuration;
+                secondDuration = resolvedSecondDuration;
+                elapsed = 0f;
+                lastTime = EditorApplication.timeSinceStartup;
+
+                AnimationMode.StartAnimationMode();
+                Sample(firstMotion, 0f, firstSpeed);
+                SceneView.RepaintAll();
+                initialized = true;
+            }
+            finally
             {
-                previewRoot.transform.SetPositionAndRotation(
-                    spawnPoint.position,
-                    spawnPoint.rotation);
+                if (!initialized)
+                {
+                    if (createdRoot != null && previewRoot == createdRoot)
+                    {
+                        Stop();
+                    }
+                    else if (createdRoot != null)
+                    {
+                        Object.DestroyImmediate(createdRoot);
+                    }
+                }
             }
-
-            foreach (var behaviour in previewRoot.GetComponentsInChildren<MonoBehaviour>(true))
-            {
-                behaviour.enabled = false;
-            }
-
-            firstMotion = first == null ? second : first;
-            secondMotion = first == null ? null : second;
-            firstDuration = ResolveDuration(
-                firstMotion,
-                first == null ? secondLength : firstLength);
-            secondDuration = secondMotion == null
-                ? 0f
-                : ResolveDuration(secondMotion, secondLength);
-            elapsed = 0f;
-            lastTime = EditorApplication.timeSinceStartup;
-
-            AnimationMode.StartAnimationMode();
-            Sample(firstMotion, 0f);
-            SceneView.RepaintAll();
         }
 
         public static void Stop()
@@ -255,6 +327,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             secondMotion = null;
             firstDuration = 0f;
             secondDuration = 0f;
+            firstSpeed = 1f;
+            secondSpeed = 1f;
             elapsed = 0f;
             SceneView.RepaintAll();
         }
@@ -273,11 +347,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
             if (elapsed < firstDuration)
             {
-                Sample(firstMotion, elapsed);
+                Sample(firstMotion, elapsed, firstSpeed);
             }
             else if (secondMotion != null && elapsed < firstDuration + secondDuration)
             {
-                Sample(secondMotion, elapsed - firstDuration);
+                Sample(secondMotion, elapsed - firstDuration, secondSpeed);
             }
             else
             {
@@ -287,7 +361,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             SceneView.RepaintAll();
         }
 
-        private static void Sample(AnimationClip motion, float time)
+        private static void Sample(
+            AnimationClip motion,
+            float time,
+            float playbackSpeed)
         {
             if (previewRoot == null || motion == null)
             {
@@ -304,7 +381,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             AnimationMode.SampleAnimationClip(
                 animators[0].gameObject,
                 motion,
-                Mathf.Clamp(time, 0f, motion.length));
+                Mathf.Clamp(time * Mathf.Max(0.01f, playbackSpeed), 0f, motion.length));
             AnimationMode.EndSampling();
         }
 
@@ -315,6 +392,26 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 : motion == null
                     ? 0f
                     : Mathf.Max(0.01f, motion.length);
+        }
+
+        // 임시 보스를 생성 즉시 군단장 방향으로 회전시킨다.
+        private static void FaceTarget(Transform bossTransform, Transform facingTarget)
+        {
+            if (bossTransform == null || facingTarget == null)
+            {
+                return;
+            }
+
+            var direction = facingTarget.position - bossTransform.position;
+            direction.y = 0f;
+            if (direction.sqrMagnitude < 0.0001f)
+            {
+                return;
+            }
+
+            bossTransform.rotation = Quaternion.LookRotation(
+                direction.normalized,
+                Vector3.up);
         }
     }
 }

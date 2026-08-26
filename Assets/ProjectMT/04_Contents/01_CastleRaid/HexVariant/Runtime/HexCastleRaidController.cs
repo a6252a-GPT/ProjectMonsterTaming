@@ -81,6 +81,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         private HexCastleGarrisonWorld garrisonWorld;
         private HexCastleAssaultWorld assaultWorld;
         private HexCastleTrapWorld trapWorld;
+        private HexCastleDeploymentAreaVisual deploymentAreaVisual;
         private HexCastleAssaultAIProfileCatalog aiProfileCatalog;
         private HexCastleCellRuntime palaceCore;
         private UnityAction[] unitButtonActions = Array.Empty<UnityAction>();
@@ -99,6 +100,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         public HexCastleProceduralStage ActiveStage => proceduralStage;
         public HexCastleAssaultWorld ActiveAssaultWorld => assaultWorld;
         public HexCastleTrapWorld ActiveTrapWorld => trapWorld;
+        public HexCastleDeploymentAreaVisual DeploymentAreaVisual => deploymentAreaVisual;
         public int CurrentDifficultyLevel => layout?.DifficultyLevel ?? difficultyLevel;
         public HexCastleTheme CurrentTheme => layout?.Theme ?? stageTheme;
         public int CurrentDefenseLayerCount => layout?.DefenseLayerCount ??
@@ -240,6 +242,7 @@ namespace ProjectMT.Contents.CastleRaidHex
 
             resultSent = true;
             IsRunning = false;
+            UpdateDeploymentAreaVisual();
             combatWorld?.SetRunning(false);
             context?.Exit.Cancel();
         }
@@ -247,6 +250,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         public void Shutdown()
         {
             IsRunning = false;
+            deploymentAreaVisual?.SetVisible(false);
             StopAllCoroutines();
             UnbindHud();
             cameraController?.StopRotation();
@@ -316,6 +320,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             garrisonWorld = null;
             assaultWorld = null;
             trapWorld = null;
+            deploymentAreaVisual = null;
             aiProfileCatalog = null;
             proceduralStage = null;
             stageInstance = null;
@@ -382,6 +387,11 @@ namespace ProjectMT.Contents.CastleRaidHex
             {
                 throw new InvalidOperationException("절차 생성 Stage의 Cell 수가 Layout과 다릅니다.");
             }
+
+            deploymentAreaVisual = stageInstance.GetComponent<HexCastleDeploymentAreaVisual>() ??
+                                   stageInstance.AddComponent<HexCastleDeploymentAreaVisual>();
+            deploymentAreaVisual.Configure(runtimeCells.Values);
+            deploymentAreaVisual.SetVisible(false);
 
             palaceCore = runtimeCells.TryGetValue(new HexCoordinates(0, 0), out var center)
                 ? center
@@ -727,6 +737,7 @@ namespace ProjectMT.Contents.CastleRaidHex
 
             resultSent = true;
             IsRunning = false;
+            UpdateDeploymentAreaVisual();
             combatWorld?.SetRunning(false);
             SetStatus("왕궁 파괴 완료");
             context.Exit.Complete(new HexCastleRaidResult(true));
@@ -821,6 +832,7 @@ namespace ProjectMT.Contents.CastleRaidHex
 
             resultSent = true;
             IsRunning = false;
+            UpdateDeploymentAreaVisual();
             combatWorld?.SetRunning(false);
             SetStatus("공격 부대가 전멸했습니다");
             context.Exit.Fail(new HexCastleRaidResult(false));
@@ -878,6 +890,16 @@ namespace ProjectMT.Contents.CastleRaidHex
                         ResolveUnitAiProfile(index));
                 }
             }
+
+            UpdateDeploymentAreaVisual();
+        }
+
+        private void UpdateDeploymentAreaVisual()
+        {
+            var hasSelection = IsRunning && selectedUnitIndex >= 0 &&
+                               selectedUnitIndex < remainingDeployments.Length &&
+                               remainingDeployments[selectedUnitIndex] > 0;
+            deploymentAreaVisual?.SetVisible(hasSelection);
         }
 
         private void ToggleAiDescription(int index)

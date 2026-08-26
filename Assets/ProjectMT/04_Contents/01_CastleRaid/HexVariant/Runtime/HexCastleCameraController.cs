@@ -14,10 +14,11 @@ namespace ProjectMT.Contents.CastleRaidHex
 
         [Header("투영")]
         [SerializeField] private Camera targetCamera;
-        [SerializeField, Range(20f, 70f)] private float fieldOfView = 38f;
+        [SerializeField, Range(20f, 70f)] private float fieldOfView = 32f;
         [SerializeField, Range(20f, 70f)] private float tiltDegrees = 38f;
         [SerializeField, Range(1.01f, 1.3f)] private float fitPadding = 1.08f;
         [SerializeField, Range(0.6f, 1f)] private float initialZoomRatio = 0.70f;
+        [SerializeField, Range(-0.2f, 0.2f)] private float verticalScreenOffset = 0.10f;
         [SerializeField, Range(0.25f, 0.85f)] private float minimumZoomRatio = 0.48f;
         [SerializeField, Range(1.05f, 2.5f)] private float maximumZoomRatio = 1.5f;
         [SerializeField, Range(2, 20)] private int defaultBattlefieldRadius = 10;
@@ -71,6 +72,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         public float MinimumDistance => minimumDistance;
         public float MaximumDistance => maximumDistance;
         public float InitialZoomRatio => initialZoomRatio;
+        public float VerticalScreenOffset => verticalScreenOffset;
         public float YawDegrees => yawDegrees;
         public float RotationSpeedDegrees => rotationSpeedDegrees;
         public float RotationCenteringDuration => rotationCenteringDuration;
@@ -110,6 +112,14 @@ namespace ProjectMT.Contents.CastleRaidHex
         private void OnValidate()
         {
             NormalizeSettings();
+        }
+
+        private void OnDisable()
+        {
+            if (targetCamera != null)
+            {
+                targetCamera.ResetProjectionMatrix();
+            }
         }
 
         public void ConfigureBounds(int battlefieldRadius, float cellSize)
@@ -672,10 +682,7 @@ namespace ProjectMT.Contents.CastleRaidHex
 
         private bool TryResolveGroundCenter(out Vector2 center)
         {
-            var screenCenter = new Vector2(
-                Mathf.Max(1, targetCamera.pixelWidth) * 0.5f,
-                Mathf.Max(1, targetCamera.pixelHeight) * 0.5f);
-            if (TryResolveGroundPoint(screenCenter, out var worldPosition))
+            if (TryResolveGroundPoint(ResolveFocusScreenPosition(), out var worldPosition))
             {
                 center = new Vector2(worldPosition.x, worldPosition.z);
                 return true;
@@ -683,6 +690,13 @@ namespace ProjectMT.Contents.CastleRaidHex
 
             center = default;
             return false;
+        }
+
+        private Vector2 ResolveFocusScreenPosition()
+        {
+            return new Vector2(
+                Mathf.Max(1, targetCamera.pixelWidth) * 0.5f,
+                Mathf.Max(1, targetCamera.pixelHeight) * (0.5f + verticalScreenOffset));
         }
 
         private bool TryResolveGroundPoint(Vector2 screenPosition, out Vector3 worldPosition)
@@ -732,8 +746,12 @@ namespace ProjectMT.Contents.CastleRaidHex
 
         private void ApplyProjectionAndRotation()
         {
+            targetCamera.ResetProjectionMatrix();
             targetCamera.orthographic = false;
             targetCamera.fieldOfView = fieldOfView;
+            var projection = targetCamera.projectionMatrix;
+            projection.m12 = -2f * verticalScreenOffset;
+            targetCamera.projectionMatrix = projection;
             targetCamera.transform.rotation = Quaternion.Euler(tiltDegrees, yawDegrees, 0f);
         }
 
@@ -826,6 +844,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             tiltDegrees = Mathf.Clamp(tiltDegrees, 20f, 70f);
             fitPadding = Mathf.Clamp(fitPadding, 1.01f, 1.3f);
             initialZoomRatio = Mathf.Clamp(initialZoomRatio, 0.6f, 1f);
+            verticalScreenOffset = Mathf.Clamp(verticalScreenOffset, -0.2f, 0.2f);
             minimumZoomRatio = Mathf.Clamp(minimumZoomRatio, 0.25f, 0.85f);
             maximumZoomRatio = Mathf.Max(1.05f, maximumZoomRatio);
             defaultBattlefieldRadius = Mathf.Clamp(defaultBattlefieldRadius, 2, 20);

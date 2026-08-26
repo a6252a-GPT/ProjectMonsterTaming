@@ -69,7 +69,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
             }
 
             Assert.That(AssetDatabase.IsValidFolder("Assets/Traps"), Is.False);
-            Assert.That(AssetDatabase.IsValidFolder("Assets/ThirdParty/추가에셋2/Traps"), Is.True);
+            Assert.That(AssetDatabase.IsValidFolder("Assets/ThirdParty2/05_오브젝트장식/Traps"), Is.True);
             Assert.That(visualSet.TrapVisuals.Count, Is.EqualTo(4));
             Assert.That(visualSet.TrapVisuals.Count(value =>
                 value.TrapType == HexCastleTrapType.Snare), Is.EqualTo(1));
@@ -79,7 +79,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
                 Is.EqualTo(4));
             Assert.That(visualSet.TrapVisuals.All(value =>
                 AssetDatabase.GetAssetPath(value.Prefab).StartsWith(
-                    "Assets/ThirdParty/추가에셋2/Traps/Prefabs/")), Is.True);
+                    "Assets/ThirdParty2/05_오브젝트장식/Traps/Prefabs/")), Is.True);
             Assert.That(visualSet.TrapVisuals.All(value =>
                 value.Prefab.GetComponentInChildren<Animator>(true) != null), Is.True);
             Assert.That(visualSet.TrapVisuals.All(value =>
@@ -215,6 +215,9 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
                 Assert.That(root.GetComponentsInChildren<Transform>(true)
                     .All(value => value.gameObject.hideFlags == HideFlags.None), Is.True);
                 Assert.That(camera.orthographic, Is.False);
+                var boardRenderer = root.transform.Find("00_BoardSurface")?.GetComponent<MeshRenderer>();
+                Assert.That(boardRenderer, Is.Not.Null);
+                Assert.That(boardRenderer.enabled, Is.False, "DEV 배경을 가리는 절차 바닥은 숨겨야 합니다.");
 
                 HexCastleGenerationPlayablePreview.Clear(scene);
                 Assert.That(camera.orthographic, Is.True);

@@ -33,6 +33,8 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             "Assets/ProjectMT/04_Contents/01_CastleRaid/Prefabs/PF_CastleRaidHUD.prefab";
         public const string FloatingNumberPrefabPath =
             "Assets/ProjectMT/02_Shared/Combat/Prefabs/PF_FloatingNumber.prefab";
+        public const string StageMapPrefabPath =
+            "Assets/ProjectMT/98_Generated/Stages/hex1/PF_StageMap_hex1.prefab";
 
         [MenuItem("JC Tool/군단의 역습 육각/정식 씬·MainBattle 연결")]
         public static void BuildAndConnect()
@@ -129,6 +131,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             var root = new GameObject("00_SceneRoot");
             var sceneRoot = root.AddComponent<HexCastleRaidSceneRoot>();
             var controller = root.AddComponent<HexCastleRaidController>();
+            CreateStageMap(scene);
 
             var runtimeRoot = CreateChild("01_RuntimeRoot", root.transform);
             var stageAnchor = CreateChild("StageAnchor", runtimeRoot.transform).transform;
@@ -141,7 +144,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             cameraObject.tag = "MainCamera";
             var camera = cameraObject.AddComponent<Camera>();
             camera.orthographic = false;
-            camera.fieldOfView = 38f;
+            camera.fieldOfView = 32f;
             camera.nearClipPlane = 0.1f;
             camera.farClipPlane = 300f;
             camera.clearFlags = CameraClearFlags.Skybox;
@@ -374,6 +377,25 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             if (!EditorSceneManager.SaveScene(scene, HexScenePath))
             {
                 throw new InvalidOperationException("03_CastleRaidHex 씬 저장에 실패했습니다.");
+            }
+        }
+
+        private static void CreateStageMap(Scene scene)
+        {
+            var prefab = LoadRequired<GameObject>(StageMapPrefabPath);
+            var stageMap = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject ??
+                           throw new InvalidOperationException("Hex 배경 맵 Prefab 인스턴스 생성에 실패했습니다.");
+            stageMap.name = "PF_StageMap_hex1";
+            stageMap.transform.SetPositionAndRotation(
+                new Vector3(0f, -4.34f, 4.73f),
+                Quaternion.identity);
+            stageMap.transform.localScale = Vector3.one;
+            stageMap.SetActive(true);
+            var mapLight = stageMap.GetComponentsInChildren<Light>(true)
+                .FirstOrDefault(value => value.name == "Directional Light");
+            if (mapLight != null)
+            {
+                mapLight.gameObject.SetActive(true);
             }
         }
 

@@ -134,6 +134,10 @@ InitTestScene*.unity*
 !/[Aa]ssets/[Tt]hird[Pp]arty.meta
 !/[Aa]ssets/[Tt]hird[Pp]arty/.gitkeep
 
+# Second local third-party vendor root; package contents and root meta stay local.
+/[Aa]ssets/[Tt]hird[Pp]arty2/**
+/[Aa]ssets/[Tt]hird[Pp]arty2.meta
+
 # Local JCSoft Hera Connector junction; package source stays outside this project.
 /Packages/com.notnull92.hera-agent-unity/
 /artifacts/chatgpt-hybrid-mcp/

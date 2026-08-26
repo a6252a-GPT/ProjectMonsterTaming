@@ -27,7 +27,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
         private const float TurretHeadFootprintRatio = 0.82f;
         private const float BallistaSeatInset = 0.025f;
         private const string KayKitRoot =
-            "Assets/ThirdParty/04_환경맵/KayKit - Forest Nature Pack (for Unity)/KayKit - Forest Nature Pack (for Unity)/Packs/KayKit - Medieval Hexagon Pack (for Unity)/Prefabs";
+            "Assets/ThirdParty2/04_환경맵/KayKit - Medieval Hexagon Pack (for Unity)/Prefabs";
         private const string BlueBuildingPath = KayKitRoot + "/buildings/blue/";
         private const string TowerPath = BlueBuildingPath + "building_tower_A_blue.prefab";
         private const string PalacePath = BlueBuildingPath + "building_castle_blue.prefab";
@@ -1033,7 +1033,9 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             mesh.RecalculateBounds();
             var board = CreateChild("00_BoardSurface", parent);
             board.gameObject.AddComponent<MeshFilter>().sharedMesh = mesh;
-            board.gameObject.AddComponent<MeshRenderer>().sharedMaterial = material;
+            var renderer = board.gameObject.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.enabled = false; // DEV 배경 지형을 가리지 않도록 미리보기 바닥도 숨긴다
         }
 
         private static void CreateGridOverlay(
@@ -1136,7 +1138,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
         {
             var bounds = ResolveCastlePreviewBounds(root);
             camera.orthographic = false;
-            camera.fieldOfView = 38f;
+            camera.fieldOfView = 32f;
             camera.nearClipPlane = 0.1f;
             camera.farClipPlane = 300f;
             camera.clearFlags = CameraClearFlags.SolidColor;

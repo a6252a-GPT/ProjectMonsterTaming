@@ -20,11 +20,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
         internal const string FormalLabScenePath =
             "Assets/ProjectMT/00_Scenes/DEV_FEEL_BasicAttackImpactLab.unity";
         internal const string PlayerDemoPath =
-            "Assets/ThirdParty/추가에셋2/Feel/MMFeedbacks/Demos/MMFeedbacksDemo/MMF_PlayerDemo.unity";
+            "Assets/ThirdParty2/10_툴/Feel/MMFeedbacks/Demos/MMFeedbacksDemo/MMF_PlayerDemo.unity";
         private const string BarbarianEnemyPath =
-            "Assets/ThirdParty/추가에셋2/Feel/FeelDemos/Barbarians/Prefabs/FeelBarbarianEnemy.prefab";
+            "Assets/ThirdParty2/10_툴/Feel/FeelDemos/Barbarians/Prefabs/FeelBarbarianEnemy.prefab";
         private const string TacticalScenePath =
-            "Assets/ThirdParty/추가에셋2/Feel/FeelDemos/Tactical/FeelTactical.unity";
+            "Assets/ThirdParty2/10_툴/Feel/FeelDemos/Tactical/FeelTactical.unity";
 
         private static readonly ProductionPresetDefinition[] ProductionPresets =
         {

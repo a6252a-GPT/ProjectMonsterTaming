@@ -135,6 +135,14 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
                 Assert.That(controllerData.FindProperty("difficultyLevel").intValue, Is.EqualTo(4));
                 Assert.That(controllerData.FindProperty("generationSeed").intValue, Is.EqualTo(10801));
                 Assert.That(camera.orthographic, Is.False);
+                var stageMap = roots.Single(value => value.name == "PF_StageMap_hex1");
+                Assert.That(stageMap.activeSelf, Is.True);
+                Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(stageMap),
+                    Is.EqualTo(HexCastleProductionSceneSetupUtility.StageMapPrefabPath));
+                Assert.That(stageMap.transform.position,
+                    Is.EqualTo(new Vector3(0f, -4.34f, 4.73f)));
+                Assert.That(stageMap.transform.rotation, Is.EqualTo(Quaternion.identity));
+                Assert.That(stageMap.transform.localScale, Is.EqualTo(Vector3.one));
                 Assert.That(roots.SelectMany(value => value.GetComponentsInChildren<Button>(true))
                     .Count(value => value.name == "RotateCameraLeftButton" || value.name == "RotateCameraRightButton"),
                     Is.EqualTo(2));

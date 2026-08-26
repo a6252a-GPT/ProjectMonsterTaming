@@ -458,7 +458,9 @@ namespace ProjectMT.Contents.CastleRaidHex
             mesh.RecalculateBounds();
             var board = CreateChild("00_BoardSurface", parent);
             board.gameObject.AddComponent<MeshFilter>().sharedMesh = mesh;
-            board.gameObject.AddComponent<MeshRenderer>().sharedMaterial = material;
+            var renderer = board.gameObject.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.enabled = false; // 정식 배경 지형을 가리지 않도록 절차 바닥은 판정용 Mesh만 유지한다
             return mesh;
         }
 

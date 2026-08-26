@@ -331,6 +331,10 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
                 Assert.That(controller.MinimumDistance, Is.LessThan(controller.DefaultDistance));
                 Assert.That(controller.MaximumDistance, Is.GreaterThan(controller.DefaultDistance));
                 Assert.That(controller.InitialZoomRatio, Is.EqualTo(0.70f).Within(0.001f));
+                Assert.That(controller.VerticalScreenOffset, Is.EqualTo(0.10f).Within(0.001f));
+                var palaceViewport = camera.WorldToViewportPoint(Vector3.zero);
+                Assert.That(palaceViewport.x, Is.EqualTo(0.5f).Within(0.001f));
+                Assert.That(palaceViewport.y, Is.EqualTo(0.60f).Within(0.001f));
                 Assert.That(controller.MinimumPanRange, Is.GreaterThanOrEqualTo(6f));
                 Assert.That(controller.ExtraPanRange, Is.GreaterThanOrEqualTo(3.5f));
             }
@@ -409,14 +413,14 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
                     controller.EditorStep(0.05f);
                 }
 
-                var pivotBeforeRotation = ResolveGroundCenter(camera);
+                var pivotBeforeRotation = ResolveGroundCenter(camera, controller.VerticalScreenOffset);
                 var palaceCenter = controller.RotationFocusGroundCenter;
                 var initialOffsetFromPalace = Vector2.Distance(pivotBeforeRotation, palaceCenter);
                 Assert.That(initialOffsetFromPalace, Is.GreaterThan(0.1f));
 
                 controller.BeginRotateRight();
                 controller.EditorStep(controller.RotationCenteringDuration * 0.5f);
-                var pivotDuringCentering = ResolveGroundCenter(camera);
+                var pivotDuringCentering = ResolveGroundCenter(camera, controller.VerticalScreenOffset);
                 Assert.That(controller.YawDegrees,
                     Is.EqualTo(controller.RotationSpeedDegrees * controller.RotationCenteringDuration * 0.5f)
                         .Within(0.01f));
@@ -425,7 +429,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
                     Is.LessThan(initialOffsetFromPalace));
 
                 controller.EditorStep(controller.RotationCenteringDuration * 0.5f);
-                var pivotAfterCentering = ResolveGroundCenter(camera);
+                var pivotAfterCentering = ResolveGroundCenter(camera, controller.VerticalScreenOffset);
                 Assert.That(controller.IsRotationCentering, Is.False);
                 Assert.That(controller.YawDegrees,
                     Is.EqualTo(controller.RotationSpeedDegrees * controller.RotationCenteringDuration)
@@ -434,7 +438,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
                 Assert.That(pivotAfterCentering.y, Is.EqualTo(palaceCenter.y).Within(0.01f));
 
                 controller.EditorStep(0.5f);
-                var pivotDuringRotation = ResolveGroundCenter(camera);
+                var pivotDuringRotation = ResolveGroundCenter(camera, controller.VerticalScreenOffset);
 
                 Assert.That(controller.YawDegrees,
                     Is.EqualTo(controller.RotationSpeedDegrees *
@@ -447,7 +451,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
                 controller.StopRotation();
                 var stoppedYaw = controller.YawDegrees;
                 controller.EditorStep(0.5f);
-                var pivotAfterRotation = ResolveGroundCenter(camera);
+                var pivotAfterRotation = ResolveGroundCenter(camera, controller.VerticalScreenOffset);
                 Assert.That(controller.YawDegrees, Is.EqualTo(stoppedYaw).Within(0.01f));
                 Assert.That(pivotAfterRotation.x, Is.EqualTo(palaceCenter.x).Within(0.01f));
                 Assert.That(pivotAfterRotation.y, Is.EqualTo(palaceCenter.y).Within(0.01f));
@@ -459,9 +463,62 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
             }
         }
 
-        private static Vector2 ResolveGroundCenter(Camera camera)
+        [Test]
+        public void DeploymentAreaVisual_ShowsOnlyAvailableDeploymentHexCells()
         {
-            var screenCenter = new Vector2(camera.pixelWidth * 0.5f, camera.pixelHeight * 0.5f);
+            var root = new GameObject("HexDeploymentAreaVisualTest");
+            try
+            {
+                var first = CreateRuntimeCell(
+                    new HexCastleCell(new HexCoordinates(7, 0), HexCastleCellKind.Deployment),
+                    root.transform);
+                var second = CreateRuntimeCell(
+                    new HexCastleCell(new HexCoordinates(6, 1), HexCastleCellKind.Deployment),
+                    root.transform);
+                var ground = CreateRuntimeCell(
+                    new HexCastleCell(new HexCoordinates(5, 0), HexCastleCellKind.Ground),
+                    root.transform);
+                var visual = root.AddComponent<HexCastleDeploymentAreaVisual>();
+
+                visual.Configure(new[] { first, second, ground });
+
+                Assert.That(visual.AllowedCellCount, Is.EqualTo(2));
+                Assert.That(visual.IsVisible, Is.False);
+                var renderer = visual.GetComponentInChildren<MeshRenderer>(true);
+                var mesh = visual.GetComponentInChildren<MeshFilter>(true).sharedMesh;
+                Assert.That(renderer, Is.Not.Null);
+                Assert.That(mesh.subMeshCount, Is.EqualTo(2));
+                Assert.That(renderer.sharedMaterials.Length, Is.EqualTo(2));
+                Assert.That(renderer.sharedMaterials[0].color.a, Is.LessThan(0.5f));
+
+                visual.SetVisible(true);
+                Assert.That(visual.IsVisible, Is.True);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        private static HexCastleCellRuntime CreateRuntimeCell(HexCastleCell cell, Transform parent)
+        {
+            var cellObject = new GameObject($"Cell_{cell.Coordinates.Q}_{cell.Coordinates.R}");
+            cellObject.transform.SetParent(parent, false);
+            cellObject.transform.localPosition = HexSpatialContract.ToWorld(cell.Coordinates);
+            var tile = new GameObject("TileVisualRoot").transform;
+            tile.SetParent(cellObject.transform, false);
+            var content = new GameObject("ContentVisualRoot").transform;
+            content.SetParent(cellObject.transform, false);
+            var runtime = cellObject.AddComponent<HexCastleCellRuntime>();
+            runtime.Configure(cell, null, null, null, tile, content);
+            return runtime;
+        }
+
+        private static Vector2 ResolveGroundCenter(Camera camera, float verticalScreenOffset)
+        {
+            var screenCenter = new Vector2(
+                camera.pixelWidth * 0.5f,
+                camera.pixelHeight * (0.5f + verticalScreenOffset));
             var ray = camera.ScreenPointToRay(screenCenter);
             var plane = new Plane(Vector3.up, Vector3.zero);
             Assert.That(plane.Raycast(ray, out var distance), Is.True);

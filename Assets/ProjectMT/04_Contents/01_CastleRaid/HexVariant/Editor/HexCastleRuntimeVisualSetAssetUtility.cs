@@ -11,14 +11,14 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Resources/HexCastleRuntimeVisualSet.asset";
 
         private const string KayKitRoot =
-            "Assets/ThirdParty/04_환경맵/KayKit - Forest Nature Pack (for Unity)/KayKit - Forest Nature Pack (for Unity)/Packs/KayKit - Medieval Hexagon Pack (for Unity)/Prefabs";
+            "Assets/ThirdParty2/04_환경맵/KayKit - Medieval Hexagon Pack (for Unity)/Prefabs";
         private const string DerivedRoot =
             "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Art/Derived/KayKitDoubleSided/Prefabs/";
         private const string TurretHeadRoot =
             "Assets/ProjectMT/04_Contents/01_CastleRaid/Prefabs/TurretHeads/";
         private const string MaterialPath =
             "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Art/Materials/MAT_CRHex_KayKitWall_Spring.mat";
-        private const string TrapSourceRoot = "Assets/ThirdParty/추가에셋2/Traps";
+        private const string TrapSourceRoot = "Assets/ThirdParty2/05_오브젝트장식/Traps";
         private const string TrapMaterialRoot =
             "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Art/Materials/Traps";
 

@@ -64,13 +64,21 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 Assert.That(controller.ActiveStage.IsComplete, Is.True, "절차 Stage 완성 상태");
                 var boardRenderer = controller.ActiveStage.transform.Find("00_BoardSurface")
                     ?.GetComponent<MeshRenderer>();
-                Assert.That(boardRenderer, Is.Not.Null, "절차 풀바닥 Renderer");
+                Assert.That(boardRenderer, Is.Not.Null, "절차 보드 Renderer");
+                Assert.That(boardRenderer.enabled, Is.False, "정식 배경 지형을 가리지 않는 숨김 보드");
                 Assert.That(boardRenderer.sharedMaterial.shader.name,
                     Is.EqualTo("Universal Render Pipeline/Lit"));
                 Assert.That(boardRenderer.sharedMaterial.mainTexture, Is.EqualTo(Texture2D.whiteTexture),
                     "건물 아틀라스를 상속하지 않는 단색 임시 풀바닥");
                 Assert.That(boardRenderer.sharedMaterial.color.g,
                     Is.GreaterThan(boardRenderer.sharedMaterial.color.r));
+                var initialDeploymentAreaVisual = controller.DeploymentAreaVisual;
+                Assert.That(initialDeploymentAreaVisual, Is.Not.Null, "육각 배치 가능 영역 표시");
+                Assert.That(initialDeploymentAreaVisual.AllowedCellCount,
+                    Is.EqualTo(controller.ActiveStage
+                        .GetComponentsInChildren<HexCastleCellRuntime>(true)
+                        .Count(value => value.Kind == HexCastleCellKind.Deployment && !value.InitialBlocked)));
+                Assert.That(initialDeploymentAreaVisual.IsVisible, Is.False, "몬스터 선택 전에는 숨김");
                 Assert.That(controller.RemainingDeploymentCount, Is.EqualTo(party.Units.Length * 2));
                 Assert.That(Camera.main, Is.Not.Null);
                 Assert.That(Camera.main.orthographic, Is.False);
@@ -334,7 +342,9 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 holdButton.OnPointerDown(new PointerEventData(EventSystem.current));
                 yield return new WaitForSecondsRealtime(cameraController.RotationCenteringDuration + 0.15f);
                 holdButton.OnPointerUp(new PointerEventData(EventSystem.current));
-                var pivotAfterRotation = ResolveGroundCenter(Camera.main);
+                var pivotAfterRotation = ResolveGroundCenter(
+                    Camera.main,
+                    cameraController.VerticalScreenOffset);
                 Assert.That(cameraController.YawDegrees, Is.GreaterThan(2f));
                 Assert.That(Camera.main.transform.position, Is.Not.EqualTo(cameraPosition));
                 Assert.That(pivotAfterRotation.x,
@@ -350,9 +360,18 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 var deploymentCell = controller.ActiveStage
                     .GetComponentsInChildren<HexCastleCellRuntime>(true)
                     .First(value => value.Kind == HexCastleCellKind.Deployment && !value.InitialBlocked);
+                var deploymentAreaVisual = controller.DeploymentAreaVisual;
+                Assert.That(deploymentAreaVisual, Is.Not.Null, "재생성된 현재 Stage 배치 표시");
                 Assert.That(controller.TrySelectUnit(0), Is.True);
+                Assert.That(deploymentAreaVisual.IsVisible, Is.True, "몬스터 선택 후 배치 가능 셀 표시");
+                var deploymentRenderer = deploymentAreaVisual.transform
+                    .Find("02_DeploymentAreaVisual")
+                    ?.GetComponent<MeshRenderer>();
+                Assert.That(deploymentRenderer, Is.Not.Null);
+                Assert.That(deploymentRenderer.sharedMaterials.Length, Is.EqualTo(2));
                 Assert.That(controller.TryDeployAtCell(deploymentCell.Coordinates), Is.True);
                 yield return null;
+                Assert.That(deploymentAreaVisual.IsVisible, Is.True, "동일 몬스터 잔여 수량이 있으면 표시 유지");
 
                 var assault = Object.FindFirstObjectByType<HexCastleAssaultUnit>();
                 Assert.That(assault, Is.Not.Null);
@@ -607,9 +626,11 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 });
         }
 
-        private static Vector2 ResolveGroundCenter(Camera camera)
+        private static Vector2 ResolveGroundCenter(Camera camera, float verticalScreenOffset)
         {
-            var screenCenter = new Vector2(camera.pixelWidth * 0.5f, camera.pixelHeight * 0.5f);
+            var screenCenter = new Vector2(
+                camera.pixelWidth * 0.5f,
+                camera.pixelHeight * (0.5f + verticalScreenOffset));
             var ray = camera.ScreenPointToRay(screenCenter);
             var plane = new Plane(Vector3.up, Vector3.zero);
             Assert.That(plane.Raycast(ray, out var distance), Is.True);

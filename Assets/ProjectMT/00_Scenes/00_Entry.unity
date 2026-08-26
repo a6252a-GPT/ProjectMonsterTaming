@@ -413,7 +413,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 20
@@ -746,6 +746,10 @@ PrefabInstance:
     - target: {fileID: 8627034600908333134, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8799466515846509343, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8967176565493135945, guid: 2a564031d21762a45ada0acc11d490ae, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag

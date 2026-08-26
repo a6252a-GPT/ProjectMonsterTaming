@@ -1,6 +1,7 @@
 using System;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Combat;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -86,7 +87,7 @@ namespace ProjectMT.Features.Settings
 
         public void Open()
         {
-            gameObject.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(gameObject);
             data = LocalSettingsStore.Load();
             ShowTab(Tab.System);
             deleteConfirmRoot?.SetActive(false);
@@ -103,9 +104,8 @@ namespace ProjectMT.Features.Settings
                 return;
             }
 
-            OpenStateChanged?.Invoke(false);
             deleteConfirmRoot?.SetActive(false);
-            gameObject.SetActive(false);
+            UIPanelPopAnimator.RequestClose(gameObject, () => OpenStateChanged?.Invoke(false));
         }
 
         public void ShowTab(Tab tab)

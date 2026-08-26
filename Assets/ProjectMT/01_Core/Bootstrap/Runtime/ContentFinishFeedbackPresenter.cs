@@ -1,5 +1,6 @@
 using System;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -39,7 +40,7 @@ namespace ProjectMT.Bootstrap
                 retryButton.gameObject.SetActive(false);
             }
 
-            panelRoot?.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(panelRoot);
         }
 
         public void ShowSaveFailed(Action retryAction)
@@ -53,13 +54,13 @@ namespace ProjectMT.Bootstrap
                 retryButton.interactable = retryAction != null;
             }
 
-            panelRoot?.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(panelRoot);
         }
 
         public void Hide()
         {
             retry = null;
-            panelRoot?.SetActive(false);
+            UIPanelPopAnimator.RequestClose(panelRoot);
         }
 
         private void HandleRetry()

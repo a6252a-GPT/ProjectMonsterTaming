@@ -224,13 +224,15 @@ namespace ProjectMT.Shared.GameData
                 entry.AdvanceRepeatCycle(); // 사이클 +1, 다음 등장을 위해 진행값 초기화
                 quests.SetActiveRepeatingTemplate(
                     change.NextRepeatingTemplateId,
-                    change.ClaimRepeatingQuestRewardTemplateId);
+                    change.ClaimRepeatingQuestRewardTemplateId,
+                    change.NextRepeatingTemplateStartsNewCycle);
                 return;
             }
 
             if (change.HasInitializeActiveRepeatingTemplate)
             {
-                quests.SetActiveRepeatingTemplate(change.InitializeActiveRepeatingTemplateId, default);
+                // 반복 풀을 처음 켜는 시점이라 셔플백이 비어 있으므로 새 라운드로 시작한다.
+                quests.SetActiveRepeatingTemplate(change.InitializeActiveRepeatingTemplateId, default, true);
             }
         }
 
@@ -295,6 +297,7 @@ namespace ProjectMT.Shared.GameData
         internal bool HasClaimRepeatingQuestReward { get; private set; }
         internal QuestId ClaimRepeatingQuestRewardTemplateId { get; private set; }
         internal QuestId NextRepeatingTemplateId { get; private set; }
+        internal bool NextRepeatingTemplateStartsNewCycle { get; private set; }
         internal bool HasInitializeActiveRepeatingTemplate { get; private set; }
         internal QuestId InitializeActiveRepeatingTemplateId { get; private set; }
         internal bool HasQuestDailyReset { get; private set; }
@@ -355,16 +358,19 @@ namespace ProjectMT.Shared.GameData
 
         // 반복 퀘스트 템플릿의 보상을 받고, 동시에 다음에 추적할 템플릿(nextTemplateId)으로 넘어간다.
         // 다음 템플릿은 호출부(QuestRuntime)가 카탈로그를 보고 미리 골라서 넘겨준다.
+        // startsNewCycle: 셔플백 후보를 이번 선택으로 모두 소진했는지(=다음부터 새 라운드) 여부.
         public static GameProgressChange ClaimRepeatingQuestReward(
             QuestId completedTemplateId,
             RewardBundle reward,
-            QuestId nextTemplateId)
+            QuestId nextTemplateId,
+            bool startsNewCycle)
         {
             return new GameProgressChange
             {
                 HasClaimRepeatingQuestReward = true,
                 ClaimRepeatingQuestRewardTemplateId = completedTemplateId,
                 NextRepeatingTemplateId = nextTemplateId,
+                NextRepeatingTemplateStartsNewCycle = startsNewCycle,
                 Rewards = reward ?? RewardBundle.Empty
             };
         }

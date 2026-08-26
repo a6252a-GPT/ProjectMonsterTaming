@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ProjectMT.Features.Quest;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Quest;
+using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -183,7 +184,25 @@ namespace ProjectMT.Features.Formation
         private void SetPageOpen(bool open)
         {
             var wasOpen = IsOpen;
-            pageRoot?.SetActive(open);
+            if (pageRoot != null)
+            {
+                if (open)
+                {
+                    // 이 페이지는 군단장 3D 프리뷰(발 IK 고정)를 포함하므로 스케일/이동 없는
+                    // FadeOnly를 쓴다. 자세한 이유는 UIPanelPopStyle.FadeOnly 주석 참고.
+                    UIPanelPopAnimator.RequestOpen(pageRoot, UIPanelPopStyle.FadeOnly);
+
+                    // PageRoot가 기본 비활성이라 Awake() 시점에 EnsureOn을 부르면 초기화가 미뤄진다.
+                    // PageRoot가 막 활성화된 직후인 여기서 붙여야 클릭 연출이 확실히 동작한다.
+                    UIButtonClickPunch.EnsureOn(formationButton?.gameObject);
+                    UIButtonClickPunch.EnsureOn(positionFormationButton?.gameObject);
+                }
+                else
+                {
+                    UIPanelPopAnimator.RequestClose(pageRoot);
+                }
+            }
+
             if (openButton != null)
             {
                 openButton.gameObject.SetActive(showStandaloneOpenButton && !open);
@@ -205,9 +224,9 @@ namespace ProjectMT.Features.Formation
                 ClearFormationPreview();
             }
 
-            if (wasOpen != IsOpen)
+            if (wasOpen != open)
             {
-                OpenStateChanged?.Invoke(IsOpen);
+                OpenStateChanged?.Invoke(open);
             }
         }
 
@@ -360,6 +379,10 @@ namespace ProjectMT.Features.Formation
 
             RefreshOwnedCards(roster);
             RefreshSelectedDetails(view);
+            if (pageRoot != null)
+            {
+                UIButtonClickPunch.ApplyToAllButtonsUnder(pageRoot.transform); // 새로 생성된 몬스터 카드 버튼도 포함
+            }
         }
 
         private void UpdateTabState(MonsterRosterView roster)

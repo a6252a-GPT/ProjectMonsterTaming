@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ProjectMT.Shared.Items;
+using UnityEngine;
 
 namespace ProjectMT.Shared.Reward
 {
@@ -108,5 +109,8 @@ namespace ProjectMT.Shared.Reward
     public interface IRewardPresentationPlayer // 저장 성공 뒤 Bootstrap이 호출하는 표현 계약
     {
         void PlayConfirmed(RewardPresentationRequest request);
+
+        // HUD 버튼 클릭 위치 등 기본 SpawnAnchor 대신 특정 지점에서 시작하는 연출.
+        void PlayConfirmed(RewardPresentationRequest request, Vector3 worldSpawnPosition);
     }
 }

@@ -14,4 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Reward.RewardDefinition
   gold: 800
   commanderExperience: 150
-  items: []
+  items:
+  - itemId: material_equipment_slot_upgrade_stone
+    amount: 30

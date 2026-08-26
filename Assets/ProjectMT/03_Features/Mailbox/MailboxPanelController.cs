@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -103,7 +104,7 @@ namespace ProjectMT.Features.Mailbox
 
         public void Open()
         {
-            gameObject.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(gameObject);
             Refresh();
             OpenStateChanged?.Invoke(true);
         }
@@ -115,8 +116,7 @@ namespace ProjectMT.Features.Mailbox
                 return;
             }
 
-            OpenStateChanged?.Invoke(false);
-            gameObject.SetActive(false);
+            UIPanelPopAnimator.RequestClose(gameObject, () => OpenStateChanged?.Invoke(false));
         }
 
         private void SetFilter(Filter filter)

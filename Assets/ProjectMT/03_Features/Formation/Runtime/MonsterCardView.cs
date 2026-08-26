@@ -11,6 +11,7 @@ namespace ProjectMT.Features.Formation
     public sealed class MonsterCardView : MonoBehaviour // 보유 목록·편성 슬롯 공용 카드
     {
         private static readonly Color32 CardSurfaceColor = new Color32(0x22, 0x24, 0x2B, 0xFF);
+        private const float NotOwnedCardAlpha = 100f / 255f; // 도감 미보유 카드 흐림 표시(배경·테두리·몬스터 공통)
 
         [SerializeField] private Button button;
         [SerializeField] private Image portraitImage;
@@ -91,6 +92,68 @@ namespace ProjectMT.Features.Formation
             }
         }
 
+        // 도감 목록 전용(레벨·편성 배지 없음). 미보유 몬스터는 흐리게 표시한다.
+        public void BindCatalogEntry(MonsterDefinition definition, MonsterRarity rarity, bool isOwned)
+        {
+            if (definition == null)
+            {
+                BindEmpty(string.Empty);
+                return;
+            }
+
+            monsterId = definition.MonsterId;
+            selectedAction = null;
+            if (portraitImage != null)
+            {
+                portraitImage.sprite = definition.Portrait;
+                portraitImage.color = definition.Portrait == null
+                    ? new Color(0.2f, 0.24f, 0.3f, 1f)
+                    : Color.white;
+            }
+
+            SetText(nameLabel, definition.DisplayName);
+            SetNameVisible(true);
+            SetText(levelLabel, string.Empty);
+            levelBadge?.SetActive(false);
+            ApplyRarity(rarity);
+            ApplyAscension(0, showStars: false);
+            assignmentBadge?.SetActive(false);
+            breakthroughReadyBadge?.SetActive(false);
+            selectionFrame?.SetActive(false);
+            ApplyOwnershipAlpha(isOwned);
+            if (button != null)
+            {
+                button.interactable = true;
+            }
+        }
+
+        // ApplyRarity가 이미 정상 알파를 세팅해두므로, 미보유일 때만 카드 전체를 흐리게 낮춘다.
+        private void ApplyOwnershipAlpha(bool isOwned)
+        {
+            if (isOwned)
+            {
+                return;
+            }
+
+            SetColor(portraitImage, new Color(NotOwnedCardAlpha, NotOwnedCardAlpha, NotOwnedCardAlpha, NotOwnedCardAlpha));
+            SetAlpha(rarityBackground, NotOwnedCardAlpha);
+            SetAlpha(rarityInnerBorder, NotOwnedCardAlpha);
+            SetAlpha(rarityHighlight, NotOwnedCardAlpha);
+            SetAlpha(rarityAura, NotOwnedCardAlpha);
+        }
+
+        private static void SetAlpha(Graphic target, float alpha)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            var color = target.color;
+            color.a = alpha;
+            target.color = color;
+        }
+
         public void BindEmpty(string label)
         {
             monsterId = null;
@@ -167,7 +230,8 @@ namespace ProjectMT.Features.Formation
             }
         }
 
-        private void ApplyAscension(int ascensionLevel)
+        // showStars가 false면(도감 미리보기 카드) 별을 아예 그리지 않는다.
+        private void ApplyAscension(int ascensionLevel, bool showStars = true)
         {
             var filledCount = Mathf.Clamp(ascensionLevel, 0, MonsterAscension.MaxAscensionLevel);
             for (var index = 0; index < ascensionStars.Length; index++)
@@ -180,7 +244,7 @@ namespace ProjectMT.Features.Formation
 
                 star.sprite = index < filledCount ? ascensionFilledStar : ascensionEmptyStar;
                 star.color = Color.white;
-                star.enabled = star.sprite != null;
+                star.enabled = showStars && star.sprite != null;
             }
         }
 

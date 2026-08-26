@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -133,7 +134,7 @@ namespace ProjectMT.Features.CommanderSkill
             EnsureReferencesAndListeners();
             if (!gameObject.activeSelf)
             {
-                gameObject.SetActive(true);
+                UIPanelPopAnimator.RequestOpen(gameObject);
                 OpenStateChanged?.Invoke(true);
             }
 
@@ -148,8 +149,7 @@ namespace ProjectMT.Features.CommanderSkill
                 return;
             }
 
-            gameObject.SetActive(false);
-            OpenStateChanged?.Invoke(false);
+            UIPanelPopAnimator.RequestClose(gameObject, () => OpenStateChanged?.Invoke(false));
         }
 
         private void EnsureReferencesAndListeners()

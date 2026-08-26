@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/ProjectMT/00_Scenes/01_MainBattle.unity
     guid: 483d7e1d56955ff4fab6327a43246f37
   - enabled: 1
+    path: Assets/ProjectMT/00_Scenes/01_MainBattle 1.unity
+    guid: 3f9a2f7d4d1269140bb5319528f6787d
+  - enabled: 1
     path: Assets/ProjectMT/00_Scenes/02_CastleRaid.unity
     guid: 00895dac032cc054f884061ae38229de
   - enabled: 1

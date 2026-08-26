@@ -8,6 +8,9 @@ using ProjectMT.Features.Mailbox;
 using ProjectMT.Features.Quest;
 using ProjectMT.Features.Settings;
 using ProjectMT.Shared.Combat;
+using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.UI;
+using ProjectMT.Shared.Unit;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -22,6 +25,7 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private Button monsterManagementButton;
         [SerializeField] private Button equipmentButton;
         [SerializeField] private Button growthDungeonButton;
+        [SerializeField] private Button monsterCollectionButton;
 
         [Header("관리 Page")]
         [SerializeField] private GameObject commanderGrowthPage;
@@ -38,8 +42,13 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private SettingsPanelController settingsPage;
         [SerializeField] private AttendancePanelController attendancePage;
         [SerializeField] private MailboxPanelController mailboxPage;
+        [SerializeField] private GameObject monsterCollectionPage;
+        [SerializeField] private Button monsterCollectionCloseButton;
+        [SerializeField] private MonsterRarityCatalog monsterRarityCatalog; // 도감 등급별 목록 조회용
 
         private DailyMissionPanelView questPage;
+        private MonsterCollectionPanelController monsterCollectionController;
+        private IGameProgressService monsterCollectionProgress;
 
         private int defaultSiblingIndex = -1;
         private int defaultCanvasSortingOrder;
@@ -48,6 +57,9 @@ namespace ProjectMT.Features.MainBattle
         private bool combatDisplaySuppressed;
 
         public event Action GrowthDungeonPageOpened;
+
+        // 페이지가 하나라도 열리고/닫힐 때 알림. HUD 고정 버튼 등 뒤쪽 UI의 클릭 가능 상태를 맞추는 데 사용.
+        public event Action<bool> AnyPageOpenChanged;
 
         public bool IsAnyPageOpen =>
             (commanderGrowthPage != null && commanderGrowthPage.activeSelf) ||
@@ -62,7 +74,8 @@ namespace ProjectMT.Features.MainBattle
             (attendancePage != null && attendancePage.IsOpen) ||
             (mailboxPage != null && mailboxPage.IsOpen) ||
             (questPage != null && questPage.IsOpen) ||
-            (formationPage != null && formationPage.IsOpen);
+            (formationPage != null && formationPage.IsOpen) ||
+            (monsterCollectionPage != null && monsterCollectionPage.activeSelf);
 
         private void Awake()
         {
@@ -104,6 +117,11 @@ namespace ProjectMT.Features.MainBattle
                 monsterManagementButton.onClick.AddListener(OpenMonsterManagementPage);
                 monsterManagementPage.OpenStateChanged += HandleMonsterManagementOpenStateChanged;
             }
+            if (monsterCollectionButton != null && monsterCollectionPage != null)
+            {
+                monsterCollectionButton.onClick.AddListener(ToggleMonsterCollectionPage);
+                monsterCollectionCloseButton?.onClick.AddListener(CloseMonsterCollectionPage);
+            }
         }
 
         private void OnDestroy()
@@ -118,6 +136,8 @@ namespace ProjectMT.Features.MainBattle
             equipmentCloseButton?.onClick.RemoveListener(CloseEquipmentPage);
             growthDungeonButton?.onClick.RemoveListener(ToggleGrowthDungeonPage);
             growthDungeonCloseButton?.onClick.RemoveListener(CloseGrowthDungeonPage);
+            monsterCollectionButton?.onClick.RemoveListener(ToggleMonsterCollectionPage);
+            monsterCollectionCloseButton?.onClick.RemoveListener(CloseMonsterCollectionPage);
             ConfigureEquipmentSlotUpgradePage(null);
             ConfigureInventoryPage(null);
             ConfigureCommanderSkillPage(null);
@@ -157,14 +177,14 @@ namespace ProjectMT.Features.MainBattle
         public void OpenCommanderGrowthPage()
         {
             CloseAllPages();
-            commanderGrowthPage?.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(commanderGrowthPage, UIPanelPopStyle.FadeOnly);
             BringToFront();
         }
 
         public void OpenEquipmentPage()
         {
             CloseAllPages();
-            equipmentPage?.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(equipmentPage, UIPanelPopStyle.FadeOnly);
             BringToFront();
         }
 
@@ -252,7 +272,7 @@ namespace ProjectMT.Features.MainBattle
         public void OpenGrowthDungeonPage()
         {
             CloseAllPages();
-            growthDungeonPage?.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(growthDungeonPage);
             GrowthDungeonPageOpened?.Invoke();
             BringToFront();
         }
@@ -393,28 +413,35 @@ namespace ProjectMT.Features.MainBattle
 
         private void CloseManagementPages()
         {
-            commanderGrowthPage?.SetActive(false);
-            shopPage?.SetActive(false);
+            // SetActive(false)를 직접 호출하면 UIPanelPopAnimator.OnDisable이 진행 중이던 오픈 트윈을
+            // 중간값에서 그대로 죽여버려(스케일/위치가 목표치로 정리되지 않음) 다음에 열 때 잔상이
+            // 남을 수 있다. 항상 RequestClose를 통해 애니메이터가 스스로 정리하게 한다.
+            // RestoreHudOrder를 각 RequestClose의 완료 콜백으로 넘긴다(사유는 CloseShopPage 주석 참고).
+            // 실제로는 한 번에 하나만 열려 있어 대부분 콜백 하나만 지연 실행되고 나머지는 즉시 실행된다.
+            UIPanelPopAnimator.RequestClose(commanderGrowthPage, RestoreHudOrder);
+            UIPanelPopAnimator.RequestClose(shopPage, RestoreHudOrder);
             monsterManagementPage?.ClosePage();
-            equipmentPage?.SetActive(false);
+            UIPanelPopAnimator.RequestClose(equipmentPage, RestoreHudOrder);
             equipmentSlotUpgradePage?.Close();
             inventoryPage?.Close();
             commanderSkillPage?.Close();
-            growthDungeonPage?.SetActive(false);
+            UIPanelPopAnimator.RequestClose(growthDungeonPage, RestoreHudOrder);
             settingsPage?.Close();
             attendancePage?.Close();
             mailboxPage?.Close();
             questPage?.Close();
-            RestoreHudOrder();
+            UIPanelPopAnimator.RequestClose(monsterCollectionPage, RestoreHudOrder);
         }
 
         private void ToggleCommanderGrowthPage()
         {
             var shouldOpen = commanderGrowthPage != null && !commanderGrowthPage.activeSelf;
             CloseAllPages();
-            commanderGrowthPage?.SetActive(shouldOpen);
             if (shouldOpen)
             {
+                // 이 페이지는 군단장 3D 프리뷰(발 IK 고정)를 포함하므로 스케일/이동 없는
+                // FadeOnly를 쓴다. 자세한 이유는 UIPanelPopStyle.FadeOnly 주석 참고.
+                UIPanelPopAnimator.RequestOpen(commanderGrowthPage, UIPanelPopStyle.FadeOnly);
                 BringToFront();
             }
         }
@@ -422,14 +449,16 @@ namespace ProjectMT.Features.MainBattle
         public void OpenShopPage()
         {
             CloseAllPages();
-            shopPage?.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(shopPage, UIPanelPopStyle.FullScreenPage);
             BringToFront();
         }
 
         private void CloseShopPage()
         {
-            shopPage?.SetActive(false);
-            RestoreHudOrder();
+            // RestoreHudOrder를 즉시 부르면 페이드가 끝나기 전(activeSelf가 아직 true)인데
+            // LateUpdate가 IsAnyPageOpen을 다시 true로 보고 억제 상태를 되살릴 수 있다.
+            // 완료 콜백으로 넘겨 SetActive(false) 시점과 정확히 맞춘다.
+            UIPanelPopAnimator.RequestClose(shopPage, RestoreHudOrder);
         }
 
         public void OpenMonsterManagementPage()
@@ -442,26 +471,27 @@ namespace ProjectMT.Features.MainBattle
         {
             var shouldOpen = equipmentPage != null && !equipmentPage.activeSelf;
             CloseAllPages();
-            equipmentPage?.SetActive(shouldOpen);
             if (shouldOpen)
             {
+                // 이 페이지도 군단장 3D 프리뷰(발 IK 고정)를 포함하므로 스케일/이동 없는
+                // FadeOnly를 쓴다. 자세한 이유는 UIPanelPopStyle.FadeOnly 주석 참고.
+                UIPanelPopAnimator.RequestOpen(equipmentPage, UIPanelPopStyle.FadeOnly);
                 BringToFront();
             }
         }
 
         private void CloseEquipmentPage()
         {
-            equipmentPage?.SetActive(false);
-            RestoreHudOrder();
+            UIPanelPopAnimator.RequestClose(equipmentPage, RestoreHudOrder);
         }
 
         private void ToggleGrowthDungeonPage()
         {
             var shouldOpen = growthDungeonPage != null && !growthDungeonPage.activeSelf;
             CloseAllPages();
-            growthDungeonPage?.SetActive(shouldOpen);
             if (shouldOpen)
             {
+                UIPanelPopAnimator.RequestOpen(growthDungeonPage);
                 GrowthDungeonPageOpened?.Invoke();
                 BringToFront();
             }
@@ -469,8 +499,66 @@ namespace ProjectMT.Features.MainBattle
 
         private void CloseGrowthDungeonPage()
         {
-            growthDungeonPage?.SetActive(false);
-            RestoreHudOrder();
+            UIPanelPopAnimator.RequestClose(growthDungeonPage, RestoreHudOrder);
+        }
+
+        public void OpenMonsterCollectionPage()
+        {
+            CloseAllPages();
+            // 컬렉션 패널도 몬스터 3D 프리뷰(PreviewCamera_Runtime)를 포함하므로 스케일/이동 없는
+            // FadeOnly를 쓴다. 자세한 이유는 UIPanelPopStyle.FadeOnly 주석 참고.
+            UIPanelPopAnimator.RequestOpen(monsterCollectionPage, UIPanelPopStyle.FadeOnly);
+            EnsureCollectionPanelActive();
+            BringToFront();
+        }
+
+        private void ToggleMonsterCollectionPage()
+        {
+            var shouldOpen = monsterCollectionPage != null && !monsterCollectionPage.activeSelf;
+            CloseAllPages();
+            if (shouldOpen)
+            {
+                UIPanelPopAnimator.RequestOpen(monsterCollectionPage, UIPanelPopStyle.FadeOnly);
+                EnsureCollectionPanelActive();
+                BringToFront();
+            }
+        }
+
+        // CollectionPanel이 비활성 상태로 남는 문제가 있었던 자리라 열 때마다 안전하게 다시 켠다.
+        // 탭 전환·등급별 목록 컨트롤러도 이 패널 하위에 없으므로 여기서 붙이고 매번 초기 탭으로 되돌린다.
+        private void EnsureCollectionPanelActive()
+        {
+            var collectionPanel = monsterCollectionPage != null
+                ? monsterCollectionPage.transform.Find("CollectionPanel")
+                : null;
+            if (collectionPanel == null)
+            {
+                return;
+            }
+
+            if (!collectionPanel.gameObject.activeSelf)
+            {
+                collectionPanel.gameObject.SetActive(true);
+            }
+
+            if (monsterCollectionController == null)
+            {
+                monsterCollectionController = collectionPanel.GetComponent<MonsterCollectionPanelController>()
+                    ?? collectionPanel.gameObject.AddComponent<MonsterCollectionPanelController>();
+            }
+
+            monsterCollectionController.Configure(monsterRarityCatalog, monsterCollectionProgress);
+        }
+
+        // 도감 보유 현황(Count)·미보유 카드 흐림 표시에 쓸 진행 데이터. 씬 부트스트랩에서 주입한다.
+        public void ConfigureMonsterCollectionData(IGameProgressService progressService)
+        {
+            monsterCollectionProgress = progressService;
+        }
+
+        private void CloseMonsterCollectionPage()
+        {
+            UIPanelPopAnimator.RequestClose(monsterCollectionPage, RestoreHudOrder);
         }
 
         private void HandleMonsterManagementOpenStateChanged(bool open)
@@ -489,7 +577,8 @@ namespace ProjectMT.Features.MainBattle
                      (settingsPage == null || !settingsPage.IsOpen) &&
                      (attendancePage == null || !attendancePage.IsOpen) &&
                      (mailboxPage == null || !mailboxPage.IsOpen) &&
-                     (questPage == null || !questPage.IsOpen))
+                     (questPage == null || !questPage.IsOpen) &&
+                     (monsterCollectionPage == null || !monsterCollectionPage.activeSelf))
             {
                 RestoreHudOrder();
             }
@@ -622,6 +711,7 @@ namespace ProjectMT.Features.MainBattle
         private void SetCombatDisplaySuppressed(bool suppressed)
         {
             combatDisplaySuppressed = suppressed;
+            AnyPageOpenChanged?.Invoke(suppressed);
             foreach (var feedback in FindObjectsByType<CombatFeedbackPlayer>(
                          FindObjectsInactive.Include,
                          FindObjectsSortMode.None))

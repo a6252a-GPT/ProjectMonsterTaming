@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -359,18 +360,13 @@ namespace ProjectMT.Features.CommanderSkill
                 resultSummaryText.text = $"획득 종류 {ordered.Length:N0}개  ·  중복은 스킬 레벨업 재료로 저장됩니다";
             }
 
-            resultOverlay.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(resultOverlay, UIPanelPopStyle.RewardPopup);
             LayoutRebuilder.ForceRebuildLayoutImmediate(resultItemsRoot);
         }
 
         private void HideResults()
         {
-            if (resultOverlay != null)
-            {
-                resultOverlay.SetActive(false);
-            }
-
-            ClearResults();
+            UIPanelPopAnimator.RequestClose(resultOverlay, ClearResults);
         }
 
         private void ClearResults()

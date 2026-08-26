@@ -318,7 +318,7 @@ namespace ProjectMT.Features.Quest
                 return true;
             }
 
-            if (!TryPickRepeatingTemplate(type, default, out var picked))
+            if (!TryPickRepeatingTemplate(type, default, out var picked, out _))
             {
                 return false; // 카탈로그에 반복 템플릿이 하나도 등록되어 있지 않음
             }
@@ -449,19 +449,56 @@ namespace ProjectMT.Features.Quest
             return highest;
         }
 
-        // 다음에 추적할 반복 템플릿을 무작위로 고른다. excludeId(방금 끝난 템플릿)는 같은 퀘스트가
-        // 연달아 나오지 않도록 제외하고, 이미 최대 등장 횟수를 채운 템플릿도 후보에서 뺀다.
-        private static bool TryPickRepeatingTemplate(QuestType type, QuestId excludeId, out QuestDefinition result)
+        // 다음 반복 템플릿을 "셔플백" 방식으로 고른다: 이번 라운드에 안 나온 후보 중에서만 뽑아
+        // 전부 한 번씩 나오기 전엔 같은 템플릿이 먼저 두 번 나오지 않게 한다. excludeId·소진된
+        // 템플릿·선행 조건(RepeatPrerequisiteQuestIds) 미충족 템플릿은 제외하며, startsNewCycle이
+        // true면 호출부가 저장 시 셔플백 목록을 비워야 한다(GameProgressChange 참고).
+        private static bool TryPickRepeatingTemplate(
+            QuestType type,
+            QuestId excludeId,
+            out QuestDefinition result,
+            out bool startsNewCycle)
         {
+            var usedThisCycle = progress?.Quests.RepeatCycleUsedTemplateIds;
+            startsNewCycle = false;
+
             var candidates = new List<QuestDefinition>();
             foreach (var candidate in catalog.GetRepeatingTemplates(type))
             {
-                if (candidate.QuestId == excludeId || IsRepeatingTemplateExhausted(candidate))
+                if (candidate.QuestId == excludeId || IsRepeatingTemplateExhausted(candidate) ||
+                    !AreRepeatPrerequisitesMet(candidate) || ContainsId(usedThisCycle, candidate.QuestId))
                 {
                     continue;
                 }
 
                 candidates.Add(candidate);
+            }
+
+            if (candidates.Count == 0)
+            {
+                // 라운드 후보를 모두 소진했으면 방금 끝난 템플릿만 제외하고 새 라운드를 시작한다.
+                startsNewCycle = true;
+                foreach (var candidate in catalog.GetRepeatingTemplates(type))
+                {
+                    if (candidate.QuestId != excludeId && !IsRepeatingTemplateExhausted(candidate) &&
+                        AreRepeatPrerequisitesMet(candidate))
+                    {
+                        candidates.Add(candidate);
+                    }
+                }
+            }
+
+            if (candidates.Count == 0)
+            {
+                // 안전장치: 선행 조건을 만족하는 후보가 없으면(설정 문제 포함) 조건을 잠시 무시하고
+                // 소진되지 않은 템플릿 중에서 고른다(풀이 멈추는 것보다 안전).
+                foreach (var candidate in catalog.GetRepeatingTemplates(type))
+                {
+                    if (candidate.QuestId != excludeId && !IsRepeatingTemplateExhausted(candidate))
+                    {
+                        candidates.Add(candidate);
+                    }
+                }
             }
 
             if (candidates.Count == 0)
@@ -484,6 +521,39 @@ namespace ProjectMT.Features.Quest
 
             result = candidates[UnityEngine.Random.Range(0, candidates.Count)];
             return true;
+        }
+
+        // RepeatPrerequisiteQuestIds에 적힌 템플릿들이 전부 한 번 이상 완료됐는지 확인한다(비어 있으면 항상 통과).
+        private static bool AreRepeatPrerequisitesMet(QuestDefinition template)
+        {
+            var prerequisites = template.RepeatPrerequisiteQuestIds;
+            for (var i = 0; i < prerequisites.Count; i++)
+            {
+                if (GetProgress(prerequisites[i]).RepeatCycleCount < 1)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool ContainsId(IReadOnlyList<QuestId> ids, QuestId id)
+        {
+            if (ids == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < ids.Count; i++)
+            {
+                if (ids[i] == id)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool IsRepeatingTemplateExhausted(QuestDefinition template)
@@ -899,11 +969,12 @@ namespace ProjectMT.Features.Quest
         }
 
         // 현재 탭에서 수령 가능한 퀘스트의 보상과 수령 상태를 한 저장으로 함께 확정한다.
-        public static async Task<bool> TryClaimAllRewardsAsync(QuestType type)
+        // 반환된 Reward는 호출부가 수령 연출을 만들 때 쓴다(비동기라 out 대신 튜플로 반환).
+        public static async Task<(bool Success, RewardBundle Reward)> TryClaimAllRewardsAsync(QuestType type)
         {
             if (!IsReady || (type != QuestType.Daily && type != QuestType.Weekly))
             {
-                return false;
+                return (false, RewardBundle.Empty);
             }
 
             await FlushPendingProgressAsync();
@@ -924,7 +995,7 @@ namespace ProjectMT.Features.Quest
                     Debug.LogWarning(
                         $"[Quest] 일괄 보상 수령 실패: 보상 정의가 비어있거나 잘못됨 " +
                         $"(questId={definition.QuestId.Value})");
-                    return false;
+                    return (false, RewardBundle.Empty);
                 }
 
                 if (!RewardBundle.TryCombine(combined, bundle, out combined))
@@ -932,7 +1003,7 @@ namespace ProjectMT.Features.Quest
                     Debug.LogWarning(
                         $"[Quest] 일괄 보상 수령 실패: 합산 중 수치가 허용 범위를 넘음 " +
                         $"(questId={definition.QuestId.Value})");
-                    return false;
+                    return (false, RewardBundle.Empty);
                 }
 
                 ids.Add(definition.QuestId);
@@ -941,13 +1012,13 @@ namespace ProjectMT.Features.Quest
 
             if (ids.Count == 0)
             {
-                return false;
+                return (false, RewardBundle.Empty);
             }
 
             var applied = await progress.TryApplyAndSaveAsync(GameProgressChange.ClaimQuestRewards(ids, combined));
             if (!applied)
             {
-                return false;
+                return (false, RewardBundle.Empty);
             }
 
             for (var i = 0; i < ids.Count; i++)
@@ -956,11 +1027,11 @@ namespace ProjectMT.Features.Quest
             }
 
             Debug.Log($"[Quest] {QuestTypeInfo.GetDisplayName(type)} 임무 보상 {ids.Count}개 일괄 수령");
-            return true;
+            return (true, combined);
         }
 
         // 반복 퀘스트 템플릿 전용 보상 수령. 임계값형 조건은 최신 값을 저장에 반영해서 검증을 통과시키고,
-        // 성공하면 다음에 추적할 템플릿을 무작위로 골라 같은 저장 요청 안에서 사이클 전환까지 함께 처리한다.
+        // 성공하면 다음에 추적할 템플릿을 셔플백 방식으로 골라 같은 저장 요청 안에서 사이클 전환까지 함께 처리한다.
         private static async Task<bool> TryClaimRepeatingRewardAsync(QuestId templateId, QuestDefinition definition)
         {
             if (progress.Quests.ActiveRepeatingTemplateId != templateId)
@@ -980,13 +1051,13 @@ namespace ProjectMT.Features.Quest
                 return false;
             }
 
-            if (!TryPickRepeatingTemplate(definition.QuestType, templateId, out var nextDefinition))
+            if (!TryPickRepeatingTemplate(definition.QuestType, templateId, out var nextDefinition, out var startsNewCycle))
             {
                 return false; // 카탈로그에 반복 템플릿이 하나도 없음(설정 확인 필요)
             }
 
             var applied = await progress.TryApplyAndSaveAsync(
-                GameProgressChange.ClaimRepeatingQuestReward(templateId, bundle, nextDefinition.QuestId));
+                GameProgressChange.ClaimRepeatingQuestReward(templateId, bundle, nextDefinition.QuestId, startsNewCycle));
             if (applied)
             {
                 Debug.Log($"[Quest] 반복 임무 보상 수령: {definition.DisplayName} -> 다음: {nextDefinition.DisplayName}");

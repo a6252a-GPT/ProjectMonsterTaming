@@ -53,6 +53,42 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             return null;
         }
 
+        public static bool IsChestMarkerName(string objectName)
+        {
+            if (string.IsNullOrEmpty(objectName))
+            {
+                return false;
+            }
+
+            if (objectName.StartsWith(ChestMarkerName, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return objectName.StartsWith("Chest-pt", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static List<Transform> CollectChestMarkers(Transform mapRoot)
+        {
+            List<Transform> markers = new List<Transform>();
+            if (mapRoot == null)
+            {
+                return markers;
+            }
+
+            Transform[] allTransforms = mapRoot.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < allTransforms.Length; i++)
+            {
+                Transform current = allTransforms[i];
+                if (current != null && IsChestMarkerName(current.name))
+                {
+                    markers.Add(current);
+                }
+            }
+
+            return markers;
+        }
+
         public static List<Transform> CollectMarkers(Transform mapRoot, string markerName)
         {
             List<Transform> markers = new List<Transform>();

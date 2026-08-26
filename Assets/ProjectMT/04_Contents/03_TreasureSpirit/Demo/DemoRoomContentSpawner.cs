@@ -7,7 +7,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 {
     internal static class DemoRoomContentSpawner
     {
-        private const string ChestMarkerName = "Chest_pt";
         private const string GuardMarkerName = "Guard_pt";
 
         public static void Spawn(
@@ -37,6 +36,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 chestHeightOffset,
                 playerTransform,
                 keyState);
+            DemoSpikeFloorTrapInstaller.Install(mapRoot, contentRoot);
             SpawnGuards(mapRoot, contentRoot, guardPrefab, guardsPerRoom, guardSpreadDistance, playerTransform);
         }
 
@@ -49,7 +49,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             Transform playerTransform,
             BakedDungeonLoader keyState)
         {
-            List<Transform> chestMarkers = DemoMapUtil.CollectMarkers(mapRoot, ChestMarkerName);
+            List<Transform> chestMarkers = DemoMapUtil.CollectChestMarkers(mapRoot);
             if (chestMarkers.Count == 0)
             {
                 return;

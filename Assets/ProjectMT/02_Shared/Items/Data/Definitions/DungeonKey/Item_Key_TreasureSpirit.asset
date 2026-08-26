@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Item_Key_TreasureSpirit
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Items.ItemDefinition
   itemId: key_treasure_spirit
-  displayName: "\uBCF4\uBB3C \uC815\uB839 \uC5F4\uC1E0"
-  description: "\uBCF4\uBB3C \uC815\uB839 \uC228\uBC14\uAF2D\uC9C8\uC758 \uD074\uB9AC\uC5B4
-    \uB2E8\uACC4 \uD30C\uBC0D\uACFC \uC18C\uD0D5\uC5D0 \uC0AC\uC6A9\uD558\uB294 \uC5F4\uC1E0."
-  icon: {fileID: 21300000, guid: 133550fc1e41e4de59cea1bfaad68c51, type: 3}
+  displayName: "\uB358\uC804 \uAC10\uC625 \uC5F4\uC1E0"
+  description: "\uB358\uC804\uC758 \uAC10\uC625\uC5D0 \uAC07\uD78C \uBAAC\uC2A4\uD130\uB97C
+    \uAD6C\uCD9C\uD558\uAE30 \uC704\uD55C \uC5F4\uC1E0"
+  icon: {fileID: 21300000, guid: 2e34cb35718e843e7b597ded0bd9e260, type: 3}
   category: 3
   grade: 1
   maxQuantity: 3

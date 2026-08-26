@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.InputSystem;
 using ProjectMT.Shared.Input;
+using ProjectMT.Shared.Unit;
 
 namespace ProjectMT.Contents.TreasureSpirit
 {
@@ -18,11 +19,21 @@ namespace ProjectMT.Contents.TreasureSpirit
         [SerializeField] private Animator animator;
         [SerializeField] private string speedParameter = "Speed";
 
+        [Header("체력")]
+        [SerializeField] private float maxHealth = 100f;
+        [SerializeField] private float hitKnockbackSpeed = 5.5f;
+        [SerializeField] private float hitKnockbackDecay = 18f;
+
         private CharacterController characterController;
+        private UnitVisualFeedback visualFeedback;
+        private MazeCameraFollow cameraFollow;
+        private Vector3 knockbackVelocity;
         private int speedHash;
         private bool hasSpeedParameter;
         private bool inputEnabled = true;
         private float verticalVelocity;
+        private float currentHealth;
+        private bool isDead;
 
         public bool InputEnabled => inputEnabled;
 
@@ -36,6 +47,16 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
 
             CheckSpeedParameter();
+            currentHealth = maxHealth;
+            isDead = false;
+
+            visualFeedback = GetComponent<UnitVisualFeedback>();
+            if (visualFeedback == null)
+            {
+                visualFeedback = gameObject.AddComponent<UnitVisualFeedback>();
+            }
+
+            visualFeedback.RefreshRenderers();
         }
 
         /// <summary>
@@ -64,28 +85,42 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private void Update()
         {
-            if (!inputEnabled || characterController == null)
+            if (characterController == null)
             {
                 UpdateAnimation(0f);
                 return;
             }
 
-            // 1. 입력 감지
-            Vector2 inputDirection = ReadDirection();
-            Vector3 movement = new Vector3(inputDirection.x, 0f, inputDirection.y);
             Vector3 moveDelta = Vector3.zero;
-
-            if (movement.sqrMagnitude > 0.001f)
+            if (!inputEnabled || isDead)
             {
-                moveDelta = movement.normalized * (moveSpeed * Time.deltaTime);
-
-                Quaternion targetRotation = Quaternion.LookRotation(moveDelta.normalized, Vector3.up);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-                UpdateAnimation(1f);
+                UpdateAnimation(0f);
             }
             else
             {
-                UpdateAnimation(0f);
+                Vector2 inputDirection = ReadDirection();
+                Vector3 movement = new Vector3(inputDirection.x, 0f, inputDirection.y);
+                if (movement.sqrMagnitude > 0.001f)
+                {
+                    moveDelta = movement.normalized * (moveSpeed * Time.deltaTime);
+
+                    Quaternion targetRotation = Quaternion.LookRotation(moveDelta.normalized, Vector3.up);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+                    UpdateAnimation(1f);
+                }
+                else
+                {
+                    UpdateAnimation(0f);
+                }
+            }
+
+            if (knockbackVelocity.sqrMagnitude > 0.0001f)
+            {
+                moveDelta += knockbackVelocity * Time.deltaTime;
+                knockbackVelocity = Vector3.MoveTowards(
+                    knockbackVelocity,
+                    Vector3.zero,
+                    hitKnockbackDecay * Time.deltaTime);
             }
 
             if (characterController.isGrounded && verticalVelocity < 0f)
@@ -177,6 +212,55 @@ namespace ProjectMT.Contents.TreasureSpirit
             {
                 animator.SetFloat(speedHash, speedValue, 0.08f, Time.deltaTime);
             }
+        }
+
+        public void TakeDamage(float damage)
+        {
+            TakeDamage(damage, transform.position - transform.forward);
+        }
+
+        public void TakeDamage(float damage, Vector3 hitOrigin)
+        {
+            if (isDead || damage <= 0f)
+            {
+                return;
+            }
+
+            currentHealth -= damage;
+            PlayHitReaction(hitOrigin);
+            if (currentHealth > 0f)
+            {
+                return;
+            }
+
+            currentHealth = 0f;
+            isDead = true;
+            SetInputEnabled(false);
+
+            Demo.DemoDungeonController controller = FindFirstObjectByType<Demo.DemoDungeonController>();
+            controller?.FailDungeon("함정에 당했습니다");
+        }
+
+        private void PlayHitReaction(Vector3 hitOrigin)
+        {
+            visualFeedback?.PlayHit();
+
+            Vector3 away = transform.position - hitOrigin;
+            away.y = 0f;
+            if (away.sqrMagnitude < 0.0001f)
+            {
+                away = -transform.forward;
+            }
+
+            knockbackVelocity = away.normalized * hitKnockbackSpeed;
+
+            if (cameraFollow == null)
+            {
+                Camera mainCamera = Camera.main;
+                cameraFollow = mainCamera != null ? mainCamera.GetComponent<MazeCameraFollow>() : null;
+            }
+
+            cameraFollow?.PlayHitShake();
         }
 
         public void SetInputEnabled(bool enabled)

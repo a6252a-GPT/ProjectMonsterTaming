@@ -64,6 +64,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             GameObject prisonObject = Object.Instantiate(prisonPrefab, spawnPosition, spawnRotation, parent);
             prisonObject.name = "PF_Prison_Runtime";
+            DemoWallHeightAdjuster.Apply(prisonObject.transform);
             AlignPrisonBottomToFloor(prisonObject, spawnPosition.y);
 
             SpawnPrisonVisualContent(prisonObject, prisonContentPrefab, prisonContentLocalOffset);

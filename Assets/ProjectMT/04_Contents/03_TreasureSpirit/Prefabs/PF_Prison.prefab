@@ -88,6 +88,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4854300780712456, guid: 874b75af7f9044864935dfb000b0e0e6, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.6
+      objectReference: {fileID: 0}
     - target: {fileID: 65541296759346870, guid: 874b75af7f9044864935dfb000b0e0e6, type: 3}
       propertyPath: m_Size.x
       value: 2
@@ -130,6 +134,10 @@ PrefabInstance:
     - target: {fileID: 1768021477997006, guid: 3316d5c6f07ad4ef5b957ede56827bad, type: 3}
       propertyPath: m_Name
       value: Dungeon_Wall_Prison (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4390558277776286, guid: 3316d5c6f07ad4ef5b957ede56827bad, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 4390558277776286, guid: 3316d5c6f07ad4ef5b957ede56827bad, type: 3}
       propertyPath: m_LocalPosition.x
@@ -194,6 +202,10 @@ PrefabInstance:
       value: Dungeon_Wall_Prison (2)
       objectReference: {fileID: 0}
     - target: {fileID: 4390558277776286, guid: 3316d5c6f07ad4ef5b957ede56827bad, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4390558277776286, guid: 3316d5c6f07ad4ef5b957ede56827bad, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -256,6 +268,10 @@ PrefabInstance:
       value: Dungeon_Wall_Prison
       objectReference: {fileID: 0}
     - target: {fileID: 4390558277776286, guid: 3316d5c6f07ad4ef5b957ede56827bad, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4390558277776286, guid: 3316d5c6f07ad4ef5b957ede56827bad, type: 3}
       propertyPath: m_LocalPosition.x
       value: 2.11
       objectReference: {fileID: 0}
@@ -316,6 +332,10 @@ PrefabInstance:
     - target: {fileID: 1534485926465190, guid: a6c1a425713cf460a84b5e1f6a4fae83, type: 3}
       propertyPath: m_Name
       value: Dungeon_Door_Prison
+      objectReference: {fileID: 0}
+    - target: {fileID: 4824923560230760, guid: a6c1a425713cf460a84b5e1f6a4fae83, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 4824923560230760, guid: a6c1a425713cf460a84b5e1f6a4fae83, type: 3}
       propertyPath: m_LocalPosition.x

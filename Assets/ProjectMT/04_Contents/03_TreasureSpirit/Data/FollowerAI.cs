@@ -18,6 +18,7 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         [Header("상태 관찰")]
         [SerializeField] private State currentState = State.FollowCommander;
+        public State CurrentState => currentState;
 
         [Header("감지 및 거리 설정")]
         [SerializeField] private float detectEnemyRange = 6.0f;     // 적 감지 거리
@@ -28,7 +29,10 @@ namespace ProjectMT.Contents.TreasureSpirit
         [SerializeField] private float baseMoveSpeed = 3.5f;        // 기본 이동 속도 (MD)
         [SerializeField] private float attackDamage = 20f;          // 공격력 (MD)
         [SerializeField] private float attackCooldown = 1.0f;        // 공격 쿨타임 (MD AttackSpeed 기반)
+        [SerializeField] private float maxHealth = 100f;
         private float lastAttackTime;
+        private float currentHealth;
+        private bool isDead;
 
         [Header("타겟 참조")]
         [SerializeField] private Transform commander;
@@ -106,6 +110,7 @@ namespace ProjectMT.Contents.TreasureSpirit
                 baseMoveSpeed = definition.MoveSpeed;   // public 프로퍼티
                 attackDamage = definition.AttackPower; // public 프로퍼티
                 attackRange = definition.AttackRange;   // public 프로퍼티
+                maxHealth = definition.MaxHealth;
 
                 if (definition.AttackSpeed > 0)
                 {
@@ -136,10 +141,18 @@ namespace ProjectMT.Contents.TreasureSpirit
                     }
                 }
             }
+
+            currentHealth = maxHealth;
+            isDead = false;
         }
 
         private void Update()
         {
+            if (isDead)
+            {
+                return;
+            }
+
             if (commander == null)
             {
                 GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -374,6 +387,39 @@ namespace ProjectMT.Contents.TreasureSpirit
 
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, attackRange);
+        }
+
+        public void TakeDamage(float damage)
+        {
+            if (isDead || damage <= 0f)
+            {
+                return;
+            }
+
+            currentHealth -= damage;
+            if (currentHealth > 0f)
+            {
+                return;
+            }
+
+            currentHealth = 0f;
+            isDead = true;
+            targetMimic = null;
+            targetGuard = null;
+
+            if (agent != null)
+            {
+                agent.isStopped = true;
+                agent.enabled = false;
+            }
+
+            Collider collider = GetComponent<Collider>();
+            if (collider != null)
+            {
+                collider.enabled = false;
+            }
+
+            Destroy(gameObject, 1.2f);
         }
     }
 }

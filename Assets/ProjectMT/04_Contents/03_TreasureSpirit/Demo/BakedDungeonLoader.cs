@@ -7,7 +7,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
     [DisallowMultipleComponent]
     public sealed class BakedDungeonLoader : MonoBehaviour
     {
-        [Header("베이크된 던전 프리팹 (5개 등록)")]
+        [Header("베이크된 던전 프리팹")]
         [SerializeField] private GameObject[] dungeonMapPrefabs;
 
         [Header("맵 순환 (1→2→3→4→5→1)")]
@@ -81,7 +81,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 $"[BakedDungeonLoader] 맵 로드: {prefabRoot.name} (index={selectedIndex + 1}/{prefabs.Length}, 다음={nextMapIndex + 1}) " +
                 $"Start_pt={DemoMapUtil.CollectMarkers(activeMapInstance.transform, DemoMapUtil.StartMarkerName).Count} " +
                 $"Prison_pt={DemoMapUtil.CollectMarkers(activeMapInstance.transform, DemoMapUtil.PrisonMarkerName).Count} " +
-                $"Chest_pt={DemoMapUtil.CollectMarkers(activeMapInstance.transform, DemoMapUtil.ChestMarkerName).Count} " +
+                $"Chest_pt={DemoMapUtil.CollectChestMarkers(activeMapInstance.transform).Count} " +
                 $"Guard_pt={DemoMapUtil.CollectMarkers(activeMapInstance.transform, DemoMapUtil.GuardMarkerName).Count}");
         }
 
@@ -93,6 +93,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             PrepareMapVisuals(activeMapInstance);
+            DemoWallHeightAdjuster.Apply(activeMapInstance.transform);
+            DemoJunctionSeamFiller.Install(activeMapInstance.transform);
+            DemoSawbladeTrapInstaller.Install(activeMapInstance.transform);
+            DemoArrowTrapInstaller.Install(activeMapInstance.transform);
+            DemoFirePillarTrapInstaller.Install(activeMapInstance.transform);
 
             activeMetadata = activeMapInstance.GetComponent<BakedDungeonMapMetadata>();
             if (activeMetadata == null)

@@ -423,7 +423,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectMT.Contents.TreasureSpirit::ProjectMT.Contents.TreasureSpirit.MazeCameraFollow
   target: {fileID: 1433094538}
-  offset: {x: 0, y: 5, z: -2}
+  offset: {x: 0, y: 6, z: -2}
   followSpeed: 10
 --- !u!1 &166381484
 GameObject:
@@ -976,6 +976,7 @@ MonoBehaviour:
   hitVfxPrefab: {fileID: 2470788992684002907, guid: 6e6074fa5f86bd848b05edbf171981d8, type: 3}
   cameraImpulse: {fileID: 0}
   floatingNumbers: {fileID: 771234945}
+  worldHealthBars: {fileID: 0}
   sfxPool: {fileID: 771234944}
   hitSfx: {fileID: 0}
   deathSfx: {fileID: 0}
@@ -1404,10 +1405,12 @@ MonoBehaviour:
   dungeonMapPrefabs:
   - {fileID: 6610685206715039582, guid: 2f86b722492c5ba4abdf70ebc7f3620e, type: 3}
   - {fileID: 6861597518526568210, guid: 7d7dec4cc6fbe52458bc059e87b907b7, type: 3}
+  - {fileID: 3487291184580941855, guid: b577592ed6167cd4f80e6f93c18e0e8a, type: 3}
   - {fileID: 3662517623368511206, guid: cbe773124cd013242aabb6a1f74c70e0, type: 3}
   - {fileID: 5266390021749569353, guid: 5e796f7386e39aa4689bb40c2ee9da3b, type: 3}
   - {fileID: 4939918238588314618, guid: 156ab314b017f57469b01f2613ef49ea, type: 3}
-  startMapIndex: 3
+  - {fileID: 6947390783818347766, guid: 1001b59f03163d64c8ae170bdf0ab9df, type: 3}
+  startMapIndex: 6
   chestPrefab: {fileID: 8111757877157432391, guid: a105dc230d1322943bbdff8ecfba2a7e, type: 3}
   mimicPrefab: {fileID: 1000013768157686, guid: c87759c4b502f20468a940a9164fa93f, type: 3}
   guardPrefab: {fileID: 9151998103618918405, guid: 7c6491b74c708764a80dcd6a730525e3, type: 3}
@@ -1539,6 +1542,9 @@ MonoBehaviour:
   rotationSpeed: 14
   animator: {fileID: 1123637311}
   speedParameter: Speed
+  maxHealth: 100
+  hitKnockbackSpeed: 5.5
+  hitKnockbackDecay: 18
 --- !u!143 &1433094541
 CharacterController:
   m_ObjectHideFlags: 0
@@ -1835,9 +1841,16 @@ MonoBehaviour:
   killCountText: {fileID: 38408470}
   resultText: {fileID: 1571000276}
   exitButton: {fileID: 929909576}
+  cardPanel: {fileID: 0}
+  keyItemDefinition: {fileID: 11400000, guid: 870985507fc7bf34fa5588405db4bf4e, type: 2}
+  contentResultOverlayPrefab: {fileID: 3810198431009909963, guid: 69159d92b2e62204a92b65cace4a6bfd, type: 3}
+  rewardTable: {fileID: 11400000, guid: 6b532a2baefaafd44ad27f341c45d368, type: 2}
+  contentDisplayName: "\uBCF4\uBB3C \uC815\uB839 \uC228\uBC14\uAF2D\uC9C8"
   timeLimitSeconds: 100
   exitSceneName: 00_Entry
   nextSceneName: DEV_02_TreasureDungeon
+  resultTextHideDelay: 20
+  keyCardHideDelay: 5
 --- !u!114 &1575771562
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2195,6 +2208,7 @@ MonoBehaviour:
   baseMoveSpeed: 3.5
   attackDamage: 20
   attackCooldown: 1.2
+  maxHealth: 100
   commander: {fileID: 1433094538}
   targetMimic: {fileID: 0}
   targetGuard: {fileID: -4177114305784316184, guid: 7c6491b74c708764a80dcd6a730525e3, type: 3}

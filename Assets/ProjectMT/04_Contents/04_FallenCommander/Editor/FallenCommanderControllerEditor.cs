@@ -33,15 +33,15 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             if (config == null)
             {
                 EditorGUILayout.HelpBox(
-                    "보스 설정 데이터를 연결하면 모션을 미리 볼 수 있어용.",
+                    "보스 설정 데이터를 연결하면 모션을 미리 볼 수 있습니다.",
                     MessageType.Info);
                 return;
             }
 
             EditorGUILayout.HelpBox(
                 Application.isPlaying
-                    ? "게임 실행 중: 현재 생성된 보스가 모션을 재생해용."
-                    : "편집 중: 현재 씬에 임시 보스를 만들어 모션을 보여줘용.",
+                    ? "게임 실행 중: 현재 생성된 보스가 모션을 재생합니다."
+                    : "편집 중: 현재 씬에 임시 보스를 생성하여 모션을 표시합니다.",
                 MessageType.None);
 
             DrawAttackPreview("근접 공격", config.MeleeAttack);
@@ -216,6 +216,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             AssemblyReloadEvents.beforeAssemblyReload += Stop;
         }
 
+        // 임시 보스를 안전하게 생성하고 지정된 모션들을 순서대로 미리 재생한다.
         public static void PlaySequence(
             GameObject prefab,
             Transform spawnPoint,
@@ -236,46 +237,74 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 return;
             }
 
-            previewRoot = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
-            if (previewRoot == null)
+            GameObject createdRoot = null;
+            var initialized = false;
+            try
             {
-                return;
-            }
+                createdRoot = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+                if (createdRoot == null)
+                {
+                    return;
+                }
 
-            previewRoot.name = $"[모션 미리보기] {prefab.name}";
-            previewRoot.hideFlags = HideFlags.DontSave;
-            if (spawnPoint != null)
+                createdRoot.name = $"[모션 미리보기] {prefab.name}";
+                createdRoot.hideFlags = HideFlags.HideAndDontSave;
+                if (spawnPoint != null)
+                {
+                    createdRoot.transform.SetPositionAndRotation(
+                        spawnPoint.position,
+                        spawnPoint.rotation);
+                }
+
+                FaceTarget(createdRoot.transform, facingTarget);
+
+                foreach (var behaviour in createdRoot.GetComponentsInChildren<MonoBehaviour>(true))
+                {
+                    behaviour.enabled = false;
+                }
+
+                var resolvedFirstMotion = first == null ? second : first;
+                var resolvedSecondMotion = first == null ? null : second;
+                var resolvedFirstSpeed = Mathf.Max(
+                    0.01f,
+                    first == null ? secondPlaybackSpeed : firstPlaybackSpeed);
+                var resolvedSecondSpeed = Mathf.Max(0.01f, secondPlaybackSpeed);
+                var resolvedFirstDuration = ResolveDuration(
+                    resolvedFirstMotion,
+                    first == null ? secondLength : firstLength);
+                var resolvedSecondDuration = resolvedSecondMotion == null
+                    ? 0f
+                    : ResolveDuration(resolvedSecondMotion, secondLength);
+
+                previewRoot = createdRoot;
+                firstMotion = resolvedFirstMotion;
+                secondMotion = resolvedSecondMotion;
+                firstSpeed = resolvedFirstSpeed;
+                secondSpeed = resolvedSecondSpeed;
+                firstDuration = resolvedFirstDuration;
+                secondDuration = resolvedSecondDuration;
+                elapsed = 0f;
+                lastTime = EditorApplication.timeSinceStartup;
+
+                AnimationMode.StartAnimationMode();
+                Sample(firstMotion, 0f, firstSpeed);
+                SceneView.RepaintAll();
+                initialized = true;
+            }
+            finally
             {
-                previewRoot.transform.SetPositionAndRotation(
-                    spawnPoint.position,
-                    spawnPoint.rotation);
+                if (!initialized)
+                {
+                    if (createdRoot != null && previewRoot == createdRoot)
+                    {
+                        Stop();
+                    }
+                    else if (createdRoot != null)
+                    {
+                        Object.DestroyImmediate(createdRoot);
+                    }
+                }
             }
-
-            FaceTarget(previewRoot.transform, facingTarget);
-
-            foreach (var behaviour in previewRoot.GetComponentsInChildren<MonoBehaviour>(true))
-            {
-                behaviour.enabled = false;
-            }
-
-            firstMotion = first == null ? second : first;
-            secondMotion = first == null ? null : second;
-            firstSpeed = Mathf.Max(
-                0.01f,
-                first == null ? secondPlaybackSpeed : firstPlaybackSpeed);
-            secondSpeed = Mathf.Max(0.01f, secondPlaybackSpeed);
-            firstDuration = ResolveDuration(
-                firstMotion,
-                first == null ? secondLength : firstLength);
-            secondDuration = secondMotion == null
-                ? 0f
-                : ResolveDuration(secondMotion, secondLength);
-            elapsed = 0f;
-            lastTime = EditorApplication.timeSinceStartup;
-
-            AnimationMode.StartAnimationMode();
-            Sample(firstMotion, 0f, firstSpeed);
-            SceneView.RepaintAll();
         }
 
         public static void Stop()

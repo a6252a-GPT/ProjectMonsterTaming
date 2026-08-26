@@ -110,7 +110,9 @@ namespace ProjectMT.Contents.FallenCommander
                 attack.Effects,
                 CenterPosition,
                 Vector3.forward,
-                effectParent);
+                effectParent,
+                bossActor.transform,
+                commanderRoot);
             ActiveTelegraph = FallenCommanderTelegraphView.CreateCircle(
                 attack.TelegraphPrefab,
                 effectParent,
@@ -175,7 +177,9 @@ namespace ProjectMT.Contents.FallenCommander
                 attack.Effects,
                 CenterPosition,
                 Vector3.forward,
-                effectParent);
+                effectParent,
+                bossActor.transform,
+                commanderRoot);
         }
 
         // 중심에 가까울수록 강해지는 속도로 범위 안의 군단장을 끌어당긴다.
@@ -240,7 +244,9 @@ namespace ProjectMT.Contents.FallenCommander
                 endEffects,
                 CenterPosition,
                 Vector3.forward,
-                effectParent);
+                effectParent,
+                bossActor == null ? null : bossActor.transform,
+                commanderRoot);
             ReleaseRuntimeState();
         }
 

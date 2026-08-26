@@ -687,7 +687,9 @@ namespace ProjectMT.Contents.FallenCommander
                 basicAttack.Effects,
                 basicProjectilePosition,
                 basicProjectileDirection,
-                bossActor.transform.parent);
+                bossActor.transform.parent,
+                bossActor.transform,
+                commanderRoot);
 
             activeBasicTelegraph = FallenCommanderTelegraphView.CreateLine(
                 basicAttack.TelegraphPrefab,
@@ -732,7 +734,9 @@ namespace ProjectMT.Contents.FallenCommander
                 markStrikeMotion?.Effects,
                 markStrikePosition,
                 bossActor.transform.forward,
-                bossActor.transform.parent);
+                bossActor.transform.parent,
+                bossActor.transform,
+                commanderRoot);
 
             // 이전 공격 표시 제거
             DestroyActiveTelegraph();
@@ -761,7 +765,9 @@ namespace ProjectMT.Contents.FallenCommander
                 trackingMarkMotion?.Effects,
                 markStrikePosition,
                 bossActor.transform.forward,
-                bossActor.transform.parent);
+                bossActor.transform.parent,
+                bossActor.transform,
+                commanderRoot);
             DestroyActiveTelegraph();
 
             activeTelegraph = FallenCommanderTelegraphView.CreateCircle(
@@ -819,7 +825,9 @@ namespace ProjectMT.Contents.FallenCommander
                 lineStrikeMotion?.Effects,
                 origin,
                 lineStrikeDirection,
-                bossActor.transform.parent);
+                bossActor.transform.parent,
+                bossActor.transform,
+                commanderRoot);
             DestroyActiveTelegraph();
 
             activeTelegraph = FallenCommanderTelegraphView.CreateLine(
@@ -849,7 +857,9 @@ namespace ProjectMT.Contents.FallenCommander
                 corruptionRingMotion?.Effects,
                 markStrikePosition,
                 bossActor.transform.forward,
-                bossActor.transform.parent);
+                bossActor.transform.parent,
+                bossActor.transform,
+                commanderRoot);
             DestroyActiveTelegraph();
 
             activeTelegraph = FallenCommanderTelegraphView.CreateCircle(
@@ -887,7 +897,9 @@ namespace ProjectMT.Contents.FallenCommander
                 motion?.Effects,
                 position,
                 bossActor.transform.forward,
-                bossActor.transform.parent);
+                bossActor.transform.parent,
+                bossActor.transform,
+                commanderRoot);
             DestroyActiveTelegraph();
 
             activeTelegraph = FallenCommanderTelegraphView.CreateCircle(
@@ -989,7 +1001,12 @@ namespace ProjectMT.Contents.FallenCommander
                     basicAttack.Effects,
                     basicProjectilePosition,
                     basicProjectileDirection,
-                    bossActor.transform.parent);
+                    bossActor.transform.parent,
+                    bossActor.transform,
+                    commanderRoot,
+                    activeBasicProjectile == null
+                        ? null
+                        : activeBasicProjectile.transform);
                 combatWorld.AttackDamageable(
                     bossActor,
                     commanderHealth,
@@ -1140,7 +1157,9 @@ namespace ProjectMT.Contents.FallenCommander
                 motion?.Effects,
                 effectPosition,
                 effectDirection,
-                bossActor.transform.parent);
+                bossActor.transform.parent,
+                bossActor.transform,
+                commanderRoot);
 
             if (IsCommanderInsideCurrentAttack())
             {

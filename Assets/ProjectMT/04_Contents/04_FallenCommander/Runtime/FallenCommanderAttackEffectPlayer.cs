@@ -10,23 +10,35 @@ namespace ProjectMT.Contents.FallenCommander
             FallenCommanderAttackEffectData effects,
             Vector3 position,
             Vector3 direction,
-            Transform parent)
+            Transform parent,
+            Transform boss = null,
+            Transform commander = null,
+            Transform projectile = null)
         {
             if (effects == null)
             {
                 return null;
             }
 
+            var context = CreatePlacementContext(
+                position,
+                direction,
+                boss,
+                commander,
+                projectile);
+            var placement = FallenCommanderEffectPlacementResolver.Resolve(
+                effects,
+                FallenCommanderEffectStage.Start,
+                context);
             var instance = PlayVfx(
                 effects.StartVfxPrefab,
                 effects.StartVfxDuration,
-                position,
-                direction,
-                parent);
+                parent,
+                placement);
             PlaySfx(
                 effects.StartSfx,
                 effects.StartSfxDuration,
-                position,
+                placement.AnchorPosition,
                 effects.SfxVolume);
             return instance;
         }
@@ -36,23 +48,35 @@ namespace ProjectMT.Contents.FallenCommander
             FallenCommanderAttackEffectData effects,
             Vector3 position,
             Vector3 direction,
-            Transform parent)
+            Transform parent,
+            Transform boss = null,
+            Transform commander = null,
+            Transform projectile = null)
         {
             if (effects == null)
             {
                 return null;
             }
 
+            var context = CreatePlacementContext(
+                position,
+                direction,
+                boss,
+                commander,
+                projectile);
+            var placement = FallenCommanderEffectPlacementResolver.Resolve(
+                effects,
+                FallenCommanderEffectStage.Resolve,
+                context);
             var instance = PlayVfx(
                 effects.ResolveVfxPrefab,
                 effects.ResolveVfxDuration,
-                position,
-                direction,
-                parent);
+                parent,
+                placement);
             PlaySfx(
                 effects.ResolveSfx,
                 effects.ResolveSfxDuration,
-                position,
+                placement.AnchorPosition,
                 effects.SfxVolume);
             return instance;
         }
@@ -61,21 +85,40 @@ namespace ProjectMT.Contents.FallenCommander
         private static GameObject PlayVfx(
             GameObject prefab,
             float duration,
-            Vector3 position,
-            Vector3 direction,
-            Transform parent)
+            Transform parent,
+            FallenCommanderEffectPlacement placement)
         {
             if (prefab == null)
             {
                 return null;
             }
 
-            var rotation = direction.sqrMagnitude > 0.0001f
-                ? Quaternion.LookRotation(direction.normalized, Vector3.up)
-                : Quaternion.identity;
-            var instance = Object.Instantiate(prefab, position, rotation, parent);
+            var instance = Object.Instantiate(
+                prefab,
+                placement.Position,
+                placement.Rotation,
+                parent);
+            instance.transform.localScale = Vector3.Scale(
+                instance.transform.localScale,
+                placement.Scale);
             Object.Destroy(instance, ResolveVfxLifetime(instance, duration));
             return instance;
+        }
+
+        // 런타임 Transform 참조를 공통 배치 계산기가 사용하는 값 형식 문맥으로 변환한다.
+        private static FallenCommanderEffectPlacementContext CreatePlacementContext(
+            Vector3 attackPosition,
+            Vector3 attackDirection,
+            Transform boss,
+            Transform commander,
+            Transform projectile)
+        {
+            return new FallenCommanderEffectPlacementContext(
+                attackPosition,
+                attackDirection,
+                boss == null ? (Vector3?)null : boss.position,
+                commander == null ? (Vector3?)null : commander.position,
+                projectile == null ? (Vector3?)null : projectile.position);
         }
 
         // 지정된 AudioClip을 공격 위치에서 재생하고 설정된 유지시간 뒤 제거한다.

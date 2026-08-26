@@ -35,8 +35,8 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, Range(0.01f, 1f)] private float finalChargeHealthRatio = 0.3f;
         [SerializeField, Min(0.1f)] private float finalChargeDuration = 12f;
         [SerializeField, Min(0.1f)] private float finalChargeRadius = 10f;
-        [SerializeField, Min(0f)] private float timeoutWipeWarningDuration = 0.8f;
-        [SerializeField, Min(0f)] private float timeoutWipeDeathResultDelay = 2f;
+        [SerializeField, HideInInspector, Min(0f)] private float timeoutWipeWarningDuration = 0.8f;
+        [SerializeField, HideInInspector, Min(0f)] private float timeoutWipeDeathResultDelay = 2f;
         [SerializeField, Min(0f)] private float timeoutWarningStartSeconds = 5f;
 
         private ContentContext context;
@@ -63,9 +63,7 @@ namespace ProjectMT.Contents.FallenCommander
         private bool hasTriggeredFinalCharge;
         private bool isFinalChargePending;
         private readonly FallenCommanderFinalChargePattern finalChargePattern = new();
-        private bool isTimeoutWipeActive;
-        private Coroutine timeoutWipeRoutine;
-        private float timeoutWipeStartedRealtime = -1f;
+        private readonly FallenCommanderTimeoutWipePattern timeoutWipePattern = new();
         private FallenCommanderBossPhase currentBossPhase;
         private FallenCommanderBossPhase requestedBossPhase;
         private FallenCommanderAttackPattern pendingPhaseAttack;
@@ -81,6 +79,7 @@ namespace ProjectMT.Contents.FallenCommander
         private const float BreakGaugeDamageScale = 5f;
         private float RemainingBreakGauge =>
             Mathf.Max(0f, bossConfig.MaxBreakGauge - currentBreakGauge);
+        private FallenCommanderTimeoutWipeData TimeoutWipe => bossConfig?.TimeoutWipe;
 
         public bool IsRunning { get; private set; }
         public event Action<FallenCommanderHudState> HudStateChanged;
@@ -126,8 +125,7 @@ namespace ProjectMT.Contents.FallenCommander
             isWaitingForPhaseSignature = false;
             phaseTransitionMessage = string.Empty;
             isDebugPhaseJump = false;
-            isTimeoutWipeActive = false;
-            timeoutWipeStartedRealtime = -1f;
+            timeoutWipePattern.Cancel();
             score = 0;
             isFinishing = false;
             var stage = int.TryParse(context.RunInfo.StageId, out var selectedStage) &&
@@ -171,14 +169,7 @@ namespace ProjectMT.Contents.FallenCommander
             isWaitingForPhaseSignature = false;
             phaseTransitionMessage = string.Empty;
             isDebugPhaseJump = false;
-            isTimeoutWipeActive = false;
-            timeoutWipeStartedRealtime = -1f;
-
-            if (timeoutWipeRoutine != null)
-            {
-                StopCoroutine(timeoutWipeRoutine);
-                timeoutWipeRoutine = null;
-            }
+            timeoutWipePattern.Cancel();
 
             if (deathRoutine != null)
             {
@@ -241,6 +232,21 @@ namespace ProjectMT.Contents.FallenCommander
                 0f,
                 phaseIntroNoticeRemainingTime - Time.deltaTime);
 
+            if (timeoutWipePattern.IsActive)
+            {
+                var hasResolved = timeoutWipePattern.Tick(Time.unscaledDeltaTime);
+                PublishHudState();
+                if (hasResolved)
+                {
+                    BeginDeathSequence(
+                        ContentOutcome.Fail,
+                        true,
+                        timeoutWipePattern.ResultDelay);
+                }
+
+                return;
+            }
+
             if (isBattleStartDelay)
             {
                 battleStartDelayRemaining = Mathf.Max(
@@ -256,7 +262,6 @@ namespace ProjectMT.Contents.FallenCommander
 
                 return;
             }
-
             remainingTime = Mathf.Max(0f, remainingTime - Time.deltaTime);
             if (remainingTime <= 0f)
             {
@@ -348,7 +353,8 @@ namespace ProjectMT.Contents.FallenCommander
                 bossConfig.LineStrike.TelegraphPrefab == null ||
                 bossConfig.CorruptionRing == null ||
                 bossConfig.CorruptionRing.TelegraphPrefab == null ||
-                bossConfig.FinalChargeTelegraphPrefab == null)
+                bossConfig.FinalChargeTelegraphPrefab == null ||
+                bossConfig.TimeoutWipe == null)
             {
                 throw new InvalidOperationException(
                     "Fallen Commander references are missing.");
@@ -545,7 +551,7 @@ namespace ProjectMT.Contents.FallenCommander
                 commanderRoot.transform,
                 () => !IsRunning ||
                     isBattleStartDelay ||
-                    isTimeoutWipeActive ||
+                    timeoutWipePattern.IsActive ||
                     commanderMove == null ||
                     !commanderMove.IsInputEnabled ||
                     isCommanderStunned,
@@ -704,7 +710,9 @@ namespace ProjectMT.Contents.FallenCommander
                 bossConfig.FinalChargeEffects,
                 effectPosition,
                 effectDirection,
-                bossActor == null ? null : bossActor.transform.parent);
+                bossActor == null ? null : bossActor.transform.parent,
+                bossActor == null ? null : bossActor.transform,
+                commanderRoot == null ? null : commanderRoot.transform);
 
             if (commanderHealth != null &&
                 commanderHealth.IsAlive &&
@@ -726,15 +734,18 @@ namespace ProjectMT.Contents.FallenCommander
             PublishHudState();
         }
 
+        // 일반 전투 흐름을 중지하고 제한시간 전멸기 모듈을 시작한다.
         private void BeginTimeoutWipeSequence()
         {
-            if (!IsRunning || isFinishing || isTimeoutWipeActive)
+            if (!IsRunning ||
+                isFinishing ||
+                timeoutWipePattern.IsActive ||
+                commanderRoot == null ||
+                commanderHealth == null)
             {
                 return;
             }
 
-            isTimeoutWipeActive = true;
-            timeoutWipeStartedRealtime = Time.realtimeSinceStartup;
             finalChargePattern.Cancel();
             isPhaseTransitionActive = false;
             phaseTransitionRemainingTime = 0f;
@@ -742,30 +753,16 @@ namespace ProjectMT.Contents.FallenCommander
             ShutdownCommanderSkills();
             stateMachine?.Shutdown();
             commanderMove?.SetInputEnabled(false);
+            timeoutWipePattern.Begin(
+                TimeoutWipe,
+                timeoutWipeWarningDuration,
+                timeoutWipeDeathResultDelay,
+                bossActor,
+                commanderRoot.transform,
+                commanderHealth,
+                bossAnimationPresenter,
+                bossActor == null ? null : bossActor.transform.parent);
             PublishHudState();
-            timeoutWipeRoutine = StartCoroutine(CompleteTimeoutWipe());
-        }
-
-        // 실제 시간 기준 경고가 끝나면 군단장의 남은 하트를 제거하고 실패 연출을 시작한다.
-        private IEnumerator CompleteTimeoutWipe()
-        {
-            yield return new WaitForSecondsRealtime(timeoutWipeWarningDuration);
-            timeoutWipeRoutine = null;
-
-            while (commanderHealth != null && commanderHealth.IsAlive)
-            {
-                commanderHealth.ApplyDamage(new DamageRequest(
-                    bossActor,
-                    1f,
-                    commanderRoot.transform.position));
-            }
-
-            isTimeoutWipeActive = false;
-            PublishHudState();
-            BeginDeathSequence(
-                ContentOutcome.Fail,
-                true,
-                timeoutWipeDeathResultDelay);
         }
 
         // 체력 조건에 도달하면 충전 광역기를 예약하고 선행 페이즈 연출이 없을 때 시작한다.
@@ -809,7 +806,7 @@ namespace ProjectMT.Contents.FallenCommander
         private bool StartFinalCharge()
         {
             if (finalChargePattern.IsActive ||
-                isTimeoutWipeActive ||
+                timeoutWipePattern.IsActive ||
                 isFinishing ||
                 bossActor == null ||
                 !bossActor.IsAlive)
@@ -842,7 +839,9 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor.transform.TransformPoint(
                     bossConfig.FinalChargeStartEffectOffset),
                 bossActor.transform.forward,
-                bossActor.transform);
+                bossActor.transform,
+                bossActor.transform,
+                commanderRoot == null ? null : commanderRoot.transform);
             Debug.Log(
                 $"충전 광역 공격 준비 시작: {finalChargeDuration:0.0}초",
                 this);
@@ -982,15 +981,17 @@ namespace ProjectMT.Contents.FallenCommander
                 finalChargePattern.IsActive
                     ? finalChargePattern.Duration
                     : finalChargeDuration,
-                isTimeoutWipeActive,
+                timeoutWipePattern.IsActive,
                 !isBattleStartDelay &&
-                !isTimeoutWipeActive &&
+                !timeoutWipePattern.IsActive &&
                     remainingTime > 0f &&
                     remainingTime <= timeoutWarningStartSeconds,
                 timeoutWarningStartSeconds,
                 isPhaseTransitionActive || phaseIntroNoticeRemainingTime > 0f,
                 (int)currentBossPhase,
-                phaseTransitionMessage));
+                phaseTransitionMessage,
+                TimeoutWipe?.WarningMessage,
+                TimeoutWipe?.WarningPulseInterval ?? 0.45f));
         }
 
         private void HandleCommanderDamaged(DamageReport report)
@@ -1003,7 +1004,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void HandleCommanderDied(DamageReport report)
         {
-            if (isTimeoutWipeActive)
+            if (timeoutWipePattern.IsActive)
             {
                 return;
             }
@@ -1020,7 +1021,7 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            if (isTimeoutWipeActive)
+            if (timeoutWipePattern.IsActive)
             {
                 return;
             }
@@ -1047,7 +1048,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugReduceTimeTenSeconds()
         {
-            if (!IsRunning || isFinishing || isTimeoutWipeActive)
+            if (!IsRunning || isFinishing || timeoutWipePattern.IsActive)
             {
                 return;
             }
@@ -1063,7 +1064,7 @@ namespace ProjectMT.Contents.FallenCommander
         public void DebugKillBoss()
         {
             if (!IsRunning ||
-                isTimeoutWipeActive ||
+                timeoutWipePattern.IsActive ||
                 bossActor == null ||
                 !bossActor.IsAlive)
             {
@@ -1079,7 +1080,7 @@ namespace ProjectMT.Contents.FallenCommander
         public void DebugDamageBossTenPercent()
         {
             if (!IsRunning ||
-                isTimeoutWipeActive ||
+                timeoutWipePattern.IsActive ||
                 bossActor == null ||
                 !bossActor.IsAlive)
             {
@@ -1097,7 +1098,7 @@ namespace ProjectMT.Contents.FallenCommander
         {
             if (!IsRunning ||
                 isBattleStartDelay ||
-                isTimeoutWipeActive ||
+                timeoutWipePattern.IsActive ||
                 isFinishing ||
                 bossActor == null ||
                 !bossActor.IsAlive)
@@ -1169,7 +1170,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugBasicAttack()
         {
-            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || timeoutWipePattern.IsActive)
             {
                 return;
             }
@@ -1179,7 +1180,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugMeleeAttack()
         {
-            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || timeoutWipePattern.IsActive)
             {
                 return;
             }
@@ -1189,7 +1190,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugLineStrike()
         {
-            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || timeoutWipePattern.IsActive)
             {
                 return;
             }
@@ -1199,7 +1200,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugCorruptionRing()
         {
-            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || timeoutWipePattern.IsActive)
             {
                 return;
             }
@@ -1209,7 +1210,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugMarkStrike()
         {
-            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || timeoutWipePattern.IsActive)
             {
                 return;
             }
@@ -1219,7 +1220,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugTrackingMark()
         {
-            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || timeoutWipePattern.IsActive)
             {
                 return;
             }
@@ -1229,7 +1230,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugWideBurst()
         {
-            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || finalChargePattern.IsActive || timeoutWipePattern.IsActive)
             {
                 return;
             }
@@ -1239,7 +1240,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugChargedWideBurst()
         {
-            if (!IsRunning || isBattleStartDelay || isTimeoutWipeActive)
+            if (!IsRunning || isBattleStartDelay || timeoutWipePattern.IsActive)
             {
                 return;
             }
@@ -1388,12 +1389,12 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void ExitContent(ContentOutcome outcome)
         {
-            if (timeoutWipeStartedRealtime >= 0f)
+            var timeoutWipeElapsed = timeoutWipePattern.ConsumeElapsedRealtime();
+            if (timeoutWipeElapsed >= 0f)
             {
                 Debug.Log(
-                    $"시간 종료 전멸 연출 완료: {Time.realtimeSinceStartup - timeoutWipeStartedRealtime:0.00}초",
+                    $"시간 종료 전멸 연출 완료: {timeoutWipeElapsed:0.00}초",
                     this);
-                timeoutWipeStartedRealtime = -1f;
             }
 
             var result = new FallenCommanderResult(
@@ -1419,6 +1420,7 @@ namespace ProjectMT.Contents.FallenCommander
 
             IsRunning = false;
             isFinishing = true;
+            timeoutWipePattern.Cancel();
             ShutdownCommanderSkills();
             stateMachine?.Shutdown();
             commanderMove?.SetInputEnabled(false);

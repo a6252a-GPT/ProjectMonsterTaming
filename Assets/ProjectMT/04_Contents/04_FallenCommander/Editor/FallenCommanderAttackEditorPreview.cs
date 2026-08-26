@@ -14,9 +14,22 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         Full
     }
 
+    internal enum FallenCommanderAttackPreviewKind
+    {
+        Basic,
+        Melee,
+        MarkStrike,
+        TrackingMark,
+        BlackHole,
+        LineStrike,
+        CorruptionRing,
+        FinalCharge,
+        TimeoutWipe
+    }
+
     internal sealed class FallenCommanderAttackPreviewSpec
     {
-        public int AttackIndex { get; set; }
+        public FallenCommanderAttackPreviewKind Kind { get; set; }
         public string Label { get; set; }
         public FallenCommanderBossConfig Config { get; set; }
         public GameObject BossPrefab { get; set; }
@@ -24,6 +37,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         public Transform FacingTarget { get; set; }
         public FallenCommanderBasicAttackData BasicAttack { get; set; }
         public FallenCommanderAttackEffectData Effects { get; set; }
+        public GameObject TelegraphPrefab { get; set; }
+        public float TelegraphRadius { get; set; }
+        public float TelegraphWidth { get; set; }
+        public float TelegraphLength { get; set; }
+        public float SecondaryTelegraphRadius { get; set; }
         public AnimationClip PreCastMotion { get; set; }
         public float PreCastMotionDuration { get; set; }
         public float PreCastMotionSpeed { get; set; } = 1f;
@@ -32,7 +50,6 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         public float CastMotionSpeed { get; set; } = 1f;
         public float WarningDuration { get; set; } = 0.1f;
         public Vector3 StartEffectLocalOffset { get; set; }
-        public bool AttachStartEffectToBoss { get; set; }
     }
 
     [InitializeOnLoad]
@@ -55,6 +72,22 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private static readonly List<ParticleSystem> Particles = new();
         private static readonly Color BasicTelegraphColor =
             new Color(0.2f, 0.85f, 1f, 0.8f);
+        private static readonly Color MeleeTelegraphColor =
+            new Color(1f, 0.25f, 0.05f, 0.75f);
+        private static readonly Color LineTelegraphColor =
+            new Color(0.15f, 0.45f, 1f, 0.75f);
+        private static readonly Color MarkTelegraphColor =
+            new Color(0.9f, 0.15f, 0.8f, 0.75f);
+        private static readonly Color TrackingMarkTelegraphColor =
+            new Color(0.25f, 0.75f, 1f, 0.75f);
+        private static readonly Color BlackHoleTelegraphColor =
+            new Color(0.55f, 0.1f, 0.85f, 0.8f);
+        private static readonly Color CorruptionRingTelegraphColor =
+            new Color(0.65f, 0.05f, 0.15f, 0.8f);
+        private static readonly Color CorruptionRingSafeColor =
+            new Color(0.1f, 0.9f, 0.45f, 0.8f);
+        private static readonly Color FinalChargeTelegraphColor =
+            new Color(0.9f, 0.08f, 0.12f, 0.85f);
 
         private static FallenCommanderAttackPreviewSpec spec;
         private static FallenCommanderAttackPreviewMode mode;
@@ -62,6 +95,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private static Animator previewAnimator;
         private static GameObject startVfxInstance;
         private static FallenCommanderTelegraphView basicTelegraph;
+        private static FallenCommanderTelegraphView attackTelegraph;
+        private static FallenCommanderTelegraphView secondaryAttackTelegraph;
         private static GameObject basicProjectile;
         private static Vector3 basicProjectilePosition;
         private static Vector3 basicProjectileDirection;
@@ -114,7 +149,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
                 createdBoss.name =
                     $"[공격 미리보기] {previewSpec.Label} - {previewSpec.BossPrefab.name}";
-                createdBoss.hideFlags = HideFlags.DontSave;
+                createdBoss.hideFlags = HideFlags.HideAndDontSave;
                 if (previewSpec.SpawnPoint != null)
                 {
                     createdBoss.transform.SetPositionAndRotation(
@@ -144,7 +179,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     AnimationMode.StartAnimationMode();
                 }
 
-                if (previewSpec.AttackIndex == 0)
+                if (previewSpec.Kind == FallenCommanderAttackPreviewKind.Basic)
                 {
                     BeginBasicAttackPreview(previewMode);
                 }
@@ -156,6 +191,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 else
                 {
                     PlayStartPresentation();
+                    BeginAttackTelegraphPreview();
                     Sample(previewSpec.PreCastMotion, 0f, previewSpec.PreCastMotionSpeed);
                 }
 
@@ -198,7 +234,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             SceneView.RepaintAll();
         }
 
-        // 실제 시간으로 모션과 파티클을 진행하고 전체 미리보기의 공격 시점을 처리한다.
+        // 미리보기 갱신 중 예외가 발생하면 오류를 기록하고 모든 임시 리소스를 정리한다.
         private static void Update()
         {
             if (!IsActive)
@@ -206,6 +242,26 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 return;
             }
 
+            try
+            {
+                UpdatePreviewFrame();
+            }
+            catch (Exception exception)
+            {
+                try
+                {
+                    Debug.LogException(exception);
+                }
+                finally
+                {
+                    Stop();
+                }
+            }
+        }
+
+        // 실제 시간으로 모션과 파티클을 진행하고 전체 미리보기의 공격 시점을 처리한다.
+        private static void UpdatePreviewFrame()
+        {
             if (EditorApplication.isPlayingOrWillChangePlaymode ||
                 PrefabStageUtility.GetCurrentPrefabStage() != null)
             {
@@ -218,12 +274,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             lastTime = now;
             elapsed += deltaTime;
 
-            if (spec.AttachStartEffectToBoss && startVfxInstance != null)
+            if (startVfxInstance != null)
             {
-                startVfxInstance.transform.localPosition =
-                    spec.Config == null
-                        ? spec.StartEffectLocalOffset
-                        : spec.Config.FinalChargeStartEffectOffset;
+                ApplyLiveStartVfxTransform();
             }
 
             if (isAudioPlaying && elapsed >= audioStopTime)
@@ -231,16 +284,21 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 StopAudio();
             }
 
-            if (spec.AttackIndex == 0)
+            if (spec.Kind == FallenCommanderAttackPreviewKind.Basic)
             {
                 UpdateBasicAttack(deltaTime);
             }
-            else if (mode == FallenCommanderAttackPreviewMode.Full &&
-                     !hasResolved &&
-                     elapsed >= resolveTime)
+            else
             {
-                hasResolved = true;
-                PlayResolvePresentation();
+                UpdateAttackTelegraphPreview();
+                if (mode == FallenCommanderAttackPreviewMode.Full &&
+                    !hasResolved &&
+                    elapsed >= resolveTime)
+                {
+                    hasResolved = true;
+                    CompleteAttackTelegraphPreview();
+                    PlayResolvePresentation();
+                }
             }
 
             UpdateMotion();
@@ -303,7 +361,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 BasicTelegraphColor);
             if (basicTelegraph != null)
             {
-                basicTelegraph.gameObject.hideFlags = HideFlags.DontSave;
+                basicTelegraph.gameObject.hideFlags = HideFlags.HideAndDontSave;
             }
         }
 
@@ -367,6 +425,193 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
         }
 
+        // 선택한 공격의 실제 범위 프리팹을 런타임과 같은 모양과 크기로 생성한다.
+        private static void BeginAttackTelegraphPreview()
+        {
+            if (spec.TelegraphPrefab == null || previewBoss == null)
+            {
+                return;
+            }
+
+            var position = ResolveTelegraphPosition();
+            if (spec.Kind == FallenCommanderAttackPreviewKind.LineStrike)
+            {
+                attackTelegraph = FallenCommanderTelegraphView.CreateLine(
+                    spec.TelegraphPrefab,
+                    previewBoss.transform,
+                    position,
+                    ResolvePreviewDirection(),
+                    spec.TelegraphWidth,
+                    spec.TelegraphLength,
+                    LineTelegraphColor);
+            }
+            else
+            {
+                attackTelegraph = FallenCommanderTelegraphView.CreateCircle(
+                    spec.TelegraphPrefab,
+                    previewBoss.transform,
+                    position,
+                    spec.TelegraphRadius,
+                    ResolveTelegraphColor());
+            }
+
+            if (attackTelegraph != null)
+            {
+                attackTelegraph.gameObject.hideFlags = HideFlags.HideAndDontSave;
+                attackTelegraph.SetProgress(0f);
+            }
+
+            if (spec.Kind != FallenCommanderAttackPreviewKind.CorruptionRing ||
+                spec.SecondaryTelegraphRadius <= 0f)
+            {
+                return;
+            }
+
+            secondaryAttackTelegraph = FallenCommanderTelegraphView.CreateCircle(
+                spec.TelegraphPrefab,
+                previewBoss.transform,
+                position + Vector3.up * 0.035f,
+                spec.SecondaryTelegraphRadius,
+                CorruptionRingSafeColor);
+            if (secondaryAttackTelegraph != null)
+            {
+                secondaryAttackTelegraph.gameObject.hideFlags = HideFlags.HideAndDontSave;
+                secondaryAttackTelegraph.SetProgress(1f);
+            }
+        }
+
+        // 경고시간 동안 공격 범위를 채우고 추적형 범위의 위치를 갱신한다.
+        private static void UpdateAttackTelegraphPreview()
+        {
+            if (attackTelegraph == null)
+            {
+                return;
+            }
+
+            if (spec.Kind == FallenCommanderAttackPreviewKind.TrackingMark)
+            {
+                var lockDuration = spec.Config == null
+                    ? 0f
+                    : spec.Config.TrackingMarkLockDuration;
+                var trackingDuration = Mathf.Max(0f, spec.WarningDuration - lockDuration);
+                if (elapsed < trackingDuration)
+                {
+                    var position = ResolveTelegraphPosition();
+                    position.y += 0.025f;
+                    attackTelegraph.transform.position = position;
+                }
+            }
+
+            attackTelegraph.SetProgress(Mathf.Clamp01(elapsed / spec.WarningDuration));
+        }
+
+        // 공격이 발동하는 순간 범위를 완전히 채운 뒤 미리보기에서 숨긴다.
+        private static void CompleteAttackTelegraphPreview()
+        {
+            if (attackTelegraph != null)
+            {
+                attackTelegraph.SetProgress(1f);
+                attackTelegraph.gameObject.SetActive(false);
+            }
+
+            if (secondaryAttackTelegraph != null)
+            {
+                secondaryAttackTelegraph.gameObject.SetActive(false);
+            }
+        }
+
+        // 공격 종류에 따라 보스 위치·군단장 위치·블랙홀 예시 위치를 선택한다.
+        private static Vector3 ResolveTelegraphPosition()
+        {
+            if (spec.Kind == FallenCommanderAttackPreviewKind.MarkStrike ||
+                spec.Kind == FallenCommanderAttackPreviewKind.TrackingMark)
+            {
+                return spec.FacingTarget == null
+                    ? previewBoss.transform.position
+                    : spec.FacingTarget.position;
+            }
+
+            if (spec.Kind == FallenCommanderAttackPreviewKind.BlackHole)
+            {
+                return ResolveBlackHolePreviewPosition();
+            }
+
+            return previewBoss.transform.position;
+        }
+
+        // 블랙홀의 무작위 생성을 대신해 군단장 근처의 재현 가능한 예시 위치를 계산한다.
+        private static Vector3 ResolveBlackHolePreviewPosition()
+        {
+            var bossPosition = previewBoss.transform.position;
+            var targetPosition = spec.FacingTarget == null
+                ? bossPosition
+                : spec.FacingTarget.position;
+            var towardTarget = targetPosition - bossPosition;
+            towardTarget.y = 0f;
+            if (towardTarget.sqrMagnitude < 0.0001f)
+            {
+                towardTarget = previewBoss.transform.forward;
+            }
+
+            towardTarget.Normalize();
+            var sideDirection = Vector3.Cross(Vector3.up, towardTarget).normalized;
+            var minimumDistance = spec.Config == null
+                ? 0f
+                : spec.Config.BlackHoleSpawnMinDistance;
+            var maximumDistance = spec.Config == null
+                ? minimumDistance
+                : spec.Config.BlackHoleSpawnMaxDistance;
+            var distance = (minimumDistance + maximumDistance) * 0.5f;
+            var candidate = targetPosition + sideDirection * distance;
+            if (spec.Config != null)
+            {
+                var outerRadius = Mathf.Max(
+                    spec.Config.BlackHoleCoreRadius + 0.1f,
+                    spec.TelegraphRadius);
+                var halfExtents = spec.Config.BlackHoleArenaHalfExtents;
+                var allowedX = Mathf.Max(0f, halfExtents.x - outerRadius);
+                var allowedZ = Mathf.Max(0f, halfExtents.y - outerRadius);
+                candidate.x = Mathf.Clamp(
+                    candidate.x,
+                    bossPosition.x - allowedX,
+                    bossPosition.x + allowedX);
+                candidate.z = Mathf.Clamp(
+                    candidate.z,
+                    bossPosition.z - allowedZ,
+                    bossPosition.z + allowedZ);
+            }
+
+            candidate.y = bossPosition.y;
+            return candidate;
+        }
+
+        // 직선 공격이 보스에서 군단장 방향을 바라보도록 수평 방향을 계산한다.
+        private static Vector3 ResolvePreviewDirection()
+        {
+            var direction = spec.FacingTarget == null
+                ? previewBoss.transform.forward
+                : spec.FacingTarget.position - previewBoss.transform.position;
+            direction.y = 0f;
+            return direction.sqrMagnitude < 0.0001f
+                ? previewBoss.transform.forward
+                : direction.normalized;
+        }
+
+        // 런타임에서 사용하는 공격별 경고 색상을 미리보기에도 적용한다.
+        private static Color ResolveTelegraphColor()
+        {
+            return spec.Kind switch
+            {
+                FallenCommanderAttackPreviewKind.Melee => MeleeTelegraphColor,
+                FallenCommanderAttackPreviewKind.MarkStrike => MarkTelegraphColor,
+                FallenCommanderAttackPreviewKind.TrackingMark => TrackingMarkTelegraphColor,
+                FallenCommanderAttackPreviewKind.BlackHole => BlackHoleTelegraphColor,
+                FallenCommanderAttackPreviewKind.CorruptionRing => CorruptionRingTelegraphColor,
+                FallenCommanderAttackPreviewKind.FinalCharge => FinalChargeTelegraphColor,
+                _ => BasicTelegraphColor
+            };
+        }
+
         // 데이터에 지정된 투사체 프리팹을 런타임과 같은 크기와 위치로 생성한다.
         private static void CreateBasicProjectile()
         {
@@ -380,7 +625,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 ? GameObject.CreatePrimitive(PrimitiveType.Sphere)
                 : UnityEngine.Object.Instantiate(attack.ProjectilePrefab);
             basicProjectile.name = "[미리보기] 기본 공격 투사체";
-            basicProjectile.hideFlags = HideFlags.DontSave;
+            basicProjectile.hideFlags = HideFlags.HideAndDontSave;
             basicProjectile.transform.SetParent(previewBoss.transform, true);
             basicProjectile.transform.SetPositionAndRotation(
                 basicProjectilePosition,
@@ -444,18 +689,21 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         // 시전 VFX와 SFX를 실제 공격 시작 위치 기준으로 재생한다.
         private static void PlayStartPresentation()
         {
-            var position = ResolveEffectPosition(true);
+            ResolveVfxTransform(
+                true,
+                out var position,
+                out var rotation,
+                out var scale);
             var parent = previewBoss.transform;
             var instance = CreateVfx(
                 spec.Effects?.StartVfxPrefab,
                 position,
-                previewBoss.transform.forward,
+                rotation,
+                scale,
                 parent);
-            if (instance != null && spec.AttachStartEffectToBoss)
+            if (instance != null)
             {
                 startVfxInstance = instance;
-                instance.transform.localPosition = spec.StartEffectLocalOffset;
-                instance.transform.localRotation = Quaternion.identity;
             }
 
             PlayAudio(
@@ -466,34 +714,94 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         // 적중 VFX와 SFX를 실제 공격 해결 위치 기준으로 재생한다.
         private static void PlayResolvePresentation()
         {
+            ResolveVfxTransform(
+                false,
+                out var position,
+                out var rotation,
+                out var scale);
             CreateVfx(
                 spec.Effects?.ResolveVfxPrefab,
-                ResolveEffectPosition(false),
-                previewBoss.transform.forward,
+                position,
+                rotation,
+                scale,
                 previewBoss.transform);
             PlayAudio(
                 spec.Effects?.ResolveSfx,
                 spec.Effects == null ? 0f : spec.Effects.ResolveSfxDuration);
         }
 
+        // 데이터의 위치 기준·오프셋·회전·크기를 현재 미리보기 오브젝트 기준으로 계산한다.
+        private static void ResolveVfxTransform(
+            bool isStart,
+            out Vector3 position,
+            out Quaternion rotation,
+            out Vector3 scale)
+        {
+            var direction = spec.Kind == FallenCommanderAttackPreviewKind.Basic &&
+                basicProjectileDirection.sqrMagnitude > 0.0001f
+                    ? basicProjectileDirection
+                    : previewBoss.transform.forward;
+            var projectilePosition = basicProjectile != null
+                ? basicProjectile.transform.position
+                : spec.Kind == FallenCommanderAttackPreviewKind.Basic
+                    ? basicProjectilePosition
+                    : (Vector3?)null;
+            var context = new FallenCommanderEffectPlacementContext(
+                ResolveEffectPosition(isStart),
+                direction,
+                previewBoss.transform.position,
+                spec.FacingTarget == null
+                    ? (Vector3?)null
+                    : spec.FacingTarget.position,
+                projectilePosition);
+            var placement = FallenCommanderEffectPlacementResolver.Resolve(
+                spec.Effects,
+                isStart
+                    ? FallenCommanderEffectStage.Start
+                    : FallenCommanderEffectStage.Resolve,
+                context);
+            position = placement.Position;
+            rotation = placement.Rotation;
+            scale = placement.Scale;
+        }
+
+        // 충전 광역기 데이터를 수정하는 동안 시전 VFX의 위치·회전·크기를 즉시 갱신한다.
+        private static void ApplyLiveStartVfxTransform()
+        {
+            if (startVfxInstance == null || spec.Effects?.StartVfxPrefab == null)
+            {
+                return;
+            }
+
+            ResolveVfxTransform(true, out var position, out var rotation, out var scale);
+            startVfxInstance.transform.SetPositionAndRotation(position, rotation);
+            startVfxInstance.transform.localScale = Vector3.Scale(
+                spec.Effects.StartVfxPrefab.transform.localScale,
+                scale);
+        }
+
         // 공격 종류에 따라 보스·군단장·투사체 높이 중 연출 위치를 선택한다.
         private static Vector3 ResolveEffectPosition(bool isStart)
         {
-            if (spec.AttackIndex == 0)
+            if (spec.Kind == FallenCommanderAttackPreviewKind.Basic)
             {
                 return basicProjectilePosition;
             }
 
-            if (spec.AttackIndex == 2 || spec.AttackIndex == 3)
+            if (spec.Kind == FallenCommanderAttackPreviewKind.MarkStrike ||
+                spec.Kind == FallenCommanderAttackPreviewKind.TrackingMark)
             {
                 return spec.FacingTarget == null
                     ? previewBoss.transform.position
                     : spec.FacingTarget.position;
             }
 
-            if (spec.AttackIndex == 7 && isStart)
+            if (spec.Kind == FallenCommanderAttackPreviewKind.FinalCharge && isStart)
             {
-                return previewBoss.transform.TransformPoint(spec.StartEffectLocalOffset);
+                var offset = spec.Config == null
+                    ? spec.StartEffectLocalOffset
+                    : spec.Config.FinalChargeStartEffectOffset;
+                return previewBoss.transform.TransformPoint(offset);
             }
 
             return previewBoss.transform.position;
@@ -503,7 +811,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private static GameObject CreateVfx(
             GameObject prefab,
             Vector3 position,
-            Vector3 direction,
+            Quaternion rotation,
+            Vector3 scale,
             Transform parent)
         {
             if (prefab == null)
@@ -511,12 +820,12 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 return null;
             }
 
-            var rotation = direction.sqrMagnitude > 0.0001f
-                ? Quaternion.LookRotation(direction.normalized, Vector3.up)
-                : Quaternion.identity;
             var instance = UnityEngine.Object.Instantiate(prefab, position, rotation, parent);
             instance.name = $"[미리보기] {prefab.name}";
-            instance.hideFlags = HideFlags.DontSave;
+            instance.hideFlags = HideFlags.HideAndDontSave;
+            instance.transform.localScale = Vector3.Scale(
+                instance.transform.localScale,
+                scale);
             foreach (var behaviour in instance.GetComponentsInChildren<MonoBehaviour>(true))
             {
                 behaviour.enabled = false;
@@ -586,7 +895,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             FallenCommanderAttackPreviewSpec previewSpec,
             FallenCommanderAttackPreviewMode previewMode)
         {
-            if (previewSpec.AttackIndex == 0 && previewSpec.BasicAttack != null)
+            if (previewSpec.Kind == FallenCommanderAttackPreviewKind.Basic &&
+                previewSpec.BasicAttack != null)
             {
                 var warningDuration = Mathf.Max(0.1f, previewSpec.BasicAttack.WarningDuration);
                 var startDuration = ResolveStageDuration(previewSpec.Effects, true);
@@ -611,7 +921,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 return Mathf.Max(
                     0.2f,
                     previewSpec.PreCastMotionDuration,
-                    ResolveStageDuration(previewSpec.Effects, true));
+                    ResolveStageDuration(previewSpec.Effects, true),
+                    previewSpec.TelegraphPrefab == null
+                        ? 0f
+                        : previewSpec.WarningDuration);
             }
 
             var castDuration = Mathf.Max(
@@ -682,6 +995,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             previewAnimator = null;
             startVfxInstance = null;
             basicTelegraph = null;
+            attackTelegraph = null;
+            secondaryAttackTelegraph = null;
             basicProjectile = null;
             basicProjectilePosition = Vector3.zero;
             basicProjectileDirection = Vector3.zero;

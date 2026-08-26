@@ -34,6 +34,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 "finalChargeTelegraphPrefab" => "공격 범위 오브젝트",
                 "finalChargeEffects" => "연출 (시각 효과 / 효과음)",
                 "finalChargeStartEffectOffset" => "시전 연출 위치 오프셋",
+                "timeoutWipe" => "제한시간 전멸기 설정",
                 "closeAttackDistance" => "근접 공격 선택 거리",
                 "lineStrikeMinimumDistance" => "직선 공격 최소 거리",
                 "lineStrikeAlignmentThreshold" => "직선 공격 정면 판정 기준",
@@ -101,13 +102,40 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             {
                 "startVfxPrefab" => "시전 시각 효과",
                 "startVfxDuration" => "시전 시각 효과 유지시간 (0 = 자동)",
+                "startVfxAnchor" => "시전 시각 효과 위치 기준",
+                "startVfxPositionOffset" => "시전 시각 효과 위치 오프셋",
+                "startVfxRotationOffset" => "시전 시각 효과 회전 오프셋",
+                "startVfxScale" => "시전 시각 효과 크기",
                 "resolveVfxPrefab" => "적중 시각 효과",
                 "resolveVfxDuration" => "적중 시각 효과 유지시간 (0 = 자동)",
+                "resolveVfxAnchor" => "적중 시각 효과 위치 기준",
+                "resolveVfxPositionOffset" => "적중 시각 효과 위치 오프셋",
+                "resolveVfxRotationOffset" => "적중 시각 효과 회전 오프셋",
+                "resolveVfxScale" => "적중 시각 효과 크기",
                 "startSfx" => "시전 효과음",
                 "startSfxDuration" => "시전 효과음 유지시간 (0 = 자동)",
                 "resolveSfx" => "적중 효과음",
                 "resolveSfxDuration" => "적중 효과음 유지시간 (0 = 자동)",
                 "sfxVolume" => "효과음 볼륨",
+                _ => ObjectNames.NicifyVariableName(propertyName)
+            };
+        }
+
+        public static string TimeoutWipe(string propertyName)
+        {
+            return propertyName switch
+            {
+                "effects" => "연출 (시각 효과 / 효과음)",
+                "preCastMotion" => "시전 모션",
+                "preCastMotionSpeed" => "시전 모션 속도",
+                "preCastMotionDuration" => "시전 모션 재생시간 (0 = 자동)",
+                "castMotion" => "전멸 발동 모션",
+                "castMotionSpeed" => "전멸 발동 모션 속도",
+                "castMotionDuration" => "전멸 발동 모션 재생시간 (0 = 자동)",
+                "warningDuration" => "발동 전 경고시간",
+                "resultDelay" => "결과창 대기시간",
+                "warningMessage" => "전멸 경고 문구",
+                "warningPulseInterval" => "경고 점멸 간격",
                 _ => ObjectNames.NicifyVariableName(propertyName)
             };
         }
@@ -301,6 +329,26 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             return FallenCommanderLocalizedPropertyGUI.GetHeight(
                 property,
                 FallenCommanderInspectorLabels.Phase);
+        }
+    }
+
+    [CustomPropertyDrawer(typeof(FallenCommanderTimeoutWipeData))]
+    public sealed class FallenCommanderTimeoutWipeDataDrawer : PropertyDrawer
+    {
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            FallenCommanderLocalizedPropertyGUI.Draw(
+                position,
+                property,
+                label,
+                FallenCommanderInspectorLabels.TimeoutWipe);
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return FallenCommanderLocalizedPropertyGUI.GetHeight(
+                property,
+                FallenCommanderInspectorLabels.TimeoutWipe);
         }
     }
 

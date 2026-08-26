@@ -12,45 +12,93 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private const string ShowAllAttacksKey =
             "ProjectMT.FallenCommander.BossConfig.ShowAllAttacks";
 
-        private static readonly string[] AttackTabLabels =
+        private sealed class AttackInspectorDefinition
         {
-            "1. 기본",
-            "2. 근접",
-            "3. 위치",
-            "4. 추적",
-            "5. 블랙홀",
-            "6. 직선",
-            "7. 고리",
-            "8. 충전"
-        };
-
-        private static readonly string[][] AttackPropertyNames =
-        {
-            new[] { "projectileBasicAttack" },
-            new[] { "meleeAttack" },
-            new[] { "markStrike" },
-            new[] { "trackingMark", "trackingMarkLockDuration" },
-            new[]
+            public AttackInspectorDefinition(
+                string label,
+                FallenCommanderAttackPreviewKind previewKind,
+                string[] propertyNames,
+                System.Func<FallenCommanderBossConfig, FallenCommanderAttackData> resolveAttack = null)
             {
-                "blackHole",
-                "blackHoleActiveDuration",
-                "blackHoleCoreRadius",
-                "blackHoleSpawnMinDistance",
-                "blackHoleSpawnMaxDistance",
-                "blackHoleOuterPullSpeed",
-                "blackHoleInnerPullSpeed",
-                "blackHolePullStrengthCurve",
-                "blackHoleArenaHalfExtents",
-                "blackHoleEndEffects"
-            },
-            new[] { "lineStrike" },
-            new[] { "corruptionRing", "corruptionRingSafeRadius" },
-            new[]
-            {
-                "finalChargeTelegraphPrefab",
-                "finalChargeEffects",
-                "finalChargeStartEffectOffset"
+                Label = label;
+                PreviewKind = previewKind;
+                PropertyNames = propertyNames;
+                ResolveAttack = resolveAttack;
             }
+
+            public string Label { get; }
+            public FallenCommanderAttackPreviewKind PreviewKind { get; }
+            public string[] PropertyNames { get; }
+            private System.Func<FallenCommanderBossConfig, FallenCommanderAttackData> ResolveAttack { get; }
+
+            // 정의에 연결된 일반 공격 데이터를 반환한다.
+            public FallenCommanderAttackData ResolveAttackData(FallenCommanderBossConfig config)
+            {
+                return ResolveAttack?.Invoke(config);
+            }
+        }
+
+        private static readonly AttackInspectorDefinition[] AttackDefinitions =
+        {
+            new(
+                "1. 기본",
+                FallenCommanderAttackPreviewKind.Basic,
+                new[] { "projectileBasicAttack" }),
+            new(
+                "2. 근접",
+                FallenCommanderAttackPreviewKind.Melee,
+                new[] { "meleeAttack" },
+                config => config.MeleeAttack),
+            new(
+                "3. 위치",
+                FallenCommanderAttackPreviewKind.MarkStrike,
+                new[] { "markStrike" },
+                config => config.MarkStrike),
+            new(
+                "4. 추적",
+                FallenCommanderAttackPreviewKind.TrackingMark,
+                new[] { "trackingMark", "trackingMarkLockDuration" },
+                config => config.TrackingMark),
+            new(
+                "5. 블랙홀",
+                FallenCommanderAttackPreviewKind.BlackHole,
+                new[]
+                {
+                    "blackHole",
+                    "blackHoleActiveDuration",
+                    "blackHoleCoreRadius",
+                    "blackHoleSpawnMinDistance",
+                    "blackHoleSpawnMaxDistance",
+                    "blackHoleOuterPullSpeed",
+                    "blackHoleInnerPullSpeed",
+                    "blackHolePullStrengthCurve",
+                    "blackHoleArenaHalfExtents",
+                    "blackHoleEndEffects"
+                },
+                config => config.BlackHole),
+            new(
+                "6. 직선",
+                FallenCommanderAttackPreviewKind.LineStrike,
+                new[] { "lineStrike" },
+                config => config.LineStrike),
+            new(
+                "7. 고리",
+                FallenCommanderAttackPreviewKind.CorruptionRing,
+                new[] { "corruptionRing", "corruptionRingSafeRadius" },
+                config => config.CorruptionRing),
+            new(
+                "8. 충전",
+                FallenCommanderAttackPreviewKind.FinalCharge,
+                new[]
+                {
+                    "finalChargeTelegraphPrefab",
+                    "finalChargeEffects",
+                    "finalChargeStartEffectOffset"
+                }),
+            new(
+                "9. 전멸",
+                FallenCommanderAttackPreviewKind.TimeoutWipe,
+                new[] { "timeoutWipe" })
         };
 
         private int selectedAttack;
@@ -62,7 +110,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             selectedAttack = Mathf.Clamp(
                 EditorPrefs.GetInt(SelectedAttackKey, 0),
                 0,
-                AttackTabLabels.Length - 1);
+                AttackDefinitions.Length - 1);
             showAllAttacks = EditorPrefs.GetBool(ShowAllAttacksKey, false);
         }
 
@@ -117,16 +165,23 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 }
             }
 
-            for (var row = 0; row < 2; row++)
+            const int columnCount = 3;
+            var rowCount = Mathf.CeilToInt(AttackDefinitions.Length / (float)columnCount);
+            for (var row = 0; row < rowCount; row++)
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    for (var column = 0; column < 4; column++)
+                    for (var column = 0; column < columnCount; column++)
                     {
-                        var index = row * 4 + column;
+                        var index = row * columnCount + column;
+                        if (index >= AttackDefinitions.Length)
+                        {
+                            break;
+                        }
+
                         var selected = GUILayout.Toggle(
                             selectedAttack == index,
-                            AttackTabLabels[index],
+                            AttackDefinitions[index].Label,
                             EditorStyles.miniButton);
                         if (selected && selectedAttack != index)
                         {
@@ -141,21 +196,25 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             EditorGUILayout.Space(4f);
             if (showAllAttacks)
             {
-                for (var index = 0; index < AttackPropertyNames.Length; index++)
+                for (var index = 0; index < AttackDefinitions.Length; index++)
                 {
-                    DrawAttackProperties(index);
+                    DrawAttackProperties(
+                        AttackDefinitions[index],
+                        index < AttackDefinitions.Length - 1);
                 }
 
                 return;
             }
 
-            DrawAttackProperties(selectedAttack);
+            DrawAttackProperties(AttackDefinitions[selectedAttack], false);
         }
 
         // 선택된 공격에 포함된 SerializedProperty와 전용 도구를 표시한다.
-        private void DrawAttackProperties(int attackIndex)
+        private void DrawAttackProperties(
+            AttackInspectorDefinition definition,
+            bool addBottomSpacing)
         {
-            foreach (var propertyName in AttackPropertyNames[attackIndex])
+            foreach (var propertyName in definition.PropertyNames)
             {
                 var attackProperty = serializedObject.FindProperty(propertyName);
                 if (attackProperty != null)
@@ -170,9 +229,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             serializedObject.ApplyModifiedProperties();
             DrawAttackPreviewTools(
                 (FallenCommanderBossConfig)target,
-                attackIndex);
+                definition);
 
-            if (showAllAttacks && attackIndex < AttackPropertyNames.Length - 1)
+            if (showAllAttacks && addBottomSpacing)
             {
                 EditorGUILayout.Space(6f);
             }
@@ -181,7 +240,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         // 공격 탭 안에 시전·공격·전체 미리보기와 종료 버튼을 표시한다.
         private static void DrawAttackPreviewTools(
             FallenCommanderBossConfig config,
-            int attackIndex)
+            AttackInspectorDefinition definition)
         {
             EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("공격 연출 미리보기", EditorStyles.boldLabel);
@@ -190,16 +249,16 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             {
                 FallenCommanderAttackEditorPreview.Stop();
                 EditorGUILayout.HelpBox(
-                    "프리팹 편집 화면에서는 원본 보호를 위해 미리보기를 실행하지 않아용. " +
-                    "프리팹 편집 화면을 닫고 개발용 군단장 씬에서 사용해 주세요.",
+                    "프리팹 편집 화면에서는 원본 보호를 위해 미리보기를 실행할 수 없습니다. " +
+                    "프리팹 편집 화면을 닫고 개발용 군단장 씬에서 실행하세요.",
                     MessageType.Warning);
                 return;
             }
 
-            if (!TryBuildAttackPreviewSpec(config, attackIndex, out var previewSpec))
+            if (!TryBuildAttackPreviewSpec(config, definition, out var previewSpec))
             {
                 EditorGUILayout.HelpBox(
-                    "현재 씬에서 군단장 보스 실행 오브젝트를 찾지 못했어용.",
+                    "현재 씬에서 군단장 보스 실행 오브젝트를 찾을 수 없습니다.",
                     MessageType.Info);
                 return;
             }
@@ -209,21 +268,28 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             if (!hasPreCast && !hasCast)
             {
                 EditorGUILayout.HelpBox(
-                    "이 공격에는 아직 모션·시각 효과·효과음이 지정되지 않았어용.",
+                    "이 공격에는 모션·시각 효과·효과음이 지정되지 않았습니다.",
                     MessageType.Info);
             }
-            else if (attackIndex == 0)
+            else if (definition.PreviewKind == FallenCommanderAttackPreviewKind.Basic)
             {
                 EditorGUILayout.HelpBox(
                     "전체 미리보기는 직선 경고범위가 차오른 뒤 기본 공격 구체가 " +
-                    "군단장 방향으로 날아가고, 닿는 순간 적중 연출을 재생해용.",
+                    "군단장 방향으로 이동하며, 충돌 시 적중 연출을 재생합니다.",
+                    MessageType.None);
+            }
+            else if (definition.PreviewKind == FallenCommanderAttackPreviewKind.TimeoutWipe)
+            {
+                EditorGUILayout.HelpBox(
+                    "전체 미리보기는 전멸 경고 종료 후 발동 모션과 적중 연출을 재생합니다. " +
+                    "실제 하트 피해는 적용하지 않습니다.",
                     MessageType.None);
             }
             else
             {
                 EditorGUILayout.HelpBox(
                     $"전체 미리보기는 시전 후 {previewSpec.WarningDuration:0.##}초에 " +
-                    "공격 모션·적중 시각 효과·효과음을 재생해용.",
+                    "공격 모션·적중 시각 효과·효과음을 재생합니다.",
                     MessageType.None);
             }
 
@@ -273,7 +339,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         // 현재 Scene 참조와 선택된 공격 데이터를 범용 미리보기 명세로 묶는다.
         private static bool TryBuildAttackPreviewSpec(
             FallenCommanderBossConfig config,
-            int attackIndex,
+            AttackInspectorDefinition definition,
             out FallenCommanderAttackPreviewSpec previewSpec)
         {
             previewSpec = null;
@@ -293,40 +359,68 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     ?.objectReferenceValue as Transform;
                 var commanderRoot = controllerData.FindProperty("commanderRoot")
                     ?.objectReferenceValue as GameObject;
-                var attack = ResolveAttackData(config, attackIndex);
-                var basicAttack = attackIndex == 0 ? config.BasicAttack : null;
-                var effects = attackIndex == 7
+                var kind = definition.PreviewKind;
+                var attack = definition.ResolveAttackData(config);
+                var basicAttack = kind == FallenCommanderAttackPreviewKind.Basic
+                    ? config.BasicAttack
+                    : null;
+                var timeoutWipe = kind == FallenCommanderAttackPreviewKind.TimeoutWipe
+                    ? config.TimeoutWipe
+                    : null;
+                var effects = kind == FallenCommanderAttackPreviewKind.FinalCharge
                     ? config.FinalChargeEffects
-                    : attackIndex == 0
+                    : kind == FallenCommanderAttackPreviewKind.TimeoutWipe
+                        ? timeoutWipe?.Effects
+                    : kind == FallenCommanderAttackPreviewKind.Basic
                         ? basicAttack?.Effects
                         : attack?.Effects;
-                var warningDuration = attackIndex == 7
+                var warningDuration = kind == FallenCommanderAttackPreviewKind.FinalCharge
                     ? controllerData.FindProperty("finalChargeDuration")?.floatValue ?? 0.1f
-                    : attackIndex == 0
+                    : kind == FallenCommanderAttackPreviewKind.TimeoutWipe
+                        ? timeoutWipe?.WarningDuration ?? 0.1f
+                    : kind == FallenCommanderAttackPreviewKind.Basic
                         ? basicAttack?.WarningDuration ?? 0.1f
                         : attack?.WarningDuration ?? 0.1f;
+                var telegraphPrefab = kind == FallenCommanderAttackPreviewKind.Basic
+                    ? basicAttack?.TelegraphPrefab
+                    : kind == FallenCommanderAttackPreviewKind.FinalCharge
+                        ? config.FinalChargeTelegraphPrefab
+                        : attack?.TelegraphPrefab;
+                var telegraphRadius = kind == FallenCommanderAttackPreviewKind.FinalCharge
+                    ? controllerData.FindProperty("finalChargeRadius")?.floatValue ?? 0f
+                    : attack?.Radius ?? 0f;
 
                 previewSpec = new FallenCommanderAttackPreviewSpec
                 {
-                    AttackIndex = attackIndex,
-                    Label = AttackTabLabels[attackIndex],
+                    Kind = kind,
+                    Label = definition.Label,
                     Config = config,
                     BossPrefab = bossPrefab,
                     SpawnPoint = spawnPoint,
                     FacingTarget = commanderRoot == null ? null : commanderRoot.transform,
                     BasicAttack = basicAttack,
                     Effects = effects,
-                    PreCastMotion = attack?.PreCastMotion,
-                    PreCastMotionDuration = attack?.PreCastMotionDuration ?? 0f,
-                    PreCastMotionSpeed = attack?.PreCastMotionSpeed ?? 1f,
-                    CastMotion = attack?.CastMotion,
-                    CastMotionDuration = attack?.CastMotionDuration ?? 0f,
-                    CastMotionSpeed = attack?.CastMotionSpeed ?? 1f,
+                    TelegraphPrefab = telegraphPrefab,
+                    TelegraphRadius = telegraphRadius,
+                    TelegraphWidth = attack?.Width ?? 0f,
+                    TelegraphLength = attack?.Length ?? 0f,
+                    SecondaryTelegraphRadius = kind == FallenCommanderAttackPreviewKind.CorruptionRing
+                        ? config.CorruptionRingSafeRadius
+                        : 0f,
+                    PreCastMotion = timeoutWipe?.PreCastMotion ?? attack?.PreCastMotion,
+                    PreCastMotionDuration = timeoutWipe?.PreCastMotionDuration ??
+                        attack?.PreCastMotionDuration ?? 0f,
+                    PreCastMotionSpeed = timeoutWipe?.PreCastMotionSpeed ??
+                        attack?.PreCastMotionSpeed ?? 1f,
+                    CastMotion = timeoutWipe?.CastMotion ?? attack?.CastMotion,
+                    CastMotionDuration = timeoutWipe?.CastMotionDuration ??
+                        attack?.CastMotionDuration ?? 0f,
+                    CastMotionSpeed = timeoutWipe?.CastMotionSpeed ??
+                        attack?.CastMotionSpeed ?? 1f,
                     WarningDuration = Mathf.Max(0.1f, warningDuration),
-                    StartEffectLocalOffset = attackIndex == 7
+                    StartEffectLocalOffset = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargeStartEffectOffset
-                        : Vector3.zero,
-                    AttachStartEffectToBoss = attackIndex == 7
+                        : Vector3.zero
                 };
                 return true;
             }
@@ -334,27 +428,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             return false;
         }
 
-        // 공격 번호에 해당하는 일반 공격 데이터를 반환한다.
-        private static FallenCommanderAttackData ResolveAttackData(
-            FallenCommanderBossConfig config,
-            int attackIndex)
-        {
-            return attackIndex switch
-            {
-                1 => config.MeleeAttack,
-                2 => config.MarkStrike,
-                3 => config.TrackingMark,
-                4 => config.BlackHole,
-                5 => config.LineStrike,
-                6 => config.CorruptionRing,
-                _ => null
-            };
-        }
-
         // 시전 단계에 모션·VFX·SFX 중 하나라도 있는지 확인한다.
         private static bool HasPreCastPresentation(FallenCommanderAttackPreviewSpec previewSpec)
         {
             return previewSpec.BasicAttack != null ||
+                previewSpec.TelegraphPrefab != null ||
                 previewSpec.PreCastMotion != null ||
                 previewSpec.Effects?.StartVfxPrefab != null ||
                 previewSpec.Effects?.StartSfx != null;
@@ -372,9 +450,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         // 현재 속성이 공격 탭에서 별도로 표시되는 데이터인지 확인한다.
         private static bool IsAttackProperty(string propertyPath)
         {
-            foreach (var propertyNames in AttackPropertyNames)
+            foreach (var definition in AttackDefinitions)
             {
-                foreach (var propertyName in propertyNames)
+                foreach (var propertyName in definition.PropertyNames)
                 {
                     if (propertyPath == propertyName)
                     {
@@ -396,8 +474,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             {
                 FallenCommanderFinalChargeVfxEditorPreview.Stop();
                 EditorGUILayout.HelpBox(
-                    "프리팹 편집 화면에서는 원본 보호를 위해 미리보기를 실행하지 않아용. " +
-                    "프리팹 편집 화면을 닫고 개발용 군단장 씬에서 사용해 주세요.",
+                    "프리팹 편집 화면에서는 원본 보호를 위해 미리보기를 실행할 수 없습니다. " +
+                    "프리팹 편집 화면을 닫고 개발용 군단장 씬에서 실행하세요.",
                     MessageType.Warning);
                 return;
             }
@@ -427,7 +505,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     {
                         EditorUtility.DisplayDialog(
                             "충전 시각 효과 미리보기",
-                            "현재 씬에서 군단장 보스 실행 오브젝트를 찾지 못했어용.",
+                            "현재 씬에서 군단장 보스 실행 오브젝트를 찾을 수 없습니다.",
                             "확인");
                     }
                 }
@@ -532,7 +610,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 }
 
                 createdBoss.name = $"[충전 시각 효과 미리보기] {bossPrefab.name}";
-                createdBoss.hideFlags = HideFlags.DontSave;
+                createdBoss.hideFlags = HideFlags.HideAndDontSave;
                 if (spawnPoint != null)
                 {
                     createdBoss.transform.SetPositionAndRotation(
@@ -552,7 +630,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     createdBoss.transform,
                     false);
                 createdVfx.name = $"[미리보기] {config.FinalChargeEffects.StartVfxPrefab.name}";
-                createdVfx.hideFlags = HideFlags.DontSave;
+                createdVfx.hideFlags = HideFlags.HideAndDontSave;
                 createdVfx.transform.localPosition = config.FinalChargeStartEffectOffset;
                 createdVfx.transform.localRotation = Quaternion.identity;
 

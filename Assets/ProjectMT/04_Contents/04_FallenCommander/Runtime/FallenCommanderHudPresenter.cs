@@ -68,7 +68,9 @@ namespace ProjectMT.Contents.FallenCommander
             float timeoutWarningDuration = 0f,
             bool isPhaseTransitionActive = false,
             int bossPhase = 1,
-            string phaseTransitionMessage = "")
+            string phaseTransitionMessage = "",
+            string timeoutWipeMessage = "",
+            float timeoutWipePulseInterval = 0.45f)
         {
             BossHealth = bossHealth;
             BossMaxHealth = bossMaxHealth;
@@ -96,6 +98,8 @@ namespace ProjectMT.Contents.FallenCommander
             IsPhaseTransitionActive = isPhaseTransitionActive;
             BossPhase = bossPhase;
             PhaseTransitionMessage = phaseTransitionMessage;
+            TimeoutWipeMessage = timeoutWipeMessage;
+            TimeoutWipePulseInterval = timeoutWipePulseInterval;
         }
 
         public float BossHealth { get; }
@@ -124,6 +128,8 @@ namespace ProjectMT.Contents.FallenCommander
         public bool IsPhaseTransitionActive { get; }
         public int BossPhase { get; }
         public string PhaseTransitionMessage { get; }
+        public string TimeoutWipeMessage { get; }
+        public float TimeoutWipePulseInterval { get; }
     }
 
     // 같은 GameObject에 이 컴포넌트를 여러 개 추가하지 못하게 막는다.
@@ -177,6 +183,7 @@ namespace ProjectMT.Contents.FallenCommander
         private Text commanderStunNotice;
         private CanvasGroup finalChargeCanvasGroup;
         private bool isTimeoutWarningPulsing;
+        private float activeTimeoutWarningPulseInterval = 0.45f;
         private readonly List<Graphic> commanderHeartGraphics = new List<Graphic>();
         private readonly Dictionary<GameObject, bool> hiddenHudRootChildren =
             new Dictionary<GameObject, bool>();
@@ -431,7 +438,7 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             var pulse = Mathf.PingPong(
-                Time.unscaledTime / Mathf.Max(0.05f, timeoutWarningPulseInterval),
+                Time.unscaledTime / Mathf.Max(0.05f, activeTimeoutWarningPulseInterval),
                 1f);
             SetFinalChargeAlpha(Mathf.Lerp(timeoutWarningMinAlpha, 1f, pulse));
         }
@@ -499,6 +506,9 @@ namespace ProjectMT.Contents.FallenCommander
 
             isTimeoutWarningPulsing =
                 state.IsTimeoutWarningActive || state.IsTimeoutWipeActive;
+            activeTimeoutWarningPulseInterval = state.TimeoutWipePulseInterval > 0f
+                ? state.TimeoutWipePulseInterval
+                : timeoutWarningPulseInterval;
             if (!isTimeoutWarningPulsing)
             {
                 SetFinalChargeAlpha(1f);
@@ -507,7 +517,9 @@ namespace ProjectMT.Contents.FallenCommander
             if (finalChargeWarning != null)
             {
                 finalChargeWarning.text = state.IsTimeoutWipeActive
-                    ? "시간 종료! 전멸 공격이 발동됩니다!"
+                    ? string.IsNullOrWhiteSpace(state.TimeoutWipeMessage)
+                        ? "시간 종료! 전멸 공격이 발동됩니다!"
+                        : state.TimeoutWipeMessage
                     : state.IsTimeoutWarningActive
                         ? "경고! 곧 전멸 공격이 발동됩니다!"
                         : "경고! 보스가 강력한 광역 공격을 준비합니다!";

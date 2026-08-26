@@ -2320,6 +2320,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PF_FallenCommanderRuntime
       objectReference: {fileID: 0}
+    - target: {fileID: 649873630842670835, guid: 23596149dad639144aa606e113a1e209, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 822244598824268358, guid: 23596149dad639144aa606e113a1e209, type: 3}
       propertyPath: serializeData2.selectionData.maxConnectionDistance
       value: 0.066230774

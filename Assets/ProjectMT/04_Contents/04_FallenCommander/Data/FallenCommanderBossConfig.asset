@@ -21,8 +21,16 @@ MonoBehaviour:
     effects:
       startVfxPrefab: {fileID: 0}
       startVfxDuration: 0
+      startVfxAnchor: 0
+      startVfxPositionOffset: {x: 0, y: 0, z: 0}
+      startVfxRotationOffset: {x: 0, y: 0, z: 0}
+      startVfxScale: {x: 1, y: 1, z: 1}
       resolveVfxPrefab: {fileID: 470645583430424332, guid: d49a95270485c4e49827569d31c73a6a, type: 3}
       resolveVfxDuration: 0
+      resolveVfxAnchor: 0
+      resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+      resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
+      resolveVfxScale: {x: 1, y: 1, z: 1}
       startSfx: {fileID: 0}
       startSfxDuration: 0
       resolveSfx: {fileID: 0}
@@ -40,8 +48,16 @@ MonoBehaviour:
     effects:
       startVfxPrefab: {fileID: 3090182719152197242, guid: 72a58d6b485ceaa43a825cf9fcfa6aa0, type: 3}
       startVfxDuration: 2
+      startVfxAnchor: 0
+      startVfxPositionOffset: {x: 0, y: 0, z: 0}
+      startVfxRotationOffset: {x: 0, y: 0, z: 0}
+      startVfxScale: {x: 1, y: 1, z: 1}
       resolveVfxPrefab: {fileID: 4497473641098484015, guid: b2e4dc7e90fe6054884f2daf9aba3555, type: 3}
       resolveVfxDuration: 1
+      resolveVfxAnchor: 0
+      resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+      resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
+      resolveVfxScale: {x: 1, y: 1, z: 1}
       startSfx: {fileID: 0}
       startSfxDuration: 2
       resolveSfx: {fileID: 0}
@@ -63,8 +79,16 @@ MonoBehaviour:
     effects:
       startVfxPrefab: {fileID: 4671078854636446704, guid: cf89c35f520ddc34e8a51dc0938df8ac, type: 3}
       startVfxDuration: 3
+      startVfxAnchor: 0
+      startVfxPositionOffset: {x: 0, y: 0, z: 0}
+      startVfxRotationOffset: {x: 0, y: 0, z: 0}
+      startVfxScale: {x: 1, y: 1, z: 1}
       resolveVfxPrefab: {fileID: 8023403893727423613, guid: 59e539ff0672d2344b7a8b35f9f6fbc0, type: 3}
       resolveVfxDuration: 1.2
+      resolveVfxAnchor: 0
+      resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+      resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
+      resolveVfxScale: {x: 1, y: 1, z: 1}
       startSfx: {fileID: 0}
       startSfxDuration: 3
       resolveSfx: {fileID: 0}
@@ -86,8 +110,16 @@ MonoBehaviour:
     effects:
       startVfxPrefab: {fileID: 0}
       startVfxDuration: 0
+      startVfxAnchor: 0
+      startVfxPositionOffset: {x: 0, y: 0, z: 0}
+      startVfxRotationOffset: {x: 0, y: 0, z: 0}
+      startVfxScale: {x: 1, y: 1, z: 1}
       resolveVfxPrefab: {fileID: 8897071228384316925, guid: e432d4f1310f4704c81a01bf480843cc, type: 3}
       resolveVfxDuration: 0
+      resolveVfxAnchor: 0
+      resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+      resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
+      resolveVfxScale: {x: 1, y: 1, z: 1}
       startSfx: {fileID: 0}
       startSfxDuration: 0
       resolveSfx: {fileID: 0}
@@ -110,8 +142,16 @@ MonoBehaviour:
     effects:
       startVfxPrefab: {fileID: 1187270765252648731, guid: ce12a47334d76aa4ea9d06483d8641dc, type: 3}
       startVfxDuration: 1.5
+      startVfxAnchor: 0
+      startVfxPositionOffset: {x: 0, y: 0, z: 0}
+      startVfxRotationOffset: {x: 0, y: 0, z: 0}
+      startVfxScale: {x: 1, y: 1, z: 1}
       resolveVfxPrefab: {fileID: 6258482674219099290, guid: 5d9ec90da4013ec40a319d8432b07519, type: 3}
       resolveVfxDuration: 3.5
+      resolveVfxAnchor: 0
+      resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+      resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
+      resolveVfxScale: {x: 1, y: 1, z: 1}
       startSfx: {fileID: 0}
       startSfxDuration: 5
       resolveSfx: {fileID: 0}
@@ -123,7 +163,7 @@ MonoBehaviour:
     castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
     castMotionSpeed: 1
     castMotionDuration: 0.875
-    warningDuration: 1.5
+    warningDuration: 1
     radius: 3.5
     width: 2
     length: 8
@@ -160,10 +200,18 @@ MonoBehaviour:
     m_RotationOrder: 4
   blackHoleArenaHalfExtents: {x: 6, y: 4}
   blackHoleEndEffects:
-    startVfxPrefab: {fileID: 0}
-    startVfxDuration: 0
+    startVfxPrefab: {fileID: 1187270765252648731, guid: ce12a47334d76aa4ea9d06483d8641dc, type: 3}
+    startVfxDuration: 2
+    startVfxAnchor: 0
+    startVfxPositionOffset: {x: 0, y: 0, z: 0}
+    startVfxRotationOffset: {x: 0, y: 0, z: 0}
+    startVfxScale: {x: 1, y: 1, z: 1}
     resolveVfxPrefab: {fileID: 6909954905928057147, guid: be310100dd74466468712278ac4229d2, type: 3}
     resolveVfxDuration: 1.5
+    resolveVfxAnchor: 0
+    resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+    resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
+    resolveVfxScale: {x: 1, y: 1, z: 1}
     startSfx: {fileID: 0}
     startSfxDuration: 0
     resolveSfx: {fileID: 0}
@@ -174,8 +222,16 @@ MonoBehaviour:
     effects:
       startVfxPrefab: {fileID: 7276037009419760238, guid: 46d61a38af42fea47b54eae26ec93e8d, type: 3}
       startVfxDuration: 2.5
+      startVfxAnchor: 0
+      startVfxPositionOffset: {x: 0, y: 0, z: 0}
+      startVfxRotationOffset: {x: 0, y: 0, z: 0}
+      startVfxScale: {x: 1, y: 1, z: 1}
       resolveVfxPrefab: {fileID: 6794211593868074654, guid: 41e16059ffb359b429a19bcc6c2ace43, type: 3}
       resolveVfxDuration: 1.2
+      resolveVfxAnchor: 0
+      resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+      resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
+      resolveVfxScale: {x: 1, y: 1, z: 1}
       startSfx: {fileID: 0}
       startSfxDuration: 2.5
       resolveSfx: {fileID: 0}
@@ -197,8 +253,16 @@ MonoBehaviour:
     effects:
       startVfxPrefab: {fileID: 347788217132506165, guid: 1bde8c2900e5fa34f8e08eb668bbfa07, type: 3}
       startVfxDuration: 2.5
+      startVfxAnchor: 0
+      startVfxPositionOffset: {x: 0, y: 0, z: 0}
+      startVfxRotationOffset: {x: 0, y: 0, z: 0}
+      startVfxScale: {x: 1, y: 1, z: 1}
       resolveVfxPrefab: {fileID: 917792888290565687, guid: c8368c448a7e9e24681033ada41f9dcc, type: 3}
       resolveVfxDuration: 1.5
+      resolveVfxAnchor: 0
+      resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+      resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
+      resolveVfxScale: {x: 1, y: 1, z: 1}
       startSfx: {fileID: 0}
       startSfxDuration: 2.5
       resolveSfx: {fileID: 0}
@@ -220,14 +284,51 @@ MonoBehaviour:
   finalChargeEffects:
     startVfxPrefab: {fileID: 3090182719152197242, guid: 72a58d6b485ceaa43a825cf9fcfa6aa0, type: 3}
     startVfxDuration: 1
+    startVfxAnchor: 0
+    startVfxPositionOffset: {x: 0, y: 0, z: 0}
+    startVfxRotationOffset: {x: 0, y: 0, z: 0}
+    startVfxScale: {x: 1, y: 1, z: 1}
     resolveVfxPrefab: {fileID: 344858183500810125, guid: 6083b5b842a6ac44889a2d9ebebabae8, type: 3}
     resolveVfxDuration: 15
+    resolveVfxAnchor: 0
+    resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+    resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
+    resolveVfxScale: {x: 1, y: 1, z: 1}
     startSfx: {fileID: 0}
     startSfxDuration: 0
     resolveSfx: {fileID: 0}
     resolveSfxDuration: 0
     sfxVolume: 1
   finalChargeStartEffectOffset: {x: 0, y: 1.5, z: 0}
+  timeoutWipe:
+    effects:
+      startVfxPrefab: {fileID: 0}
+      startVfxDuration: 0
+      startVfxAnchor: 0
+      startVfxPositionOffset: {x: 0, y: 0, z: 0}
+      startVfxRotationOffset: {x: 0, y: 0, z: 0}
+      startVfxScale: {x: 1, y: 1, z: 1}
+      resolveVfxPrefab: {fileID: 0}
+      resolveVfxDuration: 0
+      resolveVfxAnchor: 0
+      resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+      resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
+      resolveVfxScale: {x: 1, y: 1, z: 1}
+      startSfx: {fileID: 0}
+      startSfxDuration: 0
+      resolveSfx: {fileID: 0}
+      resolveSfxDuration: 0
+      sfxVolume: 1
+    preCastMotion: {fileID: 0}
+    preCastMotionSpeed: 1
+    preCastMotionDuration: 0
+    castMotion: {fileID: 0}
+    castMotionSpeed: 1
+    castMotionDuration: 0
+    warningDuration: 0.8
+    resultDelay: 2
+    warningMessage: "\uC2DC\uAC04 \uC885\uB8CC! \uC804\uBA78 \uACF5\uACA9\uC774 \uBC1C\uB3D9\uB429\uB2C8\uB2E4!"
+    warningPulseInterval: 0.45
   closeAttackDistance: 3
   lineStrikeMinimumDistance: 5
   lineStrikeAlignmentThreshold: 0.7

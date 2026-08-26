@@ -17,6 +17,7 @@ MonoBehaviour:
   monsterCatalog: {fileID: 11400000, guid: fe8b78d3f8fdc474f867c3d64664a095, type: 2}
   itemCatalog: {fileID: 11400000, guid: 42763c2994db882418ae426304c124ad, type: 2}
   combatStatConfig: {fileID: 11400000, guid: e3fe862709cca3e4384f834bd1b4942d, type: 2}
+  combatTuningConfig: {fileID: 11400000, guid: 322442540e3ce66459fecbd377ccf68c, type: 2}
   commanderGrowthConfig: {fileID: 11400000, guid: 70faaebd425ec634688a149e0c9eebc5, type: 2}
   equipmentBalanceConfig: {fileID: 11400000, guid: be2ba100346b1664d8bcdbc024dd7b0f, type: 2}
   commanderSkillBalanceConfig: {fileID: 11400000, guid: 2407a88cd75a1594a8691043327768f7, type: 2}

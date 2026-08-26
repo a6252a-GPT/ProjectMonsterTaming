@@ -28,13 +28,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3468f1cd999e99a4ca82955b5e695459, type: 3}
   m_Name: Ranged_never_ice_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.ProjectileActionDefinition
+  basicAttackProfile: {fileID: 11400000, guid: 46d39a607f1261f4d859b8143b8c2046, type: 2}
   deliveryMode: 0
-  mode: 0
+  mode: 1
   projectilePrefab: {fileID: 8900597983205870692, guid: 7d0df7a31c4b87e4e867d3dc816c56ed, type: 3}
   launchSfx: {fileID: 0}
+  overrideBasicAttackProfileTuning: 0
   speed: 9
   lifetime: 3
   hitRadius: 0.25
-  maxPiercingTargets: 2
-  impactRadius: 1.5
-  maxImpactTargets: 4
+  maxPiercingTargets: 3
+  impactRadius: 0.28
+  maxImpactTargets: 3
+  launchRecoilDistance: 0
+  launchRecoilDuration: 0.12

@@ -19,7 +19,7 @@ MonoBehaviour:
   visualTint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 100
   attackPower: 10
-  defense: 0
+  defense: 3
   attackSpeed: 1
   moveSpeed: 2.5
   attackRange: 4

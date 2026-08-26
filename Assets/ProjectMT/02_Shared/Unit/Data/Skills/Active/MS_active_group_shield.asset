@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a6d69d254fe2224f86750625f474cdf, type: 3}
+  m_Name: MS_active_group_shield
+  m_EditorClassIdentifier: ProjectMT.Shared:ProjectMT.Shared.Unit:GenericMonsterActiveSkill
+  skillId: active_group_shield
+  displayName: "\uC218\uD638\uB9C9 \uC804\uAC1C"
+  description: "\uC544\uAD70 \uC804\uCCB4\uC5D0\uAC8C \uBCF4\uD638\uB9C9\uC744 \uBD80\uC5EC\uD569\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  presentationTier: 2
+  recipe:
+    trigger: 11
+    triggerCount: 1
+    internalCooldown: 0
+    conditions: []
+    target: 12
+    delivery: 6
+    shape: 1
+    effects:
+    - effectId: group_shield
+      type: 2
+      valueSource: 3
+      magnitude: 0.12
+      duration: 4
+      delay: 0
+      radius: 100
+      maxTargets: 5
+      repeatCount: 1
+      stackPolicy: 1
+  authoringEnabled: 1
+  energyCost: 1000

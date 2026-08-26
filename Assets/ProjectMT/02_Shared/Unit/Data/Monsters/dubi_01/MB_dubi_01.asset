@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b64a9dc2cac6e714e80d1ff73e6cbc52, type: 3}
   m_Name: MB_dubi_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterBodyProfile
-  visualScale: {x: 1, y: 1, z: 1}
+  visualScale: {x: 1.2, y: 1.2, z: 1.2}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0

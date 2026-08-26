@@ -16,4 +16,4 @@ MonoBehaviour:
   commanderExperience: 100
   items:
   - itemId: ticket_monster_summon
-    amount: 1
+    amount: 10

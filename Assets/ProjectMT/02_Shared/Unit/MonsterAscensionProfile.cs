@@ -3,7 +3,7 @@ using UnityEngine;
 namespace ProjectMT.Shared.Unit
 {
     [CreateAssetMenu(menuName = "ProjectMT/Unit/Monster Ascension Profile", fileName = "MA_Monster")]
-    public sealed class MonsterAscensionProfile : ScriptableObject // 1·3·5 Stat, 2·4 Ability 고정 슬롯
+    public sealed class MonsterAscensionProfile : ScriptableObject // 1·3·5 Stat, 2·4 기존 스킬 Augment 고정 슬롯
     {
         [SerializeField] private bool configured;
         [SerializeField] private MonsterStatModifier milestone1;
@@ -63,6 +63,18 @@ namespace ProjectMT.Shared.Unit
             }
 
             return System.Array.Empty<string>();
+        }
+
+        public MonsterAbilityDefinition[] ResolveUnlockedSkillAugments(int ascensionLevel)
+        {
+            if (!configured || ascensionLevel < 2)
+            {
+                return System.Array.Empty<MonsterAbilityDefinition>();
+            }
+
+            return ascensionLevel >= 4
+                ? new[] { milestone2, milestone4 }
+                : new[] { milestone2 };
         }
 
         public bool TryValidate(out string error)

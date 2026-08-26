@@ -81,6 +81,7 @@ namespace ProjectMT.Features.Equipment
 
         private const string FrameVariantPrefix = ItemGradeFramePalette.FrameVariantPrefix;
         private readonly Dictionary<string, GameObject> frameVariantTemplates = new Dictionary<string, GameObject>();
+        private readonly Dictionary<string, Color> frameVariantSwatchColors = new Dictionary<string, Color>();
         private Transform frameVariantTemplateStorage;
 
         [SerializeField] private TMP_FontAsset equippedLabelFont;
@@ -323,7 +324,35 @@ namespace ProjectMT.Features.Equipment
                 var clone = Instantiate(all[i].gameObject, frameVariantTemplateStorage);
                 clone.name = name;
                 frameVariantTemplates[suffix] = clone;
+
+                var swatch = FindFrameSwatchGraphic(clone.transform);
+                if (swatch != null)
+                {
+                    frameVariantSwatchColors[suffix] = swatch.color;
+                }
             }
+        }
+
+        // 프레임 템플릿의 배경("Bg") 색을 찾는다. 분해창 등 단색 UI에서 재사용한다.
+        private static Graphic FindFrameSwatchGraphic(Transform frameRoot)
+        {
+            var namedBg = frameRoot.Find("Bg");
+            var namedGraphic = namedBg != null ? namedBg.GetComponent<Graphic>() : null;
+            if (namedGraphic != null)
+            {
+                return namedGraphic;
+            }
+
+            var graphics = frameRoot.GetComponentsInChildren<Graphic>(true);
+            for (var i = 0; i < graphics.Length; i++)
+            {
+                if (graphics[i] != null && graphics[i].name != "Icon")
+                {
+                    return graphics[i];
+                }
+            }
+
+            return null;
         }
 
         // 등급에 맞는 프레임 템플릿을 복제해서 normalArea 밑에 끼워 넣는다.
@@ -1434,22 +1463,21 @@ namespace ProjectMT.Features.Equipment
 
                 if (preview.Frame != null)
                 {
-                    preview.Frame.color = GetGradeColor(item.Grade);
+                    preview.Frame.color = GetDismantlePreviewColor(item.Grade);
                 }
             }
         }
 
-        private static Color GetGradeColor(EquipmentGrade grade)
+        // 분해 미리보기 배경색. 인벤토리 프레임에서 뽑은 실제 색을 우선 쓰고, 없으면 팔레트 근사값을 쓴다.
+        private Color GetDismantlePreviewColor(EquipmentGrade grade)
         {
-            return grade switch
+            if (FrameVariantSuffixByGrade.TryGetValue(grade, out var suffix)
+                && frameVariantSwatchColors.TryGetValue(suffix, out var sampledColor))
             {
-                EquipmentGrade.Common => new Color32(56, 131, 91, 255),
-                EquipmentGrade.Rare => new Color32(52, 112, 175, 255),
-                EquipmentGrade.Epic => new Color32(194, 162, 62, 255),
-                EquipmentGrade.Legendary => new Color32(126, 68, 159, 255),
-                EquipmentGrade.Mythic => new Color32(183, 55, 55, 255),
-                _ => new Color32(78, 76, 80, 255)
-            };
+                return sampledColor;
+            }
+
+            return ItemGradeFramePalette.GetColor(grade);
         }
 
         private void RefreshDismantleControls()

@@ -23,27 +23,72 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private MonsterProjectileAttackMode mode;
         [SerializeField] private GameObject projectilePrefab;
         [SerializeField] private SfxCue launchSfx;
+        [SerializeField] private bool overrideBasicAttackProfileTuning;
         [SerializeField, Min(0.01f)] private float speed = 9f;
         [SerializeField, Min(0.01f)] private float lifetime = 3f;
         [SerializeField, Min(0.01f)] private float hitRadius = 0.25f;
         [SerializeField, Min(1)] private int maxPiercingTargets = 2;
         [SerializeField, Min(0.01f)] private float impactRadius = 1.5f;
         [SerializeField, Min(1)] private int maxImpactTargets = 4;
+        [SerializeField, Min(0f)] private float launchRecoilDistance;
+        [SerializeField, Min(0.01f)] private float launchRecoilDuration = 0.12f;
 
         public override MonsterCombatType CombatType => MonsterCombatType.Ranged;
         public MonsterRangedDeliveryMode DeliveryMode => deliveryMode;
         public MonsterProjectileAttackMode Mode => mode;
         public GameObject ProjectilePrefab => projectilePrefab;
         public SfxCue LaunchSfx => launchSfx;
+        public bool OverrideBasicAttackProfileTuning => overrideBasicAttackProfileTuning;
         public float Speed => Mathf.Max(0.01f, speed);
         public float Lifetime => Mathf.Max(0.01f, lifetime);
         public float HitRadius => Mathf.Max(0.01f, hitRadius);
+        public float ResolvedSpeed => BasicAttackProfile != null && !overrideBasicAttackProfileTuning
+            ? BasicAttackProfile.ProjectileSpeed
+            : Speed;
+        public float ResolvedLifetime => BasicAttackProfile != null && !overrideBasicAttackProfileTuning
+            ? BasicAttackProfile.ProjectileLifetime
+            : Lifetime;
+        public float ResolvedHitRadius => BasicAttackProfile != null && !overrideBasicAttackProfileTuning
+            ? BasicAttackProfile.ProjectileCollisionRadius
+            : HitRadius;
         public int MaxPiercingTargets => Mathf.Max(1, maxPiercingTargets);
         public float ImpactRadius => Mathf.Max(0.01f, impactRadius);
         public int MaxImpactTargets => Mathf.Max(1, maxImpactTargets);
+        public float LaunchRecoilDistance => Mathf.Max(0f, launchRecoilDistance);
+        public float LaunchRecoilDuration => Mathf.Max(0.01f, launchRecoilDuration);
 
         public override bool TryValidate(out string error)
         {
+            if (BasicAttackProfile != null)
+            {
+                if (BasicAttackProfile.CombatType != MonsterCombatType.Ranged)
+                {
+                    error = $"Projectile action requires a Ranged Basic Attack profile. Action={name}";
+                    return false;
+                }
+
+                if (!BasicAttackProfile.TryValidate(out error))
+                {
+                    return false;
+                }
+
+                if (BasicAttackProfile.UsesProjectileVisual &&
+                    (projectilePrefab == null || speed <= 0f || lifetime <= 0f))
+                {
+                    error = $"Projectile Basic Attack requires visual, speed and lifetime. Action={name}";
+                    return false;
+                }
+
+                error = null;
+                return true;
+            }
+
+            if (launchRecoilDistance < 0f || launchRecoilDuration <= 0f)
+            {
+                error = $"Projectile launch recoil settings are invalid. Action={name}";
+                return false;
+            }
+
             if (deliveryMode == MonsterRangedDeliveryMode.Instant)
             {
                 if (mode == MonsterProjectileAttackMode.Piercing)
@@ -104,18 +149,24 @@ namespace ProjectMT.Shared.Unit
             float collisionRadius,
             int piercingTargets,
             float areaRadius,
-            int areaTargets)
+            int areaTargets,
+            float recoilDistance = 0f,
+            float recoilDuration = 0.12f,
+            bool overrideProfileTuning = false)
         {
             deliveryMode = delivery;
             mode = attackMode;
             projectilePrefab = delivery == MonsterRangedDeliveryMode.Projectile ? prefab : null;
             launchSfx = delivery == MonsterRangedDeliveryMode.Projectile ? projectileLaunchSfx : null;
+            overrideBasicAttackProfileTuning = overrideProfileTuning;
             speed = projectileSpeed;
             lifetime = projectileLifetime;
             hitRadius = collisionRadius;
             maxPiercingTargets = piercingTargets;
             impactRadius = areaRadius;
             maxImpactTargets = areaTargets;
+            launchRecoilDistance = Mathf.Max(0f, recoilDistance);
+            launchRecoilDuration = Mathf.Max(0.01f, recoilDuration);
         }
 
         public void EditorConfigure(

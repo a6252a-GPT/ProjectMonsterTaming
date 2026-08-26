@@ -1,0 +1,183 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ce58ed4c4ad0964e89df11c13f20017, type: 3}
+  m_Name: MainBattleAIProfileCatalog
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.MainBattle.MainBattleAIProfileCatalog
+  profiles:
+  - monsterId: lumi_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.22
+  - monsterId: aru_01
+    role: 1
+    targetPriority: 0
+    preferredRangeRatio: 0.66
+    retreatRangeRatio: 0
+    retargetInterval: 0.16
+  - monsterId: shakun_01
+    role: 2
+    targetPriority: 1
+    preferredRangeRatio: 0.68
+    retreatRangeRatio: 0
+    retargetInterval: 0.28
+  - monsterId: ru_01
+    role: 3
+    targetPriority: 0
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.25
+  - monsterId: mukuk_01
+    role: 4
+    targetPriority: 2
+    preferredRangeRatio: 0.92
+    retreatRangeRatio: 0.44
+    retargetInterval: 0.32
+  - monsterId: lucy_01
+    role: 4
+    targetPriority: 0
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.28
+  - monsterId: pc_bear_01
+    role: 3
+    targetPriority: 0
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.28
+  - monsterId: grisu_fire_01
+    role: 3
+    targetPriority: 0
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.28
+  - monsterId: grimpy_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.2
+  - monsterId: kimhyeona_01
+    role: 3
+    targetPriority: 0
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.28
+  - monsterId: dubi_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.2
+  - monsterId: doomba_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.2
+  - monsterId: rako_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.2
+  - monsterId: rubea_01
+    role: 3
+    targetPriority: 0
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.28
+  - monsterId: berkan_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.2
+  - monsterId: silpia_01
+    role: 3
+    targetPriority: 0
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.28
+  - monsterId: oster_01
+    role: 2
+    targetPriority: 0
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.28
+  - monsterId: wispy_01
+    role: 3
+    targetPriority: 0
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.28
+  - monsterId: mingyu_mythic_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.2
+  - monsterId: mingyu_legend_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.2
+  - monsterId: castley_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.2
+  - monsterId: kutan_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.2
+  - monsterId: krabi_01
+    role: 3
+    targetPriority: 0
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.28
+  - monsterId: kir_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.2
+  - monsterId: poi_poison_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.2
+  - monsterId: piru_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.2
+  - monsterId: hanjaemon_ice_01
+    role: 3
+    targetPriority: 0
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.28
+  - monsterId: fryar_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.2

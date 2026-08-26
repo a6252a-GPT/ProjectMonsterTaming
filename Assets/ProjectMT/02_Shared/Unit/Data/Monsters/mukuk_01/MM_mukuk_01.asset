@@ -39,12 +39,12 @@ MonoBehaviour:
   attacks:
   - motionId: attack01
     clip: {fileID: 7400000, guid: 55caf94400bc82247ab7fec81162d70e, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
+    playbackSpeed: 0.9
+    crossFadeDuration: 0.08
     weight: 1
     preventImmediateRepeat: 0
     markers:
-    - normalizedTime: 0.45
+    - normalizedTime: 0.48
       powerRatio: 1
       feedbackOverride:
         sfx: {fileID: 0}

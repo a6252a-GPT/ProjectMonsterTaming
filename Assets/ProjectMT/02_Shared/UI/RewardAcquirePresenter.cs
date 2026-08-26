@@ -32,21 +32,31 @@ namespace ProjectMT.Shared.UI
 
         public void PlayConfirmed(RewardPresentationRequest request)
         {
+            if (spawnAnchor == null)
+            {
+                return;
+            }
+
+            PlayConfirmed(request, spawnAnchor.position);
+        }
+
+        public void PlayConfirmed(RewardPresentationRequest request, Vector3 worldSpawnPosition)
+        {
             if (request == null || request.IsEmpty || poolScope == null || itemPrefab == null || displayRoot == null ||
-                spawnAnchor == null || targetAnchor == null || !isActiveAndEnabled)
+                targetAnchor == null || !isActiveAndEnabled)
             {
                 return;
             }
 
             sfxPool?.Play(acquireSfx, transform.position);
-            StartCoroutine(PlayItems(request));
+            StartCoroutine(PlayItems(request, worldSpawnPosition));
         }
 
-        private IEnumerator PlayItems(RewardPresentationRequest request)
+        private IEnumerator PlayItems(RewardPresentationRequest request, Vector3 worldSpawnPosition)
         {
             for (var i = 0; i < request.Items.Count; i++)
             {
-                SpawnItem(request.Items[i]);
+                SpawnItem(request.Items[i], worldSpawnPosition);
                 if (i + 1 < request.Items.Count && itemInterval > 0f)
                 {
                     yield return new WaitForSecondsRealtime(itemInterval);
@@ -54,7 +64,7 @@ namespace ProjectMT.Shared.UI
             }
         }
 
-        private void SpawnItem(RewardPresentationItem item)
+        private void SpawnItem(RewardPresentationItem item, Vector3 worldSpawnPosition)
         {
             var instance = poolScope.Rent(itemPrefab, Vector3.zero, Quaternion.identity, displayRoot);
             var view = instance == null ? null : instance.GetComponent<RewardAcquireView>();
@@ -74,7 +84,7 @@ namespace ProjectMT.Shared.UI
                 poolScope,
                 FormatLabel(item),
                 ResolveColor(item.Kind),
-                displayRoot.InverseTransformPoint(spawnAnchor.position),
+                displayRoot.InverseTransformPoint(worldSpawnPosition),
                 displayRoot.InverseTransformPoint(targetAnchor.position),
                 itemDuration,
                 HandleItemReleased);

@@ -106,7 +106,9 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            gameObject.SetActive(true);
+            // 이 패널도 군단장 3D 프리뷰(발 IK 고정)를 포함하므로 스케일/이동 없는 FadeOnly를
+            // 쓴다. 자세한 이유는 UIPanelPopStyle.FadeOnly 주석 참고.
+            UIPanelPopAnimator.RequestOpen(gameObject, UIPanelPopStyle.FadeOnly);
             OpenStateChanged?.Invoke(true);
         }
 
@@ -117,8 +119,7 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            gameObject.SetActive(false);
-            OpenStateChanged?.Invoke(false);
+            UIPanelPopAnimator.RequestClose(gameObject, () => OpenStateChanged?.Invoke(false));
         }
 
         public void SelectPart(EquipmentPart part)
@@ -535,9 +536,7 @@ namespace ProjectMT.Features.Equipment
             upgradeMaterialText.text = $"{owned} / {required}";
         }
 
-        // UpHeaderStat("현재 강화 능력 증가율") = 이번 강화(레벨 → 레벨+1)로 오르는 증가율.
-        // DownHeaderStat("다음 강화 능력 증가율") = 그 다음 강화(레벨+1 → 레벨+2)로 오르는 증가율.
-        // 부위마다 현재 레벨이 다르므로 선택된 부위의 레벨을 기준으로 각각 계산한다.
+        // UpHeaderStat = 선택된 부위의 현재 레벨 능력 증가율, DownHeaderStat = 강화 1회 후(다음 레벨) 능력 증가율.
         private void RefreshUpgradeRateTexts(EquipmentPart part)
         {
             if (upHeaderStatText == null && downHeaderStatText == null)
@@ -553,13 +552,11 @@ namespace ProjectMT.Features.Equipment
             }
 
             var level = EquipmentSlotUpgradeRuntime.GetLevel(part);
-            var currentUpgradeRate = EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level + 1)
-                - EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level);
-            var nextUpgradeRate = EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level + 2)
-                - EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level + 1);
+            var currentBonusPercent = EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level);
+            var nextBonusPercent = EquipmentSlotUpgradeCalculator.GetBonusBudgetPercent(level + 1);
 
-            SetOptionalText(upHeaderStatText, $"+{currentUpgradeRate:0.00}%");
-            SetOptionalText(downHeaderStatText, $"+{nextUpgradeRate:0.00}%");
+            SetOptionalText(upHeaderStatText, $"+{currentBonusPercent:0.0}%");
+            SetOptionalText(downHeaderStatText, $"+{nextBonusPercent:0.0}%");
         }
 
         private static void SetOptionalText(TMP_Text text, string value)

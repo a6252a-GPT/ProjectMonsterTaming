@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ProjectMT.Contents.CastleRaid
 {
-    public sealed class CastleRaidStartData : IContentStartData // 군단의 역습 시작값
+    public sealed class CastleRaidStartData : IPartyDeploymentStartData // 군단의 역습 공통 부대 투입값
     {
         private const int MaxUnitSlotCount = 10; // 편성창 본부대 슬롯 수
 
@@ -22,7 +22,7 @@ namespace ProjectMT.Contents.CastleRaid
         public int DeploymentLimit { get; } // 현재 편성 기준 총 소환 한도
     }
 
-    public sealed class CastleRaidResult : IContentResultData // 성 침공 플레이 사실
+    public sealed class CastleRaidResult : IObjectiveCompletionResultData // 성 침공 플레이 사실
     {
         public CastleRaidResult(bool mainCastleDestroyed)
         {
@@ -30,6 +30,7 @@ namespace ProjectMT.Contents.CastleRaid
         }
 
         public bool MainCastleDestroyed { get; } // 최종 성 파괴 여부
+        public bool ObjectiveCompleted => MainCastleDestroyed;
     }
 
 }

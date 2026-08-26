@@ -2,6 +2,7 @@ using ProjectMT.Core.Config;
 using ProjectMT.Core.SceneFlow;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Features.OfflineReward;
+using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.Items;
@@ -19,6 +20,7 @@ namespace ProjectMT.Bootstrap
         [SerializeField] private MonsterCatalog monsterCatalog; // 몬스터 Definition 목록
         [SerializeField] private ItemCatalog itemCatalog; // 일반 아이템 Definition 목록
         [SerializeField] private CombatStatConfig combatStatConfig; // 전투 능력치 상한·기본값
+        [SerializeField] private CombatTuningConfig combatTuningConfig; // 타격감·MainBattle 거리 튜닝
         [SerializeField] private CommanderGrowthConfig commanderGrowthConfig; // 군단장 레벨 성장 곡선
         [SerializeField] private EquipmentBalanceConfig equipmentBalanceConfig; // 장비 드랍·옵션 밸런스
         [SerializeField] private CommanderSkillBalanceConfig commanderSkillBalanceConfig; // 스킬 레벨 성장 곡선
@@ -32,6 +34,7 @@ namespace ProjectMT.Bootstrap
         public MonsterCatalog MonsterCatalog => monsterCatalog;
         public ItemCatalog ItemCatalog => itemCatalog;
         public CombatStatConfig CombatStatConfig => combatStatConfig;
+        public CombatTuningConfig CombatTuningConfig => combatTuningConfig;
         public CommanderGrowthConfig CommanderGrowthConfig => commanderGrowthConfig;
         public EquipmentBalanceConfig EquipmentBalanceConfig => equipmentBalanceConfig;
         public CommanderSkillBalanceConfig CommanderSkillBalanceConfig => commanderSkillBalanceConfig;
@@ -71,6 +74,11 @@ namespace ProjectMT.Bootstrap
             combatStatConfig = combatStats;
             commanderGrowthConfig = commanderGrowth;
             equipmentBalanceConfig = equipmentBalance;
+        }
+
+        public void EditorConfigureCombatTuning(CombatTuningConfig config)
+        {
+            combatTuningConfig = config;
         }
 
         public void EditorConfigureOfflineReward(OfflineRewardConfig config)

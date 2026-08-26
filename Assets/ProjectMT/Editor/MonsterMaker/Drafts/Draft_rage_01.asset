@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: "\uB77C\uAC8C"
   rarity: 0
   portrait: {fileID: 21300000, guid: 6e64f194c371fc840afe24c0e19787af, type: 3}
+  skillLoadoutConfigured: 0
   rarityPassiveSkill: {fileID: 0}
   rarityActiveSkill: {fileID: 0}
   productionMemo: Notion monster batch / Shell_01
@@ -41,7 +42,14 @@ MonoBehaviour:
   defense: 0
   attackSpeed: 1
   moveSpeed: 2.5
-  attackRange: 1.2
+  attackRange: 2
+  impactStrength: 1
+  reactionWeight: 1
+  mainBattleRole: 0
+  mainBattleTargetPriority: 0
+  mainBattlePreferredRangeRatio: 0.72
+  mainBattleRetreatRangeRatio: 0
+  mainBattleRetargetInterval: 0.2
   idleClip: {fileID: 7400000, guid: 05a7e7bc754f21644a358853aff7baee, type: 3}
   idleSpeed: 1
   moveClip: {fileID: 7400000, guid: fa0120cec5aa0e1408a9bad0f8216478, type: 3}
@@ -76,6 +84,7 @@ MonoBehaviour:
   deathClip: {fileID: 7400000, guid: a399b8c5021d21944aacb2d098b44b70, type: 3}
   deathSpeed: 1
   combatType: 0
+  basicAttackProfile: {fileID: 11400000, guid: d6be405325d5a00459045db04dcf44d7, type: 2}
   meleeMode: 0
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5
@@ -84,12 +93,15 @@ MonoBehaviour:
   projectileMode: 0
   projectilePrefab: {fileID: 0}
   projectileLaunchSound: {fileID: 0}
+  overrideProjectileTuning: 0
   projectileSpeed: 9
   projectileLifetime: 3
   projectileHitRadius: 0.25
   projectileMaxPiercingTargets: 2
   projectileImpactRadius: 1.5
   projectileMaxImpactTargets: 4
+  projectileLaunchRecoilDistance: 0
+  projectileLaunchRecoilDuration: 0.12
   specialEffectId: 
   specialTargetTeam: 0
   specialRadius: 2
@@ -124,6 +136,9 @@ MonoBehaviour:
     displayName: 
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension3:
     healthRate: 0
     attackRate: 0
@@ -136,6 +151,9 @@ MonoBehaviour:
     displayName: 
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension5:
     healthRate: 0
     attackRate: 0

@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f0bc2c8d3774b74385d208cf1805b2a, type: 3}
+  m_Name: MP_passive_breathing_room
+  m_EditorClassIdentifier: ProjectMT.Shared:ProjectMT.Shared.Unit:GenericMonsterPassiveSkill
+  skillId: passive_breathing_room
+  displayName: "\uC228 \uACE0\uB974\uAE30"
+  description: "\uC77C\uC815 \uC2DC\uAC04 \uD53C\uD574\uBC1B\uC9C0 \uC54A\uC73C\uBA74
+    \uCCB4\uB825\uC744 \uD68C\uBCF5\uD569\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  presentationTier: 0
+  recipe:
+    trigger: 15
+    triggerCount: 1
+    internalCooldown: 4
+    conditions: []
+    target: 0
+    delivery: 0
+    shape: 0
+    effects:
+    - effectId: breathing_heal
+      type: 1
+      valueSource: 2
+      magnitude: 0.06
+      duration: 0
+      delay: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 1
+  authoringEnabled: 0

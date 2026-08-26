@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ba24edda31e98848b3134f8c253ebab, type: 3}
   m_Name: Melee_castley_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MeleeActionDefinition
-  mode: 0
+  basicAttackProfile: {fileID: 11400000, guid: 9e07c9e2d5598db489272352afcd4263, type: 2}
+  mode: 1
   areaCenter: 1
-  areaRadius: 1.5
+  areaRadius: 1.6
   maxTargets: 4
 --- !u!114 &11400000
 MonoBehaviour:

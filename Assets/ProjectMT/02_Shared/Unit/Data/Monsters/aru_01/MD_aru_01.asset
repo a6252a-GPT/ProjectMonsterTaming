@@ -22,7 +22,7 @@ MonoBehaviour:
   defense: 7
   attackSpeed: 1
   moveSpeed: 2.6
-  attackRange: 1.1
+  attackRange: 2
   ranged: 0
   runtimeAssetKey: monster/aru_01
   runtimeAssetSet: {fileID: 11400000, guid: a54db17fd616b114eb9fda007a8929e9, type: 2}

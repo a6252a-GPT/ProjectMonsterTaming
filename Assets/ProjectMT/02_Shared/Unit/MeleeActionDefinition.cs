@@ -30,6 +30,17 @@ namespace ProjectMT.Shared.Unit
 
         public override bool TryValidate(out string error)
         {
+            if (BasicAttackProfile != null)
+            {
+                if (BasicAttackProfile.CombatType != MonsterCombatType.Melee)
+                {
+                    error = $"Melee action requires a Melee Basic Attack profile. Action={name}";
+                    return false;
+                }
+
+                return BasicAttackProfile.TryValidate(out error);
+            }
+
             if (mode == MonsterMeleeAttackMode.Area && (areaRadius <= 0f || maxTargets < 1))
             {
                 error = $"Melee Area settings are invalid. Action={name}";

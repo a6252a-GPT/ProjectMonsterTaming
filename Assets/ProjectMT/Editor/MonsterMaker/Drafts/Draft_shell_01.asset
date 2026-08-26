@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: "\uC258"
   rarity: 0
   portrait: {fileID: 21300000, guid: 56538ea974857544e8a47b4d6eca254b, type: 3}
+  skillLoadoutConfigured: 0
   rarityPassiveSkill: {fileID: 0}
   rarityActiveSkill: {fileID: 0}
   productionMemo: "Monster Maker \uC2E4\uC81C \uC81C\uC791 \uAC80\uC99D. Shell \uC804\uC6A9
@@ -43,7 +44,14 @@ MonoBehaviour:
   defense: 6
   attackSpeed: 1.1
   moveSpeed: 2.6
-  attackRange: 1
+  attackRange: 2
+  impactStrength: 0
+  reactionWeight: 0
+  mainBattleRole: 0
+  mainBattleTargetPriority: 0
+  mainBattlePreferredRangeRatio: 0.72
+  mainBattleRetreatRangeRatio: 0
+  mainBattleRetargetInterval: 0.2
   idleClip: {fileID: 7400000, guid: 05a7e7bc754f21644a358853aff7baee, type: 3}
   idleSpeed: 1
   moveClip: {fileID: 7400000, guid: fa0120cec5aa0e1408a9bad0f8216478, type: 3}
@@ -78,6 +86,7 @@ MonoBehaviour:
   deathClip: {fileID: 7400000, guid: a399b8c5021d21944aacb2d098b44b70, type: 3}
   deathSpeed: 1
   combatType: 0
+  basicAttackProfile: {fileID: 11400000, guid: d6be405325d5a00459045db04dcf44d7, type: 2}
   meleeMode: 0
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5
@@ -86,12 +95,15 @@ MonoBehaviour:
   projectileMode: 0
   projectilePrefab: {fileID: 0}
   projectileLaunchSound: {fileID: 0}
+  overrideProjectileTuning: 0
   projectileSpeed: 9
   projectileLifetime: 3
   projectileHitRadius: 0.25
   projectileMaxPiercingTargets: 2
   projectileImpactRadius: 1.5
   projectileMaxImpactTargets: 4
+  projectileLaunchRecoilDistance: 0
+  projectileLaunchRecoilDuration: 0.12
   specialEffectId: 
   specialTargetTeam: 0
   specialRadius: 2
@@ -126,6 +138,9 @@ MonoBehaviour:
     displayName: "\uB2E8\uB2E8\uD55C \uAECD\uC9C8"
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension3:
     healthRate: 0
     attackRate: 0.05
@@ -138,6 +153,9 @@ MonoBehaviour:
     displayName: "\uBC18\uACA9 \uBCF8\uB2A5"
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension5:
     healthRate: 0
     attackRate: 0

@@ -22,3 +22,12 @@ MonoBehaviour:
   resultAdapter: {fileID: 11400000, guid: 65a1705672153ba4a92ba084aaa8191e, type: 2}
   dungeonKeyItemId: 
   supportsSweep: 0
+  sceneVariants:
+  - variantId:
+      value: square
+    sceneId:
+      value: castle_raid
+  - variantId:
+      value: hex
+    sceneId:
+      value: castle_raid_hex

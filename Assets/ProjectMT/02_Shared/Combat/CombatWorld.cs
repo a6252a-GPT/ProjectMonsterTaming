@@ -15,13 +15,18 @@ namespace ProjectMT.Shared.Combat
         [SerializeField] private CombatFeedbackPlayer feedbackPlayer; // 공용 전투 연출
         [SerializeField] private GameObject projectilePrefab; // 원거리 공격 투사체
         [SerializeField, Min(1)] private int maxMonsterVfxPerFrame = 6; // 전용 Marker VFX 예산
+        [SerializeField, Min(1)] private int maxMonsterFeelPerFrame = 6; // FEEL 프리셋 독립 예산
+        [SerializeField] private bool showMonsterBasicAttackHitAreas = true; // VFX 확정 전 실제 XZ 판정 확인
 
         private readonly List<UnitActor> units = new List<UnitActor>(); // 현재 등록 유닛
         private readonly MeleeAttackExecutor meleeExecutor = new MeleeAttackExecutor();
         private readonly ProjectileAttackExecutor projectileExecutor = new ProjectileAttackExecutor();
+        private readonly MonsterBasicAttackExecutor basicAttackExecutor = new MonsterBasicAttackExecutor();
         private readonly SpecialActionExecutor specialExecutor = new SpecialActionExecutor();
         private int monsterVfxFrame = -1;
         private int monsterVfxCount;
+        private int monsterFeelFrame = -1;
+        private int monsterFeelCount;
         private static CombatStatConfig sharedStatConfig;
 
         public ICombatFeedbackPlayer Feedback => feedbackPlayer;
@@ -136,18 +141,33 @@ namespace ProjectMT.Shared.Combat
 
         public UnitActor FindNearestOpponent(UnitActor seeker, float maxDistance)
         {
+            return FindOpponent(seeker, maxDistance, UnitTargetPriority.Nearest);
+        }
+
+        public UnitActor FindOpponent(UnitActor seeker, float maxDistance, UnitTargetPriority priority)
+        {
+            return FindOpponent(seeker, maxDistance, priority, 0f);
+        }
+
+        public UnitActor FindOpponent(
+            UnitActor seeker,
+            float maxDistance,
+            UnitTargetPriority priority,
+            float targetLoadPenalty)
+        {
             if (seeker == null)
             {
                 return null;
             }
 
             var maxDistanceSquared = float.IsPositiveInfinity(maxDistance) ? float.PositiveInfinity : maxDistance * maxDistance; // 제곱 거리로 비교
-            var nearestDistanceSquared = maxDistanceSquared;
-            UnitActor nearest = null;
+            var bestScore = float.PositiveInfinity;
+            UnitActor best = null;
             for (var i = 0; i < units.Count; i++)
             {
                 var candidate = units[i];
-                if (candidate == null || candidate == seeker || !candidate.IsAlive || candidate.Team == seeker.Team)
+                if (candidate == null || candidate == seeker || !candidate.IsAlive ||
+                    !candidate.IsCombatReady || candidate.Team == seeker.Team)
                 {
                     continue;
                 }
@@ -155,14 +175,44 @@ namespace ProjectMT.Shared.Combat
                 var offset = candidate.transform.position - seeker.transform.position;
                 offset.y = 0f;
                 var distanceSquared = offset.sqrMagnitude;
-                if (distanceSquared < nearestDistanceSquared)
+                if (distanceSquared > maxDistanceSquared)
                 {
-                    nearestDistanceSquared = distanceSquared;
-                    nearest = candidate;
+                    continue;
+                }
+
+                var score = priority switch
+                {
+                    UnitTargetPriority.LowestHealth => ResolveHealthRatio(candidate) * 10000f + distanceSquared,
+                    UnitTargetPriority.RangedFirst => (candidate.IsRanged ? 0f : 1000000f) + distanceSquared,
+                    _ => distanceSquared
+                };
+                score += CountAlliedAttackers(seeker, candidate) * Mathf.Max(0f, targetLoadPenalty) * 9f;
+                if (score >= bestScore)
+                {
+                    continue;
+                }
+
+                bestScore = score;
+                best = candidate;
+            }
+
+            return best;
+        }
+
+        private int CountAlliedAttackers(UnitActor seeker, UnitActor target)
+        {
+            var count = 0;
+            for (var index = 0; index < units.Count; index++)
+            {
+                var ally = units[index];
+                if (ally != null && ally != seeker && ally.IsAlive && ally.IsCombatReady &&
+                    ally.Team == seeker.Team && ally.Target == target)
+                {
+                    count++;
                 }
             }
 
-            return nearest;
+            return count;
         }
 
         public int CountAlive(UnitTeam team)
@@ -181,7 +231,7 @@ namespace ProjectMT.Shared.Combat
 
         public void Attack(UnitActor source, UnitActor target, UnitStatsSnapshot stats)
         {
-            if (source == null || target == null || !source.IsAlive || !target.IsAlive)
+            if (source == null || target == null || !source.IsAlive || !target.IsAlive || !target.IsCombatReady)
             {
                 return;
             }
@@ -226,7 +276,10 @@ namespace ProjectMT.Shared.Combat
                 assetSet,
                 marker,
                 animationDriver);
-            var executed = assetSet.CombatProfile.CombatType switch
+            var basicAttackProfile = assetSet.CombatProfile.Action?.BasicAttackProfile;
+            var executed = basicAttackProfile != null
+                ? basicAttackExecutor.Execute(context)
+                : assetSet.CombatProfile.CombatType switch
             {
                 MonsterCombatType.Melee => meleeExecutor.Execute(context),
                 MonsterCombatType.Ranged => projectileExecutor.Execute(context),
@@ -242,7 +295,7 @@ namespace ProjectMT.Shared.Combat
                     : assetSet.FeedbackProfile?.AttackMarker;
             }
 
-            if (assetSet.CombatProfile.CombatType != MonsterCombatType.Ranged)
+            if (basicAttackProfile == null && assetSet.CombatProfile.CombatType != MonsterCombatType.Ranged)
             {
                 PlayMonsterFeedback(
                     feedback,
@@ -254,7 +307,11 @@ namespace ProjectMT.Shared.Combat
             return executed;
         }
 
-        public bool ApplyMonsterDamage(UnitActor source, IDamageable target, float amount)
+        public bool ApplyMonsterDamage(
+            UnitActor source,
+            IDamageable target,
+            float amount,
+            DamageFeedbackFlags feedbackFlags = DamageFeedbackFlags.None)
         {
             if (source == null || target == null || !source.IsAlive || !target.IsAlive || amount <= 0f)
             {
@@ -264,6 +321,11 @@ namespace ProjectMT.Shared.Combat
             var resolvedAmount = amount;
             var component = target as Component;
             var targetActor = component != null ? component.GetComponent<UnitActor>() : null;
+            if (targetActor != null && !targetActor.IsCombatReady)
+            {
+                return false;
+            }
+
             if (targetActor != null)
             {
                 resolvedAmount = CombatDamageCalculator.Calculate(
@@ -274,7 +336,19 @@ namespace ProjectMT.Shared.Combat
                     Random.value).Amount;
             }
 
-            var appliedDamage = target.ReceiveDamage(source, resolvedAmount);
+            float appliedDamage;
+            var health = component != null ? component.GetComponent<HealthComponent>() : null;
+            if (health != null)
+            {
+                var hitPoint = target.Position + Vector3.up * 0.4f;
+                health.ApplyDamage(
+                    new DamageRequest(source, resolvedAmount, hitPoint, false, feedbackFlags),
+                    out appliedDamage);
+            }
+            else
+            {
+                appliedDamage = target.ReceiveDamage(source, resolvedAmount);
+            }
             if (appliedDamage <= 0f)
             {
                 return false;
@@ -310,7 +384,7 @@ namespace ProjectMT.Shared.Combat
             for (var unitIndex = 0; unitIndex < units.Count; unitIndex++)
             {
                 var candidate = units[unitIndex];
-                if (candidate == null || !candidate.IsAlive || candidate.Team != team)
+                if (candidate == null || !candidate.IsAlive || !candidate.IsCombatReady || candidate.Team != team)
                 {
                     continue;
                 }
@@ -341,6 +415,137 @@ namespace ProjectMT.Shared.Combat
                 {
                     destination.RemoveAt(destination.Count - 1);
                 }
+            }
+        }
+
+        public void CollectUnitsInFan(
+            UnitTeam team,
+            Vector3 origin,
+            Vector3 forward,
+            float range,
+            float angle,
+            int maxCount,
+            List<UnitActor> destination)
+        {
+            if (destination == null)
+            {
+                return;
+            }
+
+            destination.Clear();
+            forward.y = 0f;
+            forward = forward.sqrMagnitude < 0.0001f ? Vector3.forward : forward.normalized;
+            range = Mathf.Max(0.05f, range);
+            var minimumDot = Mathf.Cos(Mathf.Clamp(angle, 5f, 180f) * 0.5f * Mathf.Deg2Rad);
+            maxCount = Mathf.Max(1, maxCount);
+            for (var index = 0; index < units.Count; index++)
+            {
+                var candidate = units[index];
+                if (candidate == null || !candidate.IsAlive || !candidate.IsCombatReady || candidate.Team != team)
+                {
+                    continue;
+                }
+
+                var offset = candidate.transform.position - origin;
+                offset.y = 0f;
+                var distance = offset.magnitude;
+                if (distance > range + candidate.BodyRadius ||
+                    (distance > 0.001f && Vector3.Dot(forward, offset / distance) < minimumDot))
+                {
+                    continue;
+                }
+
+                InsertByDistance(destination, candidate, origin, maxCount);
+            }
+        }
+
+        public void CollectUnitsInLine(
+            UnitTeam team,
+            Vector3 origin,
+            Vector3 forward,
+            float length,
+            float width,
+            int maxCount,
+            List<UnitActor> destination)
+        {
+            if (destination == null)
+            {
+                return;
+            }
+
+            destination.Clear();
+            forward.y = 0f;
+            forward = forward.sqrMagnitude < 0.0001f ? Vector3.forward : forward.normalized;
+            length = Mathf.Max(0.05f, length);
+            var halfWidth = Mathf.Max(0.025f, width * 0.5f);
+            maxCount = Mathf.Max(1, maxCount);
+            for (var index = 0; index < units.Count; index++)
+            {
+                var candidate = units[index];
+                if (candidate == null || !candidate.IsAlive || !candidate.IsCombatReady || candidate.Team != team)
+                {
+                    continue;
+                }
+
+                var offset = candidate.transform.position - origin;
+                offset.y = 0f;
+                var longitudinal = Vector3.Dot(offset, forward);
+                var lateral = (offset - forward * longitudinal).magnitude;
+                if (longitudinal < -candidate.BodyRadius ||
+                    longitudinal > length + candidate.BodyRadius ||
+                    lateral > halfWidth + candidate.BodyRadius)
+                {
+                    continue;
+                }
+
+                InsertByDistance(destination, candidate, origin, maxCount);
+            }
+        }
+
+        public void ShowMonsterBasicAttackArea(
+            MonsterBasicAttackProfile profile,
+            UnitActor source,
+            Vector3 origin,
+            Vector3 forward,
+            Vector3 primaryTarget,
+            float attackRange)
+        {
+            if (!showMonsterBasicAttackHitAreas || profile == null || source == null)
+            {
+                return;
+            }
+
+            var color = source.Team == UnitTeam.Player
+                ? new Color(0.1f, 0.9f, 1f, 0.72f)
+                : new Color(1f, 0.25f, 0.18f, 0.72f);
+            MonsterAttackAreaIndicator.Create(
+                transform,
+                profile,
+                origin,
+                forward,
+                primaryTarget,
+                attackRange,
+                color);
+        }
+
+        private static void InsertByDistance(
+            List<UnitActor> destination,
+            UnitActor candidate,
+            Vector3 origin,
+            int maxCount)
+        {
+            var distanceSquared = (candidate.transform.position - origin).sqrMagnitude;
+            var insertIndex = 0;
+            while (insertIndex < destination.Count &&
+                   (destination[insertIndex].transform.position - origin).sqrMagnitude <= distanceSquared)
+            {
+                insertIndex++;
+            }
+
+            destination.Insert(insertIndex, candidate);
+            if (destination.Count > maxCount)
+            {
+                destination.RemoveAt(destination.Count - 1);
             }
         }
 
@@ -419,6 +624,91 @@ namespace ProjectMT.Shared.Combat
             var scale = cue.Scale * Mathf.Max(0.01f, vfxScale);
             instance.transform.localScale = cue.VfxPrefab.transform.localScale * scale;
             StartCoroutine(ReturnMonsterObjectAfter(instance, cue.VfxLifetime));
+        }
+
+        public bool WillPlayBasicAttackFeelTargetMotion(
+            BasicAttackFeelCue cue,
+            GameObject target,
+            float intensity = 1f)
+        {
+            if (cue == null || !cue.HasFeel || target == null || poolScope == null)
+            {
+                return false;
+            }
+
+            RefreshMonsterFeelFrameBudget();
+            if (monsterFeelCount >= Mathf.Max(1, maxMonsterFeelPerFrame))
+            {
+                return false;
+            }
+
+            var runtime = cue.Prefab.GetComponent(typeof(IBasicAttackFeelRuntime)) as IBasicAttackFeelRuntime;
+            return runtime?.IsBasicAttackFeelConfigured == true &&
+                   runtime.HasBasicAttackTargetMotion(intensity);
+        }
+
+        public void PlayBasicAttackFeelAt(
+            BasicAttackFeelCue cue,
+            Vector3 position,
+            Quaternion rotation,
+            float bodyScale = 1f,
+            GameObject target = null,
+            float intensity = 1f)
+        {
+            if (cue == null || !cue.HasFeel)
+            {
+                return;
+            }
+
+            RefreshMonsterFeelFrameBudget();
+
+            if (monsterFeelCount >= Mathf.Max(1, maxMonsterFeelPerFrame))
+            {
+                return;
+            }
+
+            monsterFeelCount++;
+            position += rotation * cue.LocalPosition;
+            rotation *= cue.LocalRotation;
+            var instance = RentMonsterObject(cue.Prefab, position, rotation);
+            if (instance == null)
+            {
+                return;
+            }
+
+            instance.transform.localScale = cue.Prefab.transform.localScale *
+                cue.Scale * Mathf.Max(0.01f, bodyScale);
+            PlayBasicAttackFeelRuntime(instance, target, intensity);
+            StartCoroutine(ReturnMonsterObjectAfter(instance, cue.Lifetime));
+        }
+
+        private void RefreshMonsterFeelFrameBudget()
+        {
+            var frame = Time.frameCount;
+            if (monsterFeelFrame == frame)
+            {
+                return;
+            }
+            monsterFeelFrame = frame;
+            monsterFeelCount = 0;
+        }
+
+        public void PlayBasicAttackFeelRuntime(
+            GameObject instance,
+            GameObject target = null,
+            float intensity = 1f)
+        {
+            if (instance == null)
+            {
+                return;
+            }
+
+            var feelRuntime = instance.GetComponent(typeof(IBasicAttackFeelRuntime)) as IBasicAttackFeelRuntime;
+            feelRuntime?.PlayBasicAttackFeel(
+                instance.transform.position,
+                target,
+                intensity,
+                BasicAttackFeelPlaybackOptions.None); // 실전 전역 카메라·히트스탑은 공용 전투 계층만 소유
         }
 
         public void PlayMonsterSfx(SfxCue cue, Vector3 position)
@@ -521,6 +811,13 @@ namespace ProjectMT.Shared.Combat
         {
             yield return new WaitForSeconds(Mathf.Max(0.01f, delay));
             ReturnMonsterObject(instance);
+        }
+
+        private static float ResolveHealthRatio(UnitActor actor)
+        {
+            return actor?.Health == null || actor.Health.MaxHealth <= 0f
+                ? 1f
+                : Mathf.Clamp01(actor.Health.CurrentHealth / actor.Health.MaxHealth);
         }
 
 #if UNITY_EDITOR

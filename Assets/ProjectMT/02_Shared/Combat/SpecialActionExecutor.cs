@@ -29,7 +29,7 @@ namespace ProjectMT.Shared.Combat
             {
                 targets[index].ApplyMonsterBuff(
                     action.EffectId,
-                    action.Modifier,
+                    action.Modifier * context.Source.SupportOutputMultiplier,
                     action.Duration,
                     action.StackPolicy);
             }

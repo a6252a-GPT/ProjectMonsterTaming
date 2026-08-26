@@ -168,21 +168,29 @@ PrefabInstance:
       propertyPath: m_Name
       value: Visual
       objectReference: {fileID: 0}
+    - target: {fileID: 6994101897339136440, guid: eef58503914c3f1499436460e38ef785, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: b30891b924362ec44aa411b355ce0bcf, type: 2}
+    - target: {fileID: 6994101897339136440, guid: eef58503914c3f1499436460e38ef785, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: dee991a1b7330c24d99b44ac9ecd2c80, type: 2}
     - target: {fileID: 7036629295771021616, guid: eef58503914c3f1499436460e38ef785, type: 3}
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 3df2156b6e434864596df057931a390b, type: 2}
     - target: {fileID: 8774754849907193906, guid: eef58503914c3f1499436460e38ef785, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.7
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8774754849907193906, guid: eef58503914c3f1499436460e38ef785, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.7
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8774754849907193906, guid: eef58503914c3f1499436460e38ef785, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.7
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8774754849907193906, guid: eef58503914c3f1499436460e38ef785, type: 3}
       propertyPath: m_LocalPosition.x

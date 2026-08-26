@@ -6,6 +6,9 @@ namespace ProjectMT.Shared.Unit
     public sealed class UnitVisualFeedback : MonoBehaviour // 유닛 피격·사망 펄스
     {
         public const float DeathPulseDurationSeconds = 0.34f;
+        private const float RecoilPushEndRatio = 0.12f;
+        private const float RecoilHoldEndRatio = 0.24f;
+        private const float RecoilRecoverEndRatio = 0.62f;
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
@@ -25,11 +28,20 @@ namespace ProjectMT.Shared.Unit
         private Vector3 reactionBaseLocalPosition;
         private Vector3 recoilStartOffset;
         private Vector3 recoilDirection;
+        private Vector3 recoilOffset;
         private float recoilDistance;
+        private float recoilHeight;
+        private float recoilLiftOffset;
         private float recoilDuration;
         private float recoilElapsed;
         private float recoilDelay;
         private bool holdDeathRecoil;
+        private Vector3 attackLungeStartOffset;
+        private Vector3 attackLungeDirection;
+        private Vector3 attackLungeOffset;
+        private float attackLungeDistance;
+        private float attackLungeDuration;
+        private float attackLungeElapsed;
 
         private void Awake()
         {
@@ -81,17 +93,20 @@ namespace ProjectMT.Shared.Unit
         public void PlayImpact(
             Vector3 worldDirection,
             float distance,
+            float height,
             float duration,
             float delay,
             bool killed)
         {
             PlayHit();
-            if (reactionRoot == null || worldDirection.sqrMagnitude < 0.0001f || distance <= 0f)
+            if (reactionRoot == null || worldDirection.sqrMagnitude < 0.0001f ||
+                (distance <= 0f && height <= 0f))
             {
                 return;
             }
 
-            if (recoilDistance > 0f && distance <= recoilDistance &&
+            if ((recoilDistance > 0f || recoilHeight > 0f) &&
+                distance <= recoilDistance && height <= recoilHeight &&
                 recoilElapsed < recoilDuration * 0.75f)
             {
                 return; // 진행 중인 같은 강도 이하 반동은 중첩·재시작하지 않음
@@ -104,17 +119,52 @@ namespace ProjectMT.Shared.Unit
                 : worldDirection.normalized;
             recoilDirection.y = 0f;
             recoilDirection.Normalize();
-            recoilStartOffset = reactionRoot.localPosition - reactionBaseLocalPosition;
+            recoilStartOffset = recoilOffset;
             recoilDistance = Mathf.Max(recoilDistance, distance); // 연타는 거리 누적 없이 강한 값만 유지
+            recoilHeight = Mathf.Max(recoilHeight, height);
             recoilDuration = Mathf.Max(0.05f, duration);
             recoilElapsed = 0f;
             recoilDelay = Mathf.Max(recoilDelay, delay);
             holdDeathRecoil |= killed;
         }
 
+        public void PlayAttackLunge(Vector3 worldDirection, float distance, float duration)
+        {
+            EnsureReady();
+            if (reactionRoot == null || worldDirection.sqrMagnitude < 0.0001f || distance <= 0f)
+            {
+                return;
+            }
+
+            if (attackLungeDistance > 0f && distance <= attackLungeDistance &&
+                attackLungeElapsed < attackLungeDuration * 0.75f)
+            {
+                return; // 범위 공격 연타는 첫 전진만 유지
+            }
+
+            worldDirection.y = 0f;
+            var parent = reactionRoot.parent;
+            attackLungeDirection = parent != null
+                ? parent.InverseTransformDirection(worldDirection.normalized)
+                : worldDirection.normalized;
+            attackLungeDirection.y = 0f;
+            attackLungeDirection.Normalize();
+            attackLungeStartOffset = attackLungeOffset;
+            attackLungeDistance = Mathf.Max(attackLungeDistance, distance);
+            attackLungeDuration = Mathf.Max(0.06f, duration);
+            attackLungeElapsed = 0f;
+        }
+
+        public void PlayAttackRecoil(Vector3 worldForward, float distance, float duration)
+        {
+            PlayAttackLunge(-worldForward, distance, duration); // 원거리 발사 순간 뒤로 짧게 반동
+        }
+
         public void PlayDeath()
         {
             EnsureReady();
+            CancelAttackLunge();
+            ApplyReactionPose();
             PlayPulse(new Color(1f, 0.85f, 0.25f), DeathPulseDurationSeconds, 0.22f);
         }
 
@@ -137,6 +187,8 @@ namespace ProjectMT.Shared.Unit
         {
             Tick(Time.deltaTime);
             TickRecoil(Time.unscaledDeltaTime);
+            TickAttackLunge(Time.unscaledDeltaTime);
+            ApplyReactionPose();
         }
 
         public bool Tick(float deltaTime) // Runtime과 Maker Preview가 같은 펄스 곡선 사용
@@ -195,11 +247,20 @@ namespace ProjectMT.Shared.Unit
 
             recoilStartOffset = Vector3.zero;
             recoilDirection = Vector3.zero;
+            recoilOffset = Vector3.zero;
             recoilDistance = 0f;
+            recoilHeight = 0f;
+            recoilLiftOffset = 0f;
             recoilDuration = 0f;
             recoilElapsed = 0f;
             recoilDelay = 0f;
             holdDeathRecoil = false;
+            attackLungeStartOffset = Vector3.zero;
+            attackLungeDirection = Vector3.zero;
+            attackLungeOffset = Vector3.zero;
+            attackLungeDistance = 0f;
+            attackLungeDuration = 0f;
+            attackLungeElapsed = 0f;
             SetColor(Color.white);
         }
 
@@ -212,7 +273,7 @@ namespace ProjectMT.Shared.Unit
 
         private void TickRecoil(float deltaTime)
         {
-            if (reactionRoot == null || recoilDistance <= 0f)
+            if (reactionRoot == null || (recoilDistance <= 0f && recoilHeight <= 0f))
             {
                 return;
             }
@@ -225,32 +286,106 @@ namespace ProjectMT.Shared.Unit
 
             recoilElapsed = Mathf.Min(recoilDuration, recoilElapsed + Mathf.Max(0f, deltaTime));
             var ratio = recoilDuration <= 0f ? 1f : recoilElapsed / recoilDuration;
-            float offsetRatio;
-            if (ratio < 0.24f)
+            var targetOffset = recoilDirection * recoilDistance;
+            if (ratio < RecoilPushEndRatio)
             {
-                var pushRatio = Mathf.SmoothStep(0f, 1f, ratio / 0.24f);
-                var targetOffset = recoilDirection * recoilDistance;
-                reactionRoot.localPosition = reactionBaseLocalPosition +
-                                              Vector3.Lerp(recoilStartOffset, targetOffset, pushRatio);
-                return; // 현재 위치에서 시작해 연타 방향 전환도 스냅 없이 연결
+                var pushRatio = Mathf.Clamp01(ratio / RecoilPushEndRatio);
+                pushRatio = 1f - Mathf.Pow(1f - pushRatio, 3f); // 첫 프레임에 퍽 튕김
+                recoilOffset = Vector3.Lerp(recoilStartOffset, targetOffset, pushRatio);
+                UpdateRecoilLift(ratio);
+                return;
             }
 
             if (holdDeathRecoil)
             {
-                offsetRatio = 1f; // 사망 동작 중 원위치 스냅 방지
-            }
-            else
-            {
-                offsetRatio = 1f - Mathf.SmoothStep(0f, 1f, (ratio - 0.24f) / 0.76f); // 한 번만 복귀
+                recoilOffset = targetOffset; // 사망 동작 중 원위치 스냅 방지
+                recoilLiftOffset = Mathf.Sin(ratio * Mathf.PI) * recoilHeight;
+                return;
             }
 
-            reactionRoot.localPosition = reactionBaseLocalPosition + recoilDirection * (recoilDistance * offsetRatio);
-            if (ratio >= 1f && !holdDeathRecoil)
+            if (ratio < RecoilHoldEndRatio)
             {
-                reactionRoot.localPosition = reactionBaseLocalPosition;
-                recoilStartOffset = Vector3.zero;
-                recoilDistance = 0f;
+                recoilOffset = targetOffset; // 짧은 정점으로 타격 위치를 읽힘
+                UpdateRecoilLift(ratio);
+                return;
             }
+
+            if (ratio < RecoilRecoverEndRatio)
+            {
+                var recoverRatio = Mathf.SmoothStep(
+                    0f,
+                    1f,
+                    (ratio - RecoilHoldEndRatio) / (RecoilRecoverEndRatio - RecoilHoldEndRatio));
+                recoilOffset = targetOffset * (1f - recoverRatio);
+                UpdateRecoilLift(ratio);
+                return;
+            }
+
+            recoilStartOffset = Vector3.zero;
+            recoilDirection = Vector3.zero;
+            recoilOffset = Vector3.zero;
+            recoilDistance = 0f;
+            recoilHeight = 0f;
+            recoilLiftOffset = 0f;
+            recoilDuration = 0f;
+            recoilElapsed = 0f;
+            recoilDelay = 0f;
+        }
+
+        private void UpdateRecoilLift(float ratio)
+        {
+            var liftRatio = Mathf.Clamp01(ratio / RecoilRecoverEndRatio);
+            recoilLiftOffset = Mathf.Sin(liftRatio * Mathf.PI) * recoilHeight;
+        }
+
+        private void TickAttackLunge(float deltaTime)
+        {
+            if (reactionRoot == null || attackLungeDistance <= 0f)
+            {
+                return;
+            }
+
+            attackLungeElapsed = Mathf.Min(
+                attackLungeDuration,
+                attackLungeElapsed + Mathf.Max(0f, deltaTime));
+            var ratio = attackLungeDuration <= 0f ? 1f : attackLungeElapsed / attackLungeDuration;
+            if (ratio < 0.22f)
+            {
+                var pushRatio = Mathf.SmoothStep(0f, 1f, ratio / 0.22f);
+                attackLungeOffset = Vector3.Lerp(
+                    attackLungeStartOffset,
+                    attackLungeDirection * attackLungeDistance,
+                    pushRatio);
+                return;
+            }
+
+            var recoverRatio = Mathf.SmoothStep(0f, 1f, (ratio - 0.22f) / 0.78f);
+            attackLungeOffset = attackLungeDirection * (attackLungeDistance * (1f - recoverRatio));
+            if (ratio >= 1f)
+            {
+                CancelAttackLunge();
+            }
+        }
+
+        private void CancelAttackLunge()
+        {
+            attackLungeStartOffset = Vector3.zero;
+            attackLungeDirection = Vector3.zero;
+            attackLungeOffset = Vector3.zero;
+            attackLungeDistance = 0f;
+            attackLungeDuration = 0f;
+            attackLungeElapsed = 0f;
+        }
+
+        private void ApplyReactionPose()
+        {
+            if (reactionRoot == null)
+            {
+                return;
+            }
+
+            reactionRoot.localPosition = reactionBaseLocalPosition + recoilOffset + attackLungeOffset +
+                                         Vector3.up * recoilLiftOffset;
         }
 
         private void ResolveReactionRoot()

@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a6d69d254fe2224f86750625f474cdf, type: 3}
+  m_Name: MS_active_defense_stance
+  m_EditorClassIdentifier: ProjectMT.Shared:ProjectMT.Shared.Unit:GenericMonsterActiveSkill
+  skillId: active_defense_stance
+  displayName: "\uCCA0\uBCBD \uC790\uC138"
+  description: "\uC790\uC2E0\uC758 \uD53C\uD574 \uAC10\uC18C\uC640 \uB109\uBC31 \uC800\uD56D\uC744
+    \uD06C\uAC8C \uB192\uC785\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  presentationTier: 2
+  recipe:
+    trigger: 11
+    triggerCount: 1
+    internalCooldown: 0
+    conditions: []
+    target: 0
+    delivery: 0
+    shape: 0
+    effects:
+    - effectId: stance_reduction
+      type: 22
+      valueSource: 1
+      magnitude: 0.45
+      duration: 3
+      delay: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 1
+    - effectId: stance_resist
+      type: 21
+      valueSource: 1
+      magnitude: 1
+      duration: 3
+      delay: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 1
+  authoringEnabled: 1
+  energyCost: 1000

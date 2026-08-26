@@ -94,7 +94,7 @@ namespace ProjectMT.Shared.Unit
             var action = definition.RuntimeAssetSet?.CombatProfile?.Action as ProjectileActionDefinition;
             if (action != null)
             {
-                projectileSpeed = action.Speed;
+                projectileSpeed = action.ResolvedSpeed;
             }
 
             var baseStats = new UnitStatsSnapshot

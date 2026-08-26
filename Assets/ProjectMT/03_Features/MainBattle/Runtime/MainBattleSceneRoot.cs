@@ -34,6 +34,7 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private MainBattleHostedContentRunner hostedRunner; // 성장 던전 전환 담당
         [SerializeField] private Button foodRiotButton; // 식량 대소동 입장 버튼
         [SerializeField] private Button castleRaidButton; // 군단의 역습 입장 버튼
+        [SerializeField] private CastleRaidGridModeDialog castleRaidGridModeDialog; // 사각·육각 전장 선택
         [SerializeField] private Button towerButton; // 08.06 안건준 추가 - 수호자의 탑 입장 버튼
         [SerializeField] private Button fallenCommanderButton; // 타락한 과거의 군단장 입장 버튼
         [SerializeField] private Button foodRiotSweepButton; // 식량 대소동 1회 소탕
@@ -69,6 +70,7 @@ namespace ProjectMT.Features.MainBattle
         private MailboxPanelController mailboxPanel; // 우편 목록·수령 팝업
         private HudQuickMenuController quickMenu; // 출석·우편 알림 배지
         private CombatPowerIncreasePresenter combatPowerIncrease; // 총전투력 상승 피드백
+        private CombatFeedbackPlayer mainBattleFeedback; // 메인전투 전용 일반 피격 밀림 조절
         private float trackedTotalPower; // 마지막 저장 확정 총전투력
 
         public SceneId SceneId => sceneId;
@@ -108,11 +110,14 @@ namespace ProjectMT.Features.MainBattle
             }
 
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
+            castleRaidGridModeDialog?.Hide();
             var runtimeRoot = transform.Find("01_MainGameplayRoot/01_RuntimeRoot");
+            var playerFormationAnchor = runtimeRoot?.Find("PlayerFormationAnchor");
             var commander = runtimeRoot?.Find("CommanderVisual");
             var enemySpawnAnchor = runtimeRoot?.Find("EnemySpawnAnchor");
             var formationGround = transform.Find("01_MainGameplayRoot/00_WorldRoot/Ground")?.GetComponent<Collider>();
-            if (commander == null || enemySpawnAnchor == null || formationGround == null)
+            if (playerFormationAnchor == null || commander == null || enemySpawnAnchor == null ||
+                formationGround == null)
             {
                 throw new InvalidOperationException("MainBattle formation frame references are missing.");
             }
@@ -124,13 +129,25 @@ namespace ProjectMT.Features.MainBattle
                 formationGround,
                 context.ItemCatalog,
                 commander,
-                context.EquipmentBalanceConfig);
+                context.EquipmentBalanceConfig,
+                playerFormationAnchor);
+            mainBattleFeedback = expedition.GetComponentInChildren<CombatFeedbackPlayer>(true);
+            mainBattleFeedback?.SetRecoilScale(1f); // 먼 쿼터뷰에서도 평타 반응이 읽히게 유지
+            var combatTuning = CombatImpactTuning.ActiveConfig;
+            mainBattleFeedback?.ConfigureActualKnockback(
+                combatTuning.MainBattleActualKnockbackDistanceMultiplier,
+                combatTuning.MainBattleActualKnockbackMaxDistance,
+                combatTuning.MainBattleActualKnockbackDurationMultiplier,
+                combatTuning.MainBattleLightPostKnockbackStagger,
+                combatTuning.MainBattleStandardPostKnockbackStagger,
+                combatTuning.MainBattleHeavyPostKnockbackStagger);
             formationPage.PartyChanged += HandlePartyChanged;
             formationPage.OpenStateChanged += HandleFormationPageOpenStateChanged;
             formationPage.PositionFormationRequested += HandlePositionFormationRequested;
             formationPage.Configure(context.Progress, context.MonsterCatalog, context.RefreshParty);
             managementUi = GetComponentInChildren<MainBattleManagementUiController>(true);
             managementUi?.ConfigureFormationPage(formationPage);
+            managementUi?.ConfigureMonsterCollectionData(context.Progress);
             ConfigureCommanderSkills(commander);
             growthDungeonEntry?.Configure(
                 context.Progress,
@@ -193,6 +210,7 @@ namespace ProjectMT.Features.MainBattle
             growthDungeonEntry?.Shutdown();
             foodRiotButton?.onClick.RemoveListener(OpenFoodRiot);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
+            castleRaidGridModeDialog?.Hide();
             towerButton?.onClick.RemoveListener(OpenGuardiansTower); // 08.06 안건준 추가
             fallenCommanderButton?.onClick.RemoveListener(OpenFallenCommander);
             foodRiotSweepButton?.onClick.RemoveListener(SweepFoodRiot);
@@ -205,6 +223,7 @@ namespace ProjectMT.Features.MainBattle
             commanderSkillSummon?.Shutdown();
             commanderSkillRuntime?.Shutdown();
             managementUi?.ConfigureFormationPage(null);
+            managementUi?.ConfigureMonsterCollectionData(null);
             managementUi?.ConfigureEquipmentSlotUpgradePage(null);
             managementUi?.ConfigureInventoryPage(null);
             managementUi?.ConfigureCommanderSkillPage(null);
@@ -239,6 +258,9 @@ namespace ProjectMT.Features.MainBattle
                 hostedRunner.CloseWithoutRestart(); // 씬 종료 중 원정대 재시작 금지
             }
 
+            mainBattleFeedback?.SetRecoilScale(1f);
+            mainBattleFeedback?.ConfigureActualKnockback(0f, 0f, 1f);
+            mainBattleFeedback = null;
             expedition?.Shutdown();
             context = null;
             party = null;
@@ -488,8 +510,9 @@ namespace ProjectMT.Features.MainBattle
             var runtimeRoot = transform.Find("01_MainGameplayRoot/01_RuntimeRoot");
             var ground = transform.Find("01_MainGameplayRoot/00_WorldRoot/Ground")?.GetComponent<Collider>();
             var commander = runtimeRoot?.Find("CommanderVisual");
+            var playerFormationAnchor = runtimeRoot?.Find("PlayerFormationAnchor");
             var enemySpawnAnchor = runtimeRoot?.Find("EnemySpawnAnchor");
-            if (ground == null || commander == null || enemySpawnAnchor == null)
+            if (ground == null || commander == null || playerFormationAnchor == null || enemySpawnAnchor == null)
             {
                 throw new InvalidOperationException("MainBattle spatial references are missing.");
             }
@@ -500,7 +523,7 @@ namespace ProjectMT.Features.MainBattle
                 spatialController = expedition.gameObject.AddComponent<MainBattleSpatialController>();
             }
 
-            spatialController.Configure(expedition, ground, commander, enemySpawnAnchor);
+            spatialController.Configure(expedition, ground, commander, playerFormationAnchor, enemySpawnAnchor);
         }
 
         private void ConfigureFormationPlacement()
@@ -509,12 +532,13 @@ namespace ProjectMT.Features.MainBattle
             var runtimeRoot = gameplayRoot?.Find("01_RuntimeRoot");
             var worldCamera = gameplayRoot?.Find("02_CameraRoot/MainBattleCamera")?.GetComponent<Camera>();
             var ground = gameplayRoot?.Find("00_WorldRoot/Ground")?.GetComponent<Collider>();
+            var playerFormationAnchor = runtimeRoot?.Find("PlayerFormationAnchor");
             var commander = runtimeRoot?.Find("CommanderVisual");
             var enemySpawnAnchor = runtimeRoot?.Find("EnemySpawnAnchor");
             var uiRoot = gameplayRoot?.Find("04_UIRoot");
             var hudRoot = uiRoot?.Find("MainBattleHUD")?.gameObject;
-            if (worldCamera == null || ground == null || commander == null || enemySpawnAnchor == null ||
-                uiRoot == null || hudRoot == null)
+            if (worldCamera == null || ground == null || playerFormationAnchor == null || commander == null ||
+                enemySpawnAnchor == null || uiRoot == null || hudRoot == null)
             {
                 throw new InvalidOperationException("MainBattle formation placement references are missing.");
             }
@@ -532,6 +556,7 @@ namespace ProjectMT.Features.MainBattle
                 monsterDrag,
                 worldCamera,
                 ground,
+                playerFormationAnchor,
                 commander,
                 uiRoot,
                 hudRoot);
@@ -641,11 +666,31 @@ namespace ProjectMT.Features.MainBattle
                 return;
             }
 
+            managementUi?.CloseAllPages();
+            if (castleRaidGridModeDialog != null)
+            {
+                castleRaidGridModeDialog.Show(HandleCastleRaidVariantSelected);
+                SetStatus("군단의 역습 전장을 선택하세요");
+                return;
+            }
+
+            HandleCastleRaidVariantSelected(CastleRaidGridModeDialog.SquareVariant);
+        }
+
+        private void HandleCastleRaidVariantSelected(ContentVariantId variantId)
+        {
+            if (!CanOpenContent())
+            {
+                return;
+            }
+
             party = context.RefreshParty();
             expedition.StopWithoutResult(); // 별도 씬 이동 전 무정산 종료
-            if (context.ContentLauncher.StartSeparate(castleRaidContentId, party))
+            if (context.ContentLauncher.StartSeparate(castleRaidContentId, party, variantId))
             {
-                SetStatus("군단의 역습");
+                SetStatus(variantId == CastleRaidGridModeDialog.HexVariant
+                    ? "군단의 역습 · 육각 전장"
+                    : "군단의 역습 · 사각 전장");
                 _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.CastleRaidEnter, 1L);
             }
             else
@@ -868,6 +913,11 @@ namespace ProjectMT.Features.MainBattle
             shopPageView = shopView;
             towerButton = guardiansTowerButton; // 08.06 안건준 추가
             fallenCommanderButton = fallenCommanderEntryButton;
+        }
+
+        public void EditorConfigureCastleRaidGridModeDialog(CastleRaidGridModeDialog dialog)
+        {
+            castleRaidGridModeDialog = dialog;
         }
 
         public void EditorConfigureGrowthDungeonSettlementUi(

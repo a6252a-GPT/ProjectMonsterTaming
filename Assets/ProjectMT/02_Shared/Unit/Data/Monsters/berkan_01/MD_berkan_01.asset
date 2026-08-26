@@ -18,11 +18,11 @@ MonoBehaviour:
   previewPrefab: {fileID: 7053366614606345691, guid: 074b65e2d05236a4f8a6c4875d7beabd, type: 3}
   visualTint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 100
-  attackPower: 10
-  defense: 0
-  attackSpeed: 1
+  attackPower: 8
+  defense: 4
+  attackSpeed: 2
   moveSpeed: 2.5
-  attackRange: 1.2
+  attackRange: 2.5
   ranged: 0
   runtimeAssetKey: monster/berkan_01
   runtimeAssetSet: {fileID: 11400000, guid: db14fbe4acbfe92459d2577d335fd24e, type: 2}

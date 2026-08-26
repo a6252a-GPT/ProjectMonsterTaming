@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: "\uB124\uBCA0\uB974"
   rarity: 3
   portrait: {fileID: 21300000, guid: 68febc19440193e4eaefebc456504b87, type: 3}
+  skillLoadoutConfigured: 0
   rarityPassiveSkill: {fileID: 0}
   rarityActiveSkill: {fileID: 0}
   productionMemo: Notion monster batch / IceMage_02
@@ -42,6 +43,13 @@ MonoBehaviour:
   attackSpeed: 1
   moveSpeed: 2.5
   attackRange: 4
+  impactStrength: 0
+  reactionWeight: 1
+  mainBattleRole: 3
+  mainBattleTargetPriority: 0
+  mainBattlePreferredRangeRatio: 0.9
+  mainBattleRetreatRangeRatio: 0.38
+  mainBattleRetargetInterval: 0.28
   idleClip: {fileID: 1827226128182048838, guid: e8303a7b50346d14cbb1bd70c80d3fba, type: 3}
   idleSpeed: 1
   moveClip: {fileID: 1827226128182048838, guid: 401b4bcd3e0c93f48b45451934fa0f43, type: 3}
@@ -76,6 +84,7 @@ MonoBehaviour:
   deathClip: {fileID: 1827226128182048838, guid: c4cec172c220dba45837d3ba5d179ecd, type: 3}
   deathSpeed: 1
   combatType: 1
+  basicAttackProfile: {fileID: 11400000, guid: 46d39a607f1261f4d859b8143b8c2046, type: 2}
   meleeMode: 0
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5
@@ -84,12 +93,15 @@ MonoBehaviour:
   projectileMode: 0
   projectilePrefab: {fileID: 0}
   projectileLaunchSound: {fileID: 0}
+  overrideProjectileTuning: 0
   projectileSpeed: 9
   projectileLifetime: 3
   projectileHitRadius: 0.25
   projectileMaxPiercingTargets: 2
   projectileImpactRadius: 1.5
   projectileMaxImpactTargets: 4
+  projectileLaunchRecoilDistance: 0
+  projectileLaunchRecoilDuration: 0.12
   specialEffectId: 
   specialTargetTeam: 0
   specialRadius: 2
@@ -124,6 +136,9 @@ MonoBehaviour:
     displayName: 
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension3:
     healthRate: 0
     attackRate: 0
@@ -136,6 +151,9 @@ MonoBehaviour:
     displayName: 
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension5:
     healthRate: 0
     attackRate: 0

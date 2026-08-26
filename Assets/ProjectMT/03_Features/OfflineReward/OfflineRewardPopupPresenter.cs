@@ -118,7 +118,14 @@ namespace ProjectMT.Features.OfflineReward
             confirmed = onConfirmed;
             busy = false;
             Bind(presentation);
-            DisplayRoot.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(DisplayRoot, UIPanelPopStyle.RewardPopup);
+
+            // DisplayRoot는 기본 비활성이라 Awake()에서 EnsureOn을 부르면 초기화가 미뤄진다.
+            // 막 활성화된 직후인 여기서 붙여야 클릭 연출이 확실히 동작한다.
+            UIButtonClickPunch.EnsureOn(adButton?.gameObject);
+            UIButtonClickPunch.EnsureOn(claimButton?.gameObject);
+            UIButtonClickPunch.EnsureOn(closeButton?.gameObject);
+
             SetCombatDisplaySuppressed(true);
             var showNotice = presentation.AutoDismantledEquipmentCount > 0 &&
                              autoDismantleNoticeRoot != null;
@@ -432,12 +439,13 @@ namespace ProjectMT.Features.OfflineReward
             }
 
             var completed = current;
-            DisplayRoot.SetActive(false);
-            SetCombatDisplaySuppressed(false);
             current = null;
             acknowledge = null;
-            confirmed?.Invoke(completed);
-            confirmed = null;
+            UIPanelPopAnimator.RequestClose(DisplayRoot, () =>
+            {
+                confirmed?.Invoke(completed);
+                confirmed = null;
+            });
         }
 
         private void SetCombatDisplaySuppressed(bool suppressed)

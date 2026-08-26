@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ProjectMT.Features.Quest;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Quest;
+using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -97,6 +98,7 @@ namespace ProjectMT.Features.Formation
             levelUpButton?.onClick.AddListener(HandleLevelUpClicked);
             ConfigureStageActions();
             breakthroughActionButton?.onClick.AddListener(HandleBreakthroughClicked);
+            UIButtonClickPunch.EnsureOn(levelUpButton?.gameObject);
             var previewMask = 1 << PreviewLayer;
             if (previewCamera != null)
             {
@@ -195,7 +197,7 @@ namespace ProjectMT.Features.Formation
             var wasOpen = IsOpen;
             if (open && !gameObject.activeSelf)
             {
-                gameObject.SetActive(true);
+                UIPanelPopAnimator.RequestOpen(gameObject);
             }
 
             if (previewCamera != null)
@@ -221,7 +223,7 @@ namespace ProjectMT.Features.Formation
 
             if (!open && gameObject.activeSelf)
             {
-                gameObject.SetActive(false);
+                UIPanelPopAnimator.RequestClose(gameObject);
             }
         }
 
@@ -284,6 +286,8 @@ namespace ProjectMT.Features.Formation
             }
 
             var nextStage = owned.AscensionLevel + 1;
+            // 0으로 비워두면 갱신 시 다음 미완료 단계가 자동 선택돼 "돌파"가 계속 이어진다.
+            selectedBreakthroughStage = 0;
             var saved = await ApplyAndSaveAsync(
                 GameProgressChange.AscendMonster(selectedMonsterId, owned.AscensionLevel),
                 $"{ResolveDisplayName(selectedMonsterId)} {nextStage}단계 돌파 완료");
@@ -354,6 +358,7 @@ namespace ProjectMT.Features.Formation
             UpdateTabState();
             RefreshRoster(progress.View.Monsters);
             RefreshSelectedDetails(progress.View);
+            UIButtonClickPunch.ApplyToAllButtonsUnder(transform); // 새로 생성된 몬스터 카드 버튼도 포함
         }
 
         private void UpdateTabState()

@@ -22,7 +22,7 @@ MonoBehaviour:
   defense: 6
   attackSpeed: 1.1
   moveSpeed: 2.6
-  attackRange: 1
+  attackRange: 2
   ranged: 0
   runtimeAssetKey: monster/shell_01
   runtimeAssetSet: {fileID: 11400000, guid: 902fb72df4d5a6e439645eeb4bf10cf4, type: 2}

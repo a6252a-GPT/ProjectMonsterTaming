@@ -1,0 +1,26 @@
+{
+  "name": "ProjectMT.Contents.CastleRaidHex.Editor",
+  "rootNamespace": "ProjectMT.Contents.CastleRaidHex.Editor",
+  "references": [
+    "ProjectMT.Contents.CastleRaidHex",
+    "ProjectMT.Core",
+    "ProjectMT.Shared",
+    "ProjectMT.Contents.Framework",
+    "ProjectMT.Features",
+    "Unity.AI.Navigation",
+    "Unity.InputSystem",
+    "UnityEngine.UI",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

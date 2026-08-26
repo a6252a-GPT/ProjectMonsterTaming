@@ -28,13 +28,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3468f1cd999e99a4ca82955b5e695459, type: 3}
   m_Name: Ranged_ru_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.ProjectileActionDefinition
+  basicAttackProfile: {fileID: 11400000, guid: 22c64b93822d90c469347167cf20a0d0, type: 2}
   deliveryMode: 0
   mode: 0
   projectilePrefab: {fileID: 8900597983205870692, guid: 7d0df7a31c4b87e4e867d3dc816c56ed, type: 3}
   launchSfx: {fileID: 0}
-  speed: 9
+  overrideBasicAttackProfileTuning: 1
+  speed: 12.5
   lifetime: 3
   hitRadius: 0.25
-  maxPiercingTargets: 2
-  impactRadius: 1.5
-  maxImpactTargets: 4
+  maxPiercingTargets: 1
+  impactRadius: 0.25
+  maxImpactTargets: 1
+  launchRecoilDistance: 0.1
+  launchRecoilDuration: 0.12

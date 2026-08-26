@@ -29,7 +29,10 @@ namespace ProjectMT.Shared.Combat
         public MonsterRuntimeAssetSet AssetSet { get; }
         public MonsterAttackMarker Marker { get; }
         public MonsterAnimationDriver AnimationDriver { get; }
-        public float Damage => Stats.damage * (Marker?.PowerRatio ?? 1f);
+        public float Damage => Stats.damage *
+                               (AssetSet?.CombatProfile?.Action?.BasicAttackProfile == null
+                                   ? Marker?.PowerRatio ?? 1f
+                                   : 1f);
     }
 
     public interface IMonsterActionExecutor

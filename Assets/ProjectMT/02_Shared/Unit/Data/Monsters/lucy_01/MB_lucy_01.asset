@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b64a9dc2cac6e714e80d1ff73e6cbc52, type: 3}
   m_Name: MB_lucy_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterBodyProfile
-  visualScale: {x: 1.1, y: 1.1, z: 1.1}
-  visualLocalPosition: {x: 0, y: 0, z: 0}
+  visualScale: {x: 1.4, y: 1.4, z: 1.4}
+  visualLocalPosition: {x: 0, y: 0.2, z: 0}
   groundOffset: 0.055
   facingYawOffset: 0
   bodyRadius: 0.69

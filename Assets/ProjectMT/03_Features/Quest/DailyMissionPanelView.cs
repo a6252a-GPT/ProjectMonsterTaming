@@ -1,6 +1,8 @@
 using System;
+using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Quest;
 using ProjectMT.Shared.Reward;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,6 +25,11 @@ namespace ProjectMT.Features.Quest
         private const string StepMilestoneNamePrefix = "LIst_";
         private const float StepIconAlphaDefault = 1f; // 미달성 상태 아이콘 색상(255/255)
         private const float StepIconAlphaAchieved = 100f / 255f; // 달성 상태로 바뀌면 연하게(100/255)
+
+        // 슬롯 밝기는 "보상 수령" 여부로만 정한다(진행중·미수령 달성은 항상 밝게). 프리팹 원본 알파가
+        // 슬롯마다 제각각이라, 매 갱신마다 코드에서 기준색을 덮어쓰고 수령한 슬롯만 어둡게 만든다.
+        private const float SlotDimmedAlpha = 76f / 255f;
+        private const float SlotNormalAlpha = 1f;
 
         private static readonly int[] StepMilestoneThresholds = { 2, 4, 6, 8, 10 };
 
@@ -133,6 +140,12 @@ namespace ProjectMT.Features.Quest
                     : null;
                 slot.ProgressText = progressTextTransform != null ? progressTextTransform.GetComponent<TMP_Text>() : null;
 
+                var sliderTrackTransform = sliderTransform != null ? FindChild(sliderTransform, "Bg") : null;
+                slot.ProgressTrackImage = sliderTrackTransform != null ? sliderTrackTransform.GetComponent<Image>() : null;
+
+                var sliderFillTransform = sliderTransform != null ? FindChild(sliderTransform, "Fill") : null;
+                slot.ProgressFillImage = sliderFillTransform != null ? sliderFillTransform.GetComponent<Image>() : null;
+
                 var rewardCountTransform = FindChild(itemTransform, "RewardCountText");
                 slot.RewardCountText = rewardCountTransform != null
                     ? rewardCountTransform.GetComponent<TMP_Text>()
@@ -208,7 +221,9 @@ namespace ProjectMT.Features.Quest
 
                 if (stepMilestones[i].IconGraphic != null)
                 {
-                    stepMilestones[i].IconGraphic.enabled = false; // 누적 보상은 MVP 제외, 체크 지표만 사용
+                    // 프리팹 원본에서 이 Image가 기본적으로 꺼져 있어(enabled: false) 항상 켜준다.
+                    // 달성 여부 표시는 ApplyStepMilestones에서 알파값으로만 구분한다.
+                    stepMilestones[i].IconGraphic.enabled = true;
                 }
             }
 
@@ -332,13 +347,13 @@ namespace ProjectMT.Features.Quest
 
         public void Open()
         {
-            gameObject.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(gameObject);
             transform.SetAsLastSibling();
         }
 
         public void Close()
         {
-            gameObject.SetActive(false);
+            UIPanelPopAnimator.RequestClose(gameObject);
         }
 
         private void ResolveFooterControls()
@@ -372,9 +387,16 @@ namespace ProjectMT.Features.Quest
 
             claimAllBusy = true;
             RefreshView();
+            var spawnPosition = claimAllButton != null ? claimAllButton.transform.position : transform.position;
             try
             {
-                await QuestRuntime.TryClaimAllRewardsAsync(currentTab);
+                var (success, reward) = await QuestRuntime.TryClaimAllRewardsAsync(currentTab);
+                if (success && !reward.IsEmpty)
+                {
+                    // 개별 수령과 동일한 연출(PF_RewardAcquireItem)을 일괄 수령한 보상 합계로 한 번만 재생한다.
+                    var presentation = RewardPresentationRequest.FromBundle(reward, ItemCatalogHub.Current);
+                    RewardPresentationHub.Current?.PlayConfirmed(presentation, spawnPosition);
+                }
             }
             finally
             {
@@ -508,6 +530,7 @@ namespace ProjectMT.Features.Quest
 
                 if (milestone.IconGraphic != null)
                 {
+                    milestone.IconGraphic.enabled = true;
                     var color = milestone.IconGraphic.color;
                     color.a = reached ? StepIconAlphaAchieved : StepIconAlphaDefault;
                     milestone.IconGraphic.color = color;
@@ -659,6 +682,8 @@ namespace ProjectMT.Features.Quest
                 slot.ProgressSlider.minValue = 0f;
                 slot.ProgressSlider.maxValue = targetValue;
                 slot.ProgressSlider.value = currentValue;
+                slot.ProgressSlider.interactable = false;
+                slot.ProgressSlider.transition = Selectable.Transition.None;
             }
 
             if (slot.ProgressText != null)
@@ -686,6 +711,8 @@ namespace ProjectMT.Features.Quest
                 slot.StampObject.SetActive(claimed);
             }
 
+            ApplySlotDimming(slot, claimed);
+
             if (slot.ClaimButton != null)
             {
                 // 패널이 몇 번을 열려도, 갱신될 때마다 리스너가 항상 살아있도록 매번 다시 붙인다.
@@ -699,6 +726,31 @@ namespace ProjectMT.Features.Quest
                     slot.ClaimButton.interactable = true;
                 }
             }
+        }
+
+        // 진행중이든 달성만 했든 받기 전까지는 항상 밝게 유지하고, 수령한 슬롯만 살짝 어둡게 만든다.
+        // 배경(ListFrame_01)은 건드리지 않고 제목·게이지·아이콘 등 "내용물"만 대상으로 삼는다.
+        private void ApplySlotDimming(MissionSlot slot, bool claimed)
+        {
+            var alpha = claimed ? SlotDimmedAlpha : SlotNormalAlpha;
+            SetGraphicAlpha(slot.TitleText, alpha);
+            SetGraphicAlpha(slot.ProgressText, alpha);
+            SetGraphicAlpha(slot.RewardCountText, alpha);
+            SetGraphicAlpha(slot.RewardIcon, alpha);
+            SetGraphicAlpha(slot.ProgressTrackImage, alpha);
+            SetGraphicAlpha(slot.ProgressFillImage, alpha);
+        }
+
+        private static void SetGraphicAlpha(Graphic graphic, float alpha)
+        {
+            if (graphic == null)
+            {
+                return;
+            }
+
+            var color = graphic.color;
+            color.a = alpha;
+            graphic.color = color;
         }
 
         private static Transform FindChild(Transform root, string objectName)
@@ -775,6 +827,8 @@ namespace ProjectMT.Features.Quest
             public TMP_Text TitleText;
             public Slider ProgressSlider;
             public TMP_Text ProgressText;
+            public Image ProgressTrackImage;
+            public Image ProgressFillImage;
             public Image RewardIcon;
             public TMP_Text RewardCountText;
             public GameObject ClaimDisabledObject;
@@ -799,11 +853,22 @@ namespace ProjectMT.Features.Quest
                     ClaimButton.interactable = false;
                 }
 
+                // 연출용 보상 정보는 수령 전에 미리 만든다(성공 시 QuestRuntime.Changed가 슬롯을 다시 그려 사라지므로).
+                var presentation = Definition.TryCreateRewardBundle(out var bundle)
+                    ? RewardPresentationRequest.FromBundle(bundle, ItemCatalogHub.Current)
+                    : null;
+                var spawnPosition = ClaimButton != null ? ClaimButton.transform.position : Root.transform.position;
+
                 try
                 {
                     // 성공하면 QuestRuntime.Changed가 발생해 DailyMissionPanelView.RefreshView가
                     // 자동으로 다시 그린다(Claim 버튼 숨김 · Stamp 표시 · 상단 달성 게이지 갱신 포함).
-                    await QuestRuntime.TryClaimRewardAsync(Definition.QuestId);
+                    var claimed = await QuestRuntime.TryClaimRewardAsync(Definition.QuestId);
+                    if (claimed && presentation != null)
+                    {
+                        // 필드 아이템 획득·메인 퀘스트 보상과 동일한 연출을 클릭한 버튼 위치에서 시작시킨다.
+                        RewardPresentationHub.Current?.PlayConfirmed(presentation, spawnPosition);
+                    }
                 }
                 finally
                 {

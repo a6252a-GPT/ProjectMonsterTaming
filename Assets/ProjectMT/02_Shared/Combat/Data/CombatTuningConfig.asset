@@ -1,0 +1,97 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd37ca115ac05624d882c5eb33d33a17, type: 3}
+  m_Name: CombatTuningConfig
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Combat.CombatTuningConfig
+  meleeLight:
+    targetHitStop: 0.018
+    attackerHitStop: 0.014
+    recoilDistance: 0.18
+    recoilHeight: 0.08
+    recoilDuration: 0.14
+    attackerLungeDistance: 0.16
+    attackerLungeDuration: 0.15
+    cameraImpulse: 0
+  meleeStandard:
+    targetHitStop: 0.028
+    attackerHitStop: 0.022
+    recoilDistance: 0.3
+    recoilHeight: 0.13
+    recoilDuration: 0.17
+    attackerLungeDistance: 0.26
+    attackerLungeDuration: 0.18
+    cameraImpulse: 0.024
+  meleeHeavy:
+    targetHitStop: 0.048
+    attackerHitStop: 0.038
+    recoilDistance: 0.48
+    recoilHeight: 0.2
+    recoilDuration: 0.22
+    attackerLungeDistance: 0.38
+    attackerLungeDuration: 0.22
+    cameraImpulse: 0.055
+  rangedLight:
+    targetHitStop: 0.016
+    attackerHitStop: 0
+    recoilDistance: 0.14
+    recoilHeight: 0.06
+    recoilDuration: 0.13
+    attackerLungeDistance: 0
+    attackerLungeDuration: 0.1
+    cameraImpulse: 0
+  rangedStandard:
+    targetHitStop: 0.02
+    attackerHitStop: 0
+    recoilDistance: 0.22
+    recoilHeight: 0.09
+    recoilDuration: 0.15
+    attackerLungeDistance: 0
+    attackerLungeDuration: 0.11
+    cameraImpulse: 0.012
+  rangedHeavy:
+    targetHitStop: 0.035
+    attackerHitStop: 0
+    recoilDistance: 0.36
+    recoilHeight: 0.14
+    recoilDuration: 0.2
+    attackerLungeDistance: 0
+    attackerLungeDuration: 0.13
+    cameraImpulse: 0.04
+  lightReactionDistanceMultiplier: 1.18
+  standardReactionDistanceMultiplier: 1
+  heavyReactionDistanceMultiplier: 0.68
+  lightReactionDurationMultiplier: 0.92
+  standardReactionDurationMultiplier: 1
+  heavyReactionDurationMultiplier: 1.08
+  criticalOrKillEmphasis: 1.12
+  criticalOrKillTargetStopMultiplier: 1.16
+  maximumHitStop: 0.06
+  mainBattleEnemySpawnSpreadMultiplier: 1.8
+  mainBattlePlayerPairDistance: 0.85
+  mainBattleEnemyPairDistance: 0.8
+  mainBattleOpposingPairDistance: 0.65
+  mainBattlePairSeparationSpeed: 0.65
+  mainBattleUnitCorrectionSpeed: 0.28
+  mainBattleActualKnockbackDistanceMultiplier: 0.65
+  mainBattleActualKnockbackMaxDistance: 0.34
+  mainBattleActualKnockbackDurationMultiplier: 0.72
+  mainBattleLightPostKnockbackStagger: 0.06
+  mainBattleStandardPostKnockbackStagger: 0.1
+  mainBattleHeavyPostKnockbackStagger: 0.15
+  enemyMeleePreferredRangeRatio: 0.72
+  enemyMeleeRetreatRangeRatio: 0
+  enemyMeleeRetargetInterval: 0.18
+  enemyMeleeTargetLoadPenalty: 0.9
+  enemyRangedPreferredRangeRatio: 0.9
+  enemyRangedRetreatRangeRatio: 0.38
+  enemyRangedRetargetInterval: 0.28
+  enemyRangedTargetLoadPenalty: 0.8

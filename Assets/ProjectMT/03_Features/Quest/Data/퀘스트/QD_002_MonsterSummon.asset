@@ -16,15 +16,15 @@ MonoBehaviour:
     value: quest_002_monster_summon
   isEnabled: 1
   displayName: "\uCCAB \uBAAC\uC2A4\uD130 \uBF51\uAE30"
-  description: "\uBAAC\uC2A4\uD130\uB97C 1\uD68C \uBF51\uC73C\uC138\uC694."
+  description: "\uBAAC\uC2A4\uD130\uB97C 10\uD68C \uBF51\uC73C\uC138\uC694."
   questType: 0
   conditionType: 1
   targetValue: 1
   prerequisiteQuestId:
     value: quest_001_expedition_clear
   reward: {fileID: 11400000, guid: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6, type: 2}
-  unlockTargets: 01000000
-  unlockGateEnabled: 1
+  unlockTargets: 
+  unlockGateEnabled: 0
   requiresActiveTracking: 1
   isRepeatingTemplate: 0
   repeatIncrement: 0

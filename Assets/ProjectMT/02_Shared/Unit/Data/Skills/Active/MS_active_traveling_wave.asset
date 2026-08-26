@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a6d69d254fe2224f86750625f474cdf, type: 3}
+  m_Name: MS_active_traveling_wave
+  m_EditorClassIdentifier: ProjectMT.Shared:ProjectMT.Shared.Unit:GenericMonsterActiveSkill
+  skillId: active_traveling_wave
+  displayName: "\uC774\uB3D9 \uD30C\uB3C4"
+  description: "\uC804\uBC29\uC73C\uB85C \uC774\uB3D9\uD558\uB294 \uD30C\uB3C4\uAC00
+    \uC801\uC744 \uAD00\uD1B5\uD558\uACE0 \uAC10\uC18D\uC2DC\uD0B5\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  presentationTier: 2
+  recipe:
+    trigger: 11
+    triggerCount: 1
+    internalCooldown: 0
+    conditions: []
+    target: 8
+    delivery: 5
+    shape: 5
+    effects:
+    - effectId: wave_damage
+      type: 0
+      valueSource: 1
+      magnitude: 1.5
+      duration: 0
+      delay: 0
+      radius: 0.8
+      maxTargets: 3
+      repeatCount: 1
+      stackPolicy: 1
+    - effectId: wave_slow
+      type: 12
+      valueSource: 1
+      magnitude: 0.2
+      duration: 2.5
+      delay: 0
+      radius: 0.8
+      maxTargets: 3
+      repeatCount: 1
+      stackPolicy: 1
+  authoringEnabled: 0
+  energyCost: 1000

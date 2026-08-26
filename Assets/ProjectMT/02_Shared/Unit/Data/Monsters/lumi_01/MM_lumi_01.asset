@@ -39,36 +39,12 @@ MonoBehaviour:
   attacks:
   - motionId: attack01
     clip: {fileID: 7400000, guid: f707859dc8335a6448d772705425758a, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
+    playbackSpeed: 1.25
+    crossFadeDuration: 0.045
+    weight: 3
     preventImmediateRepeat: 1
     markers:
-    - normalizedTime: 0.45
-      powerRatio: 1
-      feedbackOverride:
-        sfx: {fileID: 0}
-        vfxPrefab: {fileID: 0}
-        vfxLifetime: 1
-        localPosition: {x: 0, y: 0, z: 0}
-        localEulerAngles: {x: 0, y: 0, z: 0}
-        scale: 1
-      socketOverride: 
-    attackStartOverride:
-      sfx: {fileID: 0}
-      vfxPrefab: {fileID: 0}
-      vfxLifetime: 1
-      localPosition: {x: 0, y: 0, z: 0}
-      localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 1
-  - motionId: attack02
-    clip: {fileID: 7400000, guid: ff54f17c16dc04045ab3ef5a2db26912, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 1
-    markers:
-    - normalizedTime: 0.55
+    - normalizedTime: 0.38
       powerRatio: 1
       feedbackOverride:
         sfx: {fileID: 0}

@@ -16,13 +16,14 @@ MonoBehaviour:
   displayName: "\uBB34\uCFE0\uD06C"
   rarity: 3
   portrait: {fileID: 21300000, guid: 6218832df1d0d7f4fa875c40295b14fb, type: 3}
+  skillLoadoutConfigured: 0
   rarityPassiveSkill: {fileID: 0}
   rarityActiveSkill: {fileID: 0}
   productionMemo: 'Notion role: ranged buffer. Happy and Jump_water reserved for
     future ability.'
   vendorPrefab: {fileID: 4729609903644569994, guid: eef58503914c3f1499436460e38ef785, type: 3}
   animatorSource: {fileID: 7036629295771021616, guid: eef58503914c3f1499436460e38ef785, type: 3}
-  visualScale: {x: 0.7, y: 0.7, z: 0.7}
+  visualScale: {x: 1, y: 1, z: 1}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0.235
   facingYawOffset: 0
@@ -32,7 +33,7 @@ MonoBehaviour:
   hpBarHeight: 1.12
   attackOriginPath: AttackOrigin
   hitCenterPath: HitCenter
-  attackOriginLocalPosition: {x: 0, y: 0.5394, z: 0.63}
+  attackOriginLocalPosition: {x: 0.12064865, y: 0.5394, z: 0.63}
   hitCenterLocalPosition: {x: 0, y: 0.465, z: 0}
   rigMode: 0
   previewScale: 1
@@ -43,6 +44,13 @@ MonoBehaviour:
   attackSpeed: 0.95
   moveSpeed: 2.4
   attackRange: 4.2
+  impactStrength: 0
+  reactionWeight: 0
+  mainBattleRole: 4
+  mainBattleTargetPriority: 2
+  mainBattlePreferredRangeRatio: 0.92
+  mainBattleRetreatRangeRatio: 0.44
+  mainBattleRetargetInterval: 0.32
   idleClip: {fileID: 7400000, guid: 0c2113b7c3e01bb419f547e53a3fd7ef, type: 3}
   idleSpeed: 1
   moveClip: {fileID: 7400000, guid: 9a42c3198dbb56d4d9241b03e231dbd5, type: 3}
@@ -50,8 +58,8 @@ MonoBehaviour:
   attacks:
   - motionId: attack01
     clip: {fileID: 7400000, guid: 55caf94400bc82247ab7fec81162d70e, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
+    playbackSpeed: 0.9
+    crossFadeDuration: 0.08
     weight: 1
     preventImmediateRepeat: 0
     attackStartFeedback:
@@ -63,7 +71,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
     markers:
-    - normalizedTime: 0.45
+    - normalizedTime: 0.48
       powerRatio: 1
       socketOverride: 
       feedback:
@@ -77,6 +85,7 @@ MonoBehaviour:
   deathClip: {fileID: 7400000, guid: 07647718d2e036b40a9b035d67d9736b, type: 3}
   deathSpeed: 1
   combatType: 1
+  basicAttackProfile: {fileID: 11400000, guid: 8b8f8c0eac3de8f4fa4b87f291e8f574, type: 2}
   meleeMode: 0
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5
@@ -85,12 +94,15 @@ MonoBehaviour:
   projectileMode: 0
   projectilePrefab: {fileID: 0}
   projectileLaunchSound: {fileID: 0}
-  projectileSpeed: 9
+  overrideProjectileTuning: 0
+  projectileSpeed: 8
   projectileLifetime: 3
   projectileHitRadius: 0.25
   projectileMaxPiercingTargets: 2
   projectileImpactRadius: 1.5
   projectileMaxImpactTargets: 4
+  projectileLaunchRecoilDistance: 0.16
+  projectileLaunchRecoilDuration: 0.18
   specialEffectId: 
   specialTargetTeam: 0
   specialRadius: 2
@@ -112,7 +124,7 @@ MonoBehaviour:
   castleRaidHealRatio: 0.24
   castleRaidAttackBuffRate: 0.2
   castleRaidDefenseDamageMultiplier: 0.75
-  ascensionConfigured: 1
+  ascensionConfigured: 0
   ascension1:
     healthRate: 0
     attackRate: 0
@@ -125,6 +137,9 @@ MonoBehaviour:
     displayName: 
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension3:
     healthRate: 0
     attackRate: 0
@@ -137,6 +152,9 @@ MonoBehaviour:
     displayName: 
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension5:
     healthRate: 0
     attackRate: 0

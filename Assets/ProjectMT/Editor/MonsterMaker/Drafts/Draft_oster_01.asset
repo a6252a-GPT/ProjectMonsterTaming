@@ -16,13 +16,14 @@ MonoBehaviour:
   displayName: "\uC624\uC2A4\uD14C\uB974"
   rarity: 4
   portrait: {fileID: 21300000, guid: 5a3d629652e1a3d4eb8b9c79d014fedf, type: 3}
+  skillLoadoutConfigured: 0
   rarityPassiveSkill: {fileID: 0}
   rarityActiveSkill: {fileID: 0}
   productionMemo: Notion monster batch / BoneDragon
   vendorPrefab: {fileID: 3112096376565698727, guid: 405134840704e904c8acb393412f20df, type: 3}
   animatorSource: {fileID: 2314588332371613222, guid: 405134840704e904c8acb393412f20df, type: 3}
-  visualScale: {x: 0.6, y: 0.6, z: 0.6}
-  visualLocalPosition: {x: 0, y: 0, z: 0}
+  visualScale: {x: 0.7, y: 0.7, z: 0.7}
+  visualLocalPosition: {x: 0, y: 0.2, z: 0}
   groundOffset: 0
   facingYawOffset: 0
   bodyRadius: 0.5
@@ -31,17 +32,24 @@ MonoBehaviour:
   hpBarHeight: 1.2
   attackOriginPath: AttackOrigin
   hitCenterPath: HitCenter
-  attackOriginLocalPosition: {x: 0, y: 0.5, z: 0.6}
+  attackOriginLocalPosition: {x: 0, y: 2, z: 2}
   hitCenterLocalPosition: {x: 0, y: 0.5, z: 0}
   rigMode: 0
   previewScale: 1
   vfxScale: 1
   maxHealth: 100
   attackPower: 10
-  defense: 0
+  defense: 4
   attackSpeed: 1
   moveSpeed: 2.5
-  attackRange: 4
+  attackRange: 5
+  impactStrength: 2
+  reactionWeight: 2
+  mainBattleRole: 2
+  mainBattleTargetPriority: 0
+  mainBattlePreferredRangeRatio: 0.9
+  mainBattleRetreatRangeRatio: 0.38
+  mainBattleRetargetInterval: 0.28
   idleClip: {fileID: 1827226128182048838, guid: 2e1ebd74421643541bf11e31cbabe35d, type: 3}
   idleSpeed: 1
   moveClip: {fileID: 1827226128182048838, guid: f3ecc9d04ccf4914d9a6004c0d0cb3fa, type: 3}
@@ -76,20 +84,24 @@ MonoBehaviour:
   deathClip: {fileID: 1827226128182048838, guid: ed7f3a387b3a8e94bb6dfadaf6bf14fd, type: 3}
   deathSpeed: 1
   combatType: 1
+  basicAttackProfile: {fileID: 11400000, guid: 4532259f592e84546ae7138d3fffd0ac, type: 2}
   meleeMode: 0
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5
   meleeMaxTargets: 4
   rangedDeliveryMode: 0
-  projectileMode: 0
+  projectileMode: 2
   projectilePrefab: {fileID: 0}
   projectileLaunchSound: {fileID: 0}
+  overrideProjectileTuning: 0
   projectileSpeed: 9
   projectileLifetime: 3
   projectileHitRadius: 0.25
   projectileMaxPiercingTargets: 2
-  projectileImpactRadius: 1.5
+  projectileImpactRadius: 2
   projectileMaxImpactTargets: 4
+  projectileLaunchRecoilDistance: 0
+  projectileLaunchRecoilDuration: 0.12
   specialEffectId: 
   specialTargetTeam: 0
   specialRadius: 2
@@ -124,6 +136,9 @@ MonoBehaviour:
     displayName: 
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension3:
     healthRate: 0
     attackRate: 0
@@ -136,6 +151,9 @@ MonoBehaviour:
     displayName: 
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension5:
     healthRate: 0
     attackRate: 0

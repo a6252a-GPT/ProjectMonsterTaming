@@ -1,0 +1,23 @@
+{
+  "name": "ProjectMT.Contents.CastleRaidHex.Tests",
+  "rootNamespace": "ProjectMT.Contents.CastleRaidHex.Tests",
+  "references": [
+    "ProjectMT.Contents.CastleRaidHex",
+    "ProjectMT.Shared",
+    "MoreMountains.Tools"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

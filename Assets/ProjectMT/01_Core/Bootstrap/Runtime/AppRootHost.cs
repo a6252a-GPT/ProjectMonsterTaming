@@ -16,6 +16,7 @@ using ProjectMT.Shared.Debugging;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Stats;
 using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
@@ -92,6 +93,9 @@ namespace ProjectMT.Bootstrap
                 throw new InvalidOperationException($"ItemCatalog is invalid. {itemCatalogError}");
             }
 
+            ItemCatalogHub.Bind(projectConfig.ItemCatalog); // Bootstrap↔Features 순환 참조 없이 카탈로그 공유
+            RewardPresentationHub.Bind(rewardPresenter); // Bootstrap↔Features 순환 참조 없이 보상 연출 공유
+
             if (sceneLoader == null)
             {
                 sceneLoader = GetComponent<SceneLoader>();
@@ -166,6 +170,7 @@ namespace ProjectMT.Bootstrap
             await gameDataService.LoadAsync(); // 씬 초기화 전 저장 로드
             CombatWorld.ConfigureSharedStatRules(
                 projectConfig.CombatStatConfig ?? CombatStatConfig.RuntimeDefault);
+            CombatImpactTuning.Configure(projectConfig.CombatTuningConfig);
             await RefreshGrowthDungeonKeysAsync(); // 접속 1회 KST 05:00 기준 충전
             await RefreshAttendanceAsync(); // 접속 1회 KST 05:00 기준 출석 갱신
             await CleanupExpiredMailAsync(); // 만료된 미수령 우편 정리
@@ -341,7 +346,12 @@ namespace ProjectMT.Bootstrap
                 inventory.TryGetQuantity(definition.ItemId, out var currentQuantity);
                 if (currentQuantity < definition.MaxQuantity)
                 {
-                    rewards.Add(new ItemAmount(definition.ItemId, 200000L)); //0819 안건준 수정
+                    // 던전 열쇠류처럼 MaxQuantity가 작은 아이템(예: 3개)이 섞여 있으면 200000을 그대로
+                    // 지급하려다 한도를 넘겨서, ItemInventoryData.TryGrant가 배치 전체를 통째로
+                    // 거부해버린다(한 종류라도 한도 초과면 전부 실패). 남은 여유만큼만 지급해 항상
+                    // 한도 이내로 들어오게 한다.
+                    var amount = Math.Min(200000L, definition.MaxQuantity - currentQuantity);
+                    rewards.Add(new ItemAmount(definition.ItemId, amount));
                 }
             }
 
@@ -353,7 +363,7 @@ namespace ProjectMT.Bootstrap
             var saved = await gameDataService.TryApplyAndSaveAsync(
                 GameProgressChange.GrantItems(rewards.ToArray()));
             return saved
-                ? $"{rewards.Count}종 아이템 200000개씩 획득 완료"
+                ? $"{rewards.Count}종 아이템 획득 완료(최대 200000개씩)"
                 : "아이템 획득 정보를 저장하지 못했습니다";
         }
 

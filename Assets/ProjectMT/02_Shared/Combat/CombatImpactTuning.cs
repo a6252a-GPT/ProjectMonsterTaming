@@ -8,26 +8,45 @@ namespace ProjectMT.Shared.Combat
             float targetHitStop,
             float attackerHitStop,
             float recoilDistance,
+            float recoilHeight,
             float recoilDuration,
+            float attackerLungeDistance,
+            float attackerLungeDuration,
             float cameraImpulse)
         {
             TargetHitStop = targetHitStop;
             AttackerHitStop = attackerHitStop;
             RecoilDistance = recoilDistance;
+            RecoilHeight = recoilHeight;
             RecoilDuration = recoilDuration;
+            AttackerLungeDistance = attackerLungeDistance;
+            AttackerLungeDuration = attackerLungeDuration;
             CameraImpulse = cameraImpulse;
         }
 
         public float TargetHitStop { get; }
         public float AttackerHitStop { get; }
         public float RecoilDistance { get; }
+        public float RecoilHeight { get; }
         public float RecoilDuration { get; }
+        public float AttackerLungeDistance { get; }
+        public float AttackerLungeDuration { get; }
         public float CameraImpulse { get; }
     }
 
     public static class CombatImpactTuning // 다수전에서도 과하지 않은 3단계 프리셋
     {
-        public const float MaximumHitStop = 0.06f;
+        private static CombatTuningConfig configured;
+
+        public static CombatTuningConfig ActiveConfig => configured ?? CombatTuningConfig.RuntimeDefault;
+        public static float MaximumHitStop => ActiveConfig.MaximumHitStop;
+
+        public static void Configure(CombatTuningConfig config)
+        {
+            configured = config != null && config.TryValidate(out _)
+                ? config
+                : CombatTuningConfig.RuntimeDefault;
+        }
 
         public static CombatImpactPreset Resolve(
             MonsterImpactStrength strength,
@@ -36,48 +55,25 @@ namespace ProjectMT.Shared.Combat
             bool critical,
             bool killed)
         {
-            CombatImpactPreset preset;
-            if (ranged)
-            {
-                preset = strength switch
-                {
-                    MonsterImpactStrength.Light => new CombatImpactPreset(0.016f, 0f, 0.07f, 0.10f, 0f),
-                    MonsterImpactStrength.Heavy => new CombatImpactPreset(0.035f, 0f, 0.18f, 0.15f, 0.04f),
-                    _ => new CombatImpactPreset(0.020f, 0f, 0.10f, 0.11f, 0.012f)
-                };
-            }
-            else
-            {
-                preset = strength switch
-                {
-                    MonsterImpactStrength.Light => new CombatImpactPreset(0.018f, 0.014f, 0.08f, 0.10f, 0f),
-                    MonsterImpactStrength.Heavy => new CombatImpactPreset(0.048f, 0.038f, 0.24f, 0.17f, 0.055f),
-                    _ => new CombatImpactPreset(0.028f, 0.022f, 0.14f, 0.13f, 0.024f)
-                };
-            }
-
-            var recoilMultiplier = reactionWeight switch
-            {
-                MonsterReactionWeight.Light => 1.18f,
-                MonsterReactionWeight.Heavy => 0.68f,
-                _ => 1f
-            };
-            var durationMultiplier = reactionWeight switch
-            {
-                MonsterReactionWeight.Light => 0.92f,
-                MonsterReactionWeight.Heavy => 1.08f,
-                _ => 1f
-            };
-            var emphasis = critical || killed ? 1.12f : 1f;
+            var tuning = ActiveConfig;
+            var preset = tuning.ResolveBaseImpactPreset(strength, ranged);
+            var recoilMultiplier = tuning.ResolveReactionDistanceMultiplier(reactionWeight);
+            var durationMultiplier = tuning.ResolveReactionDurationMultiplier(reactionWeight);
+            var emphasis = critical || killed ? tuning.CriticalOrKillEmphasis : 1f;
             var targetStop = critical || killed
-                ? System.Math.Min(MaximumHitStop, preset.TargetHitStop * 1.16f)
+                ? System.Math.Min(
+                    MaximumHitStop,
+                    preset.TargetHitStop * tuning.CriticalOrKillTargetStopMultiplier)
                 : preset.TargetHitStop;
 
             return new CombatImpactPreset(
                 targetStop,
                 preset.AttackerHitStop,
                 preset.RecoilDistance * recoilMultiplier * emphasis,
+                preset.RecoilHeight * recoilMultiplier * emphasis,
                 preset.RecoilDuration * durationMultiplier,
+                preset.AttackerLungeDistance * emphasis,
+                preset.AttackerLungeDuration,
                 preset.CameraImpulse * emphasis);
         }
     }

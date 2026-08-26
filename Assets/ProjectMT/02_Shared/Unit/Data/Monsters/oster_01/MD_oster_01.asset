@@ -19,10 +19,10 @@ MonoBehaviour:
   visualTint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 100
   attackPower: 10
-  defense: 0
+  defense: 4
   attackSpeed: 1
   moveSpeed: 2.5
-  attackRange: 4
+  attackRange: 5
   ranged: 1
   runtimeAssetKey: monster/oster_01
   runtimeAssetSet: {fileID: 11400000, guid: 5fcf1e050fd1cff46b66f4e6322030c2, type: 2}

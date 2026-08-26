@@ -1,28 +1,30 @@
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Quest;
+using ProjectMT.Shared.Reward;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ProjectMT.Features.Quest
 {
-    // 메인 HUD 퀘스트 카드(MissionText / QuestDescriptionText / StatusText / Icon) 표시 전담.
+    // 메인 HUD 퀘스트 카드(MissionText / QuestDescriptionText / StatusText / RewardIcon) 표시 전담.
     // QuestRuntime이 준비되면 현재 추적 중인 메인 퀘스트를 자동으로 갱신하고,
-    // 완료된 퀘스트는 아이콘을 눌러 직접 보상을 수령할 수 있게 한다.
+    // 완료된 퀘스트는 RewardButton을 눌러 직접 보상을 수령할 수 있게 한다.
     [DisallowMultipleComponent]
     public sealed class QuestHudTrackerView : MonoBehaviour
     {
         [SerializeField] private TMP_Text missionText;
         [SerializeField] private TMP_Text questDescriptionText;
         [SerializeField] private TMP_Text statusText;
-        [SerializeField] private Image claimIcon;
+        [SerializeField] private Image rewardIcon;
+        [SerializeField] private TMP_Text rewardAmountText;
+        [SerializeField] private Button rewardButton;
         [SerializeField] private QuestType trackedType = QuestType.Main;
 
-        private Button claimButton;
         private QuestId trackedQuestId;
         private bool canClaimTracked;
         private bool isClaiming;
-        private bool loggedMissingIcon;
 
         private void Awake()
         {
@@ -34,6 +36,7 @@ namespace ProjectMT.Features.Quest
             ResolveReferences();
             QuestRuntime.Changed += RefreshView;
             QuestProgressServiceHub.Ready += HandleProgressReady;
+            ItemCatalogHub.Ready += HandleItemCatalogReady;
             RefreshView();
         }
 
@@ -41,13 +44,19 @@ namespace ProjectMT.Features.Quest
         {
             QuestRuntime.Changed -= RefreshView;
             QuestProgressServiceHub.Ready -= HandleProgressReady;
-            if (claimButton != null)
+            ItemCatalogHub.Ready -= HandleItemCatalogReady;
+            if (rewardButton != null)
             {
-                claimButton.onClick.RemoveListener(HandleIconClicked);
+                rewardButton.onClick.RemoveListener(HandleClaimClicked);
             }
         }
 
         private void HandleProgressReady(IGameProgressService _)
+        {
+            RefreshView();
+        }
+
+        private void HandleItemCatalogReady(ItemCatalog _)
         {
             RefreshView();
         }
@@ -62,6 +71,7 @@ namespace ProjectMT.Features.Quest
                 canClaimTracked = false;
                 UpdateClaimButtonState();
                 Apply("메인 임무", "임무를 준비 중입니다.", "준비 중");
+                ApplyRewardIcon(null);
                 return;
             }
 
@@ -73,11 +83,49 @@ namespace ProjectMT.Features.Quest
                 QuestMissionCategoryInfo.GetDisplayName(definition.ConditionType),
                 FormatDescription(definition, progress),
                 FormatStatus(progress));
+            ApplyRewardIcon(definition);
         }
 
-        // 아이콘 클릭 → 현재 추적 중인 퀘스트 보상 수령 → QuestRuntime.Changed가 갱신을 자동으로 트리거해
+        // 인벤토리와 같은 ItemCatalog에서 아이콘·수량을 가져와 보상 아이템 이미지와 "X 10" 표기를 채운다.
+        private void ApplyRewardIcon(QuestDefinition definition)
+        {
+            var rewardItem = ResolveRewardItem(definition, out var sprite);
+
+            if (rewardIcon != null)
+            {
+                rewardIcon.sprite = sprite;
+                rewardIcon.enabled = sprite != null;
+            }
+
+            SetText(rewardAmountText, rewardItem.Amount > 0L ? $"X {rewardItem.Amount:N0}" : string.Empty);
+        }
+
+        private static ItemAmount ResolveRewardItem(QuestDefinition definition, out Sprite sprite)
+        {
+            sprite = null;
+            var catalog = ItemCatalogHub.Current;
+            if (definition == null || definition.Reward == null || catalog == null)
+            {
+                return default;
+            }
+
+            // 보상 아이템이 여러 개면 대표로 첫 번째 유효 아이템의 아이콘·수량을 보여준다.
+            var items = definition.Reward.Items;
+            for (var index = 0; index < items.Count; index++)
+            {
+                if (items[index].IsValid && catalog.TryGet(items[index].ItemId, out var itemDefinition))
+                {
+                    sprite = itemDefinition.Icon;
+                    return items[index];
+                }
+            }
+
+            return default;
+        }
+
+        // RewardButton 클릭 → 현재 추적 중인 퀘스트 보상 수령 → QuestRuntime.Changed가 갱신을 자동으로 트리거해
         // 다음 퀘스트로 넘어간 화면이 곧바로 표시된다.
-        private async void HandleIconClicked()
+        private async void HandleClaimClicked()
         {
             if (isClaiming || !canClaimTracked || !QuestRuntime.IsReady)
             {
@@ -86,9 +134,19 @@ namespace ProjectMT.Features.Quest
 
             isClaiming = true;
             UpdateClaimButtonState();
+
+            // 수령 성공 시 다음 퀘스트로 화면이 바로 바뀌므로, 지금 퀘스트 보상은 수령 전에 미리 스냅샷해 둔다.
+            var claimedQuestId = trackedQuestId;
+            var spawnPosition = rewardButton != null ? rewardButton.transform.position : transform.position;
+            var presentation = BuildRewardPresentation(claimedQuestId);
             try
             {
-                await QuestRuntime.TryClaimRewardAsync(trackedQuestId);
+                var claimed = await QuestRuntime.TryClaimRewardAsync(claimedQuestId);
+                if (claimed && presentation != null)
+                {
+                    // 필드 아이템 획득과 동일한 연출(PF_RewardAcquireItem)을 RewardButton 위치에서 시작시킨다.
+                    RewardPresentationHub.Current?.PlayConfirmed(presentation, spawnPosition);
+                }
             }
             finally
             {
@@ -97,11 +155,22 @@ namespace ProjectMT.Features.Quest
             }
         }
 
+        private static RewardPresentationRequest BuildRewardPresentation(QuestId questId)
+        {
+            if (!QuestRuntime.TryGetDefinition(questId, out var definition) ||
+                !definition.TryCreateRewardBundle(out var bundle))
+            {
+                return null;
+            }
+
+            return RewardPresentationRequest.FromBundle(bundle, ItemCatalogHub.Current);
+        }
+
         private void UpdateClaimButtonState()
         {
-            if (claimButton != null)
+            if (rewardButton != null)
             {
-                claimButton.interactable = canClaimTracked && !isClaiming;
+                rewardButton.interactable = canClaimTracked && !isClaiming;
             }
         }
 
@@ -148,40 +217,32 @@ namespace ProjectMT.Features.Quest
                 statusText = FindText(root, "StatusText");
             }
 
-            if (claimIcon == null)
+            if (rewardIcon == null)
             {
-                claimIcon = FindImage(root, "Icon");
-                if (claimIcon == null && !loggedMissingIcon)
-                {
-                    loggedMissingIcon = true;
-                    Debug.LogWarning(
-                        $"[Quest][HUD] \"Icon\" 오브젝트를 찾지 못해 보상 수령 버튼을 만들 수 없습니다 (root={root?.name}). " +
-                        "HUD 카드 하위에 Icon이라는 이름의 Image가 있는지 확인하세요.", this);
-                }
+                rewardIcon = FindImage(root, "RewardIcon");
             }
 
-            if (claimIcon != null && claimButton == null)
+            if (rewardAmountText == null)
             {
-                claimIcon.raycastTarget = true;
-                claimButton = claimIcon.GetComponent<Button>();
-                if (claimButton == null)
-                {
-                    claimButton = claimIcon.gameObject.AddComponent<Button>();
-                }
+                rewardAmountText = FindText(root, "EaText");
+            }
 
-                claimButton.targetGraphic = claimIcon;
+            if (rewardButton == null)
+            {
+                rewardButton = FindButton(root, "RewardButton");
             }
 
             // 몬스터 배치 등 다른 기능이 MainBattleHUD 전체를 SetActive(false)/(true)로 껐다 켜면
-            // OnDisable에서 떼어낸 리스너가 다시 안 붙어 아이콘이 먹통이 되던 문제가 있었다.
-            // claimButton 자체는 최초 1회만 찾아 만들고, 리스너 연결은 매번(OnEnable·RefreshView마다)
+            // OnDisable에서 떼어낸 리스너가 다시 안 붙어 버튼이 먹통이 되던 문제가 있었다.
+            // rewardButton 자체는 최초 1회만 찾고, 리스너 연결은 매번(OnEnable·RefreshView마다)
             // Remove 후 Add로 다시 보장해서 몇 번을 껐다 켜도 항상 클릭이 살아있게 한다.
-            if (claimButton != null)
+            if (rewardButton != null)
             {
-                claimButton.onClick.RemoveListener(HandleIconClicked);
-                claimButton.onClick.AddListener(HandleIconClicked);
-                UpdateClaimButtonState();
+                rewardButton.onClick.RemoveListener(HandleClaimClicked);
+                rewardButton.onClick.AddListener(HandleClaimClicked);
             }
+
+            UpdateClaimButtonState();
         }
 
         private Transform FindTrackerRoot()
@@ -253,6 +314,32 @@ namespace ProjectMT.Features.Quest
             return null;
         }
 
+        private static Button FindButton(Transform root, string objectName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            for (var i = 0; i < transforms.Length; i++)
+            {
+                var candidate = transforms[i];
+                if (candidate == null || candidate.name != objectName)
+                {
+                    continue;
+                }
+
+                var button = candidate.GetComponent<Button>();
+                if (button != null)
+                {
+                    return button;
+                }
+            }
+
+            return null;
+        }
+
         private static void SetText(TMP_Text target, string value)
         {
             if (target == null)
@@ -270,12 +357,20 @@ namespace ProjectMT.Features.Quest
         }
 
 #if UNITY_EDITOR
-        public void EditorConfigure(TMP_Text mission, TMP_Text description, TMP_Text status, Image icon = null)
+        public void EditorConfigure(
+            TMP_Text mission,
+            TMP_Text description,
+            TMP_Text status,
+            Image rewardIconImage = null,
+            TMP_Text rewardAmount = null,
+            Button rewardBtn = null)
         {
             missionText = mission;
             questDescriptionText = description;
             statusText = status;
-            claimIcon = icon;
+            rewardIcon = rewardIconImage;
+            rewardAmountText = rewardAmount;
+            rewardButton = rewardBtn;
         }
 #endif
     }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ProjectMT.Contents.CastleRaid;
+using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
@@ -70,17 +71,24 @@ namespace ProjectMT.EditorTools.MonsterMaker
     }
 
     [Serializable]
-    public sealed class MonsterMakerAbilityDraft // 돌파 2·4 Ability 안정 ID 입력
+    public sealed class MonsterMakerAbilityDraft // 돌파 2·4는 새 버튼이 아니라 기존 스킬 강화
     {
         [SerializeField] private string abilityId;
         [SerializeField] private string displayName;
-        [SerializeField] private MonsterAbilityMode mode = MonsterAbilityMode.Passive;
-        [SerializeField] private string triggerPolicyId;
+        [SerializeField, HideInInspector] private MonsterAbilityMode mode = MonsterAbilityMode.Passive;
+        [SerializeField, HideInInspector] private string triggerPolicyId;
+        [SerializeField] private MonsterSkillAugmentOperation augmentOperation =
+            MonsterSkillAugmentOperation.MagnitudeMultiplier;
+        [SerializeField, Min(0f)] private float augmentScalarValue = 0.15f;
+        [SerializeField, Min(1)] private int augmentIntegerValue = 1;
 
         public string AbilityId => abilityId ?? string.Empty;
         public string DisplayName => displayName ?? string.Empty;
         public MonsterAbilityMode Mode => mode;
         public string TriggerPolicyId => triggerPolicyId ?? string.Empty;
+        public MonsterSkillAugmentOperation AugmentOperation => augmentOperation;
+        public float AugmentScalarValue => Mathf.Max(0f, augmentScalarValue);
+        public int AugmentIntegerValue => Mathf.Max(1, augmentIntegerValue);
     }
 
     [CreateAssetMenu(menuName = "ProjectMT/Monster Maker/Draft", fileName = "Draft_monster")]
@@ -90,6 +98,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private string displayName;
         [SerializeField] private MonsterRarity rarity = MonsterRarity.Common;
         [SerializeField] private Sprite portrait;
+        [SerializeField] private bool skillLoadoutConfigured;
         [SerializeField] private MonsterPassiveSkill rarityPassiveSkill;
         [SerializeField] private MonsterActiveSkill rarityActiveSkill;
         [SerializeField, TextArea(2, 5)] private string productionMemo;
@@ -119,6 +128,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField, Min(0f)] private float moveSpeed = 2.5f;
         [SerializeField, Min(0.01f)] private float attackRange = 1f;
 
+        [SerializeField] private MonsterImpactStrength impactStrength = MonsterImpactStrength.Standard;
+        [SerializeField] private MonsterReactionWeight reactionWeight = MonsterReactionWeight.Standard;
+        [SerializeField] private MainBattleMonsterRole mainBattleRole = MainBattleMonsterRole.Vanguard;
+        [SerializeField] private UnitTargetPriority mainBattleTargetPriority = UnitTargetPriority.Nearest;
+        [SerializeField, Range(0.2f, 1f)] private float mainBattlePreferredRangeRatio = 0.72f;
+        [SerializeField, Range(0f, 0.95f)] private float mainBattleRetreatRangeRatio;
+        [SerializeField, Range(0.08f, 1f)] private float mainBattleRetargetInterval = 0.2f;
+
         [SerializeField] private AnimationClip idleClip;
         [SerializeField, Min(0.01f)] private float idleSpeed = 1f;
         [SerializeField] private AnimationClip moveClip;
@@ -131,6 +148,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField, Min(0.01f)] private float deathSpeed = 1f;
 
         [SerializeField] private MonsterCombatType combatType = MonsterCombatType.Melee;
+        [SerializeField] private MonsterBasicAttackProfile basicAttackProfile;
         [SerializeField] private MonsterMeleeAttackMode meleeMode = MonsterMeleeAttackMode.Single;
         [SerializeField] private MonsterMeleeAreaCenter meleeAreaCenter = MonsterMeleeAreaCenter.PrimaryTarget;
         [SerializeField, Min(0.01f)] private float meleeAreaRadius = 1.5f;
@@ -139,12 +157,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private MonsterProjectileAttackMode projectileMode = MonsterProjectileAttackMode.Single;
         [SerializeField] private GameObject projectilePrefab;
         [SerializeField] private AudioClip projectileLaunchSound;
+        [SerializeField] private bool overrideProjectileTuning;
         [SerializeField, Min(0.01f)] private float projectileSpeed = 9f;
         [SerializeField, Min(0.01f)] private float projectileLifetime = 3f;
         [SerializeField, Min(0.01f)] private float projectileHitRadius = 0.25f;
         [SerializeField, Min(1)] private int projectileMaxPiercingTargets = 2;
         [SerializeField, Min(0.01f)] private float projectileImpactRadius = 1.5f;
         [SerializeField, Min(1)] private int projectileMaxImpactTargets = 4;
+        [SerializeField, Min(0f)] private float projectileLaunchRecoilDistance;
+        [SerializeField, Min(0.01f)] private float projectileLaunchRecoilDuration = 0.12f;
         [SerializeField] private string specialEffectId;
         [SerializeField] private MonsterBuffTargetTeam specialTargetTeam = MonsterBuffTargetTeam.Allies;
         [SerializeField, Min(0.01f)] private float specialRadius = 2f;
@@ -180,6 +201,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public string DisplayName => displayName ?? string.Empty;
         public MonsterRarity Rarity => rarity;
         public Sprite Portrait => portrait;
+        public bool SkillLoadoutConfigured => skillLoadoutConfigured;
         public MonsterPassiveSkill RarityPassiveSkill => rarityPassiveSkill;
         public MonsterActiveSkill RarityActiveSkill => rarityActiveSkill;
         public string ProductionMemo => productionMemo ?? string.Empty;
@@ -206,6 +228,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public float AttackSpeed => attackSpeed;
         public float MoveSpeed => moveSpeed;
         public float AttackRange => attackRange;
+        public MonsterImpactStrength ImpactStrength => impactStrength;
+        public MonsterReactionWeight ReactionWeight => reactionWeight;
+        public MainBattleMonsterRole MainBattleRole => mainBattleRole;
+        public UnitTargetPriority MainBattleTargetPriority => mainBattleTargetPriority;
+        public float MainBattlePreferredRangeRatio => Mathf.Clamp(mainBattlePreferredRangeRatio, 0.2f, 1f);
+        public float MainBattleRetreatRangeRatio => Mathf.Clamp(
+            mainBattleRetreatRangeRatio,
+            0f,
+            MainBattlePreferredRangeRatio - 0.05f);
+        public float MainBattleRetargetInterval => Mathf.Clamp(mainBattleRetargetInterval, 0.08f, 1f);
         public AnimationClip IdleClip => idleClip;
         public float IdleSpeed => idleSpeed;
         public AnimationClip MoveClip => moveClip;
@@ -215,6 +247,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public AnimationClip DeathClip => deathClip;
         public float DeathSpeed => deathSpeed;
         public MonsterCombatType CombatType => combatType;
+        public MonsterBasicAttackProfile BasicAttackProfile => basicAttackProfile;
         public MonsterMeleeAttackMode MeleeMode => meleeMode;
         public MonsterMeleeAreaCenter MeleeAreaCenter => meleeAreaCenter;
         public float MeleeAreaRadius => meleeAreaRadius;
@@ -223,12 +256,24 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public MonsterProjectileAttackMode ProjectileMode => projectileMode;
         public GameObject ProjectilePrefab => projectilePrefab;
         public AudioClip ProjectileLaunchSound => projectileLaunchSound;
+        public bool OverrideProjectileTuning => overrideProjectileTuning;
         public float ProjectileSpeed => projectileSpeed;
         public float ProjectileLifetime => projectileLifetime;
         public float ProjectileHitRadius => projectileHitRadius;
+        public float ResolvedProjectileSpeed => overrideProjectileTuning || basicAttackProfile == null
+            ? ProjectileSpeed
+            : basicAttackProfile.ProjectileSpeed;
+        public float ResolvedProjectileLifetime => overrideProjectileTuning || basicAttackProfile == null
+            ? ProjectileLifetime
+            : basicAttackProfile.ProjectileLifetime;
+        public float ResolvedProjectileHitRadius => overrideProjectileTuning || basicAttackProfile == null
+            ? ProjectileHitRadius
+            : basicAttackProfile.ProjectileCollisionRadius;
         public int ProjectileMaxPiercingTargets => projectileMaxPiercingTargets;
         public float ProjectileImpactRadius => projectileImpactRadius;
         public int ProjectileMaxImpactTargets => projectileMaxImpactTargets;
+        public float ProjectileLaunchRecoilDistance => projectileLaunchRecoilDistance;
+        public float ProjectileLaunchRecoilDuration => projectileLaunchRecoilDuration;
         public string SpecialEffectId => specialEffectId ?? string.Empty;
         public MonsterBuffTargetTeam SpecialTargetTeam => specialTargetTeam;
         public float SpecialRadius => specialRadius;
@@ -256,5 +301,43 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public MonsterMakerFeedbackDraft HitFeedback => hitFeedback;
         public MonsterMakerFeedbackDraft DeathFeedback => deathFeedback;
         public MonsterMakerFeedbackDraft SpecialFeedback => specialFeedback;
+
+#if UNITY_EDITOR
+        public void EditorSetBasicAttackProfile(MonsterBasicAttackProfile profile)
+        {
+            basicAttackProfile = profile;
+            if (profile != null)
+            {
+                combatType = profile.CombatType;
+            }
+        }
+
+        public void EditorPreserveLegacyProjectileTuning()
+        {
+            if (basicAttackProfile == null || !basicAttackProfile.UsesProjectileVisual)
+            {
+                overrideProjectileTuning = false;
+                return;
+            }
+
+            overrideProjectileTuning =
+                Mathf.Abs(projectileSpeed - basicAttackProfile.ProjectileSpeed) > 0.001f ||
+                Mathf.Abs(projectileLifetime - basicAttackProfile.ProjectileLifetime) > 0.001f ||
+                Mathf.Abs(projectileHitRadius - basicAttackProfile.ProjectileCollisionRadius) > 0.001f;
+        }
+
+        public void EditorAdoptBasicAttackProfileTuning()
+        {
+            overrideProjectileTuning = false;
+            if (basicAttackProfile == null || !basicAttackProfile.UsesProjectileVisual)
+            {
+                return;
+            }
+
+            projectileSpeed = basicAttackProfile.ProjectileSpeed;
+            projectileLifetime = basicAttackProfile.ProjectileLifetime;
+            projectileHitRadius = basicAttackProfile.ProjectileCollisionRadius;
+        }
+#endif
     }
 }

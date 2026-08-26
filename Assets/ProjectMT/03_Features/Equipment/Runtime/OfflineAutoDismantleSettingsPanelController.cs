@@ -1,5 +1,6 @@
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -59,7 +60,7 @@ namespace ProjectMT.Features.Equipment
 
         public void Open()
         {
-            gameObject.SetActive(true);
+            UIPanelPopAnimator.RequestOpen(gameObject);
             transform.SetAsLastSibling();
             Refresh();
         }
@@ -68,7 +69,7 @@ namespace ProjectMT.Features.Equipment
         {
             if (!requestInFlight)
             {
-                gameObject.SetActive(false);
+                UIPanelPopAnimator.RequestClose(gameObject);
             }
         }
 

@@ -16,6 +16,7 @@ MonoBehaviour:
   displayName: "\uCC28\uBBFC\uADDC"
   rarity: 4
   portrait: {fileID: 21300000, guid: 9bc12f77527bcea4187b71e62416d6cf, type: 3}
+  skillLoadoutConfigured: 0
   rarityPassiveSkill: {fileID: 0}
   rarityActiveSkill: {fileID: 0}
   productionMemo: Notion monster batch / IceGolem
@@ -38,10 +39,17 @@ MonoBehaviour:
   vfxScale: 1
   maxHealth: 100
   attackPower: 10
-  defense: 0
+  defense: 6
   attackSpeed: 1
-  moveSpeed: 2.5
-  attackRange: 1.2
+  moveSpeed: 2
+  attackRange: 3
+  impactStrength: 2
+  reactionWeight: 2
+  mainBattleRole: 0
+  mainBattleTargetPriority: 0
+  mainBattlePreferredRangeRatio: 0.72
+  mainBattleRetreatRangeRatio: 0
+  mainBattleRetargetInterval: 0.2
   idleClip: {fileID: 1827226128182048838, guid: 7a4ce2de5dd8bd949ac5112cd412abf7, type: 3}
   idleSpeed: 1
   moveClip: {fileID: 1827226128182048838, guid: 7eb331ee8c25dbc42b253ffc3fa1bd32, type: 3}
@@ -76,20 +84,24 @@ MonoBehaviour:
   deathClip: {fileID: 1827226128182048838, guid: 80d9bf057360f5043a8008f36507085e, type: 3}
   deathSpeed: 1
   combatType: 0
-  meleeMode: 0
+  basicAttackProfile: {fileID: 11400000, guid: 61002033270fd83468163f34c442e589, type: 2}
+  meleeMode: 1
   meleeAreaCenter: 1
-  meleeAreaRadius: 1.5
+  meleeAreaRadius: 2
   meleeMaxTargets: 4
   rangedDeliveryMode: 0
   projectileMode: 0
   projectilePrefab: {fileID: 0}
   projectileLaunchSound: {fileID: 0}
+  overrideProjectileTuning: 0
   projectileSpeed: 9
   projectileLifetime: 3
   projectileHitRadius: 0.25
   projectileMaxPiercingTargets: 2
   projectileImpactRadius: 1.5
   projectileMaxImpactTargets: 4
+  projectileLaunchRecoilDistance: 0
+  projectileLaunchRecoilDuration: 0.12
   specialEffectId: 
   specialTargetTeam: 0
   specialRadius: 2
@@ -124,6 +136,9 @@ MonoBehaviour:
     displayName: 
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension3:
     healthRate: 0
     attackRate: 0
@@ -136,6 +151,9 @@ MonoBehaviour:
     displayName: 
     mode: 0
     triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
   ascension5:
     healthRate: 0
     attackRate: 0

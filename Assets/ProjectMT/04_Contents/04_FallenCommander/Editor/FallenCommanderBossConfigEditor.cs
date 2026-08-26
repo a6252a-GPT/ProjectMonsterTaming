@@ -389,6 +389,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 var telegraphRadius = kind == FallenCommanderAttackPreviewKind.FinalCharge
                     ? controllerData.FindProperty("finalChargeRadius")?.floatValue ?? 0f
                     : attack?.Radius ?? 0f;
+                float ResolveFinalChargeRadius()
+                {
+                    controllerData.UpdateIfRequiredOrScript();
+                    return controllerData.FindProperty("finalChargeRadius")?.floatValue ?? 0f;
+                }
 
                 previewSpec = new FallenCommanderAttackPreviewSpec
                 {
@@ -402,11 +407,33 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     Effects = effects,
                     TelegraphPrefab = telegraphPrefab,
                     TelegraphRadius = telegraphRadius,
-                    TelegraphWidth = attack?.Width ?? 0f,
-                    TelegraphLength = attack?.Length ?? 0f,
+                    TelegraphWidth = kind == FallenCommanderAttackPreviewKind.Basic
+                        ? (basicAttack?.ProjectileRadius ?? 0f) * 2f
+                        : attack?.Width ?? 0f,
+                    TelegraphLength = kind == FallenCommanderAttackPreviewKind.Basic
+                        ? basicAttack?.MaxDistance ?? 0f
+                        : attack?.Length ?? 0f,
                     SecondaryTelegraphRadius = kind == FallenCommanderAttackPreviewKind.CorruptionRing
                         ? config.CorruptionRingSafeRadius
                         : 0f,
+                    TelegraphRadiusProvider = kind == FallenCommanderAttackPreviewKind.FinalCharge
+                        ? ResolveFinalChargeRadius
+                        : () => attack?.Radius ?? 0f,
+                    TelegraphWidthProvider = kind == FallenCommanderAttackPreviewKind.Basic
+                        ? () => (basicAttack?.ProjectileRadius ?? 0f) * 2f
+                        : () => attack?.Width ?? 0f,
+                    TelegraphLengthProvider = kind == FallenCommanderAttackPreviewKind.Basic
+                        ? () => basicAttack?.MaxDistance ?? 0f
+                        : () => attack?.Length ?? 0f,
+                    SecondaryTelegraphRadiusProvider = kind == FallenCommanderAttackPreviewKind.CorruptionRing
+                        ? () => config.CorruptionRingSafeRadius
+                        : null,
+                    BlackHoleActiveDuration = kind == FallenCommanderAttackPreviewKind.BlackHole
+                        ? config.BlackHoleActiveDuration
+                        : 0f,
+                    BlackHoleEndEffects = kind == FallenCommanderAttackPreviewKind.BlackHole
+                        ? config.BlackHoleEndEffects
+                        : null,
                     PreCastMotion = timeoutWipe?.PreCastMotion ?? attack?.PreCastMotion,
                     PreCastMotionDuration = timeoutWipe?.PreCastMotionDuration ??
                         attack?.PreCastMotionDuration ?? 0f,

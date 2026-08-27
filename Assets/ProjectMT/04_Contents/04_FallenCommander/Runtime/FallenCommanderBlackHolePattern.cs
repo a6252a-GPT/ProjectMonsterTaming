@@ -103,9 +103,11 @@ namespace ProjectMT.Contents.FallenCommander
             hasDamagedCommander = false;
             state = PatternState.Warning;
 
-            animationPresenter.Play(
+            animationPresenter.PlayPreCast(
                 attack.PreCastMotion,
-                playbackSpeed: attack.PreCastMotionSpeed);
+                playbackSpeed: attack.PreCastMotionSpeed,
+                normalizedStart: attack.PreCastMotionStart,
+                normalizedEnd: attack.PreCastMotionEnd);
             warningVfxInstance = FallenCommanderAttackEffectPlayer.PlayStart(
                 attack.Effects,
                 CenterPosition,
@@ -172,7 +174,9 @@ namespace ProjectMT.Contents.FallenCommander
                 attack.CastMotion,
                 stopAfterMotion: true,
                 durationOverride: attack.CastMotionDuration,
-                playbackSpeed: attack.CastMotionSpeed);
+                playbackSpeed: attack.CastMotionSpeed,
+                normalizedStart: attack.CastMotionStart,
+                normalizedEnd: attack.CastMotionEnd);
             activeVfxInstance = FallenCommanderAttackEffectPlayer.PlayResolve(
                 attack.Effects,
                 CenterPosition,

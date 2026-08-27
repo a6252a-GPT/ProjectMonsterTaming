@@ -49,11 +49,14 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         public float BlackHoleActiveDuration { get; set; }
         public FallenCommanderAttackEffectData BlackHoleEndEffects { get; set; }
         public AnimationClip PreCastMotion { get; set; }
-        public float PreCastMotionDuration { get; set; }
         public float PreCastMotionSpeed { get; set; } = 1f;
+        public float PreCastMotionStart { get; set; }
+        public float PreCastMotionEnd { get; set; } = 1f;
         public AnimationClip CastMotion { get; set; }
         public float CastMotionDuration { get; set; }
         public float CastMotionSpeed { get; set; } = 1f;
+        public float CastMotionStart { get; set; }
+        public float CastMotionEnd { get; set; } = 1f;
         public float WarningDuration { get; set; } = 0.1f;
         public Vector3 StartEffectLocalOffset { get; set; }
     }
@@ -223,13 +226,23 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         PlayResolvePresentation();
                     }
 
-                    Sample(previewSpec.CastMotion, 0f, previewSpec.CastMotionSpeed);
+                    Sample(
+                        previewSpec.CastMotion,
+                        0f,
+                        previewSpec.CastMotionSpeed,
+                        previewSpec.CastMotionStart,
+                        previewSpec.CastMotionEnd);
                 }
                 else
                 {
                     PlayStartPresentation();
                     BeginAttackTelegraphPreview();
-                    Sample(previewSpec.PreCastMotion, 0f, previewSpec.PreCastMotionSpeed);
+                    Sample(
+                        previewSpec.PreCastMotion,
+                        0f,
+                        previewSpec.PreCastMotionSpeed,
+                        previewSpec.PreCastMotionStart,
+                        previewSpec.PreCastMotionEnd);
                 }
 
                 initialized = true;
@@ -892,26 +905,43 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         {
             if (mode == FallenCommanderAttackPreviewMode.PreCast)
             {
-                Sample(spec.PreCastMotion, elapsed, spec.PreCastMotionSpeed);
+                Sample(
+                    spec.PreCastMotion,
+                    elapsed,
+                    spec.PreCastMotionSpeed,
+                    spec.PreCastMotionStart,
+                    spec.PreCastMotionEnd);
                 return;
             }
 
             if (mode == FallenCommanderAttackPreviewMode.Cast)
             {
-                Sample(spec.CastMotion, elapsed, spec.CastMotionSpeed);
+                Sample(
+                    spec.CastMotion,
+                    elapsed,
+                    spec.CastMotionSpeed,
+                    spec.CastMotionStart,
+                    spec.CastMotionEnd);
                 return;
             }
 
             if (!hasResolved)
             {
-                Sample(spec.PreCastMotion, elapsed, spec.PreCastMotionSpeed);
+                Sample(
+                    spec.PreCastMotion,
+                    elapsed,
+                    spec.PreCastMotionSpeed,
+                    spec.PreCastMotionStart,
+                    spec.PreCastMotionEnd);
                 return;
             }
 
             Sample(
                 spec.CastMotion,
                 Mathf.Max(0f, elapsed - resolveTime),
-                spec.CastMotionSpeed);
+                spec.CastMotionSpeed,
+                spec.CastMotionStart,
+                spec.CastMotionEnd);
         }
 
         // 시전 VFX와 SFX를 실제 공격 시작 위치 기준으로 재생한다.
@@ -1146,18 +1176,25 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             return Mathf.Clamp(lifetime, 0.1f, 10f);
         }
 
-        // AnimationMode에서 클립의 Loop 설정을 반영해 실제 전투와 같은 재생 프레임을 적용한다.
-        private static void Sample(AnimationClip motion, float time, float playbackSpeed)
+        // 실제 전투와 동일하게 공격 모션을 반복하지 않고 마지막 프레임에서 멈춘다.
+        private static void Sample(
+            AnimationClip motion,
+            float time,
+            float playbackSpeed,
+            float normalizedStart,
+            float normalizedEnd)
         {
             if (previewAnimator == null || motion == null)
             {
                 return;
             }
 
-            var scaledTime = time * Mathf.Max(0.01f, playbackSpeed);
-            var sampleTime = motion.isLooping && motion.length > 0f
-                ? Mathf.Repeat(scaledTime, motion.length)
-                : Mathf.Clamp(scaledTime, 0f, motion.length);
+            var safeStart = Mathf.Clamp(normalizedStart, 0f, 0.999f);
+            var safeEnd = Mathf.Clamp(normalizedEnd, safeStart + 0.001f, 1f);
+            var startTime = motion.length * safeStart;
+            var endTime = motion.length * safeEnd;
+            var scaledTime = startTime + time * Mathf.Max(0.01f, playbackSpeed);
+            var sampleTime = Mathf.Clamp(scaledTime, startTime, endTime);
 
             AnimationMode.BeginSampling();
             AnimationMode.SampleAnimationClip(
@@ -1226,7 +1263,6 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             {
                 return Mathf.Max(
                     0.2f,
-                    previewSpec.PreCastMotionDuration,
                     ResolveStageDuration(previewSpec.Effects, true),
                     previewSpec.TelegraphPrefab == null
                         ? 0f

@@ -54,11 +54,11 @@ namespace ProjectMT.Contents.FallenCommander
             startedRealtime = Time.realtimeSinceStartup;
             IsActive = true;
 
-            animationPresenter?.Play(
+            animationPresenter?.PlayPreCast(
                 data?.PreCastMotion,
-                stopAfterMotion: true,
-                durationOverride: data?.PreCastMotionDuration ?? 0f,
-                playbackSpeed: data?.PreCastMotionSpeed ?? 1f);
+                playbackSpeed: data?.PreCastMotionSpeed ?? 1f,
+                normalizedStart: data?.PreCastMotionStart ?? 0f,
+                normalizedEnd: data?.PreCastMotionEnd ?? 1f);
             startVfxInstance = FallenCommanderAttackEffectPlayer.PlayStart(
                 data?.Effects,
                 bossActor == null ? Vector3.zero : bossActor.transform.position,
@@ -97,7 +97,9 @@ namespace ProjectMT.Contents.FallenCommander
                 data?.CastMotion,
                 stopAfterMotion: true,
                 durationOverride: data?.CastMotionDuration ?? 0f,
-                playbackSpeed: data?.CastMotionSpeed ?? 1f);
+                playbackSpeed: data?.CastMotionSpeed ?? 1f,
+                normalizedStart: data?.CastMotionStart ?? 0f,
+                normalizedEnd: data?.CastMotionEnd ?? 1f);
             FallenCommanderAttackEffectPlayer.PlayResolve(
                 data?.Effects,
                 bossActor == null ? Vector3.zero : bossActor.transform.position,

@@ -64,11 +64,13 @@ MonoBehaviour:
       resolveSfxDuration: 1
       sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
-    preCastMotionSpeed: 1
-    preCastMotionDuration: 0.8750001
-    castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
+    preCastMotionSpeed: 0.04
+    preCastMotionStart: 0
+    preCastMotionEnd: 0.032
+    castMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
     castMotionSpeed: 1
-    castMotionDuration: 0.875
+    castMotionStart: 0.135
+    castMotionEnd: 1
     warningDuration: 2
     radius: 5
     width: 2
@@ -96,10 +98,12 @@ MonoBehaviour:
       sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
     preCastMotionSpeed: 1
-    preCastMotionDuration: 0.875
+    preCastMotionStart: 0
+    preCastMotionEnd: 1
     castMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
     castMotionSpeed: 1
-    castMotionDuration: 0.8750001
+    castMotionStart: 0
+    castMotionEnd: 1
     warningDuration: 3
     radius: 3
     width: 2
@@ -127,10 +131,12 @@ MonoBehaviour:
       sfxVolume: 1
     preCastMotion: {fileID: 0}
     preCastMotionSpeed: 1
-    preCastMotionDuration: 0
+    preCastMotionStart: 0
+    preCastMotionEnd: 1
     castMotion: {fileID: 0}
     castMotionSpeed: 1
-    castMotionDuration: 0
+    castMotionStart: 0
+    castMotionEnd: 1
     warningDuration: 2
     radius: 1.5
     width: 2
@@ -159,10 +165,12 @@ MonoBehaviour:
       sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
     preCastMotionSpeed: 1
-    preCastMotionDuration: 0.8750001
+    preCastMotionStart: 0
+    preCastMotionEnd: 1
     castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
     castMotionSpeed: 1
-    castMotionDuration: 0.875
+    castMotionStart: 0
+    castMotionEnd: 1
     warningDuration: 1
     radius: 3.5
     width: 2
@@ -239,10 +247,12 @@ MonoBehaviour:
       sfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
     preCastMotionSpeed: 1
-    preCastMotionDuration: 0.875
+    preCastMotionStart: 0
+    preCastMotionEnd: 1
     castMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
     castMotionSpeed: 1
-    castMotionDuration: 0.8750001
+    castMotionStart: 0
+    castMotionEnd: 1
     warningDuration: 2.5
     radius: 2
     width: 3
@@ -270,10 +280,12 @@ MonoBehaviour:
       sfxVolume: 1
     preCastMotion: {fileID: 0}
     preCastMotionSpeed: 1
-    preCastMotionDuration: 0
+    preCastMotionStart: 0
+    preCastMotionEnd: 0.478
     castMotion: {fileID: 0}
     castMotionSpeed: 1
-    castMotionDuration: 0
+    castMotionStart: 0
+    castMotionEnd: 1
     warningDuration: 2.5
     radius: 10
     width: 2
@@ -283,7 +295,7 @@ MonoBehaviour:
   finalChargeTelegraphPrefab: {fileID: 5939384426542757584, guid: 8798d2c2bd4635941be031039cf5686d, type: 3}
   finalChargeEffects:
     startVfxPrefab: {fileID: 3090182719152197242, guid: 72a58d6b485ceaa43a825cf9fcfa6aa0, type: 3}
-    startVfxDuration: 1
+    startVfxDuration: 10
     startVfxAnchor: 0
     startVfxPositionOffset: {x: 0, y: 0, z: 0}
     startVfxRotationOffset: {x: 0, y: 0, z: 0}
@@ -321,10 +333,12 @@ MonoBehaviour:
       sfxVolume: 1
     preCastMotion: {fileID: 0}
     preCastMotionSpeed: 1
-    preCastMotionDuration: 0
+    preCastMotionStart: 0
+    preCastMotionEnd: 1
     castMotion: {fileID: 0}
     castMotionSpeed: 1
-    castMotionDuration: 0
+    castMotionStart: 0
+    castMotionEnd: 1
     warningDuration: 0.8
     resultDelay: 2
     warningMessage: "\uC2DC\uAC04 \uC885\uB8CC! \uC804\uBA78 \uACF5\uACA9\uC774 \uBC1C\uB3D9\uB429\uB2C8\uB2E4!"

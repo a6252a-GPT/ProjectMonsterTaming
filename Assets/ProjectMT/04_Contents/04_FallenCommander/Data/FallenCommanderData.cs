@@ -231,12 +231,20 @@ namespace ProjectMT.Contents.FallenCommander
         private FallenCommanderAttackEffectData effects = new();
         [SerializeField, InspectorName("시전 모션")] private AnimationClip preCastMotion;
         [SerializeField, InspectorName("시전 모션 속도"), Min(0.01f)] private float preCastMotionSpeed = 1f;
-        [SerializeField, InspectorName("시전 모션 재생시간 (0 = 자동)"), Min(0f)]
-        private float preCastMotionDuration;
+        [SerializeField, InspectorName("시전 모션 시작 지점"), Range(0f, 1f)]
+        [Tooltip("0은 모션의 처음, 1은 모션의 끝입니다.")]
+        private float preCastMotionStart;
+        [SerializeField, InspectorName("시전 모션 종료 지점"), Range(0f, 1f)]
+        [Tooltip("종료 지점에서 자세를 멈추고 실제 공격 시점을 기다립니다.")]
+        private float preCastMotionEnd = 1f;
         [SerializeField, InspectorName("공격 모션")] private AnimationClip castMotion;
         [SerializeField, InspectorName("공격 모션 속도"), Min(0.01f)] private float castMotionSpeed = 1f;
-        [SerializeField, InspectorName("공격 모션 재생시간 (0 = 자동)"), Min(0f)]
-        private float castMotionDuration;
+        [SerializeField, InspectorName("공격 모션 시작 지점"), Range(0f, 1f)]
+        [Tooltip("0은 모션의 처음, 1은 모션의 끝입니다.")]
+        private float castMotionStart;
+        [SerializeField, InspectorName("공격 모션 종료 지점"), Range(0f, 1f)]
+        [Tooltip("공격 모션을 재생할 마지막 지점입니다.")]
+        private float castMotionEnd = 1f;
         [SerializeField, InspectorName("공격 전 경고시간"), Min(0.1f)]
         private float warningDuration = 2f;
         [SerializeField, InspectorName("원형 공격 반지름"), Min(0.1f)]
@@ -254,14 +262,15 @@ namespace ProjectMT.Contents.FallenCommander
         public AnimationClip CastMotion => castMotion;
         public float PreCastMotionSpeed => Mathf.Max(0.01f, preCastMotionSpeed);
         public float CastMotionSpeed => Mathf.Max(0.01f, castMotionSpeed);
-        public float PreCastMotionDuration => ResolveDuration(
-            preCastMotion,
-            preCastMotionDuration,
-            PreCastMotionSpeed);
+        public float PreCastMotionStart => ResolveStart(preCastMotionStart);
+        public float PreCastMotionEnd => ResolveEnd(preCastMotionStart, preCastMotionEnd);
+        public float CastMotionStart => ResolveStart(castMotionStart);
+        public float CastMotionEnd => ResolveEnd(castMotionStart, castMotionEnd);
         public float CastMotionDuration => ResolveDuration(
             castMotion,
-            castMotionDuration,
-            CastMotionSpeed);
+            CastMotionSpeed,
+            CastMotionStart,
+            CastMotionEnd);
         public float WarningDuration => warningDuration;
         public float Radius => radius;
         public float Width => width;
@@ -270,14 +279,30 @@ namespace ProjectMT.Contents.FallenCommander
 
         private static float ResolveDuration(
             AnimationClip motion,
-            float overrideDuration,
-            float playbackSpeed)
+            float playbackSpeed,
+            float start,
+            float end)
         {
-            return overrideDuration > 0f
-                ? overrideDuration
-                : motion == null
-                    ? 0f
-                    : Mathf.Max(0.01f, motion.length / Mathf.Max(0.01f, playbackSpeed));
+            return motion == null
+                ? 0f
+                : Mathf.Max(
+                    0.01f,
+                    motion.length * (end - start) / Mathf.Max(0.01f, playbackSpeed));
+        }
+
+        private static float ResolveStart(float start)
+        {
+            return Mathf.Clamp(start, 0f, 0.999f);
+        }
+
+        private static float ResolveEnd(float start, float end)
+        {
+            if (start <= 0f && end <= 0f)
+            {
+                return 1f;
+            }
+
+            return Mathf.Clamp(end, ResolveStart(start) + 0.001f, 1f);
         }
     }
 
@@ -343,13 +368,21 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("시전 모션")] private AnimationClip preCastMotion;
         [SerializeField, InspectorName("시전 모션 속도"), Min(0.01f)]
         private float preCastMotionSpeed = 1f;
-        [SerializeField, InspectorName("시전 모션 재생시간 (0 = 자동)"), Min(0f)]
-        private float preCastMotionDuration;
+        [SerializeField, InspectorName("시전 모션 시작 지점"), Range(0f, 1f)]
+        [Tooltip("0은 모션의 처음, 1은 모션의 끝입니다.")]
+        private float preCastMotionStart;
+        [SerializeField, InspectorName("시전 모션 종료 지점"), Range(0f, 1f)]
+        [Tooltip("종료 지점에서 자세를 멈추고 전멸 발동 시점을 기다립니다.")]
+        private float preCastMotionEnd = 1f;
         [SerializeField, InspectorName("전멸 발동 모션")] private AnimationClip castMotion;
         [SerializeField, InspectorName("전멸 발동 모션 속도"), Min(0.01f)]
         private float castMotionSpeed = 1f;
-        [SerializeField, InspectorName("전멸 발동 모션 재생시간 (0 = 자동)"), Min(0f)]
-        private float castMotionDuration;
+        [SerializeField, InspectorName("전멸 발동 모션 시작 지점"), Range(0f, 1f)]
+        [Tooltip("0은 모션의 처음, 1은 모션의 끝입니다.")]
+        private float castMotionStart;
+        [SerializeField, InspectorName("전멸 발동 모션 종료 지점"), Range(0f, 1f)]
+        [Tooltip("전멸 발동 모션을 재생할 마지막 지점입니다.")]
+        private float castMotionEnd = 1f;
         [SerializeField, InspectorName("발동 전 경고시간"), Min(0f)]
         private float warningDuration = 0.8f;
         [SerializeField, InspectorName("결과창 대기시간"), Min(0f)]
@@ -362,32 +395,49 @@ namespace ProjectMT.Contents.FallenCommander
         public FallenCommanderAttackEffectData Effects => effects;
         public AnimationClip PreCastMotion => preCastMotion;
         public float PreCastMotionSpeed => Mathf.Max(0.01f, preCastMotionSpeed);
-        public float PreCastMotionDuration => ResolveDuration(
-            preCastMotion,
-            preCastMotionDuration,
-            PreCastMotionSpeed);
         public AnimationClip CastMotion => castMotion;
         public float CastMotionSpeed => Mathf.Max(0.01f, castMotionSpeed);
+        public float PreCastMotionStart => ResolveStart(preCastMotionStart);
+        public float PreCastMotionEnd => ResolveEnd(preCastMotionStart, preCastMotionEnd);
+        public float CastMotionStart => ResolveStart(castMotionStart);
+        public float CastMotionEnd => ResolveEnd(castMotionStart, castMotionEnd);
         public float CastMotionDuration => ResolveDuration(
             castMotion,
-            castMotionDuration,
-            CastMotionSpeed);
+            CastMotionSpeed,
+            CastMotionStart,
+            CastMotionEnd);
         public float WarningDuration => Mathf.Max(0f, warningDuration);
         public float ResultDelay => Mathf.Max(0f, resultDelay);
         public string WarningMessage => warningMessage;
         public float WarningPulseInterval => Mathf.Max(0.05f, warningPulseInterval);
 
-        // 별도 시간이 없으면 모션 길이와 재생 속도로 실제 재생시간을 계산한다.
+        // 선택한 모션 구간과 재생 속도로 실제 재생시간을 계산한다.
         private static float ResolveDuration(
             AnimationClip motion,
-            float overrideDuration,
-            float playbackSpeed)
+            float playbackSpeed,
+            float start,
+            float end)
         {
-            return overrideDuration > 0f
-                ? overrideDuration
-                : motion == null
-                    ? 0f
-                    : Mathf.Max(0.01f, motion.length / Mathf.Max(0.01f, playbackSpeed));
+            return motion == null
+                ? 0f
+                : Mathf.Max(
+                    0.01f,
+                    motion.length * (end - start) / Mathf.Max(0.01f, playbackSpeed));
+        }
+
+        private static float ResolveStart(float start)
+        {
+            return Mathf.Clamp(start, 0f, 0.999f);
+        }
+
+        private static float ResolveEnd(float start, float end)
+        {
+            if (start <= 0f && end <= 0f)
+            {
+                return 1f;
+            }
+
+            return Mathf.Clamp(end, ResolveStart(start) + 0.001f, 1f);
         }
     }
 

@@ -727,9 +727,11 @@ namespace ProjectMT.Contents.FallenCommander
             // FSM의 현재 상태를 위치 공격으로 변경
             currentState = BossState.MarkStrike;
             PauseBossTracking();
-            animationPresenter.Play(
+            animationPresenter.PlayPreCast(
                 markStrikeMotion?.PreCastMotion,
-                playbackSpeed: markStrikeMotion == null ? 1f : markStrikeMotion.PreCastMotionSpeed);
+                playbackSpeed: markStrikeMotion == null ? 1f : markStrikeMotion.PreCastMotionSpeed,
+                normalizedStart: markStrikeMotion?.PreCastMotionStart ?? 0f,
+                normalizedEnd: markStrikeMotion?.PreCastMotionEnd ?? 1f);
             FallenCommanderAttackEffectPlayer.PlayStart(
                 markStrikeMotion?.Effects,
                 markStrikePosition,
@@ -758,9 +760,11 @@ namespace ProjectMT.Contents.FallenCommander
             stateTimeRemaining = trackingMarkCastTime;
             currentState = BossState.TrackingMark;
             PauseBossTracking();
-            animationPresenter.Play(
+            animationPresenter.PlayPreCast(
                 trackingMarkMotion?.PreCastMotion,
-                playbackSpeed: trackingMarkMotion == null ? 1f : trackingMarkMotion.PreCastMotionSpeed);
+                playbackSpeed: trackingMarkMotion == null ? 1f : trackingMarkMotion.PreCastMotionSpeed,
+                normalizedStart: trackingMarkMotion?.PreCastMotionStart ?? 0f,
+                normalizedEnd: trackingMarkMotion?.PreCastMotionEnd ?? 1f);
             FallenCommanderAttackEffectPlayer.PlayStart(
                 trackingMarkMotion?.Effects,
                 markStrikePosition,
@@ -818,9 +822,11 @@ namespace ProjectMT.Contents.FallenCommander
             stateTimeRemaining = lineStrikeCastTime;
             currentState = BossState.LineStrike;
             PauseBossTracking();
-            animationPresenter.Play(
+            animationPresenter.PlayPreCast(
                 lineStrikeMotion?.PreCastMotion,
-                playbackSpeed: lineStrikeMotion == null ? 1f : lineStrikeMotion.PreCastMotionSpeed);
+                playbackSpeed: lineStrikeMotion == null ? 1f : lineStrikeMotion.PreCastMotionSpeed,
+                normalizedStart: lineStrikeMotion?.PreCastMotionStart ?? 0f,
+                normalizedEnd: lineStrikeMotion?.PreCastMotionEnd ?? 1f);
             FallenCommanderAttackEffectPlayer.PlayStart(
                 lineStrikeMotion?.Effects,
                 origin,
@@ -850,9 +856,11 @@ namespace ProjectMT.Contents.FallenCommander
             stateTimeRemaining = corruptionRingCastTime;
             currentState = BossState.CorruptionRing;
             PauseBossTracking();
-            animationPresenter.Play(
+            animationPresenter.PlayPreCast(
                 corruptionRingMotion?.PreCastMotion,
-                playbackSpeed: corruptionRingMotion == null ? 1f : corruptionRingMotion.PreCastMotionSpeed);
+                playbackSpeed: corruptionRingMotion == null ? 1f : corruptionRingMotion.PreCastMotionSpeed,
+                normalizedStart: corruptionRingMotion?.PreCastMotionStart ?? 0f,
+                normalizedEnd: corruptionRingMotion?.PreCastMotionEnd ?? 1f);
             FallenCommanderAttackEffectPlayer.PlayStart(
                 corruptionRingMotion?.Effects,
                 markStrikePosition,
@@ -890,9 +898,11 @@ namespace ProjectMT.Contents.FallenCommander
             stateTimeRemaining = castTime;
             currentState = state;
             PauseBossTracking();
-            animationPresenter.Play(
+            animationPresenter.PlayPreCast(
                 motion?.PreCastMotion,
-                playbackSpeed: motion == null ? 1f : motion.PreCastMotionSpeed);
+                playbackSpeed: motion == null ? 1f : motion.PreCastMotionSpeed,
+                normalizedStart: motion?.PreCastMotionStart ?? 0f,
+                normalizedEnd: motion?.PreCastMotionEnd ?? 1f);
             FallenCommanderAttackEffectPlayer.PlayStart(
                 motion?.Effects,
                 position,
@@ -1184,7 +1194,9 @@ namespace ProjectMT.Contents.FallenCommander
                 motion?.CastMotion,
                 stopAfterMotion: true,
                 durationOverride: motion == null ? 0f : motion.CastMotionDuration,
-                playbackSpeed: motion == null ? 1f : motion.CastMotionSpeed);
+                playbackSpeed: motion == null ? 1f : motion.CastMotionSpeed,
+                normalizedStart: motion?.CastMotionStart ?? 0f,
+                normalizedEnd: motion?.CastMotionEnd ?? 1f);
 
             DestroyActiveTelegraph();
 

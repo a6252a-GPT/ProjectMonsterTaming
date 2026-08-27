@@ -1261,18 +1261,24 @@ namespace ProjectMT.Contents.FallenCommander
             bossAnimationPresenter.Configure(bossActor.transform);
             bossAnimationPresenter.PlaySequence(
                 attack.PreCastMotion,
-                attack.PreCastMotionDuration,
+                attack.WarningDuration,
                 attack.PreCastMotionSpeed,
                 attack.CastMotion,
                 attack.CastMotionDuration,
-                attack.CastMotionSpeed);
+                attack.CastMotionSpeed,
+                attack.PreCastMotionStart,
+                attack.PreCastMotionEnd,
+                attack.CastMotionStart,
+                attack.CastMotionEnd);
             return true;
         }
 
         public bool PreviewBossMotion(
             AnimationClip motion,
             float duration,
-            float playbackSpeed = 1f)
+            float playbackSpeed = 1f,
+            float normalizedStart = 0f,
+            float normalizedEnd = 1f)
         {
             if (!Application.isPlaying ||
                 bossActor == null ||
@@ -1287,7 +1293,9 @@ namespace ProjectMT.Contents.FallenCommander
                 motion,
                 stopAfterMotion: true,
                 durationOverride: duration,
-                playbackSpeed: playbackSpeed);
+                playbackSpeed: playbackSpeed,
+                normalizedStart: normalizedStart,
+                normalizedEnd: normalizedEnd);
             return true;
         }
 

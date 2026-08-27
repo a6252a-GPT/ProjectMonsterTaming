@@ -435,15 +435,21 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         ? config.BlackHoleEndEffects
                         : null,
                     PreCastMotion = timeoutWipe?.PreCastMotion ?? attack?.PreCastMotion,
-                    PreCastMotionDuration = timeoutWipe?.PreCastMotionDuration ??
-                        attack?.PreCastMotionDuration ?? 0f,
                     PreCastMotionSpeed = timeoutWipe?.PreCastMotionSpeed ??
                         attack?.PreCastMotionSpeed ?? 1f,
+                    PreCastMotionStart = timeoutWipe?.PreCastMotionStart ??
+                        attack?.PreCastMotionStart ?? 0f,
+                    PreCastMotionEnd = timeoutWipe?.PreCastMotionEnd ??
+                        attack?.PreCastMotionEnd ?? 1f,
                     CastMotion = timeoutWipe?.CastMotion ?? attack?.CastMotion,
                     CastMotionDuration = timeoutWipe?.CastMotionDuration ??
                         attack?.CastMotionDuration ?? 0f,
                     CastMotionSpeed = timeoutWipe?.CastMotionSpeed ??
                         attack?.CastMotionSpeed ?? 1f,
+                    CastMotionStart = timeoutWipe?.CastMotionStart ??
+                        attack?.CastMotionStart ?? 0f,
+                    CastMotionEnd = timeoutWipe?.CastMotionEnd ??
+                        attack?.CastMotionEnd ?? 1f,
                     WarningDuration = Mathf.Max(0.1f, warningDuration),
                     StartEffectLocalOffset = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargeStartEffectOffset

@@ -136,6 +136,7 @@ namespace ProjectMT.Features.Equipment
         private ScrollRect inventoryScrollRect;
         private RectTransform inventoryContentRoot;
         private GameObject inventorySlotCellTemplate;
+        private ItemComparisonPanelController itemComparisonPanel;
 
         private EquipmentPart? currentFilter; // null = 전체
         private bool sortGradeDescending = true;
@@ -172,6 +173,7 @@ namespace ProjectMT.Features.Equipment
             EquipmentInventoryRuntime.Changed -= HandleInventoryChanged;
             CloseDismantleConfirmation();
             offlineAutoDismantleSettingsPanel?.Close();
+            itemComparisonPanel?.Hide();
         }
 
         // MainBattleSceneRoot가 씬 조립 시점에 진행 데이터 서비스를 주입한다. 실제 보유/장착 데이터는
@@ -456,6 +458,7 @@ namespace ProjectMT.Features.Equipment
             currentMode = mode;
             CloseDismantleConfirmation();
             offlineAutoDismantleSettingsPanel?.Close();
+            itemComparisonPanel?.Hide();
             if (currentMode == EquipmentPageMode.Equip)
             {
                 ClearDismantleSelection();
@@ -711,6 +714,10 @@ namespace ProjectMT.Features.Equipment
 
             var capturedView = view;
             view.ClickButton.onClick.AddListener(() => HandleSlotClicked(capturedView));
+
+            var holdTrigger = PointerHoldTrigger.EnsureOn(slotRoot.gameObject);
+            holdTrigger?.Configure(() => HandleSlotHoldStart(capturedView), () => HandleSlotHoldEnd(capturedView));
+
             slots.Add(view);
         }
 
@@ -839,27 +846,79 @@ namespace ProjectMT.Features.Equipment
                 return; // 빈 슬롯
             }
 
-            if (currentMode == EquipmentPageMode.Dismantle)
+            if (currentMode != EquipmentPageMode.Dismantle)
             {
-                if (!EquipmentInventoryRuntime.TryGetItem(view.BoundInstanceId, out var dismantleItem) ||
-                    dismantleItem.IsEquipped || dismantleItem.IsLocked)
-                {
-                    return;
-                }
+                return; // 정상 모드에서는 클릭이 아니라 누르고 있는 동안(Hold)만 상세 팝업을 보여준다.
+            }
 
-                if (!dismantleSelection.Add(view.BoundInstanceId))
-                {
-                    dismantleSelection.Remove(view.BoundInstanceId);
-                }
+            if (!EquipmentInventoryRuntime.TryGetItem(view.BoundInstanceId, out var dismantleItem) ||
+                dismantleItem.IsEquipped || dismantleItem.IsLocked)
+            {
+                return;
+            }
 
-                selectedInstanceId = null;
-                CloseDismantleConfirmation();
-                RefreshSelection();
+            if (!dismantleSelection.Add(view.BoundInstanceId))
+            {
+                dismantleSelection.Remove(view.BoundInstanceId);
+            }
+
+            selectedInstanceId = null;
+            CloseDismantleConfirmation();
+            RefreshSelection();
+        }
+
+        // 아이템을 누르고 있는 동안에만 상세 옵션 팝업(PF_ItemComparison)을 보여준다.
+        private void HandleSlotHoldStart(SlotView view)
+        {
+            if (currentMode != EquipmentPageMode.Equip || string.IsNullOrEmpty(view.BoundInstanceId))
+            {
                 return;
             }
 
             selectedInstanceId = view.BoundInstanceId;
             RefreshSelection();
+            ShowItemComparisonPopup(view.BoundInstanceId);
+        }
+
+        private void HandleSlotHoldEnd(SlotView view)
+        {
+            itemComparisonPanel?.Hide();
+        }
+
+        private void ShowItemComparisonPopup(string instanceId)
+        {
+            if (!EquipmentInventoryRuntime.TryGetItem(instanceId, out var item) || item.Definition == null)
+            {
+                return;
+            }
+
+            EnsureItemComparisonPanel();
+            if (itemComparisonPanel == null)
+            {
+                return;
+            }
+
+            partIconSprites.TryGetValue(item.Part, out var icon);
+            itemComparisonPanel.Show(item, icon);
+        }
+
+        // PF_ItemComparison은 장비 페이지가 아니라 씬의 관리 UI 쪽에 배치돼 있어 루트부터 재귀 탐색한다.
+        private void EnsureItemComparisonPanel()
+        {
+            if (itemComparisonPanel != null)
+            {
+                return;
+            }
+
+            var panelRoot = FindDeep(transform.root, "PF_ItemComparison");
+            if (panelRoot == null)
+            {
+                return;
+            }
+
+            itemComparisonPanel = panelRoot.GetComponent<ItemComparisonPanelController>()
+                ?? panelRoot.gameObject.AddComponent<ItemComparisonPanelController>();
+            itemComparisonPanel.Configure(combatInputSaved);
         }
 
         // ---------------------------------------------------------------

@@ -74,6 +74,26 @@ namespace ProjectMT.Shared.Unit
                 ? new List<MonsterDefinition>()
                 : new List<MonsterDefinition>(values);
         }
+
+        private void OnValidate()
+        {
+            SyncDependentRarityCatalogs(); // 인스펙터에서 직접 몬스터를 추가/삭제해도 도감 카탈로그에 즉시 반영
+        }
+
+        // 이 MonsterCatalog를 sourceCatalog로 쓰는 모든 MonsterRarityCatalog(도감)를 찾아 동기화한다.
+        private void SyncDependentRarityCatalogs()
+        {
+            var guids = UnityEditor.AssetDatabase.FindAssets("t:MonsterRarityCatalog");
+            for (var index = 0; index < guids.Length; index++)
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[index]);
+                var rarityCatalog = UnityEditor.AssetDatabase.LoadAssetAtPath<MonsterRarityCatalog>(path);
+                if (rarityCatalog != null && rarityCatalog.SourceCatalog == this)
+                {
+                    rarityCatalog.EditorSyncWithSourceCatalog();
+                }
+            }
+        }
 #endif
     }
 }

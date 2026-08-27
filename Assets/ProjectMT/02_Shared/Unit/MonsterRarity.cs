@@ -13,9 +13,15 @@ namespace ProjectMT.Shared.Unit
         Mythic = 4
     }
 
+    // MonsterRarityCatalog의 등급별 항목 공통 계약. 원본 카탈로그와의 동기화 로직에서 사용한다.
+    public interface IMonsterRarityEntry
+    {
+        MonsterDefinition Monster { get; }
+    }
+
     // 일반~영웅 등급 몬스터 한 종류. 영웅만 범용 액티브를 추가로 사용한다.
     [Serializable]
-    public sealed class MonsterCommonRarityEntry
+    public sealed class MonsterCommonRarityEntry : IMonsterRarityEntry
     {
         [SerializeField] private MonsterDefinition monster;
         [SerializeField] private MonsterRarity rarity = MonsterRarity.Common; // Common/Rare/Epic 중 하나
@@ -103,7 +109,7 @@ namespace ProjectMT.Shared.Unit
 
     // 전설·신화 등급 몬스터 한 종류. 두 스킬 칸은 스킬 시스템 구현 전까지 비워둘 수 있다.
     [Serializable]
-    public sealed class MonsterLegendaryRarityEntry
+    public sealed class MonsterLegendaryRarityEntry : IMonsterRarityEntry
     {
         [SerializeField] private MonsterDefinition monster;
         [SerializeField] private MonsterRarity rarity = MonsterRarity.Legendary; // Legendary/Mythic 중 하나

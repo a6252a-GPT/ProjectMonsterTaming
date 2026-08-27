@@ -38,8 +38,14 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 null);
             var monsterCatalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>(
                 "Assets/ProjectMT/02_Shared/Unit/Data/MonsterCatalog.asset");
+            var rarityCatalog = AssetDatabase.LoadAssetAtPath<MonsterRarityCatalog>(
+                "Assets/ProjectMT/02_Shared/Unit/Data/MonsterRarityCatalog.asset");
             Assert.That(monsterCatalog, Is.Not.Null);
-            var party = new BattlePartySnapshotBuilder(monsterCatalog).Build(
+            Assert.That(rarityCatalog, Is.Not.Null);
+            var party = new BattlePartySnapshotBuilder(
+                monsterCatalog,
+                rarityCatalog,
+                ProjectMT.Shared.Stats.CombatStatConfig.RuntimeDefault).Build(
                 new GameProgressView(GameProgressData.CreateDefault()));
             var exit = new RecordingExit();
             var contentContext = new ContentContext(
@@ -600,6 +606,22 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 Assert.That(support.CurrentIntent, Is.EqualTo(HexCastleAssaultIntentKind.Palace));
                 Assert.That(Vector3.SqrMagnitude(support.transform.position - supportStartPosition),
                     Is.GreaterThan(0.01f), "지원 쿨다운 동안에도 왕궁 방향 진격을 계속해야 합니다.");
+
+                var rarity = AssetDatabase.LoadAssetAtPath<MonsterRarityCatalog>(
+                    "Assets/ProjectMT/02_Shared/Unit/Data/MonsterRarityCatalog.asset");
+                Assert.That(rarity.TryGetSkillLoadout("aru_01", out var entryShield, out _), Is.True);
+                var passiveProbeRoot = new GameObject("PassiveProbe");
+                owned.Add(passiveProbeRoot);
+                var passiveProbe = passiveProbeRoot.AddComponent<HexCastleAssaultUnit>();
+                passiveProbe.ConfigureForPartyUnit(
+                    world,
+                    new HexCoordinates(4, -1),
+                    cells,
+                    1f,
+                    Vector3.zero,
+                    CreateTestUnit("aru_01", entryShield, 1));
+                Assert.That(passiveProbe.PassiveRuntime.ShieldAmount, Is.EqualTo(3f).Within(.01f),
+                    "Hex 수동 배치는 합류 보호막 기본값의 절반을 자기 자신에게 적용해야 합니다.");
             }
             finally
             {
@@ -612,7 +634,10 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
             yield return null;
         }
 
-        private static BattleUnitSnapshot CreateTestUnit(string monsterId)
+        private static BattleUnitSnapshot CreateTestUnit(
+            string monsterId,
+            MonsterPassiveSkill passiveSkill = null,
+            int level = 1)
         {
             return new BattleUnitSnapshot(
                 monsterId,
@@ -623,7 +648,9 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                     moveSpeed = 3f,
                     attackRange = 1.1f,
                     attackInterval = 1f
-                });
+                },
+                passiveSkill: passiveSkill,
+                level: level);
         }
 
         private static Vector2 ResolveGroundCenter(Camera camera, float verticalScreenOffset)

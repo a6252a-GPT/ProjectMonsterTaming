@@ -13,8 +13,26 @@ MonoBehaviour:
   m_Name: HexCastleAssaultAIProfileCatalog
   m_EditorClassIdentifier: ProjectMT.Contents.CastleRaidHex::ProjectMT.Contents.CastleRaidHex.HexCastleAssaultAIProfileCatalog
   entries:
+  - monsterId: argo_01
+    pattern: 0
+    supportFocus: 0
+    supportRange: 5
+    supportCooldown: 4
+    supportDuration: 5
+    healRatio: 0.24
+    attackBuffRate: 0.2
+    defenseDamageMultiplier: 0.75
   - monsterId: aru_01
-    pattern: 5
+    pattern: 6
+    supportFocus: 2
+    supportRange: 5
+    supportCooldown: 4
+    supportDuration: 5
+    healRatio: 0.24
+    attackBuffRate: 0.2
+    defenseDamageMultiplier: 0.75
+  - monsterId: astell_01
+    pattern: 0
     supportFocus: 0
     supportRange: 5
     supportCooldown: 4
@@ -24,6 +42,15 @@ MonoBehaviour:
     defenseDamageMultiplier: 0.75
   - monsterId: berkan_01
     pattern: 3
+    supportFocus: 0
+    supportRange: 5
+    supportCooldown: 4
+    supportDuration: 5
+    healRatio: 0.24
+    attackBuffRate: 0.2
+    defenseDamageMultiplier: 0.75
+  - monsterId: candy_tree_01
+    pattern: 0
     supportFocus: 0
     supportRange: 5
     supportCooldown: 4
@@ -211,6 +238,15 @@ MonoBehaviour:
     healRatio: 0.24
     attackBuffRate: 0.2
     defenseDamageMultiplier: 0.75
+  - monsterId: pango_01
+    pattern: 0
+    supportFocus: 0
+    supportRange: 5
+    supportCooldown: 4
+    supportDuration: 5
+    healRatio: 0.24
+    attackBuffRate: 0.2
+    defenseDamageMultiplier: 0.75
   - monsterId: pc_bear_01
     pattern: 4
     supportFocus: 0
@@ -220,8 +256,17 @@ MonoBehaviour:
     healRatio: 0.24
     attackBuffRate: 0.2
     defenseDamageMultiplier: 0.75
+  - monsterId: pipi_01
+    pattern: 0
+    supportFocus: 0
+    supportRange: 5
+    supportCooldown: 4
+    supportDuration: 5
+    healRatio: 0.24
+    attackBuffRate: 0.2
+    defenseDamageMultiplier: 0.75
   - monsterId: piru_01
-    pattern: 5
+    pattern: 0
     supportFocus: 0
     supportRange: 5
     supportCooldown: 4
@@ -256,18 +301,18 @@ MonoBehaviour:
     healRatio: 0.24
     attackBuffRate: 0.2
     defenseDamageMultiplier: 0.75
-  - monsterId: ru_01
-    pattern: 6
-    supportFocus: 3
+  - monsterId: rubea_01
+    pattern: 0
+    supportFocus: 0
     supportRange: 5
     supportCooldown: 4
     supportDuration: 5
     healRatio: 0.24
     attackBuffRate: 0.2
     defenseDamageMultiplier: 0.75
-  - monsterId: rubea_01
-    pattern: 0
-    supportFocus: 0
+  - monsterId: ru_01
+    pattern: 6
+    supportFocus: 3
     supportRange: 5
     supportCooldown: 4
     supportDuration: 5

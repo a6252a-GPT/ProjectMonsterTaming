@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: MD_shell_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
   monsterId: shell_01
-  displayName: "\uC258"
-  portrait: {fileID: 21300000, guid: 56538ea974857544e8a47b4d6eca254b, type: 3}
-  previewPrefab: {fileID: 545682315351394890, guid: 59a51997eb082e449b7eff675857e1ff, type: 3}
+  displayName: "\uB77C\uBE44"
+  portrait: {fileID: 21300000, guid: 6bacf9e0dd386954595f599b939acdbc, type: 3}
+  previewPrefab: {fileID: 5202669104460537752, guid: 603596c2e740bf64493e6eb5a86c32a5, type: 3}
   visualTint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 120
   attackPower: 18

@@ -27,6 +27,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
         Hit
     }
 
+    internal enum MonsterMakerCatalogSortMode
+    {
+        Default,
+        Rarity
+    }
+
     internal sealed class MonsterMakerPreviewPositionBinding
     {
         public MonsterMakerPreviewPositionBinding(
@@ -78,6 +84,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private const float PreviewOverlayGap = 6f;
         private const float CombatPreviewOverlayHeight = 49f;
         private const float PositionPreviewToolbarHeight = 48f;
+        private const float ProfileSummaryMinWidth = 286f;
+        private const float ProfileSummaryMaxWidth = 318f;
+        private const float ProfileSummaryMinHeight = 318f;
+        private const float ProfileSummarySideBySideThreshold = 760f;
         private const float MinimumWindowWidth = 1180f;
         private const float MinimumWindowHeight = 760f;
         private static readonly Color AccentColor = new Color(0.38f, 0.66f, 1f, 1f);
@@ -85,6 +95,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             .Select(PrefabPreviewStage.GetEnvironmentLabel)
             .ToArray();
         private static readonly string[] RarityLabels = { "일반", "희귀", "영웅", "전설", "신화" };
+        private static readonly string[] CatalogSortLabels = { "기본순", "등급순" };
         private static readonly string[] CombatTypeLabels = { "근거리", "원거리", "특수" };
         private static readonly string[] MeleeModeLabels = { "단일", "범위" };
         private static readonly string[] RangedDeliveryLabels = { "투사체", "즉발 마법" };
@@ -189,6 +200,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private Shared.Unit.MonsterSkillCatalog monsterSkillCatalog;
         private Shared.Unit.MonsterDefinition[] catalogDefinitions =
             Array.Empty<Shared.Unit.MonsterDefinition>();
+        private Shared.Unit.MonsterDefinition[] displayedCatalogDefinitions =
+            Array.Empty<Shared.Unit.MonsterDefinition>();
         private readonly Dictionary<string, MonsterMakerDraft> catalogDraftsById =
             new Dictionary<string, MonsterMakerDraft>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, MonsterRarity> catalogRaritiesById =
@@ -196,6 +209,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private MonsterSkillPopupData[] passiveSkillPopups = Array.Empty<MonsterSkillPopupData>();
         private MonsterSkillPopupData[] genericActiveSkillPopups = Array.Empty<MonsterSkillPopupData>();
         private MonsterSkillPopupData[] mythicActiveSkillPopups = Array.Empty<MonsterSkillPopupData>();
+        private readonly MonsterPassiveBalanceEditor passiveBalanceEditor = new MonsterPassiveBalanceEditor();
         private Shared.Unit.MonsterDefinition selectedCatalogDefinition;
         private Vector2 catalogScroll;
         private Vector2 leftScroll;
@@ -208,6 +222,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private string loadedDraftMonsterId = string.Empty;
         private string loadedDraftFingerprint = string.Empty;
         [SerializeField] private bool showMonsterCatalog = true;
+        [SerializeField] private MonsterMakerCatalogSortMode catalogSortMode;
         [SerializeField] private bool showModelAdvancedSettings;
         [SerializeField] private bool showBasicAttackAdvancedSettings;
         [SerializeField] private bool showPreviewModelReference = true;
@@ -225,6 +240,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private int previewPositionHotControl;
         [SerializeField] private int passiveSkillCategoryFilter;
         [SerializeField] private int activeSkillCategoryFilter;
+        [SerializeField] private bool showPassiveBalanceSettings;
         private bool showUsageGuide;
         private double lastRepaintTime;
         private GUIStyle headerTitleStyle;
@@ -247,6 +263,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private GUIStyle catalogRowTitleStyle;
         private GUIStyle catalogRowMetaStyle;
         private GUIStyle catalogRowStateStyle;
+        private GUIStyle profileNameStyle;
+        private GUIStyle profileBadgeStyle;
+        private GUIStyle profileSectionStyle;
+        private GUIStyle profileKeyStyle;
+        private GUIStyle profileValueStyle;
 
         [MenuItem(MenuPath)]
         public static void OpenWindow()
@@ -448,6 +469,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     usageBodyStyle);
                 GUILayout.Space(5f);
 
+                var nextSortMode = (MonsterMakerCatalogSortMode)GUILayout.Toolbar(
+                    (int)catalogSortMode,
+                    CatalogSortLabels,
+                    GUILayout.Height(22f));
+                if (nextSortMode != catalogSortMode)
+                {
+                    SetCatalogSortMode(nextSortMode);
+                }
+                GUILayout.Space(5f);
+
                 if (monsterCatalog == null)
                 {
                     EditorGUILayout.HelpBox("MonsterCatalog를 찾을 수 없습니다.", MessageType.Error);
@@ -468,9 +499,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var rowStride = CatalogRowHeight + CatalogRowSpacing;
             var contentHeight = Mathf.Max(
                 listRect.height,
-                catalogDefinitions.Length <= 0
+                displayedCatalogDefinitions.Length <= 0
                     ? 0f
-                    : catalogDefinitions.Length * rowStride - CatalogRowSpacing);
+                    : displayedCatalogDefinitions.Length * rowStride - CatalogRowSpacing);
             var contentRect = new Rect(
                 0f,
                 0f,
@@ -482,11 +513,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 var visibleRange = CalculateVisibleCatalogRange(
                     catalogScroll.y,
                     listRect.height,
-                    catalogDefinitions.Length);
+                    displayedCatalogDefinitions.Length);
                 for (var index = visibleRange.x; index < visibleRange.y; index++)
                 {
                     DrawCatalogRow(
-                        catalogDefinitions[index],
+                        displayedCatalogDefinitions[index],
                         index + 1,
                         new Rect(0f, index * rowStride, contentRect.width, CatalogRowHeight));
                 }
@@ -535,7 +566,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             var portraitRect = new Rect(rowRect.x + 6f, rowRect.y + 6f, 40f, 40f);
-            EditorGUI.DrawRect(portraitRect, new Color(0.075f, 0.08f, 0.09f, 1f));
             if (TryResolvePortraitPreview(definition.Portrait, out var portraitTexture, out var portraitUv))
             {
                 var fittedRect = FitTextureRect(
@@ -644,8 +674,24 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 return "등급 미지정";
             }
 
-            var index = (int)rarity;
-            return index >= 0 && index < RarityLabels.Length ? RarityLabels[index] : rarity.ToString();
+            return GetRarityLabel(rarity);
+        }
+
+        private static string GetRarityLabel(MonsterRarity rarity)
+        {
+            return GetIndexedLabel(RarityLabels, (int)rarity, rarity.ToString());
+        }
+
+        private static string GetIndexedLabel(string[] labels, int index, string fallback)
+        {
+            return labels != null && index >= 0 && index < labels.Length ? labels[index] : fallback;
+        }
+
+        private static string GetShortIndexedLabel(string[] labels, int index, string fallback)
+        {
+            var label = GetIndexedLabel(labels, index, fallback);
+            var suffixIndex = label.IndexOf(" (", StringComparison.Ordinal);
+            return suffixIndex > 0 ? label.Substring(0, suffixIndex) : label;
         }
 
         private Color GetCatalogRowBackground(
@@ -743,12 +789,191 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 DrawPreviewPanel();
                 GUILayout.Space(6f);
-                DrawTimeline();
-                GUILayout.Space(6f);
                 var contentWidth = Mathf.Max(1f, previewColumnWidth - columnStyle.padding.horizontal);
-                DrawBottomActionPanel(contentWidth);
+                DrawBottomWorkspace(contentWidth);
                 DrawPanelOutline(centerPanel.rect);
             }
+        }
+
+        private void DrawBottomWorkspace(float availableWidth)
+        {
+            if (availableWidth < ProfileSummarySideBySideThreshold)
+            {
+                DrawMonsterProfileSummary(availableWidth);
+                GUILayout.Space(6f);
+                DrawTimeline();
+                GUILayout.Space(6f);
+                DrawEditControlPanel();
+                GUILayout.Space(6f);
+                DrawBottomActionPanel(availableWidth);
+                return;
+            }
+
+            var profileWidth = Mathf.Clamp(
+                availableWidth * 0.3f,
+                ProfileSummaryMinWidth,
+                ProfileSummaryMaxWidth);
+            var actionWidth = Mathf.Max(1f, availableWidth - profileWidth - ColumnGap);
+            using (new EditorGUILayout.HorizontalScope(GUILayout.ExpandWidth(true)))
+            {
+                DrawMonsterProfileSummary(profileWidth);
+                GUILayout.Space(ColumnGap);
+                using (new EditorGUILayout.VerticalScope(
+                           GUILayout.Width(actionWidth),
+                           GUILayout.ExpandWidth(false)))
+                {
+                    DrawTimeline();
+                    GUILayout.Space(6f);
+                    DrawEditControlPanel();
+                    GUILayout.Space(6f);
+                    DrawBottomActionPanel(actionWidth);
+                }
+            }
+        }
+
+        private void DrawMonsterProfileSummary(float width)
+        {
+            using (new EditorGUILayout.VerticalScope(
+                       workspacePanelStyle,
+                       GUILayout.Width(width),
+                       GUILayout.ExpandWidth(false),
+                       GUILayout.MinHeight(ProfileSummaryMinHeight),
+                       GUILayout.ExpandHeight(true)))
+            {
+                DrawColumnHeader("몬스터 프로필", "현재 설정 요약");
+                GUILayout.Space(5f);
+                DrawProfileIdentity();
+                DrawProfileSeparator();
+
+                GUILayout.Label("기본 능력치", profileSectionStyle);
+                DrawProfileStatRow("체력", draft.MaxHealth, "공격", draft.AttackPower);
+                DrawProfileStatRow("방어", draft.Defense, "공속", draft.AttackSpeed);
+                DrawProfileStatRow("이속", draft.MoveSpeed, "사거리", draft.AttackRange);
+                DrawProfileSeparator();
+
+                GUILayout.Label("전투 · 타격감", profileSectionStyle);
+                var basicAttack = draft.BasicAttackProfile;
+                DrawProfileLine(
+                    "기본공격",
+                    basicAttack == null ? "미지정" : basicAttack.DisplayName,
+                    basicAttack == null ? "기본공격 Profile이 지정되지 않았습니다." : basicAttack.AttackId);
+                DrawProfileLine(
+                    "타격/피격",
+                    $"{GetShortIndexedLabel(ImpactStrengthLabels, (int)draft.ImpactStrength, draft.ImpactStrength.ToString())} / " +
+                    GetShortIndexedLabel(ReactionWeightLabels, (int)draft.ReactionWeight, draft.ReactionWeight.ToString()));
+                DrawProfileLine("스킬", BuildProfileSkillSummary());
+                DrawProfileSeparator();
+
+                GUILayout.Label("AI", profileSectionStyle);
+                DrawProfileLine(
+                    "메인 전투",
+                    $"{GetShortIndexedLabel(MainBattleRoleLabels, (int)draft.MainBattleRole, draft.MainBattleRole.ToString())} · " +
+                    GetIndexedLabel(TargetPriorityLabels, (int)draft.MainBattleTargetPriority, draft.MainBattleTargetPriority.ToString()));
+                DrawProfileLine(
+                    "전투 거리",
+                    $"희망 {draft.MainBattlePreferredRangeRatio:0.##} · 후퇴 {draft.MainBattleRetreatRangeRatio:0.##} · 재탐색 {draft.MainBattleRetargetInterval:0.##}초");
+                DrawProfileLine(
+                    "군단 역습",
+                    GetIndexedLabel(CastleRaidAiPatternLabels, (int)draft.CastleRaidAiPattern, draft.CastleRaidAiPattern.ToString()));
+                GUILayout.Space(4f);
+            }
+        }
+
+        private void DrawProfileIdentity()
+        {
+            using (new EditorGUILayout.HorizontalScope(GUILayout.Height(78f)))
+            {
+                var portraitRect = GUILayoutUtility.GetRect(
+                    78f,
+                    78f,
+                    GUILayout.Width(78f),
+                    GUILayout.Height(78f));
+                if (TryResolvePortraitPreview(draft.Portrait, out var portraitTexture, out var portraitUv))
+                {
+                    var fittedRect = FitTextureRect(
+                        portraitRect,
+                        portraitUv.width * portraitTexture.width,
+                        portraitUv.height * portraitTexture.height);
+                    GUI.DrawTextureWithTexCoords(fittedRect, portraitTexture, portraitUv, true);
+                }
+                else
+                {
+                    GUI.Label(portraitRect, "초상화\n미지정", centeredLabelStyle);
+                }
+
+                GUILayout.Space(8f);
+                using (new EditorGUILayout.VerticalScope(GUILayout.ExpandWidth(true)))
+                {
+                    GUILayout.Label(
+                        string.IsNullOrWhiteSpace(draft.DisplayName) ? "이름 미지정" : draft.DisplayName,
+                        profileNameStyle,
+                        GUILayout.Height(24f));
+                    var rarityRect = GUILayoutUtility.GetRect(1f, 22f, GUILayout.ExpandWidth(true), GUILayout.Height(22f));
+                    EditorGUI.DrawRect(rarityRect, GetCatalogRarityColor(draft.Rarity));
+                    var previousContentColor = GUI.contentColor;
+                    var previousGuiColor = GUI.color;
+                    GUI.contentColor = Color.white;
+                    GUI.color = Color.white;
+                    GUI.Label(rarityRect, GetRarityLabel(draft.Rarity), profileBadgeStyle);
+                    GUI.color = previousGuiColor;
+                    GUI.contentColor = previousContentColor;
+                    GUILayout.Space(2f);
+                    GUILayout.Label(draft.MonsterId, profileValueStyle, GUILayout.Height(16f));
+                    GUILayout.Label(
+                        $"{GetIndexedLabel(CombatTypeLabels, (int)draft.CombatType, draft.CombatType.ToString())} · " +
+                        (draft.SkillLoadoutConfigured ? "스킬 구성" : "스킬 미사용"),
+                        profileValueStyle,
+                        GUILayout.Height(16f));
+                }
+            }
+        }
+
+        private void DrawProfileStatRow(string firstLabel, float firstValue, string secondLabel, float secondValue)
+        {
+            var rowRect = GUILayoutUtility.GetRect(1f, 18f, GUILayout.ExpandWidth(true), GUILayout.Height(18f));
+            const float gap = 8f;
+            var cellWidth = Mathf.Max(1f, (rowRect.width - gap) * 0.5f);
+            DrawProfileKeyValue(new Rect(rowRect.x, rowRect.y, cellWidth, rowRect.height), firstLabel, firstValue.ToString("0.##"));
+            DrawProfileKeyValue(
+                new Rect(rowRect.x + cellWidth + gap, rowRect.y, cellWidth, rowRect.height),
+                secondLabel,
+                secondValue.ToString("0.##"));
+        }
+
+        private void DrawProfileLine(string label, string value, string tooltip = null)
+        {
+            var rowRect = GUILayoutUtility.GetRect(1f, 18f, GUILayout.ExpandWidth(true), GUILayout.Height(18f));
+            DrawProfileKeyValue(rowRect, label, value, tooltip);
+        }
+
+        private void DrawProfileKeyValue(Rect rect, string label, string value, string tooltip = null)
+        {
+            const float keyWidth = 58f;
+            GUI.Label(new Rect(rect.x, rect.y, keyWidth, rect.height), label, profileKeyStyle);
+            GUI.Label(
+                new Rect(rect.x + keyWidth, rect.y, Mathf.Max(1f, rect.width - keyWidth), rect.height),
+                new GUIContent(value ?? string.Empty, tooltip ?? value ?? string.Empty),
+                profileValueStyle);
+        }
+
+        private static void DrawProfileSeparator()
+        {
+            GUILayout.Space(5f);
+            var separatorRect = GUILayoutUtility.GetRect(1f, 1f, GUILayout.ExpandWidth(true), GUILayout.Height(1f));
+            EditorGUI.DrawRect(separatorRect, new Color(0.2f, 0.24f, 0.3f, 1f));
+            GUILayout.Space(4f);
+        }
+
+        private string BuildProfileSkillSummary()
+        {
+            if (!draft.SkillLoadoutConfigured)
+            {
+                return "미사용";
+            }
+
+            var passive = draft.RarityPassiveSkill == null ? "패시브 미지정" : draft.RarityPassiveSkill.DisplayName;
+            var active = draft.RarityActiveSkill == null ? "액티브 미지정" : draft.RarityActiveSkill.DisplayName;
+            return draft.Rarity >= MonsterRarity.Epic ? $"{passive} / {active}" : passive;
         }
 
         private void DrawPreviewPanel()
@@ -1570,7 +1795,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawBottomActionPanel(float centerContentWidth)
         {
-            using (new EditorGUILayout.VerticalScope(actionDockStyle, GUILayout.ExpandWidth(true)))
+            using (new EditorGUILayout.VerticalScope(
+                       actionDockStyle,
+                       GUILayout.ExpandWidth(true),
+                       GUILayout.ExpandHeight(true)))
             {
                 DrawCommandDockHeader();
 
@@ -1615,37 +1843,70 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     showUsageGuide = !showUsageGuide;
                 }
             }
+        }
 
-            GUILayout.Space(4f);
-            using (new EditorGUILayout.HorizontalScope())
+        private void DrawEditControlPanel()
+        {
+            using (new EditorGUILayout.VerticalScope(workspacePanelStyle, GUILayout.ExpandWidth(true)))
             {
-                GUILayout.Label("편집 기록", headerMetaStyle, GUILayout.Width(64f));
-                GUILayout.FlexibleSpace();
-                if (GUILayout.Button(
-                        "↶ 수정 되돌리기",
-                        compactButtonStyle,
-                        GUILayout.Width(112f),
-                        GUILayout.Height(26f)))
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    PerformMakerUndo(false);
+                    GUILayout.Label("재생 · 편집 관리", sectionTitleStyle, GUILayout.Width(106f));
+                    GUILayout.Space(6f);
+                    GUILayout.Label("미리보기 재생과 현재 Draft의 수정 기록을 관리합니다", headerMetaStyle);
                 }
+
                 GUILayout.Space(4f);
-                if (GUILayout.Button(
-                        "↷ 다시 적용",
-                        compactButtonStyle,
-                        GUILayout.Width(96f),
-                        GUILayout.Height(26f)))
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    PerformMakerUndo(true);
-                }
-                GUILayout.Space(4f);
-                if (GUILayout.Button(
-                        "↺ 초기 상태 복원",
-                        compactButtonStyle,
-                        GUILayout.Width(112f),
-                        GUILayout.Height(26f)))
-                {
-                    RestoreInitialDraftSnapshot();
+                    if (GUILayout.Button(
+                            preview.IsPlaying ? "Ⅱ  일시정지" : "▶  계속 재생",
+                            actionButtonStyle,
+                            GUILayout.Width(108f),
+                            GUILayout.Height(38f)))
+                    {
+                        TogglePreviewPause();
+                    }
+
+                    GUILayout.Space(ActionGap);
+                    if (GUILayout.Button(
+                            "↺  처음부터",
+                            actionButtonStyle,
+                            GUILayout.Width(108f),
+                            GUILayout.Height(38f)))
+                    {
+                        RestartPreview();
+                    }
+
+                    GUILayout.FlexibleSpace();
+                    if (GUILayout.Button(
+                            new GUIContent("↶  Undo", "가장 최근 수정 내용을 되돌립니다"),
+                            actionButtonStyle,
+                            GUILayout.Width(94f),
+                            GUILayout.Height(38f)))
+                    {
+                        PerformMakerUndo(false);
+                    }
+
+                    GUILayout.Space(ActionGap);
+                    if (GUILayout.Button(
+                            new GUIContent("↷  Redo", "되돌린 수정 내용을 다시 적용합니다"),
+                            actionButtonStyle,
+                            GUILayout.Width(102f),
+                            GUILayout.Height(38f)))
+                    {
+                        PerformMakerUndo(true);
+                    }
+
+                    GUILayout.Space(ActionGap);
+                    if (GUILayout.Button(
+                            new GUIContent("↺  초기 상태 복원", "현재 Draft를 이 창에서 처음 연 상태로 복원합니다"),
+                            actionButtonStyle,
+                            GUILayout.Width(126f),
+                            GUILayout.Height(38f)))
+                    {
+                        RestoreInitialDraftSnapshot();
+                    }
                 }
             }
         }
@@ -1670,113 +1931,119 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawMotionPlaybackRow(float availableWidth)
         {
-            var attackCount = draft.Attacks.Count;
-            var buttonCount = 3 + attackCount + (attackCount > 1 ? 1 : 0);
-            const float minimumButtonWidth = 132f;
-            var fittedWidth = (availableWidth - ActionGap * (buttonCount - 1)) / Mathf.Max(1, buttonCount);
-            var needsScroll = fittedWidth < minimumButtonWidth;
-            var buttonWidth = needsScroll ? minimumButtonWidth : fittedWidth;
-
-            if (needsScroll)
-            {
-                animationButtonScroll.y = 0f;
-                animationButtonScroll = EditorGUILayout.BeginScrollView(
-                    animationButtonScroll,
-                    true,
-                    false,
-                    GUILayout.Height(56f));
-            }
-
+            var utilityButtonWidth = Mathf.Max(1f, (availableWidth - ActionGap * 2f) / 3f);
             using (new EditorGUILayout.HorizontalScope())
             {
-                DrawLargeActionButton("대기 모션", Color.white, buttonWidth, preview.PlayIdle);
+                DrawLargeActionButton("대기 모션", Color.white, utilityButtonWidth, preview.PlayIdle, 42f);
                 GUILayout.Space(ActionGap);
-                DrawLargeActionButton("이동 모션", Color.white, buttonWidth, preview.PlayMove);
-                for (var index = 0; index < attackCount; index++)
-                {
-                    GUILayout.Space(ActionGap);
-                    var selectedIndex = index;
-                    DrawLargeActionButton(
-                        $"공격 {index + 1:00} 재생",
-                        new Color(0.72f, 0.84f, 1f, 1f),
-                        buttonWidth,
-                        () => preview.PlayAttack(selectedIndex));
-                }
-
-                if (attackCount > 1)
-                {
-                    GUILayout.Space(ActionGap);
-                    DrawLargeActionButton(
-                        "무작위 공격",
-                        new Color(0.78f, 0.86f, 1f, 1f),
-                        buttonWidth,
-                        preview.PlayRandomAttack);
-                }
-
+                DrawLargeActionButton("이동 모션", Color.white, utilityButtonWidth, preview.PlayMove, 42f);
                 GUILayout.Space(ActionGap);
-                DrawLargeActionButton("사망 모션", new Color(0.94f, 0.84f, 0.84f, 1f), buttonWidth, preview.PlayDeath);
+                DrawLargeActionButton(
+                    "사망 모션",
+                    new Color(0.94f, 0.84f, 0.84f, 1f),
+                    utilityButtonWidth,
+                    preview.PlayDeath,
+                    42f);
             }
 
-            if (needsScroll)
+            GUILayout.Space(6f);
+            var attackCount = draft.Attacks.Count;
+            if (attackCount <= 0)
             {
-                EditorGUILayout.EndScrollView();
+                GUILayout.Label("공격 모션이 없습니다.", centeredLabelStyle, GUILayout.Height(42f));
+                return;
+            }
+
+            const float minimumAttackButtonWidth = 96f;
+            const float randomButtonSize = 44f;
+            var showRandomButton = attackCount >= 2;
+            var randomButtonSpace = showRandomButton ? randomButtonSize + ActionGap : 0f;
+            var attackRowWidth = Mathf.Max(1f, availableWidth - randomButtonSpace);
+            var fittedAttackWidth = (attackRowWidth - ActionGap * (attackCount - 1)) / attackCount;
+            var needsScroll = fittedAttackWidth < minimumAttackButtonWidth;
+            var attackButtonWidth = needsScroll ? minimumAttackButtonWidth : fittedAttackWidth;
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                using (new EditorGUILayout.VerticalScope(GUILayout.Width(attackRowWidth)))
+                {
+                    if (needsScroll)
+                    {
+                        animationButtonScroll.y = 0f;
+                        animationButtonScroll = EditorGUILayout.BeginScrollView(
+                            animationButtonScroll,
+                            true,
+                            false,
+                            GUILayout.Height(56f));
+                    }
+
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        for (var index = 0; index < attackCount; index++)
+                        {
+                            if (index > 0)
+                            {
+                                GUILayout.Space(ActionGap);
+                            }
+
+                            var selectedIndex = index;
+                            DrawLargeActionButton(
+                                $"공격 {index + 1:00} 재생",
+                                new Color(0.72f, 0.84f, 1f, 1f),
+                                attackButtonWidth,
+                                () => preview.PlayAttack(selectedIndex),
+                                44f);
+                        }
+                    }
+
+                    if (needsScroll)
+                    {
+                        EditorGUILayout.EndScrollView();
+                    }
+                }
+
+                if (showRandomButton)
+                {
+                    GUILayout.Space(ActionGap);
+                    if (GUILayout.Button(
+                            new GUIContent("랜덤\n재생", "등록된 공격 중 하나를 무작위로 재생"),
+                            actionButtonStyle,
+                            GUILayout.Width(randomButtonSize),
+                            GUILayout.Height(randomButtonSize)))
+                    {
+                        preview.PlayRandomAttack();
+                        Repaint();
+                    }
+                }
             }
         }
 
         private void DrawCommandActionRow(MonsterMakerValidationReport currentReport)
         {
-            var rowRect = GUILayoutUtility.GetRect(
+            var statusRect = GUILayoutUtility.GetRect(
                 1f,
-                42f,
+                30f,
                 GUILayout.ExpandWidth(true),
-                GUILayout.Height(42f));
-            const float sectionGap = 10f;
-            const float publishGap = 8f;
-            var totalGap = ActionGap + sectionGap * 2f + publishGap;
-            var availableWidth = Mathf.Max(1f, rowRect.width - totalGap);
-
-            const float pauseWeight = 1.1f;
-            const float restartWeight = 1.2f;
-            const float statusWeight = 2f;
-            const float validateWeight = 1.5f;
-            const float publishWeight = 2.7f;
-            const float totalWeight = pauseWeight + restartWeight + statusWeight + validateWeight + publishWeight;
-
-            var x = rowRect.x;
-            var pauseWidth = availableWidth * pauseWeight / totalWeight;
-            var restartWidth = availableWidth * restartWeight / totalWeight;
-            var statusWidth = availableWidth * statusWeight / totalWeight;
-            var validateWidth = availableWidth * validateWeight / totalWeight;
-            var publishWidth = availableWidth - pauseWidth - restartWidth - statusWidth - validateWidth;
-
-            DrawRectActionButton(
-                new Rect(x, rowRect.y, pauseWidth, rowRect.height),
-                preview.IsPlaying ? "일시정지" : "계속 재생",
-                Color.white,
-                actionButtonStyle,
-                TogglePreviewPause);
-            x += pauseWidth + ActionGap;
-            DrawRectActionButton(
-                new Rect(x, rowRect.y, restartWidth, rowRect.height),
-                "처음부터 다시",
-                Color.white,
-                actionButtonStyle,
-                RestartPreview);
-            x += restartWidth + sectionGap;
-
+                GUILayout.Height(30f));
             GUI.Label(
-                new Rect(x, rowRect.y, statusWidth, rowRect.height),
+                statusRect,
                 BuildCommandStatus(currentReport),
                 actionStatusStyle);
-            x += statusWidth + sectionGap;
+
+            GUILayout.Space(5f);
+            var publishRect = GUILayoutUtility.GetRect(
+                1f,
+                48f,
+                GUILayout.ExpandWidth(true),
+                GUILayout.Height(48f));
+            var validateWidth = Mathf.Clamp(publishRect.width * 0.34f, 168f, 230f);
+            var publishWidth = Mathf.Max(1f, publishRect.width - validateWidth - 8f);
 
             DrawRectActionButton(
-                new Rect(x, rowRect.y, validateWidth, rowRect.height),
+                new Rect(publishRect.x, publishRect.y, validateWidth, publishRect.height),
                 "1. 입력 검증",
                 new Color(1f, 0.88f, 0.62f, 1f),
                 actionButtonStyle,
                 ValidateDraft);
-            x += validateWidth + publishGap;
 
             using (new EditorGUI.DisabledScope(currentReport.HasErrors))
             {
@@ -1784,7 +2051,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     ? "2. 수정 내용 게임 반영"
                     : "2. 신규 몬스터 게임 편입";
                 DrawRectActionButton(
-                    new Rect(x, rowRect.y, publishWidth, rowRect.height),
+                    new Rect(publishRect.x + validateWidth + 8f, publishRect.y, publishWidth, publishRect.height),
                     actionLabel,
                     currentReport.HasErrors ? Color.white : new Color(0.68f, 0.82f, 1f, 1f),
                     actionPrimaryButtonStyle,
@@ -1792,11 +2059,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
         }
 
-        private void DrawLargeActionButton(string label, Color tint, float width, Action action)
+        private void DrawLargeActionButton(string label, Color tint, float width, Action action, float height = 40f)
         {
             var previousBackground = GUI.backgroundColor;
             GUI.backgroundColor = tint;
-            if (GUILayout.Button(label, actionButtonStyle, GUILayout.Width(width), GUILayout.Height(40f)))
+            if (GUILayout.Button(label, actionButtonStyle, GUILayout.Width(width), GUILayout.Height(height)))
             {
                 action?.Invoke();
                 Repaint();
@@ -1919,7 +2186,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 {
                     DrawUsageStep("1", "Draft를 준비합니다", "새 Monster는 [새 Draft], 기존 Monster는 [기존 항목 열기]로 시작하고 작업 중 입력은 [Draft 저장]으로 보관합니다.");
                     DrawUsageStep("2", "이름과 모델을 넣습니다", "ID·표시 이름·등급·초상화와 프로젝트의 원본 프리팹·실제 Animator를 직접 지정합니다.");
-                    DrawUsageStep("3", "전투 기본값을 정합니다", "능력치, 타격 강도·피격 체급과 MainBattle 역할 AI를 정합니다. 여기서는 공격 모양이나 투사체 방식을 고르지 않습니다.");
+                    DrawUsageStep("3", "전투 기본값을 정합니다", "능력치, 타격 강도·피격 체급과 메인 전투 역할 AI를 정합니다. 여기서는 공격 모양이나 투사체 방식을 고르지 않습니다.");
                 }
 
                 using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox, GUILayout.MinWidth(220f), GUILayout.ExpandWidth(true)))
@@ -2092,10 +2359,17 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 passiveSkillPopups,
                 ref passiveSkillCategoryFilter,
                 "패시브 분류");
+            var previousPassive = passiveProperty.objectReferenceValue;
             DrawSkillPopup(
                 passiveProperty,
                 "범용 패시브",
                 passiveOptions);
+            var selectedPassive = passiveProperty.objectReferenceValue as GenericMonsterPassiveSkill;
+            if (!passiveBalanceEditor.TrySelect(selectedPassive))
+            {
+                passiveProperty.objectReferenceValue = previousPassive;
+            }
+            passiveBalanceEditor.Draw(monsterRarityCatalog, ref showPassiveBalanceSettings);
 
             var activeProperty = serializedDraft.FindProperty("rarityActiveSkill");
             if (rarity < MonsterRarity.Epic)
@@ -2700,7 +2974,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawMainBattleAiSection()
         {
-            DrawSectionHeader("5. MainBattle 역할 AI");
+            DrawSectionHeader("5. 메인 전투 역할 AI");
             var role = (MainBattleMonsterRole)DrawEnumProperty(
                 "mainBattleRole",
                 "전투 역할",
@@ -3056,6 +3330,33 @@ namespace ProjectMT.EditorTools.MonsterMaker
             Repaint();
         }
 
+        private void SetCatalogSortMode(MonsterMakerCatalogSortMode sortMode)
+        {
+            if (catalogSortMode == sortMode)
+            {
+                return;
+            }
+
+            catalogSortMode = sortMode;
+            catalogScroll = Vector2.zero;
+            RebuildCatalogDisplayOrder();
+            Repaint();
+        }
+
+        private void RebuildCatalogDisplayOrder()
+        {
+            displayedCatalogDefinitions = catalogSortMode == MonsterMakerCatalogSortMode.Rarity
+                ? catalogDefinitions
+                    .OrderByDescending(GetCatalogRaritySortValue)
+                    .ToArray()
+                : catalogDefinitions;
+        }
+
+        private int GetCatalogRaritySortValue(Shared.Unit.MonsterDefinition definition)
+        {
+            return TryGetCatalogRarity(definition, out var rarity) ? (int)rarity : -1;
+        }
+
         private void ReloadCatalogEntries()
         {
             monsterCatalog = AssetDatabase.LoadAssetAtPath<Shared.Unit.MonsterCatalog>(
@@ -3080,6 +3381,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     catalogRaritiesById[definition.MonsterId] = rarity;
                 }
             }
+
+            RebuildCatalogDisplayOrder();
 
             if (draft != null)
             {
@@ -3546,7 +3849,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (columnStyle != null && workspacePanelStyle != null && actionDockStyle != null && actionButtonStyle != null &&
                 actionPrimaryButtonStyle != null && actionStatusStyle != null && usageLeadStyle != null &&
                 usageStepTitleStyle != null && usageBodyStyle != null && usageCautionStyle != null &&
-                catalogRowTitleStyle != null && catalogRowMetaStyle != null && catalogRowStateStyle != null)
+                catalogRowTitleStyle != null && catalogRowMetaStyle != null && catalogRowStateStyle != null &&
+                profileNameStyle != null && profileBadgeStyle != null && profileSectionStyle != null &&
+                profileKeyStyle != null && profileValueStyle != null)
             {
                 return;
             }
@@ -3708,6 +4013,50 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 fontStyle = FontStyle.Bold,
                 clipping = TextClipping.Clip,
                 normal = { textColor = new Color(0.5f, 0.73f, 1f, 1f) }
+            };
+
+            profileNameStyle = new GUIStyle(EditorStyles.whiteBoldLabel)
+            {
+                fontSize = 16,
+                alignment = TextAnchor.MiddleLeft,
+                clipping = TextClipping.Clip,
+                normal = { textColor = new Color(0.95f, 0.97f, 1f, 1f) }
+            };
+
+            profileBadgeStyle = new GUIStyle(EditorStyles.whiteBoldLabel)
+            {
+                fontSize = 11,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = Color.white },
+                hover = { textColor = Color.white },
+                active = { textColor = Color.white },
+                focused = { textColor = Color.white }
+            };
+
+            profileSectionStyle = new GUIStyle(EditorStyles.whiteBoldLabel)
+            {
+                fontSize = 11,
+                alignment = TextAnchor.MiddleLeft,
+                normal = { textColor = new Color(0.68f, 0.84f, 1f, 1f) }
+            };
+
+            profileKeyStyle = new GUIStyle(EditorStyles.whiteLabel)
+            {
+                fontSize = 11,
+                alignment = TextAnchor.MiddleLeft,
+                clipping = TextClipping.Clip,
+                padding = new RectOffset(5, 3, 0, 0),
+                normal = { textColor = new Color(0.82f, 0.87f, 0.94f, 1f) }
+            };
+
+            profileValueStyle = new GUIStyle(EditorStyles.whiteLabel)
+            {
+                fontSize = 11,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleLeft,
+                clipping = TextClipping.Clip,
+                padding = new RectOffset(3, 3, 0, 0),
+                normal = { textColor = new Color(0.97f, 0.98f, 1f, 1f) }
             };
         }
     }

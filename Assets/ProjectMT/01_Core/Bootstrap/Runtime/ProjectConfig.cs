@@ -18,6 +18,7 @@ namespace ProjectMT.Bootstrap
         [SerializeField] private SceneCatalog sceneCatalog; // 정식 씬 목록
         [SerializeField] private ContentCatalog contentCatalog; // 등록 콘텐츠 목록
         [SerializeField] private MonsterCatalog monsterCatalog; // 몬스터 Definition 목록
+        [SerializeField] private MonsterRarityCatalog monsterRarityCatalog; // 몬스터 등급·스킬 배정
         [SerializeField] private ItemCatalog itemCatalog; // 일반 아이템 Definition 목록
         [SerializeField] private CombatStatConfig combatStatConfig; // 전투 능력치 상한·기본값
         [SerializeField] private CombatTuningConfig combatTuningConfig; // 타격감·MainBattle 거리 튜닝
@@ -32,6 +33,7 @@ namespace ProjectMT.Bootstrap
         public SceneCatalog SceneCatalog => sceneCatalog;
         public ContentCatalog ContentCatalog => contentCatalog;
         public MonsterCatalog MonsterCatalog => monsterCatalog;
+        public MonsterRarityCatalog MonsterRarityCatalog => monsterRarityCatalog;
         public ItemCatalog ItemCatalog => itemCatalog;
         public CombatStatConfig CombatStatConfig => combatStatConfig;
         public CombatTuningConfig CombatTuningConfig => combatTuningConfig;
@@ -59,6 +61,11 @@ namespace ProjectMT.Bootstrap
         public void EditorConfigureMonsterCatalog(MonsterCatalog catalog)
         {
             monsterCatalog = catalog;
+        }
+
+        public void EditorConfigureMonsterRarityCatalog(MonsterRarityCatalog catalog)
+        {
+            monsterRarityCatalog = catalog;
         }
 
         public void EditorConfigureItemCatalog(ItemCatalog catalog)

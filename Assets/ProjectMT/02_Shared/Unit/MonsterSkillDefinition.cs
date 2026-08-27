@@ -132,7 +132,14 @@ namespace ProjectMT.Shared.Unit
         DamageShare,
         Dispel,
         Summon,
-        Revive
+        Revive,
+        OutgoingDamageRandomization
+    }
+
+    public enum MonsterSkillMagnitudeMode
+    {
+        Fixed,
+        RandomRange
     }
 
     public enum MonsterSkillValueSource
@@ -232,8 +239,11 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private MonsterSkillEffectType type;
         [SerializeField] private MonsterSkillValueSource valueSource = MonsterSkillValueSource.AttackPowerRatio;
         [SerializeField, Min(0f)] private float magnitude = 1f;
+        [SerializeField] private MonsterSkillMagnitudeMode magnitudeMode;
+        [SerializeField, Min(0f)] private float maximumMagnitude = 1f;
         [SerializeField, Min(0f)] private float duration;
         [SerializeField, Min(0f)] private float delay;
+        [SerializeField, Min(0f)] private float repeatInterval;
         [SerializeField, Min(0f)] private float radius;
         [SerializeField, Min(1)] private int maxTargets = 1;
         [SerializeField, Min(1)] private int repeatCount = 1;
@@ -243,8 +253,13 @@ namespace ProjectMT.Shared.Unit
         public MonsterSkillEffectType Type => type;
         public MonsterSkillValueSource ValueSource => valueSource;
         public float Magnitude => Mathf.Max(0f, magnitude);
+        public MonsterSkillMagnitudeMode MagnitudeMode => magnitudeMode;
+        public float MaximumMagnitude => magnitudeMode == MonsterSkillMagnitudeMode.RandomRange
+            ? Mathf.Max(Magnitude, maximumMagnitude)
+            : Magnitude;
         public float Duration => Mathf.Max(0f, duration);
         public float Delay => Mathf.Max(0f, delay);
+        public float RepeatInterval => Mathf.Max(0f, repeatInterval);
         public float Radius => Mathf.Max(0f, radius);
         public int MaxTargets => Mathf.Max(1, maxTargets);
         public int RepeatCount => Mathf.Max(1, repeatCount);
@@ -255,10 +270,13 @@ namespace ProjectMT.Shared.Unit
             if (string.IsNullOrWhiteSpace(EffectId) ||
                 !Enum.IsDefined(typeof(MonsterSkillEffectType), type) ||
                 !Enum.IsDefined(typeof(MonsterSkillValueSource), valueSource) ||
+                !Enum.IsDefined(typeof(MonsterSkillMagnitudeMode), magnitudeMode) ||
                 !Enum.IsDefined(typeof(MonsterSkillStackPolicy), stackPolicy) ||
                 float.IsNaN(magnitude) || float.IsInfinity(magnitude) || magnitude < 0f ||
+                float.IsNaN(maximumMagnitude) || float.IsInfinity(maximumMagnitude) || maximumMagnitude < 0f ||
                 float.IsNaN(duration) || float.IsInfinity(duration) || duration < 0f ||
                 float.IsNaN(delay) || float.IsInfinity(delay) || delay < 0f ||
+                float.IsNaN(repeatInterval) || float.IsInfinity(repeatInterval) || repeatInterval < 0f ||
                 float.IsNaN(radius) || float.IsInfinity(radius) || radius < 0f ||
                 maxTargets < 1 || repeatCount < 1)
             {
@@ -266,8 +284,21 @@ namespace ProjectMT.Shared.Unit
                 return false;
             }
 
+            if (magnitudeMode == MonsterSkillMagnitudeMode.RandomRange && maximumMagnitude < magnitude)
+            {
+                error = $"Monster skill random magnitude maximum is below its minimum. Effect={EffectId}";
+                return false;
+            }
+
             error = string.Empty;
             return true;
+        }
+
+        public float ResolveMagnitude(float random01)
+        {
+            return magnitudeMode == MonsterSkillMagnitudeMode.RandomRange
+                ? Mathf.Lerp(Magnitude, MaximumMagnitude, Mathf.Clamp01(random01))
+                : Magnitude;
         }
 
 #if UNITY_EDITOR
@@ -281,14 +312,20 @@ namespace ProjectMT.Shared.Unit
             int targetLimit = 1,
             MonsterSkillStackPolicy policy = MonsterSkillStackPolicy.RefreshDuration,
             int repeats = 1,
-            float startDelay = 0f)
+            float startDelay = 0f,
+            MonsterSkillMagnitudeMode amountMode = MonsterSkillMagnitudeMode.Fixed,
+            float maximumAmount = -1f,
+            float hitInterval = 0f)
         {
             effectId = id?.Trim();
             type = effectType;
             valueSource = source;
             magnitude = Mathf.Max(0f, amount);
+            magnitudeMode = amountMode;
+            maximumMagnitude = maximumAmount < 0f ? magnitude : Mathf.Max(0f, maximumAmount);
             duration = Mathf.Max(0f, effectDuration);
             delay = Mathf.Max(0f, startDelay);
+            repeatInterval = Mathf.Max(0f, hitInterval);
             radius = Mathf.Max(0f, effectRadius);
             maxTargets = Mathf.Max(1, targetLimit);
             repeatCount = Mathf.Max(1, repeats);
@@ -581,8 +618,14 @@ namespace ProjectMT.Shared.Unit
     public abstract class MonsterActiveSkill : MonsterSkillDefinitionBase
     {
         [SerializeField, Min(1)] private int energyCost = 1000;
+        [SerializeField, Min(0f)] private float energyPerSecond = 40f;
+        [SerializeField, Min(0f)] private float energyPerBasicAttackHit = 120f;
+        [SerializeField, Min(0f)] private float energyPerDamageReceived = 80f;
 
         public int EnergyCost => Mathf.Max(1, energyCost);
+        public float EnergyPerSecond => Mathf.Max(0f, energyPerSecond);
+        public float EnergyPerBasicAttackHit => Mathf.Max(0f, energyPerBasicAttackHit);
+        public float EnergyPerDamageReceived => Mathf.Max(0f, energyPerDamageReceived);
         public abstract MonsterActiveExecutionKind ExecutionKind { get; }
 
         public override bool TryValidate(out string error)
@@ -592,9 +635,14 @@ namespace ProjectMT.Shared.Unit
                 return false;
             }
 
-            if (energyCost < 1 || Recipe.Trigger != MonsterSkillTriggerType.EnergyMax)
+            if (energyCost < 1 || Recipe.Trigger != MonsterSkillTriggerType.EnergyMax ||
+                float.IsNaN(energyPerSecond) || float.IsInfinity(energyPerSecond) || energyPerSecond < 0f ||
+                float.IsNaN(energyPerBasicAttackHit) || float.IsInfinity(energyPerBasicAttackHit) ||
+                energyPerBasicAttackHit < 0f ||
+                float.IsNaN(energyPerDamageReceived) || float.IsInfinity(energyPerDamageReceived) ||
+                energyPerDamageReceived < 0f)
             {
-                error = $"Monster active skill requires positive energy cost and EnergyMax trigger. Skill={SkillId}";
+                error = $"Monster active skill requires valid energy rules and EnergyMax trigger. Skill={SkillId}";
                 return false;
             }
 
@@ -606,6 +654,13 @@ namespace ProjectMT.Shared.Unit
         protected void EditorSetEnergyCost(int value)
         {
             energyCost = Mathf.Max(1, value);
+        }
+
+        protected void EditorSetEnergyGeneration(float perSecond, float perBasicAttackHit, float perDamageReceived)
+        {
+            energyPerSecond = Mathf.Max(0f, perSecond);
+            energyPerBasicAttackHit = Mathf.Max(0f, perBasicAttackHit);
+            energyPerDamageReceived = Mathf.Max(0f, perDamageReceived);
         }
 #endif
     }

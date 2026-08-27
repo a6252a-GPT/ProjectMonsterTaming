@@ -80,6 +80,9 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private MonsterRuntimeAssetSet runtimeAssetSet; // 현재 Provider 해석 결과
         [SerializeField] private string[] unlockedAbilityIds; // 현재 돌파에서 해금된 2·4 Ability
         [SerializeField] private string displayName; // 콘텐츠 UI에 사용할 확정 이름
+        [SerializeField] private MonsterPassiveSkill passiveSkill; // 등급 카탈로그의 고유 패시브
+        [SerializeField] private MonsterActiveSkill activeSkill; // 등급 카탈로그의 고유 액티브
+        [SerializeField, Min(1)] private int level = 1; // 패시브 단계 계산에 사용하는 실제 몬스터 레벨
 
         public BattleUnitSnapshot(
             string unitId,
@@ -88,7 +91,10 @@ namespace ProjectMT.Shared.Unit
             string runtimeAssetKey = null,
             MonsterRuntimeAssetSet runtimeAssetSet = null,
             string[] unlockedAbilityIds = null,
-            string displayName = null)
+            string displayName = null,
+            MonsterPassiveSkill passiveSkill = null,
+            MonsterActiveSkill activeSkill = null,
+            int level = 1)
         {
             this.unitId = unitId;
             this.stats = stats;
@@ -97,6 +103,9 @@ namespace ProjectMT.Shared.Unit
             this.runtimeAssetSet = runtimeAssetSet;
             this.unlockedAbilityIds = unlockedAbilityIds ?? Array.Empty<string>();
             this.displayName = string.IsNullOrWhiteSpace(displayName) ? this.unitId : displayName.Trim();
+            this.passiveSkill = passiveSkill;
+            this.activeSkill = activeSkill;
+            this.level = Mathf.Max(1, level);
         }
 
         public string UnitId => unitId;
@@ -106,6 +115,9 @@ namespace ProjectMT.Shared.Unit
         public MonsterRuntimeAssetSet RuntimeAssetSet => runtimeAssetSet;
         public string[] UnlockedAbilityIds => unlockedAbilityIds ?? Array.Empty<string>();
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? UnitId : displayName;
+        public MonsterPassiveSkill PassiveSkill => passiveSkill;
+        public MonsterActiveSkill ActiveSkill => activeSkill;
+        public int Level => Mathf.Max(1, level);
     }
 
     [Serializable]

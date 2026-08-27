@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: "\uB77C\uCF54"
   rarity: 1
   portrait: {fileID: 21300000, guid: f019a582f2adc8241b56e7b95856919e, type: 3}
-  skillLoadoutConfigured: 0
-  rarityPassiveSkill: {fileID: 0}
+  skillLoadoutConfigured: 1
+  rarityPassiveSkill: {fileID: 11400000, guid: 4e530212f094c5a41a609c41baf5a2b3, type: 2}
   rarityActiveSkill: {fileID: 0}
   productionMemo: Notion monster batch / DragonSpark
   vendorPrefab: {fileID: 4695351021120890131, guid: 43532f07dad00df48bda2f336301f7f0, type: 3}

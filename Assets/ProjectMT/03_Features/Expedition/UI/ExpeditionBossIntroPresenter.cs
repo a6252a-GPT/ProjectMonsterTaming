@@ -5,7 +5,7 @@ using UnityEngine;
 namespace ProjectMT.Features.Expedition
 {
     [DisallowMultipleComponent]
-    public sealed class ExpeditionBossIntroPresenter : MonoBehaviour // 10단위 보스 등장 전 경고 연출
+    public sealed class ExpeditionBossIntroPresenter : MonoBehaviour // 5단위 보스 등장 전 경고 연출
     {
         [SerializeField] private GameObject displayRoot;
         [SerializeField] private CanvasGroup canvasGroup;

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace ProjectMT.Features.Expedition
 {
     [DisallowMultipleComponent]
-    public sealed class ExpeditionBossHudPresenter : MonoBehaviour // 10단위 원정대 보스 상단 고정 바
+    public sealed class ExpeditionBossHudPresenter : MonoBehaviour // 5단위 원정대 보스 상단 고정 바
     {
         [SerializeField] private Text titleText;
         [SerializeField] private Text healthText;

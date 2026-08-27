@@ -20,7 +20,7 @@ MonoBehaviour:
   bodyHeight: 1
   selectionRadius: 0.65
   hpBarHeight: 1.2
-  animatorPath: Visual/Bear02
+  animatorPath: Visual
   attackOriginPath: AttackOrigin
   hitCenterPath: HitCenter
   rigMode: 0

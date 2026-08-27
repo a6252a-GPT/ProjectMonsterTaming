@@ -86,12 +86,17 @@ namespace ProjectMT.Features.Expedition
         [SerializeField] private EnemyAppearanceGroup meleeAppearance = EnemyAppearanceGroup.Peasant;
         [SerializeField] private EnemyAppearanceGroup rangedAppearance = EnemyAppearanceGroup.Peasant;
         [SerializeField, Min(0)] private int rangedEveryUnits;
+        [SerializeField] private ExpeditionSpawnPoolEntry[] spawnPool = Array.Empty<ExpeditionSpawnPoolEntry>();
+        [SerializeField, Range(0, 4)] private int ninjaCount;
         [SerializeField] private ExpeditionWaveDefinition[] waves = Array.Empty<ExpeditionWaveDefinition>();
 
         public string DefinitionId => definitionId?.Trim() ?? string.Empty;
         public int MinimumStage => Mathf.Max(1, minimumStage);
         public int MaximumStage => Mathf.Max(0, maximumStage);
         public int WaveCount => waves?.Length ?? 0;
+        public int NinjaCount => Mathf.Clamp(ninjaCount, 0, 4);
+        public IReadOnlyList<ExpeditionSpawnPoolEntry> SpawnPool =>
+            spawnPool ?? Array.Empty<ExpeditionSpawnPoolEntry>();
 
         public bool Contains(int stage)
         {
@@ -122,6 +127,109 @@ namespace ProjectMT.Features.Expedition
             return ranged ? rangedAppearance : meleeAppearance;
         }
 
+        public ExpeditionEnemySpawn ResolveSpawn(
+            int stage,
+            int wave,
+            int unitIndex,
+            int enemyCount,
+            bool bossStage,
+            int randomSeed)
+        {
+            var boss = bossStage && wave == WaveCount && unitIndex == Mathf.Max(0, enemyCount - 1);
+            var ninjaInWave = GetNinjaCountForWave(wave);
+            var eligibleSlots = Mathf.Max(0, enemyCount - (boss ? 1 : 0));
+            ninjaInWave = Mathf.Min(ninjaInWave, eligibleSlots);
+            if (!boss && unitIndex < ninjaInWave)
+            {
+                return new ExpeditionEnemySpawn(
+                    EnemyAppearanceGroup.Ninja,
+                    ExpeditionEnemyRole.Flanker,
+                    false,
+                    GetNinjaCountBeforeWave(wave) + unitIndex);
+            }
+
+            var candidates = spawnPool ?? Array.Empty<ExpeditionSpawnPoolEntry>();
+            var totalWeight = 0;
+            for (var index = 0; index < candidates.Length; index++)
+            {
+                if (candidates[index] != null && candidates[index].Role != ExpeditionEnemyRole.Flanker)
+                {
+                    totalWeight += candidates[index].Weight;
+                }
+            }
+
+            if (totalWeight > 0)
+            {
+                var fallbackSeed = stage * 397 ^ wave * 31 ^ unitIndex;
+                var random = new System.Random(randomSeed == 0 ? fallbackSeed : randomSeed);
+                var roll = random.Next(totalWeight);
+                for (var index = 0; index < candidates.Length; index++)
+                {
+                    var candidate = candidates[index];
+                    if (candidate == null || candidate.Role == ExpeditionEnemyRole.Flanker)
+                    {
+                        continue;
+                    }
+
+                    if (roll < candidate.Weight)
+                    {
+                        return new ExpeditionEnemySpawn(candidate.Appearance, candidate.Role, boss);
+                    }
+
+                    roll -= candidate.Weight;
+                }
+            }
+
+            var ranged = IsRangedSlot(unitIndex);
+            return new ExpeditionEnemySpawn(
+                ResolveAppearance(ranged),
+                ranged ? ExpeditionEnemyRole.Ranged : ExpeditionEnemyRole.Melee,
+                boss);
+        }
+
+        public int GetNinjaCountForWave(int wave)
+        {
+            if (NinjaCount <= 0 || WaveCount <= 0 || wave <= 0 || wave > WaveCount)
+            {
+                return 0;
+            }
+
+            if (NinjaCount <= WaveCount)
+            {
+                if (NinjaCount == 1)
+                {
+                    return wave == (WaveCount + 1) / 2 ? 1 : 0;
+                }
+
+                if (NinjaCount == 2 && WaveCount == 3)
+                {
+                    return wave == 1 || wave == 3 ? 1 : 0;
+                }
+
+                return wave <= NinjaCount ? 1 : 0;
+            }
+
+            var count = NinjaCount / WaveCount;
+            var remainder = NinjaCount % WaveCount;
+            if (remainder > 0 && wave > WaveCount - remainder)
+            {
+                count++;
+            }
+
+            return count;
+        }
+
+        private int GetNinjaCountBeforeWave(int wave)
+        {
+            var count = 0;
+            for (var previous = 1; previous < wave; previous++)
+            {
+                count += GetNinjaCountForWave(previous);
+            }
+
+            return count;
+        }
+
 #if UNITY_EDITOR
         public static ExpeditionStageDefinition EditorCreate(
             string id,
@@ -140,6 +248,25 @@ namespace ProjectMT.Features.Expedition
                 meleeAppearance = melee,
                 rangedAppearance = ranged,
                 rangedEveryUnits = Mathf.Max(0, rangedInterval),
+                waves = waveDefinitions ?? Array.Empty<ExpeditionWaveDefinition>()
+            };
+        }
+
+        public static ExpeditionStageDefinition EditorCreate(
+            string id,
+            int minimum,
+            int maximum,
+            int ninjas,
+            ExpeditionSpawnPoolEntry[] pool,
+            params ExpeditionWaveDefinition[] waveDefinitions)
+        {
+            return new ExpeditionStageDefinition
+            {
+                definitionId = id?.Trim(),
+                minimumStage = Mathf.Max(1, minimum),
+                maximumStage = Mathf.Max(0, maximum),
+                spawnPool = pool ?? Array.Empty<ExpeditionSpawnPoolEntry>(),
+                ninjaCount = Mathf.Clamp(ninjas, 0, 4),
                 waves = waveDefinitions ?? Array.Empty<ExpeditionWaveDefinition>()
             };
         }

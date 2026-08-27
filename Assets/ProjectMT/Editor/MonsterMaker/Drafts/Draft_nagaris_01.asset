@@ -1,0 +1,447 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6244864e6a60a6d44ae02a54e0121ea2, type: 3}
+  m_Name: Draft_nagaris_01
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::ProjectMT.EditorTools.MonsterMaker.MonsterMakerDraft
+  monsterId: nagaris_01
+  displayName: "\uB098\uAC00\uB9AC\uC2A4"
+  rarity: 3
+  portrait: {fileID: 21300000, guid: 1e2e1196198d4a945b658d9c166d7825, type: 3}
+  skillLoadoutConfigured: 0
+  rarityPassiveSkill: {fileID: 0}
+  rarityActiveSkill: {fileID: 0}
+  productionMemo: "2026-08-26 \uC2E0\uADDC \uD6C4\uBCF4 \uC784\uC2DC \uD3B8\uC785.
+    \uB4F1\uAE09\xB7\uC2A4\uD0EF\xB7\uAE30\uBCF8\uACF5\uACA9\xB7\uACF5\uACA9 \uBAA8\uC158\uC740
+    \uBBF8\uB9AC\uBCF4\uAE30 \uD655\uC778 \uD6C4 \uC7AC\uC870\uC815 \uC608\uC815."
+  vendorPrefab: {fileID: 5366632779147598302, guid: fdacaae60b920e24fa18970e6f402660, type: 3}
+  animatorSource: {fileID: 5366632779156957716, guid: fdacaae60b920e24fa18970e6f402660, type: 3}
+  visualScale: {x: 0.5, y: 0.5, z: 0.5}
+  visualLocalPosition: {x: 0, y: 0, z: 0}
+  groundOffset: 0.28
+  facingYawOffset: 0
+  bodyRadius: 0.84
+  bodyHeight: 1.4
+  selectionRadius: 1.02
+  hpBarHeight: 1.75
+  attackOriginPath: AttackOrigin
+  hitCenterPath: HitCenter
+  attackOriginLocalPosition: {x: 0, y: 0.77, z: 0.756}
+  hitCenterLocalPosition: {x: 0, y: 0.7, z: 0}
+  rigMode: 0
+  previewScale: 1
+  vfxScale: 0.55
+  maxHealth: 165
+  attackPower: 22
+  defense: 8
+  attackSpeed: 0.9
+  moveSpeed: 2.5
+  attackRange: 4.2
+  impactStrength: 2
+  reactionWeight: 2
+  mainBattleRole: 4
+  mainBattleTargetPriority: 2
+  mainBattlePreferredRangeRatio: 0.9
+  mainBattleRetreatRangeRatio: 0.55
+  mainBattleRetargetInterval: 0.2
+  idleClip: {fileID: 7400000, guid: 583be27c36686204b8d2504c0bad3009, type: 3}
+  idleSpeed: 1
+  moveClip: {fileID: 7400000, guid: 9949cfe85d758844da2f9d94933ecb6d, type: 3}
+  movePlaybackSpeed: 1
+  attacks:
+  - motionId: attack01
+    clip: {fileID: 7400000, guid: bad6df9d5aef9ef4780dfc8042f918fb, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.06
+    weight: 1
+    preventImmediateRepeat: 1
+    attackStartFeedback:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 0
+    markers:
+    - normalizedTime: 0.5
+      powerRatio: 1
+      socketOverride: 
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 0
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 0
+  - motionId: attack02
+    clip: {fileID: 7400000, guid: 8e303ee159641e0499de84abfdc443b4, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.06
+    weight: 1
+    preventImmediateRepeat: 1
+    attackStartFeedback:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 0
+    markers:
+    - normalizedTime: 0.5
+      powerRatio: 1
+      socketOverride: 
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 0
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 0
+  - motionId: attack03
+    clip: {fileID: 7400000, guid: 066887aa76046b943b80e0f547b58437, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.06
+    weight: 1
+    preventImmediateRepeat: 1
+    attackStartFeedback:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 0
+    markers:
+    - normalizedTime: 0.5
+      powerRatio: 1
+      socketOverride: 
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 0
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 0
+  - motionId: attack04
+    clip: {fileID: 7400000, guid: 4e836f679dda78e4ea349c5f7821b275, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.06
+    weight: 1
+    preventImmediateRepeat: 1
+    attackStartFeedback:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 0
+    markers:
+    - normalizedTime: 0.5
+      powerRatio: 1
+      socketOverride: 
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 0
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 0
+  - motionId: attack05
+    clip: {fileID: 7400000, guid: 1111d01b912c9134a943a1d48853974f, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.06
+    weight: 1
+    preventImmediateRepeat: 1
+    attackStartFeedback:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 0
+    markers:
+    - normalizedTime: 0.5
+      powerRatio: 1
+      socketOverride: 
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 0
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 0
+  - motionId: attack06
+    clip: {fileID: 7400000, guid: a263a846ee42f314a8ea2abe39af27b5, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.06
+    weight: 1
+    preventImmediateRepeat: 1
+    attackStartFeedback:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 0
+    markers:
+    - normalizedTime: 0.5
+      powerRatio: 1
+      socketOverride: 
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 0
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 0
+  - motionId: attack07
+    clip: {fileID: 7400000, guid: c5765bbc17d19c74d9001a3764bc91e7, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.06
+    weight: 1
+    preventImmediateRepeat: 1
+    attackStartFeedback:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 0
+    markers:
+    - normalizedTime: 0.5
+      powerRatio: 1
+      socketOverride: 
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 0
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 0
+  - motionId: attack08
+    clip: {fileID: 7400000, guid: 70bfd5b5f5e44b94ebbd089d7c0a7dc0, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.06
+    weight: 1
+    preventImmediateRepeat: 1
+    attackStartFeedback:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 0
+    markers:
+    - normalizedTime: 0.5
+      powerRatio: 1
+      socketOverride: 
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 0
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 0
+  - motionId: attack09
+    clip: {fileID: 7400000, guid: 02cfa42aa36ba4c438e9245a2616c168, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.06
+    weight: 1
+    preventImmediateRepeat: 1
+    attackStartFeedback:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 0
+    markers:
+    - normalizedTime: 0.5
+      powerRatio: 1
+      socketOverride: 
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 0
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 0
+  - motionId: attack10
+    clip: {fileID: 7400000, guid: 95884edc1eb9fea4d909b3e5022be306, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.06
+    weight: 1
+    preventImmediateRepeat: 1
+    attackStartFeedback:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 0
+    markers:
+    - normalizedTime: 0.5
+      powerRatio: 1
+      socketOverride: 
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 0
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 0
+  deathClip: {fileID: 7400000, guid: e30146bb890ddf64c8267f38e2c02975, type: 3}
+  deathSpeed: 1
+  combatType: 1
+  basicAttackProfile: {fileID: 11400000, guid: a63b1ce176fab754a967ce9b61539b10, type: 2}
+  meleeMode: 0
+  meleeAreaCenter: 1
+  meleeAreaRadius: 1.5
+  meleeMaxTargets: 4
+  rangedDeliveryMode: 0
+  projectileMode: 0
+  projectilePrefab: {fileID: 0}
+  projectileLaunchSound: {fileID: 0}
+  overrideProjectileTuning: 0
+  projectileSpeed: 9
+  projectileLifetime: 3
+  projectileHitRadius: 0.25
+  projectileMaxPiercingTargets: 2
+  projectileImpactRadius: 1.5
+  projectileMaxImpactTargets: 4
+  projectileLaunchRecoilDistance: 0
+  projectileLaunchRecoilDuration: 0.12
+  specialEffectId: 
+  specialTargetTeam: 0
+  specialRadius: 2
+  specialMaxTargets: 5
+  specialDuration: 3
+  specialStackPolicy: 0
+  specialModifier:
+    healthRate: 0
+    attackRate: 0
+    defenseRate: 0
+    attackSpeedRate: 0
+    moveSpeedRate: 0
+    attackRangeRate: 0
+  castleRaidAiPattern: 0
+  castleRaidSupportFocus: 0
+  castleRaidSupportRange: 5
+  castleRaidSupportCooldown: 4
+  castleRaidSupportDuration: 5
+  castleRaidHealRatio: 0.24
+  castleRaidAttackBuffRate: 0.2
+  castleRaidDefenseDamageMultiplier: 0.75
+  ascensionConfigured: 0
+  ascension1:
+    healthRate: 0
+    attackRate: 0
+    defenseRate: 0
+    attackSpeedRate: 0
+    moveSpeedRate: 0
+    attackRangeRate: 0
+  ascension2:
+    abilityId: 
+    displayName: 
+    mode: 0
+    triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
+  ascension3:
+    healthRate: 0
+    attackRate: 0
+    defenseRate: 0
+    attackSpeedRate: 0
+    moveSpeedRate: 0
+    attackRangeRate: 0
+  ascension4:
+    abilityId: 
+    displayName: 
+    mode: 0
+    triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
+  ascension5:
+    healthRate: 0
+    attackRate: 0
+    defenseRate: 0
+    attackSpeedRate: 0
+    moveSpeedRate: 0
+    attackRangeRate: 0
+  spawnFeedback:
+    sound: {fileID: 0}
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  attackStartFeedback:
+    sound: {fileID: 0}
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  attackMarkerFeedback:
+    sound: {fileID: 0}
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  hitFeedback:
+    sound: {fileID: 0}
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  deathFeedback:
+    sound: {fileID: 0}
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  specialFeedback:
+    sound: {fileID: 0}
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1

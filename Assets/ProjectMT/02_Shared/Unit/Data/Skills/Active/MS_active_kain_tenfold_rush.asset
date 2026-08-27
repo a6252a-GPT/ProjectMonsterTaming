@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a6d69d254fe2224f86750625f474cdf, type: 3}
+  m_Name: MS_active_kain_tenfold_rush
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.GenericMonsterActiveSkill
+  skillId: active_kain_tenfold_rush
+  displayName: "\uD150\uD3F4\uB4DC \uB7EC\uC2DC"
+  description: "\uD604\uC7AC \uB300\uC0C1 \uD558\uB098\uB97C \uBE60\uB974\uAC8C 10\uD68C
+    \uD0C0\uACA9\uD558\uBA70 \uB9E4 \uD0C0\uACA9 \uD53C\uD574\uAC00 1%~500% \uC0AC\uC774\uC5D0\uC11C
+    \uB3C5\uB9BD\uC801\uC73C\uB85C \uACB0\uC815\uB429\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  presentationTier: 4
+  recipe:
+    trigger: 11
+    triggerCount: 1
+    internalCooldown: 0
+    conditions: []
+    target: 1
+    delivery: 0
+    shape: 0
+    effects:
+    - effectId: kain_tenfold_damage
+      type: 0
+      valueSource: 1
+      magnitude: 0.01
+      magnitudeMode: 1
+      maximumMagnitude: 5
+      duration: 0
+      delay: 0
+      repeatInterval: 0.075
+      radius: 0
+      maxTargets: 1
+      repeatCount: 10
+      stackPolicy: 1
+  authoringEnabled: 1
+  energyCost: 1000
+  energyPerSecond: 70
+  energyPerBasicAttackHit: 180
+  energyPerDamageReceived: 120

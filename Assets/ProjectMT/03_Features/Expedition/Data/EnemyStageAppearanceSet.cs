@@ -12,10 +12,20 @@ namespace ProjectMT.Features.Expedition
         [SerializeField] private GameObject mageTier1Prefab;
         [SerializeField] private GameObject mageTier2Prefab;
         [SerializeField] private GameObject mageTier3Prefab;
+        [SerializeField] private GameObject femalePeasantPrefab;
+        [SerializeField] private GameObject upperKnightLowerPrefab;
+        [SerializeField] private GameObject upperKnightMidPrefab;
+        [SerializeField] private GameObject upperKnightHighPrefab;
+        [SerializeField] private GameObject upperKnightFinalPrefab;
+        [SerializeField] private GameObject ninjaPrefab;
 
         public bool IsConfigured => peasantPrefab != null &&
                                     knightTier1Prefab != null && knightTier2Prefab != null && knightTier3Prefab != null &&
-                                    mageTier1Prefab != null && mageTier2Prefab != null && mageTier3Prefab != null;
+                                    mageTier1Prefab != null && mageTier2Prefab != null && mageTier3Prefab != null &&
+                                    femalePeasantPrefab != null &&
+                                    upperKnightLowerPrefab != null && upperKnightMidPrefab != null &&
+                                    upperKnightHighPrefab != null && upperKnightFinalPrefab != null &&
+                                    ninjaPrefab != null;
 
         public bool IsRangedSlot(int stage, int unitIndex)
         {
@@ -57,6 +67,12 @@ namespace ProjectMT.Features.Expedition
                 EnemyAppearanceGroup.MageTier1 => mageTier1Prefab,
                 EnemyAppearanceGroup.MageTier2 => mageTier2Prefab,
                 EnemyAppearanceGroup.MageTier3 => mageTier3Prefab,
+                EnemyAppearanceGroup.FemalePeasant => femalePeasantPrefab,
+                EnemyAppearanceGroup.UpperKnightLower => upperKnightLowerPrefab,
+                EnemyAppearanceGroup.UpperKnightMid => upperKnightMidPrefab,
+                EnemyAppearanceGroup.UpperKnightHigh => upperKnightHighPrefab,
+                EnemyAppearanceGroup.UpperKnightFinal => upperKnightFinalPrefab,
+                EnemyAppearanceGroup.Ninja => ninjaPrefab,
                 _ => peasantPrefab
             };
         }

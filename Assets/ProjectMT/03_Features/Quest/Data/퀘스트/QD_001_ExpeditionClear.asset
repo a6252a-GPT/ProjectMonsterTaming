@@ -23,9 +23,10 @@ MonoBehaviour:
   prerequisiteQuestId:
     value: 
   reward: {fileID: 11400000, guid: 5d1afb12f9f16f54bb384544e1e6c15c, type: 2}
-  unlockTargets: 
-  unlockGateEnabled: 0
+  unlockTargets: 00000000
+  unlockGateEnabled: 1
   requiresActiveTracking: 0
   isRepeatingTemplate: 0
   repeatIncrement: 0
   repeatMaxOccurrences: 0
+  repeatPrerequisiteQuestIds: []

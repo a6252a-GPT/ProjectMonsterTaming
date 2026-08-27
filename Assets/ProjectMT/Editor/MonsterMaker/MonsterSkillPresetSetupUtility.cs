@@ -14,6 +14,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private static readonly HashSet<string> P0AuthoringSkillIds = new HashSet<string>(StringComparer.Ordinal)
         {
+            "passive_kain_duality",
             "passive_nth_hit_power",
             "passive_nth_hit_splash",
             "passive_low_hp_hunter",
@@ -24,6 +25,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             "passive_nth_hit_heal",
             "passive_team_haste_rhythm",
             "passive_armor_shred",
+            "active_kain_tenfold_rush",
             "active_cone_strike",
             "active_spin_attack",
             "active_execute_strike",
@@ -62,6 +64,19 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             var passives = new List<MonsterPassiveSkill>
             {
+                Passive(
+                    "passive_kain_duality", "듀얼리티",
+                    "전투 합류 후 6초 동안 매 피해 배율이 1%~500% 사이에서 독립적으로 결정됩니다.",
+                    Recipe(MonsterSkillTriggerType.CombatJoin, 1, MonsterSkillTargetType.Self,
+                        MonsterSkillDeliveryType.Aura, MonsterSkillShapeType.SelfCircle,
+                        Effect(
+                            "kain_duality_damage",
+                            MonsterSkillEffectType.OutgoingDamageRandomization,
+                            0.01f,
+                            duration: 6f,
+                            amountMode: MonsterSkillMagnitudeMode.RandomRange,
+                            maximumMagnitude: 5f)),
+                    MonsterSkillPresentationTier.Standard),
                 Passive(
                     "passive_nth_hit_power", "박자 강화", "N번째 기본 공격을 강화합니다.",
                     Recipe(MonsterSkillTriggerType.BasicAttackNthHit, 3, MonsterSkillTargetType.CurrentTarget,
@@ -269,6 +284,23 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             var actives = new List<MonsterActiveSkill>
             {
+                Active(
+                    "active_kain_tenfold_rush", "텐폴드 러시",
+                    "현재 대상 하나를 빠르게 10회 타격하며 매 타격 피해가 1%~500% 사이에서 독립적으로 결정됩니다.",
+                    Recipe(MonsterSkillTriggerType.EnergyMax, 1, MonsterSkillTargetType.CurrentTarget,
+                        MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
+                        Effect(
+                            "kain_tenfold_damage",
+                            MonsterSkillEffectType.Damage,
+                            0.01f,
+                            repeats: 10,
+                            amountMode: MonsterSkillMagnitudeMode.RandomRange,
+                            maximumMagnitude: 5f,
+                            repeatInterval: 0.075f)),
+                    MonsterSkillPresentationTier.Mythic,
+                    energyPerSecond: 70f,
+                    energyPerBasicAttackHit: 180f,
+                    energyPerDamageReceived: 120f),
                 Active(
                     "active_dash_line", "직선 돌진", "대상에게 돌진하며 경로의 적을 타격합니다.",
                     Recipe(MonsterSkillTriggerType.EnergyMax, 1, MonsterSkillTargetType.CurrentTarget,
@@ -494,10 +526,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
             string id,
             string title,
             string description,
-            MonsterSkillRecipe recipe)
+            MonsterSkillRecipe recipe,
+            MonsterSkillPresentationTier tier = MonsterSkillPresentationTier.Subtle)
         {
             var asset = GetOrCreate<GenericMonsterPassiveSkill>($"{PassiveRoot}/MP_{id}.asset");
-            asset.EditorConfigure(id, title, description, MonsterSkillPresentationTier.Subtle, recipe);
+            asset.EditorConfigure(id, title, description, tier, recipe);
             asset.EditorSetAuthoringEnabled(P0AuthoringSkillIds.Contains(id));
             EditorUtility.SetDirty(asset);
             return asset;
@@ -507,10 +540,22 @@ namespace ProjectMT.EditorTools.MonsterMaker
             string id,
             string title,
             string description,
-            MonsterSkillRecipe recipe)
+            MonsterSkillRecipe recipe,
+            MonsterSkillPresentationTier tier = MonsterSkillPresentationTier.Heroic,
+            float energyPerSecond = 40f,
+            float energyPerBasicAttackHit = 120f,
+            float energyPerDamageReceived = 80f)
         {
             var asset = GetOrCreate<GenericMonsterActiveSkill>($"{ActiveRoot}/MS_{id}.asset");
-            asset.EditorConfigure(id, title, description, MonsterSkillPresentationTier.Heroic, recipe);
+            asset.EditorConfigure(
+                id,
+                title,
+                description,
+                tier,
+                recipe,
+                energyPerSecond: energyPerSecond,
+                energyPerBasicAttackHit: energyPerBasicAttackHit,
+                energyPerDamageReceived: energyPerDamageReceived);
             asset.EditorSetAuthoringEnabled(P0AuthoringSkillIds.Contains(id));
             EditorUtility.SetDirty(asset);
             return asset;
@@ -601,10 +646,26 @@ namespace ProjectMT.EditorTools.MonsterMaker
             int maxTargets = 1,
             MonsterSkillStackPolicy policy = MonsterSkillStackPolicy.RefreshDuration,
             int repeats = 1,
-            float delay = 0f)
+            float delay = 0f,
+            MonsterSkillMagnitudeMode amountMode = MonsterSkillMagnitudeMode.Fixed,
+            float maximumMagnitude = -1f,
+            float repeatInterval = 0f)
         {
             var effect = new MonsterSkillEffect();
-            effect.EditorConfigure(id, type, source, magnitude, duration, radius, maxTargets, policy, repeats, delay);
+            effect.EditorConfigure(
+                id,
+                type,
+                source,
+                magnitude,
+                duration,
+                radius,
+                maxTargets,
+                policy,
+                repeats,
+                delay,
+                amountMode,
+                maximumMagnitude,
+                repeatInterval);
             return effect;
         }
 

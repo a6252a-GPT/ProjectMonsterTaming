@@ -15,6 +15,7 @@ MonoBehaviour:
   sceneCatalog: {fileID: 11400000, guid: 62583908f1181834f8addc7da213dcc4, type: 2}
   contentCatalog: {fileID: 11400000, guid: 4a64c91c4617ea7499c208780aa0e2e0, type: 2}
   monsterCatalog: {fileID: 11400000, guid: fe8b78d3f8fdc474f867c3d64664a095, type: 2}
+  monsterRarityCatalog: {fileID: 11400000, guid: ba6d0a46bf29129428a639d5d92b16a2, type: 2}
   itemCatalog: {fileID: 11400000, guid: 42763c2994db882418ae426304c124ad, type: 2}
   combatStatConfig: {fileID: 11400000, guid: e3fe862709cca3e4384f834bd1b4942d, type: 2}
   combatTuningConfig: {fileID: 11400000, guid: 322442540e3ce66459fecbd377ccf68c, type: 2}

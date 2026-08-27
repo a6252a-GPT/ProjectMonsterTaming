@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: "\uD06C\uB77C\uBE44"
   rarity: 2
   portrait: {fileID: 21300000, guid: 33cf74f0895de4145811a584626ebe2d, type: 3}
-  skillLoadoutConfigured: 0
-  rarityPassiveSkill: {fileID: 0}
+  skillLoadoutConfigured: 1
+  rarityPassiveSkill: {fileID: 11400000, guid: 997657201cc02b044bdf0fa7867737ba, type: 2}
   rarityActiveSkill: {fileID: 0}
   productionMemo: Notion monster batch / SpiderKing
   vendorPrefab: {fileID: 4036688507685142794, guid: 3e15fc27bc204ea498cc283866575d3a, type: 3}

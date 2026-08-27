@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: MD_nerea_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
   monsterId: nerea_01
-  displayName: "\uB124\uB974\uC544"
+  displayName: "\uCC38\uCE58"
   portrait: {fileID: 21300000, guid: 831f3bf78a2c127439e093cee0ec9d0d, type: 3}
-  previewPrefab: {fileID: 8033871498868786565, guid: 50fcb05ee507c4d40bf07dbca28ed2ae, type: 3}
+  previewPrefab: {fileID: 2991976268598403639, guid: 3acf5afc1f4c12347b6b848fb484e41a, type: 3}
   visualTint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 100
   attackPower: 10

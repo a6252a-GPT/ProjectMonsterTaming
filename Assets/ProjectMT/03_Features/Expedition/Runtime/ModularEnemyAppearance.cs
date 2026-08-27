@@ -11,6 +11,7 @@ namespace ProjectMT.Features.Expedition
     {
         private static readonly int SpeedId = Animator.StringToHash("Speed");
         private static readonly string[] RightHandSocketNames = { "+ R Hand", "+R Hand" };
+        private static readonly string[] UpperKnightEquipmentPalettes = { "Blue", "Green", "Purple", "Red" };
 
         [SerializeField] private EnemyAppearanceProfile profile;
         [SerializeField] private Transform visualRoot;
@@ -55,7 +56,7 @@ namespace ProjectMT.Features.Expedition
             bodyInstance = InstantiatePart(bodyPrefab, visualRoot);
             bodyInstance.transform.localScale = Vector3.one * profile.VisualScale * request.VisualScaleMultiplier;
             var skinToken = FirstToken(bodyPrefab.name);
-            var paletteToken = SecondToken(bodyPrefab.name);
+            var paletteToken = ResolveEquipmentPalette(profile.Group, SecondToken(bodyPrefab.name), random);
             var headSocket = FindDescendant(bodyInstance.transform, "+ Head");
             var rightHandSocket = FindDescendant(bodyInstance.transform, RightHandSocketNames);
             var leftHandSocket = FindDescendant(bodyInstance.transform, "+ L Hand");
@@ -254,6 +255,29 @@ namespace ProjectMT.Features.Expedition
 
             return string.Equals(paletteToken, "Nature", StringComparison.OrdinalIgnoreCase) &&
                    name.IndexOf("Green", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static string ResolveEquipmentPalette(
+            EnemyAppearanceGroup group,
+            string bodyPalette,
+            System.Random random)
+        {
+            if (group != EnemyAppearanceGroup.UpperKnightLower &&
+                group != EnemyAppearanceGroup.UpperKnightMid &&
+                group != EnemyAppearanceGroup.UpperKnightHigh &&
+                group != EnemyAppearanceGroup.UpperKnightFinal)
+            {
+                return bodyPalette;
+            }
+
+            return bodyPalette switch
+            {
+                "Aqua" => "Blue",
+                "Nature" => "Green",
+                "Dark" => "Purple",
+                "Fire" => "Red",
+                _ => UpperKnightEquipmentPalettes[random.Next(UpperKnightEquipmentPalettes.Length)]
+            };
         }
 
         private static Transform FindDescendant(Transform root, params string[] names)

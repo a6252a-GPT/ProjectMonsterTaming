@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b64a9dc2cac6e714e80d1ff73e6cbc52, type: 3}
   m_Name: MB_rubea_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterBodyProfile
-  visualScale: {x: 1.2, y: 1.2, z: 1.2}
+  visualScale: {x: 1.77, y: 1.77, z: 1.77}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0
@@ -20,7 +20,7 @@ MonoBehaviour:
   bodyHeight: 1
   selectionRadius: 0.65
   hpBarHeight: 1.2
-  animatorPath: Visual/Planta_Queen
+  animatorPath: Visual
   attackOriginPath: AttackOrigin
   hitCenterPath: HitCenter
   rigMode: 0

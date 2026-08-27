@@ -35,8 +35,11 @@ MonoBehaviour:
       type: 0
       valueSource: 1
       magnitude: 0.25
+      magnitudeMode: 0
+      maximumMagnitude: 0.25
       duration: 0
       delay: 0
+      repeatInterval: 0
       radius: 0
       maxTargets: 1
       repeatCount: 1

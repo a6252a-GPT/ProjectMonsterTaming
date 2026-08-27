@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b671fbf87b6f56b4884fd4f963d98932, type: 3}
   m_Name: MA_shell_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterAscensionProfile
+  configured: 1
   milestone1:
     healthRate: 0.05
     attackRate: 0
@@ -51,6 +52,11 @@ MonoBehaviour:
   displayName: "\uB2E8\uB2E8\uD55C \uAECD\uC9C8"
   mode: 0
   triggerPolicyId: 
+  skillAugmentConfigured: 0
+  augmentTarget: 0
+  augmentOperation: 0
+  augmentScalarValue: 0.15
+  augmentIntegerValue: 1
 --- !u!114 &4346537439542670924
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -67,3 +73,8 @@ MonoBehaviour:
   displayName: "\uBC18\uACA9 \uBCF8\uB2A5"
   mode: 0
   triggerPolicyId: 
+  skillAugmentConfigured: 0
+  augmentTarget: 0
+  augmentOperation: 0
+  augmentScalarValue: 0.15
+  augmentIntegerValue: 1

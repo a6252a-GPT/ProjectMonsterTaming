@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: "\uBCA0\uB974\uCE78"
   rarity: 2
   portrait: {fileID: 21300000, guid: 32b26758531b4264fb74b90df6b9a025, type: 3}
-  skillLoadoutConfigured: 0
-  rarityPassiveSkill: {fileID: 0}
+  skillLoadoutConfigured: 1
+  rarityPassiveSkill: {fileID: 11400000, guid: 81285a8c4fbc30e4a896973963b1c440, type: 2}
   rarityActiveSkill: {fileID: 0}
   productionMemo: Notion monster batch / Wolf_04
   vendorPrefab: {fileID: 7053366614606345691, guid: 074b65e2d05236a4f8a6c4875d7beabd, type: 3}

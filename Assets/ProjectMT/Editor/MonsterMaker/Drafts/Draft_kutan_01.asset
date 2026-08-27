@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: "\uCFE0\uD0C4"
   rarity: 1
   portrait: {fileID: 21300000, guid: f686e0a0d62524140ab2e7cbaa63a848, type: 3}
-  skillLoadoutConfigured: 0
-  rarityPassiveSkill: {fileID: 0}
+  skillLoadoutConfigured: 1
+  rarityPassiveSkill: {fileID: 11400000, guid: 4c73e8163f1f1944e9505cfbf34b2e07, type: 2}
   rarityActiveSkill: {fileID: 0}
   productionMemo: Notion monster batch / FirePig_02
   vendorPrefab: {fileID: 1309761604126423416, guid: eae19874a2557b74d90d443fa3167079, type: 3}

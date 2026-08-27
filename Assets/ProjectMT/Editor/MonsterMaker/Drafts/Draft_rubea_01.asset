@@ -13,16 +13,17 @@ MonoBehaviour:
   m_Name: Draft_rubea_01
   m_EditorClassIdentifier: Assembly-CSharp-Editor::ProjectMT.EditorTools.MonsterMaker.MonsterMakerDraft
   monsterId: rubea_01
-  displayName: "\uB8E8\uBCA0\uC544"
+  displayName: "\uD53C\uB2C9\uC2A4"
   rarity: 2
   portrait: {fileID: 21300000, guid: a79ffc6e63b656342b8678065edfd703, type: 3}
-  skillLoadoutConfigured: 0
-  rarityPassiveSkill: {fileID: 0}
+  skillLoadoutConfigured: 1
+  rarityPassiveSkill: {fileID: 11400000, guid: db1a9e83e78fdfb45ac51154908f5cac, type: 2}
   rarityActiveSkill: {fileID: 0}
-  productionMemo: Notion monster batch / PlantaQueen
-  vendorPrefab: {fileID: 7734291998845522433, guid: 7d8f7b872458fd74fb3fb07ea10187e6, type: 3}
-  animatorSource: {fileID: 5556983908013562711, guid: 7d8f7b872458fd74fb3fb07ea10187e6, type: 3}
-  visualScale: {x: 1.2, y: 1.2, z: 1.2}
+  productionMemo: "\uBAAC\uC2A4\uD130 \uB9AC\uC6CC\uD06C 2026-08-26 / Cute Phoenix_A
+    / Phoenix \uC804\uC6A9 \uC560\uB2C8\uBA54\uC774\uC158 / BA_R_05 \uC720\uC9C0"
+  vendorPrefab: {fileID: 8215003284720749345, guid: de547c06f495e104f9c9602a9786b36a, type: 3}
+  animatorSource: {fileID: 8215003284728183011, guid: de547c06f495e104f9c9602a9786b36a, type: 3}
+  visualScale: {x: 1.77, y: 1.77, z: 1.77}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0
   facingYawOffset: 0
@@ -50,13 +51,13 @@ MonoBehaviour:
   mainBattlePreferredRangeRatio: 0.9
   mainBattleRetreatRangeRatio: 0.38
   mainBattleRetargetInterval: 0.28
-  idleClip: {fileID: 7400000, guid: 37fa796d59e8e8748be8fa9a24966708, type: 3}
+  idleClip: {fileID: 7400000, guid: 610176adb8b68b64185e8ab4c6ee4e68, type: 3}
   idleSpeed: 1
-  moveClip: {fileID: 7400000, guid: 713f6007d795de34d977cd723aff94d3, type: 3}
+  moveClip: {fileID: 7400000, guid: 0949d4d3847e5504a8352a0578b38941, type: 3}
   movePlaybackSpeed: 1
   attacks:
   - motionId: attack01
-    clip: {fileID: 7400000, guid: 3ee7f83216ef3404eb2e70175185b526, type: 3}
+    clip: {fileID: 7400000, guid: 2f6b6b372de81954f950e5b41c569f84, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.06
     weight: 1
@@ -81,7 +82,7 @@ MonoBehaviour:
         localPosition: {x: 0, y: 0, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
         scale: 1
-  deathClip: {fileID: 7400000, guid: 7a40dcd30eb18434585991a2d0b3ea53, type: 3}
+  deathClip: {fileID: 7400000, guid: 22214bd94efbf954994e9ad1f0935fc6, type: 3}
   deathSpeed: 1
   combatType: 1
   basicAttackProfile: {fileID: 11400000, guid: 41702aed9ca465540b77938847649334, type: 2}

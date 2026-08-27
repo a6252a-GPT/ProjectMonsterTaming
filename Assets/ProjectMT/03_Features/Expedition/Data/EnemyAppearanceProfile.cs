@@ -10,7 +10,13 @@ namespace ProjectMT.Features.Expedition
         KnightTier3,
         MageTier1,
         MageTier2,
-        MageTier3
+        MageTier3,
+        FemalePeasant,
+        UpperKnightLower,
+        UpperKnightMid,
+        UpperKnightHigh,
+        UpperKnightFinal,
+        Ninja
     }
 
     public enum EnemyHeadwearHairMode // 머리 장비와 머리카락 조합 규칙

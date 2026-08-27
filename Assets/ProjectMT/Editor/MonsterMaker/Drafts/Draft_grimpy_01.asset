@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: "\uADF8\uB9BC\uD53C"
   rarity: 1
   portrait: {fileID: 21300000, guid: 8cffbec00bf82ef4d9677185e19f202c, type: 3}
-  skillLoadoutConfigured: 0
-  rarityPassiveSkill: {fileID: 0}
+  skillLoadoutConfigured: 1
+  rarityPassiveSkill: {fileID: 11400000, guid: 4c73e8163f1f1944e9505cfbf34b2e07, type: 2}
   rarityActiveSkill: {fileID: 0}
   productionMemo: Notion monster batch / Goblin
   vendorPrefab: {fileID: 6670167171498116428, guid: 848c27bc58ecfb843890301c581f580b, type: 3}

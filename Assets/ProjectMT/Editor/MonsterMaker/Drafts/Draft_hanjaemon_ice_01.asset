@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: "\uD55C\uC7AC\uBAAC"
   rarity: 1
   portrait: {fileID: 21300000, guid: 52d615bc3f7bc624abbbcab11aa79450, type: 3}
-  skillLoadoutConfigured: 0
-  rarityPassiveSkill: {fileID: 0}
+  skillLoadoutConfigured: 1
+  rarityPassiveSkill: {fileID: 11400000, guid: 8d8deeb184e416b4498f69e67f05dea1, type: 2}
   rarityActiveSkill: {fileID: 0}
   productionMemo: Notion monster batch / Bomb_03
   vendorPrefab: {fileID: 2843133695992502258, guid: cca23dc2f52523d47819584a6210c905, type: 3}

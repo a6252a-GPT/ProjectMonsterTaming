@@ -30,8 +30,11 @@ MonoBehaviour:
       type: 17
       valueSource: 0
       magnitude: 150
+      magnitudeMode: 0
+      maximumMagnitude: 150
       duration: 0
       delay: 0
+      repeatInterval: 0
       radius: 0
       maxTargets: 1
       repeatCount: 1

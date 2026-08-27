@@ -13,18 +13,19 @@ MonoBehaviour:
   m_Name: Draft_nerea_01
   m_EditorClassIdentifier: Assembly-CSharp-Editor::ProjectMT.EditorTools.MonsterMaker.MonsterMakerDraft
   monsterId: nerea_01
-  displayName: "\uB124\uB974\uC544"
+  displayName: "\uCC38\uCE58"
   rarity: 1
   portrait: {fileID: 21300000, guid: 831f3bf78a2c127439e093cee0ec9d0d, type: 3}
-  skillLoadoutConfigured: 0
-  rarityPassiveSkill: {fileID: 0}
+  skillLoadoutConfigured: 1
+  rarityPassiveSkill: {fileID: 11400000, guid: 6df72759e2e16f54b8d81a45f1ee7574, type: 2}
   rarityActiveSkill: {fileID: 0}
-  productionMemo: Notion monster batch / PlantaShadow
-  vendorPrefab: {fileID: 8033871498868786565, guid: 50fcb05ee507c4d40bf07dbca28ed2ae, type: 3}
-  animatorSource: {fileID: 662281965273112121, guid: 50fcb05ee507c4d40bf07dbca28ed2ae, type: 3}
-  visualScale: {x: 1, y: 1, z: 1}
+  productionMemo: "\uBAAC\uC2A4\uD130 \uB9AC\uC6CC\uD06C 2026-08-26 / Chibi_Cat_08
+    / Chibi \uC804\uC6A9 Humanoid \uC560\uB2C8\uBA54\uC774\uC158 / BA_M_02 \uC720\uC9C0"
+  vendorPrefab: {fileID: 2991976268598403639, guid: 3acf5afc1f4c12347b6b848fb484e41a, type: 3}
+  animatorSource: {fileID: 8371733109833032439, guid: 3acf5afc1f4c12347b6b848fb484e41a, type: 3}
+  visualScale: {x: 0.544, y: 0.544, z: 0.544}
   visualLocalPosition: {x: 0, y: 0, z: 0}
-  groundOffset: 0
+  groundOffset: 0.025
   facingYawOffset: 0
   bodyRadius: 0.5
   bodyHeight: 1
@@ -34,7 +35,7 @@ MonoBehaviour:
   hitCenterPath: HitCenter
   attackOriginLocalPosition: {x: 0, y: 0.5, z: 0.6}
   hitCenterLocalPosition: {x: 0, y: 0.5, z: 0}
-  rigMode: 0
+  rigMode: 1
   previewScale: 1
   vfxScale: 1
   maxHealth: 100
@@ -50,13 +51,13 @@ MonoBehaviour:
   mainBattlePreferredRangeRatio: 0.72
   mainBattleRetreatRangeRatio: 0
   mainBattleRetargetInterval: 0.2
-  idleClip: {fileID: 7400000, guid: 37fa796d59e8e8748be8fa9a24966708, type: 3}
+  idleClip: {fileID: 1789320437258409465, guid: 3f163e33f9a2e064f8b4170227ca8aee, type: 3}
   idleSpeed: 1
-  moveClip: {fileID: 7400000, guid: 713f6007d795de34d977cd723aff94d3, type: 3}
+  moveClip: {fileID: 369900655582913899, guid: e3d867ce8306db8459963486dc1153e5, type: 3}
   movePlaybackSpeed: 1
   attacks:
   - motionId: attack01
-    clip: {fileID: 7400000, guid: 3ee7f83216ef3404eb2e70175185b526, type: 3}
+    clip: {fileID: 3743347588771784290, guid: 7cdf26f9596ccdc41ae0d7679e75c9e3, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.06
     weight: 1
@@ -81,14 +82,14 @@ MonoBehaviour:
         localPosition: {x: 0, y: 0, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
         scale: 1
-  deathClip: {fileID: 7400000, guid: 7a40dcd30eb18434585991a2d0b3ea53, type: 3}
+  deathClip: {fileID: 2159161471354084687, guid: fa2fc45c2f79e5b4fa0ebd6bccffd6cd, type: 3}
   deathSpeed: 1
   combatType: 0
   basicAttackProfile: {fileID: 11400000, guid: fa3959036ddd4404f93133df9c13b4e7, type: 2}
-  meleeMode: 0
-  meleeAreaCenter: 1
-  meleeAreaRadius: 1.5
-  meleeMaxTargets: 4
+  meleeMode: 1
+  meleeAreaCenter: 0
+  meleeAreaRadius: 0.35
+  meleeMaxTargets: 3
   rangedDeliveryMode: 0
   projectileMode: 0
   projectilePrefab: {fileID: 0}

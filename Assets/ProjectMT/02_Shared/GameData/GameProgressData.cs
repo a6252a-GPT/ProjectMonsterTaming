@@ -20,6 +20,12 @@ namespace ProjectMT.Shared.GameData
         Repeat
     }
 
+    public enum ExpeditionDifficulty // 원정대 난이도 진행축
+    {
+        Normal,
+        Hard
+    }
+
     [Serializable]
     public sealed class CommanderProgressData // 군단장 성장 저장 원본
     {
@@ -179,8 +185,13 @@ namespace ProjectMT.Shared.GameData
     [Serializable]
     public sealed partial class GameProgressData // 시드 사용자 진행 원본
     {
+        private const int ExpeditionMaximumStage = 100;
+
         [SerializeField] private int currentChallengeStage = 1; // 현재 도전 단계
         [SerializeField] private int lastClearedStage; // 마지막 성공 단계
+        [SerializeField] private int hardCurrentChallengeStage = 1; // 하드 현재 도전 단계
+        [SerializeField] private int hardLastClearedStage; // 하드 마지막 성공 단계
+        [SerializeField] private ExpeditionDifficulty expeditionDifficulty; // 일반 100 이후 하드 진행
         [SerializeField] private ExpeditionRunMode expeditionMode = ExpeditionRunMode.Challenge; // 저장된 실행 모드
         [FormerlySerializedAs("temporaryGold")]
         [SerializeField] private long gold; // v10 이하 잔액의 동결 백업
@@ -207,8 +218,22 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private CommanderLegionGrowthData commanderLegionGrowth = CommanderLegionGrowthData.CreateDefault(); // 군단 공용 6종 강화
         [SerializeField] private CommanderSkillProgressData commanderSkills = CommanderSkillProgressData.CreateDefault(); // 군단장 스킬 보유·장착·자동사용
 
-        public int CurrentChallengeStage => currentChallengeStage;
-        public int LastClearedStage => lastClearedStage;
+        public int CurrentChallengeStage => expeditionDifficulty == ExpeditionDifficulty.Hard
+            ? ExpeditionMaximumStage + hardCurrentChallengeStage
+            : currentChallengeStage;
+        public int LastClearedStage => expeditionDifficulty == ExpeditionDifficulty.Hard
+            ? ExpeditionMaximumStage + hardLastClearedStage
+            : lastClearedStage;
+        public int ActiveChallengeStage => expeditionDifficulty == ExpeditionDifficulty.Hard
+            ? hardCurrentChallengeStage
+            : currentChallengeStage;
+        public int ActiveLastClearedStage => expeditionDifficulty == ExpeditionDifficulty.Hard
+            ? hardLastClearedStage
+            : lastClearedStage;
+        public int NormalLastClearedStage => lastClearedStage;
+        public int HardLastClearedStage => hardLastClearedStage;
+        public ExpeditionDifficulty Difficulty => expeditionDifficulty;
+        public bool HardUnlocked => lastClearedStage >= ExpeditionMaximumStage;
         public ExpeditionRunMode ExpeditionMode => expeditionMode;
         public long Gold => coreBalanceMigrationCompleted
             ? (items ?? ItemInventoryData.CreateDefault()).GetQuantity(ItemIds.Gold)
@@ -265,6 +290,9 @@ namespace ProjectMT.Shared.GameData
             {
                 currentChallengeStage = currentChallengeStage,
                 lastClearedStage = lastClearedStage,
+                hardCurrentChallengeStage = hardCurrentChallengeStage,
+                hardLastClearedStage = hardLastClearedStage,
+                expeditionDifficulty = expeditionDifficulty,
                 expeditionMode = expeditionMode,
                 gold = gold,
                 foodRiotBestKills = foodRiotBestKills,
@@ -1235,22 +1263,48 @@ namespace ProjectMT.Shared.GameData
         private bool TryApplyExpeditionFirstClear(GameProgressChange change)
         {
             if (expeditionMode != ExpeditionRunMode.Challenge ||
-                change.ExpeditionFirstClearStage != currentChallengeStage ||
+                change.ExpeditionFirstClearStage != ActiveChallengeStage ||
                 change.Rewards == null || change.Rewards.IsEmpty)
             {
                 return false;
             }
 
-            lastClearedStage = Math.Max(lastClearedStage, change.ExpeditionFirstClearStage);
-            currentChallengeStage = Math.Max(currentChallengeStage, change.ExpeditionFirstClearStage + 1);
+            if (expeditionDifficulty == ExpeditionDifficulty.Normal)
+            {
+                lastClearedStage = Math.Max(lastClearedStage, change.ExpeditionFirstClearStage);
+                if (lastClearedStage >= ExpeditionMaximumStage)
+                {
+                    lastClearedStage = ExpeditionMaximumStage;
+                    currentChallengeStage = ExpeditionMaximumStage;
+                    expeditionDifficulty = ExpeditionDifficulty.Hard; // 일반 100 직후 하드 1 자동 시작
+                    hardCurrentChallengeStage = Math.Max(1, hardCurrentChallengeStage);
+                }
+                else
+                {
+                    currentChallengeStage = Math.Max(currentChallengeStage, change.ExpeditionFirstClearStage + 1);
+                }
+            }
+            else
+            {
+                hardLastClearedStage = Math.Max(hardLastClearedStage, change.ExpeditionFirstClearStage);
+                hardCurrentChallengeStage = hardLastClearedStage >= ExpeditionMaximumStage
+                    ? ExpeditionMaximumStage
+                    : Math.Max(hardCurrentChallengeStage, change.ExpeditionFirstClearStage + 1);
+                if (hardLastClearedStage >= ExpeditionMaximumStage)
+                {
+                    hardLastClearedStage = ExpeditionMaximumStage;
+                    expeditionMode = ExpeditionRunMode.Repeat; // 최종 단계 최초 보상 중복 차단
+                }
+            }
+
             return true;
         }
 
         private bool TryApplyExpeditionRepeatClear(GameProgressChange change)
         {
             return expeditionMode == ExpeditionRunMode.Repeat &&
-                   lastClearedStage > 0 &&
-                   change.ExpeditionRepeatClearStage == lastClearedStage &&
+                   ActiveLastClearedStage > 0 &&
+                   change.ExpeditionRepeatClearStage == ActiveLastClearedStage &&
                    change.Rewards != null &&
                    !change.Rewards.IsEmpty;
         }
@@ -1295,8 +1349,26 @@ namespace ProjectMT.Shared.GameData
             CommanderSkillBalanceConfig commanderSkillBalanceConfig = null,
             CommanderSkillSummonConfig commanderSkillSummonConfig = null)
         {
-            currentChallengeStage = Math.Max(1, currentChallengeStage);
-            lastClearedStage = Math.Max(0, Math.Min(lastClearedStage, currentChallengeStage - 1));
+            if (lastClearedStage > ExpeditionMaximumStage && hardLastClearedStage <= 0)
+            {
+                hardLastClearedStage = Math.Min(
+                    ExpeditionMaximumStage,
+                    lastClearedStage - ExpeditionMaximumStage);
+                hardCurrentChallengeStage = Math.Min(
+                    ExpeditionMaximumStage,
+                    Math.Max(hardLastClearedStage + 1, currentChallengeStage - ExpeditionMaximumStage));
+                lastClearedStage = ExpeditionMaximumStage; // 구버전 101+ 진행을 하드 단계로 이관
+                expeditionDifficulty = ExpeditionDifficulty.Hard;
+            }
+
+            lastClearedStage = Math.Max(0, Math.Min(ExpeditionMaximumStage, lastClearedStage));
+            currentChallengeStage = lastClearedStage >= ExpeditionMaximumStage
+                ? ExpeditionMaximumStage
+                : Math.Min(ExpeditionMaximumStage, Math.Max(lastClearedStage + 1, currentChallengeStage));
+            hardLastClearedStage = Math.Max(0, Math.Min(ExpeditionMaximumStage, hardLastClearedStage));
+            hardCurrentChallengeStage = hardLastClearedStage >= ExpeditionMaximumStage
+                ? ExpeditionMaximumStage
+                : Math.Min(ExpeditionMaximumStage, Math.Max(hardLastClearedStage + 1, hardCurrentChallengeStage));
             gold = Math.Max(0L, gold);
             foodRiotBestKills = Math.Max(0, foodRiotBestKills);
             guardiansTowerBestKills = Math.Max(0, guardiansTowerBestKills); // 08.06 안건준 추가
@@ -1332,8 +1404,15 @@ namespace ProjectMT.Shared.GameData
             commanderSkills ??= CommanderSkillProgressData.CreateDefault();
             commanderSkills.Repair(commanderSkillBalanceConfig, commanderSkillSummonConfig);
 
+            if (!IsValidExpeditionDifficulty(expeditionDifficulty) ||
+                (expeditionDifficulty == ExpeditionDifficulty.Hard &&
+                 lastClearedStage < ExpeditionMaximumStage))
+            {
+                expeditionDifficulty = ExpeditionDifficulty.Normal;
+            }
+
             if (!IsValidExpeditionMode(expeditionMode) ||
-                (lastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat))
+                (ActiveLastClearedStage == 0 && expeditionMode == ExpeditionRunMode.Repeat))
             {
                 expeditionMode = ExpeditionRunMode.Challenge; // 손상값·클리어 전 반복 복구
             }
@@ -1425,6 +1504,11 @@ namespace ProjectMT.Shared.GameData
         {
             return mode == ExpeditionRunMode.Challenge || mode == ExpeditionRunMode.Repeat;
         }
+
+        private static bool IsValidExpeditionDifficulty(ExpeditionDifficulty difficulty)
+        {
+            return difficulty == ExpeditionDifficulty.Normal || difficulty == ExpeditionDifficulty.Hard;
+        }
     }
 
     public readonly struct GameProgressView // UI·전투용 읽기 전용 복사값
@@ -1433,6 +1517,12 @@ namespace ProjectMT.Shared.GameData
         {
             CurrentChallengeStage = data.CurrentChallengeStage;
             LastClearedStage = data.LastClearedStage;
+            ActiveChallengeStage = data.ActiveChallengeStage;
+            ActiveLastClearedStage = data.ActiveLastClearedStage;
+            NormalLastClearedStage = data.NormalLastClearedStage;
+            HardLastClearedStage = data.HardLastClearedStage;
+            Difficulty = data.Difficulty;
+            HardUnlocked = data.HardUnlocked;
             ExpeditionMode = data.ExpeditionMode;
             Gold = data.Gold;
             Diamond = data.Diamond;
@@ -1459,6 +1549,12 @@ namespace ProjectMT.Shared.GameData
 
         public int CurrentChallengeStage { get; }
         public int LastClearedStage { get; }
+        public int ActiveChallengeStage { get; }
+        public int ActiveLastClearedStage { get; }
+        public int NormalLastClearedStage { get; }
+        public int HardLastClearedStage { get; }
+        public ExpeditionDifficulty Difficulty { get; }
+        public bool HardUnlocked { get; }
         public ExpeditionRunMode ExpeditionMode { get; }
         public long Gold { get; }
         public long Diamond { get; }

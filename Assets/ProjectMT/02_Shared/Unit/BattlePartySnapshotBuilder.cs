@@ -11,6 +11,7 @@ namespace ProjectMT.Shared.Unit
         private const float RangedProjectileSpeed = 9f; // 현재 공용 원거리 투사체 속도
 
         private readonly MonsterCatalog catalog;
+        private readonly MonsterRarityCatalog rarityCatalog;
         private readonly CombatStatConfig statConfig;
 
         public BattlePartySnapshotBuilder(MonsterCatalog monsterCatalog)
@@ -19,8 +20,17 @@ namespace ProjectMT.Shared.Unit
         }
 
         public BattlePartySnapshotBuilder(MonsterCatalog monsterCatalog, CombatStatConfig combatStatConfig)
+            : this(monsterCatalog, null, combatStatConfig)
+        {
+        }
+
+        public BattlePartySnapshotBuilder(
+            MonsterCatalog monsterCatalog,
+            MonsterRarityCatalog monsterRarityCatalog,
+            CombatStatConfig combatStatConfig)
         {
             catalog = monsterCatalog ?? throw new ArgumentNullException(nameof(monsterCatalog));
+            rarityCatalog = monsterRarityCatalog;
             statConfig = combatStatConfig ?? throw new ArgumentNullException(nameof(combatStatConfig));
             if (!catalog.TryValidate(out var error))
             {
@@ -76,8 +86,27 @@ namespace ProjectMT.Shared.Unit
                     definition.RuntimeAssetKey,
                     definition.RuntimeAssetSet,
                     ResolveUnlockedAbilityIds(definition, owned.AscensionLevel),
-                    definition.DisplayName));
+                    definition.DisplayName,
+                    ResolvePassiveSkill(monsterId),
+                    ResolveActiveSkill(monsterId),
+                    owned.Level));
             }
+        }
+
+        private MonsterPassiveSkill ResolvePassiveSkill(string monsterId)
+        {
+            return rarityCatalog != null &&
+                   rarityCatalog.TryGetSkillLoadout(monsterId, out var passive, out _)
+                ? passive
+                : null;
+        }
+
+        private MonsterActiveSkill ResolveActiveSkill(string monsterId)
+        {
+            return rarityCatalog != null &&
+                   rarityCatalog.TryGetSkillLoadout(monsterId, out _, out var active)
+                ? active
+                : null;
         }
 
         private UnitStatsSnapshot ResolveStats(

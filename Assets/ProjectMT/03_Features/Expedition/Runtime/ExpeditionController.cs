@@ -58,9 +58,10 @@ namespace ProjectMT.Features.Expedition
         private BattlePartySnapshot party; // 다음 Run에 사용할 최신 부대 사진
         private BattlePartySnapshot activeRunParty; // 현재 Run 시작 때 고정한 부대 사진
         private ExpeditionRunMode currentMode; // 도전·반복 상태
+        private ExpeditionDifficulty currentDifficulty; // 일반·하드 상태
         private int currentStage; // 현재 실행 단계
         private int currentWave; // 현재 표시 웨이브
-        private float waveElapsed; // 2웨이브 대기 시간
+        private float waveElapsed; // 후속 웨이브 대기 시간
         private float challengeTimeRemaining; // 도전 남은 시간
         private int nextWaveToSpawn; // 다음 데이터 웨이브 번호
         private int waveCount; // 현재 단계의 전체 웨이브 수
@@ -84,6 +85,7 @@ namespace ProjectMT.Features.Expedition
         private int defeatedEnemyCount; // 현재 Run 처치 적 수
         private bool hudCacheValid; // HUD 중복 할당 방지
         private ExpeditionRunMode displayedMode;
+        private ExpeditionDifficulty displayedDifficulty;
         private int displayedStage;
         private int displayedWave;
         private int displayedWaveCount;
@@ -200,14 +202,15 @@ namespace ProjectMT.Features.Expedition
 
             var view = progress.View;
             currentMode = view.ExpeditionMode;
-            if (currentMode == ExpeditionRunMode.Repeat && view.LastClearedStage <= 0)
+            currentDifficulty = view.Difficulty;
+            if (currentMode == ExpeditionRunMode.Repeat && view.ActiveLastClearedStage <= 0)
             {
                 currentMode = ExpeditionRunMode.Challenge;
             }
 
             currentStage = currentMode == ExpeditionRunMode.Challenge // 모드별 실행 단계 선택
-                ? view.CurrentChallengeStage
-                : view.LastClearedStage;
+                ? view.ActiveChallengeStage
+                : view.ActiveLastClearedStage;
             StartRun();
         }
 
@@ -417,7 +420,11 @@ namespace ProjectMT.Features.Expedition
                     canAttack: !placementMode,
                     visualTint: units[i].VisualTint,
                     runtimeAssetSet: units[i].RuntimeAssetSet,
-                    supportOutputMultiplier: MainBattleFormationBuffRules.GetSupportOutputMultiplier(formationOffset));
+                    supportOutputMultiplier: MainBattleFormationBuffRules.GetSupportOutputMultiplier(formationOffset),
+                    passiveSkill: units[i].PassiveSkill,
+                    activeSkill: units[i].ActiveSkill,
+                    monsterLevel: units[i].Level,
+                    entryReason: UnitEntryReason.InitialDeployment);
                 var actor = combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity);
                 ApplyPlayerAIProfile(actor, units[i].UnitId);
                 TrackPlayerUnit(actor, i);
@@ -556,7 +563,11 @@ namespace ProjectMT.Features.Expedition
                     reserve.Stats,
                     UnitTeam.Player,
                     visualTint: reserve.VisualTint,
-                    runtimeAssetSet: reserve.RuntimeAssetSet);
+                    runtimeAssetSet: reserve.RuntimeAssetSet,
+                    passiveSkill: reserve.PassiveSkill,
+                    activeSkill: reserve.ActiveSkill,
+                    monsterLevel: reserve.Level,
+                    entryReason: UnitEntryReason.ReserveReplacement);
                 var actor = combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity);
                 if (actor == null)
                 {
@@ -769,19 +780,19 @@ namespace ProjectMT.Features.Expedition
                 readyLaneOffset,
                 formationRight,
                 formationForward);
-            var unitIndex = index + arrivalWave * 10;
-            var ranged = profile.IsRangedSlot(currentStage, unitIndex);
+            var appearanceSeed = CreateEnemyAppearanceSeed(currentStage, arrivalWave, index, operationVersion);
+            var spawn = profile.ResolveSpawn(currentStage, arrivalWave, index, appearanceSeed);
             var enemyPrefab = enemyAppearanceSet == null
                 ? enemyUnitPrefab
-                : enemyAppearanceSet.ResolvePrefab(profile.ResolveAppearance(currentStage, ranged));
-            var boss = profile.IsBossStage(currentStage);
+                : enemyAppearanceSet.ResolvePrefab(spawn.Appearance);
             var request = new UnitSpawnRequest(
-                boss ? $"boss_{currentStage}" : $"enemy_{currentStage}_{arrivalWave}_{index}",
-                profile.CreateEnemyStats(currentStage, ranged),
+                spawn.IsBoss ? $"boss_{currentDifficulty}_{currentStage}" :
+                $"enemy_{currentDifficulty}_{currentStage}_{arrivalWave}_{index}",
+                profile.CreateEnemyStats(currentStage, currentDifficulty, spawn),
                 UnitTeam.Enemy,
-                appearanceSeed: CreateEnemyAppearanceSeed(currentStage, arrivalWave, index, operationVersion),
-                visualScaleMultiplier: boss ? profile.BossVisualScaleMultiplier : 1f,
-                isBoss: boss);
+                appearanceSeed: appearanceSeed,
+                visualScaleMultiplier: spawn.IsBoss ? profile.BossVisualScaleMultiplier : 1f,
+                isBoss: spawn.IsBoss);
             var direction = readyPosition - entryPosition;
             direction.y = 0f;
             var rotation = direction.sqrMagnitude > 0.0001f
@@ -793,7 +804,7 @@ namespace ProjectMT.Features.Expedition
                 return;
             }
 
-            ApplyEnemyAIProfile(actor, ranged);
+            ApplyEnemyAIProfile(actor, spawn.IsRanged);
             actor.SetCombatReady(false);
             actor.AnimationDriver?.PlayMove();
             TrackWaveEnemy(actor, arrivalWave);
@@ -802,7 +813,9 @@ namespace ProjectMT.Features.Expedition
                 entryPosition,
                 readyPosition,
                 profile.EnemyMarchDurationSeconds,
-                boss));
+                spawn.IsBoss,
+                spawn.IsNinja,
+                spawn.NinjaOrdinal));
         }
 
         private Vector3 ResolveEnemyEntryPosition(
@@ -926,8 +939,15 @@ namespace ProjectMT.Features.Expedition
                 }
 
                 arrival.Actor.transform.position = arrival.ReadyPosition;
-                arrival.Actor.SetCombatReady(true);
-                arrival.Actor.AnimationDriver?.PlayIdle(true);
+                if (arrival.IsNinja)
+                {
+                    BeginNinjaFlank(arrival.Actor, arrival.NinjaOrdinal);
+                }
+                else
+                {
+                    arrival.Actor.SetCombatReady(true);
+                    arrival.Actor.AnimationDriver?.PlayIdle(true);
+                }
                 if (arrival.IsBoss)
                 {
                     bossHud?.Show(arrival.Actor, currentStage); // Ready 시점부터 보스 HUD 표시
@@ -942,6 +962,42 @@ namespace ProjectMT.Features.Expedition
             arrivalNextSpawnIndex = 0;
             arrivalSpawnTimer = 0f;
             waveElapsed = 0f;
+        }
+
+        private void BeginNinjaFlank(UnitActor actor, int ninjaOrdinal)
+        {
+            if (actor == null)
+            {
+                return;
+            }
+
+            ResolveEnemyFormationAxes(out _, out var formationForward);
+            UnitActor rearTarget = null;
+            var rearProjection = float.PositiveInfinity;
+            foreach (var pair in playerSlotByActor)
+            {
+                var candidate = pair.Key;
+                if (candidate == null || !candidate.IsAlive)
+                {
+                    continue;
+                }
+
+                var projection = Vector3.Dot(candidate.transform.position - formationOrigin, formationForward);
+                if (projection < rearProjection)
+                {
+                    rearProjection = projection;
+                    rearTarget = candidate;
+                }
+            }
+
+            if (rearTarget == null)
+            {
+                actor.SetCombatReady(true);
+                return;
+            }
+
+            var flank = actor.gameObject.AddComponent<NinjaFlankController>();
+            flank.Configure(actor, rearTarget, formationForward, Mathf.Max(0, ninjaOrdinal));
         }
 
         private static int CreateEnemyAppearanceSeed(int stage, int wave, int index, int runVersion)
@@ -1053,7 +1109,7 @@ namespace ProjectMT.Features.Expedition
             var nextMode = currentMode == ExpeditionRunMode.Challenge
                 ? ExpeditionRunMode.Repeat
                 : ExpeditionRunMode.Challenge;
-            if (nextMode == ExpeditionRunMode.Repeat && view.LastClearedStage <= 0)
+            if (nextMode == ExpeditionRunMode.Repeat && view.ActiveLastClearedStage <= 0)
             {
                 return;
             }
@@ -1109,17 +1165,19 @@ namespace ProjectMT.Features.Expedition
             }
 
             var settledMode = currentMode;
+            var settledDifficulty = currentDifficulty;
             var settledStage = currentStage;
+            var rewardStage = ExpeditionCampaignRules.ToProgressStage(settledDifficulty, settledStage);
             RewardBundle rewards;
             GameProgressChange change;
             switch (settledMode)
             {
                 case ExpeditionRunMode.Challenge:
-                    rewards = ExpeditionFirstClearRewardRules.Create(settledStage);
+                    rewards = ExpeditionFirstClearRewardRules.Create(rewardStage);
                     change = GameProgressChange.RecordExpeditionFirstClear(settledStage, rewards);
                     break;
                 case ExpeditionRunMode.Repeat:
-                    rewards = ExpeditionRepeatClearRewardRules.Create(settledStage);
+                    rewards = ExpeditionRepeatClearRewardRules.Create(rewardStage);
                     change = GameProgressChange.RecordExpeditionRepeatClear(settledStage, rewards);
                     break;
                 default:
@@ -1160,9 +1218,10 @@ namespace ProjectMT.Features.Expedition
 
                 if (settledMode == ExpeditionRunMode.Challenge)
                 {
-                    SetResult(ExpeditionResultNoticeFormatter.ChallengeVictory(
+                    var notice = ExpeditionResultNoticeFormatter.ChallengeVictory(
                         settledStage,
-                        RewardPresentationRequest.FromBundle(rewards, itemCatalog)));
+                        RewardPresentationRequest.FromBundle(rewards, itemCatalog));
+                    SetResult(settledDifficulty == ExpeditionDifficulty.Hard ? $"하드 {notice}" : notice);
 
                     // 새로운 단계를 처음 클리어했을 때만 "원정대 클리어" 퀘스트 진행(반복 클리어는 제외).
                     _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.ExpeditionClear, 1L);
@@ -1212,7 +1271,7 @@ namespace ProjectMT.Features.Expedition
 
             if (currentMode == ExpeditionRunMode.Challenge)
             {
-                var lastClearedStage = progress.View.LastClearedStage;
+                var lastClearedStage = progress.View.ActiveLastClearedStage;
                 var repeatModeSaved = false;
                 if (lastClearedStage > 0)
                 {
@@ -1411,15 +1470,19 @@ namespace ProjectMT.Features.Expedition
 
         private void UpdateHud()
         {
-            var modeChanged = !hudCacheValid || displayedMode != currentMode;
+            var modeChanged = !hudCacheValid || displayedMode != currentMode ||
+                              displayedDifficulty != currentDifficulty;
             if (modeText != null && modeChanged)
             {
-                modeText.text = currentMode == ExpeditionRunMode.Challenge ? "도전" : "반복";
+                var difficulty = currentDifficulty == ExpeditionDifficulty.Hard ? "하드" : "일반";
+                var runMode = currentMode == ExpeditionRunMode.Challenge ? "도전" : "반복";
+                modeText.text = $"{difficulty} · {runMode}";
             }
 
             if (stageText != null && (!hudCacheValid || displayedStage != currentStage))
             {
-                stageText.text = $"원정대 {currentStage}";
+                var difficulty = currentDifficulty == ExpeditionDifficulty.Hard ? "하드" : "일반";
+                stageText.text = $"{difficulty} 원정대 {currentStage}";
             }
 
             if (waveText != null &&
@@ -1447,7 +1510,8 @@ namespace ProjectMT.Features.Expedition
             }
 
             var modeInteractable = !settling &&
-                (currentMode == ExpeditionRunMode.Repeat || progress == null || progress.View.LastClearedStage > 0);
+                (currentMode == ExpeditionRunMode.Repeat || progress == null ||
+                 progress.View.ActiveLastClearedStage > 0);
             if (modeButton != null && (!hudCacheValid || displayedModeInteractable != modeInteractable))
             {
                 modeButton.interactable = modeInteractable;
@@ -1466,6 +1530,7 @@ namespace ProjectMT.Features.Expedition
             }
 
             displayedMode = currentMode;
+            displayedDifficulty = currentDifficulty;
             displayedStage = currentStage;
             displayedWave = currentWave;
             displayedWaveCount = waveCount;
@@ -1500,13 +1565,17 @@ namespace ProjectMT.Features.Expedition
                 Vector3 entryPosition,
                 Vector3 readyPosition,
                 float duration,
-                bool isBoss)
+                bool isBoss,
+                bool isNinja,
+                int ninjaOrdinal)
             {
                 Actor = actor;
                 EntryPosition = entryPosition;
                 ReadyPosition = readyPosition;
                 Duration = Mathf.Max(0.1f, duration);
                 IsBoss = isBoss;
+                IsNinja = isNinja;
+                NinjaOrdinal = ninjaOrdinal;
             }
 
             public UnitActor Actor { get; }
@@ -1514,6 +1583,8 @@ namespace ProjectMT.Features.Expedition
             public Vector3 ReadyPosition { get; }
             public float Duration { get; }
             public bool IsBoss { get; }
+            public bool IsNinja { get; }
+            public int NinjaOrdinal { get; }
             public float Elapsed { get; set; }
             public bool Reached { get; set; }
         }

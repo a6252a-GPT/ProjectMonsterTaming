@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: "\uB450\uBE44"
   rarity: 0
   portrait: {fileID: 21300000, guid: a35a4a34c8fe9f442a9368da6c86abbe, type: 3}
-  skillLoadoutConfigured: 0
-  rarityPassiveSkill: {fileID: 0}
+  skillLoadoutConfigured: 1
+  rarityPassiveSkill: {fileID: 11400000, guid: 4c73e8163f1f1944e9505cfbf34b2e07, type: 2}
   rarityActiveSkill: {fileID: 0}
   productionMemo: Notion monster batch / Bunny_01
   vendorPrefab: {fileID: 1285027137539520594, guid: 876abe367e8aada43bd9cd492081f3c3, type: 3}

@@ -61,7 +61,18 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 ["lucy_01"] = "BA_M_06",
                 ["mingyu_mythic_01"] = "BA_M_03",
                 ["oster_01"] = "BA_R_03",
-                ["pc_bear_01"] = "BA_R_04"
+                ["pc_bear_01"] = "BA_R_04",
+                ["pipi_01"] = "BA_R_01",
+                ["berry_01"] = "BA_R_01",
+                ["pango_01"] = "BA_M_04",
+                ["ruby_01"] = "BA_M_05",
+                ["kain_01"] = "BA_M_06",
+                ["argo_01"] = "BA_R_05",
+                ["astell_01"] = "BA_S_01",
+                ["candy_tree_01"] = "BA_R_03",
+                ["ignis_01"] = "BA_M_02",
+                ["pyron_01"] = "BA_R_03",
+                ["nagaris_01"] = "BA_S_02"
             };
 
         public static IReadOnlyDictionary<string, string> Assignments => MonsterProfileIds;

@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5de17c54962b5e4498845b2d56bbb2f, type: 3}
+  m_Name: MD_berry_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
+  monsterId: berry_01
+  displayName: "\uBCA0\uB9AC"
+  portrait: {fileID: 21300000, guid: 05e7960c3a2d63d4b9eac06d8617d9c3, type: 3}
+  previewPrefab: {fileID: 1785047037702400, guid: 9ff7d0c3932f6114e8bb75820cd77b53, type: 3}
+  visualTint: {r: 1, g: 1, b: 1, a: 1}
+  maxHealth: 92
+  attackPower: 11
+  defense: 2
+  attackSpeed: 1.15
+  moveSpeed: 2.7
+  attackRange: 4
+  ranged: 1
+  runtimeAssetKey: monster/berry_01
+  runtimeAssetSet: {fileID: 11400000, guid: 238adb0ba12336d429f21f0a83978eb6, type: 2}

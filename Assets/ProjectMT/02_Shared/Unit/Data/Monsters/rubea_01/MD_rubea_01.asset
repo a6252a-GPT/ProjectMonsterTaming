@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: MD_rubea_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
   monsterId: rubea_01
-  displayName: "\uB8E8\uBCA0\uC544"
+  displayName: "\uD53C\uB2C9\uC2A4"
   portrait: {fileID: 21300000, guid: a79ffc6e63b656342b8678065edfd703, type: 3}
-  previewPrefab: {fileID: 7734291998845522433, guid: 7d8f7b872458fd74fb3fb07ea10187e6, type: 3}
+  previewPrefab: {fileID: 8215003284720749345, guid: de547c06f495e104f9c9602a9786b36a, type: 3}
   visualTint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 100
   attackPower: 10

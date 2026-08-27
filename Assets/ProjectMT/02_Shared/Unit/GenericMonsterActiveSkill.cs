@@ -32,10 +32,14 @@ namespace ProjectMT.Shared.Unit
             MonsterSkillPresentationTier tier,
             MonsterSkillRecipe skillRecipe,
             int cost = 1000,
-            Sprite skillIcon = null)
+            Sprite skillIcon = null,
+            float energyPerSecond = 40f,
+            float energyPerBasicAttackHit = 120f,
+            float energyPerDamageReceived = 80f)
         {
             EditorConfigureCommon(id, title, body, tier, skillRecipe, skillIcon);
             EditorSetEnergyCost(cost);
+            EditorSetEnergyGeneration(energyPerSecond, energyPerBasicAttackHit, energyPerDamageReceived);
         }
 #endif
     }

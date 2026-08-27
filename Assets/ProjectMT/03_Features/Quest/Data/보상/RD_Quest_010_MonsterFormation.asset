@@ -17,3 +17,5 @@ MonoBehaviour:
   items:
   - itemId: material_legion_potential_upgrade_stone
     amount: 10
+  - itemId: ticket_monster_summon
+    amount: 1

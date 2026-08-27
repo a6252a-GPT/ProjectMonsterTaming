@@ -25,7 +25,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
   move:
-    clip: {fileID: 1827226128182048838, guid: bcb0e4718319f064592e5116d18cda0d, type: 3}
+    clip: {fileID: 1827226128182048838, guid: 27f47c1cca29fb049a955d5604cdb9ab, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.08
     loop: 1

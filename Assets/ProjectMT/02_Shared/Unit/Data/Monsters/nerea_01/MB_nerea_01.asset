@@ -12,17 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b64a9dc2cac6e714e80d1ff73e6cbc52, type: 3}
   m_Name: MB_nerea_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterBodyProfile
-  visualScale: {x: 1, y: 1, z: 1}
+  visualScale: {x: 0.544, y: 0.544, z: 0.544}
   visualLocalPosition: {x: 0, y: 0, z: 0}
-  groundOffset: 0
+  groundOffset: 0.025
   facingYawOffset: 0
   bodyRadius: 0.5
   bodyHeight: 1
   selectionRadius: 0.65
   hpBarHeight: 1.2
-  animatorPath: Visual/Planta_Shadow
+  animatorPath: Visual
   attackOriginPath: AttackOrigin
   hitCenterPath: HitCenter
-  rigMode: 0
+  rigMode: 1
   previewScale: 1
   vfxScale: 1

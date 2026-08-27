@@ -23,9 +23,10 @@ MonoBehaviour:
   prerequisiteQuestId:
     value: quest_002_monster_summon
   reward: {fileID: 11400000, guid: 789501d9d2e540bb9a76127269d98d40, type: 2}
-  unlockTargets: 
-  unlockGateEnabled: 0
+  unlockTargets: 02000000
+  unlockGateEnabled: 1
   requiresActiveTracking: 1
   isRepeatingTemplate: 0
   repeatIncrement: 0
   repeatMaxOccurrences: 0
+  repeatPrerequisiteQuestIds: []

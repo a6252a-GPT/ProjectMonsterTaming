@@ -78,6 +78,18 @@ namespace ProjectMT.Contents.CastleRaidHex
             : Defender?.Health == null
                 ? Ally != null ? Ally.CurrentHealth : 0f
                 : Defender.Health.CurrentHealth;
+        public float MaxHealth => Structure != null
+            ? Structure.MaxHealth
+            : Defender?.Health == null
+                ? Ally != null ? Ally.MaxHealth : 0f
+                : Defender.Health.MaxHealth;
+        public Vector3 Position => Structure != null
+            ? Structure.transform.position
+            : Defender != null
+                ? Defender.transform.position
+                : Ally != null
+                    ? Ally.transform.position
+                    : Vector3.zero;
     }
 
     public readonly struct HexCastleAssaultDecision
@@ -200,6 +212,12 @@ namespace ProjectMT.Contents.CastleRaidHex
             public float ExpiresAt;
         }
 
+        private sealed class PassiveExposureRecord
+        {
+            public float Rate;
+            public float Remaining;
+        }
+
         private readonly struct ThreatClaim : IEquatable<ThreatClaim>
         {
             public ThreatClaim(int targetId, int responderId)
@@ -248,6 +266,11 @@ namespace ProjectMT.Contents.CastleRaidHex
             new Dictionary<SupportClaimKey, SupportClaimRecord>();
         private readonly Dictionary<int, int> unitSpawnOrders = new Dictionary<int, int>();
         private readonly Dictionary<int, int> cellHealthBands = new Dictionary<int, int>();
+        private readonly Dictionary<int, PassiveExposureRecord> passiveExposures =
+            new Dictionary<int, PassiveExposureRecord>();
+        private readonly List<HexCastleAssaultTarget> passiveTargetBuffer =
+            new List<HexCastleAssaultTarget>();
+        private readonly List<int> expiredPassiveExposureKeys = new List<int>();
         private HexCastleAssaultNavigationSnapshot navigation;
         private HexCastleAssaultAIProfileCatalog profileCatalog;
         private HexCastleGarrisonWorld garrisonWorld;
@@ -391,6 +414,9 @@ namespace ProjectMT.Contents.CastleRaidHex
             supportClaims.Clear();
             unitSpawnOrders.Clear();
             cellHealthBands.Clear();
+            passiveExposures.Clear();
+            passiveTargetBuffer.Clear();
+            expiredPassiveExposureKeys.Clear();
             cells = null;
             navigation = null;
             profileCatalog = null;
@@ -683,6 +709,7 @@ namespace ProjectMT.Contents.CastleRaidHex
 
         private void Update()
         {
+            TickPassiveExposures(Time.deltaTime);
             if (!configured || units.Count == 0)
             {
                 return;
@@ -704,6 +731,123 @@ namespace ProjectMT.Contents.CastleRaidHex
                 unit.RefreshStrategicDecision();
                 remainingBudget--;
             }
+        }
+
+        public void ApplyPassiveExposure(HexCastleAssaultTarget target, float rate, float duration)
+        {
+            if (target.InstanceId == 0 || rate <= 0f || duration <= 0f)
+            {
+                return;
+            }
+            if (!passiveExposures.TryGetValue(target.InstanceId, out var record))
+            {
+                record = new PassiveExposureRecord();
+                passiveExposures.Add(target.InstanceId, record);
+            }
+            record.Rate = Mathf.Max(record.Rate, rate);
+            record.Remaining = Mathf.Max(record.Remaining, duration);
+        }
+
+        public float ResolvePassiveDamageMultiplier(HexCastleAssaultTarget target)
+        {
+            return target.InstanceId != 0 &&
+                   passiveExposures.TryGetValue(target.InstanceId, out var record) &&
+                   record.Remaining > 0f
+                ? 1f + Mathf.Max(0f, record.Rate)
+                : 1f;
+        }
+
+        public void ApplyPassiveSplash(
+            HexCastleAssaultUnit source,
+            HexCastleAssaultTarget primary,
+            float amount,
+            float radius,
+            int maxTargets)
+        {
+            if (source == null || amount <= 0f || radius <= 0f || maxTargets <= 0)
+            {
+                return;
+            }
+            passiveTargetBuffer.Clear();
+            if (cells != null)
+            {
+                foreach (var cell in cells.Values)
+                {
+                    if (cell == null || !cell.IsAlive || !cell.IsDamageable || cell.GetInstanceID() == primary.InstanceId)
+                    {
+                        continue;
+                    }
+                    var target = new HexCastleAssaultTarget(cell, cell == palaceCore);
+                    if (PlanarDistance(primary.Position, target.Position) <= radius)
+                    {
+                        passiveTargetBuffer.Add(target);
+                    }
+                }
+            }
+            var defenders = garrisonWorld?.Units;
+            if (defenders != null)
+            {
+                for (var index = 0; index < defenders.Count; index++)
+                {
+                    var defender = defenders[index];
+                    if (defender == null || !defender.IsAlive || defender.GetInstanceID() == primary.InstanceId)
+                    {
+                        continue;
+                    }
+                    var target = new HexCastleAssaultTarget(defender);
+                    if (PlanarDistance(primary.Position, target.Position) <= radius)
+                    {
+                        passiveTargetBuffer.Add(target);
+                    }
+                }
+            }
+            passiveTargetBuffer.Sort((left, right) =>
+                PlanarDistance(primary.Position, left.Position).CompareTo(
+                    PlanarDistance(primary.Position, right.Position)));
+            var count = Mathf.Min(maxTargets, passiveTargetBuffer.Count);
+            for (var index = 0; index < count; index++)
+            {
+                var target = passiveTargetBuffer[index];
+                var resolved = amount * ResolvePassiveDamageMultiplier(target);
+                if (target.Structure != null)
+                {
+                    target.Structure.ApplyDamage(resolved, target.Position);
+                }
+                else
+                {
+                    target.Defender?.ApplyDamage(resolved, target.Position);
+                }
+            }
+            passiveTargetBuffer.Clear();
+        }
+
+        private void TickPassiveExposures(float deltaTime)
+        {
+            if (passiveExposures.Count == 0)
+            {
+                return;
+            }
+            expiredPassiveExposureKeys.Clear();
+            foreach (var pair in passiveExposures)
+            {
+                pair.Value.Remaining = Mathf.Max(0f, pair.Value.Remaining - Mathf.Max(0f, deltaTime));
+                if (pair.Value.Remaining <= 0f)
+                {
+                    expiredPassiveExposureKeys.Add(pair.Key);
+                }
+            }
+            for (var index = 0; index < expiredPassiveExposureKeys.Count; index++)
+            {
+                passiveExposures.Remove(expiredPassiveExposureKeys[index]);
+            }
+            expiredPassiveExposureKeys.Clear();
+        }
+
+        private static float PlanarDistance(Vector3 left, Vector3 right)
+        {
+            left.y = 0f;
+            right.y = 0f;
+            return Vector3.Distance(left, right);
         }
 
         private bool TryResolveThreat(

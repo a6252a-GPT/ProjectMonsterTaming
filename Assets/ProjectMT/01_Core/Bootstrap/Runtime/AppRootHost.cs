@@ -186,6 +186,7 @@ namespace ProjectMT.Bootstrap
 
             partyBuilder = new BattlePartySnapshotBuilder(
                 projectConfig.MonsterCatalog,
+                projectConfig.MonsterRarityCatalog,
                 projectConfig.CombatStatConfig ?? CombatStatConfig.RuntimeDefault);
 
             sceneLoader.Configure(projectConfig.SceneCatalog);

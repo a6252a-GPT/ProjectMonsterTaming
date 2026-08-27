@@ -313,14 +313,36 @@ namespace ProjectMT.Shared.Combat
             float amount,
             DamageFeedbackFlags feedbackFlags = DamageFeedbackFlags.None)
         {
+            return ApplyMonsterDamageInternal(source, target, amount, feedbackFlags, true);
+        }
+
+        public bool ApplyMonsterSkillDamage(
+            UnitActor source,
+            IDamageable target,
+            float amount,
+            DamageFeedbackFlags feedbackFlags = DamageFeedbackFlags.None)
+        {
+            var skillRate = source == null ? 1f : Mathf.Max(0f, 1f + source.EffectiveStats.skillDamageRate);
+            return ApplyMonsterDamageInternal(source, target, amount * skillRate, feedbackFlags, false);
+        }
+
+        private bool ApplyMonsterDamageInternal(
+            UnitActor source,
+            IDamageable target,
+            float amount,
+            DamageFeedbackFlags feedbackFlags,
+            bool applyOutgoingPassive)
+        {
             if (source == null || target == null || !source.IsAlive || !target.IsAlive || amount <= 0f)
             {
                 return false;
             }
 
-            var resolvedAmount = amount;
             var component = target as Component;
             var targetActor = component != null ? component.GetComponent<UnitActor>() : null;
+            var resolvedAmount = applyOutgoingPassive
+                ? amount * source.SkillRuntime.ResolveOutgoingDamageMultiplier(targetActor)
+                : amount;
             if (targetActor != null && !targetActor.IsCombatReady)
             {
                 return false;
@@ -329,11 +351,22 @@ namespace ProjectMT.Shared.Combat
             if (targetActor != null)
             {
                 resolvedAmount = CombatDamageCalculator.Calculate(
-                    amount,
+                    resolvedAmount,
                     source.EffectiveStats,
                     targetActor.EffectiveStats,
                     sharedStatConfig ?? CombatStatConfig.RuntimeDefault,
                     Random.value).Amount;
+                resolvedAmount = targetActor.SkillRuntime.ResolveIncomingDamage(
+                    resolvedAmount,
+                    out var shieldAbsorbed);
+                if (resolvedAmount <= 0f && shieldAbsorbed > 0f)
+                {
+                    if (applyOutgoingPassive)
+                    {
+                        source.SkillRuntime.NotifyBasicAttackHit(true, targetActor);
+                    }
+                    return true;
+                }
             }
 
             float appliedDamage;
@@ -352,6 +385,15 @@ namespace ProjectMT.Shared.Combat
             if (appliedDamage <= 0f)
             {
                 return false;
+            }
+
+            if (applyOutgoingPassive && targetActor != null)
+            {
+                source.SkillRuntime.NotifyBasicAttackHit(true, targetActor);
+                if (!targetActor.IsAlive)
+                {
+                    source.SkillRuntime.NotifyTargetDestroyed();
+                }
             }
 
             if (targetActor == null)

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f8f928504a5fbb4087b619c60edf930, type: 3}
+  m_Name: MC_ruby_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterCombatProfile
+  combatType: 0
+  action: {fileID: 8027584422207582474}
+  impactStrength: 0
+  reactionWeight: 1
+--- !u!114 &8027584422207582474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ba24edda31e98848b3134f8c253ebab, type: 3}
+  m_Name: Melee_ruby_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MeleeActionDefinition
+  basicAttackProfile: {fileID: 11400000, guid: 6afe6c47cd7c43d48b71952eb7e80c35, type: 2}
+  mode: 0
+  areaCenter: 1
+  areaRadius: 1.5
+  maxTargets: 4

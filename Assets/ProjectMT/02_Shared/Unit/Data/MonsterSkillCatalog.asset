@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: MonsterSkillCatalog
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterSkillCatalog
   passiveSkills:
+  - {fileID: 11400000, guid: dc106c0699e32a84db8bee2e2ab6f15b, type: 2}
   - {fileID: 11400000, guid: 6ee1b6bedd8437d49a882952f6871d37, type: 2}
   - {fileID: 11400000, guid: 6df72759e2e16f54b8d81a45f1ee7574, type: 2}
   - {fileID: 11400000, guid: 81285a8c4fbc30e4a896973963b1c440, type: 2}
@@ -47,6 +48,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 390624e3460e32a4fa6c46a80ea426b6, type: 2}
   - {fileID: 11400000, guid: fbb8cfea3f35c7e4ab8b435b5ed95a70, type: 2}
   activeSkills:
+  - {fileID: 11400000, guid: 547fc4a37ceefc3408ddd5295f31219a, type: 2}
   - {fileID: 11400000, guid: 753382b57e76aa5478e6c32454929eb6, type: 2}
   - {fileID: 11400000, guid: 2b06b79af1de3c34da517ca0349ffad5, type: 2}
   - {fileID: 11400000, guid: 785812a2c08285b43b35345c4b57ca32, type: 2}

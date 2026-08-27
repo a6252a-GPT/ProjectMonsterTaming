@@ -126,15 +126,17 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
         }
 
         [Test]
-        public void IndependentProfileCatalog_KeepsSquareMonsterPolicyValues()
+        public void ProfileCatalog_ContainsCurrentHexMonsterPolicyValues()
         {
             var catalog = Resources.Load<HexCastleAssaultAIProfileCatalog>(
                 HexCastleAssaultAIProfileCatalog.DefaultResourcesPath);
 
             Assert.That(catalog, Is.Not.Null);
             Assert.That(catalog.TryValidate(out var error), Is.True, error);
-            Assert.That(catalog.Entries.Count, Is.EqualTo(33));
-            Assert.That(catalog.Resolve("aru_01").Pattern, Is.EqualTo(HexCastleAssaultPattern.ThreatSuppressor));
+            Assert.That(catalog.Entries.Count, Is.EqualTo(38));
+            Assert.That(catalog.Resolve("aru_01").Pattern, Is.EqualTo(HexCastleAssaultPattern.TacticalSupport));
+            Assert.That(catalog.Resolve("aru_01").SupportFocus, Is.EqualTo(HexCastleAssaultSupportFocus.DefenseBuff));
+            Assert.That(catalog.Resolve("nerea_01").Pattern, Is.EqualTo(HexCastleAssaultPattern.DefenderHunter));
             Assert.That(catalog.Resolve("castley_01").Pattern, Is.EqualTo(HexCastleAssaultPattern.WallBreaker));
             Assert.That(catalog.Resolve("floria_01").Pattern, Is.EqualTo(HexCastleAssaultPattern.TacticalSupport));
         }

@@ -1,0 +1,145 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7dce2fcc29bd12a478eb63ec8d4d69c4, type: 3}
+  m_Name: EnemyAppearance_UpperKnight_High
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Expedition.EnemyAppearanceProfile
+  group: 10
+  visualScale: 0.75
+  locomotionController: {fileID: 9100000, guid: 006c41f5874bc4c4eab383ed3c09d91c, type: 2}
+  bodyPrefabs:
+  - {fileID: 3700871802860749809, guid: eb67899951917494cb7db28ce054ff8d, type: 3}
+  - {fileID: 1011001027228133253, guid: 64ba75aa1fbe12c47903d4fd73f1f7c3, type: 3}
+  - {fileID: 1185417723026727976, guid: 4511b33ca008d8243aada23088fb499d, type: 3}
+  - {fileID: 3574672246908441472, guid: 7c8a7eda3aa56814fb7b06a0f62122b3, type: 3}
+  - {fileID: 6434995765704883834, guid: aa98431c71b8eb34492edc4fe2522fea, type: 3}
+  - {fileID: 3288701687297090835, guid: ee4799b227ece6c4382cb100288e22d2, type: 3}
+  - {fileID: 5492212686711091840, guid: 6ea8f43b4e3b4e245a69b2d6fa5bc06a, type: 3}
+  - {fileID: 16297705063170433, guid: 060aa5f1f870d8f499cb881fb53e7f46, type: 3}
+  fairHeadPrefabs:
+  - {fileID: 748358387108527456, guid: 74832b4893f7e104a8e8419ebe82d0d9, type: 3}
+  - {fileID: 2634349007816627988, guid: 953828d771bf03a498dcac53c0e22c39, type: 3}
+  tanHeadPrefabs:
+  - {fileID: 4710130169166428788, guid: 4d6ca77f379c30046adc5978d5f0e638, type: 3}
+  - {fileID: 3891784013233585213, guid: 310f7b67f4adba7419d00e67cdd36f35, type: 3}
+  facePrefabs:
+  - {fileID: 6672452283609618782, guid: 4008f458f907a4a4ea536c302d7ff47c, type: 3}
+  - {fileID: 6859511089570260906, guid: b1e3fcb5712b6494fa527cfbd74a5849, type: 3}
+  - {fileID: 554947813622418829, guid: dd0a4496dd67cb149a89349a60b6a5cd, type: 3}
+  - {fileID: 5315210187450253028, guid: 4a7c267e9cb7c8244abe4c13e14bfd8c, type: 3}
+  - {fileID: 273541279120373057, guid: ec9c477745503c4418f75e001015be35, type: 3}
+  - {fileID: 5788464411015287754, guid: 2b69a82f6be67824fb1b49e87fa85e9e, type: 3}
+  - {fileID: 1408175269263755328, guid: bbf34249dceca7d4180a32d1a2c47900, type: 3}
+  - {fileID: 3622569088578312609, guid: 19af5208cfe64f24b95f7fb89858d18e, type: 3}
+  - {fileID: 5721433798116060735, guid: d10950c921461754bb654f193a38eb60, type: 3}
+  - {fileID: 3174010472532562036, guid: c56a4cea125321d47ad491143678e402, type: 3}
+  - {fileID: 8493058836699952306, guid: 694fe910063d6794c986855429c4d3d7, type: 3}
+  - {fileID: 2146383181418711706, guid: a48806fc9a3f44d4092b7a18edc9220d, type: 3}
+  - {fileID: 8508447952602442379, guid: 8d17396b6b9ea6b409c3749833cde5b9, type: 3}
+  - {fileID: 7024688136908479755, guid: 1bd2d82be8a13354dbd32de98291de6f, type: 3}
+  - {fileID: 891595249403174434, guid: b68321e0cc5d7e34ca00316cca10ff80, type: 3}
+  regularHairPrefabs:
+  - {fileID: 7709592250652146324, guid: 0e222f1b9776b23428ee5bd2e3aae6d2, type: 3}
+  - {fileID: 3420077196208132480, guid: 0dce5721ce0c50945b68081ef3c4af4d, type: 3}
+  - {fileID: 3205810025240634525, guid: 97f24e200b7c398448f6ff7dbd4542a7, type: 3}
+  - {fileID: 7480245162048355766, guid: 98ecf5ed101c0e943847bdd233635087, type: 3}
+  - {fileID: 5252911804231810021, guid: 42f65287e535a3449aee2f9a0f6cd60d, type: 3}
+  - {fileID: 3420077196208132480, guid: f4dba9b36a49fd04688809001e0ee09c, type: 3}
+  - {fileID: 7709592250652146324, guid: feec38850e46c9b45a227894c43663e1, type: 3}
+  - {fileID: 3205810025240634525, guid: 4e33960e529136b4986d5336e09b8177, type: 3}
+  - {fileID: 7480245162048355766, guid: 372f6bb4ca3de57428d4a1e895b832f7, type: 3}
+  - {fileID: 5252911804231810021, guid: 6fe5c8b4d443bf7418703756093959eb, type: 3}
+  - {fileID: 3420077196208132480, guid: 7218e12abc2571b45a32fa2ecc76d206, type: 3}
+  - {fileID: 7709592250652146324, guid: 0b0247b82f9c521439015e6db4902c78, type: 3}
+  - {fileID: 3205810025240634525, guid: 20a6e35a31f841e4c969cdd124a8c81c, type: 3}
+  - {fileID: 7480245162048355766, guid: 6a07e65c3cd6384489f645c5a22bd512, type: 3}
+  - {fileID: 5252911804231810021, guid: 418e8be779f6bdc439ee14bf0aedd44b, type: 3}
+  - {fileID: 4445755073631534311, guid: 8dbf246f741900d4997a06cf21ff9d1a, type: 3}
+  - {fileID: 8834353528948509786, guid: 27aa8de094d2d9243b4d048736c25124, type: 3}
+  - {fileID: 4414031417064827466, guid: e9eec5f1cfc561c44bee7a8286c6daa4, type: 3}
+  - {fileID: 2351104628867433763, guid: 24e3e079f7017f342ae860563c626ae4, type: 3}
+  - {fileID: 3735605456231184478, guid: a022f87195cfee145ac88428ff545a93, type: 3}
+  hatHairPrefabs:
+  - {fileID: 5052429155277091333, guid: 33891c239f057434ba29d7cdc90cb746, type: 3}
+  - {fileID: 9177034488595210082, guid: 2578fb221bf0d48409d5528bfbc4c06a, type: 3}
+  - {fileID: 1574746675696567057, guid: dea8ec8dada0f1642a6706cabe8d4848, type: 3}
+  - {fileID: 4083742853737807, guid: 4e5bb197bcd14864a9b3f19dfa4deaae, type: 3}
+  - {fileID: 1372391129933981055, guid: ead1969b384681b449849f38b06fc1a9, type: 3}
+  headwearPrefabs:
+  - {fileID: 2093682475179316359, guid: 2754bade5ec8e454198a9a12283bebb4, type: 3}
+  - {fileID: 476184710534662954, guid: c36d41670674f764387f53bc003b7e62, type: 3}
+  - {fileID: 1449419952620718751, guid: b1da1b029c9fc184c818ba492ce40441, type: 3}
+  - {fileID: 1114546501468638607, guid: e011205cb16ee44409764824756de9d3, type: 3}
+  - {fileID: 8111270488476237469, guid: 853d642e835980449a3a860d839e0829, type: 3}
+  - {fileID: 2328132046264453396, guid: 546ac9107717de84b9cb95acc4eb2dfd, type: 3}
+  - {fileID: 7855277258294041047, guid: 69dc5c0183dd9f34e8bff00d1a27b44e, type: 3}
+  - {fileID: 8192691302776988256, guid: 227585109c300494193bda523a53b952, type: 3}
+  - {fileID: 8386923732626588470, guid: c03f6936114024b47be722e9ff813ef5, type: 3}
+  - {fileID: 4405499961917878090, guid: cd8556a4fb112ac4a88eb52dab4ea89e, type: 3}
+  - {fileID: 3449827092541328626, guid: dc91fc264c489dd4d8ba38b8022307fa, type: 3}
+  - {fileID: 7185752178590159272, guid: 68d7a76a61b06f84a8785c646df7cb57, type: 3}
+  - {fileID: 2446391207944116082, guid: 9cdeef48ce8a1df48a5a442d21dc6afc, type: 3}
+  - {fileID: 2908169836124555705, guid: 3152da8f2b2c76a43b35b3a1416ba5cb, type: 3}
+  - {fileID: 6989061839369611086, guid: 5175d487e50058f4cad924b96d8a5ccd, type: 3}
+  - {fileID: 1768279522426511857, guid: 4b4c7f4997d02084cbada0624e3a05c5, type: 3}
+  - {fileID: 5021596835513820681, guid: 9fc65bcb29c9803499cf2d34a30de911, type: 3}
+  - {fileID: 7887619099909382075, guid: 22209569c13f869489b3d83c8dabe79d, type: 3}
+  - {fileID: 4189922566161994717, guid: e673821f3593b81409ab430093189477, type: 3}
+  - {fileID: 5310108330066208266, guid: 0c3a33dd912359d4886811bbf57f78c4, type: 3}
+  rightHandPrefabs:
+  - {fileID: 6939972105707272929, guid: 3ba130ecb0010d848afd5d73847cc5e9, type: 3}
+  - {fileID: 197854190125567213, guid: 9309bb21d8435b9409ecbddeac128231, type: 3}
+  - {fileID: 8100920622132855395, guid: 5f7f3431068e4424bb217cb33ed73ea6, type: 3}
+  - {fileID: 800371890296464365, guid: bcf5303e03f5cf54b8b619d1b34478a9, type: 3}
+  - {fileID: 6195700356872177987, guid: 5ef478bea262f9b4fbc40adaab925818, type: 3}
+  - {fileID: 4079195181530061258, guid: 8686dee1fbf6f9d43ad7194a50bcf0f9, type: 3}
+  - {fileID: 7187027578295664079, guid: 1a0c352b1a5a11c4eb98b945646b34b1, type: 3}
+  - {fileID: 1528376486071842057, guid: b0e1e166231f42a498383129e3493034, type: 3}
+  - {fileID: 595247383282946245, guid: 9cb6e0b389c7a3f4ba2a22ac4fe6e2c1, type: 3}
+  - {fileID: 318813851315770587, guid: 6cbb3e51718b3d14486c8d8ffb22f6ad, type: 3}
+  - {fileID: 6915069819932414172, guid: fe5192210653c144c86cb70a31330444, type: 3}
+  - {fileID: 6774173387065301755, guid: f0579aa6713a07b4eb551c9b6a2c65cb, type: 3}
+  - {fileID: 1123499670579604248, guid: 283a03c3916c27e4b86531de26f37be8, type: 3}
+  - {fileID: 3857928242685315015, guid: ff679310a80fb7d4d9562b984cb764bd, type: 3}
+  - {fileID: 1405959090994629310, guid: 5b48bf54513e9df469b94f49854b9014, type: 3}
+  - {fileID: 726660776835052464, guid: ae1b21d357a230248bb52f0a07307eb3, type: 3}
+  - {fileID: 7257587498477199300, guid: 49712f55e54234848add388ed9960dd7, type: 3}
+  - {fileID: 8492906638690644299, guid: b50cfd0f3248a874d9cfb56db552431a, type: 3}
+  - {fileID: 3254875358522813288, guid: e7403fde2563aac4c9675bdb7306d552, type: 3}
+  - {fileID: 156221432838380127, guid: 0bafa7ab9272c684ba50b018f91e60eb, type: 3}
+  leftHandPrefabs:
+  - {fileID: 7818070215085045959, guid: bf4d975abb90aaf4bb32542cd7916fda, type: 3}
+  - {fileID: 166288452207685046, guid: 66a4f10a12100b14cb883a8d624a8244, type: 3}
+  - {fileID: 7066121102697450007, guid: caf4c49b09546f643998667bc5603391, type: 3}
+  - {fileID: 7300741165431187964, guid: 7a52c9df4815180438b6aed76f264403, type: 3}
+  - {fileID: 8850955619769122882, guid: 5a0e96ed2a1965749bc12ce42a7ded7a, type: 3}
+  - {fileID: 4499290782332609775, guid: 470e24f9713a5ac48b3d5e4233e2c001, type: 3}
+  - {fileID: 7988463570298006859, guid: f8d7130344a123d49a65e329699fe49c, type: 3}
+  - {fileID: 7624345058352644241, guid: f1a0b31c5af5a43408f5225c187254cc, type: 3}
+  - {fileID: 6595550830882552943, guid: 78684f242fff0164e86af09f8f540e77, type: 3}
+  - {fileID: 5167759372239978109, guid: e47b689538f9d4f4a9bcd7ebf5864e52, type: 3}
+  - {fileID: 1341916992057439863, guid: e11d2f9dbe14e3745bc5c2f4dfa9a6b5, type: 3}
+  - {fileID: 3975511911912463376, guid: 748af3e6551989243a71b02868f6046e, type: 3}
+  - {fileID: 1549136071363678393, guid: 29b92ade24046df4d9fc4d1c8fbe5e97, type: 3}
+  - {fileID: 1918337431499542218, guid: 787f07ae0c4d9c6438d09f654c728810, type: 3}
+  - {fileID: 3997340655923137747, guid: 93fbae367eb2d6b47bb78315a5dfdf1e, type: 3}
+  - {fileID: 8696523465171711406, guid: ad075e7d8c6401948af6775d33d1f949, type: 3}
+  - {fileID: 9126513610892942491, guid: a9cbd7201a2b7f742a428597cf273ad1, type: 3}
+  - {fileID: 8778545540336351877, guid: 5008b1fb5d8b4aa469825d0b8e459da6, type: 3}
+  - {fileID: 596518135523562921, guid: 3f6cf3dc23990f14a8fa1de9a75eda02, type: 3}
+  - {fileID: 397973865363157364, guid: f625d6feae9fa7b4599258ad8e39af7e, type: 3}
+  backPrefabs: []
+  hairModeWithHeadwear: 2
+  headwearChance: 1
+  rightHandChance: 1
+  leftHandChance: 1
+  minimumBackAttachments: 0
+  maximumBackAttachments: 0

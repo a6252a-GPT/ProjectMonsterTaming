@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9063022393fce349b94c80b48a17738, type: 3}
+  m_Name: MR_berry_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterRuntimeAssetSet
+  visualAdapterPrefab: {fileID: 7727369928668151991, guid: a6a65e420d4edcb4fa33cf485a4e9faa, type: 3}
+  animatorController: {fileID: 9100000, guid: ab347d180fb33ba449f9d00121b798ac, type: 2}
+  bodyProfile: {fileID: 11400000, guid: dc86066061603dd48868761b8c314e38, type: 2}
+  motionProfile: {fileID: 11400000, guid: 8b00097d424407142b2cc56348b99da2, type: 2}
+  combatProfile: {fileID: 11400000, guid: cc6ebc28fd3fe39418c8c8f3edcad88c, type: 2}
+  ascensionProfile: {fileID: 11400000, guid: 7e8d594740cf8bf448174350e5b78188, type: 2}
+  feedbackProfile: {fileID: 11400000, guid: 536b710ea7f6ac74ca8488dfb322c85a, type: 2}

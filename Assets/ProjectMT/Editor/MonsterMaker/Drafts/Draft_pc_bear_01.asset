@@ -19,9 +19,9 @@ MonoBehaviour:
   skillLoadoutConfigured: 0
   rarityPassiveSkill: {fileID: 0}
   rarityActiveSkill: {fileID: 0}
-  productionMemo: Notion monster batch / Bear_03
-  vendorPrefab: {fileID: 3783682521264058297, guid: 35362d1e646858a459dd00072241e669, type: 3}
-  animatorSource: {fileID: 7996474116817644448, guid: 35362d1e646858a459dd00072241e669, type: 3}
+  productionMemo: Notion monster batch / Example13
+  vendorPrefab: {fileID: 1249964366292818, guid: 7c7b348f4fbf4c5478a5cb383db1d9eb, type: 3}
+  animatorSource: {fileID: 95514372820104280, guid: 7c7b348f4fbf4c5478a5cb383db1d9eb, type: 3}
   visualScale: {x: 2.5, y: 2.5, z: 2.5}
   visualLocalPosition: {x: 0, y: 0, z: 0}
   groundOffset: 0

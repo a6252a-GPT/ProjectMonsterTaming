@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9063022393fce349b94c80b48a17738, type: 3}
+  m_Name: MR_pipi_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterRuntimeAssetSet
+  visualAdapterPrefab: {fileID: 9097517946448066842, guid: b49c22b13780ebb458821e6b95fa25fe, type: 3}
+  animatorController: {fileID: 9100000, guid: 08c8199ebc4cf254dbb79ecd7b4d9a2d, type: 2}
+  bodyProfile: {fileID: 11400000, guid: c11d73ad6c4e70347a16b6a5c26e4775, type: 2}
+  motionProfile: {fileID: 11400000, guid: 15dd3b2f7e99f7540844726f35d57aa9, type: 2}
+  combatProfile: {fileID: 11400000, guid: acaf71858b86f6348a5d9e4eeaf767fa, type: 2}
+  ascensionProfile: {fileID: 11400000, guid: b386c0381afc30148a26d343ff916723, type: 2}
+  feedbackProfile: {fileID: 11400000, guid: a04fce61e5fdb624e9c0c4244f13c85f, type: 2}

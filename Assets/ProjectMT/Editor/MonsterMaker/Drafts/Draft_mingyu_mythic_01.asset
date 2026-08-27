@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp-Editor::ProjectMT.EditorTools.MonsterMaker.MonsterMakerDraft
   monsterId: mingyu_mythic_01
   displayName: "\uCC28\uBBFC\uADDC"
-  rarity: 4
+  rarity: 3
   portrait: {fileID: 21300000, guid: 9bc12f77527bcea4187b71e62416d6cf, type: 3}
   skillLoadoutConfigured: 0
   rarityPassiveSkill: {fileID: 0}

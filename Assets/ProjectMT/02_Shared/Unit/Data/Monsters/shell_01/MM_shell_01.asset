@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: MM_shell_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterMotionProfile
   idle:
-    clip: {fileID: 7400000, guid: 05a7e7bc754f21644a358853aff7baee, type: 3}
+    clip: {fileID: 7400000, guid: 00e0143f3c6c8e44395ccdeab0f44be2, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.08
     loop: 1
@@ -25,7 +25,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
   move:
-    clip: {fileID: 7400000, guid: fa0120cec5aa0e1408a9bad0f8216478, type: 3}
+    clip: {fileID: 7400000, guid: e899528dfebb5ae46b40652351d02039, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.08
     loop: 1
@@ -38,7 +38,7 @@ MonoBehaviour:
       scale: 1
   attacks:
   - motionId: bite01
-    clip: {fileID: 7400000, guid: 80f9762d2649e5a469350c4efc539797, type: 3}
+    clip: {fileID: 7400000, guid: e3e5f1175b60ca640909417c30eff285, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.06
     weight: 1
@@ -62,7 +62,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
   death:
-    clip: {fileID: 7400000, guid: a399b8c5021d21944aacb2d098b44b70, type: 3}
+    clip: {fileID: 7400000, guid: 6c1607d94e26a694190788a65e2e73e3, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.08
     loop: 0

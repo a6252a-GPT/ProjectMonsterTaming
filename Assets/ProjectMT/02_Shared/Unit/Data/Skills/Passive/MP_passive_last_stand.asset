@@ -39,8 +39,11 @@ MonoBehaviour:
       type: 2
       valueSource: 2
       magnitude: 0.2
+      magnitudeMode: 0
+      maximumMagnitude: 0.2
       duration: 4
       delay: 0
+      repeatInterval: 0
       radius: 0
       maxTargets: 1
       repeatCount: 1

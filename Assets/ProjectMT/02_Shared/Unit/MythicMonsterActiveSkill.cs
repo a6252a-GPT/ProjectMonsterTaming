@@ -35,10 +35,14 @@ namespace ProjectMT.Shared.Unit
             MonsterSkillRecipe skillRecipe,
             string executorId,
             int cost = 1000,
-            Sprite skillIcon = null)
+            Sprite skillIcon = null,
+            float energyPerSecond = 40f,
+            float energyPerBasicAttackHit = 120f,
+            float energyPerDamageReceived = 80f)
         {
             EditorConfigureCommon(id, title, body, MonsterSkillPresentationTier.Mythic, skillRecipe, skillIcon);
             EditorSetEnergyCost(cost);
+            EditorSetEnergyGeneration(energyPerSecond, energyPerBasicAttackHit, energyPerDamageReceived);
             dedicatedExecutorId = executorId?.Trim();
         }
 #endif

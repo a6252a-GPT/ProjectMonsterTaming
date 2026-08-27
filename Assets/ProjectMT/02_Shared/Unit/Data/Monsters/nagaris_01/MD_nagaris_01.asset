@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5de17c54962b5e4498845b2d56bbb2f, type: 3}
+  m_Name: MD_nagaris_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
+  monsterId: nagaris_01
+  displayName: "\uB098\uAC00\uB9AC\uC2A4"
+  portrait: {fileID: 21300000, guid: 1e2e1196198d4a945b658d9c166d7825, type: 3}
+  previewPrefab: {fileID: 5366632779147598302, guid: fdacaae60b920e24fa18970e6f402660, type: 3}
+  visualTint: {r: 1, g: 1, b: 1, a: 1}
+  maxHealth: 165
+  attackPower: 22
+  defense: 8
+  attackSpeed: 0.9
+  moveSpeed: 2.5
+  attackRange: 4.2
+  ranged: 1
+  runtimeAssetKey: monster/nagaris_01
+  runtimeAssetSet: {fileID: 11400000, guid: 8e0b289f10464b548b39f0a05df9ab23, type: 2}

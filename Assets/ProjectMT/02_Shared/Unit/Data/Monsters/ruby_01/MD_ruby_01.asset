@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5de17c54962b5e4498845b2d56bbb2f, type: 3}
+  m_Name: MD_ruby_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
+  monsterId: ruby_01
+  displayName: "\uB8E8\uBE44"
+  portrait: {fileID: 21300000, guid: c28b49276d2bb8c40981c9867e701ab2, type: 3}
+  previewPrefab: {fileID: 1746828927619028, guid: 0c544b804431e4a4aad8be505ff67c4c, type: 3}
+  visualTint: {r: 1, g: 1, b: 1, a: 1}
+  maxHealth: 105
+  attackPower: 15
+  defense: 3
+  attackSpeed: 1.35
+  moveSpeed: 3.2
+  attackRange: 2
+  ranged: 0
+  runtimeAssetKey: monster/ruby_01
+  runtimeAssetSet: {fileID: 11400000, guid: 7e9969bba1248ba409097256ceb55af8, type: 2}

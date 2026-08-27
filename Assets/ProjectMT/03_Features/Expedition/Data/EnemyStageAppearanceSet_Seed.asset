@@ -19,3 +19,9 @@ MonoBehaviour:
   mageTier1Prefab: {fileID: 1794485642791220319, guid: ecae6c2e983552b499c4902b49a9cd6b, type: 3}
   mageTier2Prefab: {fileID: 3371738317126103677, guid: de4b040cfb5ed7540952ad25760cb67c, type: 3}
   mageTier3Prefab: {fileID: 7073384584022453730, guid: 6e60787e57e14144ab7a7f5a2985c019, type: 3}
+  femalePeasantPrefab: {fileID: 5526742172049761887, guid: d1ecd2707c96c5f47acc41a53162c715, type: 3}
+  upperKnightLowerPrefab: {fileID: 4139436160291562566, guid: be3ce54d1af917f4082b05c4d89dc61a, type: 3}
+  upperKnightMidPrefab: {fileID: 8869772595425723906, guid: a11d7314f97a83644976328737b79a02, type: 3}
+  upperKnightHighPrefab: {fileID: 3175604385978060451, guid: f0edb8234a2cef841b4f9b161d6746f3, type: 3}
+  upperKnightFinalPrefab: {fileID: 808526905525549218, guid: be21742e925945941bdc426d718e94c7, type: 3}
+  ninjaPrefab: {fileID: 3248402871316491621, guid: c29f9f3e5dfdbf348a75a45e39af9c1e, type: 3}

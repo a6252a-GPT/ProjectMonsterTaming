@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5de17c54962b5e4498845b2d56bbb2f, type: 3}
+  m_Name: MD_kain_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
+  monsterId: kain_01
+  displayName: "\uCE74\uC778"
+  portrait: {fileID: 21300000, guid: 4c28b58923f8484499d6bf1106e1113c, type: 3}
+  previewPrefab: {fileID: 1910958790382018, guid: e363ccf9d9ceede4d90cc42493c6c6a4, type: 3}
+  visualTint: {r: 1, g: 1, b: 1, a: 1}
+  maxHealth: 98
+  attackPower: 16
+  defense: 2
+  attackSpeed: 1.45
+  moveSpeed: 3.3
+  attackRange: 2
+  ranged: 0
+  runtimeAssetKey: monster/kain_01
+  runtimeAssetSet: {fileID: 11400000, guid: 735f507bace9d3643a6b4ed6361e8c3e, type: 2}

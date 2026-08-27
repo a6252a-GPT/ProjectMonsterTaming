@@ -64,6 +64,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         private string unitId = string.Empty;
         private readonly HashSet<int> evaluatedOpportunityLayers = new HashSet<int>();
         private readonly Dictionary<int, int> specialistTargetCounts = new Dictionary<int, int>();
+        private readonly HexMonsterPassiveRuntime passiveRuntime = new HexMonsterPassiveRuntime();
 
         public bool ReachedPalace { get; private set; }
         public HexCoordinates CurrentCoordinates { get; private set; }
@@ -82,7 +83,9 @@ namespace ProjectMT.Contents.CastleRaidHex
             ? trapMoveSpeedMultiplier
             : 1f;
         public float EstimatedDamagePerSecond => Mathf.Max(0.1f, attackDamage * attackDamageMultiplier) /
-                                                  Mathf.Max(0.05f, attackInterval);
+                                                  passiveRuntime.ResolveAttackInterval(attackInterval);
+        public float BaseAttackDamage => attackDamage;
+        public HexMonsterPassiveRuntime PassiveRuntime => passiveRuntime;
         public float RecentDamagePerSecond => recentDamagePerSecond;
         public bool HasAttackBuff => attackBuffRemaining > 0f;
         public bool HasDefenseBuff => defenseBuffRemaining > 0f;
@@ -236,6 +239,12 @@ namespace ProjectMT.Contents.CastleRaidHex
             CurrentCoordinates = start;
             ExpectedDefenseLayer = assaultWorld.DefenseLayerCount;
             aiProfile = assaultWorld.RegisterUnit(this, unitId);
+            passiveRuntime.Initialize(
+                this,
+                assaultWorld,
+                unit.PassiveSkill,
+                unit.Level,
+                UnitEntryReason.CastleManualDeployment);
             transform.position = ResolvePosition(start);
             strategicDecisionRequested = true;
             nextAwarenessAt = Time.time + ResolveDecisionSpread();
@@ -356,7 +365,14 @@ namespace ProjectMT.Contents.CastleRaidHex
                 RequestStrategicDecision(true);
             }
 
-            var requested = amount * incomingDamageMultiplier;
+            var requested = passiveRuntime.ResolveIncomingDamage(
+                amount * incomingDamageMultiplier,
+                out var shieldAbsorbed);
+            if (requested <= 0f && shieldAbsorbed > 0f)
+            {
+                visualFeedback?.PlayHit();
+                return true;
+            }
             var appliedDamage = Mathf.Min(currentHealth, requested);
             currentHealth = Mathf.Max(0f, currentHealth - appliedDamage);
             recentDamagePerSecond += appliedDamage / 2.5f;
@@ -451,8 +467,17 @@ namespace ProjectMT.Contents.CastleRaidHex
             }
         }
 
+        public void HealPassive(float amount)
+        {
+            if (IsAlive && amount > 0f)
+            {
+                currentHealth = Mathf.Min(maximumHealth, currentHealth + amount);
+            }
+        }
+
         public void ShutdownRuntime()
         {
+            passiveRuntime.Shutdown();
             HideHealthBar();
             assaultWorld?.UnregisterUnit(this);
             assaultWorld = null;
@@ -597,6 +622,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             }
 
             TickRuntimeEffects(Time.deltaTime);
+            passiveRuntime.Tick(Time.deltaTime);
             if (dynamicRuntime)
             {
                 TickDynamicRuntime(Time.deltaTime);
@@ -851,7 +877,7 @@ namespace ProjectMT.Contents.CastleRaidHex
 
         private void StartDynamicAttack(HexCastleAssaultTarget target)
         {
-            nextAttackTime = Time.time + attackInterval;
+            nextAttackTime = Time.time + passiveRuntime.ResolveAttackInterval(attackInterval);
             pendingTarget = target;
             pendingAttackPosition = ResolveTargetPosition(target);
             BeginAttackAction();
@@ -859,7 +885,7 @@ namespace ProjectMT.Contents.CastleRaidHex
 
         private void StartLegacyAttack(HexCoordinates coordinates, Vector3 hitPoint)
         {
-            nextAttackTime = Time.time + attackInterval;
+            nextAttackTime = Time.time + passiveRuntime.ResolveAttackInterval(attackInterval);
             pendingLegacyAttackCoordinates = coordinates;
             pendingAttackPosition = hitPoint;
             pendingTarget = default;
@@ -872,7 +898,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             {
                 attackActionRunning = true;
                 if (animationDriver.TryBeginAttack(
-                        attackInterval,
+                        passiveRuntime.ResolveAttackInterval(attackInterval),
                         ++nextActionSequenceId,
                         HandleAttackMarker))
                 {
@@ -924,6 +950,8 @@ namespace ProjectMT.Contents.CastleRaidHex
                     return;
                 }
 
+                damage = passiveRuntime.ResolveOutgoingDamage(damage, pendingTarget);
+                damage *= assaultWorld?.ResolvePassiveDamageMultiplier(pendingTarget) ?? 1f;
                 var wasAlive = pendingTarget.IsAlive;
                 if (pendingTarget.Structure != null)
                 {
@@ -934,7 +962,9 @@ namespace ProjectMT.Contents.CastleRaidHex
                     pendingTarget.Defender?.ApplyDamage(damage, pendingAttackPosition);
                 }
 
-                if (wasAlive && !pendingTarget.IsAlive)
+                var destroyed = wasAlive && !pendingTarget.IsAlive;
+                passiveRuntime.NotifyBasicAttackHit(pendingTarget, destroyed);
+                if (destroyed)
                 {
                     DestroyedTargets++;
                     if (committedTarget.InstanceId == pendingTarget.InstanceId)

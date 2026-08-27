@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b64a9dc2cac6e714e80d1ff73e6cbc52, type: 3}
   m_Name: MB_ru_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterBodyProfile
-  visualScale: {x: 1.8, y: 1.8, z: 1.8}
+  visualScale: {x: 2.04, y: 2.04, z: 2.04}
   visualLocalPosition: {x: 0, y: 0, z: 0}
-  groundOffset: 0
+  groundOffset: 0.007
   facingYawOffset: 0
   bodyRadius: 0.56
   bodyHeight: 0.86
   selectionRadius: 0.68
   hpBarHeight: 1.05
-  animatorPath: Visual/Planta_Slave
+  animatorPath: Visual
   attackOriginPath: AttackOrigin
   hitCenterPath: HitCenter
   rigMode: 0

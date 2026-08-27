@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: "\uB460\uBC14"
   rarity: 1
   portrait: {fileID: 21300000, guid: bb2a599c5b50d784687899631c29cdde, type: 3}
-  skillLoadoutConfigured: 0
-  rarityPassiveSkill: {fileID: 0}
+  skillLoadoutConfigured: 1
+  rarityPassiveSkill: {fileID: 11400000, guid: db1a9e83e78fdfb45ac51154908f5cac, type: 2}
   rarityActiveSkill: {fileID: 0}
   productionMemo: Notion monster batch / Burrow_01
   vendorPrefab: {fileID: 2288660051788122574, guid: 075021fc02e0bc0488d9144939defea2, type: 3}

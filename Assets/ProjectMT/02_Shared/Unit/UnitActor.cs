@@ -24,7 +24,11 @@ namespace ProjectMT.Shared.Unit
             int appearanceSeed = 0,
             float visualScaleMultiplier = 1f,
             bool isBoss = false,
-            float supportOutputMultiplier = 1f)
+            float supportOutputMultiplier = 1f,
+            MonsterPassiveSkill passiveSkill = null,
+            MonsterActiveSkill activeSkill = null,
+            int monsterLevel = 1,
+            UnitEntryReason entryReason = UnitEntryReason.InitialDeployment)
         {
             UnitId = unitId ?? string.Empty;
             Stats = stats;
@@ -38,6 +42,10 @@ namespace ProjectMT.Shared.Unit
             VisualScaleMultiplier = Mathf.Max(0.01f, visualScaleMultiplier);
             IsBoss = isBoss;
             SupportOutputMultiplier = Mathf.Max(0f, supportOutputMultiplier);
+            PassiveSkill = passiveSkill;
+            ActiveSkill = activeSkill;
+            MonsterLevel = Mathf.Max(1, monsterLevel);
+            EntryReason = entryReason;
         }
 
         public string UnitId { get; }
@@ -52,6 +60,10 @@ namespace ProjectMT.Shared.Unit
         public float VisualScaleMultiplier { get; }
         public bool IsBoss { get; }
         public float SupportOutputMultiplier { get; }
+        public MonsterPassiveSkill PassiveSkill { get; }
+        public MonsterActiveSkill ActiveSkill { get; }
+        public int MonsterLevel { get; }
+        public UnitEntryReason EntryReason { get; }
     }
 
     [DisallowMultipleComponent]
@@ -89,6 +101,7 @@ namespace ProjectMT.Shared.Unit
             new System.Collections.Generic.List<ActiveMonsterBuff>();
         private MonsterStatModifier activeMonsterBuffModifier;
         private float supportOutputMultiplier = 1f; // 회복·버프 출력 배율
+        private readonly MonsterSkillRuntime monsterSkillRuntime = new MonsterSkillRuntime();
         private MonsterRuntimeAssetSet runtimeAssetSet;
         private UnitCombatBehavior combatBehavior;
         private bool combatReady;
@@ -128,6 +141,7 @@ namespace ProjectMT.Shared.Unit
         public UnitStatsSnapshot EffectiveStats => GetEffectiveStats(); // 피격 계산용 현재 Snapshot
         public float BodyRadius => Mathf.Max(0.1f, runtimeAssetSet?.BodyProfile?.BodyRadius ?? 0.45f);
         public float SupportOutputMultiplier => supportOutputMultiplier;
+        public MonsterSkillRuntime SkillRuntime => monsterSkillRuntime;
 
         public event Action<UnitActor> Died;
 
@@ -179,6 +193,13 @@ namespace ProjectMT.Shared.Unit
             health.Damaged += HandleDamaged;
             health.Died += HandleDied;
             world?.Register(this);
+            monsterSkillRuntime.Initialize(
+                this,
+                world,
+                request.PassiveSkill,
+                request.ActiveSkill,
+                request.MonsterLevel,
+                request.EntryReason);
             if (runtimeAssetSet != null)
             {
                 world?.PlayMonsterFeedback(
@@ -327,6 +348,13 @@ namespace ProjectMT.Shared.Unit
                 return; // 체력·피격·적 타깃 등록은 유지하고 자기 행동만 멈춤
             }
 
+            monsterSkillRuntime.Tick(deltaTime, canAttack && !attackActionRunning);
+            if (monsterSkillRuntime.IsExecuting)
+            {
+                animationDriver?.PlayIdle();
+                return;
+            }
+
             attackCooldown = Mathf.Max(0f, attackCooldown - deltaTime);
             retargetCooldown -= deltaTime;
 
@@ -418,6 +446,7 @@ namespace ProjectMT.Shared.Unit
 
         public void Shutdown()
         {
+            monsterSkillRuntime.Shutdown();
             if (health != null)
             {
                 health.Damaged -= HandleDamaged;
@@ -987,6 +1016,7 @@ namespace ProjectMT.Shared.Unit
 
         private void HandleDamaged(DamageReport report)
         {
+            monsterSkillRuntime.NotifyDamaged(report);
             feedback?.PlayHit(this, report);
             if (runtimeAssetSet != null)
             {
@@ -1000,6 +1030,7 @@ namespace ProjectMT.Shared.Unit
 
         private void HandleDied(DamageReport report)
         {
+            monsterSkillRuntime.Shutdown();
             feedback?.PlayDeath(this, report);
             attackActionRunning = false;
             actionTarget = null;

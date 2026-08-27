@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ProjectMT.Features.WorldDrops;
+using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
@@ -10,7 +11,7 @@ namespace ProjectMT.Features.Expedition
     [CreateAssetMenu(menuName = "ProjectMT/Expedition/Seed Profile", fileName = "ExpeditionSeedProfile")]
     public sealed class ExpeditionSeedProfile : ScriptableObject // 원정대 단계·웨이브·드랍 원본
     {
-        [SerializeField, Min(0.1f)] private float waveIntervalSeconds = 2f; // 2웨이브 출현 간격
+        [SerializeField, Min(0.1f)] private float waveIntervalSeconds = 2f; // 다음 웨이브 출현 간격
         [SerializeField, Min(1f)] private float challengeTimeLimitSeconds = 45f; // 도전 제한시간
         [SerializeField, Min(0.1f)] private float resultDelaySeconds = 0.8f; // 결과 표시 대기
         [SerializeField, Min(1f)] private float enemyBaseHealth = 28f; // 1단계 적 체력
@@ -31,7 +32,7 @@ namespace ProjectMT.Features.Expedition
         [SerializeField, Range(0f, 1f)] private float reinforcementAliveRatio = 0.4f;
 
         [Header("Boss Stage")]
-        [SerializeField, Min(1)] private int bossStageInterval = 10;
+        [SerializeField, Min(1)] private int bossStageInterval = 5;
         [SerializeField, Min(1f)] private float bossHealthMultiplier = 10f;
         [SerializeField, Min(1f)] private float bossVisualScaleMultiplier = 2.5f;
 
@@ -99,11 +100,6 @@ namespace ProjectMT.Features.Expedition
 
         public int GetWaveCount(int stage)
         {
-            if (IsBossStage(stage))
-            {
-                return 1;
-            }
-
             return TryResolveStage(stage, out var definition) && definition.WaveCount > 0
                 ? definition.WaveCount
                 : ExpeditionStageRules.LegacyWaveCount;
@@ -111,11 +107,6 @@ namespace ProjectMT.Features.Expedition
 
         public int GetEnemyCount(int stage, int wave)
         {
-            if (IsBossStage(stage))
-            {
-                return wave == 1 ? 1 : 0;
-            }
-
             return TryResolveStage(stage, out var definition) && definition.TryGetWave(wave, out var waveDefinition)
                 ? waveDefinition.ResolveEnemyCount(stage, definition.MinimumStage)
                 : ExpeditionStageRules.GetLegacyEnemiesPerWave(stage);
@@ -179,6 +170,30 @@ namespace ProjectMT.Features.Expedition
                   tier == 2 ? EnemyAppearanceGroup.KnightTier2 : EnemyAppearanceGroup.KnightTier3;
         }
 
+        public ExpeditionEnemySpawn ResolveSpawn(int stage, int wave, int unitIndex, int randomSeed)
+        {
+            var enemyCount = GetEnemyCount(stage, wave);
+            if (TryResolveStage(stage, out var definition))
+            {
+                return definition.ResolveSpawn(
+                    stage,
+                    wave,
+                    unitIndex,
+                    enemyCount,
+                    IsBossStage(stage),
+                    randomSeed);
+            }
+
+            var ranged = IsRangedSlot(stage, unitIndex);
+            var boss = IsBossStage(stage) &&
+                       wave == GetWaveCount(stage) &&
+                       unitIndex == Mathf.Max(0, enemyCount - 1);
+            return new ExpeditionEnemySpawn(
+                ResolveAppearance(stage, ranged),
+                ranged ? ExpeditionEnemyRole.Ranged : ExpeditionEnemyRole.Melee,
+                boss);
+        }
+
         public bool TryCreateEnemyWorldDrop(Vector3 position, out WorldItemDropRequest request)
         {
             request = new WorldItemDropRequest(EnemyWorldDropItemId, EnemyWorldDropQuantity, position);
@@ -230,7 +245,8 @@ namespace ProjectMT.Features.Expedition
             var stageOffset = Mathf.Max(0, stage - 1);
             var result = new UnitStatsSnapshot
             {
-                maxHealth = enemyBaseHealth * (1f + enemyHealthGrowthPerStage * stageOffset),
+                maxHealth = enemyBaseHealth * (1f + enemyHealthGrowthPerStage * stageOffset) *
+                            ResolveEnemyHealthTierMultiplier(stage),
                 damage = enemyBaseDamage * (1f + enemyDamageGrowthPerStage * stageOffset),
                 moveSpeed = ranged ? 1.9f : 2.15f,
                 attackRange = ranged ? enemyRangedAttackRange : enemyMeleeAttackRange,
@@ -238,12 +254,136 @@ namespace ProjectMT.Features.Expedition
                 projectileSpeed = ranged ? 8f : 0f,
                 ranged = ranged
             };
+            FloorEnemyCombatStats(ref result);
             if (IsBossStage(stage))
             {
-                result.maxHealth *= BossHealthMultiplier;
+                result.maxHealth = Mathf.Floor(result.maxHealth * BossHealthMultiplier);
             }
 
             return result;
+        }
+
+        public UnitStatsSnapshot CreateEnemyStats(
+            int stage,
+            ExpeditionDifficulty difficulty,
+            ExpeditionEnemySpawn spawn)
+        {
+            stage = Mathf.Clamp(stage, 1, ExpeditionCampaignRules.MaximumStage);
+            var ranged = spawn.IsRanged;
+            var normalStageOffset = stage - 1;
+            var health = enemyBaseHealth * (1f + enemyHealthGrowthPerStage * normalStageOffset) *
+                         ResolveEnemyHealthTierMultiplier(stage);
+            var damage = enemyBaseDamage * (1f + enemyDamageGrowthPerStage * normalStageOffset);
+            if (difficulty == ExpeditionDifficulty.Hard)
+            {
+                var normal100Health = enemyBaseHealth *
+                                      (1f + enemyHealthGrowthPerStage * (ExpeditionCampaignRules.MaximumStage - 1)) *
+                                      ResolveEnemyHealthTierMultiplier(ExpeditionCampaignRules.MaximumStage);
+                var normal100Damage = enemyBaseDamage *
+                                      (1f + enemyDamageGrowthPerStage * (ExpeditionCampaignRules.MaximumStage - 1));
+                health = normal100Health * 1.6f * (1f + 0.08f * normalStageOffset);
+                damage = normal100Damage * 1.3f * (1f + 0.055f * normalStageOffset);
+            }
+
+            var result = new UnitStatsSnapshot
+            {
+                maxHealth = health,
+                damage = damage,
+                moveSpeed = ranged ? 1.9f : 2.15f,
+                attackRange = ranged ? enemyRangedAttackRange : enemyMeleeAttackRange,
+                attackInterval = ranged ? 1.2f : 1f,
+                projectileSpeed = ranged ? 8f : 0f,
+                ranged = ranged
+            };
+
+            ApplyUpperKnightStats(spawn.Appearance, ref result);
+            if (spawn.IsNinja)
+            {
+                result.maxHealth *= 0.7f;
+                result.damage *= 1.1f;
+                result.moveSpeed = 2.15f * 1.6f;
+                result.attackRange = enemyMeleeAttackRange;
+                result.attackInterval = 0.85f;
+                result.projectileSpeed = 0f;
+                result.ranged = false;
+            }
+
+            if (difficulty == ExpeditionDifficulty.Hard)
+            {
+                result.moveSpeed *= 1.08f;
+            }
+
+            FloorEnemyCombatStats(ref result);
+            if (spawn.IsBoss)
+            {
+                result.maxHealth = Mathf.Floor(result.maxHealth * BossHealthMultiplier);
+            }
+
+            return result;
+        }
+
+        private static float ResolveEnemyHealthTierMultiplier(int stage)
+        {
+            if (stage <= 15)
+            {
+                return 1f;
+            }
+
+            if (stage <= 30)
+            {
+                return 2f;
+            }
+
+            if (stage <= 45)
+            {
+                return 3.5f;
+            }
+
+            if (stage <= 60)
+            {
+                return 8f;
+            }
+
+            if (stage <= 75)
+            {
+                return 18f;
+            }
+
+            if (stage <= 90)
+            {
+                return 43f;
+            }
+
+            return 47f;
+        }
+
+        private static void FloorEnemyCombatStats(ref UnitStatsSnapshot stats)
+        {
+            stats.maxHealth = Mathf.Max(1f, Mathf.Floor(stats.maxHealth));
+            stats.damage = Mathf.Max(1f, Mathf.Floor(stats.damage));
+        }
+
+        private static void ApplyUpperKnightStats(EnemyAppearanceGroup appearance, ref UnitStatsSnapshot stats)
+        {
+            switch (appearance)
+            {
+                case EnemyAppearanceGroup.UpperKnightLower:
+                    stats.maxHealth *= 1.08f;
+                    stats.damage *= 1.05f;
+                    break;
+                case EnemyAppearanceGroup.UpperKnightMid:
+                    stats.maxHealth *= 1.18f;
+                    stats.damage *= 1.1f;
+                    break;
+                case EnemyAppearanceGroup.UpperKnightHigh:
+                    stats.maxHealth *= 1.3f;
+                    stats.damage *= 1.18f;
+                    break;
+                case EnemyAppearanceGroup.UpperKnightFinal:
+                    stats.maxHealth *= 1.45f;
+                    stats.damage *= 1.28f;
+                    break;
+            }
         }
 
 #if UNITY_EDITOR
@@ -350,6 +490,17 @@ namespace ProjectMT.Features.Expedition
             }
 
             return forward.sqrMagnitude < 0.0001f ? Vector3.forward : forward.normalized;
+        }
+    }
+
+    public static class ExpeditionCampaignRules // 일반 100 이후 하드 1로 전환하는 진행 규칙
+    {
+        public const int MaximumStage = 100;
+
+        public static int ToProgressStage(ExpeditionDifficulty difficulty, int stage)
+        {
+            var localStage = Mathf.Clamp(stage, 0, MaximumStage);
+            return difficulty == ExpeditionDifficulty.Hard ? MaximumStage + localStage : localStage;
         }
     }
 }

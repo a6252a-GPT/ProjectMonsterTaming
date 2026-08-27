@@ -116,6 +116,43 @@ namespace ProjectMT.Shared.Unit
             return false;
         }
 
+        public bool TryGetSkillLoadout(
+            string monsterId,
+            out MonsterPassiveSkill passiveSkill,
+            out MonsterActiveSkill activeSkill)
+        {
+            if (!string.IsNullOrWhiteSpace(monsterId))
+            {
+                for (var index = 0; index < commonToEpicEntries.Count; index++)
+                {
+                    var entry = commonToEpicEntries[index];
+                    if (entry?.Monster != null &&
+                        string.Equals(entry.Monster.MonsterId, monsterId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        passiveSkill = entry.PassiveSkill;
+                        activeSkill = entry.ActiveSkill;
+                        return passiveSkill != null || activeSkill != null;
+                    }
+                }
+
+                for (var index = 0; index < legendaryMythicEntries.Count; index++)
+                {
+                    var entry = legendaryMythicEntries[index];
+                    if (entry?.Monster != null &&
+                        string.Equals(entry.Monster.MonsterId, monsterId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        passiveSkill = entry.PassiveSkill;
+                        activeSkill = entry.ActiveSkill;
+                        return passiveSkill != null || activeSkill != null;
+                    }
+                }
+            }
+
+            passiveSkill = null;
+            activeSkill = null;
+            return false;
+        }
+
         public IReadOnlyList<MonsterDefinition> GetMonstersOfRarity(MonsterRarity rarity)
         {
             var result = new List<MonsterDefinition>();

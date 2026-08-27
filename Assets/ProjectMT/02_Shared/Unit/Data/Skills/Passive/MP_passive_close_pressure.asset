@@ -35,8 +35,11 @@ MonoBehaviour:
       type: 0
       valueSource: 1
       magnitude: 0.18
+      magnitudeMode: 0
+      maximumMagnitude: 0.18
       duration: 0
       delay: 0
+      repeatInterval: 0
       radius: 0
       maxTargets: 1
       repeatCount: 1
@@ -45,8 +48,11 @@ MonoBehaviour:
       type: 13
       valueSource: 0
       magnitude: 0.08
+      magnitudeMode: 0
+      maximumMagnitude: 0.08
       duration: 0.08
       delay: 0
+      repeatInterval: 0
       radius: 0
       maxTargets: 1
       repeatCount: 1

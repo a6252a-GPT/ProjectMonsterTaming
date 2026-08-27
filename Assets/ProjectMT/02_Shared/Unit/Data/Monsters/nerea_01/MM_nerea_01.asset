@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: MM_nerea_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterMotionProfile
   idle:
-    clip: {fileID: 7400000, guid: 37fa796d59e8e8748be8fa9a24966708, type: 3}
+    clip: {fileID: 1789320437258409465, guid: 3f163e33f9a2e064f8b4170227ca8aee, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.08
     loop: 1
@@ -25,7 +25,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
   move:
-    clip: {fileID: 7400000, guid: 713f6007d795de34d977cd723aff94d3, type: 3}
+    clip: {fileID: 369900655582913899, guid: e3d867ce8306db8459963486dc1153e5, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.08
     loop: 1
@@ -38,7 +38,7 @@ MonoBehaviour:
       scale: 1
   attacks:
   - motionId: attack01
-    clip: {fileID: 7400000, guid: 3ee7f83216ef3404eb2e70175185b526, type: 3}
+    clip: {fileID: 3743347588771784290, guid: 7cdf26f9596ccdc41ae0d7679e75c9e3, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.06
     weight: 1
@@ -62,7 +62,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
   death:
-    clip: {fileID: 7400000, guid: 7a40dcd30eb18434585991a2d0b3ea53, type: 3}
+    clip: {fileID: 2159161471354084687, guid: fa2fc45c2f79e5b4fa0ebd6bccffd6cd, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.08
     loop: 0

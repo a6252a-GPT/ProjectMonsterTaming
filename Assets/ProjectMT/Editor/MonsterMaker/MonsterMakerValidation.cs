@@ -278,9 +278,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (active == null)
             {
                 report.Add(
-                    MonsterMakerIssueSeverity.Error,
-                    "MAKER-SKILL-ACTIVE-MISSING",
-                    "영웅 이상 등급의 액티브가 아직 선택되지 않았습니다.",
+                    MonsterMakerIssueSeverity.Warning,
+                    "MAKER-SKILL-ACTIVE-PENDING",
+                    "영웅 이상 등급의 액티브가 아직 선택되지 않았습니다. 패시브만 먼저 반영할 수 있습니다.",
                     draft);
                 return;
             }

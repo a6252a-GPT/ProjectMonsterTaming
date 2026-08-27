@@ -31,10 +31,25 @@ MonoBehaviour:
       type: 2
       valueSource: 2
       magnitude: 0.18
+      magnitudeMode: 0
+      maximumMagnitude: 0.18
       duration: 6
       delay: 0
+      repeatInterval: 0
       radius: 0
       maxTargets: 1
       repeatCount: 1
       stackPolicy: 1
   authoringEnabled: 1
+  runtimeKind: 13
+  primaryBase: 0.06
+  primaryPerLevelStep: 0.003
+  secondaryBase: 0.03
+  secondaryPerLevelStep: 0.002
+  triggerCount: 1
+  maxStacks: 1
+  duration: 6
+  cooldown: 0
+  threshold: 0
+  radius: 0
+  maxTargets: 1

@@ -31,11 +31,17 @@ MonoBehaviour:
       type: 0
       valueSource: 1
       magnitude: 0.45
+      magnitudeMode: 0
+      maximumMagnitude: 0.45
       duration: 0
       delay: 0
+      repeatInterval: 0
       radius: 2
       maxTargets: 5
       repeatCount: 3
       stackPolicy: 1
   authoringEnabled: 0
   energyCost: 1000
+  energyPerSecond: 40
+  energyPerBasicAttackHit: 120
+  energyPerDamageReceived: 80

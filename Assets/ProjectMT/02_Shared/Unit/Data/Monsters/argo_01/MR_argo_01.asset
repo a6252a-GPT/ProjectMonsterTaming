@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9063022393fce349b94c80b48a17738, type: 3}
+  m_Name: MR_argo_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterRuntimeAssetSet
+  visualAdapterPrefab: {fileID: 6156967232021512185, guid: bcc86d7655569c8439568cc0fb9b8b42, type: 3}
+  animatorController: {fileID: 9100000, guid: ee2eedea25e2b5c408dea9cf1e540333, type: 2}
+  bodyProfile: {fileID: 11400000, guid: 7c3bebeb9d8cd6f488091ba330523b60, type: 2}
+  motionProfile: {fileID: 11400000, guid: abd80f6690d425646a6ce91e2db51b30, type: 2}
+  combatProfile: {fileID: 11400000, guid: 246f9d1eba089c246849351690fef746, type: 2}
+  ascensionProfile: {fileID: 11400000, guid: f2e8842c5c34aef4aa424299116cd5a7, type: 2}
+  feedbackProfile: {fileID: 11400000, guid: f73edcf771091da45999fe2e893d25f0, type: 2}

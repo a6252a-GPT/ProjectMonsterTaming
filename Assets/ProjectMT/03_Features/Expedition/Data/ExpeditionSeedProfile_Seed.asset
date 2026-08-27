@@ -29,16 +29,47 @@ MonoBehaviour:
   reinforcementMinimumDelaySeconds: 3
   reinforcementForceDelaySeconds: 10
   reinforcementAliveRatio: 0.4
-  bossStageInterval: 10
+  bossStageInterval: 5
   bossHealthMultiplier: 10
   bossVisualScaleMultiplier: 2.5
   stages:
-  - definitionId: stage_01_10
+  - definitionId: normal_01_05
     minimumStage: 1
+    maximumStage: 5
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 0
+      role: 0
+      weight: 1
+    - appearance: 7
+      role: 0
+      weight: 1
+    ninjaCount: 0
+    waves:
+    - baseEnemyCount: 4
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_06_10
+    minimumStage: 6
     maximumStage: 10
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 0
+      role: 0
+      weight: 1
+    - appearance: 7
+      role: 0
+      weight: 1
+    ninjaCount: 0
     waves:
     - baseEnemyCount: 4
       extraEnemyEveryStages: 0
@@ -56,74 +87,597 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: stage_11_20
+  - definitionId: normal_11_15
     minimumStage: 11
+    maximumStage: 15
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 0
+      role: 0
+      weight: 1
+    - appearance: 7
+      role: 0
+      weight: 1
+    ninjaCount: 0
+    waves:
+    - baseEnemyCount: 4
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 4
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 4
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_16_20
+    minimumStage: 16
     maximumStage: 20
-    meleeAppearance: 1
-    rangedAppearance: 4
-    rangedEveryUnits: 4
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 1
+      role: 0
+      weight: 3
+    - appearance: 4
+      role: 1
+      weight: 1
+    ninjaCount: 0
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 4
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
       drops:
       - itemId: currency_gold
-        quantity: 3
+        quantity: 2
         chance: 1
-    - baseEnemyCount: 5
-      extraEnemyEveryStages: 0
-      spawnDelaySeconds: 2
-      formationForwardOffset: 1.15
-      drops:
-      - itemId: currency_gold
-        quantity: 3
-        chance: 1
-  - definitionId: stage_21_30
+  - definitionId: normal_21_25
     minimumStage: 21
+    maximumStage: 25
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 2
+      role: 0
+      weight: 3
+    - appearance: 5
+      role: 1
+      weight: 1
+    ninjaCount: 0
+    waves:
+    - baseEnemyCount: 4
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 4
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_26_30
+    minimumStage: 26
     maximumStage: 30
-    meleeAppearance: 2
-    rangedAppearance: 5
-    rangedEveryUnits: 4
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 3
+      role: 0
+      weight: 3
+    - appearance: 6
+      role: 1
+      weight: 1
+    ninjaCount: 0
     waves:
-    - baseEnemyCount: 6
+    - baseEnemyCount: 4
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
       drops:
       - itemId: currency_gold
-        quantity: 4
+        quantity: 2
         chance: 1
-    - baseEnemyCount: 6
+    - baseEnemyCount: 4
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
       drops:
       - itemId: currency_gold
-        quantity: 4
+        quantity: 2
         chance: 1
-  - definitionId: stage_31_plus
+    - baseEnemyCount: 4
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_31_35
     minimumStage: 31
-    maximumStage: 0
-    meleeAppearance: 3
-    rangedAppearance: 6
-    rangedEveryUnits: 4
+    maximumStage: 35
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 3
+      role: 0
+      weight: 60
+    - appearance: 8
+      role: 0
+      weight: 15
+    - appearance: 6
+      role: 1
+      weight: 25
+    ninjaCount: 1
     waves:
-    - baseEnemyCount: 7
-      extraEnemyEveryStages: 10
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
       drops:
       - itemId: currency_gold
-        quantity: 5
+        quantity: 2
         chance: 1
-    - baseEnemyCount: 7
-      extraEnemyEveryStages: 10
+  - definitionId: normal_36_40
+    minimumStage: 36
+    maximumStage: 40
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 3
+      role: 0
+      weight: 49
+    - appearance: 8
+      role: 0
+      weight: 26
+    - appearance: 6
+      role: 1
+      weight: 25
+    ninjaCount: 1
+    waves:
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
       drops:
       - itemId: currency_gold
-        quantity: 5
+        quantity: 2
+        chance: 1
+  - definitionId: normal_41_45
+    minimumStage: 41
+    maximumStage: 45
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 3
+      role: 0
+      weight: 38
+    - appearance: 8
+      role: 0
+      weight: 37
+    - appearance: 6
+      role: 1
+      weight: 25
+    ninjaCount: 1
+    waves:
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_46_50
+    minimumStage: 46
+    maximumStage: 50
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 8
+      role: 0
+      weight: 50
+    - appearance: 9
+      role: 0
+      weight: 25
+    - appearance: 6
+      role: 1
+      weight: 25
+    ninjaCount: 2
+    waves:
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_51_55
+    minimumStage: 51
+    maximumStage: 55
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 8
+      role: 0
+      weight: 25
+    - appearance: 9
+      role: 0
+      weight: 50
+    - appearance: 6
+      role: 1
+      weight: 25
+    ninjaCount: 2
+    waves:
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_56_60
+    minimumStage: 56
+    maximumStage: 60
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 8
+      role: 0
+      weight: 25
+    - appearance: 9
+      role: 0
+      weight: 50
+    - appearance: 6
+      role: 1
+      weight: 25
+    ninjaCount: 2
+    waves:
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_61_65
+    minimumStage: 61
+    maximumStage: 65
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 9
+      role: 0
+      weight: 3
+    - appearance: 6
+      role: 1
+      weight: 1
+    ninjaCount: 2
+    waves:
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_66_70
+    minimumStage: 66
+    maximumStage: 70
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 9
+      role: 0
+      weight: 3
+    - appearance: 6
+      role: 1
+      weight: 1
+    ninjaCount: 2
+    waves:
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_71_75
+    minimumStage: 71
+    maximumStage: 75
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 9
+      role: 0
+      weight: 3
+    - appearance: 6
+      role: 1
+      weight: 1
+    ninjaCount: 2
+    waves:
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_76_80
+    minimumStage: 76
+    maximumStage: 80
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 10
+      role: 0
+      weight: 3
+    - appearance: 6
+      role: 1
+      weight: 1
+    ninjaCount: 3
+    waves:
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_81_85
+    minimumStage: 81
+    maximumStage: 85
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 10
+      role: 0
+      weight: 3
+    - appearance: 6
+      role: 1
+      weight: 1
+    ninjaCount: 3
+    waves:
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_86_90
+    minimumStage: 86
+    maximumStage: 90
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 10
+      role: 0
+      weight: 3
+    - appearance: 6
+      role: 1
+      weight: 1
+    ninjaCount: 3
+    waves:
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_91_95
+    minimumStage: 91
+    maximumStage: 95
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 11
+      role: 0
+      weight: 3
+    - appearance: 6
+      role: 1
+      weight: 1
+    ninjaCount: 4
+    waves:
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: normal_96_100
+    minimumStage: 96
+    maximumStage: 100
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool:
+    - appearance: 11
+      role: 0
+      weight: 3
+    - appearance: 6
+      role: 1
+      weight: 1
+    ninjaCount: 4
+    waves:
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 5
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      drops:
+      - itemId: currency_gold
+        quantity: 2
         chance: 1
   worldItemDropVisualCatalog: {fileID: 11400000, guid: f18b689dc18bfca449462502e4ea93b5, type: 2}
   enemyWorldDropItemId: currency_gold

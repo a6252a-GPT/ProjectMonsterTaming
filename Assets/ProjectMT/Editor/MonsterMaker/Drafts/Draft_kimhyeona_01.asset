@@ -52,7 +52,7 @@ MonoBehaviour:
   mainBattleRetargetInterval: 0.28
   idleClip: {fileID: 1827226128182048838, guid: 475660ca6ef7a1f4bb79003f15400872, type: 3}
   idleSpeed: 1
-  moveClip: {fileID: 1827226128182048838, guid: bcb0e4718319f064592e5116d18cda0d, type: 3}
+  moveClip: {fileID: 1827226128182048838, guid: 27f47c1cca29fb049a955d5604cdb9ab, type: 3}
   movePlaybackSpeed: 1
   attacks:
   - motionId: attack01

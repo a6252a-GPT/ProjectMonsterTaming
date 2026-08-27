@@ -121,7 +121,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             SetupCameraFollow();
         }
 
-        public void SpawnRoomContents()
+        public void SpawnRoomContents(float difficultyMultiplier = 1f)
         {
             if (activeMapInstance == null)
             {
@@ -137,7 +137,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 guardSpreadDistance,
                 chestHeightOffset,
                 playerTransform,
-                this);
+                this,
+                difficultyMultiplier);
         }
 
         public void SpawnEndRoomPrison(DemoDungeonController controller)

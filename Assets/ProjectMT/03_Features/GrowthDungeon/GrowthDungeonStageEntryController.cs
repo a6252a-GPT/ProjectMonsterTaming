@@ -190,7 +190,7 @@ namespace ProjectMT.Features.GrowthDungeon
         public void Refresh()
         {
             RefreshCard(foodRiotEnterButton, foodRiotSweepButton, FoodRiotId, true);
-            RefreshCard(treasureSpiritEnterButton, treasureSpiritSweepButton, TreasureSpiritId, false);
+            RefreshCard(treasureSpiritEnterButton, treasureSpiritSweepButton, TreasureSpiritId, true);
             RefreshCard(fallenCommanderEnterButton, fallenCommanderSweepButton, FallenCommanderId, true);
             RefreshCard(guardiansTowerEnterButton, guardiansTowerSweepButton, GuardiansTowerId, true);
             RefreshPopup();
@@ -206,7 +206,7 @@ namespace ProjectMT.Features.GrowthDungeon
             Open(new DungeonBinding(
                 TreasureSpiritId,
                 "보물 정령 숨바꼭질",
-                false,
+                true,
                 treasureSpiritPopupPrefab));
         }
 
@@ -239,6 +239,7 @@ namespace ProjectMT.Features.GrowthDungeon
             ClosePopup();
             currentBinding = binding;
             if (binding.RuntimeAvailable &&
+                launcher != null &&
                 launcher.TryGetGrowthDungeonState(binding.ContentId, out var state))
             {
                 selectedStage = state.NextChallengeStage;

@@ -179,7 +179,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             MeshFilter floorFilter = floor.GetComponent<MeshFilter>();
             MeshFilter fillFilter = fillBox.GetComponent<MeshFilter>();
             Mesh floorMesh = floorFilter != null ? floorFilter.sharedMesh : null;
-            if (floorMesh == null || fillFilter == null || fillFilter.sharedMesh == null)
+            if (floorMesh == null || !floorMesh.isReadable || fillFilter == null || fillFilter.sharedMesh == null)
             {
                 return;
             }

@@ -19,6 +19,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private Transform playerTransform;
         private BakedDungeonLoader keyState;
         private GameObject mimicPrefab;
+        private float difficultyMultiplier = 1f;
         private bool interacted;
 
         public void SetupKeyChest(Transform player, BakedDungeonLoader loader)
@@ -29,11 +30,12 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             DemoChestInteractionSetup.Ensure(gameObject);
         }
 
-        public void SetupMimicChest(Transform player, GameObject mimic)
+        public void SetupMimicChest(Transform player, GameObject mimic, float difficulty = 1f)
         {
             chestKind = ChestKind.Mimic;
             playerTransform = player;
             mimicPrefab = mimic;
+            difficultyMultiplier = Mathf.Max(1f, difficulty);
             DemoChestInteractionSetup.Ensure(gameObject);
         }
 
@@ -161,7 +163,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 mimicAi = mimicObject.AddComponent<DemoMimicAI>();
             }
 
-            mimicAi.Initialize(playerTransform);
+            mimicAi.Initialize(playerTransform, difficultyMultiplier);
 
             Debug.Log("[DemoChestInteraction] 상자가 미믹으로 변신했습니다.");
         }

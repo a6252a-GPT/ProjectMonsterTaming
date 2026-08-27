@@ -39,9 +39,12 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         public bool IsAlive => !isDead;
         public Transform TargetTransform => transform;
 
-        public void Initialize(Transform commander)
+        public void Initialize(Transform commander, float difficultyMultiplier = 1f)
         {
             commanderTarget = commander;
+            var multiplier = Mathf.Max(1f, difficultyMultiplier);
+            maxHealth *= multiplier;
+            attackDamage *= multiplier;
         }
 
         private void Awake()

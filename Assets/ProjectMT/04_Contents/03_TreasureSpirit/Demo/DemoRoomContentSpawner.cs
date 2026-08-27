@@ -18,7 +18,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             float guardSpreadDistance,
             float chestHeightOffset,
             Transform playerTransform,
-            BakedDungeonLoader keyState)
+            BakedDungeonLoader keyState,
+            float difficultyMultiplier)
         {
             if (mapRoot == null)
             {
@@ -35,9 +36,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 mimicPrefab,
                 chestHeightOffset,
                 playerTransform,
-                keyState);
+                keyState,
+                difficultyMultiplier);
             DemoSpikeFloorTrapInstaller.Install(mapRoot, contentRoot);
-            SpawnGuards(mapRoot, contentRoot, guardPrefab, guardsPerRoom, guardSpreadDistance, playerTransform);
+            SpawnGuards(
+                mapRoot, contentRoot, guardPrefab, guardsPerRoom, guardSpreadDistance, playerTransform, difficultyMultiplier);
         }
 
         private static void SpawnChestsAndMimics(
@@ -47,7 +50,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             GameObject mimicPrefab,
             float chestHeightOffset,
             Transform playerTransform,
-            BakedDungeonLoader keyState)
+            BakedDungeonLoader keyState,
+            float difficultyMultiplier)
         {
             List<Transform> chestMarkers = DemoMapUtil.CollectChestMarkers(mapRoot);
             if (chestMarkers.Count == 0)
@@ -87,7 +91,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                         continue;
                     }
 
-                    SpawnMimicChest(contentRoot, chestPrefab, mimicPrefab, room, position, rotation, playerTransform);
+                    SpawnMimicChest(
+                        contentRoot, chestPrefab, mimicPrefab, room, position, rotation, playerTransform, difficultyMultiplier);
                     mimicCount++;
                 }
             }
@@ -134,7 +139,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             Transform room,
             Vector3 position,
             Quaternion rotation,
-            Transform playerTransform)
+            Transform playerTransform,
+            float difficultyMultiplier)
         {
             GameObject chestObject = Object.Instantiate(chestPrefab, position, rotation, contentRoot);
             chestObject.name = $"DemoMimicChest_{room.name}";
@@ -146,7 +152,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 interaction = chestObject.AddComponent<DemoChestInteraction>();
             }
 
-            interaction.SetupMimicChest(playerTransform, mimicPrefab);
+            interaction.SetupMimicChest(playerTransform, mimicPrefab, difficultyMultiplier);
         }
 
         private static void SpawnGuards(
@@ -155,7 +161,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             GameObject guardPrefab,
             int guardsPerRoom,
             float guardSpreadDistance,
-            Transform playerTransform)
+            Transform playerTransform,
+            float difficultyMultiplier)
         {
             if (guardPrefab == null)
             {
@@ -196,7 +203,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                         contentRoot);
                     guardObject.name = $"DemoGuard_{room.name}_{i + 1}_{g + 1}";
 
-                    ConfigureGuard(guardObject, patrolCenter, patrolRadius, playerTransform);
+                    ConfigureGuard(guardObject, patrolCenter, patrolRadius, playerTransform, difficultyMultiplier);
                     spawnedCount++;
                 }
             }
@@ -209,7 +216,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             GameObject guardObject,
             Vector3 patrolCenter,
             float patrolRadius,
-            Transform playerTransform)
+            Transform playerTransform,
+            float difficultyMultiplier)
         {
             NavMeshAgent agent = guardObject.GetComponent<NavMeshAgent>();
             if (agent != null)
@@ -232,6 +240,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 guardAi.SetTargetPlayer(playerTransform);
             }
 
+            guardAi.ConfigureDifficulty(difficultyMultiplier);
             guardAi.SetPatrolBounds(patrolCenter, patrolRadius);
         }
 

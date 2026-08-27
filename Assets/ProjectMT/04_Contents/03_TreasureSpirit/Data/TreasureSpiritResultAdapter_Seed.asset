@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bec202893e26f7c4b834da8c2523d7ad, type: 3}
+  m_Name: TreasureSpiritResultAdapter_Seed
+  m_EditorClassIdentifier: ProjectMT.Contents.TreasureSpirit::ProjectMT.Contents.TreasureSpirit.TreasureSpiritResultAdapter
+  clearReward: {fileID: 11400000, guid: acd8f991b145b194da3abf862ab2c980, type: 2}
+  stageRewards: {fileID: 11400000, guid: 6b532a2baefaafd44ad27f341c45d368, type: 2}

@@ -19,7 +19,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             DemoMapColliderBaker.Bake(mapInstance.transform);
 
             List<NavMeshBuildSource> sources = new List<NavMeshBuildSource>();
-            CollectFloorSources(mapInstance.transform, sources);
+            CollectFloorColliderSources(mapInstance.transform, sources);
             CollectDoorwaySources(mapInstance.transform, sources);
             if (sources.Count == 0)
             {
@@ -104,24 +104,25 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
         }
 
-        private static void CollectFloorSources(Transform mapRoot, List<NavMeshBuildSource> sources)
+        private static void CollectFloorColliderSources(Transform mapRoot, List<NavMeshBuildSource> sources)
         {
-            MeshFilter[] meshFilters = mapRoot.GetComponentsInChildren<MeshFilter>(true);
-            for (int i = 0; i < meshFilters.Length; i++)
+            BoxCollider[] colliders = mapRoot.GetComponentsInChildren<BoxCollider>(true);
+            for (int i = 0; i < colliders.Length; i++)
             {
-                MeshFilter meshFilter = meshFilters[i];
-                if (meshFilter == null ||
-                    meshFilter.sharedMesh == null ||
-                    !meshFilter.gameObject.name.StartsWith(DemoFloorBounds.FloorNamePrefix))
+                BoxCollider floorCollider = colliders[i];
+                if (floorCollider == null ||
+                    !floorCollider.enabled ||
+                    floorCollider.isTrigger ||
+                    !floorCollider.gameObject.name.StartsWith(DemoFloorBounds.FloorNamePrefix))
                 {
                     continue;
                 }
 
                 NavMeshBuildSource source = new NavMeshBuildSource
                 {
-                    shape = NavMeshBuildSourceShape.Mesh,
-                    sourceObject = meshFilter.sharedMesh,
-                    transform = meshFilter.transform.localToWorldMatrix,
+                    shape = NavMeshBuildSourceShape.Box,
+                    size = floorCollider.size,
+                    transform = floorCollider.transform.localToWorldMatrix * Matrix4x4.Translate(floorCollider.center),
                     area = 0
                 };
                 sources.Add(source);

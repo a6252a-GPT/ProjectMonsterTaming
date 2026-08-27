@@ -22,5 +22,5 @@ MonoBehaviour:
   maxQuantity: 3
   discardable: 0
   allowMultiUse: 0
-  useEffect: {fileID: 11400000, guid: 7e9faad5b83d33f4a9eb701fe0fa74a9, type: 2}
+  useEffect: {fileID: 0}
   sortOrder: 510

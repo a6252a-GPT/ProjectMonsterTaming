@@ -6,7 +6,7 @@ using ProjectMT.Contents.TreasureSpirit;
 namespace ProjectMT.Contents.TreasureSpirit.Demo
 {
     [DisallowMultipleComponent]
-    public sealed class DemoDodgeButton : MonoBehaviour
+    public sealed class DemoJumpButton : MonoBehaviour
     {
         private const float ButtonSize = 64f;
         private static readonly Color ReadyFill = new Color(0.28f, 0.86f, 0.94f, 0.95f);
@@ -19,21 +19,21 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private Image fill;
         private CanvasGroup canvasGroup;
 
-        public static DemoDodgeButton Ensure(Transform hudRoot, PlayerCharacterController playerMove)
+        public static DemoJumpButton Ensure(Transform hudRoot, PlayerCharacterController playerMove)
         {
             if (hudRoot == null)
             {
                 return null;
             }
 
-            Transform existing = hudRoot.Find("DodgeButton");
+            Transform existing = hudRoot.Find("JumpButton");
             if (existing != null)
             {
                 Destroy(existing.gameObject);
             }
 
             Sprite circle = GetCircleSprite();
-            GameObject root = new GameObject("DodgeButton", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button), typeof(CanvasGroup));
+            GameObject root = new GameObject("JumpButton", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button), typeof(CanvasGroup));
             RectTransform rect = root.GetComponent<RectTransform>();
             rect.SetParent(hudRoot, false);
             rect.anchorMin = new Vector2(1f, 0f);
@@ -74,7 +74,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             labelRect.offsetMin = Vector2.zero;
             labelRect.offsetMax = Vector2.zero;
             TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
-            label.text = "회피";
+            label.text = "점프";
             label.alignment = TextAlignmentOptions.Center;
             label.fontSize = 16f;
             label.color = Color.white;
@@ -85,7 +85,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 label.font = source.font;
             }
 
-            DemoDodgeButton view = root.AddComponent<DemoDodgeButton>();
+            DemoJumpButton view = root.AddComponent<DemoJumpButton>();
             view.player = playerMove;
             view.button = root.GetComponent<Button>();
             view.fill = fillImage;
@@ -139,7 +139,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void HandleClicked()
         {
-            player?.TryDodge();
+            player?.TryJump();
             Refresh();
         }
 
@@ -155,12 +155,12 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             if (button != null)
             {
-                button.interactable = visible && player != null && player.CanDodge;
+                button.interactable = visible && player != null && player.CanJump;
             }
 
             if (fill != null && player != null)
             {
-                fill.fillAmount = player.DodgeCooldownFill;
+                fill.fillAmount = player.JumpReadyFill;
                 fill.color = ReadyFill;
             }
         }
@@ -192,7 +192,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             texture.SetPixels(pixels);
             texture.Apply(false, false);
             circleSprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 100f);
-            circleSprite.name = "DodgeCircle";
+            circleSprite.name = "JumpCircle";
             return circleSprite;
         }
     }

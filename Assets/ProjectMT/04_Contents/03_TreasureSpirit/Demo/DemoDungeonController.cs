@@ -1,11 +1,11 @@
+using System;
 using System.Collections;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Contents.TreasureSpirit;
+using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
-using ProjectMT.Shared.Reward;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace ProjectMT.Contents.TreasureSpirit.Demo
@@ -14,13 +14,12 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
     /// 베이크 던전 데모 컨트롤러. BakedDungeonLoader로 5종 맵을 순환합니다.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class DemoDungeonController : MonoBehaviour
+    public sealed class DemoDungeonController : MonoBehaviour, IContentController
     {
         [Header("베이크 맵")]
         [SerializeField] private BakedDungeonLoader bakedDungeonLoader;
 
         [Header("전투 / 유닛")]
-        [SerializeField] private FollowerSpawner followerSpawner;
         [SerializeField] private GameObject commanderRoot;
         [SerializeField] private PlayerCharacterController commanderMove;
 
@@ -32,25 +31,22 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         [SerializeField] private Button exitButton;
         [SerializeField] private GameObject cardPanel;
         [SerializeField] private ItemDefinition keyItemDefinition;
-        [SerializeField] private GameObject contentResultOverlayPrefab;
-        [SerializeField] private GrowthDungeonRewardTable rewardTable;
-        [SerializeField] private string contentDisplayName = "보물 정령 숨바꼭질";
 
         [Header("던전 설정")]
         [SerializeField] private float timeLimitSeconds = 100f;
-        [SerializeField] private string exitSceneName = "00_Entry";
-        [SerializeField] private string nextSceneName = "00_Entry";
         [SerializeField] private float resultTextHideDelay = 20f;
         [SerializeField] private float keyCardHideDelay = 10f;
 
+        private ContentContext context;
+        private TreasureSpiritStartData startData;
+        private float difficultyMultiplier = 1f;
         private float timeRemaining;
         private int killCount;
         private BakedDungeonLoader keyState;
         private Coroutine resultTextHideRoutine;
         private Coroutine keyCardHideRoutine;
-        private IContentResultView resultView;
         private readonly DemoLifeHud lifeHud = new DemoLifeHud();
-        private DemoDodgeButton dodgeButton;
+        private DemoJumpButton jumpButton;
 
         public bool IsRunning { get; private set; }
 
@@ -59,31 +55,33 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             BindExitButton();
         }
 
-        private void Start()
+        public void Initialize(ContentContext contentContext)
         {
-            if (!IsRunning)
+            Shutdown();
+            context = contentContext ?? throw new ArgumentNullException(nameof(contentContext));
+            startData = contentContext.StartData as TreasureSpiritStartData;
+            if (startData == null || startData.Party == null)
             {
-                Initialize();
+                throw new ArgumentException("TreasureSpiritStartData is required.", nameof(contentContext));
             }
-        }
-
-        public void Initialize()
-        {
-            ShutdownInternal();
 
             if (bakedDungeonLoader == null)
             {
-                Debug.LogError("[DemoDungeonController] BakedDungeonLoader가 연결되지 않았습니다.");
-                return;
+                throw new InvalidOperationException("Treasure Spirit runtime references are missing.");
             }
+
+            var stage = int.TryParse(context.RunInfo.StageId, out var selectedStage) &&
+                        GrowthDungeonStageRules.IsValidStage(selectedStage)
+                ? selectedStage
+                : 1;
+            difficultyMultiplier = GrowthDungeonStageRules.ResolveDifficultyMultiplier(stage);
 
             bakedDungeonLoader.LoadNextMap();
             keyState = bakedDungeonLoader;
 
             if (bakedDungeonLoader.ActiveMapInstance == null)
             {
-                Debug.LogError("[DemoDungeonController] 베이크 맵 로드에 실패했습니다.");
-                return;
+                throw new InvalidOperationException("Treasure Spirit baked map loading failed.");
             }
 
             StartCoroutine(BuildNavMeshAndSpawnRoutine());
@@ -117,18 +115,17 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 commanderRoot.SetActive(true);
             }
 
-            bakedDungeonLoader.SpawnRoomContents();
+            bakedDungeonLoader.SpawnRoomContents(difficultyMultiplier);
             bakedDungeonLoader.SpawnEndRoomPrison(this);
 
             commanderMove?.SetInputEnabled(true);
             BindLifeHud();
 
-            timeRemaining = timeLimitSeconds;
+            timeRemaining = startData != null ? startData.DurationSeconds : timeLimitSeconds;
             killCount = 0;
             IsRunning = true;
             Time.timeScale = 1f;
 
-            SpawnFollower();
             UpdateHud();
             EnsureCardPanel();
             HideCardPanel();
@@ -152,7 +149,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             HideCardPanel();
             DemoChestQuizOverlay.HideActive();
             lifeHud.Hide();
-            dodgeButton?.Hide();
+            jumpButton?.Hide();
 
             if (commanderRoot != null)
             {
@@ -174,33 +171,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             {
                 OnTimeOut();
             }
-        }
-
-        private void SpawnFollower()
-        {
-            if (followerSpawner == null || bakedDungeonLoader?.ActiveMapInstance == null)
-            {
-                return;
-            }
-
-            Transform mapRoot = bakedDungeonLoader.ActiveMapInstance.transform;
-            Vector3 spawnPosition;
-
-            if (DemoSpawnResolver.TryGetSpawnPosition(mapRoot, 0.5f, out spawnPosition))
-            {
-                spawnPosition += new Vector3(0f, 0f, -1.2f);
-            }
-            else if (commanderRoot != null)
-            {
-                spawnPosition = commanderRoot.transform.position + new Vector3(0f, 0f, -1.2f);
-            }
-            else
-            {
-                return;
-            }
-
-            DemoSpawnResolver.TrySnapToNavMesh(ref spawnPosition, 3f);
-            followerSpawner.SpawnFollower(spawnPosition);
         }
 
         private void OnKeyGranted()
@@ -434,8 +404,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             Transform hudRoot = ResolveHudRoot();
             lifeHud.Ensure(hudRoot);
             lifeHud.Show();
-            dodgeButton = DemoDodgeButton.Ensure(hudRoot, commanderMove);
-            dodgeButton?.Show();
+            jumpButton = DemoJumpButton.Ensure(hudRoot, commanderMove);
+            jumpButton?.Show();
 
             if (commanderMove == null)
             {
@@ -508,7 +478,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private void FinishGame(bool isSuccess, string summary)
         {
             IsRunning = false;
-            Time.timeScale = 0f;
             commanderMove?.SetInputEnabled(false);
             HideCardPanel();
             DemoChestQuizOverlay.HideActive();
@@ -518,105 +487,27 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 resultText.gameObject.SetActive(false);
             }
 
-            StartCoroutine(ShowContentResultThenReload(isSuccess, summary));
-        }
-
-        private IEnumerator ShowContentResultThenReload(bool isSuccess, string summary)
-        {
-            IContentResultView view = ResolveResultView();
-            if (view != null)
+            var result = new TreasureSpiritResult(isSuccess, killCount, timeRemaining, summary);
+            if (isSuccess)
             {
-                var task = view.ShowAsync(CreateResultPresentation(isSuccess, summary));
-                while (task != null && !task.IsCompleted)
-                {
-                    yield return null;
-                }
+                context?.Exit.Complete(result);
             }
             else
             {
-                Debug.LogWarning("[DemoDungeonController] 식량대소동과 같은 결과창을 찾지 못했습니다.");
-                yield return new WaitForSecondsRealtime(2f);
+                context?.Exit.Fail(result);
             }
-
-            OnConfirmAndReload();
-        }
-
-        private ContentResultPresentation CreateResultPresentation(bool isSuccess, string summary)
-        {
-            ContentOutcome outcome = isSuccess ? ContentOutcome.Complete : ContentOutcome.Fail;
-            RewardPresentationRequest rewards = null;
-            if (isSuccess &&
-                rewardTable != null &&
-                rewardTable.TryCreate(1, ContentRunMode.SeedTest, out RewardBundle bundle))
-            {
-                rewards = RewardPresentationRequest.FromBundle(bundle);
-            }
-
-            return new ContentResultPresentation(
-                new ContentId("treasure_spirit"),
-                contentDisplayName,
-                outcome,
-                summary,
-                rewards);
-        }
-
-        private IContentResultView ResolveResultView()
-        {
-            if (resultView != null)
-            {
-                return resultView;
-            }
-
-            MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-            for (int i = 0; i < behaviours.Length; i++)
-            {
-                if (behaviours[i] is IContentResultView view)
-                {
-                    resultView = view;
-                    return resultView;
-                }
-            }
-
-            GameObject prefab = ResolveResultOverlayPrefab();
-            if (prefab == null)
-            {
-                return null;
-            }
-
-            GameObject instance = Instantiate(prefab);
-            instance.name = "PF_ContentResultOverlay_Runtime";
-            resultView = instance.GetComponent<IContentResultView>() ??
-                         instance.GetComponentInChildren<IContentResultView>(true);
-            return resultView;
-        }
-
-        private GameObject ResolveResultOverlayPrefab()
-        {
-            if (contentResultOverlayPrefab != null)
-            {
-                return contentResultOverlayPrefab;
-            }
-
-#if UNITY_EDITOR
-            const string overlayGuid = "69159d92b2e62204a92b65cace4a6bfd";
-            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(overlayGuid);
-            contentResultOverlayPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
-#endif
-            return contentResultOverlayPrefab;
-        }
-
-        private void OnConfirmAndReload()
-        {
-            Time.timeScale = 1f;
-            SceneManager.LoadScene(nextSceneName);
         }
 
         private void OnExitButtonClicked()
         {
-            Time.timeScale = 1f;
-            SceneManager.LoadScene(exitSceneName);
+            if (!IsRunning)
+            {
+                return;
+            }
+
+            IsRunning = false;
+            commanderMove?.SetInputEnabled(false);
+            context?.Exit.Cancel();
         }
 
         private void BindExitButton()
@@ -633,6 +524,17 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private void OnDestroy()
         {
             exitButton?.onClick.RemoveListener(OnExitButtonClicked);
+        }
+
+        public void Shutdown()
+        {
+            ShutdownInternal();
+            context = null;
+            startData = null;
+            difficultyMultiplier = 1f;
+            timeRemaining = 0f;
+            killCount = 0;
+            Time.timeScale = 1f;
         }
     }
 }

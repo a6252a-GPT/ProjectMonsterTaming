@@ -112,6 +112,13 @@ namespace ProjectMT.Contents.TreasureSpirit
             commanderTarget = target;
         }
 
+        public void ConfigureDifficulty(float difficultyMultiplier) // 성장 단계 전투 배율 적용
+        {
+            var multiplier = Mathf.Max(1f, difficultyMultiplier);
+            maxHealth *= multiplier;
+            attackDamage *= multiplier;
+        }
+
         public void SetPatrolBounds(Vector3 center, float radius)
         {
             patrolOrigin = center;

@@ -493,6 +493,77 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 140953549}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &143932448
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 391906752}
+    m_Modifications:
+    - target: {fileID: 1481322446448525261, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1481322446448525261, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1481322446448525261, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1481322446448525261, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1481322446448525261, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1481322446448525261, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1481322446448525261, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1481322446448525261, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1481322446448525261, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1481322446448525261, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6317879395377019594, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+      propertyPath: m_Name
+      value: PF_TreasureSpiritRuntime
+      objectReference: {fileID: 0}
+    - target: {fileID: 6317879395377019594, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+--- !u!1 &143932449 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6317879395377019594, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+  m_PrefabInstance: {fileID: 143932448}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &143932450 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1481322446448525261, guid: b0cbd09854875704bb0151706d58e32e, type: 3}
+  m_PrefabInstance: {fileID: 143932448}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &152255086
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1275,6 +1346,8 @@ MonoBehaviour:
     instance: {fileID: 1660288080}
   - config: {fileID: 11400000, guid: b527a3676c6e8f24a90a390f63916b20, type: 2}
     instance: {fileID: 277185350}
+  - config: {fileID: 11400000, guid: f33f1de65bbacd54ca09722f5e2d957a, type: 2}
+    instance: {fileID: 143932449}
 --- !u!4 &391906752
 Transform:
   m_ObjectHideFlags: 0
@@ -1291,6 +1364,7 @@ Transform:
   - {fileID: 1744144522}
   - {fileID: 1660288081}
   - {fileID: 277185351}
+  - {fileID: 143932450}
   m_Father: {fileID: 542566293}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &426870923
@@ -44866,7 +44940,6 @@ MonoBehaviour:
   projectilePrefab: {fileID: 8900597983205870692, guid: 7d0df7a31c4b87e4e867d3dc816c56ed, type: 3}
   maxMonsterVfxPerFrame: 6
   maxMonsterFeelPerFrame: 6
-  showMonsterBasicAttackHitAreas: 1
 --- !u!1001 &1744144520
 PrefabInstance:
   m_ObjectHideFlags: 0

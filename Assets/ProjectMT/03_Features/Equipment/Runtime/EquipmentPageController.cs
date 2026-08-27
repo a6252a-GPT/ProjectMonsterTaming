@@ -867,8 +867,7 @@ namespace ProjectMT.Features.Equipment
             RefreshSelection();
         }
 
-        // 아이템을 누르고 있는 동안에만 상세 옵션 팝업(PF_ItemComparison)을 보여준다. 손을 떼거나
-        // 누른 채로 슬롯 밖으로 나가면 HandleSlotHoldEnd가 호출돼 바로 닫힌다.
+        // 아이템을 누르고 있는 동안에만 상세 옵션 팝업(PF_ItemComparison)을 보여준다.
         private void HandleSlotHoldStart(SlotView view)
         {
             if (currentMode != EquipmentPageMode.Equip || string.IsNullOrEmpty(view.BoundInstanceId))
@@ -886,8 +885,6 @@ namespace ProjectMT.Features.Equipment
             itemComparisonPanel?.Hide();
         }
 
-        // 아이템 클릭 시 상세 옵션 팝업(PF_ItemComparison)을 띄운다. 이미 열려 있어도 다른 아이템을
-        // 클릭하면 그 아이템 정보로 갱신된다.
         private void ShowItemComparisonPopup(string instanceId)
         {
             if (!EquipmentInventoryRuntime.TryGetItem(instanceId, out var item) || item.Definition == null)

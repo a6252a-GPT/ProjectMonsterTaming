@@ -47,12 +47,11 @@ namespace ProjectMT.Features.Equipment
         private readonly List<TMP_Text> bonusOptionNameTexts = new List<TMP_Text>();
         private readonly List<TMP_Text> bonusOptionValueTexts = new List<TMP_Text>();
 
-        // Popup_1 상단 "장착된 장비" 리본(클릭한 아이템이 이미 장착 중일 때만 노출)
+        // Popup_1 상단 "장착된 장비"/"선택한 장비" 리본
         private Transform equippedRibbon;
         private TMP_Text equippedRibbonText;
         private TMP_Text equippedRibbonTextShadow;
 
-        // Popup_2: 같은 부위 장착 아이템과의 비교 패널
         private Image compareDecoLineImage;
         private Image compareFrameBgImage;
         private Image compareFrameInnerBorderImage;
@@ -100,9 +99,6 @@ namespace ProjectMT.Features.Equipment
             popup1?.gameObject.SetActive(true);
             dimmed?.gameObject.SetActive(true);
 
-            // 같은 부위에 클릭한 것과 다른 장비가 이미 장착 중이면 Popup_1은 항상 "장착 중인 장비"를
-            // 기준으로 보여주고, Popup_2에서 새로 클릭한 장비를 그 기준과 비교해서 보여준다.
-            // 장착된 게 없거나 클릭한 게 이미 장착 중인 장비면 Popup_1이 그 클릭한 장비를 그대로 보여준다.
             var hasComparison = EquipmentInventoryRuntime.TryGetEquipped(clickedItem.Part, out var equippedItem)
                 && equippedItem.Definition != null
                 && equippedItem.InstanceId != clickedItem.InstanceId;
@@ -120,7 +116,6 @@ namespace ProjectMT.Features.Equipment
             }
         }
 
-        // Popup_1: 장착 중인 장비가 있으면 그 장비를, 없으면 클릭한 장비를 그대로 보여준다.
         private void ApplyPopup1(EquipmentItemView item, Sprite icon)
         {
             var gradeColor = ItemGradeFramePalette.GetColor(item.Grade);
@@ -269,8 +264,6 @@ namespace ProjectMT.Features.Equipment
             }
         }
 
-        // Popup_2: 장착 중인 장비와 다른 걸 클릭했을 때만 켜서, 새로 클릭한 장비를 보여주고
-        // 장착 중인 장비(Popup_1) 대비 추가옵션 우열/신규 여부를 표시한다.
         private void ApplyComparePanel(EquipmentItemView clickedItem, EquipmentItemView equippedItem, Sprite icon)
         {
             if (popup2 == null)
@@ -378,7 +371,6 @@ namespace ProjectMT.Features.Equipment
 
             if (!matchedCore.HasValue)
             {
-                // 장착 중인 장비에 같은 종류의 기본옵션이 없음 - 비교 대상이 없으니 화살표를 숨긴다.
                 arrow.gameObject.SetActive(false);
                 return;
             }

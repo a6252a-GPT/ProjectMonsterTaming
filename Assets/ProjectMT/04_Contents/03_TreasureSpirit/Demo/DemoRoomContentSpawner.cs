@@ -116,6 +116,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         {
             GameObject chestObject = Object.Instantiate(chestPrefab, position, rotation, contentRoot);
             chestObject.name = $"DemoKeyChest_{room.name}";
+            DemoUrpParticleRemapper.Remap(chestObject);
 
             DemoChestInteraction interaction = chestObject.GetComponent<DemoChestInteraction>();
             if (interaction == null)
@@ -137,6 +138,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         {
             GameObject chestObject = Object.Instantiate(chestPrefab, position, rotation, contentRoot);
             chestObject.name = $"DemoMimicChest_{room.name}";
+            DemoUrpParticleRemapper.Remap(chestObject);
 
             DemoChestInteraction interaction = chestObject.GetComponent<DemoChestInteraction>();
             if (interaction == null)

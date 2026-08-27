@@ -49,6 +49,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private Coroutine resultTextHideRoutine;
         private Coroutine keyCardHideRoutine;
         private IContentResultView resultView;
+        private readonly DemoLifeHud lifeHud = new DemoLifeHud();
+        private DemoDodgeButton dodgeButton;
 
         public bool IsRunning { get; private set; }
 
@@ -119,6 +121,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             bakedDungeonLoader.SpawnEndRoomPrison(this);
 
             commanderMove?.SetInputEnabled(true);
+            BindLifeHud();
 
             timeRemaining = timeLimitSeconds;
             killCount = 0;
@@ -136,6 +139,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         {
             IsRunning = false;
             StopAllCoroutines();
+            UnbindLifeHud();
             commanderMove?.SetInputEnabled(false);
 
             if (keyState != null)
@@ -146,6 +150,9 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             bakedDungeonLoader?.ClearMap();
             keyState = null;
             HideCardPanel();
+            DemoChestQuizOverlay.HideActive();
+            lifeHud.Hide();
+            dodgeButton?.Hide();
 
             if (commanderRoot != null)
             {
@@ -422,6 +429,52 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
         }
 
+        private void BindLifeHud()
+        {
+            Transform hudRoot = ResolveHudRoot();
+            lifeHud.Ensure(hudRoot);
+            lifeHud.Show();
+            dodgeButton = DemoDodgeButton.Ensure(hudRoot, commanderMove);
+            dodgeButton?.Show();
+
+            if (commanderMove == null)
+            {
+                return;
+            }
+
+            commanderMove.LivesChanged -= OnPlayerLivesChanged;
+            commanderMove.LivesChanged += OnPlayerLivesChanged;
+            commanderMove.ResetLives();
+        }
+
+        private void UnbindLifeHud()
+        {
+            if (commanderMove != null)
+            {
+                commanderMove.LivesChanged -= OnPlayerLivesChanged;
+            }
+        }
+
+        private void OnPlayerLivesChanged(int current, int max)
+        {
+            lifeHud.SetLives(current, max);
+        }
+
+        private Transform ResolveHudRoot()
+        {
+            if (timerText != null)
+            {
+                return timerText.transform.parent;
+            }
+
+            if (killCountText != null)
+            {
+                return killCountText.transform.parent;
+            }
+
+            return statusText != null ? statusText.transform.parent : null;
+        }
+
         public void CompleteDungeon()
         {
             if (!IsRunning)
@@ -458,6 +511,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             Time.timeScale = 0f;
             commanderMove?.SetInputEnabled(false);
             HideCardPanel();
+            DemoChestQuizOverlay.HideActive();
 
             if (resultText != null)
             {

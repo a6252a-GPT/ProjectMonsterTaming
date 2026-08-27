@@ -36,7 +36,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private float elapsed;
         private int phase;
         private readonly Dictionary<int, float> nextHitTime = new Dictionary<int, float>();
-        private readonly Collider[] overlapHits = new Collider[16];
+        private readonly Collider[] overlapHits = new Collider[64];
 
         public static void Spawn(Transform parent, Transform ceiling, int staggerIndex)
         {
@@ -101,6 +101,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 instance.transform.localRotation = upward;
                 instance.transform.localScale = new Vector3(heightScale, zScale, heightScale);
                 DisableColliders(instance);
+                DemoUrpParticleRemapper.Remap(instance);
                 ParticleSystem[] systems = instance.GetComponentsInChildren<ParticleSystem>(true);
                 for (int s = 0; s < systems.Length; s++)
                 {
@@ -239,9 +240,21 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void DetectHits()
         {
+            PlayerCharacterController player = FindFirstObjectByType<PlayerCharacterController>();
+            if (player != null)
+            {
+                TryHitBody(player.transform, player, null);
+            }
+
+            FollowerAI follower = FindFirstObjectByType<FollowerAI>();
+            if (follower != null)
+            {
+                TryHitBody(follower.transform, null, follower);
+            }
+
             float height = Mathf.Max(0.5f, ceilingY - floorY);
             Vector3 center = transform.position + Vector3.up * (height * 0.5f);
-            Vector3 half = new Vector3(SprayThicknessX * 0.5f, height * 0.5f, sprayLengthZ * 0.5f);
+            Vector3 half = new Vector3(SprayThicknessX * 0.5f + 0.2f, height * 0.5f, sprayLengthZ * 0.5f + 0.2f);
             int hitCount = Physics.OverlapBoxNonAlloc(
                 center,
                 half,
@@ -271,9 +284,24 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return;
             }
 
+            TryHitBody(body, player, follower);
+        }
+
+        private void TryHitBody(Transform body, PlayerCharacterController player, FollowerAI follower)
+        {
+            if (body == null)
+            {
+                return;
+            }
+
             Vector3 delta = body.position - transform.position;
-            if (Mathf.Abs(delta.x) > SprayThicknessX * 0.5f + 0.12f ||
-                Mathf.Abs(delta.z) > sprayLengthZ * 0.5f + 0.12f)
+            if (Mathf.Abs(delta.x) > SprayThicknessX * 0.5f + 0.35f ||
+                Mathf.Abs(delta.z) > sprayLengthZ * 0.5f + 0.35f)
+            {
+                return;
+            }
+
+            if (body.position.y < floorY - 0.6f || body.position.y > ceilingY + 0.4f)
             {
                 return;
             }
@@ -287,11 +315,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             nextHitTime[targetId] = Time.time + hitCooldown;
             if (player != null)
             {
-                player.TakeDamage(damage, origin);
+                player.TakeDamage(damage, transform.position);
                 return;
             }
 
-            follower.TakeDamage(damage);
+            follower?.TakeDamage(damage);
         }
 
         private Transform CreateQuad(string objectName, Material material, Vector3 worldScale, Vector3 localPosition)

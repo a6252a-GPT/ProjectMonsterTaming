@@ -29,6 +29,7 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         [Header("공격 설정")]
         [SerializeField] private float attackCooldown = 1.5f;
+        [SerializeField] private float attackDamage = 15f;
         [SerializeField] private int attackMotionCount = 3;
         private float lastAttackTime;
 
@@ -51,6 +52,11 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private NavMeshAgent agent;
         private Animator animator;
+        private bool animatorParamsCached;
+        private bool hasSpeedParameter;
+        private bool hasAttackIndexParameter;
+        private bool hasAttackTrigger;
+        private bool hasDieTrigger;
 
         private bool IsAgentReady()
         {
@@ -91,6 +97,7 @@ namespace ProjectMT.Contents.TreasureSpirit
         {
             agent = GetComponent<NavMeshAgent>();
             animator = GetComponentInChildren<Animator>();
+            CacheAnimatorParameters();
         }
 
         private void Start()
@@ -124,7 +131,8 @@ namespace ProjectMT.Contents.TreasureSpirit
                 return;
             }
 
-            if (animator != null)
+            CacheAnimatorParameters();
+            if (hasSpeedParameter)
             {
                 animator.SetFloat("Speed", agent.velocity.magnitude);
             }
@@ -303,6 +311,45 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
         }
 
+        private void CacheAnimatorParameters()
+        {
+            if (animatorParamsCached)
+            {
+                return;
+            }
+
+            animatorParamsCached = true;
+            if (animator == null)
+            {
+                return;
+            }
+
+            hasSpeedParameter = HasAnimatorParameter("Speed");
+            hasAttackIndexParameter = HasAnimatorParameter("AttackIndex");
+            hasAttackTrigger = HasAnimatorParameter("Attack");
+            hasDieTrigger = HasAnimatorParameter("Die");
+        }
+
+        private bool HasAnimatorParameter(string parameterName)
+        {
+            if (animator == null || string.IsNullOrEmpty(parameterName))
+            {
+                return false;
+            }
+
+            int hash = Animator.StringToHash(parameterName);
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].nameHash == hash)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static float GetHorizontalDistance(Vector3 a, Vector3 b)
         {
             a.y = 0f;
@@ -312,15 +359,38 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private void PerformAttack()
         {
-            if (animator != null)
+            if (hasAttackTrigger)
             {
-                int randomAttackIndex = Random.Range(0, attackMotionCount);
-                animator.SetInteger("AttackIndex", randomAttackIndex);
+                if (hasAttackIndexParameter)
+                {
+                    int randomAttackIndex = Random.Range(0, attackMotionCount);
+                    animator.SetInteger("AttackIndex", randomAttackIndex);
+                }
+
                 animator.SetTrigger("Attack");
             }
 
             string targetName = currentTarget != null ? currentTarget.name : "타겟";
             Debug.Log($"⚔️ {gameObject.name}이(가) [{targetName}]을(를) 공격했습니다!");
+            ApplyAttackDamage();
+        }
+
+        private void ApplyAttackDamage()
+        {
+            if (currentTarget == null)
+            {
+                return;
+            }
+
+            PlayerCharacterController player = currentTarget.GetComponentInParent<PlayerCharacterController>();
+            if (player != null)
+            {
+                player.TakeDamage(attackDamage, transform.position);
+                return;
+            }
+
+            FollowerAI follower = currentTarget.GetComponentInParent<FollowerAI>();
+            follower?.TakeDamage(attackDamage);
         }
 
         public void TakeDamage(float damage)
@@ -350,7 +420,7 @@ namespace ProjectMT.Contents.TreasureSpirit
                 col.enabled = false;
             }
 
-            if (animator != null)
+            if (hasDieTrigger)
             {
                 animator.SetTrigger("Die");
             }

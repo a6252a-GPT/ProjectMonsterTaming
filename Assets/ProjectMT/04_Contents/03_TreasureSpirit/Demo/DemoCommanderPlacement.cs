@@ -46,7 +46,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             sensorCollider.isTrigger = true;
-            sensorCollider.radius = 1.1f;
+            sensorCollider.radius = 0.4f;
 
             Rigidbody sensorBody = sensorObject.GetComponent<Rigidbody>();
             if (sensorBody == null)

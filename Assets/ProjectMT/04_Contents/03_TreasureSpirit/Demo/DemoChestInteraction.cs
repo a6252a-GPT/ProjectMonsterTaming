@@ -13,7 +13,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             Mimic
         }
 
-        [SerializeField] private float interactRadius = 1.75f;
+        [SerializeField] private float interactRadius = 0.55f;
 
         private ChestKind chestKind;
         private Transform playerTransform;
@@ -55,8 +55,9 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             Vector3 interactionPoint = DemoChestInteractionSetup.GetInteractionPoint(transform);
-            float distance = Vector3.Distance(interactionPoint, playerTransform.position);
-            if (distance <= interactRadius)
+            Vector3 toPlayer = playerTransform.position - interactionPoint;
+            toPlayer.y = 0f;
+            if (toPlayer.magnitude <= interactRadius)
             {
                 Interact();
             }
@@ -74,7 +75,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private bool CanInteract()
         {
-            return !interacted;
+            return !interacted && !DemoChestQuizOverlay.IsOpen;
         }
 
         private void Interact()
@@ -84,14 +85,37 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             switch (chestKind)
             {
                 case ChestKind.Key:
-                    keyState?.GrantKey();
-                    Debug.Log("[DemoChestInteraction] 열쇠 상자를 열었습니다.");
-                    Destroy(gameObject);
+                    OpenKeyQuiz();
                     break;
 
                 case ChestKind.Mimic:
                     SpawnMimic();
                     break;
+            }
+        }
+
+        private void OpenKeyQuiz()
+        {
+            DemoDungeonDifficulty difficulty = DemoDungeonDifficultyUtil.Resolve(
+                keyState != null ? keyState.ActiveMapInstance : null);
+            DemoChestQuizOverlay.Show(difficulty, playerTransform, OnKeyQuizSolved, OnKeyQuizClosed);
+        }
+
+        private void OnKeyQuizSolved()
+        {
+            keyState?.GrantKey();
+            Debug.Log("[DemoChestInteraction] 퀴즈를 풀어 열쇠를 획득했습니다.");
+            if (this != null)
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        private void OnKeyQuizClosed()
+        {
+            if (this != null)
+            {
+                interacted = false;
             }
         }
 
@@ -121,6 +145,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             GameObject mimicObject = Instantiate(mimicPrefab, spawnPosition, spawnRotation, parent);
             mimicObject.name = mimicObject.name.Replace("(Clone)", "_Runtime");
+            DemoUrpParticleRemapper.Remap(mimicObject);
 
             NavMeshAgent agent = mimicObject.GetComponent<NavMeshAgent>();
             if (agent != null)
@@ -144,6 +169,9 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
     internal static class DemoChestInteractionSetup
     {
+        private const float TriggerSizeXz = 0.62f;
+        private const float TriggerHeight = 0.9f;
+
         public static void Ensure(GameObject chestObject)
         {
             Rigidbody rigidbody = chestObject.GetComponent<Rigidbody>();
@@ -155,23 +183,30 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             rigidbody.isKinematic = true;
             rigidbody.useGravity = false;
 
-            Collider collider = chestObject.GetComponent<Collider>();
-            if (collider == null)
+            Collider[] colliders = chestObject.GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
             {
-                collider = chestObject.GetComponentInChildren<Collider>();
+                if (colliders[i] != null)
+                {
+                    colliders[i].enabled = false;
+                }
             }
 
-            if (collider == null)
+            BoxCollider boxCollider = chestObject.GetComponent<BoxCollider>();
+            if (boxCollider == null)
             {
-                BoxCollider boxCollider = chestObject.AddComponent<BoxCollider>();
-                boxCollider.isTrigger = true;
-                boxCollider.size = new Vector3(1.8f, 1.8f, 1.8f);
-                boxCollider.center = new Vector3(0f, 0.9f, 0f);
+                boxCollider = chestObject.AddComponent<BoxCollider>();
             }
-            else
-            {
-                collider.isTrigger = true;
-            }
+
+            Vector3 lossyScale = chestObject.transform.lossyScale;
+            float scaleX = Mathf.Max(0.01f, Mathf.Abs(lossyScale.x));
+            float scaleY = Mathf.Max(0.01f, Mathf.Abs(lossyScale.y));
+            float scaleZ = Mathf.Max(0.01f, Mathf.Abs(lossyScale.z));
+
+            boxCollider.enabled = true;
+            boxCollider.isTrigger = true;
+            boxCollider.size = new Vector3(TriggerSizeXz / scaleX, TriggerHeight / scaleY, TriggerSizeXz / scaleZ);
+            boxCollider.center = new Vector3(0f, (TriggerHeight * 0.5f) / scaleY, 0f);
         }
 
         public static Vector3 GetInteractionPoint(Transform chestTransform)

@@ -48,6 +48,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         {
             agent = GetComponent<NavMeshAgent>();
             initialScale = transform.localScale;
+            DemoUrpParticleRemapper.Remap(gameObject);
         }
 
         private void Start()
@@ -232,6 +233,25 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             Debug.Log($"[DemoMimicAI] {currentTarget.name} 공격 ({attackDamage} 데미지)");
+            ApplyAttackDamage();
+        }
+
+        private void ApplyAttackDamage()
+        {
+            if (currentTarget == null)
+            {
+                return;
+            }
+
+            PlayerCharacterController player = currentTarget.GetComponentInParent<PlayerCharacterController>();
+            if (player != null)
+            {
+                player.TakeDamage(attackDamage, transform.position);
+                return;
+            }
+
+            FollowerAI follower = currentTarget.GetComponentInParent<FollowerAI>();
+            follower?.TakeDamage(attackDamage);
         }
 
         private void ApplyBounce()

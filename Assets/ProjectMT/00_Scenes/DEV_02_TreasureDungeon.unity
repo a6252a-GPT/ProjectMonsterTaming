@@ -154,7 +154,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 140, y: -42}
+  m_AnchoredPosition: {x: 140, y: -156}
   m_SizeDelta: {x: 240, y: 48}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &38408470
@@ -1472,6 +1472,8 @@ MonoBehaviour:
   feedbackPlayer: {fileID: 771234943}
   projectilePrefab: {fileID: 8900597983205870692, guid: 7d0df7a31c4b87e4e867d3dc816c56ed, type: 3}
   maxMonsterVfxPerFrame: 6
+  maxMonsterFeelPerFrame: 6
+  showMonsterBasicAttackHitAreas: 1
 --- !u!1 &1433094536
 GameObject:
   m_ObjectHideFlags: 0
@@ -1542,9 +1544,13 @@ MonoBehaviour:
   rotationSpeed: 14
   animator: {fileID: 1123637311}
   speedParameter: Speed
-  maxHealth: 100
+  maxLives: 5
   hitKnockbackSpeed: 5.5
   hitKnockbackDecay: 18
+  dodgeDistance: 2.5
+  dodgeDuration: 0.2
+  dodgeCooldown: 1.2
+  dodgeInvulnerableDuration: 0.3
 --- !u!143 &1433094541
 CharacterController:
   m_ObjectHideFlags: 0
@@ -1993,7 +1999,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 140, y: -114}
+  m_AnchoredPosition: {x: 140, y: -248}
   m_SizeDelta: {x: 240, y: 48}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1898932448

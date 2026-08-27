@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using ProjectMT.Shared.Combat;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,6 +23,8 @@ namespace ProjectMT.Shared.Debugging
         [SerializeField] private TMP_Text acquireAllItemsLabel;
         [SerializeField] private Button sendRandomMailButton; // 보상 첨부 테스트 우편 발송
         [SerializeField] private TMP_Text sendRandomMailLabel;
+        [SerializeField] private Button basicAttackAreaButton; // 기본공격 판정 표시 전환
+        [SerializeField] private TMP_Text basicAttackAreaLabel;
         [SerializeField] private TMP_Text statusLabel; // 실행 결과 표시
 
         private const float ConfirmDuration = 4f;
@@ -41,8 +44,10 @@ namespace ProjectMT.Shared.Debugging
             acquireEquipmentButton?.onClick.AddListener(HandleAcquireEquipmentClicked);
             acquireAllItemsButton?.onClick.AddListener(HandleAcquireAllItemsClicked);
             sendRandomMailButton?.onClick.AddListener(HandleSendRandomMailClicked);
+            basicAttackAreaButton?.onClick.AddListener(HandleBasicAttackAreaClicked);
             SetPanelOpen(false);
             ResetConfirmation();
+            RefreshBasicAttackAreaLabel();
         }
 
         private void OnDestroy()
@@ -53,6 +58,7 @@ namespace ProjectMT.Shared.Debugging
             acquireEquipmentButton?.onClick.RemoveListener(HandleAcquireEquipmentClicked);
             acquireAllItemsButton?.onClick.RemoveListener(HandleAcquireAllItemsClicked);
             sendRandomMailButton?.onClick.RemoveListener(HandleSendRandomMailClicked);
+            basicAttackAreaButton?.onClick.RemoveListener(HandleBasicAttackAreaClicked);
         }
 
         private void Update()
@@ -264,6 +270,24 @@ namespace ProjectMT.Shared.Debugging
             }
         }
 
+        private void HandleBasicAttackAreaClicked()
+        {
+            var visible = !CombatWorld.MonsterBasicAttackHitAreasVisible;
+            CombatWorld.SetMonsterBasicAttackHitAreasVisible(visible);
+            RefreshBasicAttackAreaLabel();
+            SetStatus(visible ? "기본공격 판정 표시 ON" : "기본공격 판정 표시 OFF");
+        }
+
+        private void RefreshBasicAttackAreaLabel()
+        {
+            if (basicAttackAreaLabel != null)
+            {
+                basicAttackAreaLabel.text = CombatWorld.MonsterBasicAttackHitAreasVisible
+                    ? "기본공격 판정: ON"
+                    : "기본공격 판정: OFF";
+            }
+        }
+
         private void ResetConfirmation(bool clearStatus = true)
         {
             confirmUntil = 0f;
@@ -316,6 +340,11 @@ namespace ProjectMT.Shared.Debugging
             {
                 sendRandomMailButton.interactable = interactable && sendRandomMailAction != null;
             }
+
+            if (basicAttackAreaButton != null)
+            {
+                basicAttackAreaButton.interactable = interactable;
+            }
         }
 
 #if UNITY_EDITOR
@@ -333,7 +362,9 @@ namespace ProjectMT.Shared.Debugging
             Button allItemsAcquireButton = null,
             TMP_Text allItemsAcquireText = null,
             Button randomMailButton = null,
-            TMP_Text randomMailText = null)
+            TMP_Text randomMailText = null,
+            Button attackAreaButton = null,
+            TMP_Text attackAreaText = null)
         {
             panelRoot = toolsPanel;
             toggleButton = toggle;
@@ -348,6 +379,8 @@ namespace ProjectMT.Shared.Debugging
             acquireAllItemsLabel = allItemsAcquireText;
             sendRandomMailButton = randomMailButton;
             sendRandomMailLabel = randomMailText;
+            basicAttackAreaButton = attackAreaButton;
+            basicAttackAreaLabel = attackAreaText;
             statusLabel = statusText;
             SetPanelOpen(false);
             ResetConfirmation();
@@ -370,6 +403,8 @@ namespace ProjectMT.Shared.Debugging
             {
                 sendRandomMailLabel.text = "랜덤 우편 보내기";
             }
+
+            RefreshBasicAttackAreaLabel();
         }
 #endif
     }

@@ -1,4 +1,5 @@
 using System;
+using ProjectMT.Shared.Combat;
 using UnityEditor;
 using UnityEngine;
 
@@ -133,16 +134,28 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
     internal sealed class MonsterPositionAdjustWindow : EditorWindow // 좌표 편집만 담당하는 가벼운 공용 팝업
     {
-        private static readonly Vector2 WindowSize = new Vector2(720f, 620f);
+        private static readonly Vector2 WindowSize = new Vector2(720f, 676f);
         private static readonly int OrbitControlHint = "MonsterPositionAdjustOrbit".GetHashCode();
         private const float OuterMargin = 8f;
         private const float BottomHeight = 104f;
+        private const float VfxBottomHeight = 260f;
+        private const float VfxPlaybackSpeedGaugeDefaultExponent = 1f;
         private const float OrbitSensitivity = 0.35f;
 
         private MonsterMakerDraft draft;
         private MonsterMakerPreviewPositionBinding binding;
         private Func<Vector3, bool> applyValue;
+        private Func<Vector3, Vector3, float, float, float, bool> applyVfxValue;
         private Vector3 currentValue;
+        private Vector3 currentEuler;
+        private float currentScale = 1f;
+        private float currentPlaybackOffset;
+        private float currentPlaybackSpeed = 1f;
+        private float vfxPreviewElapsed;
+        private double vfxPreviewLastUpdateTime;
+        private bool vfxPreviewPlaying;
+        private GameObject previewVfxPrefab;
+        private Transform previewVfx;
         private PreviewRenderUtility previewUtility;
         private Texture lastTexture;
         private GameObject previewRoot;
@@ -195,6 +208,50 @@ namespace ProjectMT.EditorTools.MonsterMaker
             window.Focus();
         }
 
+        public static void OpenVfx(
+            EditorWindow owner,
+            MonsterMakerDraft source,
+            MonsterMakerPreviewPositionBinding positionBinding,
+            GameObject vfxPrefab,
+            Vector3 initialPosition,
+            Vector3 initialEuler,
+            float initialScale,
+            float initialPlaybackOffset,
+            float initialPlaybackSpeed,
+            Func<Vector3, Vector3, float, float, float, bool> onApply)
+        {
+            if (!CanOpen(source) || positionBinding == null || vfxPrefab == null || onApply == null)
+            {
+                return;
+            }
+
+            var window = CreateInstance<MonsterPositionAdjustWindow>();
+            window.titleContent = new GUIContent("VFX 조절 · " + positionBinding.Label);
+            window.minSize = WindowSize;
+            window.maxSize = WindowSize;
+            window.InitializeVfx(
+                source,
+                positionBinding,
+                vfxPrefab,
+                initialPosition,
+                initialEuler,
+                initialScale,
+                initialPlaybackOffset,
+                initialPlaybackSpeed,
+                onApply);
+
+            var ownerRect = owner == null
+                ? new Rect(100f, 100f, WindowSize.x, WindowSize.y)
+                : owner.position;
+            window.position = new Rect(
+                ownerRect.center.x - WindowSize.x * 0.5f,
+                ownerRect.center.y - WindowSize.y * 0.5f,
+                WindowSize.x,
+                WindowSize.y);
+            window.ShowUtility();
+            window.Focus();
+        }
+
         private void Initialize(
             MonsterMakerDraft source,
             MonsterMakerPreviewPositionBinding positionBinding,
@@ -208,10 +265,38 @@ namespace ProjectMT.EditorTools.MonsterMaker
             BuildPreview();
         }
 
+        private void InitializeVfx(
+            MonsterMakerDraft source,
+            MonsterMakerPreviewPositionBinding positionBinding,
+            GameObject vfxPrefab,
+            Vector3 initialPosition,
+            Vector3 initialEuler,
+            float initialScale,
+            float initialPlaybackOffset,
+            float initialPlaybackSpeed,
+            Func<Vector3, Vector3, float, float, float, bool> onApply)
+        {
+            draft = source;
+            binding = positionBinding;
+            previewVfxPrefab = vfxPrefab;
+            currentValue = initialPosition;
+            currentEuler = initialEuler;
+            currentScale = Mathf.Max(0.01f, initialScale);
+            currentPlaybackOffset = Mathf.Max(0f, initialPlaybackOffset);
+            currentPlaybackSpeed = SanitizePlaybackSpeed(initialPlaybackSpeed);
+            applyVfxValue = onApply;
+            BuildPreview();
+            RestartVfxPreview();
+            SetVfxPreviewPlaying(true);
+        }
+
         private void OnDisable()
         {
+            EditorApplication.update -= UpdateVfxPreview;
             CleanupPreview();
             applyValue = null;
+            applyVfxValue = null;
+            previewVfxPrefab = null;
         }
 
         private void OnGUI()
@@ -223,16 +308,17 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 return;
             }
 
+            var bottomHeight = IsVfxMode ? VfxBottomHeight : BottomHeight;
             var previewRect = new Rect(
                 OuterMargin,
                 OuterMargin,
                 Mathf.Max(1f, position.width - OuterMargin * 2f),
-                Mathf.Max(1f, position.height - BottomHeight - OuterMargin * 2f));
+                Mathf.Max(1f, position.height - bottomHeight - OuterMargin * 2f));
             var bottomRect = new Rect(
                 OuterMargin,
                 previewRect.yMax + 6f,
                 previewRect.width,
-                BottomHeight - 6f);
+                bottomHeight - 6f);
 
             // PositionHandle의 Camera 상태가 뒤에 그리는 IMGUI를 가리지 않도록 조작 UI를 먼저 그린다.
             DrawBottomControls(bottomRect);
@@ -453,6 +539,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private void DrawBottomControls(Rect rect)
         {
             EditorGUI.DrawRect(rect, new Color(0.12f, 0.125f, 0.14f, 1f));
+            if (IsVfxMode)
+            {
+                DrawVfxBottomControls(rect);
+                return;
+            }
+
             var valueRect = new Rect(rect.x + 10f, rect.y + 6f, rect.width - 20f, 42f);
             EditorGUI.BeginChangeCheck();
             var changed = EditorGUI.Vector3Field(valueRect, new GUIContent(binding?.Label ?? "현재 좌표"), currentValue);
@@ -484,6 +576,344 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 Close();
             }
+        }
+
+        private void DrawVfxBottomControls(Rect rect)
+        {
+            var content = new Rect(rect.x + 10f, rect.y + 7f, rect.width - 20f, 20f);
+            EditorGUI.BeginChangeCheck();
+            var changedPosition = DrawCompactVector3Field(content, "위치 보정", currentValue);
+            content.y += 24f;
+            var changedEuler = DrawCompactVector3Field(content, "회전 보정", currentEuler);
+            content.y += 24f;
+            GUI.Label(
+                new Rect(content.x, content.y, 78f, content.height),
+                "크기 배율",
+                EditorStyles.miniLabel);
+            var changedScale = EditorGUI.FloatField(
+                new Rect(content.x + 78f, content.y, 150f, content.height),
+                currentScale);
+            if (EditorGUI.EndChangeCheck())
+            {
+                currentValue = changedPosition;
+                currentEuler = changedEuler;
+                currentScale = Mathf.Max(0.01f, changedScale);
+                ApplyValueToPreview();
+                Repaint();
+            }
+
+            var playbackRect = new Rect(
+                rect.x + 10f,
+                rect.y + 83f,
+                rect.width - 20f,
+                22f);
+            GUI.Label(
+                new Rect(playbackRect.x, playbackRect.y + 2f, 78f, 18f),
+                "VFX 재생",
+                EditorStyles.miniLabel);
+            var x = playbackRect.x + 78f;
+            if (GUI.Button(
+                    new Rect(x, playbackRect.y, 82f, playbackRect.height),
+                    vfxPreviewPlaying ? "일시정지" : "재생",
+                    EditorStyles.miniButtonLeft))
+            {
+                SetVfxPreviewPlaying(!vfxPreviewPlaying);
+            }
+
+            x += 82f;
+            if (GUI.Button(
+                    new Rect(x, playbackRect.y, 82f, playbackRect.height),
+                    "처음부터",
+                    EditorStyles.miniButtonRight))
+            {
+                RestartVfxPreview();
+            }
+
+            x += 94f;
+            GUI.Label(
+                new Rect(x, playbackRect.y + 2f, playbackRect.xMax - x, 18f),
+                $"현재 원본 {currentPlaybackOffset + vfxPreviewElapsed * currentPlaybackSpeed:0.00}초 · " +
+                $"{currentPlaybackSpeed:0.##}배",
+                EditorStyles.miniLabel);
+
+            var offsetRect = new Rect(
+                rect.x + 10f,
+                rect.y + 111f,
+                rect.width - 20f,
+                22f);
+            GUI.Label(
+                new Rect(offsetRect.x, offsetRect.y + 2f, 78f, 18f),
+                "내부 시작",
+                EditorStyles.miniLabel);
+            x = offsetRect.x + 78f;
+            GUI.Label(
+                new Rect(x, offsetRect.y + 2f, 48f, 18f),
+                new GUIContent("시작점", "Prefab 원본 시간축에서 처음 건너뛸 구간입니다."),
+                EditorStyles.miniLabel);
+            x += 48f;
+            EditorGUI.BeginChangeCheck();
+            var changedPlaybackOffset = EditorGUI.FloatField(
+                new Rect(x, offsetRect.y, 70f, offsetRect.height),
+                currentPlaybackOffset);
+            var playbackOffsetChanged = EditorGUI.EndChangeCheck();
+            x += 74f;
+            GUI.Label(new Rect(x, offsetRect.y + 2f, 20f, 18f), "초", EditorStyles.miniLabel);
+            GUI.Label(
+                new Rect(x + 32f, offsetRect.y + 2f, offsetRect.xMax - x - 32f, 18f),
+                "앞부분을 건너뛰고 시작",
+                EditorStyles.miniLabel);
+
+            var speedRect = new Rect(
+                rect.x + 10f,
+                rect.y + 139f,
+                rect.width - 20f,
+                22f);
+            GUI.Label(
+                new Rect(speedRect.x, speedRect.y + 2f, 78f, 18f),
+                new GUIContent("재생 속도", "VFX 내부 시간만 빠르게 또는 느리게 흐르게 합니다."),
+                EditorStyles.miniLabel);
+
+            var gaugeExponent = ResolveVfxPlaybackSpeedGaugeExponent(currentPlaybackSpeed);
+            var gaugeMinExponent = -gaugeExponent;
+            var gaugeMaxExponent = gaugeExponent;
+            var gaugeMinSpeed = FromVfxPlaybackSpeedGaugeValue(gaugeMinExponent);
+            var gaugeMaxSpeed = FromVfxPlaybackSpeedGaugeValue(gaugeMaxExponent);
+            x = speedRect.x + 78f;
+            GUI.Label(
+                new Rect(x, speedRect.y + 2f, 48f, 18f),
+                $"{gaugeMinSpeed:0.##}배",
+                EditorStyles.miniLabel);
+            x += 54f;
+            const float gaugeTrailingWidth = 194f;
+            var gaugeRect = new Rect(
+                x,
+                speedRect.y + 2f,
+                Mathf.Max(100f, speedRect.xMax - x - gaugeTrailingWidth),
+                18f);
+            var changedPlaybackSpeed = currentPlaybackSpeed;
+            var playbackSpeedChanged = false;
+            EditorGUI.BeginChangeCheck();
+            var changedGaugeValue = GUI.HorizontalSlider(
+                gaugeRect,
+                Mathf.Clamp(
+                    ToVfxPlaybackSpeedGaugeValue(currentPlaybackSpeed),
+                    gaugeMinExponent,
+                    gaugeMaxExponent),
+                gaugeMinExponent,
+                gaugeMaxExponent);
+            if (EditorGUI.EndChangeCheck())
+            {
+                changedPlaybackSpeed = Mathf.Round(
+                    FromVfxPlaybackSpeedGaugeValue(changedGaugeValue) * 100f) / 100f;
+                playbackSpeedChanged = true;
+            }
+            var oneX = Mathf.Lerp(
+                gaugeRect.xMin,
+                gaugeRect.xMax,
+                Mathf.InverseLerp(gaugeMinExponent, gaugeMaxExponent, 0f));
+            EditorGUI.DrawRect(
+                new Rect(oneX, gaugeRect.yMax - 5f, 1f, 5f),
+                new Color(0.75f, 0.75f, 0.75f, 0.8f));
+
+            x = gaugeRect.xMax + 6f;
+            GUI.Label(
+                new Rect(x, speedRect.y + 2f, 48f, 18f),
+                $"{gaugeMaxSpeed:0.##}배",
+                EditorStyles.miniLabel);
+            x += 54f;
+            EditorGUI.BeginChangeCheck();
+            var exactPlaybackSpeed = EditorGUI.FloatField(
+                new Rect(x, speedRect.y, 62f, speedRect.height),
+                changedPlaybackSpeed);
+            if (EditorGUI.EndChangeCheck())
+            {
+                changedPlaybackSpeed = exactPlaybackSpeed;
+                playbackSpeedChanged = true;
+            }
+            x += 62f;
+            GUI.Label(new Rect(x, speedRect.y + 2f, 18f, 18f), "배", EditorStyles.miniLabel);
+            x += 24f;
+            var resetSpeed = GUI.Button(
+                new Rect(x, speedRect.y, 48f, speedRect.height),
+                "1배",
+                EditorStyles.miniButton);
+            if (playbackOffsetChanged || playbackSpeedChanged || resetSpeed)
+            {
+                currentPlaybackOffset = Mathf.Max(0f, changedPlaybackOffset);
+                currentPlaybackSpeed = resetSpeed ? 1f : SanitizePlaybackSpeed(changedPlaybackSpeed);
+                if (resetSpeed)
+                {
+                    GUI.FocusControl(null);
+                }
+                RestartVfxPreview();
+            }
+
+            GUI.Label(
+                new Rect(rect.x + 10f, rect.y + 174f, rect.width - 20f, 38f),
+                "노란 핸들 또는 숫자로 보정합니다. 속도 게이지는 1배 중심으로 현재 값을 포함하도록 자동 확장됩니다. 시작점·속도는 Preview와 실제 전투에 동일 적용되며 VFX 유지 시간과 공격 판정은 바뀌지 않습니다.",
+                EditorStyles.wordWrappedMiniLabel);
+
+            const float buttonWidth = 112f;
+            const float gap = 6f;
+            var buttonY = rect.yMax - 32f;
+            var cancelRect = new Rect(rect.xMax - buttonWidth, buttonY, buttonWidth, 26f);
+            var applyRect = new Rect(cancelRect.x - gap - buttonWidth, buttonY, buttonWidth, 26f);
+            if (GUI.Button(applyRect, "적용"))
+            {
+                if (applyVfxValue?.Invoke(
+                        currentValue,
+                        currentEuler,
+                        currentScale,
+                        currentPlaybackOffset,
+                        currentPlaybackSpeed) != false)
+                {
+                    Close();
+                }
+                else
+                {
+                    ShowNotification(new GUIContent("현재 상태에서는 적용할 수 없습니다."));
+                }
+            }
+
+            if (GUI.Button(cancelRect, "취소"))
+            {
+                Close();
+            }
+        }
+
+        private static Vector3 DrawCompactVector3Field(
+            Rect rect,
+            string label,
+            Vector3 value)
+        {
+            const float labelWidth = 78f;
+            const float gap = 8f;
+            const float axisLabelWidth = 14f;
+            GUI.Label(
+                new Rect(rect.x, rect.y + 2f, labelWidth, 18f),
+                label,
+                EditorStyles.miniLabel);
+
+            var fieldStart = rect.x + labelWidth;
+            var fieldWidth = Mathf.Max(
+                48f,
+                (rect.xMax - fieldStart - gap * 2f) / 3f);
+            value.x = DrawCompactAxisField(
+                new Rect(fieldStart, rect.y, fieldWidth, rect.height),
+                "X",
+                axisLabelWidth,
+                value.x);
+            fieldStart += fieldWidth + gap;
+            value.y = DrawCompactAxisField(
+                new Rect(fieldStart, rect.y, fieldWidth, rect.height),
+                "Y",
+                axisLabelWidth,
+                value.y);
+            fieldStart += fieldWidth + gap;
+            value.z = DrawCompactAxisField(
+                new Rect(fieldStart, rect.y, fieldWidth, rect.height),
+                "Z",
+                axisLabelWidth,
+                value.z);
+            return value;
+        }
+
+        private static float DrawCompactAxisField(
+            Rect rect,
+            string axis,
+            float axisLabelWidth,
+            float value)
+        {
+            GUI.Label(
+                new Rect(rect.x, rect.y + 2f, axisLabelWidth, 18f),
+                axis,
+                EditorStyles.miniLabel);
+            return EditorGUI.FloatField(
+                new Rect(
+                    rect.x + axisLabelWidth,
+                    rect.y,
+                    Mathf.Max(1f, rect.width - axisLabelWidth),
+                    rect.height),
+                value);
+        }
+
+        private void SetVfxPreviewPlaying(bool playing)
+        {
+            vfxPreviewPlaying = playing;
+            vfxPreviewLastUpdateTime = EditorApplication.timeSinceStartup;
+            EditorApplication.update -= UpdateVfxPreview;
+            if (playing && IsVfxMode)
+            {
+                EditorApplication.update += UpdateVfxPreview;
+            }
+            Repaint();
+        }
+
+        private void RestartVfxPreview()
+        {
+            if (previewVfx == null)
+            {
+                return;
+            }
+
+            MonsterBasicAttackVfxPlayback.RestartAtOffset(
+                previewVfx.gameObject,
+                currentPlaybackOffset,
+                false,
+                currentPlaybackSpeed);
+            vfxPreviewElapsed = 0f;
+            vfxPreviewLastUpdateTime = EditorApplication.timeSinceStartup;
+            Repaint();
+        }
+
+        private static float SanitizePlaybackSpeed(float value)
+        {
+            return float.IsNaN(value) || float.IsInfinity(value)
+                ? 1f
+                : Mathf.Max(0.01f, value);
+        }
+
+        private static float ResolveVfxPlaybackSpeedGaugeExponent(float speed)
+        {
+            var exponent = Mathf.Abs(ToVfxPlaybackSpeedGaugeValue(speed));
+            return Mathf.Max(
+                VfxPlaybackSpeedGaugeDefaultExponent,
+                Mathf.Ceil(exponent));
+        }
+
+        private static float ToVfxPlaybackSpeedGaugeValue(float speed)
+        {
+            return Mathf.Log(SanitizePlaybackSpeed(speed), 2f);
+        }
+
+        private static float FromVfxPlaybackSpeedGaugeValue(float value)
+        {
+            return SanitizePlaybackSpeed(Mathf.Pow(2f, value));
+        }
+
+        private void UpdateVfxPreview()
+        {
+            if (!vfxPreviewPlaying || previewVfx == null)
+            {
+                return;
+            }
+
+            var now = EditorApplication.timeSinceStartup;
+            var deltaTime = Mathf.Clamp(
+                (float)(now - vfxPreviewLastUpdateTime),
+                0f,
+                0.05f);
+            vfxPreviewLastUpdateTime = now;
+            if (deltaTime <= 0f)
+            {
+                return;
+            }
+
+            MonsterBasicAttackVfxPlayback.Simulate(
+                previewVfx.gameObject,
+                deltaTime);
+            vfxPreviewElapsed += deltaTime;
+            Repaint();
         }
 
         private void BuildPreview()
@@ -530,9 +960,17 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 hitCenter.localPosition = draft.HitCenterLocalPosition;
                 valueAnchor = ResolveValueAnchor();
                 PrepareModelOnlyPreview(previewRoot);
+                if (IsVfxMode)
+                {
+                    previewVfx = UnityEngine.Object
+                        .Instantiate(previewVfxPrefab, valueAnchor)
+                        .transform;
+                    previewVfx.name = "VFX Preview";
+                    PrepareVfxPreview(previewVfx.gameObject);
+                }
                 ApplyValueToPreview();
                 previewUtility.AddSingleGO(previewRoot);
-                modelBounds = CalculateModelBounds(previewVisual.gameObject);
+                modelBounds = CalculateModelBounds(previewRoot);
                 errorMessage = null;
             }
             catch (Exception exception)
@@ -589,7 +1027,17 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 return;
             }
 
-            if (binding.ValueMode == MonsterMakerPreviewPositionValueMode.VisualLocal && previewVisual != null)
+            if (IsVfxMode && previewVfx != null)
+            {
+                previewVfx.localPosition = currentValue;
+                previewVfx.localRotation = Quaternion.Euler(currentEuler);
+                MonsterBasicAttackVfxPlayback.ApplyInstanceScale(
+                    previewVfx.gameObject,
+                    previewVfxPrefab.transform.localScale *
+                    currentScale *
+                    Mathf.Max(0.01f, draft.VfxScale));
+            }
+            else if (binding.ValueMode == MonsterMakerPreviewPositionValueMode.VisualLocal && previewVisual != null)
             {
                 previewVisual.localPosition = currentValue + Vector3.up * draft.GroundOffset;
             }
@@ -637,6 +1085,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             return attackOrigin ?? previewRoot.transform;
         }
+
+        private bool IsVfxMode => previewVfxPrefab != null && applyVfxValue != null;
 
         private bool IsStandardTarget(string propertyName)
         {
@@ -711,6 +1161,31 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
         }
 
+        private static void PrepareVfxPreview(GameObject root)
+        {
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            for (var index = 0; index < transforms.Length; index++)
+            {
+                transforms[index].gameObject.hideFlags = HideFlags.HideAndDontSave;
+            }
+
+            var behaviours = root.GetComponentsInChildren<MonoBehaviour>(true);
+            for (var index = 0; index < behaviours.Length; index++)
+            {
+                behaviours[index].enabled = false;
+            }
+            var audioSources = root.GetComponentsInChildren<AudioSource>(true);
+            for (var index = 0; index < audioSources.Length; index++)
+            {
+                audioSources[index].enabled = false;
+            }
+            var cameras = root.GetComponentsInChildren<Camera>(true);
+            for (var index = 0; index < cameras.Length; index++)
+            {
+                cameras[index].enabled = false;
+            }
+        }
+
         private static Bounds CalculateModelBounds(GameObject model)
         {
             var renderers = model.GetComponentsInChildren<Renderer>(true);
@@ -739,6 +1214,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void CleanupPreview()
         {
+            EditorApplication.update -= UpdateVfxPreview;
             lastTexture = null;
             if (previewRoot != null)
             {
@@ -750,6 +1226,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             attackOrigin = null;
             hitCenter = null;
             valueAnchor = null;
+            previewVfx = null;
             if (previewUtility != null)
             {
                 previewUtility.Cleanup();

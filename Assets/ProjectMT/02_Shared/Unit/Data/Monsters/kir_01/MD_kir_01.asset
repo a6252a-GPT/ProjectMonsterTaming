@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 10
   defense: 3
   attackSpeed: 1
-  moveSpeed: 2.5
-  attackRange: 2
+  moveSpeed: 2
+  attackRange: 3.5
   ranged: 0
   runtimeAssetKey: monster/kir_01
   runtimeAssetSet: {fileID: 11400000, guid: d2f0c980c4096f84fa4bf9430b3807f7, type: 2}

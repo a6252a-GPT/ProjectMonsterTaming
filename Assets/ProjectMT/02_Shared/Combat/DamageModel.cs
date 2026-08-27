@@ -7,7 +7,8 @@ namespace ProjectMT.Shared.Combat
     public enum DamageFeedbackFlags
     {
         None = 0,
-        BasicAttackFeelTargetMotion = 1 << 0
+        BasicAttackFeelTargetMotion = 1 << 0,
+        PassiveEnhancedNumber = 1 << 1
     }
 
     public readonly struct DamageRequest // 피해 적용 전 요청값

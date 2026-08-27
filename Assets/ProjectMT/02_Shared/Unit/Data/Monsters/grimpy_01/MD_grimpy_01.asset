@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 10
   defense: 4
   attackSpeed: 1
-  moveSpeed: 2.5
-  attackRange: 2.4
+  moveSpeed: 2
+  attackRange: 3.6
   ranged: 0
   runtimeAssetKey: monster/grimpy_01
   runtimeAssetSet: {fileID: 11400000, guid: b7659f24facbcf44185c13bc570fa2f7, type: 2}

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: MM_grimpy_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterMotionProfile
   idle:
-    clip: {fileID: 1827226128182048838, guid: fc1dd3c29d42f9340964b0ec777af477, type: 3}
+    clip: {fileID: 7400000, guid: 18a0906056baa894ead83f984e673373, type: 2}
     playbackSpeed: 1
     crossFadeDuration: 0.08
     loop: 1
@@ -43,6 +43,8 @@ MonoBehaviour:
     crossFadeDuration: 0.06
     weight: 1
     preventImmediateRepeat: 0
+    overrideBreathDuration: 0
+    breathDuration: 0.8
     markers:
     - normalizedTime: 0.5
       powerRatio: 1

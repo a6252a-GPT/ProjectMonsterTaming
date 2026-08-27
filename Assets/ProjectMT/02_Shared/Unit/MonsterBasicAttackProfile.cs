@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ProjectMT.Shared.Unit
@@ -115,6 +116,9 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private BasicAttackFeelCue projectileFeel = new BasicAttackFeelCue();
         [SerializeField] private BasicAttackFeelCue impactFeel = new BasicAttackFeelCue();
 
+        [Header("몬스터 고유 VFX 공간 계약")]
+        [SerializeField] private List<MonsterBasicAttackVfxSlot> vfxSlots = new List<MonsterBasicAttackVfxSlot>();
+
         [Header("조립 모듈")]
         [SerializeField, HideInInspector] private int recipeVersion;
         [SerializeField] private MonsterBasicAttackDeliveryModule deliveryModule;
@@ -145,6 +149,7 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private float[] damageRatios = { 1f };
         [SerializeField, Range(0.1f, 1f)] private float secondaryDamageRatio = 1f;
         [SerializeField, Range(0.01f, 0.3f)] private float repeatHitInterval = 0.08f;
+        [SerializeField, Min(0.01f)] private float breathDuration = 0.8f;
         [SerializeField] private bool repeatImpactFeedback = true;
 
         [Header("공격자 이동·표시")]
@@ -165,6 +170,8 @@ namespace ProjectMT.Shared.Unit
         public BasicAttackFeelCue LaunchFeel => launchFeel;
         public BasicAttackFeelCue ProjectileFeel => projectileFeel;
         public BasicAttackFeelCue ImpactFeel => impactFeel;
+        public IReadOnlyList<MonsterBasicAttackVfxSlot> VfxSlots => vfxSlots ??
+            (IReadOnlyList<MonsterBasicAttackVfxSlot>)Array.Empty<MonsterBasicAttackVfxSlot>();
         public MonsterCombatType CombatType => combatType;
         public int RecipeVersion => recipeVersion;
         public bool IsModularRecipe => recipeVersion >= CurrentRecipeVersion;
@@ -203,6 +210,8 @@ namespace ProjectMT.Shared.Unit
         public int HitCount => Mathf.Clamp(damageRatios?.Length ?? 0, 1, MaximumHitCount);
         public float SecondaryDamageRatio => Mathf.Clamp(secondaryDamageRatio, 0.1f, 1f);
         public float RepeatHitInterval => Mathf.Clamp(repeatHitInterval, 0.01f, 0.3f);
+        public bool UsesBreathDurationContract => PresentationKind == MonsterBasicAttackPresentationKind.Breath;
+        public float BreathDuration => Mathf.Max(0.01f, breathDuration);
         public bool RepeatImpactFeedback => repeatImpactFeedback;
         public float DashDistance => Mathf.Max(0f, dashDistance);
         public float DashDuration => Mathf.Clamp(dashDuration, 0.05f, 0.3f);
@@ -210,6 +219,16 @@ namespace ProjectMT.Shared.Unit
         public bool StopOnFirstTarget => CollisionModule == MonsterBasicAttackCollisionModule.StopOnFirstTarget;
         public bool UsesProjectileVisual => DeliveryModule != MonsterBasicAttackDeliveryModule.Direct;
         public bool UsesPatternSequence => SequenceModule != MonsterBasicAttackSequenceModule.Single;
+        public float ResolveRepeatHitInterval(float motionBreathDuration = 0f)
+        {
+            if (!UsesBreathDurationContract)
+            {
+                return RepeatHitInterval;
+            }
+
+            var duration = motionBreathDuration > 0f ? motionBreathDuration : BreathDuration;
+            return Mathf.Max(0.01f, duration / Mathf.Max(1, HitCount));
+        }
         public MonsterProjectileAttackMode LegacyProjectileMode => CollisionModule switch
         {
             MonsterBasicAttackCollisionModule.AreaImpact => MonsterProjectileAttackMode.Area,
@@ -260,7 +279,8 @@ namespace ProjectMT.Shared.Unit
                 lineWidth <= 0f || maxTargets < 1 || maxTargets > MaximumTargets ||
                 projectileCount < 1 || projectileCount > MaximumProjectileCount ||
                 damageRatios == null || damageRatios.Length < 1 || damageRatios.Length > MaximumHitCount ||
-                projectileSpeed <= 0f || projectileLifetime <= 0f || projectileCollisionRadius <= 0f)
+                projectileSpeed <= 0f || projectileLifetime <= 0f || projectileCollisionRadius <= 0f ||
+                UsesBreathDurationContract && breathDuration <= 0f)
             {
                 error = $"Basic Attack geometry or hit limit is invalid. Profile={name}";
                 return false;
@@ -297,6 +317,37 @@ namespace ProjectMT.Shared.Unit
                 impactFeedback != null && !impactFeedback.TryValidate(out error))
             {
                 error = $"Basic Attack legacy presentation is invalid. Profile={name}, Detail={error}";
+                return false;
+            }
+
+            var slotIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var deliveryVisualCount = 0;
+            for (var index = 0; vfxSlots != null && index < vfxSlots.Count; index++)
+            {
+                var slot = vfxSlots[index];
+                if (slot == null)
+                {
+                    error = $"Basic Attack VFX slot is null. Profile={name}";
+                    return false;
+                }
+                if (!slot.TryValidate(out var slotError))
+                {
+                    error = $"Basic Attack VFX contract is invalid. Profile={name}, Detail={slotError}";
+                    return false;
+                }
+                if (!slotIds.Add(slot.SlotId))
+                {
+                    error = $"Basic Attack VFX slot ID is duplicated. Profile={name}, Slot={slot.SlotId}";
+                    return false;
+                }
+                if (slot.IsDeliveryVisual)
+                {
+                    deliveryVisualCount++;
+                }
+            }
+            if (deliveryVisualCount > 1 || deliveryVisualCount > 0 && !UsesProjectileVisual)
+            {
+                error = $"Basic Attack delivery visual slot count is invalid. Profile={name}";
                 return false;
             }
 
@@ -654,6 +705,11 @@ namespace ProjectMT.Shared.Unit
             sweepDirection = direction;
         }
 
+        public void EditorSetBreathDuration(float duration)
+        {
+            breathDuration = Mathf.Max(0.01f, duration);
+        }
+
         public void EditorSetDesignMemo(string memo)
         {
             designMemo = memo?.Trim();
@@ -677,6 +733,13 @@ namespace ProjectMT.Shared.Unit
             launchFeel = launch ?? new BasicAttackFeelCue();
             projectileFeel = projectile ?? new BasicAttackFeelCue();
             impactFeel = impact ?? new BasicAttackFeelCue();
+        }
+
+        public void EditorSetVfxSlots(IEnumerable<MonsterBasicAttackVfxSlot> slots)
+        {
+            vfxSlots = slots == null
+                ? new List<MonsterBasicAttackVfxSlot>()
+                : new List<MonsterBasicAttackVfxSlot>(slots);
         }
 #endif
 

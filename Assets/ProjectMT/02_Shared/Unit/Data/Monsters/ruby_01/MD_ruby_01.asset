@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 15
   defense: 3
   attackSpeed: 1.35
-  moveSpeed: 3.2
-  attackRange: 2
+  moveSpeed: 2.6
+  attackRange: 3.5
   ranged: 0
   runtimeAssetKey: monster/ruby_01
   runtimeAssetSet: {fileID: 11400000, guid: 7e9969bba1248ba409097256ceb55af8, type: 2}

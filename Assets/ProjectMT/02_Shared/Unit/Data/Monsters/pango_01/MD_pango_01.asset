@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 10
   defense: 7
   attackSpeed: 0.9
-  moveSpeed: 2.3
-  attackRange: 2
+  moveSpeed: 1.8
+  attackRange: 4.4
   ranged: 0
   runtimeAssetKey: monster/pango_01
   runtimeAssetSet: {fileID: 11400000, guid: 241e57ce63b2e5a458f3586dbc1d37a8, type: 2}

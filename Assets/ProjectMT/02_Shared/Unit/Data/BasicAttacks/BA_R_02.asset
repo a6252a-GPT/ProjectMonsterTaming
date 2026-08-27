@@ -56,6 +56,51 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  vfxSlots:
+  - slotId: launch
+    displayName: "\uBC1C\uC0AC"
+    description: "\uAD00\uD1B5 \uD22C\uC0AC\uCCB4\uAC00 \uC0DD\uC131\uB418\uB294
+      \uC6D0\uC810 \uD6A8\uACFC"
+    eventType: 1
+    anchor: 1
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: projectile
+    displayName: "\uAD00\uD1B5 \uD22C\uC0AC\uCCB4 \uBCF8\uCCB4"
+    description: "\uC2E4\uC81C \uC774\uB3D9 \uD310\uC815\uCCB4\uC758 \uBAAC\uC2A4\uD130
+      \uACE0\uC720 \uC678\uD615"
+    eventType: 2
+    anchor: 3
+    multiplicity: 2
+    assignmentScope: 0
+    attachment: 2
+    endPolicy: 1
+    defaultLifetime: 1
+  - slotId: pierce_hit
+    displayName: "\uAD00\uD1B5 \uBA85\uC911"
+    description: "\uACBD\uB85C \uC704\uC5D0\uC11C \uD53C\uD574\uB97C \uBC1B\uC740
+      \uB300\uC0C1\uBCC4 \uD6A8\uACFC"
+    eventType: 3
+    anchor: 5
+    multiplicity: 3
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: delivery_end
+    displayName: "\uBE44\uD589 \uC885\uB8CC"
+    description: "\uCD5C\uB300 \uAC70\uB9AC \uB610\uB294 \uC218\uBA85\uC73C\uB85C
+      \uC774\uB3D9\uCCB4\uAC00 \uB05D\uB098\uB294 \uD6A8\uACFC"
+    eventType: 9
+    anchor: 3
+    multiplicity: 2
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
   recipeVersion: 1
   deliveryModule: 1
   collisionModule: 2

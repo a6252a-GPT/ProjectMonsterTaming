@@ -23,6 +23,9 @@ namespace ProjectMT.Shared.Combat
         public const float DefaultHorizontalDrift = 0.52f;
         public const float DefaultArcHeight = 0.16f;
         public const float DefaultStartTilt = 7f;
+        public const float StatusQueueInterval = 0.28f;
+        public const float StatusDuplicateWindow = 0.35f;
+        public const float StatusMaximumQueueDelay = 1.5f;
 
         [SerializeField] private ScenePoolScope poolScope; // 현재 전투 수명 풀
         [SerializeField] private GameObject numberPrefab; // 정식 월드 TMP Prefab
@@ -39,6 +42,9 @@ namespace ProjectMT.Shared.Combat
 
         private readonly Dictionary<int, PendingNumber> pending = new Dictionary<int, PendingNumber>(); // 대상별 합산 요청
         private readonly List<int> readyKeys = new List<int>(); // 순회 중 Dictionary 변경 방지
+        private readonly List<PendingText> pendingTexts = new List<PendingText>();
+        private readonly Dictionary<int, float> nextTextReleaseAt = new Dictionary<int, float>();
+        private readonly Dictionary<int, RecentText> recentTexts = new Dictionary<int, RecentText>();
         private int activeNumberCount; // 현재 풀에서 재생 중인 숫자
         private int uniqueKeySeed = int.MinValue; // 합산하지 않을 요청 식별자
         private uint presentationSequence; // 반복 숫자의 좌우 방향 교대
@@ -46,16 +52,20 @@ namespace ProjectMT.Shared.Combat
 
         public int ActiveNumberCount => activeNumberCount;
         public int PendingNumberCount => pending.Count;
+        public int PendingTextCount => pendingTexts.Count;
         public bool IsVisible => visible;
 
         private void LateUpdate()
         {
-            FlushReadyNumbers();
+            FlushReady();
         }
 
         private void OnDisable()
         {
             pending.Clear();
+            pendingTexts.Clear();
+            nextTextReleaseAt.Clear();
+            recentTexts.Clear();
             readyKeys.Clear();
             activeNumberCount = 0;
             presentationSequence = 0u;
@@ -73,10 +83,19 @@ namespace ProjectMT.Shared.Combat
                 : target.Team == UnitTeam.Player
                     ? FloatingNumberStyle.PlayerDamage
                     : FloatingNumberStyle.EnemyDamage;
-            Queue(report.Request.HitPoint, report.AppliedDamage, style, target.GetInstanceID());
+            var passiveScale =
+                (report.Request.FeedbackFlags & DamageFeedbackFlags.PassiveEnhancedNumber) != 0
+                    ? 1.2f
+                    : 1f;
+            Queue(report.Request.HitPoint, report.AppliedDamage, style, target.GetInstanceID(), passiveScale);
         }
 
-        public void Queue(Vector3 position, float amount, FloatingNumberStyle style, int mergeKey = 0)
+        public void Queue(
+            Vector3 position,
+            float amount,
+            FloatingNumberStyle style,
+            int mergeKey = 0,
+            float sizeMultiplier = 1f)
         {
             if (!visible || amount <= 0f || poolScope == null || numberPrefab == null || !isActiveAndEnabled)
             {
@@ -102,6 +121,7 @@ namespace ProjectMT.Shared.Combat
                 {
                     current.Style = style;
                 }
+                current.SizeMultiplier = Mathf.Max(current.SizeMultiplier, sizeMultiplier);
 
                 pending[mergeKey] = current;
                 return;
@@ -112,8 +132,60 @@ namespace ProjectMT.Shared.Combat
                 Amount = amount,
                 Position = position,
                 ReleaseAt = now + mergeWindow,
-                Style = style
+                Style = style,
+                SizeMultiplier = Mathf.Max(0.1f, sizeMultiplier)
             });
+        }
+
+        public void QueueText(
+            Vector3 position,
+            string value,
+            CombatStatusTextStyle style,
+            int queueKey = 0)
+        {
+            value = value?.Trim();
+            if (!visible || string.IsNullOrWhiteSpace(value) || poolScope == null || numberPrefab == null ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            if (queueKey == 0)
+            {
+                queueKey = uniqueKeySeed++;
+                if (uniqueKeySeed >= 0)
+                {
+                    uniqueKeySeed = int.MinValue;
+                }
+            }
+
+            var now = Time.unscaledTime;
+            if (recentTexts.TryGetValue(queueKey, out var recent) &&
+                recent.Value == value &&
+                now - recent.QueuedAt < StatusDuplicateWindow)
+            {
+                return;
+            }
+
+            var releaseAt = nextTextReleaseAt.TryGetValue(queueKey, out var next)
+                ? Mathf.Max(now, next)
+                : now;
+            if (releaseAt - now > StatusMaximumQueueDelay)
+            {
+                return; // 전투가 진행된 뒤 오래된 시작 문구가 뒤늦게 나오지 않게 한다
+            }
+
+            pendingTexts.Add(new PendingText
+            {
+                Position = position,
+                Value = value,
+                Style = style,
+                ReleaseAt = releaseAt,
+                QueuedAt = now,
+                QueueKey = queueKey
+            });
+            nextTextReleaseAt[queueKey] = releaseAt + StatusQueueInterval;
+            recentTexts[queueKey] = new RecentText(value, now);
         }
 
         public void SetVisible(bool value)
@@ -122,19 +194,28 @@ namespace ProjectMT.Shared.Combat
             if (!visible)
             {
                 pending.Clear(); // 비표시 전환 뒤 늦게 숫자가 뜨지 않게 한다
+                pendingTexts.Clear();
+                nextTextReleaseAt.Clear();
+                recentTexts.Clear();
                 readyKeys.Clear();
             }
         }
 
-        private void FlushReadyNumbers()
+        private void FlushReady()
         {
-            if (pending.Count == 0)
+            if (pending.Count == 0 && pendingTexts.Count == 0)
+            {
+                return;
+            }
+
+            var now = Time.unscaledTime;
+            var spawned = FlushReadyTexts(now);
+            if (spawned >= maxNumbersPerFrame || activeNumberCount >= maxActiveNumbers || pending.Count == 0)
             {
                 return;
             }
 
             readyKeys.Clear();
-            var now = Time.unscaledTime;
             foreach (var pair in pending)
             {
                 if (pair.Value.ReleaseAt <= now)
@@ -143,7 +224,6 @@ namespace ProjectMT.Shared.Combat
                 }
             }
 
-            var spawned = 0;
             for (var i = 0; i < readyKeys.Count; i++)
             {
                 var key = readyKeys[i];
@@ -163,6 +243,34 @@ namespace ProjectMT.Shared.Combat
                     spawned++;
                 }
             }
+        }
+
+        private int FlushReadyTexts(float now)
+        {
+            var spawned = 0;
+            for (var index = pendingTexts.Count - 1; index >= 0; index--)
+            {
+                var request = pendingTexts[index];
+                if (request.ReleaseAt > now)
+                {
+                    continue;
+                }
+
+                pendingTexts.RemoveAt(index);
+                if (now - request.QueuedAt > StatusMaximumQueueDelay ||
+                    spawned >= maxNumbersPerFrame ||
+                    activeNumberCount >= maxActiveNumbers)
+                {
+                    continue;
+                }
+
+                if (SpawnText(request))
+                {
+                    spawned++;
+                }
+            }
+
+            return spawned;
         }
 
         private bool SpawnNumber(int key, PendingNumber request)
@@ -202,7 +310,47 @@ namespace ProjectMT.Shared.Combat
                 signedDrift,
                 arcHeight,
                 startTilt * side,
-                request.Style == FloatingNumberStyle.Critical ? 1.25f : 1f,
+                (request.Style == FloatingNumberStyle.Critical ? 1.25f : 1f) *
+                Mathf.Max(0.1f, request.SizeMultiplier),
+                worldCamera,
+                HandleViewReleased);
+            return true;
+        }
+
+        private bool SpawnText(PendingText request)
+        {
+            if (worldCamera == null)
+            {
+                worldCamera = Camera.main;
+            }
+
+            presentationSequence = unchecked(presentationSequence + 1u);
+            var signedDrift = ResolveHorizontalDrift(request.QueueKey, presentationSequence, horizontalDrift * 0.14f);
+            var cameraRight = worldCamera != null ? worldCamera.transform.right : Vector3.right;
+            var position = request.Position + Vector3.up * heightOffset;
+            var instance = poolScope.Rent(numberPrefab, position, Quaternion.identity, poolScope.transform);
+            var view = instance == null ? null : instance.GetComponent<FloatingNumberView>();
+            if (view == null)
+            {
+                Debug.LogError("Floating number prefab has no FloatingNumberView.");
+                if (instance != null)
+                {
+                    poolScope.Return(instance);
+                }
+                return false;
+            }
+
+            activeNumberCount++;
+            view.Play(
+                poolScope,
+                request.Value,
+                ResolveStatusColor(request.Style),
+                0.72f,
+                0.58f,
+                signedDrift,
+                0.08f,
+                0f,
+                0.86f,
                 worldCamera,
                 HandleViewReleased);
             return true;
@@ -234,6 +382,20 @@ namespace ProjectMT.Shared.Combat
             }
         }
 
+        public static Color ResolveStatusColor(CombatStatusTextStyle style)
+        {
+            return style switch
+            {
+                CombatStatusTextStyle.Enhanced => new Color32(0xFF, 0xD4, 0x5C, 0xFF),
+                CombatStatusTextStyle.AttackUp => new Color32(0xFF, 0x9F, 0x45, 0xFF),
+                CombatStatusTextStyle.Haste => new Color32(0x5F, 0xE0, 0xC1, 0xFF),
+                CombatStatusTextStyle.DamageReduction => new Color32(0x72, 0xA7, 0xFF, 0xFF),
+                CombatStatusTextStyle.Shield => new Color32(0x65, 0xD9, 0xFF, 0xFF),
+                CombatStatusTextStyle.Impact => new Color32(0xFF, 0x88, 0x48, 0xFF),
+                _ => Color.white
+            };
+        }
+
         public static float ResolveHorizontalDrift(int key, uint sequence, float maximumDrift)
         {
             var side = (sequence & 1u) == 0u ? -1f : 1f;
@@ -257,6 +419,29 @@ namespace ProjectMT.Shared.Combat
             public float Amount;
             public float ReleaseAt;
             public FloatingNumberStyle Style;
+            public float SizeMultiplier;
+        }
+
+        private struct PendingText
+        {
+            public Vector3 Position;
+            public string Value;
+            public CombatStatusTextStyle Style;
+            public float ReleaseAt;
+            public float QueuedAt;
+            public int QueueKey;
+        }
+
+        private readonly struct RecentText
+        {
+            public RecentText(string value, float queuedAt)
+            {
+                Value = value;
+                QueuedAt = queuedAt;
+            }
+
+            public string Value { get; }
+            public float QueuedAt { get; }
         }
     }
 }

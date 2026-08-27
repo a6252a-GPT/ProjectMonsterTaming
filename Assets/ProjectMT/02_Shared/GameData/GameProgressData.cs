@@ -1446,10 +1446,10 @@ namespace ProjectMT.Shared.GameData
                 coreBalanceMigrationCompleted = true; // 백업값은 보존하고 원본 권한만 ItemInventory로 이동
             }
 
-            if (sourceDataVersion <= 16)
+            if (sourceDataVersion <= 20)
             {
                 monsters ??= MonsterRosterData.CreateDefault();
-                monsters.MigrateRetiredMonsterIds(); // 두부·스파이크 보유 진행과 편성을 현재 정식 ID로 보존
+                monsters.MigrateRetiredMonsterIds(); // 퇴역·개명 ID의 보유 진행과 편성을 현재 정식 ID로 보존
             }
 
             if (sourceDataVersion <= 12)

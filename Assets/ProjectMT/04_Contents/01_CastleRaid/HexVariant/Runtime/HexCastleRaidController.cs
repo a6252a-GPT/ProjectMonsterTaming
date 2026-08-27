@@ -456,7 +456,8 @@ namespace ProjectMT.Contents.CastleRaidHex
                 CurrentDefenseLayerCount,
                 garrisonWorld,
                 aiProfileCatalog,
-                CurrentSeed);
+                CurrentSeed,
+                combatFeedback);
             trapWorld = stageInstance.GetComponent<HexCastleTrapWorld>();
             if (trapWorld == null || trapWorld.TrapCount != difficultyProfile.TotalTrapCount)
             {
@@ -768,7 +769,8 @@ namespace ProjectMT.Contents.CastleRaidHex
                 HexCastleOverheadHealthBar.ResolveWorldAnchor(cell.transform),
                 report.AppliedDamage,
                 FloatingNumberStyle.EnemyDamage,
-                cell.GetInstanceID());
+                cell.GetInstanceID(),
+                assaultWorld?.ConsumePassiveDamageFeedback(cell.GetInstanceID()) ?? DamageFeedbackFlags.None);
         }
 
         private void HandleUnitDamaged(HexCastleAssaultUnit unit, DamageReport report)
@@ -807,7 +809,8 @@ namespace ProjectMT.Contents.CastleRaidHex
                 HexCastleOverheadHealthBar.ResolveWorldAnchor(unit.transform),
                 report.AppliedDamage,
                 FloatingNumberStyle.EnemyDamage,
-                unit.GetInstanceID());
+                unit.GetInstanceID(),
+                assaultWorld?.ConsumePassiveDamageFeedback(unit.GetInstanceID()) ?? DamageFeedbackFlags.None);
         }
 
         private IEnumerator ReturnDeadUnit(HexCastleAssaultUnit unit)

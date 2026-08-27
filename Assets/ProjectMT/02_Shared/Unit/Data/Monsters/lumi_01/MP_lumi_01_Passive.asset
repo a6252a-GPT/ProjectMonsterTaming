@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f0bc2c8d3774b74385d208cf1805b2a, type: 3}
+  m_Name: MP_lumi_01_Passive
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.GenericMonsterPassiveSkill
+  skillId: passive_same_target_haste_lumi_01
+  displayName: "\uAC00\uC18D \uC5F0\uD0C0"
+  description: "\uAC19\uC740 \uB300\uC0C1\uC744 \uC5F0\uC18D \uC801\uC911\uD558\uBA74
+    \uACF5\uACA9 \uC18D\uB3C4\uAC00 \uC99D\uAC00\uD569\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  presentationTier: 0
+  recipe:
+    trigger: 2
+    triggerCount: 1
+    internalCooldown: 0
+    conditions:
+    - type: 13
+      value: 0
+      count: 1
+      referenceId: 
+    target: 0
+    delivery: 0
+    shape: 0
+    effects:
+    - effectId: same_target_haste
+      type: 5
+      valueSource: 1
+      magnitude: 0.05
+      magnitudeMode: 0
+      maximumMagnitude: 0.05
+      duration: 2
+      delay: 0
+      repeatInterval: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 2
+  authoringEnabled: 1
+  runtimeKind: 2
+  primaryBase: 0.015
+  primaryPerLevelStep: 0.001
+  secondaryBase: 0
+  secondaryPerLevelStep: 0
+  triggerCount: 1
+  maxStacks: 4
+  duration: 3
+  cooldown: 0
+  threshold: 0
+  radius: 0
+  maxTargets: 1

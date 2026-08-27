@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 11
   defense: 2
   attackSpeed: 1.15
-  moveSpeed: 2.7
-  attackRange: 4
+  moveSpeed: 2.2
+  attackRange: 4.4
   ranged: 1
   runtimeAssetKey: monster/berry_01
   runtimeAssetSet: {fileID: 11400000, guid: 238adb0ba12336d429f21f0a83978eb6, type: 2}

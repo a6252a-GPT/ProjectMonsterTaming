@@ -56,6 +56,29 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  vfxSlots:
+  - slotId: sweep_plane
+    displayName: "\uD729\uC4F8\uAE30 \uBA74"
+    description: "\uC804\uBC29 \uBD80\uCC44\uAF34\uC744 \uC77D\uD788\uAC8C \uD558\uB294
+      \uACF5\uACA9 \uBA74"
+    eventType: 1
+    anchor: 0
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: target_hit
+    displayName: "\uB300\uC0C1\uBCC4 \uBA85\uC911"
+    description: "\uC2E4\uC81C\uB85C \uD53C\uD574\uB97C \uBC1B\uC740 \uAC01 \uB300\uC0C1\uC758
+      \uBA85\uC911 \uD6A8\uACFC"
+    eventType: 3
+    anchor: 5
+    multiplicity: 3
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
   recipeVersion: 1
   deliveryModule: 0
   collisionModule: 0

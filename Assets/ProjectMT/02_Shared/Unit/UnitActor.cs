@@ -574,6 +574,25 @@ namespace ProjectMT.Shared.Unit
             return distance > 0f;
         }
 
+        public bool TryApplyCombatStagger(float duration)
+        {
+            duration = Mathf.Clamp(duration, 0f, 0.5f);
+            if (Team == UnitTeam.Player || !IsAlive || IsBoss || !combatReady || isManuallyHeld || duration <= 0f)
+            {
+                return false;
+            }
+
+            if (IsKnockedBack)
+            {
+                combatPostKnockbackStaggerDuration = Mathf.Max(combatPostKnockbackStaggerDuration, duration);
+            }
+            else
+            {
+                combatStaggerRemaining = Mathf.Max(combatStaggerRemaining, duration);
+            }
+            return true;
+        }
+
         private bool TickLocalHitStop()
         {
             if (localHitStopRemaining <= 0f)
@@ -787,10 +806,15 @@ namespace ProjectMT.Shared.Unit
             {
                 actionTarget = target; // normalizedTime 0 Marker도 같은 고정 타깃 사용
                 attackActionRunning = true;
+                var basicAttackProfile = runtimeAssetSet.CombatProfile?.Action?.BasicAttackProfile;
+                var breathDuration = basicAttackProfile != null && basicAttackProfile.UsesBreathDurationContract
+                    ? basicAttackProfile.BreathDuration
+                    : 0f;
                 if (animationDriver.TryBeginAttack(
                         effectiveStats.attackInterval,
                         ++nextActionSequenceId,
-                        HandleAttackMarker))
+                        HandleAttackMarker,
+                        breathDuration))
                 {
                     var startFeedback = animationDriver.CurrentAttackStartFeedback ??
                                         runtimeAssetSet.FeedbackProfile?.AttackStart;
@@ -799,6 +823,7 @@ namespace ProjectMT.Shared.Unit
                         animationDriver,
                         null,
                         runtimeAssetSet.BodyProfile?.VfxScale ?? 1f);
+                    DispatchBasicAttackMotionVfx(true);
                     return;
                 }
 
@@ -827,9 +852,53 @@ namespace ProjectMT.Shared.Unit
 
             if (animationDriver == null || animationDriver.TickAttack(deltaTime, HandleAttackMarker))
             {
+                DispatchBasicAttackMotionVfx(false);
                 attackActionRunning = false;
                 actionTarget = null;
                 animationDriver?.PlayIdle(true);
+            }
+        }
+
+        private void DispatchBasicAttackMotionVfx(bool begin)
+        {
+            var profile = runtimeAssetSet?.CombatProfile?.Action?.BasicAttackProfile;
+            if (profile == null || world == null || animationDriver == null)
+            {
+                return;
+            }
+
+            var origin = animationDriver.AttackOrigin.position;
+            var hitPoint = actionTarget?.Position ?? origin;
+            var forward = hitPoint - origin;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f)
+            {
+                forward = transform.forward;
+            }
+            if (forward.sqrMagnitude < 0.0001f)
+            {
+                forward = Vector3.forward;
+            }
+            var context = new MonsterBasicAttackVfxContext(
+                world,
+                profile,
+                runtimeAssetSet.FeedbackProfile,
+                this,
+                actionTarget,
+                animationDriver,
+                null,
+                null,
+                origin,
+                hitPoint,
+                hitPoint,
+                Quaternion.LookRotation(forward, Vector3.up));
+            if (begin)
+            {
+                MonsterBasicAttackVfxRuntime.BeginMotion(context);
+            }
+            else
+            {
+                MonsterBasicAttackVfxRuntime.EndMotion(context);
             }
         }
 

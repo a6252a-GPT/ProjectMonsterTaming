@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 10
   defense: 0
   attackSpeed: 1
-  moveSpeed: 2.5
-  attackRange: 4
+  moveSpeed: 2
+  attackRange: 4.4
   ranged: 1
   runtimeAssetKey: monster/never_ice_01
   runtimeAssetSet: {fileID: 11400000, guid: de08d33192a756a44a886a144ce6f658, type: 2}

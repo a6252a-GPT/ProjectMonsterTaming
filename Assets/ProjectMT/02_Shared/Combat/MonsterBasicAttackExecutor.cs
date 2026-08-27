@@ -44,11 +44,20 @@ namespace ProjectMT.Shared.Combat
             }
 
             var attackRotation = Quaternion.LookRotation(forward, Vector3.up);
-            context.World.PlayMonsterFeedbackAt(
-                profile.LaunchFeedback,
-                origin,
-                attackRotation,
-                context.AssetSet.BodyProfile?.VfxScale ?? 1f);
+            if (profile.VfxSlots.Count > 0)
+            {
+                MonsterBasicAttackVfxRuntime.Dispatch(
+                    MonsterBasicAttackVfxEvent.RecipeExecute,
+                    CreateVfxContext(context, profile, origin, primaryPosition, primaryPosition, attackRotation));
+            }
+            else
+            {
+                context.World.PlayMonsterFeedbackAt(
+                    profile.LaunchFeedback,
+                    origin,
+                    attackRotation,
+                    context.AssetSet.BodyProfile?.VfxScale ?? 1f);
+            }
             context.World.PlayBasicAttackFeelAt(
                 profile.LaunchFeel,
                 origin,
@@ -92,10 +101,19 @@ namespace ProjectMT.Shared.Combat
                 return false;
             }
 
-            var presentation = profile.ProjectileFeedback;
-            var projectilePrefab = presentation?.VfxPrefab != null
-                ? presentation.VfxPrefab
-                : action.ProjectilePrefab;
+            var usesPresentationContract = profile.VfxSlots.Count > 0;
+            var presentation = usesPresentationContract ? null : profile.ProjectileFeedback;
+            var hasDeliveryVisual = MonsterBasicAttackVfxResolver.TryResolveDeliveryVisual(
+                profile,
+                context.AssetSet.FeedbackProfile?.BasicAttackVfxBindings,
+                context.AnimationDriver?.CurrentMotionId,
+                out _,
+                out var deliveryBinding);
+            var projectilePrefab = hasDeliveryVisual
+                ? deliveryBinding.Prefab
+                : presentation?.VfxPrefab != null
+                    ? presentation.VfxPrefab
+                    : action.ProjectilePrefab;
             if (projectilePrefab == null)
             {
                 return ApplyInstantHit(context, profile, origin, forward, 0);
@@ -112,7 +130,12 @@ namespace ProjectMT.Shared.Combat
                 var direction = Quaternion.Euler(0f, ratio * profile.ProjectileSpreadAngle, 0f) * forward;
                 var rotation = Quaternion.LookRotation(direction, Vector3.up);
                 var spawnPosition = origin;
-                if (presentation != null)
+                if (hasDeliveryVisual)
+                {
+                    spawnPosition += rotation * deliveryBinding.LocalPosition;
+                    rotation *= deliveryBinding.LocalRotation;
+                }
+                else if (presentation != null)
                 {
                     spawnPosition += rotation * presentation.LocalPosition;
                     rotation *= presentation.LocalRotation;
@@ -134,7 +157,18 @@ namespace ProjectMT.Shared.Combat
 
                 var projectile = instance.GetComponent<MonsterBasicAttackProjectileActor>() ??
                                  instance.AddComponent<MonsterBasicAttackProjectileActor>();
-                if (presentation != null)
+                if (hasDeliveryVisual)
+                {
+                    MonsterBasicAttackVfxPlayback.ApplyInstanceScale(
+                        instance,
+                        projectilePrefab.transform.localScale *
+                        deliveryBinding.Scale * Mathf.Max(0.01f, vfxScale));
+                    MonsterBasicAttackVfxPlayback.RestartAtOffset(
+                        instance,
+                        deliveryBinding.PlaybackOffset,
+                        playbackSpeed: deliveryBinding.PlaybackSpeed);
+                }
+                else if (presentation != null)
                 {
                     instance.transform.localScale = projectilePrefab.transform.localScale *
                         presentation.Scale * Mathf.Max(0.01f, vfxScale);
@@ -154,15 +188,28 @@ namespace ProjectMT.Shared.Combat
                     volley,
                     feedback,
                     vfxScale);
+                MonsterBasicAttackVfxRuntime.Dispatch(
+                    MonsterBasicAttackVfxEvent.DeliverySpawn,
+                    CreateVfxContext(
+                        context,
+                        profile,
+                        origin,
+                        context.PrimaryTarget.Position + Vector3.up * 0.4f,
+                        context.PrimaryTarget.Position,
+                        rotation,
+                        projectile.transform));
                 spawned = true;
             }
 
             if (spawned)
             {
-                var presentationSfx = presentation?.Sfx;
-                context.World.PlayMonsterSfx(
-                    presentationSfx ?? (profile.LaunchFeedback?.Sfx == null ? action.LaunchSfx : null),
-                    origin);
+                if (!usesPresentationContract)
+                {
+                    var presentationSfx = presentation?.Sfx;
+                    context.World.PlayMonsterSfx(
+                        presentationSfx ?? (profile.LaunchFeedback?.Sfx == null ? action.LaunchSfx : null),
+                        origin);
+                }
                 return true;
             }
 
@@ -175,9 +222,11 @@ namespace ProjectMT.Shared.Combat
             Vector3 origin,
             Vector3 forward)
         {
+            var motionBreathDuration = context.AnimationDriver?.CurrentBreathDuration ?? 0f;
+            var repeatInterval = profile.ResolveRepeatHitInterval(motionBreathDuration);
             for (var hitIndex = 1; hitIndex < profile.HitCount; hitIndex++)
             {
-                yield return WaitForCombatSeconds(context.World, profile.RepeatHitInterval);
+                yield return WaitForCombatSeconds(context.World, repeatInterval);
                 if (context.Source == null || !context.Source.IsAlive ||
                     context.PrimaryTarget == null || !context.PrimaryTarget.IsAlive)
                 {
@@ -252,6 +301,19 @@ namespace ProjectMT.Shared.Combat
                         target.Health,
                         context.Damage * targetRatio,
                         ResolveFeelTargetMotionFlags(feelOwnsTargetMotion, true));
+                    if (targetApplied)
+                    {
+                        MonsterBasicAttackVfxRuntime.Dispatch(
+                            MonsterBasicAttackVfxEvent.TargetDamaged,
+                            CreateVfxContext(
+                                context,
+                                profile,
+                                origin,
+                                target.transform.position + Vector3.up * 0.4f,
+                                context.PrimaryTarget.Position,
+                                Quaternion.LookRotation(forward, Vector3.up),
+                                target: target.Health));
+                    }
                     applied |= targetApplied;
                     if (targetApplied && !feelPlayed && profile.ImpactFeel?.HasFeel == true)
                     {
@@ -274,6 +336,18 @@ namespace ProjectMT.Shared.Combat
                     context.Source,
                     context.PrimaryTarget,
                     context.Damage);
+                if (applied)
+                {
+                    MonsterBasicAttackVfxRuntime.Dispatch(
+                        MonsterBasicAttackVfxEvent.TargetDamaged,
+                        CreateVfxContext(
+                            context,
+                            profile,
+                            origin,
+                            context.PrimaryTarget.Position + Vector3.up * 0.4f,
+                            context.PrimaryTarget.Position,
+                            Quaternion.LookRotation(forward, Vector3.up)));
+                }
             }
             if (applied)
             {
@@ -361,19 +435,48 @@ namespace ProjectMT.Shared.Combat
                 }
 
                 var targetRatio = target == primaryActor ? 1f : profile.SecondaryDamageRatio;
-                applied |= context.World.ApplyMonsterDamage(
+                var targetApplied = context.World.ApplyMonsterDamage(
                     context.Source,
                     target.Health,
                     context.Damage * ratio * targetRatio,
                     ResolveFeelTargetMotionFlags(feelOwnsTargetMotion, target == primaryActor));
+                applied |= targetApplied;
+                if (targetApplied)
+                {
+                    MonsterBasicAttackVfxRuntime.Dispatch(
+                        MonsterBasicAttackVfxEvent.TargetDamaged,
+                        CreateVfxContext(
+                            context,
+                            profile,
+                            origin,
+                            target.transform.position + Vector3.up * 0.4f,
+                            context.PrimaryTarget.Position,
+                            Quaternion.LookRotation(forward, Vector3.up),
+                            damageStage: hitIndex,
+                            target: target.Health));
+                }
             }
 
             if (primaryActor == null && context.PrimaryTarget.IsAlive)
             {
-                applied |= context.World.ApplyMonsterDamage(
+                var primaryApplied = context.World.ApplyMonsterDamage(
                     context.Source,
                     context.PrimaryTarget,
                     context.Damage * ratio);
+                applied |= primaryApplied;
+                if (primaryApplied)
+                {
+                    MonsterBasicAttackVfxRuntime.Dispatch(
+                        MonsterBasicAttackVfxEvent.TargetDamaged,
+                        CreateVfxContext(
+                            context,
+                            profile,
+                            origin,
+                            context.PrimaryTarget.Position + Vector3.up * 0.4f,
+                            context.PrimaryTarget.Position,
+                            Quaternion.LookRotation(forward, Vector3.up),
+                            damageStage: hitIndex));
+                }
             }
 
             if (applied && playActionFeedback)
@@ -394,6 +497,36 @@ namespace ProjectMT.Shared.Combat
                     context.AssetSet.BodyProfile?.VfxScale ?? 1f,
                     feelTarget,
                     feelIntensity);
+            }
+
+            if (applied && profile.Shape == MonsterBasicAttackShape.Circle)
+            {
+                var areaCenter = profile.Center == MonsterBasicAttackCenter.Source
+                    ? origin
+                    : context.PrimaryTarget.Position;
+                MonsterBasicAttackVfxRuntime.Dispatch(
+                    MonsterBasicAttackVfxEvent.AreaResolved,
+                    CreateVfxContext(
+                        context,
+                        profile,
+                        origin,
+                        areaCenter + Vector3.up * 0.4f,
+                        areaCenter,
+                        Quaternion.LookRotation(forward, Vector3.up),
+                        damageStage: hitIndex));
+            }
+            if (applied && hitIndex == profile.HitCount - 1)
+            {
+                MonsterBasicAttackVfxRuntime.Dispatch(
+                    MonsterBasicAttackVfxEvent.SequenceEnd,
+                    CreateVfxContext(
+                        context,
+                        profile,
+                        origin,
+                        context.PrimaryTarget.Position + Vector3.up * 0.4f,
+                        context.PrimaryTarget.Position,
+                        Quaternion.LookRotation(forward, Vector3.up),
+                        damageStage: hitIndex));
             }
 
             return applied;
@@ -507,10 +640,41 @@ namespace ProjectMT.Shared.Combat
                 : DamageFeedbackFlags.None;
         }
 
+        private static MonsterBasicAttackVfxContext CreateVfxContext(
+            MonsterActionExecutionContext context,
+            MonsterBasicAttackProfile profile,
+            Vector3 origin,
+            Vector3 hitPoint,
+            Vector3 areaCenter,
+            Quaternion rotation,
+            Transform projectile = null,
+            int damageStage = 0,
+            IDamageable target = null)
+        {
+            return new MonsterBasicAttackVfxContext(
+                context.World,
+                profile,
+                context.AssetSet?.FeedbackProfile,
+                context.Source,
+                target ?? context.PrimaryTarget,
+                context.AnimationDriver,
+                projectile,
+                context.Marker?.SocketOverride,
+                origin,
+                hitPoint,
+                areaCenter,
+                rotation,
+                damageStage);
+        }
+
         private static MonsterFeedbackCue ResolveImpactFeedback(
             MonsterActionExecutionContext context,
             MonsterBasicAttackProfile profile)
         {
+            if (profile?.VfxSlots.Count > 0)
+            {
+                return null;
+            }
             if (context.Marker?.FeedbackOverride != null && context.Marker.FeedbackOverride.HasAnyFeedback)
             {
                 return context.Marker.FeedbackOverride;

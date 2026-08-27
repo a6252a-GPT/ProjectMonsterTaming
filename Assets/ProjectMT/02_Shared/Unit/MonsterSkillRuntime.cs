@@ -11,6 +11,7 @@ namespace ProjectMT.Shared.Unit
         private const string FirstWaveId = "passive_first_wave";
 
         private readonly List<UnitActor> unitBuffer = new List<UnitActor>();
+        private readonly HashSet<int> couragePresentedRecipients = new HashSet<int>();
         private UnitActor owner;
         private CombatWorld world;
         private MonsterPassiveSkill passiveSkill;
@@ -37,6 +38,7 @@ namespace ProjectMT.Shared.Unit
         private int continuousHits;
         private int monsterLevel = 1;
         private bool executingActive;
+        private bool frontlineBondActive;
 
         public MonsterPassiveSkill PassiveSkill => passiveSkill;
         public MonsterActiveSkill ActiveSkill => activeSkill;
@@ -46,6 +48,10 @@ namespace ProjectMT.Shared.Unit
         public bool IsExecuting => executingActive;
         public int RemainingActiveHits => remainingActiveHits;
         public float ShieldAmount => shieldRemaining > 0f ? shieldAmount : 0f;
+        public bool WillEnhanceNextBasicHit =>
+            genericSkill != null &&
+            genericSkill.RuntimeKind == GenericMonsterPassiveRuntimeKind.RhythmPower &&
+            (basicHitCount + 1) % genericSkill.TriggerCount == 0;
 
         public void Initialize(
             UnitActor unit,
@@ -100,7 +106,9 @@ namespace ProjectMT.Shared.Unit
             continuousHits = 0;
             monsterLevel = 1;
             executingActive = false;
+            frontlineBondActive = false;
             unitBuffer.Clear();
+            couragePresentedRecipients.Clear();
         }
 
         public void Tick(float deltaTime, bool canBeginActive)
@@ -150,13 +158,20 @@ namespace ProjectMT.Shared.Unit
 
             switch (genericSkill.RuntimeKind)
             {
+                case GenericMonsterPassiveRuntimeKind.RhythmPower:
+                    if (IsNthHit())
+                    {
+                        QueueStatus(owner, "강화!", CombatStatusTextStyle.Enhanced);
+                    }
+                    break;
                 case GenericMonsterPassiveRuntimeKind.SameTargetHaste:
                     ApplySameTargetHaste();
                     break;
-                case GenericMonsterPassiveRuntimeKind.RallySplash:
+                case GenericMonsterPassiveRuntimeKind.ImpactStrike:
                     if (IsNthHit())
                     {
-                        ApplySplash(hitTarget);
+                        hitTarget.TryApplyCombatStagger(genericSkill.Duration);
+                        QueueStatus(owner, "충격!", CombatStatusTextStyle.Impact);
                     }
                     break;
                 case GenericMonsterPassiveRuntimeKind.FractureMark:
@@ -200,7 +215,9 @@ namespace ProjectMT.Shared.Unit
             }
 
             cooldownRemaining = genericSkill.Cooldown;
+            var before = owner.Health.CurrentHealth;
             owner.Health.Heal(owner.Health.MaxHealth * genericSkill.ResolvePrimary(monsterLevel));
+            QueueHeal(owner, owner.Health.CurrentHealth - before);
         }
 
         public float ResolveOutgoingDamageMultiplier()
@@ -320,6 +337,12 @@ namespace ProjectMT.Shared.Unit
                         multiplier *= 1f + genericSkill.ResolvePrimary(monsterLevel);
                     }
                     break;
+                case GenericMonsterPassiveRuntimeKind.ImpactStrike:
+                    if ((basicHitCount + 1) % genericSkill.TriggerCount == 0 && target.IsBoss)
+                    {
+                        multiplier *= 1f + genericSkill.ResolvePrimary(monsterLevel);
+                    }
+                    break;
             }
             return multiplier;
         }
@@ -368,6 +391,7 @@ namespace ProjectMT.Shared.Unit
                     {
                         ApplyDamageReduction(genericSkill.ResolvePrimary(monsterLevel), genericSkill.Duration);
                         cooldownRemaining = genericSkill.Cooldown;
+                        QueueStatus(owner, "피해 감소!", CombatStatusTextStyle.DamageReduction);
                     }
                     break;
                 case GenericMonsterPassiveRuntimeKind.FrontlineBond:
@@ -380,10 +404,16 @@ namespace ProjectMT.Shared.Unit
                             nearbyAllies++;
                         }
                     }
-                    if (nearbyAllies >= 2)
+                    var bonded = nearbyAllies >= 2;
+                    if (bonded)
                     {
                         ApplyDamageReduction(genericSkill.ResolvePrimary(monsterLevel), 0.55f);
+                        if (!frontlineBondActive)
+                        {
+                            QueueStatus(owner, "피해 감소!", CombatStatusTextStyle.DamageReduction);
+                        }
                     }
+                    frontlineBondActive = bonded;
                     break;
                 case GenericMonsterPassiveRuntimeKind.CourageAura:
                     ApplyCourageAura();
@@ -405,6 +435,7 @@ namespace ProjectMT.Shared.Unit
                         0f, genericSkill.ResolvePrimary(monsterLevel), 0f, 0f, 0f, 0f),
                     genericSkill.Duration,
                     MonsterBuffStackPolicy.RefreshDuration);
+                QueueStatus(owner, "공격력 상승!", CombatStatusTextStyle.AttackUp);
                 return;
             }
             if (entryReason == UnitEntryReason.InitialDeployment)
@@ -414,12 +445,17 @@ namespace ProjectMT.Shared.Unit
             if (genericSkill.RuntimeKind == GenericMonsterPassiveRuntimeKind.EmergencyEntry)
             {
                 GrantShield(owner.Health.MaxHealth * genericSkill.ResolvePrimary(monsterLevel), genericSkill.Duration);
+                QueueStatus(owner, "보호막!", CombatStatusTextStyle.Shield);
                 if (entryReason == UnitEntryReason.ReserveReplacement && world != null)
                 {
                     var ally = FindLowestHealthAlly(false);
-                    ally?.SkillRuntime.GrantShield(
-                        ally.Health.MaxHealth * genericSkill.ResolveSecondary(monsterLevel),
-                        genericSkill.Duration);
+                    if (ally != null)
+                    {
+                        ally.SkillRuntime.GrantShield(
+                            ally.Health.MaxHealth * genericSkill.ResolveSecondary(monsterLevel),
+                            genericSkill.Duration);
+                        QueueStatus(ally, "보호막!", CombatStatusTextStyle.Shield);
+                    }
                 }
             }
         }
@@ -435,25 +471,9 @@ namespace ProjectMT.Shared.Unit
                     0f, 0f),
                 genericSkill.Duration,
                 MonsterBuffStackPolicy.RefreshDuration);
-        }
-
-        private void ApplySplash(UnitActor primaryTarget)
-        {
-            world.CollectUnits(primaryTarget.Team, primaryTarget.transform.position, genericSkill.Radius,
-                genericSkill.MaxTargets + 1, unitBuffer);
-            var applied = 0;
-            var amount = owner.EffectiveStats.damage * genericSkill.ResolvePrimary(monsterLevel);
-            for (var index = 0; index < unitBuffer.Count && applied < genericSkill.MaxTargets; index++)
+            if (continuousHits <= genericSkill.MaxStacks)
             {
-                var target = unitBuffer[index];
-                if (target == null || target == primaryTarget)
-                {
-                    continue;
-                }
-                if (world.ApplyMonsterSkillDamage(owner, target.Health, amount))
-                {
-                    applied++;
-                }
+                QueueStatus(owner, "가속!", CombatStatusTextStyle.Haste);
             }
         }
 
@@ -462,7 +482,9 @@ namespace ProjectMT.Shared.Unit
             var ally = FindLowestHealthAlly(true);
             if (ally != null)
             {
+                var before = ally.Health.CurrentHealth;
                 ally.Health.Heal(owner.EffectiveStats.damage * genericSkill.ResolvePrimary(monsterLevel));
+                QueueHeal(ally, ally.Health.CurrentHealth - before);
             }
         }
 
@@ -504,6 +526,34 @@ namespace ProjectMT.Shared.Unit
                         0f, genericSkill.ResolvePrimary(monsterLevel), 0f, 0f, 0f, 0f),
                     0.55f,
                     MonsterBuffStackPolicy.ReplaceIfStronger);
+                if (couragePresentedRecipients.Add(candidate.GetInstanceID()))
+                {
+                    QueueStatus(candidate, "공격력 상승!", CombatStatusTextStyle.AttackUp);
+                }
+            }
+        }
+
+        private void QueueStatus(UnitActor target, string text, CombatStatusTextStyle style)
+        {
+            if (target != null)
+            {
+                world?.Feedback?.PlayStatusText(
+                    target.transform.position,
+                    text,
+                    style,
+                    target.GetInstanceID());
+            }
+        }
+
+        private void QueueHeal(UnitActor target, float amount)
+        {
+            if (target != null && amount > 0f)
+            {
+                world?.Feedback?.PlayFloatingNumber(
+                    target.transform.position,
+                    amount,
+                    FloatingNumberStyle.Heal,
+                    target.GetInstanceID());
             }
         }
 

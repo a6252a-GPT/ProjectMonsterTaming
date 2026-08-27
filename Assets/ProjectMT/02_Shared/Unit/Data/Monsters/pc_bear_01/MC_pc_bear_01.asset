@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f8f928504a5fbb4087b619c60edf930, type: 3}
   m_Name: MC_pc_bear_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterCombatProfile
-  combatType: 1
-  action: {fileID: 4998394721581460397}
-  impactStrength: 1
+  combatType: 0
+  action: {fileID: 4919703122861087296}
+  impactStrength: 2
   reactionWeight: 1
---- !u!114 &4998394721581460397
+--- !u!114 &4919703122861087296
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -25,20 +25,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3468f1cd999e99a4ca82955b5e695459, type: 3}
-  m_Name: Ranged_pc_bear_01
-  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.ProjectileActionDefinition
-  basicAttackProfile: {fileID: 11400000, guid: 5500e8d0ed2e2d54e8179ed864296492, type: 2}
-  deliveryMode: 1
+  m_Script: {fileID: 11500000, guid: 1ba24edda31e98848b3134f8c253ebab, type: 3}
+  m_Name: Melee_pc_bear_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MeleeActionDefinition
+  basicAttackProfile: {fileID: 11400000, guid: 9e07c9e2d5598db489272352afcd4263, type: 2}
   mode: 0
-  projectilePrefab: {fileID: 0}
-  launchSfx: {fileID: 0}
-  overrideBasicAttackProfileTuning: 0
-  speed: 9
-  lifetime: 3
-  hitRadius: 0.25
-  maxPiercingTargets: 1
-  impactRadius: 0.35
-  maxImpactTargets: 1
-  launchRecoilDistance: 0
-  launchRecoilDuration: 0.12
+  areaCenter: 1
+  areaRadius: 1.5
+  maxTargets: 4

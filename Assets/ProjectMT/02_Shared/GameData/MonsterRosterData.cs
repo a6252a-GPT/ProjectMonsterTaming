@@ -131,13 +131,19 @@ namespace ProjectMT.Shared.GameData
             {
                 { "spike_01", "lumi_01" },
                 { "tofu_01", "lumi_01" },
-                { "tofu_02", "shell_01" },
-                { "tofu_03", "ru_01" },
+                { "tofu_02", "rabi_01" },
+                { "tofu_03", "rabi_queen_01" },
                 { "tofu_04", "aru_01" },
                 { "tofu_05", "lumi_01" },
                 { "tofu_06", "shakun_01" },
                 { "tofu_07", "lucy_01" },
-                { "tofu_08", "mukuk_01" }
+                { "tofu_08", "mukuk_01" },
+                { "nerea_01", "chamchi_01" },
+                { "ru_01", "rabi_queen_01" },
+                { "rubea_01", "phoenix_01" },
+                { "shell_01", "rabi_01" },
+                { "grisu_fire_01", "angeonjun_01" },
+                { "mingyu_legend_01", "werewolf_01" }
             };
 
         [SerializeField] private List<OwnedMonsterData> ownedMonsters = new List<OwnedMonsterData>();

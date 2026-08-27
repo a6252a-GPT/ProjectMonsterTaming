@@ -248,7 +248,7 @@ namespace ProjectMT.Features.Expedition
                 maxHealth = enemyBaseHealth * (1f + enemyHealthGrowthPerStage * stageOffset) *
                             ResolveEnemyHealthTierMultiplier(stage),
                 damage = enemyBaseDamage * (1f + enemyDamageGrowthPerStage * stageOffset),
-                moveSpeed = ranged ? 1.9f : 2.15f,
+                moveSpeed = ranged ? 2.28f : 2.58f,
                 attackRange = ranged ? enemyRangedAttackRange : enemyMeleeAttackRange,
                 attackInterval = ranged ? 1.2f : 1f,
                 projectileSpeed = ranged ? 8f : 0f,
@@ -289,7 +289,7 @@ namespace ProjectMT.Features.Expedition
             {
                 maxHealth = health,
                 damage = damage,
-                moveSpeed = ranged ? 1.9f : 2.15f,
+                moveSpeed = ranged ? 2.28f : 2.58f,
                 attackRange = ranged ? enemyRangedAttackRange : enemyMeleeAttackRange,
                 attackInterval = ranged ? 1.2f : 1f,
                 projectileSpeed = ranged ? 8f : 0f,
@@ -301,7 +301,7 @@ namespace ProjectMT.Features.Expedition
             {
                 result.maxHealth *= 0.7f;
                 result.damage *= 1.1f;
-                result.moveSpeed = 2.15f * 1.6f;
+                result.moveSpeed = 2.58f * 1.6f;
                 result.attackRange = enemyMeleeAttackRange;
                 result.attackInterval = 0.85f;
                 result.projectileSpeed = 0f;

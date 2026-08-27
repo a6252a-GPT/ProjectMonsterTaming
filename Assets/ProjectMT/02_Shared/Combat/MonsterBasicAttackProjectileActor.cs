@@ -192,6 +192,9 @@ namespace ProjectMT.Shared.Combat
             if (!returning)
             {
                 ApplyPrimaryFallback(0);
+                MonsterBasicAttackVfxRuntime.Dispatch(
+                    MonsterBasicAttackVfxEvent.DeliveryTurn,
+                    CreateVfxContext(primaryTarget, transform.position, 0));
                 returning = true;
                 passIndex = 1;
                 passHitTargetIds.Clear();
@@ -259,6 +262,7 @@ namespace ProjectMT.Shared.Combat
                         baseDamage * profile.ResolveDamageRatio(damagePass) * ratio,
                         ResolveFeelTargetMotionFlags(feelOwnsTargetMotion)))
                 {
+                    DispatchTargetDamaged(target.Health, target.transform.position + Vector3.up * 0.4f, damagePass);
                     PlayImpactFeedback(target.transform.position + Vector3.up * 0.4f, feelTarget);
                     applied = true;
                 }
@@ -285,11 +289,19 @@ namespace ProjectMT.Shared.Combat
                 profile.ImpactFeel,
                 feelTarget,
                 ResolveFeelIntensity());
-            return world.ApplyMonsterDamage(
+            var applied = world.ApplyMonsterDamage(
                 source,
                 primaryTarget,
                 baseDamage * profile.ResolveDamageRatio(damagePass),
                 ResolveFeelTargetMotionFlags(feelOwnsTargetMotion));
+            if (applied)
+            {
+                DispatchTargetDamaged(
+                    primaryTarget,
+                    primaryTarget.Position + Vector3.up * 0.4f,
+                    damagePass);
+            }
+            return applied;
         }
 
         private bool ApplyPrimaryFallback(int damagePass)
@@ -339,21 +351,79 @@ namespace ProjectMT.Shared.Combat
             {
                 var target = nearbyTargets[index];
                 var ratio = target == primaryActor ? 1f : profile.SecondaryDamageRatio;
-                applied |= world.ApplyMonsterDamage(
+                var targetApplied = world.ApplyMonsterDamage(
                     source,
                     target.Health,
                     baseDamage * profile.ResolveDamageRatio(damagePass) * ratio,
                     ResolveFeelTargetMotionFlags(feelOwnsTargetMotion && target == primaryActor));
+                applied |= targetApplied;
+                if (targetApplied)
+                {
+                    DispatchTargetDamaged(
+                        target.Health,
+                        target.transform.position + Vector3.up * 0.4f,
+                        damagePass);
+                }
             }
 
             if (primaryActor == null && primaryTarget != null && primaryTarget.IsAlive)
             {
-                applied |= world.ApplyMonsterDamage(
+                var primaryApplied = world.ApplyMonsterDamage(
                     source,
                     primaryTarget,
                     baseDamage * profile.ResolveDamageRatio(damagePass));
+                applied |= primaryApplied;
+                if (primaryApplied)
+                {
+                    DispatchTargetDamaged(
+                        primaryTarget,
+                        primaryTarget.Position + Vector3.up * 0.4f,
+                        damagePass);
+                }
+            }
+            if (applied)
+            {
+                MonsterBasicAttackVfxRuntime.Dispatch(
+                    MonsterBasicAttackVfxEvent.AreaResolved,
+                    CreateVfxContext(primaryTarget, center, damagePass, center));
             }
             return applied;
+        }
+
+        private void DispatchTargetDamaged(IDamageable target, Vector3 hitPoint, int damagePass)
+        {
+            var context = CreateVfxContext(target, hitPoint, damagePass);
+            MonsterBasicAttackVfxRuntime.Dispatch(MonsterBasicAttackVfxEvent.TargetDamaged, context);
+            if (profile?.SequenceModule == MonsterBasicAttackSequenceModule.ReturnPasses)
+            {
+                MonsterBasicAttackVfxRuntime.Dispatch(
+                    damagePass == 0
+                        ? MonsterBasicAttackVfxEvent.OutboundTargetDamaged
+                        : MonsterBasicAttackVfxEvent.ReturnTargetDamaged,
+                    context);
+            }
+        }
+
+        private MonsterBasicAttackVfxContext CreateVfxContext(
+            IDamageable target,
+            Vector3 hitPoint,
+            int damageStage,
+            Vector3? resolvedAreaCenter = null)
+        {
+            return new MonsterBasicAttackVfxContext(
+                world,
+                profile,
+                source?.RuntimeAssetSet?.FeedbackProfile,
+                source,
+                target,
+                source?.AnimationDriver,
+                transform,
+                null,
+                origin,
+                hitPoint,
+                resolvedAreaCenter ?? targetPosition,
+                transform.rotation,
+                damageStage);
         }
 
         private bool IsPrimary(UnitActor target)
@@ -488,6 +558,8 @@ namespace ProjectMT.Shared.Combat
 
             running = false;
             var owner = world;
+            MonsterBasicAttackVfxRuntime.EndDelivery(
+                CreateVfxContext(primaryTarget, transform.position, passIndex, transform.position));
             ReleaseProjectileFeel();
             world = null;
             owner?.ReturnMonsterObject(gameObject);

@@ -112,7 +112,7 @@ MonoBehaviour:
     healRatio: 0.24
     attackBuffRate: 0.2
     defenseDamageMultiplier: 0.75
-  - monsterId: grisu_fire_01
+  - monsterId: angeonjun_01
     pattern: 2
     supportFocus: 0
     supportRange: 5
@@ -184,7 +184,7 @@ MonoBehaviour:
     healRatio: 0.24
     attackBuffRate: 0.2
     defenseDamageMultiplier: 0.75
-  - monsterId: mingyu_legend_01
+  - monsterId: werewolf_01
     pattern: 3
     supportFocus: 0
     supportRange: 5
@@ -211,7 +211,7 @@ MonoBehaviour:
     healRatio: 0.24
     attackBuffRate: 0.2
     defenseDamageMultiplier: 0.75
-  - monsterId: nerea_01
+  - monsterId: chamchi_01
     pattern: 3
     supportFocus: 0
     supportRange: 5
@@ -301,7 +301,7 @@ MonoBehaviour:
     healRatio: 0.24
     attackBuffRate: 0.2
     defenseDamageMultiplier: 0.75
-  - monsterId: rubea_01
+  - monsterId: phoenix_01
     pattern: 0
     supportFocus: 0
     supportRange: 5
@@ -310,7 +310,7 @@ MonoBehaviour:
     healRatio: 0.24
     attackBuffRate: 0.2
     defenseDamageMultiplier: 0.75
-  - monsterId: ru_01
+  - monsterId: rabi_queen_01
     pattern: 6
     supportFocus: 3
     supportRange: 5
@@ -328,7 +328,7 @@ MonoBehaviour:
     healRatio: 0.24
     attackBuffRate: 0.2
     defenseDamageMultiplier: 0.75
-  - monsterId: shell_01
+  - monsterId: rabi_01
     pattern: 0
     supportFocus: 0
     supportRange: 5

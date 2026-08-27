@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 14
   defense: 8
   attackSpeed: 0.8
-  moveSpeed: 1.9
-  attackRange: 4
+  moveSpeed: 1.5
+  attackRange: 4.4
   ranged: 1
   runtimeAssetKey: monster/candy_tree_01
   runtimeAssetSet: {fileID: 11400000, guid: a543f5b87f77311479154bb5e03cf382, type: 2}

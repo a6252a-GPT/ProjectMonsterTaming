@@ -9,10 +9,10 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
     {
         private static readonly string[] TargetMonsterIds =
         {
-            "piru_01", "kir_01", "wispy_01", "shell_01", "aru_01", "rage_01", "dubi_01",
-            "poi_poison_01", "pipi_01", "nerea_01", "doomba_01", "argo_01", "grimpy_01",
+            "piru_01", "kir_01", "wispy_01", "rabi_01", "aru_01", "rage_01", "dubi_01",
+            "poi_poison_01", "pipi_01", "chamchi_01", "doomba_01", "argo_01", "grimpy_01",
             "rako_01", "hanjaemon_ice_01", "kutan_01", "astell_01", "candy_tree_01",
-            "rubea_01", "lumi_01", "krabi_01", "shakun_01", "ru_01", "pango_01", "berkan_01"
+            "phoenix_01", "lumi_01", "krabi_01", "shakun_01", "rabi_queen_01", "pango_01", "berkan_01"
         };
 
         [Test]
@@ -28,9 +28,9 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
                     monsterId,
                     StringComparison.OrdinalIgnoreCase)), Is.True, monsterId);
             }
-            Assert.That(catalog.Resolve("nerea_01").Pattern, Is.EqualTo(HexCastleAssaultPattern.DefenderHunter));
+            Assert.That(catalog.Resolve("chamchi_01").Pattern, Is.EqualTo(HexCastleAssaultPattern.DefenderHunter));
             Assert.That(catalog.Resolve("aru_01").SupportFocus, Is.EqualTo(HexCastleAssaultSupportFocus.DefenseBuff));
-            Assert.That(catalog.Resolve("ru_01").SupportFocus, Is.EqualTo(HexCastleAssaultSupportFocus.Recovery));
+            Assert.That(catalog.Resolve("rabi_queen_01").SupportFocus, Is.EqualTo(HexCastleAssaultSupportFocus.Recovery));
         }
     }
 }

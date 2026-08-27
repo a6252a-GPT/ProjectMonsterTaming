@@ -56,6 +56,40 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  vfxSlots:
+  - slotId: dash_start
+    displayName: "\uB3CC\uC9C4 \uC2DC\uC791"
+    description: "\uACF5\uACA9 \uBAA8\uC158\uC774 \uC2DC\uC791\uB420 \uB54C\uC758
+      \uC608\uACE0 \uD6A8\uACFC"
+    eventType: 0
+    anchor: 0
+    multiplicity: 0
+    assignmentScope: 1
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: dash_trail
+    displayName: "\uB3CC\uC9C4 \uC794\uC0C1"
+    description: "\uACF5\uACA9\uC790\uB97C \uB530\uB77C\uAC00\uB294 \uB3CC\uC9C4
+      \uD6A8\uACFC"
+    eventType: 1
+    anchor: 0
+    multiplicity: 5
+    assignmentScope: 1
+    attachment: 1
+    endPolicy: 2
+    defaultLifetime: 1
+  - slotId: hit
+    displayName: "\uC2E4\uC81C \uBA85\uC911"
+    description: "\uB3CC\uC9C4 \uB4A4 \uD53C\uD574\uAC00 \uC801\uC6A9\uB41C \uC704\uCE58\uC758
+      \uBA85\uC911 \uD6A8\uACFC"
+    eventType: 3
+    anchor: 5
+    multiplicity: 3
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
   recipeVersion: 1
   deliveryModule: 0
   collisionModule: 0

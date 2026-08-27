@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 10
   defense: 6
   attackSpeed: 1
-  moveSpeed: 2
-  attackRange: 3
+  moveSpeed: 1.6
+  attackRange: 4
   ranged: 0
   runtimeAssetKey: monster/mingyu_mythic_01
   runtimeAssetSet: {fileID: 11400000, guid: 84980a171ab232e459d968c6960efa65, type: 2}

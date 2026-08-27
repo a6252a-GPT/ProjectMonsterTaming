@@ -788,10 +788,15 @@ namespace ProjectMT.Contents.CastleRaid
             if (runtimeAssetSet != null && animationDriver != null && animationDriver.IsReady)
             {
                 attackActionRunning = true; // normalizedTime 0 Marker도 현재 대상을 사용
+                var basicAttackProfile = runtimeAssetSet.CombatProfile?.Action?.BasicAttackProfile;
+                var breathDuration = basicAttackProfile != null && basicAttackProfile.UsesBreathDurationContract
+                    ? basicAttackProfile.BreathDuration
+                    : 0f;
                 if (animationDriver.TryBeginAttack(
                         stats.attackInterval,
                         ++nextActionSequenceId,
-                        HandleAttackMarker))
+                        HandleAttackMarker,
+                        breathDuration))
                 {
                     return;
                 }

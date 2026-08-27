@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 8
   defense: 4
   attackSpeed: 2
-  moveSpeed: 2.5
-  attackRange: 2.5
+  moveSpeed: 2
+  attackRange: 3.5
   ranged: 0
   runtimeAssetKey: monster/berkan_01
   runtimeAssetSet: {fileID: 11400000, guid: db14fbe4acbfe92459d2577d335fd24e, type: 2}

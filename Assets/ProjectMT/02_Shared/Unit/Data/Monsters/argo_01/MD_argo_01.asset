@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 14
   defense: 4
   attackSpeed: 1.1
-  moveSpeed: 2.5
-  attackRange: 4.2
+  moveSpeed: 2
+  attackRange: 4.6
   ranged: 1
   runtimeAssetKey: monster/argo_01
   runtimeAssetSet: {fileID: 11400000, guid: 7bb9828b7ddc649439557c3b37c042a5, type: 2}

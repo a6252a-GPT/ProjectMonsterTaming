@@ -207,10 +207,26 @@ namespace ProjectMT.Shared.Combat
             PlayImpulse(impulse);
         }
 
-        public void PlayDamage(Vector3 position, float amount, FloatingNumberStyle style, int mergeKey)
+        public void PlayDamage(
+            Vector3 position,
+            float amount,
+            FloatingNumberStyle style,
+            int mergeKey,
+            DamageFeedbackFlags feedbackFlags = DamageFeedbackFlags.None)
         {
-            floatingNumbers?.Queue(position, amount, style, mergeKey); // 비 UnitActor 대상의 확정 피해 표시
+            var sizeMultiplier = (feedbackFlags & DamageFeedbackFlags.PassiveEnhancedNumber) != 0 ? 1.2f : 1f;
+            floatingNumbers?.Queue(position, amount, style, mergeKey, sizeMultiplier); // 비 UnitActor 대상의 확정 피해 표시
             sfxPool?.Play(hitSfx, position);
+        }
+
+        public void PlayFloatingNumber(Vector3 position, float amount, FloatingNumberStyle style, int mergeKey)
+        {
+            floatingNumbers?.Queue(position, amount, style, mergeKey);
+        }
+
+        public void PlayStatusText(Vector3 position, string text, CombatStatusTextStyle style, int queueKey)
+        {
+            floatingNumbers?.QueueText(position, text, style, queueKey);
         }
 
         public bool PlayMonsterCue(SfxCue cue, Vector3 position)

@@ -54,3 +54,36 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  basicAttackVfxBindings:
+  - attackId: BA_M_02
+    slotId: sweep_plane
+    motionId: attack01
+    state: 1
+    prefab: {fileID: 6683339827821937881, guid: c8d384946f7bd414eaf2ec0951fc2948, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 1.3
+    playbackSpeed: 1.5
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_M_02
+    slotId: target_hit
+    motionId: 
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1

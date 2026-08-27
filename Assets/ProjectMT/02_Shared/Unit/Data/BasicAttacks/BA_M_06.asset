@@ -56,6 +56,39 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  vfxSlots:
+  - slotId: strike_trail
+    displayName: "\uC5F0\uC18D \uACF5\uACA9 \uADA4\uC801"
+    description: "\uC120\uD0DD\uB41C \uC5F0\uC18D \uACF5\uACA9 \uBAA8\uC158\uC758
+      \uADA4\uC801"
+    eventType: 1
+    anchor: 1
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 1
+    endPolicy: 2
+    defaultLifetime: 1
+  - slotId: per_hit
+    displayName: "\uD0C0\uACA9\uBCC4 \uBA85\uC911"
+    description: "\uAC01 \uD53C\uD574 \uB2E8\uACC4\uC758 \uBA85\uC911 \uD6A8\uACFC"
+    eventType: 3
+    anchor: 5
+    multiplicity: 4
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: final_hit
+    displayName: "\uB9C8\uC9C0\uB9C9 \uD0C0\uACA9"
+    description: "\uB9C8\uC9C0\uB9C9 \uD53C\uD574 \uB2E8\uACC4 \uB4A4\uC758 \uB9C8\uBB34\uB9AC
+      \uD6A8\uACFC"
+    eventType: 7
+    anchor: 5
+    multiplicity: 1
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
   recipeVersion: 1
   deliveryModule: 0
   collisionModule: 0

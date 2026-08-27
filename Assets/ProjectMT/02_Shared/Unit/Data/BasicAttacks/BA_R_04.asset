@@ -56,6 +56,29 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  vfxSlots:
+  - slotId: cast
+    displayName: "\uC989\uBC1C \uC2DC\uC804"
+    description: "Marker \uC21C\uAC04 \uACF5\uACA9 \uC6D0\uC810\uC758 \uC2DC\uC804
+      \uD6A8\uACFC"
+    eventType: 1
+    anchor: 1
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: hit
+    displayName: "\uC2E4\uC81C \uBA85\uC911"
+    description: "\uC989\uC2DC \uD53C\uD574\uAC00 \uC801\uC6A9\uB41C \uB300\uC0C1
+      \uD6A8\uACFC"
+    eventType: 3
+    anchor: 5
+    multiplicity: 3
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
   recipeVersion: 1
   deliveryModule: 0
   collisionModule: 0

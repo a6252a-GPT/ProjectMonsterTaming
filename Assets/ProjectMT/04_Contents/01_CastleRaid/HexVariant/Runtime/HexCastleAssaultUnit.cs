@@ -40,6 +40,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         private Vector3 baseScale;
         private float groundOffset = 0.42f;
         private MonsterAnimationDriver animationDriver;
+        private MonsterRuntimeAssetSet runtimeAssetSet;
         private UnitVisualFeedback visualFeedback;
         private bool usesFormalVisual;
         private bool attackActionRunning;
@@ -239,13 +240,13 @@ namespace ProjectMT.Contents.CastleRaidHex
             CurrentCoordinates = start;
             ExpectedDefenseLayer = assaultWorld.DefenseLayerCount;
             aiProfile = assaultWorld.RegisterUnit(this, unitId);
+            transform.position = ResolvePosition(start);
             passiveRuntime.Initialize(
                 this,
                 assaultWorld,
                 unit.PassiveSkill,
                 unit.Level,
                 UnitEntryReason.CastleManualDeployment);
-            transform.position = ResolvePosition(start);
             strategicDecisionRequested = true;
             nextAwarenessAt = Time.time + ResolveDecisionSpread();
             decisionTopologyVersion = 0;
@@ -467,12 +468,16 @@ namespace ProjectMT.Contents.CastleRaidHex
             }
         }
 
-        public void HealPassive(float amount)
+        public float HealPassive(float amount)
         {
-            if (IsAlive && amount > 0f)
+            if (!IsAlive || amount <= 0f)
             {
-                currentHealth = Mathf.Min(maximumHealth, currentHealth + amount);
+                return 0f;
             }
+
+            var before = currentHealth;
+            currentHealth = Mathf.Min(maximumHealth, currentHealth + amount);
+            return currentHealth - before;
         }
 
         public void ShutdownRuntime()
@@ -491,6 +496,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             legacyPath = null;
             cellTargets = null;
             aiProfile = null;
+            runtimeAssetSet = null;
             evaluatedOpportunityLayers.Clear();
             specialistTargetCounts.Clear();
             HasSelectedInitialWall = false;
@@ -569,6 +575,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             baseScale = transform.localScale;
             groundOffset = Mathf.Max(0f, targetGroundOffset);
             usesFormalVisual = unit != null;
+            runtimeAssetSet = unit?.RuntimeAssetSet;
             attackActionRunning = false;
             nextActionSequenceId = 0;
             nextAttackTime = Time.time + UnityEngine.Random.Range(0f, attackInterval * 0.35f);
@@ -897,10 +904,15 @@ namespace ProjectMT.Contents.CastleRaidHex
             if (usesFormalVisual && animationDriver != null && animationDriver.IsReady)
             {
                 attackActionRunning = true;
+                var basicAttackProfile = runtimeAssetSet?.CombatProfile?.Action?.BasicAttackProfile;
+                var breathDuration = basicAttackProfile != null && basicAttackProfile.UsesBreathDurationContract
+                    ? basicAttackProfile.BreathDuration
+                    : 0f;
                 if (animationDriver.TryBeginAttack(
                         passiveRuntime.ResolveAttackInterval(attackInterval),
                         ++nextActionSequenceId,
-                        HandleAttackMarker))
+                        HandleAttackMarker,
+                        breathDuration))
                 {
                     return;
                 }

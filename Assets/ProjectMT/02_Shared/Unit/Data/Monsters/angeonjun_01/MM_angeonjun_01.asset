@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f20f689cfbc13cd4c9b86bb83379c2a3, type: 3}
+  m_Name: MM_angeonjun_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterMotionProfile
+  idle:
+    clip: {fileID: 7400000, guid: e90fb7829e1df964a940ca135a44e094, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.08
+    loop: 1
+    startFeedback:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+  move:
+    clip: {fileID: 7400000, guid: 0f9a1676d37847f4fbb1374ebd2a6331, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.08
+    loop: 1
+    startFeedback:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+  attacks:
+  - motionId: attack01
+    clip: {fileID: 7400000, guid: ce8b91eea3deacc4291aee26457a92c4, type: 3}
+    playbackSpeed: 0.5
+    crossFadeDuration: 0.06
+    weight: 1
+    preventImmediateRepeat: 0
+    overrideBreathDuration: 1
+    breathDuration: 0.8
+    markers:
+    - normalizedTime: 0.45
+      powerRatio: 1
+      feedbackOverride:
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      socketOverride: 
+    attackStartOverride:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+  death:
+    clip: {fileID: 7400000, guid: a613a74bc1d5e464bb10e85beed0b153, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.08
+    loop: 0
+    startFeedback:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1

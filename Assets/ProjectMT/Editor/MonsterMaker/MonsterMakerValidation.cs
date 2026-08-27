@@ -52,7 +52,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var report = new MonsterMakerValidationReport();
             if (draft == null)
             {
-                report.Add(MonsterMakerIssueSeverity.Error, "MAKER-DRAFT", "Monster Maker Draft가 없습니다.", null);
+                report.Add(MonsterMakerIssueSeverity.Error, "MAKER-DRAFT", "Monster Maker 제작 원본이 없습니다.", null);
                 return report;
             }
 
@@ -62,11 +62,115 @@ namespace ProjectMT.EditorTools.MonsterMaker
             ValidateStats(draft, report);
             ValidateMotions(draft, report);
             ValidateCombat(draft, report);
+            ValidateBasicAttackVfx(draft, report);
             ValidateMainBattleAI(draft, report);
             ValidateCastleRaidAI(draft, report);
             ValidateAscension(draft, report);
             ValidateFeedback(draft, report);
             return report;
+        }
+
+        private static void ValidateBasicAttackVfx(
+            MonsterMakerDraft draft,
+            MonsterMakerValidationReport report)
+        {
+            var profile = draft.BasicAttackProfile;
+            if (profile == null)
+            {
+                return;
+            }
+
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var binding in draft.BasicAttackVfxBindings)
+            {
+                if (binding == null)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-BASIC-VFX-BINDING",
+                        "기본공격 연출 배정 데이터가 비어 있습니다.",
+                        draft);
+                    continue;
+                }
+                if (!binding.TryValidate(out var bindingError))
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-BASIC-VFX-BINDING",
+                        bindingError,
+                        draft);
+                    continue;
+                }
+                var key = $"{binding.AttackId}|{binding.SlotId}|{binding.MotionId}";
+                if (!seen.Add(key))
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-BASIC-VFX-DUPLICATE",
+                        $"기본공격 연출 배정 키가 중복됩니다: {key}",
+                        draft);
+                }
+            }
+
+            foreach (var slot in profile.VfxSlots)
+            {
+                if (slot == null)
+                {
+                    continue;
+                }
+                var motionIds = slot.AssignmentScope == MonsterBasicAttackVfxAssignmentScope.MotionSpecific
+                    ? draft.Attacks.Where(attack => attack != null)
+                        .Select(attack => attack.MotionId)
+                        .Where(id => !string.IsNullOrWhiteSpace(id))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                    : new[] { string.Empty };
+                foreach (var motionId in motionIds)
+                {
+                    var binding = draft.BasicAttackVfxBindings.LastOrDefault(candidate =>
+                        candidate != null &&
+                        string.Equals(candidate.AttackId, profile.AttackId, StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(candidate.SlotId, slot.SlotId, StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(candidate.MotionId, motionId, StringComparison.OrdinalIgnoreCase));
+                    if (binding == null || binding.State == MonsterBasicAttackVfxAssignmentState.Undecided)
+                    {
+                        report.Add(
+                            MonsterMakerIssueSeverity.Warning,
+                            "MAKER-BASIC-VFX-PENDING",
+                            $"기본공격 VFX가 미결정입니다: {slot.DisplayName}" +
+                            (string.IsNullOrWhiteSpace(motionId) ? string.Empty : $" / {motionId}"),
+                            draft);
+                    }
+                    else if (binding.State == MonsterBasicAttackVfxAssignmentState.Assigned &&
+                             binding.Prefab == null)
+                    {
+                        report.Add(
+                            MonsterMakerIssueSeverity.Error,
+                            "MAKER-BASIC-VFX-PREFAB",
+                            $"배정 상태인 기본공격 VFX Prefab이 비어 있습니다: {slot.DisplayName}",
+                            draft);
+                    }
+
+                    if (binding == null ||
+                        binding.SfxState == MonsterBasicAttackSfxAssignmentState.Undecided)
+                    {
+                        report.Add(
+                            MonsterMakerIssueSeverity.Warning,
+                            "MAKER-BASIC-SFX-PENDING",
+                            $"기본공격 SFX 사용 여부가 미결정입니다: {slot.DisplayName}" +
+                            (string.IsNullOrWhiteSpace(motionId) ? string.Empty : $" / {motionId}"),
+                            draft);
+                    }
+                    else if (binding.SfxState == MonsterBasicAttackSfxAssignmentState.Assigned &&
+                             binding.Sound == null)
+                    {
+                        report.Add(
+                            MonsterMakerIssueSeverity.Error,
+                            "MAKER-BASIC-SFX-CLIP",
+                            $"SFX 사용 상태이지만 AudioClip이 비어 있습니다: {slot.DisplayName}",
+                            draft);
+                    }
+                }
+            }
         }
 
         public static string ResolveAnimatorPath(MonsterMakerDraft draft)
@@ -260,6 +364,19 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     draft.RarityPassiveSkill);
             }
 
+            if (draft.RarityPassiveSkill is GenericMonsterPassiveSkill genericPassive)
+            {
+                var tuningError = "몬스터 전용 패시브 수치가 없습니다.";
+                if (draft.PassiveTuning == null || !draft.PassiveTuning.TryValidate(genericPassive, out tuningError))
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-SKILL-PASSIVE-TUNING",
+                        tuningError,
+                        draft);
+                }
+            }
+
             var active = draft.RarityActiveSkill;
             if (draft.Rarity < MonsterRarity.Epic)
             {
@@ -390,15 +507,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 }
 
                 ValidateClipRig(attack.Clip, "Attack", report);
-                if (attack.Clip.isLooping)
-                {
-                    report.Add(
-                        MonsterMakerIssueSeverity.Warning,
-                        "MAKER-ATTACK-LOOP",
-                        $"Attack Clip이 Loop Import 상태입니다: {attack.MotionId}",
-                        attack.Clip);
-                }
-
                 if (attack.Markers.Count != 1)
                 {
                     report.Add(
@@ -476,7 +584,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     report.Add(
                         MonsterMakerIssueSeverity.Error,
                         "MAKER-BASIC-ATTACK-TYPE",
-                        $"Draft 공격 종류와 기본공격 프로필이 다릅니다. Draft={draft.CombatType}, Profile={basicAttack.CombatType}",
+                        $"제작 원본 공격 종류와 기본공격 프로필이 다릅니다. Source={draft.CombatType}, Profile={basicAttack.CombatType}",
                         draft);
                 }
 
@@ -669,34 +777,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private static void ValidateFeedback(MonsterMakerDraft draft, MonsterMakerValidationReport report)
         {
             ValidateFeedbackCue(draft.SpawnFeedback, "생성", report, draft);
-            ValidateFeedbackCue(draft.AttackStartFeedback, "공격 시작", report, draft);
-            ValidateFeedbackCue(draft.AttackMarkerFeedback, "공격 타격", report, draft);
             ValidateFeedbackCue(draft.HitFeedback, "피격", report, draft);
             ValidateFeedbackCue(draft.DeathFeedback, "사망", report, draft);
             ValidateFeedbackCue(draft.SpecialFeedback, "특수", report, draft);
-
-            for (var attackIndex = 0; attackIndex < draft.Attacks.Count; attackIndex++)
-            {
-                var attack = draft.Attacks[attackIndex];
-                if (attack == null)
-                {
-                    continue;
-                }
-
-                ValidateFeedbackCue(
-                    attack.AttackStartFeedback,
-                    $"{attack.MotionId} 공격 동작",
-                    report,
-                    draft);
-                for (var markerIndex = 0; markerIndex < attack.Markers.Count; markerIndex++)
-                {
-                    ValidateFeedbackCue(
-                        attack.Markers[markerIndex]?.Feedback,
-                        $"{attack.MotionId} 타격 {markerIndex + 1}",
-                        report,
-                        draft);
-                }
-            }
         }
 
         private static void ValidateFeedbackCue(

@@ -45,7 +45,7 @@ MonoBehaviour:
   primaryPerLevelStep: 0.01
   secondaryBase: 0
   secondaryPerLevelStep: 0
-  triggerCount: 4
+  triggerCount: 3
   maxStacks: 1
   duration: 0
   cooldown: 0

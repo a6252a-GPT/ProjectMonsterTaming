@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 18
   defense: 6
   attackSpeed: 1.2
-  moveSpeed: 2.8
-  attackRange: 2
+  moveSpeed: 2.2
+  attackRange: 3.5
   ranged: 0
   runtimeAssetKey: monster/lumi_01
   runtimeAssetSet: {fileID: 11400000, guid: 313f70e9909953f4c9e2553ca1b2a5e1, type: 2}

@@ -56,6 +56,51 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  vfxSlots:
+  - slotId: overhead_trail
+    displayName: "\uB0B4\uB824\uCC0D\uAE30 \uADA4\uC801"
+    description: "\uC120\uD0DD\uB41C \uBAA8\uC158\uC758 \uB0B4\uB824\uCC0D\uAE30
+      \uADA4\uC801"
+    eventType: 1
+    anchor: 1
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 1
+    endPolicy: 2
+    defaultLifetime: 1
+  - slotId: ground_contact
+    displayName: "\uC9C0\uBA74 \uC811\uCD09"
+    description: "\uB0B4\uB824\uCC0D\uAE30\uAC00 \uB2FF\uC740 \uC911\uC2EC\uC810
+      \uD6A8\uACFC"
+    eventType: 1
+    anchor: 6
+    multiplicity: 1
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: target_hit
+    displayName: "\uB300\uC0C1\uBCC4 \uBA85\uC911"
+    description: "\uBC94\uC704 \uC548\uC5D0\uC11C \uC2E4\uC81C \uD53C\uD574\uB97C
+      \uBC1B\uC740 \uAC01 \uB300\uC0C1\uC758 \uBA85\uC911 \uD6A8\uACFC"
+    eventType: 3
+    anchor: 5
+    multiplicity: 3
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: area_wave
+    displayName: "\uBC94\uC704 \uD30C\uB3D9"
+    description: "\uBC94\uC704 \uD310\uC815\uC774 \uD574\uACB0\uB41C \uB4A4 \uD3BC\uCCD0\uC9C0\uB294
+      \uC6D0\uD615 \uD6A8\uACFC"
+    eventType: 6
+    anchor: 6
+    multiplicity: 1
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
   recipeVersion: 1
   deliveryModule: 0
   collisionModule: 0

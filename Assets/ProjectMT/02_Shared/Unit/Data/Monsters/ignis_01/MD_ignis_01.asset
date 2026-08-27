@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 19
   defense: 9
   attackSpeed: 0.9
-  moveSpeed: 2.3
-  attackRange: 2.2
+  moveSpeed: 1.8
+  attackRange: 3.4
   ranged: 0
   runtimeAssetKey: monster/ignis_01
   runtimeAssetSet: {fileID: 11400000, guid: be32fc3822e61f1449fbf8ee0c32340e, type: 2}

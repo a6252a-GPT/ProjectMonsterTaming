@@ -57,6 +57,40 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  vfxSlots:
+  - slotId: multi_launch
+    displayName: "\uB2E4\uC911 \uBC1C\uC0AC"
+    description: "\uBD80\uCC44\uAF34 \uD0C4\uB9C9\uC774 \uC2DC\uC791\uB418\uB294
+      \uC6D0\uC810 \uD6A8\uACFC"
+    eventType: 1
+    anchor: 1
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: projectile
+    displayName: "\uAC1C\uBCC4 \uD22C\uC0AC\uCCB4 \uBCF8\uCCB4"
+    description: "\uC2E4\uC81C \uC774\uB3D9 \uD310\uC815\uCCB4\uC758 \uBAAC\uC2A4\uD130
+      \uACE0\uC720 \uC678\uD615"
+    eventType: 2
+    anchor: 3
+    multiplicity: 2
+    assignmentScope: 0
+    attachment: 2
+    endPolicy: 1
+    defaultLifetime: 1
+  - slotId: hit
+    displayName: "\uAC1C\uBCC4 \uBA85\uC911"
+    description: "\uAC01 \uD22C\uC0AC\uCCB4\uAC00 \uD53C\uD574\uB97C \uC801\uC6A9\uD55C
+      \uB300\uC0C1 \uD6A8\uACFC"
+    eventType: 3
+    anchor: 5
+    multiplicity: 3
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
   recipeVersion: 1
   deliveryModule: 1
   collisionModule: 1

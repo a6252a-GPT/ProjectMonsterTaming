@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 15
   defense: 4
   attackSpeed: 1.05
-  moveSpeed: 2.5
-  attackRange: 4
+  moveSpeed: 2
+  attackRange: 4.4
   ranged: 0
   runtimeAssetKey: monster/lucy_01
   runtimeAssetSet: {fileID: 11400000, guid: a7806d3927ed24f4c9ae938f91706906, type: 2}

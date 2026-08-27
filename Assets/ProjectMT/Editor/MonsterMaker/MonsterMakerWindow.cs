@@ -88,6 +88,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private const float ProfileSummaryMaxWidth = 318f;
         private const float ProfileSummaryMinHeight = 318f;
         private const float ProfileSummarySideBySideThreshold = 760f;
+        private const float BasicAttackVfxTimingGaugeMinRange = 0.5f;
+        private const float BasicAttackVfxTimingGaugeRangeStep = 0.5f;
         private const float MinimumWindowWidth = 1180f;
         private const float MinimumWindowHeight = 760f;
         private static readonly Color AccentColor = new Color(0.38f, 0.66f, 1f, 1f);
@@ -224,7 +226,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private bool showMonsterCatalog = true;
         [SerializeField] private MonsterMakerCatalogSortMode catalogSortMode;
         [SerializeField] private bool showModelAdvancedSettings;
-        [SerializeField] private bool showBasicAttackAdvancedSettings;
         [SerializeField] private bool showPreviewModelReference = true;
         [SerializeField] private bool showPreviewAttackReference = true;
         [SerializeField] private bool showPreviewHitReference = true;
@@ -238,7 +239,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private Vector2 previewPositionDragScreenDirection = Vector2.right;
         private float previewPositionDragPixelsPerValueUnit = 40f;
         private int previewPositionHotControl;
-        [SerializeField] private int passiveSkillCategoryFilter;
         [SerializeField] private int activeSkillCategoryFilter;
         [SerializeField] private bool showPassiveBalanceSettings;
         private bool showUsageGuide;
@@ -327,7 +327,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             HandleDefinitionPicker();
             if (draft == null || serializedDraft == null)
             {
-                EditorGUILayout.HelpBox("새 Draft를 만들거나 기존 Draft를 선택하세요.", MessageType.Info);
+                EditorGUILayout.HelpBox("새 몬스터 제작을 시작하거나 기존 제작 원본을 선택하세요.", MessageType.Info);
                 return;
             }
 
@@ -389,7 +389,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             EditorGUI.DrawRect(new Rect(backgroundRect.x, backgroundRect.yMax - 2f, backgroundRect.width, 2f), AccentColor);
 
             const float horizontalPadding = 12f;
-            const float selectorLabelWidth = 44f;
+            const float selectorLabelWidth = 60f;
             const float buttonGap = 4f;
             const float listToggleWidth = 92f;
             var contentWidth = backgroundRect.width - horizontalPadding * 2f;
@@ -414,7 +414,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var selectorX = backgroundRect.x + horizontalPadding;
             var selectorWidth = contentWidth;
             var controlY = backgroundRect.y + 49f;
-            GUI.Label(new Rect(selectorX, controlY, selectorLabelWidth, ControlHeight), "DRAFT", headerMetaStyle);
+            GUI.Label(new Rect(selectorX, controlY, selectorLabelWidth, ControlHeight), "제작 원본", headerMetaStyle);
             var selected = (MonsterMakerDraft)EditorGUI.ObjectField(
                 new Rect(selectorX + selectorLabelWidth, controlY, selectorWidth - selectorLabelWidth, ControlHeight),
                 draft,
@@ -436,13 +436,13 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var smallButtonWidth = (contentWidth - buttonGap * 2f) * 0.28f;
             var openButtonWidth = contentWidth - smallButtonWidth * 2f - buttonGap * 2f;
             var buttonX = selectorX;
-            if (GUI.Button(new Rect(buttonX, buttonY, smallButtonWidth, ControlHeight), "새 Draft", compactButtonStyle))
+            if (GUI.Button(new Rect(buttonX, buttonY, smallButtonWidth, ControlHeight), "새 몬스터", compactButtonStyle))
             {
                 CreateTransientDraft();
             }
 
             buttonX += smallButtonWidth + buttonGap;
-            if (GUI.Button(new Rect(buttonX, buttonY, smallButtonWidth, ControlHeight), "Draft 저장", compactButtonStyle))
+            if (GUI.Button(new Rect(buttonX, buttonY, smallButtonWidth, ControlHeight), "원본 저장", compactButtonStyle))
             {
                 SaveDraft();
             }
@@ -465,7 +465,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 DrawColumnHeader("게임 몬스터", $"{catalogDefinitions.Length}종");
                 GUILayout.Space(3f);
                 GUILayout.Label(
-                    "Maker 제작 항목을 누르면 저장된 수정 Draft가 열립니다.",
+                    "Maker 제작 항목을 누르면 저장된 제작 원본이 열립니다.",
                     usageBodyStyle);
                 GUILayout.Space(5f);
 
@@ -595,12 +595,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 catalogRowMetaStyle);
             GUI.Label(
                 new Rect(textX, rowRect.y + 35f, textWidth, 13f),
-                canEdit ? "Maker 수정 가능" : "기존 호환 · Draft 없음",
+                canEdit ? "Maker 수정 가능" : "기존 호환 · 제작 원본 없음",
                 canEdit ? catalogRowStateStyle : catalogRowMetaStyle);
 
             var tooltip = canEdit
-                ? $"{definition.DisplayName}의 저장된 Maker Draft 열기"
-                : $"{definition.DisplayName}은 Maker 이전 호환 데이터라 Draft가 없습니다.";
+                ? $"{definition.DisplayName}의 저장된 제작 원본 열기"
+                : $"{definition.DisplayName}은 Maker 이전 호환 데이터라 제작 원본이 없습니다.";
             if (!GUI.Button(rowRect, new GUIContent(string.Empty, tooltip), GUIStyle.none))
             {
                 return;
@@ -615,7 +615,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             Selection.activeObject = definition;
             EditorGUIUtility.PingObject(definition);
-            ShowNotification(new GUIContent("기존 호환 Monster입니다. Maker Draft는 자동 생성하지 않습니다."));
+            ShowNotification(new GUIContent("기존 호환 Monster입니다. 제작 원본은 자동 생성하지 않습니다."));
         }
 
         private static bool TryResolvePortraitPreview(
@@ -1835,7 +1835,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 GUILayout.Label("미리보기 · 반영", columnTitleStyle);
                 GUILayout.Space(8f);
-                GUILayout.Label("모션 확인 → 입력 검증 → 게임 반영", columnMetaStyle);
+                GUILayout.Label("모션 확인 → 입력 검증 → 전투 반영", columnMetaStyle);
                 GUILayout.FlexibleSpace();
                 var guideButtonLabel = showUsageGuide ? "도움말 닫기 ▲" : "도움말 ▼";
                 if (GUILayout.Button(guideButtonLabel, compactButtonStyle, GUILayout.Width(106f), GUILayout.Height(26f)))
@@ -1853,7 +1853,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 {
                     GUILayout.Label("재생 · 편집 관리", sectionTitleStyle, GUILayout.Width(106f));
                     GUILayout.Space(6f);
-                    GUILayout.Label("미리보기 재생과 현재 Draft의 수정 기록을 관리합니다", headerMetaStyle);
+                    GUILayout.Label("미리보기 재생과 현재 제작 원본의 수정 기록을 관리합니다", headerMetaStyle);
                 }
 
                 GUILayout.Space(4f);
@@ -1900,7 +1900,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
                     GUILayout.Space(ActionGap);
                     if (GUILayout.Button(
-                            new GUIContent("↺  초기 상태 복원", "현재 Draft를 이 창에서 처음 연 상태로 복원합니다"),
+                            new GUIContent("↺  초기 상태 복원", "현재 제작 원본을 이 창에서 처음 연 상태로 복원합니다"),
                             actionButtonStyle,
                             GUILayout.Width(126f),
                             GUILayout.Height(38f)))
@@ -1926,7 +1926,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 return $"{mode} · {lastWriteResult.Definition.MonsterId}";
             }
 
-            return "입력 검증 후 게임에 반영합니다";
+            return "입력 검증 후 전투 데이터에 반영합니다";
         }
 
         private void DrawMotionPlaybackRow(float availableWidth)
@@ -2048,8 +2048,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
             using (new EditorGUI.DisabledScope(currentReport.HasErrors))
             {
                 var actionLabel = IsEditingExistingMonster()
-                    ? "2. 수정 내용 게임 반영"
-                    : "2. 신규 몬스터 게임 편입";
+                    ? "2. 수정 내용 전투 반영"
+                    : "2. 신규 몬스터 전투 편입";
                 DrawRectActionButton(
                     new Rect(publishRect.x + validateWidth + 8f, publishRect.y, publishWidth, publishRect.height),
                     actionLabel,
@@ -2111,7 +2111,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (initialDraftSnapshot == null || draft == null ||
                 !EditorUtility.DisplayDialog(
                     "초기 상태 복원",
-                    "현재 Draft의 모든 제작 값을 Maker에서 처음 열었을 때 상태로 되돌립니다.\n복원 후에도 '수정 되돌리기'로 다시 복구할 수 있습니다.",
+                    "현재 제작 원본의 모든 값을 Maker에서 처음 열었을 때 상태로 되돌립니다.\n복원 후에도 '수정 되돌리기'로 다시 복구할 수 있습니다.",
                     "초기 상태로 복원",
                     "취소"))
             {
@@ -2176,7 +2176,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             GUILayout.Space(8f);
-            GUILayout.Label("왼쪽 입력  →  중앙 확인  →  오류 검증  →  게임 반영", usageLeadStyle);
+            GUILayout.Label("왼쪽 입력  →  중앙 확인  →  오류 검증  →  전투 반영", usageLeadStyle);
             GUILayout.Space(5f);
             usageGuideScroll.x = 0f;
             usageGuideScroll = EditorGUILayout.BeginScrollView(usageGuideScroll, GUILayout.Height(184f));
@@ -2184,7 +2184,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox, GUILayout.MinWidth(220f), GUILayout.ExpandWidth(true)))
                 {
-                    DrawUsageStep("1", "Draft를 준비합니다", "새 Monster는 [새 Draft], 기존 Monster는 [기존 항목 열기]로 시작하고 작업 중 입력은 [Draft 저장]으로 보관합니다.");
+                    DrawUsageStep("1", "제작 원본을 준비합니다", "새 Monster는 [새 몬스터], 기존 Monster는 [기존 항목 열기]로 시작하고 작업 중 입력은 [원본 저장]으로 보관합니다.");
                     DrawUsageStep("2", "이름과 모델을 넣습니다", "ID·표시 이름·등급·초상화와 프로젝트의 원본 프리팹·실제 Animator를 직접 지정합니다.");
                     DrawUsageStep("3", "전투 기본값을 정합니다", "능력치, 타격 강도·피격 체급과 메인 전투 역할 AI를 정합니다. 여기서는 공격 모양이나 투사체 방식을 고르지 않습니다.");
                 }
@@ -2298,7 +2298,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
                 if (validation.Issues.Count == 0)
                 {
-                    GUILayout.Label("필수 검증을 통과했습니다. 게임 반영 버튼을 사용할 수 있습니다.", EditorStyles.wordWrappedMiniLabel);
+                    GUILayout.Label("필수 검증을 통과했습니다. 전투 반영 버튼을 사용할 수 있습니다.", EditorStyles.wordWrappedMiniLabel);
                 }
                 else
                 {
@@ -2323,7 +2323,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             if (EditorUtility.IsPersistent(draft))
             {
-                GUILayout.Label("저장된 Draft의 ID는 파일 소유권 보호를 위해 고정됩니다.", EditorStyles.wordWrappedMiniLabel);
+                GUILayout.Label("저장된 제작 원본의 ID는 파일 소유권 보호를 위해 고정됩니다.", EditorStyles.wordWrappedMiniLabel);
             }
 
             DrawProperty("displayName", "표시 이름");
@@ -2334,14 +2334,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawSkillSection()
         {
-            DrawSectionHeader("6. 범용 스킬");
+            DrawSectionHeader("6. 스킬");
             var rarity = (MonsterRarity)serializedDraft.FindProperty("rarity").enumValueIndex;
             var configured = serializedDraft.FindProperty("skillLoadoutConfigured");
-            EditorGUILayout.PropertyField(configured, new GUIContent("범용 스킬 구성 사용"));
+            EditorGUILayout.PropertyField(configured, new GUIContent("스킬 사용"));
             if (!configured.boolValue)
             {
                 EditorGUILayout.HelpBox(
-                    "기존 운영 Monster 호환 모드입니다. 스킬을 배정하려면 이 옵션을 켜세요.",
+                    "패시브를 배정하려면 스킬 사용을 켜세요.",
                     MessageType.None);
                 return;
             }
@@ -2355,21 +2355,26 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             var passiveProperty = serializedDraft.FindProperty("rarityPassiveSkill");
-            var passiveOptions = DrawSkillCategoryFilter(
-                passiveSkillPopups,
-                ref passiveSkillCategoryFilter,
-                "패시브 분류");
+            var passiveOptions = passiveSkillPopups != null && passiveSkillPopups.Length > 0
+                ? passiveSkillPopups[0]
+                : MonsterSkillPopupData.Empty;
             var previousPassive = passiveProperty.objectReferenceValue;
             DrawSkillPopup(
                 passiveProperty,
-                "범용 패시브",
-                passiveOptions);
+                "패시브 종류",
+                passiveOptions,
+                false);
             var selectedPassive = passiveProperty.objectReferenceValue as GenericMonsterPassiveSkill;
-            if (!passiveBalanceEditor.TrySelect(selectedPassive))
+            var passiveTuning = serializedDraft.FindProperty("passiveTuning");
+            if (!ReferenceEquals(previousPassive, selectedPassive))
             {
-                passiveProperty.objectReferenceValue = previousPassive;
+                MonsterPassiveBalanceEditor.EnsureInitialized(passiveTuning, selectedPassive, true);
             }
-            passiveBalanceEditor.Draw(monsterRarityCatalog, ref showPassiveBalanceSettings);
+            passiveBalanceEditor.Draw(
+                selectedPassive,
+                passiveTuning,
+                serializedDraft.FindProperty("displayName").stringValue,
+                ref showPassiveBalanceSettings);
 
             var activeProperty = serializedDraft.FindProperty("rarityActiveSkill");
             if (rarity < MonsterRarity.Epic)
@@ -2416,7 +2421,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private static void DrawSkillPopup(
             SerializedProperty property,
             string label,
-            MonsterSkillPopupData popup)
+            MonsterSkillPopupData popup,
+            bool showRecipe = true)
         {
             var current = property.objectReferenceValue as MonsterSkillDefinitionBase;
             var options = popup?.Options ?? MonsterSkillPopupData.Empty.Options;
@@ -2458,7 +2464,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     GUILayout.Label(selected.Description, EditorStyles.wordWrappedMiniLabel);
                 }
 
-                GUILayout.Label(selected.RecipeSummary, EditorStyles.wordWrappedMiniLabel);
+                if (showRecipe)
+                {
+                    GUILayout.Label(selected.RecipeSummary, EditorStyles.wordWrappedMiniLabel);
+                }
             }
         }
 
@@ -2469,7 +2478,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 return "<미설정>";
             }
 
-            return $"[{SkillCategoryLabels[(int)skill.Category + 1]}] {skill.DisplayName}  [{skill.SkillId}]" +
+            return $"[{SkillCategoryLabels[(int)skill.Category + 1]}] {skill.DisplayName}" +
                    (!skill.AuthoringEnabled ? " · 비활성" : string.Empty) +
                    (skill is MonsterActiveSkill active &&
                     active.ExecutionKind == MonsterActiveExecutionKind.DedicatedMythic
@@ -2548,7 +2557,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 serializedDraft.FindProperty("deathFeedback"),
                 "사망 애니메이션 시작",
                 "사망 사운드",
-                "사망 사운드는 사망 애니메이션을 시작할 때 재생됩니다. AudioClip만 지정하면 게임 편입 때 SFX Cue를 자동 생성합니다.",
+                "사망 사운드는 사망 애니메이션을 시작할 때 재생됩니다. AudioClip만 지정하면 전투 편입 때 SFX Cue를 자동 생성합니다.",
                 MonsterMakerPreviewAnchor.HitCenter);
         }
 
@@ -2595,12 +2604,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 DrawRelativeProperty(attack, "clip", "공격 애니메이션");
                 DrawRelativeProperty(attack, "playbackSpeed", "재생 속도");
+                DrawRelativeProperty(attack, "crossFadeDuration", "전환 시간");
                 if (canRemove)
                 {
                     DrawRelativeProperty(attack, "weight", "무작위 선택 비중");
                     DrawRelativeProperty(attack, "preventImmediateRepeat", "같은 동작 연속 방지");
                 }
                 DrawAttackMarkers(attack.FindPropertyRelative("markers"));
+                DrawBreathDurationOverride(attack);
                 if (canRemove)
                 {
                     if (GUILayout.Button("이 공격 삭제", compactButtonStyle, GUILayout.Height(22f)))
@@ -2655,10 +2666,91 @@ namespace ProjectMT.EditorTools.MonsterMaker
             EditorGUILayout.HelpBox(
                 isProjectile
                     ? "이 값은 애니메이션의 실제 발사 순간입니다. 피해는 이 지점이 아니라 투사체가 닿을 때 발생하며, 이동 속도·수명은 기본공격 프리셋이 소유합니다."
+                    : profile != null && profile.UsesBreathDurationContract
+                        ? $"이 값에서 브레스가 시작됩니다. {profile.HitCount}단계 피해와 본체 VFX는 아래 브레스 유지 시간 계약을 함께 사용합니다."
                     : profile != null && profile.HitCount > 1
                         ? $"이 값은 첫 타격 순간입니다. 이후 {profile.HitCount - 1}회는 기본공격 프리셋의 타격 간격으로 이어집니다."
                         : "이 값은 애니메이션의 실제 타격 순간입니다. 공격 방식과 판정은 기본공격 프리셋이 소유합니다.",
                 MessageType.None);
+        }
+
+        private void DrawBreathDurationOverride(SerializedProperty attack)
+        {
+            var profile = serializedDraft.FindProperty("basicAttackProfile")?.objectReferenceValue as
+                MonsterBasicAttackProfile;
+            if (profile == null || !profile.UsesBreathDurationContract)
+            {
+                return;
+            }
+
+            var useOverride = attack.FindPropertyRelative("overrideBreathDuration");
+            var duration = attack.FindPropertyRelative("breathDuration");
+            if (useOverride == null || duration == null)
+            {
+                return;
+            }
+
+            GUILayout.Space(4f);
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                useOverride.boolValue = EditorGUILayout.ToggleLeft(
+                    $"몬스터 고유 브레스 시간 사용 · 기본 {profile.BreathDuration:0.###}초",
+                    useOverride.boolValue);
+                var effectiveDuration = useOverride.boolValue
+                    ? Mathf.Max(0.01f, duration.floatValue)
+                    : profile.BreathDuration;
+                if (useOverride.boolValue)
+                {
+                    var gaugeMax = Mathf.Max(
+                        1.5f,
+                        Mathf.Ceil(effectiveDuration / BasicAttackVfxTimingGaugeRangeStep) *
+                        BasicAttackVfxTimingGaugeRangeStep);
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        GUILayout.Label("유지 시간", GUILayout.Width(52f));
+                        var gaugeValue = GUILayout.HorizontalSlider(effectiveDuration, 0.01f, gaugeMax);
+                        var numericValue = EditorGUILayout.FloatField(gaugeValue, GUILayout.Width(64f));
+                        GUILayout.Label("초", GUILayout.Width(14f));
+                        if (GUILayout.Button("기본값", compactButtonStyle, GUILayout.Width(52f)))
+                        {
+                            useOverride.boolValue = false;
+                            numericValue = profile.BreathDuration;
+                        }
+                        duration.floatValue = Mathf.Max(0.01f, numericValue);
+                        effectiveDuration = useOverride.boolValue
+                            ? duration.floatValue
+                            : profile.BreathDuration;
+                    }
+                }
+
+                var clip = attack.FindPropertyRelative("clip")?.objectReferenceValue as AnimationClip;
+                var markers = attack.FindPropertyRelative("markers");
+                if (clip != null && markers != null && markers.arraySize > 0)
+                {
+                    var markerTime = markers.GetArrayElementAtIndex(0)
+                        .FindPropertyRelative("normalizedTime").floatValue;
+                    var authoredSpeed = Mathf.Max(
+                        0.01f,
+                        attack.FindPropertyRelative("playbackSpeed").floatValue);
+                    var attackSpeed = Mathf.Max(
+                        0.01f,
+                        serializedDraft.FindProperty("attackSpeed").floatValue);
+                    var resolvedSpeed = MonsterAnimationDriver.ResolveAttackPlaybackSpeed(
+                        clip,
+                        authoredSpeed,
+                        1f / attackSpeed);
+                    var recipeStart = clip.length * Mathf.Clamp01(markerTime) / resolvedSpeed;
+                    var motionEnd = clip.length / resolvedSpeed;
+                    var breathEnd = recipeStart + effectiveDuration;
+                    var poseHold = Mathf.Max(0f, breathEnd - motionEnd);
+                    var hitInterval = effectiveDuration / Mathf.Max(1, profile.HitCount);
+                    GUILayout.Label(
+                        $"적용 {effectiveDuration:0.###}초 · 피해 간격 {hitInterval:0.###}초 · " +
+                        $"공격 시작 기준 종료 {breathEnd:0.###}초" +
+                        (poseHold > 0f ? $" · 마지막 자세 유지 {poseHold:0.###}초" : string.Empty),
+                        EditorStyles.wordWrappedMiniLabel);
+                }
+            }
         }
 
         private void DrawOptionalAnimationFeedback(
@@ -2776,6 +2868,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 }
             }
 
+            DrawBasicAttackVfxAssignments(profile);
             GUILayout.Space(5f);
             GUILayout.Label("공격 동작 · 실제 발생 시점", EditorStyles.boldLabel);
             DrawAttackList();
@@ -2788,93 +2881,771 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 }
             }
 
-            showBasicAttackAdvancedSettings = EditorGUILayout.Foldout(
-                showBasicAttackAdvancedSettings,
-                "몬스터별 추가 연출 · 예외 보정 (고급)",
-                true);
-            if (showBasicAttackAdvancedSettings)
-            {
-                DrawBasicAttackAdvancedOverrides(profile);
-            }
-
             EditorGUILayout.HelpBox(
-                "공격 동작은 애니메이션과 발생 시점만 정합니다. 공격 방식·판정·연타·돌진·투사체 이동과 공용 VFX/SFX는 기본공격 프리셋 한 곳에서 정합니다.",
+                "조립소는 공격 방식과 연출 공간만 정의합니다. 이 Monster의 VFX와 SFX는 같은 공간 카드에서 배정하고, 공격 동작에서는 Clip과 Marker 시점만 정합니다.",
                 MessageType.Info);
         }
 
-        private void DrawBasicAttackAdvancedOverrides(MonsterBasicAttackProfile profile)
+        private void DrawBasicAttackVfxAssignments(MonsterBasicAttackProfile profile)
         {
-            EditorGUILayout.HelpBox(
-                "비워두면 기본공격 프리셋의 공용 연출과 수치를 그대로 사용합니다. 이 몬스터만 달라야 할 때만 펼쳐서 설정합니다.",
-                MessageType.None);
+            GUILayout.Space(5f);
+            GUILayout.Label("몬스터 고유 기본공격 연출", EditorStyles.boldLabel);
+            if (profile == null)
+            {
+                EditorGUILayout.HelpBox(
+                    "기본공격을 선택하면 해당 공격이 요구하는 VFX·SFX 연출 공간이 여기에 자동으로 나타납니다.",
+                    MessageType.None);
+                return;
+            }
+
+            var slots = profile.VfxSlots;
+            if (slots.Count == 0)
+            {
+                EditorGUILayout.HelpBox(
+                    "이 기본공격에는 아직 연출 공간 계약이 없습니다. 기본공격 조립소에서 공간을 먼저 정의하세요.",
+                    MessageType.Warning);
+                return;
+            }
+
+            var bindings = serializedDraft.FindProperty("basicAttackVfxBindings");
+            var rows = new List<(
+                MonsterBasicAttackVfxSlot Slot,
+                SerializedProperty Binding,
+                string MotionId)>();
+            var vfxDecided = 0;
+            var sfxDecided = 0;
+            var total = 0;
+            for (var slotIndex = 0; slotIndex < slots.Count; slotIndex++)
+            {
+                var slot = slots[slotIndex];
+                if (slot == null)
+                {
+                    continue;
+                }
+
+                var motionIds = ResolveBasicAttackVfxMotionIds(slot);
+                for (var motionIndex = 0; motionIndex < motionIds.Count; motionIndex++)
+                {
+                    var motionId = motionIds[motionIndex];
+                    var binding = FindOrCreateBasicAttackVfxBinding(bindings, profile, slot, motionId);
+                    var state = (MonsterBasicAttackVfxAssignmentState)binding
+                        .FindPropertyRelative("state")
+                        .enumValueIndex;
+                    var hasPrefab = binding.FindPropertyRelative("prefab").objectReferenceValue != null;
+                    var hasSound = binding.FindPropertyRelative("sound").objectReferenceValue != null;
+                    var hasValidAssignment =
+                        state == MonsterBasicAttackVfxAssignmentState.Assigned && hasPrefab;
+                    if (hasValidAssignment || state == MonsterBasicAttackVfxAssignmentState.Disabled)
+                    {
+                        vfxDecided++;
+                    }
+                    var sfxState = (MonsterBasicAttackSfxAssignmentState)binding
+                        .FindPropertyRelative("sfxState")
+                        .enumValueIndex;
+                    if (sfxState == MonsterBasicAttackSfxAssignmentState.Disabled ||
+                        sfxState == MonsterBasicAttackSfxAssignmentState.Assigned && hasSound)
+                    {
+                        sfxDecided++;
+                    }
+                    total++;
+                    rows.Add((slot, binding, motionId));
+                }
+            }
+
+            var spaceSummary = slots.Count == total
+                ? $"연출 공간 {total}개"
+                : $"연출 공간 {slots.Count}종 · 배정 단위 {total}개";
+            GUILayout.Label(
+                $"[{profile.AttackId}] {profile.DisplayName} · {spaceSummary}",
+                EditorStyles.miniBoldLabel);
+            var progressRect = EditorGUILayout.GetControlRect(false, 18f);
+            var progress = total > 0 ? (vfxDecided + sfxDecided) / (total * 2f) : 0f;
+            EditorGUI.ProgressBar(
+                progressRect,
+                progress,
+                $"VFX 결정 {vfxDecided}/{total} · SFX 결정 {sfxDecided}/{total}");
+
+            for (var index = 0; index < rows.Count; index++)
+            {
+                var row = rows[index];
+                DrawBasicAttackVfxBindingCard(row.Slot, row.Binding, row.MotionId);
+            }
+
+            GUILayout.Label(
+                "VFX 보정과 SFX 원본 클립은 제작 원본에 보존됩니다. 정식 생성·수정 시 SFX Cue는 역할별로 자동 생성됩니다.",
+                EditorStyles.wordWrappedMiniLabel);
+        }
+
+        private List<string> ResolveBasicAttackVfxMotionIds(MonsterBasicAttackVfxSlot slot)
+        {
+            var result = new List<string>();
+            if (slot.AssignmentScope == MonsterBasicAttackVfxAssignmentScope.MonsterShared)
+            {
+                result.Add(string.Empty);
+                return result;
+            }
 
             var attacks = serializedDraft.FindProperty("attacks");
             for (var index = 0; attacks != null && index < attacks.arraySize; index++)
             {
-                var attack = attacks.GetArrayElementAtIndex(index);
-                var clip = attack.FindPropertyRelative("clip").objectReferenceValue;
-                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                var motionId = attacks.GetArrayElementAtIndex(index)
+                    .FindPropertyRelative("motionId").stringValue?.Trim();
+                if (!string.IsNullOrWhiteSpace(motionId) && !result.Contains(motionId))
                 {
-                    GUILayout.Label(
-                        $"공격 동작 {index + 1:00} · {(clip == null ? "미지정" : clip.name)}",
-                        EditorStyles.miniBoldLabel);
-                    DrawRelativeProperty(attack, "crossFadeDuration", "전환 시간");
-                    DrawOptionalAnimationFeedback(
-                        attack.FindPropertyRelative("attackStartFeedback"),
-                        "동작 시작 추가 연출",
-                        "동작 시작 사운드",
-                        "Motion 시작 순간에 별도 연출이 꼭 필요할 때만 추가합니다. 프리셋의 발사 연출은 실제 공격 발생 시점에 재생됩니다.",
-                        MonsterMakerPreviewAnchor.AttackOrigin);
-                    var markers = attack.FindPropertyRelative("markers");
-                    if (markers != null && markers.arraySize == 1)
-                    {
-                        DrawOptionalAnimationFeedback(
-                            markers.GetArrayElementAtIndex(0).FindPropertyRelative("feedback"),
-                            "타격 연출 덮어쓰기",
-                            "타격 사운드",
-                            "기본공격 프리셋의 명중/폭발 연출보다 이 Motion 전용 연출을 우선할 때만 사용합니다.",
-                            MonsterMakerPreviewAnchor.Socket,
-                            markers.GetArrayElementAtIndex(0)
-                                .FindPropertyRelative("socketOverride")
-                                .stringValue);
-                    }
+                    result.Add(motionId);
+                }
+            }
+            if (result.Count == 0)
+            {
+                result.Add("attack01");
+            }
+            return result;
+        }
+
+        private static SerializedProperty FindOrCreateBasicAttackVfxBinding(
+            SerializedProperty bindings,
+            MonsterBasicAttackProfile profile,
+            MonsterBasicAttackVfxSlot slot,
+            string motionId)
+        {
+            for (var index = 0; index < bindings.arraySize; index++)
+            {
+                var candidate = bindings.GetArrayElementAtIndex(index);
+                if (string.Equals(
+                        candidate.FindPropertyRelative("attackId").stringValue,
+                        profile.AttackId,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(
+                        candidate.FindPropertyRelative("slotId").stringValue,
+                        slot.SlotId,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(
+                        candidate.FindPropertyRelative("motionId").stringValue,
+                        motionId,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return candidate;
                 }
             }
 
-            if (profile == null)
+            var newIndex = bindings.arraySize;
+            bindings.InsertArrayElementAtIndex(newIndex);
+            var created = bindings.GetArrayElementAtIndex(newIndex);
+            created.FindPropertyRelative("attackId").stringValue = profile.AttackId;
+            created.FindPropertyRelative("slotId").stringValue = slot.SlotId;
+            created.FindPropertyRelative("motionId").stringValue = motionId;
+            created.FindPropertyRelative("state").enumValueIndex =
+                (int)MonsterBasicAttackVfxAssignmentState.Undecided;
+            created.FindPropertyRelative("prefab").objectReferenceValue = null;
+            created.FindPropertyRelative("sfxState").enumValueIndex =
+                (int)MonsterBasicAttackSfxAssignmentState.Undecided;
+            created.FindPropertyRelative("sound").objectReferenceValue = null;
+            created.FindPropertyRelative("soundVolume").floatValue = 1f;
+            created.FindPropertyRelative("sfx").objectReferenceValue = null;
+            created.FindPropertyRelative("lifetime").floatValue = slot.DefaultLifetime;
+            created.FindPropertyRelative("playbackOffset").floatValue = 0f;
+            created.FindPropertyRelative("playbackSpeed").floatValue = 1f;
+            created.FindPropertyRelative("eventTimingOffset").floatValue = 0f;
+            created.FindPropertyRelative("localPosition").vector3Value = Vector3.zero;
+            created.FindPropertyRelative("localEulerAngles").vector3Value = Vector3.zero;
+            created.FindPropertyRelative("scale").floatValue = 1f;
+            return created;
+        }
+
+        private static int ToVfxAssignmentPopupIndex(MonsterBasicAttackVfxAssignmentState state)
+        {
+            return state switch
             {
-                return;
-            }
-            if (profile.CombatType == MonsterCombatType.Ranged)
+                MonsterBasicAttackVfxAssignmentState.Disabled => 1,
+                MonsterBasicAttackVfxAssignmentState.Assigned => 2,
+                _ => 0
+            };
+        }
+
+        private static MonsterBasicAttackVfxAssignmentState FromVfxAssignmentPopupIndex(int index)
+        {
+            return index switch
             {
-                DrawProperty("projectileLaunchRecoilDistance", "발사 반동 거리");
-                DrawProperty("projectileLaunchRecoilDuration", "발사 반동 시간");
+                1 => MonsterBasicAttackVfxAssignmentState.Disabled,
+                2 => MonsterBasicAttackVfxAssignmentState.Assigned,
+                _ => MonsterBasicAttackVfxAssignmentState.Undecided
+            };
+        }
+
+        private static int ToSfxAssignmentPopupIndex(MonsterBasicAttackSfxAssignmentState state)
+        {
+            return state switch
+            {
+                MonsterBasicAttackSfxAssignmentState.Disabled => 1,
+                MonsterBasicAttackSfxAssignmentState.Assigned => 2,
+                _ => 0
+            };
+        }
+
+        private static MonsterBasicAttackSfxAssignmentState FromSfxAssignmentPopupIndex(int index)
+        {
+            return index switch
+            {
+                1 => MonsterBasicAttackSfxAssignmentState.Disabled,
+                2 => MonsterBasicAttackSfxAssignmentState.Assigned,
+                _ => MonsterBasicAttackSfxAssignmentState.Undecided
+            };
+        }
+
+        private void DrawBasicAttackVfxBindingCard(
+            MonsterBasicAttackVfxSlot slot,
+            SerializedProperty binding,
+            string motionId)
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                var sfxState = binding.FindPropertyRelative("sfxState");
+                var state = binding.FindPropertyRelative("state");
+                var currentSfxState = (MonsterBasicAttackSfxAssignmentState)sfxState.enumValueIndex;
+                var currentState = (MonsterBasicAttackVfxAssignmentState)state.enumValueIndex;
+                var scopeLabel = string.IsNullOrWhiteSpace(motionId)
+                    ? MonsterBasicAttackVfxEditorLabels.Get(slot.AssignmentScope)
+                    : $"{MonsterBasicAttackVfxEditorLabels.Get(slot.AssignmentScope)} · {motionId}";
+                var roleLabel = BasicAttackWorkshopVfxRoles.GetLabel(
+                    BasicAttackWorkshopVfxRoles.Resolve(slot));
+                var fullyDisabled = IsBasicAttackPresentationFullyDisabled(
+                    currentSfxState,
+                    currentState);
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (fullyDisabled)
+                    {
+                        binding.isExpanded = EditorGUILayout.Foldout(
+                            binding.isExpanded,
+                            new GUIContent(roleLabel, slot.Description),
+                            true);
+                    }
+                    else
+                    {
+                        GUILayout.Label(
+                            new GUIContent(roleLabel, slot.Description),
+                            EditorStyles.miniBoldLabel);
+                    }
+                    GUILayout.FlexibleSpace();
+                    GUILayout.Label(
+                        fullyDisabled
+                            ? $"SFX/VFX 모두 사용 안 함 · {scopeLabel}"
+                            : $"선택 · {scopeLabel}",
+                        EditorStyles.miniLabel);
+                }
+                if (fullyDisabled && !binding.isExpanded)
+                {
+                    return;
+                }
+
+                GUILayout.Label("SFX", EditorStyles.miniBoldLabel);
+                var selectedSfxIndex = EditorGUILayout.Popup(
+                    "사용 상태",
+                    ToSfxAssignmentPopupIndex(currentSfxState),
+                    new[] { "미결정", "사용 안 함", "SFX 사용" });
+                var resolvedSfxState = FromSfxAssignmentPopupIndex(selectedSfxIndex);
+                if (resolvedSfxState != currentSfxState)
+                {
+                    sfxState.enumValueIndex = (int)resolvedSfxState;
+                    if (resolvedSfxState != MonsterBasicAttackSfxAssignmentState.Assigned)
+                    {
+                        SfxEditorAudioPreview.StopAll();
+                    }
+                    if (IsBasicAttackPresentationFullyDisabled(
+                            resolvedSfxState,
+                            (MonsterBasicAttackVfxAssignmentState)state.enumValueIndex))
+                    {
+                        binding.isExpanded = false;
+                    }
+                }
+                var sound = binding.FindPropertyRelative("sound");
+                if (resolvedSfxState == MonsterBasicAttackSfxAssignmentState.Undecided)
+                {
+                    DrawBasicAttackVfxNotice(
+                        "SFX 사용 여부를 결정하세요.",
+                        MessageType.None);
+                }
+                else if (resolvedSfxState == MonsterBasicAttackSfxAssignmentState.Disabled)
+                {
+                    DrawBasicAttackVfxNotice(
+                        "이 공간에서는 SFX를 사용하지 않습니다.",
+                        MessageType.None);
+                }
+                else
+                {
+                    EditorGUILayout.PropertyField(sound, new GUIContent("SFX 원본 클립"));
+                    var soundVolume = binding.FindPropertyRelative("soundVolume");
+                    soundVolume.floatValue = EditorGUILayout.Slider(
+                        "볼륨",
+                        soundVolume.floatValue,
+                        0f,
+                        1f);
+                    var assignedSound = sound.objectReferenceValue as AudioClip;
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        using (new EditorGUI.DisabledScope(assignedSound == null))
+                        {
+                            if (GUILayout.Button("SFX 미리듣기", compactButtonStyle))
+                            {
+                                SfxEditorAudioPreview.Play(
+                                    assignedSound,
+                                    0,
+                                    false,
+                                    soundVolume.floatValue);
+                            }
+                        }
+                        if (GUILayout.Button("SFX 정지", compactButtonStyle))
+                        {
+                            SfxEditorAudioPreview.StopAll();
+                        }
+                    }
+                    if (assignedSound == null)
+                    {
+                        DrawBasicAttackVfxNotice(
+                            "SFX 사용 상태이지만 AudioClip이 비어 있습니다.",
+                            MessageType.Error);
+                    }
+                    else
+                    {
+                        GUILayout.Label(
+                            "정식 생성·수정 시 이 클립과 볼륨으로 전용 SFX Cue가 자동 생성됩니다.",
+                            EditorStyles.wordWrappedMiniLabel);
+                    }
+                }
+
+                GUILayout.Space(3f);
+                GUILayout.Label("VFX", EditorStyles.miniBoldLabel);
+                var selectedStateIndex = EditorGUILayout.Popup(
+                    "사용 상태",
+                    ToVfxAssignmentPopupIndex(currentState),
+                    new[] { "미결정", "사용 안 함", "VFX 사용" });
+                var resolvedState = FromVfxAssignmentPopupIndex(selectedStateIndex);
+                state.enumValueIndex = (int)resolvedState;
+                if (resolvedState != currentState &&
+                    IsBasicAttackPresentationFullyDisabled(resolvedSfxState, resolvedState))
+                {
+                    binding.isExpanded = false;
+                }
+                if (resolvedState == MonsterBasicAttackVfxAssignmentState.Undecided)
+                {
+                    DrawBasicAttackVfxNotice(
+                        "VFX 사용 여부를 결정하세요.",
+                        MessageType.None);
+                    return;
+                }
+                if (resolvedState == MonsterBasicAttackVfxAssignmentState.Disabled)
+                {
+                    DrawBasicAttackVfxNotice(
+                        "이 공간에서는 VFX를 사용하지 않습니다.",
+                        MessageType.None);
+                    return;
+                }
+
+                var prefab = binding.FindPropertyRelative("prefab");
+                EditorGUILayout.PropertyField(prefab, new GUIContent(
+                    slot.IsDeliveryVisual ? "이동체 VFX Prefab" : "VFX Prefab"));
+                var assignedPrefab = prefab.objectReferenceValue as GameObject;
+                if (assignedPrefab == null)
+                {
+                    DrawBasicAttackVfxNotice(
+                        "배정 상태이지만 VFX Prefab이 비어 있습니다.",
+                        MessageType.Error);
+                    return;
+                }
+
+                if (slot.EndPolicy is MonsterBasicAttackVfxEndPolicy.Timed or
+                    MonsterBasicAttackVfxEndPolicy.ParticleDuration)
+                {
+                    DrawRelativeProperty(binding, "lifetime", "VFX 유지 시간");
+                }
+                var eventTimingOffset = binding.FindPropertyRelative("eventTimingOffset");
+                if (slot.AllowsMonsterTimingOffset && eventTimingOffset != null)
+                {
+                    DrawBasicAttackVfxTimingToggle(slot, eventTimingOffset);
+                }
+                var localPosition = binding.FindPropertyRelative("localPosition");
+                var localEulerAngles = binding.FindPropertyRelative("localEulerAngles");
+                var scale = binding.FindPropertyRelative("scale");
+                var playbackOffset = binding.FindPropertyRelative("playbackOffset");
+                var playbackSpeed = binding.FindPropertyRelative("playbackSpeed");
+                GUILayout.Label(
+                    $"보정 · 위치 {FormatBasicAttackVfxVector(localPosition.vector3Value)} · " +
+                    $"회전 {FormatBasicAttackVfxVector(localEulerAngles.vector3Value)} · " +
+                    $"크기 {scale.floatValue:0.##} · 내부 시작 {playbackOffset.floatValue:0.##}초 · " +
+                    $"속도 {Mathf.Max(0.01f, playbackSpeed?.floatValue ?? 1f):0.##}배" +
+                    (slot.AllowsMonsterTimingOffset && eventTimingOffset != null
+                        ? $" · 발생 {eventTimingOffset.floatValue:+0.##;-0.##;0}초"
+                        : string.Empty),
+                    EditorStyles.wordWrappedMiniLabel);
+
+                var isPlaying = preview?.IsPlaying == true;
+                var canPreviewAdjust = MonsterPositionAdjustWindow.CanOpen(draft) &&
+                                       !isPlaying;
+                var isWrapper = MonsterBasicAttackVfxPrefabUtility.IsMonsterWrapper(
+                    assignedPrefab,
+                    draft?.MonsterId);
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    using (new EditorGUI.DisabledScope(!canPreviewAdjust))
+                    {
+                        var previewButtonLabel = isPlaying
+                            ? "재생 중 · 먼저 일시정지"
+                            : "VFX 보정·재생";
+                        if (GUILayout.Button(previewButtonLabel, compactButtonStyle))
+                        {
+                            OpenBasicAttackVfxAdjustWindow(
+                                slot,
+                                binding,
+                                assignedPrefab);
+                        }
+                    }
+
+                    if (GUILayout.Button(
+                            isWrapper ? "전용 Prefab 편집" : "전용 래퍼 만들기",
+                            compactButtonStyle))
+                    {
+                        if (isWrapper)
+                        {
+                            AssetDatabase.OpenAsset(assignedPrefab);
+                            EditorGUIUtility.PingObject(assignedPrefab);
+                        }
+                        else
+                        {
+                            CreateBasicAttackVfxWrapper(slot, binding, motionId);
+                        }
+                    }
+                }
+                if (slot.IsDeliveryVisual)
+                {
+                    GUILayout.Label(
+                        "이 Prefab은 이동체 외형이며 이동·충돌·수명은 기본공격이 처리합니다.",
+                        EditorStyles.miniLabel);
+                }
             }
-            if (!profile.UsesProjectileVisual)
+        }
+
+        private static bool IsBasicAttackPresentationFullyDisabled(
+            MonsterBasicAttackSfxAssignmentState sfxState,
+            MonsterBasicAttackVfxAssignmentState vfxState)
+        {
+            return sfxState == MonsterBasicAttackSfxAssignmentState.Disabled &&
+                   vfxState == MonsterBasicAttackVfxAssignmentState.Disabled;
+        }
+
+        private static void DrawBasicAttackVfxNotice(string message, MessageType type)
+        {
+            var prefix = type switch
+            {
+                MessageType.Error => "오류 · ",
+                MessageType.Warning => "확인 필요 · ",
+                _ => string.Empty
+            };
+            GUILayout.Label(prefix + message, EditorStyles.wordWrappedMiniLabel);
+        }
+
+        private static string FormatBasicAttackVfxVector(Vector3 value)
+        {
+            return $"({value.x:0.##}, {value.y:0.##}, {value.z:0.##})";
+        }
+
+        private static string BuildBasicAttackVfxTimingSummary(
+            MonsterBasicAttackVfxEvent eventType,
+            float offset)
+        {
+            var eventLabel = MonsterBasicAttackVfxEditorLabels.Get(eventType);
+            if (Mathf.Abs(offset) < 0.0001f)
+            {
+                return $"계약 시점 그대로 · {eventLabel}";
+            }
+            return offset < 0f
+                ? $"{eventLabel}보다 {Mathf.Abs(offset):0.##}초 먼저 재생"
+                : $"{eventLabel}보다 {offset:0.##}초 늦게 재생";
+        }
+
+        private static void DrawBasicAttackVfxTimingToggle(
+            MonsterBasicAttackVfxSlot slot,
+            SerializedProperty eventTimingOffset)
+        {
+            var value = slot.ClampTimingOffset(eventTimingOffset.floatValue);
+            eventTimingOffset.floatValue = value;
+            var toggleSummary = Mathf.Abs(value) < 0.0001f
+                ? "정시"
+                : value < 0f
+                    ? $"{Mathf.Abs(value):0.##}초 먼저"
+                    : $"{value:0.##}초 늦게";
+            eventTimingOffset.isExpanded = EditorGUILayout.Foldout(
+                eventTimingOffset.isExpanded,
+                new GUIContent(
+                    $"VFX 시점 보정 · {toggleSummary}",
+                    "필요할 때만 펼쳐 게이지와 정확한 숫자값을 조절합니다."),
+                true);
+            if (!eventTimingOffset.isExpanded)
             {
                 return;
             }
 
-            DrawProperty("projectilePrefab", "몬스터 전용 투사체 VFX");
-            DrawProperty("projectileLaunchSound", "몬스터 전용 발사 사운드");
-            GUILayout.Label(
-                "프리셋에 공용 투사체 VFX/SFX가 지정되어 있으면 공용값을 사용하고, 비어 있을 때 이 몬스터 전용값을 사용합니다.",
-                EditorStyles.wordWrappedMiniLabel);
-            var overrideTuning = serializedDraft.FindProperty("overrideProjectileTuning");
-            EditorGUILayout.PropertyField(overrideTuning, new GUIContent("몬스터 전용 투사체 수치 사용"));
-            if (overrideTuning.boolValue)
-            {
-                DrawProperty("projectileSpeed", "이동 속도");
-                DrawProperty("projectileLifetime", "수명");
-                DrawProperty("projectileHitRadius", "충돌 반경");
-            }
-            else
+            EditorGUI.indentLevel++;
+            DrawBasicAttackVfxTimingGauge(slot, eventTimingOffset);
+            if (!slot.AllowsTimingLead)
             {
                 GUILayout.Label(
-                    $"프리셋 수치 · 속도 {profile.ProjectileSpeed:0.##} · 수명 {profile.ProjectileLifetime:0.##}초 · " +
-                    $"충돌 반경 {profile.ProjectileCollisionRadius:0.##}m",
+                    "실제 발생 전 위치를 알 수 없는 계약은 0초 이후 지연만 적용됩니다.",
                     EditorStyles.wordWrappedMiniLabel);
             }
+            EditorGUI.indentLevel--;
+        }
+
+        private static void DrawBasicAttackVfxTimingGauge(
+            MonsterBasicAttackVfxSlot slot,
+            SerializedProperty eventTimingOffset)
+        {
+            var value = slot.ClampTimingOffset(eventTimingOffset.floatValue);
+            var gaugeRange = ResolveBasicAttackVfxTimingGaugeRange(value);
+            var gaugeMin = slot.AllowsTimingLead ? -gaugeRange : 0f;
+            var gaugeMax = gaugeRange;
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Label(
+                    slot.AllowsTimingLead ? "먼저" : "정시",
+                    EditorStyles.miniLabel,
+                    GUILayout.Width(30f));
+                var gaugeRect = GUILayoutUtility.GetRect(
+                    100f,
+                    18f,
+                    GUILayout.ExpandWidth(true));
+                EditorGUI.BeginChangeCheck();
+                var gaugeValue = GUI.HorizontalSlider(
+                    gaugeRect,
+                    Mathf.Clamp(value, gaugeMin, gaugeMax),
+                    gaugeMin,
+                    gaugeMax);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    value = Mathf.Round(gaugeValue * 100f) * 0.01f;
+                }
+                if (slot.AllowsTimingLead)
+                {
+                    var zeroX = Mathf.Lerp(gaugeRect.xMin, gaugeRect.xMax, 0.5f);
+                    EditorGUI.DrawRect(
+                        new Rect(zeroX, gaugeRect.yMax - 5f, 1f, 5f),
+                        new Color(0.75f, 0.75f, 0.75f, 0.8f));
+                }
+
+                GUILayout.Label(
+                    "늦게",
+                    EditorStyles.miniLabel,
+                    GUILayout.Width(30f));
+                EditorGUI.BeginChangeCheck();
+                var exactValue = EditorGUILayout.FloatField(value, GUILayout.Width(62f));
+                if (EditorGUI.EndChangeCheck())
+                {
+                    value = exactValue;
+                }
+                GUILayout.Label("초", EditorStyles.miniLabel, GUILayout.Width(14f));
+                if (GUILayout.Button(
+                        new GUIContent("0", "계약 시점 그대로 되돌립니다."),
+                        EditorStyles.miniButton,
+                        GUILayout.Width(26f)))
+                {
+                    value = 0f;
+                    GUI.FocusControl(null);
+                }
+            }
+
+            eventTimingOffset.floatValue = slot.ClampTimingOffset(value);
+            GUILayout.Label(
+                BuildBasicAttackVfxTimingSummary(
+                    slot.EventType,
+                    eventTimingOffset.floatValue),
+                EditorStyles.wordWrappedMiniLabel);
+            GUILayout.Label(
+                "게이지는 현재 값에 맞춰 자동 확장 · 숫자 직접 입력은 제한 없음",
+                EditorStyles.centeredGreyMiniLabel);
+        }
+
+        private static float ResolveBasicAttackVfxTimingGaugeRange(float value)
+        {
+            var magnitude = float.IsNaN(value) || float.IsInfinity(value)
+                ? 0f
+                : Mathf.Abs(value);
+            return Mathf.Max(
+                BasicAttackVfxTimingGaugeMinRange,
+                Mathf.Ceil(magnitude / BasicAttackVfxTimingGaugeRangeStep) *
+                BasicAttackVfxTimingGaugeRangeStep);
+        }
+
+        private void OpenBasicAttackVfxAdjustWindow(
+            MonsterBasicAttackVfxSlot slot,
+            SerializedProperty binding,
+            GameObject assignedPrefab)
+        {
+            var position = binding?.FindPropertyRelative("localPosition");
+            var euler = binding?.FindPropertyRelative("localEulerAngles");
+            var scale = binding?.FindPropertyRelative("scale");
+            var playbackOffset = binding?.FindPropertyRelative("playbackOffset");
+            var playbackSpeed = binding?.FindPropertyRelative("playbackSpeed");
+            if (position == null || euler == null || scale == null ||
+                playbackOffset == null || playbackSpeed == null || assignedPrefab == null)
+            {
+                return;
+            }
+
+            serializedDraft.ApplyModifiedProperties();
+            var targetDraft = draft;
+            var positionPath = position.propertyPath;
+            var eulerPath = euler.propertyPath;
+            var scalePath = scale.propertyPath;
+            var playbackOffsetPath = playbackOffset.propertyPath;
+            var playbackSpeedPath = playbackSpeed.propertyPath;
+            var positionBinding = new MonsterMakerPreviewPositionBinding(
+                positionPath,
+                slot.DisplayName,
+                MonsterMakerPreviewPositionValueMode.AnchorOffset,
+                ResolveBasicAttackVfxPreviewAnchor(slot.Anchor));
+            MonsterPositionAdjustWindow.OpenVfx(
+                this,
+                targetDraft,
+                positionBinding,
+                assignedPrefab,
+                position.vector3Value,
+                euler.vector3Value,
+                scale.floatValue,
+                playbackOffset.floatValue,
+                playbackSpeed.floatValue,
+                (changedPosition, changedEuler, changedScale, changedPlaybackOffset, changedPlaybackSpeed) =>
+                    ApplyPopupVfxValues(
+                        targetDraft,
+                        positionPath,
+                        eulerPath,
+                        scalePath,
+                        playbackOffsetPath,
+                        playbackSpeedPath,
+                        slot.DisplayName,
+                        changedPosition,
+                        changedEuler,
+                        changedScale,
+                        changedPlaybackOffset,
+                        changedPlaybackSpeed));
+        }
+
+        private bool ApplyPopupVfxValues(
+            MonsterMakerDraft targetDraft,
+            string positionPath,
+            string eulerPath,
+            string scalePath,
+            string playbackOffsetPath,
+            string playbackSpeedPath,
+            string label,
+            Vector3 position,
+            Vector3 euler,
+            float scale,
+            float playbackOffset,
+            float playbackSpeed)
+        {
+            if (targetDraft == null || draft != targetDraft || serializedDraft == null ||
+                preview?.IsPlaying == true)
+            {
+                return false;
+            }
+
+            serializedDraft.UpdateIfRequiredOrScript();
+            var positionProperty = serializedDraft.FindProperty(positionPath);
+            var eulerProperty = serializedDraft.FindProperty(eulerPath);
+            var scaleProperty = serializedDraft.FindProperty(scalePath);
+            var playbackOffsetProperty = serializedDraft.FindProperty(playbackOffsetPath);
+            var playbackSpeedProperty = serializedDraft.FindProperty(playbackSpeedPath);
+            if (positionProperty == null || eulerProperty == null || scaleProperty == null ||
+                playbackOffsetProperty == null || playbackSpeedProperty == null)
+            {
+                return false;
+            }
+
+            Undo.RecordObject(targetDraft, $"{label} VFX 보정");
+            positionProperty.vector3Value = position;
+            eulerProperty.vector3Value = euler;
+            scaleProperty.floatValue = Mathf.Max(0.01f, scale);
+            playbackOffsetProperty.floatValue = Mathf.Max(0f, playbackOffset);
+            playbackSpeedProperty.floatValue = float.IsNaN(playbackSpeed) || float.IsInfinity(playbackSpeed)
+                ? 1f
+                : Mathf.Max(0.01f, playbackSpeed);
+            serializedDraft.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(targetDraft);
+            validation = null;
+            lastWriteResult = null;
+            preview.ApplyDraftPositionOverrides();
+            Repaint();
+            return true;
+        }
+
+        private void CreateBasicAttackVfxWrapper(
+            MonsterBasicAttackVfxSlot slot,
+            SerializedProperty binding,
+            string motionId)
+        {
+            var source = binding?.FindPropertyRelative("prefab")?.objectReferenceValue as GameObject;
+            if (source == null || draft == null)
+            {
+                return;
+            }
+
+            var bindingPath = binding.propertyPath;
+            var attackId = binding.FindPropertyRelative("attackId").stringValue;
+            if (!MonsterBasicAttackVfxPrefabUtility.TryCreateWrapper(
+                    draft.MonsterId,
+                    attackId,
+                    slot.SlotId,
+                    motionId,
+                    source,
+                    binding.FindPropertyRelative("localPosition").vector3Value,
+                    binding.FindPropertyRelative("localEulerAngles").vector3Value,
+                    binding.FindPropertyRelative("scale").floatValue,
+                    out var wrapper,
+                    out var error))
+            {
+                EditorUtility.DisplayDialog(
+                    "전용 VFX 래퍼 생성 실패",
+                    string.IsNullOrWhiteSpace(error) ? "알 수 없는 오류입니다." : error,
+                    "확인");
+                return;
+            }
+
+            serializedDraft.UpdateIfRequiredOrScript();
+            var refreshedBinding = serializedDraft.FindProperty(bindingPath);
+            if (refreshedBinding == null)
+            {
+                return;
+            }
+            Undo.RecordObject(draft, $"{slot.DisplayName} 전용 VFX 래퍼 생성");
+            refreshedBinding.FindPropertyRelative("prefab").objectReferenceValue = wrapper;
+            refreshedBinding.FindPropertyRelative("localPosition").vector3Value = Vector3.zero;
+            refreshedBinding.FindPropertyRelative("localEulerAngles").vector3Value = Vector3.zero;
+            refreshedBinding.FindPropertyRelative("scale").floatValue = 1f;
+            serializedDraft.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(draft);
+            validation = null;
+            lastWriteResult = null;
+            EditorGUIUtility.PingObject(wrapper);
+            ShowNotification(new GUIContent("전용 VFX 래퍼 생성 · 보정값 0/0/1 정리"));
+            GUIUtility.ExitGUI();
+        }
+
+        private static MonsterMakerPreviewAnchor ResolveBasicAttackVfxPreviewAnchor(
+            MonsterBasicAttackVfxAnchor anchor)
+        {
+            return anchor switch
+            {
+                MonsterBasicAttackVfxAnchor.AttackOrigin or
+                MonsterBasicAttackVfxAnchor.MarkerSocket or
+                MonsterBasicAttackVfxAnchor.ProjectileRoot or
+                MonsterBasicAttackVfxAnchor.TrajectoryOrigin =>
+                    MonsterMakerPreviewAnchor.AttackOrigin,
+                MonsterBasicAttackVfxAnchor.TargetRoot or
+                MonsterBasicAttackVfxAnchor.HitPoint or
+                MonsterBasicAttackVfxAnchor.AreaCenter =>
+                    MonsterMakerPreviewAnchor.HitCenter,
+                _ => MonsterMakerPreviewAnchor.Root
+            };
         }
 
         private static string BuildBasicAttackKoreanSummary(MonsterBasicAttackProfile profile)
@@ -2912,7 +3683,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (!configured.boolValue)
             {
                 EditorGUILayout.HelpBox(
-                    "미설정 상태입니다. 게임 편입은 가능하며 돌파 능력치와 스킬은 적용되지 않습니다.",
+                    "미설정 상태입니다. 전투 편입은 가능하며 돌파 능력치와 스킬은 적용되지 않습니다.",
                     MessageType.None);
                 return;
             }
@@ -3191,7 +3962,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
             attack.FindPropertyRelative("crossFadeDuration").floatValue = 0.06f;
             attack.FindPropertyRelative("weight").floatValue = 1f;
             attack.FindPropertyRelative("preventImmediateRepeat").boolValue = false;
-            ResetFeedback(attack.FindPropertyRelative("attackStartFeedback"));
+            attack.FindPropertyRelative("overrideBreathDuration").boolValue = false;
+            attack.FindPropertyRelative("breathDuration").floatValue = 0.8f;
             var markers = attack.FindPropertyRelative("markers");
             markers.arraySize = 1;
             ResetMarker(markers.GetArrayElementAtIndex(0));
@@ -3256,7 +4028,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
             marker.FindPropertyRelative("normalizedTime").floatValue = 0.5f;
             marker.FindPropertyRelative("powerRatio").floatValue = 1f;
             marker.FindPropertyRelative("socketOverride").stringValue = string.Empty;
-            ResetFeedback(marker.FindPropertyRelative("feedback"));
         }
 
         private static void ResetFeedback(SerializedProperty feedback)
@@ -3289,7 +4060,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         {
             if (draft == null)
             {
-                return "Draft를 선택해 제작을 시작하세요";
+                return "제작 원본을 선택해 제작을 시작하세요";
             }
 
             var id = string.IsNullOrWhiteSpace(draft.MonsterId) ? "ID 미입력" : draft.MonsterId;
@@ -3300,7 +4071,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             return IsEditingExistingMonster()
                 ? $"{id}  ·  기존 몬스터 수정 모드 (GUID 유지)"
-                : $"{id}  ·  저장된 신규 Draft";
+                : $"{id}  ·  저장된 제작 원본";
         }
 
         private bool IsEditingExistingMonster()
@@ -3525,7 +4296,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 if (!MonsterMakerValidator.UsesSafeId(draft.MonsterId))
                 {
                     throw new InvalidOperationException(
-                        "Draft를 처음 저장하려면 영문·숫자·밑줄·하이픈으로 된 Monster ID가 필요합니다.");
+                        "제작 원본을 처음 저장하려면 영문·숫자·밑줄·하이픈으로 된 Monster ID가 필요합니다.");
                 }
 
                 var productionCatalog = AssetDatabase.LoadAssetAtPath<Shared.Unit.MonsterCatalog>(
@@ -3533,7 +4304,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 if (productionCatalog != null && productionCatalog.TryGet(draft.MonsterId, out _))
                 {
                     throw new InvalidOperationException(
-                        "게임 Catalog에 이미 같은 ID가 있습니다. 새 Draft로 덮어쓰지 말고 왼쪽 목록에서 기존 항목을 여세요.");
+                        "게임 Catalog에 이미 같은 ID가 있습니다. 새 제작 원본으로 덮어쓰지 말고 왼쪽 목록에서 기존 항목을 여세요.");
                 }
 
                 EnsureDraftFolder();
@@ -3542,7 +4313,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 if (existing != null)
                 {
                     throw new InvalidOperationException(
-                        $"같은 ID의 Draft가 이미 있습니다. 덮어쓰지 말고 게임 몬스터 목록에서 여세요.\n{path}");
+                        $"같은 ID의 제작 원본이 이미 있습니다. 덮어쓰지 말고 게임 몬스터 목록에서 여세요.\n{path}");
                 }
 
                 draft.hideFlags = HideFlags.None;
@@ -3571,14 +4342,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (string.IsNullOrWhiteSpace(loadedDraftAssetPath) ||
                 !string.Equals(currentPath, loadedDraftAssetPath, StringComparison.OrdinalIgnoreCase))
             {
-                error = "열었던 Draft와 현재 Asset 경로가 달라졌습니다. 저장하지 말고 Draft를 다시 여세요.";
+                error = "열었던 제작 원본과 현재 Asset 경로가 달라졌습니다. 저장하지 말고 제작 원본을 다시 여세요.";
                 return false;
             }
 
             if (!string.Equals(draft.MonsterId, loadedDraftMonsterId, StringComparison.Ordinal) ||
                 !string.Equals(currentPath, expectedPath, StringComparison.OrdinalIgnoreCase))
             {
-                error = "저장된 Draft의 Monster ID 또는 파일명이 바뀌었습니다. 기존 ID는 변경할 수 없습니다.";
+                error = "저장된 제작 원본의 Monster ID 또는 파일명이 바뀌었습니다. 기존 ID는 변경할 수 없습니다.";
                 return false;
             }
 
@@ -3586,7 +4357,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (string.IsNullOrWhiteSpace(currentFingerprint) ||
                 !string.Equals(currentFingerprint, loadedDraftFingerprint, StringComparison.Ordinal))
             {
-                error = "Draft 파일이 창 밖에서 변경되었습니다. 현재 입력을 덮어쓰지 말고 Draft를 다시 여세요.";
+                error = "제작 원본 파일이 창 밖에서 변경되었습니다. 현재 입력을 덮어쓰지 말고 제작 원본을 다시 여세요.";
                 return false;
             }
 
@@ -3679,7 +4450,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 if (notifyWhenMissing)
                 {
                     ShowNotification(new GUIContent(
-                        "Maker 이전 호환 데이터입니다. 자동 Draft 변환은 하지 않습니다."));
+                        "Maker 이전 호환 데이터입니다. 제작 원본을 자동 생성하지 않습니다."));
                 }
 
                 Repaint();

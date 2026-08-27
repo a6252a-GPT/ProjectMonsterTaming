@@ -18,6 +18,20 @@ MonoBehaviour:
   portrait: {fileID: 21300000, guid: 99bd7cc490d590c48bfe9df0a0e9f4de, type: 3}
   skillLoadoutConfigured: 0
   rarityPassiveSkill: {fileID: 0}
+  passiveTuning:
+    initialized: 0
+    runtimeKind: 0
+    primaryBase: 0
+    primaryPerLevelStep: 0
+    secondaryBase: 0
+    secondaryPerLevelStep: 0
+    triggerCount: 1
+    maxStacks: 1
+    duration: 0
+    cooldown: 0
+    threshold: 0
+    radius: 0
+    maxTargets: 1
   rarityActiveSkill: {fileID: 0}
   productionMemo: Notion monster batch / Castle
   vendorPrefab: {fileID: 8610135130089982903, guid: bd904672fab68744a9b53f2e9f2c9cd7, type: 3}
@@ -41,8 +55,8 @@ MonoBehaviour:
   attackPower: 20
   defense: 6
   attackSpeed: 0.8
-  moveSpeed: 1.5
-  attackRange: 2.4
+  moveSpeed: 1.2
+  attackRange: 3.6
   impactStrength: 2
   reactionWeight: 2
   mainBattleRole: 0
@@ -61,30 +75,17 @@ MonoBehaviour:
     crossFadeDuration: 0.06
     weight: 1
     preventImmediateRepeat: 0
-    attackStartFeedback:
-      sound: {fileID: 0}
-      sfx: {fileID: 0}
-      vfxPrefab: {fileID: 0}
-      vfxLifetime: 1
-      localPosition: {x: 0, y: 0, z: 0}
-      localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 1
+    overrideBreathDuration: 0
+    breathDuration: 0.8
     markers:
     - normalizedTime: 0.45
       powerRatio: 1
       socketOverride: 
-      feedback:
-        sound: {fileID: 0}
-        sfx: {fileID: 0}
-        vfxPrefab: {fileID: 0}
-        vfxLifetime: 1
-        localPosition: {x: 0, y: 0, z: 0}
-        localEulerAngles: {x: 0, y: 0, z: 0}
-        scale: 1
   deathClip: {fileID: 1827226128182048838, guid: d36b9abdef359f243b5514a8e7b07505, type: 3}
   deathSpeed: 1
   combatType: 0
   basicAttackProfile: {fileID: 11400000, guid: 9e07c9e2d5598db489272352afcd4263, type: 2}
+  basicAttackVfxBindings: []
   meleeMode: 1
   meleeAreaCenter: 1
   meleeAreaRadius: 3
@@ -92,7 +93,6 @@ MonoBehaviour:
   rangedDeliveryMode: 0
   projectileMode: 0
   projectilePrefab: {fileID: 0}
-  projectileLaunchSound: {fileID: 0}
   overrideProjectileTuning: 0
   projectileSpeed: 9
   projectileLifetime: 3
@@ -162,22 +162,6 @@ MonoBehaviour:
     moveSpeedRate: 0
     attackRangeRate: 0
   spawnFeedback:
-    sound: {fileID: 0}
-    sfx: {fileID: 0}
-    vfxPrefab: {fileID: 0}
-    vfxLifetime: 1
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  attackStartFeedback:
-    sound: {fileID: 0}
-    sfx: {fileID: 0}
-    vfxPrefab: {fileID: 0}
-    vfxLifetime: 1
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  attackMarkerFeedback:
     sound: {fileID: 0}
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}

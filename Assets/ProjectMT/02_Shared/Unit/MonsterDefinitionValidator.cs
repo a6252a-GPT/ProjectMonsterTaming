@@ -197,14 +197,6 @@ namespace ProjectMT.Shared.Unit
             for (var index = 0; index < attacks.Length; index++)
             {
                 totalWeight += attacks[index].Weight;
-                if (attacks[index].Clip != null && attacks[index].Clip.isLooping)
-                {
-                    report.Add(
-                        MonsterValidationSeverity.Warning,
-                        "MON-ATTACK-LOOP",
-                        $"Attack clip is imported as looping. Motion={attacks[index].MotionId}",
-                        attacks[index].Clip);
-                }
             }
 
             if (totalWeight <= 0f)

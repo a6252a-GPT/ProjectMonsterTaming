@@ -13,7 +13,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             "Assets/ProjectMT/05_Art/Monsters/shakun_01/PF_shakun_01_VisualAdapter.prefab",
             "Assets/ProjectMT/05_Art/Monsters/lumi_01/PF_lumi_01_VisualAdapter.prefab",
             "Assets/ProjectMT/05_Art/Monsters/aru_01/PF_aru_01_VisualAdapter.prefab",
-            "Assets/ProjectMT/05_Art/Monsters/ru_01/PF_ru_01_VisualAdapter.prefab"
+            "Assets/ProjectMT/05_Art/Monsters/rabi_queen_01/PF_rabi_queen_01_VisualAdapter.prefab"
         };
 
         public static Dictionary<string, Material> CreateMaterials()

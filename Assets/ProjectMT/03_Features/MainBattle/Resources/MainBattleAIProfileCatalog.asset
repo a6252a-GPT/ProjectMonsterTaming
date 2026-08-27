@@ -16,9 +16,9 @@ MonoBehaviour:
   - monsterId: lumi_01
     role: 0
     targetPriority: 0
-    preferredRangeRatio: 0.68
+    preferredRangeRatio: 0.72
     retreatRangeRatio: 0
-    retargetInterval: 0.28
+    retargetInterval: 0.22
   - monsterId: aru_01
     role: 1
     targetPriority: 0
@@ -30,13 +30,13 @@ MonoBehaviour:
     targetPriority: 1
     preferredRangeRatio: 0.68
     retreatRangeRatio: 0
-    retargetInterval: 0.18
-  - monsterId: ru_01
+    retargetInterval: 0.28
+  - monsterId: rabi_queen_01
     role: 3
     targetPriority: 0
     preferredRangeRatio: 0.9
-    retreatRangeRatio: 0.45
-    retargetInterval: 0.24
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.25
   - monsterId: mukuk_01
     role: 4
     targetPriority: 2
@@ -55,7 +55,7 @@ MonoBehaviour:
     preferredRangeRatio: 0.9
     retreatRangeRatio: 0.38
     retargetInterval: 0.28
-  - monsterId: grisu_fire_01
+  - monsterId: angeonjun_01
     role: 3
     targetPriority: 0
     preferredRangeRatio: 0.9
@@ -64,9 +64,9 @@ MonoBehaviour:
   - monsterId: grimpy_01
     role: 0
     targetPriority: 0
-    preferredRangeRatio: 0.68
+    preferredRangeRatio: 0.72
     retreatRangeRatio: 0
-    retargetInterval: 0.28
+    retargetInterval: 0.2
   - monsterId: kimhyeona_01
     role: 3
     targetPriority: 0
@@ -76,33 +76,33 @@ MonoBehaviour:
   - monsterId: dubi_01
     role: 0
     targetPriority: 0
-    preferredRangeRatio: 0.68
+    preferredRangeRatio: 0.72
     retreatRangeRatio: 0
-    retargetInterval: 0.28
+    retargetInterval: 0.2
   - monsterId: doomba_01
     role: 0
     targetPriority: 0
-    preferredRangeRatio: 0.66
+    preferredRangeRatio: 0.72
     retreatRangeRatio: 0
-    retargetInterval: 0.18
+    retargetInterval: 0.2
   - monsterId: rako_01
-    role: 4
-    targetPriority: 2
-    preferredRangeRatio: 0.7
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
     retreatRangeRatio: 0
-    retargetInterval: 0.18
-  - monsterId: rubea_01
+    retargetInterval: 0.2
+  - monsterId: phoenix_01
     role: 3
     targetPriority: 0
     preferredRangeRatio: 0.9
-    retreatRangeRatio: 0.45
-    retargetInterval: 0.24
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.28
   - monsterId: berkan_01
     role: 0
     targetPriority: 0
-    preferredRangeRatio: 0.68
+    preferredRangeRatio: 0.72
     retreatRangeRatio: 0
-    retargetInterval: 0.28
+    retargetInterval: 0.2
   - monsterId: silpia_01
     role: 3
     targetPriority: 0
@@ -119,15 +119,15 @@ MonoBehaviour:
     role: 3
     targetPriority: 0
     preferredRangeRatio: 0.9
-    retreatRangeRatio: 0.45
-    retargetInterval: 0.24
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.28
   - monsterId: mingyu_mythic_01
     role: 0
     targetPriority: 0
     preferredRangeRatio: 0.72
     retreatRangeRatio: 0
     retargetInterval: 0.2
-  - monsterId: mingyu_legend_01
+  - monsterId: werewolf_01
     role: 0
     targetPriority: 0
     preferredRangeRatio: 0.72
@@ -142,27 +142,27 @@ MonoBehaviour:
   - monsterId: kutan_01
     role: 0
     targetPriority: 0
-    preferredRangeRatio: 0.68
+    preferredRangeRatio: 0.72
     retreatRangeRatio: 0
-    retargetInterval: 0.28
+    retargetInterval: 0.2
   - monsterId: krabi_01
     role: 3
     targetPriority: 0
-    preferredRangeRatio: 0.95
-    retreatRangeRatio: 0.55
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
     retargetInterval: 0.28
   - monsterId: kir_01
-    role: 4
-    targetPriority: 2
-    preferredRangeRatio: 0.7
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
     retreatRangeRatio: 0
-    retargetInterval: 0.18
+    retargetInterval: 0.2
   - monsterId: poi_poison_01
-    role: 4
-    targetPriority: 2
-    preferredRangeRatio: 0.7
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
     retreatRangeRatio: 0
-    retargetInterval: 0.18
+    retargetInterval: 0.2
   - monsterId: piru_01
     role: 0
     targetPriority: 0
@@ -172,8 +172,8 @@ MonoBehaviour:
   - monsterId: hanjaemon_ice_01
     role: 3
     targetPriority: 0
-    preferredRangeRatio: 0.86
-    retreatRangeRatio: 0.3
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
     retargetInterval: 0.28
   - monsterId: fryar_01
     role: 0
@@ -184,9 +184,9 @@ MonoBehaviour:
   - monsterId: pipi_01
     role: 3
     targetPriority: 0
-    preferredRangeRatio: 0.92
+    preferredRangeRatio: 0.9
     retreatRangeRatio: 0.55
-    retargetInterval: 0.26
+    retargetInterval: 0.2
   - monsterId: berry_01
     role: 3
     targetPriority: 0
@@ -196,9 +196,9 @@ MonoBehaviour:
   - monsterId: pango_01
     role: 1
     targetPriority: 0
-    preferredRangeRatio: 0.66
+    preferredRangeRatio: 0.72
     retreatRangeRatio: 0
-    retargetInterval: 0.16
+    retargetInterval: 0.2
   - monsterId: ruby_01
     role: 0
     targetPriority: 0
@@ -215,20 +215,20 @@ MonoBehaviour:
     role: 3
     targetPriority: 0
     preferredRangeRatio: 0.9
-    retreatRangeRatio: 0.45
-    retargetInterval: 0.24
+    retreatRangeRatio: 0.55
+    retargetInterval: 0.2
   - monsterId: astell_01
     role: 3
     targetPriority: 0
     preferredRangeRatio: 0.9
-    retreatRangeRatio: 0.45
-    retargetInterval: 0.24
+    retreatRangeRatio: 0.55
+    retargetInterval: 0.2
   - monsterId: candy_tree_01
     role: 3
     targetPriority: 0
-    preferredRangeRatio: 0.86
-    retreatRangeRatio: 0.3
-    retargetInterval: 0.28
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.55
+    retargetInterval: 0.2
   - monsterId: ignis_01
     role: 1
     targetPriority: 0
@@ -247,21 +247,33 @@ MonoBehaviour:
     preferredRangeRatio: 0.9
     retreatRangeRatio: 0.55
     retargetInterval: 0.2
-  - monsterId: shell_01
+  - monsterId: rabi_01
     role: 0
     targetPriority: 0
     preferredRangeRatio: 0.72
     retreatRangeRatio: 0
     retargetInterval: 0.2
   - monsterId: rage_01
-    role: 2
-    targetPriority: 1
-    preferredRangeRatio: 0.68
-    retreatRangeRatio: 0
-    retargetInterval: 0.18
-  - monsterId: nerea_01
     role: 0
     targetPriority: 0
-    preferredRangeRatio: 0.66
+    preferredRangeRatio: 0.72
     retreatRangeRatio: 0
-    retargetInterval: 0.18
+    retargetInterval: 0.2
+  - monsterId: chamchi_01
+    role: 0
+    targetPriority: 0
+    preferredRangeRatio: 0.72
+    retreatRangeRatio: 0
+    retargetInterval: 0.2
+  - monsterId: floria_01
+    role: 3
+    targetPriority: 0
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.28
+  - monsterId: never_ice_01
+    role: 3
+    targetPriority: 0
+    preferredRangeRatio: 0.9
+    retreatRangeRatio: 0.38
+    retargetInterval: 0.28

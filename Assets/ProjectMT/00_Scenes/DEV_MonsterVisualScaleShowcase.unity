@@ -7947,7 +7947,7 @@ GameObject:
   m_Component:
   - component: {fileID: 599750702}
   m_Layer: 0
-  m_Name: "02_\uC258_shell_01"
+  m_Name: "02_\uB77C\uBE44_rabi_01"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10226,7 +10226,7 @@ GameObject:
   m_Component:
   - component: {fileID: 755870661}
   m_Layer: 0
-  m_Name: "11_\uADF8\uB9AC\uC218_grisu_fire_01"
+  m_Name: "11_\uC548\uAC74\uC900_angeonjun_01"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10309,7 +10309,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "11. \uADF8\uB9AC\uC218\ngrisu_fire_01  |  scale 1.00  |  W 2.52 H 1.92
+  m_text: "11. \uC548\uAC74\uC900\nangeonjun_01  |  scale 1.00  |  W 2.52 H 1.92
     D 2.24"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}
@@ -11344,7 +11344,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "02. \uC258\nshell_01  |  scale 1.00  |  W 0.81 H 0.87 D 0.86"
+  m_text: "02. \uB77C\uBE44\nrabi_01  |  scale 1.00  |  W 0.81 H 0.87 D 0.86"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}
   m_sharedMaterial: {fileID: -883070917891464217, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}
@@ -15975,7 +15975,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1238140990}
   m_Layer: 0
-  m_Name: "26_\uCC28\uBBFC\uADDC_mingyu_legend_01"
+  m_Name: "26_\uC6E8\uC5B4\uC6B8\uD504_werewolf_01"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -18212,8 +18212,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "26. \uCC28\uBBFC\uADDC\nmingyu_legend_01  |  scale 1.00  |  W 2.93 H 3.36
-    D 3.57"
+  m_text: "26. \uC6E8\uC5B4\uC6B8\uD504\nwerewolf_01  |  scale 1.00  |  W 2.93 H
+    3.36 D 3.57"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}
   m_sharedMaterial: {fileID: -883070917891464217, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}
@@ -19139,7 +19139,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1476806918}
   m_Layer: 0
-  m_Name: "03_\uB8E8_ru_01"
+  m_Name: "03_\uB77C\uBE44\uD038_rabi_queen_01"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -20749,7 +20749,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1558207312}
   m_Layer: 0
-  m_Name: "20_\uB8E8\uBCA0\uC544_rubea_01"
+  m_Name: "20_\uD53C\uB2C9\uC2A4_phoenix_01"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -21436,7 +21436,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "29. \uD06C\uB77C\uBE44\nkrabi_01  |  scale 1.00  |  W 2.35 H 1.70 D 2.24"
+  m_text: "29. \uB77C\uBE44\nkrabi_01  |  scale 1.00  |  W 2.35 H 1.70 D 2.24"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}
   m_sharedMaterial: {fileID: -883070917891464217, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}
@@ -22730,7 +22730,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "20. \uB8E8\uBCA0\uC544\nrubea_01  |  scale 1.00  |  W 0.91 H 1.09 D 0.91"
+  m_text: "20. \uD53C\uB2C9\uC2A4\nphoenix_01  |  scale 1.00  |  W 0.91 H 1.09 D
+    0.91"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}
   m_sharedMaterial: {fileID: -883070917891464217, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}
@@ -24599,7 +24600,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "03. \uB8E8\nru_01  |  scale 1.70  |  W 1.12 H 0.86 D 1.12"
+  m_text: "03. \uB77C\uBE44\uD038\nrabi_queen_01  |  scale 1.70  |  W 1.12 H 0.86
+    D 1.12"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}
   m_sharedMaterial: {fileID: -883070917891464217, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}
@@ -25538,7 +25540,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1927603005}
   m_Layer: 0
-  m_Name: "14_\uB124\uB974\uC544_nerea_01"
+  m_Name: "14_\uCC38\uCE58_chamchi_01"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -26550,7 +26552,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "14. \uB124\uB974\uC544\nnerea_01  |  scale 1.00  |  W 0.66 H 0.99 D 0.66"
+  m_text: "14. \uCC38\uCE58\nchamchi_01  |  scale 1.00  |  W 0.66 H 0.99 D 0.66"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}
   m_sharedMaterial: {fileID: -883070917891464217, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}

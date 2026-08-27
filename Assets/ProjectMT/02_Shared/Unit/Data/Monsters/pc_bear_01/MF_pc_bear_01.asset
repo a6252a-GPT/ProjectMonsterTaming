@@ -54,3 +54,100 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  basicAttackVfxBindings:
+  - attackId: BA_R_04
+    slotId: cast
+    motionId: attack01
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_R_04
+    slotId: hit
+    motionId: 
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_M_04
+    slotId: overhead_trail
+    motionId: attack01
+    state: 1
+    prefab: {fileID: 8679266786258473969, guid: 0ea9e4dcdfcec8648b69665e203d9a4f, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: -0.2
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 180, y: 0, z: 180}
+    scale: 0.7
+  - attackId: BA_M_04
+    slotId: ground_contact
+    motionId: 
+    state: 1
+    prefab: {fileID: 3463373973632022023, guid: 44bf36ac6dfa10c4eb503f8fba494cdb, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 0.7
+  - attackId: BA_M_04
+    slotId: target_hit
+    motionId: 
+    state: 1
+    prefab: {fileID: 3927127137047121744, guid: 32d8ea6211779f1439877eb77df691bb, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_M_04
+    slotId: area_wave
+    motionId: 
+    state: 2
+    prefab: {fileID: 0}
+    sfxState: 2
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1

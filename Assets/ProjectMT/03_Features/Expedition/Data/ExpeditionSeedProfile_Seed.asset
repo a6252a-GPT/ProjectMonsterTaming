@@ -19,8 +19,8 @@ MonoBehaviour:
   enemyBaseDamage: 4
   enemyHealthGrowthPerStage: 0.11
   enemyDamageGrowthPerStage: 0.07
-  enemyMeleeAttackRange: 2
-  enemyRangedAttackRange: 4.1
+  enemyMeleeAttackRange: 3.5
+  enemyRangedAttackRange: 5.5
   enemyEntryDistance: 3.2
   enemySpawnIntervalSeconds: 0.16
   enemyMarchDurationSeconds: 1

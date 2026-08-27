@@ -1,370 +1,214 @@
-using System.Collections.Generic;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
 using UnityEngine;
 
 namespace ProjectMT.EditorTools.MonsterMaker
 {
-    internal sealed class MonsterPassiveBalanceEditor // 공용 원본은 적용 전까지 건드리지 않습니다.
+    internal sealed class MonsterPassiveBalanceEditor // 현재 몬스터의 전용 수치만 편집합니다.
     {
-        private GenericMonsterPassiveSkill skill;
-        private float primaryBase;
-        private float primaryStep;
-        private float secondaryBase;
-        private float secondaryStep;
-        private int triggerCount;
-        private int maxStacks;
-        private float duration;
-        private float cooldown;
-        private float threshold;
-        private float radius;
-        private int maxTargets;
-
-        public GenericMonsterPassiveSkill Skill => skill;
-
-        public bool HasPendingChanges => skill != null &&
-            (!Mathf.Approximately(primaryBase, skill.PrimaryBase) ||
-             !Mathf.Approximately(primaryStep, skill.PrimaryPerLevelStep) ||
-             !Mathf.Approximately(secondaryBase, skill.SecondaryBase) ||
-             !Mathf.Approximately(secondaryStep, skill.SecondaryPerLevelStep) ||
-             triggerCount != skill.TriggerCount ||
-             maxStacks != skill.MaxStacks ||
-             !Mathf.Approximately(duration, skill.Duration) ||
-             !Mathf.Approximately(cooldown, skill.Cooldown) ||
-             !Mathf.Approximately(threshold, skill.Threshold) ||
-             !Mathf.Approximately(radius, skill.Radius) ||
-             maxTargets != skill.MaxTargets);
-
-        public bool TrySelect(GenericMonsterPassiveSkill next)
+        public void Draw(
+            GenericMonsterPassiveSkill template,
+            SerializedProperty tuning,
+            string monsterName,
+            ref bool expanded)
         {
-            if (ReferenceEquals(skill, next))
-            {
-                return true;
-            }
-
-            if (skill != null && HasPendingChanges)
-            {
-                var choice = EditorUtility.DisplayDialogComplex(
-                    "공용 패시브 변경사항",
-                    $"{skill.DisplayName}의 미적용 수치가 있습니다. 어떻게 처리할까요?",
-                    "적용 후 전환",
-                    "전환 취소",
-                    "변경 버리기");
-                if (choice == 0)
-                {
-                    if (!TryApply(out var error))
-                    {
-                        EditorUtility.DisplayDialog("패시브 수치 적용 실패", error, "확인");
-                        return false;
-                    }
-                }
-                else if (choice == 1)
-                {
-                    return false;
-                }
-            }
-
-            Load(next);
-            return true;
-        }
-
-        public void Draw(MonsterRarityCatalog rarityCatalog, ref bool expanded)
-        {
-            if (skill == null)
+            if (template == null || tuning == null)
             {
                 return;
             }
 
-            if (skill.NeedsRuntimeInitialization)
-            {
-                EditorGUILayout.HelpBox(
-                    "선택한 패시브는 아직 실행 수치 Profile이 없습니다. 실행 기능 연결 뒤 수치를 조절할 수 있습니다.",
-                    MessageType.Warning);
-                return;
-            }
-
+            EnsureInitialized(tuning, template, false);
             GUILayout.Space(4f);
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                expanded = EditorGUILayout.Foldout(expanded, "공용 패시브 수치 조절", true);
-                GUILayout.Label(BuildCompactSummary(), EditorStyles.wordWrappedMiniLabel);
+                var ownerLabel = string.IsNullOrWhiteSpace(monsterName) ? "현재 몬스터" : monsterName.Trim();
+                expanded = EditorGUILayout.Foldout(
+                    expanded,
+                    $"{ownerLabel} 전용 패시브 설정",
+                    true);
+                GUILayout.Label(BuildCompactSummary(template, tuning), EditorStyles.wordWrappedMiniLabel);
                 if (!expanded)
                 {
                     return;
                 }
 
-                var users = CollectUsers(rarityCatalog);
                 EditorGUILayout.HelpBox(
-                    users.Count == 0
-                        ? "현재 게임 데이터에서 이 패시브를 사용하는 몬스터가 없습니다."
-                        : $"공용 원본입니다. 적용하면 다음 {users.Count}종이 함께 변경됩니다.\n{string.Join(", ", users)}",
-                    users.Count == 0 ? MessageType.Info : MessageType.Warning);
-
-                EditorGUILayout.LabelField("실행 방식", GetKindLabel(skill.RuntimeKind));
-                DrawEffectFields();
-                DrawContentRule();
+                    "여기서 바꾼 수치는 이 몬스터에게만 저장됩니다. 같은 패시브를 쓰는 다른 몬스터는 바뀌지 않습니다.",
+                    MessageType.Info);
+                DrawEffectFields(template.RuntimeKind, tuning);
+                DrawContentRule(template.RuntimeKind);
 
                 GUILayout.Space(4f);
-                GUILayout.Label("레벨별 최종 수치", EditorStyles.boldLabel);
-                DrawLevelPreview("Lv1", 0);
-                DrawLevelPreview("Lv20", 1);
-                DrawLevelPreview("Lv100", 5);
-                DrawLevelPreview("Lv200", 10);
+                GUILayout.Label("레벨별 적용값", EditorStyles.boldLabel);
+                DrawLevelPreview("Lv1", 0, template.RuntimeKind, tuning);
+                DrawLevelPreview("Lv20", 1, template.RuntimeKind, tuning);
+                DrawLevelPreview("Lv100", 5, template.RuntimeKind, tuning);
+                DrawLevelPreview("Lv200", 10, template.RuntimeKind, tuning);
 
-                var valid = TryValidateDraft(out var error);
-                if (!valid)
+                if (GUILayout.Button("이 패시브의 기본값으로 되돌리기"))
                 {
-                    EditorGUILayout.HelpBox(error, MessageType.Error);
-                }
-                else if (HasPendingChanges)
-                {
-                    EditorGUILayout.HelpBox("아직 공용 자산에 적용하지 않은 변경사항입니다.", MessageType.Info);
-                }
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    using (new EditorGUI.DisabledScope(!HasPendingChanges))
-                    {
-                        if (GUILayout.Button("변경 취소"))
-                        {
-                            Load(skill);
-                            GUI.FocusControl(null);
-                        }
-                    }
-
-                    using (new EditorGUI.DisabledScope(!HasPendingChanges || !valid))
-                    {
-                        if (GUILayout.Button($"공용값 적용{(users.Count > 0 ? $" · {users.Count}종" : string.Empty)}"))
-                        {
-                            if (!TryApply(out error))
-                            {
-                                EditorUtility.DisplayDialog("패시브 수치 적용 실패", error, "확인");
-                            }
-                            else
-                            {
-                                GUI.FocusControl(null);
-                            }
-                        }
-                    }
-                }
-
-                using (new EditorGUI.DisabledScope(HasPendingChanges))
-                {
-                    if (GUILayout.Button("저장된 공용값 다시 불러오기"))
-                    {
-                        Load(skill);
-                    }
+                    EnsureInitialized(tuning, template, true);
+                    GUI.FocusControl(null);
                 }
             }
         }
 
-        internal void Load(GenericMonsterPassiveSkill source)
+        internal static void EnsureInitialized(
+            SerializedProperty tuning,
+            GenericMonsterPassiveSkill template,
+            bool force)
         {
-            skill = source;
-            if (skill == null)
+            if (tuning == null || template == null)
             {
                 return;
             }
 
-            primaryBase = skill.PrimaryBase;
-            primaryStep = skill.PrimaryPerLevelStep;
-            secondaryBase = skill.SecondaryBase;
-            secondaryStep = skill.SecondaryPerLevelStep;
-            triggerCount = skill.TriggerCount;
-            maxStacks = skill.MaxStacks;
-            duration = skill.Duration;
-            cooldown = skill.Cooldown;
-            threshold = skill.Threshold;
-            radius = skill.Radius;
-            maxTargets = skill.MaxTargets;
+            var initialized = tuning.FindPropertyRelative("initialized");
+            var runtimeKind = tuning.FindPropertyRelative("runtimeKind");
+            if (!force && initialized.boolValue && runtimeKind.enumValueIndex == (int)template.RuntimeKind)
+            {
+                return;
+            }
+
+            initialized.boolValue = true;
+            runtimeKind.enumValueIndex = (int)template.RuntimeKind;
+            SetFloat(tuning, "primaryBase", template.PrimaryBase);
+            SetFloat(tuning, "primaryPerLevelStep", template.PrimaryPerLevelStep);
+            SetFloat(tuning, "secondaryBase", template.SecondaryBase);
+            SetFloat(tuning, "secondaryPerLevelStep", template.SecondaryPerLevelStep);
+            SetInt(tuning, "triggerCount", template.TriggerCount);
+            SetInt(tuning, "maxStacks", template.MaxStacks);
+            SetFloat(tuning, "duration", template.Duration);
+            SetFloat(tuning, "cooldown", template.Cooldown);
+            SetFloat(tuning, "threshold", template.Threshold);
+            SetFloat(tuning, "radius", template.Radius);
+            SetInt(tuning, "maxTargets", template.MaxTargets);
         }
 
-        internal bool TryApply(out string error)
+        private static void DrawEffectFields(
+            GenericMonsterPassiveRuntimeKind kind,
+            SerializedProperty tuning)
         {
-            if (!TryValidateDraft(out error))
+            DrawPercent(tuning, "primaryBase", GetPrimaryLabel(kind));
+            DrawPercent(tuning, "primaryPerLevelStep", "20레벨마다 증가 (%)");
+
+            if (UsesSecondary(kind))
             {
-                return false;
+                DrawPercent(tuning, "secondaryBase", GetSecondaryLabel(kind));
+                DrawPercent(tuning, "secondaryPerLevelStep", "보조 효과 20레벨마다 증가 (%)");
             }
 
-            Undo.RecordObject(skill, "공용 패시브 수치 조절");
-            skill.EditorConfigureRuntime(
-                skill.RuntimeKind,
-                primaryBase,
-                primaryStep,
-                secondaryBase,
-                secondaryStep,
-                triggerCount,
-                maxStacks,
-                duration,
-                cooldown,
-                threshold,
-                radius,
-                maxTargets);
-            EditorUtility.SetDirty(skill);
-            AssetDatabase.SaveAssetIfDirty(skill);
-            Load(skill);
-            error = string.Empty;
-            return true;
-        }
-
-        private void DrawEffectFields()
-        {
-            primaryBase = DrawPercent(GetPrimaryLabel(skill.RuntimeKind), primaryBase);
-            primaryStep = DrawPercent("20레벨당 증가", primaryStep);
-
-            if (UsesSecondary(skill.RuntimeKind))
+            if (UsesTriggerCount(kind))
             {
-                secondaryBase = DrawPercent(GetSecondaryLabel(skill.RuntimeKind), secondaryBase);
-                secondaryStep = DrawPercent("보조값 20레벨당 증가", secondaryStep);
+                var property = tuning.FindPropertyRelative("triggerCount");
+                property.intValue = Mathf.Max(1, EditorGUILayout.IntField("몇 번째 공격마다", property.intValue));
             }
 
-            if (UsesTriggerCount(skill.RuntimeKind))
+            if (kind == GenericMonsterPassiveRuntimeKind.SameTargetHaste)
             {
-                triggerCount = Mathf.Max(1, EditorGUILayout.IntField("발동 필요 타수", triggerCount));
+                var property = tuning.FindPropertyRelative("maxStacks");
+                property.intValue = Mathf.Max(1, EditorGUILayout.IntField("최대 가속 중첩", property.intValue));
             }
 
-            if (skill.RuntimeKind == GenericMonsterPassiveRuntimeKind.SameTargetHaste)
+            if (UsesDuration(kind))
             {
-                maxStacks = Mathf.Max(1, EditorGUILayout.IntField("최대 중첩", maxStacks));
+                var property = tuning.FindPropertyRelative("duration");
+                property.floatValue = Mathf.Max(0f, EditorGUILayout.FloatField(GetDurationLabel(kind), property.floatValue));
             }
 
-            if (UsesDuration(skill.RuntimeKind))
+            if (UsesCooldown(kind))
             {
-                duration = Mathf.Max(0f, EditorGUILayout.FloatField("지속시간 (초)", duration));
+                var property = tuning.FindPropertyRelative("cooldown");
+                property.floatValue = Mathf.Max(0f, EditorGUILayout.FloatField("다시 발동하기까지 (초)", property.floatValue));
             }
 
-            if (UsesCooldown(skill.RuntimeKind))
+            if (UsesHealthThreshold(kind))
             {
-                cooldown = Mathf.Max(0f, EditorGUILayout.FloatField("재사용 대기 (초)", cooldown));
+                var property = tuning.FindPropertyRelative("threshold");
+                property.floatValue = EditorGUILayout.Slider("발동 체력 기준 (%)", property.floatValue * 100f, 1f, 100f) / 100f;
+            }
+            else if (kind == GenericMonsterPassiveRuntimeKind.LongRangeAim)
+            {
+                var property = tuning.FindPropertyRelative("threshold");
+                property.floatValue = Mathf.Max(0f, EditorGUILayout.FloatField("효과가 켜지는 거리 (m)", property.floatValue));
             }
 
-            if (UsesHealthThreshold(skill.RuntimeKind))
+            if (kind == GenericMonsterPassiveRuntimeKind.FrontlineBond)
             {
-                threshold = EditorGUILayout.Slider("발동 체력 기준 (%)", threshold * 100f, 1f, 100f) / 100f;
-            }
-            else if (skill.RuntimeKind == GenericMonsterPassiveRuntimeKind.LongRangeAim)
-            {
-                threshold = Mathf.Max(0f, EditorGUILayout.FloatField("최소 거리 (m)", threshold));
-            }
-
-            if (UsesRadius(skill.RuntimeKind))
-            {
-                radius = Mathf.Max(0f, EditorGUILayout.FloatField("효과 반경 (m)", radius));
-            }
-
-            if (skill.RuntimeKind == GenericMonsterPassiveRuntimeKind.RallySplash)
-            {
-                maxTargets = Mathf.Max(1, EditorGUILayout.IntField("추가 대상 수", maxTargets));
+                var property = tuning.FindPropertyRelative("radius");
+                property.floatValue = Mathf.Max(0f, EditorGUILayout.FloatField("아군을 확인할 거리 (m)", property.floatValue));
             }
         }
 
-        private void DrawContentRule()
+        private static void DrawContentRule(GenericMonsterPassiveRuntimeKind kind)
         {
-            var message = skill.RuntimeKind switch
+            var message = kind switch
             {
+                GenericMonsterPassiveRuntimeKind.ImpactStrike =>
+                    "일반 적은 잠깐 경직되고, 경직되지 않는 보스·구조물은 표시된 추가 피해를 받습니다.",
                 GenericMonsterPassiveRuntimeKind.EmergencyEntry =>
-                    "MainBattle은 예비 교체 합류 때만 자신·아군 보호막이 발동합니다. 육각 수동 배치는 자신 보호막의 50%만 적용합니다.",
+                    "메인 전투의 예비 교체 합류 때 자신과 체력이 가장 낮은 아군에게 적용됩니다. 군단의 역습 수동 배치는 자신에게 절반만 적용됩니다.",
                 GenericMonsterPassiveRuntimeKind.FirstWave =>
-                    "MainBattle 초기·예비 배치와 육각 수동 배치 직후에 같은 지속시간으로 발동합니다.",
+                    "전투에 합류하면 즉시 공격력이 상승합니다.",
                 GenericMonsterPassiveRuntimeKind.FrontlineBond =>
-                    "현재 실행 조건은 반경 안에 자신을 제외한 아군 2기 이상입니다.",
+                    "표시된 거리 안에 자신을 제외한 아군이 2명 이상이면 발동합니다.",
                 GenericMonsterPassiveRuntimeKind.ThreatMark =>
-                    "MainBattle은 원거리·보스, 육각은 수비대·포탑을 고위협 대상으로 판단합니다.",
-                _ => "MainBattle과 육각 군단의 역습이 이 공용 수치를 함께 사용합니다."
+                    "메인 전투는 원거리·보스, 군단의 역습은 수비대·포탑을 우선 대상으로 판단합니다.",
+                _ => "메인 전투와 군단의 역습에서 같은 전용 수치가 사용됩니다."
             };
             EditorGUILayout.HelpBox(message, MessageType.None);
         }
 
-        private void DrawLevelPreview(string label, int stage)
+        private static void DrawLevelPreview(
+            string label,
+            int stage,
+            GenericMonsterPassiveRuntimeKind kind,
+            SerializedProperty tuning)
         {
-            var primary = primaryBase + primaryStep * stage;
+            var primary = GetFloat(tuning, "primaryBase") + GetFloat(tuning, "primaryPerLevelStep") * stage;
             var text = $"주 효과 {FormatPercent(primary)}";
-            if (UsesSecondary(skill.RuntimeKind))
+            if (UsesSecondary(kind))
             {
-                text += $"  ·  보조 효과 {FormatPercent(secondaryBase + secondaryStep * stage)}";
+                var secondary = GetFloat(tuning, "secondaryBase") +
+                                GetFloat(tuning, "secondaryPerLevelStep") * stage;
+                text += $"  ·  보조 효과 {FormatPercent(secondary)}";
             }
             EditorGUILayout.LabelField(label, text);
         }
 
-        private string BuildCompactSummary()
+        private static string BuildCompactSummary(
+            GenericMonsterPassiveSkill template,
+            SerializedProperty tuning)
         {
-            var levelTwoHundred = primaryBase + primaryStep * 10f;
-            var summary = $"{GetKindLabel(skill.RuntimeKind)}  ·  Lv1 {FormatPercent(primaryBase)} → Lv200 {FormatPercent(levelTwoHundred)}";
-            if (UsesSecondary(skill.RuntimeKind))
+            var primary = GetFloat(tuning, "primaryBase");
+            var step = GetFloat(tuning, "primaryPerLevelStep");
+            var summary = $"{template.DisplayName}  ·  Lv1 {FormatPercent(primary)} → Lv200 {FormatPercent(primary + step * 10f)}";
+            if (UsesTriggerCount(template.RuntimeKind))
             {
-                summary += $"  ·  보조 {FormatPercent(secondaryBase)} → {FormatPercent(secondaryBase + secondaryStep * 10f)}";
+                summary += $"  ·  {tuning.FindPropertyRelative("triggerCount").intValue}번째 공격마다";
             }
             return summary;
         }
 
-        private bool TryValidateDraft(out string error)
+        private static void DrawPercent(SerializedProperty root, string name, string label)
         {
-            if (skill == null || skill.NeedsRuntimeInitialization)
-            {
-                error = "실행 수치 Profile이 연결된 공용 패시브만 조절할 수 있습니다.";
-                return false;
-            }
-
-            if (primaryBase < 0f || primaryStep < 0f || secondaryBase < 0f || secondaryStep < 0f)
-            {
-                error = "효과 수치와 레벨 증가량은 0 이상이어야 합니다.";
-                return false;
-            }
-
-            if (UsesDuration(skill.RuntimeKind) && duration <= 0f)
-            {
-                error = "이 패시브의 지속시간은 0보다 커야 합니다.";
-                return false;
-            }
-
-            if (skill.RuntimeKind == GenericMonsterPassiveRuntimeKind.LongRangeAim && threshold <= 0f)
-            {
-                error = "장거리 조준의 최소 거리는 0보다 커야 합니다.";
-                return false;
-            }
-
-            if (UsesRadius(skill.RuntimeKind) && radius <= 0f)
-            {
-                error = "이 패시브의 효과 반경은 0보다 커야 합니다.";
-                return false;
-            }
-
-            error = string.Empty;
-            return true;
+            var property = root.FindPropertyRelative(name);
+            property.floatValue = Mathf.Max(0f, EditorGUILayout.FloatField(label, property.floatValue * 100f)) / 100f;
         }
 
-        private List<string> CollectUsers(MonsterRarityCatalog catalog)
+        private static void SetFloat(SerializedProperty root, string name, float value)
         {
-            var result = new List<string>();
-            if (catalog == null || skill == null)
-            {
-                return result;
-            }
-
-            for (var index = 0; index < catalog.CommonToEpicEntries.Count; index++)
-            {
-                var entry = catalog.CommonToEpicEntries[index];
-                if (entry?.Monster != null && ReferenceEquals(entry.PassiveSkill, skill))
-                {
-                    result.Add($"{entry.Monster.DisplayName} [{entry.Monster.MonsterId}]");
-                }
-            }
-
-            for (var index = 0; index < catalog.LegendaryMythicEntries.Count; index++)
-            {
-                var entry = catalog.LegendaryMythicEntries[index];
-                if (entry?.Monster != null && ReferenceEquals(entry.PassiveSkill, skill))
-                {
-                    result.Add($"{entry.Monster.DisplayName} [{entry.Monster.MonsterId}]");
-                }
-            }
-
-            return result;
+            root.FindPropertyRelative(name).floatValue = value;
         }
 
-        private static float DrawPercent(string label, float value)
+        private static void SetInt(SerializedProperty root, string name, int value)
         {
-            return Mathf.Max(0f, EditorGUILayout.FloatField(label, value * 100f)) / 100f;
+            root.FindPropertyRelative(name).intValue = value;
+        }
+
+        private static float GetFloat(SerializedProperty root, string name)
+        {
+            return root.FindPropertyRelative(name).floatValue;
         }
 
         private static string FormatPercent(float value)
@@ -381,7 +225,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private static bool UsesTriggerCount(GenericMonsterPassiveRuntimeKind kind)
         {
             return kind == GenericMonsterPassiveRuntimeKind.RhythmPower ||
-                   kind == GenericMonsterPassiveRuntimeKind.RallySplash ||
+                   kind == GenericMonsterPassiveRuntimeKind.ImpactStrike ||
                    kind == GenericMonsterPassiveRuntimeKind.FractureMark ||
                    kind == GenericMonsterPassiveRuntimeKind.HealingShot;
         }
@@ -389,6 +233,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private static bool UsesDuration(GenericMonsterPassiveRuntimeKind kind)
         {
             return kind == GenericMonsterPassiveRuntimeKind.SameTargetHaste ||
+                   kind == GenericMonsterPassiveRuntimeKind.ImpactStrike ||
                    kind == GenericMonsterPassiveRuntimeKind.CrisisDefense ||
                    kind == GenericMonsterPassiveRuntimeKind.FractureMark ||
                    kind == GenericMonsterPassiveRuntimeKind.ThreatMark ||
@@ -408,10 +253,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
                    kind == GenericMonsterPassiveRuntimeKind.CrisisDefense;
         }
 
-        private static bool UsesRadius(GenericMonsterPassiveRuntimeKind kind)
+        private static string GetDurationLabel(GenericMonsterPassiveRuntimeKind kind)
         {
-            return kind == GenericMonsterPassiveRuntimeKind.RallySplash ||
-                   kind == GenericMonsterPassiveRuntimeKind.FrontlineBond;
+            return kind == GenericMonsterPassiveRuntimeKind.ImpactStrike
+                ? "일반 적 경직 시간 (초)"
+                : "효과 지속시간 (초)";
         }
 
         private static string GetPrimaryLabel(GenericMonsterPassiveRuntimeKind kind)
@@ -420,16 +266,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 GenericMonsterPassiveRuntimeKind.RhythmPower => "강화 공격 추가 피해 (%)",
                 GenericMonsterPassiveRuntimeKind.SameTargetHaste => "중첩당 공격속도 증가 (%)",
-                GenericMonsterPassiveRuntimeKind.RallySplash => "주변 피해 계수 (%)",
+                GenericMonsterPassiveRuntimeKind.ImpactStrike => "보스·구조물 추가 피해 (%)",
                 GenericMonsterPassiveRuntimeKind.LowHealthHunter => "저체력 대상 추가 피해 (%)",
                 GenericMonsterPassiveRuntimeKind.LongRangeAim => "장거리 추가 피해 (%)",
                 GenericMonsterPassiveRuntimeKind.CrisisDefense => "받는 피해 감소 (%)",
                 GenericMonsterPassiveRuntimeKind.FrontlineBond => "받는 피해 감소 (%)",
-                GenericMonsterPassiveRuntimeKind.FractureMark => "팀 피해 노출 (%)",
-                GenericMonsterPassiveRuntimeKind.ThreatMark => "개인 추가 피해 (%)",
+                GenericMonsterPassiveRuntimeKind.FractureMark => "대상이 더 받는 피해 (%)",
+                GenericMonsterPassiveRuntimeKind.ThreatMark => "고위협 대상 추가 피해 (%)",
                 GenericMonsterPassiveRuntimeKind.KillHeal => "최대 체력 회복 (%)",
                 GenericMonsterPassiveRuntimeKind.CourageAura => "아군 공격력 증가 (%)",
-                GenericMonsterPassiveRuntimeKind.HealingShot => "공격력 기반 회복 계수 (%)",
+                GenericMonsterPassiveRuntimeKind.HealingShot => "공격력 기반 회복량 (%)",
                 GenericMonsterPassiveRuntimeKind.EmergencyEntry => "자신 최대 체력 보호막 (%)",
                 GenericMonsterPassiveRuntimeKind.FirstWave => "공격력 증가 (%)",
                 _ => "주 효과 (%)"
@@ -440,31 +286,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
         {
             return kind switch
             {
-                GenericMonsterPassiveRuntimeKind.ThreatMark => "팀 피해 노출 (%)",
+                GenericMonsterPassiveRuntimeKind.ThreatMark => "대상이 더 받는 피해 (%)",
                 GenericMonsterPassiveRuntimeKind.EmergencyEntry => "아군 최대 체력 보호막 (%)",
                 _ => "보조 효과 (%)"
-            };
-        }
-
-        private static string GetKindLabel(GenericMonsterPassiveRuntimeKind kind)
-        {
-            return kind switch
-            {
-                GenericMonsterPassiveRuntimeKind.RhythmPower => "박자 강화",
-                GenericMonsterPassiveRuntimeKind.SameTargetHaste => "가속 연타",
-                GenericMonsterPassiveRuntimeKind.RallySplash => "폭발 타격",
-                GenericMonsterPassiveRuntimeKind.LowHealthHunter => "피 냄새",
-                GenericMonsterPassiveRuntimeKind.LongRangeAim => "장거리 조준",
-                GenericMonsterPassiveRuntimeKind.CrisisDefense => "위기 방어",
-                GenericMonsterPassiveRuntimeKind.FrontlineBond => "진형 결속",
-                GenericMonsterPassiveRuntimeKind.FractureMark => "약점 누적",
-                GenericMonsterPassiveRuntimeKind.ThreatMark => "후열 사냥",
-                GenericMonsterPassiveRuntimeKind.KillHeal => "흡수 본능",
-                GenericMonsterPassiveRuntimeKind.CourageAura => "용기 오라",
-                GenericMonsterPassiveRuntimeKind.HealingShot => "치유 탄환",
-                GenericMonsterPassiveRuntimeKind.EmergencyEntry => "합류 보호막",
-                GenericMonsterPassiveRuntimeKind.FirstWave => "첫 파도",
-                _ => "미연결"
             };
         }
     }

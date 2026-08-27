@@ -1,0 +1,196 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6244864e6a60a6d44ae02a54e0121ea2, type: 3}
+  m_Name: Draft_rabi_queen_01
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::ProjectMT.EditorTools.MonsterMaker.MonsterMakerDraft
+  monsterId: rabi_queen_01
+  displayName: "\uB77C\uBE44\uD038"
+  rarity: 2
+  portrait: {fileID: 21300000, guid: 2c161ecb39d37a14abf5516350daf6f9, type: 3}
+  skillLoadoutConfigured: 1
+  rarityPassiveSkill: {fileID: 11400000, guid: d925cf18fd037f5408dcb8e1a4ac7d06, type: 2}
+  passiveTuning:
+    initialized: 1
+    runtimeKind: 12
+    primaryBase: 0.2
+    primaryPerLevelStep: 0.01
+    secondaryBase: 0
+    secondaryPerLevelStep: 0
+    triggerCount: 5
+    maxStacks: 1
+    duration: 0
+    cooldown: 0
+    threshold: 0
+    radius: 0
+    maxTargets: 1
+  rarityActiveSkill: {fileID: 0}
+  productionMemo: "\uBAAC\uC2A4\uD130 \uB9AC\uC6CC\uD06C 2026-08-26 / Rabby_Queen_White
+    / Rabby \uC804\uC6A9 \uC560\uB2C8\uBA54\uC774\uC158 / BA_R_01 \uC720\uC9C0"
+  vendorPrefab: {fileID: 6733014878611864065, guid: 68d7b79f706834246a6538ec21c092da, type: 3}
+  animatorSource: {fileID: 6733014878619240913, guid: 68d7b79f706834246a6538ec21c092da, type: 3}
+  visualScale: {x: 2.04, y: 2.04, z: 2.04}
+  visualLocalPosition: {x: 0, y: 0, z: 0}
+  groundOffset: 0.007
+  facingYawOffset: 0
+  bodyRadius: 0.56
+  bodyHeight: 0.86
+  selectionRadius: 0.68
+  hpBarHeight: 1.05
+  attackOriginPath: AttackOrigin
+  hitCenterPath: HitCenter
+  attackOriginLocalPosition: {x: 0, y: 0.49879998, z: 0.68}
+  hitCenterLocalPosition: {x: 0, y: 0.43, z: 0}
+  rigMode: 0
+  previewScale: 1
+  vfxScale: 0.85
+  maxHealth: 110
+  attackPower: 12
+  defense: 4
+  attackSpeed: 1
+  moveSpeed: 2
+  attackRange: 4.6
+  impactStrength: 1
+  reactionWeight: 1
+  mainBattleRole: 3
+  mainBattleTargetPriority: 0
+  mainBattlePreferredRangeRatio: 0.9
+  mainBattleRetreatRangeRatio: 0.38
+  mainBattleRetargetInterval: 0.25
+  idleClip: {fileID: 7400000, guid: 00e0143f3c6c8e44395ccdeab0f44be2, type: 3}
+  idleSpeed: 1
+  moveClip: {fileID: 7400000, guid: e899528dfebb5ae46b40652351d02039, type: 3}
+  movePlaybackSpeed: 1
+  attacks:
+  - motionId: attack01
+    clip: {fileID: 7400000, guid: e3e5f1175b60ca640909417c30eff285, type: 3}
+    playbackSpeed: 1.2
+    crossFadeDuration: 0.05
+    weight: 1
+    preventImmediateRepeat: 0
+    overrideBreathDuration: 0
+    breathDuration: 0.8
+    markers:
+    - normalizedTime: 0.34
+      powerRatio: 1
+      socketOverride: 
+  deathClip: {fileID: 7400000, guid: 6c1607d94e26a694190788a65e2e73e3, type: 3}
+  deathSpeed: 1
+  combatType: 1
+  basicAttackProfile: {fileID: 11400000, guid: 22c64b93822d90c469347167cf20a0d0, type: 2}
+  basicAttackVfxBindings: []
+  meleeMode: 0
+  meleeAreaCenter: 1
+  meleeAreaRadius: 1.5
+  meleeMaxTargets: 1
+  rangedDeliveryMode: 0
+  projectileMode: 0
+  projectilePrefab: {fileID: 0}
+  overrideProjectileTuning: 1
+  projectileSpeed: 12.5
+  projectileLifetime: 3
+  projectileHitRadius: 0.25
+  projectileMaxPiercingTargets: 2
+  projectileImpactRadius: 1.5
+  projectileMaxImpactTargets: 4
+  projectileLaunchRecoilDistance: 0.1
+  projectileLaunchRecoilDuration: 0.12
+  specialEffectId: 
+  specialTargetTeam: 0
+  specialRadius: 2
+  specialMaxTargets: 5
+  specialDuration: 3
+  specialStackPolicy: 0
+  specialModifier:
+    healthRate: 0
+    attackRate: 0
+    defenseRate: 0
+    attackSpeedRate: 0
+    moveSpeedRate: 0
+    attackRangeRate: 0
+  castleRaidAiPattern: 6
+  castleRaidSupportFocus: 3
+  castleRaidSupportRange: 5
+  castleRaidSupportCooldown: 4
+  castleRaidSupportDuration: 5
+  castleRaidHealRatio: 0.24
+  castleRaidAttackBuffRate: 0.2
+  castleRaidDefenseDamageMultiplier: 0.75
+  ascensionConfigured: 0
+  ascension1:
+    healthRate: 0
+    attackRate: 0
+    defenseRate: 0
+    attackSpeedRate: 0
+    moveSpeedRate: 0
+    attackRangeRate: 0
+  ascension2:
+    abilityId: 
+    displayName: 
+    mode: 0
+    triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
+  ascension3:
+    healthRate: 0
+    attackRate: 0
+    defenseRate: 0
+    attackSpeedRate: 0
+    moveSpeedRate: 0
+    attackRangeRate: 0
+  ascension4:
+    abilityId: 
+    displayName: 
+    mode: 0
+    triggerPolicyId: 
+    augmentOperation: 0
+    augmentScalarValue: 0.15
+    augmentIntegerValue: 1
+  ascension5:
+    healthRate: 0
+    attackRate: 0
+    defenseRate: 0
+    attackSpeedRate: 0
+    moveSpeedRate: 0
+    attackRangeRate: 0
+  spawnFeedback:
+    sound: {fileID: 0}
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  hitFeedback:
+    sound: {fileID: 0}
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  deathFeedback:
+    sound: {fileID: 0}
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  specialFeedback:
+    sound: {fileID: 0}
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1

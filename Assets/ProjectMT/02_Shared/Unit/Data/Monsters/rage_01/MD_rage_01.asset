@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 10
   defense: 0
   attackSpeed: 1
-  moveSpeed: 2.5
-  attackRange: 2
+  moveSpeed: 2
+  attackRange: 3.5
   ranged: 0
   runtimeAssetKey: monster/rage_01
   runtimeAssetSet: {fileID: 11400000, guid: 976830e305fccbf40bf7faa02b947d59, type: 2}

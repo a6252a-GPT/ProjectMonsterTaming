@@ -36,12 +36,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField, Range(0f, 1f)] private float normalizedTime = 0.5f;
         [SerializeField, Min(0f)] private float powerRatio = 1f;
         [SerializeField] private string socketOverride;
-        [SerializeField] private MonsterMakerFeedbackDraft feedback = new MonsterMakerFeedbackDraft();
 
         public float NormalizedTime => normalizedTime;
         public float PowerRatio => powerRatio;
         public string SocketOverride => socketOverride ?? string.Empty;
-        public MonsterMakerFeedbackDraft Feedback => feedback;
     }
 
     [Serializable]
@@ -53,7 +51,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField, Min(0f)] private float crossFadeDuration = 0.06f;
         [SerializeField, Min(0f)] private float weight = 1f;
         [SerializeField] private bool preventImmediateRepeat;
-        [SerializeField] private MonsterMakerFeedbackDraft attackStartFeedback = new MonsterMakerFeedbackDraft();
+        [SerializeField] private bool overrideBreathDuration;
+        [SerializeField, Min(0.01f)] private float breathDuration = 0.8f;
         [SerializeField] private List<MonsterMakerMarkerDraft> markers = new List<MonsterMakerMarkerDraft>
         {
             new MonsterMakerMarkerDraft()
@@ -65,9 +64,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public float CrossFadeDuration => Mathf.Max(0f, crossFadeDuration);
         public float Weight => Mathf.Max(0f, weight);
         public bool PreventImmediateRepeat => preventImmediateRepeat;
-        public MonsterMakerFeedbackDraft AttackStartFeedback => attackStartFeedback;
+        public bool OverrideBreathDuration => overrideBreathDuration;
+        public float BreathDuration => Mathf.Max(0.01f, breathDuration);
         public IReadOnlyList<MonsterMakerMarkerDraft> Markers => markers ??
             (IReadOnlyList<MonsterMakerMarkerDraft>)Array.Empty<MonsterMakerMarkerDraft>();
+
+        public float ResolveBreathDuration(float profileDefault)
+        {
+            return overrideBreathDuration ? BreathDuration : Mathf.Max(0.01f, profileDefault);
+        }
     }
 
     [Serializable]
@@ -91,6 +96,106 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public int AugmentIntegerValue => Mathf.Max(1, augmentIntegerValue);
     }
 
+    [Serializable]
+    public sealed class MonsterMakerPassiveTuningDraft // 공용 동작을 쓰되 몬스터마다 독립적으로 저장하는 수치
+    {
+        [SerializeField] private bool initialized;
+        [SerializeField] private GenericMonsterPassiveRuntimeKind runtimeKind;
+        [SerializeField, Min(0f)] private float primaryBase;
+        [SerializeField, Min(0f)] private float primaryPerLevelStep;
+        [SerializeField, Min(0f)] private float secondaryBase;
+        [SerializeField, Min(0f)] private float secondaryPerLevelStep;
+        [SerializeField, Min(1)] private int triggerCount = 1;
+        [SerializeField, Min(1)] private int maxStacks = 1;
+        [SerializeField, Min(0f)] private float duration;
+        [SerializeField, Min(0f)] private float cooldown;
+        [SerializeField, Min(0f)] private float threshold;
+        [SerializeField, Min(0f)] private float radius;
+        [SerializeField, Min(1)] private int maxTargets = 1;
+
+        public bool Initialized => initialized;
+        public GenericMonsterPassiveRuntimeKind RuntimeKind => runtimeKind;
+        public float PrimaryBase => Mathf.Max(0f, primaryBase);
+        public float PrimaryPerLevelStep => Mathf.Max(0f, primaryPerLevelStep);
+        public float SecondaryBase => Mathf.Max(0f, secondaryBase);
+        public float SecondaryPerLevelStep => Mathf.Max(0f, secondaryPerLevelStep);
+        public int TriggerCount => Mathf.Max(1, triggerCount);
+        public int MaxStacks => Mathf.Max(1, maxStacks);
+        public float Duration => Mathf.Max(0f, duration);
+        public float Cooldown => Mathf.Max(0f, cooldown);
+        public float Threshold => Mathf.Max(0f, threshold);
+        public float Radius => Mathf.Max(0f, radius);
+        public int MaxTargets => Mathf.Max(1, maxTargets);
+
+        public bool Matches(GenericMonsterPassiveSkill template)
+        {
+            return initialized && template != null && runtimeKind == template.RuntimeKind;
+        }
+
+        public bool TryValidate(GenericMonsterPassiveSkill template, out string error)
+        {
+            if (!Matches(template))
+            {
+                error = "선택한 패시브 종류의 몬스터 전용 수치가 아직 준비되지 않았습니다.";
+                return false;
+            }
+            if (float.IsNaN(primaryBase) || float.IsInfinity(primaryBase) || primaryBase < 0f ||
+                float.IsNaN(primaryPerLevelStep) || float.IsInfinity(primaryPerLevelStep) || primaryPerLevelStep < 0f ||
+                float.IsNaN(secondaryBase) || float.IsInfinity(secondaryBase) || secondaryBase < 0f ||
+                float.IsNaN(secondaryPerLevelStep) || float.IsInfinity(secondaryPerLevelStep) || secondaryPerLevelStep < 0f)
+            {
+                error = "효과 수치와 레벨 증가량은 0 이상의 유효한 값이어야 합니다.";
+                return false;
+            }
+            if (RequiresDuration(runtimeKind) && duration <= 0f)
+            {
+                error = "이 패시브의 지속시간은 0보다 커야 합니다.";
+                return false;
+            }
+            if (runtimeKind == GenericMonsterPassiveRuntimeKind.LongRangeAim && threshold <= 0f)
+            {
+                error = "장거리 조준의 최소 거리는 0보다 커야 합니다.";
+                return false;
+            }
+            if (runtimeKind == GenericMonsterPassiveRuntimeKind.FrontlineBond && radius <= 0f)
+            {
+                error = "진형 결속의 아군 탐색 반경은 0보다 커야 합니다.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        public void CopyFrom(GenericMonsterPassiveSkill source)
+        {
+            initialized = source != null;
+            runtimeKind = source == null ? GenericMonsterPassiveRuntimeKind.None : source.RuntimeKind;
+            primaryBase = source?.PrimaryBase ?? 0f;
+            primaryPerLevelStep = source?.PrimaryPerLevelStep ?? 0f;
+            secondaryBase = source?.SecondaryBase ?? 0f;
+            secondaryPerLevelStep = source?.SecondaryPerLevelStep ?? 0f;
+            triggerCount = source?.TriggerCount ?? 1;
+            maxStacks = source?.MaxStacks ?? 1;
+            duration = source?.Duration ?? 0f;
+            cooldown = source?.Cooldown ?? 0f;
+            threshold = source?.Threshold ?? 0f;
+            radius = source?.Radius ?? 0f;
+            maxTargets = source?.MaxTargets ?? 1;
+        }
+
+        private static bool RequiresDuration(GenericMonsterPassiveRuntimeKind kind)
+        {
+            return kind == GenericMonsterPassiveRuntimeKind.SameTargetHaste ||
+                   kind == GenericMonsterPassiveRuntimeKind.ImpactStrike ||
+                   kind == GenericMonsterPassiveRuntimeKind.CrisisDefense ||
+                   kind == GenericMonsterPassiveRuntimeKind.FractureMark ||
+                   kind == GenericMonsterPassiveRuntimeKind.ThreatMark ||
+                   kind == GenericMonsterPassiveRuntimeKind.EmergencyEntry ||
+                   kind == GenericMonsterPassiveRuntimeKind.FirstWave;
+        }
+    }
+
     [CreateAssetMenu(menuName = "ProjectMT/Monster Maker/Draft", fileName = "Draft_monster")]
     public sealed class MonsterMakerDraft : ScriptableObject // 생성 전 사람의 결정을 보존하는 Editor 전용 원본
     {
@@ -100,6 +205,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private Sprite portrait;
         [SerializeField] private bool skillLoadoutConfigured;
         [SerializeField] private MonsterPassiveSkill rarityPassiveSkill;
+        [SerializeField] private MonsterMakerPassiveTuningDraft passiveTuning = new MonsterMakerPassiveTuningDraft();
         [SerializeField] private MonsterActiveSkill rarityActiveSkill;
         [SerializeField, TextArea(2, 5)] private string productionMemo;
 
@@ -149,6 +255,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         [SerializeField] private MonsterCombatType combatType = MonsterCombatType.Melee;
         [SerializeField] private MonsterBasicAttackProfile basicAttackProfile;
+        [SerializeField] private List<MonsterBasicAttackVfxBinding> basicAttackVfxBindings =
+            new List<MonsterBasicAttackVfxBinding>();
         [SerializeField] private MonsterMeleeAttackMode meleeMode = MonsterMeleeAttackMode.Single;
         [SerializeField] private MonsterMeleeAreaCenter meleeAreaCenter = MonsterMeleeAreaCenter.PrimaryTarget;
         [SerializeField, Min(0.01f)] private float meleeAreaRadius = 1.5f;
@@ -156,7 +264,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private MonsterRangedDeliveryMode rangedDeliveryMode = MonsterRangedDeliveryMode.Projectile;
         [SerializeField] private MonsterProjectileAttackMode projectileMode = MonsterProjectileAttackMode.Single;
         [SerializeField] private GameObject projectilePrefab;
-        [SerializeField] private AudioClip projectileLaunchSound;
         [SerializeField] private bool overrideProjectileTuning;
         [SerializeField, Min(0.01f)] private float projectileSpeed = 9f;
         [SerializeField, Min(0.01f)] private float projectileLifetime = 3f;
@@ -191,8 +298,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private MonsterStatModifier ascension5;
 
         [SerializeField] private MonsterMakerFeedbackDraft spawnFeedback = new MonsterMakerFeedbackDraft();
-        [SerializeField] private MonsterMakerFeedbackDraft attackStartFeedback = new MonsterMakerFeedbackDraft();
-        [SerializeField] private MonsterMakerFeedbackDraft attackMarkerFeedback = new MonsterMakerFeedbackDraft();
         [SerializeField] private MonsterMakerFeedbackDraft hitFeedback = new MonsterMakerFeedbackDraft();
         [SerializeField] private MonsterMakerFeedbackDraft deathFeedback = new MonsterMakerFeedbackDraft();
         [SerializeField] private MonsterMakerFeedbackDraft specialFeedback = new MonsterMakerFeedbackDraft();
@@ -203,6 +308,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public Sprite Portrait => portrait;
         public bool SkillLoadoutConfigured => skillLoadoutConfigured;
         public MonsterPassiveSkill RarityPassiveSkill => rarityPassiveSkill;
+        public MonsterMakerPassiveTuningDraft PassiveTuning => passiveTuning;
         public MonsterActiveSkill RarityActiveSkill => rarityActiveSkill;
         public string ProductionMemo => productionMemo ?? string.Empty;
         public GameObject VendorPrefab => vendorPrefab;
@@ -248,6 +354,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public float DeathSpeed => deathSpeed;
         public MonsterCombatType CombatType => combatType;
         public MonsterBasicAttackProfile BasicAttackProfile => basicAttackProfile;
+        public IReadOnlyList<MonsterBasicAttackVfxBinding> BasicAttackVfxBindings =>
+            basicAttackVfxBindings ??
+            (IReadOnlyList<MonsterBasicAttackVfxBinding>)Array.Empty<MonsterBasicAttackVfxBinding>();
         public MonsterMeleeAttackMode MeleeMode => meleeMode;
         public MonsterMeleeAreaCenter MeleeAreaCenter => meleeAreaCenter;
         public float MeleeAreaRadius => meleeAreaRadius;
@@ -255,7 +364,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public MonsterRangedDeliveryMode RangedDeliveryMode => rangedDeliveryMode;
         public MonsterProjectileAttackMode ProjectileMode => projectileMode;
         public GameObject ProjectilePrefab => projectilePrefab;
-        public AudioClip ProjectileLaunchSound => projectileLaunchSound;
         public bool OverrideProjectileTuning => overrideProjectileTuning;
         public float ProjectileSpeed => projectileSpeed;
         public float ProjectileLifetime => projectileLifetime;
@@ -296,13 +404,22 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public MonsterMakerAbilityDraft Ascension4 => ascension4;
         public MonsterStatModifier Ascension5 => ascension5;
         public MonsterMakerFeedbackDraft SpawnFeedback => spawnFeedback;
-        public MonsterMakerFeedbackDraft AttackStartFeedback => attackStartFeedback;
-        public MonsterMakerFeedbackDraft AttackMarkerFeedback => attackMarkerFeedback;
         public MonsterMakerFeedbackDraft HitFeedback => hitFeedback;
         public MonsterMakerFeedbackDraft DeathFeedback => deathFeedback;
         public MonsterMakerFeedbackDraft SpecialFeedback => specialFeedback;
 
 #if UNITY_EDITOR
+        public void EditorSetPassiveTemplate(GenericMonsterPassiveSkill template, bool resetTuning = false)
+        {
+            skillLoadoutConfigured = template != null;
+            rarityPassiveSkill = template;
+            passiveTuning ??= new MonsterMakerPassiveTuningDraft();
+            if (resetTuning || !passiveTuning.Matches(template))
+            {
+                passiveTuning.CopyFrom(template);
+            }
+        }
+
         public void EditorSetBasicAttackProfile(MonsterBasicAttackProfile profile)
         {
             basicAttackProfile = profile;

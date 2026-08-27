@@ -56,6 +56,49 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  vfxSlots:
+  - slotId: charge
+    displayName: "\uBE54 \uCDA9\uC804"
+    description: "\uBE54 \uBAA8\uC158 \uC2DC\uC791\uC758 \uCDA9\uC804 \uD6A8\uACFC"
+    eventType: 0
+    anchor: 1
+    multiplicity: 0
+    assignmentScope: 1
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: beam_body
+    displayName: "\uBE54 \uBCF8\uCCB4"
+    description: "\uACF5\uACA9 \uC6D0\uC810\uC5D0\uC11C \uBAA9\uD45C \uBC29\uD5A5\uC73C\uB85C
+      \uC720\uC9C0\uB418\uB294 \uBE54 \uD6A8\uACFC"
+    eventType: 1
+    anchor: 7
+    multiplicity: 5
+    assignmentScope: 1
+    attachment: 1
+    endPolicy: 2
+    defaultLifetime: 1
+  - slotId: contact_hit
+    displayName: "\uBE54 \uC811\uCD09 \uBA85\uC911"
+    description: "\uC9C1\uC120 \uD310\uC815\uC5D0\uC11C \uD53C\uD574\uB97C \uBC1B\uC740
+      \uB300\uC0C1 \uD6A8\uACFC"
+    eventType: 3
+    anchor: 5
+    multiplicity: 3
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: end
+    displayName: "\uBE54 \uC885\uB8CC"
+    description: "\uBE54 \uBAA8\uC158 \uC885\uB8CC \uD6A8\uACFC"
+    eventType: 10
+    anchor: 1
+    multiplicity: 0
+    assignmentScope: 1
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
   recipeVersion: 1
   deliveryModule: 0
   collisionModule: 0

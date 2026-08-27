@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 10
   defense: 4
   attackSpeed: 1
-  moveSpeed: 2.5
-  attackRange: 5
+  moveSpeed: 2
+  attackRange: 5.4
   ranged: 1
   runtimeAssetKey: monster/oster_01
   runtimeAssetSet: {fileID: 11400000, guid: 5fcf1e050fd1cff46b66f4e6322030c2, type: 2}

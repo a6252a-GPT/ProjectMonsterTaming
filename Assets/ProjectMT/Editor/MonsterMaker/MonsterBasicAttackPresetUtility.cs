@@ -35,28 +35,28 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 ["piru_01"] = "BA_M_01",
                 ["poi_poison_01"] = "BA_M_01",
                 ["rage_01"] = "BA_M_01",
-                ["ru_01"] = "BA_R_01",
-                ["shell_01"] = "BA_M_01",
+                ["rabi_queen_01"] = "BA_R_01",
+                ["rabi_01"] = "BA_M_01",
                 ["doomba_01"] = "BA_M_02",
                 ["grimpy_01"] = "BA_M_01",
                 ["hanjaemon_ice_01"] = "BA_R_03",
                 ["kutan_01"] = "BA_M_01",
-                ["nerea_01"] = "BA_M_02",
+                ["chamchi_01"] = "BA_M_02",
                 ["rako_01"] = "BA_M_01",
                 ["wispy_01"] = "BA_R_01",
                 ["berkan_01"] = "BA_M_02",
                 ["krabi_01"] = "BA_R_01",
                 ["lumi_01"] = "BA_M_05",
-                ["rubea_01"] = "BA_R_05",
+                ["phoenix_01"] = "BA_R_05",
                 ["shakun_01"] = "BA_M_05",
                 ["castley_01"] = "BA_M_04",
-                ["mingyu_legend_01"] = "BA_M_02",
+                ["werewolf_01"] = "BA_M_02",
                 ["mukuk_01"] = "BA_S_04",
                 ["never_ice_01"] = "BA_R_02",
                 ["silpia_01"] = "BA_S_01",
                 ["floria_01"] = "BA_S_03",
                 ["fryar_01"] = "BA_M_02",
-                ["grisu_fire_01"] = "BA_S_02",
+                ["angeonjun_01"] = "BA_S_02",
                 ["kimhyeona_01"] = "BA_R_02",
                 ["lucy_01"] = "BA_M_06",
                 ["mingyu_mythic_01"] = "BA_M_03",
@@ -169,6 +169,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [MenuItem("Tools/ProjectMT/Monster Maker/기본공격 15종 생성 및 전체 매칭")]
         public static void SetupAll()
         {
+            var validatedDrafts = ValidateSetupTargets();
             EnsureFolder("Assets/ProjectMT/02_Shared/Unit/Data", "BasicAttacks");
             var profiles = CreateOrUpdateProfiles();
             if (profiles.Count != 15)
@@ -185,12 +186,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         $"기본공격 Profile을 찾지 못했습니다. Monster={assignment.Key}, Profile={assignment.Value}");
                 }
 
-                var draftPath = MonsterMakerAssetWriter.BuildDraftPath(assignment.Key);
-                var draft = AssetDatabase.LoadAssetAtPath<MonsterMakerDraft>(draftPath);
-                if (draft == null)
-                {
-                    throw new InvalidOperationException($"Monster Maker Draft를 찾지 못했습니다: {draftPath}");
-                }
+                var draft = validatedDrafts[assignment.Key];
 
                 Undo.RecordObject(draft, "기본공격 전체 매칭");
                 draft.EditorSetBasicAttackProfile(profile);
@@ -217,6 +213,48 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             AssetDatabase.Refresh();
             Debug.Log($"[Monster Maker] 기본공격 15종 생성 및 {drafts.Count}마리 전체 매칭 완료");
+        }
+
+        private static Dictionary<string, MonsterMakerDraft> ValidateSetupTargets()
+        {
+            var drafts = new Dictionary<string, MonsterMakerDraft>(StringComparer.OrdinalIgnoreCase);
+            foreach (var assignment in MonsterProfileIds)
+            {
+                if (!BuiltInProfileIds.Contains(assignment.Value))
+                {
+                    throw new InvalidOperationException(
+                        $"기본공격 매칭표에 등록되지 않은 Profile ID가 있습니다. Monster={assignment.Key}, Profile={assignment.Value}");
+                }
+
+                var draftPath = MonsterMakerAssetWriter.BuildDraftPath(assignment.Key);
+                var draft = AssetDatabase.LoadAssetAtPath<MonsterMakerDraft>(draftPath);
+                if (draft == null)
+                {
+                    throw new InvalidOperationException($"Monster Maker 제작 원본을 찾지 못했습니다: {draftPath}");
+                }
+
+                if (!string.Equals(draft.MonsterId, assignment.Key, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        $"Monster Maker 제작 원본 ID가 경로와 다릅니다. Expected={assignment.Key}, Actual={draft.MonsterId}");
+                }
+
+                var combatPath = MonsterMakerAssetWriter.BuildPaths(assignment.Key)[3];
+                if (AssetDatabase.LoadAssetAtPath<MonsterCombatProfile>(combatPath) == null)
+                {
+                    throw new InvalidOperationException($"Monster Combat Profile을 찾지 못했습니다: {combatPath}");
+                }
+
+                drafts.Add(assignment.Key, draft);
+            }
+
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(MonsterMakerAssetWriter.DefaultProjectilePrefabPath) == null)
+            {
+                throw new InvalidOperationException(
+                    $"기본 투사체 Prefab을 찾지 못했습니다: {MonsterMakerAssetWriter.DefaultProjectilePrefabPath}");
+            }
+
+            return drafts;
         }
 
         private static void SyncRuntimeCombat(MonsterMakerDraft draft)
@@ -319,6 +357,178 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     $"{ProfileRoot}/{attackId}.asset");
         }
 
+        [MenuItem("Tools/ProjectMT/Monster Maker/기본공격 VFX 공간 계약만 초기화")]
+        public static void SetupBuiltInVfxContractsOnly()
+        {
+            foreach (var attackId in BuiltInProfileIds)
+            {
+                var profile = LoadProfile(attackId);
+                if (profile == null)
+                {
+                    throw new InvalidOperationException($"기본공격 Profile을 찾지 못했습니다: {attackId}");
+                }
+                Undo.RecordObject(profile, "기본공격 VFX 공간 계약 초기화");
+                ApplyBuiltInVfxContract(profile);
+                if (!profile.TryValidate(out var error))
+                {
+                    throw new InvalidOperationException(error);
+                }
+                EditorUtility.SetDirty(profile);
+                AssetDatabase.SaveAssetIfDirty(profile);
+            }
+            AssetDatabase.Refresh();
+            Debug.Log("[Monster Maker] 공식 기본공격 15종 VFX 공간 계약 초기화 완료");
+        }
+
+        private static void ApplyBuiltInVfxContract(MonsterBasicAttackProfile profile)
+        {
+            profile.EditorSetVfxSlots(BuildBuiltInVfxSlots(profile.AttackId));
+        }
+
+        private static MonsterBasicAttackVfxSlot[] BuildBuiltInVfxSlots(string attackId)
+        {
+            var motion = MonsterBasicAttackVfxAssignmentScope.MotionSpecific;
+            var shared = MonsterBasicAttackVfxAssignmentScope.MonsterShared;
+            return attackId switch
+            {
+                "BA_M_01" => new[]
+                {
+                    Vfx("swing_trail", "공격 궤적", "선택된 공격 모션의 휘두름 궤적", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution, motion, MonsterBasicAttackVfxAttachment.FollowAnchor, MonsterBasicAttackVfxEndPolicy.MotionEnd),
+                    Vfx("hit", "실제 명중", "피해가 적용된 대상 위치의 명중 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared)
+                },
+                "BA_M_02" => new[]
+                {
+                    Vfx("sweep_plane", "휩쓸기 면", "전방 부채꼴을 읽히게 하는 공격 면", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.SourceRoot, MonsterBasicAttackVfxMultiplicity.OncePerExecution, motion),
+                    Vfx("target_hit", "대상별 명중", "실제로 피해를 받은 각 대상의 명중 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared)
+                },
+                "BA_M_03" => new[]
+                {
+                    Vfx("thrust_path", "찌르기 경로", "공격 원점에서 목표 방향으로 뻗는 직선 효과", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.TrajectoryOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution, motion),
+                    Vfx("path_hit", "경로 명중", "직선 경로에서 피해를 받은 대상 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared)
+                },
+                "BA_M_04" => new[]
+                {
+                    Vfx("overhead_trail", "내려찍기 궤적", "선택된 모션의 내려찍기 궤적", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution, motion, MonsterBasicAttackVfxAttachment.FollowAnchor, MonsterBasicAttackVfxEndPolicy.MotionEnd),
+                    Vfx("ground_contact", "지면 접촉", "내려찍기가 닿은 중심점 효과", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AreaCenter, MonsterBasicAttackVfxMultiplicity.OncePerExecution, shared),
+                    Vfx("target_hit", "대상별 명중", "범위 안에서 실제 피해를 받은 각 대상의 명중 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared),
+                    Vfx("area_wave", "범위 파동", "범위 판정이 해결된 뒤 펼쳐지는 원형 효과", MonsterBasicAttackVfxEvent.AreaResolved, MonsterBasicAttackVfxAnchor.AreaCenter, MonsterBasicAttackVfxMultiplicity.OncePerExecution, shared)
+                },
+                "BA_M_05" => new[]
+                {
+                    Vfx("dash_start", "돌진 시작", "공격 모션이 시작될 때의 예고 효과", MonsterBasicAttackVfxEvent.MotionStart, MonsterBasicAttackVfxAnchor.SourceRoot, MonsterBasicAttackVfxMultiplicity.OncePerMotion, motion),
+                    Vfx("dash_trail", "돌진 잔상", "공격자를 따라가는 돌진 효과", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.SourceRoot, MonsterBasicAttackVfxMultiplicity.ContinuousUntilEnd, motion, MonsterBasicAttackVfxAttachment.FollowAnchor, MonsterBasicAttackVfxEndPolicy.MotionEnd),
+                    Vfx("hit", "실제 명중", "돌진 뒤 피해가 적용된 위치의 명중 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared)
+                },
+                "BA_M_06" => new[]
+                {
+                    Vfx("strike_trail", "연속 공격 궤적", "선택된 연속 공격 모션의 궤적", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution, motion, MonsterBasicAttackVfxAttachment.FollowAnchor, MonsterBasicAttackVfxEndPolicy.MotionEnd),
+                    Vfx("per_hit", "타격별 명중", "각 피해 단계의 명중 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerDamageStage, shared),
+                    Vfx("final_hit", "마지막 타격", "마지막 피해 단계 뒤의 마무리 효과", MonsterBasicAttackVfxEvent.SequenceEnd, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.OncePerExecution, shared)
+                },
+                "BA_R_01" => ProjectileSlots("launch", "발사", "projectile", "투사체 본체", "hit", "실제 명중"),
+                "BA_R_02" => new[]
+                {
+                    Vfx("launch", "발사", "관통 투사체가 생성되는 원점 효과", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution, motion),
+                    Delivery("projectile", "관통 투사체 본체"),
+                    Vfx("pierce_hit", "관통 명중", "경로 위에서 피해를 받은 대상별 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared),
+                    Vfx("delivery_end", "비행 종료", "최대 거리 또는 수명으로 이동체가 끝나는 효과", MonsterBasicAttackVfxEvent.DeliveryEnd, MonsterBasicAttackVfxAnchor.ProjectileRoot, MonsterBasicAttackVfxMultiplicity.PerProjectile, shared)
+                },
+                "BA_R_03" => new[]
+                {
+                    Vfx("launch", "발사", "폭발 투사체가 생성되는 원점 효과", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution, motion),
+                    Delivery("projectile", "폭발 투사체 본체"),
+                    Vfx("contact", "접촉 명중", "투사체가 실제로 접촉한 위치 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared),
+                    Vfx("area_explosion", "범위 폭발", "범위 피해 해결 뒤 중심점 폭발 효과", MonsterBasicAttackVfxEvent.AreaResolved, MonsterBasicAttackVfxAnchor.AreaCenter, MonsterBasicAttackVfxMultiplicity.OncePerExecution, shared)
+                },
+                "BA_R_04" => new[]
+                {
+                    Vfx("cast", "즉발 시전", "Marker 순간 공격 원점의 시전 효과", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution, motion),
+                    Vfx("hit", "실제 명중", "즉시 피해가 적용된 대상 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared)
+                },
+                "BA_R_05" => new[]
+                {
+                    Vfx("multi_launch", "다중 발사", "부채꼴 탄막이 시작되는 원점 효과", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution, motion),
+                    Delivery("projectile", "개별 투사체 본체"),
+                    Vfx("hit", "개별 명중", "각 투사체가 피해를 적용한 대상 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared)
+                },
+                "BA_S_01" => new[]
+                {
+                    Vfx("launch", "왕복 발사", "왕복 투사체가 출발하는 원점 효과", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution, motion),
+                    Delivery("projectile", "왕복 투사체 본체"),
+                    Vfx("outbound_hit", "나가는 경로 명중", "전진 구간의 실제 명중 효과", MonsterBasicAttackVfxEvent.OutboundTargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared),
+                    Vfx("turn", "회전 전환", "투사체가 복귀로 전환되는 지점 효과", MonsterBasicAttackVfxEvent.DeliveryTurn, MonsterBasicAttackVfxAnchor.ProjectileRoot, MonsterBasicAttackVfxMultiplicity.PerProjectile, shared),
+                    Vfx("return_hit", "돌아오는 경로 명중", "복귀 구간의 실제 명중 효과", MonsterBasicAttackVfxEvent.ReturnTargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared)
+                },
+                "BA_S_02" => new[]
+                {
+                    Vfx("start", "브레스 시작", "브레스 모션 시작 예고 효과", MonsterBasicAttackVfxEvent.MotionStart, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerMotion, motion),
+                    Vfx("body", "브레스 본체", "공격 원점을 따라 유지되는 브레스 효과", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.ContinuousUntilEnd, motion, MonsterBasicAttackVfxAttachment.FollowAnchor, MonsterBasicAttackVfxEndPolicy.MotionEnd),
+                    Vfx("repeated_hit", "반복 명중", "각 피해 단계에서 실제 명중한 위치 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerDamageStage, shared),
+                    Vfx("end", "브레스 종료", "브레스 모션 종료 효과", MonsterBasicAttackVfxEvent.MotionEnd, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerMotion, motion)
+                },
+                "BA_S_03" => new[]
+                {
+                    Vfx("charge", "빔 충전", "빔 모션 시작의 충전 효과", MonsterBasicAttackVfxEvent.MotionStart, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerMotion, motion),
+                    Vfx("beam_body", "빔 본체", "공격 원점에서 목표 방향으로 유지되는 빔 효과", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.TrajectoryOrigin, MonsterBasicAttackVfxMultiplicity.ContinuousUntilEnd, motion, MonsterBasicAttackVfxAttachment.FollowAnchor, MonsterBasicAttackVfxEndPolicy.MotionEnd),
+                    Vfx("contact_hit", "빔 접촉 명중", "직선 판정에서 피해를 받은 대상 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared),
+                    Vfx("end", "빔 종료", "빔 모션 종료 효과", MonsterBasicAttackVfxEvent.MotionEnd, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerMotion, motion)
+                },
+                "BA_S_04" => new[]
+                {
+                    Vfx("start", "파동 시작", "이동 파동이 생성되는 원점 효과", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution, motion),
+                    Delivery("wave_body", "이동 파동 본체"),
+                    Vfx("path_hit", "경로 명중", "파동 경로에서 피해를 받은 대상 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared),
+                    Vfx("disappear", "파동 소멸", "파동 이동체가 끝나는 위치 효과", MonsterBasicAttackVfxEvent.DeliveryEnd, MonsterBasicAttackVfxAnchor.ProjectileRoot, MonsterBasicAttackVfxMultiplicity.PerProjectile, shared)
+                },
+                _ => Array.Empty<MonsterBasicAttackVfxSlot>()
+            };
+        }
+
+        private static MonsterBasicAttackVfxSlot[] ProjectileSlots(
+            string launchId, string launchName, string deliveryId, string deliveryName,
+            string hitId, string hitName)
+        {
+            return new[]
+            {
+                Vfx(launchId, launchName, "투사체가 생성되는 공격 원점 효과", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution, MonsterBasicAttackVfxAssignmentScope.MotionSpecific),
+                Delivery(deliveryId, deliveryName),
+                Vfx(hitId, hitName, "피해가 적용된 실제 명중 위치 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, MonsterBasicAttackVfxAssignmentScope.MonsterShared)
+            };
+        }
+
+        private static MonsterBasicAttackVfxSlot Delivery(string id, string name)
+        {
+            return Vfx(id, name, "실제 이동 판정체의 몬스터 고유 외형",
+                MonsterBasicAttackVfxEvent.DeliverySpawn, MonsterBasicAttackVfxAnchor.ProjectileRoot,
+                MonsterBasicAttackVfxMultiplicity.PerProjectile,
+                MonsterBasicAttackVfxAssignmentScope.MonsterShared,
+                MonsterBasicAttackVfxAttachment.DeliveryVisual,
+                MonsterBasicAttackVfxEndPolicy.DeliveryEnd);
+        }
+
+        private static MonsterBasicAttackVfxSlot Vfx(
+            string id, string name, string guide, MonsterBasicAttackVfxEvent timing,
+            MonsterBasicAttackVfxAnchor anchor, MonsterBasicAttackVfxMultiplicity repeat,
+            MonsterBasicAttackVfxAssignmentScope scope,
+            MonsterBasicAttackVfxAttachment attachment = MonsterBasicAttackVfxAttachment.World,
+            MonsterBasicAttackVfxEndPolicy end = MonsterBasicAttackVfxEndPolicy.Timed,
+            float lifetime = 1f)
+        {
+            var slot = new MonsterBasicAttackVfxSlot();
+            slot.EditorConfigure(
+                id,
+                name,
+                guide,
+                timing,
+                anchor,
+                repeat,
+                scope,
+                attachment,
+                end,
+                lifetime);
+            return slot;
+        }
+
         private static Dictionary<string, MonsterBasicAttackProfile> CreateOrUpdateProfiles()
         {
             var profiles = new Dictionary<string, MonsterBasicAttackProfile>(StringComparer.OrdinalIgnoreCase);
@@ -390,7 +600,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 MonsterBasicAttackCenter.Source, MonsterBasicAttackProjectileTravel.None,
                 1f, 0.4f, 55f, 1f, 4, 1, 0f, new[] { 0.34f, 0.33f, 0.33f }, 0.6f,
                 hitInterval: 0.07f,
-                designMemo: "전방 부채꼴을 짧게 유지하며 총 피해를 세 번으로 나눠 전달.");
+                designMemo: "전방 부채꼴 브레스를 기본 0.8초 유지하며 총 피해를 세 단계로 나눠 전달.");
+            profiles["BA_S_02"]?.EditorSetBreathDuration(0.8f);
             Configure(profiles, "BA_S_03", "직선 빔",
                 MonsterCombatType.Ranged, MonsterBasicAttackDelivery.Beam, MonsterBasicAttackShape.Line,
                 MonsterBasicAttackCenter.Source, MonsterBasicAttackProjectileTravel.None,
@@ -467,6 +678,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 projectileLife: projectileLife,
                 projectileContactRadius: projectileContactRadius);
             profile.EditorSetDesignMemo(designMemo);
+            ApplyBuiltInVfxContract(profile);
             if (!profile.TryValidate(out var error))
             {
                 throw new InvalidOperationException(error);

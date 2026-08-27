@@ -56,6 +56,60 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  vfxSlots:
+  - slotId: launch
+    displayName: "\uC655\uBCF5 \uBC1C\uC0AC"
+    description: "\uC655\uBCF5 \uD22C\uC0AC\uCCB4\uAC00 \uCD9C\uBC1C\uD558\uB294
+      \uC6D0\uC810 \uD6A8\uACFC"
+    eventType: 1
+    anchor: 1
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: projectile
+    displayName: "\uC655\uBCF5 \uD22C\uC0AC\uCCB4 \uBCF8\uCCB4"
+    description: "\uC2E4\uC81C \uC774\uB3D9 \uD310\uC815\uCCB4\uC758 \uBAAC\uC2A4\uD130
+      \uACE0\uC720 \uC678\uD615"
+    eventType: 2
+    anchor: 3
+    multiplicity: 2
+    assignmentScope: 0
+    attachment: 2
+    endPolicy: 1
+    defaultLifetime: 1
+  - slotId: outbound_hit
+    displayName: "\uB098\uAC00\uB294 \uACBD\uB85C \uBA85\uC911"
+    description: "\uC804\uC9C4 \uAD6C\uAC04\uC758 \uC2E4\uC81C \uBA85\uC911 \uD6A8\uACFC"
+    eventType: 4
+    anchor: 5
+    multiplicity: 3
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: turn
+    displayName: "\uD68C\uC804 \uC804\uD658"
+    description: "\uD22C\uC0AC\uCCB4\uAC00 \uBCF5\uADC0\uB85C \uC804\uD658\uB418\uB294
+      \uC9C0\uC810 \uD6A8\uACFC"
+    eventType: 8
+    anchor: 3
+    multiplicity: 2
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: return_hit
+    displayName: "\uB3CC\uC544\uC624\uB294 \uACBD\uB85C \uBA85\uC911"
+    description: "\uBCF5\uADC0 \uAD6C\uAC04\uC758 \uC2E4\uC81C \uBA85\uC911 \uD6A8\uACFC"
+    eventType: 5
+    anchor: 5
+    multiplicity: 3
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
   recipeVersion: 1
   deliveryModule: 1
   collisionModule: 4

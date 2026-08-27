@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
 
@@ -24,6 +26,8 @@ namespace ProjectMT.Contents.CastleRaidHex
         private float damageReductionRemaining;
         private float shieldAmount;
         private float shieldRemaining;
+        private bool frontlineBondActive;
+        private readonly HashSet<int> couragePresentedRecipients = new HashSet<int>();
 
         public float AttackDamageMultiplier => attackBuffRemaining > 0f ? 1f + attackBuffRate : 1f;
         public float AttackSpeedRate => attackSpeedRemaining > 0f ? attackSpeedRate : 0f;
@@ -67,6 +71,8 @@ namespace ProjectMT.Contents.CastleRaidHex
             damageReductionRemaining = 0f;
             shieldAmount = 0f;
             shieldRemaining = 0f;
+            frontlineBondActive = false;
+            couragePresentedRecipients.Clear();
         }
 
         public void Tick(float deltaTime)
@@ -111,13 +117,20 @@ namespace ProjectMT.Contents.CastleRaidHex
                     {
                         ApplyDamageReduction(skill.ResolvePrimary(monsterLevel), skill.Duration);
                         cooldownRemaining = skill.Cooldown;
+                        QueueStatus(owner, "피해 감소!", CombatStatusTextStyle.DamageReduction);
                     }
                     break;
                 case GenericMonsterPassiveRuntimeKind.FrontlineBond:
-                    if (CountNearbyAllies(skill.Radius) >= 2)
+                    var bonded = CountNearbyAllies(skill.Radius) >= 2;
+                    if (bonded)
                     {
                         ApplyDamageReduction(skill.ResolvePrimary(monsterLevel), 0.55f);
+                        if (!frontlineBondActive)
+                        {
+                            QueueStatus(owner, "피해 감소!", CombatStatusTextStyle.DamageReduction);
+                        }
                     }
+                    frontlineBondActive = bonded;
                     break;
                 case GenericMonsterPassiveRuntimeKind.CourageAura:
                     ApplyCourageAura();
@@ -143,6 +156,7 @@ namespace ProjectMT.Contents.CastleRaidHex
                     if ((basicHitCount + 1) % skill.TriggerCount == 0)
                     {
                         resolved *= 1f + skill.ResolvePrimary(monsterLevel);
+                        world.MarkPassiveEnhancedDamage(target);
                     }
                     break;
                 case GenericMonsterPassiveRuntimeKind.LowHealthHunter:
@@ -160,6 +174,13 @@ namespace ProjectMT.Contents.CastleRaidHex
                 case GenericMonsterPassiveRuntimeKind.ThreatMark:
                     if (target.Kind == HexCastleAssaultTargetKind.Defender ||
                         target.Structure != null && target.Structure.TurretWeaponKind != HexCastleTurretWeaponKind.None)
+                    {
+                        resolved *= 1f + skill.ResolvePrimary(monsterLevel);
+                    }
+                    break;
+                case GenericMonsterPassiveRuntimeKind.ImpactStrike:
+                    if ((basicHitCount + 1) % skill.TriggerCount == 0 &&
+                        target.Kind != HexCastleAssaultTargetKind.Defender)
                     {
                         resolved *= 1f + skill.ResolvePrimary(monsterLevel);
                     }
@@ -208,20 +229,26 @@ namespace ProjectMT.Contents.CastleRaidHex
 
             switch (skill.RuntimeKind)
             {
+                case GenericMonsterPassiveRuntimeKind.RhythmPower:
+                    if (IsNthHit())
+                    {
+                        QueueStatus(owner, "강화!", CombatStatusTextStyle.Enhanced);
+                    }
+                    break;
                 case GenericMonsterPassiveRuntimeKind.SameTargetHaste:
                     ApplyAttackSpeedBuff(
                         skill.ResolvePrimary(monsterLevel) * Mathf.Clamp(continuousHits, 1, skill.MaxStacks),
                         skill.Duration);
+                    if (continuousHits <= skill.MaxStacks)
+                    {
+                        QueueStatus(owner, "가속!", CombatStatusTextStyle.Haste);
+                    }
                     break;
-                case GenericMonsterPassiveRuntimeKind.RallySplash:
+                case GenericMonsterPassiveRuntimeKind.ImpactStrike:
                     if (IsNthHit())
                     {
-                        world.ApplyPassiveSplash(
-                            owner,
-                            target,
-                            owner.BaseAttackDamage * skill.ResolvePrimary(monsterLevel),
-                            skill.Radius,
-                            skill.MaxTargets);
+                        target.Defender?.TryApplyPassiveStagger(skill.Duration);
+                        QueueStatus(owner, "충격!", CombatStatusTextStyle.Impact);
                     }
                     break;
                 case GenericMonsterPassiveRuntimeKind.FractureMark:
@@ -240,15 +267,22 @@ namespace ProjectMT.Contents.CastleRaidHex
                 case GenericMonsterPassiveRuntimeKind.HealingShot:
                     if (IsNthHit())
                     {
-                        FindLowestHealthAlly()?.HealPassive(
-                            owner.BaseAttackDamage * skill.ResolvePrimary(monsterLevel));
+                        var ally = FindLowestHealthAlly();
+                        if (ally != null)
+                        {
+                            QueueHeal(
+                                ally,
+                                ally.HealPassive(owner.BaseAttackDamage * skill.ResolvePrimary(monsterLevel)));
+                        }
                     }
                     break;
                 case GenericMonsterPassiveRuntimeKind.KillHeal:
                     if (destroyed && cooldownRemaining <= 0f)
                     {
                         cooldownRemaining = skill.Cooldown;
-                        owner.HealPassive(owner.MaxHealth * skill.ResolvePrimary(monsterLevel));
+                        QueueHeal(
+                            owner,
+                            owner.HealPassive(owner.MaxHealth * skill.ResolvePrimary(monsterLevel)));
                     }
                     break;
             }
@@ -303,6 +337,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             if (skill.RuntimeKind == GenericMonsterPassiveRuntimeKind.FirstWave)
             {
                 ApplyAttackBuff(skill.ResolvePrimary(monsterLevel), skill.Duration);
+                QueueStatus(owner, "공격력 상승!", CombatStatusTextStyle.AttackUp);
                 return;
             }
             if (entryReason == UnitEntryReason.InitialDeployment)
@@ -313,6 +348,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             {
                 var scale = entryReason == UnitEntryReason.CastleManualDeployment ? 0.5f : 1f;
                 GrantShield(owner.MaxHealth * skill.ResolvePrimary(monsterLevel) * scale, skill.Duration);
+                QueueStatus(owner, "보호막!", CombatStatusTextStyle.Shield);
             }
         }
 
@@ -360,7 +396,24 @@ namespace ProjectMT.Contents.CastleRaidHex
                     continue;
                 }
                 candidate.PassiveRuntime.ApplyAttackBuff(skill.ResolvePrimary(monsterLevel), 0.55f);
+                if (couragePresentedRecipients.Add(candidate.GetInstanceID()))
+                {
+                    QueueStatus(candidate, "공격력 상승!", CombatStatusTextStyle.AttackUp);
+                }
             }
+        }
+
+        private void QueueStatus(
+            HexCastleAssaultUnit unit,
+            string text,
+            CombatStatusTextStyle style)
+        {
+            world?.QueuePassiveStatus(unit, text, style);
+        }
+
+        private void QueueHeal(HexCastleAssaultUnit unit, float amount)
+        {
+            world?.QueuePassiveHeal(unit, amount);
         }
 
         private bool IsNthHit()

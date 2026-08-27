@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 20
   defense: 6
   attackSpeed: 1
-  moveSpeed: 2.8
-  attackRange: 4.4
+  moveSpeed: 2.2
+  attackRange: 4.8
   ranged: 1
   runtimeAssetKey: monster/pyron_01
   runtimeAssetSet: {fileID: 11400000, guid: 814d6616c306dc443a009735feeef4bb, type: 2}

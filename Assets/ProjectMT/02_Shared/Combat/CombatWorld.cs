@@ -16,9 +16,11 @@ namespace ProjectMT.Shared.Combat
         [SerializeField] private GameObject projectilePrefab; // 원거리 공격 투사체
         [SerializeField, Min(1)] private int maxMonsterVfxPerFrame = 6; // 전용 Marker VFX 예산
         [SerializeField, Min(1)] private int maxMonsterFeelPerFrame = 6; // FEEL 프리셋 독립 예산
-        [SerializeField] private bool showMonsterBasicAttackHitAreas = true; // VFX 확정 전 실제 XZ 판정 확인
+        private static bool showMonsterBasicAttackHitAreas; // 디버그 버튼으로만 켜는 실제 XZ 판정 표시
 
         private readonly List<UnitActor> units = new List<UnitActor>(); // 현재 등록 유닛
+        private readonly List<MonsterAttackAreaIndicator> monsterBasicAttackHitAreas =
+            new List<MonsterAttackAreaIndicator>();
         private readonly MeleeAttackExecutor meleeExecutor = new MeleeAttackExecutor();
         private readonly ProjectileAttackExecutor projectileExecutor = new ProjectileAttackExecutor();
         private readonly MonsterBasicAttackExecutor basicAttackExecutor = new MonsterBasicAttackExecutor();
@@ -31,6 +33,30 @@ namespace ProjectMT.Shared.Combat
 
         public ICombatFeedbackPlayer Feedback => feedbackPlayer;
         public bool IsPaused { get; private set; }
+        public static bool MonsterBasicAttackHitAreasVisible => showMonsterBasicAttackHitAreas;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetDebugSettings()
+        {
+            showMonsterBasicAttackHitAreas = false; // Play 시작마다 기본 OFF
+        }
+
+        public static void SetMonsterBasicAttackHitAreasVisible(bool visible)
+        {
+            showMonsterBasicAttackHitAreas = visible;
+            if (visible)
+            {
+                return;
+            }
+
+            var worlds = FindObjectsByType<CombatWorld>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (var index = 0; index < worlds.Length; index++)
+            {
+                worlds[index]?.ClearMonsterBasicAttackHitAreas();
+            }
+        }
 
         public static void ConfigureSharedStatRules(CombatStatConfig config)
         {
@@ -340,6 +366,10 @@ namespace ProjectMT.Shared.Combat
 
             var component = target as Component;
             var targetActor = component != null ? component.GetComponent<UnitActor>() : null;
+            if (applyOutgoingPassive && source.SkillRuntime.WillEnhanceNextBasicHit)
+            {
+                feedbackFlags |= DamageFeedbackFlags.PassiveEnhancedNumber;
+            }
             var resolvedAmount = applyOutgoingPassive
                 ? amount * source.SkillRuntime.ResolveOutgoingDamageMultiplier(targetActor)
                 : amount;
@@ -560,7 +590,8 @@ namespace ProjectMT.Shared.Combat
             var color = source.Team == UnitTeam.Player
                 ? new Color(0.1f, 0.9f, 1f, 0.72f)
                 : new Color(1f, 0.25f, 0.18f, 0.72f);
-            MonsterAttackAreaIndicator.Create(
+            monsterBasicAttackHitAreas.RemoveAll(indicator => indicator == null);
+            var indicator = MonsterAttackAreaIndicator.Create(
                 transform,
                 profile,
                 origin,
@@ -568,6 +599,34 @@ namespace ProjectMT.Shared.Combat
                 primaryTarget,
                 attackRange,
                 color);
+            if (indicator != null)
+            {
+                monsterBasicAttackHitAreas.Add(indicator);
+            }
+        }
+
+        private void ClearMonsterBasicAttackHitAreas()
+        {
+            for (var index = 0; index < monsterBasicAttackHitAreas.Count; index++)
+            {
+                var indicator = monsterBasicAttackHitAreas[index];
+                if (indicator == null)
+                {
+                    continue;
+                }
+
+                indicator.gameObject.SetActive(false);
+                if (Application.isPlaying)
+                {
+                    Destroy(indicator.gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(indicator.gameObject);
+                }
+            }
+
+            monsterBasicAttackHitAreas.Clear();
         }
 
         private static void InsertByDistance(
@@ -666,6 +725,55 @@ namespace ProjectMT.Shared.Combat
             var scale = cue.Scale * Mathf.Max(0.01f, vfxScale);
             instance.transform.localScale = cue.VfxPrefab.transform.localScale * scale;
             StartCoroutine(ReturnMonsterObjectAfter(instance, cue.VfxLifetime));
+        }
+
+        public GameObject SpawnBasicAttackVfx(
+            MonsterBasicAttackVfxBinding binding,
+            Vector3 position,
+            Quaternion rotation,
+            Transform parent = null,
+            float bodyVfxScale = 1f)
+        {
+            if (binding == null || !binding.IsAssigned)
+            {
+                return null;
+            }
+
+            var frame = Time.frameCount;
+            if (monsterVfxFrame != frame)
+            {
+                monsterVfxFrame = frame;
+                monsterVfxCount = 0;
+            }
+            if (monsterVfxCount >= Mathf.Max(1, maxMonsterVfxPerFrame))
+            {
+                return null;
+            }
+
+            monsterVfxCount++;
+            position += rotation * binding.LocalPosition;
+            rotation *= binding.LocalRotation;
+            var instance = RentMonsterObject(binding.Prefab, position, rotation, parent);
+            if (instance != null)
+            {
+                MonsterBasicAttackVfxPlayback.ApplyInstanceScale(
+                    instance,
+                    binding.Prefab.transform.localScale *
+                    binding.Scale * Mathf.Max(0.01f, bodyVfxScale));
+                MonsterBasicAttackVfxPlayback.RestartAtOffset(
+                    instance,
+                    binding.PlaybackOffset,
+                    playbackSpeed: binding.PlaybackSpeed);
+            }
+            return instance;
+        }
+
+        public void ScheduleMonsterObjectReturn(GameObject instance, float delay)
+        {
+            if (instance != null)
+            {
+                StartCoroutine(ReturnMonsterObjectAfter(instance, delay));
+            }
         }
 
         public bool WillPlayBasicAttackFeelTargetMotion(
@@ -820,6 +928,7 @@ namespace ProjectMT.Shared.Combat
         {
             StopAllCoroutines();
             IsPaused = false;
+            ClearMonsterBasicAttackHitAreas();
             var buffer = new List<UnitActor>(units); // 순회 중 원본 목록 분리
             units.Clear();
             foreach (var unit in buffer)

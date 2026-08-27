@@ -31,5 +31,5 @@ MonoBehaviour:
   basicAttackProfile: {fileID: 11400000, guid: d6be405325d5a00459045db04dcf44d7, type: 2}
   mode: 0
   areaCenter: 1
-  areaRadius: 0.35
-  maxTargets: 1
+  areaRadius: 1.5
+  maxTargets: 4

@@ -43,6 +43,8 @@ MonoBehaviour:
     crossFadeDuration: 0.045
     weight: 3
     preventImmediateRepeat: 1
+    overrideBreathDuration: 0
+    breathDuration: 0.8
     markers:
     - normalizedTime: 0.38
       powerRatio: 1

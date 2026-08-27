@@ -67,6 +67,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         private float attackCooldown;
         private float patrolWait;
         private float responseDelayRemaining;
+        private float passiveStaggerRemaining;
         private float jumpElapsed;
         private int routeIndex;
         private int patrolSequence;
@@ -180,6 +181,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             targetSearchCooldown = 0f;
             TargetSearchCount = 0;
             responseDelayRemaining = 0f;
+            passiveStaggerRemaining = 0f;
             isJumping = false;
             jumpCount = 0;
             ConfigureJumpFeedback();
@@ -191,6 +193,17 @@ namespace ProjectMT.Contents.CastleRaidHex
                    health.ApplyDamage(new DamageRequest(null, amount, hitPoint));
         }
 
+        public bool TryApplyPassiveStagger(float duration)
+        {
+            if (!IsAlive || duration <= 0f)
+            {
+                return false;
+            }
+
+            passiveStaggerRemaining = Mathf.Max(passiveStaggerRemaining, Mathf.Min(0.5f, duration));
+            return true;
+        }
+
         public void Tick(float deltaTime)
         {
             if (!IsConfigured || !IsAlive)
@@ -199,6 +212,12 @@ namespace ProjectMT.Contents.CastleRaidHex
             }
 
             deltaTime = Mathf.Max(0f, deltaTime);
+            passiveStaggerRemaining = Mathf.Max(0f, passiveStaggerRemaining - deltaTime);
+            if (passiveStaggerRemaining > 0f)
+            {
+                state = HexCastleGarrisonState.Idle;
+                return;
+            }
             attackCooldown = Mathf.Max(0f, attackCooldown - deltaTime);
             patrolWait = Mathf.Max(0f, patrolWait - deltaTime);
             targetSearchCooldown = Mathf.Max(0f, targetSearchCooldown - deltaTime);

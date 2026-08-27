@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 10
   defense: 3
   attackSpeed: 1
-  moveSpeed: 2.5
-  attackRange: 2
+  moveSpeed: 2
+  attackRange: 3.5
   ranged: 0
   runtimeAssetKey: monster/poi_poison_01
   runtimeAssetSet: {fileID: 11400000, guid: f212cce910246594eb62fc3f096ef803, type: 2}

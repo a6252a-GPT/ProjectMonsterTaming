@@ -136,7 +136,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
             Assert.That(catalog.Entries.Count, Is.EqualTo(38));
             Assert.That(catalog.Resolve("aru_01").Pattern, Is.EqualTo(HexCastleAssaultPattern.TacticalSupport));
             Assert.That(catalog.Resolve("aru_01").SupportFocus, Is.EqualTo(HexCastleAssaultSupportFocus.DefenseBuff));
-            Assert.That(catalog.Resolve("nerea_01").Pattern, Is.EqualTo(HexCastleAssaultPattern.DefenderHunter));
+            Assert.That(catalog.Resolve("chamchi_01").Pattern, Is.EqualTo(HexCastleAssaultPattern.DefenderHunter));
             Assert.That(catalog.Resolve("castley_01").Pattern, Is.EqualTo(HexCastleAssaultPattern.WallBreaker));
             Assert.That(catalog.Resolve("floria_01").Pattern, Is.EqualTo(HexCastleAssaultPattern.TacticalSupport));
         }
@@ -417,7 +417,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
             var firstSupport = CreateAssaultUnit(world, cells, start, "floria_01");
             var secondSupport = CreateAssaultUnit(world, cells, start.Neighbor(2), "floria_01");
             var firstAlly = CreateAssaultUnit(world, cells, start.Neighbor(1), "kimhyeona_01");
-            var secondAlly = CreateAssaultUnit(world, cells, start.Neighbor(3), "rubea_01");
+            var secondAlly = CreateAssaultUnit(world, cells, start.Neighbor(3), "phoenix_01");
             firstAlly.ApplyDamage(50f);
             secondAlly.ApplyDamage(50f);
 
@@ -549,7 +549,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
             var world = worldObject.AddComponent<HexCastleAssaultWorld>();
             world.Configure(cells, 1f, 2, null, null, 71);
             var victim = CreateAssaultUnit(world, cells, start, "kimhyeona_01");
-            var responder = CreateAssaultUnit(world, cells, start.Neighbor(2), "rubea_01");
+            var responder = CreateAssaultUnit(world, cells, start.Neighbor(2), "phoenix_01");
             responder.RefreshStrategicDecision();
             var committedWall = responder.CommittedTarget.Structure;
 

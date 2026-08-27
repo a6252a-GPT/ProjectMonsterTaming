@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5de17c54962b5e4498845b2d56bbb2f, type: 3}
+  m_Name: MD_rabi_queen_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterDefinition
+  monsterId: rabi_queen_01
+  displayName: "\uB77C\uBE44\uD038"
+  portrait: {fileID: 21300000, guid: 2c161ecb39d37a14abf5516350daf6f9, type: 3}
+  previewPrefab: {fileID: 6733014878611864065, guid: 68d7b79f706834246a6538ec21c092da, type: 3}
+  visualTint: {r: 1, g: 1, b: 1, a: 1}
+  maxHealth: 110
+  attackPower: 12
+  defense: 4
+  attackSpeed: 1
+  moveSpeed: 2
+  attackRange: 4.6
+  ranged: 1
+  runtimeAssetKey: monster/rabi_queen_01
+  runtimeAssetSet: {fileID: 11400000, guid: 490c5eab9cc516e498b7ba0b5ae3a5e0, type: 2}

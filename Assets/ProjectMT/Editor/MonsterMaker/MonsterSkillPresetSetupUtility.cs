@@ -16,15 +16,19 @@ namespace ProjectMT.EditorTools.MonsterMaker
         {
             "passive_kain_duality",
             "passive_nth_hit_power",
-            "passive_nth_hit_splash",
+            "passive_impact_strike",
+            "passive_same_target_haste",
             "passive_low_hp_hunter",
             "passive_ranged_hunter",
+            "passive_kill_heal",
             "passive_entry_shield",
-            "passive_heavy_body",
-            "passive_last_stand",
+            "passive_crisis_defense",
             "passive_nth_hit_heal",
-            "passive_team_haste_rhythm",
-            "passive_armor_shred",
+            "passive_long_range_aim",
+            "passive_weakpoint_stack",
+            "passive_courage_aura",
+            "passive_formation_bond",
+            "passive_first_wave",
             "active_kain_tenfold_rush",
             "active_cone_strike",
             "active_spin_attack",
@@ -83,10 +87,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
                         Effect("nth_hit_damage", MonsterSkillEffectType.Damage, 1.35f))),
                 Passive(
-                    "passive_nth_hit_splash", "폭발 타격", "N번째 기본 공격이 대상 주변까지 타격합니다.",
+                    "passive_impact_strike", "충격 타격", "4번째 기본 공격이 일반 적을 잠깐 경직시키고, 보스와 구조물에는 추가 피해를 줍니다.",
                     Recipe(MonsterSkillTriggerType.BasicAttackNthHit, 4, MonsterSkillTargetType.TargetAreaEnemies,
                         MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.TargetCircle,
-                        Effect("nth_hit_splash", MonsterSkillEffectType.Damage, 0.65f, radius: 1.2f, maxTargets: 3))),
+                        Effect("impact_strike", MonsterSkillEffectType.Stagger, 0.2f))),
                 Passive(
                     "passive_same_target_haste", "가속 연타", "같은 대상을 연속 적중하면 공격 속도가 증가합니다.",
                     Recipe(MonsterSkillTriggerType.BasicAttackHit, 1, MonsterSkillTargetType.Self,
@@ -94,11 +98,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         Effect("same_target_haste", MonsterSkillEffectType.AttackSpeedBuff, 0.05f, duration: 2f,
                             policy: MonsterSkillStackPolicy.Stack),
                         Condition(MonsterSkillConditionType.SameTargetContinuous))),
-                Passive(
-                    "passive_first_hit", "선제타", "새 표적에 가하는 첫 공격을 강화합니다.",
-                    Recipe(MonsterSkillTriggerType.TargetChanged, 1, MonsterSkillTargetType.CurrentTarget,
-                        MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
-                        Effect("first_hit_damage", MonsterSkillEffectType.Damage, 1.3f))),
                 Passive(
                     "passive_low_hp_hunter", "피 냄새", "체력이 낮은 적에게 추가 피해를 줍니다.",
                     Recipe(MonsterSkillTriggerType.BasicAttackHit, 1, MonsterSkillTargetType.CurrentTarget,
@@ -115,11 +114,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
                             Effect("ranged_hunter_mark", MonsterSkillEffectType.Mark, 1f, duration: 5f)
                         },
                         Condition(MonsterSkillConditionType.TargetIsRanged))),
-                Passive(
-                    "passive_kill_energy", "포식 충전", "적을 처치하면 에너지를 회복합니다.",
-                    Recipe(MonsterSkillTriggerType.Kill, 1, MonsterSkillTargetType.Self,
-                        MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
-                        Effect("kill_energy", MonsterSkillEffectType.EnergyGain, 150f, MonsterSkillValueSource.Flat))),
                 Passive(
                     "passive_kill_heal", "흡수 본능", "적을 처치하면 자신의 체력을 회복합니다.",
                     Recipe(MonsterSkillTriggerType.Kill, 1, MonsterSkillTargetType.Self,
@@ -138,57 +132,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         Effect("crisis_defense", MonsterSkillEffectType.DefenseBuff, 0.25f, duration: 4f),
                         Condition(MonsterSkillConditionType.SelfHealthBelow, 0.4f))),
                 Passive(
-                    "passive_hit_counter", "피격 반격", "일정 횟수 피해를 받으면 공격자에게 반격합니다.",
-                    Recipe(MonsterSkillTriggerType.DamagedNthTime, 4, MonsterSkillTargetType.Attacker,
-                        MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
-                        Effect("hit_counter_damage", MonsterSkillEffectType.Damage, 0.8f))),
-                Passive(
-                    "passive_shield_break_pulse", "보호막 파동", "보호막이 피해로 파괴되면 주변 적을 경직시킵니다.",
-                    Recipe(MonsterSkillTriggerType.ShieldBroken, 1, MonsterSkillTargetType.TargetAreaEnemies,
-                        MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.SelfCircle,
-                        Effect("shield_break_stagger", MonsterSkillEffectType.Stagger, 0.18f,
-                            MonsterSkillValueSource.Flat, 0.18f, 1.4f, 3))),
-                Passive(
-                    "passive_heavy_body", "묵직한 몸", "전투 중 넉백 저항을 얻습니다.",
-                    Recipe(MonsterSkillTriggerType.CombatStart, 1, MonsterSkillTargetType.Self,
-                        MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
-                        Effect("heavy_body_resist", MonsterSkillEffectType.KnockbackResistance, 0.35f))),
-                Passive(
                     "passive_nth_hit_heal", "치유 탄환", "N번째 기본 공격 적중 시 최저 체력 아군을 회복합니다.",
                     Recipe(MonsterSkillTriggerType.BasicAttackNthHit, 4, MonsterSkillTargetType.LowestHealthAlly,
                         MonsterSkillDeliveryType.Projectile, MonsterSkillShapeType.Single,
                         Effect("nth_hit_heal", MonsterSkillEffectType.Heal, 0.65f))),
-                Passive(
-                    "passive_team_haste_rhythm", "박자 공유", "N번째 기본 공격마다 아군 전체 공격 속도를 높입니다.",
-                    Recipe(MonsterSkillTriggerType.BasicAttackNthHit, 4, MonsterSkillTargetType.AllAllies,
-                        MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.SelfCircle,
-                        Effect("team_haste_rhythm", MonsterSkillEffectType.AttackSpeedBuff, 0.08f, duration: 2f,
-                            radius: 100f, maxTargets: 5))),
-                Passive(
-                    "passive_ally_crisis_shield", "위기 지원", "아군이 처음 위기에 빠지면 보호막을 보냅니다.",
-                    Recipe(MonsterSkillTriggerType.AllyHealthThresholdEntered, 1,
-                        MonsterSkillTargetType.LowestHealthAlly, MonsterSkillDeliveryType.Projectile,
-                        MonsterSkillShapeType.Single,
-                        Effect("ally_crisis_shield", MonsterSkillEffectType.Shield, 0.1f,
-                            MonsterSkillValueSource.TargetMaxHealthRatio, 4f),
-                        Condition(MonsterSkillConditionType.OncePerBattle))),
                 Passive(
                     "passive_long_range_aim", "장거리 조준", "먼 적을 공격할 때 추가 피해를 줍니다.",
                     Recipe(MonsterSkillTriggerType.BasicAttackHit, 1, MonsterSkillTargetType.CurrentTarget,
                         MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
                         Effect("long_range_bonus", MonsterSkillEffectType.Damage, 0.22f),
                         Condition(MonsterSkillConditionType.DistanceAtLeast, 4f))),
-                Passive(
-                    "passive_close_pressure", "근접 압박", "가까운 적에게 추가 피해와 짧은 경직을 줍니다.",
-                    Recipe(MonsterSkillTriggerType.BasicAttackHit, 1, MonsterSkillTargetType.CurrentTarget,
-                        MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
-                        new[]
-                        {
-                            Effect("close_pressure_damage", MonsterSkillEffectType.Damage, 0.18f),
-                            Effect("close_pressure_stagger", MonsterSkillEffectType.Stagger, 0.08f,
-                                MonsterSkillValueSource.Flat, duration: 0.08f)
-                        },
-                        Condition(MonsterSkillConditionType.DistanceAtMost, 1.5f))),
                 Passive(
                     "passive_weakpoint_stack", "약점 누적", "같은 대상을 계속 공격하면 방어 약화를 누적합니다.",
                     Recipe(MonsterSkillTriggerType.BasicAttackHit, 1, MonsterSkillTargetType.CurrentTarget,
@@ -197,61 +150,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
                             duration: 5f, policy: MonsterSkillStackPolicy.Stack),
                         Condition(MonsterSkillConditionType.SameTargetContinuous))),
                 Passive(
-                    "passive_elite_hunter", "거대 사냥꾼", "정예·보스에게 추가 피해를 줍니다.",
-                    Recipe(MonsterSkillTriggerType.BasicAttackHit, 1, MonsterSkillTargetType.CurrentTarget,
-                        MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
-                        Effect("elite_hunter_damage", MonsterSkillEffectType.Damage, 0.25f),
-                        Condition(MonsterSkillConditionType.TargetIsBoss))),
-                Passive(
-                    "passive_outnumbered_guard", "다수 상대", "주변 적이 많을 때 방어력이 증가합니다.",
-                    Recipe(MonsterSkillTriggerType.Damaged, 1, MonsterSkillTargetType.Self,
-                        MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
-                        Effect("outnumbered_defense", MonsterSkillEffectType.DefenseBuff, 0.15f, duration: 2f),
-                        Condition(MonsterSkillConditionType.NearbyEnemyCountAtLeast, count: 3))),
-                Passive(
-                    "passive_last_stand", "최후의 버팀", "전투당 한 번 위기 체력에서 보호막을 얻습니다.",
-                    Recipe(MonsterSkillTriggerType.HealthThresholdEntered, 1, MonsterSkillTargetType.Self,
-                        MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
-                        Effect("last_stand_shield", MonsterSkillEffectType.Shield, 0.2f,
-                            MonsterSkillValueSource.MaxHealthRatio, 4f),
-                        Condition(MonsterSkillConditionType.SelfHealthBelow, 0.2f),
-                        Condition(MonsterSkillConditionType.OncePerBattle))),
-                Passive(
-                    "passive_thorn_shell", "가시 껍질", "피해를 받으면 일부를 공격자에게 되돌립니다.",
-                    TimedRecipe(MonsterSkillTriggerType.Damaged, 1, 0.5f, MonsterSkillTargetType.Attacker,
-                        MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
-                        Effect("thorn_reflect", MonsterSkillEffectType.DamageReflect, 0.15f,
-                            MonsterSkillValueSource.ReceivedDamageRatio))),
-                Passive(
-                    "passive_breathing_room", "숨 고르기", "일정 시간 피해받지 않으면 체력을 회복합니다.",
-                    TimedRecipe(MonsterSkillTriggerType.NoDamageForDuration, 1, 4f, MonsterSkillTargetType.Self,
-                        MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
-                        Effect("breathing_heal", MonsterSkillEffectType.Heal, 0.06f,
-                            MonsterSkillValueSource.MaxHealthRatio))),
-                Passive(
                     "passive_courage_aura", "용기 오라", "전투 시작 시 아군 전체의 공격력을 높입니다.",
                     Recipe(MonsterSkillTriggerType.CombatStart, 1, MonsterSkillTargetType.AllAllies,
                         MonsterSkillDeliveryType.Aura, MonsterSkillShapeType.SelfCircle,
                         Effect("courage_aura", MonsterSkillEffectType.AttackBuff, 0.06f,
                             duration: 999f, radius: 100f, maxTargets: 5))),
-                Passive(
-                    "passive_guard_aura", "수호 오라", "전투 시작 시 아군 전체의 방어력을 높입니다.",
-                    Recipe(MonsterSkillTriggerType.CombatStart, 1, MonsterSkillTargetType.AllAllies,
-                        MonsterSkillDeliveryType.Aura, MonsterSkillShapeType.SelfCircle,
-                        Effect("guard_aura", MonsterSkillEffectType.DefenseBuff, 0.06f,
-                            duration: 999f, radius: 100f, maxTargets: 5))),
-                Passive(
-                    "passive_cleanse_leaf", "정화의 잎", "아군이 위기에 빠지면 약화 효과 하나를 제거합니다.",
-                    TimedRecipe(MonsterSkillTriggerType.AllyHealthThresholdEntered, 1, 8f,
-                        MonsterSkillTargetType.LowestHealthAlly, MonsterSkillDeliveryType.Projectile,
-                        MonsterSkillShapeType.Single,
-                        Effect("cleanse_leaf", MonsterSkillEffectType.Cleanse, 1f, MonsterSkillValueSource.Flat),
-                        Condition(MonsterSkillConditionType.TargetHealthBelow, 0.35f))),
-                Passive(
-                    "passive_skill_response", "스킬 호응", "아군이 액티브를 쓰면 자신이 잠시 강화됩니다.",
-                    TimedRecipe(MonsterSkillTriggerType.AllyActiveUsed, 1, 2f, MonsterSkillTargetType.Self,
-                        MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
-                        Effect("skill_response_attack", MonsterSkillEffectType.AttackBuff, 0.12f, duration: 3f))),
                 Passive(
                     "passive_formation_bond", "진형 결속", "가까운 아군이 둘 이상이면 방어력이 증가합니다.",
                     TimedRecipe(MonsterSkillTriggerType.Interval, 1, 1f, MonsterSkillTargetType.Self,
@@ -259,27 +162,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         Effect("formation_defense", MonsterSkillEffectType.DefenseBuff, 0.12f, duration: 1.2f),
                         Condition(MonsterSkillConditionType.NearbyAllyCountAtLeast, count: 2))),
                 Passive(
-                    "passive_armor_shred", "갑옷 파쇄", "N번째 기본 공격이 대상의 방어력을 낮춥니다.",
-                    Recipe(MonsterSkillTriggerType.BasicAttackNthHit, 4, MonsterSkillTargetType.CurrentTarget,
-                        MonsterSkillDeliveryType.Mark, MonsterSkillShapeType.Single,
-                        Effect("armor_shred", MonsterSkillEffectType.DefenseDebuff, 0.1f, duration: 4f))),
-                Passive(
                     "passive_first_wave", "첫 파도", "웨이브 시작 직후 잠시 공격력이 증가합니다.",
                     Recipe(MonsterSkillTriggerType.WaveStart, 1, MonsterSkillTargetType.Self,
                         MonsterSkillDeliveryType.Instant, MonsterSkillShapeType.Single,
                         Effect("first_wave_attack", MonsterSkillEffectType.AttackBuff, 0.15f, duration: 5f),
-                        Condition(MonsterSkillConditionType.OncePerWave))),
-                Passive(
-                    "passive_death_echo", "생명의 잔향", "사망할 때 최저 체력 아군을 회복합니다.",
-                    Recipe(MonsterSkillTriggerType.Death, 1, MonsterSkillTargetType.LowestHealthAlly,
-                        MonsterSkillDeliveryType.Projectile, MonsterSkillShapeType.Single,
-                        Effect("death_echo_heal", MonsterSkillEffectType.Heal, 0.9f))),
-                Passive(
-                    "passive_death_burst", "죽음의 폭발", "사망할 때 주변 적에게 피해를 줍니다.",
-                    Recipe(MonsterSkillTriggerType.Death, 1, MonsterSkillTargetType.TargetAreaEnemies,
-                        MonsterSkillDeliveryType.Radial, MonsterSkillShapeType.SelfCircle,
-                        Effect("death_burst_damage", MonsterSkillEffectType.Damage, 1.2f,
-                            radius: 1.5f, maxTargets: 3)))
+                        Condition(MonsterSkillConditionType.OncePerWave)))
             };
 
             var actives = new List<MonsterActiveSkill>

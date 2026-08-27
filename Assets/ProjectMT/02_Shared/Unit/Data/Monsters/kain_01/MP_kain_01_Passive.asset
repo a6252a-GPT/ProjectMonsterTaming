@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f0bc2c8d3774b74385d208cf1805b2a, type: 3}
+  m_Name: MP_kain_01_Passive
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.GenericMonsterPassiveSkill
+  skillId: passive_kain_duality_kain_01
+  displayName: "\uB4C0\uC5BC\uB9AC\uD2F0"
+  description: "\uC804\uD22C \uD569\uB958 \uD6C4 6\uCD08 \uB3D9\uC548 \uB9E4 \uD53C\uD574
+    \uBC30\uC728\uC774 1%~500% \uC0AC\uC774\uC5D0\uC11C \uB3C5\uB9BD\uC801\uC73C\uB85C
+    \uACB0\uC815\uB429\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  presentationTier: 1
+  recipe:
+    trigger: 1
+    triggerCount: 1
+    internalCooldown: 0
+    conditions: []
+    target: 0
+    delivery: 6
+    shape: 1
+    effects:
+    - effectId: kain_duality_damage
+      type: 35
+      valueSource: 1
+      magnitude: 0.01
+      magnitudeMode: 1
+      maximumMagnitude: 5
+      duration: 6
+      delay: 0
+      repeatInterval: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 1
+  authoringEnabled: 1
+  runtimeKind: 0
+  primaryBase: 0
+  primaryPerLevelStep: 0
+  secondaryBase: 0
+  secondaryPerLevelStep: 0
+  triggerCount: 1
+  maxStacks: 1
+  duration: 0
+  cooldown: 0
+  threshold: 0
+  radius: 0
+  maxTargets: 1

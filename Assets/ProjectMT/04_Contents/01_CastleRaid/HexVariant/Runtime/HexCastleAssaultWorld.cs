@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectMT.Shared.Combat;
 using UnityEngine;
 
 namespace ProjectMT.Contents.CastleRaidHex
@@ -268,12 +269,12 @@ namespace ProjectMT.Contents.CastleRaidHex
         private readonly Dictionary<int, int> cellHealthBands = new Dictionary<int, int>();
         private readonly Dictionary<int, PassiveExposureRecord> passiveExposures =
             new Dictionary<int, PassiveExposureRecord>();
-        private readonly List<HexCastleAssaultTarget> passiveTargetBuffer =
-            new List<HexCastleAssaultTarget>();
+        private readonly HashSet<int> passiveEnhancedDamageTargets = new HashSet<int>();
         private readonly List<int> expiredPassiveExposureKeys = new List<int>();
         private HexCastleAssaultNavigationSnapshot navigation;
         private HexCastleAssaultAIProfileCatalog profileCatalog;
         private HexCastleGarrisonWorld garrisonWorld;
+        private ICombatFeedbackPlayer feedback;
         private HexCastleCellRuntime palaceCore;
         private int defenseLayerCount;
         private int topologyVersion = 1;
@@ -303,12 +304,14 @@ namespace ProjectMT.Contents.CastleRaidHex
             int targetDefenseLayerCount,
             HexCastleGarrisonWorld targetGarrisonWorld,
             HexCastleAssaultAIProfileCatalog targetProfileCatalog = null,
-            int targetStageSeed = 0)
+            int targetStageSeed = 0,
+            ICombatFeedbackPlayer targetFeedback = null)
         {
             Shutdown();
             cells = runtimeCells ?? throw new ArgumentNullException(nameof(runtimeCells));
             defenseLayerCount = Mathf.Clamp(targetDefenseLayerCount, 2, 4);
             garrisonWorld = targetGarrisonWorld;
+            feedback = targetFeedback;
             stageSeed = targetStageSeed;
             profileCatalog = targetProfileCatalog != null
                 ? targetProfileCatalog
@@ -415,12 +418,13 @@ namespace ProjectMT.Contents.CastleRaidHex
             unitSpawnOrders.Clear();
             cellHealthBands.Clear();
             passiveExposures.Clear();
-            passiveTargetBuffer.Clear();
+            passiveEnhancedDamageTargets.Clear();
             expiredPassiveExposureKeys.Clear();
             cells = null;
             navigation = null;
             profileCatalog = null;
             garrisonWorld = null;
+            feedback = null;
             palaceCore = null;
             strategicCursor = 0;
             nextCohortId = 1;
@@ -757,68 +761,43 @@ namespace ProjectMT.Contents.CastleRaidHex
                 : 1f;
         }
 
-        public void ApplyPassiveSplash(
-            HexCastleAssaultUnit source,
-            HexCastleAssaultTarget primary,
-            float amount,
-            float radius,
-            int maxTargets)
+        public void MarkPassiveEnhancedDamage(HexCastleAssaultTarget target)
         {
-            if (source == null || amount <= 0f || radius <= 0f || maxTargets <= 0)
+            if (target.InstanceId != 0)
             {
-                return;
+                passiveEnhancedDamageTargets.Add(target.InstanceId);
             }
-            passiveTargetBuffer.Clear();
-            if (cells != null)
+        }
+
+        public DamageFeedbackFlags ConsumePassiveDamageFeedback(int targetId)
+        {
+            return targetId != 0 && passiveEnhancedDamageTargets.Remove(targetId)
+                ? DamageFeedbackFlags.PassiveEnhancedNumber
+                : DamageFeedbackFlags.None;
+        }
+
+        public void QueuePassiveStatus(HexCastleAssaultUnit unit, string text, CombatStatusTextStyle style)
+        {
+            if (unit != null)
             {
-                foreach (var cell in cells.Values)
-                {
-                    if (cell == null || !cell.IsAlive || !cell.IsDamageable || cell.GetInstanceID() == primary.InstanceId)
-                    {
-                        continue;
-                    }
-                    var target = new HexCastleAssaultTarget(cell, cell == palaceCore);
-                    if (PlanarDistance(primary.Position, target.Position) <= radius)
-                    {
-                        passiveTargetBuffer.Add(target);
-                    }
-                }
+                feedback?.PlayStatusText(
+                    HexCastleOverheadHealthBar.ResolveWorldAnchor(unit.transform),
+                    text,
+                    style,
+                    unit.GetInstanceID());
             }
-            var defenders = garrisonWorld?.Units;
-            if (defenders != null)
+        }
+
+        public void QueuePassiveHeal(HexCastleAssaultUnit unit, float amount)
+        {
+            if (unit != null && amount > 0f)
             {
-                for (var index = 0; index < defenders.Count; index++)
-                {
-                    var defender = defenders[index];
-                    if (defender == null || !defender.IsAlive || defender.GetInstanceID() == primary.InstanceId)
-                    {
-                        continue;
-                    }
-                    var target = new HexCastleAssaultTarget(defender);
-                    if (PlanarDistance(primary.Position, target.Position) <= radius)
-                    {
-                        passiveTargetBuffer.Add(target);
-                    }
-                }
+                feedback?.PlayFloatingNumber(
+                    HexCastleOverheadHealthBar.ResolveWorldAnchor(unit.transform),
+                    amount,
+                    FloatingNumberStyle.Heal,
+                    unit.GetInstanceID());
             }
-            passiveTargetBuffer.Sort((left, right) =>
-                PlanarDistance(primary.Position, left.Position).CompareTo(
-                    PlanarDistance(primary.Position, right.Position)));
-            var count = Mathf.Min(maxTargets, passiveTargetBuffer.Count);
-            for (var index = 0; index < count; index++)
-            {
-                var target = passiveTargetBuffer[index];
-                var resolved = amount * ResolvePassiveDamageMultiplier(target);
-                if (target.Structure != null)
-                {
-                    target.Structure.ApplyDamage(resolved, target.Position);
-                }
-                else
-                {
-                    target.Defender?.ApplyDamage(resolved, target.Position);
-                }
-            }
-            passiveTargetBuffer.Clear();
         }
 
         private void TickPassiveExposures(float deltaTime)

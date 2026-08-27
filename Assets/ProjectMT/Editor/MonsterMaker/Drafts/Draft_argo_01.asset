@@ -18,6 +18,20 @@ MonoBehaviour:
   portrait: {fileID: 21300000, guid: 80a1e81118fb757409ab35d8df4b50e2, type: 3}
   skillLoadoutConfigured: 1
   rarityPassiveSkill: {fileID: 11400000, guid: 6ee1b6bedd8437d49a882952f6871d37, type: 2}
+  passiveTuning:
+    initialized: 1
+    runtimeKind: 1
+    primaryBase: 0.25
+    primaryPerLevelStep: 0.01
+    secondaryBase: 0
+    secondaryPerLevelStep: 0
+    triggerCount: 3
+    maxStacks: 1
+    duration: 0
+    cooldown: 0
+    threshold: 0
+    radius: 0
+    maxTargets: 1
   rarityActiveSkill: {fileID: 0}
   productionMemo: "2026-08-26 \uC2E0\uADDC \uD6C4\uBCF4 \uC784\uC2DC \uD3B8\uC785.
     \uB4F1\uAE09\xB7\uC2A4\uD0EF\xB7\uAE30\uBCF8\uACF5\uACA9\xB7\uACF5\uACA9 \uBAA8\uC158\uC740
@@ -43,8 +57,8 @@ MonoBehaviour:
   attackPower: 14
   defense: 4
   attackSpeed: 1.1
-  moveSpeed: 2.5
-  attackRange: 4.2
+  moveSpeed: 2
+  attackRange: 4.6
   impactStrength: 0
   reactionWeight: 0
   mainBattleRole: 3
@@ -63,56 +77,29 @@ MonoBehaviour:
     crossFadeDuration: 0.06
     weight: 1
     preventImmediateRepeat: 1
-    attackStartFeedback:
-      sound: {fileID: 0}
-      sfx: {fileID: 0}
-      vfxPrefab: {fileID: 0}
-      vfxLifetime: 0
-      localPosition: {x: 0, y: 0, z: 0}
-      localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 0
+    overrideBreathDuration: 0
+    breathDuration: 0.8
     markers:
     - normalizedTime: 0.5
       powerRatio: 1
       socketOverride: 
-      feedback:
-        sound: {fileID: 0}
-        sfx: {fileID: 0}
-        vfxPrefab: {fileID: 0}
-        vfxLifetime: 0
-        localPosition: {x: 0, y: 0, z: 0}
-        localEulerAngles: {x: 0, y: 0, z: 0}
-        scale: 0
   - motionId: attack02
     clip: {fileID: 1827226128182048838, guid: 87a7fb0c87a5aa84291e3ef59651dac6, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.06
     weight: 1
     preventImmediateRepeat: 1
-    attackStartFeedback:
-      sound: {fileID: 0}
-      sfx: {fileID: 0}
-      vfxPrefab: {fileID: 0}
-      vfxLifetime: 0
-      localPosition: {x: 0, y: 0, z: 0}
-      localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 0
+    overrideBreathDuration: 0
+    breathDuration: 0.8
     markers:
     - normalizedTime: 0.5
       powerRatio: 1
       socketOverride: 
-      feedback:
-        sound: {fileID: 0}
-        sfx: {fileID: 0}
-        vfxPrefab: {fileID: 0}
-        vfxLifetime: 0
-        localPosition: {x: 0, y: 0, z: 0}
-        localEulerAngles: {x: 0, y: 0, z: 0}
-        scale: 0
   deathClip: {fileID: 1827226128182048838, guid: dcdc4ac3a7df87840af14c9ea35d6ae8, type: 3}
   deathSpeed: 1
   combatType: 1
   basicAttackProfile: {fileID: 11400000, guid: 41702aed9ca465540b77938847649334, type: 2}
+  basicAttackVfxBindings: []
   meleeMode: 0
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5
@@ -120,7 +107,6 @@ MonoBehaviour:
   rangedDeliveryMode: 0
   projectileMode: 0
   projectilePrefab: {fileID: 0}
-  projectileLaunchSound: {fileID: 0}
   overrideProjectileTuning: 0
   projectileSpeed: 9
   projectileLifetime: 3
@@ -190,22 +176,6 @@ MonoBehaviour:
     moveSpeedRate: 0
     attackRangeRate: 0
   spawnFeedback:
-    sound: {fileID: 0}
-    sfx: {fileID: 0}
-    vfxPrefab: {fileID: 0}
-    vfxLifetime: 1
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  attackStartFeedback:
-    sound: {fileID: 0}
-    sfx: {fileID: 0}
-    vfxPrefab: {fileID: 0}
-    vfxLifetime: 1
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  attackMarkerFeedback:
     sound: {fileID: 0}
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}

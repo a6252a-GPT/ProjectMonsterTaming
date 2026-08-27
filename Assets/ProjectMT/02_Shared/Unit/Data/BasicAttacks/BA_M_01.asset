@@ -56,6 +56,29 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  vfxSlots:
+  - slotId: swing_trail
+    displayName: "\uACF5\uACA9 \uADA4\uC801"
+    description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
+      \uADA4\uC801"
+    eventType: 1
+    anchor: 1
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 1
+    endPolicy: 2
+    defaultLifetime: 1
+  - slotId: hit
+    displayName: "\uC2E4\uC81C \uBA85\uC911"
+    description: "\uD53C\uD574\uAC00 \uC801\uC6A9\uB41C \uB300\uC0C1 \uC704\uCE58\uC758
+      \uBA85\uC911 \uD6A8\uACFC"
+    eventType: 3
+    anchor: 5
+    multiplicity: 3
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
   recipeVersion: 1
   deliveryModule: 0
   collisionModule: 0

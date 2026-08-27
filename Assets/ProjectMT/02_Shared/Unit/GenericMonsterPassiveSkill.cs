@@ -7,7 +7,7 @@ namespace ProjectMT.Shared.Unit
         None = 0,
         RhythmPower = 1,
         SameTargetHaste = 2,
-        RallySplash = 3,
+        ImpactStrike = 3,
         LowHealthHunter = 4,
         LongRangeAim = 5,
         CrisisDefense = 6,

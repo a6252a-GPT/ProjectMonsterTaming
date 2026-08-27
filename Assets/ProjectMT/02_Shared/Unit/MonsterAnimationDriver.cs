@@ -20,7 +20,10 @@ namespace ProjectMT.Shared.Unit
         private int nextMarkerIndex;
         private int actionSequenceId;
         private float attackElapsed;
+        private float motionDuration;
         private float attackDuration;
+        private float currentBreathDuration;
+        private string lastAttackMotionId;
         private float previousNormalizedTime;
         private string currentStateName;
         private float desiredAnimatorSpeed = 1f;
@@ -29,13 +32,29 @@ namespace ProjectMT.Shared.Unit
         public bool IsReady => animator != null && assetSet != null && motionProfile != null;
         public bool IsAttackPlaying => currentAttack != null;
         public int ActionSequenceId => actionSequenceId;
-        public string CurrentMotionId => currentAttack?.MotionId ?? string.Empty;
+        public string CurrentMotionId => currentAttack?.MotionId ?? lastAttackMotionId ?? string.Empty;
+        public float CurrentBreathDuration => currentBreathDuration;
         public MonsterFeedbackCue CurrentAttackStartFeedback => currentAttack?.AttackStartOverride;
-        public float CurrentNormalizedTime => currentAttack == null || attackDuration <= 0f
+        public float CurrentNormalizedTime => currentAttack == null || motionDuration <= 0f
             ? 0f
-            : Mathf.Clamp01(attackElapsed / attackDuration);
+            : Mathf.Clamp01(attackElapsed / motionDuration);
         public Transform AttackOrigin => attackOrigin != null ? attackOrigin : transform;
         public Transform HitCenter => hitCenter != null ? hitCenter : transform;
+
+        public bool TryGetNextAttackMarkerDelay(out float delay)
+        {
+            delay = 0f;
+            if (currentAttack?.Markers == null ||
+                nextMarkerIndex < 0 ||
+                nextMarkerIndex >= currentAttack.Markers.Length)
+            {
+                return false;
+            }
+
+            var marker = currentAttack.Markers[nextMarkerIndex];
+            delay = Mathf.Max(0f, motionDuration * marker.NormalizedTime - attackElapsed);
+            return true;
+        }
 
         public void SetLocallyPaused(bool paused)
         {
@@ -89,7 +108,8 @@ namespace ProjectMT.Shared.Unit
         public bool TryBeginAttack(
             float attackInterval,
             int sequenceId,
-            Action<int, MonsterAttackMarker> onMarker)
+            Action<int, MonsterAttackMarker> onMarker,
+            float profileBreathDuration = 0f)
         {
             if (!IsReady || currentAttack != null)
             {
@@ -103,6 +123,7 @@ namespace ProjectMT.Shared.Unit
             }
 
             currentAttack = motionProfile.Attacks[currentAttackIndex];
+            lastAttackMotionId = currentAttack.MotionId;
             previousAttackIndex = currentAttackIndex;
             actionSequenceId = sequenceId;
             attackElapsed = 0f;
@@ -114,7 +135,16 @@ namespace ProjectMT.Shared.Unit
                 currentAttack.Clip,
                 currentAttack.PlaybackSpeed,
                 attackInterval);
-            attackDuration = clipLength / resolvedSpeed;
+            motionDuration = clipLength / resolvedSpeed;
+            currentBreathDuration = profileBreathDuration > 0f
+                ? currentAttack.ResolveBreathDuration(profileBreathDuration)
+                : 0f;
+            attackDuration = motionDuration;
+            if (currentBreathDuration > 0f && currentAttack.Markers.Length > 0)
+            {
+                var recipeStart = motionDuration * currentAttack.Markers[0].NormalizedTime;
+                attackDuration = Mathf.Max(attackDuration, recipeStart + currentBreathDuration);
+            }
             PlayAnimatorState(currentAttack.StateName, resolvedSpeed, currentAttack.CrossFadeDuration);
             currentStateName = currentAttack.StateName;
 
@@ -152,6 +182,7 @@ namespace ProjectMT.Shared.Unit
             currentAttack = null;
             currentAttackIndex = -1;
             nextMarkerIndex = 0;
+            currentBreathDuration = 0f;
             return true;
         }
 
@@ -197,7 +228,10 @@ namespace ProjectMT.Shared.Unit
             nextMarkerIndex = 0;
             actionSequenceId = 0;
             attackElapsed = 0f;
+            motionDuration = 0f;
             attackDuration = 0f;
+            currentBreathDuration = 0f;
+            lastAttackMotionId = string.Empty;
             previousNormalizedTime = 0f;
             currentStateName = string.Empty;
         }

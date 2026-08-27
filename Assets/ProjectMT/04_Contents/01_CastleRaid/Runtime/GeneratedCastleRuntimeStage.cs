@@ -144,7 +144,7 @@ namespace ProjectMT.Contents.CastleRaid
             }
 
             var definitions = new List<MonsterDefinition>(5);
-            var preferredIds = new[] { "lumi_01", "shell_01", "aru_01", "ru_01", "lucy_01" };
+            var preferredIds = new[] { "lumi_01", "rabi_01", "aru_01", "rabi_queen_01", "lucy_01" };
             foreach (var monsterId in preferredIds)
             {
                 if (playtestMonsterCatalog.TryGet(monsterId, out var definition) &&

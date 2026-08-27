@@ -73,6 +73,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             var paths = BuildPaths(draft.MonsterId);
+            var generatesUniquePassive = draft.SkillLoadoutConfigured &&
+                                         draft.RarityPassiveSkill is GenericMonsterPassiveSkill;
+            var passivePath = BuildPassivePath(draft.MonsterId);
+            var outputPaths = generatesUniquePassive
+                ? paths.Concat(new[] { passivePath }).ToArray()
+                : paths;
             var dataFolder = DataRoot + "/" + draft.MonsterId;
             var artFolder = ArtRoot + "/" + draft.MonsterId;
             var catalogPath = RequirePersistentAssetPath(catalog, "MonsterCatalog");
@@ -81,7 +87,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var writesProductionAiCatalog =
                 string.Equals(catalogPath, MonsterCatalogPath, StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(rarityCatalogPath, MonsterRarityCatalogPath, StringComparison.OrdinalIgnoreCase);
-            var transactionPaths = paths.Concat(new[] { catalogPath, rarityCatalogPath });
+            var transactionPaths = outputPaths.Concat(new[] { catalogPath, rarityCatalogPath });
             if (writesProductionAiCatalog)
             {
                 transactionPaths = transactionPaths.Concat(new[]
@@ -106,8 +112,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     EnsureFolder("Assets/ProjectMT/03_Features/MainBattle", "Resources");
                 }
 
-                var guidBefore = paths.ToDictionary(path => path, AssetDatabase.AssetPathToGUID);
+                var guidBefore = outputPaths.ToDictionary(path => path, AssetDatabase.AssetPathToGUID);
                 var updatedExisting = !string.IsNullOrEmpty(guidBefore[paths[0]]);
+
+                var uniquePassive = generatesUniquePassive
+                    ? BuildOrUpdateMonsterPassiveAsset(draft)
+                    : null;
 
                 var body = GetOrCreateAsset<MonsterBodyProfile>(paths[1], "MB_" + draft.MonsterId);
                 var motion = GetOrCreateAsset<MonsterMotionProfile>(paths[2], "MM_" + draft.MonsterId);
@@ -165,10 +175,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     marker.EditorConfigure(
                         markerDraft.NormalizedTime,
                         markerDraft.PowerRatio,
-                        CreateFeedbackCue(
-                            markerDraft.Feedback,
-                            generatedSfx,
-                            $"Attack_{source.MotionId}_Hit_{markerIndex + 1:00}"),
+                        null,
                         markerDraft.SocketOverride);
                     markers[markerIndex] = marker;
                 }
@@ -182,10 +189,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     source.Weight,
                     source.PreventImmediateRepeat,
                     markers,
-                    CreateFeedbackCue(
-                        source.AttackStartFeedback,
-                        generatedSfx,
-                        $"Attack_{source.MotionId}_Start"));
+                    null,
+                    source.OverrideBreathDuration,
+                    source.BreathDuration);
                 attacks[attackIndex] = attack;
             }
 
@@ -246,11 +252,13 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             feedback.EditorConfigure(
                 CreateFeedbackCue(draft.SpawnFeedback, generatedSfx, "Spawn"),
-                CreateFeedbackCue(draft.AttackStartFeedback, generatedSfx, "AttackStart_Default"),
-                CreateFeedbackCue(draft.AttackMarkerFeedback, generatedSfx, "AttackHit_Default"),
+                null,
+                null,
                 CreateFeedbackCue(draft.HitFeedback, generatedSfx, "HitReceived"),
                 CreateFeedbackCue(draft.DeathFeedback, generatedSfx, "Death"),
                 CreateFeedbackCue(draft.SpecialFeedback, generatedSfx, "Special"));
+            feedback.EditorSetBasicAttackVfxBindings(
+                CompileBasicAttackPresentationBindings(draft, generatedSfx));
             generatedSfx.RemoveUnused();
 
             var controller = ConfigureAnimatorController(paths[7], motion);
@@ -262,7 +270,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (!string.IsNullOrWhiteSpace(definition.MonsterId) &&
                 !string.Equals(definition.MonsterId, draft.MonsterId, StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException("기존 Definition의 안정 ID와 Draft ID가 다릅니다.");
+                throw new InvalidOperationException("기존 Definition의 안정 ID와 제작 원본 ID가 다릅니다.");
             }
 
             definition.EditorConfigure(
@@ -324,6 +332,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 definition,
                 castleRaidAiCatalog,
                 mainBattleAiCatalog);
+            MarkDirty(uniquePassive);
             SaveAssetsIfDirty(
                 body,
                 motion,
@@ -339,6 +348,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 definition,
                 castleRaidAiCatalog,
                 mainBattleAiCatalog);
+            SaveAssetsIfDirty(uniquePassive);
             generatedSfx.SaveIfDirty();
             AssetDatabase.ImportAsset(paths[8], ImportAssetOptions.ForceUpdate);
             AssetDatabase.ImportAsset(paths[7], ImportAssetOptions.ForceUpdate);
@@ -350,7 +360,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 throw new InvalidOperationException(BuildRuntimeIssueText(outputValidation.Issues));
             }
 
-            RegisterLast(catalog, rarityCatalog, definition, draft);
+            RegisterLast(catalog, rarityCatalog, definition, draft, uniquePassive);
             SaveAssetsIfDirty(catalog, rarityCatalog, castleRaidAiCatalog, mainBattleAiCatalog);
             AssetDatabase.Refresh();
 
@@ -379,20 +389,20 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 throw new InvalidOperationException("생성물 검증 뒤 MainBattle AI Profile 등록을 확인하지 못했습니다.");
             }
 
-            var guidAfter = paths.ToDictionary(path => path, AssetDatabase.AssetPathToGUID);
-            for (var index = 0; index < paths.Count; index++)
+            var guidAfter = outputPaths.ToDictionary(path => path, AssetDatabase.AssetPathToGUID);
+            for (var index = 0; index < outputPaths.Count; index++)
             {
-                var before = guidBefore[paths[index]];
-                if (!string.IsNullOrEmpty(before) && !string.Equals(before, guidAfter[paths[index]], StringComparison.Ordinal))
+                var before = guidBefore[outputPaths[index]];
+                if (!string.IsNullOrEmpty(before) && !string.Equals(before, guidAfter[outputPaths[index]], StringComparison.Ordinal))
                 {
-                    throw new InvalidOperationException("기존 Asset GUID가 변경되었습니다: " + paths[index]);
+                    throw new InvalidOperationException("기존 Asset GUID가 변경되었습니다: " + outputPaths[index]);
                 }
             }
 
                 var result = new MonsterMakerWriteResult(
                     definition,
                     updatedExisting,
-                    paths,
+                    outputPaths,
                     guidBefore,
                     guidAfter,
                     outputValidation);
@@ -444,6 +454,58 @@ namespace ProjectMT.EditorTools.MonsterMaker
             return $"{DraftRoot}/Draft_{monsterId}.asset";
         }
 
+        public static string BuildPassivePath(string monsterId)
+        {
+            return $"{DataRoot}/{monsterId}/MP_{monsterId}_Passive.asset";
+        }
+
+        public static GenericMonsterPassiveSkill BuildOrUpdateMonsterPassiveAsset(MonsterMakerDraft draft)
+        {
+            if (draft == null || !(draft.RarityPassiveSkill is GenericMonsterPassiveSkill template))
+            {
+                return null;
+            }
+            var tuningError = "몬스터 전용 패시브 수치가 없습니다.";
+            if (draft.PassiveTuning == null || !draft.PassiveTuning.TryValidate(template, out tuningError))
+            {
+                throw new InvalidOperationException(tuningError);
+            }
+
+            EnsureFolder("Assets/ProjectMT/02_Shared/Unit/Data", "Monsters");
+            EnsureFolder(DataRoot, draft.MonsterId);
+            var path = BuildPassivePath(draft.MonsterId);
+            var passive = GetOrCreateAsset<GenericMonsterPassiveSkill>(path, $"MP_{draft.MonsterId}_Passive");
+            passive.EditorConfigure(
+                $"{template.SkillId}_{draft.MonsterId}",
+                template.DisplayName,
+                template.Description,
+                template.PresentationTier,
+                template.Recipe,
+                template.Icon);
+            var tuning = draft.PassiveTuning;
+            passive.EditorConfigureRuntime(
+                tuning.RuntimeKind,
+                tuning.PrimaryBase,
+                tuning.PrimaryPerLevelStep,
+                tuning.SecondaryBase,
+                tuning.SecondaryPerLevelStep,
+                tuning.TriggerCount,
+                tuning.MaxStacks,
+                tuning.Duration,
+                tuning.Cooldown,
+                tuning.Threshold,
+                tuning.Radius,
+                tuning.MaxTargets);
+            passive.EditorSetAuthoringEnabled(template.AuthoringEnabled);
+            if (!passive.TryValidate(out var error))
+            {
+                throw new InvalidOperationException(error);
+            }
+            EditorUtility.SetDirty(passive);
+            AssetDatabase.SaveAssetIfDirty(passive);
+            return passive;
+        }
+
         private static void ValidateProductionDraftOwnership(
             MonsterMakerDraft draft,
             string catalogPath,
@@ -459,7 +521,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             if (draft == null || !EditorUtility.IsPersistent(draft))
             {
-                throw new InvalidOperationException("정식 Catalog 편입은 먼저 저장한 Maker Draft에서만 실행할 수 있습니다.");
+                throw new InvalidOperationException("정식 Catalog 편입은 먼저 저장한 Maker 제작 원본에서만 실행할 수 있습니다.");
             }
 
             var actualPath = AssetDatabase.GetAssetPath(draft).Replace('\\', '/');
@@ -467,7 +529,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (!string.Equals(actualPath, expectedPath, StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(
-                    $"Draft ID 소유권이 일치하지 않습니다. Expected={expectedPath}, Actual={actualPath}");
+                    $"제작 원본 ID 소유권이 일치하지 않습니다. Expected={expectedPath}, Actual={actualPath}");
             }
         }
 
@@ -556,9 +618,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         resolvedDelivery,
                         resolvedMode,
                         projectileVisual,
-                        usesProjectileVisual
-                            ? generatedSfx.Resolve(draft.ProjectileLaunchSound, "ProjectileLaunch")
-                            : null,
+                        null,
                         draft.ResolvedProjectileSpeed,
                         draft.ResolvedProjectileLifetime,
                         draft.ResolvedProjectileHitRadius,
@@ -768,6 +828,31 @@ namespace ProjectMT.EditorTools.MonsterMaker
             return cue;
         }
 
+        private static IReadOnlyList<MonsterBasicAttackVfxBinding> CompileBasicAttackPresentationBindings(
+            MonsterMakerDraft draft,
+            MonsterMakerGeneratedSfxWriter generatedSfx)
+        {
+            var result = new List<MonsterBasicAttackVfxBinding>();
+            foreach (var binding in draft.BasicAttackVfxBindings)
+            {
+                if (binding == null)
+                {
+                    continue;
+                }
+
+                var motion = string.IsNullOrWhiteSpace(binding.MotionId)
+                    ? "Shared"
+                    : binding.MotionId;
+                var roleId = $"BasicAttack_{binding.AttackId}_{binding.SlotId}_{motion}";
+                var runtimeSfx = binding.SfxState == MonsterBasicAttackSfxAssignmentState.Assigned
+                    ? generatedSfx.Resolve(binding.Sound, roleId, binding.SoundVolume)
+                    : null;
+                result.Add(binding.EditorCloneForRuntime(
+                    runtimeSfx));
+            }
+            return result;
+        }
+
         private sealed class MonsterMakerGeneratedSfxWriter // AudioClip 입력을 역할별 Cue 서브에셋으로 관리
         {
             private const string GeneratedPrefix = "__MonsterMakerSfx_";
@@ -811,6 +896,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             public SfxCue Resolve(AudioClip sound, string roleId)
             {
+                return Resolve(sound, roleId, null);
+            }
+
+            public SfxCue Resolve(AudioClip sound, string roleId, float? volume)
+            {
                 if (sound == null)
                 {
                     return null;
@@ -829,7 +919,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
                 cue.EditorConfigure(
                     new[] { sound },
-                    DefaultVolume,
+                    volume.HasValue
+                        ? Vector2.one * Mathf.Clamp01(volume.Value)
+                        : DefaultVolume,
                     DefaultPitch,
                     DefaultSpatialBlend,
                     DefaultDuplicateCooldown,
@@ -895,7 +987,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
             MonsterCatalog catalog,
             MonsterRarityCatalog rarityCatalog,
             MonsterDefinition definition,
-            MonsterMakerDraft draft)
+            MonsterMakerDraft draft,
+            MonsterPassiveSkill resolvedPassive)
         {
             var previousDefinitions = catalog.Definitions.ToList();
             var matching = previousDefinitions
@@ -918,7 +1011,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 throw new InvalidOperationException(catalogError);
             }
 
-            RegisterRarity(rarityCatalog, definition, draft);
+            RegisterRarity(rarityCatalog, definition, draft, resolvedPassive);
             if (!rarityCatalog.TryValidate(out var rarityCatalogError))
             {
                 throw new InvalidOperationException(rarityCatalogError);
@@ -931,7 +1024,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private static void RegisterRarity(
             MonsterRarityCatalog rarityCatalog,
             MonsterDefinition definition,
-            MonsterMakerDraft draft)
+            MonsterMakerDraft draft,
+            MonsterPassiveSkill resolvedPassive)
         {
             var serialized = new SerializedObject(rarityCatalog);
             var common = serialized.FindProperty("commonToEpicEntries");
@@ -946,7 +1040,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             entry.FindPropertyRelative("monster").objectReferenceValue = definition;
             entry.FindPropertyRelative("rarity").enumValueIndex = (int)draft.Rarity;
             entry.FindPropertyRelative("passiveSkill").objectReferenceValue =
-                draft.SkillLoadoutConfigured ? draft.RarityPassiveSkill : null;
+                draft.SkillLoadoutConfigured ? resolvedPassive ?? draft.RarityPassiveSkill : null;
             var activeSkill = entry.FindPropertyRelative("activeSkill");
             if (activeSkill != null)
             {

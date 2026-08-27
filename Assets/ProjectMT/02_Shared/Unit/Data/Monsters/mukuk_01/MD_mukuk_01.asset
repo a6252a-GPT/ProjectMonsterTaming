@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 14
   defense: 5
   attackSpeed: 0.95
-  moveSpeed: 2.4
-  attackRange: 4.2
+  moveSpeed: 1.9
+  attackRange: 4.6
   ranged: 1
   runtimeAssetKey: monster/mukuk_01
   runtimeAssetSet: {fileID: 11400000, guid: a106c7ca9a5455945a7a15d86a9c069f, type: 2}

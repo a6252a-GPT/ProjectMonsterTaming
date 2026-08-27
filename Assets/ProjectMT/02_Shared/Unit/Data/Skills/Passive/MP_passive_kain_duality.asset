@@ -42,3 +42,15 @@ MonoBehaviour:
       repeatCount: 1
       stackPolicy: 1
   authoringEnabled: 1
+  runtimeKind: 0
+  primaryBase: 0
+  primaryPerLevelStep: 0
+  secondaryBase: 0
+  secondaryPerLevelStep: 0
+  triggerCount: 1
+  maxStacks: 1
+  duration: 0
+  cooldown: 0
+  threshold: 0
+  radius: 0
+  maxTargets: 1

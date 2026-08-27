@@ -60,6 +60,418 @@ namespace ProjectMT.EditorTools.MonsterMaker
         Impact
     }
 
+    internal enum BasicAttackWorkshopVfxRole // 제작자는 역할을 고르고 기술 계약은 템플릿이 구성
+    {
+        Custom,
+        MotionCueSource,
+        MotionCueOrigin,
+        AttackTrail,
+        SweepPlane,
+        AttackPath,
+        CastOrLaunch,
+        GroundContact,
+        FollowSourceBody,
+        FollowOriginBody,
+        FollowTrajectoryBody,
+        DeliveryVisual,
+        TargetImpact,
+        DamageStageImpact,
+        AreaImpact,
+        SequenceFinish,
+        OutboundImpact,
+        DeliveryTurn,
+        ReturnImpact,
+        DeliveryEnd,
+        MotionEnd
+    }
+
+    [Serializable]
+    internal sealed class BasicAttackWorkshopVfxSlot // 조립소의 편집용 VFX 빈칸
+    {
+        public string slotId = "vfx_slot";
+        public string displayName = "새 VFX 공간";
+        public string description = "Monster Maker에서 이 공간에 몬스터 고유 VFX를 배정합니다.";
+        public MonsterBasicAttackVfxEvent eventType = MonsterBasicAttackVfxEvent.RecipeExecute;
+        public MonsterBasicAttackVfxAnchor anchor = MonsterBasicAttackVfxAnchor.AttackOrigin;
+        public MonsterBasicAttackVfxMultiplicity multiplicity =
+            MonsterBasicAttackVfxMultiplicity.OncePerExecution;
+        public MonsterBasicAttackVfxAssignmentScope assignmentScope =
+            MonsterBasicAttackVfxAssignmentScope.MonsterShared;
+        public MonsterBasicAttackVfxAttachment attachment = MonsterBasicAttackVfxAttachment.World;
+        public MonsterBasicAttackVfxEndPolicy endPolicy = MonsterBasicAttackVfxEndPolicy.Timed;
+        public float defaultLifetime = 1f;
+        public BasicAttackWorkshopVfxRole editorRole = BasicAttackWorkshopVfxRole.Custom;
+        public bool showAdvanced;
+
+        public static BasicAttackWorkshopVfxSlot From(MonsterBasicAttackVfxSlot source)
+        {
+            var result = new BasicAttackWorkshopVfxSlot
+            {
+                slotId = source?.SlotId ?? "vfx_slot",
+                displayName = source?.DisplayName ?? "새 VFX 공간",
+                description = source?.Description ??
+                              "Monster Maker에서 이 공간에 몬스터 고유 VFX를 배정합니다.",
+                eventType = source?.EventType ?? MonsterBasicAttackVfxEvent.RecipeExecute,
+                anchor = source?.Anchor ?? MonsterBasicAttackVfxAnchor.AttackOrigin,
+                multiplicity = source?.Multiplicity ?? MonsterBasicAttackVfxMultiplicity.OncePerExecution,
+                assignmentScope = source?.AssignmentScope ??
+                                  MonsterBasicAttackVfxAssignmentScope.MonsterShared,
+                attachment = source?.Attachment ?? MonsterBasicAttackVfxAttachment.World,
+                endPolicy = source?.EndPolicy ?? MonsterBasicAttackVfxEndPolicy.Timed,
+                defaultLifetime = source?.DefaultLifetime ?? 1f
+            };
+            result.editorRole = BasicAttackWorkshopVfxRoles.Resolve(result);
+            return result;
+        }
+
+        public MonsterBasicAttackVfxSlot Compile()
+        {
+            var result = new MonsterBasicAttackVfxSlot();
+            result.EditorConfigure(
+                slotId,
+                displayName,
+                description,
+                eventType,
+                anchor,
+                multiplicity,
+                assignmentScope,
+                attachment,
+                endPolicy,
+                defaultLifetime);
+            return result;
+        }
+    }
+
+    internal static class BasicAttackWorkshopVfxRoles
+    {
+        private readonly struct Definition
+        {
+            public Definition(
+                BasicAttackWorkshopVfxRole role,
+                string label,
+                string defaultName,
+                string guide,
+                MonsterBasicAttackVfxEvent eventType,
+                MonsterBasicAttackVfxAnchor anchor,
+                MonsterBasicAttackVfxMultiplicity multiplicity,
+                MonsterBasicAttackVfxAttachment attachment,
+                MonsterBasicAttackVfxEndPolicy endPolicy)
+            {
+                Role = role;
+                Label = label;
+                DefaultName = defaultName;
+                Guide = guide;
+                EventType = eventType;
+                Anchor = anchor;
+                Multiplicity = multiplicity;
+                Attachment = attachment;
+                EndPolicy = endPolicy;
+            }
+
+            public BasicAttackWorkshopVfxRole Role { get; }
+            public string Label { get; }
+            public string DefaultName { get; }
+            public string Guide { get; }
+            public MonsterBasicAttackVfxEvent EventType { get; }
+            public MonsterBasicAttackVfxAnchor Anchor { get; }
+            public MonsterBasicAttackVfxMultiplicity Multiplicity { get; }
+            public MonsterBasicAttackVfxAttachment Attachment { get; }
+            public MonsterBasicAttackVfxEndPolicy EndPolicy { get; }
+        }
+
+        private static readonly Definition[] Definitions =
+        {
+            Define(BasicAttackWorkshopVfxRole.MotionCueSource, "시작 · 공격자 중심 예고", "공격 시작 예고", "공격 모션이 시작될 때 공격자 중심에서 한 번 재생합니다.", MonsterBasicAttackVfxEvent.MotionStart, MonsterBasicAttackVfxAnchor.SourceRoot, MonsterBasicAttackVfxMultiplicity.OncePerMotion),
+            Define(BasicAttackWorkshopVfxRole.MotionCueOrigin, "시작 · 공격 시작점 예고", "공격 시작 예고", "공격 모션이 시작될 때 입·손·무기 등의 공격 시작점에서 한 번 재생합니다.", MonsterBasicAttackVfxEvent.MotionStart, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerMotion),
+            Define(BasicAttackWorkshopVfxRole.AttackTrail, "진행 · 휘두름·내려찍기 궤적", "공격 궤적", "실제 공격 실행 순간부터 공격 시작점을 따라가며 모션 종료까지 유지합니다.", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution, MonsterBasicAttackVfxAttachment.FollowAnchor, MonsterBasicAttackVfxEndPolicy.MotionEnd),
+            Define(BasicAttackWorkshopVfxRole.SweepPlane, "진행 · 휩쓸기 공격 면", "휩쓸기 면", "전방 부채꼴이나 넓은 휩쓸기 범위를 공격자 중심에서 한 번 보여줍니다.", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.SourceRoot, MonsterBasicAttackVfxMultiplicity.OncePerExecution),
+            Define(BasicAttackWorkshopVfxRole.AttackPath, "진행 · 찌르기·직선 경로", "공격 경로", "공격 원점에서 목표 방향으로 뻗는 직선 경로를 한 번 보여줍니다.", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.TrajectoryOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution),
+            Define(BasicAttackWorkshopVfxRole.CastOrLaunch, "시작 · 발사·즉발 시전", "발사·시전", "Marker의 실제 공격 실행 순간 공격 시작점에서 한 번 재생합니다.", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution),
+            Define(BasicAttackWorkshopVfxRole.GroundContact, "명중 · 지면 접촉", "지면 접촉", "내려찍기처럼 공격이 닿는 범위 중심에 한 번 재생합니다.", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AreaCenter, MonsterBasicAttackVfxMultiplicity.OncePerExecution),
+            Define(BasicAttackWorkshopVfxRole.FollowSourceBody, "진행 · 공격자 추적 본체", "공격 본체", "돌진처럼 공격자 중심을 따라가며 공격 모션 종료까지 유지합니다.", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.SourceRoot, MonsterBasicAttackVfxMultiplicity.ContinuousUntilEnd, MonsterBasicAttackVfxAttachment.FollowAnchor, MonsterBasicAttackVfxEndPolicy.MotionEnd),
+            Define(BasicAttackWorkshopVfxRole.FollowOriginBody, "진행 · 공격 시작점 추적 본체", "공격 본체", "브레스처럼 공격 시작점을 따라가며 공격 모션 종료까지 유지합니다.", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.ContinuousUntilEnd, MonsterBasicAttackVfxAttachment.FollowAnchor, MonsterBasicAttackVfxEndPolicy.MotionEnd),
+            Define(BasicAttackWorkshopVfxRole.FollowTrajectoryBody, "진행 · 경로 추적 본체", "공격 본체", "빔처럼 이동 경로 시작점에 붙어 공격 모션 종료까지 유지합니다.", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.TrajectoryOrigin, MonsterBasicAttackVfxMultiplicity.ContinuousUntilEnd, MonsterBasicAttackVfxAttachment.FollowAnchor, MonsterBasicAttackVfxEndPolicy.MotionEnd),
+            Define(BasicAttackWorkshopVfxRole.DeliveryVisual, "진행 · 투사체·이동체 본체", "이동체 본체", "배정한 Prefab 자체가 실제 투사체·파동 판정체의 외형이 됩니다.", MonsterBasicAttackVfxEvent.DeliverySpawn, MonsterBasicAttackVfxAnchor.ProjectileRoot, MonsterBasicAttackVfxMultiplicity.PerProjectile, MonsterBasicAttackVfxAttachment.DeliveryVisual, MonsterBasicAttackVfxEndPolicy.DeliveryEnd),
+            Define(BasicAttackWorkshopVfxRole.TargetImpact, "명중 · 대상 실제 명중", "실제 명중", "피해가 실제로 적용된 대상의 명중 위치마다 재생합니다.", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit),
+            Define(BasicAttackWorkshopVfxRole.DamageStageImpact, "명중 · 피해 단계마다", "타격별 명중", "연타·지속 공격의 각 피해 단계가 적용된 명중 위치에서 재생합니다.", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerDamageStage),
+            Define(BasicAttackWorkshopVfxRole.AreaImpact, "명중 · 범위 판정 완료", "범위 효과", "원형 범위의 피해 판정이 해결된 중심에서 한 번 재생합니다.", MonsterBasicAttackVfxEvent.AreaResolved, MonsterBasicAttackVfxAnchor.AreaCenter, MonsterBasicAttackVfxMultiplicity.OncePerExecution),
+            Define(BasicAttackWorkshopVfxRole.SequenceFinish, "종료 · 연타·단계 마무리", "마지막 타격", "마지막 피해 단계가 끝난 실제 명중 위치에서 한 번 재생합니다.", MonsterBasicAttackVfxEvent.SequenceEnd, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.OncePerExecution),
+            Define(BasicAttackWorkshopVfxRole.OutboundImpact, "명중 · 왕복 전진 구간", "나가는 경로 명중", "왕복 이동체가 나가는 동안 피해를 준 각 대상 위치에서 재생합니다.", MonsterBasicAttackVfxEvent.OutboundTargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit),
+            Define(BasicAttackWorkshopVfxRole.DeliveryTurn, "진행 · 왕복 방향 전환", "회전 전환", "왕복 이동체가 복귀로 방향을 바꾸는 지점에서 이동체마다 한 번 재생합니다.", MonsterBasicAttackVfxEvent.DeliveryTurn, MonsterBasicAttackVfxAnchor.ProjectileRoot, MonsterBasicAttackVfxMultiplicity.PerProjectile),
+            Define(BasicAttackWorkshopVfxRole.ReturnImpact, "명중 · 왕복 복귀 구간", "돌아오는 경로 명중", "왕복 이동체가 돌아오는 동안 피해를 준 각 대상 위치에서 재생합니다.", MonsterBasicAttackVfxEvent.ReturnTargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit),
+            Define(BasicAttackWorkshopVfxRole.DeliveryEnd, "종료 · 투사체·이동체 소멸", "이동체 소멸", "투사체·파동이 충돌·거리·수명으로 끝난 위치에서 이동체마다 재생합니다.", MonsterBasicAttackVfxEvent.DeliveryEnd, MonsterBasicAttackVfxAnchor.ProjectileRoot, MonsterBasicAttackVfxMultiplicity.PerProjectile),
+            Define(BasicAttackWorkshopVfxRole.MotionEnd, "종료 · 공격 모션 종료", "공격 종료", "공격 모션이 끝나는 순간 공격 시작점에서 한 번 재생합니다.", MonsterBasicAttackVfxEvent.MotionEnd, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerMotion)
+        };
+
+        private static readonly BasicAttackWorkshopVfxRole[] PopupValues =
+            new[] { BasicAttackWorkshopVfxRole.Custom }
+                .Concat(Definitions.Select(definition => definition.Role))
+                .ToArray();
+
+        private static readonly string[] PopupLabels =
+            new[] { "직접 설정 (고급)" }
+                .Concat(Definitions.Select(definition => definition.Label))
+                .ToArray();
+
+        public static BasicAttackWorkshopVfxRole Popup(
+            string label,
+            BasicAttackWorkshopVfxRole current)
+        {
+            var currentIndex = Mathf.Max(0, Array.IndexOf(PopupValues, current));
+            var selectedIndex = EditorGUILayout.Popup(label, currentIndex, PopupLabels);
+            return PopupValues[Mathf.Clamp(selectedIndex, 0, PopupValues.Length - 1)];
+        }
+
+        public static BasicAttackWorkshopVfxRole Resolve(BasicAttackWorkshopVfxSlot slot)
+        {
+            if (slot == null)
+            {
+                return BasicAttackWorkshopVfxRole.Custom;
+            }
+            return Resolve(
+                slot.eventType,
+                slot.anchor,
+                slot.multiplicity,
+                slot.attachment,
+                slot.endPolicy);
+        }
+
+        public static BasicAttackWorkshopVfxRole Resolve(MonsterBasicAttackVfxSlot slot)
+        {
+            if (slot == null)
+            {
+                return BasicAttackWorkshopVfxRole.Custom;
+            }
+            return Resolve(
+                slot.EventType,
+                slot.Anchor,
+                slot.Multiplicity,
+                slot.Attachment,
+                slot.EndPolicy);
+        }
+
+        public static string GetLabel(BasicAttackWorkshopVfxRole role)
+        {
+            return TryGet(role, out var definition) ? definition.Label : "직접 설정";
+        }
+
+        public static string GetGuide(BasicAttackWorkshopVfxRole role)
+        {
+            return TryGet(role, out var definition)
+                ? definition.Guide
+                : "고급 설정에서 발생 시점·위치·반복·종료 규칙을 직접 조합합니다.";
+        }
+
+        public static void Apply(BasicAttackWorkshopVfxSlot slot, BasicAttackWorkshopVfxRole role)
+        {
+            if (slot == null || !TryGet(role, out var definition))
+            {
+                return;
+            }
+            slot.eventType = definition.EventType;
+            slot.anchor = definition.Anchor;
+            slot.multiplicity = definition.Multiplicity;
+            slot.attachment = definition.Attachment;
+            slot.endPolicy = definition.EndPolicy;
+            if (string.IsNullOrWhiteSpace(slot.displayName) ||
+                slot.displayName == "새 VFX 공간" ||
+                slot.displayName.StartsWith("VFX 공간", StringComparison.Ordinal))
+            {
+                slot.displayName = definition.DefaultName;
+            }
+            if (string.IsNullOrWhiteSpace(slot.description) ||
+                slot.description.StartsWith("Monster Maker에서 이 공간에", StringComparison.Ordinal))
+            {
+                slot.description = definition.Guide;
+            }
+        }
+
+        private static BasicAttackWorkshopVfxRole Resolve(
+            MonsterBasicAttackVfxEvent eventType,
+            MonsterBasicAttackVfxAnchor anchor,
+            MonsterBasicAttackVfxMultiplicity multiplicity,
+            MonsterBasicAttackVfxAttachment attachment,
+            MonsterBasicAttackVfxEndPolicy endPolicy)
+        {
+            for (var index = 0; index < Definitions.Length; index++)
+            {
+                var definition = Definitions[index];
+                if (definition.EventType == eventType &&
+                    definition.Anchor == anchor &&
+                    definition.Multiplicity == multiplicity &&
+                    definition.Attachment == attachment &&
+                    definition.EndPolicy == endPolicy)
+                {
+                    return definition.Role;
+                }
+            }
+            return BasicAttackWorkshopVfxRole.Custom;
+        }
+
+        private static bool TryGet(
+            BasicAttackWorkshopVfxRole role,
+            out Definition definition)
+        {
+            for (var index = 0; index < Definitions.Length; index++)
+            {
+                if (Definitions[index].Role != role)
+                {
+                    continue;
+                }
+                definition = Definitions[index];
+                return true;
+            }
+            definition = default;
+            return false;
+        }
+
+        private static Definition Define(
+            BasicAttackWorkshopVfxRole role,
+            string label,
+            string defaultName,
+            string guide,
+            MonsterBasicAttackVfxEvent eventType,
+            MonsterBasicAttackVfxAnchor anchor,
+            MonsterBasicAttackVfxMultiplicity multiplicity,
+            MonsterBasicAttackVfxAttachment attachment = MonsterBasicAttackVfxAttachment.World,
+            MonsterBasicAttackVfxEndPolicy endPolicy = MonsterBasicAttackVfxEndPolicy.Timed)
+        {
+            return new Definition(
+                role,
+                label,
+                defaultName,
+                guide,
+                eventType,
+                anchor,
+                multiplicity,
+                attachment,
+                endPolicy);
+        }
+    }
+
+    internal static class MonsterBasicAttackVfxEditorLabels // Runtime enum은 유지하고 제작 화면만 한글화
+    {
+        public static T Popup<T>(string label, T current) where T : struct, Enum
+        {
+            var values = (T[])Enum.GetValues(typeof(T));
+            var labels = values.Select(value => Get((Enum)(object)value)).ToArray();
+            var currentIndex = Mathf.Max(0, Array.IndexOf(values, current));
+            var selectedIndex = EditorGUILayout.Popup(label, currentIndex, labels);
+            return values[Mathf.Clamp(selectedIndex, 0, values.Length - 1)];
+        }
+
+        public static string Get(MonsterBasicAttackVfxAssignmentScope value)
+        {
+            return value switch
+            {
+                MonsterBasicAttackVfxAssignmentScope.MonsterShared => "몬스터 공용",
+                MonsterBasicAttackVfxAssignmentScope.MotionSpecific => "공격 모션별",
+                _ => value.ToString()
+            };
+        }
+
+        public static string Get(MonsterBasicAttackVfxAttachment value)
+        {
+            return value switch
+            {
+                MonsterBasicAttackVfxAttachment.World => "월드 위치 고정",
+                MonsterBasicAttackVfxAttachment.FollowAnchor => "기준점 따라가기",
+                MonsterBasicAttackVfxAttachment.DeliveryVisual => "이동체 외형으로 사용",
+                _ => value.ToString()
+            };
+        }
+
+        public static string Get(MonsterBasicAttackVfxEvent value)
+        {
+            return value switch
+            {
+                MonsterBasicAttackVfxEvent.MotionStart => "공격 모션 시작",
+                MonsterBasicAttackVfxEvent.RecipeExecute => "기본공격 실행",
+                MonsterBasicAttackVfxEvent.DeliverySpawn => "투사체·이동체 생성",
+                MonsterBasicAttackVfxEvent.TargetDamaged => "대상 실제 명중",
+                MonsterBasicAttackVfxEvent.OutboundTargetDamaged => "왕복 전진 구간 명중",
+                MonsterBasicAttackVfxEvent.ReturnTargetDamaged => "왕복 복귀 구간 명중",
+                MonsterBasicAttackVfxEvent.AreaResolved => "범위 판정 완료",
+                MonsterBasicAttackVfxEvent.SequenceEnd => "연타·단계 종료",
+                MonsterBasicAttackVfxEvent.DeliveryTurn => "왕복 방향 전환",
+                MonsterBasicAttackVfxEvent.DeliveryEnd => "투사체·이동체 종료",
+                MonsterBasicAttackVfxEvent.MotionEnd => "공격 모션 종료",
+                _ => value.ToString()
+            };
+        }
+
+        public static string Get(MonsterBasicAttackVfxAnchor value)
+        {
+            return value switch
+            {
+                MonsterBasicAttackVfxAnchor.SourceRoot => "공격자 중심",
+                MonsterBasicAttackVfxAnchor.AttackOrigin => "공격 시작점",
+                MonsterBasicAttackVfxAnchor.MarkerSocket => "마커 지정 소켓",
+                MonsterBasicAttackVfxAnchor.ProjectileRoot => "투사체·이동체 중심",
+                MonsterBasicAttackVfxAnchor.TargetRoot => "피격 대상 중심",
+                MonsterBasicAttackVfxAnchor.HitPoint => "실제 명중 위치",
+                MonsterBasicAttackVfxAnchor.AreaCenter => "범위 중심",
+                MonsterBasicAttackVfxAnchor.TrajectoryOrigin => "이동 경로 시작점",
+                _ => value.ToString()
+            };
+        }
+
+        public static string Get(MonsterBasicAttackVfxMultiplicity value)
+        {
+            return value switch
+            {
+                MonsterBasicAttackVfxMultiplicity.OncePerMotion => "공격 모션당 1회",
+                MonsterBasicAttackVfxMultiplicity.OncePerExecution => "공격 실행당 1회",
+                MonsterBasicAttackVfxMultiplicity.PerProjectile => "투사체·이동체마다",
+                MonsterBasicAttackVfxMultiplicity.PerTargetHit => "명중 대상마다",
+                MonsterBasicAttackVfxMultiplicity.PerDamageStage => "피해 단계마다",
+                MonsterBasicAttackVfxMultiplicity.ContinuousUntilEnd => "종료까지 지속",
+                _ => value.ToString()
+            };
+        }
+
+        public static string Get(MonsterBasicAttackVfxEndPolicy value)
+        {
+            return value switch
+            {
+                MonsterBasicAttackVfxEndPolicy.Timed => "설정 시간 후 종료",
+                MonsterBasicAttackVfxEndPolicy.DeliveryEnd => "투사체·이동체 종료 시",
+                MonsterBasicAttackVfxEndPolicy.MotionEnd => "공격 모션 종료 시",
+                MonsterBasicAttackVfxEndPolicy.ParticleDuration => "파티클 재생 완료 후",
+                _ => value.ToString()
+            };
+        }
+
+        private static string Get(Enum value)
+        {
+            if (value is MonsterBasicAttackVfxAssignmentScope scope)
+            {
+                return Get(scope);
+            }
+            if (value is MonsterBasicAttackVfxAttachment attachment)
+            {
+                return Get(attachment);
+            }
+            if (value is MonsterBasicAttackVfxEvent eventType)
+            {
+                return Get(eventType);
+            }
+            if (value is MonsterBasicAttackVfxAnchor anchor)
+            {
+                return Get(anchor);
+            }
+            if (value is MonsterBasicAttackVfxMultiplicity multiplicity)
+            {
+                return Get(multiplicity);
+            }
+            if (value is MonsterBasicAttackVfxEndPolicy endPolicy)
+            {
+                return Get(endPolicy);
+            }
+            return ObjectNames.NicifyVariableName(value.ToString());
+        }
+    }
+
     [Serializable]
     internal sealed class BasicAttackWorkshopRecipe // 디자이너 선택을 런타임 모듈로 컴파일하는 작업 사본
     {
@@ -84,6 +496,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public int maxTargets;
         public int hitCount;
         public float repeatHitInterval;
+        public float breathDuration;
         public float secondaryDamageRatio;
         public int projectileCount;
         public float projectileSpreadAngle;
@@ -126,6 +539,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public float launchVfxScale;
         public float projectileVfxScale;
         public float impactVfxScale;
+        public List<BasicAttackWorkshopVfxSlot> vfxSlots = new List<BasicAttackWorkshopVfxSlot>();
 
         public void ResetBlank()
         {
@@ -150,6 +564,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             maxTargets = 1;
             hitCount = 3;
             repeatHitInterval = 0.08f;
+            breathDuration = 0.8f;
             secondaryDamageRatio = 0.75f;
             projectileCount = 3;
             projectileSpreadAngle = 24f;
@@ -192,6 +607,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             launchVfxScale = 1f;
             projectileVfxScale = 1f;
             impactVfxScale = 1f;
+            vfxSlots = new List<BasicAttackWorkshopVfxSlot>();
         }
 
         public void Load(MonsterBasicAttackProfile profile)
@@ -215,6 +631,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             multiHit = profile.SequenceModule == MonsterBasicAttackSequenceModule.Burst;
             hitCount = profile.HitCount;
             repeatHitInterval = profile.RepeatHitInterval;
+            breathDuration = profile.BreathDuration;
             secondaryDamageRatio = profile.SecondaryDamageRatio;
             projectileCount = profile.ProjectileCount;
             projectileSpreadAngle = profile.ProjectileSpreadAngle;
@@ -225,6 +642,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
             dashDistance = profile.DashDistance;
             dashDuration = profile.DashDuration;
             hitAreaVisibleDuration = profile.HitAreaVisibleDuration;
+            vfxSlots = profile.VfxSlots
+                .Select(BasicAttackWorkshopVfxSlot.From)
+                .ToList();
             LoadFeel(
                 profile.LaunchFeel,
                 out launchFeelPrefab,
@@ -438,7 +858,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 projectileLifetime,
                 projectileCollisionRadius);
             profile.EditorSetSweepDirection(sweepDirection);
+            profile.EditorSetBreathDuration(breathDuration);
             profile.EditorSetDesignMemo(designMemo);
+            profile.EditorSetVfxSlots(vfxSlots.Select(slot => slot.Compile()));
             profile.EditorSetPresentationFeedback(
                 BuildFeedback(
                     launchSfx,
@@ -555,6 +977,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             maxTargets = Mathf.Clamp(maxTargets, 1, MonsterBasicAttackProfile.MaximumTargets);
             hitCount = Mathf.Clamp(hitCount, 2, MonsterBasicAttackProfile.MaximumHitCount);
             repeatHitInterval = Mathf.Clamp(repeatHitInterval, 0.01f, 0.3f);
+            breathDuration = Mathf.Max(0.01f, breathDuration);
             secondaryDamageRatio = Mathf.Clamp(secondaryDamageRatio, 0.1f, 1f);
             projectileCount = Mathf.Clamp(projectileCount, 2, MonsterBasicAttackProfile.MaximumProjectileCount);
             projectileSpreadAngle = Mathf.Clamp(projectileSpreadAngle, 1f, 90f);
@@ -1004,8 +1427,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     recipe.angle = EditorGUILayout.Slider("브레스 각도", recipe.angle, 5f, 180f);
                     recipe.hitCount = EditorGUILayout.IntSlider(
                         "지속 타격 수", recipe.hitCount, 2, MonsterBasicAttackProfile.MaximumHitCount);
-                    recipe.repeatHitInterval = EditorGUILayout.Slider(
-                        "타격 간격", recipe.repeatHitInterval, 0.01f, 0.3f);
+                    recipe.breathDuration = Mathf.Max(
+                        0.01f,
+                        EditorGUILayout.FloatField("기본 유지 시간(초)", recipe.breathDuration));
+                    EditorGUILayout.HelpBox(
+                        $"첫 피해부터 {recipe.hitCount}단계 피해를 약 " +
+                        $"{recipe.breathDuration / Mathf.Max(1, recipe.hitCount):0.###}초 간격으로 분배하고, " +
+                        "브레스 본체는 유지 시간이 끝날 때까지 계속됩니다.",
+                        MessageType.None);
                     break;
                 case BasicAttackWorkshopSpecialPattern.Beam:
                     recipe.lineWidth = EditorGUILayout.Slider("빔 폭", recipe.lineWidth, 0.05f, 5f);
@@ -1041,9 +1470,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawPresentationOptions()
         {
-            GUILayout.Label("4. 기본공격 FEEL 타격감", EditorStyles.boldLabel);
+            DrawVfxContractOptions();
+            GUILayout.Space(8f);
+            GUILayout.Label("5. 기본공격 FEEL 타격감", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "기본공격 Recipe는 판정만, 이 구역은 FEEL 타격감만 저장합니다. 몬스터별 투사체·브레스·명중 VFX와 SFX는 Monster Maker의 공격 모션/Marker에서 따로 설정합니다.",
+                "FEEL은 공용 타격감만 저장합니다. 몬스터 고유 VFX는 위 공간 계약을 따라 Monster Maker에서 배정합니다.",
                 MessageType.Info);
             DrawPresentationPhaseCard(
                 "실제 명중 FEEL 프로필",
@@ -1059,6 +1490,179 @@ namespace ProjectMT.EditorTools.MonsterMaker
             EditorGUILayout.HelpBox(
                 "효과와 주요값, 타격점은 FEEL 연구소에서 프로필 단위로 수정합니다. 이곳에서는 저장된 프로필만 연결합니다.",
                 MessageType.None);
+        }
+
+        private void DrawVfxContractOptions()
+        {
+            GUILayout.Label("4. 몬스터 고유 VFX 공간", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "여기서는 실제 VFX를 고르지 않습니다. 이 기본공격이 사용할 수 있는 VFX 종류·개수·발생 시점·기준 공간·반복·종료 방식만 정의합니다. 모든 공간은 선택 사항이며 Monster Maker에서 몬스터별로 사용 여부를 결정합니다.",
+                MessageType.Info);
+
+            recipe.vfxSlots ??= new List<BasicAttackWorkshopVfxSlot>();
+            GUILayout.Label(
+                $"현재 공간 {recipe.vfxSlots.Count}개 · 목록의 한 줄이 서로 다른 VFX 종류 1개입니다.",
+                EditorStyles.wordWrappedMiniLabel);
+            for (var index = 0; index < recipe.vfxSlots.Count; index++)
+            {
+                var slot = recipe.vfxSlots[index] ?? new BasicAttackWorkshopVfxSlot();
+                recipe.vfxSlots[index] = slot;
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        GUILayout.Label($"VFX 공간 {index + 1:00}", EditorStyles.miniBoldLabel);
+                        GUILayout.FlexibleSpace();
+                        using (new EditorGUI.DisabledScope(index == 0))
+                        {
+                            if (GUILayout.Button("▲", GUILayout.Width(28f)))
+                            {
+                                (recipe.vfxSlots[index - 1], recipe.vfxSlots[index]) =
+                                    (recipe.vfxSlots[index], recipe.vfxSlots[index - 1]);
+                                GUIUtility.ExitGUI();
+                            }
+                        }
+                        using (new EditorGUI.DisabledScope(index >= recipe.vfxSlots.Count - 1))
+                        {
+                            if (GUILayout.Button("▼", GUILayout.Width(28f)))
+                            {
+                                (recipe.vfxSlots[index + 1], recipe.vfxSlots[index]) =
+                                    (recipe.vfxSlots[index], recipe.vfxSlots[index + 1]);
+                                GUIUtility.ExitGUI();
+                            }
+                        }
+                        if (GUILayout.Button("삭제", GUILayout.Width(44f)))
+                        {
+                            recipe.vfxSlots.RemoveAt(index);
+                            GUIUtility.ExitGUI();
+                        }
+                    }
+
+                    var inferredRole = BasicAttackWorkshopVfxRoles.Resolve(slot);
+                    if (slot.editorRole != BasicAttackWorkshopVfxRole.Custom &&
+                        inferredRole != slot.editorRole)
+                    {
+                        slot.editorRole = inferredRole;
+                    }
+                    var selectedRole = BasicAttackWorkshopVfxRoles.Popup(
+                        "공간 역할",
+                        slot.editorRole);
+                    if (selectedRole != slot.editorRole)
+                    {
+                        slot.editorRole = selectedRole;
+                        BasicAttackWorkshopVfxRoles.Apply(slot, selectedRole);
+                    }
+                    GUILayout.Label(
+                        BasicAttackWorkshopVfxRoles.GetGuide(slot.editorRole),
+                        EditorStyles.wordWrappedMiniLabel);
+
+                    slot.displayName = EditorGUILayout.TextField("Maker 표시 이름", slot.displayName);
+                    EditorGUILayout.PrefixLabel("용도 설명");
+                    slot.description = EditorGUILayout.TextArea(
+                        slot.description,
+                        GUILayout.MinHeight(38f));
+                    slot.assignmentScope = MonsterBasicAttackVfxEditorLabels.Popup(
+                        "몬스터 적용",
+                        slot.assignmentScope);
+                    GUILayout.Label(
+                        "선택 계약 · 각 몬스터가 VFX/SFX 사용 여부를 따로 결정합니다.",
+                        EditorStyles.wordWrappedMiniLabel);
+
+                    EditorGUILayout.HelpBox(
+                        $"시점  {MonsterBasicAttackVfxEditorLabels.Get(slot.eventType)}    " +
+                        $"위치  {MonsterBasicAttackVfxEditorLabels.Get(slot.anchor)}\n" +
+                        $"반복  {MonsterBasicAttackVfxEditorLabels.Get(slot.multiplicity)}    " +
+                        $"종료  {MonsterBasicAttackVfxEditorLabels.Get(slot.endPolicy)}" +
+                        (slot.attachment == MonsterBasicAttackVfxAttachment.DeliveryVisual
+                            ? "\n이동 판정체 외형  시점 보정 없음"
+                            : "\n몬스터별 VFX 시점 보정  항상 사용 · 기본 0초"),
+                        MessageType.None);
+
+                    slot.showAdvanced = EditorGUILayout.Foldout(
+                        slot.showAdvanced,
+                        "고급 설정 · 기술 계약",
+                        true);
+                    if (slot.showAdvanced)
+                    {
+                        using (new EditorGUI.IndentLevelScope())
+                        {
+                            slot.slotId = EditorGUILayout.TextField(
+                                new GUIContent(
+                                    "안정 슬롯 ID",
+                                    "몬스터별 배정 데이터를 보존하는 키입니다. 출시 후에는 바꾸지 않습니다."),
+                                slot.slotId);
+                            slot.attachment = MonsterBasicAttackVfxEditorLabels.Popup(
+                                "부착 방식",
+                                slot.attachment);
+
+                            if (slot.attachment == MonsterBasicAttackVfxAttachment.DeliveryVisual)
+                            {
+                                slot.eventType = MonsterBasicAttackVfxEvent.DeliverySpawn;
+                                slot.anchor = MonsterBasicAttackVfxAnchor.ProjectileRoot;
+                                slot.multiplicity = MonsterBasicAttackVfxMultiplicity.PerProjectile;
+                                slot.endPolicy = MonsterBasicAttackVfxEndPolicy.DeliveryEnd;
+                                EditorGUILayout.HelpBox(
+                                    "배정한 Prefab이 실제 이동 판정체의 외형이 됩니다. 시점·위치·반복·종료 규칙은 고정됩니다.",
+                                    workingProfile != null && workingProfile.UsesProjectileVisual
+                                        ? MessageType.None
+                                        : MessageType.Warning);
+                            }
+                            using (new EditorGUI.DisabledScope(
+                                       slot.attachment == MonsterBasicAttackVfxAttachment.DeliveryVisual))
+                            {
+                                slot.eventType = MonsterBasicAttackVfxEditorLabels.Popup(
+                                    "발생 시점",
+                                    slot.eventType);
+                                slot.anchor = MonsterBasicAttackVfxEditorLabels.Popup(
+                                    "발생 위치",
+                                    slot.anchor);
+                                slot.multiplicity = MonsterBasicAttackVfxEditorLabels.Popup(
+                                    "반복 방식",
+                                    slot.multiplicity);
+                                slot.endPolicy = MonsterBasicAttackVfxEditorLabels.Popup(
+                                    "종료 방식",
+                                    slot.endPolicy);
+                            }
+                            if (slot.endPolicy is MonsterBasicAttackVfxEndPolicy.Timed or
+                                MonsterBasicAttackVfxEndPolicy.ParticleDuration)
+                            {
+                                slot.defaultLifetime = Mathf.Max(
+                                    0.01f,
+                                    EditorGUILayout.FloatField("기본 유지 시간", slot.defaultLifetime));
+                            }
+                        }
+                    }
+
+                    slot.editorRole = BasicAttackWorkshopVfxRoles.Resolve(slot);
+                    if (!MonsterBasicAttackVfxResolver.UsesSafeSlotId(slot.slotId))
+                    {
+                        EditorGUILayout.HelpBox(
+                            "슬롯 ID는 영문·숫자·밑줄·하이픈만 사용할 수 있습니다.",
+                            MessageType.Error);
+                    }
+                    else if (recipe.vfxSlots.Count(candidate =>
+                                 candidate != null &&
+                                 string.Equals(
+                                     candidate.slotId,
+                                     slot.slotId,
+                                     StringComparison.OrdinalIgnoreCase)) > 1)
+                    {
+                        EditorGUILayout.HelpBox(
+                            "같은 기본공격 안에서 슬롯 ID가 중복되었습니다.",
+                            MessageType.Error);
+                    }
+                }
+            }
+
+            if (GUILayout.Button("+ VFX 공간 추가", GUILayout.Height(27f)))
+            {
+                recipe.vfxSlots.Add(new BasicAttackWorkshopVfxSlot
+                {
+                    slotId = $"vfx_{recipe.vfxSlots.Count + 1:00}",
+                    displayName = $"VFX 공간 {recipe.vfxSlots.Count + 1:00}",
+                    editorRole = BasicAttackWorkshopVfxRole.Custom
+                });
+            }
         }
 
         private void DrawPresentationPhaseCard(

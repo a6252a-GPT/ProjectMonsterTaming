@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ProjectMT.Shared.Audio;
 using UnityEngine;
 
@@ -68,6 +69,8 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private MonsterFeedbackCue hitReceived;
         [SerializeField] private MonsterFeedbackCue death;
         [SerializeField] private MonsterFeedbackCue special;
+        [SerializeField] private List<MonsterBasicAttackVfxBinding> basicAttackVfxBindings =
+            new List<MonsterBasicAttackVfxBinding>();
 
         public MonsterFeedbackCue Spawn => spawn;
         public MonsterFeedbackCue AttackStart => attackStart;
@@ -75,6 +78,9 @@ namespace ProjectMT.Shared.Unit
         public MonsterFeedbackCue HitReceived => hitReceived;
         public MonsterFeedbackCue Death => death;
         public MonsterFeedbackCue Special => special;
+        public IReadOnlyList<MonsterBasicAttackVfxBinding> BasicAttackVfxBindings =>
+            basicAttackVfxBindings ??
+            (IReadOnlyList<MonsterBasicAttackVfxBinding>)Array.Empty<MonsterBasicAttackVfxBinding>();
 
         public bool TryValidate(out string error)
         {
@@ -85,6 +91,28 @@ namespace ProjectMT.Shared.Unit
                 if (cues[index] != null && !cues[index].TryValidate(out var cueError))
                 {
                     error = $"Monster Feedback is invalid. Role={roles[index]}, Detail={cueError}";
+                    return false;
+                }
+            }
+
+            var bindingKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (var index = 0; basicAttackVfxBindings != null && index < basicAttackVfxBindings.Count; index++)
+            {
+                var binding = basicAttackVfxBindings[index];
+                if (binding == null)
+                {
+                    error = "Monster Basic Attack VFX binding is null.";
+                    return false;
+                }
+                if (!binding.TryValidate(out var bindingError))
+                {
+                    error = $"Monster Basic Attack VFX is invalid. Detail={bindingError}";
+                    return false;
+                }
+                var key = $"{binding.AttackId}|{binding.SlotId}|{binding.MotionId}";
+                if (!bindingKeys.Add(key))
+                {
+                    error = $"Monster Basic Attack VFX binding is duplicated. Key={key}";
                     return false;
                 }
             }
@@ -108,6 +136,13 @@ namespace ProjectMT.Shared.Unit
             hitReceived = hitReceivedCue;
             death = deathCue;
             special = specialCue;
+        }
+
+        public void EditorSetBasicAttackVfxBindings(IEnumerable<MonsterBasicAttackVfxBinding> bindings)
+        {
+            basicAttackVfxBindings = bindings == null
+                ? new List<MonsterBasicAttackVfxBinding>()
+                : new List<MonsterBasicAttackVfxBinding>(bindings);
         }
 #endif
     }

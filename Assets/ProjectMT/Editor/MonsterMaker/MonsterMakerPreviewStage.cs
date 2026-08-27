@@ -103,7 +103,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private readonly List<PreviewHitVfx> activeHitVfx = new List<PreviewHitVfx>();
         private readonly List<PreviewProjectile> activeProjectiles = new List<PreviewProjectile>();
         private readonly List<PendingPreviewHit> pendingHits = new List<PendingPreviewHit>();
+        private readonly List<PendingContractVfx> pendingContractVfx = new List<PendingContractVfx>();
         private readonly List<MonsterAttackAreaIndicator> activeHitAreas = new List<MonsterAttackAreaIndicator>();
+        private readonly HashSet<string> basicAttackVfxClaims = new HashSet<string>();
         private readonly PreviewCombatFeedbackPlayer combatFeedbackPlayer;
         private MonsterMakerDraft draft;
         private AnimationClip currentClip;
@@ -124,8 +126,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private double lastTickTime;
         private float playbackTime;
         private float playbackSpeed = 1f;
+        private float attackPoseHoldDuration;
+        private float remainingAttackPoseHold;
         private float previousNormalizedTime = -0.0001f;
         private int nextMarkerIndex;
+        private int basicAttackVfxSequence;
         private int lastRandomAttackIndex = -1;
         private bool loop;
         private bool playing;
@@ -288,6 +293,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
             previewMotionRoot = null;
             playing = false;
             playbackTime = 0f;
+            attackPoseHoldDuration = 0f;
+            remainingAttackPoseHold = 0f;
             markerBuffer = Array.Empty<MonsterAttackMarker>();
             markerDraftBuffer = Array.Empty<MonsterMakerMarkerDraft>();
             lastRandomAttackIndex = -1;
@@ -463,7 +470,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     1f / Mathf.Max(0.01f, draft.AttackSpeed)),
                 false,
                 currentAttack,
-                ResolveAttackStartFeedback(currentAttack),
+                null,
                 draft.AttackOriginPath);
         }
 
@@ -581,6 +588,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             playbackTime = 0f;
+            remainingAttackPoseHold = attackPoseHoldDuration;
             previousNormalizedTime = -0.0001f;
             nextMarkerIndex = 0;
             playing = true;
@@ -620,6 +628,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         {
             deltaTime = Mathf.Clamp(deltaTime, 0f, 0.1f);
             previewClock += deltaTime;
+            TickPendingContractVfx();
             TickVfx(deltaTime);
             var animationChanged = playing && currentClip != null;
             if (animationChanged)
@@ -634,8 +643,24 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 }
                 else if (finished)
                 {
+                    var overflow = Mathf.Max(
+                        0f,
+                        (playbackTime - currentClip.length) / Mathf.Max(0.01f, playbackSpeed));
                     playbackTime = currentClip.length;
-                    playing = false;
+                    remainingAttackPoseHold = Mathf.Max(0f, remainingAttackPoseHold - overflow);
+                    finished = remainingAttackPoseHold <= 0.0001f;
+                    if (finished)
+                    {
+                        playing = false;
+                        PlayContractVfx(
+                            MonsterBasicAttackVfxEvent.MotionEnd,
+                            draft?.BasicAttackProfile,
+                            stage.PreviewRoot.transform.position,
+                            ResolveCombatTargetHitPoint(),
+                            ResolveCombatTargetHitPoint(),
+                            stage.PreviewRoot.transform.rotation);
+                        ReleaseContractVfx(MonsterBasicAttackVfxEndPolicy.MotionEnd, null);
+                    }
                 }
 
                 var normalizedTime = NormalizedTime;
@@ -692,6 +717,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
             playbackSpeed = Mathf.Max(0.01f, speed);
             loop = shouldLoop;
             playbackTime = 0f;
+            attackPoseHoldDuration = 0f;
+            if (attack != null && draft.BasicAttackProfile != null &&
+                draft.BasicAttackProfile.UsesBreathDurationContract && markerBuffer.Length > 0)
+            {
+                var motionDuration = clip.length / playbackSpeed;
+                var recipeStart = motionDuration * markerBuffer[0].NormalizedTime;
+                var breathDuration = attack.ResolveBreathDuration(draft.BasicAttackProfile.BreathDuration);
+                attackPoseHoldDuration = Mathf.Max(0f, recipeStart + breathDuration - motionDuration);
+            }
+            remainingAttackPoseHold = attackPoseHoldDuration;
             previousNormalizedTime = -0.0001f;
             nextMarkerIndex = 0;
             if (attack == null)
@@ -703,6 +738,21 @@ namespace ProjectMT.EditorTools.MonsterMaker
             playing = true;
             SampleCurrentPose();
             PlayFeedback(startFeedback, startSocketPath);
+            if (attack != null)
+            {
+                basicAttackVfxSequence++;
+                basicAttackVfxClaims.Clear();
+                PlayContractVfx(
+                    MonsterBasicAttackVfxEvent.MotionStart,
+                    draft.BasicAttackProfile,
+                    stage.PreviewRoot.transform.position,
+                    ResolveCombatTargetHitPoint(),
+                    ResolveCombatTargetHitPoint(),
+                    stage.PreviewRoot.transform.rotation,
+                    null,
+                    startSocketPath);
+                ScheduleRecipeLeadContractVfx(draft.BasicAttackProfile);
+            }
             lastTickTime = EditorApplication.timeSinceStartup;
         }
 
@@ -746,17 +796,29 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 ? stage.PreviewRoot.transform.forward
                 : forward.normalized;
             var attackRotation = Quaternion.LookRotation(forward, Vector3.up);
-            PlayProfileFeedbackAt(profile?.LaunchFeedback, origin, attackRotation);
+            var usesPresentationContract = profile?.VfxSlots.Count > 0;
+            if (usesPresentationContract)
+            {
+                PlayContractVfx(
+                    MonsterBasicAttackVfxEvent.RecipeExecute,
+                    profile,
+                    origin,
+                    targetPosition,
+                    targetPosition,
+                    attackRotation,
+                    null,
+                    markerDraft.SocketOverride);
+            }
+            else
+            {
+                PlayProfileFeedbackAt(profile?.LaunchFeedback, origin, attackRotation);
+            }
 
-            var markerFeedback = markerDraft.Feedback?.HasAny == true
-                ? markerDraft.Feedback
-                : null;
-            var profileImpactFeedback = markerFeedback == null &&
+            var profileImpactFeedback = !usesPresentationContract &&
                                         profile?.ImpactFeedback?.HasAnyFeedback == true
                 ? profile.ImpactFeedback
                 : null;
-            var fallbackFeedback = markerFeedback ??
-                                   (profileImpactFeedback == null ? draft.AttackMarkerFeedback : null);
+            MonsterMakerFeedbackDraft fallbackFeedback = null;
             if (profile != null)
             {
                 ShowPreviewHitArea(profile, markerDraft);
@@ -778,13 +840,58 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             var hitCount = profile?.HitCount ?? 1;
+            var motionBreathDuration = profile != null && profile.UsesBreathDurationContract && currentAttack != null
+                ? currentAttack.ResolveBreathDuration(profile.BreathDuration)
+                : 0f;
+            var repeatHitInterval = profile?.ResolveRepeatHitInterval(motionBreathDuration) ?? 0.08f;
             for (var hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
                 var hitDamage = damage * (profile?.ResolveDamageRatio(hitIndex) ?? 1f);
                 var playImpactFeedback = hitIndex == 0 || profile?.RepeatImpactFeedback != false;
                 if (hitIndex == 0)
                 {
-                    if (ApplyPreviewDamage(hitDamage) && playImpactFeedback)
+                    var applied = ApplyPreviewDamage(hitDamage);
+                    if (applied)
+                    {
+                        var impactPosition = ResolvePreviewImpactPosition(profile, origin);
+                        PlayContractVfx(
+                            MonsterBasicAttackVfxEvent.TargetDamaged,
+                            profile,
+                            origin,
+                            impactPosition,
+                            targetPosition,
+                            attackRotation,
+                            null,
+                            markerDraft.SocketOverride,
+                            hitIndex);
+                        if (profile?.Shape == MonsterBasicAttackShape.Circle)
+                        {
+                            PlayContractVfx(
+                                MonsterBasicAttackVfxEvent.AreaResolved,
+                                profile,
+                                origin,
+                                impactPosition,
+                                profile.Center == MonsterBasicAttackCenter.Source ? origin : targetPosition,
+                                attackRotation,
+                                null,
+                                markerDraft.SocketOverride,
+                                hitIndex);
+                        }
+                        if (hitCount == 1)
+                        {
+                            PlayContractVfx(
+                                MonsterBasicAttackVfxEvent.SequenceEnd,
+                                profile,
+                                origin,
+                                impactPosition,
+                                targetPosition,
+                                attackRotation,
+                                null,
+                                markerDraft.SocketOverride,
+                                hitIndex);
+                        }
+                    }
+                    if (applied && playImpactFeedback)
                     {
                         PlayResolvedImpactFeedback(
                             fallbackFeedback,
@@ -796,14 +903,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 }
 
                 pendingHits.Add(new PendingPreviewHit(
-                    previewClock + hitIndex * (profile?.RepeatHitInterval ?? 0.08f),
+                    previewClock + hitIndex * repeatHitInterval,
                     hitDamage,
                     fallbackFeedback,
                     profileImpactFeedback,
                     profile,
                     origin,
                     attackRotation,
-                    playImpactFeedback));
+                    playImpactFeedback,
+                    hitIndex));
             }
         }
 
@@ -919,6 +1027,354 @@ namespace ProjectMT.EditorTools.MonsterMaker
             activeVfx.Add(new PreviewVfx(instance, feedback.VfxLifetime));
         }
 
+        private bool PlayContractVfx(
+            MonsterBasicAttackVfxEvent eventType,
+            MonsterBasicAttackProfile profile,
+            Vector3 origin,
+            Vector3 hitPoint,
+            Vector3 areaCenter,
+            Quaternion rotation,
+            GameObject projectile = null,
+            string socketPath = null,
+            int damageStage = 0)
+        {
+            if (profile == null || draft == null || stage.PreviewRoot == null)
+            {
+                return false;
+            }
+
+            var played = false;
+            foreach (var slot in profile.VfxSlots)
+            {
+                if (slot == null || slot.EventType != eventType ||
+                    !MonsterBasicAttackVfxResolver.TryResolvePresentation(
+                        draft.BasicAttackVfxBindings,
+                        profile.AttackId,
+                        slot,
+                        currentAttack?.MotionId,
+                        out var binding))
+                {
+                    continue;
+                }
+
+                var claimSuffix = slot.Multiplicity switch
+                {
+                    MonsterBasicAttackVfxMultiplicity.PerProjectile =>
+                        projectile == null ? "none" : projectile.GetInstanceID().ToString(),
+                    MonsterBasicAttackVfxMultiplicity.PerTargetHit => $"target:{damageStage}",
+                    MonsterBasicAttackVfxMultiplicity.PerDamageStage => damageStage.ToString(),
+                    _ => "once"
+                };
+
+                var claimPrefix = $"{basicAttackVfxSequence}|{slot.SlotId}";
+                if (binding.HasSound &&
+                    basicAttackVfxClaims.Add($"{claimPrefix}|sfx|{claimSuffix}"))
+                {
+                    if (binding.Sound != null)
+                    {
+                        SfxEditorAudioPreview.Play(
+                            binding.Sound,
+                            0,
+                            false,
+                            binding.SoundVolume);
+                        played = true;
+                    }
+                    else if (binding.Sfx != null &&
+                             binding.Sfx.TrySelectClip(out var soundClip) &&
+                             soundClip != null)
+                    {
+                        SfxEditorAudioPreview.Play(
+                            soundClip,
+                            0,
+                            false,
+                            binding.Sfx.SelectVolume());
+                        played = true;
+                    }
+                }
+
+                // 이동체 외형은 Preview Projectile이 직접 소유한다.
+                if (slot.IsDeliveryVisual || !binding.IsAssigned)
+                {
+                    continue;
+                }
+
+                var vfxClaim = $"{claimPrefix}|vfx|{claimSuffix}";
+                var timingOffset = slot.ClampTimingOffset(binding.EventTimingOffset);
+                if (timingOffset < 0f &&
+                    eventType == MonsterBasicAttackVfxEvent.RecipeExecute &&
+                    basicAttackVfxClaims.Contains(vfxClaim))
+                {
+                    continue;
+                }
+                if (!basicAttackVfxClaims.Add(vfxClaim))
+                {
+                    continue;
+                }
+                if (timingOffset > 0f)
+                {
+                    pendingContractVfx.Add(new PendingContractVfx(
+                        previewClock + timingOffset,
+                        slot,
+                        binding,
+                        origin,
+                        hitPoint,
+                        areaCenter,
+                        rotation,
+                        projectile,
+                        socketPath));
+                    played = true;
+                    continue;
+                }
+
+                played |= PlayContractVfxInstance(
+                    slot,
+                    binding,
+                    origin,
+                    hitPoint,
+                    areaCenter,
+                    rotation,
+                    projectile,
+                    socketPath);
+            }
+            return played;
+        }
+
+        private bool PlayContractVfxInstance(
+            MonsterBasicAttackVfxSlot slot,
+            MonsterBasicAttackVfxBinding binding,
+            Vector3 origin,
+            Vector3 hitPoint,
+            Vector3 areaCenter,
+            Quaternion rotation,
+            GameObject projectile,
+            string socketPath)
+        {
+            if (slot == null || binding == null || !binding.IsAssigned ||
+                stage.PreviewRoot == null)
+            {
+                return false;
+            }
+
+            ResolveContractAnchor(
+                slot.Anchor,
+                projectile,
+                socketPath,
+                origin,
+                hitPoint,
+                areaCenter,
+                rotation,
+                out var anchor,
+                out var position,
+                out var resolvedRotation);
+            position += resolvedRotation * binding.LocalPosition;
+            resolvedRotation *= binding.LocalRotation;
+
+            var instance = UnityEngine.Object.Instantiate(binding.Prefab);
+            instance.name = $"[Basic Attack VFX] {slot.DisplayName}";
+            instance.transform.SetPositionAndRotation(position, resolvedRotation);
+            stage.AddAuxiliary(instance);
+            MonsterBasicAttackVfxPlayback.ApplyInstanceScale(
+                instance,
+                binding.Prefab.transform.localScale *
+                binding.Scale * Mathf.Max(0.01f, draft.VfxScale));
+            MonsterBasicAttackVfxPlayback.RestartAtOffset(
+                instance,
+                binding.PlaybackOffset,
+                playbackSpeed: binding.PlaybackSpeed);
+            if (slot.Attachment == MonsterBasicAttackVfxAttachment.FollowAnchor && anchor != null)
+            {
+                instance.transform.SetParent(anchor, true);
+            }
+            activeVfx.Add(new PreviewVfx(
+                instance,
+                binding.Lifetime,
+                slot.EndPolicy,
+                projectile));
+            return true;
+        }
+
+        private void ScheduleRecipeLeadContractVfx(MonsterBasicAttackProfile profile)
+        {
+            if (profile == null || currentClip == null || markerBuffer.Length == 0 ||
+                draft == null || stage.PreviewRoot == null)
+            {
+                return;
+            }
+
+            var markerIndex = Mathf.Clamp(nextMarkerIndex, 0, markerBuffer.Length - 1);
+            var markerDelay =
+                currentClip.length * markerBuffer[markerIndex].NormalizedTime /
+                Mathf.Max(0.01f, playbackSpeed);
+            var socketPath = markerIndex < markerDraftBuffer.Length
+                ? markerDraftBuffer[markerIndex]?.SocketOverride
+                : null;
+            var originSocket = ResolvePreviewSocket(socketPath);
+            var origin = originSocket == null
+                ? stage.PreviewRoot.transform.position
+                : originSocket.position;
+            var targetPosition = ResolveCombatTargetHitPoint();
+            var forward = targetPosition - origin;
+            forward.y = 0f;
+            var rotation = Quaternion.LookRotation(
+                forward.sqrMagnitude < 0.0001f ? stage.PreviewRoot.transform.forward : forward.normalized,
+                Vector3.up);
+
+            foreach (var slot in profile.VfxSlots)
+            {
+                if (slot == null ||
+                    slot.EventType != MonsterBasicAttackVfxEvent.RecipeExecute ||
+                    slot.IsDeliveryVisual ||
+                    !MonsterBasicAttackVfxResolver.TryResolvePresentation(
+                        draft.BasicAttackVfxBindings,
+                        profile.AttackId,
+                        slot,
+                        currentAttack?.MotionId,
+                        out var binding) ||
+                    !binding.IsAssigned)
+                {
+                    continue;
+                }
+
+                var timingOffset = slot.ClampTimingOffset(binding.EventTimingOffset);
+                var claim = $"{basicAttackVfxSequence}|{slot.SlotId}|vfx|once";
+                if (timingOffset >= 0f || !basicAttackVfxClaims.Add(claim))
+                {
+                    continue;
+                }
+
+                var executeAt = previewClock + Mathf.Max(0f, markerDelay + timingOffset);
+                if (executeAt <= previewClock + 0.0001f)
+                {
+                    PlayContractVfxInstance(
+                        slot,
+                        binding,
+                        origin,
+                        targetPosition,
+                        targetPosition,
+                        rotation,
+                        null,
+                        socketPath);
+                    continue;
+                }
+
+                pendingContractVfx.Add(new PendingContractVfx(
+                    executeAt,
+                    slot,
+                    binding,
+                    origin,
+                    targetPosition,
+                    targetPosition,
+                    rotation,
+                    null,
+                    socketPath));
+            }
+        }
+
+        private void TickPendingContractVfx()
+        {
+            for (var index = pendingContractVfx.Count - 1; index >= 0; index--)
+            {
+                var pending = pendingContractVfx[index];
+                if (previewClock + 0.0001f < pending.ExecuteAt)
+                {
+                    continue;
+                }
+
+                pendingContractVfx.RemoveAt(index);
+                PlayContractVfxInstance(
+                    pending.Slot,
+                    pending.Binding,
+                    pending.Origin,
+                    pending.HitPoint,
+                    pending.AreaCenter,
+                    pending.Rotation,
+                    pending.Projectile,
+                    pending.SocketPath);
+            }
+        }
+
+        private void ResolveContractAnchor(
+            MonsterBasicAttackVfxAnchor anchorKind,
+            GameObject projectile,
+            string socketPath,
+            Vector3 origin,
+            Vector3 hitPoint,
+            Vector3 areaCenter,
+            Quaternion rotation,
+            out Transform anchor,
+            out Vector3 position,
+            out Quaternion resolvedRotation)
+        {
+            anchor = null;
+            position = origin;
+            resolvedRotation = rotation;
+            switch (anchorKind)
+            {
+                case MonsterBasicAttackVfxAnchor.SourceRoot:
+                    anchor = stage.PreviewRoot.transform;
+                    break;
+                case MonsterBasicAttackVfxAnchor.AttackOrigin:
+                    anchor = ResolvePreviewSocket(draft.AttackOriginPath);
+                    break;
+                case MonsterBasicAttackVfxAnchor.MarkerSocket:
+                    anchor = ResolvePreviewSocket(socketPath);
+                    break;
+                case MonsterBasicAttackVfxAnchor.ProjectileRoot:
+                    anchor = projectile?.transform;
+                    break;
+                case MonsterBasicAttackVfxAnchor.TargetRoot:
+                    anchor = dummyTarget?.transform;
+                    break;
+                case MonsterBasicAttackVfxAnchor.HitPoint:
+                    position = hitPoint;
+                    return;
+                case MonsterBasicAttackVfxAnchor.AreaCenter:
+                    position = areaCenter;
+                    return;
+                case MonsterBasicAttackVfxAnchor.TrajectoryOrigin:
+                    position = origin;
+                    return;
+            }
+            if (anchor != null)
+            {
+                position = anchor.position;
+                resolvedRotation = anchor.rotation;
+            }
+        }
+
+        private void ReleaseContractVfx(
+            MonsterBasicAttackVfxEndPolicy policy,
+            GameObject projectile)
+        {
+            for (var index = pendingContractVfx.Count - 1; index >= 0; index--)
+            {
+                var pending = pendingContractVfx[index];
+                if (pending.Slot.EndPolicy != policy ||
+                    policy == MonsterBasicAttackVfxEndPolicy.DeliveryEnd &&
+                    pending.Projectile != projectile)
+                {
+                    continue;
+                }
+                pendingContractVfx.RemoveAt(index);
+            }
+
+            for (var index = activeVfx.Count - 1; index >= 0; index--)
+            {
+                var vfx = activeVfx[index];
+                if (vfx.EndPolicy != policy ||
+                    policy == MonsterBasicAttackVfxEndPolicy.DeliveryEnd &&
+                    vfx.Delivery != projectile)
+                {
+                    continue;
+                }
+                if (vfx.Instance != null)
+                {
+                    stage.RemoveAuxiliary(vfx.Instance);
+                }
+                activeVfx.RemoveAt(index);
+            }
+        }
+
         private void PlayResolvedImpactFeedback(
             MonsterMakerFeedbackDraft draftFeedback,
             MonsterFeedbackCue profileFeedback,
@@ -950,13 +1406,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
         }
 
-        private MonsterMakerFeedbackDraft ResolveAttackStartFeedback(MonsterMakerAttackDraft attack)
-        {
-            return attack?.AttackStartFeedback?.HasAny == true
-                ? attack.AttackStartFeedback
-                : draft?.AttackStartFeedback;
-        }
-
         private void SpawnPreviewProjectile(
             MonsterMakerMarkerDraft markerDraft,
             float damage,
@@ -964,10 +1413,19 @@ namespace ProjectMT.EditorTools.MonsterMaker
             MonsterFeedbackCue profileImpactFeedback,
             MonsterBasicAttackProfile profile)
         {
-            var projectilePresentation = profile?.ProjectileFeedback;
-            var projectileVisual = projectilePresentation?.VfxPrefab != null
-                ? projectilePresentation.VfxPrefab
-                : draft?.ProjectilePrefab;
+            var usesPresentationContract = profile?.VfxSlots.Count > 0;
+            var projectilePresentation = usesPresentationContract ? null : profile?.ProjectileFeedback;
+            var hasDeliveryVisual = MonsterBasicAttackVfxResolver.TryResolveDeliveryVisual(
+                profile,
+                draft?.BasicAttackVfxBindings,
+                currentAttack?.MotionId,
+                out _,
+                out var deliveryBinding);
+            var projectileVisual = hasDeliveryVisual
+                ? deliveryBinding.Prefab
+                : projectilePresentation?.VfxPrefab != null
+                    ? projectilePresentation.VfxPrefab
+                    : draft?.ProjectilePrefab;
             if (projectileVisual == null)
             {
                 projectileVisual = AssetDatabase.LoadAssetAtPath<GameObject>(
@@ -998,7 +1456,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     0f) * direction;
                 var rotation = Quaternion.LookRotation(shotDirection, Vector3.up);
                 var spawnPosition = origin;
-                if (projectilePresentation != null)
+                if (hasDeliveryVisual)
+                {
+                    spawnPosition += rotation * deliveryBinding.LocalPosition;
+                    rotation *= deliveryBinding.LocalRotation;
+                }
+                else if (projectilePresentation != null)
                 {
                     spawnPosition += rotation * projectilePresentation.LocalPosition;
                     rotation *= projectilePresentation.LocalRotation;
@@ -1006,7 +1469,19 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 var instance = UnityEngine.Object.Instantiate(projectileVisual);
                 instance.name = "[Monster Preview Projectile] " + projectileVisual.name;
                 instance.transform.SetPositionAndRotation(spawnPosition, rotation);
-                if (projectilePresentation != null)
+                if (hasDeliveryVisual)
+                {
+                    MonsterBasicAttackVfxPlayback.ApplyInstanceScale(
+                        instance,
+                        projectileVisual.transform.localScale *
+                        deliveryBinding.Scale *
+                        Mathf.Max(0.01f, draft.VfxScale));
+                    MonsterBasicAttackVfxPlayback.RestartAtOffset(
+                        instance,
+                        deliveryBinding.PlaybackOffset,
+                        playbackSpeed: deliveryBinding.PlaybackSpeed);
+                }
+                else if (projectilePresentation != null)
                 {
                     instance.transform.localScale = projectileVisual.transform.localScale *
                                                     projectilePresentation.Scale *
@@ -1037,6 +1512,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     targetPosition,
                     shotDirection,
                     index == projectileCount / 2));
+                PlayContractVfx(
+                    MonsterBasicAttackVfxEvent.DeliverySpawn,
+                    profile,
+                    origin,
+                    targetPosition,
+                    targetPosition,
+                    rotation,
+                    instance,
+                    markerDraft?.SocketOverride);
                 spawned = true;
             }
             if (spawned)
@@ -1050,10 +1534,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         0,
                         false,
                         projectilePresentation.Sfx.SelectVolume());
-                }
-                else if (profile?.LaunchFeedback?.Sfx == null)
-                {
-                    PlaySound(draft.ProjectileLaunchSound);
                 }
             }
             combatStatus = "투사체 이동 중";
@@ -1328,7 +1808,31 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     continue;
                 }
 
-                if (ApplyPreviewDamage(pending.Damage) && pending.PlayFeedback)
+                var applied = ApplyPreviewDamage(pending.Damage);
+                if (applied)
+                {
+                    var impactPosition = ResolvePreviewImpactPosition(pending.Profile, pending.Origin);
+                    PlayContractVfx(
+                        MonsterBasicAttackVfxEvent.TargetDamaged,
+                        pending.Profile,
+                        pending.Origin,
+                        impactPosition,
+                        ResolveCombatTargetHitPoint(),
+                        pending.Rotation,
+                        damageStage: pending.HitIndex);
+                    if (pending.HitIndex == (pending.Profile?.HitCount ?? 1) - 1)
+                    {
+                        PlayContractVfx(
+                            MonsterBasicAttackVfxEvent.SequenceEnd,
+                            pending.Profile,
+                            pending.Origin,
+                            impactPosition,
+                            ResolveCombatTargetHitPoint(),
+                            pending.Rotation,
+                            damageStage: pending.HitIndex);
+                    }
+                }
+                if (applied && pending.PlayFeedback)
                 {
                     PlayResolvedImpactFeedback(
                         pending.DraftFeedback,
@@ -1405,6 +1909,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         if (!projectile.Returning)
                         {
                             ApplyPreviewProjectileDamage(projectile, 0, projectile.TargetPosition);
+                            PlayContractVfx(
+                                MonsterBasicAttackVfxEvent.DeliveryTurn,
+                                projectile.Profile,
+                                projectile.Origin,
+                                projectile.TargetPosition,
+                                projectile.TargetPosition,
+                                projectile.Instance.transform.rotation,
+                                projectile.Instance);
                             projectile.Returning = true;
                         }
                         else
@@ -1436,11 +1948,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     }
                 }
 
-                var particles = projectile.Instance.GetComponentsInChildren<ParticleSystem>(true);
-                for (var particleIndex = 0; particleIndex < particles.Length; particleIndex++)
-                {
-                    particles[particleIndex].Simulate(projectile.Elapsed, true, true);
-                }
+                MonsterBasicAttackVfxPlayback.Simulate(projectile.Instance, deltaTime);
             }
         }
 
@@ -1473,6 +1981,44 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var ratio = projectile.Profile?.ResolveDamageRatio(passIndex) ?? 1f;
             if (ApplyPreviewDamage(projectile.Damage * ratio))
             {
+                var rotation = projectile.Instance == null
+                    ? Quaternion.identity
+                    : projectile.Instance.transform.rotation;
+                PlayContractVfx(
+                    MonsterBasicAttackVfxEvent.TargetDamaged,
+                    projectile.Profile,
+                    projectile.Origin,
+                    position,
+                    position,
+                    rotation,
+                    projectile.Instance,
+                    damageStage: passIndex);
+                if (projectile.Profile?.SequenceModule == MonsterBasicAttackSequenceModule.ReturnPasses)
+                {
+                    PlayContractVfx(
+                        passIndex == 0
+                            ? MonsterBasicAttackVfxEvent.OutboundTargetDamaged
+                            : MonsterBasicAttackVfxEvent.ReturnTargetDamaged,
+                        projectile.Profile,
+                        projectile.Origin,
+                        position,
+                        position,
+                        rotation,
+                        projectile.Instance,
+                        damageStage: passIndex);
+                }
+                if (projectile.Profile?.CollisionModule == MonsterBasicAttackCollisionModule.AreaImpact)
+                {
+                    PlayContractVfx(
+                        MonsterBasicAttackVfxEvent.AreaResolved,
+                        projectile.Profile,
+                        projectile.Origin,
+                        position,
+                        position,
+                        rotation,
+                        projectile.Instance,
+                        damageStage: passIndex);
+                }
                 PlayResolvedImpactFeedback(
                     projectile.ImpactFeedback,
                     projectile.ProfileImpactFeedback,
@@ -1491,6 +2037,17 @@ namespace ProjectMT.EditorTools.MonsterMaker
         {
             if (projectile.Instance != null)
             {
+                PlayContractVfx(
+                    MonsterBasicAttackVfxEvent.DeliveryEnd,
+                    projectile.Profile,
+                    projectile.Origin,
+                    projectile.Instance.transform.position,
+                    projectile.Instance.transform.position,
+                    projectile.Instance.transform.rotation,
+                    projectile.Instance);
+                ReleaseContractVfx(
+                    MonsterBasicAttackVfxEndPolicy.DeliveryEnd,
+                    projectile.Instance);
                 stage.RemoveAuxiliary(projectile.Instance);
             }
 
@@ -1598,13 +2155,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     continue;
                 }
 
-                vfx.Elapsed += Mathf.Max(0f, deltaTime);
-                var particles = vfx.Instance.GetComponentsInChildren<ParticleSystem>(true);
-                for (var particleIndex = 0; particleIndex < particles.Length; particleIndex++)
-                {
-                    particles[particleIndex].Simulate(vfx.Elapsed, true, true);
-                }
+                var elapsedDelta = Mathf.Max(0f, deltaTime);
+                vfx.Elapsed += elapsedDelta;
+                MonsterBasicAttackVfxPlayback.Simulate(vfx.Instance, elapsedDelta);
 
+                if (vfx.EndPolicy is MonsterBasicAttackVfxEndPolicy.MotionEnd or
+                    MonsterBasicAttackVfxEndPolicy.DeliveryEnd)
+                {
+                    continue;
+                }
                 if (vfx.Elapsed < vfx.Lifetime)
                 {
                     continue;
@@ -1786,6 +2345,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             activeVfx.Clear();
+            pendingContractVfx.Clear();
             ClearCombatPresentation();
         }
 
@@ -1869,15 +2429,58 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private sealed class PreviewVfx
         {
-            public PreviewVfx(GameObject instance, float lifetime)
+            public PreviewVfx(
+                GameObject instance,
+                float lifetime,
+                MonsterBasicAttackVfxEndPolicy endPolicy = MonsterBasicAttackVfxEndPolicy.Timed,
+                GameObject delivery = null)
             {
                 Instance = instance;
                 Lifetime = Mathf.Max(0.01f, lifetime);
+                EndPolicy = endPolicy;
+                Delivery = delivery;
             }
 
             public GameObject Instance { get; }
             public float Lifetime { get; }
+            public MonsterBasicAttackVfxEndPolicy EndPolicy { get; }
+            public GameObject Delivery { get; }
             public float Elapsed { get; set; }
+        }
+
+        private sealed class PendingContractVfx
+        {
+            public PendingContractVfx(
+                float executeAt,
+                MonsterBasicAttackVfxSlot slot,
+                MonsterBasicAttackVfxBinding binding,
+                Vector3 origin,
+                Vector3 hitPoint,
+                Vector3 areaCenter,
+                Quaternion rotation,
+                GameObject projectile,
+                string socketPath)
+            {
+                ExecuteAt = executeAt;
+                Slot = slot;
+                Binding = binding;
+                Origin = origin;
+                HitPoint = hitPoint;
+                AreaCenter = areaCenter;
+                Rotation = rotation;
+                Projectile = projectile;
+                SocketPath = socketPath;
+            }
+
+            public float ExecuteAt { get; }
+            public MonsterBasicAttackVfxSlot Slot { get; }
+            public MonsterBasicAttackVfxBinding Binding { get; }
+            public Vector3 Origin { get; }
+            public Vector3 HitPoint { get; }
+            public Vector3 AreaCenter { get; }
+            public Quaternion Rotation { get; }
+            public GameObject Projectile { get; }
+            public string SocketPath { get; }
         }
 
         private sealed class PreviewFloatingNumber
@@ -1960,7 +2563,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 MonsterBasicAttackProfile profile,
                 Vector3 origin,
                 Quaternion rotation,
-                bool playFeedback)
+                bool playFeedback,
+                int hitIndex)
             {
                 ApplyAt = applyAt;
                 Damage = damage;
@@ -1970,6 +2574,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 Origin = origin;
                 Rotation = rotation;
                 PlayFeedback = playFeedback;
+                HitIndex = hitIndex;
             }
 
             public float ApplyAt { get; }
@@ -1980,6 +2585,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             public Vector3 Origin { get; }
             public Quaternion Rotation { get; }
             public bool PlayFeedback { get; }
+            public int HitIndex { get; }
         }
 
         private struct PendingFloatingNumber
@@ -2015,9 +2621,27 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
             }
 
-            public void PlayDamage(Vector3 position, float amount, FloatingNumberStyle style, int mergeKey)
+            public void PlayDamage(
+                Vector3 position,
+                float amount,
+                FloatingNumberStyle style,
+                int mergeKey,
+                DamageFeedbackFlags feedbackFlags = DamageFeedbackFlags.None)
             {
                 owner.QueueFloatingNumber(position, amount, style, mergeKey);
+            }
+
+            public void PlayFloatingNumber(Vector3 position, float amount, FloatingNumberStyle style, int mergeKey)
+            {
+                owner.QueueFloatingNumber(position, amount, style, mergeKey);
+            }
+
+            public void PlayStatusText(
+                Vector3 position,
+                string text,
+                CombatStatusTextStyle style,
+                int queueKey)
+            {
             }
         }
     }

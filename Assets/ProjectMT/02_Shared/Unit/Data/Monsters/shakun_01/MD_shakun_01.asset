@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 20
   defense: 7
   attackSpeed: 1.05
-  moveSpeed: 2.7
-  attackRange: 2
+  moveSpeed: 2.2
+  attackRange: 3.5
   ranged: 0
   runtimeAssetKey: monster/shakun_01
   runtimeAssetSet: {fileID: 11400000, guid: d5e35a5a55436ae4292cadc1430a16c0, type: 2}

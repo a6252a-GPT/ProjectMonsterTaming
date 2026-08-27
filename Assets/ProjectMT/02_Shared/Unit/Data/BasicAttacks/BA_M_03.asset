@@ -56,6 +56,29 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  vfxSlots:
+  - slotId: thrust_path
+    displayName: "\uCC0C\uB974\uAE30 \uACBD\uB85C"
+    description: "\uACF5\uACA9 \uC6D0\uC810\uC5D0\uC11C \uBAA9\uD45C \uBC29\uD5A5\uC73C\uB85C
+      \uBED7\uB294 \uC9C1\uC120 \uD6A8\uACFC"
+    eventType: 1
+    anchor: 7
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: path_hit
+    displayName: "\uACBD\uB85C \uBA85\uC911"
+    description: "\uC9C1\uC120 \uACBD\uB85C\uC5D0\uC11C \uD53C\uD574\uB97C \uBC1B\uC740
+      \uB300\uC0C1 \uD6A8\uACFC"
+    eventType: 3
+    anchor: 5
+    multiplicity: 3
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
   recipeVersion: 1
   deliveryModule: 0
   collisionModule: 0

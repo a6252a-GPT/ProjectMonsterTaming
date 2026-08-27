@@ -72,6 +72,8 @@ namespace ProjectMT.Shared.Unit
         [SerializeField, Min(0f)] private float crossFadeDuration = 0.06f;
         [SerializeField, Min(0f)] private float weight = 1f;
         [SerializeField] private bool preventImmediateRepeat;
+        [SerializeField] private bool overrideBreathDuration;
+        [SerializeField, Min(0.01f)] private float breathDuration = 0.8f;
         [SerializeField] private MonsterAttackMarker[] markers = Array.Empty<MonsterAttackMarker>();
         [SerializeField] private MonsterFeedbackCue attackStartOverride;
 
@@ -82,8 +84,15 @@ namespace ProjectMT.Shared.Unit
         public float CrossFadeDuration => Mathf.Max(0f, crossFadeDuration);
         public float Weight => Mathf.Max(0f, weight);
         public bool PreventImmediateRepeat => preventImmediateRepeat;
+        public bool OverrideBreathDuration => overrideBreathDuration;
+        public float BreathDuration => Mathf.Max(0.01f, breathDuration);
         public MonsterAttackMarker[] Markers => markers ?? Array.Empty<MonsterAttackMarker>();
         public MonsterFeedbackCue AttackStartOverride => attackStartOverride;
+
+        public float ResolveBreathDuration(float profileDefault)
+        {
+            return overrideBreathDuration ? BreathDuration : Mathf.Max(0.01f, profileDefault);
+        }
 
 #if UNITY_EDITOR
         public void EditorConfigure(
@@ -94,7 +103,9 @@ namespace ProjectMT.Shared.Unit
             float selectionWeight,
             bool preventRepeat,
             MonsterAttackMarker[] attackMarkers,
-            MonsterFeedbackCue startOverride = null)
+            MonsterFeedbackCue startOverride = null,
+            bool useBreathDurationOverride = false,
+            float configuredBreathDuration = 0.8f)
         {
             motionId = id?.Trim();
             clip = animationClip;
@@ -102,6 +113,8 @@ namespace ProjectMT.Shared.Unit
             crossFadeDuration = Mathf.Max(0f, fadeDuration);
             weight = Mathf.Max(0f, selectionWeight);
             preventImmediateRepeat = preventRepeat;
+            overrideBreathDuration = useBreathDurationOverride;
+            breathDuration = Mathf.Max(0.01f, configuredBreathDuration);
             markers = attackMarkers ?? Array.Empty<MonsterAttackMarker>();
             attackStartOverride = startOverride;
         }

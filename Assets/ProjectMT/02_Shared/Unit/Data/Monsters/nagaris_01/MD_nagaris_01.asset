@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 22
   defense: 8
   attackSpeed: 0.9
-  moveSpeed: 2.5
-  attackRange: 4.2
+  moveSpeed: 2
+  attackRange: 4.6
   ranged: 1
   runtimeAssetKey: monster/nagaris_01
   runtimeAssetSet: {fileID: 11400000, guid: 8e0b289f10464b548b39f0a05df9ab23, type: 2}

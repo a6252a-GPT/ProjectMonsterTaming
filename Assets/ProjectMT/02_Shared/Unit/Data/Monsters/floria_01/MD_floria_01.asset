@@ -21,8 +21,8 @@ MonoBehaviour:
   attackPower: 13
   defense: 5
   attackSpeed: 0.95
-  moveSpeed: 2.4
-  attackRange: 4.5
+  moveSpeed: 1.9
+  attackRange: 4.9
   ranged: 1
   runtimeAssetKey: monster/floria_01
   runtimeAssetSet: {fileID: 11400000, guid: 431033455e776ed40bc172f9e768c682, type: 2}

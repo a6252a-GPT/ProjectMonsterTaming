@@ -21,9 +21,17 @@ namespace ProjectMT.Shared.Unit
         public IReadOnlyList<MonsterLegendaryRarityEntry> LegendaryMythicEntries => legendaryMythicEntries;
 
 #if UNITY_EDITOR
+        public MonsterCatalog SourceCatalog => sourceCatalog;
+
         private void OnValidate()
         {
             SyncWithSourceCatalog(); // 기준 카탈로그 변경 시 동기화
+        }
+
+        // MonsterCatalog.OnValidate가 이 도감 카탈로그를 대신 갱신할 때 호출한다.
+        internal void EditorSyncWithSourceCatalog()
+        {
+            SyncWithSourceCatalog();
         }
 
         private void SyncWithSourceCatalog()
@@ -35,6 +43,20 @@ namespace ProjectMT.Shared.Unit
 
             commonToEpicEntries ??= new List<MonsterCommonRarityEntry>();
             legendaryMythicEntries ??= new List<MonsterLegendaryRarityEntry>();
+
+            var definitions = sourceCatalog.Definitions;
+            var validIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (var index = 0; index < definitions.Count; index++)
+            {
+                if (definitions[index] != null && !string.IsNullOrWhiteSpace(definitions[index].MonsterId))
+                {
+                    validIds.Add(definitions[index].MonsterId);
+                }
+            }
+
+            // 카탈로그에서 빠진 몬스터는 도감 항목도 같이 제거한다(그 항목의 스킬 배정도 함께 사라짐).
+            var changed = RemoveStaleEntries(commonToEpicEntries, validIds);
+            changed |= RemoveStaleEntries(legendaryMythicEntries, validIds);
 
             var existingIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             for (var index = 0; index < commonToEpicEntries.Count; index++)
@@ -53,7 +75,6 @@ namespace ProjectMT.Shared.Unit
                 }
             }
 
-            var definitions = sourceCatalog.Definitions;
             var blankSearchStart = 0;
             for (var index = 0; index < definitions.Count; index++)
             {
@@ -81,7 +102,33 @@ namespace ProjectMT.Shared.Unit
                     newEntry.AssignMonster(definition);
                     commonToEpicEntries.Add(newEntry);
                 }
+
+                changed = true;
             }
+
+            if (changed)
+            {
+                UnityEditor.EditorUtility.SetDirty(this); // 다른 에셋(MonsterCatalog) 검증 중 갱신된 경우 대비
+            }
+        }
+
+        // 리스트에서 더 이상 원본 카탈로그에 없는 몬스터를 가리키는 항목을 제거한다.
+        // 몬스터가 원래 비어있던(아직 배정 전) 항목은 건드리지 않는다.
+        private static bool RemoveStaleEntries<TEntry>(List<TEntry> entries, HashSet<string> validIds)
+            where TEntry : class, IMonsterRarityEntry
+        {
+            var removed = false;
+            for (var index = entries.Count - 1; index >= 0; index--)
+            {
+                var monster = entries[index]?.Monster;
+                if (monster != null && !validIds.Contains(monster.MonsterId))
+                {
+                    entries.RemoveAt(index);
+                    removed = true;
+                }
+            }
+
+            return removed;
         }
 #endif
 

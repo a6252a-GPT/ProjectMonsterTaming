@@ -284,25 +284,25 @@ namespace ProjectMT.Contents.FallenCommander
     [System.Serializable]
     public sealed class FallenCommanderAttackEffectData
     {
-        [SerializeField, InspectorName("시전 시각 효과")] private GameObject startVfxPrefab;
-        [SerializeField, InspectorName("시전 시각 효과 유지시간 (0 = 자동)"), Min(0f)] private float startVfxDuration;
-        [SerializeField, InspectorName("시전 시각 효과 위치 기준")]
+        [SerializeField, InspectorName("시전 효과")] private GameObject startVfxPrefab;
+        [SerializeField, InspectorName("시전 효과 유지시간 (0 = 자동)"), Min(0f)] private float startVfxDuration;
+        [SerializeField, InspectorName("시전 효과 위치 기준")]
         private FallenCommanderEffectAnchor startVfxAnchor;
-        [SerializeField, InspectorName("시전 시각 효과 위치 오프셋")]
+        [SerializeField, InspectorName("시전 효과 위치 오프셋")]
         private Vector3 startVfxPositionOffset;
-        [SerializeField, InspectorName("시전 시각 효과 회전 오프셋")]
+        [SerializeField, InspectorName("시전 효과 회전 오프셋")]
         private Vector3 startVfxRotationOffset;
-        [SerializeField, InspectorName("시전 시각 효과 크기")]
+        [SerializeField, InspectorName("시전 효과 크기")]
         private Vector3 startVfxScale = Vector3.one;
-        [SerializeField, InspectorName("적중 시각 효과")] private GameObject resolveVfxPrefab;
-        [SerializeField, InspectorName("적중 시각 효과 유지시간 (0 = 자동)"), Min(0f)] private float resolveVfxDuration;
-        [SerializeField, InspectorName("적중 시각 효과 위치 기준")]
+        [SerializeField, InspectorName("적중 효과")] private GameObject resolveVfxPrefab;
+        [SerializeField, InspectorName("적중 효과 유지시간 (0 = 자동)"), Min(0f)] private float resolveVfxDuration;
+        [SerializeField, InspectorName("적중 효과 위치 기준")]
         private FallenCommanderEffectAnchor resolveVfxAnchor;
-        [SerializeField, InspectorName("적중 시각 효과 위치 오프셋")]
+        [SerializeField, InspectorName("적중 효과 위치 오프셋")]
         private Vector3 resolveVfxPositionOffset;
-        [SerializeField, InspectorName("적중 시각 효과 회전 오프셋")]
+        [SerializeField, InspectorName("적중 효과 회전 오프셋")]
         private Vector3 resolveVfxRotationOffset;
-        [SerializeField, InspectorName("적중 시각 효과 크기")]
+        [SerializeField, InspectorName("적중 효과 크기")]
         private Vector3 resolveVfxScale = Vector3.one;
         [SerializeField, InspectorName("시전 효과음")] private AudioClip startSfx;
         [SerializeField, InspectorName("시전 효과음 유지시간 (0 = 자동)"), Min(0f)] private float startSfxDuration;

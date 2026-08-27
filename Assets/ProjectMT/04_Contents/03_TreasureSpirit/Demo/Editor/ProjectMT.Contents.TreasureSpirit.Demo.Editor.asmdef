@@ -1,0 +1,18 @@
+{
+    "name": "ProjectMT.Contents.TreasureSpirit.Demo.Editor",
+    "rootNamespace": "ProjectMT.Contents.TreasureSpirit.Demo",
+    "references": [
+        "ProjectMT.Contents.TreasureSpirit"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

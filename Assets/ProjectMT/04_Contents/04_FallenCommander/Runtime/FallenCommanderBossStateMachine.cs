@@ -103,11 +103,11 @@ namespace ProjectMT.Contents.FallenCommander
         private BossState currentState;
         private float attackInterval;
         private float attackCooldownRemaining;
-        private float markStrikeStunDuration;
         private float trackingMarkCastTime;
         private float trackingMarkLockDuration;
         private float trackingMarkRadius;
         private float basicAttackWarningTime;
+        private float basicTelegraphHoldDuration;
         private float basicProjectileSpeed;
         private float basicProjectileRadius;
         private float basicProjectileMaxDistance;
@@ -139,10 +139,12 @@ namespace ProjectMT.Contents.FallenCommander
         private bool isPhaseTransitionActive;
         private FallenCommanderBossPhase currentPhase = FallenCommanderBossPhase.Phase1;
         private FallenCommanderPhaseConfig phaseConfig;
+        private Vector3 markStrikeArenaCenter;
 
         private FallenCommanderBasicAttackData basicAttack;
         private FallenCommanderAttackData meleeAttackMotion;
         private FallenCommanderAttackData markStrikeMotion;
+        private readonly FallenCommanderMarkStrikePattern markStrikePattern = new();
         private FallenCommanderAttackData trackingMarkMotion;
         private FallenCommanderAttackData blackHoleMotion;
         private readonly FallenCommanderBlackHolePattern blackHolePattern = new();
@@ -157,7 +159,9 @@ namespace ProjectMT.Contents.FallenCommander
             currentState == BossState.Idle;
         public FallenCommanderAttackPattern LastSelectedAttack { get; private set; }
         public FallenCommanderTelegraphView ActiveTelegraph =>
-            blackHolePattern.ActiveTelegraph ?? activeTelegraph;
+            blackHolePattern.ActiveTelegraph ??
+            markStrikePattern.ActiveTelegraph ??
+            activeTelegraph;
         // 현재 바닥에 생성되어 있는 범위 오브젝트
         private FallenCommanderTelegraphView activeTelegraph;
         private FallenCommanderTelegraphView activeRingSafeTelegraph;
@@ -170,6 +174,7 @@ namespace ProjectMT.Contents.FallenCommander
         // 실제 공격 반지름
         private float markStrikeRadius;
         private float telegraphDuration;
+        private float telegraphHoldDuration;
 
         // 현재 공격이 끝날 때까지 남은 시간
         private float stateTimeRemaining;
@@ -182,7 +187,7 @@ namespace ProjectMT.Contents.FallenCommander
         private float basicProjectileDistanceRemaining;
 
         private static readonly Color BasicTelegraphColor =
-            new Color(0.2f, 0.85f, 1f, 0.8f);
+            new Color(1f, 0.12f, 0.08f, 0.82f);
         private static readonly Color MeleeTelegraphColor =
             new Color(1f, 0.25f, 0.05f, 0.75f);
         private static readonly Color LineTelegraphColor =
@@ -249,6 +254,9 @@ namespace ProjectMT.Contents.FallenCommander
             attackInterval = Mathf.Max(0.1f, interval);
             basicAttack = basicAttackData;
             basicAttackWarningTime = Mathf.Max(0.1f, basicAttackData == null ? 0f : basicAttackData.WarningDuration);
+            basicTelegraphHoldDuration = Mathf.Max(
+                0f,
+                basicAttackData == null ? 0f : basicAttackData.TelegraphHoldDuration);
             basicProjectileSpeed = Mathf.Max(0.1f, basicAttackData == null ? 0f : basicAttackData.ProjectileSpeed);
             basicProjectileRadius = Mathf.Max(0.1f, basicAttackData == null ? 0f : basicAttackData.ProjectileRadius);
             basicProjectileMaxDistance = Mathf.Max(0.1f, basicAttackData == null ? 0f : basicAttackData.MaxDistance);
@@ -261,7 +269,7 @@ namespace ProjectMT.Contents.FallenCommander
             markStrikeMotion = markMotion;
             markStrikeCastTime = Mathf.Max(0.1f, markMotion == null ? 0f : markMotion.WarningDuration);
             markStrikeRadius = Mathf.Max(0.1f, markMotion == null ? 0f : markMotion.Radius);
-            markStrikeStunDuration = Mathf.Max(0.1f, markMotion == null ? 0f : markMotion.StunDuration);
+            markStrikeArenaCenter = blackHoleArenaCenter;
             trackingMarkMotion = trackingMotion;
             trackingMarkCastTime = Mathf.Max(0.1f, trackingMotion == null ? 0f : trackingMotion.WarningDuration);
             trackingMarkLockDuration = Mathf.Clamp(trackingLockDuration, 0.1f, trackingMarkCastTime);
@@ -350,11 +358,14 @@ namespace ProjectMT.Contents.FallenCommander
                     break;
 
                 case BossState.Melee:
-                case BossState.MarkStrike:
                 case BossState.TrackingMark:
                 case BossState.LineStrike:
                 case BossState.CorruptionRing:
                     TickAttack(deltaTime);
+                    break;
+
+                case BossState.MarkStrike:
+                    TickMarkStrike(deltaTime);
                     break;
 
                 case BossState.BlackHole:
@@ -574,15 +585,16 @@ namespace ProjectMT.Contents.FallenCommander
             blackHoleMotion = null;
             breakMotionDuration = 0f;
             telegraphDuration = 0f;
+            telegraphHoldDuration = 0f;
             commanderStunChanged = null;
             attackCooldownRemaining = 0f;
             basicAttackCooldownRemaining = 0f;
             basicPatternDelayRemaining = 0f;
             basicWindupRemaining = 0f;
             commanderStunRemaining = 0f;
-            markStrikeStunDuration = 0f;
             stateTimeRemaining = 0f;
             markStrikePosition = Vector3.zero;
+            markStrikeArenaCenter = Vector3.zero;
             lineStrikeDirection = Vector3.zero;
             basicProjectilePosition = Vector3.zero;
             basicProjectileDirection = Vector3.zero;
@@ -679,7 +691,7 @@ namespace ProjectMT.Contents.FallenCommander
             basicProjectileDirection.Normalize();
             basicProjectilePosition = origin + Vector3.up * basicProjectileHeight;
             basicProjectileDistanceRemaining = basicProjectileMaxDistance;
-            basicWindupRemaining = basicAttackWarningTime;
+            basicWindupRemaining = basicAttackWarningTime + basicTelegraphHoldDuration;
             isBasicWindupActive = true;
             isBasicProjectileActive = false;
             DestroyActiveBasicTelegraph();
@@ -691,7 +703,7 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor.transform,
                 commanderRoot);
 
-            activeBasicTelegraph = FallenCommanderTelegraphView.CreateLine(
+            activeBasicTelegraph = FallenCommanderTelegraphView.CreateRectangle(
                 basicAttack.TelegraphPrefab,
                 bossActor.transform.parent,
                 origin,
@@ -718,38 +730,28 @@ namespace ProjectMT.Contents.FallenCommander
         {
             LastSelectedAttack = FallenCommanderAttackPattern.Mark;
             DelayNextBasicAttackForPatternStart();
-            // 공격을 시작한 순간의 군단장 위치를 저장
-            markStrikePosition = commanderRoot.position;
-
-            // 위치 공격 시전 시간
-            stateTimeRemaining = markStrikeCastTime;
-
-            // FSM의 현재 상태를 위치 공격으로 변경
-            currentState = BossState.MarkStrike;
-            PauseBossTracking();
-            animationPresenter.PlayPreCast(
-                markStrikeMotion?.PreCastMotion,
-                playbackSpeed: markStrikeMotion == null ? 1f : markStrikeMotion.PreCastMotionSpeed,
-                normalizedStart: markStrikeMotion?.PreCastMotionStart ?? 0f,
-                normalizedEnd: markStrikeMotion?.PreCastMotionEnd ?? 1f);
-            FallenCommanderAttackEffectPlayer.PlayStart(
-                markStrikeMotion?.Effects,
-                markStrikePosition,
-                bossActor.transform.forward,
-                bossActor.transform.parent,
-                bossActor.transform,
-                commanderRoot);
-
-            // 이전 공격 표시 제거
             DestroyActiveTelegraph();
+            PauseBossTracking();
+            var phaseData = phaseConfig?.GetPhase(currentPhase);
+            if (!markStrikePattern.Begin(
+                    markStrikeMotion,
+                    phaseData?.MarkStrikePattern,
+                    bossActor,
+                    commanderRoot,
+                    commanderHealth,
+                    animationPresenter,
+                    bossActor.transform.parent,
+                    markStrikeArenaCenter,
+                    MarkTelegraphColor,
+                    LockCommanderStun))
+            {
+                attackCooldownRemaining = attackInterval;
+                currentState = BossState.Idle;
+                ResumeBossTracking();
+                return;
+            }
 
-            activeTelegraph = FallenCommanderTelegraphView.CreateCircle(
-                markStrikeMotion.TelegraphPrefab,
-                bossActor.transform.parent,
-                markStrikePosition,
-                markStrikeRadius,
-                MarkTelegraphColor);
-            telegraphDuration = markStrikeCastTime;
+            currentState = BossState.MarkStrike;
         }
 
         private void BeginTrackingMark()
@@ -757,7 +759,7 @@ namespace ProjectMT.Contents.FallenCommander
             LastSelectedAttack = FallenCommanderAttackPattern.TrackingMark;
             DelayNextBasicAttackForPatternStart();
             markStrikePosition = commanderRoot.position;
-            stateTimeRemaining = trackingMarkCastTime;
+            stateTimeRemaining = trackingMarkCastTime + trackingMarkMotion.TelegraphHoldDuration;
             currentState = BossState.TrackingMark;
             PauseBossTracking();
             animationPresenter.PlayPreCast(
@@ -781,6 +783,7 @@ namespace ProjectMT.Contents.FallenCommander
                 trackingMarkRadius,
                 TrackingMarkTelegraphColor);
             telegraphDuration = trackingMarkCastTime;
+            telegraphHoldDuration = trackingMarkMotion.TelegraphHoldDuration;
         }
 
         // 플레이어 근처에 고정되는 블랙홀 경고와 흡입 패턴을 시작한다.
@@ -819,7 +822,7 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             lineStrikeDirection.Normalize();
-            stateTimeRemaining = lineStrikeCastTime;
+            stateTimeRemaining = lineStrikeCastTime + lineStrikeMotion.TelegraphHoldDuration;
             currentState = BossState.LineStrike;
             PauseBossTracking();
             animationPresenter.PlayPreCast(
@@ -845,6 +848,7 @@ namespace ProjectMT.Contents.FallenCommander
                 lineStrikeLength,
                 LineTelegraphColor);
             telegraphDuration = lineStrikeCastTime;
+            telegraphHoldDuration = lineStrikeMotion.TelegraphHoldDuration;
         }
 
         private void BeginCorruptionRing()
@@ -853,7 +857,7 @@ namespace ProjectMT.Contents.FallenCommander
             CancelOverlappingBasicAttack();
             basicAttackCooldownRemaining = basicAttackRepeatInterval;
             markStrikePosition = bossActor.transform.position;
-            stateTimeRemaining = corruptionRingCastTime;
+            stateTimeRemaining = corruptionRingCastTime + corruptionRingMotion.TelegraphHoldDuration;
             currentState = BossState.CorruptionRing;
             PauseBossTracking();
             animationPresenter.PlayPreCast(
@@ -884,6 +888,7 @@ namespace ProjectMT.Contents.FallenCommander
                 CorruptionRingSafeColor);
             activeRingSafeTelegraph?.SetProgress(1f);
             telegraphDuration = corruptionRingCastTime;
+            telegraphHoldDuration = corruptionRingMotion.TelegraphHoldDuration;
         }
 
         private void BeginCircleAttack(
@@ -895,7 +900,7 @@ namespace ProjectMT.Contents.FallenCommander
             Color telegraphColor)
         {
             markStrikePosition = position;
-            stateTimeRemaining = castTime;
+            stateTimeRemaining = castTime + motion.TelegraphHoldDuration;
             currentState = state;
             PauseBossTracking();
             animationPresenter.PlayPreCast(
@@ -919,6 +924,7 @@ namespace ProjectMT.Contents.FallenCommander
                 radius,
                 telegraphColor);
             telegraphDuration = castTime;
+            telegraphHoldDuration = motion.TelegraphHoldDuration;
         }
 
         // 페이즈에서 허용한 경우 다른 패턴과 별개로 기본 투사체 공격을 갱신한다.
@@ -930,8 +936,7 @@ namespace ProjectMT.Contents.FallenCommander
                 currentState == BossState.Dead ||
                 currentState == BossState.BlackHole ||
                 currentState == BossState.CorruptionRing ||
-                currentState == BossState.TrackingMark &&
-                stateTimeRemaining <= trackingMarkLockDuration)
+                IsTrackingMarkLocked())
             {
                 return;
             }
@@ -968,7 +973,10 @@ namespace ProjectMT.Contents.FallenCommander
 
             if (activeBasicTelegraph != null && basicAttackWarningTime > 0f)
             {
-                var progress = 1f - basicWindupRemaining / basicAttackWarningTime;
+                var progress = 1f - Mathf.Max(
+                    0f,
+                    basicWindupRemaining - basicTelegraphHoldDuration) /
+                    basicAttackWarningTime;
                 activeBasicTelegraph.SetProgress(progress);
             }
 
@@ -1063,6 +1071,13 @@ namespace ProjectMT.Contents.FallenCommander
             basicAttackCooldownRemaining = basicAttackRepeatInterval;
         }
 
+        // 추적 낙인이 위치 고정 또는 충전 완료 유지 단계인지 반환한다.
+        private bool IsTrackingMarkLocked()
+        {
+            return currentState == BossState.TrackingMark &&
+                stateTimeRemaining <= telegraphHoldDuration + trackingMarkLockDuration;
+        }
+
         private bool CanStartOverlappingBasicAttack()
         {
             return isActive &&
@@ -1074,8 +1089,7 @@ namespace ProjectMT.Contents.FallenCommander
                 currentState != BossState.Dead &&
                 currentState != BossState.BlackHole &&
                 currentState != BossState.CorruptionRing &&
-                !(currentState == BossState.TrackingMark &&
-                    stateTimeRemaining <= trackingMarkLockDuration) &&
+                !IsTrackingMarkLocked() &&
                 !isBasicWindupActive &&
                 !isBasicProjectileActive;
         }
@@ -1118,6 +1132,28 @@ namespace ProjectMT.Contents.FallenCommander
             ResumeBossTracking();
         }
 
+        // 페이즈별 다중 위치 공격이 모두 끝나면 일반 공격 대기 상태로 복귀한다.
+        private void TickMarkStrike(float deltaTime)
+        {
+            if (!markStrikePattern.Tick(deltaTime))
+            {
+                return;
+            }
+
+            if (!isActive ||
+                bossActor == null ||
+                commanderHealth == null ||
+                !commanderHealth.IsAlive ||
+                bossFacingSmoother == null)
+            {
+                return;
+            }
+
+            attackCooldownRemaining = attackInterval;
+            currentState = BossState.Idle;
+            ResumeBossTracking();
+        }
+
         private void TickAttack(float deltaTime)
         {
             var previousStateTimeRemaining = stateTimeRemaining;
@@ -1126,7 +1162,8 @@ namespace ProjectMT.Contents.FallenCommander
 
             if (currentState == BossState.TrackingMark)
             {
-                if (stateTimeRemaining > trackingMarkLockDuration)
+                var lockThreshold = telegraphHoldDuration + trackingMarkLockDuration;
+                if (stateTimeRemaining > lockThreshold)
                 {
                     markStrikePosition = commanderRoot.position;
                     if (activeTelegraph != null)
@@ -1136,7 +1173,7 @@ namespace ProjectMT.Contents.FallenCommander
                         activeTelegraph.transform.position = telegraphPosition;
                     }
                 }
-                else if (previousStateTimeRemaining > trackingMarkLockDuration)
+                else if (previousStateTimeRemaining > lockThreshold)
                 {
                     CancelOverlappingBasicAttack();
                     basicAttackCooldownRemaining = basicAttackRepeatInterval;
@@ -1147,7 +1184,10 @@ namespace ProjectMT.Contents.FallenCommander
                 telegraphDuration > 0f &&
                 stateTimeRemaining >= 0f)
             {
-                var progress = 1f - stateTimeRemaining / telegraphDuration;
+                var progress = 1f - Mathf.Max(
+                    0f,
+                    stateTimeRemaining - telegraphHoldDuration) /
+                    telegraphDuration;
                 activeTelegraph.SetProgress(progress);
             }
 
@@ -1173,6 +1213,14 @@ namespace ProjectMT.Contents.FallenCommander
 
             if (IsCommanderInsideCurrentAttack())
             {
+                FallenCommanderAttackEffectPlayer.PlayHit(
+                    motion?.Effects,
+                    commanderRoot.position,
+                    effectDirection,
+                    bossActor.transform.parent,
+                    bossActor.transform,
+                    commanderRoot);
+
                 var stunDuration = GetCurrentStunDuration();
                 if (stunDuration > 0f)
                 {
@@ -1245,9 +1293,7 @@ namespace ProjectMT.Contents.FallenCommander
         {
             return currentState == BossState.Melee
                 ? meleeAttackMotion == null ? 0f : meleeAttackMotion.StunDuration
-                : currentState == BossState.MarkStrike
-                    ? markStrikeStunDuration
-                    : currentState == BossState.TrackingMark
+                : currentState == BossState.TrackingMark
                         ? 0f
                     : currentState == BossState.LineStrike
                             ? lineStrikeStunDuration
@@ -1348,6 +1394,7 @@ namespace ProjectMT.Contents.FallenCommander
         private void DestroyActiveTelegraph()
         {
             blackHolePattern.Cancel();
+            markStrikePattern.Cancel();
 
             if (activeTelegraph != null)
             {

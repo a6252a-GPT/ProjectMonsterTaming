@@ -10,6 +10,12 @@ namespace ProjectMT.Contents.FallenCommander
     public sealed class FallenCommanderBossConfig : ScriptableObject
     {
         [Header("보스 기본 설정")]
+        [SerializeField, InspectorName("기본 최대 체력"), Min(1f)]
+        private float baseMaxHealth = 2000f;
+        [SerializeField, InspectorName("기본 방어력"), Min(0f)]
+        private float baseDefense = 10f;
+        [SerializeField, InspectorName("기본 이동속도"), Min(0f)]
+        private float baseMoveSpeed = 1.6f;
         [SerializeField, InspectorName("공격 간격"), Min(0.1f)] private float attackInterval = 2f;
         [SerializeField, InspectorName("공격 가능 거리"), Min(0.1f)] private float attackRange = 8f;
         [SerializeField, InspectorName("회전 속도"), Min(1f)] private float turnSpeed = 90f;
@@ -68,9 +74,31 @@ namespace ProjectMT.Contents.FallenCommander
         private float corruptionRingSafeRadius = 3.5f;
 
         [Header("8. 충전 광역기")]
+        [SerializeField, InspectorName("발동 체력 비율"), Range(0.01f, 1f)]
+        private float finalChargeHealthRatio = 0.3f;
+        [SerializeField, InspectorName("충전 시간"), Min(0.1f)]
+        private float finalChargeDuration = 12f;
         [SerializeField, InspectorName("공격 범위 오브젝트")] private GameObject finalChargeTelegraphPrefab;
+        [SerializeField, InspectorName("충전 완료 유지시간"), Min(0f)]
+        private float finalChargeTelegraphHoldDuration = 0.25f;
+        [SerializeField, InspectorName("공격 범위 반지름"), Min(0.1f)]
+        private float finalChargeRadius = 10f;
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData finalChargeEffects = new();
+        [SerializeField, InspectorName("시전 모션")] private AnimationClip finalChargePreCastMotion;
+        [SerializeField, InspectorName("시전 모션 속도"), Min(0.01f)]
+        private float finalChargePreCastMotionSpeed = 1f;
+        [SerializeField, InspectorName("시전 모션 시작 지점"), Range(0f, 1f)]
+        private float finalChargePreCastMotionStart;
+        [SerializeField, InspectorName("시전 모션 종료 지점"), Range(0f, 1f)]
+        private float finalChargePreCastMotionEnd = 1f;
+        [SerializeField, InspectorName("공격 모션")] private AnimationClip finalChargeCastMotion;
+        [SerializeField, InspectorName("공격 모션 속도"), Min(0.01f)]
+        private float finalChargeCastMotionSpeed = 1f;
+        [SerializeField, InspectorName("공격 모션 시작 지점"), Range(0f, 1f)]
+        private float finalChargeCastMotionStart;
+        [SerializeField, InspectorName("공격 모션 종료 지점"), Range(0f, 1f)]
+        private float finalChargeCastMotionEnd = 1f;
         [SerializeField, InspectorName("시전 연출 위치 오프셋")]
         private Vector3 finalChargeStartEffectOffset = new Vector3(0f, 2f, 0f);
 
@@ -119,6 +147,9 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("브레이크 모션 재생시간 (0 = 자동)"), Min(0f)]
         private float breakMotionDuration;
 
+        public float BaseMaxHealth => Mathf.Max(1f, baseMaxHealth);
+        public float BaseDefense => Mathf.Max(0f, baseDefense);
+        public float BaseMoveSpeed => Mathf.Max(0f, baseMoveSpeed);
         public float AttackInterval => attackInterval;
         public float AttackRange => attackRange;
         public float TurnSpeed => turnSpeed;
@@ -140,8 +171,30 @@ namespace ProjectMT.Contents.FallenCommander
         public FallenCommanderAttackData LineStrike => lineStrike;
         public FallenCommanderAttackData CorruptionRing => corruptionRing;
         public float CorruptionRingSafeRadius => corruptionRingSafeRadius;
+        public float FinalChargeHealthRatio => Mathf.Clamp(finalChargeHealthRatio, 0.01f, 1f);
+        public float FinalChargeDuration => Mathf.Max(0.1f, finalChargeDuration);
         public GameObject FinalChargeTelegraphPrefab => finalChargeTelegraphPrefab;
+        public float FinalChargeTelegraphHoldDuration =>
+            Mathf.Max(0f, finalChargeTelegraphHoldDuration);
+        public float FinalChargeRadius => Mathf.Max(0.1f, finalChargeRadius);
         public FallenCommanderAttackEffectData FinalChargeEffects => finalChargeEffects;
+        public AnimationClip FinalChargePreCastMotion => finalChargePreCastMotion;
+        public float FinalChargePreCastMotionSpeed => Mathf.Max(0.01f, finalChargePreCastMotionSpeed);
+        public float FinalChargePreCastMotionStart => ResolveStart(finalChargePreCastMotionStart);
+        public float FinalChargePreCastMotionEnd => ResolveEnd(
+            finalChargePreCastMotionStart,
+            finalChargePreCastMotionEnd);
+        public AnimationClip FinalChargeCastMotion => finalChargeCastMotion;
+        public float FinalChargeCastMotionSpeed => Mathf.Max(0.01f, finalChargeCastMotionSpeed);
+        public float FinalChargeCastMotionStart => ResolveStart(finalChargeCastMotionStart);
+        public float FinalChargeCastMotionEnd => ResolveEnd(
+            finalChargeCastMotionStart,
+            finalChargeCastMotionEnd);
+        public float FinalChargeCastMotionDuration => ResolveMotionDuration(
+            finalChargeCastMotion,
+            FinalChargeCastMotionSpeed,
+            FinalChargeCastMotionStart,
+            FinalChargeCastMotionEnd);
         public Vector3 FinalChargeStartEffectOffset => finalChargeStartEffectOffset;
         public FallenCommanderTimeoutWipeData TimeoutWipe => timeoutWipe;
         public float CloseAttackDistance => closeAttackDistance;
@@ -173,6 +226,34 @@ namespace ProjectMT.Contents.FallenCommander
                     ? 0f
                     : Mathf.Max(0.01f, motion.length);
         }
+
+        private static float ResolveMotionDuration(
+            AnimationClip motion,
+            float playbackSpeed,
+            float start,
+            float end)
+        {
+            return motion == null
+                ? 0f
+                : Mathf.Max(
+                    0.01f,
+                    motion.length * (end - start) / Mathf.Max(0.01f, playbackSpeed));
+        }
+
+        private static float ResolveStart(float start)
+        {
+            return Mathf.Clamp(start, 0f, 0.999f);
+        }
+
+        private static float ResolveEnd(float start, float end)
+        {
+            if (start <= 0f && end <= 0f)
+            {
+                return 1f;
+            }
+
+            return Mathf.Clamp(end, ResolveStart(start) + 0.001f, 1f);
+        }
     }
 
     public enum FallenCommanderEffectAnchor
@@ -191,13 +272,15 @@ namespace ProjectMT.Contents.FallenCommander
     public sealed class FallenCommanderBasicAttackData
     {
         [SerializeField, InspectorName("공격 범위 오브젝트")] private GameObject telegraphPrefab;
+        [SerializeField, InspectorName("공격 전 경고시간"), Min(0.1f)]
+        private float warningDuration = 0.4f;
+        [SerializeField, InspectorName("충전 완료 유지시간"), Min(0f)]
+        private float telegraphHoldDuration = 0.25f;
         [SerializeField, InspectorName("투사체 오브젝트")]
         [Tooltip("비어 있으면 안전장치로 기본 구체를 사용합니다.")]
         private GameObject projectilePrefab;
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData effects = new();
-        [SerializeField, InspectorName("공격 전 경고시간"), Min(0.1f)]
-        private float warningDuration = 0.4f;
         [SerializeField, InspectorName("투사체 이동 속도"), Min(0.1f)]
         private float projectileSpeed = 8f;
         [SerializeField, InspectorName("투사체 피격 반지름"), Min(0.1f)]
@@ -215,6 +298,7 @@ namespace ProjectMT.Contents.FallenCommander
         public GameObject ProjectilePrefab => projectilePrefab;
         public FallenCommanderAttackEffectData Effects => effects;
         public float WarningDuration => warningDuration;
+        public float TelegraphHoldDuration => Mathf.Max(0f, telegraphHoldDuration);
         public float ProjectileSpeed => projectileSpeed;
         public float ProjectileRadius => projectileRadius;
         public float MaxDistance => maxDistance;
@@ -227,6 +311,10 @@ namespace ProjectMT.Contents.FallenCommander
     public sealed class FallenCommanderAttackData
     {
         [SerializeField, InspectorName("공격 범위 오브젝트")] private GameObject telegraphPrefab;
+        [SerializeField, InspectorName("공격 전 경고시간"), Min(0.1f)]
+        private float warningDuration = 2f;
+        [SerializeField, InspectorName("충전 완료 유지시간"), Min(0f)]
+        private float telegraphHoldDuration = 0.25f;
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData effects = new();
         [SerializeField, InspectorName("시전 모션")] private AnimationClip preCastMotion;
@@ -245,8 +333,6 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("공격 모션 종료 지점"), Range(0f, 1f)]
         [Tooltip("공격 모션을 재생할 마지막 지점입니다.")]
         private float castMotionEnd = 1f;
-        [SerializeField, InspectorName("공격 전 경고시간"), Min(0.1f)]
-        private float warningDuration = 2f;
         [SerializeField, InspectorName("원형 공격 반지름"), Min(0.1f)]
         private float radius = 2.5f;
         [SerializeField, InspectorName("직선 공격 너비"), Min(0.1f)]
@@ -272,6 +358,7 @@ namespace ProjectMT.Contents.FallenCommander
             CastMotionStart,
             CastMotionEnd);
         public float WarningDuration => warningDuration;
+        public float TelegraphHoldDuration => Mathf.Max(0f, telegraphHoldDuration);
         public float Radius => radius;
         public float Width => width;
         public float Length => length;
@@ -317,8 +404,10 @@ namespace ProjectMT.Contents.FallenCommander
         private Vector3 startVfxPositionOffset;
         [SerializeField, InspectorName("시전 효과 회전 오프셋")]
         private Vector3 startVfxRotationOffset;
-        [SerializeField, InspectorName("시전 효과 크기")]
+        [SerializeField, HideInInspector]
         private Vector3 startVfxScale = Vector3.one;
+        [SerializeField, InspectorName("시전 효과 전체 크기 배율"), Min(0.01f)]
+        private float startVfxScaleMultiplier = 1f;
         [SerializeField, InspectorName("적중 효과")] private GameObject resolveVfxPrefab;
         [SerializeField, InspectorName("적중 효과 유지시간 (0 = 자동)"), Min(0f)] private float resolveVfxDuration;
         [SerializeField, InspectorName("적중 효과 위치 기준")]
@@ -327,42 +416,83 @@ namespace ProjectMT.Contents.FallenCommander
         private Vector3 resolveVfxPositionOffset;
         [SerializeField, InspectorName("적중 효과 회전 오프셋")]
         private Vector3 resolveVfxRotationOffset;
-        [SerializeField, InspectorName("적중 효과 크기")]
+        [SerializeField, HideInInspector]
         private Vector3 resolveVfxScale = Vector3.one;
+        [SerializeField, InspectorName("적중 효과 전체 크기 배율"), Min(0.01f)]
+        private float resolveVfxScaleMultiplier = 1f;
+        [SerializeField, InspectorName("적중 VFX")] private GameObject hitVfxPrefab;
+        [SerializeField, InspectorName("적중 VFX 유지시간 (0 = 자동)"), Min(0f)]
+        private float hitVfxDuration;
+        [SerializeField, InspectorName("적중 VFX 위치 오프셋")]
+        private Vector3 hitVfxPositionOffset;
+        [SerializeField, InspectorName("적중 VFX 회전 오프셋")]
+        private Vector3 hitVfxRotationOffset;
+        [SerializeField, HideInInspector]
+        private Vector3 hitVfxScale = Vector3.one;
+        [SerializeField, InspectorName("적중 VFX 전체 크기 배율"), Min(0.01f)]
+        private float hitVfxScaleMultiplier = 1f;
         [SerializeField, InspectorName("시전 효과음")] private AudioClip startSfx;
         [SerializeField, InspectorName("시전 효과음 유지시간 (0 = 자동)"), Min(0f)] private float startSfxDuration;
         [SerializeField, InspectorName("적중 효과음")] private AudioClip resolveSfx;
         [SerializeField, InspectorName("적중 효과음 유지시간 (0 = 자동)"), Min(0f)] private float resolveSfxDuration;
         [SerializeField, InspectorName("효과음 볼륨"), Range(0f, 1f)] private float sfxVolume = 1f;
+        [SerializeField, InspectorName("적중 SFX")] private AudioClip hitSfx;
+        [SerializeField, InspectorName("적중 SFX 유지시간 (0 = 자동)"), Min(0f)]
+        private float hitSfxDuration;
+        [SerializeField, InspectorName("적중 SFX 볼륨"), Range(0f, 1f)]
+        private float hitSfxVolume = 1f;
 
         public GameObject StartVfxPrefab => startVfxPrefab;
         public float StartVfxDuration => startVfxDuration;
         public FallenCommanderEffectAnchor StartVfxAnchor => startVfxAnchor;
         public Vector3 StartVfxPositionOffset => startVfxPositionOffset;
         public Vector3 StartVfxRotationOffset => startVfxRotationOffset;
-        public Vector3 StartVfxScale => ResolveScale(startVfxScale);
+        public Vector3 StartVfxScale => ResolveScale(startVfxScale) * ResolveScaleMultiplier(startVfxScaleMultiplier);
         public GameObject ResolveVfxPrefab => resolveVfxPrefab;
         public float ResolveVfxDuration => resolveVfxDuration;
         public FallenCommanderEffectAnchor ResolveVfxAnchor => resolveVfxAnchor;
         public Vector3 ResolveVfxPositionOffset => resolveVfxPositionOffset;
         public Vector3 ResolveVfxRotationOffset => resolveVfxRotationOffset;
-        public Vector3 ResolveVfxScale => ResolveScale(resolveVfxScale);
+        public Vector3 ResolveVfxScale => ResolveScale(resolveVfxScale) * ResolveScaleMultiplier(resolveVfxScaleMultiplier);
+        public GameObject HitVfxPrefab => hitVfxPrefab;
+        public float HitVfxDuration => hitVfxDuration;
+        public Vector3 HitVfxPositionOffset => hitVfxPositionOffset;
+        public Vector3 HitVfxRotationOffset => hitVfxRotationOffset;
+        public Vector3 HitVfxScale => ResolveScale(hitVfxScale) * ResolveScaleMultiplier(hitVfxScaleMultiplier);
         public AudioClip StartSfx => startSfx;
         public float StartSfxDuration => startSfxDuration;
         public AudioClip ResolveSfx => resolveSfx;
         public float ResolveSfxDuration => resolveSfxDuration;
         public float SfxVolume => sfxVolume;
+        public AudioClip HitSfx => hitSfx;
+        public float HitSfxDuration => hitSfxDuration;
+        public float HitSfxVolume => hitSfxVolume;
 
         // 기존 데이터에 크기 값이 없을 때 현재 VFX 크기를 유지하도록 기본값을 보정한다.
         private static Vector3 ResolveScale(Vector3 scale)
         {
             return scale == Vector3.zero ? Vector3.one : scale;
         }
+
+        // 새 배율 값이 아직 저장되지 않은 기존 데이터도 기존 크기 그대로 재생되도록 보정한다.
+        private static float ResolveScaleMultiplier(float multiplier)
+        {
+            return multiplier <= 0f ? 1f : multiplier;
+        }
     }
 
     [System.Serializable]
     public sealed class FallenCommanderTimeoutWipeData
     {
+        [SerializeField, InspectorName("공격 범위 오브젝트")]
+        private GameObject telegraphPrefab;
+        [SerializeField, InspectorName("발동 전 경고시간"), Min(0f)]
+        private float warningDuration = 0.8f;
+        [SerializeField, InspectorName("충전 완료 유지시간"), Min(0f)]
+        private float telegraphHoldDuration = 0.25f;
+        [SerializeField, InspectorName("공격 범위 반지름 (연출용)"), Min(0.1f)]
+        [Tooltip("전멸 피해는 전장 전체에 적용되며 이 값은 경고 범위의 표시 크기만 조절합니다.")]
+        private float radius = 8f;
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData effects = new();
         [SerializeField, InspectorName("시전 모션")] private AnimationClip preCastMotion;
@@ -383,8 +513,6 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("전멸 발동 모션 종료 지점"), Range(0f, 1f)]
         [Tooltip("전멸 발동 모션을 재생할 마지막 지점입니다.")]
         private float castMotionEnd = 1f;
-        [SerializeField, InspectorName("발동 전 경고시간"), Min(0f)]
-        private float warningDuration = 0.8f;
         [SerializeField, InspectorName("결과창 대기시간"), Min(0f)]
         private float resultDelay = 2f;
         [SerializeField, InspectorName("전멸 경고 문구")]
@@ -392,6 +520,8 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("경고 점멸 간격"), Min(0.05f)]
         private float warningPulseInterval = 0.45f;
 
+        public GameObject TelegraphPrefab => telegraphPrefab;
+        public float Radius => Mathf.Max(0.1f, radius);
         public FallenCommanderAttackEffectData Effects => effects;
         public AnimationClip PreCastMotion => preCastMotion;
         public float PreCastMotionSpeed => Mathf.Max(0.01f, preCastMotionSpeed);
@@ -407,6 +537,7 @@ namespace ProjectMT.Contents.FallenCommander
             CastMotionStart,
             CastMotionEnd);
         public float WarningDuration => Mathf.Max(0f, warningDuration);
+        public float TelegraphHoldDuration => Mathf.Max(0f, telegraphHoldDuration);
         public float ResultDelay => Mathf.Max(0f, resultDelay);
         public string WarningMessage => warningMessage;
         public float WarningPulseInterval => Mathf.Max(0.05f, warningPulseInterval);

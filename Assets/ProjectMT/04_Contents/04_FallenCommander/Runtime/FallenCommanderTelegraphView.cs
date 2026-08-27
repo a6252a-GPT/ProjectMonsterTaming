@@ -76,6 +76,27 @@ namespace ProjectMT.Contents.FallenCommander
             return view;
         }
 
+        // 기본 투사체의 실제 이동 판정 폭과 길이에 맞는 직사각형 전조를 생성한다.
+        public static FallenCommanderTelegraphView CreateRectangle(
+            GameObject fillPrefab,
+            Transform parent,
+            Vector3 origin,
+            Vector3 direction,
+            float width,
+            float length,
+            Color color)
+        {
+            var rotation = Quaternion.LookRotation(direction, Vector3.up);
+            var view = Create(fillPrefab, parent, origin, rotation, color);
+            if (view == null)
+            {
+                return null;
+            }
+
+            view.ConfigureRectangle(width, length, color);
+            return view;
+        }
+
         public void SetProgress(float progress)
         {
             Progress = Mathf.Clamp01(progress);
@@ -192,6 +213,27 @@ namespace ProjectMT.Contents.FallenCommander
             maximumOutline.SetPosition(1, new Vector3(-farHalfWidth, 0.03f, maximumLength));
             maximumOutline.SetPosition(2, new Vector3(farHalfWidth, 0.03f, maximumLength));
             maximumOutline.SetPosition(3, new Vector3(nearHalfWidth, 0.03f, 0f));
+            ApplyColor(maximumOutline.gameObject, color);
+            SetProgress(0f);
+        }
+
+        // 앞뒤 폭이 동일한 직사각형 외곽선을 실제 공격 범위 크기로 구성한다.
+        private void ConfigureRectangle(float width, float length, Color color)
+        {
+            isLine = true;
+            maximumRadius = 0f;
+            maximumWidth = Mathf.Max(0.1f, width);
+            maximumLength = Mathf.Max(0.1f, length);
+            var halfWidth = maximumWidth * 0.5f;
+            maximumOutline.widthMultiplier = Mathf.Clamp(
+                maximumWidth * 0.04f,
+                0.06f,
+                0.14f);
+            maximumOutline.positionCount = 4;
+            maximumOutline.SetPosition(0, new Vector3(-halfWidth, 0.03f, 0f));
+            maximumOutline.SetPosition(1, new Vector3(-halfWidth, 0.03f, maximumLength));
+            maximumOutline.SetPosition(2, new Vector3(halfWidth, 0.03f, maximumLength));
+            maximumOutline.SetPosition(3, new Vector3(halfWidth, 0.03f, 0f));
             ApplyColor(maximumOutline.gameObject, color);
             SetProgress(0f);
         }

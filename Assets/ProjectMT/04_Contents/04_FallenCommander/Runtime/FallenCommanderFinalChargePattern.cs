@@ -12,10 +12,12 @@ namespace ProjectMT.Contents.FallenCommander
         private FallenCommanderTelegraphView telegraph;
         private Vector3 centerPosition;
         private float duration;
+        private float holdDuration;
+        private float remainingTime;
         private float radius;
 
         public bool IsActive { get; private set; }
-        public float RemainingTime { get; private set; }
+        public float RemainingTime => Mathf.Max(0f, remainingTime - holdDuration);
         public float Duration => duration;
         public float Radius => radius;
         public Vector3 CenterPosition => centerPosition;
@@ -26,6 +28,7 @@ namespace ProjectMT.Contents.FallenCommander
             Transform targetTransform,
             GameObject telegraphPrefab,
             float chargeDuration,
+            float completedHoldDuration,
             float chargeRadius)
         {
             Cancel();
@@ -39,8 +42,9 @@ namespace ProjectMT.Contents.FallenCommander
 
             target = targetTransform;
             duration = Mathf.Max(0.1f, chargeDuration);
+            holdDuration = Mathf.Max(0f, completedHoldDuration);
             radius = Mathf.Max(0.1f, chargeRadius);
-            RemainingTime = duration;
+            remainingTime = duration + holdDuration;
             centerPosition = bossTransform.position;
             IsActive = true;
 
@@ -62,14 +66,14 @@ namespace ProjectMT.Contents.FallenCommander
                 return false;
             }
 
-            RemainingTime = Mathf.Max(
+            remainingTime = Mathf.Max(
                 0f,
-                RemainingTime - Mathf.Max(0f, deltaTime));
+                remainingTime - Mathf.Max(0f, deltaTime));
             telegraph?.SetProgress(
                 duration <= 0f
                     ? 1f
                     : 1f - RemainingTime / duration);
-            return RemainingTime <= 0f;
+            return remainingTime <= 0f;
         }
 
         // 표시했던 원형 범위의 최종 적중 여부를 반환하고 패턴을 정리한다.
@@ -90,7 +94,7 @@ namespace ProjectMT.Contents.FallenCommander
         public void Cancel()
         {
             IsActive = false;
-            RemainingTime = 0f;
+            remainingTime = 0f;
 
             if (telegraph != null)
             {
@@ -101,6 +105,7 @@ namespace ProjectMT.Contents.FallenCommander
             target = null;
             centerPosition = Vector3.zero;
             duration = 0f;
+            holdDuration = 0f;
             radius = 0f;
         }
 

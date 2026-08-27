@@ -11,6 +11,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             "ProjectMT.FallenCommander.BossConfig.SelectedAttack";
         private const string ShowAllAttacksKey =
             "ProjectMT.FallenCommander.BossConfig.ShowAllAttacks";
+        private const string FinalChargeExpandedKey =
+            "ProjectMT.FallenCommander.BossConfig.FinalChargeExpanded";
 
         private sealed class AttackInspectorDefinition
         {
@@ -91,8 +93,20 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 FallenCommanderAttackPreviewKind.FinalCharge,
                 new[]
                 {
+                    "finalChargeHealthRatio",
+                    "finalChargeDuration",
                     "finalChargeTelegraphPrefab",
+                    "finalChargeTelegraphHoldDuration",
+                    "finalChargeRadius",
                     "finalChargeEffects",
+                    "finalChargePreCastMotion",
+                    "finalChargePreCastMotionSpeed",
+                    "finalChargePreCastMotionStart",
+                    "finalChargePreCastMotionEnd",
+                    "finalChargeCastMotion",
+                    "finalChargeCastMotionSpeed",
+                    "finalChargeCastMotionStart",
+                    "finalChargeCastMotionEnd",
                     "finalChargeStartEffectOffset"
                 }),
             new(
@@ -103,6 +117,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
         private int selectedAttack;
         private bool showAllAttacks;
+        private bool finalChargeExpanded;
 
         // 마지막으로 선택한 공격 탭과 전체 보기 상태를 불러온다.
         private void OnEnable()
@@ -112,12 +127,18 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 0,
                 AttackDefinitions.Length - 1);
             showAllAttacks = EditorPrefs.GetBool(ShowAllAttacksKey, false);
+            finalChargeExpanded = EditorPrefs.GetBool(FinalChargeExpandedKey, true);
         }
 
         // 공통 데이터와 선택된 공격 탭의 데이터만 순서대로 표시한다.
         public override void OnInspectorGUI()
         {
-            serializedObject.Update();
+            if (!serializedObject.hasModifiedProperties)
+            {
+                serializedObject.UpdateIfRequiredOrScript();
+            }
+
+            DrawChangeControls();
             var property = serializedObject.GetIterator();
             var enterChildren = true;
             while (property.NextVisible(enterChildren))
@@ -143,7 +164,48 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 }
             }
 
-            serializedObject.ApplyModifiedProperties();
+            if (serializedObject.hasModifiedProperties)
+            {
+                Repaint();
+            }
+        }
+
+        // 인스펙터 변경사항을 명시적으로 적용하거나 마지막 저장 상태로 되돌린다.
+        private void DrawChangeControls()
+        {
+            EditorGUILayout.Space(2f);
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField("변경 관리", EditorStyles.boldLabel);
+                if (!serializedObject.hasModifiedProperties)
+                {
+                    EditorGUILayout.LabelField(
+                        "현재 모든 값이 적용된 상태입니다.",
+                        EditorStyles.miniLabel);
+                    return;
+                }
+
+                EditorGUILayout.HelpBox(
+                    "아직 적용되지 않은 변경사항이 있습니다. 적용 전에는 미리보기를 실행할 수 없습니다.",
+                    MessageType.Warning);
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button("변경 적용"))
+                    {
+                        serializedObject.ApplyModifiedProperties();
+                        EditorUtility.SetDirty(target);
+                        AssetDatabase.SaveAssetIfDirty(target);
+                        serializedObject.Update();
+                        GUI.FocusControl(null);
+                    }
+
+                    if (GUILayout.Button("변경 취소"))
+                    {
+                        serializedObject.Update();
+                        GUI.FocusControl(null);
+                    }
+                }
+            }
         }
 
         // 두 줄 공격 버튼과 전체 보기 전환 버튼을 표시한다.
@@ -214,27 +276,427 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             AttackInspectorDefinition definition,
             bool addBottomSpacing)
         {
-            foreach (var propertyName in definition.PropertyNames)
+            if (definition.PreviewKind == FallenCommanderAttackPreviewKind.FinalCharge)
             {
-                var attackProperty = serializedObject.FindProperty(propertyName);
-                if (attackProperty != null)
+                DrawFinalChargeProperties(definition);
+            }
+            else
+            {
+                foreach (var propertyName in definition.PropertyNames)
                 {
-                    EditorGUILayout.PropertyField(
-                        attackProperty,
-                        FallenCommanderInspectorLabels.BossConfig(attackProperty),
-                        true);
+                    if (definition.PreviewKind == FallenCommanderAttackPreviewKind.BlackHole &&
+                        propertyName == "blackHoleEndEffects")
+                    {
+                        continue;
+                    }
+
+                    var attackProperty = serializedObject.FindProperty(propertyName);
+                    if (attackProperty != null)
+                    {
+                        EditorGUILayout.PropertyField(
+                            attackProperty,
+                            FallenCommanderInspectorLabels.BossConfig(attackProperty),
+                            true);
+                    }
                 }
             }
 
-            serializedObject.ApplyModifiedProperties();
-            DrawAttackPreviewTools(
-                (FallenCommanderBossConfig)target,
-                definition);
+            DrawValidationWarnings(definition);
+            using (new EditorGUI.DisabledScope(serializedObject.hasModifiedProperties))
+            {
+                DrawAttackPreviewTools(
+                    (FallenCommanderBossConfig)target,
+                    definition);
+            }
 
             if (showAllAttacks && addBottomSpacing)
             {
                 EditorGUILayout.Space(6f);
             }
+        }
+
+        // 충전 광역기의 분산된 설정을 다른 공격과 같은 하나의 접이식 영역에 표시한다.
+        private void DrawFinalChargeProperties(AttackInspectorDefinition definition)
+        {
+            var nextExpanded = EditorGUILayout.Foldout(
+                finalChargeExpanded,
+                "충전 광역기 설정",
+                true);
+            if (nextExpanded != finalChargeExpanded)
+            {
+                finalChargeExpanded = nextExpanded;
+                EditorPrefs.SetBool(FinalChargeExpandedKey, finalChargeExpanded);
+            }
+
+            if (!finalChargeExpanded)
+            {
+                return;
+            }
+
+            using (new EditorGUI.IndentLevelScope())
+            {
+                foreach (var propertyName in definition.PropertyNames)
+                {
+                    var property = serializedObject.FindProperty(propertyName);
+                    if (property == null)
+                    {
+                        continue;
+                    }
+
+                    EditorGUILayout.PropertyField(
+                        property,
+                        FallenCommanderInspectorLabels.BossConfig(property),
+                        true);
+
+                    if (propertyName == "finalChargeHealthRatio")
+                    {
+                        var maxHealth = serializedObject.FindProperty("baseMaxHealth")
+                            ?.floatValue ?? 1f;
+                        DrawFinalChargeHealthSummary(property.floatValue, maxHealth);
+                    }
+                }
+            }
+        }
+
+        // 충전 광역기의 발동 비율을 퍼센트와 설정된 기본 최대 체력 기준 수치로 안내한다.
+        private static void DrawFinalChargeHealthSummary(
+            float healthRatio,
+            float baseMaxHealth)
+        {
+            var clampedRatio = Mathf.Clamp01(healthRatio);
+            var percent = clampedRatio * 100f;
+            var resolvedMaxHealth = Mathf.Max(1f, baseMaxHealth);
+            var triggerHealth = resolvedMaxHealth * clampedRatio;
+            EditorGUILayout.HelpBox(
+                $"현재 설정: 체력 {percent:0.#}% 이하에서 발동\n" +
+                $"기본 최대 체력 {resolvedMaxHealth:N0} 기준 남은 체력 {triggerHealth:N0} 이하",
+                MessageType.Info);
+        }
+
+        // 선택한 공격의 직렬화 값을 검사해 런타임에서 보정되거나 무시될 조합을 경고한다.
+        private void DrawValidationWarnings(AttackInspectorDefinition definition)
+        {
+            var primary = serializedObject.FindProperty(definition.PropertyNames[0]);
+            if (primary == null)
+            {
+                return;
+            }
+
+            switch (definition.PreviewKind)
+            {
+                case FallenCommanderAttackPreviewKind.Basic:
+                    ValidateRequiredObject(primary, "telegraphPrefab", "공격 범위 오브젝트가 비어 있습니다.");
+                    ValidateEffects(primary.FindPropertyRelative("effects"));
+                    break;
+
+                case FallenCommanderAttackPreviewKind.FinalCharge:
+                    ValidateRequiredObject(
+                        serializedObject,
+                        "finalChargeTelegraphPrefab",
+                        "충전 광역기의 공격 범위 오브젝트가 비어 있습니다.");
+                    ValidateEffects(serializedObject.FindProperty("finalChargeEffects"));
+                    ValidateFinalChargeMotionRanges();
+                    break;
+
+                case FallenCommanderAttackPreviewKind.TimeoutWipe:
+                    ValidateRequiredObject(
+                        primary,
+                        "telegraphPrefab",
+                        "전멸기의 공격 범위 오브젝트가 비어 있습니다.");
+                    ValidateMotionRanges(primary);
+                    ValidateEffects(primary.FindPropertyRelative("effects"));
+                    break;
+
+                default:
+                    ValidateRequiredObject(primary, "telegraphPrefab", "공격 범위 오브젝트가 비어 있습니다.");
+                    ValidateMotionRanges(primary);
+                    ValidateEffects(primary.FindPropertyRelative("effects"));
+                    break;
+            }
+
+            ValidateAttackSpecificCombination(definition, primary);
+        }
+
+        // 공격 종류별로 서로 연관된 범위와 시간 값의 잘못된 조합을 검사한다.
+        private void ValidateAttackSpecificCombination(
+            AttackInspectorDefinition definition,
+            SerializedProperty attack)
+        {
+            switch (definition.PreviewKind)
+            {
+                case FallenCommanderAttackPreviewKind.TrackingMark:
+                {
+                    var warning = attack.FindPropertyRelative("warningDuration")?.floatValue ?? 0f;
+                    var lockDuration = serializedObject.FindProperty("trackingMarkLockDuration")?.floatValue ?? 0f;
+                    if (lockDuration > warning)
+                    {
+                        DrawWarning("위치 고정시간이 경고시간보다 길어 추적이 시작 즉시 종료됩니다.");
+                    }
+
+                    break;
+                }
+
+                case FallenCommanderAttackPreviewKind.BlackHole:
+                {
+                    var radius = attack.FindPropertyRelative("radius")?.floatValue ?? 0f;
+                    var coreRadius = serializedObject.FindProperty("blackHoleCoreRadius")?.floatValue ?? 0f;
+                    var minimum = serializedObject.FindProperty("blackHoleSpawnMinDistance")?.floatValue ?? 0f;
+                    var maximum = serializedObject.FindProperty("blackHoleSpawnMaxDistance")?.floatValue ?? 0f;
+                    var outerPull = serializedObject.FindProperty("blackHoleOuterPullSpeed")?.floatValue ?? 0f;
+                    var innerPull = serializedObject.FindProperty("blackHoleInnerPullSpeed")?.floatValue ?? 0f;
+
+                    if (coreRadius >= radius)
+                    {
+                        DrawWarning("중심 피해 범위는 블랙홀 전체 반지름보다 작아야 합니다.");
+                    }
+
+                    if (minimum > maximum)
+                    {
+                        DrawWarning("생성 최소 거리는 생성 최대 거리보다 클 수 없습니다.");
+                    }
+
+                    if (innerPull < outerPull)
+                    {
+                        DrawWarning("중심부 흡입 속도는 바깥쪽 흡입 속도보다 빠르거나 같아야 합니다.");
+                    }
+
+                    ValidateEffects(serializedObject.FindProperty("blackHoleEndEffects"));
+                    break;
+                }
+
+                case FallenCommanderAttackPreviewKind.LineStrike:
+                {
+                    var width = attack.FindPropertyRelative("width")?.floatValue ?? 0f;
+                    var length = attack.FindPropertyRelative("length")?.floatValue ?? 0f;
+                    if (width > length)
+                    {
+                        DrawWarning("직선 공격 너비가 길이보다 커서 범위가 옆으로 더 넓게 표시됩니다.");
+                    }
+
+                    break;
+                }
+
+                case FallenCommanderAttackPreviewKind.CorruptionRing:
+                {
+                    var outerRadius = attack.FindPropertyRelative("radius")?.floatValue ?? 0f;
+                    var safeRadius = serializedObject.FindProperty("corruptionRingSafeRadius")?.floatValue ?? 0f;
+                    if (safeRadius >= outerRadius)
+                    {
+                        DrawWarning("안전지대 반지름은 타락의 고리 전체 반지름보다 작아야 합니다.");
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        // 시전·공격 모션의 시작 지점이 종료 지점을 넘는지 검사한다.
+        private static void ValidateMotionRanges(SerializedProperty attack)
+        {
+            ValidateMotionRange(
+                attack,
+                "preCastMotion",
+                "preCastMotionStart",
+                "preCastMotionEnd",
+                "시전 모션");
+            ValidateMotionRange(
+                attack,
+                "castMotion",
+                "castMotionStart",
+                "castMotionEnd",
+                "공격 모션");
+        }
+
+        // 충전 광역기의 루트 직렬화 필드에서 시전·공격 모션 구간을 검사한다.
+        private void ValidateFinalChargeMotionRanges()
+        {
+            ValidateRootMotionRange(
+                "finalChargePreCastMotion",
+                "finalChargePreCastMotionStart",
+                "finalChargePreCastMotionEnd",
+                "시전 모션");
+            ValidateRootMotionRange(
+                "finalChargeCastMotion",
+                "finalChargeCastMotionStart",
+                "finalChargeCastMotionEnd",
+                "공격 모션");
+        }
+
+        // 루트에 저장된 모션이 있을 때 시작 지점과 종료 지점의 순서를 검사한다.
+        private void ValidateRootMotionRange(
+            string motionName,
+            string startName,
+            string endName,
+            string label)
+        {
+            var motion = serializedObject.FindProperty(motionName);
+            var start = serializedObject.FindProperty(startName);
+            var end = serializedObject.FindProperty(endName);
+            if (motion?.objectReferenceValue != null &&
+                start != null &&
+                end != null &&
+                start.floatValue >= end.floatValue)
+            {
+                DrawWarning($"{label} 시작 지점은 종료 지점보다 작아야 합니다.");
+            }
+        }
+
+        // 지정된 모션이 있을 때 시작 지점과 종료 지점의 순서를 검사한다.
+        private static void ValidateMotionRange(
+            SerializedProperty owner,
+            string motionName,
+            string startName,
+            string endName,
+            string label)
+        {
+            var motion = owner.FindPropertyRelative(motionName);
+            var start = owner.FindPropertyRelative(startName);
+            var end = owner.FindPropertyRelative(endName);
+            if (motion?.objectReferenceValue != null &&
+                start != null &&
+                end != null &&
+                start.floatValue >= end.floatValue)
+            {
+                DrawWarning($"{label} 시작 지점은 종료 지점보다 작아야 합니다.");
+            }
+        }
+
+        // VFX·SFX 참조와 유지시간이 서로 어긋난 설정을 검사한다.
+        private static void ValidateEffects(SerializedProperty effects)
+        {
+            if (effects == null)
+            {
+                return;
+            }
+
+            ValidateDurationReference(
+                effects,
+                "startVfxPrefab",
+                "startVfxDuration",
+                "시전 효과");
+            ValidateDurationReference(
+                effects,
+                "resolveVfxPrefab",
+                "resolveVfxDuration",
+                ResolveEffectLabel(effects));
+            if (SupportsHitEffects(effects))
+            {
+                ValidateDurationReference(
+                    effects,
+                    "hitVfxPrefab",
+                    "hitVfxDuration",
+                    "적중 VFX");
+            }
+            ValidateAudioDuration(
+                effects,
+                "startSfx",
+                "startSfxDuration",
+                "시전 효과음");
+            ValidateAudioDuration(
+                effects,
+                "resolveSfx",
+                "resolveSfxDuration",
+                $"{ResolveEffectLabel(effects)}음");
+            if (SupportsHitEffects(effects))
+            {
+                ValidateAudioDuration(
+                    effects,
+                    "hitSfx",
+                    "hitSfxDuration",
+                    "적중 SFX");
+            }
+        }
+
+        // 공격 데이터 경로를 기준으로 기존 Resolve 슬롯의 실제 역할 이름을 반환한다.
+        private static string ResolveEffectLabel(SerializedProperty effects)
+        {
+            return effects.propertyPath switch
+            {
+                "projectileBasicAttack.effects" => "적중 효과",
+                "blackHoleEndEffects" => "종료 효과",
+                _ => "발동 효과"
+            };
+        }
+
+        // 실제 별도 적중 단계가 있는 공격 연출인지 반환한다.
+        private static bool SupportsHitEffects(SerializedProperty effects)
+        {
+            return effects.propertyPath != "projectileBasicAttack.effects" &&
+                effects.propertyPath != "blackHoleEndEffects";
+        }
+
+        // 참조가 비어 있는데 유지시간만 입력된 연출 설정을 경고한다.
+        private static void ValidateDurationReference(
+            SerializedProperty owner,
+            string referenceName,
+            string durationName,
+            string label)
+        {
+            var reference = owner.FindPropertyRelative(referenceName);
+            var duration = owner.FindPropertyRelative(durationName);
+            if (reference?.objectReferenceValue == null && duration?.floatValue > 0f)
+            {
+                DrawWarning($"{label}이 비어 있어 입력한 유지시간이 사용되지 않습니다.");
+            }
+        }
+
+        // 효과음 참조와 유지시간 및 원본 클립 길이의 조합을 검사한다.
+        private static void ValidateAudioDuration(
+            SerializedProperty owner,
+            string clipName,
+            string durationName,
+            string label)
+        {
+            var clipProperty = owner.FindPropertyRelative(clipName);
+            var durationProperty = owner.FindPropertyRelative(durationName);
+            var clip = clipProperty?.objectReferenceValue as AudioClip;
+            var duration = durationProperty?.floatValue ?? 0f;
+            if (clip == null)
+            {
+                if (duration > 0f)
+                {
+                    DrawWarning($"{label}이 비어 있어 입력한 유지시간이 사용되지 않습니다.");
+                }
+
+                return;
+            }
+
+            if (duration > clip.length + 0.001f)
+            {
+                DrawWarning($"{label} 유지시간이 원본 길이보다 길어 원본 길이까지만 재생됩니다.");
+            }
+        }
+
+        // 필수 오브젝트 참조가 비어 있으면 오류 안내를 표시한다.
+        private static void ValidateRequiredObject(
+            SerializedProperty owner,
+            string propertyName,
+            string message)
+        {
+            var property = owner.FindPropertyRelative(propertyName) ??
+                owner.serializedObject.FindProperty(propertyName);
+            if (property?.objectReferenceValue == null)
+            {
+                EditorGUILayout.HelpBox(message, MessageType.Error);
+            }
+        }
+
+        // 최상위 필수 오브젝트 참조가 비어 있으면 오류 안내를 표시한다.
+        private static void ValidateRequiredObject(
+            SerializedObject owner,
+            string propertyName,
+            string message)
+        {
+            if (owner.FindProperty(propertyName)?.objectReferenceValue == null)
+            {
+                EditorGUILayout.HelpBox(message, MessageType.Error);
+            }
+        }
+
+        // 잘못된 조합을 인스펙터 경고 상자로 표시한다.
+        private static void DrawWarning(string message)
+        {
+            EditorGUILayout.HelpBox(message, MessageType.Warning);
         }
 
         // 공격 탭 안에 시전·공격·전체 미리보기와 종료 버튼을 표시한다.
@@ -288,7 +750,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             else
             {
                 EditorGUILayout.HelpBox(
-                    $"전체 미리보기는 시전 후 {previewSpec.WarningDuration:0.##}초에 " +
+                    $"전체 미리보기는 {previewSpec.WarningDuration:0.##}초 동안 범위가 차오르고 " +
+                    $"{previewSpec.TelegraphHoldDuration:0.##}초 유지된 뒤 " +
                     "공격 모션·적중 시각 효과·효과음을 재생합니다.",
                     MessageType.None);
             }
@@ -375,24 +838,34 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         ? basicAttack?.Effects
                         : attack?.Effects;
                 var warningDuration = kind == FallenCommanderAttackPreviewKind.FinalCharge
-                    ? controllerData.FindProperty("finalChargeDuration")?.floatValue ?? 0.1f
+                    ? config.FinalChargeDuration
                     : kind == FallenCommanderAttackPreviewKind.TimeoutWipe
                         ? timeoutWipe?.WarningDuration ?? 0.1f
                     : kind == FallenCommanderAttackPreviewKind.Basic
                         ? basicAttack?.WarningDuration ?? 0.1f
                         : attack?.WarningDuration ?? 0.1f;
+                var telegraphHoldDuration = kind == FallenCommanderAttackPreviewKind.FinalCharge
+                    ? config.FinalChargeTelegraphHoldDuration
+                    : kind == FallenCommanderAttackPreviewKind.TimeoutWipe
+                        ? timeoutWipe?.TelegraphHoldDuration ?? 0f
+                    : kind == FallenCommanderAttackPreviewKind.Basic
+                        ? basicAttack?.TelegraphHoldDuration ?? 0f
+                        : attack?.TelegraphHoldDuration ?? 0f;
                 var telegraphPrefab = kind == FallenCommanderAttackPreviewKind.Basic
                     ? basicAttack?.TelegraphPrefab
                     : kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargeTelegraphPrefab
+                    : kind == FallenCommanderAttackPreviewKind.TimeoutWipe
+                        ? timeoutWipe?.TelegraphPrefab
                         : attack?.TelegraphPrefab;
                 var telegraphRadius = kind == FallenCommanderAttackPreviewKind.FinalCharge
-                    ? controllerData.FindProperty("finalChargeRadius")?.floatValue ?? 0f
+                    ? config.FinalChargeRadius
+                    : kind == FallenCommanderAttackPreviewKind.TimeoutWipe
+                        ? timeoutWipe?.Radius ?? 0f
                     : attack?.Radius ?? 0f;
                 float ResolveFinalChargeRadius()
                 {
-                    controllerData.UpdateIfRequiredOrScript();
-                    return controllerData.FindProperty("finalChargeRadius")?.floatValue ?? 0f;
+                    return config.FinalChargeRadius;
                 }
 
                 previewSpec = new FallenCommanderAttackPreviewSpec
@@ -418,6 +891,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         : 0f,
                     TelegraphRadiusProvider = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? ResolveFinalChargeRadius
+                        : kind == FallenCommanderAttackPreviewKind.TimeoutWipe
+                            ? () => timeoutWipe?.Radius ?? 0f
                         : () => attack?.Radius ?? 0f,
                     TelegraphWidthProvider = kind == FallenCommanderAttackPreviewKind.Basic
                         ? () => (basicAttack?.ProjectileRadius ?? 0f) * 2f
@@ -434,23 +909,42 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     BlackHoleEndEffects = kind == FallenCommanderAttackPreviewKind.BlackHole
                         ? config.BlackHoleEndEffects
                         : null,
-                    PreCastMotion = timeoutWipe?.PreCastMotion ?? attack?.PreCastMotion,
-                    PreCastMotionSpeed = timeoutWipe?.PreCastMotionSpeed ??
+                    PreCastMotion = kind == FallenCommanderAttackPreviewKind.FinalCharge
+                        ? config.FinalChargePreCastMotion
+                        : timeoutWipe?.PreCastMotion ?? attack?.PreCastMotion,
+                    PreCastMotionSpeed = kind == FallenCommanderAttackPreviewKind.FinalCharge
+                        ? config.FinalChargePreCastMotionSpeed
+                        : timeoutWipe?.PreCastMotionSpeed ??
                         attack?.PreCastMotionSpeed ?? 1f,
-                    PreCastMotionStart = timeoutWipe?.PreCastMotionStart ??
+                    PreCastMotionStart = kind == FallenCommanderAttackPreviewKind.FinalCharge
+                        ? config.FinalChargePreCastMotionStart
+                        : timeoutWipe?.PreCastMotionStart ??
                         attack?.PreCastMotionStart ?? 0f,
-                    PreCastMotionEnd = timeoutWipe?.PreCastMotionEnd ??
+                    PreCastMotionEnd = kind == FallenCommanderAttackPreviewKind.FinalCharge
+                        ? config.FinalChargePreCastMotionEnd
+                        : timeoutWipe?.PreCastMotionEnd ??
                         attack?.PreCastMotionEnd ?? 1f,
-                    CastMotion = timeoutWipe?.CastMotion ?? attack?.CastMotion,
-                    CastMotionDuration = timeoutWipe?.CastMotionDuration ??
+                    CastMotion = kind == FallenCommanderAttackPreviewKind.FinalCharge
+                        ? config.FinalChargeCastMotion
+                        : timeoutWipe?.CastMotion ?? attack?.CastMotion,
+                    CastMotionDuration = kind == FallenCommanderAttackPreviewKind.FinalCharge
+                        ? config.FinalChargeCastMotionDuration
+                        : timeoutWipe?.CastMotionDuration ??
                         attack?.CastMotionDuration ?? 0f,
-                    CastMotionSpeed = timeoutWipe?.CastMotionSpeed ??
+                    CastMotionSpeed = kind == FallenCommanderAttackPreviewKind.FinalCharge
+                        ? config.FinalChargeCastMotionSpeed
+                        : timeoutWipe?.CastMotionSpeed ??
                         attack?.CastMotionSpeed ?? 1f,
-                    CastMotionStart = timeoutWipe?.CastMotionStart ??
+                    CastMotionStart = kind == FallenCommanderAttackPreviewKind.FinalCharge
+                        ? config.FinalChargeCastMotionStart
+                        : timeoutWipe?.CastMotionStart ??
                         attack?.CastMotionStart ?? 0f,
-                    CastMotionEnd = timeoutWipe?.CastMotionEnd ??
+                    CastMotionEnd = kind == FallenCommanderAttackPreviewKind.FinalCharge
+                        ? config.FinalChargeCastMotionEnd
+                        : timeoutWipe?.CastMotionEnd ??
                         attack?.CastMotionEnd ?? 1f,
                     WarningDuration = Mathf.Max(0.1f, warningDuration),
+                    TelegraphHoldDuration = Mathf.Max(0f, telegraphHoldDuration),
                     StartEffectLocalOffset = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargeStartEffectOffset
                         : Vector3.zero

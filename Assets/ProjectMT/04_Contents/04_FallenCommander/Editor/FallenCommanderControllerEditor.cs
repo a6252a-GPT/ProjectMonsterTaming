@@ -44,62 +44,12 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     : "편집 중: 현재 씬에 임시 보스를 생성하여 모션을 표시합니다.",
                 MessageType.None);
 
-            DrawAttackPreview("근접 공격", config.MeleeAttack);
-            DrawAttackPreview("위치 공격", config.MarkStrike);
-            DrawAttackPreview("블랙홀", config.BlackHole);
-            DrawAttackPreview("직선 공격", config.LineStrike);
             DrawMotionPreview("보스 브레이크", config.BreakMotion, config.BreakMotionDuration);
             DrawMotionPreview("보스 사망", config.DeathMotion, config.DeathMotionDuration);
 
             if (GUILayout.Button("모션 미리보기 종료"))
             {
                 FallenCommanderBossEditorPreview.Stop();
-            }
-        }
-
-        private void DrawAttackPreview(string label, FallenCommanderAttackData attack)
-        {
-            if (attack == null)
-            {
-                return;
-            }
-
-            EditorGUILayout.LabelField(
-                $"{label}  (시전 {attack.PreCastMotionStart:P0}~{attack.PreCastMotionEnd:P0} " +
-                $"x{attack.PreCastMotionSpeed:0.##} → 공격 {attack.CastMotionStart:P0}~" +
-                $"{attack.CastMotionEnd:P0} x{attack.CastMotionSpeed:0.##})",
-                EditorStyles.miniLabel);
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                if (GUILayout.Button($"▶ {label}: 시전 → 공격"))
-                {
-                    PreviewAttack(attack);
-                }
-
-                if (GUILayout.Button("시전 보기", GUILayout.Width(72f)))
-                {
-                    PreviewMotion(
-                        attack.PreCastMotion,
-                        ResolveMotionDuration(
-                            attack.PreCastMotion,
-                            attack.PreCastMotionSpeed,
-                            attack.PreCastMotionStart,
-                            attack.PreCastMotionEnd),
-                        attack.PreCastMotionSpeed,
-                        attack.PreCastMotionStart,
-                        attack.PreCastMotionEnd);
-                }
-
-                if (GUILayout.Button("공격 보기", GUILayout.Width(72f)))
-                {
-                    PreviewMotion(
-                        attack.CastMotion,
-                        attack.CastMotionDuration,
-                        attack.CastMotionSpeed,
-                        attack.CastMotionStart,
-                        attack.CastMotionEnd);
-                }
             }
         }
 
@@ -120,37 +70,6 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     PreviewMotion(motion, duration);
                 }
             }
-        }
-
-        private void PreviewAttack(FallenCommanderAttackData attack)
-        {
-            if (Application.isPlaying)
-            {
-                if (!((FallenCommanderController)target).PreviewBossAttack(attack))
-                {
-                    EditorUtility.DisplayDialog(
-                        "보스 모션 미리보기",
-                        "보스가 생성되도록 던전에 먼저 입장해 주세요.",
-                        "확인");
-                }
-
-                return;
-            }
-
-            FallenCommanderBossEditorPreview.PlaySequence(
-                GetBossPrefab(),
-                GetSpawnPoint(),
-                GetFacingTarget(),
-                attack.PreCastMotion,
-                attack.WarningDuration,
-                attack.PreCastMotionSpeed,
-                attack.CastMotion,
-                attack.CastMotionDuration,
-                attack.CastMotionSpeed,
-                attack.PreCastMotionStart,
-                attack.PreCastMotionEnd,
-                attack.CastMotionStart,
-                attack.CastMotionEnd);
         }
 
         private void PreviewMotion(
@@ -195,26 +114,6 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 1f,
                 normalizedStart,
                 normalizedEnd);
-        }
-
-        // 모션 길이와 재생 속도로 자동 재생시간을 계산한다.
-        private static float ResolveMotionDuration(
-            AnimationClip motion,
-            float playbackSpeed,
-            float normalizedStart,
-            float normalizedEnd)
-        {
-            if (motion == null)
-            {
-                return 0f;
-            }
-
-            var safeStart = Mathf.Clamp(normalizedStart, 0f, 0.999f);
-            var safeEnd = Mathf.Clamp(normalizedEnd, safeStart + 0.001f, 1f);
-            return Mathf.Max(
-                0.01f,
-                motion.length * (safeEnd - safeStart) /
-                Mathf.Max(0.01f, playbackSpeed));
         }
 
         private GameObject GetBossPrefab()

@@ -19,7 +19,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         {
             CleanOpenDungeonBakeStage();
 
-            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/DungeonBakes" });
+            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/ProjectMT/04_Contents/03_TreasureSpirit/Demo/DungeonBakes" });
             int totalRemoved = 0;
             for (int i = 0; i < guids.Length; i++)
             {

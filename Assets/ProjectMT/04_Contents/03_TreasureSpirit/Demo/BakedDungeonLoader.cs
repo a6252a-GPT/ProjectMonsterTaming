@@ -236,11 +236,13 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 renderer.enabled = true;
                 renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.BlendProbes;
 
+#if UNITY_EDITOR
                 MeshRenderer meshRenderer = renderer as MeshRenderer;
                 if (meshRenderer != null)
                 {
                     meshRenderer.receiveGI = ReceiveGI.LightProbes;
                 }
+#endif
             }
         }
 

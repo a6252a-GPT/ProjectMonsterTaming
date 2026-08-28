@@ -49,12 +49,16 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         public float BlackHoleActiveDuration { get; set; }
         public FallenCommanderAttackEffectData BlackHoleEndEffects { get; set; }
         public AnimationClip PreCastMotion { get; set; }
-        public float PreCastMotionDuration { get; set; }
         public float PreCastMotionSpeed { get; set; } = 1f;
+        public float PreCastMotionStart { get; set; }
+        public float PreCastMotionEnd { get; set; } = 1f;
         public AnimationClip CastMotion { get; set; }
         public float CastMotionDuration { get; set; }
         public float CastMotionSpeed { get; set; } = 1f;
+        public float CastMotionStart { get; set; }
+        public float CastMotionEnd { get; set; } = 1f;
         public float WarningDuration { get; set; } = 0.1f;
+        public float TelegraphHoldDuration { get; set; }
         public Vector3 StartEffectLocalOffset { get; set; }
     }
 
@@ -84,7 +88,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private static readonly List<ParticleSystem> Particles = new();
         private static readonly List<PreviewVfxLifetime> VfxLifetimes = new();
         private static readonly Color BasicTelegraphColor =
-            new Color(0.2f, 0.85f, 1f, 0.8f);
+            new Color(1f, 0.12f, 0.08f, 0.82f);
         private static readonly Color MeleeTelegraphColor =
             new Color(1f, 0.25f, 0.05f, 0.75f);
         private static readonly Color LineTelegraphColor =
@@ -196,7 +200,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 lockedAttackPosition = ResolveInitialAttackPosition();
                 previewAnimator = createdBoss.GetComponentInChildren<Animator>(true);
                 elapsed = 0f;
-                resolveTime = Mathf.Max(0.1f, previewSpec.WarningDuration);
+                resolveTime = Mathf.Max(0.1f, previewSpec.WarningDuration) +
+                    Mathf.Max(0f, previewSpec.TelegraphHoldDuration);
                 hasResolved = previewMode == FallenCommanderAttackPreviewMode.Cast;
                 hasCompletedBlackHole = false;
                 totalDuration = ResolveTotalDuration(previewSpec, previewMode);
@@ -221,15 +226,26 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     else
                     {
                         PlayResolvePresentation();
+                        PlayHitPresentation();
                     }
 
-                    Sample(previewSpec.CastMotion, 0f, previewSpec.CastMotionSpeed);
+                    Sample(
+                        previewSpec.CastMotion,
+                        0f,
+                        previewSpec.CastMotionSpeed,
+                        previewSpec.CastMotionStart,
+                        previewSpec.CastMotionEnd);
                 }
                 else
                 {
                     PlayStartPresentation();
                     BeginAttackTelegraphPreview();
-                    Sample(previewSpec.PreCastMotion, 0f, previewSpec.PreCastMotionSpeed);
+                    Sample(
+                        previewSpec.PreCastMotion,
+                        0f,
+                        previewSpec.PreCastMotionSpeed,
+                        previewSpec.PreCastMotionStart,
+                        previewSpec.PreCastMotionEnd);
                 }
 
                 initialized = true;
@@ -354,6 +370,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         }
 
                         PlayResolvePresentation();
+                        PlayHitPresentation();
                     }
                 }
 
@@ -410,7 +427,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
 
             PlayStartPresentation();
-            basicTelegraph = FallenCommanderTelegraphView.CreateLine(
+            basicTelegraph = FallenCommanderTelegraphView.CreateRectangle(
                 attack.TelegraphPrefab,
                 previewRoot.transform,
                 origin,
@@ -434,10 +451,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
 
             var warningDuration = Mathf.Max(0.1f, attack.WarningDuration);
+            var attackStartTime = warningDuration + attack.TelegraphHoldDuration;
             if (basicTelegraph != null)
             {
                 basicTelegraph.SetProgress(Mathf.Clamp01(elapsed / warningDuration));
-                if (elapsed >= warningDuration)
+                if (elapsed >= attackStartTime)
                 {
                     basicTelegraph.gameObject.SetActive(false);
                 }
@@ -445,7 +463,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
             if (mode == FallenCommanderAttackPreviewMode.Full &&
                 !basicProjectileLaunched &&
-                elapsed >= warningDuration)
+                elapsed >= attackStartTime)
             {
                 CreateBasicProjectile();
             }
@@ -582,7 +600,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 basicProjectileTravelRemaining = ResolveBasicTravelDistance(
                     spec,
                     out basicProjectileWillHit);
-                basicTelegraph = FallenCommanderTelegraphView.CreateLine(
+                basicTelegraph = FallenCommanderTelegraphView.CreateRectangle(
                     spec.TelegraphPrefab,
                     previewRoot.transform,
                     previewBoss.transform.position,
@@ -668,12 +686,13 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
         }
 
-        // 경고가 끝난 블랙홀 범위를 유지하고 실제 활성 VFX 단계로 전환한다.
+        // 경고가 끝난 블랙홀 범위를 제거하고 실제 활성 VFX 단계로 전환한다.
         private static void BeginBlackHoleActivePreview()
         {
-            attackTelegraph?.SetProgress(1f);
+            CompleteAttackTelegraphPreview();
             DestroyPreviewVfx(ref startVfxInstance);
             activeResolveVfxInstance = PlayResolvePresentation();
+            PlayHitPresentation();
         }
 
         // 실제 활성시간이 끝나면 블랙홀 범위와 활성 VFX를 제거하고 종료 연출을 재생한다.
@@ -695,12 +714,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
 
             hasCompletedBlackHole = true;
-            CompleteAttackTelegraphPreview();
             DestroyPreviewVfx(ref activeResolveVfxInstance);
             PlayBlackHoleEndPresentation();
         }
 
-        // 블랙홀 종료 데이터의 적중 VFX와 SFX를 실제 중심 위치에서 재생한다.
+        // 블랙홀 종료 데이터의 종료 VFX와 SFX를 실제 중심 위치에서 재생한다.
         private static void PlayBlackHoleEndPresentation()
         {
             var effects = spec.BlackHoleEndEffects;
@@ -892,26 +910,43 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         {
             if (mode == FallenCommanderAttackPreviewMode.PreCast)
             {
-                Sample(spec.PreCastMotion, elapsed, spec.PreCastMotionSpeed);
+                Sample(
+                    spec.PreCastMotion,
+                    elapsed,
+                    spec.PreCastMotionSpeed,
+                    spec.PreCastMotionStart,
+                    spec.PreCastMotionEnd);
                 return;
             }
 
             if (mode == FallenCommanderAttackPreviewMode.Cast)
             {
-                Sample(spec.CastMotion, elapsed, spec.CastMotionSpeed);
+                Sample(
+                    spec.CastMotion,
+                    elapsed,
+                    spec.CastMotionSpeed,
+                    spec.CastMotionStart,
+                    spec.CastMotionEnd);
                 return;
             }
 
             if (!hasResolved)
             {
-                Sample(spec.PreCastMotion, elapsed, spec.PreCastMotionSpeed);
+                Sample(
+                    spec.PreCastMotion,
+                    elapsed,
+                    spec.PreCastMotionSpeed,
+                    spec.PreCastMotionStart,
+                    spec.PreCastMotionEnd);
                 return;
             }
 
             Sample(
                 spec.CastMotion,
                 Mathf.Max(0f, elapsed - resolveTime),
-                spec.CastMotionSpeed);
+                spec.CastMotionSpeed,
+                spec.CastMotionStart,
+                spec.CastMotionEnd);
         }
 
         // 시전 VFX와 SFX를 실제 공격 시작 위치 기준으로 재생한다.
@@ -942,7 +977,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 spec.Effects == null ? 0f : spec.Effects.StartSfxDuration);
         }
 
-        // 적중 VFX와 SFX를 실제 공격 해결 위치 기준으로 재생한다.
+        // 발동 VFX와 SFX를 실제 공격 해결 위치 기준으로 재생한다.
         private static GameObject PlayResolvePresentation()
         {
             ResolveVfxTransform(
@@ -963,6 +998,26 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             return instance;
         }
 
+        // 적중 VFX와 SFX를 미리보기 군단장의 충돌 위치에서 별도로 재생한다.
+        private static void PlayHitPresentation()
+        {
+            ResolveVfxTransform(
+                FallenCommanderEffectStage.Hit,
+                out var position,
+                out var rotation,
+                out var scale);
+            CreateVfx(
+                spec.Effects?.HitVfxPrefab,
+                spec.Effects == null ? 0f : spec.Effects.HitVfxDuration,
+                position,
+                rotation,
+                scale,
+                previewRoot.transform);
+            PlayAudio(
+                spec.Effects?.HitSfx,
+                spec.Effects == null ? 0f : spec.Effects.HitSfxDuration);
+        }
+
         // 데이터의 위치 기준·오프셋·회전·크기를 현재 미리보기 오브젝트 기준으로 계산한다.
         private static void ResolveVfxTransform(
             bool isStart,
@@ -970,6 +1025,23 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             out Quaternion rotation,
             out Vector3 scale)
         {
+            ResolveVfxTransform(
+                isStart
+                    ? FallenCommanderEffectStage.Start
+                    : FallenCommanderEffectStage.Resolve,
+                out position,
+                out rotation,
+                out scale);
+        }
+
+        // 지정한 연출 단계의 배치값을 공격 위치와 미리보기 군단장 위치를 기준으로 계산한다.
+        private static void ResolveVfxTransform(
+            FallenCommanderEffectStage stage,
+            out Vector3 position,
+            out Quaternion rotation,
+            out Vector3 scale)
+        {
+            var isStart = stage == FallenCommanderEffectStage.Start;
             var direction = spec.Kind == FallenCommanderAttackPreviewKind.Basic &&
                 basicProjectileDirection.sqrMagnitude > 0.0001f
                     ? basicProjectileDirection
@@ -980,7 +1052,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     ? basicProjectilePosition
                     : (Vector3?)null;
             var context = new FallenCommanderEffectPlacementContext(
-                ResolveEffectPosition(isStart),
+                stage == FallenCommanderEffectStage.Hit && spec.FacingTarget != null
+                    ? spec.FacingTarget.position
+                    : ResolveEffectPosition(isStart),
                 direction,
                 previewBoss.transform.position,
                 spec.FacingTarget == null
@@ -989,9 +1063,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 projectilePosition);
             var placement = FallenCommanderEffectPlacementResolver.Resolve(
                 spec.Effects,
-                isStart
-                    ? FallenCommanderEffectStage.Start
-                    : FallenCommanderEffectStage.Resolve,
+                stage,
                 context);
             position = placement.Position;
             rotation = placement.Rotation;
@@ -1146,18 +1218,25 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             return Mathf.Clamp(lifetime, 0.1f, 10f);
         }
 
-        // AnimationMode에서 클립의 Loop 설정을 반영해 실제 전투와 같은 재생 프레임을 적용한다.
-        private static void Sample(AnimationClip motion, float time, float playbackSpeed)
+        // 실제 전투와 동일하게 공격 모션을 반복하지 않고 마지막 프레임에서 멈춘다.
+        private static void Sample(
+            AnimationClip motion,
+            float time,
+            float playbackSpeed,
+            float normalizedStart,
+            float normalizedEnd)
         {
             if (previewAnimator == null || motion == null)
             {
                 return;
             }
 
-            var scaledTime = time * Mathf.Max(0.01f, playbackSpeed);
-            var sampleTime = motion.isLooping && motion.length > 0f
-                ? Mathf.Repeat(scaledTime, motion.length)
-                : Mathf.Clamp(scaledTime, 0f, motion.length);
+            var safeStart = Mathf.Clamp(normalizedStart, 0f, 0.999f);
+            var safeEnd = Mathf.Clamp(normalizedEnd, safeStart + 0.001f, 1f);
+            var startTime = motion.length * safeStart;
+            var endTime = motion.length * safeEnd;
+            var scaledTime = startTime + time * Mathf.Max(0.01f, playbackSpeed);
+            var sampleTime = Mathf.Clamp(scaledTime, startTime, endTime);
 
             AnimationMode.BeginSampling();
             AnimationMode.SampleAnimationClip(
@@ -1170,7 +1249,6 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         // Unity Editor의 AudioUtil을 이용해 씬 오브젝트 없이 SFX를 재생한다.
         private static void PlayAudio(AudioClip clip, float duration)
         {
-            StopAudio();
             if (clip == null || PlayPreviewClipMethod == null)
             {
                 return;
@@ -1180,14 +1258,16 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             var playDuration = duration > 0f
                 ? Mathf.Min(duration, clip.length)
                 : clip.length;
-            audioStopTime = elapsed + Mathf.Max(0.01f, playDuration);
+            audioStopTime = Mathf.Max(
+                audioStopTime,
+                elapsed + Mathf.Max(0.01f, playDuration));
             isAudioPlaying = true;
         }
 
         // Unity Editor에서 재생 중인 미리보기 SFX를 중지한다.
         private static void StopAudio()
         {
-            if (isAudioPlaying && StopPreviewClipsMethod != null)
+            if (StopPreviewClipsMethod != null)
             {
                 StopPreviewClipsMethod.Invoke(null, null);
             }
@@ -1205,10 +1285,12 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 previewSpec.BasicAttack != null)
             {
                 var warningDuration = Mathf.Max(0.1f, previewSpec.BasicAttack.WarningDuration);
+                var attackStartTime = warningDuration +
+                    previewSpec.BasicAttack.TelegraphHoldDuration;
                 var startDuration = ResolveStageDuration(previewSpec.Effects, true);
                 if (previewMode == FallenCommanderAttackPreviewMode.PreCast)
                 {
-                    return Mathf.Max(warningDuration, startDuration);
+                    return Mathf.Max(attackStartTime, startDuration);
                 }
 
                 var travelDuration = ResolveBasicTravelDistance(previewSpec, out var willHit) /
@@ -1219,18 +1301,17 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 var attackDuration = travelDuration + resolveDuration;
                 return previewMode == FallenCommanderAttackPreviewMode.Cast
                     ? Mathf.Max(0.2f, attackDuration)
-                    : Mathf.Max(startDuration, warningDuration + attackDuration);
+                    : Mathf.Max(startDuration, attackStartTime + attackDuration);
             }
 
             if (previewMode == FallenCommanderAttackPreviewMode.PreCast)
             {
                 return Mathf.Max(
                     0.2f,
-                    previewSpec.PreCastMotionDuration,
                     ResolveStageDuration(previewSpec.Effects, true),
                     previewSpec.TelegraphPrefab == null
                         ? 0f
-                        : previewSpec.WarningDuration);
+                        : previewSpec.WarningDuration + previewSpec.TelegraphHoldDuration);
             }
 
             if (previewSpec.Kind == FallenCommanderAttackPreviewKind.BlackHole &&
@@ -1238,22 +1319,28 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             {
                 var activeStartTime = previewMode == FallenCommanderAttackPreviewMode.Cast
                     ? 0f
-                    : Mathf.Max(0.1f, previewSpec.WarningDuration);
+                    : Mathf.Max(0.1f, previewSpec.WarningDuration) +
+                        previewSpec.TelegraphHoldDuration;
                 var endDuration = ResolveStageDuration(
                     previewSpec.BlackHoleEndEffects,
                     false);
+                var hitDuration = ResolveHitStageDuration(previewSpec.Effects);
                 return activeStartTime +
-                    Mathf.Max(0.1f, previewSpec.BlackHoleActiveDuration) +
-                    endDuration;
+                    Mathf.Max(
+                        Mathf.Max(0.1f, previewSpec.BlackHoleActiveDuration) +
+                            endDuration,
+                        hitDuration);
             }
 
             var castDuration = Mathf.Max(
                 0.2f,
                 previewSpec.CastMotionDuration,
-                ResolveStageDuration(previewSpec.Effects, false));
+                ResolveStageDuration(previewSpec.Effects, false),
+                ResolveHitStageDuration(previewSpec.Effects));
             return previewMode == FallenCommanderAttackPreviewMode.Cast
                 ? castDuration
-                : Mathf.Max(0.1f, previewSpec.WarningDuration) + castDuration;
+                : Mathf.Max(0.1f, previewSpec.WarningDuration) +
+                    previewSpec.TelegraphHoldDuration + castDuration;
         }
 
         // 군단장까지의 거리와 투사체 반지름을 반영해 실제 충돌 또는 최대 이동거리를 계산한다.
@@ -1308,6 +1395,29 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             if (sfxDuration <= 0f && clip != null)
             {
                 sfxDuration = clip.length;
+            }
+
+            return Mathf.Max(vfxDuration, sfxDuration, 0.2f);
+        }
+
+        // 적중 VFX와 SFX 중 더 긴 재생시간을 미리보기 유지시간으로 반환한다.
+        private static float ResolveHitStageDuration(
+            FallenCommanderAttackEffectData effects)
+        {
+            if (effects == null)
+            {
+                return 0f;
+            }
+
+            var vfxDuration = effects.HitVfxPrefab == null
+                ? 0f
+                : ResolveVfxLifetime(
+                    effects.HitVfxPrefab,
+                    effects.HitVfxDuration);
+            var sfxDuration = effects.HitSfxDuration;
+            if (sfxDuration <= 0f && effects.HitSfx != null)
+            {
+                sfxDuration = effects.HitSfx.length;
             }
 
             return Mathf.Max(vfxDuration, sfxDuration, 0.2f);

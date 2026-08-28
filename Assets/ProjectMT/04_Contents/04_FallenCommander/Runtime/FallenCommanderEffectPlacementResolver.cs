@@ -5,7 +5,8 @@ namespace ProjectMT.Contents.FallenCommander
     public enum FallenCommanderEffectStage
     {
         Start,
-        Resolve
+        Resolve,
+        Hit
     }
 
     public readonly struct FallenCommanderEffectPlacementContext
@@ -59,23 +60,35 @@ namespace ProjectMT.Contents.FallenCommander
             FallenCommanderEffectStage stage,
             in FallenCommanderEffectPlacementContext context)
         {
-            var isStart = stage == FallenCommanderEffectStage.Start;
-            var anchor = isStart
-                ? effects?.StartVfxAnchor ?? FallenCommanderEffectAnchor.AttackPosition
-                : effects?.ResolveVfxAnchor ?? FallenCommanderEffectAnchor.AttackPosition;
+            var anchor = stage switch
+            {
+                FallenCommanderEffectStage.Start =>
+                    effects?.StartVfxAnchor ?? FallenCommanderEffectAnchor.AttackPosition,
+                FallenCommanderEffectStage.Hit => FallenCommanderEffectAnchor.AttackPosition,
+                _ => effects?.ResolveVfxAnchor ?? FallenCommanderEffectAnchor.AttackPosition
+            };
             var anchorPosition = ResolveAnchorPosition(anchor, context);
             var baseRotation = context.AttackDirection.sqrMagnitude > 0.0001f
                 ? Quaternion.LookRotation(context.AttackDirection.normalized, Vector3.up)
                 : Quaternion.identity;
-            var positionOffset = isStart
-                ? effects?.StartVfxPositionOffset ?? Vector3.zero
-                : effects?.ResolveVfxPositionOffset ?? Vector3.zero;
-            var rotationOffset = isStart
-                ? effects?.StartVfxRotationOffset ?? Vector3.zero
-                : effects?.ResolveVfxRotationOffset ?? Vector3.zero;
-            var scale = isStart
-                ? effects?.StartVfxScale ?? Vector3.one
-                : effects?.ResolveVfxScale ?? Vector3.one;
+            var positionOffset = stage switch
+            {
+                FallenCommanderEffectStage.Start => effects?.StartVfxPositionOffset ?? Vector3.zero,
+                FallenCommanderEffectStage.Hit => effects?.HitVfxPositionOffset ?? Vector3.zero,
+                _ => effects?.ResolveVfxPositionOffset ?? Vector3.zero
+            };
+            var rotationOffset = stage switch
+            {
+                FallenCommanderEffectStage.Start => effects?.StartVfxRotationOffset ?? Vector3.zero,
+                FallenCommanderEffectStage.Hit => effects?.HitVfxRotationOffset ?? Vector3.zero,
+                _ => effects?.ResolveVfxRotationOffset ?? Vector3.zero
+            };
+            var scale = stage switch
+            {
+                FallenCommanderEffectStage.Start => effects?.StartVfxScale ?? Vector3.one,
+                FallenCommanderEffectStage.Hit => effects?.HitVfxScale ?? Vector3.one,
+                _ => effects?.ResolveVfxScale ?? Vector3.one
+            };
 
             return new FallenCommanderEffectPlacement(
                 anchorPosition,

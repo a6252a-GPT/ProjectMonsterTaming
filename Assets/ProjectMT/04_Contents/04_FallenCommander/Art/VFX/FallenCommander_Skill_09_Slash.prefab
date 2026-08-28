@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5585587027774424372}
   m_Layer: 0
-  m_Name: FallenCommander_Skill_09
+  m_Name: FallenCommander_Skill_09_Slash
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -117,7 +117,8 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 3926718044187310783, guid: 70bc1d386393a2f438b42cfb15a5f30f, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 70bc1d386393a2f438b42cfb15a5f30f, type: 3}

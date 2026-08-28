@@ -100,6 +100,13 @@ namespace ProjectMT.Contents.FallenCommander
                     error = $"{phases[index].Phase} 대표 공격은 사용할 공격 목록에도 포함되어야 합니다.";
                     return false;
                 }
+
+                if (phases[index].Allows(FallenCommanderAttackPattern.Mark) &&
+                    !phases[index].MarkStrikePattern.TryValidate(out var markStrikeError))
+                {
+                    error = $"{phases[index].Phase} 위치 공격 설정 오류: {markStrikeError}";
+                    return false;
+                }
             }
 
             error = string.Empty;
@@ -128,6 +135,8 @@ namespace ProjectMT.Contents.FallenCommander
         private AudioClip transitionSound;
         [SerializeField, InspectorName("페이즈 전환시간"), Min(0.1f)]
         private float transitionDuration = 1f;
+        [SerializeField, InspectorName("위치 공격 다중 패턴 설정")]
+        private FallenCommanderMarkStrikePhaseData markStrikePattern = new();
 
         public FallenCommanderBossPhase Phase => phase;
         public float HealthRatio => healthRatio;
@@ -138,6 +147,7 @@ namespace ProjectMT.Contents.FallenCommander
         public string TransitionMessage => transitionMessage;
         public AudioClip TransitionSound => transitionSound;
         public float TransitionDuration => transitionDuration;
+        public FallenCommanderMarkStrikePhaseData MarkStrikePattern => markStrikePattern;
 
         // 이 페이즈의 스킬 목록에 지정 공격이 포함되는지 확인한다.
         public bool Allows(FallenCommanderAttackPattern attack)
@@ -199,6 +209,69 @@ namespace ProjectMT.Contents.FallenCommander
             return availableAttacks.Count > 0
                 ? availableAttacks[0]
                 : FallenCommanderAttackPattern.Mark;
+        }
+    }
+
+    [System.Serializable]
+    public sealed class FallenCommanderMarkStrikePhaseData
+    {
+        [SerializeField, InspectorName("총 공격 개수"), Min(1)]
+        private int totalCount = 3;
+        [SerializeField, InspectorName("동시 생성 개수"), Min(1)]
+        private int simultaneousCount = 3;
+        [SerializeField, InspectorName("다음 묶음 생성 간격"), Min(0f)]
+        private float groupInterval = 0.45f;
+        [SerializeField, InspectorName("개별 공격 경고시간"), Min(0.1f)]
+        private float warningDuration = 1f;
+        [SerializeField, InspectorName("랜덤 생성 영역 반경")]
+        private Vector2 arenaHalfExtents = new Vector2(6f, 4f);
+        [SerializeField, InspectorName("랜덤 위치 최소 간격"), Min(0f)]
+        private float minimumSpacing = 2.5f;
+        [SerializeField, InspectorName("묶음 밀집 배치")]
+        private bool clusterGroups;
+        [SerializeField, InspectorName("묶음 배치 반경"), Min(0f)]
+        private float clusterRadius = 1.35f;
+        [SerializeField, InspectorName("묶음당 최대 피해 횟수"), Min(1)]
+        private int maxDamagePerGroup = 1;
+        [SerializeField, InspectorName("피격 기절시간"), Min(0f)]
+        private float stunDuration;
+
+        public int TotalCount => Mathf.Max(1, totalCount);
+        public int SimultaneousCount => Mathf.Clamp(simultaneousCount, 1, TotalCount);
+        public float GroupInterval => Mathf.Max(0f, groupInterval);
+        public float WarningDuration => Mathf.Max(0.1f, warningDuration);
+        public Vector2 ArenaHalfExtents => new Vector2(
+            Mathf.Max(0.1f, arenaHalfExtents.x),
+            Mathf.Max(0.1f, arenaHalfExtents.y));
+        public float MinimumSpacing => Mathf.Max(0f, minimumSpacing);
+        public bool ClusterGroups => clusterGroups;
+        public float ClusterRadius => Mathf.Max(0f, clusterRadius);
+        public int MaxDamagePerGroup => Mathf.Max(1, maxDamagePerGroup);
+        public float StunDuration => Mathf.Max(0f, stunDuration);
+
+        // 다중 위치 공격의 개수·시간·생성 영역 조합이 실행 가능한지 검사한다.
+        public bool TryValidate(out string error)
+        {
+            if (totalCount < 1 || simultaneousCount < 1 || simultaneousCount > totalCount)
+            {
+                error = "동시 생성 개수는 1 이상이며 총 공격 개수를 넘을 수 없습니다.";
+                return false;
+            }
+
+            if (warningDuration < 0.1f || groupInterval < 0f)
+            {
+                error = "경고시간은 0.1초 이상이고 묶음 간격은 0초 이상이어야 합니다.";
+                return false;
+            }
+
+            if (arenaHalfExtents.x <= 0f || arenaHalfExtents.y <= 0f)
+            {
+                error = "랜덤 생성 영역은 X·Y 모두 0보다 커야 합니다.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
         }
     }
 }

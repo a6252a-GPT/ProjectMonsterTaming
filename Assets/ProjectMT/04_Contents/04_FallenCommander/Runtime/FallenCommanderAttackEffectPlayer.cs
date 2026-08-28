@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace ProjectMT.Contents.FallenCommander
 {
-    // 공격 데이터에 지정된 일회성 VFX와 SFX를 시전·적중 시점에 재생한다.
+    // 공격 데이터에 지정된 일회성 VFX와 SFX를 시전·발동·적중 시점에 각각 재생한다.
     public static class FallenCommanderAttackEffectPlayer
     {
         // 공격 시전 슬롯에 지정된 VFX와 SFX를 재생한다.
@@ -43,7 +43,7 @@ namespace ProjectMT.Contents.FallenCommander
             return instance;
         }
 
-        // 공격 적중 슬롯에 지정된 VFX와 SFX를 재생한다.
+        // 공격 발동 또는 해결 슬롯에 지정된 VFX와 SFX를 재생한다.
         public static GameObject PlayResolve(
             FallenCommanderAttackEffectData effects,
             Vector3 position,
@@ -78,6 +78,44 @@ namespace ProjectMT.Contents.FallenCommander
                 effects.ResolveSfxDuration,
                 placement.AnchorPosition,
                 effects.SfxVolume);
+            return instance;
+        }
+
+        // 실제 피해가 확정된 대상 위치에 독립된 적중 VFX와 SFX를 재생한다.
+        public static GameObject PlayHit(
+            FallenCommanderAttackEffectData effects,
+            Vector3 position,
+            Vector3 direction,
+            Transform parent,
+            Transform boss = null,
+            Transform commander = null,
+            Transform projectile = null)
+        {
+            if (effects == null)
+            {
+                return null;
+            }
+
+            var context = CreatePlacementContext(
+                position,
+                direction,
+                boss,
+                commander,
+                projectile);
+            var placement = FallenCommanderEffectPlacementResolver.Resolve(
+                effects,
+                FallenCommanderEffectStage.Hit,
+                context);
+            var instance = PlayVfx(
+                effects.HitVfxPrefab,
+                effects.HitVfxDuration,
+                parent,
+                placement);
+            PlaySfx(
+                effects.HitSfx,
+                effects.HitSfxDuration,
+                placement.AnchorPosition,
+                effects.HitSfxVolume);
             return instance;
         }
 

@@ -44,53 +44,12 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     : "편집 중: 현재 씬에 임시 보스를 생성하여 모션을 표시합니다.",
                 MessageType.None);
 
-            DrawAttackPreview("근접 공격", config.MeleeAttack);
-            DrawAttackPreview("위치 공격", config.MarkStrike);
-            DrawAttackPreview("블랙홀", config.BlackHole);
-            DrawAttackPreview("직선 공격", config.LineStrike);
             DrawMotionPreview("보스 브레이크", config.BreakMotion, config.BreakMotionDuration);
             DrawMotionPreview("보스 사망", config.DeathMotion, config.DeathMotionDuration);
 
             if (GUILayout.Button("모션 미리보기 종료"))
             {
                 FallenCommanderBossEditorPreview.Stop();
-            }
-        }
-
-        private void DrawAttackPreview(string label, FallenCommanderAttackData attack)
-        {
-            if (attack == null)
-            {
-                return;
-            }
-
-            EditorGUILayout.LabelField(
-                $"{label}  (시전 속도 x{attack.PreCastMotionSpeed:0.##} / {attack.PreCastMotionDuration:0.###}초 → " +
-                $"공격 속도 x{attack.CastMotionSpeed:0.##} / {attack.CastMotionDuration:0.###}초)",
-                EditorStyles.miniLabel);
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                if (GUILayout.Button($"▶ {label}: 시전 → 공격"))
-                {
-                    PreviewAttack(attack);
-                }
-
-                if (GUILayout.Button("시전 보기", GUILayout.Width(72f)))
-                {
-                    PreviewMotion(
-                        attack.PreCastMotion,
-                        attack.PreCastMotionDuration,
-                        attack.PreCastMotionSpeed);
-                }
-
-                if (GUILayout.Button("공격 보기", GUILayout.Width(72f)))
-                {
-                    PreviewMotion(
-                        attack.CastMotion,
-                        attack.CastMotionDuration,
-                        attack.CastMotionSpeed);
-                }
             }
         }
 
@@ -113,37 +72,12 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
         }
 
-        private void PreviewAttack(FallenCommanderAttackData attack)
-        {
-            if (Application.isPlaying)
-            {
-                if (!((FallenCommanderController)target).PreviewBossAttack(attack))
-                {
-                    EditorUtility.DisplayDialog(
-                        "보스 모션 미리보기",
-                        "보스가 생성되도록 던전에 먼저 입장해 주세요.",
-                        "확인");
-                }
-
-                return;
-            }
-
-            FallenCommanderBossEditorPreview.PlaySequence(
-                GetBossPrefab(),
-                GetSpawnPoint(),
-                GetFacingTarget(),
-                attack.PreCastMotion,
-                attack.PreCastMotionDuration,
-                attack.PreCastMotionSpeed,
-                attack.CastMotion,
-                attack.CastMotionDuration,
-                attack.CastMotionSpeed);
-        }
-
         private void PreviewMotion(
             AnimationClip motion,
             float duration,
-            float playbackSpeed = 1f)
+            float playbackSpeed = 1f,
+            float normalizedStart = 0f,
+            float normalizedEnd = 1f)
         {
             if (motion == null)
             {
@@ -155,7 +89,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 if (!((FallenCommanderController)target).PreviewBossMotion(
                     motion,
                     duration,
-                    playbackSpeed))
+                    playbackSpeed,
+                    normalizedStart,
+                    normalizedEnd))
                 {
                     EditorUtility.DisplayDialog(
                         "보스 모션 미리보기",
@@ -175,7 +111,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 playbackSpeed,
                 null,
                 0f,
-                1f);
+                1f,
+                normalizedStart,
+                normalizedEnd);
         }
 
         private GameObject GetBossPrefab()
@@ -206,6 +144,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private static float secondDuration;
         private static float firstSpeed = 1f;
         private static float secondSpeed = 1f;
+        private static float firstStart;
+        private static float firstEnd = 1f;
+        private static float secondStart;
+        private static float secondEnd = 1f;
         private static double lastTime;
         private static float elapsed;
 
@@ -226,7 +168,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             float firstPlaybackSpeed,
             AnimationClip second,
             float secondLength,
-            float secondPlaybackSpeed)
+            float secondPlaybackSpeed,
+            float requestedFirstStart = 0f,
+            float requestedFirstEnd = 1f,
+            float requestedSecondStart = 0f,
+            float requestedSecondEnd = 1f)
         {
             Stop();
             FallenCommanderAttackEditorPreview.Stop();
@@ -269,25 +215,43 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     0.01f,
                     first == null ? secondPlaybackSpeed : firstPlaybackSpeed);
                 var resolvedSecondSpeed = Mathf.Max(0.01f, secondPlaybackSpeed);
+                var resolvedFirstStart = first == null
+                    ? requestedSecondStart
+                    : requestedFirstStart;
+                var resolvedFirstEnd = first == null
+                    ? requestedSecondEnd
+                    : requestedFirstEnd;
                 var resolvedFirstDuration = ResolveDuration(
                     resolvedFirstMotion,
-                    first == null ? secondLength : firstLength);
+                    first == null ? secondLength : firstLength,
+                    resolvedFirstSpeed,
+                    resolvedFirstStart,
+                    resolvedFirstEnd);
                 var resolvedSecondDuration = resolvedSecondMotion == null
                     ? 0f
-                    : ResolveDuration(resolvedSecondMotion, secondLength);
+                    : ResolveDuration(
+                        resolvedSecondMotion,
+                        secondLength,
+                        resolvedSecondSpeed,
+                        requestedSecondStart,
+                        requestedSecondEnd);
 
                 previewRoot = createdRoot;
                 firstMotion = resolvedFirstMotion;
                 secondMotion = resolvedSecondMotion;
                 firstSpeed = resolvedFirstSpeed;
                 secondSpeed = resolvedSecondSpeed;
+                firstStart = resolvedFirstStart;
+                firstEnd = resolvedFirstEnd;
+                secondStart = requestedSecondStart;
+                secondEnd = requestedSecondEnd;
                 firstDuration = resolvedFirstDuration;
                 secondDuration = resolvedSecondDuration;
                 elapsed = 0f;
                 lastTime = EditorApplication.timeSinceStartup;
 
                 AnimationMode.StartAnimationMode();
-                Sample(firstMotion, 0f, firstSpeed);
+                Sample(firstMotion, 0f, firstSpeed, firstStart, firstEnd);
                 SceneView.RepaintAll();
                 initialized = true;
             }
@@ -329,6 +293,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             secondDuration = 0f;
             firstSpeed = 1f;
             secondSpeed = 1f;
+            firstStart = 0f;
+            firstEnd = 1f;
+            secondStart = 0f;
+            secondEnd = 1f;
             elapsed = 0f;
             SceneView.RepaintAll();
         }
@@ -347,11 +315,16 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
             if (elapsed < firstDuration)
             {
-                Sample(firstMotion, elapsed, firstSpeed);
+                Sample(firstMotion, elapsed, firstSpeed, firstStart, firstEnd);
             }
             else if (secondMotion != null && elapsed < firstDuration + secondDuration)
             {
-                Sample(secondMotion, elapsed - firstDuration, secondSpeed);
+                Sample(
+                    secondMotion,
+                    elapsed - firstDuration,
+                    secondSpeed,
+                    secondStart,
+                    secondEnd);
             }
             else
             {
@@ -364,7 +337,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private static void Sample(
             AnimationClip motion,
             float time,
-            float playbackSpeed)
+            float playbackSpeed,
+            float normalizedStart,
+            float normalizedEnd)
         {
             if (previewRoot == null || motion == null)
             {
@@ -377,21 +352,38 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 return;
             }
 
+            var safeStart = Mathf.Clamp(normalizedStart, 0f, 0.999f);
+            var safeEnd = Mathf.Clamp(normalizedEnd, safeStart + 0.001f, 1f);
+            var startTime = motion.length * safeStart;
+            var endTime = motion.length * safeEnd;
             AnimationMode.BeginSampling();
             AnimationMode.SampleAnimationClip(
                 animators[0].gameObject,
                 motion,
-                Mathf.Clamp(time * Mathf.Max(0.01f, playbackSpeed), 0f, motion.length));
+                Mathf.Clamp(
+                    startTime + time * Mathf.Max(0.01f, playbackSpeed),
+                    startTime,
+                    endTime));
             AnimationMode.EndSampling();
         }
 
-        private static float ResolveDuration(AnimationClip motion, float duration)
+        private static float ResolveDuration(
+            AnimationClip motion,
+            float duration,
+            float playbackSpeed,
+            float normalizedStart,
+            float normalizedEnd)
         {
+            var safeStart = Mathf.Clamp(normalizedStart, 0f, 0.999f);
+            var safeEnd = Mathf.Clamp(normalizedEnd, safeStart + 0.001f, 1f);
             return duration > 0f
                 ? duration
                 : motion == null
                     ? 0f
-                    : Mathf.Max(0.01f, motion.length);
+                    : Mathf.Max(
+                        0.01f,
+                        motion.length * (safeEnd - safeStart) /
+                        Mathf.Max(0.01f, playbackSpeed));
         }
 
         // 임시 보스를 생성 즉시 군단장 방향으로 회전시킨다.

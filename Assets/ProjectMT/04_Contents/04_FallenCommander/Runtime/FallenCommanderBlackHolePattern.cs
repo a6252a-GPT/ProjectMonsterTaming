@@ -99,13 +99,16 @@ namespace ProjectMT.Contents.FallenCommander
             animationPresenter = animations;
             effectParent = parent;
             CenterPosition = ResolveSpawnPosition(commander.position);
-            remainingTime = Mathf.Max(0.1f, attack.WarningDuration);
+            remainingTime = Mathf.Max(0.1f, attack.WarningDuration) +
+                attack.TelegraphHoldDuration;
             hasDamagedCommander = false;
             state = PatternState.Warning;
 
-            animationPresenter.Play(
+            animationPresenter.PlayPreCast(
                 attack.PreCastMotion,
-                playbackSpeed: attack.PreCastMotionSpeed);
+                playbackSpeed: attack.PreCastMotionSpeed,
+                normalizedStart: attack.PreCastMotionStart,
+                normalizedEnd: attack.PreCastMotionEnd);
             warningVfxInstance = FallenCommanderAttackEffectPlayer.PlayStart(
                 attack.Effects,
                 CenterPosition,
@@ -141,7 +144,10 @@ namespace ProjectMT.Contents.FallenCommander
             if (state == PatternState.Warning)
             {
                 var warningDuration = Mathf.Max(0.1f, attack.WarningDuration);
-                ActiveTelegraph?.SetProgress(1f - remainingTime / warningDuration);
+                var fillRemaining = Mathf.Max(
+                    0f,
+                    remainingTime - attack.TelegraphHoldDuration);
+                ActiveTelegraph?.SetProgress(1f - fillRemaining / warningDuration);
                 if (remainingTime <= 0f)
                 {
                     BeginPulling();
@@ -166,13 +172,15 @@ namespace ProjectMT.Contents.FallenCommander
         {
             state = PatternState.Active;
             remainingTime = activeDuration;
-            ActiveTelegraph?.SetProgress(1f);
+            DestroyTelegraph();
             DestroyEffect(ref warningVfxInstance);
             animationPresenter.Play(
                 attack.CastMotion,
                 stopAfterMotion: true,
                 durationOverride: attack.CastMotionDuration,
-                playbackSpeed: attack.CastMotionSpeed);
+                playbackSpeed: attack.CastMotionSpeed,
+                normalizedStart: attack.CastMotionStart,
+                normalizedEnd: attack.CastMotionEnd);
             activeVfxInstance = FallenCommanderAttackEffectPlayer.PlayResolve(
                 attack.Effects,
                 CenterPosition,
@@ -230,6 +238,13 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             hasDamagedCommander = true;
+            FallenCommanderAttackEffectPlayer.PlayHit(
+                attack.Effects,
+                commanderRoot.position,
+                Vector3.forward,
+                effectParent,
+                bossActor == null ? null : bossActor.transform,
+                commanderRoot);
             commanderHealth.ApplyDamage(new DamageRequest(
                 bossActor,
                 1f,
@@ -285,12 +300,7 @@ namespace ProjectMT.Contents.FallenCommander
         {
             DestroyEffect(ref warningVfxInstance);
             DestroyEffect(ref activeVfxInstance);
-
-            if (ActiveTelegraph != null)
-            {
-                Object.Destroy(ActiveTelegraph.gameObject);
-                ActiveTelegraph = null;
-            }
+            DestroyTelegraph();
 
             state = PatternState.Inactive;
             remainingTime = 0f;
@@ -300,6 +310,18 @@ namespace ProjectMT.Contents.FallenCommander
             commanderHealth = null;
             animationPresenter = null;
             effectParent = null;
+        }
+
+        // 경고 단계에서만 사용하는 공격 범위 오브젝트를 제거한다.
+        private void DestroyTelegraph()
+        {
+            if (ActiveTelegraph == null)
+            {
+                return;
+            }
+
+            Object.Destroy(ActiveTelegraph.gameObject);
+            ActiveTelegraph = null;
         }
 
         // 블랙홀 모듈이 직접 생성한 진행 중 VFX만 안전하게 제거한다.

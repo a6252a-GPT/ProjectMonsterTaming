@@ -32,9 +32,9 @@ namespace ProjectMT.Contents.FallenCommander
         [Header("Dungeon")]
         [SerializeField, Min(1f)] private float timeLimitSeconds = 80f;
         [SerializeField, Min(0f)] private float battleStartDelaySeconds = 2f;
-        [SerializeField, Range(0.01f, 1f)] private float finalChargeHealthRatio = 0.3f;
-        [SerializeField, Min(0.1f)] private float finalChargeDuration = 12f;
-        [SerializeField, Min(0.1f)] private float finalChargeRadius = 10f;
+        [SerializeField, HideInInspector, Range(0.01f, 1f)] private float finalChargeHealthRatio = 0.3f;
+        [SerializeField, HideInInspector, Min(0.1f)] private float finalChargeDuration = 12f;
+        [SerializeField, HideInInspector, Min(0.1f)] private float finalChargeRadius = 10f;
         [SerializeField, HideInInspector, Min(0f)] private float timeoutWipeWarningDuration = 0.8f;
         [SerializeField, HideInInspector, Min(0f)] private float timeoutWipeDeathResultDelay = 2f;
         [SerializeField, Min(0f)] private float timeoutWarningStartSeconds = 5f;
@@ -257,6 +257,7 @@ namespace ProjectMT.Contents.FallenCommander
                 if (battleStartDelayRemaining <= 0f)
                 {
                     isBattleStartDelay = false;
+                    PlayInitialPhaseSound();
                     PublishHudState();
                 }
 
@@ -413,10 +414,10 @@ namespace ProjectMT.Contents.FallenCommander
         {
             var stats = new UnitStatsSnapshot
             {
-                maxHealth = 2000f * difficultyMultiplier,
+                maxHealth = bossConfig.BaseMaxHealth * difficultyMultiplier,
                 damage = 1f,
-                defense = 10f * difficultyMultiplier,
-                moveSpeed = 1.6f,
+                defense = bossConfig.BaseDefense * difficultyMultiplier,
+                moveSpeed = bossConfig.BaseMoveSpeed,
                 attackRange = bossConfig.AttackRange,
                 attackInterval = 1f,
                 projectileSpeed = 0f,
@@ -669,7 +670,7 @@ namespace ProjectMT.Contents.FallenCommander
             return true;
         }
 
-        // 전투 준비시간 안에 1페이즈 문구와 선택 사운드를 재생한다.
+        // 전투 준비시간 안에 1페이즈 문구를 표시하고 사운드는 전투 시작 시점에 예약한다.
         private void PresentInitialPhase()
         {
             var phaseData = bossConfig.PhaseConfig.GetPhase(
@@ -678,6 +679,18 @@ namespace ProjectMT.Contents.FallenCommander
                 ? Mathf.Min(battleStartDelayRemaining, phaseData.TransitionDuration)
                 : phaseData.TransitionDuration;
             phaseTransitionMessage = phaseData.TransitionMessage;
+
+            if (!isBattleStartDelay)
+            {
+                PlayPhaseTransitionSound(phaseData);
+            }
+        }
+
+        // 준비시간이 끝난 순간 1페이즈 진입 사운드를 한 번 재생한다.
+        private void PlayInitialPhaseSound()
+        {
+            var phaseData = bossConfig.PhaseConfig.GetPhase(
+                FallenCommanderBossPhase.Phase1);
             PlayPhaseTransitionSound(phaseData);
         }
 
@@ -713,11 +726,25 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor == null ? null : bossActor.transform.parent,
                 bossActor == null ? null : bossActor.transform,
                 commanderRoot == null ? null : commanderRoot.transform);
+            bossAnimationPresenter?.Play(
+                bossConfig.FinalChargeCastMotion,
+                stopAfterMotion: true,
+                durationOverride: bossConfig.FinalChargeCastMotionDuration,
+                playbackSpeed: bossConfig.FinalChargeCastMotionSpeed,
+                normalizedStart: bossConfig.FinalChargeCastMotionStart,
+                normalizedEnd: bossConfig.FinalChargeCastMotionEnd);
 
             if (commanderHealth != null &&
                 commanderHealth.IsAlive &&
                 commanderInside)
             {
+                FallenCommanderAttackEffectPlayer.PlayHit(
+                    bossConfig.FinalChargeEffects,
+                    commanderRoot.transform.position,
+                    effectDirection,
+                    bossActor == null ? null : bossActor.transform.parent,
+                    bossActor == null ? null : bossActor.transform,
+                    commanderRoot.transform);
                 commanderHealth.ApplyDamage(new DamageRequest(
                     bossActor,
                     1f,
@@ -778,7 +805,7 @@ namespace ProjectMT.Contents.FallenCommander
 
             var healthRatio =
                 bossActor.Health.CurrentHealth / bossActor.Health.MaxHealth;
-            if (healthRatio > finalChargeHealthRatio)
+            if (healthRatio > bossConfig.FinalChargeHealthRatio)
             {
                 return false;
             }
@@ -818,8 +845,9 @@ namespace ProjectMT.Contents.FallenCommander
                     bossActor.transform,
                     commanderRoot.transform,
                     bossConfig.FinalChargeTelegraphPrefab,
-                    finalChargeDuration,
-                    finalChargeRadius))
+                    bossConfig.FinalChargeDuration,
+                    bossConfig.FinalChargeTelegraphHoldDuration,
+                    bossConfig.FinalChargeRadius))
             {
                 return false;
             }
@@ -834,6 +862,11 @@ namespace ProjectMT.Contents.FallenCommander
             phaseTransitionRemainingTime = 0f;
             pendingPhaseAttack = FallenCommanderAttackPattern.Basic;
             stateMachine?.Shutdown();
+            bossAnimationPresenter?.PlayPreCast(
+                bossConfig.FinalChargePreCastMotion,
+                playbackSpeed: bossConfig.FinalChargePreCastMotionSpeed,
+                normalizedStart: bossConfig.FinalChargePreCastMotionStart,
+                normalizedEnd: bossConfig.FinalChargePreCastMotionEnd);
             FallenCommanderAttackEffectPlayer.PlayStart(
                 bossConfig.FinalChargeEffects,
                 bossActor.transform.TransformPoint(
@@ -843,7 +876,7 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor.transform,
                 commanderRoot == null ? null : commanderRoot.transform);
             Debug.Log(
-                $"충전 광역 공격 준비 시작: {finalChargeDuration:0.0}초",
+                $"충전 광역 공격 준비 시작: {bossConfig.FinalChargeDuration:0.0}초",
                 this);
             return true;
         }
@@ -980,7 +1013,7 @@ namespace ProjectMT.Contents.FallenCommander
                 finalChargePattern.RemainingTime,
                 finalChargePattern.IsActive
                     ? finalChargePattern.Duration
-                    : finalChargeDuration,
+                    : bossConfig.FinalChargeDuration,
                 timeoutWipePattern.IsActive,
                 !isBattleStartDelay &&
                 !timeoutWipePattern.IsActive &&
@@ -1261,18 +1294,24 @@ namespace ProjectMT.Contents.FallenCommander
             bossAnimationPresenter.Configure(bossActor.transform);
             bossAnimationPresenter.PlaySequence(
                 attack.PreCastMotion,
-                attack.PreCastMotionDuration,
+                attack.WarningDuration + attack.TelegraphHoldDuration,
                 attack.PreCastMotionSpeed,
                 attack.CastMotion,
                 attack.CastMotionDuration,
-                attack.CastMotionSpeed);
+                attack.CastMotionSpeed,
+                attack.PreCastMotionStart,
+                attack.PreCastMotionEnd,
+                attack.CastMotionStart,
+                attack.CastMotionEnd);
             return true;
         }
 
         public bool PreviewBossMotion(
             AnimationClip motion,
             float duration,
-            float playbackSpeed = 1f)
+            float playbackSpeed = 1f,
+            float normalizedStart = 0f,
+            float normalizedEnd = 1f)
         {
             if (!Application.isPlaying ||
                 bossActor == null ||
@@ -1287,7 +1326,9 @@ namespace ProjectMT.Contents.FallenCommander
                 motion,
                 stopAfterMotion: true,
                 durationOverride: duration,
-                playbackSpeed: playbackSpeed);
+                playbackSpeed: playbackSpeed,
+                normalizedStart: normalizedStart,
+                normalizedEnd: normalizedEnd);
             return true;
         }
 

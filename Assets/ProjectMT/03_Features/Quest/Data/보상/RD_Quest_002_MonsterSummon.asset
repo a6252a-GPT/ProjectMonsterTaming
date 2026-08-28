@@ -17,5 +17,3 @@ MonoBehaviour:
   items:
   - itemId: material_equipment_slot_upgrade_stone
     amount: 10
-  - itemId: ticket_monster_summon
-    amount: 1

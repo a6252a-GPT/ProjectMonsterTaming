@@ -23,10 +23,9 @@ MonoBehaviour:
   prerequisiteQuestId:
     value: quest_004_commander_level_up
   reward: {fileID: 11400000, guid: d4e5f6a7b8c9d0e1f2a3b4c5d6a1b2c3, type: 2}
-  unlockTargets: 06000000
-  unlockGateEnabled: 1
+  unlockTargets: 
+  unlockGateEnabled: 0
   requiresActiveTracking: 1
   isRepeatingTemplate: 0
   repeatIncrement: 0
   repeatMaxOccurrences: 0
-  repeatPrerequisiteQuestIds: []

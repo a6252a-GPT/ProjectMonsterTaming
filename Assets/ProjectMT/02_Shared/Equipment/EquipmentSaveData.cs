@@ -143,6 +143,55 @@ namespace ProjectMT.Shared.Equipment
             return true;
         }
 
+        internal bool TryEquipBatch(IReadOnlyList<string> instanceIds)
+        {
+            if (instanceIds == null || instanceIds.Count == 0 || instanceIds.Count > PartCount)
+            {
+                return false;
+            }
+
+            var nextByPart = new Dictionary<int, string>(instanceIds.Count);
+            var uniqueIds = new HashSet<string>(StringComparer.Ordinal);
+            for (var index = 0; index < instanceIds.Count; index++)
+            {
+                var instanceId = instanceIds[index]?.Trim();
+                var ownedIndex = FindIndex(instanceId);
+                if (ownedIndex < 0 || !uniqueIds.Add(instanceId))
+                {
+                    return false;
+                }
+
+                var partIndex = (int)instances[ownedIndex].Part;
+                if (partIndex < 0 || partIndex >= PartCount || nextByPart.ContainsKey(partIndex))
+                {
+                    return false;
+                }
+
+                nextByPart.Add(partIndex, instances[ownedIndex].InstanceId);
+            }
+
+            var changed = false;
+            foreach (var pair in nextByPart)
+            {
+                if (!string.Equals(equippedInstanceIds[pair.Key], pair.Value, StringComparison.Ordinal))
+                {
+                    changed = true;
+                }
+            }
+
+            if (!changed)
+            {
+                return false;
+            }
+
+            foreach (var pair in nextByPart)
+            {
+                equippedInstanceIds[pair.Key] = pair.Value;
+            }
+
+            return true;
+        }
+
         internal bool TryUnequip(EquipmentPart part)
         {
             var partIndex = (int)part;

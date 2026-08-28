@@ -183,6 +183,30 @@ namespace ProjectMT.Features.Equipment
             return saved;
         }
 
+        public static async Task<bool> TryAutoEquipAsync()
+        {
+            if (!IsReady)
+            {
+                return false;
+            }
+
+            var bestInstanceIds = EquipmentUpgradeEvaluator.GetBestUpgradeInstanceIds();
+            if (bestInstanceIds.Count == 0)
+            {
+                return false;
+            }
+
+            var saved = await progress.TryApplyAndSaveAsync(GameProgressChange.EquipItems(bestInstanceIds));
+            if (saved)
+            {
+                _ = QuestRuntime.AdvanceAllOfConditionAsync(
+                    QuestConditionType.EquipmentEquip,
+                    bestInstanceIds.Count);
+            }
+
+            return saved;
+        }
+
         public static async Task<bool> TryUnequipAsync(EquipmentPart part)
         {
             if (!IsReady)

@@ -736,6 +736,12 @@ namespace ProjectMT.Shared.GameData
                 return false;
             }
 
+            if (change.HasEquipItems &&
+                !(equipment ??= EquipmentSaveData.CreateDefault()).TryEquipBatch(change.EquipItemInstanceIds))
+            {
+                return false;
+            }
+
             if (change.HasUnequipItem &&
                 !(equipment ??= EquipmentSaveData.CreateDefault()).TryUnequip(change.UnequipItemPart))
             {
@@ -1641,6 +1647,8 @@ namespace ProjectMT.Shared.GameData
         internal List<EquipmentInstanceData> AcquireEquipmentInstances { get; private set; }
         internal bool HasEquipItem { get; private set; }
         internal string EquipItemInstanceId { get; private set; }
+        internal bool HasEquipItems { get; private set; }
+        internal IReadOnlyList<string> EquipItemInstanceIds { get; private set; }
         internal bool HasUnequipItem { get; private set; }
         internal EquipmentPart UnequipItemPart { get; private set; }
         internal bool HasSetEquipmentLock { get; private set; }
@@ -2129,6 +2137,24 @@ namespace ProjectMT.Shared.GameData
             {
                 HasEquipItem = true,
                 EquipItemInstanceId = instanceId?.Trim()
+            };
+        }
+
+        public static GameProgressChange EquipItems(IReadOnlyList<string> instanceIds)
+        {
+            var copiedIds = new List<string>(instanceIds?.Count ?? 0);
+            if (instanceIds != null)
+            {
+                for (var index = 0; index < instanceIds.Count; index++)
+                {
+                    copiedIds.Add(instanceIds[index]?.Trim());
+                }
+            }
+
+            return new GameProgressChange
+            {
+                HasEquipItems = true,
+                EquipItemInstanceIds = copiedIds
             };
         }
 

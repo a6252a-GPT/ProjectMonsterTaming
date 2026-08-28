@@ -209,7 +209,7 @@ MonoBehaviour:
       resolveVfxPrefab: {fileID: 6258482674219099290, guid: 5d9ec90da4013ec40a319d8432b07519, type: 3}
       resolveVfxDuration: 0
       resolveVfxAnchor: 0
-      resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+      resolveVfxPositionOffset: {x: 0, y: 0.3, z: 0}
       resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
       resolveVfxScale: {x: 1, y: 1, z: 1}
       resolveVfxScaleMultiplier: 1
@@ -281,7 +281,7 @@ MonoBehaviour:
     resolveVfxPrefab: {fileID: 6909954905928057147, guid: be310100dd74466468712278ac4229d2, type: 3}
     resolveVfxDuration: 0
     resolveVfxAnchor: 0
-    resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+    resolveVfxPositionOffset: {x: 0, y: 0.3, z: 0}
     resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
     resolveVfxScale: {x: 1, y: 1, z: 1}
     resolveVfxScaleMultiplier: 1

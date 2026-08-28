@@ -22,8 +22,7 @@ namespace ProjectMT.Features.Equipment
     {
         private const int AuthoredInventorySlotCount = 20; // 프리팹에 미리 둔 재사용 슬롯 수
         private const int MaxInventorySlotCount = EquipmentInventoryRuntime.MaxTotalQuantity;
-        private const string EquipButtonEquipText = "장착";
-        private const string EquipButtonUnequipText = "해제";
+        private const string AutoEquipButtonText = "자동 장착";
 
         private enum EquipmentPageMode
         {
@@ -41,7 +40,9 @@ namespace ProjectMT.Features.Equipment
             public GameObject AddIndicator; // 비어있을 때 표시하는 "+" 표시(Add_1)
             public GameObject TextLevel; // 슬롯이 비어있을 때는 숨겨야 하는 목업 레벨 텍스트(값은 건드리지 않음)
             public GameObject CheckObject;
+            public GameObject FocusObject;
             public GameObject LockObject;
+            public Image UpgradeArrow;
             public TMP_Text EquippedLabelText; // 장착 중인 아이템을 인벤토리에서도 구분할 수 있도록 아이콘 아래 "[장착]" 표시
             public Button ClickButton;
             public string BoundInstanceId; // 이 슬롯이 현재 표시 중인 인스턴스 ID (없으면 null → 빈 슬롯)
@@ -85,6 +86,7 @@ namespace ProjectMT.Features.Equipment
         private Transform frameVariantTemplateStorage;
 
         [SerializeField] private TMP_FontAsset equippedLabelFont;
+        [SerializeField] private Sprite upgradeArrowSprite;
 
         private TMP_Text capacityText;
         private TMP_Text sortLabelText;
@@ -290,7 +292,10 @@ namespace ProjectMT.Features.Equipment
         {
             foreach (var pair in commanderSlots)
             {
-                var image = pair.Value != null ? pair.Value.Find("ItemFrame_01/Item")?.GetComponent<Image>() : null;
+                var image = pair.Value != null
+                    ? pair.Value.GetComponentsInChildren<Image>(true)
+                        .FirstOrDefault(candidate => candidate.name == "Item" && candidate.sprite != null)
+                    : null;
                 if (image != null && image.sprite != null)
                 {
                     partIconSprites[pair.Key] = image.sprite;
@@ -702,10 +707,12 @@ namespace ProjectMT.Features.Equipment
                 AddIndicator = FindDeep(slotRoot, "Add_1")?.gameObject,
                 TextLevel = FindDeep(slotRoot, "Text_Level")?.gameObject,
                 CheckObject = FindDeep(slotRoot, "Check")?.gameObject,
+                FocusObject = FindDeep(slotRoot, "Focus")?.gameObject,
                 LockObject = FindDeep(slotRoot, "Lock")?.gameObject
             };
 
             view.EquippedLabelText = CreateEquippedLabel(slotRoot);
+            view.UpgradeArrow = CreateUpgradeArrow(slotRoot);
             view.ClickButton = EnsureButton(slotRoot);
             if (resetClickListeners)
             {
@@ -813,6 +820,33 @@ namespace ProjectMT.Features.Equipment
             return text;
         }
 
+        private Image CreateUpgradeArrow(Transform slotRoot)
+        {
+            var existing = FindDeep(slotRoot, "UpgradeArrow")?.GetComponent<Image>();
+            if (existing != null)
+            {
+                existing.sprite = upgradeArrowSprite;
+                return existing;
+            }
+
+            var arrowObject = new GameObject("UpgradeArrow", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            arrowObject.transform.SetParent(slotRoot, false);
+            var rect = arrowObject.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.one;
+            rect.anchorMax = Vector2.one;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(-24f, -24f);
+            rect.sizeDelta = new Vector2(48f, 48f);
+
+            var image = arrowObject.GetComponent<Image>();
+            image.sprite = upgradeArrowSprite;
+            image.color = new Color32(50, 220, 105, 255);
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            arrowObject.SetActive(false);
+            return image;
+        }
+
         private static Button EnsureButton(Transform target)
         {
             var button = target.GetComponent<Button>();
@@ -897,6 +931,16 @@ namespace ProjectMT.Features.Equipment
             }
 
             partIconSprites.TryGetValue(item.Part, out var icon);
+            if (icon == null)
+            {
+                CachePartIconSprites(); // 늦게 준비된 장착 슬롯 아이콘 재수집
+                partIconSprites.TryGetValue(item.Part, out icon);
+            }
+
+            if (icon == null)
+            {
+                icon = item.Definition.Icon;
+            }
             itemComparisonPanel.Show(item, icon);
         }
 
@@ -908,7 +952,7 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            var panelRoot = FindDeepAny(transform.root, "PF_ItemComparison_2", "PF_ItemComparison");
+            var panelRoot = FindDeep(transform.root, "PF_ItemComparison_2");
             if (panelRoot == null)
             {
                 return;
@@ -920,7 +964,7 @@ namespace ProjectMT.Features.Equipment
         }
 
         // ---------------------------------------------------------------
-        // 장착 버튼
+        // 자동 장착 버튼
         // ---------------------------------------------------------------
 
         private void BuildEquipButton()
@@ -937,25 +981,24 @@ namespace ProjectMT.Features.Equipment
 
         private async void HandleEquipButtonClicked()
         {
-            if (currentMode != EquipmentPageMode.Equip || string.IsNullOrEmpty(selectedInstanceId) ||
-                !EquipmentInventoryRuntime.TryGetItem(selectedInstanceId, out var item))
+            if (currentMode != EquipmentPageMode.Equip || requestInFlight)
             {
                 return;
             }
 
-            if (item.IsEquipped)
+            requestInFlight = true;
+            RefreshSelection();
+            try
             {
-                if (await EquipmentInventoryRuntime.TryUnequipAsync(item.Part))
+                if (await EquipmentInventoryRuntime.TryAutoEquipAsync())
                 {
                     combatInputSaved?.Invoke();
                 }
             }
-            else
+            finally
             {
-                if (await EquipmentInventoryRuntime.TryEquipAsync(selectedInstanceId))
-                {
-                    combatInputSaved?.Invoke();
-                }
+                requestInFlight = false;
+                RefreshAll();
             }
         }
 
@@ -1209,10 +1252,23 @@ namespace ProjectMT.Features.Equipment
                 query = query.Where(item => item.Part == currentFilter.Value);
             }
 
-            var ordered = sortGradeDescending
-                ? query.OrderByDescending(item => (int)item.Grade).ThenBy(item => item.Part)
-                : query.OrderBy(item => (int)item.Grade).ThenBy(item => item.Part);
-            var list = ordered.ToList();
+            var evaluated = query.Select((item, index) => new
+            {
+                Item = item,
+                OriginalIndex = index,
+                PowerDelta = EquipmentUpgradeEvaluator.EvaluatePowerDelta(item)
+            });
+            var ordered = evaluated
+                .OrderByDescending(entry => entry.PowerDelta > 0)
+                .ThenByDescending(entry => entry.PowerDelta);
+            ordered = sortGradeDescending
+                ? ordered.ThenByDescending(entry => (int)entry.Item.Grade)
+                : ordered.ThenBy(entry => (int)entry.Item.Grade);
+            var list = ordered
+                .ThenBy(entry => entry.Item.Part)
+                .ThenBy(entry => entry.OriginalIndex)
+                .Select(entry => entry.Item)
+                .ToList();
             var visibleSlotCount = EnsureInventorySlotCount(list.Count);
 
             for (var i = 0; i < slots.Count; i++)
@@ -1285,9 +1341,20 @@ namespace ProjectMT.Features.Equipment
 
             if (view.CheckObject != null)
             {
-                view.CheckObject.SetActive(currentMode == EquipmentPageMode.Dismantle
-                    ? dismantleSelection.Contains(item.InstanceId)
-                    : item.InstanceId == selectedInstanceId);
+                view.CheckObject.SetActive(currentMode == EquipmentPageMode.Dismantle &&
+                                           dismantleSelection.Contains(item.InstanceId));
+            }
+
+            if (view.FocusObject != null)
+            {
+                view.FocusObject.SetActive(currentMode == EquipmentPageMode.Equip &&
+                                           item.InstanceId == selectedInstanceId);
+            }
+
+            if (view.UpgradeArrow != null)
+            {
+                view.UpgradeArrow.gameObject.SetActive(currentMode == EquipmentPageMode.Equip &&
+                                                       EquipmentUpgradeEvaluator.EvaluatePowerDelta(item) > 0);
             }
 
             if (view.LockObject != null)
@@ -1337,6 +1404,16 @@ namespace ProjectMT.Features.Equipment
                 view.CheckObject.SetActive(false);
             }
 
+            if (view.FocusObject != null)
+            {
+                view.FocusObject.SetActive(false);
+            }
+
+            if (view.UpgradeArrow != null)
+            {
+                view.UpgradeArrow.gameObject.SetActive(false);
+            }
+
             if (view.LockObject != null)
             {
                 view.LockObject.SetActive(false);
@@ -1365,9 +1442,15 @@ namespace ProjectMT.Features.Equipment
                 if (view.CheckObject != null)
                 {
                     view.CheckObject.SetActive(view.BoundInstanceId != null &&
-                        (currentMode == EquipmentPageMode.Dismantle
-                            ? dismantleSelection.Contains(view.BoundInstanceId)
-                            : view.BoundInstanceId == selectedInstanceId));
+                        currentMode == EquipmentPageMode.Dismantle &&
+                        dismantleSelection.Contains(view.BoundInstanceId));
+                }
+
+                if (view.FocusObject != null)
+                {
+                    view.FocusObject.SetActive(view.BoundInstanceId != null &&
+                        currentMode == EquipmentPageMode.Equip &&
+                        view.BoundInstanceId == selectedInstanceId);
                 }
             }
 
@@ -1429,14 +1512,14 @@ namespace ProjectMT.Features.Equipment
 
             if (equipButton != null)
             {
-                equipButton.interactable = hasSelection && !requestInFlight;
+                equipButton.interactable = currentMode == EquipmentPageMode.Equip &&
+                                           !requestInFlight &&
+                                           EquipmentUpgradeEvaluator.GetBestUpgradeInstanceIds().Count > 0;
             }
 
             if (equipButtonText != null)
             {
-                equipButtonText.text = hasSelection && selectedItem.IsEquipped
-                    ? EquipButtonUnequipText
-                    : EquipButtonEquipText;
+                equipButtonText.text = AutoEquipButtonText;
             }
 
             if (equipButtonRoot != null)

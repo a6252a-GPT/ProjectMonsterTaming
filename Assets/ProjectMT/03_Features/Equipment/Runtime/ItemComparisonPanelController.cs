@@ -2,14 +2,13 @@ using System;
 using System.Collections.Generic;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.UI;
-using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ProjectMT.Features.Equipment
 {
-    // 장비 인벤토리에서 아이템을 클릭하면 뜨는 상세 옵션 팝업(PF_ItemComparison) 컨트롤러.
+    // 장비 인벤토리에서 아이템을 클릭하면 뜨는 상세 옵션 팝업(PF_ItemComparison_2) 컨트롤러.
     // Popup_1: 같은 부위에 장착 중인 장비가 있으면 항상 그 장비를 보여준다(없으면 클릭한 장비를 보여줌).
     // Popup_2: 장착 중인 장비와 다른 걸 클릭했을 때만 추가로 켜서, 새로 클릭한 장비를 장착 중인
     // 장비와 비교(추가옵션 우/열세·신규, 전투력 변화)해서 보여준다.
@@ -21,14 +20,11 @@ namespace ProjectMT.Features.Equipment
         private const int MaxCompareOptionRows = 4;
         private const string EquippedRibbonLabel = "장착된 장비";
         private const string SelectedRibbonLabel = "선택한 장비";
-
-        // 전투력 변화 추정용 가상 기준치(실제 파티 스탯과 무관, 장비 한 칸 교체 효과만 비교하기 위한 값).
-        private const float BaselineDamage = 100f;
-        private const float BaselineMaxHealth = 1000f;
-        private const float BaselineDefense = 50f;
-        private const float BaselineAttackInterval = 1f;
-        private const float BaselineCriticalRate = 0.05f;
-        private const float BaselineCriticalDamageMultiplier = 1.5f;
+        private const float PopupVerticalPosition = 499.2f;
+        private const float CompareLeftOffset = -260.91f;
+        private const float CompareRightOffset = 260.78f;
+        private const float SingleCloseOffset = 240f;
+        private const float CompareCloseOffset = 500f;
 
         private Transform popup1;
         private Transform popup2;
@@ -73,9 +69,18 @@ namespace ProjectMT.Features.Equipment
         // Popup_1/Popup_2 공통 "장착" 버튼(Group_Buttons)
         private Transform popup1EquipButtonRoot;
         private Transform popup2EquipButtonRoot;
+        private Button popup1EquipButton;
+        private Button popup2EquipButton;
+        private TMP_Text popup1EquipButtonText;
+        private TMP_Text popup2EquipButtonText;
+        private RectTransform closeButtonRoot;
+        private Button closeButton;
+        private Button dimmedButton;
 
         private bool referencesResolved;
         private string currentInstanceId;
+        private EquipmentPart currentPart;
+        private bool currentItemIsEquipped;
         private bool equipRequestInFlight;
         private Action onEquipped;
 
@@ -95,6 +100,8 @@ namespace ProjectMT.Features.Equipment
 
             EnsureReferences();
             currentInstanceId = clickedItem.InstanceId;
+            currentPart = clickedItem.Part;
+            currentItemIsEquipped = clickedItem.IsEquipped;
             gameObject.SetActive(true);
             popup1?.gameObject.SetActive(true);
             dimmed?.gameObject.SetActive(true);
@@ -105,6 +112,12 @@ namespace ProjectMT.Features.Equipment
 
             var referenceItem = hasComparison ? equippedItem : clickedItem;
             ApplyPopup1(referenceItem, icon);
+            var centerX = ResolveScreenCenterX();
+            SetAnchoredPosition(popup1, new Vector2(centerX + (hasComparison ? CompareLeftOffset : 0f), PopupVerticalPosition));
+            SetAnchoredPosition(popup2, new Vector2(centerX + CompareRightOffset, PopupVerticalPosition));
+            SetAnchoredPosition(closeButtonRoot,
+                new Vector2(centerX + (hasComparison ? CompareCloseOffset : SingleCloseOffset), 455f));
+            SetActionState(hasComparison);
 
             if (hasComparison)
             {
@@ -153,11 +166,14 @@ namespace ProjectMT.Features.Equipment
 
         public void Hide()
         {
+            if (equipRequestInFlight)
+            {
+                return;
+            }
+
             gameObject.SetActive(false);
         }
 
-        // Group_Buttons(장착) 클릭 시 지금 보고 있는 아이템을 장착한다. 같은 부위에 다른 장비가
-        // 이미 장착돼 있으면 EquipmentInventoryRuntime.TryEquipAsync가 자동으로 교체해준다.
         private async void HandleEquipButtonClicked()
         {
             if (equipRequestInFlight || string.IsNullOrEmpty(currentInstanceId))
@@ -165,19 +181,48 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            equipRequestInFlight = true;
+            SetRequestInFlight(true);
             try
             {
-                if (await EquipmentInventoryRuntime.TryEquipAsync(currentInstanceId))
+                var saved = currentItemIsEquipped
+                    ? await EquipmentInventoryRuntime.TryUnequipAsync(currentPart)
+                    : await EquipmentInventoryRuntime.TryEquipAsync(currentInstanceId);
+                if (saved)
                 {
                     onEquipped?.Invoke();
-                    Hide();
+                    gameObject.SetActive(false);
                 }
             }
             finally
             {
-                equipRequestInFlight = false;
+                SetRequestInFlight(false);
             }
+        }
+
+        private void SetActionState(bool hasComparison)
+        {
+            popup1EquipButtonRoot?.gameObject.SetActive(!hasComparison);
+            popup2EquipButtonRoot?.gameObject.SetActive(hasComparison);
+            if (popup1EquipButtonText != null)
+            {
+                popup1EquipButtonText.text = currentItemIsEquipped ? "해제" : "장착";
+            }
+
+            if (popup2EquipButtonText != null)
+            {
+                popup2EquipButtonText.text = "장착";
+            }
+
+            SetRequestInFlight(false);
+        }
+
+        private void SetRequestInFlight(bool inFlight)
+        {
+            equipRequestInFlight = inFlight;
+            if (popup1EquipButton != null) popup1EquipButton.interactable = !inFlight;
+            if (popup2EquipButton != null) popup2EquipButton.interactable = !inFlight;
+            if (closeButton != null) closeButton.interactable = !inFlight;
+            if (dimmedButton != null) dimmedButton.interactable = !inFlight;
         }
 
         private void ApplyCoreOptions(IReadOnlyList<EquipmentStatContribution> contributions)
@@ -449,8 +494,9 @@ namespace ProjectMT.Features.Equipment
 
             if (matched == null)
             {
-                // 장착 중인 장비에 같은 종류의 추가옵션이 없음 - 화살표 대신 "NEW"
+                // 장착 중인 장비에 같은 종류의 추가옵션이 없음 - 옵션명 뒤에 작은 "NEW" 표시
                 arrow?.gameObject.SetActive(false);
+                PlaceNewBadgeAfterOptionName(rowIndex);
                 newBadge?.SetActive(true);
                 return;
             }
@@ -473,6 +519,28 @@ namespace ProjectMT.Features.Equipment
             arrow.localEulerAngles = euler;
         }
 
+        private void PlaceNewBadgeAfterOptionName(int rowIndex)
+        {
+            if (rowIndex < 0 || rowIndex >= compareOptionNameTexts.Count ||
+                rowIndex >= compareOptionNewBadges.Count)
+            {
+                return;
+            }
+
+            var optionName = compareOptionNameTexts[rowIndex];
+            var badge = compareOptionNewBadges[rowIndex]?.transform as RectTransform;
+            if (optionName == null || badge == null)
+            {
+                return;
+            }
+
+            var nameWidth = optionName.GetPreferredValues(optionName.text).x;
+            badge.anchorMin = new Vector2(0f, 0.5f);
+            badge.anchorMax = new Vector2(0f, 0.5f);
+            badge.pivot = new Vector2(0f, 0.5f);
+            badge.anchoredPosition = new Vector2(nameWidth + 8f, 0f);
+        }
+
         // 장착 중인 장비 -> 클릭한 장비로 바꿨을 때의 전투력 변화를 "+120" 형식으로 표시한다.
         // 실제 파티 스탯과는 무관하게, 이 장비 한 칸의 기여도 차이만 가상 기준치에 적용해 추정한다.
         private void ApplyPowerDelta(EquipmentItemView equippedItem, EquipmentItemView clickedItem)
@@ -482,122 +550,9 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            var currentTotal = EquipmentLegionBonusCalculator.CalculateTotal();
-            var equippedOnly = BuildItemBonus(equippedItem);
-            var clickedOnly = BuildItemBonus(clickedItem);
-            var hypotheticalTotal = Add(Subtract(currentTotal, equippedOnly), clickedOnly);
-
-            var beforePower = BuildBaselineSnapshot(currentTotal).EstimatePower();
-            var afterPower = BuildBaselineSnapshot(hypotheticalTotal).EstimatePower();
-            var delta = Mathf.RoundToInt(afterPower - beforePower);
+            var delta = EquipmentUpgradeEvaluator.EvaluatePowerDelta(clickedItem);
             var sign = delta >= 0 ? "+" : "";
             comparePowerDeltaText.text = $"{sign}{delta:N0}";
-        }
-
-        private static UnitStatsSnapshot BuildBaselineSnapshot(EquipmentLegionBonus bonus)
-        {
-            return new UnitStatsSnapshot
-            {
-                damage = BaselineDamage * (1f + bonus.AttackPower / 100f),
-                maxHealth = BaselineMaxHealth * (1f + bonus.MaxHealth / 100f),
-                defense = BaselineDefense * (1f + bonus.Defense / 100f),
-                attackInterval = BaselineAttackInterval / (1f + Mathf.Max(0f, bonus.AttackSpeed) / 100f),
-                criticalRate = BaselineCriticalRate + bonus.CriticalRate / 100f,
-                criticalDamageMultiplier = BaselineCriticalDamageMultiplier + bonus.CriticalDamage / 100f,
-                damageReductionRate = Mathf.Clamp01(bonus.DamageReduction / 100f)
-            };
-        }
-
-        private static EquipmentLegionBonus BuildItemBonus(EquipmentItemView item)
-        {
-            var bonus = default(EquipmentLegionBonus);
-            if (item.Definition == null)
-            {
-                return bonus;
-            }
-
-            AccumulateInto(ref bonus, item.Definition.CoreStatContributions);
-            var options = item.Instance?.RandomOptions;
-            if (options == null)
-            {
-                return bonus;
-            }
-
-            for (var i = 0; i < options.Count; i++)
-            {
-                var option = options[i];
-                if (option != null)
-                {
-                    AccumulateInto(ref bonus, EquipmentOptionInfo.ResolveContributions(option.Type, option.Value));
-                }
-            }
-
-            return bonus;
-        }
-
-        private static void AccumulateInto(ref EquipmentLegionBonus bonus, IReadOnlyList<EquipmentStatContribution> contributions)
-        {
-            if (contributions == null)
-            {
-                return;
-            }
-
-            for (var i = 0; i < contributions.Count; i++)
-            {
-                var c = contributions[i];
-                switch (c.StatType)
-                {
-                    case EquipmentStatType.AttackPower: bonus.AttackPower += c.Value; break;
-                    case EquipmentStatType.MaxHealth: bonus.MaxHealth += c.Value; break;
-                    case EquipmentStatType.Defense: bonus.Defense += c.Value; break;
-                    case EquipmentStatType.AttackSpeed: bonus.AttackSpeed += c.Value; break;
-                    case EquipmentStatType.MoveSpeed: bonus.MoveSpeed += c.Value; break;
-                    case EquipmentStatType.CriticalRate: bonus.CriticalRate += c.Value; break;
-                    case EquipmentStatType.CriticalDamage: bonus.CriticalDamage += c.Value; break;
-                    case EquipmentStatType.SkillDamage: bonus.SkillDamage += c.Value; break;
-                    case EquipmentStatType.BossDamage: bonus.BossDamage += c.Value; break;
-                    case EquipmentStatType.NormalMonsterDamage: bonus.NormalMonsterDamage += c.Value; break;
-                    case EquipmentStatType.SkillCooldownReduction: bonus.SkillCooldownReduction += c.Value; break;
-                    case EquipmentStatType.DefensePenetration: bonus.DefensePenetration += c.Value; break;
-                    case EquipmentStatType.DamageReduction: bonus.DamageReduction += c.Value; break;
-                }
-            }
-        }
-
-        private static EquipmentLegionBonus Subtract(EquipmentLegionBonus a, EquipmentLegionBonus b)
-        {
-            a.AttackPower -= b.AttackPower;
-            a.MaxHealth -= b.MaxHealth;
-            a.Defense -= b.Defense;
-            a.AttackSpeed -= b.AttackSpeed;
-            a.MoveSpeed -= b.MoveSpeed;
-            a.CriticalRate -= b.CriticalRate;
-            a.CriticalDamage -= b.CriticalDamage;
-            a.SkillDamage -= b.SkillDamage;
-            a.BossDamage -= b.BossDamage;
-            a.NormalMonsterDamage -= b.NormalMonsterDamage;
-            a.SkillCooldownReduction -= b.SkillCooldownReduction;
-            a.DefensePenetration -= b.DefensePenetration;
-            a.DamageReduction -= b.DamageReduction;
-            return a;
-        }
-
-        private static EquipmentLegionBonus Add(EquipmentLegionBonus a, EquipmentLegionBonus b)
-        {
-            a.AttackPower += b.AttackPower;
-            a.MaxHealth += b.MaxHealth;
-            a.Defense += b.Defense;
-            a.AttackSpeed += b.AttackSpeed;
-            a.MoveSpeed += b.MoveSpeed;
-            a.CriticalRate += b.CriticalRate;
-            a.CriticalDamage += b.CriticalDamage;
-            a.SkillDamage += b.SkillDamage;
-            a.BossDamage += b.BossDamage;
-            a.NormalMonsterDamage += b.NormalMonsterDamage;
-            a.SkillCooldownReduction += b.SkillCooldownReduction;
-            a.DefensePenetration += b.DefensePenetration;
-            a.DamageReduction += b.DamageReduction;
-            return a;
         }
 
         // ---------------------------------------------------------------
@@ -619,6 +574,14 @@ namespace ProjectMT.Features.Equipment
 
             ResolvePopup1(popup1);
             ResolvePopup2(popup2);
+
+            closeButtonRoot = FindDeep(transform, "CloseTouchArea_80x80") as RectTransform;
+            if (closeButtonRoot != null)
+            {
+                closeButton = EnsureButton(closeButtonRoot);
+                closeButton.onClick.RemoveListener(Hide);
+                closeButton.onClick.AddListener(Hide);
+            }
 
             WireDimmedClose();
         }
@@ -680,7 +643,14 @@ namespace ProjectMT.Features.Equipment
             popup1EquipButtonRoot = FindDeep(root, "Group_Buttons");
             if (popup1EquipButtonRoot != null)
             {
-                EnsureButton(popup1EquipButtonRoot).onClick.AddListener(HandleEquipButtonClicked);
+                var dismantleButton = FindDeep(popup1EquipButtonRoot, "Button_02_Blue");
+                dismantleButton?.gameObject.SetActive(false);
+                var actionRoot = FindDeep(popup1EquipButtonRoot, "Button_02_Green") ?? popup1EquipButtonRoot;
+                actionRoot.gameObject.SetActive(true);
+                popup1EquipButton = EnsureButton(actionRoot);
+                popup1EquipButton.onClick.RemoveListener(HandleEquipButtonClicked);
+                popup1EquipButton.onClick.AddListener(HandleEquipButtonClicked);
+                popup1EquipButtonText = actionRoot.GetComponentInChildren<TMP_Text>(true);
             }
         }
 
@@ -741,7 +711,14 @@ namespace ProjectMT.Features.Equipment
             popup2EquipButtonRoot = FindDeep(root, "Group_Buttons");
             if (popup2EquipButtonRoot != null)
             {
-                EnsureButton(popup2EquipButtonRoot).onClick.AddListener(HandleEquipButtonClicked);
+                var dismantleButton = FindDeep(popup2EquipButtonRoot, "Button_02_Red");
+                dismantleButton?.gameObject.SetActive(false);
+                var actionRoot = FindDeep(popup2EquipButtonRoot, "Button_02_Brown") ?? popup2EquipButtonRoot;
+                actionRoot.gameObject.SetActive(true);
+                popup2EquipButton = EnsureButton(actionRoot);
+                popup2EquipButton.onClick.RemoveListener(HandleEquipButtonClicked);
+                popup2EquipButton.onClick.AddListener(HandleEquipButtonClicked);
+                popup2EquipButtonText = actionRoot.GetComponentInChildren<TMP_Text>(true);
             }
         }
 
@@ -753,9 +730,37 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            var button = EnsureButton(dimmed);
-            button.onClick.RemoveListener(Hide);
-            button.onClick.AddListener(Hide);
+            dimmedButton = EnsureButton(dimmed);
+            dimmedButton.onClick.RemoveListener(Hide);
+            dimmedButton.onClick.AddListener(Hide);
+        }
+
+        private static void SetAnchoredPosition(Transform target, Vector2 position)
+        {
+            if (target is RectTransform rectTransform)
+            {
+                rectTransform.anchoredPosition = position;
+            }
+        }
+
+        private float ResolveScreenCenterX()
+        {
+            if (!(popup1?.parent is RectTransform overlay))
+            {
+                return 0f;
+            }
+
+            var canvas = overlay.GetComponentInParent<Canvas>();
+            var camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                ? canvas.worldCamera
+                : null;
+            return RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                overlay,
+                new Vector2(Screen.width * 0.5f, Screen.height * 0.5f),
+                camera,
+                out var localPoint)
+                ? localPoint.x
+                : 0f;
         }
 
         private static Button EnsureButton(Transform target)

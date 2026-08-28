@@ -316,7 +316,7 @@ MonoBehaviour:
       resolveVfxAnchor: 0
       resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
       resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
-      resolveVfxScale: {x: 1, y: 1, z: 1}
+      resolveVfxScale: {x: 0.5, y: 0.5, z: 1}
       resolveVfxScaleMultiplier: 1
       hitVfxPrefab: {fileID: 0}
       hitVfxDuration: 0
@@ -333,7 +333,7 @@ MonoBehaviour:
       hitSfxDuration: 0
       hitSfxVolume: 1
     preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
-    preCastMotionSpeed: 1
+    preCastMotionSpeed: 0.35
     preCastMotionStart: 0
     preCastMotionEnd: 1
     castMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}

@@ -811,6 +811,8 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void BeginLineStrike()
         {
+            // 전찬우 수정: 직선 VFX 범위 정렬, 2.5초 선딜 모션 보정, 삼각 인디케이터의 고정 영역 내부 채움을 적용함.
+            // Codex 확인: 위 세 수정을 실제 플레이에서 확인하고 정상이라면 이 안내 주석 두 줄을 삭제할 것.
             LastSelectedAttack = FallenCommanderAttackPattern.Line;
             DelayNextBasicAttackForPatternStart();
             var origin = bossActor.transform.position;

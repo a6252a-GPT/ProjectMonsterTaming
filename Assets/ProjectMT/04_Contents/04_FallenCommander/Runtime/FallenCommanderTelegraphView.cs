@@ -13,7 +13,17 @@ namespace ProjectMT.Contents.FallenCommander
         private float progressFillYScale;
         private LineRenderer maximumOutline;
         private Material outlineMaterial;
+        private Mesh lineFillMesh;
+        private Vector3[] lineFillSourceVertices;
+        private Vector3[] lineFillVertices;
+        private Vector2[] lineFillSourceUvs;
+        private Vector2[] lineFillUvs;
+        private int lineNearLeftIndex = -1;
+        private int lineNearRightIndex = -1;
+        private int lineFarLeftIndex = -1;
+        private int lineFarRightIndex = -1;
         private bool isLine;
+        private bool usesLineAreaFill;
         private float maximumRadius;
         private float maximumWidth;
         private float maximumLength;
@@ -107,6 +117,17 @@ namespace ProjectMT.Contents.FallenCommander
 
             if (isLine)
             {
+                if (usesLineAreaFill && lineFillMesh != null)
+                {
+                    progressFill.localPosition = new Vector3(0f, 0f, maximumLength * 0.5f);
+                    progressFill.localScale = new Vector3(
+                        maximumWidth,
+                        progressFillYScale,
+                        maximumLength);
+                    UpdateLineAreaFill(Progress);
+                    return;
+                }
+
                 var filledLength = Mathf.Max(0.01f, maximumLength * Progress);
                 progressFill.localPosition = new Vector3(0f, 0f, filledLength * 0.5f);
                 progressFill.localScale = new Vector3(
@@ -199,6 +220,7 @@ namespace ProjectMT.Contents.FallenCommander
             maximumRadius = 0f;
             maximumWidth = Mathf.Max(0.1f, width);
             maximumLength = Mathf.Max(0.1f, length);
+            usesLineAreaFill = TryConfigureLineAreaFill();
             var nearHalfWidth = CalculateLineHalfWidth(
                 maximumWidth,
                 maximumLength,
@@ -221,6 +243,7 @@ namespace ProjectMT.Contents.FallenCommander
         private void ConfigureRectangle(float width, float length, Color color)
         {
             isLine = true;
+            usesLineAreaFill = false;
             maximumRadius = 0f;
             maximumWidth = Mathf.Max(0.1f, width);
             maximumLength = Mathf.Max(0.1f, length);
@@ -238,8 +261,130 @@ namespace ProjectMT.Contents.FallenCommander
             SetProgress(0f);
         }
 
+        // 전찬우 수정: 삼각 인디케이터 크기는 고정하고 원본 메시 내부를 진행 방향으로 채운다.
+        private bool TryConfigureLineAreaFill()
+        {
+            var meshFilter = progressFill.GetComponentInChildren<MeshFilter>(true);
+            var sourceMesh = meshFilter == null ? null : meshFilter.sharedMesh;
+            if (sourceMesh == null || sourceMesh.vertexCount != 4)
+            {
+                return false;
+            }
+
+            lineFillSourceVertices = sourceMesh.vertices;
+            lineFillSourceUvs = sourceMesh.uv;
+            if (lineFillSourceUvs == null ||
+                lineFillSourceUvs.Length != lineFillSourceVertices.Length)
+            {
+                lineFillSourceUvs = new Vector2[lineFillSourceVertices.Length];
+            }
+
+            var minimumZ = float.MaxValue;
+            var maximumZ = float.MinValue;
+            foreach (var vertex in lineFillSourceVertices)
+            {
+                minimumZ = Mathf.Min(minimumZ, vertex.z);
+                maximumZ = Mathf.Max(maximumZ, vertex.z);
+            }
+
+            for (var index = 0; index < lineFillSourceVertices.Length; index++)
+            {
+                var vertex = lineFillSourceVertices[index];
+                if (Mathf.Approximately(vertex.z, minimumZ))
+                {
+                    if (lineNearLeftIndex < 0 ||
+                        vertex.x < lineFillSourceVertices[lineNearLeftIndex].x)
+                    {
+                        lineNearLeftIndex = index;
+                    }
+
+                    if (lineNearRightIndex < 0 ||
+                        vertex.x > lineFillSourceVertices[lineNearRightIndex].x)
+                    {
+                        lineNearRightIndex = index;
+                    }
+                }
+
+                if (Mathf.Approximately(vertex.z, maximumZ))
+                {
+                    if (lineFarLeftIndex < 0 ||
+                        vertex.x < lineFillSourceVertices[lineFarLeftIndex].x)
+                    {
+                        lineFarLeftIndex = index;
+                    }
+
+                    if (lineFarRightIndex < 0 ||
+                        vertex.x > lineFillSourceVertices[lineFarRightIndex].x)
+                    {
+                        lineFarRightIndex = index;
+                    }
+                }
+            }
+
+            if (lineNearLeftIndex < 0 ||
+                lineNearRightIndex < 0 ||
+                lineFarLeftIndex < 0 ||
+                lineFarRightIndex < 0)
+            {
+                return false;
+            }
+
+            lineFillMesh = Instantiate(sourceMesh);
+            lineFillMesh.name = $"{sourceMesh.name}_RuntimeAreaFill";
+            lineFillMesh.hideFlags = HideFlags.HideAndDontSave;
+            lineFillMesh.MarkDynamic();
+            meshFilter.sharedMesh = lineFillMesh;
+            lineFillVertices = (Vector3[])lineFillSourceVertices.Clone();
+            lineFillUvs = (Vector2[])lineFillSourceUvs.Clone();
+            return true;
+        }
+
+        private void UpdateLineAreaFill(float progress)
+        {
+            for (var index = 0; index < lineFillVertices.Length; index++)
+            {
+                lineFillVertices[index] = lineFillSourceVertices[index];
+                lineFillUvs[index] = lineFillSourceUvs[index];
+            }
+
+            lineFillVertices[lineFarLeftIndex] = Vector3.Lerp(
+                lineFillSourceVertices[lineNearLeftIndex],
+                lineFillSourceVertices[lineFarLeftIndex],
+                progress);
+            lineFillVertices[lineFarRightIndex] = Vector3.Lerp(
+                lineFillSourceVertices[lineNearRightIndex],
+                lineFillSourceVertices[lineFarRightIndex],
+                progress);
+            lineFillUvs[lineFarLeftIndex] = Vector2.Lerp(
+                lineFillSourceUvs[lineNearLeftIndex],
+                lineFillSourceUvs[lineFarLeftIndex],
+                progress);
+            lineFillUvs[lineFarRightIndex] = Vector2.Lerp(
+                lineFillSourceUvs[lineNearRightIndex],
+                lineFillSourceUvs[lineFarRightIndex],
+                progress);
+
+            lineFillMesh.vertices = lineFillVertices;
+            lineFillMesh.uv = lineFillUvs;
+            lineFillMesh.RecalculateBounds();
+        }
+
         private void OnDestroy()
         {
+            if (lineFillMesh != null)
+            {
+                if (Application.isPlaying)
+                {
+                    Destroy(lineFillMesh);
+                }
+                else
+                {
+                    DestroyImmediate(lineFillMesh);
+                }
+
+                lineFillMesh = null;
+            }
+
             if (outlineMaterial != null)
             {
                 if (Application.isPlaying)

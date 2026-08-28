@@ -1212,19 +1212,37 @@ namespace ProjectMT.EditorTools.StageMapSlicer
         private static bool ComponentAffectsRegion(Component component, SelectionRegion region)
         {
             Collider collider = component.GetComponent<Collider>();
-            if (collider != null && region.Intersects(collider.bounds))
+            if (collider != null && HasUsableBounds(collider.bounds) && region.Intersects(collider.bounds))
             {
                 return true;
             }
 
             Renderer renderer = component.GetComponent<Renderer>();
-            if (renderer != null && region.Intersects(renderer.bounds))
+            if (renderer != null && HasUsableBounds(renderer.bounds) && region.Intersects(renderer.bounds))
             {
                 return true;
             }
 
             Vector3 position = component.transform.position;
             return region.Contains(position.x, position.z);
+        }
+
+        private static bool HasUsableBounds(Bounds bounds)
+        {
+            Vector3 center = bounds.center;
+            Vector3 size = bounds.size;
+            return IsFinite(center.x)
+                   && IsFinite(center.y)
+                   && IsFinite(center.z)
+                   && IsFinite(size.x)
+                   && IsFinite(size.y)
+                   && IsFinite(size.z)
+                   && size.sqrMagnitude > 0.000001f;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private static bool LightAffectsRegion(Light light, SelectionRegion region)

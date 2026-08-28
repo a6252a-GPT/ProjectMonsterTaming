@@ -32,9 +32,6 @@ namespace ProjectMT.Contents.FallenCommander
         [Header("Dungeon")]
         [SerializeField, Min(1f)] private float timeLimitSeconds = 80f;
         [SerializeField, Min(0f)] private float battleStartDelaySeconds = 2f;
-        [SerializeField, HideInInspector, Range(0.01f, 1f)] private float finalChargeHealthRatio = 0.3f;
-        [SerializeField, HideInInspector, Min(0.1f)] private float finalChargeDuration = 12f;
-        [SerializeField, HideInInspector, Min(0.1f)] private float finalChargeRadius = 10f;
         [SerializeField, HideInInspector, Min(0f)] private float timeoutWipeWarningDuration = 0.8f;
         [SerializeField, HideInInspector, Min(0f)] private float timeoutWipeDeathResultDelay = 2f;
         [SerializeField, Min(0f)] private float timeoutWarningStartSeconds = 5f;

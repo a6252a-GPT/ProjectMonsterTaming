@@ -19,6 +19,7 @@ namespace ProjectMT.Shared.Input
     {
         [SerializeField] private Transform controlled; // 실제 이동 대상
         [SerializeField] private SeedVirtualJoystick virtualJoystick; // 모바일 입력
+        [SerializeField] private Transform movementReference; // 화면 기준 이동 축
         [SerializeField, Min(0f)] private float moveSpeed = 4f; // 초당 이동 거리
         [SerializeField] private Vector2 worldHalfExtents = new Vector2(6f, 4f); // 이동 가능 반경
         [SerializeField, Min(0f)] private float evadeDistance = 2.4f; // 회피 이동 거리
@@ -59,7 +60,7 @@ namespace ProjectMT.Shared.Input
                 return; // 회피 중에는 일반 이동을 겹치지 않음
             }
 
-            var movement = new Vector3(CurrentCommand.Direction.x, 0f, CurrentCommand.Direction.y);
+            var movement = ResolveWorldMovement(CurrentCommand.Direction);
             var next = controlled.position + movement * (moveSpeed * Time.deltaTime);
             next.x = Mathf.Clamp(next.x, center.x - worldHalfExtents.x, center.x + worldHalfExtents.x);
             next.z = Mathf.Clamp(next.z, center.z - worldHalfExtents.y, center.z + worldHalfExtents.y);
@@ -103,7 +104,7 @@ namespace ProjectMT.Shared.Input
             }
 
             var evadeDirection = inputDirection.sqrMagnitude >= 0.001f
-                ? new Vector3(inputDirection.x, 0f, inputDirection.y).normalized
+                ? ResolveWorldMovement(inputDirection).normalized
                 : GetBackwardDirection();
             var start = controlled.position;
             var destination = ClampToBounds(start + evadeDirection * evadeDistance);
@@ -167,6 +168,27 @@ namespace ProjectMT.Shared.Input
             return backward.sqrMagnitude > 0.001f ? backward.normalized : Vector3.back;
         }
 
+        private Vector3 ResolveWorldMovement(Vector2 direction)
+        {
+            if (movementReference == null)
+            {
+                return new Vector3(direction.x, 0f, direction.y);
+            }
+
+            var forward = movementReference.forward;
+            var right = movementReference.right;
+            forward.y = 0f;
+            right.y = 0f;
+            if (forward.sqrMagnitude < 0.001f || right.sqrMagnitude < 0.001f)
+            {
+                return new Vector3(direction.x, 0f, direction.y);
+            }
+
+            return Vector3.ClampMagnitude(
+                right.normalized * direction.x + forward.normalized * direction.y,
+                1f);
+        }
+
         private Vector3 ClampToBounds(Vector3 position)
         {
             position.x = Mathf.Clamp(position.x, center.x - worldHalfExtents.x, center.x + worldHalfExtents.x);
@@ -212,10 +234,16 @@ namespace ProjectMT.Shared.Input
         }
 
 #if UNITY_EDITOR
-        public void EditorConfigure(Transform target, SeedVirtualJoystick joystick, float speed, Vector2 halfExtents)
+        public void EditorConfigure(
+            Transform target,
+            SeedVirtualJoystick joystick,
+            float speed,
+            Vector2 halfExtents,
+            Transform inputReference = null)
         {
             controlled = target;
             virtualJoystick = joystick;
+            movementReference = inputReference;
             moveSpeed = speed;
             worldHalfExtents = halfExtents;
         }

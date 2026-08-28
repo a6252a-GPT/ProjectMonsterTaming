@@ -45,18 +45,7 @@ namespace ProjectMT.Shared.Unit
             legendaryMythicEntries ??= new List<MonsterLegendaryRarityEntry>();
 
             var definitions = sourceCatalog.Definitions;
-            var validIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            for (var index = 0; index < definitions.Count; index++)
-            {
-                if (definitions[index] != null && !string.IsNullOrWhiteSpace(definitions[index].MonsterId))
-                {
-                    validIds.Add(definitions[index].MonsterId);
-                }
-            }
-
-            // 카탈로그에서 빠진 몬스터는 도감 항목도 같이 제거한다(그 항목의 스킬 배정도 함께 사라짐).
-            var changed = RemoveStaleEntries(commonToEpicEntries, validIds);
-            changed |= RemoveStaleEntries(legendaryMythicEntries, validIds);
+            var changed = false; // 자동 동기화는 기존 등급·스킬 배정을 보존하고 새 항목만 추가
 
             var existingIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             for (var index = 0; index < commonToEpicEntries.Count; index++)
@@ -112,24 +101,6 @@ namespace ProjectMT.Shared.Unit
             }
         }
 
-        // 리스트에서 더 이상 원본 카탈로그에 없는 몬스터를 가리키는 항목을 제거한다.
-        // 몬스터가 원래 비어있던(아직 배정 전) 항목은 건드리지 않는다.
-        private static bool RemoveStaleEntries<TEntry>(List<TEntry> entries, HashSet<string> validIds)
-            where TEntry : class, IMonsterRarityEntry
-        {
-            var removed = false;
-            for (var index = entries.Count - 1; index >= 0; index--)
-            {
-                var monster = entries[index]?.Monster;
-                if (monster != null && !validIds.Contains(monster.MonsterId))
-                {
-                    entries.RemoveAt(index);
-                    removed = true;
-                }
-            }
-
-            return removed;
-        }
 #endif
 
         public bool TryGetRarity(string monsterId, out MonsterRarity rarity)

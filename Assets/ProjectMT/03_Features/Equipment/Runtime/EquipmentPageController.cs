@@ -716,7 +716,7 @@ namespace ProjectMT.Features.Equipment
             view.ClickButton.onClick.AddListener(() => HandleSlotClicked(capturedView));
 
             var holdTrigger = PointerHoldTrigger.EnsureOn(slotRoot.gameObject);
-            holdTrigger?.Configure(() => HandleSlotHoldStart(capturedView), () => HandleSlotHoldEnd(capturedView));
+            holdTrigger?.Configure(() => HandleSlotHoldStart(capturedView), null);
 
             slots.Add(view);
         }
@@ -846,28 +846,31 @@ namespace ProjectMT.Features.Equipment
                 return; // 빈 슬롯
             }
 
-            if (currentMode != EquipmentPageMode.Dismantle)
+            if (currentMode == EquipmentPageMode.Dismantle)
             {
-                return; // 정상 모드에서는 클릭이 아니라 누르고 있는 동안(Hold)만 상세 팝업을 보여준다.
-            }
+                if (!EquipmentInventoryRuntime.TryGetItem(view.BoundInstanceId, out var dismantleItem) ||
+                    dismantleItem.IsEquipped || dismantleItem.IsLocked)
+                {
+                    return;
+                }
 
-            if (!EquipmentInventoryRuntime.TryGetItem(view.BoundInstanceId, out var dismantleItem) ||
-                dismantleItem.IsEquipped || dismantleItem.IsLocked)
-            {
+                if (!dismantleSelection.Add(view.BoundInstanceId))
+                {
+                    dismantleSelection.Remove(view.BoundInstanceId);
+                }
+
+                selectedInstanceId = null;
+                CloseDismantleConfirmation();
+                RefreshSelection();
                 return;
             }
 
-            if (!dismantleSelection.Add(view.BoundInstanceId))
-            {
-                dismantleSelection.Remove(view.BoundInstanceId);
-            }
-
-            selectedInstanceId = null;
-            CloseDismantleConfirmation();
+            selectedInstanceId = view.BoundInstanceId;
             RefreshSelection();
+            ShowItemComparisonPopup(view.BoundInstanceId);
         }
 
-        // 아이템을 누르고 있는 동안에만 상세 옵션 팝업(PF_ItemComparison)을 보여준다.
+        // 누르는 순간 비교창을 열어 모바일에서도 즉시 반응하게 한다.
         private void HandleSlotHoldStart(SlotView view)
         {
             if (currentMode != EquipmentPageMode.Equip || string.IsNullOrEmpty(view.BoundInstanceId))
@@ -878,11 +881,6 @@ namespace ProjectMT.Features.Equipment
             selectedInstanceId = view.BoundInstanceId;
             RefreshSelection();
             ShowItemComparisonPopup(view.BoundInstanceId);
-        }
-
-        private void HandleSlotHoldEnd(SlotView view)
-        {
-            itemComparisonPanel?.Hide();
         }
 
         private void ShowItemComparisonPopup(string instanceId)

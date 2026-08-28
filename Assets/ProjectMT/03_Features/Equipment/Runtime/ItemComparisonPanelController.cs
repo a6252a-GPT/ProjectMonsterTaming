@@ -20,11 +20,6 @@ namespace ProjectMT.Features.Equipment
         private const int MaxCompareOptionRows = 4;
         private const string EquippedRibbonLabel = "장착된 장비";
         private const string SelectedRibbonLabel = "선택한 장비";
-        private const float PopupVerticalPosition = 499.2f;
-        private const float CompareLeftOffset = -260.91f;
-        private const float CompareRightOffset = 260.78f;
-        private const float SingleCloseOffset = 240f;
-        private const float CompareCloseOffset = 500f;
 
         private Transform popup1;
         private Transform popup2;
@@ -112,11 +107,7 @@ namespace ProjectMT.Features.Equipment
 
             var referenceItem = hasComparison ? equippedItem : clickedItem;
             ApplyPopup1(referenceItem, icon);
-            var centerX = ResolveScreenCenterX();
-            SetAnchoredPosition(popup1, new Vector2(centerX + (hasComparison ? CompareLeftOffset : 0f), PopupVerticalPosition));
-            SetAnchoredPosition(popup2, new Vector2(centerX + CompareRightOffset, PopupVerticalPosition));
-            SetAnchoredPosition(closeButtonRoot,
-                new Vector2(centerX + (hasComparison ? CompareCloseOffset : SingleCloseOffset), 455f));
+            // Popup_1/Popup_2/닫기 버튼 위치는 코드로 옮기지 않고 프리팹에 배치된 그대로 사용한다.
             SetActionState(hasComparison);
 
             if (hasComparison)
@@ -494,9 +485,9 @@ namespace ProjectMT.Features.Equipment
 
             if (matched == null)
             {
-                // 장착 중인 장비에 같은 종류의 추가옵션이 없음 - 옵션명 뒤에 작은 "NEW" 표시
+                // 장착 중인 장비에 같은 종류의 추가옵션이 없음 - 화살표 자리에 "NEW" 표시
                 arrow?.gameObject.SetActive(false);
-                PlaceNewBadgeAfterOptionName(rowIndex);
+                AlignNewBadgeWithArrow(rowIndex);
                 newBadge?.SetActive(true);
                 return;
             }
@@ -519,26 +510,25 @@ namespace ProjectMT.Features.Equipment
             arrow.localEulerAngles = euler;
         }
 
-        private void PlaceNewBadgeAfterOptionName(int rowIndex)
+        private void AlignNewBadgeWithArrow(int rowIndex)
         {
-            if (rowIndex < 0 || rowIndex >= compareOptionNameTexts.Count ||
+            if (rowIndex < 0 || rowIndex >= compareOptionArrowIcons.Count ||
                 rowIndex >= compareOptionNewBadges.Count)
             {
                 return;
             }
 
-            var optionName = compareOptionNameTexts[rowIndex];
+            var arrow = compareOptionArrowIcons[rowIndex];
             var badge = compareOptionNewBadges[rowIndex]?.transform as RectTransform;
-            if (optionName == null || badge == null)
+            if (arrow == null || badge == null)
             {
                 return;
             }
 
-            var nameWidth = optionName.GetPreferredValues(optionName.text).x;
-            badge.anchorMin = new Vector2(0f, 0.5f);
-            badge.anchorMax = new Vector2(0f, 0.5f);
-            badge.pivot = new Vector2(0f, 0.5f);
-            badge.anchoredPosition = new Vector2(nameWidth + 8f, 0f);
+            badge.anchorMin = arrow.anchorMin;
+            badge.anchorMax = arrow.anchorMax;
+            badge.pivot = arrow.pivot;
+            badge.anchoredPosition = arrow.anchoredPosition;
         }
 
         // 장착 중인 장비 -> 클릭한 장비로 바꿨을 때의 전투력 변화를 "+120" 형식으로 표시한다.
@@ -640,17 +630,20 @@ namespace ProjectMT.Features.Equipment
                 bonusOptionValueTexts.Add(row?.Find("StatText_2")?.GetComponent<TMP_Text>());
             }
 
-            popup1EquipButtonRoot = FindDeep(root, "Group_Buttons");
+            // 기존 Group_Buttons(Button_02_Green)는 더 이상 쓰지 않고 SelectGroup_Buttons(Button_02_Brown)로 대체됐다.
+            var legacyButtonGroup = FindDeep(root, "Group_Buttons");
+            legacyButtonGroup?.gameObject.SetActive(false);
+
+            popup1EquipButtonRoot = FindDeep(root, "SelectGroup_Buttons");
             if (popup1EquipButtonRoot != null)
             {
-                var dismantleButton = FindDeep(popup1EquipButtonRoot, "Button_02_Blue");
-                dismantleButton?.gameObject.SetActive(false);
-                var actionRoot = FindDeep(popup1EquipButtonRoot, "Button_02_Green") ?? popup1EquipButtonRoot;
+                var actionRoot = FindDeep(popup1EquipButtonRoot, "Button_02_Brown") ?? popup1EquipButtonRoot;
                 actionRoot.gameObject.SetActive(true);
                 popup1EquipButton = EnsureButton(actionRoot);
                 popup1EquipButton.onClick.RemoveListener(HandleEquipButtonClicked);
                 popup1EquipButton.onClick.AddListener(HandleEquipButtonClicked);
-                popup1EquipButtonText = actionRoot.GetComponentInChildren<TMP_Text>(true);
+                popup1EquipButtonText = FindDeep(actionRoot, "Text (TMP)")?.GetComponent<TMP_Text>()
+                    ?? actionRoot.GetComponentInChildren<TMP_Text>(true);
             }
         }
 
@@ -733,34 +726,6 @@ namespace ProjectMT.Features.Equipment
             dimmedButton = EnsureButton(dimmed);
             dimmedButton.onClick.RemoveListener(Hide);
             dimmedButton.onClick.AddListener(Hide);
-        }
-
-        private static void SetAnchoredPosition(Transform target, Vector2 position)
-        {
-            if (target is RectTransform rectTransform)
-            {
-                rectTransform.anchoredPosition = position;
-            }
-        }
-
-        private float ResolveScreenCenterX()
-        {
-            if (!(popup1?.parent is RectTransform overlay))
-            {
-                return 0f;
-            }
-
-            var canvas = overlay.GetComponentInParent<Canvas>();
-            var camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
-                ? canvas.worldCamera
-                : null;
-            return RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                overlay,
-                new Vector2(Screen.width * 0.5f, Screen.height * 0.5f),
-                camera,
-                out var localPoint)
-                ? localPoint.x
-                : 0f;
         }
 
         private static Button EnsureButton(Transform target)

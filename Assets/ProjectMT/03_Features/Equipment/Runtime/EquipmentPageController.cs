@@ -908,7 +908,7 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            var panelRoot = FindDeep(transform.root, "PF_ItemComparison");
+            var panelRoot = FindDeepAny(transform.root, "PF_ItemComparison_2", "PF_ItemComparison");
             if (panelRoot == null)
             {
                 return;

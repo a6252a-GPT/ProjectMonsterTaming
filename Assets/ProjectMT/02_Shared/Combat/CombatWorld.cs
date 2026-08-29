@@ -25,6 +25,11 @@ namespace ProjectMT.Shared.Combat
         private readonly ProjectileAttackExecutor projectileExecutor = new ProjectileAttackExecutor();
         private readonly MonsterBasicAttackExecutor basicAttackExecutor = new MonsterBasicAttackExecutor();
         private readonly SpecialActionExecutor specialExecutor = new SpecialActionExecutor();
+        private readonly Queue<ActiveFocusRequest> activeFocusQueue = new Queue<ActiveFocusRequest>();
+        private ActiveFocusRequest activeFocus;
+        private MonsterActiveFocusPresenter activeFocusPresenter;
+        private float activeFocusElapsed;
+        private bool activeFocusCommitted;
         private int monsterVfxFrame = -1;
         private int monsterVfxCount;
         private int monsterFeelFrame = -1;
@@ -33,6 +38,8 @@ namespace ProjectMT.Shared.Combat
 
         public ICombatFeedbackPlayer Feedback => feedbackPlayer;
         public bool IsPaused { get; private set; }
+        public UnitActor ActiveFocusCaster => activeFocus?.Caster;
+        public int ActiveFocusQueueCount => activeFocusQueue.Count;
         public static bool MonsterBasicAttackHitAreasVisible => showMonsterBasicAttackHitAreas;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -71,6 +78,7 @@ namespace ProjectMT.Shared.Combat
             }
 
             var deltaTime = Time.deltaTime;
+            TickMonsterActiveFocus(Time.unscaledDeltaTime);
             // 08.07 안건준 수정 - unit.Tick() 도중에(예: 마지막 적 처치로 콘텐츠가 즉시 Complete/Fail 처리되어
             // combatWorld.Clear()가 동기적으로 호출되는 경우) units 목록이 갑자기 비워지거나 크게 줄어들 수 있다.
             // 반복문 시작 시점의 개수(i)만 믿고 접근하면 "Index was out of range" 예외가 발생하므로,
@@ -89,7 +97,11 @@ namespace ProjectMT.Shared.Combat
                     continue;
                 }
 
-                unit.Tick(deltaTime); // 중앙 Tick으로 전투 일시정지 통제
+                var unitDelta = activeFocus != null && unit != activeFocus.Caster
+                    ? deltaTime * 0.22f
+                    : deltaTime;
+                unit.SetActiveFocusTimeScale(activeFocus != null && unit != activeFocus.Caster ? 0.22f : 1f);
+                unit.Tick(unitDelta); // 액티브 강조 중 시전자 외 유닛만 국소 감속
             }
         }
 
@@ -161,8 +173,88 @@ namespace ProjectMT.Shared.Combat
         {
             if (unit != null)
             {
+                feedbackPlayer?.UntrackUnit(unit);
                 units.Remove(unit);
             }
+        }
+
+        public void TrackMonsterActiveSkill(UnitActor unit)
+        {
+            feedbackPlayer?.TrackMonsterActiveSkill(unit);
+        }
+
+        public bool RequestMonsterActiveFocus(
+            UnitActor caster,
+            MonsterAttackActiveSkill skill,
+            System.Action commit,
+            float commitDelay = 0.24f,
+            float totalDuration = 0.72f)
+        {
+            if (caster == null || skill == null || commit == null) return false;
+            activeFocusQueue.Enqueue(new ActiveFocusRequest(
+                caster,
+                skill,
+                commit,
+                commitDelay,
+                totalDuration));
+            if (activeFocus == null) BeginNextMonsterActiveFocus();
+            return true;
+        }
+
+        private void TickMonsterActiveFocus(float unscaledDeltaTime)
+        {
+            if (activeFocus == null)
+            {
+                BeginNextMonsterActiveFocus();
+                return;
+            }
+            if (activeFocus.Caster == null || !activeFocus.Caster.IsAlive)
+            {
+                CompleteMonsterActiveFocus(false);
+                return;
+            }
+            activeFocusElapsed += Mathf.Max(0f, unscaledDeltaTime);
+            if (!activeFocusCommitted && activeFocusElapsed >= activeFocus.CommitDelay)
+            {
+                activeFocusCommitted = true;
+                activeFocus.Commit?.Invoke();
+            }
+            if (activeFocusElapsed >= activeFocus.Duration) CompleteMonsterActiveFocus(false);
+        }
+
+        private void BeginNextMonsterActiveFocus()
+        {
+            while (activeFocusQueue.Count > 0)
+            {
+                var next = activeFocusQueue.Dequeue();
+                if (next.Caster == null || !next.Caster.IsAlive) continue;
+                activeFocus = next;
+                activeFocusElapsed = 0f;
+                activeFocusCommitted = false;
+                if (activeFocusPresenter == null)
+                {
+                    var host = feedbackPlayer != null ? feedbackPlayer.gameObject : gameObject;
+                    activeFocusPresenter = host.GetComponent<MonsterActiveFocusPresenter>() ??
+                                           host.AddComponent<MonsterActiveFocusPresenter>();
+                }
+                activeFocusPresenter.Show(next.Caster, next.Skill, next.Duration);
+                return;
+            }
+            activeFocus = null;
+        }
+
+        private void CompleteMonsterActiveFocus(bool clearQueue)
+        {
+            for (var index = 0; index < units.Count; index++)
+            {
+                units[index]?.SetActiveFocusTimeScale(1f);
+            }
+            activeFocus = null;
+            activeFocusElapsed = 0f;
+            activeFocusCommitted = false;
+            activeFocusPresenter?.HideImmediate();
+            if (clearQueue) activeFocusQueue.Clear();
+            else BeginNextMonsterActiveFocus();
         }
 
         public UnitActor FindNearestOpponent(UnitActor seeker, float maxDistance)
@@ -928,6 +1020,7 @@ namespace ProjectMT.Shared.Combat
         {
             StopAllCoroutines();
             IsPaused = false;
+            CompleteMonsterActiveFocus(true);
             ClearMonsterBasicAttackHitAreas();
             var buffer = new List<UnitActor>(units); // 순회 중 원본 목록 분리
             units.Clear();
@@ -969,6 +1062,29 @@ namespace ProjectMT.Shared.Combat
             return actor?.Health == null || actor.Health.MaxHealth <= 0f
                 ? 1f
                 : Mathf.Clamp01(actor.Health.CurrentHealth / actor.Health.MaxHealth);
+        }
+
+        private sealed class ActiveFocusRequest
+        {
+            public ActiveFocusRequest(
+                UnitActor caster,
+                MonsterAttackActiveSkill skill,
+                System.Action commit,
+                float commitDelay,
+                float totalDuration)
+            {
+                Caster = caster;
+                Skill = skill;
+                Commit = commit;
+                Duration = Mathf.Max(0.35f, totalDuration);
+                CommitDelay = Mathf.Clamp(commitDelay, 0.05f, Duration - 0.1f);
+            }
+
+            public UnitActor Caster { get; }
+            public MonsterAttackActiveSkill Skill { get; }
+            public System.Action Commit { get; }
+            public float CommitDelay { get; }
+            public float Duration { get; }
         }
 
 #if UNITY_EDITOR

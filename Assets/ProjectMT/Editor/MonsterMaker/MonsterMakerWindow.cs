@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using ProjectMT.Contents.CastleRaid;
+using ProjectMT.Contents.CastleRaidHex;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Unit;
@@ -151,12 +151,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
         };
         private static readonly string[] CastleRaidAiPatternLabels =
         {
-            "균형 진격형",
-            "건물 우선형",
-            "방어 시설 우선형",
-            "수비대 우선형",
-            "방벽 파괴형",
-            "왕궁 돌격형",
+            "일반 진격형",
+            "자원 약탈형",
+            "포탑 사냥형",
+            "수비대 사냥형",
+            "성벽 파괴형",
+            "위협 억제형",
             "전술 지원형"
         };
         private static readonly string[] CastleRaidSupportFocusLabels =
@@ -241,6 +241,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private int previewPositionHotControl;
         [SerializeField] private int activeSkillCategoryFilter;
         [SerializeField] private bool showPassiveBalanceSettings;
+        [SerializeField] private bool showAdvancedActiveStepMotions;
+        [SerializeField] private bool showActiveStepTunings = true;
+        [SerializeField] private bool showActivePresentations;
         private bool showUsageGuide;
         private double lastRepaintTime;
         private GUIStyle headerTitleStyle;
@@ -1096,6 +1099,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 preview.SetView(145f, 10f);
             }
+
         }
 
         private void DrawPreviewEmptyState(Rect previewRect)
@@ -1947,57 +1951,94 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             GUILayout.Space(6f);
-            var attackCount = draft.Attacks.Count;
-            if (attackCount <= 0)
-            {
-                GUILayout.Label("공격 모션이 없습니다.", centeredLabelStyle, GUILayout.Height(42f));
-                return;
-            }
 
+            var attackCount = draft.Attacks.Count;
             const float minimumAttackButtonWidth = 96f;
             const float randomButtonSize = 44f;
             var showRandomButton = attackCount >= 2;
+            var showActiveButton = draft.ActiveAttackProfile != null;
+            var playbackButtonCount = attackCount + (showActiveButton ? 1 : 0);
             var randomButtonSpace = showRandomButton ? randomButtonSize + ActionGap : 0f;
-            var attackRowWidth = Mathf.Max(1f, availableWidth - randomButtonSpace);
-            var fittedAttackWidth = (attackRowWidth - ActionGap * (attackCount - 1)) / attackCount;
-            var needsScroll = fittedAttackWidth < minimumAttackButtonWidth;
-            var attackButtonWidth = needsScroll ? minimumAttackButtonWidth : fittedAttackWidth;
+            var playbackRowWidth = Mathf.Max(1f, availableWidth - randomButtonSpace);
+            var fittedPlaybackWidth = playbackButtonCount > 0
+                ? (playbackRowWidth - ActionGap * (playbackButtonCount - 1)) / playbackButtonCount
+                : playbackRowWidth;
+            var needsScroll = playbackButtonCount > 0 && fittedPlaybackWidth < minimumAttackButtonWidth;
+            var playbackButtonWidth = needsScroll ? minimumAttackButtonWidth : fittedPlaybackWidth;
             using (new EditorGUILayout.HorizontalScope())
             {
-                using (new EditorGUILayout.VerticalScope(GUILayout.Width(attackRowWidth)))
+                using (new EditorGUILayout.VerticalScope(GUILayout.Width(playbackRowWidth)))
                 {
-                    if (needsScroll)
+                    if (playbackButtonCount <= 0)
                     {
-                        animationButtonScroll.y = 0f;
-                        animationButtonScroll = EditorGUILayout.BeginScrollView(
-                            animationButtonScroll,
-                            true,
-                            false,
-                            GUILayout.Height(56f));
+                        GUILayout.Label("재생할 공격 모션이 없습니다.", centeredLabelStyle, GUILayout.Height(44f));
                     }
-
-                    using (new EditorGUILayout.HorizontalScope())
+                    else
                     {
-                        for (var index = 0; index < attackCount; index++)
+                        if (needsScroll)
                         {
-                            if (index > 0)
+                            animationButtonScroll.y = 0f;
+                            animationButtonScroll = EditorGUILayout.BeginScrollView(
+                                animationButtonScroll,
+                                true,
+                                false,
+                                GUILayout.Height(56f));
+                        }
+
+                        using (new EditorGUILayout.HorizontalScope())
+                        {
+                            for (var index = 0; index < attackCount; index++)
                             {
-                                GUILayout.Space(ActionGap);
+                                if (index > 0)
+                                {
+                                    GUILayout.Space(ActionGap);
+                                }
+
+                                var selectedIndex = index;
+                                DrawLargeActionButton(
+                                    $"공격 {index + 1:00} 재생",
+                                    new Color(0.72f, 0.84f, 1f, 1f),
+                                    playbackButtonWidth,
+                                    () => preview.PlayAttack(selectedIndex),
+                                    44f);
                             }
 
-                            var selectedIndex = index;
-                            DrawLargeActionButton(
-                                $"공격 {index + 1:00} 재생",
-                                new Color(0.72f, 0.84f, 1f, 1f),
-                                attackButtonWidth,
-                                () => preview.PlayAttack(selectedIndex),
-                                44f);
-                        }
-                    }
+                            if (showActiveButton)
+                            {
+                                if (attackCount > 0)
+                                {
+                                    GUILayout.Space(ActionGap);
+                                }
 
-                    if (needsScroll)
-                    {
-                        EditorGUILayout.EndScrollView();
+                                using (new EditorGUI.DisabledScope(!preview.CanPlayActiveSkill))
+                                {
+                                    var tooltip = preview.CanPlayActiveSkill
+                                        ? $"{draft.ActiveSkillName} · 액티브 모션과 공격 Step·VFX/SFX·피해를 함께 재생합니다."
+                                        : $"{draft.ActiveSkillName} · 액티브 모션 Clip이 필요합니다.";
+                                    var previousBackground = GUI.backgroundColor;
+                                    GUI.backgroundColor = Color.Lerp(
+                                        Color.white,
+                                        MonsterWorkshopVisualTheme.FeelColor,
+                                        0.58f);
+                                    var playActive = GUILayout.Button(
+                                            new GUIContent("◆ 액티브 재생", tooltip),
+                                            actionButtonStyle,
+                                            GUILayout.Width(playbackButtonWidth),
+                                            GUILayout.Height(44f));
+                                    GUI.backgroundColor = previousBackground;
+                                    if (playActive)
+                                    {
+                                        preview.PlayActiveSkill();
+                                        Repaint();
+                                    }
+                                }
+                            }
+                        }
+
+                        if (needsScroll)
+                        {
+                            EditorGUILayout.EndScrollView();
+                        }
                     }
                 }
 
@@ -2014,6 +2055,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         Repaint();
                     }
                 }
+
             }
         }
 
@@ -2377,32 +2419,478 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 ref showPassiveBalanceSettings);
 
             var activeProperty = serializedDraft.FindProperty("rarityActiveSkill");
-            if (rarity < MonsterRarity.Epic)
+            var activeProfileProperty = serializedDraft.FindProperty("activeAttackProfile");
+            if (rarity < MonsterRarity.Legendary)
             {
-                if (activeProperty.objectReferenceValue != null)
+                if (activeProperty.objectReferenceValue != null || activeProfileProperty.objectReferenceValue != null)
                 {
-                    EditorGUILayout.HelpBox("일반·희귀 등급은 액티브를 연결할 수 없습니다.", MessageType.Error);
-                    DrawSkillPopup(activeProperty, "제거할 액티브", MonsterSkillPopupData.Empty);
+                    EditorGUILayout.HelpBox(
+                        "일반·희귀·영웅 등급은 액티브를 사용할 수 없습니다. 아래 버튼으로 기존 연결을 정리하세요.",
+                        MessageType.Error);
+                    if (GUILayout.Button("액티브 연결 제거", GUILayout.Height(28f)))
+                    {
+                        Undo.RecordObject(draft, "액티브 연결 제거");
+                        activeProperty.objectReferenceValue = null;
+                        activeProfileProperty.objectReferenceValue = null;
+                        serializedDraft.ApplyModifiedPropertiesWithoutUndo();
+                        draft.EditorSetActiveAttackProfile(null);
+                        EditorUtility.SetDirty(draft);
+                        serializedDraft.UpdateIfRequiredOrScript();
+                    }
                 }
                 else
                 {
-                    GUILayout.Label("일반·희귀 등급은 패시브 1개만 사용합니다.", EditorStyles.wordWrappedMiniLabel);
+                    GUILayout.Label("일반·희귀·영웅 등급은 패시브 1개만 사용합니다.", EditorStyles.wordWrappedMiniLabel);
                 }
 
                 return;
             }
 
-            var activeOptions = DrawSkillCategoryFilter(
-                rarity == MonsterRarity.Mythic ? mythicActiveSkillPopups : genericActiveSkillPopups,
-                ref activeSkillCategoryFilter,
-                "액티브 분류");
-            DrawSkillPopup(activeProperty, rarity == MonsterRarity.Mythic ? "액티브" : "범용 액티브", activeOptions);
-            GUILayout.Label(
-                rarity == MonsterRarity.Mythic
-                    ? "신화는 범용 액티브와 신화 전용 액티브를 모두 선택할 수 있습니다."
-                    : "영웅·전설은 공용 Recipe로 만든 범용 액티브만 선택할 수 있습니다.",
-                EditorStyles.wordWrappedMiniLabel);
+            DrawActiveAttackAuthoring(rarity, activeProfileProperty, activeProperty);
         }
+
+        private void DrawActiveAttackAuthoring(
+            MonsterRarity rarity,
+            SerializedProperty profileProperty,
+            SerializedProperty generatedSkillProperty)
+        {
+            GUILayout.Space(7f);
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                GUILayout.Label("공격 액티브", EditorStyles.boldLabel);
+                EditorGUILayout.HelpBox(
+                    "공격 구조는 조립소에서 만들고, 이 몬스터의 이름·기력·모션·수치·VFX/SFX는 여기서 정합니다.",
+                    MessageType.None);
+
+                var profile = profileProperty.objectReferenceValue as MonsterActiveAttackProfile;
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button(
+                            profile == null ? "액티브 스킬 선택" : "액티브 스킬 변경",
+                            GUILayout.Height(30f)))
+                    {
+                        ShowActiveAttackPresetMenu(profileProperty);
+                    }
+
+                    if (GUILayout.Button("공격 조립소 열기", GUILayout.Height(30f)))
+                    {
+                        serializedDraft.ApplyModifiedProperties();
+                        MonsterActiveAttackWorkshopWindow.OpenFor(profile, draft);
+                    }
+                }
+
+                if (profile == null)
+                {
+                    EditorGUILayout.HelpBox(
+                        "먼저 저장된 액티브 스킬을 선택하거나 공격 조립소에서 새 프리셋을 만들어야 합니다.",
+                        MessageType.Warning);
+                    if (generatedSkillProperty.objectReferenceValue != null)
+                    {
+                        EditorGUILayout.PropertyField(generatedSkillProperty, new GUIContent("기존 액티브 (읽기 전용)"));
+                    }
+                    return;
+                }
+
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    GUILayout.Label(
+                        $"현재 액티브 스킬 · [{profile.ProfileId}] {profile.DisplayName}",
+                        EditorStyles.boldLabel);
+                    GUILayout.Label(
+                        $"공격 스텝 {profile.Steps.Count}개 · 같은 프리셋도 몬스터별 수치와 연출로 다르게 조정됩니다.",
+                        EditorStyles.wordWrappedMiniLabel);
+                }
+
+                if (GUILayout.Button("프로필 Step 다시 동기화", GUILayout.Height(24f)))
+                {
+                    serializedDraft.ApplyModifiedProperties();
+                    Undo.RecordObject(draft, "액티브 Step 동기화");
+                    draft.EditorSyncActiveAttackAuthoring();
+                    EditorUtility.SetDirty(draft);
+                    serializedDraft.UpdateIfRequiredOrScript();
+                }
+
+                DrawProperty("activeSkillName", "몬스터 고유 스킬 이름");
+                DrawProperty("activeEnergyMaximum", "최대 기력");
+                GUILayout.Label(
+                    $"공용 획득 · 초당 {MonsterActiveEnergyConfig.SharedEnergyPerSecond:0.#} / 기본공격당 " +
+                    $"{MonsterActiveEnergyConfig.SharedEnergyPerBasicAttack:0.#} · 몬스터별 밸런스는 최대 기력만 조정",
+                    EditorStyles.wordWrappedMiniLabel);
+
+                DrawActiveStepMotions();
+                DrawActiveStepTunings();
+                DrawActivePresentations();
+
+                using (new EditorGUI.DisabledScope(true))
+                {
+                    EditorGUILayout.PropertyField(generatedSkillProperty, new GUIContent("생성된 액티브 에셋"));
+                }
+                GUILayout.Label(
+                    rarity == MonsterRarity.Mythic
+                        ? "신화 전용 에셋으로 생성됩니다. 같은 프로필도 몬스터 튜닝에 따라 다른 스킬이 됩니다."
+                        : "전설 공격 액티브로 생성됩니다. 신화 전용 실행기와 구분됩니다.",
+                    EditorStyles.wordWrappedMiniLabel);
+            }
+        }
+
+        private void ShowActiveAttackPresetMenu(SerializedProperty profileProperty)
+        {
+            var menu = new GenericMenu();
+            var current = profileProperty.objectReferenceValue as MonsterActiveAttackProfile;
+            var profiles = FindActiveAttackPresets();
+
+            if (profiles.Length == 0)
+            {
+                menu.AddDisabledItem(new GUIContent("저장된 액티브 스킬 없음"));
+            }
+
+            foreach (var profile in profiles)
+            {
+                var captured = profile;
+                menu.AddItem(
+                    new GUIContent($"저장된 액티브 스킬/[{profile.ProfileId}] {profile.DisplayName}"),
+                    profile == current,
+                    () => AssignActiveAttackPreset(captured));
+            }
+
+            menu.ShowAsContext();
+        }
+
+        private static MonsterActiveAttackProfile[] FindActiveAttackPresets()
+        {
+            return AssetDatabase.FindAssets(
+                    "t:MonsterActiveAttackProfile",
+                    new[] { MonsterActiveAttackWorkshopWindow.ProfileRoot })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Select(AssetDatabase.LoadAssetAtPath<MonsterActiveAttackProfile>)
+                .Where(profile => profile != null)
+                .OrderBy(profile => profile.DisplayName, StringComparer.CurrentCulture)
+                .ThenBy(profile => profile.ProfileId, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        private void AssignActiveAttackPreset(MonsterActiveAttackProfile profile)
+        {
+            if (draft == null || profile == null || draft.ActiveAttackProfile == profile)
+            {
+                return;
+            }
+
+            serializedDraft.ApplyModifiedProperties();
+            Undo.RecordObject(draft, "액티브 스킬 프리셋 선택");
+            draft.EditorSetActiveAttackProfile(profile);
+            EditorUtility.SetDirty(draft);
+            serializedDraft.UpdateIfRequiredOrScript();
+            validation = null;
+            lastWriteResult = null;
+            RefreshPreview();
+            Repaint();
+        }
+
+        private void DrawActiveStepMotions()
+        {
+            var profile = serializedDraft.FindProperty("activeAttackProfile").objectReferenceValue as
+                MonsterActiveAttackProfile;
+            var presentations = serializedDraft.FindProperty("activeAttackPresentations");
+            var useCustomMotions = serializedDraft.FindProperty("useCustomActiveStepMotions");
+            showAdvancedActiveStepMotions = EditorGUILayout.Foldout(
+                showAdvancedActiveStepMotions,
+                useCustomMotions.boolValue
+                    ? $"고급 · 액티브 스킬 모션 · 전용 {presentations.arraySize}개"
+                    : "고급 · 액티브 스킬 모션 · 기본 공격 사용",
+                true);
+            if (!showAdvancedActiveStepMotions) return;
+
+            EditorGUI.indentLevel++;
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.PropertyField(
+                useCustomMotions,
+                new GUIContent(
+                    "스텝별 전용 공격 모션 사용",
+                    "끄면 모든 액티브 스텝이 기본 공격 01 모션을 사용합니다."));
+            if (EditorGUI.EndChangeCheck())
+            {
+                serializedDraft.ApplyModifiedProperties();
+                validation = null;
+                lastWriteResult = null;
+                RefreshPreview();
+            }
+            if (!useCustomMotions.boolValue)
+            {
+                EditorGUILayout.HelpBox(
+                    "기본 설정입니다. 모든 스텝이 기본 공격 01의 모션·재생 속도·첫 판정 시점을 사용합니다.",
+                    MessageType.None);
+                EditorGUI.indentLevel--;
+                return;
+            }
+
+            GUILayout.Label(
+                "필요할 때만 스텝별 전용 모션을 지정합니다. 같은 모션은 1번 설정을 전체에 적용할 수 있습니다.",
+                EditorStyles.wordWrappedMiniLabel);
+            if (profile == null || presentations.arraySize != profile.Steps.Count)
+            {
+                EditorGUILayout.HelpBox(
+                    "프로필 스텝과 모션 수가 다릅니다. 위 동기화 버튼을 누르세요.",
+                    MessageType.Error);
+                EditorGUI.indentLevel--;
+                return;
+            }
+
+            if (presentations.arraySize > 1)
+            {
+                var firstMotion = presentations.GetArrayElementAtIndex(0);
+                using (new EditorGUI.DisabledScope(
+                           firstMotion.FindPropertyRelative("motionClip").objectReferenceValue == null))
+                {
+                    if (GUILayout.Button(
+                            new GUIContent(
+                                "1번 모션 설정을 전체 스텝에 적용",
+                                "1번 스텝의 Clip·재생 속도·전환 시간·판정 시작 시점을 나머지 스텝에 복사합니다."),
+                            GUILayout.Height(24f)))
+                    {
+                        Undo.RecordObject(draft, "액티브 스텝 모션 전체 적용");
+                        for (var index = 1; index < presentations.arraySize; index++)
+                        {
+                            CopyActiveStepMotion(
+                                firstMotion,
+                                presentations.GetArrayElementAtIndex(index));
+                        }
+                        serializedDraft.ApplyModifiedPropertiesWithoutUndo();
+                        EditorUtility.SetDirty(draft);
+                        validation = null;
+                        lastWriteResult = null;
+                        RefreshPreview();
+                    }
+                }
+            }
+
+            for (var index = 0; index < presentations.arraySize; index++)
+            {
+                var presentation = presentations.GetArrayElementAtIndex(index);
+                var source = profile.Steps[index];
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    GUILayout.Label($"#{index + 1:00} {source.DisplayName}", EditorStyles.boldLabel);
+                    DrawRelativeProperty(presentation, "motionClip", "공격 모션 Clip");
+                    DrawRelativeProperty(presentation, "motionPlaybackSpeed", "재생 속도");
+                    DrawRelativeProperty(presentation, "motionCrossFadeDuration", "전환 시간(초)");
+                    DrawRelativeProperty(presentation, "motionCommitNormalizedTime", "판정 시작 시점(0~1)");
+                }
+            }
+            EditorGUI.indentLevel--;
+        }
+
+        private static void CopyActiveStepMotion(SerializedProperty source, SerializedProperty destination)
+        {
+            destination.FindPropertyRelative("motionConfigured").boolValue = true;
+            destination.FindPropertyRelative("motionClip").objectReferenceValue =
+                source.FindPropertyRelative("motionClip").objectReferenceValue;
+            destination.FindPropertyRelative("motionPlaybackSpeed").floatValue =
+                source.FindPropertyRelative("motionPlaybackSpeed").floatValue;
+            destination.FindPropertyRelative("motionCrossFadeDuration").floatValue =
+                source.FindPropertyRelative("motionCrossFadeDuration").floatValue;
+            destination.FindPropertyRelative("motionCommitNormalizedTime").floatValue =
+                source.FindPropertyRelative("motionCommitNormalizedTime").floatValue;
+        }
+
+        private void DrawActiveStepTunings()
+        {
+            var profile = serializedDraft.FindProperty("activeAttackProfile").objectReferenceValue as
+                MonsterActiveAttackProfile;
+            var tunings = serializedDraft.FindProperty("activeAttackStepTunings");
+            showActiveStepTunings = EditorGUILayout.Foldout(
+                showActiveStepTunings,
+                $"몬스터별 스텝 수치 · {tunings.arraySize}개",
+                true);
+            if (!showActiveStepTunings) return;
+
+            EditorGUI.indentLevel++;
+            GUILayout.Label("1배가 프로필 원본입니다. 슬라이더 옆 숫자로 정확한 값을 입력할 수 있습니다.",
+                EditorStyles.wordWrappedMiniLabel);
+            if (profile == null || tunings.arraySize != profile.Steps.Count)
+            {
+                EditorGUILayout.HelpBox(
+                    "프로필 스텝과 튜닝 수가 다릅니다. 위 동기화 버튼을 누르세요.",
+                    MessageType.Error);
+                EditorGUI.indentLevel--;
+                return;
+            }
+
+            for (var index = 0; index < tunings.arraySize; index++)
+            {
+                var tuning = tunings.GetArrayElementAtIndex(index);
+                var source = profile.Steps[index];
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    GUILayout.Label($"#{index + 1:00} {source.DisplayName} · {source.BuildSummary()}",
+                        EditorStyles.wordWrappedMiniLabel);
+                    using (new EditorGUI.DisabledScope(true))
+                    {
+                        DrawRelativeProperty(tuning, "stepId", "스텝 ID");
+                    }
+                    DrawTuningScale(tuning.FindPropertyRelative("damageScale"), "피해 배율");
+                    DrawTuningScale(tuning.FindPropertyRelative("sizeScale"), "크기/범위 배율");
+                    DrawTuningScale(tuning.FindPropertyRelative("timingScale"), "시간 배율");
+                    if (source.IsProjectile)
+                    {
+                        var projectileCount = tuning.FindPropertyRelative("projectileCountOverride");
+                        projectileCount.intValue = EditorGUILayout.IntSlider(
+                            new GUIContent("투사체 개수 덮어쓰기", "0이면 프로필 원본 개수를 사용합니다."),
+                            projectileCount.intValue,
+                            0,
+                            12);
+                        GUILayout.Label("0 = 프로필 원본", EditorStyles.miniLabel);
+                    }
+                }
+            }
+            EditorGUI.indentLevel--;
+        }
+
+        private static void DrawTuningScale(SerializedProperty property, string label)
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                property.floatValue = EditorGUILayout.Slider(label, property.floatValue, 0.25f, 3f);
+                if (GUILayout.Button("1배", EditorStyles.miniButton, GUILayout.Width(38f)))
+                {
+                    property.floatValue = 1f;
+                    GUI.FocusControl(null);
+                }
+            }
+        }
+
+        private void DrawActivePresentations()
+        {
+            var profile = serializedDraft.FindProperty("activeAttackProfile").objectReferenceValue as
+                MonsterActiveAttackProfile;
+            var presentations = serializedDraft.FindProperty("activeAttackPresentations");
+            showActivePresentations = EditorGUILayout.Foldout(
+                showActivePresentations,
+                $"Step별 VFX/SFX 연결 · {presentations.arraySize}개",
+                true);
+            if (!showActivePresentations) return;
+
+            EditorGUI.indentLevel++;
+            GUILayout.Label("조립소에서 만든 공간 계약만 표시합니다. VFX·SFX는 비워도 정상이며 FEEL은 공격 프로필의 공통 프리셋을 사용합니다.",
+                EditorStyles.wordWrappedMiniLabel);
+            if (profile == null || presentations.arraySize != profile.Steps.Count)
+            {
+                EditorGUILayout.HelpBox("프로필 Step과 연출 연결 수가 다릅니다. 위 동기화 버튼을 누르세요.", MessageType.Error);
+                EditorGUI.indentLevel--;
+                return;
+            }
+
+            for (var index = 0; index < presentations.arraySize; index++)
+            {
+                var presentation = presentations.GetArrayElementAtIndex(index);
+                var source = profile.Steps[index];
+                presentation.isExpanded = EditorGUILayout.Foldout(
+                    presentation.isExpanded,
+                    $"#{index + 1:00} {source.DisplayName} · 공간 {source.PresentationSlots.Count}개",
+                    true);
+                if (!presentation.isExpanded) continue;
+
+                EditorGUI.indentLevel++;
+                var slots = presentation.FindPropertyRelative("slots");
+                var linked = 0;
+                for (var slotIndex = 0; slotIndex < source.PresentationSlots.Count; slotIndex++)
+                {
+                    var contract = source.PresentationSlots[slotIndex];
+                    var slot = FindActivePresentationSlot(slots, contract?.SlotId);
+                    if (slot != null && HasActivePresentationFeedback(slot.FindPropertyRelative("feedback"))) linked++;
+                }
+                var progressRect = EditorGUILayout.GetControlRect(false, 18f);
+                EditorGUI.ProgressBar(
+                    progressRect,
+                    source.PresentationSlots.Count > 0 ? linked / (float)source.PresentationSlots.Count : 0f,
+                    $"연결된 연출 {linked}/{source.PresentationSlots.Count} · 미연결도 정상");
+
+                if (source.PresentationSlots.Count == 0)
+                {
+                    EditorGUILayout.HelpBox(
+                        "이 Step에는 VFX/SFX 공간 계약이 없습니다. 액티브 조립소에서 추가할 수 있습니다.",
+                        MessageType.None);
+                }
+                for (var slotIndex = 0; slotIndex < source.PresentationSlots.Count; slotIndex++)
+                {
+                    var contract = source.PresentationSlots[slotIndex];
+                    if (contract == null) continue;
+                    var slot = FindActivePresentationSlot(slots, contract.SlotId);
+                    if (slot == null)
+                    {
+                        EditorGUILayout.HelpBox(
+                            $"공간 [{contract.SlotId}] 연결 데이터가 없습니다. 액티브 프로필 동기화를 실행하세요.",
+                            MessageType.Error);
+                        continue;
+                    }
+                    var timing = GetActivePresentationEventLabel(contract.Timing);
+                    var anchor = GetActivePresentationAnchorLabel(contract.Anchor);
+                    var help = string.IsNullOrWhiteSpace(contract.Description)
+                        ? $"{timing} 시점 · {anchor} 기준으로 재생합니다."
+                        : $"{timing} 시점 · {anchor} 기준 · {contract.Description}";
+                    DrawOptionalAnimationFeedback(
+                        slot.FindPropertyRelative("feedback"),
+                        $"{slotIndex + 1:00} · {contract.DisplayName}",
+                        contract.DisplayName + " SFX",
+                        help,
+                        ResolveActivePresentationPreviewAnchor(contract.Anchor));
+                }
+                EditorGUI.indentLevel--;
+            }
+            EditorGUI.indentLevel--;
+        }
+
+        private static SerializedProperty FindActivePresentationSlot(SerializedProperty slots, string slotId)
+        {
+            if (slots == null || string.IsNullOrWhiteSpace(slotId)) return null;
+            for (var index = 0; index < slots.arraySize; index++)
+            {
+                var slot = slots.GetArrayElementAtIndex(index);
+                if (string.Equals(
+                        slot.FindPropertyRelative("slotId").stringValue,
+                        slotId,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return slot;
+                }
+            }
+            return null;
+        }
+
+        private static bool HasActivePresentationFeedback(SerializedProperty feedback)
+        {
+            if (feedback == null) return false;
+            return feedback.FindPropertyRelative("sound").objectReferenceValue != null ||
+                   feedback.FindPropertyRelative("sfx").objectReferenceValue != null ||
+                   feedback.FindPropertyRelative("vfxPrefab").objectReferenceValue != null;
+        }
+
+        private static MonsterMakerPreviewAnchor ResolveActivePresentationPreviewAnchor(
+            MonsterActivePresentationAnchor anchor) => anchor switch
+        {
+            MonsterActivePresentationAnchor.AttackOrigin => MonsterMakerPreviewAnchor.AttackOrigin,
+            MonsterActivePresentationAnchor.TargetPoint => MonsterMakerPreviewAnchor.HitCenter,
+            _ => MonsterMakerPreviewAnchor.Root
+        };
+
+        private static string GetActivePresentationEventLabel(MonsterActivePresentationEvent timing) => timing switch
+        {
+            MonsterActivePresentationEvent.Telegraph => "판정 예고",
+            MonsterActivePresentationEvent.Launch => "공격 발동",
+            MonsterActivePresentationEvent.Travel => "이동체 / 빔",
+            MonsterActivePresentationEvent.Impact => "실제 타격",
+            MonsterActivePresentationEvent.TeleportExit => "순간이동 출발",
+            MonsterActivePresentationEvent.TeleportEnter => "순간이동 도착",
+            _ => timing.ToString()
+        };
+
+        private static string GetActivePresentationAnchorLabel(MonsterActivePresentationAnchor anchor) => anchor switch
+        {
+            MonsterActivePresentationAnchor.CasterRoot => "시전자 중심",
+            MonsterActivePresentationAnchor.AttackOrigin => "공격 원점",
+            MonsterActivePresentationAnchor.TargetPoint => "대상 지점",
+            _ => anchor.ToString()
+        };
 
         private static MonsterSkillPopupData DrawSkillCategoryFilter(
             MonsterSkillPopupData[] cachedPopups,
@@ -3704,22 +4192,22 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var rarity = (MonsterRarity)serializedDraft.FindProperty("rarity").enumValueIndex;
             DrawSkillAugment(
                 serializedDraft.FindProperty("ascension4"),
-                rarity >= MonsterRarity.Epic ? "4돌파 · 액티브 강화" : "4돌파 · 패시브 추가 강화",
-                rarity >= MonsterRarity.Epic);
+                rarity >= MonsterRarity.Legendary ? "4돌파 · 액티브 강화" : "4돌파 · 패시브 추가 강화",
+                rarity >= MonsterRarity.Legendary);
             DrawStatModifier(serializedDraft.FindProperty("ascension5"), "5돌파 능력치");
         }
 
         private void DrawCastleRaidAiSection()
         {
             DrawSectionHeader("9. 군단의 역습 AI");
-            var pattern = (CastleRaidAiPattern)DrawEnumProperty(
+            var pattern = (HexCastleAssaultPattern)DrawEnumProperty(
                 "castleRaidAiPattern",
                 "행동 패턴",
                 CastleRaidAiPatternLabels);
             EditorGUILayout.HelpBox(
                 "군단의 역습에서만 사용하는 목표 선택 규칙입니다. 메인 전투 AI에는 영향을 주지 않습니다.",
                 MessageType.None);
-            if (pattern != CastleRaidAiPattern.TacticalSupport)
+            if (pattern != HexCastleAssaultPattern.TacticalSupport)
             {
                 return;
             }
@@ -4498,6 +4986,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
             ReleasePreviewPositionControl();
             draft = source;
             ownsTransientDraft = transient && source != null;
+            if (source?.ActiveAttackProfile != null)
+            {
+                source.EditorSyncActiveAttackAuthoring();
+            }
             CaptureInitialDraftSnapshot();
             serializedDraft = source == null ? null : new SerializedObject(source);
             validation = null;

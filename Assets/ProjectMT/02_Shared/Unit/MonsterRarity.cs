@@ -19,14 +19,14 @@ namespace ProjectMT.Shared.Unit
         MonsterDefinition Monster { get; }
     }
 
-    // 일반~영웅 등급 몬스터 한 종류. 영웅만 범용 액티브를 추가로 사용한다.
+    // 일반~영웅 등급 몬스터 한 종류. 액티브는 전설·신화부터 사용한다.
     [Serializable]
     public sealed class MonsterCommonRarityEntry : IMonsterRarityEntry
     {
         [SerializeField] private MonsterDefinition monster;
         [SerializeField] private MonsterRarity rarity = MonsterRarity.Common; // Common/Rare/Epic 중 하나
         [SerializeField] private MonsterPassiveSkill passiveSkill; // 고정 패시브 1개
-        [SerializeField] private MonsterActiveSkill activeSkill; // 영웅 범용 액티브 1개
+        [SerializeField] private MonsterActiveSkill activeSkill; // 이전 데이터 감지용. 이 등급에서는 비어 있어야 한다.
 
         public MonsterDefinition Monster => monster;
         public MonsterRarity Rarity => rarity;
@@ -71,26 +71,9 @@ namespace ProjectMT.Shared.Unit
                 return false;
             }
 
-            if (rarity == MonsterRarity.Epic && activeSkill == null)
+            if (activeSkill != null)
             {
-                error = $"영웅 등급은 범용 액티브 스킬이 필요합니다. Monster={monster.MonsterId}";
-                return false;
-            }
-
-            if (activeSkill != null && !activeSkill.TryValidate(out error))
-            {
-                return false;
-            }
-
-            if (rarity != MonsterRarity.Epic && activeSkill != null)
-            {
-                error = $"일반·희귀 등급은 액티브 스킬을 사용할 수 없습니다. Monster={monster.MonsterId}";
-                return false;
-            }
-
-            if (activeSkill != null && activeSkill.ExecutionKind == MonsterActiveExecutionKind.DedicatedMythic)
-            {
-                error = $"신화 전용 액티브는 영웅 이하 등급에 연결할 수 없습니다. Monster={monster.MonsterId}";
+                error = $"일반·희귀·영웅 등급은 액티브 스킬을 사용할 수 없습니다. Monster={monster.MonsterId}";
                 return false;
             }
 

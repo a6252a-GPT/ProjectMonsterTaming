@@ -136,7 +136,11 @@ namespace ProjectMT.Contents.FoodRiot
                     partyUnits[i].Stats,
                     UnitTeam.Player,
                     visualTint: partyUnits[i].VisualTint,
-                    runtimeAssetSet: partyUnits[i].RuntimeAssetSet);
+                    runtimeAssetSet: partyUnits[i].RuntimeAssetSet,
+                    passiveSkill: partyUnits[i].PassiveSkill,
+                    activeSkill: partyUnits[i].ActiveSkill,
+                    monsterLevel: partyUnits[i].Level,
+                    displayName: partyUnits[i].DisplayName);
                 var actor = combatWorld.SpawnUnit(followerPrefab, request, spawnPosition, Quaternion.identity);
                 actor?.SetFollowAnchor(commanderRoot.transform, offsets[i], 6.5f, 8f);
             }

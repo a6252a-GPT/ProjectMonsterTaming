@@ -22,10 +22,6 @@ MonoBehaviour:
     scenePath: Assets/ProjectMT/00_Scenes/01_MainBattle.unity
     sceneKind: 1
   - sceneId:
-      value: castle_raid
-    scenePath: Assets/ProjectMT/00_Scenes/02_CastleRaid.unity
-    sceneKind: 2
-  - sceneId:
       value: castle_raid_hex
     scenePath: Assets/ProjectMT/00_Scenes/03_CastleRaidHex.unity
     sceneKind: 2

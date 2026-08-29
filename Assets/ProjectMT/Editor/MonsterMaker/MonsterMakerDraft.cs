@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using ProjectMT.Contents.CastleRaid;
+using ProjectMT.Contents.CastleRaidHex;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Unit;
@@ -28,6 +28,141 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public float Scale => Mathf.Max(0.01f, scale);
         public bool HasSound => sound != null || sfx != null;
         public bool HasAny => HasSound || vfxPrefab != null;
+    }
+
+    [Serializable]
+    public sealed class MonsterMakerActivePresentationSlotDraft // 공간 ID를 유지하는 몬스터별 VFX/SFX 입력
+    {
+        [SerializeField] private string slotId;
+        [SerializeField] private MonsterMakerFeedbackDraft feedback = new MonsterMakerFeedbackDraft();
+
+        public string SlotId => slotId ?? string.Empty;
+        public MonsterMakerFeedbackDraft Feedback => feedback ??= new MonsterMakerFeedbackDraft();
+
+#if UNITY_EDITOR
+        public void EditorConfigure(string id, MonsterMakerFeedbackDraft source = null)
+        {
+            slotId = id?.Trim();
+            feedback = source ?? new MonsterMakerFeedbackDraft();
+        }
+#endif
+    }
+
+    [Serializable]
+    public sealed class MonsterMakerActiveStepPresentationDraft // Step/공간 ID를 유지하는 몬스터별 연출 연결
+    {
+        [SerializeField] private string stepId;
+        [SerializeField] private bool motionConfigured;
+        [SerializeField] private AnimationClip motionClip;
+        [SerializeField, Min(0.01f)] private float motionPlaybackSpeed = 1f;
+        [SerializeField, Min(0f)] private float motionCrossFadeDuration = 0.08f;
+        [SerializeField, Range(0f, 1f)] private float motionCommitNormalizedTime = 0.25f;
+        [SerializeField] private MonsterMakerFeedbackDraft telegraph = new MonsterMakerFeedbackDraft();
+        [SerializeField] private MonsterMakerFeedbackDraft launch = new MonsterMakerFeedbackDraft();
+        [SerializeField] private MonsterMakerFeedbackDraft travel = new MonsterMakerFeedbackDraft();
+        [SerializeField] private MonsterMakerFeedbackDraft impact = new MonsterMakerFeedbackDraft();
+        [SerializeField] private MonsterMakerFeedbackDraft teleportExit = new MonsterMakerFeedbackDraft();
+        [SerializeField] private MonsterMakerFeedbackDraft teleportEnter = new MonsterMakerFeedbackDraft();
+        [SerializeField] private List<MonsterMakerActivePresentationSlotDraft> slots =
+            new List<MonsterMakerActivePresentationSlotDraft>();
+
+        public string StepId => stepId ?? string.Empty;
+        public AnimationClip MotionClip => motionClip;
+        public float MotionPlaybackSpeed => Mathf.Max(0.01f, motionPlaybackSpeed);
+        public float MotionCrossFadeDuration => Mathf.Max(0f, motionCrossFadeDuration);
+        public float MotionCommitNormalizedTime => Mathf.Clamp01(motionCommitNormalizedTime);
+        public MonsterMakerFeedbackDraft Telegraph => telegraph;
+        public MonsterMakerFeedbackDraft Launch => launch;
+        public MonsterMakerFeedbackDraft Travel => travel;
+        public MonsterMakerFeedbackDraft Impact => impact;
+        public MonsterMakerFeedbackDraft TeleportExit => teleportExit;
+        public MonsterMakerFeedbackDraft TeleportEnter => teleportEnter;
+        public IReadOnlyList<MonsterMakerActivePresentationSlotDraft> Slots => slots ??
+            (IReadOnlyList<MonsterMakerActivePresentationSlotDraft>)
+            Array.Empty<MonsterMakerActivePresentationSlotDraft>();
+
+        public MonsterMakerActivePresentationSlotDraft ResolveSlot(string id)
+        {
+            for (var index = 0; index < Slots.Count; index++)
+            {
+                var candidate = Slots[index];
+                if (candidate != null && string.Equals(candidate.SlotId, id, StringComparison.OrdinalIgnoreCase))
+                    return candidate;
+            }
+            return null;
+        }
+
+#if UNITY_EDITOR
+        public void EditorSetStepId(string id) { stepId = id?.Trim(); }
+
+        public void EditorEnsureMotion(
+            AnimationClip fallbackClip,
+            float fallbackSpeed,
+            float fallbackFadeDuration,
+            float fallbackCommitTime)
+        {
+            if (motionConfigured) return;
+            motionConfigured = true;
+            motionClip = fallbackClip;
+            motionPlaybackSpeed = Mathf.Max(0.01f, fallbackSpeed);
+            motionCrossFadeDuration = Mathf.Max(0f, fallbackFadeDuration);
+            motionCommitNormalizedTime = Mathf.Clamp01(fallbackCommitTime);
+        }
+
+        public void EditorSyncSlots(MonsterActiveAttackStep step)
+        {
+            slots ??= new List<MonsterMakerActivePresentationSlotDraft>();
+            if (step == null)
+            {
+                slots.Clear();
+                return;
+            }
+
+            var synced = new List<MonsterMakerActivePresentationSlotDraft>(step.PresentationSlots.Count);
+            var migratedTimings = new HashSet<MonsterActivePresentationEvent>();
+            for (var slotIndex = 0; slotIndex < step.PresentationSlots.Count; slotIndex++)
+            {
+                var contract = step.PresentationSlots[slotIndex];
+                if (contract == null) continue;
+                MonsterMakerActivePresentationSlotDraft existing = null;
+                for (var index = 0; index < slots.Count; index++)
+                {
+                    if (slots[index] != null && string.Equals(
+                            slots[index].SlotId,
+                            contract.SlotId,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        existing = slots[index];
+                        break;
+                    }
+                }
+                if (existing == null)
+                {
+                    existing = new MonsterMakerActivePresentationSlotDraft();
+                    var legacy = migratedTimings.Add(contract.Timing)
+                        ? ResolveLegacyFeedback(contract.Timing)
+                        : null;
+                    existing.EditorConfigure(contract.SlotId, legacy);
+                }
+                synced.Add(existing);
+            }
+            slots = synced;
+        }
+
+        private MonsterMakerFeedbackDraft ResolveLegacyFeedback(MonsterActivePresentationEvent timing)
+        {
+            return timing switch
+            {
+                MonsterActivePresentationEvent.Telegraph => telegraph,
+                MonsterActivePresentationEvent.Launch => launch,
+                MonsterActivePresentationEvent.Travel => travel,
+                MonsterActivePresentationEvent.Impact => impact,
+                MonsterActivePresentationEvent.TeleportExit => teleportExit,
+                MonsterActivePresentationEvent.TeleportEnter => teleportEnter,
+                _ => null
+            };
+        }
+#endif
     }
 
     [Serializable]
@@ -207,6 +342,19 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private MonsterPassiveSkill rarityPassiveSkill;
         [SerializeField] private MonsterMakerPassiveTuningDraft passiveTuning = new MonsterMakerPassiveTuningDraft();
         [SerializeField] private MonsterActiveSkill rarityActiveSkill;
+        [SerializeField] private MonsterActiveAttackProfile activeAttackProfile;
+        [SerializeField] private string activeSkillName;
+        [SerializeField, Min(1)] private int activeEnergyMaximum = 1000;
+        [SerializeField] private AnimationClip activeSkillClip;
+        [SerializeField, Min(0.01f)] private float activeSkillPlaybackSpeed = 1f;
+        [SerializeField, Min(0f)] private float activeSkillCrossFadeDuration = 0.08f;
+        [SerializeField, Range(0f, 1f)] private float activeSkillCommitNormalizedTime = 0.25f;
+        [SerializeField, HideInInspector] private bool activeStepMotionModeConfigured;
+        [SerializeField] private bool useCustomActiveStepMotions;
+        [SerializeField] private List<MonsterActiveAttackStepTuning> activeAttackStepTunings =
+            new List<MonsterActiveAttackStepTuning>();
+        [SerializeField] private List<MonsterMakerActiveStepPresentationDraft> activeAttackPresentations =
+            new List<MonsterMakerActiveStepPresentationDraft>();
         [SerializeField, TextArea(2, 5)] private string productionMemo;
 
         [SerializeField] private GameObject vendorPrefab;
@@ -281,8 +429,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private MonsterBuffStackPolicy specialStackPolicy = MonsterBuffStackPolicy.RefreshDuration;
         [SerializeField] private MonsterStatModifier specialModifier;
 
-        [SerializeField] private CastleRaidAiPattern castleRaidAiPattern = CastleRaidAiPattern.BalancedAdvance;
-        [SerializeField] private CastleRaidSupportFocus castleRaidSupportFocus = CastleRaidSupportFocus.Adaptive;
+        [SerializeField] private HexCastleAssaultPattern castleRaidAiPattern = HexCastleAssaultPattern.GeneralAdvance;
+        [SerializeField] private HexCastleAssaultSupportFocus castleRaidSupportFocus = HexCastleAssaultSupportFocus.Adaptive;
         [SerializeField, Min(1f)] private float castleRaidSupportRange = 5f;
         [SerializeField, Min(0.1f)] private float castleRaidSupportCooldown = 4f;
         [SerializeField, Min(0.1f)] private float castleRaidSupportDuration = 5f;
@@ -310,6 +458,23 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public MonsterPassiveSkill RarityPassiveSkill => rarityPassiveSkill;
         public MonsterMakerPassiveTuningDraft PassiveTuning => passiveTuning;
         public MonsterActiveSkill RarityActiveSkill => rarityActiveSkill;
+        public MonsterActiveAttackProfile ActiveAttackProfile => activeAttackProfile;
+        public string ActiveSkillName => string.IsNullOrWhiteSpace(activeSkillName)
+            ? activeAttackProfile?.DisplayName ?? string.Empty
+            : activeSkillName.Trim();
+        public int ActiveEnergyMaximum => activeEnergyMaximum;
+        public AnimationClip ActiveSkillClip => activeSkillClip;
+        public float ActiveSkillPlaybackSpeed => activeSkillPlaybackSpeed;
+        public float ActiveSkillCrossFadeDuration => activeSkillCrossFadeDuration;
+        public float ActiveSkillCommitNormalizedTime => activeSkillCommitNormalizedTime;
+        public bool UseCustomActiveStepMotions => useCustomActiveStepMotions;
+        public IReadOnlyList<MonsterActiveAttackStepTuning> ActiveAttackStepTunings =>
+            activeAttackStepTunings ??
+            (IReadOnlyList<MonsterActiveAttackStepTuning>)Array.Empty<MonsterActiveAttackStepTuning>();
+        public IReadOnlyList<MonsterMakerActiveStepPresentationDraft> ActiveAttackPresentations =>
+            activeAttackPresentations ??
+            (IReadOnlyList<MonsterMakerActiveStepPresentationDraft>)
+            Array.Empty<MonsterMakerActiveStepPresentationDraft>();
         public string ProductionMemo => productionMemo ?? string.Empty;
         public GameObject VendorPrefab => vendorPrefab;
         public Animator AnimatorSource => animatorSource;
@@ -389,8 +554,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public float SpecialDuration => specialDuration;
         public MonsterBuffStackPolicy SpecialStackPolicy => specialStackPolicy;
         public MonsterStatModifier SpecialModifier => specialModifier;
-        public CastleRaidAiPattern CastleRaidAiPattern => castleRaidAiPattern;
-        public CastleRaidSupportFocus CastleRaidSupportFocus => castleRaidSupportFocus;
+        public HexCastleAssaultPattern CastleRaidAiPattern => castleRaidAiPattern;
+        public HexCastleAssaultSupportFocus CastleRaidSupportFocus => castleRaidSupportFocus;
         public float CastleRaidSupportRange => castleRaidSupportRange;
         public float CastleRaidSupportCooldown => castleRaidSupportCooldown;
         public float CastleRaidSupportDuration => castleRaidSupportDuration;
@@ -418,6 +583,116 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 passiveTuning.CopyFrom(template);
             }
+        }
+
+        public void EditorSetActiveAttackProfile(MonsterActiveAttackProfile profile)
+        {
+            activeAttackProfile = profile;
+            if (profile != null && string.IsNullOrWhiteSpace(activeSkillName))
+            {
+                activeSkillName = profile.DisplayName;
+            }
+            EditorSyncActiveAttackAuthoring();
+        }
+
+        public void EditorSetResolvedActiveSkill(MonsterActiveSkill skill)
+        {
+            rarityActiveSkill = skill;
+        }
+
+        public void EditorSyncActiveAttackAuthoring()
+        {
+            activeAttackStepTunings ??= new List<MonsterActiveAttackStepTuning>();
+            activeAttackPresentations ??= new List<MonsterMakerActiveStepPresentationDraft>();
+            if (!activeStepMotionModeConfigured)
+            {
+                activeStepMotionModeConfigured = true;
+                useCustomActiveStepMotions = activeSkillClip != null;
+            }
+            if (activeAttackProfile == null)
+            {
+                activeAttackStepTunings.Clear();
+                activeAttackPresentations.Clear();
+                return;
+            }
+
+            var syncedTunings = new List<MonsterActiveAttackStepTuning>(activeAttackProfile.Steps.Count);
+            var syncedPresentations = new List<MonsterMakerActiveStepPresentationDraft>(activeAttackProfile.Steps.Count);
+            for (var stepIndex = 0; stepIndex < activeAttackProfile.Steps.Count; stepIndex++)
+            {
+                var stepId = activeAttackProfile.Steps[stepIndex].StepId;
+                MonsterActiveAttackStepTuning tuning = null;
+                for (var index = 0; index < activeAttackStepTunings.Count; index++)
+                {
+                    if (activeAttackStepTunings[index] != null && string.Equals(
+                            activeAttackStepTunings[index].StepId,
+                            stepId,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        tuning = activeAttackStepTunings[index];
+                        break;
+                    }
+                }
+                if (tuning == null)
+                {
+                    tuning = new MonsterActiveAttackStepTuning();
+                    tuning.EditorConfigure(stepId);
+                }
+                syncedTunings.Add(tuning);
+
+                MonsterMakerActiveStepPresentationDraft presentation = null;
+                for (var index = 0; index < activeAttackPresentations.Count; index++)
+                {
+                    if (activeAttackPresentations[index] != null && string.Equals(
+                            activeAttackPresentations[index].StepId,
+                            stepId,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        presentation = activeAttackPresentations[index];
+                        break;
+                    }
+                }
+                if (presentation == null)
+                {
+                    presentation = new MonsterMakerActiveStepPresentationDraft();
+                    presentation.EditorSetStepId(stepId);
+                }
+                presentation.EditorEnsureMotion(
+                    activeSkillClip,
+                    activeSkillPlaybackSpeed,
+                    activeSkillCrossFadeDuration,
+                    activeSkillCommitNormalizedTime);
+                presentation.EditorSyncSlots(activeAttackProfile.Steps[stepIndex]);
+                syncedPresentations.Add(presentation);
+            }
+
+            activeAttackStepTunings = syncedTunings;
+            activeAttackPresentations = syncedPresentations;
+        }
+
+        public void ResolveActiveStepMotion(
+            MonsterMakerActiveStepPresentationDraft presentation,
+            out AnimationClip clip,
+            out float playbackSpeed,
+            out float crossFadeDuration,
+            out float commitNormalizedTime)
+        {
+            if (useCustomActiveStepMotions)
+            {
+                clip = presentation?.MotionClip;
+                playbackSpeed = presentation?.MotionPlaybackSpeed ?? 1f;
+                crossFadeDuration = presentation?.MotionCrossFadeDuration ?? 0.08f;
+                commitNormalizedTime = presentation?.MotionCommitNormalizedTime ?? 0.25f;
+                return;
+            }
+
+            var basicAttack = Attacks.Count > 0 ? Attacks[0] : null;
+            clip = basicAttack?.Clip;
+            playbackSpeed = basicAttack?.PlaybackSpeed ?? 1f;
+            crossFadeDuration = basicAttack?.CrossFadeDuration ?? 0.06f;
+            commitNormalizedTime = basicAttack != null && basicAttack.Markers.Count > 0
+                ? basicAttack.Markers[0].NormalizedTime
+                : 0.25f;
         }
 
         public void EditorSetBasicAttackProfile(MonsterBasicAttackProfile profile)

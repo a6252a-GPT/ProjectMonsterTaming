@@ -28,7 +28,8 @@ namespace ProjectMT.Shared.Unit
             MonsterPassiveSkill passiveSkill = null,
             MonsterActiveSkill activeSkill = null,
             int monsterLevel = 1,
-            UnitEntryReason entryReason = UnitEntryReason.InitialDeployment)
+            UnitEntryReason entryReason = UnitEntryReason.InitialDeployment,
+            string displayName = null)
         {
             UnitId = unitId ?? string.Empty;
             Stats = stats;
@@ -46,6 +47,7 @@ namespace ProjectMT.Shared.Unit
             ActiveSkill = activeSkill;
             MonsterLevel = Mathf.Max(1, monsterLevel);
             EntryReason = entryReason;
+            DisplayName = string.IsNullOrWhiteSpace(displayName) ? UnitId : displayName.Trim();
         }
 
         public string UnitId { get; }
@@ -64,6 +66,7 @@ namespace ProjectMT.Shared.Unit
         public MonsterActiveSkill ActiveSkill { get; }
         public int MonsterLevel { get; }
         public UnitEntryReason EntryReason { get; }
+        public string DisplayName { get; }
     }
 
     [DisallowMultipleComponent]
@@ -116,12 +119,25 @@ namespace ProjectMT.Shared.Unit
         private float combatKnockbackAppliedDistance;
         private float combatPostKnockbackStaggerDuration;
         private float combatStaggerRemaining;
+        private float activeStunRemaining;
+        private float activeSlowRemaining;
+        private float activeSlowRate;
+        private float activeBleedRemaining;
+        private float activeBleedTickRemaining;
+        private float activeBleedInterval;
+        private float activeBleedDamage;
+        private UnitActor activeBleedSource;
+        private float activeAirborneElapsed;
+        private float activeAirborneDuration;
+        private float activeAirborneHeight;
+        private float activeAirborneBaseY;
         private Animator[] fallbackHitStopAnimators = Array.Empty<Animator>();
         private float[] fallbackAnimatorSpeeds = Array.Empty<float>();
         private bool fallbackAnimatorsPaused;
         private bool fallbackAnimatorsResolved;
 
         public string UnitId { get; private set; }
+        public string DisplayName { get; private set; }
         public UnitTeam Team { get; private set; }
         public HealthComponent Health => health;
         public UnitVisualFeedback VisualFeedback => visualFeedback;
@@ -134,6 +150,9 @@ namespace ProjectMT.Shared.Unit
         public bool IsKnockedBack => combatKnockbackDistance > 0f;
         public bool IsHitStaggered => combatStaggerRemaining > 0f;
         public bool IsInHitReaction => IsKnockedBack || IsHitStaggered;
+        public bool IsActiveStunned => activeStunRemaining > 0f;
+        public bool IsActiveAirborne => activeAirborneDuration > 0f;
+        public bool IsActiveSlowed => activeSlowRemaining > 0f;
         public bool IsRanged => stats.ranged;
         public bool IsBoss { get; private set; }
         public bool IsCombatReady => combatReady;
@@ -142,6 +161,11 @@ namespace ProjectMT.Shared.Unit
         public float BodyRadius => Mathf.Max(0.1f, runtimeAssetSet?.BodyProfile?.BodyRadius ?? 0.45f);
         public float SupportOutputMultiplier => supportOutputMultiplier;
         public MonsterSkillRuntime SkillRuntime => monsterSkillRuntime;
+
+        public void SetActiveFocusTimeScale(float scale)
+        {
+            animationDriver?.SetFocusTimeScale(scale);
+        }
 
         public event Action<UnitActor> Died;
 
@@ -167,6 +191,7 @@ namespace ProjectMT.Shared.Unit
         {
             Shutdown(); // 풀 재사용 전 이전 연결 정리
             UnitId = request.UnitId;
+            DisplayName = request.DisplayName;
             Team = request.Team;
             stats = request.Stats;
             canMove = request.CanMove;
@@ -200,6 +225,7 @@ namespace ProjectMT.Shared.Unit
                 request.ActiveSkill,
                 request.MonsterLevel,
                 request.EntryReason);
+            world?.TrackMonsterActiveSkill(this);
             if (runtimeAssetSet != null)
             {
                 world?.PlayMonsterFeedback(
@@ -317,6 +343,12 @@ namespace ProjectMT.Shared.Unit
                 return;
             }
 
+            if (TickActiveStatusEffects(deltaTime))
+            {
+                animationDriver?.PlayIdle();
+                return;
+            }
+
             if (TickCombatKnockback(deltaTime))
             {
                 animationDriver?.PlayIdle();
@@ -351,7 +383,6 @@ namespace ProjectMT.Shared.Unit
             monsterSkillRuntime.Tick(deltaTime, canAttack && !attackActionRunning);
             if (monsterSkillRuntime.IsExecuting)
             {
-                animationDriver?.PlayIdle();
                 return;
             }
 
@@ -446,6 +477,7 @@ namespace ProjectMT.Shared.Unit
 
         public void Shutdown()
         {
+            world?.Unregister(this);
             monsterSkillRuntime.Shutdown();
             if (health != null)
             {
@@ -470,16 +502,17 @@ namespace ProjectMT.Shared.Unit
             attackActionRunning = false;
             nextActionSequenceId = 0;
 
-            world?.Unregister(this);
             world = null;
             feedback = null;
             Target = null;
+            DisplayName = string.Empty;
             followAnchor = null;
             hasLastAnchorPosition = false; // 08.07 안건준 추가 - 풀 재사용 전 이동 감지 상태 초기화
             isManuallyHeld = false;
             forcedTarget = null; // 08.07 안건준 추가 - 풀 재사용 전 강제 지정 상태 초기화
             forcedTargetTimer = 0f;
             localHitStopRemaining = 0f;
+            ResetActiveStatusEffects();
             CancelCombatHitReaction();
             SetLocalAnimationPaused(false);
             fallbackHitStopAnimators = Array.Empty<Animator>();
@@ -537,9 +570,25 @@ namespace ProjectMT.Shared.Unit
             float duration,
             float postKnockbackStagger = 0f)
         {
-            if (Team == UnitTeam.Player || !IsAlive || IsBoss || !combatReady || isManuallyHeld || distance <= 0f)
+            return TryBeginCombatKnockback(
+                worldDirection,
+                distance,
+                duration,
+                postKnockbackStagger,
+                allowPlayerTarget: false);
+        }
+
+        private bool TryBeginCombatKnockback(
+            Vector3 worldDirection,
+            float distance,
+            float duration,
+            float postKnockbackStagger,
+            bool allowPlayerTarget)
+        {
+            if ((!allowPlayerTarget && Team == UnitTeam.Player) ||
+                !IsAlive || IsBoss || !combatReady || isManuallyHeld || distance <= 0f)
             {
-                return false; // 아군은 판정 루트를 밀지 않고 Visual 반동만 사용
+                return false;
             }
 
             worldDirection.y = 0f;
@@ -574,6 +623,62 @@ namespace ProjectMT.Shared.Unit
             return distance > 0f;
         }
 
+        public bool TryApplyActiveKnockback(
+            Vector3 worldDirection,
+            float distance,
+            float duration,
+            float postKnockbackStagger = 0f)
+        {
+            return TryBeginCombatKnockback(
+                worldDirection,
+                distance,
+                duration,
+                postKnockbackStagger,
+                allowPlayerTarget: true);
+        }
+
+        public bool TryApplyActiveStun(float duration)
+        {
+            if (!IsAlive || IsBoss || !combatReady || duration <= 0f) return false;
+            activeStunRemaining = Mathf.Max(activeStunRemaining, duration);
+            return true;
+        }
+
+        public bool TryApplyActiveAirborne(float height, float duration)
+        {
+            if (!IsAlive || IsBoss || !combatReady || height <= 0f || duration <= 0f) return false;
+            if (activeAirborneDuration <= 0f) activeAirborneBaseY = transform.position.y;
+            activeAirborneElapsed = 0f;
+            activeAirborneHeight = Mathf.Max(activeAirborneHeight, height);
+            activeAirborneDuration = Mathf.Max(activeAirborneDuration, duration);
+            return true;
+        }
+
+        public void ApplyActiveBleed(UnitActor source, float attackPowerRatio, float duration, float tickInterval)
+        {
+            if (!IsAlive || source == null || attackPowerRatio <= 0f || duration <= 0f) return;
+            activeBleedSource = source;
+            activeBleedDamage = Mathf.Max(activeBleedDamage, source.EffectiveStats.damage * attackPowerRatio);
+            activeBleedRemaining = Mathf.Max(activeBleedRemaining, duration);
+            activeBleedInterval = Mathf.Max(0.05f, tickInterval);
+            if (activeBleedTickRemaining <= 0f) activeBleedTickRemaining = activeBleedInterval;
+        }
+
+        public void ApplyActiveSlow(float rate, float duration)
+        {
+            if (!IsAlive || rate <= 0f || rate >= 1f || duration <= 0f) return;
+            activeSlowRate = Mathf.Max(activeSlowRate, rate);
+            activeSlowRemaining = Mathf.Max(activeSlowRemaining, duration);
+        }
+
+        public bool TryTeleportForActive(Vector3 destination)
+        {
+            if (!IsAlive || !combatReady || isManuallyHeld) return false;
+            destination.y = transform.position.y;
+            transform.position = destination;
+            return true;
+        }
+
         public bool TryApplyCombatStagger(float duration)
         {
             duration = Mathf.Clamp(duration, 0f, 0.5f);
@@ -591,6 +696,84 @@ namespace ProjectMT.Shared.Unit
                 combatStaggerRemaining = Mathf.Max(combatStaggerRemaining, duration);
             }
             return true;
+        }
+
+        private bool TickActiveStatusEffects(float deltaTime)
+        {
+            deltaTime = Mathf.Max(0f, deltaTime);
+            activeSlowRemaining = Mathf.Max(0f, activeSlowRemaining - deltaTime);
+            if (activeSlowRemaining <= 0f) activeSlowRate = 0f;
+
+            if (activeBleedRemaining > 0f)
+            {
+                activeBleedRemaining = Mathf.Max(0f, activeBleedRemaining - deltaTime);
+                activeBleedTickRemaining -= deltaTime;
+                var safety = 0;
+                while (activeBleedRemaining > 0f && activeBleedTickRemaining <= 0f && safety++ < 16)
+                {
+                    if (world == null || activeBleedSource == null || !activeBleedSource.IsAlive ||
+                        !world.ApplyMonsterSkillDamage(activeBleedSource, health, activeBleedDamage))
+                    {
+                        activeBleedRemaining = 0f;
+                        break;
+                    }
+                    activeBleedTickRemaining += activeBleedInterval;
+                }
+                if (activeBleedRemaining <= 0f)
+                {
+                    activeBleedSource = null;
+                    activeBleedDamage = 0f;
+                    activeBleedTickRemaining = 0f;
+                }
+            }
+
+            if (!IsAlive) return true;
+            if (activeAirborneDuration > 0f)
+            {
+                activeAirborneElapsed = Mathf.Min(activeAirborneDuration, activeAirborneElapsed + deltaTime);
+                var ratio = activeAirborneElapsed / Mathf.Max(0.01f, activeAirborneDuration);
+                var position = transform.position;
+                position.y = activeAirborneBaseY + Mathf.Sin(ratio * Mathf.PI) * activeAirborneHeight;
+                transform.position = position;
+                if (ratio >= 1f)
+                {
+                    position.y = activeAirborneBaseY;
+                    transform.position = position;
+                    activeAirborneDuration = 0f;
+                    activeAirborneElapsed = 0f;
+                    activeAirborneHeight = 0f;
+                }
+                return true;
+            }
+
+            if (activeStunRemaining > 0f)
+            {
+                activeStunRemaining = Mathf.Max(0f, activeStunRemaining - deltaTime);
+                return true;
+            }
+            return false;
+        }
+
+        private void ResetActiveStatusEffects()
+        {
+            if (activeAirborneDuration > 0f)
+            {
+                var position = transform.position;
+                position.y = activeAirborneBaseY;
+                transform.position = position;
+            }
+            activeStunRemaining = 0f;
+            activeSlowRemaining = 0f;
+            activeSlowRate = 0f;
+            activeBleedRemaining = 0f;
+            activeBleedTickRemaining = 0f;
+            activeBleedInterval = 0f;
+            activeBleedDamage = 0f;
+            activeBleedSource = null;
+            activeAirborneElapsed = 0f;
+            activeAirborneDuration = 0f;
+            activeAirborneHeight = 0f;
+            activeAirborneBaseY = 0f;
         }
 
         private bool TickLocalHitStop()
@@ -739,7 +922,8 @@ namespace ProjectMT.Shared.Unit
                                 Mathf.Max(0.01f, 1f + activeMonsterBuffModifier.AttackRate);
             effective.defense *= Mathf.Max(0.01f, 1f + activeMonsterBuffModifier.DefenseRate);
             effective.moveSpeed *= moveSpeedMultiplier *
-                                   Mathf.Max(0.01f, 1f + activeMonsterBuffModifier.MoveSpeedRate);
+                                   Mathf.Max(0.01f, 1f + activeMonsterBuffModifier.MoveSpeedRate) *
+                                   Mathf.Clamp01(1f - activeSlowRate);
             effective.attackRange *= Mathf.Max(0.01f, 1f + activeMonsterBuffModifier.AttackRangeRate);
             effective.attackInterval /= Mathf.Max(0.01f, 1f + activeMonsterBuffModifier.AttackSpeedRate);
             return effective;
@@ -802,6 +986,7 @@ namespace ProjectMT.Shared.Unit
 
             var effectiveStats = GetEffectiveStats();
             attackCooldown = Mathf.Max(0.05f, effectiveStats.attackInterval);
+            monsterSkillRuntime.NotifyBasicAttackPerformed(); // 다단 타격이어도 행동 한 번당 기력 한 번
             if (runtimeAssetSet != null && animationDriver != null && animationDriver.IsReady)
             {
                 actionTarget = target; // normalizedTime 0 Marker도 같은 고정 타깃 사용

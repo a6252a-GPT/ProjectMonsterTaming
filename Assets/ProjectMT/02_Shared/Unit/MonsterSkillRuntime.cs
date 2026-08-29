@@ -12,6 +12,7 @@ namespace ProjectMT.Shared.Unit
 
         private readonly List<UnitActor> unitBuffer = new List<UnitActor>();
         private readonly HashSet<int> couragePresentedRecipients = new HashSet<int>();
+        private readonly MonsterActiveAttackExecutor activeAttackExecutor = new MonsterActiveAttackExecutor();
         private UnitActor owner;
         private CombatWorld world;
         private MonsterPassiveSkill passiveSkill;
@@ -38,6 +39,8 @@ namespace ProjectMT.Shared.Unit
         private int continuousHits;
         private int monsterLevel = 1;
         private bool executingActive;
+        private bool waitingForActiveFocus;
+        private bool activeFirstStepMotionStarted;
         private bool frontlineBondActive;
 
         public MonsterPassiveSkill PassiveSkill => passiveSkill;
@@ -46,7 +49,9 @@ namespace ProjectMT.Shared.Unit
         public float EnergyCapacity => activeSkill == null ? 0f : activeSkill.EnergyCost;
         public bool IsPassiveActive => outgoingRandomEffect != null && outgoingRandomRemaining > 0f;
         public bool IsExecuting => executingActive;
-        public int RemainingActiveHits => remainingActiveHits;
+        public int RemainingActiveHits => activeAttackExecutor.IsRunning && activeSkill is MonsterAttackActiveSkill attack
+            ? Mathf.Max(0, attack.Steps.Count - activeAttackExecutor.CompletedStepCount)
+            : remainingActiveHits;
         public float ShieldAmount => shieldRemaining > 0f ? shieldAmount : 0f;
         public bool WillEnhanceNextBasicHit =>
             genericSkill != null &&
@@ -106,9 +111,12 @@ namespace ProjectMT.Shared.Unit
             continuousHits = 0;
             monsterLevel = 1;
             executingActive = false;
+            waitingForActiveFocus = false;
+            activeFirstStepMotionStarted = false;
             frontlineBondActive = false;
             unitBuffer.Clear();
             couragePresentedRecipients.Clear();
+            activeAttackExecutor.Reset();
         }
 
         public void Tick(float deltaTime, bool canBeginActive)
@@ -128,7 +136,9 @@ namespace ProjectMT.Shared.Unit
                 return;
             }
 
-            energy = Mathf.Min(activeSkill.EnergyCost, energy + activeSkill.EnergyPerSecond * deltaTime);
+            energy = Mathf.Min(
+                activeSkill.EnergyCost,
+                energy + MonsterActiveEnergyConfig.SharedEnergyPerSecond * deltaTime);
             if (canBeginActive && energy >= activeSkill.EnergyCost)
             {
                 TryBeginActive();
@@ -147,7 +157,6 @@ namespace ProjectMT.Shared.Unit
                 return;
             }
 
-            AddEnergy(activeSkill?.EnergyPerBasicAttackHit ?? 0f);
             TryActivatePassive(MonsterSkillTriggerType.BasicAttackHit);
             basicHitCount++;
             UpdateContinuousTarget(hitTarget);
@@ -202,8 +211,12 @@ namespace ProjectMT.Shared.Unit
         public void NotifyDamaged(DamageReport report)
         {
             lastReceivedDamage = Mathf.Max(0f, report.AppliedDamage);
-            AddEnergy(activeSkill?.EnergyPerDamageReceived ?? 0f);
             TryActivatePassive(MonsterSkillTriggerType.Damaged);
+        }
+
+        public void NotifyBasicAttackPerformed()
+        {
+            AddEnergy(MonsterActiveEnergyConfig.SharedEnergyPerBasicAttack);
         }
 
         public void NotifyTargetDestroyed()
@@ -616,6 +629,37 @@ namespace ProjectMT.Shared.Unit
             {
                 return;
             }
+            if (activeSkill is MonsterAttackActiveSkill assembledAttack)
+            {
+                energy = Mathf.Max(0f, energy - activeSkill.EnergyCost);
+                activeTarget = target;
+                executingActive = true;
+                waitingForActiveFocus = true;
+                var motionDuration = 0f;
+                var rawCommitDelay = 0f;
+                if (assembledAttack.Steps.Count > 0 && owner.AnimationDriver != null)
+                {
+                    motionDuration = owner.AnimationDriver.PlayActiveStep(
+                        assembledAttack.Steps[0].StepId,
+                        assembledAttack.CommitNormalizedTime,
+                        out rawCommitDelay);
+                }
+                activeFirstStepMotionStarted = motionDuration > 0f;
+                var commitDelay = motionDuration > 0f
+                    ? Mathf.Clamp(rawCommitDelay, 0.08f, 1.2f)
+                    : 0.24f;
+                var focusDuration = Mathf.Clamp(commitDelay + 0.42f, 0.6f, 1.5f);
+                if (!world.RequestMonsterActiveFocus(
+                        owner,
+                        assembledAttack,
+                        CommitAssembledAttack,
+                        commitDelay,
+                        focusDuration))
+                {
+                    CommitAssembledAttack();
+                }
+                return;
+            }
             MonsterSkillEffect damageEffect = null;
             var effects = recipe.Effects;
             for (var index = 0; index < effects.Count; index++)
@@ -662,6 +706,12 @@ namespace ProjectMT.Shared.Unit
             {
                 return;
             }
+            if (activeSkill is MonsterAttackActiveSkill)
+            {
+                if (waitingForActiveFocus) return;
+                if (activeAttackExecutor.Tick(deltaTime)) CompleteActive();
+                return;
+            }
             nextActiveHitDelay -= Mathf.Max(0f, deltaTime);
             var safety = 0;
             while (executingActive && nextActiveHitDelay <= 0f && safety++ < 64)
@@ -706,10 +756,35 @@ namespace ProjectMT.Shared.Unit
         private void CompleteActive()
         {
             executingActive = false;
+            waitingForActiveFocus = false;
+            activeFirstStepMotionStarted = false;
+            activeAttackExecutor.Reset();
             activeDamageEffect = null;
             activeTarget = null;
             remainingActiveHits = 0;
             nextActiveHitDelay = 0f;
+        }
+
+        private void CommitAssembledAttack()
+        {
+            if (!executingActive || !(activeSkill is MonsterAttackActiveSkill assembledAttack) ||
+                owner == null || world == null || !owner.IsAlive)
+            {
+                CompleteActive();
+                return;
+            }
+            waitingForActiveFocus = false;
+            if (!activeAttackExecutor.Begin(
+                    owner,
+                    world,
+                    assembledAttack,
+                    activeTarget,
+                    activeFirstStepMotionStarted))
+            {
+                CompleteActive();
+                return;
+            }
+            TickExecutingActive(0f);
         }
     }
 }

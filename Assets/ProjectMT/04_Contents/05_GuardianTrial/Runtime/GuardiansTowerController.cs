@@ -310,7 +310,11 @@ namespace ProjectMT.Contents.GuardianTrial
                     stats,
                     UnitTeam.Player,
                     visualTint: partyUnits[i].VisualTint,
-                    runtimeAssetSet: partyUnits[i].RuntimeAssetSet);
+                    runtimeAssetSet: partyUnits[i].RuntimeAssetSet,
+                    passiveSkill: partyUnits[i].PassiveSkill,
+                    activeSkill: partyUnits[i].ActiveSkill,
+                    monsterLevel: partyUnits[i].Level,
+                    displayName: partyUnits[i].DisplayName);
                 var actor = combatWorld.SpawnUnit(followerPrefab, request, spawnPosition, Quaternion.identity);
                 if (actor == null)
                 {

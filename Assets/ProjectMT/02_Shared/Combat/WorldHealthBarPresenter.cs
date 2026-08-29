@@ -48,8 +48,9 @@ namespace ProjectMT.Shared.Combat
             var ratio = ResolveHealthRatio(target.Health);
             if (active.TryGetValue(key, out var current))
             {
-                current.HideAt = Time.unscaledTime + visibleSeconds;
+                if (!current.Persistent) current.HideAt = Time.unscaledTime + visibleSeconds;
                 current.View.SetHealthRatio(ratio);
+                current.View.SetEnergy(ResolveEnergyRatio(target), current.Persistent);
                 active[key] = current;
                 return;
             }
@@ -66,8 +67,41 @@ namespace ProjectMT.Shared.Combat
             }
 
             view.Bind(target.Team == UnitTeam.Player ? FriendlyColor : HostileColor, ratio);
-            active.Add(key, new ActiveBar(target, view, Time.unscaledTime + visibleSeconds));
+            view.SetEnergy(0f, false);
+            active.Add(key, new ActiveBar(target, view, Time.unscaledTime + visibleSeconds, false));
             UpdatePosition(target, view);
+        }
+
+        public void TrackActiveSkill(UnitActor target)
+        {
+            if (!visible || target == null || target.IsBoss || target.Health == null ||
+                target.SkillRuntime.ActiveSkill == null || container == null || viewPrefab == null ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            var key = target.GetInstanceID();
+            if (active.TryGetValue(key, out var current))
+            {
+                current.Persistent = true;
+                current.HideAt = float.PositiveInfinity;
+                current.View.SetEnergy(ResolveEnergyRatio(target), true);
+                active[key] = current;
+                return;
+            }
+            if (active.Count >= Mathf.Max(1, maxActiveBars)) return;
+            var view = RentView();
+            if (view == null) return;
+            view.Bind(target.Team == UnitTeam.Player ? FriendlyColor : HostileColor, ResolveHealthRatio(target.Health));
+            view.SetEnergy(ResolveEnergyRatio(target), true);
+            active.Add(key, new ActiveBar(target, view, float.PositiveInfinity, true));
+            UpdatePosition(target, view);
+        }
+
+        public void Untrack(UnitActor target)
+        {
+            if (target != null) Release(target.GetInstanceID());
         }
 
         public void SetVisible(bool value)
@@ -93,13 +127,14 @@ namespace ProjectMT.Shared.Combat
                 var entry = pair.Value;
                 if (!visible || entry.Target == null || !entry.Target.gameObject.activeInHierarchy ||
                     entry.Target.Health == null ||
-                    !entry.Target.IsAlive || now >= entry.HideAt)
+                    !entry.Target.IsAlive || !entry.Persistent && now >= entry.HideAt)
                 {
                     releaseKeys.Add(pair.Key);
                     continue;
                 }
 
                 entry.View.SetHealthRatio(ResolveHealthRatio(entry.Target.Health));
+                entry.View.SetEnergy(ResolveEnergyRatio(entry.Target), entry.Persistent);
                 UpdatePosition(entry.Target, entry.View);
             }
 
@@ -206,6 +241,12 @@ namespace ProjectMT.Shared.Combat
                 : 0f;
         }
 
+        private static float ResolveEnergyRatio(UnitActor target)
+        {
+            var capacity = target?.SkillRuntime.EnergyCapacity ?? 0f;
+            return capacity > 0f ? Mathf.Clamp01(target.SkillRuntime.Energy / capacity) : 0f;
+        }
+
 #if UNITY_EDITOR
         public void EditorConfigure(
             Canvas targetCanvas,
@@ -222,16 +263,18 @@ namespace ProjectMT.Shared.Combat
 
         private struct ActiveBar
         {
-            public ActiveBar(UnitActor target, WorldHealthBarView view, float hideAt)
+            public ActiveBar(UnitActor target, WorldHealthBarView view, float hideAt, bool persistent)
             {
                 Target = target;
                 View = view;
                 HideAt = hideAt;
+                Persistent = persistent;
             }
 
             public UnitActor Target;
             public WorldHealthBarView View;
             public float HideAt;
+            public bool Persistent;
         }
     }
 }

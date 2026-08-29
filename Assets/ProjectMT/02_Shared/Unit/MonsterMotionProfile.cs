@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ProjectMT.Shared.Unit
@@ -121,22 +122,86 @@ namespace ProjectMT.Shared.Unit
 #endif
     }
 
+    [Serializable]
+    public sealed class MonsterActiveStepMotion // 액티브 공격 Step 하나의 전용 모션
+    {
+        [SerializeField] private string stepId;
+        [SerializeField] private AnimationClip clip;
+        [SerializeField, Min(0.01f)] private float playbackSpeed = 1f;
+        [SerializeField, Min(0f)] private float crossFadeDuration = 0.08f;
+        [SerializeField, Range(0f, 1f)] private float commitNormalizedTime = 0.25f;
+
+        public string StepId => stepId?.Trim() ?? string.Empty;
+        public string StateName => "Active_" + StepId;
+        public AnimationClip Clip => clip;
+        public float PlaybackSpeed => Mathf.Max(0.01f, playbackSpeed);
+        public float CrossFadeDuration => Mathf.Max(0f, crossFadeDuration);
+        public float CommitNormalizedTime => Mathf.Clamp01(commitNormalizedTime);
+
+        public bool TryValidate(out string error)
+        {
+            if (!ActiveAttackValue.UsesSafeId(StepId) || clip == null)
+            {
+                error = $"액티브 Step 모션이 유효하지 않습니다. Step={StepId}";
+                return false;
+            }
+            error = string.Empty;
+            return true;
+        }
+
+#if UNITY_EDITOR
+        public void EditorConfigure(
+            string id,
+            AnimationClip animationClip,
+            float speed,
+            float fadeDuration,
+            float commitTime)
+        {
+            stepId = id?.Trim();
+            clip = animationClip;
+            playbackSpeed = Mathf.Max(0.01f, speed);
+            crossFadeDuration = Mathf.Max(0f, fadeDuration);
+            commitNormalizedTime = Mathf.Clamp01(commitTime);
+        }
+#endif
+    }
+
     [CreateAssetMenu(menuName = "ProjectMT/Unit/Monster Motion Profile", fileName = "MM_Monster")]
     public sealed class MonsterMotionProfile : ScriptableObject // 공통 네 동작과 공격 후보 원본
     {
         public const string IdleStateName = "Idle";
         public const string MoveStateName = "Move";
+        public const string ActiveStateName = "Active";
         public const string DeathStateName = "Death";
 
         [SerializeField] private MonsterMotionSlot idle = new MonsterMotionSlot();
         [SerializeField] private MonsterMotionSlot move = new MonsterMotionSlot();
         [SerializeField] private MonsterAttackMotion[] attacks = Array.Empty<MonsterAttackMotion>();
+        [SerializeField] private MonsterMotionSlot active;
+        [SerializeField] private MonsterActiveStepMotion[] activeSteps = Array.Empty<MonsterActiveStepMotion>();
         [SerializeField] private MonsterMotionSlot death = new MonsterMotionSlot();
 
         public MonsterMotionSlot Idle => idle;
         public MonsterMotionSlot Move => move;
         public MonsterAttackMotion[] Attacks => attacks ?? Array.Empty<MonsterAttackMotion>();
+        public MonsterMotionSlot Active => active;
+        public IReadOnlyList<MonsterActiveStepMotion> ActiveSteps => activeSteps ??
+            Array.Empty<MonsterActiveStepMotion>();
         public MonsterMotionSlot Death => death;
+
+        public MonsterActiveStepMotion ResolveActiveStep(string stepId)
+        {
+            if (string.IsNullOrWhiteSpace(stepId)) return null;
+            for (var index = 0; index < ActiveSteps.Count; index++)
+            {
+                var motion = ActiveSteps[index];
+                if (motion != null && string.Equals(motion.StepId, stepId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return motion;
+                }
+            }
+            return null;
+        }
 
         public bool TryValidate(out string error)
         {
@@ -155,6 +220,7 @@ namespace ProjectMT.Shared.Unit
 
             if (!ValidateFeedback(idle.StartFeedback, "Idle", out error) ||
                 !ValidateFeedback(move.StartFeedback, "Move", out error) ||
+                !ValidateFeedback(active?.StartFeedback, "Active", out error) ||
                 !ValidateFeedback(death.StartFeedback, "Death", out error))
             {
                 return false;
@@ -224,6 +290,18 @@ namespace ProjectMT.Shared.Unit
                 }
             }
 
+            var activeStepIds = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (var index = 0; index < ActiveSteps.Count; index++)
+            {
+                var motion = ActiveSteps[index];
+                var motionError = "액티브 Step 모션이 비어 있습니다.";
+                if (motion == null || !motion.TryValidate(out motionError) || !activeStepIds.Add(motion.StepId))
+                {
+                    error = $"Monster Active Step motion is invalid. Profile={name}, Detail={motionError}";
+                    return false;
+                }
+            }
+
             error = null;
             return true;
         }
@@ -247,9 +325,38 @@ namespace ProjectMT.Shared.Unit
             MonsterAttackMotion[] attackMotions,
             MonsterMotionSlot deathMotion)
         {
+            EditorConfigure(idleMotion, moveMotion, attackMotions, null, deathMotion);
+        }
+
+        public void EditorConfigure(
+            MonsterMotionSlot idleMotion,
+            MonsterMotionSlot moveMotion,
+            MonsterAttackMotion[] attackMotions,
+            MonsterMotionSlot activeMotion,
+            MonsterMotionSlot deathMotion)
+        {
+            EditorConfigure(
+                idleMotion,
+                moveMotion,
+                attackMotions,
+                activeMotion,
+                Array.Empty<MonsterActiveStepMotion>(),
+                deathMotion);
+        }
+
+        public void EditorConfigure(
+            MonsterMotionSlot idleMotion,
+            MonsterMotionSlot moveMotion,
+            MonsterAttackMotion[] attackMotions,
+            MonsterMotionSlot activeMotion,
+            MonsterActiveStepMotion[] activeStepMotions,
+            MonsterMotionSlot deathMotion)
+        {
             idle = idleMotion;
             move = moveMotion;
             attacks = attackMotions ?? Array.Empty<MonsterAttackMotion>();
+            active = activeMotion;
+            activeSteps = activeStepMotions ?? Array.Empty<MonsterActiveStepMotion>();
             death = deathMotion;
         }
 #endif

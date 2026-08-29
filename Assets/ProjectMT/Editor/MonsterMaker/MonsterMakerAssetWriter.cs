@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using ProjectMT.Contents.CastleRaid;
+using ProjectMT.Contents.CastleRaidHex;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Unit;
@@ -48,7 +48,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public const string ArtRoot = "Assets/ProjectMT/05_Art/Monsters";
         public const string DraftRoot = "Assets/ProjectMT/Editor/MonsterMaker/Drafts";
         public const string CastleRaidAIProfileCatalogPath =
-            "Assets/ProjectMT/04_Contents/01_CastleRaid/Resources/CastleRaidAIProfileCatalog.asset";
+            "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Resources/HexCastleAssaultAIProfileCatalog.asset";
         public const string MainBattleAIProfileCatalogPath =
             "Assets/ProjectMT/03_Features/MainBattle/Resources/MainBattleAIProfileCatalog.asset";
         public const string DefaultProjectilePrefabPath =
@@ -59,6 +59,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             MonsterCatalog catalog = null,
             MonsterRarityCatalog rarityCatalog = null)
         {
+            draft?.EditorSyncActiveAttackAuthoring();
             var preflight = MonsterMakerValidator.Validate(draft);
             if (preflight.HasErrors)
             {
@@ -75,10 +76,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var paths = BuildPaths(draft.MonsterId);
             var generatesUniquePassive = draft.SkillLoadoutConfigured &&
                                          draft.RarityPassiveSkill is GenericMonsterPassiveSkill;
+            var generatesAttackActive = draft.SkillLoadoutConfigured &&
+                                        draft.Rarity >= MonsterRarity.Legendary &&
+                                        draft.ActiveAttackProfile != null;
             var passivePath = BuildPassivePath(draft.MonsterId);
-            var outputPaths = generatesUniquePassive
-                ? paths.Concat(new[] { passivePath }).ToArray()
-                : paths;
+            var extraPaths = new List<string>();
+            if (generatesUniquePassive) extraPaths.Add(passivePath);
+            if (generatesAttackActive) extraPaths.Add(BuildActivePath(draft.MonsterId));
+            var outputPaths = paths.Concat(extraPaths).ToArray();
             var dataFolder = DataRoot + "/" + draft.MonsterId;
             var artFolder = ArtRoot + "/" + draft.MonsterId;
             var catalogPath = RequirePersistentAssetPath(catalog, "MonsterCatalog");
@@ -125,9 +130,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 var ascension = GetOrCreateAsset<MonsterAscensionProfile>(paths[4], "MA_" + draft.MonsterId);
                 var feedback = GetOrCreateAsset<MonsterFeedbackProfile>(paths[5], "MF_" + draft.MonsterId);
                 var castleRaidAiCatalog = writesProductionAiCatalog
-                    ? GetOrCreateAsset<CastleRaidAIProfileCatalog>(
+                    ? GetOrCreateAsset<HexCastleAssaultAIProfileCatalog>(
                         CastleRaidAIProfileCatalogPath,
-                        "CastleRaidAIProfileCatalog")
+                        "HexCastleAssaultAIProfileCatalog")
                     : null;
                 var mainBattleAiCatalog = writesProductionAiCatalog
                     ? GetOrCreateAsset<MainBattleAIProfileCatalog>(
@@ -156,6 +161,38 @@ namespace ProjectMT.EditorTools.MonsterMaker
             idle.EditorConfigure(draft.IdleClip, draft.IdleSpeed, 0.08f, true);
             var move = new MonsterMotionSlot();
             move.EditorConfigure(draft.MoveClip, draft.MovePlaybackSpeed, 0.08f, true);
+            MonsterMotionSlot active = null;
+            var activeStepMotions = Array.Empty<MonsterActiveStepMotion>();
+            if (generatesAttackActive)
+            {
+                activeStepMotions = draft.ActiveAttackPresentations
+                    .Where(source => source != null)
+                    .Select(source =>
+                    {
+                        draft.ResolveActiveStepMotion(
+                            source,
+                            out var clip,
+                            out var playbackSpeed,
+                            out var crossFadeDuration,
+                            out var commitNormalizedTime);
+                        var motion = new MonsterActiveStepMotion();
+                        motion.EditorConfigure(
+                            source.StepId,
+                            clip,
+                            playbackSpeed,
+                            crossFadeDuration,
+                            commitNormalizedTime);
+                        return motion;
+                    })
+                    .ToArray();
+                var firstMotion = activeStepMotions.FirstOrDefault();
+                active = new MonsterMotionSlot();
+                active.EditorConfigure(
+                    firstMotion?.Clip,
+                    firstMotion?.PlaybackSpeed ?? 1f,
+                    firstMotion?.CrossFadeDuration ?? 0.08f,
+                    false);
+            }
             var death = new MonsterMotionSlot();
             death.EditorConfigure(
                 draft.DeathClip,
@@ -195,7 +232,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 attacks[attackIndex] = attack;
             }
 
-            motion.EditorConfigure(idle, move, attacks, death);
+            motion.EditorConfigure(idle, move, attacks, active, activeStepMotions, death);
             var action = ConfigureCombatAction(combat, paths[3], draft, generatedSfx);
             combat.EditorConfigure(
                 draft.BasicAttackProfile != null ? draft.BasicAttackProfile.CombatType : draft.CombatType,
@@ -220,7 +257,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     ability4.EditorConfigureSkillAugment(
                         draft.Ascension4.AbilityId,
                         draft.Ascension4.DisplayName,
-                        draft.Rarity >= MonsterRarity.Epic
+                        draft.Rarity >= MonsterRarity.Legendary
                             ? MonsterSkillAugmentTarget.Active
                             : MonsterSkillAugmentTarget.Passive,
                         draft.Ascension4.AugmentOperation,
@@ -259,6 +296,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 CreateFeedbackCue(draft.SpecialFeedback, generatedSfx, "Special"));
             feedback.EditorSetBasicAttackVfxBindings(
                 CompileBasicAttackPresentationBindings(draft, generatedSfx));
+            var attackActive = generatesAttackActive
+                ? BuildOrUpdateMonsterActiveAsset(draft, generatedSfx)
+                : null;
             generatedSfx.RemoveUnused();
 
             var controller = ConfigureAnimatorController(paths[7], motion);
@@ -333,6 +373,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 castleRaidAiCatalog,
                 mainBattleAiCatalog);
             MarkDirty(uniquePassive);
+            MarkDirty(attackActive, draft);
             SaveAssetsIfDirty(
                 body,
                 motion,
@@ -349,6 +390,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 castleRaidAiCatalog,
                 mainBattleAiCatalog);
             SaveAssetsIfDirty(uniquePassive);
+            SaveAssetsIfDirty(attackActive, draft);
             generatedSfx.SaveIfDirty();
             AssetDatabase.ImportAsset(paths[8], ImportAssetOptions.ForceUpdate);
             AssetDatabase.ImportAsset(paths[7], ImportAssetOptions.ForceUpdate);
@@ -360,7 +402,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 throw new InvalidOperationException(BuildRuntimeIssueText(outputValidation.Issues));
             }
 
-            RegisterLast(catalog, rarityCatalog, definition, draft, uniquePassive);
+            RegisterLast(catalog, rarityCatalog, definition, draft, uniquePassive, attackActive);
             SaveAssetsIfDirty(catalog, rarityCatalog, castleRaidAiCatalog, mainBattleAiCatalog);
             AssetDatabase.Refresh();
 
@@ -378,7 +420,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (castleRaidAiCatalog != null && (assignedAiProfile == null ||
                 assignedAiProfile.Pattern != draft.CastleRaidAiPattern))
             {
-                throw new InvalidOperationException("생성물 검증 뒤 Castle Raid AI Profile 등록을 확인하지 못했습니다.");
+                throw new InvalidOperationException("생성물 검증 뒤 Hex Castle Raid AI Profile 등록을 확인하지 못했습니다.");
             }
 
             if (mainBattleAiCatalog != null &&
@@ -390,7 +432,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             var guidAfter = outputPaths.ToDictionary(path => path, AssetDatabase.AssetPathToGUID);
-            for (var index = 0; index < outputPaths.Count; index++)
+            for (var index = 0; index < outputPaths.Length; index++)
             {
                 var before = guidBefore[outputPaths[index]];
                 if (!string.IsNullOrEmpty(before) && !string.Equals(before, guidAfter[outputPaths[index]], StringComparison.Ordinal))
@@ -459,6 +501,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
             return $"{DataRoot}/{monsterId}/MP_{monsterId}_Passive.asset";
         }
 
+        public static string BuildActivePath(string monsterId)
+        {
+            return $"{DataRoot}/{monsterId}/MSA_{monsterId}_Active.asset";
+        }
+
         public static GenericMonsterPassiveSkill BuildOrUpdateMonsterPassiveAsset(MonsterMakerDraft draft)
         {
             if (draft == null || !(draft.RarityPassiveSkill is GenericMonsterPassiveSkill template))
@@ -504,6 +551,50 @@ namespace ProjectMT.EditorTools.MonsterMaker
             EditorUtility.SetDirty(passive);
             AssetDatabase.SaveAssetIfDirty(passive);
             return passive;
+        }
+
+        private static MonsterAttackActiveSkill BuildOrUpdateMonsterActiveAsset(
+            MonsterMakerDraft draft,
+            MonsterMakerGeneratedSfxWriter generatedSfx)
+        {
+            var path = BuildActivePath(draft.MonsterId);
+            var active = GetOrCreateAsset<MonsterAttackActiveSkill>(
+                path,
+                $"MSA_{draft.MonsterId}_Active");
+            active.EditorConfigure(
+                $"active_{draft.MonsterId}",
+                draft.ActiveSkillName,
+                draft.ActiveAttackProfile.Description,
+                draft.Portrait,
+                draft.ActiveAttackProfile,
+                draft.ActiveAttackStepTunings,
+                CompileActiveAttackPresentationBindings(draft, generatedSfx),
+                draft.ActiveEnergyMaximum,
+                ResolveActiveCommitNormalizedTime(draft),
+                draft.Rarity == MonsterRarity.Mythic);
+            if (!active.TryValidate(out var error))
+            {
+                throw new InvalidOperationException(error);
+            }
+
+            draft.EditorSetResolvedActiveSkill(active);
+            EditorUtility.SetDirty(active);
+            EditorUtility.SetDirty(draft);
+            return active;
+        }
+
+        private static float ResolveActiveCommitNormalizedTime(MonsterMakerDraft draft)
+        {
+            var firstPresentation = draft.ActiveAttackPresentations.Count > 0
+                ? draft.ActiveAttackPresentations[0]
+                : null;
+            draft.ResolveActiveStepMotion(
+                firstPresentation,
+                out _,
+                out _,
+                out _,
+                out var commitNormalizedTime);
+            return commitNormalizedTime;
         }
 
         private static void ValidateProductionDraftOwnership(
@@ -680,6 +771,18 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 [MonsterMotionProfile.MoveStateName] = motion.Move.Clip,
                 [MonsterMotionProfile.DeathStateName] = motion.Death.Clip
             };
+            if (motion.Active?.Clip != null)
+            {
+                expected[MonsterMotionProfile.ActiveStateName] = motion.Active.Clip;
+            }
+            for (var index = 0; index < motion.ActiveSteps.Count; index++)
+            {
+                var activeStep = motion.ActiveSteps[index];
+                if (activeStep?.Clip != null)
+                {
+                    expected[activeStep.StateName] = activeStep.Clip;
+                }
+            }
             for (var index = 0; index < motion.Attacks.Length; index++)
             {
                 expected[motion.Attacks[index].StateName] = motion.Attacks[index].Clip;
@@ -853,6 +956,56 @@ namespace ProjectMT.EditorTools.MonsterMaker
             return result;
         }
 
+        private static MonsterActiveAttackPresentationBinding[] CompileActiveAttackPresentationBindings(
+            MonsterMakerDraft draft,
+            MonsterMakerGeneratedSfxWriter generatedSfx)
+        {
+            var result = new List<MonsterActiveAttackPresentationBinding>();
+            foreach (var source in draft.ActiveAttackPresentations)
+            {
+                if (source == null || string.IsNullOrWhiteSpace(source.StepId))
+                {
+                    continue;
+                }
+
+                var role = $"Active_{source.StepId}";
+                var slotBindings = new List<MonsterActiveAttackPresentationCueBinding>();
+                var sourceStep = draft.ActiveAttackProfile?.Steps.FirstOrDefault(step =>
+                    step != null && string.Equals(step.StepId, source.StepId, StringComparison.OrdinalIgnoreCase));
+                if (sourceStep != null)
+                {
+                    for (var slotIndex = 0; slotIndex < sourceStep.PresentationSlots.Count; slotIndex++)
+                    {
+                        var contract = sourceStep.PresentationSlots[slotIndex];
+                        if (contract == null) continue;
+                        var slotDraft = source.ResolveSlot(contract.SlotId);
+                        var slotBinding = new MonsterActiveAttackPresentationCueBinding();
+                        slotBinding.EditorConfigure(
+                            contract.SlotId,
+                            contract.Timing,
+                            contract.Anchor,
+                            CreateFeedbackCue(
+                                slotDraft?.Feedback,
+                                generatedSfx,
+                                role + "_" + contract.SlotId));
+                        slotBindings.Add(slotBinding);
+                    }
+                }
+                var binding = new MonsterActiveAttackPresentationBinding();
+                binding.EditorConfigure(
+                    source.StepId,
+                    CreateFeedbackCue(source.Telegraph, generatedSfx, role + "_Telegraph"),
+                    CreateFeedbackCue(source.Launch, generatedSfx, role + "_Launch"),
+                    CreateFeedbackCue(source.Travel, generatedSfx, role + "_Travel"),
+                    CreateFeedbackCue(source.Impact, generatedSfx, role + "_Impact"),
+                    CreateFeedbackCue(source.TeleportExit, generatedSfx, role + "_TeleportExit"),
+                    CreateFeedbackCue(source.TeleportEnter, generatedSfx, role + "_TeleportEnter"),
+                    slotBindings.ToArray());
+                result.Add(binding);
+            }
+            return result.ToArray();
+        }
+
         private sealed class MonsterMakerGeneratedSfxWriter // AudioClip 입력을 역할별 Cue 서브에셋으로 관리
         {
             private const string GeneratedPrefix = "__MonsterMakerSfx_";
@@ -988,7 +1141,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
             MonsterRarityCatalog rarityCatalog,
             MonsterDefinition definition,
             MonsterMakerDraft draft,
-            MonsterPassiveSkill resolvedPassive)
+            MonsterPassiveSkill resolvedPassive,
+            MonsterActiveSkill resolvedActive)
         {
             var previousDefinitions = catalog.Definitions.ToList();
             var matching = previousDefinitions
@@ -1011,7 +1165,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 throw new InvalidOperationException(catalogError);
             }
 
-            RegisterRarity(rarityCatalog, definition, draft, resolvedPassive);
+            RegisterRarity(rarityCatalog, definition, draft, resolvedPassive, resolvedActive);
             if (!rarityCatalog.TryValidate(out var rarityCatalogError))
             {
                 throw new InvalidOperationException(rarityCatalogError);
@@ -1025,7 +1179,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
             MonsterRarityCatalog rarityCatalog,
             MonsterDefinition definition,
             MonsterMakerDraft draft,
-            MonsterPassiveSkill resolvedPassive)
+            MonsterPassiveSkill resolvedPassive,
+            MonsterActiveSkill resolvedActive)
         {
             var serialized = new SerializedObject(rarityCatalog);
             var common = serialized.FindProperty("commonToEpicEntries");
@@ -1044,7 +1199,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var activeSkill = entry.FindPropertyRelative("activeSkill");
             if (activeSkill != null)
             {
-                activeSkill.objectReferenceValue = draft.SkillLoadoutConfigured ? draft.RarityActiveSkill : null;
+                activeSkill.objectReferenceValue = draft.SkillLoadoutConfigured ? resolvedActive : null;
             }
 
             serialized.ApplyModifiedPropertiesWithoutUndo();

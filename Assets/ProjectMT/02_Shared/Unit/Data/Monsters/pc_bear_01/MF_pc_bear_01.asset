@@ -99,7 +99,7 @@ MonoBehaviour:
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
-    eventTimingOffset: -0.2
+    eventTimingOffset: -0.35
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 180, y: 0, z: 180}
     scale: 0.7

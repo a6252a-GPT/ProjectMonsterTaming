@@ -1,0 +1,190 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 636d839b21812ab49a12f4bee7b8ef7d, type: 3}
+  m_Name: AAP_SkyBreak
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterActiveAttackProfile
+  profileId: sky_break
+  displayName: "\uCC9C\uACF5 \uBD84\uC1C4"
+  description: "\uC21C\uAC04\uC774\uB3D9 \uD6C4 \uD0C0\uAE43\uC744 \uC804\uD658\uD558\uACE0
+    \uC774\uC804 Step\uC758 \uD0C0\uAE43\uC73C\uB85C \uC5F0\uACC4\uD558\uB294 \uC804\uC124
+    \uACF5\uACA9 \uC2A4\uD0AC QA."
+  steps:
+  - stepId: step_01
+    displayName: "\uC804\uBC29 \uB3C4\uC57D \uBD84\uC1C4"
+    delayAfterPrevious: 0
+    targetPolicy: 0
+    teleportBeforeAttack: 1
+    teleportFrontDistance: 1.2
+    pattern: 3
+    progression: 0
+    damageMultiplier: 1.2
+    maxTargets: 8
+    range: 4
+    width: 1.2
+    radius: 2
+    forwardOffset: 1.2
+    angle: 70
+    progressionDuration: 0.25
+    telegraphDelay: 0.12
+    visualDuration: 0.8
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    instantMagicTarget: 0
+    magicDirection: 0
+    hitEffects:
+    - type: 1
+      magnitude: 1.2
+      duration: 0.5
+      secondaryMagnitude: 0
+      tickInterval: 0.5
+    presentationSlots:
+    - slotId: vfx_01
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      timing: 0
+      anchor: 2
+      description: 
+    - slotId: vfx_02
+      displayName: "\uACF5\uACA9 \uBC1C\uB3D9"
+      timing: 1
+      anchor: 1
+      description: 
+    - slotId: vfx_03
+      displayName: "\uC2E4\uC81C \uD0C0\uACA9"
+      timing: 3
+      anchor: 2
+      description: 
+    - slotId: vfx_04
+      displayName: "\uC21C\uAC04\uC774\uB3D9 \uCD9C\uBC1C"
+      timing: 4
+      anchor: 0
+      description: 
+    - slotId: vfx_05
+      displayName: "\uC21C\uAC04\uC774\uB3D9 \uB3C4\uCC29"
+      timing: 5
+      anchor: 0
+      description: 
+  - stepId: step_02
+    displayName: "\uD0C0\uAE43 \uC804\uD658 \uAD00\uD1B5\uAD11"
+    delayAfterPrevious: 0.18
+    targetPolicy: 1
+    teleportBeforeAttack: 0
+    teleportFrontDistance: 1
+    pattern: 6
+    progression: 0
+    damageMultiplier: 1.4
+    maxTargets: 8
+    range: 7
+    width: 1
+    radius: 1.5
+    forwardOffset: 1
+    angle: 60
+    progressionDuration: 0.25
+    telegraphDelay: 0.12
+    visualDuration: 0.8
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    instantMagicTarget: 0
+    magicDirection: 0
+    hitEffects:
+    - type: 3
+      magnitude: 0.12
+      duration: 3
+      secondaryMagnitude: 0
+      tickInterval: 0.5
+    presentationSlots:
+    - slotId: vfx_01
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      timing: 0
+      anchor: 2
+      description: 
+    - slotId: vfx_02
+      displayName: "\uACF5\uACA9 \uBC1C\uB3D9"
+      timing: 1
+      anchor: 1
+      description: 
+    - slotId: vfx_03
+      displayName: "\uBE54 \uBCF8\uCCB4"
+      timing: 2
+      anchor: 1
+      description: 
+    - slotId: vfx_04
+      displayName: "\uC2E4\uC81C \uD0C0\uACA9"
+      timing: 3
+      anchor: 2
+      description: 
+  - stepId: step_03
+    displayName: "\uC804\uBC29 \uB9C8\uBB34\uB9AC"
+    delayAfterPrevious: 0.2
+    targetPolicy: 0
+    teleportBeforeAttack: 0
+    teleportFrontDistance: 1
+    pattern: 0
+    progression: 1
+    damageMultiplier: 1.8
+    maxTargets: 8
+    range: 6
+    width: 1.2
+    radius: 1.5
+    forwardOffset: 1
+    angle: 60
+    progressionDuration: 0.35
+    telegraphDelay: 0.12
+    visualDuration: 0.8
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    instantMagicTarget: 0
+    magicDirection: 0
+    hitEffects:
+    - type: 0
+      magnitude: 0.6
+      duration: 0.22
+      secondaryMagnitude: 0.12
+      tickInterval: 0.5
+    - type: 2
+      magnitude: 0
+      duration: 0.8
+      secondaryMagnitude: 0
+      tickInterval: 0.5
+    presentationSlots:
+    - slotId: vfx_01
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      timing: 0
+      anchor: 2
+      description: 
+    - slotId: vfx_02
+      displayName: "\uACF5\uACA9 \uBC1C\uB3D9"
+      timing: 1
+      anchor: 1
+      description: 
+    - slotId: vfx_03
+      displayName: "\uC2E4\uC81C \uD0C0\uACA9"
+      timing: 3
+      anchor: 2
+      description: 
+  impactFeel:
+    prefab: {fileID: 0}
+    lifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1

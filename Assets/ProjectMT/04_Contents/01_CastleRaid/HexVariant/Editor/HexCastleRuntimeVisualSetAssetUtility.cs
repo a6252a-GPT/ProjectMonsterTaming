@@ -15,7 +15,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
         private const string DerivedRoot =
             "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Art/Derived/KayKitDoubleSided/Prefabs/";
         private const string TurretHeadRoot =
-            "Assets/ProjectMT/04_Contents/01_CastleRaid/Prefabs/TurretHeads/";
+            "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Prefabs/TurretHeads/";
         private const string MaterialPath =
             "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Art/Materials/MAT_CRHex_KayKitWall_Spring.mat";
         private const string TrapSourceRoot = "Assets/ThirdParty2/05_오브젝트장식/Traps";

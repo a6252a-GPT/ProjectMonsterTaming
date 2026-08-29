@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ProjectMT.Contents.CastleRaid;
+using ProjectMT.Contents.CastleRaidHex;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Unit;
@@ -284,7 +284,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             MonsterMakerDraft draft,
             MonsterMakerValidationReport report)
         {
-            if (draft.CastleRaidAiPattern != CastleRaidAiPattern.TacticalSupport)
+            if (draft.CastleRaidAiPattern != HexCastleAssaultPattern.TacticalSupport)
             {
                 return;
             }
@@ -307,7 +307,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
         {
             if (!draft.SkillLoadoutConfigured)
             {
-                if (draft.RarityPassiveSkill != null || draft.RarityActiveSkill != null)
+                if (draft.RarityPassiveSkill != null || draft.RarityActiveSkill != null ||
+                    draft.ActiveAttackProfile != null)
                 {
                     report.Add(
                         MonsterMakerIssueSeverity.Error,
@@ -378,63 +379,154 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             var active = draft.RarityActiveSkill;
-            if (draft.Rarity < MonsterRarity.Epic)
+            if (draft.Rarity < MonsterRarity.Legendary)
             {
-                if (active != null)
+                if (active != null || draft.ActiveAttackProfile != null)
                 {
                     report.Add(
                         MonsterMakerIssueSeverity.Error,
                         "MAKER-SKILL-ACTIVE-RARITY",
-                        "일반·희귀 등급은 액티브를 연결할 수 없습니다.",
-                        active);
+                        "일반·희귀·영웅 등급은 액티브 공격 프로필을 연결할 수 없습니다.",
+                        active != null ? active : draft.ActiveAttackProfile);
                 }
 
                 return;
             }
 
-            if (active == null)
+            if (draft.ActiveAttackProfile == null)
             {
                 report.Add(
-                    MonsterMakerIssueSeverity.Warning,
+                    MonsterMakerIssueSeverity.Error,
                     "MAKER-SKILL-ACTIVE-PENDING",
-                    "영웅 이상 등급의 액티브가 아직 선택되지 않았습니다. 패시브만 먼저 반영할 수 있습니다.",
+                    "전설·신화 등급은 공격 액티브 프로필이 필요합니다.",
                     draft);
                 return;
             }
 
-            if (!active.TryValidate(out var activeError))
+            ValidateActiveAttackAuthoring(draft, report);
+        }
+
+        private static void ValidateActiveAttackAuthoring(
+            MonsterMakerDraft draft,
+            MonsterMakerValidationReport report)
+        {
+            var profile = draft.ActiveAttackProfile;
+            if (!profile.TryValidate(out var profileError))
             {
                 report.Add(
                     MonsterMakerIssueSeverity.Error,
-                    "MAKER-SKILL-ACTIVE-INVALID",
-                    activeError,
-                    active);
-            }
-            else if (!catalog.Contains(active))
-            {
-                report.Add(
-                    MonsterMakerIssueSeverity.Error,
-                    "MAKER-SKILL-ACTIVE-UNREGISTERED",
-                    "선택한 액티브가 Monster Skill Catalog에 등록되지 않았습니다.",
-                    active);
-            }
-            else if (!active.AuthoringEnabled)
-            {
-                report.Add(
-                    MonsterMakerIssueSeverity.Error,
-                    "MAKER-SKILL-ACTIVE-DISABLED",
-                    "선택한 액티브는 현재 P0 고도화 대상이 아니어서 Monster Maker에서 비활성 상태입니다.",
-                    active);
+                    "MAKER-ACTIVE-PROFILE",
+                    profileError,
+                    profile);
             }
 
-            if (draft.Rarity != MonsterRarity.Mythic &&
-                active.ExecutionKind == MonsterActiveExecutionKind.DedicatedMythic)
+            if (string.IsNullOrWhiteSpace(draft.ActiveSkillName))
             {
                 report.Add(
                     MonsterMakerIssueSeverity.Error,
-                    "MAKER-SKILL-DEDICATED-RARITY",
-                    "신화 전용 액티브는 신화 등급에만 연결할 수 있습니다.",
-                    active);
+                    "MAKER-ACTIVE-NAME",
+                    "이 몬스터가 사용할 고유 액티브 스킬 이름을 입력하세요.",
+                    draft);
+            }
+
+            if (draft.ActiveEnergyMaximum < 1)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ACTIVE-ENERGY",
+                    "액티브 최대 기력은 1 이상이어야 합니다.",
+                    draft);
+            }
+
+            var profileStepIds = new HashSet<string>(
+                profile.Steps.Select(step => step.StepId),
+                StringComparer.OrdinalIgnoreCase);
+            var tuningIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var tuning in draft.ActiveAttackStepTunings)
+            {
+                var tuningError = "액티브 Step 튜닝이 비어 있습니다.";
+                if (tuning == null || !tuning.TryValidate(out tuningError))
+                {
+                    report.Add(MonsterMakerIssueSeverity.Error, "MAKER-ACTIVE-TUNING", tuningError, draft);
+                    continue;
+                }
+                if (!profileStepIds.Contains(tuning.StepId) || !tuningIds.Add(tuning.StepId))
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-ACTIVE-TUNING-ID",
+                        $"프로필과 일치하지 않거나 중복된 Step 튜닝입니다. Step={tuning.StepId}",
+                        draft);
+                }
+            }
+            if (tuningIds.Count != profile.Steps.Count)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ACTIVE-TUNING-COUNT",
+                    "프로필이 변경되었습니다. 액티브 섹션에서 Step을 다시 동기화하세요.",
+                    draft);
+            }
+
+            var presentationIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var presentation in draft.ActiveAttackPresentations)
+            {
+                if (presentation == null || !profileStepIds.Contains(presentation.StepId) ||
+                    !presentationIds.Add(presentation.StepId))
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-ACTIVE-PRESENTATION-ID",
+                        $"프로필과 일치하지 않거나 중복된 Step 연출 연결입니다. Step={presentation?.StepId}",
+                        draft);
+                    continue;
+                }
+                if (draft.UseCustomActiveStepMotions && presentation.MotionClip == null)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-ACTIVE-STEP-MOTION",
+                        $"액티브 스텝 [{presentation.StepId}]의 공격 모션 Clip을 지정하세요.",
+                        draft);
+                }
+                else if (draft.UseCustomActiveStepMotions)
+                {
+                    ValidateClipRig(presentation.MotionClip, $"Active/{presentation.StepId}", report);
+                }
+                if (draft.UseCustomActiveStepMotions &&
+                    (!IsFinitePositive(presentation.MotionPlaybackSpeed) ||
+                    !IsFiniteNonNegative(presentation.MotionCrossFadeDuration) ||
+                    !IsFiniteInRange(presentation.MotionCommitNormalizedTime, 0f, 1f)))
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-ACTIVE-STEP-MOTION-TUNING",
+                        $"액티브 스텝 [{presentation.StepId}]의 재생 속도·전환 시간·판정 시작 시점이 유효하지 않습니다.",
+                        draft);
+                }
+                ValidateFeedbackCue(presentation.Telegraph, $"{presentation.StepId} 예고", report, draft);
+                ValidateFeedbackCue(presentation.Launch, $"{presentation.StepId} 발동", report, draft);
+                ValidateFeedbackCue(presentation.Travel, $"{presentation.StepId} 이동", report, draft);
+                ValidateFeedbackCue(presentation.Impact, $"{presentation.StepId} 타격", report, draft);
+                ValidateFeedbackCue(presentation.TeleportExit, $"{presentation.StepId} 순간이동 출발", report, draft);
+                ValidateFeedbackCue(presentation.TeleportEnter, $"{presentation.StepId} 순간이동 도착", report, draft);
+            }
+            if (presentationIds.Count != profile.Steps.Count)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ACTIVE-PRESENTATION-COUNT",
+                    "프로필이 변경되었습니다. 액티브 연출 연결을 다시 동기화하세요.",
+                    draft);
+            }
+
+            if (draft.RarityActiveSkill != null && draft.RarityActiveSkill is not MonsterAttackActiveSkill)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Warning,
+                    "MAKER-ACTIVE-LEGACY",
+                    "기존 액티브 참조는 전투 반영 시 새 공격 액티브 에셋으로 교체됩니다.",
+                    draft.RarityActiveSkill);
             }
         }
 
@@ -749,7 +841,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             ValidateAbility(
                 draft.Ascension4,
                 4,
-                draft.Rarity >= MonsterRarity.Epic
+                draft.Rarity >= MonsterRarity.Legendary
                     ? MonsterSkillAugmentTarget.Active
                     : MonsterSkillAugmentTarget.Passive,
                 report,
@@ -764,7 +856,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     draft);
             }
 
-            if (draft.Rarity >= MonsterRarity.Epic && draft.RarityActiveSkill == null)
+            if (draft.Rarity >= MonsterRarity.Legendary && draft.ActiveAttackProfile == null)
             {
                 report.Add(
                     MonsterMakerIssueSeverity.Error,
@@ -978,6 +1070,21 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             return true;
+        }
+
+        private static bool IsFinitePositive(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) && value > 0f;
+        }
+
+        private static bool IsFiniteNonNegative(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) && value >= 0f;
+        }
+
+        private static bool IsFiniteInRange(float value, float minimum, float maximum)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) && value >= minimum && value <= maximum;
         }
     }
 }

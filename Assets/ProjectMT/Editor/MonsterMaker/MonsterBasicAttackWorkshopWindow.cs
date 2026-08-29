@@ -1036,6 +1036,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
     {
         private const float LibraryWidth = 285f;
         private const float AssemblerWidth = 480f;
+        private const float AssemblerContentWidth = AssemblerWidth - 33f; // Toolbar의 3px 내부 여백까지 포함해 액티브와 실제 폭을 맞춤
         private const float MinimumPreviewWidth = 300f;
         private const string StandardFeelTargetPath =
             "Assets/ProjectMT/03_Features/Expedition/Prefabs/PF_Enemy_Knight_T1.prefab";
@@ -1086,10 +1087,17 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private float previewActivationElapsed = -1f;
         private bool previewDeliveryActivated;
         private bool previewUpdateSubscribed;
+        private Rect lastAssemblerContentRect; // 최소 창 폭 QA용 실제 중앙 콘텐츠 경계
+        private Rect lastAssemblerViewportRect; // 세로 스크롤이 실제로 보여 주는 중앙 폭
+        private Rect lastVfxHeaderRightmostRect; // VFX 공간 헤더의 삭제 버튼 경계
+        private Rect lastAssemblerPanelRect; // 저장 영역까지 포함한 중앙 패널 경계
+        private Rect lastSaveRightmostRect; // 두 저장 버튼 중 가장 오른쪽 버튼 경계
+        private Rect lastPreviewColumnRect; // 우측 미리보기 열 경계
+        private Rect lastPreviewToolbarRightmostRect; // VFX 위치 버튼 행의 가장 오른쪽 버튼 경계
 
         public static event Action PresetAssigned;
 
-        [MenuItem("Tools/ProjectMT/Monster Maker/기본공격 조립소")]
+        [MenuItem("JC Tool/Monster/기본공격 조립소")]
         public static void OpenStandalone()
         {
             Open(null);
@@ -1119,6 +1127,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
             window.Focus();
         }
 
+        internal int PreviewSceneHandle => previewUtility?.camera != null
+            ? previewUtility.camera.gameObject.scene.handle
+            : 0;
+
         private void OnEnable()
         {
             titleContent = new GUIContent("기본공격 조립소");
@@ -1142,9 +1154,23 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
         }
 
+        private void OnDestroy()
+        {
+            SetPreviewUpdateSubscribed(false);
+            DisposePreview();
+            if (workingProfile != null)
+            {
+                DestroyImmediate(workingProfile);
+                workingProfile = null;
+            }
+        }
+
         private void OnGUI()
         {
             EnsureWorkingProfile();
+            MonsterWorkshopVisualTheme.DrawHeader(
+                "기본공격 조립소",
+                "공격 방식 조립 · 몬스터별 연출 계약 · 독립 판정 미리보기");
             using (new EditorGUILayout.HorizontalScope())
             {
                 DrawLibrary();
@@ -1158,7 +1184,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
             using (new EditorGUILayout.VerticalScope(GUILayout.Width(LibraryWidth)))
             {
                 GUILayout.Label("저장된 프리셋", EditorStyles.boldLabel);
-                if (GUILayout.Button("+ 빈 기본공격 조립", GUILayout.Height(28f)))
+                if (MonsterWorkshopVisualTheme.DrawTintedButton(
+                        new GUIContent("+ 빈 기본공격 조립"),
+                        MonsterWorkshopVisualTheme.PrimaryColor,
+                        28f))
                 {
                     StartBlank();
                 }
@@ -1184,7 +1213,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 }
 
                 search = EditorGUILayout.TextField("검색", search);
-                libraryScroll = EditorGUILayout.BeginScrollView(libraryScroll);
+                libraryScroll = MonsterWorkshopVisualTheme.BeginVerticalScrollView(libraryScroll);
                 DrawProfileGroup("공식 기본공격 15종", true);
                 DrawProfileGroup("사용자 프리셋", false);
                 EditorGUILayout.EndScrollView();
@@ -1211,12 +1240,13 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    var selected = profile == loadedProfile ? "▶ " : string.Empty;
                     var usage = MonsterBasicAttackPresetUtility.CountDraftUsages(profile);
                     var content = new GUIContent(
-                        $"{selected}[{profile.AttackId}] {profile.DisplayName}",
+                        $"[{profile.AttackId}] {profile.DisplayName}",
                         $"현재 {usage}마리가 사용하는 프리셋");
-                    if (GUILayout.Button(content, GUILayout.Height(26f)))
+                    if (MonsterWorkshopVisualTheme.DrawPresetButton(
+                            content,
+                            profile == loadedProfile))
                     {
                         LoadProfile(profile);
                     }
@@ -1230,92 +1260,116 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawAssembler()
         {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox, GUILayout.Width(AssemblerWidth)))
+            using (var assemblerScope = new EditorGUILayout.VerticalScope(
+                       EditorStyles.helpBox,
+                       GUILayout.Width(AssemblerWidth)))
             {
                 GUILayout.Label("기본공격 조립", EditorStyles.boldLabel);
                 GUILayout.Label(
                     loadedProfile == null ? "빈 작업 사본 · 아직 프리셋 자산이 아닙니다." :
-                    $"불러옴: {AssetDatabase.GetAssetPath(loadedProfile)}",
+                    $"직접 수정 중: {AssetDatabase.GetAssetPath(loadedProfile)}",
                     EditorStyles.wordWrappedMiniLabel);
-                if (loadedProfile != null && GUILayout.Button("이 설정을 새 프리셋으로 분기", GUILayout.Height(24f)))
-                {
-                    ForkLoadedAsNew();
-                }
-
-                recipeScroll = EditorGUILayout.BeginScrollView(recipeScroll);
-                EditorGUI.BeginChangeCheck();
-                using (new EditorGUI.DisabledScope(loadedProfile != null))
-                {
-                    recipe.attackId = EditorGUILayout.TextField("프리셋 ID", recipe.attackId);
-                }
                 if (loadedProfile != null)
                 {
                     GUILayout.Label(
-                        "저장된 프리셋의 ID와 공격 계열은 자산 경로·참조 보호를 위해 고정됩니다.",
+                        "프리셋 ID만 잠깁니다. 나머지 설정은 바로 편집하고 아래의 저장 버튼으로 반영하세요.",
                         EditorStyles.wordWrappedMiniLabel);
-                }
-                recipe.displayName = EditorGUILayout.TextField("표시 이름", recipe.displayName);
-                EditorGUILayout.LabelField("기획 메모");
-                recipe.designMemo = EditorGUILayout.TextArea(
-                    recipe.designMemo ?? string.Empty,
-                    GUILayout.MinHeight(54f));
-
-                GUILayout.Space(6f);
-                GUILayout.Label("1. 공격 계열", EditorStyles.boldLabel);
-                var previousFamily = recipe.family;
-                using (new EditorGUI.DisabledScope(loadedProfile != null))
-                {
-                    recipe.family = (BasicAttackWorkshopFamily)GUILayout.Toolbar(
-                        (int)recipe.family,
-                        new[] { "근거리", "원거리", "특수" },
-                        GUILayout.Height(28f));
-                }
-                if (recipe.family != previousFamily)
-                {
-                    recipe.attackId = FindNextPresetId(recipe.family);
+                    if (GUILayout.Button("다른 프리셋으로 복제", EditorStyles.miniButton, GUILayout.Height(22f)))
+                    {
+                        ForkLoadedAsNew();
+                    }
                 }
 
-                GUILayout.Space(6f);
-                GUILayout.Label("2. 공격 방식", EditorStyles.boldLabel);
-                switch (recipe.family)
+                recipeScroll = MonsterWorkshopVisualTheme.BeginVerticalScrollView(recipeScroll);
+                using (var contentScope = new EditorGUILayout.VerticalScope(GUILayout.Width(AssemblerContentWidth)))
                 {
-                    case BasicAttackWorkshopFamily.Melee:
-                        DrawMeleeOptions();
-                        break;
-                    case BasicAttackWorkshopFamily.Ranged:
-                        DrawRangedOptions();
-                        break;
-                    case BasicAttackWorkshopFamily.Special:
-                        DrawSpecialOptions();
-                        break;
-                }
+                    EditorGUI.BeginChangeCheck();
+                    using (new EditorGUI.DisabledScope(loadedProfile != null))
+                    {
+                        recipe.attackId = EditorGUILayout.TextField("프리셋 ID", recipe.attackId);
+                    }
+                    if (loadedProfile != null)
+                    {
+                        GUILayout.Label(
+                            "저장된 프리셋의 ID와 공격 계열은 자산 경로·참조 보호를 위해 고정됩니다.",
+                            EditorStyles.wordWrappedMiniLabel);
+                    }
+                    recipe.displayName = EditorGUILayout.TextField("표시 이름", recipe.displayName);
+                    EditorGUILayout.LabelField("기획 메모");
+                    recipe.designMemo = MonsterWorkshopVisualTheme.DrawWrappedTextArea(
+                        recipe.designMemo,
+                        54f,
+                        AssemblerContentWidth - 8f);
 
-                GUILayout.Space(6f);
-                GUILayout.Label("3. 공용 판정 수치", EditorStyles.boldLabel);
-                recipe.rangeMultiplier = EditorGUILayout.Slider("사거리 배율", recipe.rangeMultiplier, 0.2f, 4f);
-                recipe.maxTargets = EditorGUILayout.IntSlider(
-                    "최대 대상 수", recipe.maxTargets, 1, MonsterBasicAttackProfile.MaximumTargets);
-                if (recipe.maxTargets > 1)
-                {
-                    recipe.secondaryDamageRatio = EditorGUILayout.Slider(
-                        "부대상 피해 배율", recipe.secondaryDamageRatio, 0.1f, 1f);
-                }
-                recipe.hitAreaVisibleDuration = EditorGUILayout.Slider(
-                    "판정 표시 시간", recipe.hitAreaVisibleDuration, 0.1f, 1f);
+                    GUILayout.Space(6f);
+                    GUILayout.Label("1. 공격 계열", EditorStyles.boldLabel);
+                    var previousFamily = recipe.family;
+                    using (new EditorGUI.DisabledScope(loadedProfile != null))
+                    {
+                        recipe.family = (BasicAttackWorkshopFamily)GUILayout.Toolbar(
+                            (int)recipe.family,
+                            new[] { "근거리", "원거리", "특수" },
+                            GUILayout.Height(28f));
+                    }
+                    if (recipe.family != previousFamily)
+                    {
+                        recipe.attackId = FindNextPresetId(recipe.family);
+                    }
 
-                GUILayout.Space(6f);
-                DrawPresentationOptions();
+                    GUILayout.Space(6f);
+                    GUILayout.Label("2. 공격 방식", EditorStyles.boldLabel);
+                    switch (recipe.family)
+                    {
+                        case BasicAttackWorkshopFamily.Melee:
+                            DrawMeleeOptions();
+                            break;
+                        case BasicAttackWorkshopFamily.Ranged:
+                            DrawRangedOptions();
+                            break;
+                        case BasicAttackWorkshopFamily.Special:
+                            DrawSpecialOptions();
+                            break;
+                    }
 
-                if (EditorGUI.EndChangeCheck())
-                {
-                    recipe.Normalize();
-                    CompileWorkingProfile();
-                    workCopyDirty = true;
-                    message = null;
+                    GUILayout.Space(6f);
+                    GUILayout.Label("3. 공용 판정 수치", EditorStyles.boldLabel);
+                    recipe.rangeMultiplier = EditorGUILayout.Slider("사거리 배율", recipe.rangeMultiplier, 0.2f, 4f);
+                    recipe.maxTargets = EditorGUILayout.IntSlider(
+                        "최대 대상 수", recipe.maxTargets, 1, MonsterBasicAttackProfile.MaximumTargets);
+                    if (recipe.maxTargets > 1)
+                    {
+                        recipe.secondaryDamageRatio = EditorGUILayout.Slider(
+                            "부대상 피해 배율", recipe.secondaryDamageRatio, 0.1f, 1f);
+                    }
+                    recipe.hitAreaVisibleDuration = EditorGUILayout.Slider(
+                        "판정 표시 시간", recipe.hitAreaVisibleDuration, 0.1f, 1f);
+
+                    GUILayout.Space(6f);
+                    DrawPresentationOptions();
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        recipe.Normalize();
+                        CompileWorkingProfile();
+                        workCopyDirty = true;
+                        message = null;
+                    }
+                    if (Event.current.type == EventType.Repaint)
+                    {
+                        lastAssemblerContentRect = contentScope.rect;
+                    }
                 }
                 EditorGUILayout.EndScrollView();
+                if (Event.current.type == EventType.Repaint)
+                {
+                    lastAssemblerViewportRect = GUILayoutUtility.GetLastRect();
+                }
 
                 DrawSaveAndAssignControls();
+                if (Event.current.type == EventType.Repaint)
+                {
+                    lastAssemblerPanelRect = assemblerScope.rect;
+                }
             }
         }
 
@@ -1511,8 +1565,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 {
                     using (new EditorGUILayout.HorizontalScope())
                     {
-                        GUILayout.Label($"VFX 공간 {index + 1:00}", EditorStyles.miniBoldLabel);
-                        GUILayout.FlexibleSpace();
+                        GUILayout.Label(
+                            $"VFX 공간 {index + 1:00}",
+                            EditorStyles.miniBoldLabel,
+                            GUILayout.MinWidth(0f),
+                            GUILayout.ExpandWidth(true));
                         using (new EditorGUI.DisabledScope(index == 0))
                         {
                             if (GUILayout.Button("▲", GUILayout.Width(28f)))
@@ -1531,7 +1588,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
                                 GUIUtility.ExitGUI();
                             }
                         }
-                        if (GUILayout.Button("삭제", GUILayout.Width(44f)))
+                        var remove = GUILayout.Button("삭제", GUILayout.Width(44f));
+                        if (Event.current.type == EventType.Repaint)
+                        {
+                            lastVfxHeaderRightmostRect = GUILayoutUtility.GetLastRect();
+                        }
+                        if (remove)
                         {
                             recipe.vfxSlots.RemoveAt(index);
                             GUIUtility.ExitGUI();
@@ -1558,9 +1620,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
                     slot.displayName = EditorGUILayout.TextField("Maker 표시 이름", slot.displayName);
                     EditorGUILayout.PrefixLabel("용도 설명");
-                    slot.description = EditorGUILayout.TextArea(
+                    slot.description = MonsterWorkshopVisualTheme.DrawWrappedTextArea(
                         slot.description,
-                        GUILayout.MinHeight(38f));
+                        38f,
+                        AssemblerContentWidth - 8f);
                     slot.assignmentScope = MonsterBasicAttackVfxEditorLabels.Popup(
                         "몬스터 적용",
                         slot.assignmentScope);
@@ -1781,19 +1844,31 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button("새 프리셋으로 저장", GUILayout.Height(30f)))
+                if (MonsterWorkshopVisualTheme.DrawTintedButton(
+                        new GUIContent("새 프리셋으로 저장"),
+                        MonsterWorkshopVisualTheme.PrimaryColor,
+                        30f))
                 {
                     SaveAsNew();
                 }
                 using (new EditorGUI.DisabledScope(loadedProfile == null))
                 {
-                    if (GUILayout.Button("불러온 프리셋 업데이트", GUILayout.Height(30f)))
+                    var update = MonsterWorkshopVisualTheme.DrawTintedButton(
+                        new GUIContent("현재 프리셋에 저장"),
+                        MonsterWorkshopVisualTheme.PreviewColor,
+                        30f);
+                    if (Event.current.type == EventType.Repaint)
+                    {
+                        lastSaveRightmostRect = GUILayoutUtility.GetLastRect();
+                    }
+                    if (update)
                     {
                         UpdateLoaded();
                     }
                 }
             }
 
+            GUILayout.Space(4f);
             using (new EditorGUI.DisabledScope(originDraft == null || loadedProfile == null || workCopyDirty))
             {
                 var label = originDraft == null
@@ -1801,7 +1876,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     : workCopyDirty
                         ? "먼저 저장해야 현재 몬스터에 배정할 수 있습니다"
                         : $"[{loadedProfile?.AttackId}] → {originDraft.MonsterId}에게 배정";
-                if (GUILayout.Button(label, GUILayout.Height(32f)))
+                if (MonsterWorkshopVisualTheme.DrawTintedButton(
+                        new GUIContent(label),
+                        MonsterWorkshopVisualTheme.FeelColor,
+                        32f))
                 {
                     AssignLoadedToOrigin();
                 }
@@ -1815,7 +1893,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void DrawPreview()
         {
-            using (new EditorGUILayout.VerticalScope(GUILayout.ExpandWidth(true)))
+            using (var previewScope = new EditorGUILayout.VerticalScope(GUILayout.ExpandWidth(true)))
             {
                 DrawPreviewPositionToolbar();
                 DrawPreviewMotionContext();
@@ -1839,7 +1917,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     GUILayout.ExpandWidth(true));
                 RenderPreview(presentationRect, false);
 
-                if (GUILayout.Button("공격 미리보기 재생", GUILayout.Height(30f)))
+                if (MonsterWorkshopVisualTheme.DrawTintedButton(
+                        new GUIContent("공격 미리보기 재생"),
+                        MonsterWorkshopVisualTheme.PreviewColor,
+                        30f))
                 {
                     PlayPreviewAttack();
                 }
@@ -1852,6 +1933,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 EditorGUILayout.HelpBox(
                     "청록색 외곽선이 실제 공용 판정 모양입니다. VFX·SFX는 이 판정과 분리된 후속 슬롯입니다.",
                     MessageType.None);
+                if (Event.current.type == EventType.Repaint)
+                {
+                    lastPreviewColumnRect = previewScope.rect;
+                }
             }
         }
 
@@ -1891,9 +1976,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
                           !previewPlaying;
             using (new EditorGUI.DisabledScope(!canOpen))
             {
-                if (GUILayout.Button(
-                        previewPlaying ? "재생 중 · 먼저 정지" : label,
-                        GUILayout.Height(23f)))
+                var open = GUILayout.Button(
+                    previewPlaying ? "재생 중 · 먼저 정지" : label,
+                    GUILayout.Height(23f));
+                if (Event.current.type == EventType.Repaint)
+                {
+                    lastPreviewToolbarRightmostRect = GUILayoutUtility.GetLastRect();
+                }
+                if (open)
                 {
                     StopPreviewPlayback();
                     previewPositionTarget = target;
@@ -2505,6 +2595,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 return;
             }
 
+            MonsterWorkshopPreviewSceneRecovery.RecoverOrphanedScenesIfNeeded();
+            if (previewUtility != null && !MonsterWorkshopPreviewSceneRecovery.HasRenderingMask(previewUtility))
+            {
+                previewUtility.Cleanup();
+                previewUtility = null;
+            }
             if (previewUtility == null)
             {
                 previewUtility = new PreviewRenderUtility();
@@ -2599,6 +2695,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private void RenderPreview(Rect rect, bool topDown)
         {
+            if (previewUtility != null && !MonsterWorkshopPreviewSceneRecovery.HasRenderingMask(previewUtility))
+            {
+                RebuildPreview();
+            }
             ConfigurePreviewCamera(rect, topDown);
             if (Event.current.type != EventType.Repaint)
             {

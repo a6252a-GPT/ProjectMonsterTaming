@@ -243,7 +243,7 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 {
                     var visual = liveBallista.GetComponent<HexCastleTurretVisual>();
                     var sourceHead = AssetDatabase.LoadAssetAtPath<GameObject>(
-                        $"Assets/ProjectMT/04_Contents/01_CastleRaid/Prefabs/TurretHeads/" +
+                        $"Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Prefabs/TurretHeads/" +
                         $"PF_CR_TurretHead_Ballista_Lv{liveBallista.Profile.Level}.prefab");
                     var sourceModel = sourceHead.transform.Find("Joint_BodyMount/YawPivot/PitchPivot/Model");
                     var liveModel = visual.PitchPivot.Find("Model");

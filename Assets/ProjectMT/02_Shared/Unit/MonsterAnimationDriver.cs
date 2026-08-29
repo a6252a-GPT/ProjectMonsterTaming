@@ -27,6 +27,7 @@ namespace ProjectMT.Shared.Unit
         private float previousNormalizedTime;
         private string currentStateName;
         private float desiredAnimatorSpeed = 1f;
+        private float focusTimeScale = 1f;
         private bool locallyPaused;
 
         public bool IsReady => animator != null && assetSet != null && motionProfile != null;
@@ -61,7 +62,16 @@ namespace ProjectMT.Shared.Unit
             locallyPaused = paused;
             if (animator != null)
             {
-                animator.speed = paused ? 0f : Mathf.Max(0.01f, desiredAnimatorSpeed);
+                animator.speed = paused ? 0f : Mathf.Max(0.01f, desiredAnimatorSpeed * focusTimeScale);
+            }
+        }
+
+        public void SetFocusTimeScale(float scale)
+        {
+            focusTimeScale = Mathf.Clamp(scale, 0.05f, 1f);
+            if (animator != null && !locallyPaused)
+            {
+                animator.speed = Mathf.Max(0.01f, desiredAnimatorSpeed * focusTimeScale);
             }
         }
 
@@ -186,6 +196,48 @@ namespace ProjectMT.Shared.Unit
             return true;
         }
 
+        public float PlayActive()
+        {
+            currentAttack = null;
+            var active = motionProfile?.Active;
+            if (!IsReady || active == null || active.Clip == null)
+            {
+                return 0f;
+            }
+
+            PlayAnimatorState(
+                MonsterMotionProfile.ActiveStateName,
+                active.PlaybackSpeed,
+                active.CrossFadeDuration);
+            currentStateName = MonsterMotionProfile.ActiveStateName;
+            return Mathf.Max(0.05f, active.Clip.length / active.PlaybackSpeed);
+        }
+
+        public float PlayActiveStep(
+            string stepId,
+            float fallbackCommitNormalizedTime,
+            out float commitDelay)
+        {
+            commitDelay = 0f;
+            currentAttack = null;
+            var stepMotion = motionProfile?.ResolveActiveStep(stepId);
+            if (IsReady && stepMotion?.Clip != null)
+            {
+                PlayAnimatorState(
+                    stepMotion.StateName,
+                    stepMotion.PlaybackSpeed,
+                    stepMotion.CrossFadeDuration);
+                currentStateName = stepMotion.StateName;
+                var duration = Mathf.Max(0.05f, stepMotion.Clip.length / stepMotion.PlaybackSpeed);
+                commitDelay = duration * stepMotion.CommitNormalizedTime;
+                return duration;
+            }
+
+            var fallbackDuration = PlayActive();
+            commitDelay = fallbackDuration * Mathf.Clamp01(fallbackCommitNormalizedTime);
+            return fallbackDuration;
+        }
+
         public float PlayDeath()
         {
             currentAttack = null;
@@ -215,6 +267,7 @@ namespace ProjectMT.Shared.Unit
         {
             locallyPaused = false;
             desiredAnimatorSpeed = 1f;
+            focusTimeScale = 1f;
             if (animator != null)
             {
                 animator.speed = 1f;
@@ -257,7 +310,7 @@ namespace ProjectMT.Shared.Unit
             }
 
             desiredAnimatorSpeed = Mathf.Max(0.01f, speed);
-            animator.speed = locallyPaused ? 0f : desiredAnimatorSpeed;
+            animator.speed = locallyPaused ? 0f : desiredAnimatorSpeed * focusTimeScale;
             if (crossFadeDuration <= 0f)
             {
                 animator.Play(stateName, 0, 0f);

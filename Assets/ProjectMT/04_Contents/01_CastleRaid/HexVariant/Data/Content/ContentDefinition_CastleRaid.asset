@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e4e65517f6e3254f8d77198f9d5aacf, type: 3}
+  m_Name: ContentDefinition_CastleRaid
+  m_EditorClassIdentifier: ProjectMT.Contents.Framework::ProjectMT.Contents.Framework.ContentDefinition
+  contentId:
+    value: castle_raid
+  displayName: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5"
+  openMode: 1
+  sceneId:
+    value: castle_raid_hex
+  startDataFactory: {fileID: 11400000, guid: 0579318ab39c2f94ba155bcbb313bb0b, type: 2}
+  resultAdapter: {fileID: 11400000, guid: fee47530b5a8a19418f26324cd7d5045, type: 2}
+  dungeonKeyItemId: 
+  supportsSweep: 0
+  sceneVariants: []

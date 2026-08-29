@@ -25,12 +25,13 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
         public const string HexScenePath = "Assets/ProjectMT/00_Scenes/03_CastleRaidHex.unity";
         public const string MainBattleScenePath = "Assets/ProjectMT/00_Scenes/01_MainBattle.unity";
         public const string SceneCatalogPath = "Assets/ProjectMT/01_Core/Config/SceneCatalog.asset";
+        public const string LegacySquareScenePath = "Assets/ProjectMT/00_Scenes/02_CastleRaid.unity";
         public const string ContentDefinitionPath =
-            "Assets/ProjectMT/04_Contents/01_CastleRaid/Data/ContentDefinition_CastleRaid.asset";
+            "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Data/Content/ContentDefinition_CastleRaid.asset";
         public const string HexRulesPath =
             "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Data/Foundation/HexCastleTheme1Rules.asset";
         public const string HudPrefabPath =
-            "Assets/ProjectMT/04_Contents/01_CastleRaid/Prefabs/PF_CastleRaidHUD.prefab";
+            "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Prefabs/PF_CastleRaidHexHUD.prefab";
         public const string FloatingNumberPrefabPath =
             "Assets/ProjectMT/02_Shared/Combat/Prefabs/PF_FloatingNumber.prefab";
         public const string StageMapPrefabPath =
@@ -56,11 +57,11 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             {
                 UpdateContentAndSceneCatalogs();
                 BuildHexScene();
-                ConnectMainBattleDialog();
+                RemoveMainBattleGridModeDialog();
                 UpdateBuildSettings();
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-                Debug.Log("[Hex Formalization] 정식 Hex 씬·MainBattle 전장 선택·Catalog·Build Settings 연결 완료");
+                Debug.Log("[Hex Formalization] Hex 단일 정식 씬·MainBattle·Catalog·Build Settings 연결 완료");
             }
             finally
             {
@@ -101,20 +102,20 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
         private static void UpdateContentAndSceneCatalogs()
         {
             var definition = LoadRequired<ContentDefinition>(ContentDefinitionPath);
-            definition.EditorSetSceneVariants(new[]
-            {
-                new ContentSceneVariant(
-                    CastleRaidGridModeDialog.SquareVariant,
-                    new SceneId("castle_raid")),
-                new ContentSceneVariant(
-                    CastleRaidGridModeDialog.HexVariant,
-                    new SceneId("castle_raid_hex"))
-            });
+            definition.EditorConfigure(
+                definition.ContentId,
+                definition.OpenMode,
+                new SceneId("castle_raid_hex"),
+                definition.StartDataFactory,
+                definition.ResultAdapter);
+            definition.EditorSetSceneVariants(Array.Empty<ContentSceneVariant>());
             EditorUtility.SetDirty(definition);
 
             var catalog = LoadRequired<SceneCatalog>(SceneCatalogPath);
             var entries = catalog.Entries
-                .Where(value => value != null && value.SceneId != new SceneId("castle_raid_hex"))
+                .Where(value => value != null &&
+                                value.SceneId != new SceneId("castle_raid") &&
+                                value.SceneId != new SceneId("castle_raid_hex"))
                 .ToList();
             entries.Add(new SceneEntry(
                 new SceneId("castle_raid_hex"),
@@ -195,17 +196,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             canvas.sortingOrder = 20;
 
             var inputTransform = RequireChild(hud.transform, "DeploymentInputSurface");
-            foreach (var behaviour in inputTransform.GetComponents<MonoBehaviour>())
-            {
-                if (behaviour != null &&
-                    string.Equals(
-                        behaviour.GetType().FullName,
-                        "ProjectMT.Contents.CastleRaid.CastleDeploymentInputSurface",
-                        StringComparison.Ordinal))
-                {
-                    Object.DestroyImmediate(behaviour);
-                }
-            }
             var inputSurface = inputTransform.gameObject.AddComponent<HexCastleDeploymentInputSurface>();
 
             var buttons = new Button[HexUnitSlotCount];
@@ -399,7 +389,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             }
         }
 
-        private static void ConnectMainBattleDialog()
+        private static void RemoveMainBattleGridModeDialog()
         {
             var scene = EditorSceneManager.OpenScene(MainBattleScenePath, OpenSceneMode.Single);
             var sceneRoot = scene.GetRootGameObjects()
@@ -414,79 +404,11 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
                 Object.DestroyImmediate(existing.gameObject);
             }
 
-            var dialog = BuildGridModeDialog((RectTransform)hud, out var title, out var square, out var hex, out var cancel);
-            dialog.EditorConfigure(dialog.gameObject, title, square, hex, cancel);
-            sceneRoot.EditorConfigureCastleRaidGridModeDialog(dialog);
-            dialog.gameObject.SetActive(false);
-
             EditorSceneManager.MarkSceneDirty(scene);
             if (!EditorSceneManager.SaveScene(scene, MainBattleScenePath))
             {
-                throw new InvalidOperationException("01_MainBattle 전장 선택 팝업 저장에 실패했습니다.");
+                throw new InvalidOperationException("01_MainBattle Hex 단일 진입 정리 저장에 실패했습니다.");
             }
-        }
-
-        private static CastleRaidGridModeDialog BuildGridModeDialog(
-            RectTransform parent,
-            out TMP_Text title,
-            out Button squareButton,
-            out Button hexButton,
-            out Button cancelButton)
-        {
-            var font = parent.GetComponentInChildren<TMP_Text>(true)?.font ?? TMP_Settings.defaultFontAsset;
-            var root = CreateUiObject("CastleRaidGridModeDialog", parent);
-            Stretch(root);
-            var backdrop = root.gameObject.AddComponent<Image>();
-            backdrop.color = new Color(0.015f, 0.025f, 0.045f, 0.80f);
-
-            var panel = CreateUiObject("Panel", root);
-            panel.anchorMin = panel.anchorMax = new Vector2(0.5f, 0.5f);
-            panel.pivot = new Vector2(0.5f, 0.5f);
-            panel.sizeDelta = new Vector2(690f, 390f);
-            panel.anchoredPosition = Vector2.zero;
-            var panelImage = panel.gameObject.AddComponent<Image>();
-            panelImage.sprite = ResolveUiSprite();
-            panelImage.type = Image.Type.Sliced;
-            panelImage.color = new Color(0.075f, 0.105f, 0.16f, 0.98f);
-            var outline = panel.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.25f, 0.72f, 0.88f, 0.75f);
-            outline.effectDistance = new Vector2(2f, -2f);
-
-            title = CreateText("Title", panel, font, "군단의 역습 전장 선택", 34f, FontStyles.Bold);
-            SetRect(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(620f, 62f), new Vector2(0f, -54f));
-            var description = CreateText(
-                "Description",
-                panel,
-                font,
-                "게임 규칙과 보상은 동일하며, 전장 그리드와 이동 AI만 달라집니다.",
-                20f,
-                FontStyles.Normal);
-            description.color = new Color(0.76f, 0.83f, 0.90f);
-            SetRect(description.rectTransform, new Vector2(0.5f, 1f), new Vector2(620f, 52f), new Vector2(0f, -112f));
-
-            squareButton = CreateButton(
-                "SquareGridButton",
-                panel,
-                font,
-                "사각 그리드\n기존 전장",
-                new Color(0.16f, 0.40f, 0.72f));
-            SetRect(squareButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(270f, 122f), new Vector2(-150f, -15f));
-            hexButton = CreateButton(
-                "HexGridButton",
-                panel,
-                font,
-                "육각 그리드\nTheme 1",
-                new Color(0.12f, 0.58f, 0.42f));
-            SetRect(hexButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(270f, 122f), new Vector2(150f, -15f));
-            cancelButton = CreateButton(
-                "CancelButton",
-                panel,
-                font,
-                "취소",
-                new Color(0.25f, 0.29f, 0.36f));
-            SetRect(cancelButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(190f, 58f), new Vector2(0f, 48f));
-
-            return root.gameObject.AddComponent<CastleRaidGridModeDialog>();
         }
 
         private static Button CreateButton(
@@ -580,7 +502,12 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
 
         private static void UpdateBuildSettings()
         {
-            var scenes = EditorBuildSettings.scenes.ToList();
+            var scenes = EditorBuildSettings.scenes
+                .Where(value => !string.Equals(
+                    value.path,
+                    LegacySquareScenePath,
+                    StringComparison.OrdinalIgnoreCase))
+                .ToList();
             var existingIndex = scenes.FindIndex(value =>
                 string.Equals(value.path, HexScenePath, StringComparison.OrdinalIgnoreCase));
             if (existingIndex >= 0)

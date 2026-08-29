@@ -47,6 +47,28 @@ namespace ProjectMT.Shared.Combat
             return indicator;
         }
 
+        public static MonsterAttackAreaIndicator CreateActive(
+            Transform parent,
+            MonsterActiveAttackStep step,
+            Vector3 origin,
+            Vector3 forward,
+            Vector3 primaryTarget,
+            Color color,
+            bool autoTick = true)
+        {
+            if (step == null)
+            {
+                return null;
+            }
+
+            var root = new GameObject($"[Active Attack Area] {step.StepId}");
+            root.hideFlags = HideFlags.DontSave;
+            root.transform.SetParent(parent, true);
+            var indicator = root.AddComponent<MonsterAttackAreaIndicator>();
+            indicator.BuildActive(step, origin, forward, primaryTarget, color, autoTick);
+            return indicator;
+        }
+
         public bool Tick(float deltaTime)
         {
             remaining = Mathf.Max(0f, remaining - Mathf.Max(0f, deltaTime));
@@ -126,6 +148,61 @@ namespace ProjectMT.Shared.Combat
                     break;
                 default:
                     AddCircle(primaryTarget, profile.Radius, color);
+                    break;
+            }
+        }
+
+        private void BuildActive(
+            MonsterActiveAttackStep step,
+            Vector3 origin,
+            Vector3 forward,
+            Vector3 primaryTarget,
+            Color color,
+            bool autoTick)
+        {
+            automaticTick = autoTick;
+            duration = Mathf.Clamp(step.VisualDuration, 0.35f, 1.5f);
+            remaining = duration;
+            origin.y += 0.08f;
+            primaryTarget.y = origin.y;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
+            forward.Normalize();
+
+            switch (step.Pattern)
+            {
+                case MonsterActiveAttackPattern.Line:
+                case MonsterActiveAttackPattern.PiercingBeam:
+                    AddLineArea(origin, forward, step.Range, step.Width, color);
+                    break;
+                case MonsterActiveAttackPattern.Cone:
+                    AddFan(origin, forward, step.Range, step.Angle, color);
+                    break;
+                case MonsterActiveAttackPattern.SelfCircle:
+                    AddCircle(origin, step.Radius, color);
+                    break;
+                case MonsterActiveAttackPattern.FrontCircle:
+                    AddCircle(origin + forward * step.ForwardOffset, step.Radius, color);
+                    break;
+                case MonsterActiveAttackPattern.PiercingProjectile:
+                    if (step.ProjectileFormation == MonsterActiveProjectileFormation.Fan)
+                        AddFan(origin, forward, step.Range, step.ProjectileFanAngle, color);
+                    else
+                        AddLineArea(origin, forward, step.Range, step.ProjectileCollisionRadius * 2f, color);
+                    break;
+                case MonsterActiveAttackPattern.ExplosiveProjectile:
+                    if (step.ProjectileFormation == MonsterActiveProjectileFormation.Fan)
+                        AddFan(origin, forward, step.Range, step.ProjectileFanAngle, color);
+                    else
+                        AddLine(new[] { origin, primaryTarget }, color, 0.045f, false);
+                    AddCircle(primaryTarget, step.ExplosionRadius, color);
+                    break;
+                case MonsterActiveAttackPattern.InstantMagic:
+                    AddCircle(primaryTarget,
+                        step.InstantMagicTarget == MonsterActiveInstantMagicTarget.SingleTarget
+                            ? Mathf.Max(0.25f, step.ProjectileCollisionRadius)
+                            : step.Radius,
+                        color);
                     break;
             }
         }

@@ -276,9 +276,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
         public void BallistaLv2_KeepsOriginalSocketsLoadedArrowsAndAttackAssets()
         {
             const string headPath =
-                "Assets/ProjectMT/04_Contents/01_CastleRaid/Prefabs/TurretHeads/PF_CR_TurretHead_Ballista_Lv2.prefab";
-            const string sourceProfilePath =
-                "Assets/ProjectMT/04_Contents/01_CastleRaid/Data/Turrets/CR_TurretAttack_Ballista_Lv2.asset";
+                "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Prefabs/TurretHeads/PF_CR_TurretHead_Ballista_Lv2.prefab";
             const string hexProfilePath =
                 "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Data/Turrets/CRHex_TurretAttack_Ballista_Lv2.asset";
             var head = AssetDatabase.LoadAssetAtPath<GameObject>(headPath);
@@ -307,30 +305,10 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
                     .Select(index => loaded.GetChild(index).localPosition.z),
                 Is.All.EqualTo(0.48f).Within(0.0001f));
 
-            var sourceProfile = AssetDatabase.LoadMainAssetAtPath(sourceProfilePath);
-            var hexProfile = AssetDatabase.LoadMainAssetAtPath(hexProfilePath);
-            Assert.That(sourceProfile, Is.Not.Null);
+            var hexProfile = AssetDatabase.LoadAssetAtPath<HexCastleTurretAttackProfile>(hexProfilePath);
             Assert.That(hexProfile, Is.Not.Null);
-            var sourceData = new SerializedObject(sourceProfile).FindProperty("data");
-            var hexData = new SerializedObject(hexProfile).FindProperty("data");
-            Assert.That(sourceData, Is.Not.Null);
-            Assert.That(hexData, Is.Not.Null);
-            foreach (var field in new[]
-                     {
-                         "projectilePrefab",
-                         "impactVfxPrefab",
-                         "fireSfx",
-                         "hitSfx",
-                         "explosionSfx"
-                     })
-            {
-                Assert.That(
-                    hexData.FindPropertyRelative(field).objectReferenceValue,
-                    Is.SameAs(sourceData.FindPropertyRelative(field).objectReferenceValue),
-                    field);
-            }
-
-            var projectile = hexData.FindPropertyRelative("projectilePrefab").objectReferenceValue as GameObject;
+            Assert.That(hexProfile.HasCompletePresentation, Is.True);
+            var projectile = hexProfile.Data.projectilePrefab;
             Assert.That(projectile, Is.Not.Null);
             Assert.That(projectile.GetComponentsInChildren<TrailRenderer>(true).Length, Is.GreaterThan(0));
             Assert.That(
@@ -339,14 +317,12 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
         }
 
         [Test]
-        public void SupportedTurretLevels_KeepSquarePresentationAssets()
+        public void SupportedTurretLevels_KeepHexPresentationAssets()
         {
-            const string sourceRoot =
-                "Assets/ProjectMT/04_Contents/01_CastleRaid/Data/Turrets/";
             const string hexRoot =
                 "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Data/Turrets/";
             const string headRoot =
-                "Assets/ProjectMT/04_Contents/01_CastleRaid/Prefabs/TurretHeads/";
+                "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Prefabs/TurretHeads/";
             var catalog = HexCastleTurretAttackAssetUtility.LoadOrCreateCatalog();
 
             Assert.That(catalog.HasCompletePresentation, Is.True);
@@ -366,10 +342,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
                     Assert.That(
                         AssetDatabase.GetAssetPath(profile),
                         Is.EqualTo($"{hexRoot}CRHex_TurretAttack_{family}_Lv{level}.asset"));
-                    var source = AssetDatabase.LoadMainAssetAtPath(
-                        $"{sourceRoot}CR_TurretAttack_{family}_Lv{level}.asset");
-                    var sourceData = new SerializedObject(source).FindProperty("data");
-                    var hexData = new SerializedObject(profile).FindProperty("data");
                     var head = AssetDatabase.LoadAssetAtPath<GameObject>(
                         $"{headRoot}PF_CR_TurretHead_{family}_Lv{level}.prefab");
                     var pitch = head.transform.Find("Joint_BodyMount/YawPivot/PitchPivot");
@@ -381,21 +353,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
                     Assert.That(data.projectilePrefab, Is.Not.Null, $"{family} Lv{level} Projectile");
                     Assert.That(data.fireSfx?.HasPlayableClip, Is.True, $"{family} Lv{level} Fire SFX");
                     Assert.That(muzzleVfx, Is.Not.Null, $"{family} Lv{level} Muzzle socket");
-                    foreach (var field in new[]
-                             {
-                                 "projectilePrefab",
-                                 "impactVfxPrefab",
-                                 "fireSfx",
-                                 "hitSfx",
-                                 "explosionSfx"
-                             })
-                    {
-                        Assert.That(
-                            hexData.FindPropertyRelative(field).objectReferenceValue,
-                            Is.SameAs(sourceData.FindPropertyRelative(field).objectReferenceValue),
-                            $"{family} Lv{level} {field}");
-                    }
-
                     if (weaponKind == HexCastleTurretWeaponKind.Cannon)
                     {
                         Assert.That(muzzleVfx.GetComponentsInChildren<ParticleSystem>(true), Is.Not.Empty);

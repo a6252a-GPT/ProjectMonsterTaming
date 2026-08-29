@@ -34,7 +34,6 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private MainBattleHostedContentRunner hostedRunner; // 성장 던전 전환 담당
         [SerializeField] private Button foodRiotButton; // 식량 대소동 입장 버튼
         [SerializeField] private Button castleRaidButton; // 군단의 역습 입장 버튼
-        [SerializeField] private CastleRaidGridModeDialog castleRaidGridModeDialog; // 사각·육각 전장 선택
         [SerializeField] private Button towerButton; // 08.06 안건준 추가 - 수호자의 탑 입장 버튼
         [SerializeField] private Button fallenCommanderButton; // 타락한 과거의 군단장 입장 버튼
         [SerializeField] private Button foodRiotSweepButton; // 식량 대소동 1회 소탕
@@ -110,7 +109,6 @@ namespace ProjectMT.Features.MainBattle
             }
 
             castleRaidButton?.onClick.AddListener(OpenCastleRaid);
-            castleRaidGridModeDialog?.Hide();
             var runtimeRoot = transform.Find("01_MainGameplayRoot/01_RuntimeRoot");
             var playerFormationAnchor = runtimeRoot?.Find("PlayerFormationAnchor");
             var commander = runtimeRoot?.Find("CommanderVisual");
@@ -210,7 +208,6 @@ namespace ProjectMT.Features.MainBattle
             growthDungeonEntry?.Shutdown();
             foodRiotButton?.onClick.RemoveListener(OpenFoodRiot);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
-            castleRaidGridModeDialog?.Hide();
             towerButton?.onClick.RemoveListener(OpenGuardiansTower); // 08.06 안건준 추가
             fallenCommanderButton?.onClick.RemoveListener(OpenFallenCommander);
             foodRiotSweepButton?.onClick.RemoveListener(SweepFoodRiot);
@@ -667,30 +664,11 @@ namespace ProjectMT.Features.MainBattle
             }
 
             managementUi?.CloseAllPages();
-            if (castleRaidGridModeDialog != null)
-            {
-                castleRaidGridModeDialog.Show(HandleCastleRaidVariantSelected);
-                SetStatus("군단의 역습 전장을 선택하세요");
-                return;
-            }
-
-            HandleCastleRaidVariantSelected(CastleRaidGridModeDialog.SquareVariant);
-        }
-
-        private void HandleCastleRaidVariantSelected(ContentVariantId variantId)
-        {
-            if (!CanOpenContent())
-            {
-                return;
-            }
-
             party = context.RefreshParty();
             expedition.StopWithoutResult(); // 별도 씬 이동 전 무정산 종료
-            if (context.ContentLauncher.StartSeparate(castleRaidContentId, party, variantId))
+            if (context.ContentLauncher.StartSeparate(castleRaidContentId, party))
             {
-                SetStatus(variantId == CastleRaidGridModeDialog.HexVariant
-                    ? "군단의 역습 · 육각 전장"
-                    : "군단의 역습 · 사각 전장");
+                SetStatus("군단의 역습 · 육각 전장");
                 _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.CastleRaidEnter, 1L);
             }
             else
@@ -913,11 +891,6 @@ namespace ProjectMT.Features.MainBattle
             shopPageView = shopView;
             towerButton = guardiansTowerButton; // 08.06 안건준 추가
             fallenCommanderButton = fallenCommanderEntryButton;
-        }
-
-        public void EditorConfigureCastleRaidGridModeDialog(CastleRaidGridModeDialog dialog)
-        {
-            castleRaidGridModeDialog = dialog;
         }
 
         public void EditorConfigureGrowthDungeonSettlementUi(

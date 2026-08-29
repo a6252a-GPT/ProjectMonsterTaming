@@ -118,7 +118,7 @@ MonoBehaviour:
     eventTimingOffset: 0
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 1.2
   - attackId: BA_M_04
     slotId: area_wave
     motionId: 

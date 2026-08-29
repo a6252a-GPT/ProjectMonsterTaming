@@ -223,6 +223,48 @@ namespace ProjectMT.Contents.CastleRaidHex
         }
 
 #if UNITY_EDITOR
+        public void EditorUpsert(
+            string monsterId,
+            HexCastleAssaultPattern pattern,
+            HexCastleAssaultSupportFocus focus,
+            float range,
+            float cooldown,
+            float duration,
+            float healRatio,
+            float attackBuffRate,
+            float defenseDamageMultiplier)
+        {
+            HexCastleAssaultAIProfile entry = null;
+            for (var index = 0; index < entries.Count; index++)
+            {
+                if (entries[index] != null && string.Equals(
+                        entries[index].MonsterId,
+                        monsterId,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    entry = entries[index];
+                    break;
+                }
+            }
+
+            if (entry == null)
+            {
+                entry = new HexCastleAssaultAIProfile();
+                entries.Add(entry);
+            }
+
+            entry.EditorConfigure(
+                monsterId,
+                pattern,
+                focus,
+                range,
+                cooldown,
+                duration,
+                healRatio,
+                attackBuffRate,
+                defenseDamageMultiplier);
+        }
+
         public void EditorReplaceEntries(IEnumerable<HexCastleAssaultAIProfile> source)
         {
             entries = source == null

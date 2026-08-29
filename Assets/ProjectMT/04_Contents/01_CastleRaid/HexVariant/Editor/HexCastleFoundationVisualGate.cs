@@ -34,7 +34,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
         private const string DerivedPrefabRoot =
             "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Art/Derived/KayKitDoubleSided/Prefabs/";
         private const string TurretHeadPrefabRoot =
-            "Assets/ProjectMT/04_Contents/01_CastleRaid/Prefabs/TurretHeads/";
+            "Assets/ProjectMT/04_Contents/01_CastleRaid/HexVariant/Prefabs/TurretHeads/";
         private const string WallStubPath = DerivedPrefabRoot + "PF_CRHex_WallStub_DoubleSided.prefab";
         private const string ClosedGatePath = DerivedPrefabRoot + "PF_CRHex_Gate_Closed_DoubleSided.prefab";
         private const string OpenGatePath = DerivedPrefabRoot + "PF_CRHex_Gate_Open_DoubleSided.prefab";

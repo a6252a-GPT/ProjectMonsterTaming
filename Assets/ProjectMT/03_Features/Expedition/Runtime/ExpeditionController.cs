@@ -424,7 +424,8 @@ namespace ProjectMT.Features.Expedition
                     passiveSkill: units[i].PassiveSkill,
                     activeSkill: units[i].ActiveSkill,
                     monsterLevel: units[i].Level,
-                    entryReason: UnitEntryReason.InitialDeployment);
+                    entryReason: UnitEntryReason.InitialDeployment,
+                    displayName: units[i].DisplayName);
                 var actor = combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity);
                 ApplyPlayerAIProfile(actor, units[i].UnitId);
                 TrackPlayerUnit(actor, i);
@@ -567,7 +568,8 @@ namespace ProjectMT.Features.Expedition
                     passiveSkill: reserve.PassiveSkill,
                     activeSkill: reserve.ActiveSkill,
                     monsterLevel: reserve.Level,
-                    entryReason: UnitEntryReason.ReserveReplacement);
+                    entryReason: UnitEntryReason.ReserveReplacement,
+                    displayName: reserve.DisplayName);
                 var actor = combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity);
                 if (actor == null)
                 {

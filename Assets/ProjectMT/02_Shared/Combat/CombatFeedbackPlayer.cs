@@ -234,6 +234,16 @@ namespace ProjectMT.Shared.Combat
             return sfxPool != null && sfxPool.Play(cue, position);
         }
 
+        public void TrackMonsterActiveSkill(UnitActor target)
+        {
+            worldHealthBars?.TrackActiveSkill(target);
+        }
+
+        public void UntrackUnit(UnitActor target)
+        {
+            worldHealthBars?.Untrack(target);
+        }
+
         public void SetDisplayOptions(bool showFloatingNumbers, bool showUnitHealthBars)
         {
             requestedFloatingNumbers = showFloatingNumbers;

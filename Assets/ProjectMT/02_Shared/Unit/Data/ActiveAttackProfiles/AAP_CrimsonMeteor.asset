@@ -1,0 +1,195 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 636d839b21812ab49a12f4bee7b8ef7d, type: 3}
+  m_Name: AAP_CrimsonMeteor
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterActiveAttackProfile
+  profileId: crimson_meteor
+  displayName: "\uD64D\uB828 \uC720\uC131\uC6B0"
+  description: "\uD3ED\uBC1C \uD22C\uC0AC\uCCB4\uB97C \uC5EC\uB7EC \uB300\uC0C1\uC5D0\uAC8C
+    \uD769\uBFCC\uB9B0 \uB4A4 \uC0C1\uACF5 \uB099\uD558\uC640 \uC9C0\uBA74 \uBD84\uCD9C\uC744
+    \uC5F0\uACC4\uD558\uB294 \uC6D0\uAC70\uB9AC \uD3ED\uACA9\uD615 \uACF5\uACA9 \uD504\uB9AC\uC14B."
+  steps:
+  - stepId: step_01
+    displayName: "\uBD88\uC528 \uD655\uC0B0"
+    delayAfterPrevious: 0
+    targetPolicy: 1
+    teleportBeforeAttack: 0
+    teleportFrontDistance: 1
+    pattern: 5
+    progression: 0
+    damageMultiplier: 0.5
+    maxTargets: 10
+    range: 8
+    width: 1.2
+    radius: 2
+    forwardOffset: 1.2
+    angle: 70
+    progressionDuration: 0.25
+    telegraphDelay: 0.14
+    visualDuration: 0.8
+    projectileFormation: 1
+    projectileCount: 5
+    projectileFanAngle: 72
+    projectileSpeed: 11
+    projectileCollisionRadius: 0.3
+    explosionRadius: 1.7
+    instantMagicTarget: 0
+    magicDirection: 0
+    hitEffects:
+    - type: 4
+      magnitude: 0.15
+      duration: 1.5
+      secondaryMagnitude: 0
+      tickInterval: 0.5
+    presentationSlots:
+    - slotId: telegraph
+      displayName: "\uD3ED\uACA9 \uBC94\uC704 \uC608\uACE0"
+      timing: 0
+      anchor: 2
+      description: "\uBD80\uCC44\uAF34 \uD22C\uC0AC\uCCB4\uC758 \uC608\uC0C1 \uD3ED\uBC1C
+        \uBC94\uC704"
+    - slotId: launch
+      displayName: "\uBD88\uC528 \uBC1C\uC0AC"
+      timing: 1
+      anchor: 1
+      description: "\uB2E4\uC12F \uAC08\uB798 \uBC1C\uC0AC \uC5F0\uCD9C \uACF5\uAC04"
+    - slotId: travel
+      displayName: "\uD3ED\uBC1C \uD22C\uC0AC\uCCB4"
+      timing: 2
+      anchor: 1
+      description: "\uC774\uB3D9\uD558\uB294 \uD22C\uC0AC\uCCB4 \uBCF8\uCCB4"
+    - slotId: impact
+      displayName: "\uBD88\uC528 \uD3ED\uBC1C"
+      timing: 3
+      anchor: 2
+      description: "\uAC01 \uD22C\uC0AC\uCCB4 \uD3ED\uBC1C\uACFC \uAC10\uC18D \uD53C\uB4DC\uBC31
+        \uACF5\uAC04"
+  - stepId: step_02
+    displayName: "\uC720\uC131 \uB099\uD558"
+    delayAfterPrevious: 0.22
+    targetPolicy: 1
+    teleportBeforeAttack: 0
+    teleportFrontDistance: 1
+    pattern: 7
+    progression: 0
+    damageMultiplier: 1.25
+    maxTargets: 8
+    range: 8
+    width: 1.2
+    radius: 2.6
+    forwardOffset: 0
+    angle: 70
+    progressionDuration: 0.25
+    telegraphDelay: 0.22
+    visualDuration: 0.8
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    instantMagicTarget: 1
+    magicDirection: 1
+    hitEffects:
+    - type: 2
+      magnitude: 0
+      duration: 0.5
+      secondaryMagnitude: 0
+      tickInterval: 0.5
+    presentationSlots:
+    - slotId: telegraph
+      displayName: "\uB099\uD558\uC9C0\uC810 \uC608\uACE0"
+      timing: 0
+      anchor: 2
+      description: "\uC720\uC131\uC774 \uB5A8\uC5B4\uC9C8 \uBC94\uC704"
+    - slotId: launch
+      displayName: "\uC8FC\uBB38 \uBC1C\uB3D9"
+      timing: 1
+      anchor: 0
+      description: "\uC2DC\uC804\uC790 \uC8FC\uBB38 \uC5F0\uCD9C \uACF5\uAC04"
+    - slotId: travel
+      displayName: "\uC0C1\uACF5 \uC720\uC131"
+      timing: 2
+      anchor: 2
+      description: "\uB300\uC0C1 \uC9C0\uC810 \uC704\uC5D0\uC11C \uB5A8\uC5B4\uC9C0\uB294
+        \uACF5\uACA9 \uBCF8\uCCB4"
+    - slotId: impact
+      displayName: "\uC720\uC131 \uCDA9\uB3CC"
+      timing: 3
+      anchor: 2
+      description: "\uCDA9\uB3CC\uACFC \uAE30\uC808 \uD53C\uB4DC\uBC31 \uACF5\uAC04"
+  - stepId: step_03
+    displayName: "\uD64D\uB828 \uBD84\uCD9C"
+    delayAfterPrevious: 0.18
+    targetPolicy: 0
+    teleportBeforeAttack: 0
+    teleportFrontDistance: 1
+    pattern: 7
+    progression: 0
+    damageMultiplier: 1.55
+    maxTargets: 10
+    range: 8
+    width: 1.2
+    radius: 3.1
+    forwardOffset: 0
+    angle: 70
+    progressionDuration: 0.25
+    telegraphDelay: 0.16
+    visualDuration: 0.8
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    instantMagicTarget: 1
+    magicDirection: 0
+    hitEffects:
+    - type: 0
+      magnitude: 0.65
+      duration: 0.2
+      secondaryMagnitude: 0.1
+      tickInterval: 0.5
+    - type: 3
+      magnitude: 0.08
+      duration: 2.5
+      secondaryMagnitude: 0
+      tickInterval: 0.5
+    presentationSlots:
+    - slotId: telegraph
+      displayName: "\uBD84\uCD9C \uBC94\uC704 \uC608\uACE0"
+      timing: 0
+      anchor: 2
+      description: "\uB9C8\uBB34\uB9AC \uC9C0\uBA74 \uBC94\uC704"
+    - slotId: launch
+      displayName: "\uD64D\uB828 \uC810\uD654"
+      timing: 1
+      anchor: 0
+      description: "\uC2DC\uC804\uC790 \uC810\uD654 \uC5F0\uCD9C \uACF5\uAC04"
+    - slotId: travel
+      displayName: "\uC9C0\uBA74 \uADE0\uC5F4"
+      timing: 2
+      anchor: 2
+      description: "\uBC14\uB2E5\uC5D0\uC11C \uC62C\uB77C\uC624\uB294 \uACF5\uACA9
+        \uBCF8\uCCB4"
+    - slotId: impact
+      displayName: "\uD64D\uB828 \uD3ED\uBC1C"
+      timing: 3
+      anchor: 2
+      description: "\uB109\uBC31\uACFC \uCD9C\uD608 \uC801\uC911 \uD53C\uB4DC\uBC31
+        \uACF5\uAC04"
+  impactFeel:
+    prefab: {fileID: 7220257174886157722, guid: e37ef8e5f5da9ba4092001f2172bab56, type: 3}
+    lifetime: 0.85
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1

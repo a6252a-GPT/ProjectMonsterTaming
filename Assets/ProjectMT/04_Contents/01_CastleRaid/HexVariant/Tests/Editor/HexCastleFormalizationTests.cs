@@ -34,20 +34,19 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
         }
 
         [Test]
-        public void CastleRaidDefinition_ResolvesSquareAndHexToSeparateScenes()
+        public void CastleRaidDefinition_ResolvesOnlyProductionHexScene()
         {
             var definition = AssetDatabase.LoadAssetAtPath<ContentDefinition>(
                 HexCastleProductionSceneSetupUtility.ContentDefinitionPath);
 
             Assert.That(definition, Is.Not.Null);
             Assert.That(
-                definition.TryResolveSceneId(CastleRaidGridModeDialog.SquareVariant, out var squareScene),
-                Is.True);
-            Assert.That(squareScene, Is.EqualTo(new SceneId("castle_raid")));
-            Assert.That(
-                definition.TryResolveSceneId(CastleRaidGridModeDialog.HexVariant, out var hexScene),
+                definition.TryResolveSceneId(default, out var hexScene),
                 Is.True);
             Assert.That(hexScene, Is.EqualTo(new SceneId("castle_raid_hex")));
+            Assert.That(
+                definition.TryResolveSceneId(new ContentVariantId("square"), out _),
+                Is.False);
         }
 
         [Test]
@@ -58,11 +57,15 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
 
             Assert.That(catalog, Is.Not.Null);
             Assert.That(catalog.TryGet(new SceneId("castle_raid_hex"), out var entry), Is.True);
+            Assert.That(catalog.TryGet(new SceneId("castle_raid"), out _), Is.False);
             Assert.That(entry.ScenePath, Is.EqualTo(HexCastleProductionSceneSetupUtility.HexScenePath));
             Assert.That(entry.SceneKind, Is.EqualTo(SceneKind.SeparateContent));
             Assert.That(EditorBuildSettings.scenes.Any(value =>
                     value.enabled && value.path == HexCastleProductionSceneSetupUtility.HexScenePath),
                 Is.True);
+            Assert.That(EditorBuildSettings.scenes.Any(value =>
+                    value.path == HexCastleProductionSceneSetupUtility.LegacySquareScenePath),
+                Is.False);
         }
 
         [Test]
@@ -179,7 +182,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
         }
 
         [Test]
-        public void MainBattleScene_HasInactiveAndCompleteGridModeDialog()
+        public void MainBattleScene_HasNoLegacyGridModeDialog()
         {
             var scene = EditorSceneManager.OpenPreviewScene(HexCastleProductionSceneSetupUtility.MainBattleScenePath);
             try
@@ -187,20 +190,10 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
                 var roots = scene.GetRootGameObjects();
                 var sceneRoot = roots.SelectMany(value => value.GetComponentsInChildren<MainBattleSceneRoot>(true))
                     .Single();
-                var dialog = roots.SelectMany(value =>
-                        value.GetComponentsInChildren<CastleRaidGridModeDialog>(true))
-                    .Single();
                 var rootData = new SerializedObject(sceneRoot);
-                var dialogData = new SerializedObject(dialog);
-
-                AssertReference(rootData, "castleRaidGridModeDialog");
-                AssertReference(dialogData, "dialogRoot");
-                AssertReference(dialogData, "titleText");
-                AssertReference(dialogData, "squareButton");
-                AssertReference(dialogData, "hexButton");
-                AssertReference(dialogData, "cancelButton");
-                Assert.That(dialog.gameObject.activeSelf, Is.False);
-                Assert.That(dialog.transform.parent.name, Is.EqualTo("MainBattleHUD"));
+                Assert.That(rootData.FindProperty("castleRaidGridModeDialog"), Is.Null);
+                Assert.That(roots.SelectMany(value => value.GetComponentsInChildren<Transform>(true))
+                    .Any(value => value.name == "CastleRaidGridModeDialog"), Is.False);
                 Assert.That(scene.isDirty, Is.False);
             }
             finally

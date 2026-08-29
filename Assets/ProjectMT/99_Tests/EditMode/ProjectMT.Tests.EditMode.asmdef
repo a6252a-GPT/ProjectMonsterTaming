@@ -9,10 +9,9 @@
     "ProjectMT.Contents.Framework",
     "ProjectMT.Contents.FoodRiot",
     "ProjectMT.Contents.FallenCommander",
-    "ProjectMT.Contents.CastleRaid",
+    "ProjectMT.Contents.CastleRaidHex",
     "ProjectMT.Contents.GuardianTrial",
     "ProjectMT.Contents.TreasureSpirit",
-    "ProjectMT.Tools.CastleBake.Editor",
     "Unity.TextMeshPro"
   ],
   "includePlatforms": [

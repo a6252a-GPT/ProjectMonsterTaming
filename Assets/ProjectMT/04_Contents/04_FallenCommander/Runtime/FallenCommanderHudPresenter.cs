@@ -136,6 +136,8 @@ namespace ProjectMT.Contents.FallenCommander
     [DisallowMultipleComponent]
     public sealed class FallenCommanderHudPresenter : MonoBehaviour
     {
+        public event Action DebugRestartBattleRequested;
+
         [SerializeField] private GameObject hudRoot;
         [SerializeField] private Image bossHealthFill;
         [SerializeField] private Image breakGaugeFill;
@@ -219,6 +221,10 @@ namespace ProjectMT.Contents.FallenCommander
             finalChargeRoot?.SetActive(false);
             phaseTransitionNotice?.gameObject.SetActive(false);
             EnsureRuntimeControls();
+            debugRestartBattleButton?.onClick.RemoveListener(
+                HandleDebugRestartBattle);
+            debugRestartBattleButton?.onClick.AddListener(
+                HandleDebugRestartBattle);
             ConfigureAttackDebugLabels();
             ApplyHudLayout();
             SetControlVisibility();
@@ -445,6 +451,9 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void OnDestroy()
         {
+            debugRestartBattleButton?.onClick.RemoveListener(
+                HandleDebugRestartBattle);
+            DebugRestartBattleRequested = null;
             Unbind();
         }
         // Controller가 새로운 HUD 상태를 전달하면 호출
@@ -586,6 +595,12 @@ namespace ProjectMT.Contents.FallenCommander
         private void HandleDebugReduceTime()
         {
             timeoutController?.DebugReduceTimeTenSeconds();
+        }
+
+        // DEV 재시작 버튼 입력을 외부 전투 시작 담당자에게 전달한다.
+        private void HandleDebugRestartBattle()
+        {
+            DebugRestartBattleRequested?.Invoke();
         }
 
         private void HandleDebugBasicAttack()

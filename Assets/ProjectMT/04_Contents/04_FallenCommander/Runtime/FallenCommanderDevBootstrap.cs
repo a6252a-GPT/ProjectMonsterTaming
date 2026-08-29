@@ -9,6 +9,7 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField] private FallenCommanderController controller;
 
         private DebugContentExit debugExit;
+        private FallenCommanderHudPresenter hudPresenter;
 
         private void Start()
         {
@@ -25,6 +26,14 @@ namespace ProjectMT.Contents.FallenCommander
             debugExit = new DebugContentExit();
             // 종료 이벤트는 같은 부트스트랩에서 정리한다.
             debugExit.Exited += HandleExit;
+
+            hudPresenter = controller.GetComponentInChildren<
+                FallenCommanderHudPresenter>(true);
+            if (hudPresenter != null)
+            {
+                hudPresenter.DebugRestartBattleRequested +=
+                    DebugRestartBattle;
+            }
 
             StartDevBattle();
         }
@@ -80,6 +89,12 @@ namespace ProjectMT.Contents.FallenCommander
             if (debugExit != null)
             {
                 debugExit.Exited -= HandleExit;
+            }
+
+            if (hudPresenter != null)
+            {
+                hudPresenter.DebugRestartBattleRequested -=
+                    DebugRestartBattle;
             }
 
             if (controller != null)

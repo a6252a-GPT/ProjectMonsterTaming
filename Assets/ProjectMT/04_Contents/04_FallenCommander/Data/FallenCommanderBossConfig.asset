@@ -478,6 +478,126 @@ MonoBehaviour:
     resultDelay: 2
     warningMessage: "\uC2DC\uAC04 \uC885\uB8CC! \uC804\uBA78 \uACF5\uACA9\uC774 \uBC1C\uB3D9\uB429\uB2C8\uB2E4!"
     warningPulseInterval: 0.45
+  twistedBattlefield:
+    telegraphPrefab: {fileID: 1008657052338794460, guid: 329f7a8bf8861d84bbf8ac716f846107, type: 3}
+    effects:
+      startVfxPrefab: {fileID: 0}
+      startVfxDuration: 0
+      startVfxAnchor: 0
+      startVfxPositionOffset: {x: 0, y: 0, z: 0}
+      startVfxRotationOffset: {x: 0, y: 0, z: 0}
+      startVfxScale: {x: 1, y: 1, z: 1}
+      startVfxScaleMultiplier: 1
+      resolveVfxPrefab: {fileID: 0}
+      resolveVfxDuration: 0
+      resolveVfxAnchor: 0
+      resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+      resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
+      resolveVfxScale: {x: 1, y: 1, z: 1}
+      resolveVfxScaleMultiplier: 1
+      hitVfxPrefab: {fileID: 0}
+      hitVfxDuration: 0
+      hitVfxPositionOffset: {x: 0, y: 0, z: 0}
+      hitVfxRotationOffset: {x: 0, y: 0, z: 0}
+      hitVfxScale: {x: 1, y: 1, z: 1}
+      hitVfxScaleMultiplier: 1
+      startSfx: {fileID: 0}
+      startSfxDuration: 0
+      resolveSfx: {fileID: 0}
+      resolveSfxDuration: 0
+      sfxVolume: 1
+      hitSfx: {fileID: 0}
+      hitSfxDuration: 0
+      hitSfxVolume: 1
+    preCastMotion: {fileID: 0}
+    preCastMotionSpeed: 1
+    preCastMotionStart: 0
+    preCastMotionEnd: 1
+    castMotion: {fileID: 0}
+    castMotionSpeed: 1
+    castMotionStart: 0
+    castMotionEnd: 1
+    arenaHalfExtents: {x: 19, y: 19}
+    columnCount: 6
+    rowCount: 4
+    tileGap: 0.08
+    dangerColor: {r: 1, g: 0.08, b: 0.04, a: 0.82}
+    safeColor: {r: 0.08, g: 0.85, b: 0.42, a: 0.72}
+  fallingBarrage:
+    projectilePrefab: {fileID: 1850910852090788313, guid: 159bd577af07b324096272fb36975101, type: 3}
+    telegraphPrefab: {fileID: 5939384426542757584, guid: 4f2e0a6235579d848969926c9a9bc0f5, type: 3}
+    effects:
+      startVfxPrefab: {fileID: 0}
+      startVfxDuration: 0
+      startVfxAnchor: 0
+      startVfxPositionOffset: {x: 0, y: 0, z: 0}
+      startVfxRotationOffset: {x: 0, y: 0, z: 0}
+      startVfxScale: {x: 1, y: 1, z: 1}
+      startVfxScaleMultiplier: 1
+      resolveVfxPrefab: {fileID: 0}
+      resolveVfxDuration: 0
+      resolveVfxAnchor: 0
+      resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+      resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
+      resolveVfxScale: {x: 1, y: 1, z: 1}
+      resolveVfxScaleMultiplier: 1
+      hitVfxPrefab: {fileID: 0}
+      hitVfxDuration: 0
+      hitVfxPositionOffset: {x: 0, y: 0, z: 0}
+      hitVfxRotationOffset: {x: 0, y: 0, z: 0}
+      hitVfxScale: {x: 1, y: 1, z: 1}
+      hitVfxScaleMultiplier: 1
+      startSfx: {fileID: 0}
+      startSfxDuration: 0
+      resolveSfx: {fileID: 0}
+      resolveSfxDuration: 0
+      sfxVolume: 1
+      hitSfx: {fileID: 0}
+      hitSfxDuration: 0
+      hitSfxVolume: 1
+    preCastMotion: {fileID: 0}
+    preCastMotionSpeed: 1
+    preCastMotionStart: 0
+    preCastMotionEnd: 1
+    castMotion: {fileID: 0}
+    castMotionSpeed: 1
+    castMotionStart: 0
+    castMotionEnd: 1
+    arenaHalfExtents: {x: 7, y: 12}
+    spawnHeight: 7
+    projectileCount: 20
+    airHoldDuration: 0.6
+    fallSpeedCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 2
+        outSlope: 2
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    warningMessage: "\uACBD\uACE0! \uC7A0\uC2DC \uD6C4 \uD0C4\uB9C9\uC774 \uC3DF\uC544\uC9D1\uB2C8\uB2E4!"
+    warningMessageDuration: 2
+    impactRadius: 1.4
+    minimumSpacing: 2.8
+    commanderSafetyRadius: 1.8
+    initialPoolSize: 40
+    telegraphColor: {r: 1, g: 0.12, b: 0.04, a: 0.82}
   closeAttackDistance: 3
   lineStrikeMinimumDistance: 5
   lineStrikeAlignmentThreshold: 0.7

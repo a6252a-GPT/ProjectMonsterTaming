@@ -107,6 +107,23 @@ namespace ProjectMT.Contents.FallenCommander
                     error = $"{phases[index].Phase} 위치 공격 설정 오류: {markStrikeError}";
                     return false;
                 }
+
+                if (phases[index].Allows(FallenCommanderAttackPattern.TwistedBattlefield) &&
+                    !phases[index].TwistedBattlefieldPattern.TryValidate(
+                        out var twistedBattlefieldError))
+                {
+                    error = $"{phases[index].Phase} 연속 장판 공격 설정 오류: " +
+                        twistedBattlefieldError;
+                    return false;
+                }
+
+                if (phases[index].Allows(FallenCommanderAttackPattern.FallingBarrage) &&
+                    !phases[index].FallingBarragePattern.TryValidate(out var fallingBarrageError))
+                {
+                    error = $"{phases[index].Phase} 낙하 탄막 공격 설정 오류: " +
+                        fallingBarrageError;
+                    return false;
+                }
             }
 
             error = string.Empty;
@@ -137,6 +154,10 @@ namespace ProjectMT.Contents.FallenCommander
         private float transitionDuration = 1f;
         [SerializeField, InspectorName("위치 공격 다중 패턴 설정")]
         private FallenCommanderMarkStrikePhaseData markStrikePattern = new();
+        [SerializeField, InspectorName("연속 장판 공격 페이즈 설정")]
+        private FallenCommanderTwistedBattlefieldPhaseData twistedBattlefieldPattern = new();
+        [SerializeField, InspectorName("낙하 탄막 공격 페이즈 설정")]
+        private FallenCommanderFallingBarragePhaseData fallingBarragePattern = new();
 
         public FallenCommanderBossPhase Phase => phase;
         public float HealthRatio => healthRatio;
@@ -148,6 +169,10 @@ namespace ProjectMT.Contents.FallenCommander
         public AudioClip TransitionSound => transitionSound;
         public float TransitionDuration => transitionDuration;
         public FallenCommanderMarkStrikePhaseData MarkStrikePattern => markStrikePattern;
+        public FallenCommanderTwistedBattlefieldPhaseData TwistedBattlefieldPattern =>
+            twistedBattlefieldPattern ??= new FallenCommanderTwistedBattlefieldPhaseData();
+        public FallenCommanderFallingBarragePhaseData FallingBarragePattern =>
+            fallingBarragePattern ??= new FallenCommanderFallingBarragePhaseData();
 
         // 이 페이즈의 스킬 목록에 지정 공격이 포함되는지 확인한다.
         public bool Allows(FallenCommanderAttackPattern attack)
@@ -200,7 +225,9 @@ namespace ProjectMT.Contents.FallenCommander
 
             for (var index = 0; index < availableAttacks.Count; index++)
             {
-                if (availableAttacks[index] != previous)
+                if (availableAttacks[index] != previous &&
+                    availableAttacks[index] != FallenCommanderAttackPattern.TwistedBattlefield &&
+                    availableAttacks[index] != FallenCommanderAttackPattern.FallingBarrage)
                 {
                     return availableAttacks[index];
                 }
@@ -209,6 +236,94 @@ namespace ProjectMT.Contents.FallenCommander
             return availableAttacks.Count > 0
                 ? availableAttacks[0]
                 : FallenCommanderAttackPattern.Mark;
+        }
+    }
+
+    [System.Serializable]
+    public sealed class FallenCommanderTwistedBattlefieldPhaseData
+    {
+        [SerializeField, InspectorName("등장 확률"), Range(0f, 1f)]
+        private float selectionChance = 0.2f;
+        [SerializeField, InspectorName("연속 공격 횟수"), Min(2)]
+        private int beatCount = 2;
+        [SerializeField, InspectorName("공격 전 경고시간"), Min(0.1f)]
+        private float warningDuration = 1.35f;
+        [SerializeField, InspectorName("충전 완료 유지시간"), Min(0f)]
+        private float telegraphHoldDuration = 0.25f;
+        [SerializeField, InspectorName("다음 장판 전환 간격"), Min(0f)]
+        private float beatInterval = 0.3f;
+
+        public float SelectionChance => Mathf.Clamp01(selectionChance);
+        public int BeatCount => Mathf.Max(2, beatCount);
+        public float WarningDuration => Mathf.Max(0.1f, warningDuration);
+        public float TelegraphHoldDuration => Mathf.Max(0f, telegraphHoldDuration);
+        public float BeatInterval => Mathf.Max(0f, beatInterval);
+
+        // 페이즈별 등장 확률과 연속 공격 시간 설정이 실행 가능한지 검사한다.
+        public bool TryValidate(out string error)
+        {
+            if (selectionChance <= 0f || selectionChance > 1f)
+            {
+                error = "등장 확률은 0보다 크고 1 이하여야 합니다.";
+                return false;
+            }
+
+            if (beatCount < 2)
+            {
+                error = "안전지대 반전을 위해 연속 공격 횟수는 2회 이상이어야 합니다.";
+                return false;
+            }
+
+            if (warningDuration < 0.1f || telegraphHoldDuration < 0f || beatInterval < 0f)
+            {
+                error = "경고시간·유지시간·전환 간격 설정을 확인해 주세요.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+    }
+
+    [System.Serializable]
+    public sealed class FallenCommanderFallingBarragePhaseData
+    {
+        [SerializeField, InspectorName("패턴 등장 확률"), Range(0f, 1f)]
+        private float selectionChance = 0.18f;
+        [SerializeField, InspectorName("반복 묶음 횟수"), Min(1)]
+        private int waveCount = 2;
+        [SerializeField, InspectorName("묶음 사이 간격"), Min(0f)]
+        private float waveInterval = 0.8f;
+        [SerializeField, InspectorName("기본 생성 간격"), Min(0f)]
+        private float spawnInterval = 0.08f;
+        [SerializeField, InspectorName("생성 시간 무작위 범위"), Min(0f)]
+        private float spawnTimeJitter = 0.06f;
+        [SerializeField, InspectorName("착탄까지 걸리는 시간"), Min(0.1f)]
+        private float fallDuration = 1.4f;
+        public float SelectionChance => Mathf.Clamp01(selectionChance);
+        public int WaveCount => Mathf.Max(1, waveCount);
+        public float WaveInterval => Mathf.Max(0f, waveInterval);
+        public float SpawnInterval => Mathf.Max(0f, spawnInterval);
+        public float SpawnTimeJitter => Mathf.Max(0f, spawnTimeJitter);
+        public float FallDuration => Mathf.Max(0.1f, fallDuration);
+
+        public bool TryValidate(out string error)
+        {
+            if (selectionChance <= 0f || selectionChance > 1f)
+            {
+                error = "등장 확률은 0보다 크고 1 이하여야 합니다.";
+                return false;
+            }
+
+            if (waveCount < 1 || fallDuration < 0.1f ||
+                waveInterval < 0f || spawnInterval < 0f || spawnTimeJitter < 0f)
+            {
+                error = "묶음 횟수·생성 간격·낙하시간을 확인해 주세요.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
         }
     }
 

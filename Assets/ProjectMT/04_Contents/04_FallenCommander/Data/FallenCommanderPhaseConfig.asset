@@ -33,9 +33,22 @@ MonoBehaviour:
       clusterRadius: 1.35
       maxDamagePerGroup: 1
       stunDuration: 0
+    twistedBattlefieldPattern:
+      selectionChance: 0.2
+      beatCount: 2
+      warningDuration: 1.35
+      telegraphHoldDuration: 0.25
+      beatInterval: 0.3
+    fallingBarragePattern:
+      selectionChance: 0.18
+      waveCount: 2
+      waveInterval: 0.8
+      spawnInterval: 0.03
+      spawnTimeJitter: 0.12
+      fallDuration: 1.8
   - phase: 2
     healthRatio: 0.7
-    availableAttacks: 0400000006000000020000000500000001000000
+    availableAttacks: 04000000060000000200000005000000010000000700000008000000
     allowOverlappingBasicAttack: 1
     hasSignatureAttack: 1
     signatureAttack: 4
@@ -53,9 +66,22 @@ MonoBehaviour:
       clusterRadius: 1.35
       maxDamagePerGroup: 1
       stunDuration: 0
+    twistedBattlefieldPattern:
+      selectionChance: 0.2
+      beatCount: 2
+      warningDuration: 1.35
+      telegraphHoldDuration: 0.25
+      beatInterval: 0.3
+    fallingBarragePattern:
+      selectionChance: 0.18
+      waveCount: 2
+      waveInterval: 0.9
+      spawnInterval: 0.025
+      spawnTimeJitter: 0.12
+      fallDuration: 2
   - phase: 3
     healthRatio: 0.4
-    availableAttacks: 040000000600000003000000050000000100000002000000
+    availableAttacks: 0400000006000000030000000500000001000000020000000700000008000000
     allowOverlappingBasicAttack: 1
     hasSignatureAttack: 1
     signatureAttack: 3
@@ -73,3 +99,16 @@ MonoBehaviour:
       clusterRadius: 1.35
       maxDamagePerGroup: 1
       stunDuration: 0
+    twistedBattlefieldPattern:
+      selectionChance: 0.28
+      beatCount: 4
+      warningDuration: 1
+      telegraphHoldDuration: 0.2
+      beatInterval: 0.2
+    fallingBarragePattern:
+      selectionChance: 0.25
+      waveCount: 3
+      waveInterval: 0.65
+      spawnInterval: 0.018
+      spawnTimeJitter: 0.1
+      fallDuration: 1.6

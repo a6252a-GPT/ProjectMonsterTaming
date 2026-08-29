@@ -29,7 +29,11 @@ namespace ProjectMT.Contents.FallenCommander
         [InspectorName("직선 공격")]
         Line,
         [InspectorName("타락의 고리")]
-        Ring
+        Ring,
+        [InspectorName("연속 장판 공격")]
+        TwistedBattlefield,
+        [InspectorName("낙하 탄막 공격")]
+        FallingBarrage
     }
 
     public static class FallenCommanderAttackSelectionRules
@@ -87,6 +91,8 @@ namespace ProjectMT.Contents.FallenCommander
             BlackHole,
             LineStrike,
             CorruptionRing,
+            TwistedBattlefield,
+            FallingBarrage,
             Broken,
             Dead
         }
@@ -132,6 +138,7 @@ namespace ProjectMT.Contents.FallenCommander
         private float lineStrikeAlignmentThreshold;
         private float commanderStunRemaining;
         private System.Action<bool> commanderStunChanged;
+        private System.Action<FallenCommanderAttackPattern> attackStarted;
         private bool isCommanderStunned;
         private bool isActive;
         private bool isBasicWindupActive;
@@ -150,6 +157,10 @@ namespace ProjectMT.Contents.FallenCommander
         private readonly FallenCommanderBlackHolePattern blackHolePattern = new();
         private FallenCommanderAttackData lineStrikeMotion;
         private FallenCommanderAttackData corruptionRingMotion;
+        private FallenCommanderTwistedBattlefieldData twistedBattlefieldData;
+        private readonly FallenCommanderTwistedBattlefieldPattern twistedBattlefieldPattern = new();
+        private FallenCommanderFallingBarrageData fallingBarrageData;
+        private readonly FallenCommanderFallingBarragePattern fallingBarragePattern = new();
 
         public bool IsCommanderStunned => isCommanderStunned;
         public float CommanderStunRemainingTime => commanderStunRemaining;
@@ -159,6 +170,8 @@ namespace ProjectMT.Contents.FallenCommander
             currentState == BossState.Idle;
         public FallenCommanderAttackPattern LastSelectedAttack { get; private set; }
         public FallenCommanderTelegraphView ActiveTelegraph =>
+            fallingBarragePattern.ActiveTelegraph ??
+            twistedBattlefieldPattern.ActiveTelegraph ??
             blackHolePattern.ActiveTelegraph ??
             markStrikePattern.ActiveTelegraph ??
             activeTelegraph;
@@ -232,11 +245,14 @@ namespace ProjectMT.Contents.FallenCommander
             FallenCommanderAttackData lineMotion,
             FallenCommanderAttackData ringMotion,
             float ringSafeRadius,
+            FallenCommanderTwistedBattlefieldData twistedBattlefield,
+            FallenCommanderFallingBarrageData fallingBarrage,
             float closeDistance,
             float lineMinimumDistance,
             float lineAlignmentThreshold,
             FallenCommanderPhaseConfig phases,
             System.Action<bool> stunChanged,
+            System.Action<FallenCommanderAttackPattern> started,
             FallenCommanderBossFacingSmoother facingSmoother)
         {
             Shutdown();
@@ -298,11 +314,14 @@ namespace ProjectMT.Contents.FallenCommander
             corruptionRingCastTime = Mathf.Max(0.1f, ringMotion == null ? 0f : ringMotion.WarningDuration);
             corruptionRingOuterRadius = Mathf.Max(0.2f, ringMotion == null ? 0f : ringMotion.Radius);
             corruptionRingSafeRadius = Mathf.Clamp(ringSafeRadius, 0.1f, corruptionRingOuterRadius - 0.1f);
+            twistedBattlefieldData = twistedBattlefield;
+            fallingBarrageData = fallingBarrage;
             closeAttackDistance = Mathf.Max(0.1f, closeDistance);
             lineStrikeMinimumDistance = Mathf.Max(closeAttackDistance, lineMinimumDistance);
             lineStrikeAlignmentThreshold = Mathf.Clamp(lineAlignmentThreshold, -1f, 1f);
             phaseConfig = phases;
             commanderStunChanged = stunChanged;
+            attackStarted = started;
 
             attackCooldownRemaining = attackInterval;
             currentState = BossState.Idle;
@@ -327,6 +346,11 @@ namespace ProjectMT.Contents.FallenCommander
                 lineStrikeMotion.TelegraphPrefab != null &&
                 corruptionRingMotion != null &&
                 corruptionRingMotion.TelegraphPrefab != null &&
+                twistedBattlefieldData != null &&
+                twistedBattlefieldData.TelegraphPrefab != null &&
+                fallingBarrageData != null &&
+                fallingBarrageData.ProjectilePrefab != null &&
+                fallingBarrageData.TelegraphPrefab != null &&
                 phaseConfig != null &&
                 animationPresenter != null &&
                 bossFacingSmoother != null &&
@@ -372,6 +396,14 @@ namespace ProjectMT.Contents.FallenCommander
                     TickBlackHole(deltaTime);
                     break;
 
+                case BossState.TwistedBattlefield:
+                    TickTwistedBattlefield(deltaTime);
+                    break;
+
+                case BossState.FallingBarrage:
+                    TickFallingBarrage(deltaTime);
+                    break;
+
                 case BossState.Broken:
                 case BossState.Dead:
                     break;
@@ -389,6 +421,8 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             DestroyActiveTelegraph();
+            twistedBattlefieldPattern.Cancel();
+            fallingBarragePattern.Cancel();
             CancelOverlappingBasicAttack();
             animationPresenter?.StopPlayback();
             animationPresenter?.Play(
@@ -449,6 +483,8 @@ namespace ProjectMT.Contents.FallenCommander
             currentPhase = phase;
             isPhaseTransitionActive = true;
             DestroyActiveTelegraph();
+            twistedBattlefieldPattern.Cancel();
+            fallingBarragePattern.Cancel();
             CancelOverlappingBasicAttack();
             animationPresenter?.StopPlayback();
             stateTimeRemaining = 0f;
@@ -545,6 +581,27 @@ namespace ProjectMT.Contents.FallenCommander
             BeginCorruptionRing();
         }
 
+        // DEV 테스트에서 현재 페이즈 설정으로 연속 장판 공격을 즉시 시작한다.
+        public void DebugForceTwistedBattlefield()
+        {
+            if (!PrepareDebugAttack())
+            {
+                return;
+            }
+
+            BeginTwistedBattlefield();
+        }
+
+        public void DebugForceFallingBarrage()
+        {
+            if (!PrepareDebugAttack())
+            {
+                return;
+            }
+
+            BeginFallingBarrage();
+        }
+
         private bool PrepareDebugAttack()
         {
             if (!isActive ||
@@ -558,6 +615,8 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             DestroyActiveTelegraph();
+            twistedBattlefieldPattern.Cancel();
+            fallingBarragePattern.Cancel();
             stateTimeRemaining = 0f;
             isPhaseTransitionActive = false;
             currentState = BossState.Idle;
@@ -569,6 +628,8 @@ namespace ProjectMT.Contents.FallenCommander
         public void Shutdown()
         {
             DestroyActiveTelegraph();
+            twistedBattlefieldPattern.Cancel();
+            fallingBarragePattern.Dispose();
             CancelOverlappingBasicAttack();
             ReleaseCommanderStun();
             animationPresenter?.Stop();
@@ -583,10 +644,13 @@ namespace ProjectMT.Contents.FallenCommander
             animationPresenter = null;
             breakMotion = null;
             blackHoleMotion = null;
+            twistedBattlefieldData = null;
+            fallingBarrageData = null;
             breakMotionDuration = 0f;
             telegraphDuration = 0f;
             telegraphHoldDuration = 0f;
             commanderStunChanged = null;
+            attackStarted = null;
             attackCooldownRemaining = 0f;
             basicAttackCooldownRemaining = 0f;
             basicPatternDelayRemaining = 0f;
@@ -625,14 +689,16 @@ namespace ProjectMT.Contents.FallenCommander
                 : Vector3.Dot(
                     bossActor.transform.forward,
                     toCommander / distance);
-            var selected = FallenCommanderAttackSelectionRules.Select(
-                distance,
-                alignment,
-                closeAttackDistance,
-                blackHoleRadius,
-                lineStrikeMinimumDistance,
-                lineStrikeAlignmentThreshold,
-                LastSelectedAttack);
+            var selected = TrySelectSpecialPattern(out var specialPattern)
+                ? specialPattern
+                : FallenCommanderAttackSelectionRules.Select(
+                    distance,
+                    alignment,
+                    closeAttackDistance,
+                    blackHoleRadius,
+                    lineStrikeMinimumDistance,
+                    lineStrikeAlignmentThreshold,
+                    LastSelectedAttack);
             selected = ResolvePhaseAttack(selected);
 
             BeginPatternAttack(selected);
@@ -662,6 +728,12 @@ namespace ProjectMT.Contents.FallenCommander
                 case FallenCommanderAttackPattern.Ring:
                     BeginCorruptionRing();
                     break;
+                case FallenCommanderAttackPattern.TwistedBattlefield:
+                    BeginTwistedBattlefield();
+                    break;
+                case FallenCommanderAttackPattern.FallingBarrage:
+                    BeginFallingBarrage();
+                    break;
                 default:
                     BeginLineStrike();
                     break;
@@ -676,6 +748,40 @@ namespace ProjectMT.Contents.FallenCommander
             return phase == null
                 ? selected
                 : phase.ResolveAttack(selected, LastSelectedAttack);
+        }
+
+        // 현재 페이즈의 특수 패턴 확률을 한 번만 굴려 선택 결과를 결정한다.
+        private bool TrySelectSpecialPattern(out FallenCommanderAttackPattern selected)
+        {
+            var phase = phaseConfig?.GetPhase(currentPhase);
+            selected = FallenCommanderAttackPattern.Basic;
+            if (phase == null)
+            {
+                return false;
+            }
+
+            var fallingChance = phase.Allows(FallenCommanderAttackPattern.FallingBarrage) &&
+                LastSelectedAttack != FallenCommanderAttackPattern.FallingBarrage
+                ? phase.FallingBarragePattern.SelectionChance
+                : 0f;
+            var twistedChance = phase.Allows(FallenCommanderAttackPattern.TwistedBattlefield) &&
+                LastSelectedAttack != FallenCommanderAttackPattern.TwistedBattlefield
+                ? phase.TwistedBattlefieldPattern.SelectionChance
+                : 0f;
+            var roll = Random.value;
+            if (roll < fallingChance)
+            {
+                selected = FallenCommanderAttackPattern.FallingBarrage;
+                return true;
+            }
+
+            if (roll < Mathf.Clamp01(fallingChance + twistedChance))
+            {
+                selected = FallenCommanderAttackPattern.TwistedBattlefield;
+                return true;
+            }
+
+            return false;
         }
 
         private void BeginBasicAttack()
@@ -893,6 +999,64 @@ namespace ProjectMT.Contents.FallenCommander
             telegraphHoldDuration = corruptionRingMotion.TelegraphHoldDuration;
         }
 
+        // 현재 페이즈의 박자·속도 설정으로 연속 장판 공격 패턴을 시작한다.
+        private void BeginTwistedBattlefield()
+        {
+            LastSelectedAttack = FallenCommanderAttackPattern.TwistedBattlefield;
+            CancelOverlappingBasicAttack();
+            basicAttackCooldownRemaining = basicAttackRepeatInterval;
+            DestroyActiveTelegraph();
+            PauseBossTracking();
+            var phaseData = phaseConfig?.GetPhase(currentPhase);
+            if (!twistedBattlefieldPattern.Begin(
+                    twistedBattlefieldData,
+                    phaseData?.TwistedBattlefieldPattern,
+                    bossActor,
+                    commanderRoot,
+                    commanderHealth,
+                    animationPresenter,
+                    bossActor.transform.parent,
+                    markStrikeArenaCenter))
+            {
+                twistedBattlefieldPattern.Cancel();
+                attackCooldownRemaining = attackInterval;
+                currentState = BossState.Idle;
+                ResumeBossTracking();
+                return;
+            }
+
+            currentState = BossState.TwistedBattlefield;
+        }
+
+        private void BeginFallingBarrage()
+        {
+            LastSelectedAttack = FallenCommanderAttackPattern.FallingBarrage;
+            CancelOverlappingBasicAttack();
+            basicAttackCooldownRemaining = basicAttackRepeatInterval;
+            DestroyActiveTelegraph();
+            PauseBossTracking();
+            var phaseData = phaseConfig?.GetPhase(currentPhase);
+            if (!fallingBarragePattern.Begin(
+                    fallingBarrageData,
+                    phaseData?.FallingBarragePattern,
+                    bossActor,
+                    commanderRoot,
+                    commanderHealth,
+                    animationPresenter,
+                    bossActor.transform.parent,
+                    markStrikeArenaCenter))
+            {
+                fallingBarragePattern.Cancel();
+                attackCooldownRemaining = attackInterval;
+                currentState = BossState.Idle;
+                ResumeBossTracking();
+                return;
+            }
+
+            currentState = BossState.FallingBarrage;
+            attackStarted?.Invoke(FallenCommanderAttackPattern.FallingBarrage);
+        }
+
         private void BeginCircleAttack(
             BossState state,
             Vector3 position,
@@ -938,6 +1102,8 @@ namespace ProjectMT.Contents.FallenCommander
                 currentState == BossState.Dead ||
                 currentState == BossState.BlackHole ||
                 currentState == BossState.CorruptionRing ||
+                currentState == BossState.TwistedBattlefield ||
+                currentState == BossState.FallingBarrage ||
                 IsTrackingMarkLocked())
             {
                 return;
@@ -1091,6 +1257,8 @@ namespace ProjectMT.Contents.FallenCommander
                 currentState != BossState.Dead &&
                 currentState != BossState.BlackHole &&
                 currentState != BossState.CorruptionRing &&
+                currentState != BossState.TwistedBattlefield &&
+                currentState != BossState.FallingBarrage &&
                 !IsTrackingMarkLocked() &&
                 !isBasicWindupActive &&
                 !isBasicProjectileActive;
@@ -1125,6 +1293,46 @@ namespace ProjectMT.Contents.FallenCommander
                 commanderHealth == null ||
                 !commanderHealth.IsAlive ||
                 bossFacingSmoother == null)
+            {
+                return;
+            }
+
+            attackCooldownRemaining = attackInterval;
+            currentState = BossState.Idle;
+            ResumeBossTracking();
+        }
+
+        // 연속 장판 공격의 모든 반전 박자가 끝나면 일반 공격 대기 상태로 복귀한다.
+        private void TickTwistedBattlefield(float deltaTime)
+        {
+            if (!twistedBattlefieldPattern.Tick(deltaTime))
+            {
+                return;
+            }
+
+            if (!isActive ||
+                bossActor == null ||
+                commanderHealth == null ||
+                !commanderHealth.IsAlive ||
+                bossFacingSmoother == null)
+            {
+                return;
+            }
+
+            attackCooldownRemaining = attackInterval;
+            currentState = BossState.Idle;
+            ResumeBossTracking();
+        }
+
+        private void TickFallingBarrage(float deltaTime)
+        {
+            if (!fallingBarragePattern.Tick(deltaTime))
+            {
+                return;
+            }
+
+            if (!isActive || bossActor == null || commanderHealth == null ||
+                !commanderHealth.IsAlive || bossFacingSmoother == null)
             {
                 return;
             }
@@ -1397,6 +1605,8 @@ namespace ProjectMT.Contents.FallenCommander
         {
             blackHolePattern.Cancel();
             markStrikePattern.Cancel();
+            twistedBattlefieldPattern.Cancel();
+            fallingBarragePattern.Cancel();
 
             if (activeTelegraph != null)
             {

@@ -50,6 +50,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 "finalChargeCastMotionEnd" => "공격 모션 종료 지점",
                 "finalChargeStartEffectOffset" => "시전 연출 위치 오프셋",
                 "timeoutWipe" => "제한시간 전멸기 설정",
+                "twistedBattlefield" => "연속 장판 공격 설정",
+                "fallingBarrage" => "낙하 탄막 공격 설정",
                 "closeAttackDistance" => "근접 공격 선택 거리",
                 "lineStrikeMinimumDistance" => "직선 공격 최소 거리",
                 "lineStrikeAlignmentThreshold" => "직선 공격 정면 판정 기준",
@@ -186,6 +188,90 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 "transitionSound" => "페이즈 전환 사운드",
                 "transitionDuration" => "페이즈 전환시간",
                 "markStrikePattern" => "위치 공격 다중 패턴 설정",
+                "twistedBattlefieldPattern" => "연속 장판 공격 페이즈 설정",
+                "fallingBarragePattern" => "낙하 탄막 공격 페이즈 설정",
+                _ => ObjectNames.NicifyVariableName(propertyName)
+            };
+        }
+
+        public static string TwistedBattlefield(string propertyName)
+        {
+            return propertyName switch
+            {
+                "telegraphPrefab" => "공격 범위 오브젝트",
+                "effects" => "연출 (VFX / SFX)",
+                "preCastMotion" => "시전 모션",
+                "preCastMotionSpeed" => "시전 모션 속도",
+                "preCastMotionStart" => "시전 모션 시작 지점",
+                "preCastMotionEnd" => "시전 모션 종료 지점",
+                "castMotion" => "공격 모션",
+                "castMotionSpeed" => "공격 모션 속도",
+                "castMotionStart" => "공격 모션 시작 지점",
+                "castMotionEnd" => "공격 모션 종료 지점",
+                "arenaHalfExtents" => "전장 가로·세로 반경",
+                "columnCount" => "세로 분할 개수",
+                "rowCount" => "가로 분할 개수",
+                "tileGap" => "장판 사이 간격",
+                "dangerColor" => "위험 장판 색상",
+                "safeColor" => "안전지대 색상",
+                _ => ObjectNames.NicifyVariableName(propertyName)
+            };
+        }
+
+        public static string TwistedBattlefieldPhase(string propertyName)
+        {
+            return propertyName switch
+            {
+                "selectionChance" => "패턴 등장 확률",
+                "beatCount" => "연속 발동 횟수",
+                "warningDuration" => "공격 전 경고시간",
+                "telegraphHoldDuration" => "충전 완료 유지시간",
+                "beatInterval" => "다음 장판 전환 간격",
+                _ => ObjectNames.NicifyVariableName(propertyName)
+            };
+        }
+
+        public static string FallingBarrage(string propertyName)
+        {
+            return propertyName switch
+            {
+                "projectilePrefab" => "낙하 탄막 오브젝트",
+                "telegraphPrefab" => "착탄 경고 오브젝트",
+                "effects" => "연출 (VFX / SFX)",
+                "preCastMotion" => "시전 모션",
+                "preCastMotionSpeed" => "시전 모션 속도",
+                "preCastMotionStart" => "시전 모션 시작 지점",
+                "preCastMotionEnd" => "시전 모션 종료 지점",
+                "castMotion" => "공격 모션",
+                "castMotionSpeed" => "공격 모션 속도",
+                "castMotionStart" => "공격 모션 시작 지점",
+                "castMotionEnd" => "공격 모션 종료 지점",
+                "arenaHalfExtents" => "랜덤 생성 영역 반경",
+                "spawnHeight" => "탄막 생성 높이",
+                "projectileCount" => "한 묶음 탄막 개수",
+                "airHoldDuration" => "공중 대기시간",
+                "fallSpeedCurve" => "낙하 가속 곡선",
+                "warningMessage" => "패턴 경고 문구",
+                "warningMessageDuration" => "경고 후 공격 대기시간",
+                "impactRadius" => "착탄 피해 반지름",
+                "minimumSpacing" => "탄막 최소 배치 간격",
+                "commanderSafetyRadius" => "군단장 주변 최소 안전거리",
+                "initialPoolSize" => "풀 초기 준비 개수",
+                "telegraphColor" => "경고 장판 색상",
+                _ => ObjectNames.NicifyVariableName(propertyName)
+            };
+        }
+
+        public static string FallingBarragePhase(string propertyName)
+        {
+            return propertyName switch
+            {
+                "selectionChance" => "패턴 등장 확률",
+                "waveCount" => "반복 묶음 횟수",
+                "waveInterval" => "묶음 사이 간격",
+                "spawnInterval" => "기본 생성 간격",
+                "spawnTimeJitter" => "생성 시간 무작위 범위",
+                "fallDuration" => "착탄까지 걸리는 시간",
                 _ => ObjectNames.NicifyVariableName(propertyName)
             };
         }
@@ -626,6 +712,46 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         }
     }
 
+    [CustomPropertyDrawer(typeof(FallenCommanderTwistedBattlefieldData))]
+    public sealed class FallenCommanderTwistedBattlefieldDataDrawer : PropertyDrawer
+    {
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            FallenCommanderLocalizedPropertyGUI.Draw(
+                position,
+                property,
+                label,
+                FallenCommanderInspectorLabels.TwistedBattlefield);
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return FallenCommanderLocalizedPropertyGUI.GetHeight(
+                property,
+                FallenCommanderInspectorLabels.TwistedBattlefield);
+        }
+    }
+
+    [CustomPropertyDrawer(typeof(FallenCommanderFallingBarrageData))]
+    public sealed class FallenCommanderFallingBarrageDataDrawer : PropertyDrawer
+    {
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            FallenCommanderLocalizedPropertyGUI.Draw(
+                position,
+                property,
+                label,
+                FallenCommanderInspectorLabels.FallingBarrage);
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return FallenCommanderLocalizedPropertyGUI.GetHeight(
+                property,
+                FallenCommanderInspectorLabels.FallingBarrage);
+        }
+    }
+
     [CustomPropertyDrawer(typeof(FallenCommanderPhaseData))]
     public sealed class FallenCommanderPhaseDataDrawer : PropertyDrawer
     {
@@ -703,6 +829,46 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 new GUIContent("페이즈 목록"),
                 true);
             serializedObject.ApplyModifiedProperties();
+        }
+    }
+
+    [CustomPropertyDrawer(typeof(FallenCommanderTwistedBattlefieldPhaseData))]
+    public sealed class FallenCommanderTwistedBattlefieldPhaseDataDrawer : PropertyDrawer
+    {
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            FallenCommanderLocalizedPropertyGUI.Draw(
+                position,
+                property,
+                label,
+                FallenCommanderInspectorLabels.TwistedBattlefieldPhase);
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return FallenCommanderLocalizedPropertyGUI.GetHeight(
+                property,
+                FallenCommanderInspectorLabels.TwistedBattlefieldPhase);
+        }
+    }
+
+    [CustomPropertyDrawer(typeof(FallenCommanderFallingBarragePhaseData))]
+    public sealed class FallenCommanderFallingBarragePhaseDataDrawer : PropertyDrawer
+    {
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            FallenCommanderLocalizedPropertyGUI.Draw(
+                position,
+                property,
+                label,
+                FallenCommanderInspectorLabels.FallingBarragePhase);
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return FallenCommanderLocalizedPropertyGUI.GetHeight(
+                property,
+                FallenCommanderInspectorLabels.FallingBarragePhase);
         }
     }
 }

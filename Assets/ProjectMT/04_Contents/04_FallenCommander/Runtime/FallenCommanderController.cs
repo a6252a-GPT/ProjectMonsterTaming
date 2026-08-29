@@ -351,6 +351,11 @@ namespace ProjectMT.Contents.FallenCommander
                 bossConfig.LineStrike.TelegraphPrefab == null ||
                 bossConfig.CorruptionRing == null ||
                 bossConfig.CorruptionRing.TelegraphPrefab == null ||
+                bossConfig.TwistedBattlefield == null ||
+                bossConfig.TwistedBattlefield.TelegraphPrefab == null ||
+                bossConfig.FallingBarrage == null ||
+                bossConfig.FallingBarrage.ProjectilePrefab == null ||
+                bossConfig.FallingBarrage.TelegraphPrefab == null ||
                 bossConfig.FinalChargeTelegraphPrefab == null ||
                 bossConfig.TimeoutWipe == null)
             {
@@ -362,6 +367,21 @@ namespace ProjectMT.Contents.FallenCommander
             {
                 throw new InvalidOperationException(
                     $"Fallen Commander phase settings are invalid: {phaseError}");
+            }
+
+            if (!bossConfig.TwistedBattlefield.TryValidate(
+                    out var twistedBattlefieldError))
+            {
+                throw new InvalidOperationException(
+                    "Fallen Commander twisted battlefield settings are invalid: " +
+                    twistedBattlefieldError);
+            }
+
+            if (!bossConfig.FallingBarrage.TryValidate(out var fallingBarrageError))
+            {
+                throw new InvalidOperationException(
+                    "Fallen Commander falling barrage settings are invalid: " +
+                    fallingBarrageError);
             }
 
             if (bossConfig.TrackingMark == null ||
@@ -514,11 +534,14 @@ namespace ProjectMT.Contents.FallenCommander
                 bossConfig.LineStrike,
                 bossConfig.CorruptionRing,
                 bossConfig.CorruptionRingSafeRadius,
+                bossConfig.TwistedBattlefield,
+                bossConfig.FallingBarrage,
                 bossConfig.CloseAttackDistance,
                 bossConfig.LineStrikeMinimumDistance,
                 bossConfig.LineStrikeAlignmentThreshold,
                 bossConfig.PhaseConfig,
                 HandleCommanderStunChanged,
+                HandleBossAttackStarted,
                 bossFacingSmoother);
             stateMachine.SetPhase(currentBossPhase);
         }
@@ -530,6 +553,19 @@ namespace ProjectMT.Contents.FallenCommander
             Debug.Log(
                 $"군단장 기절 : {(isStunned ? "시작" : "해제")}",
                 this);
+        }
+
+        private void HandleBossAttackStarted(FallenCommanderAttackPattern attack)
+        {
+            if (attack != FallenCommanderAttackPattern.FallingBarrage ||
+                bossConfig?.FallingBarrage == null)
+            {
+                return;
+            }
+
+            hudPresenter?.ShowAttackWarning(
+                bossConfig.FallingBarrage.WarningMessage,
+                bossConfig.FallingBarrage.WarningMessageDuration);
         }
 
         private void ConfigureCommanderSkills()
@@ -1236,6 +1272,33 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             stateMachine?.DebugForceCorruptionRing();
+        }
+
+        // DEV 버튼에서 연속 장판 공격을 현재 페이즈 설정으로 강제 실행한다.
+        public void DebugTwistedBattlefield()
+        {
+            if (!IsRunning ||
+                isBattleStartDelay ||
+                finalChargePattern.IsActive ||
+                timeoutWipePattern.IsActive)
+            {
+                return;
+            }
+
+            stateMachine?.DebugForceTwistedBattlefield();
+        }
+
+        public void DebugFallingBarrage()
+        {
+            if (!IsRunning ||
+                isBattleStartDelay ||
+                finalChargePattern.IsActive ||
+                timeoutWipePattern.IsActive)
+            {
+                return;
+            }
+
+            stateMachine?.DebugForceFallingBarrage();
         }
 
         public void DebugMarkStrike()

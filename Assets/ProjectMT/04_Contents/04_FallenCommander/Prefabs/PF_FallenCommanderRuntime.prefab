@@ -138922,6 +138922,8 @@ MonoBehaviour:
   debugWideBurstButton: {fileID: 2031573297233481476}
   debugChargedWideBurstButton: {fileID: 5985692341011712811}
   debugCorruptionRingButton: {fileID: 793828651745568353}
+  debugTwistedBattlefieldButton: {fileID: 0}
+  debugFallingBarrageButton: {fileID: 0}
   debugBossKillButton: {fileID: 5732340364581643784}
   debugBossHealthButton: {fileID: 4020169770866221870}
   debugPhase1Button: {fileID: 2811285368208983072}

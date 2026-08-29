@@ -16,6 +16,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
     internal enum FallenCommanderAttackPreviewKind
     {
+        None,
         Basic,
         Melee,
         MarkStrike,
@@ -24,7 +25,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         LineStrike,
         CorruptionRing,
         FinalCharge,
-        TimeoutWipe
+        TimeoutWipe,
+        TwistedBattlefield,
+        FallingBarrage
     }
 
     internal sealed class FallenCommanderAttackPreviewSpec
@@ -36,6 +39,15 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         public Transform SpawnPoint { get; set; }
         public Transform FacingTarget { get; set; }
         public FallenCommanderBasicAttackData BasicAttack { get; set; }
+        public FallenCommanderTwistedBattlefieldData TwistedBattlefield { get; set; }
+        public int TwistedBeatCount { get; set; } = 2;
+        public float TwistedBeatInterval { get; set; } = 0.3f;
+        public FallenCommanderFallingBarrageData FallingBarrage { get; set; }
+        public int FallingProjectileCount { get; set; } = 12;
+        public float FallingSpawnInterval { get; set; } = 0.08f;
+        public float FallingSpawnJitter { get; set; } = 0.06f;
+        public float FallingDuration { get; set; } = 1.4f;
+        public float FallingAirHoldDuration { get; set; } = 0.6f;
         public FallenCommanderAttackEffectData Effects { get; set; }
         public GameObject TelegraphPrefab { get; set; }
         public float TelegraphRadius { get; set; }
@@ -71,6 +83,21 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             public float DestroyAt { get; set; }
         }
 
+        private sealed class TwistedPreviewTile
+        {
+            public bool IsDangerous { get; set; }
+            public FallenCommanderTelegraphView Telegraph { get; set; }
+        }
+
+        private sealed class FallingPreviewShot
+        {
+            public GameObject Projectile { get; set; }
+            public FallenCommanderTelegraphView Telegraph { get; set; }
+            public Vector3 Target { get; set; }
+            public float StartDelay { get; set; }
+            public bool Resolved { get; set; }
+        }
+
         private static readonly Type AudioUtilType =
             typeof(AudioImporter).Assembly.GetType("UnityEditor.AudioUtil");
         private static readonly MethodInfo PlayPreviewClipMethod =
@@ -87,6 +114,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
         private static readonly List<ParticleSystem> Particles = new();
         private static readonly List<PreviewVfxLifetime> VfxLifetimes = new();
+        private static readonly List<TwistedPreviewTile> TwistedTiles = new();
+        private static readonly List<FallingPreviewShot> FallingShots = new();
         private static readonly Color BasicTelegraphColor =
             new Color(1f, 0.12f, 0.08f, 0.82f);
         private static readonly Color MeleeTelegraphColor =
@@ -131,6 +160,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private static float audioStopTime;
         private static bool hasResolved;
         private static bool hasCompletedBlackHole;
+        private static int twistedBeatIndex;
+        private static int twistedLayoutIndex;
+        private static float twistedBeatStartTime;
+        private static float twistedLastResolveTime;
+        private static bool twistedBeatResolved;
         private static bool isAudioPlaying;
 
         public static bool IsActive => previewBoss != null && spec != null;
@@ -223,6 +257,17 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     {
                         BeginBlackHoleActivePreview();
                     }
+                    else if (previewSpec.Kind == FallenCommanderAttackPreviewKind.TwistedBattlefield)
+                    {
+                        BeginTwistedBattlefieldBeat();
+                        SetTwistedBattlefieldProgress(1f);
+                        PlayResolvePresentation();
+                        PlayHitPresentation();
+                    }
+                    else if (previewSpec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage)
+                    {
+                        BeginFallingBarragePreview(true);
+                    }
                     else
                     {
                         PlayResolvePresentation();
@@ -239,7 +284,18 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 else
                 {
                     PlayStartPresentation();
-                    BeginAttackTelegraphPreview();
+                    if (previewSpec.Kind == FallenCommanderAttackPreviewKind.TwistedBattlefield)
+                    {
+                        BeginTwistedBattlefieldBeat();
+                    }
+                    else if (previewSpec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage)
+                    {
+                        BeginFallingBarragePreview(false);
+                    }
+                    else
+                    {
+                        BeginAttackTelegraphPreview();
+                    }
                     Sample(
                         previewSpec.PreCastMotion,
                         0f,
@@ -348,6 +404,14 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             if (spec.Kind == FallenCommanderAttackPreviewKind.Basic)
             {
                 UpdateBasicAttack(deltaTime);
+            }
+            else if (spec.Kind == FallenCommanderAttackPreviewKind.TwistedBattlefield)
+            {
+                UpdateTwistedBattlefieldPreview();
+            }
+            else if (spec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage)
+            {
+                UpdateFallingBarragePreview();
             }
             else
             {
@@ -557,10 +621,313 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
         }
 
+        // 연속 장판 공격의 현재 박자를 실제 패턴과 같은 무작위 분할 장판으로 생성한다.
+        private static void BeginTwistedBattlefieldBeat()
+        {
+            DestroyTwistedBattlefieldTiles();
+            var data = spec.TwistedBattlefield;
+            if (data == null || data.TelegraphPrefab == null || previewRoot == null)
+            {
+                return;
+            }
+
+            if ((twistedBeatIndex & 1) == 0)
+            {
+                twistedLayoutIndex = UnityEngine.Random.Range(0, 3);
+            }
+
+            var extents = data.ArenaHalfExtents;
+            var columns = twistedLayoutIndex == 1 ? 1 : data.ColumnCount;
+            var rows = twistedLayoutIndex == 0 ? 1 :
+                twistedLayoutIndex == 1 ? Mathf.Max(2, data.RowCount * 2) : data.RowCount;
+            var cellWidth = extents.x * 2f / columns;
+            var cellLength = extents.y * 2f / rows;
+            var visibleWidth = Mathf.Max(0.1f, cellWidth - data.TileGap);
+            var visibleLength = Mathf.Max(0.1f, cellLength - data.TileGap);
+            var center = previewBoss == null ? Vector3.zero : previewBoss.transform.position;
+            var isInverted = (twistedBeatIndex & 1) == 1;
+            for (var row = 0; row < rows; row++)
+            {
+                for (var column = 0; column < columns; column++)
+                {
+                    var tileCenter = center + new Vector3(
+                        -extents.x + cellWidth * (column + 0.5f),
+                        0f,
+                        -extents.y + cellLength * (row + 0.5f));
+                    var isDangerous = ((row + column) & 1) == 0;
+                    if (isInverted)
+                    {
+                        isDangerous = !isDangerous;
+                    }
+
+                    var origin = tileCenter - Vector3.forward * (visibleLength * 0.5f);
+                    var telegraph = FallenCommanderTelegraphView.CreateRectangle(
+                        data.TelegraphPrefab,
+                        previewRoot.transform,
+                        origin,
+                        Vector3.forward,
+                        visibleWidth,
+                        visibleLength,
+                        isDangerous ? data.DangerColor : data.SafeColor);
+                    if (telegraph != null)
+                    {
+                        telegraph.gameObject.hideFlags = HideFlags.HideAndDontSave;
+                        telegraph.SetProgress(isDangerous ? 0f : 1f);
+                    }
+
+                    TwistedTiles.Add(new TwistedPreviewTile
+                    {
+                        IsDangerous = isDangerous,
+                        Telegraph = telegraph
+                    });
+                }
+            }
+
+            twistedBeatStartTime = elapsed;
+            twistedBeatResolved = false;
+        }
+
+        // 경고 게이지를 채우고 발동 후 다음 박자에서 위험·안전 장판을 반전한다.
+        private static void UpdateTwistedBattlefieldPreview()
+        {
+            if (mode == FallenCommanderAttackPreviewMode.Cast ||
+                spec.TwistedBattlefield == null)
+            {
+                return;
+            }
+
+            var localElapsed = Mathf.Max(0f, elapsed - twistedBeatStartTime);
+            var progress = Mathf.Clamp01(localElapsed / Mathf.Max(0.1f, spec.WarningDuration));
+            SetTwistedBattlefieldProgress(progress);
+
+            if (mode == FallenCommanderAttackPreviewMode.PreCast)
+            {
+                return;
+            }
+
+            var resolveAt = spec.WarningDuration + spec.TelegraphHoldDuration;
+            if (!twistedBeatResolved && localElapsed >= resolveAt)
+            {
+                twistedBeatResolved = true;
+                twistedLastResolveTime = elapsed;
+                PlayResolvePresentation();
+                PlayHitPresentation();
+                DestroyTwistedBattlefieldTiles();
+                twistedBeatIndex++;
+            }
+
+            if (!twistedBeatResolved || twistedBeatIndex >= spec.TwistedBeatCount ||
+                elapsed < twistedLastResolveTime + spec.TwistedBeatInterval)
+            {
+                return;
+            }
+
+            BeginTwistedBattlefieldBeat();
+        }
+
+        // 연속 장판 공격의 모든 위험 장판에 같은 충전 진행도를 적용한다.
+        private static void SetTwistedBattlefieldProgress(float progress)
+        {
+            for (var index = 0; index < TwistedTiles.Count; index++)
+            {
+                if (TwistedTiles[index].IsDangerous)
+                {
+                    TwistedTiles[index].Telegraph?.SetProgress(progress);
+                }
+            }
+        }
+
+        // 연속 장판 공격 미리보기에서 생성한 모든 장판을 즉시 정리한다.
+        private static void DestroyTwistedBattlefieldTiles()
+        {
+            for (var index = 0; index < TwistedTiles.Count; index++)
+            {
+                var telegraph = TwistedTiles[index].Telegraph;
+                if (telegraph != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(telegraph.gameObject);
+                }
+            }
+
+            TwistedTiles.Clear();
+        }
+
+        // 낙하 탄막 미리보기를 공통 수량과 시간 설정으로 생성한다.
+        private static void BeginFallingBarragePreview(bool resolveImmediately)
+        {
+            DestroyFallingBarrageShots();
+            var data = spec.FallingBarrage;
+            if (data == null || data.ProjectilePrefab == null ||
+                data.TelegraphPrefab == null || previewRoot == null)
+            {
+                return;
+            }
+
+            var count = resolveImmediately ? 1 : Mathf.Max(1, spec.FallingProjectileCount);
+            var center = previewBoss == null ? Vector3.zero : previewBoss.transform.position;
+            var extents = data.ArenaHalfExtents;
+            for (var index = 0; index < count; index++)
+            {
+                var target = resolveImmediately && spec.FacingTarget != null
+                    ? spec.FacingTarget.position
+                    : center + new Vector3(
+                        UnityEngine.Random.Range(-extents.x, extents.x),
+                        0f,
+                        UnityEngine.Random.Range(-extents.y, extents.y));
+                var projectile = UnityEngine.Object.Instantiate(
+                    data.ProjectilePrefab,
+                    previewRoot.transform);
+                projectile.name = "[미리보기] 낙하 탄막";
+                projectile.hideFlags = HideFlags.HideAndDontSave;
+                projectile.transform.position = target + Vector3.up * data.SpawnHeight;
+                DisablePreviewBehaviours(projectile);
+
+                var telegraph = FallenCommanderTelegraphView.CreateCircle(
+                    data.TelegraphPrefab,
+                    previewRoot.transform,
+                    target,
+                    data.ImpactRadius,
+                    data.TelegraphColor);
+                if (telegraph != null)
+                {
+                    telegraph.gameObject.hideFlags = HideFlags.HideAndDontSave;
+                }
+
+                var shot = new FallingPreviewShot
+                {
+                    Projectile = projectile,
+                    Telegraph = telegraph,
+                    Target = target,
+                    StartDelay = resolveImmediately
+                        ? 0f
+                        : data.WarningMessageDuration + Mathf.Max(
+                            0f,
+                            index * spec.FallingSpawnInterval +
+                            UnityEngine.Random.Range(
+                                -spec.FallingSpawnJitter,
+                                spec.FallingSpawnJitter))
+                };
+                FallingShots.Add(shot);
+
+                if (resolveImmediately)
+                {
+                    projectile.transform.position = target;
+                    telegraph?.SetProgress(1f);
+                    shot.Resolved = true;
+                    lockedAttackPosition = target;
+                    PlayResolvePresentation();
+                    PlayHitPresentation();
+                    continue;
+                }
+
+                projectile.SetActive(false);
+                telegraph?.gameObject.SetActive(false);
+            }
+        }
+
+        // 낙하 시작시간의 작은 무작위 차이와 실제 낙하시간으로 탄막 위치를 갱신한다.
+        private static void UpdateFallingBarragePreview()
+        {
+            if (mode == FallenCommanderAttackPreviewMode.Cast ||
+                spec?.FallingBarrage == null)
+            {
+                return;
+            }
+
+            var fallDuration = Mathf.Max(0.1f, spec.FallingDuration);
+            for (var index = 0; index < FallingShots.Count; index++)
+            {
+                var shot = FallingShots[index];
+                if (shot.Resolved || elapsed < shot.StartDelay)
+                {
+                    continue;
+                }
+
+                shot.Projectile?.SetActive(true);
+                shot.Telegraph?.gameObject.SetActive(true);
+                var normalizedTime = Mathf.Clamp01(
+                    (elapsed - shot.StartDelay - spec.FallingAirHoldDuration) /
+                    fallDuration);
+                var progress = spec.FallingBarrage.EvaluateFallProgress(normalizedTime);
+                if (shot.Projectile != null)
+                {
+                    shot.Projectile.transform.position = Vector3.Lerp(
+                        shot.Target + Vector3.up * spec.FallingBarrage.SpawnHeight,
+                        shot.Target,
+                        progress);
+                }
+
+                shot.Telegraph?.SetProgress(progress);
+                if (normalizedTime < 1f)
+                {
+                    continue;
+                }
+
+                shot.Resolved = true;
+                if (mode == FallenCommanderAttackPreviewMode.PreCast)
+                {
+                    continue;
+                }
+
+                lockedAttackPosition = shot.Target;
+                PlayResolvePresentation();
+                shot.Projectile?.SetActive(false);
+                shot.Telegraph?.gameObject.SetActive(false);
+            }
+        }
+
+        // 낙하 탄막 미리보기에서 생성한 투사체와 경고 장판을 즉시 정리한다.
+        private static void DestroyFallingBarrageShots()
+        {
+            for (var index = 0; index < FallingShots.Count; index++)
+            {
+                if (FallingShots[index].Projectile != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(FallingShots[index].Projectile);
+                }
+
+                if (FallingShots[index].Telegraph != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(
+                        FallingShots[index].Telegraph.gameObject);
+                }
+            }
+
+            FallingShots.Clear();
+        }
+
+        // 미리보기 프리팹의 실제 런타임 동작은 끄고 파티클만 에디터 시간으로 재생한다.
+        private static void DisablePreviewBehaviours(GameObject root)
+        {
+            foreach (var collider in root.GetComponentsInChildren<Collider>(true))
+            {
+                collider.enabled = false;
+            }
+
+            foreach (var behaviour in root.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                behaviour.enabled = false;
+            }
+
+            foreach (var particle in root.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+                particle.Simulate(0f, false, true, true);
+                particle.Play(false);
+                Particles.Add(particle);
+            }
+        }
+
         // Config의 공격 범위 수치가 바뀐 순간에만 현재 미리보기 범위를 다시 생성한다.
         private static void RefreshTelegraphPreviewIfNeeded()
         {
             if (spec == null || mode == FallenCommanderAttackPreviewMode.Cast)
+            {
+                return;
+            }
+
+            if (spec.Kind == FallenCommanderAttackPreviewKind.TwistedBattlefield ||
+                spec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage)
             {
                 return;
             }
@@ -908,6 +1275,29 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         // 선택한 미리보기 단계에 맞는 애니메이션 클립을 샘플링한다.
         private static void UpdateMotion()
         {
+            if (spec.Kind == FallenCommanderAttackPreviewKind.TwistedBattlefield &&
+                mode == FallenCommanderAttackPreviewMode.Full)
+            {
+                if (twistedBeatIndex == 0 && !twistedBeatResolved)
+                {
+                    Sample(
+                        spec.PreCastMotion,
+                        elapsed,
+                        spec.PreCastMotionSpeed,
+                        spec.PreCastMotionStart,
+                        spec.PreCastMotionEnd);
+                    return;
+                }
+
+                Sample(
+                    spec.CastMotion,
+                    Mathf.Max(0f, elapsed - twistedLastResolveTime),
+                    spec.CastMotionSpeed,
+                    spec.CastMotionStart,
+                    spec.CastMotionEnd);
+                return;
+            }
+
             if (mode == FallenCommanderAttackPreviewMode.PreCast)
             {
                 Sample(
@@ -1304,6 +1694,58 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     : Mathf.Max(startDuration, attackStartTime + attackDuration);
             }
 
+            if (previewSpec.Kind == FallenCommanderAttackPreviewKind.TwistedBattlefield)
+            {
+                var beatDuration = Mathf.Max(0.1f, previewSpec.WarningDuration) +
+                    previewSpec.TelegraphHoldDuration;
+                if (previewMode == FallenCommanderAttackPreviewMode.PreCast)
+                {
+                    return Mathf.Max(
+                        beatDuration,
+                        ResolveStageDuration(previewSpec.Effects, true));
+                }
+
+                var twistedCastDuration = Mathf.Max(
+                    0.2f,
+                    previewSpec.CastMotionDuration,
+                    ResolveStageDuration(previewSpec.Effects, false),
+                    ResolveHitStageDuration(previewSpec.Effects));
+                if (previewMode == FallenCommanderAttackPreviewMode.Cast)
+                {
+                    return Mathf.Max(0.8f, twistedCastDuration);
+                }
+
+                var beatCount = Mathf.Max(2, previewSpec.TwistedBeatCount);
+                return beatDuration * beatCount +
+                    Mathf.Max(0f, previewSpec.TwistedBeatInterval) * (beatCount - 1) +
+                    twistedCastDuration;
+            }
+
+            if (previewSpec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage)
+            {
+                var fallingDuration = Mathf.Max(0.1f, previewSpec.FallingDuration);
+                var fallingCastDuration = Mathf.Max(
+                    0.2f,
+                    previewSpec.CastMotionDuration,
+                    ResolveStageDuration(previewSpec.Effects, false),
+                    ResolveHitStageDuration(previewSpec.Effects));
+                if (previewMode == FallenCommanderAttackPreviewMode.Cast)
+                {
+                    return fallingCastDuration;
+                }
+
+                var lastStartTime = Mathf.Max(0, previewSpec.FallingProjectileCount - 1) *
+                    Mathf.Max(0f, previewSpec.FallingSpawnInterval) +
+                    Mathf.Max(0f, previewSpec.FallingSpawnJitter);
+                var barrageDuration = previewSpec.FallingBarrage.WarningMessageDuration +
+                    lastStartTime +
+                    Mathf.Max(0f, previewSpec.FallingAirHoldDuration) +
+                    fallingDuration;
+                return previewMode == FallenCommanderAttackPreviewMode.PreCast
+                    ? barrageDuration
+                    : barrageDuration + fallingCastDuration;
+            }
+
             if (previewMode == FallenCommanderAttackPreviewMode.PreCast)
             {
                 return Mathf.Max(
@@ -1426,6 +1868,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         // 임시 상태를 다음 미리보기가 사용할 수 있도록 초기값으로 되돌린다.
         private static void ClearState()
         {
+            DestroyTwistedBattlefieldTiles();
+            DestroyFallingBarrageShots();
             spec = null;
             previewRoot = null;
             previewBoss = null;
@@ -1451,6 +1895,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             audioStopTime = 0f;
             hasResolved = false;
             hasCompletedBlackHole = false;
+            twistedBeatIndex = 0;
+            twistedLayoutIndex = 0;
+            twistedBeatStartTime = 0f;
+            twistedLastResolveTime = 0f;
+            twistedBeatResolved = false;
             isAudioPlaying = false;
         }
 

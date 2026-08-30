@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -75,7 +74,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
     }
 
     [InitializeOnLoad]
-    internal static class FallenCommanderAttackEditorPreview
+    internal static class FallenCommanderAttackPreviewController
     {
         private sealed class PreviewVfxLifetime
         {
@@ -97,20 +96,6 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             public float StartDelay { get; set; }
             public bool Resolved { get; set; }
         }
-
-        private static readonly Type AudioUtilType =
-            typeof(AudioImporter).Assembly.GetType("UnityEditor.AudioUtil");
-        private static readonly MethodInfo PlayPreviewClipMethod =
-            AudioUtilType?.GetMethod(
-                "PlayPreviewClip",
-                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic,
-                null,
-                new[] { typeof(AudioClip), typeof(int), typeof(bool) },
-                null);
-        private static readonly MethodInfo StopPreviewClipsMethod =
-            AudioUtilType?.GetMethod(
-                "StopAllPreviewClips",
-                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
 
         private static readonly List<ParticleSystem> Particles = new();
         private static readonly List<PreviewVfxLifetime> VfxLifetimes = new();
@@ -170,7 +155,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         public static bool IsActive => previewBoss != null && spec != null;
 
         // 에디터 상태가 바뀌어도 임시 보스·연출·오디오가 남지 않도록 정리 경로를 등록한다.
-        static FallenCommanderAttackEditorPreview()
+        static FallenCommanderAttackPreviewController()
         {
             EditorApplication.update += Update;
             EditorApplication.playModeStateChanged += _ => Stop();
@@ -337,11 +322,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
             if (previewRoot != null)
             {
-                UnityEngine.Object.DestroyImmediate(previewRoot);
+                FallenCommanderPreviewCleanup.Destroy(previewRoot);
             }
             else if (previewBoss != null)
             {
-                UnityEngine.Object.DestroyImmediate(previewBoss);
+                FallenCommanderPreviewCleanup.Destroy(previewBoss);
             }
 
             ClearState();
@@ -577,7 +562,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             var position = ResolveTelegraphPosition();
             if (spec.Kind == FallenCommanderAttackPreviewKind.LineStrike)
             {
-                attackTelegraph = FallenCommanderTelegraphView.CreateLine(
+                attackTelegraph = FallenCommanderPreviewRangeRenderer.CreateLine(
                     spec.TelegraphPrefab,
                     previewRoot.transform,
                     position,
@@ -588,7 +573,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
             else
             {
-                attackTelegraph = FallenCommanderTelegraphView.CreateCircle(
+                attackTelegraph = FallenCommanderPreviewRangeRenderer.CreateCircle(
                     spec.TelegraphPrefab,
                     previewRoot.transform,
                     position,
@@ -608,7 +593,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 return;
             }
 
-            secondaryAttackTelegraph = FallenCommanderTelegraphView.CreateCircle(
+            secondaryAttackTelegraph = FallenCommanderPreviewRangeRenderer.CreateCircle(
                 spec.TelegraphPrefab,
                 previewRoot.transform,
                 position + Vector3.up * 0.035f,
@@ -1005,11 +990,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         // 다시 만들 범위 오브젝트만 즉시 제거하고 참조를 초기화한다.
         private static void DestroyTelegraph(ref FallenCommanderTelegraphView telegraph)
         {
-            if (telegraph != null)
-            {
-                UnityEngine.Object.DestroyImmediate(telegraph.gameObject);
-                telegraph = null;
-            }
+            FallenCommanderPreviewCleanup.Destroy(ref telegraph);
         }
 
         // 경고시간 동안 공격 범위를 채우고 추적형 범위의 위치를 갱신한다.
@@ -1234,36 +1215,13 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 return;
             }
 
-            basicProjectile = attack.ProjectilePrefab == null
-                ? GameObject.CreatePrimitive(PrimitiveType.Sphere)
-                : UnityEngine.Object.Instantiate(attack.ProjectilePrefab);
-            basicProjectile.name = "[미리보기] 기본 공격 투사체";
-            basicProjectile.hideFlags = HideFlags.HideAndDontSave;
-            basicProjectile.transform.SetParent(previewRoot.transform, true);
-            basicProjectile.transform.SetPositionAndRotation(
+            basicProjectile = FallenCommanderPreviewProjectilePlayer.Create(
+                attack.ProjectilePrefab,
+                previewRoot.transform,
                 basicProjectilePosition,
-                Quaternion.LookRotation(basicProjectileDirection, Vector3.up));
-            basicProjectile.transform.localScale *= Mathf.Max(
-                0.1f,
-                attack.ProjectileRadius * 2f);
-
-            foreach (var collider in basicProjectile.GetComponentsInChildren<Collider>(true))
-            {
-                collider.enabled = false;
-            }
-
-            foreach (var behaviour in basicProjectile.GetComponentsInChildren<MonoBehaviour>(true))
-            {
-                behaviour.enabled = false;
-            }
-
-            foreach (var particle in basicProjectile.GetComponentsInChildren<ParticleSystem>(true))
-            {
-                particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
-                particle.Simulate(0f, false, true, true);
-                particle.Play(false);
-                Particles.Add(particle);
-            }
+                basicProjectileDirection,
+                attack.ProjectileRadius,
+                Particles);
 
             basicProjectileLaunched = true;
             if (basicProjectileTravelRemaining <= 0f)
@@ -1616,35 +1574,22 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             float normalizedStart,
             float normalizedEnd)
         {
-            if (previewAnimator == null || motion == null)
-            {
-                return;
-            }
-
-            var safeStart = Mathf.Clamp(normalizedStart, 0f, 0.999f);
-            var safeEnd = Mathf.Clamp(normalizedEnd, safeStart + 0.001f, 1f);
-            var startTime = motion.length * safeStart;
-            var endTime = motion.length * safeEnd;
-            var scaledTime = startTime + time * Mathf.Max(0.01f, playbackSpeed);
-            var sampleTime = Mathf.Clamp(scaledTime, startTime, endTime);
-
-            AnimationMode.BeginSampling();
-            AnimationMode.SampleAnimationClip(
-                previewAnimator.gameObject,
+            FallenCommanderPreviewMotionPlayer.Sample(
+                previewAnimator,
                 motion,
-                sampleTime);
-            AnimationMode.EndSampling();
+                time,
+                playbackSpeed,
+                normalizedStart,
+                normalizedEnd);
         }
 
         // Unity Editor의 AudioUtil을 이용해 씬 오브젝트 없이 SFX를 재생한다.
         private static void PlayAudio(AudioClip clip, float duration)
         {
-            if (clip == null || PlayPreviewClipMethod == null)
+            if (!FallenCommanderPreviewEffectPlayer.PlayAudio(clip))
             {
                 return;
             }
-
-            PlayPreviewClipMethod.Invoke(null, new object[] { clip, 0, false });
             var playDuration = duration > 0f
                 ? Mathf.Min(duration, clip.length)
                 : clip.length;
@@ -1657,10 +1602,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         // Unity Editor에서 재생 중인 미리보기 SFX를 중지한다.
         private static void StopAudio()
         {
-            if (StopPreviewClipsMethod != null)
-            {
-                StopPreviewClipsMethod.Invoke(null, null);
-            }
+            FallenCommanderPreviewEffectPlayer.StopAudio();
 
             isAudioPlaying = false;
             audioStopTime = 0f;
@@ -1906,21 +1848,28 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         // 미리보기 보스를 군단장 방향으로 즉시 회전시킨다.
         private static void FaceTarget(Transform bossTransform, Transform facingTarget)
         {
-            if (bossTransform == null || facingTarget == null)
-            {
-                return;
-            }
+            FallenCommanderPreviewMotionPlayer.FaceTarget(
+                bossTransform,
+                facingTarget);
+        }
+    }
 
-            var direction = facingTarget.position - bossTransform.position;
-            direction.y = 0f;
-            if (direction.sqrMagnitude < 0.0001f)
-            {
-                return;
-            }
+    internal static class FallenCommanderAttackEditorPreview
+    {
+        public static bool IsActive => FallenCommanderAttackPreviewController.IsActive;
 
-            bossTransform.rotation = Quaternion.LookRotation(
-                direction.normalized,
-                Vector3.up);
+        public static bool Play(
+            FallenCommanderAttackPreviewSpec previewSpec,
+            FallenCommanderAttackPreviewMode previewMode)
+        {
+            return FallenCommanderAttackPreviewController.Play(
+                previewSpec,
+                previewMode);
+        }
+
+        public static void Stop()
+        {
+            FallenCommanderAttackPreviewController.Stop();
         }
     }
 }

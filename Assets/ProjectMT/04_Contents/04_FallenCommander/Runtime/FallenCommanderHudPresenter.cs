@@ -41,6 +41,14 @@ namespace ProjectMT.Contents.FallenCommander
         void DebugFallingBarrage();
     }
 
+    public interface IBossDungeonDebugController :
+        IBossDungeonTimeoutController,
+        IBossDungeonBossKillController,
+        IBossDungeonBossHealthDebugController,
+        IBossDungeonAttackDebugController
+    {
+    }
+
     // HUD에 표시할 값을 한 번에 전달하기 위한 데이터 묶음
     public readonly struct FallenCommanderHudState
     {
@@ -202,16 +210,17 @@ namespace ProjectMT.Contents.FallenCommander
         //Controller.Initialize()에서 호출
         public void Bind(
             IBossDungeonHudSource targetController,
+            IBossDungeonDebugController targetDebugController,
             bool showDebugButtons)
         {
             //기존 이벤트 구독을 먼저 해제
             Unbind();
 
             hudSource = targetController;
-            timeoutController = targetController as IBossDungeonTimeoutController;
-            bossKillController = targetController as IBossDungeonBossKillController;
-            bossHealthDebugController = targetController as IBossDungeonBossHealthDebugController;
-            attackDebugController = targetController as IBossDungeonAttackDebugController;
+            timeoutController = targetDebugController;
+            bossKillController = targetDebugController;
+            bossHealthDebugController = targetDebugController;
+            attackDebugController = targetDebugController;
             showDebugControls = showDebugButtons;
             keepRestartVisibleWhenUnbound = showDebugButtons;
             if (hudSource != null)
@@ -660,6 +669,7 @@ namespace ProjectMT.Contents.FallenCommander
             timeoutController?.DebugTimeout();
         }
 
+        // 시간 -10초 버튼 입력을 외부 전투 시작 담당자에게 전달한다.
         private void HandleDebugReduceTime()
         {
             timeoutController?.DebugReduceTimeTenSeconds();

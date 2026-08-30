@@ -222,35 +222,11 @@ namespace ProjectMT.Contents.FallenCommander
             UnitActor boss,
             Transform commander,
             HealthComponent commanderTarget,
-            float interval,
             FallenCommanderBossAnimationPresenter animations,
-            AnimationClip brokenMotion,
-            float brokenMotionDuration,
-            FallenCommanderBasicAttackData basicAttackData,
-            FallenCommanderAttackData meleeMotion,
-            FallenCommanderAttackData markMotion,
-            FallenCommanderAttackData trackingMotion,
-            float trackingLockDuration,
-            FallenCommanderAttackData blackHoleAttack,
-            float blackHoleActiveDuration,
-            float blackHoleCoreRadius,
-            float blackHoleSpawnMinDistance,
-            float blackHoleSpawnMaxDistance,
-            float blackHoleOuterPullSpeed,
-            float blackHoleInnerPullSpeed,
-            AnimationCurve blackHolePullStrengthCurve,
+            FallenCommanderBossStatsConfig stats,
+            FallenCommanderAttackSetConfig attacks,
+            FallenCommanderPresentationConfig presentation,
             Vector3 blackHoleArenaCenter,
-            Vector2 blackHoleArenaHalfExtents,
-            FallenCommanderAttackEffectData blackHoleEndingEffects,
-            FallenCommanderAttackData lineMotion,
-            FallenCommanderAttackData ringMotion,
-            float ringSafeRadius,
-            FallenCommanderTwistedBattlefieldData twistedBattlefield,
-            FallenCommanderFallingBarrageData fallingBarrage,
-            float closeDistance,
-            float lineMinimumDistance,
-            float lineAlignmentThreshold,
-            FallenCommanderPhaseConfig phases,
             System.Action<bool> stunChanged,
             System.Action<FallenCommanderAttackPattern> started,
             FallenCommanderBossFacingSmoother facingSmoother)
@@ -263,63 +239,63 @@ namespace ProjectMT.Contents.FallenCommander
             commanderHealth = commanderTarget;
             bossFacingSmoother = facingSmoother;
             animationPresenter = animations;
-            breakMotion = brokenMotion;
-            this.breakMotionDuration = brokenMotionDuration;
+            breakMotion = presentation.BreakMotion;
+            breakMotionDuration = presentation.BreakMotionDuration;
 
             // 0초나 음수가 되는 것을 막기
-            attackInterval = Mathf.Max(0.1f, interval);
-            basicAttack = basicAttackData;
-            basicAttackWarningTime = Mathf.Max(0.1f, basicAttackData == null ? 0f : basicAttackData.WarningDuration);
+            attackInterval = Mathf.Max(0.1f, stats.AttackInterval);
+            basicAttack = attacks.Basic;
+            basicAttackWarningTime = Mathf.Max(0.1f, basicAttack == null ? 0f : basicAttack.WarningDuration);
             basicTelegraphHoldDuration = Mathf.Max(
                 0f,
-                basicAttackData == null ? 0f : basicAttackData.TelegraphHoldDuration);
-            basicProjectileSpeed = Mathf.Max(0.1f, basicAttackData == null ? 0f : basicAttackData.ProjectileSpeed);
-            basicProjectileRadius = Mathf.Max(0.1f, basicAttackData == null ? 0f : basicAttackData.ProjectileRadius);
-            basicProjectileMaxDistance = Mathf.Max(0.1f, basicAttackData == null ? 0f : basicAttackData.MaxDistance);
-            basicProjectileHeight = Mathf.Max(0f, basicAttackData == null ? 0f : basicAttackData.ProjectileHeight);
-            basicAttackRepeatInterval = Mathf.Max(0.1f, basicAttackData == null ? 0f : basicAttackData.RepeatInterval);
-            basicPatternOverlapDelay = Mathf.Max(0f, basicAttackData == null ? 0f : basicAttackData.PatternOverlapDelay);
-            meleeAttackMotion = meleeMotion;
-            meleeAttackCastTime = Mathf.Max(0.1f, meleeMotion == null ? 0f : meleeMotion.WarningDuration);
-            meleeAttackRadius = Mathf.Max(0.1f, meleeMotion == null ? 0f : meleeMotion.Radius);
-            markStrikeMotion = markMotion;
-            markStrikeCastTime = Mathf.Max(0.1f, markMotion == null ? 0f : markMotion.WarningDuration);
-            markStrikeRadius = Mathf.Max(0.1f, markMotion == null ? 0f : markMotion.Radius);
+                basicAttack == null ? 0f : basicAttack.TelegraphHoldDuration);
+            basicProjectileSpeed = Mathf.Max(0.1f, basicAttack == null ? 0f : basicAttack.ProjectileSpeed);
+            basicProjectileRadius = Mathf.Max(0.1f, basicAttack == null ? 0f : basicAttack.ProjectileRadius);
+            basicProjectileMaxDistance = Mathf.Max(0.1f, basicAttack == null ? 0f : basicAttack.MaxDistance);
+            basicProjectileHeight = Mathf.Max(0f, basicAttack == null ? 0f : basicAttack.ProjectileHeight);
+            basicAttackRepeatInterval = Mathf.Max(0.1f, basicAttack == null ? 0f : basicAttack.RepeatInterval);
+            basicPatternOverlapDelay = Mathf.Max(0f, basicAttack == null ? 0f : basicAttack.PatternOverlapDelay);
+            meleeAttackMotion = attacks.Melee;
+            meleeAttackCastTime = Mathf.Max(0.1f, meleeAttackMotion == null ? 0f : meleeAttackMotion.WarningDuration);
+            meleeAttackRadius = Mathf.Max(0.1f, meleeAttackMotion == null ? 0f : meleeAttackMotion.Radius);
+            markStrikeMotion = attacks.MarkStrike;
+            markStrikeCastTime = Mathf.Max(0.1f, markStrikeMotion == null ? 0f : markStrikeMotion.WarningDuration);
+            markStrikeRadius = Mathf.Max(0.1f, markStrikeMotion == null ? 0f : markStrikeMotion.Radius);
             markStrikeArenaCenter = blackHoleArenaCenter;
-            trackingMarkMotion = trackingMotion;
-            trackingMarkCastTime = Mathf.Max(0.1f, trackingMotion == null ? 0f : trackingMotion.WarningDuration);
-            trackingMarkLockDuration = Mathf.Clamp(trackingLockDuration, 0.1f, trackingMarkCastTime);
-            trackingMarkRadius = Mathf.Max(0.1f, trackingMotion == null ? 0f : trackingMotion.Radius);
-            blackHoleMotion = blackHoleAttack;
-            blackHoleRadius = Mathf.Max(0.1f, blackHoleAttack == null ? 0f : blackHoleAttack.Radius);
+            trackingMarkMotion = attacks.TrackingMark;
+            trackingMarkCastTime = Mathf.Max(0.1f, trackingMarkMotion == null ? 0f : trackingMarkMotion.WarningDuration);
+            trackingMarkLockDuration = Mathf.Clamp(attacks.TrackingMarkLockDuration, 0.1f, trackingMarkCastTime);
+            trackingMarkRadius = Mathf.Max(0.1f, trackingMarkMotion == null ? 0f : trackingMarkMotion.Radius);
+            blackHoleMotion = attacks.BlackHole;
+            blackHoleRadius = Mathf.Max(0.1f, blackHoleMotion == null ? 0f : blackHoleMotion.Radius);
             blackHolePattern.Configure(
-                blackHoleAttack,
-                blackHoleActiveDuration,
-                blackHoleCoreRadius,
-                blackHoleSpawnMinDistance,
-                blackHoleSpawnMaxDistance,
-                blackHoleOuterPullSpeed,
-                blackHoleInnerPullSpeed,
-                blackHolePullStrengthCurve,
+                attacks.BlackHole,
+                attacks.BlackHoleActiveDuration,
+                attacks.BlackHoleCoreRadius,
+                attacks.BlackHoleSpawnMinDistance,
+                attacks.BlackHoleSpawnMaxDistance,
+                attacks.BlackHoleOuterPullSpeed,
+                attacks.BlackHoleInnerPullSpeed,
+                attacks.BlackHolePullStrengthCurve,
                 blackHoleArenaCenter,
-                blackHoleArenaHalfExtents,
-                blackHoleEndingEffects,
+                attacks.BlackHoleArenaHalfExtents,
+                attacks.BlackHoleEndEffects,
                 BlackHoleTelegraphColor);
-            lineStrikeMotion = lineMotion;
-            lineStrikeCastTime = Mathf.Max(0.1f, lineMotion == null ? 0f : lineMotion.WarningDuration);
-            lineStrikeWidth = Mathf.Max(0.1f, lineMotion == null ? 0f : lineMotion.Width);
-            lineStrikeLength = Mathf.Max(0.1f, lineMotion == null ? 0f : lineMotion.Length);
-            lineStrikeStunDuration = Mathf.Max(0f, lineMotion == null ? 0f : lineMotion.StunDuration);
-            corruptionRingMotion = ringMotion;
-            corruptionRingCastTime = Mathf.Max(0.1f, ringMotion == null ? 0f : ringMotion.WarningDuration);
-            corruptionRingOuterRadius = Mathf.Max(0.2f, ringMotion == null ? 0f : ringMotion.Radius);
-            corruptionRingSafeRadius = Mathf.Clamp(ringSafeRadius, 0.1f, corruptionRingOuterRadius - 0.1f);
-            twistedBattlefieldData = twistedBattlefield;
-            fallingBarrageData = fallingBarrage;
-            closeAttackDistance = Mathf.Max(0.1f, closeDistance);
-            lineStrikeMinimumDistance = Mathf.Max(closeAttackDistance, lineMinimumDistance);
-            lineStrikeAlignmentThreshold = Mathf.Clamp(lineAlignmentThreshold, -1f, 1f);
-            phaseConfig = phases;
+            lineStrikeMotion = attacks.LineStrike;
+            lineStrikeCastTime = Mathf.Max(0.1f, lineStrikeMotion == null ? 0f : lineStrikeMotion.WarningDuration);
+            lineStrikeWidth = Mathf.Max(0.1f, lineStrikeMotion == null ? 0f : lineStrikeMotion.Width);
+            lineStrikeLength = Mathf.Max(0.1f, lineStrikeMotion == null ? 0f : lineStrikeMotion.Length);
+            lineStrikeStunDuration = Mathf.Max(0f, lineStrikeMotion == null ? 0f : lineStrikeMotion.StunDuration);
+            corruptionRingMotion = attacks.CorruptionRing;
+            corruptionRingCastTime = Mathf.Max(0.1f, corruptionRingMotion == null ? 0f : corruptionRingMotion.WarningDuration);
+            corruptionRingOuterRadius = Mathf.Max(0.2f, corruptionRingMotion == null ? 0f : corruptionRingMotion.Radius);
+            corruptionRingSafeRadius = Mathf.Clamp(attacks.CorruptionRingSafeRadius, 0.1f, corruptionRingOuterRadius - 0.1f);
+            twistedBattlefieldData = attacks.TwistedBattlefield;
+            fallingBarrageData = attacks.FallingBarrage;
+            closeAttackDistance = Mathf.Max(0.1f, attacks.CloseAttackDistance);
+            lineStrikeMinimumDistance = Mathf.Max(closeAttackDistance, attacks.LineStrikeMinimumDistance);
+            lineStrikeAlignmentThreshold = Mathf.Clamp(attacks.LineStrikeAlignmentThreshold, -1f, 1f);
+            phaseConfig = attacks.PhaseConfig;
             commanderStunChanged = stunChanged;
             attackStarted = started;
 

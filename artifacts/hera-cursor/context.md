@@ -1,6 +1,6 @@
 ﻿# Unity Live Context
 
-Generated: 2026-08-31 11:55:44 +09:00
+Generated: 2026-09-01 02:11:40 +09:00
 Project root: C:\Users\ZZ5\Documents\GitHub\ProjectMonsterTaming
 CLI: C:\Users\ZZ5\AppData\Local\JCSoft\HeraAgentUnity\bin\hera-agent-unity.exe
 
@@ -14,9 +14,9 @@ Unity (port 8090): ready
   Version: 6000.3.15f1
   Docs:    6000.3
   Compiler: csc=unity_dotnet_sdk_roslyn dotnet=unity_netcore_runtime
-  PID:     25528
+  PID:     37588
 
-Update available: jcsoft-dev → v0.2.17
+Update available: jcsoft-dev ??v0.2.17
 Run "hera-agent-unity update" to upgrade.
 --- STATUS END ---
 

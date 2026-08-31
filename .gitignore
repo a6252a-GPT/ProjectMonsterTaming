@@ -142,20 +142,6 @@ InitTestScene*.unity*
 /Packages/com.notnull92.hera-agent-unity/
 /artifacts/chatgpt-hybrid-mcp/
 
-# Local QA and Unity screenshots; never include generated captures in Git.
-/artifacts/*.png
-/artifacts/**/*.png
-/artifacts/*.jpg
-/artifacts/**/*.jpg
-/artifacts/*.jpeg
-/artifacts/**/*.jpeg
-/artifacts/*.gif
-/artifacts/**/*.gif
-/artifacts/*.webp
-/artifacts/**/*.webp
-/artifacts/*.bmp
-/artifacts/**/*.bmp
-
 # Local Codex backups, diagnostics, and temporary outputs.
 /_Temp/
 

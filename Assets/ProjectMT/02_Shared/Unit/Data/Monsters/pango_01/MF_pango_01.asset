@@ -57,38 +57,6 @@ MonoBehaviour:
   basicAttackVfxBindings:
   - attackId: BA_M_04
     slotId: overhead_trail
-    motionId: attack01
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_M_04
-    slotId: overhead_trail
-    motionId: attack02
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_M_04
-    slotId: overhead_trail
     motionId: attack03
     state: 1
     prefab: {fileID: 8537190404587795106, guid: 7466c53e2b59861439e74eb5603a958d, type: 3}
@@ -120,11 +88,11 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1.2
   - attackId: BA_M_04
-    slotId: area_wave
+    slotId: target_hit
     motionId: 
-    state: 2
+    state: 1
     prefab: {fileID: 7557672875213120968, guid: e27928aadd9dbe94a98983a519a81072, type: 3}
-    sfxState: 2
+    sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
     sfx: {fileID: 0}
@@ -136,11 +104,11 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   - attackId: BA_M_04
-    slotId: target_hit
+    slotId: area_wave
     motionId: 
-    state: 1
+    state: 2
     prefab: {fileID: 7557672875213120968, guid: e27928aadd9dbe94a98983a519a81072, type: 3}
-    sfxState: 0
+    sfxState: 2
     sound: {fileID: 0}
     soundVolume: 1
     sfx: {fileID: 0}

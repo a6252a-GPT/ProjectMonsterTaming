@@ -51,8 +51,14 @@ namespace ProjectMT.Shared.Unit
             var mainUnits = new List<BattleUnitSnapshot>(MonsterRosterData.MainPartySlotCount);
             var reserveUnits = new List<BattleUnitSnapshot>(MonsterRosterData.ReservePartySlotCount);
             var addedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            AppendPartyUnits(roster.MainPartySlots, roster, legionModifiers, addedIds, mainUnits);
-            AppendPartyUnits(roster.ReservePartySlots, roster, legionModifiers, addedIds, reserveUnits);
+            AppendPartyUnits(roster.MainPartySlots, roster, legionModifiers, addedIds, mainUnits, 0);
+            AppendPartyUnits(
+                roster.ReservePartySlots,
+                roster,
+                legionModifiers,
+                addedIds,
+                reserveUnits,
+                MonsterRosterData.MainPartySlotCount);
 
             if (mainUnits.Count == 0)
             {
@@ -67,7 +73,8 @@ namespace ProjectMT.Shared.Unit
             MonsterRosterView roster,
             IReadOnlyList<StatModifier> legionModifiers,
             HashSet<string> addedIds,
-            List<BattleUnitSnapshot> destination)
+            List<BattleUnitSnapshot> destination,
+            int slotOffset)
         {
             for (var index = 0; index < slots.Count; index++)
             {
@@ -89,8 +96,23 @@ namespace ProjectMT.Shared.Unit
                     definition.DisplayName,
                     ResolvePassiveSkill(monsterId),
                     ResolveActiveSkill(monsterId),
-                    owned.Level));
+                    owned.Level,
+                    ResolvePresentation(definition, monsterId, slotOffset + index)));
             }
+        }
+
+        private MonsterBattlePresentationSnapshot ResolvePresentation(
+            MonsterDefinition definition,
+            string monsterId,
+            int partySlotIndex)
+        {
+            var rarity = rarityCatalog != null && rarityCatalog.TryGetRarity(monsterId, out var resolved)
+                ? resolved
+                : MonsterRarity.Common;
+            return new MonsterBattlePresentationSnapshot(
+                definition != null ? definition.Portrait : null,
+                rarity,
+                partySlotIndex);
         }
 
         private MonsterPassiveSkill ResolvePassiveSkill(string monsterId)

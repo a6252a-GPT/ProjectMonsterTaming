@@ -48,30 +48,60 @@ MonoBehaviour:
     hitEffects: []
     presentationSlots:
     - slotId: telegraph
-      displayName: "\uD64D\uC815 \uC0B0\uD0C4 \uACBD\uB85C \uC608\uACE0"
+      displayName: "\uD310\uC815 \uC608\uACE0"
       timing: 0
       anchor: 2
-      description: "\uD310\uC815 \uC804\uC5D0 \uBC94\uC704\uC640 \uD0C0\uC774\uBC0D\uC744
-        \uC54C\uB9AC\uB294 \uC120\uD0DD \uC5F0\uCD9C \uACF5\uAC04\uC785\uB2C8\uB2E4."
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 0
+      description: "\uC2E4\uC81C \uD53C\uD574\uAC00 \uC801\uC6A9\uB418\uAE30 \uC804\uC5D0
+        \uACF5\uACA9 \uBC94\uC704\uB97C \uC54C\uB9AC\uB294 \uD6A8\uACFC"
+      useDuration: 0
+      duration: 1
     - slotId: launch
-      displayName: "\uD64D\uC815 \uC0B0\uD0C4 \uBC1C\uC0AC"
+      displayName: "\uAD00\uD1B5 \uD22C\uC0AC\uCCB4 \uBC1C\uC0AC"
       timing: 1
       anchor: 1
-      description: "\uACF5\uACA9\uC774 \uBC1C\uB3D9\uD558\uB294 \uC21C\uAC04 \uACF5\uACA9
-        \uC2DC\uC791\uC810\uC5D0\uC11C \uC7AC\uC0DD\uD558\uB294 \uC120\uD0DD \uC5F0\uCD9C
-        \uACF5\uAC04\uC785\uB2C8\uB2E4."
-    - slotId: travel
-      displayName: "\uD64D\uC815 \uBE44\uD589\uCCB4"
-      timing: 2
-      anchor: 1
-      description: "\uD22C\uC0AC\uCCB4 \uB610\uB294 \uC774\uB3D9\uCCB4 \uBCF8\uCCB4\uC5D0
-        \uC0AC\uC6A9\uD558\uB294 \uC120\uD0DD \uC5F0\uCD9C \uACF5\uAC04\uC785\uB2C8\uB2E4."
-    - slotId: impact
-      displayName: "\uC218\uC815 \uAD00\uD1B5 \uD0C0\uACA9"
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 0
+      description: "\uACF5\uACA9 \uC6D0\uC810\uC5D0\uC11C \uD22C\uC0AC\uCCB4\uAC00
+        \uC0DD\uC131\uB418\uB294 \uC21C\uAC04"
+      useDuration: 0
+      duration: 1
+    - slotId: projectile
+      displayName: "\uAD00\uD1B5 \uD22C\uC0AC\uCCB4 \uBCF8\uCCB4"
+      timing: 7
+      anchor: 4
+      multiplicity: 1
+      attachment: 2
+      endPolicy: 1
+      description: "\uBC30\uC815\uD55C Prefab\uC774 \uC2E4\uC81C \uC774\uB3D9\uCCB4
+        \uC678\uD615\uC73C\uB85C \uC0AC\uC6A9\uB429\uB2C8\uB2E4."
+      useDuration: 0
+      duration: 1
+    - slotId: pierce_hit
+      displayName: "\uAD00\uD1B5 \uBA85\uC911"
       timing: 3
-      anchor: 2
-      description: "\uC2E4\uC81C \uD53C\uD574\uAC00 \uC801\uC6A9\uB418\uB294 \uC9C0\uC810\uC5D0\uC11C
-        \uC7AC\uC0DD\uD558\uB294 \uC120\uD0DD \uC5F0\uCD9C \uACF5\uAC04\uC785\uB2C8\uB2E4."
+      anchor: 6
+      multiplicity: 2
+      attachment: 0
+      endPolicy: 0
+      description: "\uAC01 \uD22C\uC0AC\uCCB4\uAC00 \uC2E4\uC81C\uB85C \uD53C\uD574\uB97C
+        \uC900 \uB300\uC0C1 \uC704\uCE58"
+      useDuration: 0
+      duration: 1
+    - slotId: delivery_end
+      displayName: "\uC774\uB3D9\uCCB4 \uC885\uB8CC"
+      timing: 9
+      anchor: 4
+      multiplicity: 1
+      attachment: 0
+      endPolicy: 0
+      description: "\uCD5C\uB300 \uAC70\uB9AC \uB610\uB294 \uCDA9\uB3CC\uB85C \uC774\uB3D9\uCCB4\uAC00
+        \uB05D\uB098\uB294 \uC704\uCE58"
+      useDuration: 0
+      duration: 1
   - stepId: step_02
     displayName: "\uACB0\uC815 \uACE0\uC815"
     delayAfterPrevious: 0.16
@@ -106,24 +136,38 @@ MonoBehaviour:
       tickInterval: 0.5
     presentationSlots:
     - slotId: telegraph
-      displayName: "\uACB0\uC815 \uACE0\uC815 \uC9C0\uC810 \uC608\uACE0"
+      displayName: "\uD310\uC815 \uC608\uACE0"
       timing: 0
       anchor: 2
-      description: "\uD310\uC815 \uC804\uC5D0 \uBC94\uC704\uC640 \uD0C0\uC774\uBC0D\uC744
-        \uC54C\uB9AC\uB294 \uC120\uD0DD \uC5F0\uCD9C \uACF5\uAC04\uC785\uB2C8\uB2E4."
-    - slotId: launch
-      displayName: "\uACB0\uC815\uD575 \uACF5\uBA85"
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 0
+      description: "\uC2E4\uC81C \uD53C\uD574\uAC00 \uC801\uC6A9\uB418\uAE30 \uC804\uC5D0
+        \uACF5\uACA9 \uBC94\uC704\uB97C \uC54C\uB9AC\uB294 \uD6A8\uACFC"
+      useDuration: 0
+      duration: 1
+    - slotId: magic_cast
+      displayName: "\uC989\uBC1C \uB9C8\uBC95 \uC2DC\uC804"
       timing: 1
       anchor: 1
-      description: "\uACF5\uACA9\uC774 \uBC1C\uB3D9\uD558\uB294 \uC21C\uAC04 \uACF5\uACA9
-        \uC2DC\uC791\uC810\uC5D0\uC11C \uC7AC\uC0DD\uD558\uB294 \uC120\uD0DD \uC5F0\uCD9C
-        \uACF5\uAC04\uC785\uB2C8\uB2E4."
-    - slotId: impact
-      displayName: "\uACB0\uC815 \uC18D\uBC15"
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 0
+      description: "\uBC14\uB2E5\uC5D0\uC11C \uC704\uB85C \uB098\uD0C0\uB098\uB294
+        \uB9C8\uBC95 \uC2DC\uC804"
+      useDuration: 0
+      duration: 1
+    - slotId: target_hit
+      displayName: "\uB300\uC0C1\uBCC4 \uC2E4\uC81C \uBA85\uC911"
       timing: 3
-      anchor: 2
-      description: "\uC2E4\uC81C \uD53C\uD574\uAC00 \uC801\uC6A9\uB418\uB294 \uC9C0\uC810\uC5D0\uC11C
-        \uC7AC\uC0DD\uD558\uB294 \uC120\uD0DD \uC5F0\uCD9C \uACF5\uAC04\uC785\uB2C8\uB2E4."
+      anchor: 6
+      multiplicity: 2
+      attachment: 0
+      endPolicy: 0
+      description: "\uD53C\uD574\uAC00 \uC2E4\uC81C \uC801\uC6A9\uB41C \uAC01 \uB300\uC0C1
+        \uC704\uCE58"
+      useDuration: 0
+      duration: 1
   - stepId: step_03
     displayName: "\uACFC\uD3EC\uD654 \uD3ED\uBC1C"
     delayAfterPrevious: 0.18
@@ -158,30 +202,71 @@ MonoBehaviour:
       tickInterval: 0.5
     presentationSlots:
     - slotId: telegraph
-      displayName: "\uACFC\uD3EC\uD654 \uD3ED\uBC1C \uBC94\uC704 \uC608\uACE0"
+      displayName: "\uD310\uC815 \uC608\uACE0"
       timing: 0
       anchor: 2
-      description: "\uD310\uC815 \uC804\uC5D0 \uBC94\uC704\uC640 \uD0C0\uC774\uBC0D\uC744
-        \uC54C\uB9AC\uB294 \uC120\uD0DD \uC5F0\uCD9C \uACF5\uAC04\uC785\uB2C8\uB2E4."
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 0
+      description: "\uC2E4\uC81C \uD53C\uD574\uAC00 \uC801\uC6A9\uB418\uAE30 \uC804\uC5D0
+        \uACF5\uACA9 \uBC94\uC704\uB97C \uC54C\uB9AC\uB294 \uD6A8\uACFC"
+      useDuration: 0
+      duration: 1
     - slotId: launch
-      displayName: "\uACB0\uC815\uD575 \uBC1C\uC0AC"
+      displayName: "\uD3ED\uBC1C \uD22C\uC0AC\uCCB4 \uBC1C\uC0AC"
       timing: 1
       anchor: 1
-      description: "\uACF5\uACA9\uC774 \uBC1C\uB3D9\uD558\uB294 \uC21C\uAC04 \uACF5\uACA9
-        \uC2DC\uC791\uC810\uC5D0\uC11C \uC7AC\uC0DD\uD558\uB294 \uC120\uD0DD \uC5F0\uCD9C
-        \uACF5\uAC04\uC785\uB2C8\uB2E4."
-    - slotId: travel
-      displayName: "\uACB0\uC815\uD575 \uBE44\uD589\uCCB4"
-      timing: 2
-      anchor: 1
-      description: "\uD22C\uC0AC\uCCB4 \uB610\uB294 \uC774\uB3D9\uCCB4 \uBCF8\uCCB4\uC5D0
-        \uC0AC\uC6A9\uD558\uB294 \uC120\uD0DD \uC5F0\uCD9C \uACF5\uAC04\uC785\uB2C8\uB2E4."
-    - slotId: impact
-      displayName: "\uACFC\uD3EC\uD654 \uD3ED\uBC1C"
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 0
+      description: "\uACF5\uACA9 \uC6D0\uC810\uC5D0\uC11C \uD22C\uC0AC\uCCB4\uAC00
+        \uC0DD\uC131\uB418\uB294 \uC21C\uAC04"
+      useDuration: 0
+      duration: 1
+    - slotId: projectile
+      displayName: "\uD3ED\uBC1C \uD22C\uC0AC\uCCB4 \uBCF8\uCCB4"
+      timing: 7
+      anchor: 4
+      multiplicity: 1
+      attachment: 2
+      endPolicy: 1
+      description: "\uBC30\uC815\uD55C Prefab\uC774 \uC2E4\uC81C \uC774\uB3D9\uCCB4
+        \uC678\uD615\uC73C\uB85C \uC0AC\uC6A9\uB429\uB2C8\uB2E4."
+      useDuration: 0
+      duration: 1
+    - slotId: target_hit
+      displayName: "\uB300\uC0C1\uBCC4 \uC2E4\uC81C \uBA85\uC911"
       timing: 3
-      anchor: 2
-      description: "\uC2E4\uC81C \uD53C\uD574\uAC00 \uC801\uC6A9\uB418\uB294 \uC9C0\uC810\uC5D0\uC11C
-        \uC7AC\uC0DD\uD558\uB294 \uC120\uD0DD \uC5F0\uCD9C \uACF5\uAC04\uC785\uB2C8\uB2E4."
+      anchor: 6
+      multiplicity: 2
+      attachment: 0
+      endPolicy: 0
+      description: "\uD53C\uD574\uAC00 \uC2E4\uC81C \uC801\uC6A9\uB41C \uAC01 \uB300\uC0C1
+        \uC704\uCE58"
+      useDuration: 0
+      duration: 1
+    - slotId: area_explosion
+      displayName: "\uBC94\uC704 \uD3ED\uBC1C"
+      timing: 8
+      anchor: 7
+      multiplicity: 1
+      attachment: 0
+      endPolicy: 0
+      description: "\uBC94\uC704 \uC548\uC758 \uB300\uC0C1 \uD310\uC815\uC774 \uC644\uB8CC\uB41C
+        \uC911\uC2EC \uC704\uCE58"
+      useDuration: 0
+      duration: 1
+    - slotId: delivery_end
+      displayName: "\uC774\uB3D9\uCCB4 \uC885\uB8CC"
+      timing: 9
+      anchor: 4
+      multiplicity: 1
+      attachment: 0
+      endPolicy: 0
+      description: "\uCD5C\uB300 \uAC70\uB9AC \uB610\uB294 \uCDA9\uB3CC\uB85C \uC774\uB3D9\uCCB4\uAC00
+        \uB05D\uB098\uB294 \uC704\uCE58"
+      useDuration: 0
+      duration: 1
   impactFeel:
     prefab: {fileID: 7220257174886157722, guid: 3108072e33b17c74b86dbd8ed9f0b7a5, type: 3}
     lifetime: 0.85

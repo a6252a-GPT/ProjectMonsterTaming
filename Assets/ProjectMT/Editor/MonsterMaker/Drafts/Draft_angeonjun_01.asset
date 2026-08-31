@@ -33,6 +33,17 @@ MonoBehaviour:
     radius: 0
     maxTargets: 1
   rarityActiveSkill: {fileID: 0}
+  activeAttackProfile: {fileID: 0}
+  activeSkillName:
+  activeEnergyMaximum: 1000
+  activeSkillClip: {fileID: 0}
+  activeSkillPlaybackSpeed: 1
+  activeSkillCrossFadeDuration: 0.08
+  activeSkillCommitNormalizedTime: 0.25
+  activeStepMotionModeConfigured: 0
+  useCustomActiveStepMotions: 0
+  activeAttackStepTunings: []
+  activeAttackPresentations: []
   productionMemo: Notion monster batch / DragonSD_02
   vendorPrefab: {fileID: 4063105653316211765, guid: ad81e2ee47f1fed498d8241c583aa7e0, type: 3}
   animatorSource: {fileID: 821888171601697783, guid: ad81e2ee47f1fed498d8241c583aa7e0, type: 3}
@@ -106,7 +117,7 @@ MonoBehaviour:
     slotId: body
     motionId: attack01
     state: 1
-    prefab: {fileID: 1486696693933490610, guid: 62655a68ce8728d478371a3dc863f4b2, type: 3}
+    prefab: {fileID: 222473768346676621, guid: 3c28e4951356a7d46a5687f21cd0f594, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -115,9 +126,9 @@ MonoBehaviour:
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: -0.25
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: -0.49522042, z: 0.75555277}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 0.7
   - attackId: BA_S_02
     slotId: repeated_hit
     motionId: 

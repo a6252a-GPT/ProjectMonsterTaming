@@ -61,7 +61,7 @@ namespace ProjectMT.Shared.Combat
                 return;
             }
 
-            var deltaTime = Time.deltaTime;
+            var deltaTime = Time.deltaTime * world.GetMonsterActiveFocusTimeScale(source);
             remainingLifetime -= deltaTime;
             if (remainingLifetime <= 0f)
             {

@@ -143,10 +143,6 @@ MonoBehaviour:
     rarity: 4
     passiveSkill: {fileID: 11400000, guid: 8c0bf39c8c83f7f40a85ae8afdd989ff, type: 2}
     activeSkill: {fileID: 11400000, guid: 547fc4a37ceefc3408ddd5295f31219a, type: 2}
-  - monster: {fileID: 11400000, guid: 6b776b307b595934eaed288a0ae5b377, type: 2}
-    rarity: 4
-    passiveSkill: {fileID: 0}
-    activeSkill: {fileID: 0}
   - monster: {fileID: 11400000, guid: 4e44abbeeb73dd24c83b5e24b65c987e, type: 2}
     rarity: 4
     passiveSkill: {fileID: 0}
@@ -190,4 +186,8 @@ MonoBehaviour:
   - monster: {fileID: 11400000, guid: caa9ef953b786e94dbf8bac39e7b0a5e, type: 2}
     rarity: 4
     passiveSkill: {fileID: 11400000, guid: ab2e66c11ef45d841a149b6c90d43013, type: 2}
+    activeSkill: {fileID: 11400000, guid: 53477ef1300e74d44ad74da5ac81ed93, type: 2}
+  - monster: {fileID: 11400000, guid: 6b776b307b595934eaed288a0ae5b377, type: 2}
+    rarity: 4
+    passiveSkill: {fileID: 0}
     activeSkill: {fileID: 0}

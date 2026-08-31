@@ -335,6 +335,11 @@ namespace ProjectMT.Shared.Unit
                     error = $"Basic Attack VFX contract is invalid. Profile={name}, Detail={slotError}";
                     return false;
                 }
+                if (!MonsterBasicAttackVfxCompatibility.TryValidateSlot(this, slot, out var compatibilityError))
+                {
+                    error = $"Basic Attack VFX contract does not match its attack modules. Profile={name}, Detail={compatibilityError}";
+                    return false;
+                }
                 if (!slotIds.Add(slot.SlotId))
                 {
                     error = $"Basic Attack VFX slot ID is duplicated. Profile={name}, Slot={slot.SlotId}";

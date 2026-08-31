@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f8f928504a5fbb4087b619c60edf930, type: 3}
   m_Name: MC_kimhyeona_01
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterCombatProfile
-  combatType: 1
-  action: {fileID: 7317603669112529149}
+  combatType: 0
+  action: {fileID: 5954153582930548028}
   impactStrength: 0
   reactionWeight: 0
---- !u!114 &7317603669112529149
+--- !u!114 &5954153582930548028
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -25,20 +25,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3468f1cd999e99a4ca82955b5e695459, type: 3}
-  m_Name: Ranged_kimhyeona_01
-  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.ProjectileActionDefinition
-  basicAttackProfile: {fileID: 11400000, guid: 46d39a607f1261f4d859b8143b8c2046, type: 2}
-  deliveryMode: 0
+  m_Script: {fileID: 11500000, guid: 1ba24edda31e98848b3134f8c253ebab, type: 3}
+  m_Name: Melee_kimhyeona_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MeleeActionDefinition
+  basicAttackProfile: {fileID: 11400000, guid: 61002033270fd83468163f34c442e589, type: 2}
   mode: 1
-  projectilePrefab: {fileID: 8900597983205870692, guid: 7d0df7a31c4b87e4e867d3dc816c56ed, type: 3}
-  launchSfx: {fileID: 0}
-  overrideBasicAttackProfileTuning: 0
-  speed: 9
-  lifetime: 3
-  hitRadius: 0.25
-  maxPiercingTargets: 3
-  impactRadius: 0.28
-  maxImpactTargets: 3
-  launchRecoilDistance: 0
-  launchRecoilDuration: 0.12
+  areaCenter: 1
+  areaRadius: 1.5
+  maxTargets: 4

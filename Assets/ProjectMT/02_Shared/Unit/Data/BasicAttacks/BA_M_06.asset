@@ -115,6 +115,7 @@ MonoBehaviour:
   - 0.4
   secondaryDamageRatio: 1
   repeatHitInterval: 0.08
+  breathDuration: 0.8
   repeatImpactFeedback: 1
   dashDistance: 0
   dashDuration: 0.1

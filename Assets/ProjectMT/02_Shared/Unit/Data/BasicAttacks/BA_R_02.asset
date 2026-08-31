@@ -70,15 +70,15 @@ MonoBehaviour:
     defaultLifetime: 1
   - slotId: projectile
     displayName: "\uAD00\uD1B5 \uD22C\uC0AC\uCCB4 \uBCF8\uCCB4"
-    description: "\uC2E4\uC81C \uC774\uB3D9 \uD310\uC815\uCCB4\uC758 \uBAAC\uC2A4\uD130
-      \uACE0\uC720 \uC678\uD615"
+    description: "\uBC30\uC815\uD55C Prefab\uC774 \uC2E4\uC81C \uC774\uB3D9 \uD310\uC815\uCCB4\uC758
+      \uC678\uD615\uC774 \uB429\uB2C8\uB2E4."
     eventType: 2
     anchor: 3
     multiplicity: 2
     assignmentScope: 0
     attachment: 2
     endPolicy: 1
-    defaultLifetime: 1
+    defaultLifetime: 3
   - slotId: pierce_hit
     displayName: "\uAD00\uD1B5 \uBA85\uC911"
     description: "\uACBD\uB85C \uC704\uC5D0\uC11C \uD53C\uD574\uB97C \uBC1B\uC740
@@ -125,6 +125,7 @@ MonoBehaviour:
   - 1
   secondaryDamageRatio: 0.8
   repeatHitInterval: 0.08
+  breathDuration: 0.8
   repeatImpactFeedback: 1
   dashDistance: 0
   dashDuration: 0.1

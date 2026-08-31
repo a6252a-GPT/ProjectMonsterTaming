@@ -13,6 +13,7 @@ namespace ProjectMT.Shared.Unit
         private readonly List<UnitActor> unitBuffer = new List<UnitActor>();
         private readonly HashSet<int> couragePresentedRecipients = new HashSet<int>();
         private readonly MonsterActiveAttackExecutor activeAttackExecutor = new MonsterActiveAttackExecutor();
+        private readonly MonsterEffectActiveExecutor activeEffectExecutor = new MonsterEffectActiveExecutor();
         private UnitActor owner;
         private CombatWorld world;
         private MonsterPassiveSkill passiveSkill;
@@ -40,7 +41,10 @@ namespace ProjectMT.Shared.Unit
         private int monsterLevel = 1;
         private bool executingActive;
         private bool waitingForActiveFocus;
+        private bool activeFocusQueued;
+        private bool canArmActiveFocus;
         private bool activeFirstStepMotionStarted;
+        private int activeCommitMarkerBaseline;
         private bool frontlineBondActive;
 
         public MonsterPassiveSkill PassiveSkill => passiveSkill;
@@ -49,6 +53,7 @@ namespace ProjectMT.Shared.Unit
         public float EnergyCapacity => activeSkill == null ? 0f : activeSkill.EnergyCost;
         public bool IsPassiveActive => outgoingRandomEffect != null && outgoingRandomRemaining > 0f;
         public bool IsExecuting => executingActive;
+        public bool IsActiveFocusQueued => activeFocusQueued;
         public int RemainingActiveHits => activeAttackExecutor.IsRunning && activeSkill is MonsterAttackActiveSkill attack
             ? Mathf.Max(0, attack.Steps.Count - activeAttackExecutor.CompletedStepCount)
             : remainingActiveHits;
@@ -85,6 +90,7 @@ namespace ProjectMT.Shared.Unit
 
         public void Shutdown()
         {
+            world?.CancelMonsterActiveFocus(owner);
             owner = null;
             world = null;
             passiveSkill = null;
@@ -112,16 +118,25 @@ namespace ProjectMT.Shared.Unit
             monsterLevel = 1;
             executingActive = false;
             waitingForActiveFocus = false;
+            activeFocusQueued = false;
+            canArmActiveFocus = false;
             activeFirstStepMotionStarted = false;
+            activeCommitMarkerBaseline = 0;
             frontlineBondActive = false;
             unitBuffer.Clear();
             couragePresentedRecipients.Clear();
             activeAttackExecutor.Reset();
+            activeEffectExecutor.Reset();
         }
 
         public void Tick(float deltaTime, bool canBeginActive)
         {
             deltaTime = Mathf.Max(0f, deltaTime);
+            canArmActiveFocus = canBeginActive;
+            if (!executingActive && activeEffectExecutor.HasLingering)
+            {
+                activeEffectExecutor.TickLingering(deltaTime);
+            }
             TickPassiveDurations(deltaTime);
             TickGenericPassive(deltaTime);
 
@@ -139,9 +154,10 @@ namespace ProjectMT.Shared.Unit
             energy = Mathf.Min(
                 activeSkill.EnergyCost,
                 energy + MonsterActiveEnergyConfig.SharedEnergyPerSecond * deltaTime);
-            if (canBeginActive && energy >= activeSkill.EnergyCost)
+            if (!activeFocusQueued && energy >= activeSkill.EnergyCost &&
+                owner.CanQueueMonsterActiveFocus)
             {
-                TryBeginActive();
+                TryQueueActive();
             }
         }
 
@@ -588,6 +604,19 @@ namespace ProjectMT.Shared.Unit
             return basicHitCount > 0 && basicHitCount % genericSkill.TriggerCount == 0;
         }
 
+        public void GrantActiveEnergy(float amount)
+        {
+            AddEnergy(amount); // 다음 Tick에서만 발동을 판정해 같은 프레임 연쇄 발동을 막습니다.
+        }
+
+        public void DrainActiveEnergy(float amount)
+        {
+            if (activeSkill != null && amount > 0f)
+            {
+                energy = Mathf.Max(0f, energy - amount);
+            }
+        }
+
         private void AddEnergy(float amount)
         {
             if (activeSkill != null && amount > 0f)
@@ -617,72 +646,183 @@ namespace ProjectMT.Shared.Unit
             }
         }
 
-        private void TryBeginActive()
+        private void TryQueueActive()
         {
             var recipe = activeSkill?.Recipe;
             if (recipe == null || recipe.Trigger != MonsterSkillTriggerType.EnergyMax)
             {
                 return;
             }
-            var target = ResolveActiveTarget(recipe.Target);
+            var target = activeSkill is MonsterEffectActiveSkill effectActive
+                ? ResolveEffectActiveTarget(effectActive)
+                : ResolveActiveTarget(recipe.Target);
             if (target == null || !target.IsAlive || !target.IsCombatReady)
             {
                 return;
             }
+
+            var commitDelay = 0.24f;
             if (activeSkill is MonsterAttackActiveSkill assembledAttack)
             {
-                energy = Mathf.Max(0f, energy - activeSkill.EnergyCost);
-                activeTarget = target;
-                executingActive = true;
-                waitingForActiveFocus = true;
                 var motionDuration = 0f;
                 var rawCommitDelay = 0f;
                 if (assembledAttack.Steps.Count > 0 && owner.AnimationDriver != null)
                 {
-                    motionDuration = owner.AnimationDriver.PlayActiveStep(
+                    owner.AnimationDriver.TryResolveActiveStepTiming(
                         assembledAttack.Steps[0].StepId,
                         assembledAttack.CommitNormalizedTime,
+                        out motionDuration,
                         out rawCommitDelay);
                 }
-                activeFirstStepMotionStarted = motionDuration > 0f;
-                var commitDelay = motionDuration > 0f
+                commitDelay = motionDuration > 0f
                     ? Mathf.Clamp(rawCommitDelay, 0.08f, 1.2f)
                     : 0.24f;
-                var focusDuration = Mathf.Clamp(commitDelay + 0.42f, 0.6f, 1.5f);
-                if (!world.RequestMonsterActiveFocus(
-                        owner,
-                        assembledAttack,
-                        CommitAssembledAttack,
-                        commitDelay,
-                        focusDuration))
-                {
-                    CommitAssembledAttack();
-                }
-                return;
             }
-            MonsterSkillEffect damageEffect = null;
-            var effects = recipe.Effects;
-            for (var index = 0; index < effects.Count; index++)
+            else if (activeSkill is MonsterEffectActiveSkill assembledEffect)
             {
-                if (effects[index]?.Type == MonsterSkillEffectType.Damage)
+                var motionDuration = 0f;
+                var rawCommitDelay = 0f;
+                if (assembledEffect.Groups.Count > 0 && owner.AnimationDriver != null)
                 {
-                    damageEffect = effects[index];
-                    break;
+                    owner.AnimationDriver.TryResolveActiveStepTiming(
+                        assembledEffect.Groups[0].GroupId,
+                        assembledEffect.CommitNormalizedTime,
+                        out motionDuration,
+                        out rawCommitDelay);
+                }
+                commitDelay = motionDuration > 0f
+                    ? Mathf.Clamp(rawCommitDelay, 0.08f, 1.2f)
+                    : 0.24f;
+            }
+            else
+            {
+                activeDamageEffect = null;
+                var effects = recipe.Effects;
+                for (var index = 0; index < effects.Count; index++)
+                {
+                    if (effects[index]?.Type == MonsterSkillEffectType.Damage)
+                    {
+                        activeDamageEffect = effects[index];
+                        break;
+                    }
+                }
+                if (activeDamageEffect == null)
+                {
+                    return;
                 }
             }
-            if (damageEffect == null)
-            {
-                return;
-            }
+
             activeTarget = target;
-            activeDamageEffect = damageEffect;
-            remainingActiveHits = damageEffect.RepeatCount;
-            nextActiveHitDelay = damageEffect.Delay;
-            energy = Mathf.Max(0f, energy - activeSkill.EnergyCost);
-            executingActive = true;
-            TickExecutingActive(0f);
+            activeFocusQueued = true;
+            activeFirstStepMotionStarted = false;
+            activeCommitMarkerBaseline = 0;
+            var config = MonsterActiveFocusPresentationConfig.Current;
+            var preset = config != null
+                ? config.ResolvePreset(owner.Presentation.Rarity)
+                : default;
+            var focusDuration = commitDelay + Mathf.Max(0.08f, preset.FadeOut);
+            if (world.RequestMonsterActiveFocus(
+                    owner,
+                    activeSkill,
+                    ResolveQueuedActiveTarget,
+                    CanArmQueuedActiveFocus,
+                    BeginQueuedActiveFocus,
+                    CommitQueuedActiveFocus,
+                    CancelQueuedActiveFocus,
+                    IsActiveCommitMarkerReached,
+                    commitDelay,
+                    focusDuration))
+            {
+                return;
+            }
+
+            CancelQueuedActiveFocus();
         }
 
+        private UnitActor ResolveQueuedActiveTarget()
+        {
+            if (activeTarget != null && activeTarget.IsAlive && activeTarget.IsCombatReady)
+            {
+                return activeTarget;
+            }
+            var recipe = activeSkill?.Recipe;
+            activeTarget = activeSkill is MonsterEffectActiveSkill effectActive
+                ? ResolveEffectActiveTarget(effectActive)
+                : recipe != null
+                    ? ResolveActiveTarget(recipe.Target)
+                    : null;
+            return activeTarget;
+        }
+
+        private bool CanArmQueuedActiveFocus()
+        {
+            return activeFocusQueued &&
+                   !executingActive &&
+                   owner != null &&
+                   owner.CanArmMonsterActiveFocus &&
+                   canArmActiveFocus &&
+                   ResolveQueuedActiveTarget() != null;
+        }
+
+        private void BeginQueuedActiveFocus()
+        {
+            if (!activeFocusQueued || owner == null || !owner.IsAlive)
+            {
+                return;
+            }
+            executingActive = true;
+            waitingForActiveFocus = true;
+            activeFirstStepMotionStarted = false;
+            activeCommitMarkerBaseline = owner.AnimationDriver != null
+                ? owner.AnimationDriver.ActiveSkillCommitVersion
+                : 0;
+            if (activeSkill is MonsterAttackActiveSkill)
+            {
+                BeginAssembledAttackFocusMotion();
+            }
+            else if (activeSkill is MonsterEffectActiveSkill)
+            {
+                BeginAssembledEffectFocusMotion();
+            }
+        }
+
+        private bool CommitQueuedActiveFocus()
+        {
+            if (!activeFocusQueued || !executingActive || !waitingForActiveFocus ||
+                ResolveQueuedActiveTarget() == null)
+            {
+                CancelQueuedActiveFocus();
+                return false;
+            }
+            if (activeSkill is MonsterAttackActiveSkill)
+            {
+                return CommitAssembledAttack();
+            }
+            if (activeSkill is MonsterEffectActiveSkill)
+            {
+                return CommitAssembledEffect();
+            }
+            return CommitLegacyActive();
+        }
+
+        private bool IsActiveCommitMarkerReached()
+        {
+            return executingActive &&
+                   waitingForActiveFocus &&
+                   owner?.AnimationDriver != null &&
+                   owner.AnimationDriver.ActiveSkillCommitVersion != activeCommitMarkerBaseline;
+        }
+
+        private UnitActor ResolveEffectActiveTarget(MonsterEffectActiveSkill effectActive)
+        {
+            if (effectActive?.SourceProfile?.Role != MonsterEffectActiveRole.Debuff)
+            {
+                return owner;
+            }
+            return owner.Target != null && owner.Target.IsAlive
+                ? owner.Target
+                : world.FindNearestOpponent(owner, float.PositiveInfinity);
+        }
         private UnitActor ResolveActiveTarget(MonsterSkillTargetType targetType)
         {
             switch (targetType)
@@ -710,6 +850,12 @@ namespace ProjectMT.Shared.Unit
             {
                 if (waitingForActiveFocus) return;
                 if (activeAttackExecutor.Tick(deltaTime)) CompleteActive();
+                return;
+            }
+            if (activeSkill is MonsterEffectActiveSkill)
+            {
+                if (waitingForActiveFocus) return;
+                if (activeEffectExecutor.Tick(deltaTime)) CompleteActive();
                 return;
             }
             nextActiveHitDelay -= Mathf.Max(0f, deltaTime);
@@ -757,7 +903,9 @@ namespace ProjectMT.Shared.Unit
         {
             executingActive = false;
             waitingForActiveFocus = false;
+            activeFocusQueued = false;
             activeFirstStepMotionStarted = false;
+            activeCommitMarkerBaseline = 0;
             activeAttackExecutor.Reset();
             activeDamageEffect = null;
             activeTarget = null;
@@ -765,14 +913,20 @@ namespace ProjectMT.Shared.Unit
             nextActiveHitDelay = 0f;
         }
 
-        private void CommitAssembledAttack()
+        private bool CommitAssembledAttack()
         {
             if (!executingActive || !(activeSkill is MonsterAttackActiveSkill assembledAttack) ||
                 owner == null || world == null || !owner.IsAlive)
             {
                 CompleteActive();
-                return;
+                return false;
             }
+            if (!TryConsumeActiveEnergy())
+            {
+                CompleteActive();
+                return false;
+            }
+            activeFocusQueued = false;
             waitingForActiveFocus = false;
             if (!activeAttackExecutor.Begin(
                     owner,
@@ -781,10 +935,124 @@ namespace ProjectMT.Shared.Unit
                     activeTarget,
                     activeFirstStepMotionStarted))
             {
+                RefundActiveEnergy();
                 CompleteActive();
-                return;
+                return false;
             }
             TickExecutingActive(0f);
+            return true;
+        }
+
+        private void BeginAssembledAttackFocusMotion()
+        {
+            if (!executingActive || !(activeSkill is MonsterAttackActiveSkill assembledAttack) ||
+                assembledAttack.Steps.Count == 0 || owner?.AnimationDriver == null || !owner.IsAlive)
+            {
+                activeFirstStepMotionStarted = false;
+                return;
+            }
+            var duration = owner.AnimationDriver.PlayActiveStep(
+                assembledAttack.Steps[0].StepId,
+                assembledAttack.CommitNormalizedTime,
+                out _);
+            activeFirstStepMotionStarted = duration > 0f;
+        }
+        private bool CommitAssembledEffect()
+        {
+            if (!executingActive || !(activeSkill is MonsterEffectActiveSkill assembledEffect) ||
+                owner == null || world == null || !owner.IsAlive)
+            {
+                CompleteActive();
+                return false;
+            }
+            if (!TryConsumeActiveEnergy())
+            {
+                CompleteActive();
+                return false;
+            }
+            activeFocusQueued = false;
+            waitingForActiveFocus = false;
+            if (!activeEffectExecutor.Begin(owner, world, assembledEffect, activeTarget))
+            {
+                RefundActiveEnergy();
+                CompleteActive();
+                return false;
+            }
+            TickExecutingActive(0f);
+            if (!activeEffectExecutor.IsRunning)
+            {
+                CompleteActive(); // 지연 없는 효과형은 Commit 프레임에 실행 상태를 확실히 닫습니다.
+            }
+            return true;
+        }
+
+        private void BeginAssembledEffectFocusMotion()
+        {
+            if (!executingActive || !(activeSkill is MonsterEffectActiveSkill assembledEffect) ||
+                assembledEffect.Groups.Count == 0 || owner?.AnimationDriver == null || !owner.IsAlive)
+            {
+                activeFirstStepMotionStarted = false;
+                return;
+            }
+            var duration = owner.AnimationDriver.PlayActiveStep(
+                assembledEffect.Groups[0].GroupId,
+                assembledEffect.CommitNormalizedTime,
+                out _);
+            activeFirstStepMotionStarted = duration > 0f;
+        }
+
+        private bool CommitLegacyActive()
+        {
+            if (activeDamageEffect == null || owner == null || world == null ||
+                activeTarget == null || !activeTarget.IsAlive || !TryConsumeActiveEnergy())
+            {
+                CompleteActive();
+                return false;
+            }
+
+            activeFocusQueued = false;
+            waitingForActiveFocus = false;
+            remainingActiveHits = activeDamageEffect.RepeatCount;
+            nextActiveHitDelay = activeDamageEffect.Delay;
+            TickExecutingActive(0f);
+            return true;
+        }
+
+        private bool TryConsumeActiveEnergy()
+        {
+            if (activeSkill == null || energy + 0.001f < activeSkill.EnergyCost)
+            {
+                return false;
+            }
+            energy = Mathf.Max(0f, energy - activeSkill.EnergyCost);
+            return true;
+        }
+
+        private void RefundActiveEnergy()
+        {
+            if (activeSkill != null)
+            {
+                energy = Mathf.Min(activeSkill.EnergyCost, energy + activeSkill.EnergyCost);
+            }
+        }
+
+        private void CancelQueuedActiveFocus()
+        {
+            var wasArmed = executingActive && waitingForActiveFocus;
+            executingActive = false;
+            waitingForActiveFocus = false;
+            activeFocusQueued = false;
+            activeFirstStepMotionStarted = false;
+            activeCommitMarkerBaseline = 0;
+            activeAttackExecutor.Reset();
+            activeDamageEffect = null;
+            activeTarget = null;
+            remainingActiveHits = 0;
+            nextActiveHitDelay = 0f;
+            if (wasArmed && owner != null && owner.IsAlive)
+            {
+                owner.AnimationDriver?.PlayIdle(true);
+            }
         }
     }
 }

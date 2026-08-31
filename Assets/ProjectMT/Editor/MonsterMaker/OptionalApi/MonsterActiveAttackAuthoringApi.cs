@@ -67,6 +67,8 @@ namespace ProjectMT.EditorTools.MonsterMaker.OptionalApi
         public string timing = "Impact";
         public string anchor = "TargetPoint";
         public string description = string.Empty;
+        public bool useDuration;
+        public float duration = 1f;
     }
 
     [Serializable]
@@ -336,6 +338,10 @@ namespace ProjectMT.EditorTools.MonsterMaker.OptionalApi
                 if (!TryBuildPresentationSlots(request.presentationSlots, index, out var slots, out error)) return false;
                 step.EditorSetPresentationSlots(slots);
             }
+            else
+            {
+                step.EditorSetPresentationSlots(MonsterActiveAttackVfxContractTemplates.Build(step));
+            }
             error = string.Empty;
             return true;
         }
@@ -398,7 +404,14 @@ namespace ProjectMT.EditorTools.MonsterMaker.OptionalApi
                     return false;
                 }
                 var slot = new MonsterActivePresentationSlot();
-                slot.EditorConfigure(request.slotId, request.displayName, timing, anchor, request.description);
+                slot.EditorConfigure(
+                    request.slotId,
+                    request.displayName,
+                    timing,
+                    anchor,
+                    request.description,
+                    request.useDuration,
+                    PositiveOr(request.duration, 1f));
                 slots[index] = slot;
             }
             error = string.Empty;

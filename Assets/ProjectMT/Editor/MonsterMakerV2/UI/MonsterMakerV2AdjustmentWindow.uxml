@@ -1,0 +1,63 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Assets/ProjectMT/Editor/MonsterMakerV2/UI/MonsterMakerV2AdjustmentWindow.uss?fileID=7433441132597879392&amp;guid=da76d58b89f34c45a5a420bd0f2038ef&amp;type=3#MonsterMakerV2AdjustmentWindow" />
+    <ui:VisualElement class="adjust-root">
+        <ui:VisualElement class="adjust-header panel-card">
+            <ui:VisualElement class="adjust-title-area">
+                <ui:Label name="adjust-title" text="좌표 보정" class="adjust-title" />
+                <ui:Label name="adjust-caption" text="노란 핸들과 정확한 숫자 입력을 함께 사용할 수 있습니다." class="adjust-caption" />
+            </ui:VisualElement>
+            <ui:Label text="V2" class="version-badge" />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="preview-card panel-card">
+            <ui:VisualElement class="preview-heading-row">
+                <ui:Label text="3D 미리보기" class="card-title" />
+                <ui:Label text="우클릭 드래그: 회전  ·  휠: 확대/축소" class="card-caption" />
+            </ui:VisualElement>
+            <ui:VisualElement name="adjust-preview-host" class="adjust-preview-host" />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="adjust-controls panel-card">
+            <ui:VisualElement name="position-controls" class="control-section">
+                <ui:Label text="좌표" class="section-label" />
+                <uie:Vector3Field name="position-field" label="현재 좌표" class="wide-field" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="vfx-controls" class="control-section vfx-controls">
+                <ui:Label text="VFX 보정" class="section-label" />
+                <uie:Vector3Field name="vfx-position-field" label="위치" class="wide-field" />
+                <uie:Vector3Field name="vfx-euler-field" label="회전" class="wide-field" />
+                <ui:VisualElement class="paired-fields">
+                    <uie:FloatField name="vfx-scale-field" label="크기 배율" class="half-field" />
+                    <uie:FloatField name="vfx-lifetime-field" label="유지 시간(초)" class="half-field half-field--last" />
+                </ui:VisualElement>
+                <ui:VisualElement class="playback-panel">
+                    <ui:VisualElement class="playback-heading-row">
+                        <ui:Label text="재생 확인" class="playback-title" />
+                        <ui:Label name="vfx-playback-status" text="원본 0.00초 · 1배" class="playback-status" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="playback-button-row">
+                        <ui:Button name="vfx-play-pause" text="Ⅱ 일시정지" class="secondary-button" />
+                        <ui:Button name="vfx-restart" text="↻ 처음부터" class="secondary-button" />
+                        <uie:FloatField name="vfx-offset-field" label="내부 시작(초)" class="offset-field" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="speed-row">
+                        <ui:Label name="speed-min-label" text="0.5배" class="speed-bound" />
+                        <ui:Slider name="vfx-speed-slider" low-value="-1" high-value="1" value="0" class="speed-slider" />
+                        <ui:Label name="speed-max-label" text="2배" class="speed-bound speed-bound--right" />
+                        <uie:FloatField name="vfx-speed-field" label="정확한 배속" class="speed-exact" />
+                        <ui:Button name="vfx-speed-reset" text="1배" class="mini-button" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:HelpBox text="위치·회전·크기는 Preview와 실제 전투에 같은 값이 적용됩니다. 유지 시간은 사라지는 시점, 내부 시작은 Prefab 앞부분을 건너뛰는 값입니다." message-type="Info" class="adjust-help" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="footer-row">
+                <ui:Button name="reset-button" text="↻ 처음 값으로" class="secondary-button footer-button footer-button--first" />
+                <ui:VisualElement class="footer-spacer" />
+                <ui:Button name="cancel-button" text="취소" class="secondary-button footer-button" />
+                <ui:Button name="apply-button" text="적용" class="primary-button footer-button" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

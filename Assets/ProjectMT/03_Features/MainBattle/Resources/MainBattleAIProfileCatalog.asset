@@ -194,7 +194,7 @@ MonoBehaviour:
     retreatRangeRatio: 0.55
     retargetInterval: 0.2
   - monsterId: pango_01
-    role: 1
+    role: 0
     targetPriority: 0
     preferredRangeRatio: 0.72
     retreatRangeRatio: 0

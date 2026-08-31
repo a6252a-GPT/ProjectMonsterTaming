@@ -285,9 +285,13 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
 
                 var serialized = new SerializedObject(draft);
                 var idProperty = serialized.FindProperty("monsterId");
-                var configuredProperty = serialized.FindProperty("skillLoadoutConfigured");
+                var passiveUsageProperty = serialized.FindProperty("usePassiveSkill");
+                var activeUsageProperty = serialized.FindProperty("useActiveSkill");
+                var splitUsageProperty = serialized.FindProperty("splitSkillUsageConfigured");
                 var passiveProperty = serialized.FindProperty("rarityPassiveSkill");
-                if (idProperty == null || configuredProperty == null || passiveProperty == null)
+                if (idProperty == null || passiveUsageProperty == null ||
+                    activeUsageProperty == null || splitUsageProperty == null ||
+                    passiveProperty == null)
                 {
                     throw new InvalidOperationException($"Monster Maker source schema is invalid: {draftPath}");
                 }
@@ -419,7 +423,9 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
 
                 var template = passives[pair.Value];
                 var serialized = new SerializedObject(draft);
-                serialized.FindProperty("skillLoadoutConfigured").boolValue = true;
+                serialized.FindProperty("usePassiveSkill").boolValue = true;
+                serialized.FindProperty("useActiveSkill").boolValue = false;
+                serialized.FindProperty("splitSkillUsageConfigured").boolValue = true;
                 serialized.FindProperty("rarityPassiveSkill").objectReferenceValue = template;
                 var tuning = serialized.FindProperty("passiveTuning");
                 var initialized = tuning.FindPropertyRelative("initialized");

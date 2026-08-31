@@ -149,6 +149,7 @@ namespace ProjectMT.Shared.Unit
         MaxHealthRatio,
         TargetMaxHealthRatio,
         TargetMissingHealthRatio,
+        TargetEnergyCapacityRatio,
         ReceivedDamageRatio
     }
 
@@ -618,9 +619,9 @@ namespace ProjectMT.Shared.Unit
     public abstract class MonsterActiveSkill : MonsterSkillDefinitionBase
     {
         [SerializeField, Min(1)] private int energyCost = 1000;
-        [SerializeField, Min(0f)] private float energyPerSecond = 40f;
-        [SerializeField, Min(0f)] private float energyPerBasicAttackHit = 120f;
-        [SerializeField, Min(0f)] private float energyPerDamageReceived = 80f;
+        [SerializeField, HideInInspector, Min(0f)] private float energyPerSecond = 40f; // 구 자산 역직렬화 전용
+        [SerializeField, HideInInspector, Min(0f)] private float energyPerBasicAttackHit = 120f; // 구 자산 역직렬화 전용
+        [SerializeField, HideInInspector, Min(0f)] private float energyPerDamageReceived = 80f; // 구 자산 역직렬화 전용
 
         public int EnergyCost => Mathf.Max(1, energyCost);
         public float EnergyPerSecond => Mathf.Max(0f, energyPerSecond);
@@ -635,14 +636,9 @@ namespace ProjectMT.Shared.Unit
                 return false;
             }
 
-            if (energyCost < 1 || Recipe.Trigger != MonsterSkillTriggerType.EnergyMax ||
-                float.IsNaN(energyPerSecond) || float.IsInfinity(energyPerSecond) || energyPerSecond < 0f ||
-                float.IsNaN(energyPerBasicAttackHit) || float.IsInfinity(energyPerBasicAttackHit) ||
-                energyPerBasicAttackHit < 0f ||
-                float.IsNaN(energyPerDamageReceived) || float.IsInfinity(energyPerDamageReceived) ||
-                energyPerDamageReceived < 0f)
+            if (energyCost < 1 || Recipe.Trigger != MonsterSkillTriggerType.EnergyMax)
             {
-                error = $"Monster active skill requires valid energy rules and EnergyMax trigger. Skill={SkillId}";
+                error = $"Monster active skill requires EnergyCost and EnergyMax trigger. Skill={SkillId}";
                 return false;
             }
 

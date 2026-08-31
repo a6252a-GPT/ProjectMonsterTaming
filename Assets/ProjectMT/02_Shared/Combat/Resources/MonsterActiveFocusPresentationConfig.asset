@@ -14,3 +14,35 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Combat.MonsterActiveFocusPresentationConfig
   ownerFont: {fileID: 11400000, guid: 37ac620ac2de14d4e95add63e16e2e90, type: 2}
   skillFont: {fileID: 11400000, guid: 3718a141c8028064eb11791445f163c4, type: 2}
+  presenterPrefab: {fileID: 4638549886583367537, guid: 077da7d582155184a9471fa6c87e5f44, type: 3}
+  dimMaterialTemplate: {fileID: 2100000, guid: cea6ae700ad1d604eae5bab5a805b3d2, type: 2}
+  cutInEdgeFadeMaterialTemplate: {fileID: 2100000, guid: b985476b227a9d14f9e496e9436f4c86, type: 2}
+  focusFeedbackPrefab: {fileID: 1163122161272509565, guid: 316d81bc3b5d4734ea50c2ff4be25770, type: 3}
+  legendaryCutInBackground: {fileID: 21300000, guid: d487916bed47b104380feed6862a78b7, type: 3}
+  mythicCutInBackground: {fileID: 21300000, guid: ce55182a01e12a24fbf589e7ca83374d, type: 3}
+  legendaryPreset:
+    otherUnitTimeScale: 0.3
+    focusLead: 0.26
+    fadeIn: 0.14
+    fadeOut: 0.22
+    minimumVisibleDuration: 1.5
+    cameraReleaseDuration: 0.48
+    dimAlpha: 0.38
+    cameraMaxOffset: 1.2
+    cameraFovDelta: -1.5
+    accentColor: {r: 0.90588236, g: 0.827451, b: 0.2901961, a: 1}
+  mythicPreset:
+    otherUnitTimeScale: 0.22
+    focusLead: 0.34
+    fadeIn: 0.16
+    fadeOut: 0.26
+    minimumVisibleDuration: 1.5
+    cameraReleaseDuration: 0.58
+    dimAlpha: 0.52
+    cameraMaxOffset: 1.6
+    cameraFovDelta: -2.5
+    accentColor: {r: 0.8392157, g: 0.21568628, b: 0.20784314, a: 1}
+  legendaryStartSfx: {fileID: 0}
+  mythicStartSfx: {fileID: 0}
+  legendaryHaloPrefab: {fileID: 0}
+  mythicHaloPrefab: {fileID: 0}

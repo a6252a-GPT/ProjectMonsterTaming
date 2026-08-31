@@ -10,18 +10,32 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private string slotId;
         [SerializeField] private MonsterActivePresentationEvent timing;
         [SerializeField] private MonsterActivePresentationAnchor anchor;
+        [SerializeField] private MonsterActivePresentationMultiplicity multiplicity;
+        [SerializeField] private MonsterActivePresentationAttachment attachment;
+        [SerializeField] private MonsterActivePresentationEndPolicy endPolicy;
         [SerializeField] private MonsterFeedbackCue feedback;
+        [SerializeField] private bool useDuration;
+        [SerializeField, Min(0.05f)] private float duration = 1f;
 
         public string SlotId => slotId?.Trim() ?? string.Empty;
         public MonsterActivePresentationEvent Timing => timing;
         public MonsterActivePresentationAnchor Anchor => anchor;
+        public MonsterActivePresentationMultiplicity Multiplicity => multiplicity;
+        public MonsterActivePresentationAttachment Attachment => attachment;
+        public MonsterActivePresentationEndPolicy EndPolicy => endPolicy;
         public MonsterFeedbackCue Feedback => feedback;
+        public bool UseDuration => useDuration;
+        public float Duration => Mathf.Max(0.05f, duration);
 
         public bool TryValidate(out string error)
         {
             if (!ActiveAttackValue.UsesSafeId(SlotId) ||
                 !Enum.IsDefined(typeof(MonsterActivePresentationEvent), timing) ||
-                !Enum.IsDefined(typeof(MonsterActivePresentationAnchor), anchor))
+                !Enum.IsDefined(typeof(MonsterActivePresentationAnchor), anchor) ||
+                !Enum.IsDefined(typeof(MonsterActivePresentationMultiplicity), multiplicity) ||
+                !Enum.IsDefined(typeof(MonsterActivePresentationAttachment), attachment) ||
+                !Enum.IsDefined(typeof(MonsterActivePresentationEndPolicy), endPolicy) ||
+                (useDuration && !ActiveAttackValue.IsFinitePositive(duration)))
             {
                 error = $"액티브 런타임 연출 공간이 유효하지 않습니다. Slot={SlotId}";
                 return false;
@@ -36,12 +50,25 @@ namespace ProjectMT.Shared.Unit
             string id,
             MonsterActivePresentationEvent eventTiming,
             MonsterActivePresentationAnchor positionAnchor,
-            MonsterFeedbackCue cue)
+            MonsterFeedbackCue cue,
+            bool overrideDuration = false,
+            float playbackDuration = 1f,
+            MonsterActivePresentationMultiplicity playbackMultiplicity =
+                MonsterActivePresentationMultiplicity.OncePerStep,
+            MonsterActivePresentationAttachment playbackAttachment =
+                MonsterActivePresentationAttachment.World,
+            MonsterActivePresentationEndPolicy playbackEndPolicy =
+                MonsterActivePresentationEndPolicy.Timed)
         {
             slotId = id?.Trim();
             timing = eventTiming;
             anchor = positionAnchor;
+            multiplicity = playbackMultiplicity;
+            attachment = playbackAttachment;
+            endPolicy = playbackEndPolicy;
             feedback = cue;
+            useDuration = overrideDuration;
+            duration = Mathf.Max(0.05f, playbackDuration);
         }
 #endif
     }
@@ -172,6 +199,11 @@ namespace ProjectMT.Shared.Unit
                 error = $"컴파일된 공격 Step 수가 유효하지 않습니다. Skill={SkillId}";
                 return false;
             }
+            if (Presentations.Count != Steps.Count)
+            {
+                error = $"컴파일된 공격 Step과 연출 연결 수가 다릅니다. Skill={SkillId}, Step={Steps.Count}, Presentation={Presentations.Count}";
+                return false;
+            }
 
             var stepIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             for (var index = 0; index < Steps.Count; index++)
@@ -194,6 +226,65 @@ namespace ProjectMT.Shared.Unit
                     !stepIds.Contains(binding.StepId) || !presentationIds.Add(binding.StepId))
                 {
                     error = $"공격 Step 연출 연결이 유효하지 않습니다. Skill={SkillId}, Detail={bindingError}";
+                    return false;
+                }
+                var step = ResolveStep(binding.StepId);
+                if (!MatchesPresentationContract(step, binding, out bindingError))
+                {
+                    error = $"공격 Step 연출 계약이 원본과 다릅니다. Skill={SkillId}, Detail={bindingError}";
+                    return false;
+                }
+            }
+            error = string.Empty;
+            return true;
+        }
+
+        private MonsterActiveAttackStep ResolveStep(string stepId)
+        {
+            for (var index = 0; index < Steps.Count; index++)
+            {
+                var step = Steps[index];
+                if (step != null && string.Equals(step.StepId, stepId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return step;
+                }
+            }
+            return null;
+        }
+
+        private static bool MatchesPresentationContract(
+            MonsterActiveAttackStep step,
+            MonsterActiveAttackPresentationBinding binding,
+            out string error)
+        {
+            if (step == null || binding == null || step.PresentationSlots.Count != binding.Slots.Count)
+            {
+                error = $"Step={binding?.StepId}, 공간 수가 다릅니다.";
+                return false;
+            }
+            for (var contractIndex = 0; contractIndex < step.PresentationSlots.Count; contractIndex++)
+            {
+                var contract = step.PresentationSlots[contractIndex];
+                MonsterActiveAttackPresentationCueBinding compiled = null;
+                for (var slotIndex = 0; slotIndex < binding.Slots.Count; slotIndex++)
+                {
+                    var candidate = binding.Slots[slotIndex];
+                    if (candidate != null && contract != null && string.Equals(
+                            candidate.SlotId,
+                            contract.SlotId,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        compiled = candidate;
+                        break;
+                    }
+                }
+                if (contract == null || compiled == null ||
+                    compiled.Timing != contract.Timing || compiled.Anchor != contract.Anchor ||
+                    compiled.Multiplicity != contract.Multiplicity || compiled.Attachment != contract.Attachment ||
+                    compiled.EndPolicy != contract.EndPolicy || compiled.UseDuration != contract.UseDuration ||
+                    compiled.UseDuration && !Mathf.Approximately(compiled.Duration, contract.Duration))
+                {
+                    error = $"Step={step.StepId}, Slot={contract?.SlotId ?? "비어 있음"}";
                     return false;
                 }
             }

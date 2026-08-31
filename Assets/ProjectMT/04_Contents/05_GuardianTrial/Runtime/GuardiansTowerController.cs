@@ -314,7 +314,8 @@ namespace ProjectMT.Contents.GuardianTrial
                     passiveSkill: partyUnits[i].PassiveSkill,
                     activeSkill: partyUnits[i].ActiveSkill,
                     monsterLevel: partyUnits[i].Level,
-                    displayName: partyUnits[i].DisplayName);
+                    displayName: partyUnits[i].DisplayName,
+                    presentation: partyUnits[i].Presentation.WithPartySlot(i));
                 var actor = combatWorld.SpawnUnit(followerPrefab, request, spawnPosition, Quaternion.identity);
                 if (actor == null)
                 {

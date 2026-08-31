@@ -3,13 +3,16 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace ProjectMT.EditorTools.MonsterMaker
 {
     internal static class MonsterWorkshopPreviewSceneRecovery // 조립소 누수로 고갈된 Preview Scene 마스크를 회수
     {
         private const string BasicRootName = "[Basic Attack Workshop Preview]";
+        private const string BasicV2RootName = "[Basic Attack Workshop V2 Preview]";
         private const string ActiveRootName = "[Active Attack Workshop Preview]";
+        private static readonly HashSet<Scene> OwnedScenes = new HashSet<Scene>();
 
         internal static bool HasRenderingMask(PreviewRenderUtility utility)
         {
@@ -17,21 +20,23 @@ namespace ProjectMT.EditorTools.MonsterMaker
                    EditorSceneManager.GetSceneCullingMask(utility.camera.gameObject.scene) != 0;
         }
 
+        internal static void RegisterOwner(PreviewRenderUtility utility)
+        {
+            if (utility?.camera == null) return;
+            var scene = utility.camera.gameObject.scene;
+            if (scene.IsValid() && EditorSceneManager.IsPreviewScene(scene))
+                OwnedScenes.Add(scene);
+        }
+
+        internal static void UnregisterOwner(PreviewRenderUtility utility)
+        {
+            if (utility?.camera == null) return;
+            OwnedScenes.Remove(utility.camera.gameObject.scene);
+        }
+
         internal static int RecoverOrphanedScenesIfNeeded()
         {
             if (EditorSceneManager.CalculateAvailableSceneCullingMask() != 0) return 0;
-
-            var preservedHandles = new HashSet<int>();
-            foreach (var window in Resources.FindObjectsOfTypeAll<MonsterBasicAttackWorkshopWindow>())
-            {
-                if (window != null && window.PreviewSceneHandle != 0)
-                    preservedHandles.Add(window.PreviewSceneHandle);
-            }
-            foreach (var window in Resources.FindObjectsOfTypeAll<MonsterActiveAttackWorkshopWindow>())
-            {
-                if (window != null && window.PreviewSceneHandle != 0)
-                    preservedHandles.Add(window.PreviewSceneHandle);
-            }
 
             var scenes = Resources.FindObjectsOfTypeAll<Camera>()
                 .Where(camera => camera != null && camera.gameObject.scene.IsValid() &&
@@ -40,13 +45,17 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 .GroupBy(scene => scene.handle)
                 .Select(group => group.First())
                 .ToArray();
+            OwnedScenes.IntersectWith(scenes);
+            var preservedScenes = new HashSet<Scene>(OwnedScenes);
             var recovered = 0;
             for (var index = 0; index < scenes.Length; index++)
             {
                 var scene = scenes[index];
-                if (preservedHandles.Contains(scene.handle)) continue;
+                if (preservedScenes.Contains(scene)) continue;
                 var ownedByWorkshop = scene.GetRootGameObjects().Any(root =>
-                    root != null && (root.name == BasicRootName || root.name == ActiveRootName));
+                    root != null && (root.name == BasicRootName ||
+                                     root.name == BasicV2RootName ||
+                                     root.name == ActiveRootName));
                 if (!ownedByWorkshop) continue;
                 if (EditorSceneManager.ClosePreviewScene(scene)) recovered++;
             }

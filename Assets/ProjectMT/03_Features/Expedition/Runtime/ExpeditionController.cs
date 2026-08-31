@@ -110,6 +110,7 @@ namespace ProjectMT.Features.Expedition
         public bool IsRunning => running;
         public bool IsSettling => settling;
         public int RunSequence => runSequence;
+        public CombatWorld CombatWorld => combatWorld;
         public bool IsFormationPlacementActive => formationPlacementActive;
         public bool IsWaveArrivalActive => waveArrivalActive;
         public bool IsReinforcementWarningActive => reinforcementWarningActive;
@@ -425,7 +426,8 @@ namespace ProjectMT.Features.Expedition
                     activeSkill: units[i].ActiveSkill,
                     monsterLevel: units[i].Level,
                     entryReason: UnitEntryReason.InitialDeployment,
-                    displayName: units[i].DisplayName);
+                    displayName: units[i].DisplayName,
+                    presentation: units[i].Presentation.WithPartySlot(i));
                 var actor = combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity);
                 ApplyPlayerAIProfile(actor, units[i].UnitId);
                 TrackPlayerUnit(actor, i);
@@ -569,7 +571,8 @@ namespace ProjectMT.Features.Expedition
                     activeSkill: reserve.ActiveSkill,
                     monsterLevel: reserve.Level,
                     entryReason: UnitEntryReason.ReserveReplacement,
-                    displayName: reserve.DisplayName);
+                    displayName: reserve.DisplayName,
+                    presentation: reserve.Presentation.WithPartySlot(slotIndex));
                 var actor = combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity);
                 if (actor == null)
                 {

@@ -23,6 +23,6 @@ MonoBehaviour:
   attackSpeed: 2
   moveSpeed: 1.2
   attackRange: 4
-  ranged: 1
+  ranged: 0
   runtimeAssetKey: monster/kimhyeona_01
   runtimeAssetSet: {fileID: 11400000, guid: 178d563a44d45cb42aa5c86ebdcc71f3, type: 2}

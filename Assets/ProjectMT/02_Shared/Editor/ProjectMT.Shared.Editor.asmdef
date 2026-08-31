@@ -2,7 +2,9 @@
     "name": "ProjectMT.Shared.Editor",
     "rootNamespace": "ProjectMT.Shared.Editor",
     "references": [
-        "ProjectMT.Shared"
+        "ProjectMT.Shared",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

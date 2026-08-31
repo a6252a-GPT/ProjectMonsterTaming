@@ -8,7 +8,7 @@ namespace ProjectMT.Features.MainBattle
 {
     [ExecuteAlways]
     [DisallowMultipleComponent]
-    public sealed class MainBattleCameraController : MonoBehaviour // 메인전투 원근 구도·추적
+    public sealed class MainBattleCameraController : MonoBehaviour, IMonsterActiveFocusCamera // 메인전투 원근 구도·추적
     {
         [Header("References")]
         [SerializeField] private Camera worldCamera;
@@ -37,6 +37,12 @@ namespace ProjectMT.Features.MainBattle
         private Vector3 currentFocus;
         private Vector3 focusVelocity;
         private bool runtimeReady;
+        private CombatWorld registeredCombatWorld;
+        private UnitActor activeFocusCaster;
+        private UnitActor activeFocusTarget;
+        private MonsterActiveFocusPreset activeFocusPreset;
+        private float activeFocusBlend;
+        private bool activeFocusRequested;
 
         public Camera WorldCamera => worldCamera;
 
@@ -53,6 +59,13 @@ namespace ProjectMT.Features.MainBattle
             {
                 DisableGeneratedStageCameras();
             }
+            if (Application.isPlaying)
+            {
+                registeredCombatWorld = expedition != null
+                    ? expedition.CombatWorld
+                    : FindFirstObjectByType<CombatWorld>();
+                registeredCombatWorld?.SetMonsterActiveFocusCamera(this);
+            }
         }
 
         private void LateUpdate()
@@ -63,26 +76,64 @@ namespace ProjectMT.Features.MainBattle
             }
 
             RefreshBaseFocus();
+            var unscaledDeltaTime = Time.unscaledDeltaTime;
+            var blendDuration = activeFocusRequested
+                ? activeFocusPreset.FadeIn
+                : activeFocusPreset.CameraReleaseDuration;
+            activeFocusBlend = Mathf.MoveTowards(
+                activeFocusBlend,
+                activeFocusRequested ? 1f : 0f,
+                unscaledDeltaTime / Mathf.Max(0.05f, blendDuration));
             var desiredFocus = ResolveDesiredFocus();
+            var smoothTime = activeFocusBlend > 0.001f
+                ? Mathf.Min(activeFocusRequested ? 0.16f : 0.28f, followSmoothTime)
+                : followSmoothTime;
             currentFocus = Vector3.SmoothDamp(
                 currentFocus,
                 desiredFocus,
                 ref focusVelocity,
-                Mathf.Max(0.01f, followSmoothTime),
+                Mathf.Max(0.01f, smoothTime),
                 followMaxSpeed <= 0f ? Mathf.Infinity : followMaxSpeed,
-                Time.unscaledDeltaTime);
+                unscaledDeltaTime);
+            if (!activeFocusRequested && activeFocusBlend <= 0f)
+            {
+                activeFocusCaster = null;
+                activeFocusTarget = null;
+            }
             ApplyCameraSettings();
             ApplyPose(currentFocus, false);
         }
 
         private void OnDisable()
         {
+            registeredCombatWorld?.ClearMonsterActiveFocusCamera(this);
+            registeredCombatWorld = null;
             runtimeReady = false;
             focusVelocity = Vector3.zero;
+            ResetMonsterActiveFocus();
             activeUnits.Clear();
         }
 
         private Vector3 ResolveDesiredFocus()
+        {
+            var battleFocus = ResolveBattleFocus();
+            if (activeFocusBlend <= 0f || activeFocusCaster == null || !activeFocusCaster.IsAlive)
+            {
+                return battleFocus;
+            }
+
+            var casterPosition = activeFocusCaster.transform.position;
+            var focusPosition = activeFocusTarget != null && activeFocusTarget.IsAlive
+                ? Vector3.Lerp(casterPosition, activeFocusTarget.transform.position, 0.2f)
+                : casterPosition;
+            focusPosition.y = battleFocus.y;
+            var offset = focusPosition - battleFocus;
+            offset.y = 0f;
+            offset = Vector3.ClampMagnitude(offset, activeFocusPreset.CameraMaxOffset);
+            return battleFocus + offset * activeFocusBlend;
+        }
+
+        private Vector3 ResolveBattleFocus()
         {
             if (!followBattleCenter || expedition == null || expedition.IsFormationPlacementActive)
             {
@@ -135,7 +186,10 @@ namespace ProjectMT.Features.MainBattle
             }
 
             worldCamera.orthographic = false;
-            worldCamera.fieldOfView = Mathf.Clamp(fieldOfView, 20f, 50f);
+            worldCamera.fieldOfView = Mathf.Clamp(
+                fieldOfView + activeFocusPreset.CameraFovDelta * activeFocusBlend,
+                20f,
+                50f);
             worldCamera.nearClipPlane = Mathf.Max(0.01f, nearClipPlane);
             worldCamera.farClipPlane = Mathf.Max(worldCamera.nearClipPlane + 10f, farClipPlane);
         }
@@ -162,6 +216,39 @@ namespace ProjectMT.Features.MainBattle
             if (worldCamera == null)
             {
                 worldCamera = GetComponentInChildren<Camera>(true);
+            }
+        }
+
+        public void BeginMonsterActiveFocus(
+            UnitActor caster,
+            UnitActor target,
+            MonsterActiveFocusPreset preset)
+        {
+            if (caster == null)
+            {
+                return;
+            }
+            activeFocusCaster = caster;
+            activeFocusTarget = target;
+            activeFocusPreset = preset;
+            activeFocusRequested = true;
+        }
+
+        public void EndMonsterActiveFocus()
+        {
+            activeFocusRequested = false;
+        }
+
+        public void ResetMonsterActiveFocus()
+        {
+            activeFocusRequested = false;
+            activeFocusBlend = 0f;
+            activeFocusCaster = null;
+            activeFocusTarget = null;
+            activeFocusPreset = default;
+            if (worldCamera != null)
+            {
+                ApplyCameraSettings();
             }
         }
 

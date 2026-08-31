@@ -15,6 +15,7 @@ namespace ProjectMT.Shared.Combat
         [SerializeField] private CombatFeedbackPlayer feedbackPlayer; // 공용 전투 연출
         [SerializeField] private GameObject projectilePrefab; // 원거리 공격 투사체
         [SerializeField, Min(1)] private int maxMonsterVfxPerFrame = 6; // 전용 Marker VFX 예산
+        [SerializeField, Min(1)] private int maxMonsterActiveVfxPerFrame = 64; // 액티브 다중 탄·다중 명중 전용 예산
         [SerializeField, Min(1)] private int maxMonsterFeelPerFrame = 6; // FEEL 프리셋 독립 예산
         private static bool showMonsterBasicAttackHitAreas; // 디버그 버튼으로만 켜는 실제 XZ 판정 표시
 
@@ -25,13 +26,22 @@ namespace ProjectMT.Shared.Combat
         private readonly ProjectileAttackExecutor projectileExecutor = new ProjectileAttackExecutor();
         private readonly MonsterBasicAttackExecutor basicAttackExecutor = new MonsterBasicAttackExecutor();
         private readonly SpecialActionExecutor specialExecutor = new SpecialActionExecutor();
-        private readonly Queue<ActiveFocusRequest> activeFocusQueue = new Queue<ActiveFocusRequest>();
+        private readonly List<ActiveFocusRequest> activeFocusQueue = new List<ActiveFocusRequest>();
         private ActiveFocusRequest activeFocus;
         private MonsterActiveFocusPresenter activeFocusPresenter;
+        private IMonsterActiveFocusCamera activeFocusCamera;
+        private GameObject activeFocusHaloInstance;
         private float activeFocusElapsed;
+        private float activeFocusResolvedDuration;
+        private float activeFocusReadyWait;
         private bool activeFocusCommitted;
+        private bool activeFocusVisible;
+        private MonsterActiveFocusPreset activeFocusPreset;
+        private long nextActiveFocusSequence;
         private int monsterVfxFrame = -1;
         private int monsterVfxCount;
+        private int monsterActiveVfxFrame = -1;
+        private int monsterActiveVfxCount;
         private int monsterFeelFrame = -1;
         private int monsterFeelCount;
         private static CombatStatConfig sharedStatConfig;
@@ -40,6 +50,7 @@ namespace ProjectMT.Shared.Combat
         public bool IsPaused { get; private set; }
         public UnitActor ActiveFocusCaster => activeFocus?.Caster;
         public int ActiveFocusQueueCount => activeFocusQueue.Count;
+        public bool IsMonsterActiveFocusVisible => activeFocusVisible;
         public static bool MonsterBasicAttackHitAreasVisible => showMonsterBasicAttackHitAreas;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -72,6 +83,7 @@ namespace ProjectMT.Shared.Combat
 
         private void Update()
         {
+            activeFocusPresenter?.Tick(Time.unscaledDeltaTime);
             if (IsPaused)
             {
                 return;
@@ -97,12 +109,17 @@ namespace ProjectMT.Shared.Combat
                     continue;
                 }
 
-                var unitDelta = activeFocus != null && unit != activeFocus.Caster
-                    ? deltaTime * 0.22f
-                    : deltaTime;
-                unit.SetActiveFocusTimeScale(activeFocus != null && unit != activeFocus.Caster ? 0.22f : 1f);
+                var localScale = GetMonsterActiveFocusTimeScale(unit);
+                var unitDelta = deltaTime * localScale;
+                unit.SetActiveFocusTimeScale(localScale);
                 unit.Tick(unitDelta); // 액티브 강조 중 시전자 외 유닛만 국소 감속
             }
+        }
+
+        private void OnDisable()
+        {
+            CompleteMonsterActiveFocus(true, true);
+            activeFocusCamera?.ResetMonsterActiveFocus();
         }
 
         public UnitActor SpawnUnit(GameObject prefab, UnitSpawnRequest request, Vector3 position, Quaternion rotation)
@@ -173,6 +190,7 @@ namespace ProjectMT.Shared.Combat
         {
             if (unit != null)
             {
+                CancelMonsterActiveFocus(unit);
                 feedbackPlayer?.UntrackUnit(unit);
                 units.Remove(unit);
             }
@@ -185,19 +203,62 @@ namespace ProjectMT.Shared.Combat
 
         public bool RequestMonsterActiveFocus(
             UnitActor caster,
-            MonsterAttackActiveSkill skill,
+            MonsterActiveSkill skill,
             System.Action commit,
             float commitDelay = 0.24f,
-            float totalDuration = 0.72f)
+            float totalDuration = 0.72f,
+            System.Action begin = null)
         {
-            if (caster == null || skill == null || commit == null) return false;
-            activeFocusQueue.Enqueue(new ActiveFocusRequest(
+            return RequestMonsterActiveFocus(
                 caster,
                 skill,
-                commit,
+                () => caster != null ? caster.Target : null,
+                () => true,
+                begin,
+                () =>
+                {
+                    commit?.Invoke();
+                    return true;
+                },
+                null,
+                null,
                 commitDelay,
-                totalDuration));
-            if (activeFocus == null) BeginNextMonsterActiveFocus();
+                totalDuration);
+        }
+
+        public bool RequestMonsterActiveFocus(
+            UnitActor caster,
+            MonsterActiveSkill skill,
+            System.Func<UnitActor> targetResolver,
+            System.Func<bool> canArm,
+            System.Action begin,
+            System.Func<bool> commit,
+            System.Action cancel,
+            System.Func<bool> commitSignal,
+            float commitDelay = 0.24f,
+            float totalDuration = 0.42f)
+        {
+            if (caster == null || skill == null || commit == null || HasMonsterActiveFocusRequest(caster))
+            {
+                return false;
+            }
+
+            activeFocusQueue.Add(new ActiveFocusRequest(
+                caster,
+                skill,
+                targetResolver,
+                canArm,
+                begin,
+                commit,
+                cancel,
+                commitSignal,
+                commitDelay,
+                totalDuration,
+                Time.unscaledTime,
+                caster.ActiveFocusPartySlotIndex,
+                nextActiveFocusSequence++));
+            activeFocusQueue.Sort(ActiveFocusRequest.Compare);
+            // 같은 프레임에 준비된 요청을 모두 받은 뒤 다음 CombatWorld Tick에서 안정 정렬합니다.
             return true;
         }
 
@@ -210,51 +271,306 @@ namespace ProjectMT.Shared.Combat
             }
             if (activeFocus.Caster == null || !activeFocus.Caster.IsAlive)
             {
-                CompleteMonsterActiveFocus(false);
+                CompleteMonsterActiveFocus(false, true);
                 return;
             }
-            activeFocusElapsed += Mathf.Max(0f, unscaledDeltaTime);
-            if (!activeFocusCommitted && activeFocusElapsed >= activeFocus.CommitDelay)
+
+            var step = Mathf.Clamp(unscaledDeltaTime, 0f, 0.1f);
+            if (!activeFocus.Armed)
             {
-                activeFocusCommitted = true;
-                activeFocus.Commit?.Invoke();
+                activeFocusReadyWait += step;
+                if (!TryArmMonsterActiveFocus())
+                {
+                    if (activeFocusReadyWait >= ActiveFocusRequest.MaxReadyWait)
+                    {
+                        CompleteMonsterActiveFocus(false, true);
+                    }
+                    return;
+                }
             }
-            if (activeFocusElapsed >= activeFocus.Duration) CompleteMonsterActiveFocus(false);
+
+            activeFocusElapsed += step;
+            var focusStart = Mathf.Max(0f, activeFocus.CommitDelay - activeFocusPreset.FocusLead);
+            if (!activeFocusVisible && !activeFocusCommitted && activeFocusElapsed >= focusStart)
+            {
+                ShowMonsterActiveFocusPresentation();
+            }
+
+            var commitSignalReached = false;
+            if (!activeFocusCommitted && activeFocus.CommitSignal != null)
+            {
+                try
+                {
+                    commitSignalReached = activeFocus.CommitSignal();
+                }
+                catch (System.Exception exception)
+                {
+                    Debug.LogException(exception, activeFocus.Caster);
+                }
+            }
+            if (!activeFocusCommitted &&
+                (commitSignalReached || activeFocusElapsed >= activeFocus.CommitDelay))
+            {
+                if (!activeFocusVisible)
+                {
+                    ShowMonsterActiveFocusPresentation();
+                }
+
+                var committed = false;
+                try
+                {
+                    committed = activeFocus.Commit?.Invoke() == true;
+                }
+                catch (System.Exception exception)
+                {
+                    Debug.LogException(exception, activeFocus.Caster);
+                }
+
+                if (!committed)
+                {
+                    CompleteMonsterActiveFocus(false, true);
+                    return;
+                }
+
+                activeFocusCommitted = true;
+                ReleaseMonsterActiveFocusPresentation(false); // 판정 프레임에 전투 속도 즉시 복구
+            }
+
+            if (activeFocusCommitted && activeFocusElapsed >= activeFocusResolvedDuration)
+            {
+                CompleteMonsterActiveFocus(false, false);
+            }
         }
 
         private void BeginNextMonsterActiveFocus()
         {
             while (activeFocusQueue.Count > 0)
             {
-                var next = activeFocusQueue.Dequeue();
-                if (next.Caster == null || !next.Caster.IsAlive) continue;
+                var next = activeFocusQueue[0];
+                activeFocusQueue.RemoveAt(0);
+                if (next.Caster == null || !next.Caster.IsAlive)
+                {
+                    next.Cancel?.Invoke();
+                    continue;
+                }
+
                 activeFocus = next;
                 activeFocusElapsed = 0f;
+                activeFocusReadyWait = 0f;
                 activeFocusCommitted = false;
-                if (activeFocusPresenter == null)
-                {
-                    var host = feedbackPlayer != null ? feedbackPlayer.gameObject : gameObject;
-                    activeFocusPresenter = host.GetComponent<MonsterActiveFocusPresenter>() ??
-                                           host.AddComponent<MonsterActiveFocusPresenter>();
-                }
-                activeFocusPresenter.Show(next.Caster, next.Skill, next.Duration);
+                activeFocusVisible = false;
+                var config = MonsterActiveFocusPresentationConfig.Current;
+                activeFocusPreset = config != null
+                    ? config.ResolvePreset(next.Caster.Presentation.Rarity)
+                    : default;
+                var focusStart = Mathf.Max(0f, next.CommitDelay - activeFocusPreset.FocusLead);
+                activeFocusResolvedDuration = Mathf.Max(
+                    next.Duration,
+                    focusStart + activeFocusPreset.MinimumVisibleDuration);
+                TryArmMonsterActiveFocus();
                 return;
             }
             activeFocus = null;
+            activeFocusResolvedDuration = 0f;
         }
 
-        private void CompleteMonsterActiveFocus(bool clearQueue)
+        private bool TryArmMonsterActiveFocus()
+        {
+            if (activeFocus == null || activeFocus.Armed)
+            {
+                return activeFocus?.Armed == true;
+            }
+            if (activeFocus.CanArm != null && !activeFocus.CanArm())
+            {
+                return false;
+            }
+
+            try
+            {
+                activeFocus.Begin?.Invoke();
+                activeFocus.Armed = true;
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogException(exception, activeFocus.Caster);
+                return false;
+            }
+
+            var focusStart = Mathf.Max(0f, activeFocus.CommitDelay - activeFocusPreset.FocusLead);
+            if (focusStart <= 0f)
+            {
+                ShowMonsterActiveFocusPresentation();
+            }
+            return true;
+        }
+
+        private void ShowMonsterActiveFocusPresentation()
+        {
+            if (activeFocus == null || activeFocusVisible)
+            {
+                return;
+            }
+
+            if (activeFocusPresenter == null)
+            {
+                var host = feedbackPlayer != null ? feedbackPlayer.gameObject : gameObject;
+                var prefab = MonsterActiveFocusPresentationConfig.Current?.PresenterPrefab;
+                if (prefab != null)
+                {
+                    activeFocusPresenter = Instantiate(prefab, host.transform);
+                    activeFocusPresenter.name = "MonsterActiveFocusHud";
+                }
+                else
+                {
+                    activeFocusPresenter = host.GetComponent<MonsterActiveFocusPresenter>() ??
+                                           host.AddComponent<MonsterActiveFocusPresenter>();
+                }
+            }
+
+            var target = activeFocus.TargetResolver?.Invoke();
+            var camera = activeFocusCamera?.WorldCamera;
+            activeFocusPresenter.Show(
+                activeFocus.Caster,
+                target,
+                activeFocus.Skill,
+                activeFocusPreset,
+                camera);
+            activeFocusCamera?.BeginMonsterActiveFocus(activeFocus.Caster, target, activeFocusPreset);
+            var startSfx = MonsterActiveFocusPresentationConfig.Current?.ResolveStartSfx(
+                activeFocus.Caster.Presentation.Rarity);
+            if (startSfx != null)
+            {
+                PlayMonsterSfx(startSfx, activeFocus.Caster.transform.position);
+            }
+            var haloPrefab = MonsterActiveFocusPresentationConfig.Current?.ResolveHaloPrefab(
+                activeFocus.Caster.Presentation.Rarity);
+            if (haloPrefab != null)
+            {
+                activeFocusHaloInstance = RentMonsterObject(
+                    haloPrefab,
+                    activeFocus.Caster.transform.position,
+                    activeFocus.Caster.transform.rotation,
+                    activeFocus.Caster.transform);
+                if (activeFocusHaloInstance != null)
+                {
+                    activeFocusHaloInstance.transform.localPosition = Vector3.zero;
+                    MonsterBasicAttackVfxPlayback.RestartAtOffset(
+                        activeFocusHaloInstance,
+                        0f,
+                        playbackSpeed: 1f);
+                }
+            }
+            activeFocusVisible = true;
+        }
+
+        private void ReleaseMonsterActiveFocusPresentation(bool immediate)
         {
             for (var index = 0; index < units.Count; index++)
             {
                 units[index]?.SetActiveFocusTimeScale(1f);
             }
+            activeFocusVisible = false;
+            if (activeFocusHaloInstance != null)
+            {
+                ReturnMonsterObject(activeFocusHaloInstance);
+                activeFocusHaloInstance = null;
+            }
+            if (immediate)
+            {
+                activeFocusPresenter?.HideImmediate();
+                activeFocusCamera?.ResetMonsterActiveFocus();
+            }
+            else
+            {
+                activeFocusPresenter?.BeginRelease();
+                activeFocusCamera?.EndMonsterActiveFocus();
+            }
+        }
+
+        private void CompleteMonsterActiveFocus(bool clearQueue, bool cancelled = false)
+        {
+            if (cancelled && activeFocus != null && !activeFocusCommitted)
+            {
+                activeFocus.Cancel?.Invoke();
+            }
+            ReleaseMonsterActiveFocusPresentation(clearQueue || cancelled);
             activeFocus = null;
             activeFocusElapsed = 0f;
+            activeFocusResolvedDuration = 0f;
+            activeFocusReadyWait = 0f;
             activeFocusCommitted = false;
-            activeFocusPresenter?.HideImmediate();
-            if (clearQueue) activeFocusQueue.Clear();
-            else BeginNextMonsterActiveFocus();
+            activeFocusPreset = default;
+            if (clearQueue)
+            {
+                for (var index = 0; index < activeFocusQueue.Count; index++)
+                {
+                    activeFocusQueue[index].Cancel?.Invoke();
+                }
+                activeFocusQueue.Clear();
+            }
+            else if (!IsPaused)
+            {
+                BeginNextMonsterActiveFocus();
+            }
+        }
+
+        public void CancelMonsterActiveFocus(UnitActor caster)
+        {
+            if (caster == null)
+            {
+                return;
+            }
+
+            if (activeFocus != null && activeFocus.Caster == caster)
+            {
+                CompleteMonsterActiveFocus(false, !activeFocusCommitted);
+            }
+
+            for (var index = activeFocusQueue.Count - 1; index >= 0; index--)
+            {
+                if (activeFocusQueue[index].Caster != caster)
+                {
+                    continue;
+                }
+                activeFocusQueue[index].Cancel?.Invoke();
+                activeFocusQueue.RemoveAt(index);
+            }
+        }
+
+        public void SetMonsterActiveFocusCamera(IMonsterActiveFocusCamera camera)
+        {
+            activeFocusCamera = camera;
+        }
+
+        public void ClearMonsterActiveFocusCamera(IMonsterActiveFocusCamera camera)
+        {
+            if (ReferenceEquals(activeFocusCamera, camera))
+            {
+                activeFocusCamera = null;
+            }
+        }
+
+        public float GetMonsterActiveFocusTimeScale(UnitActor source)
+        {
+            return activeFocusVisible && activeFocus != null && source != null && source != activeFocus.Caster
+                ? activeFocusPreset.OtherUnitTimeScale
+                : 1f;
+        }
+
+        private bool HasMonsterActiveFocusRequest(UnitActor caster)
+        {
+            if (activeFocus != null && activeFocus.Caster == caster)
+            {
+                return true;
+            }
+            for (var index = 0; index < activeFocusQueue.Count; index++)
+            {
+                if (activeFocusQueue[index].Caster == caster)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public UnitActor FindNearestOpponent(UnitActor seeker, float maxDistance)
@@ -781,19 +1097,34 @@ namespace ProjectMT.Shared.Combat
             Quaternion rotation,
             float vfxScale = 1f)
         {
-            if (cue == null || !cue.HasAnyFeedback)
-            {
-                return;
-            }
+            PlayMonsterFeedbackAt(cue, position, rotation, vfxScale, 0f);
+        }
 
+        public void PlayMonsterFeedbackAt(
+            MonsterFeedbackCue cue,
+            Vector3 position,
+            Quaternion rotation,
+            float vfxScale,
+            float vfxLifetimeOverride)
+        {
+            var instance = SpawnMonsterFeedbackVfx(cue, position, rotation, null, vfxScale);
+            if (instance == null) return;
+            var lifetime = vfxLifetimeOverride > 0f ? vfxLifetimeOverride : cue.VfxLifetime;
+            StartCoroutine(ReturnMonsterObjectAfter(instance, lifetime));
+        }
+
+        public GameObject SpawnMonsterFeedbackVfx(
+            MonsterFeedbackCue cue,
+            Vector3 position,
+            Quaternion rotation,
+            Transform parent = null,
+            float vfxScale = 1f)
+        {
+            if (cue == null || !cue.HasAnyFeedback) return null;
             position += rotation * cue.LocalPosition;
             rotation *= cue.LocalRotation;
             PlayMonsterSfx(cue.Sfx, position);
-
-            if (cue.VfxPrefab == null)
-            {
-                return;
-            }
+            if (cue.VfxPrefab == null) return null;
 
             var frame = Time.frameCount;
             if (monsterVfxFrame != frame)
@@ -801,22 +1132,45 @@ namespace ProjectMT.Shared.Combat
                 monsterVfxFrame = frame;
                 monsterVfxCount = 0;
             }
-
-            if (monsterVfxCount >= Mathf.Max(1, maxMonsterVfxPerFrame))
-            {
-                return;
-            }
+            if (monsterVfxCount >= Mathf.Max(1, maxMonsterVfxPerFrame)) return null;
 
             monsterVfxCount++;
-            var instance = RentMonsterObject(cue.VfxPrefab, position, rotation);
-            if (instance == null)
-            {
-                return;
-            }
-
+            var instance = RentMonsterObject(cue.VfxPrefab, position, rotation, parent);
+            if (instance == null) return null;
             var scale = cue.Scale * Mathf.Max(0.01f, vfxScale);
             instance.transform.localScale = cue.VfxPrefab.transform.localScale * scale;
-            StartCoroutine(ReturnMonsterObjectAfter(instance, cue.VfxLifetime));
+            MonsterBasicAttackVfxPlayback.RestartAtOffset(instance, 0f, playbackSpeed: 1f);
+            return instance;
+        }
+
+        public GameObject SpawnMonsterActiveVfx(
+            MonsterFeedbackCue cue,
+            Vector3 position,
+            Quaternion rotation,
+            Transform parent = null,
+            float vfxScale = 1f)
+        {
+            if (cue == null || !cue.HasAnyFeedback) return null;
+            position += rotation * cue.LocalPosition;
+            rotation *= cue.LocalRotation;
+            PlayMonsterSfx(cue.Sfx, position);
+            if (cue.VfxPrefab == null) return null;
+
+            var frame = Time.frameCount;
+            if (monsterActiveVfxFrame != frame)
+            {
+                monsterActiveVfxFrame = frame;
+                monsterActiveVfxCount = 0;
+            }
+            if (monsterActiveVfxCount >= Mathf.Max(1, maxMonsterActiveVfxPerFrame)) return null;
+
+            monsterActiveVfxCount++;
+            var instance = RentMonsterObject(cue.VfxPrefab, position, rotation, parent);
+            if (instance == null) return null;
+            var scale = cue.Scale * Mathf.Max(0.01f, vfxScale);
+            instance.transform.localScale = cue.VfxPrefab.transform.localScale * scale;
+            MonsterBasicAttackVfxPlayback.RestartAtOffset(instance, 0f, playbackSpeed: 1f);
+            return instance;
         }
 
         public GameObject SpawnBasicAttackVfx(
@@ -1013,14 +1367,22 @@ namespace ProjectMT.Shared.Combat
 
         public void SetPaused(bool paused)
         {
+            if (IsPaused == paused)
+            {
+                return;
+            }
             IsPaused = paused;
+            if (paused)
+            {
+                CompleteMonsterActiveFocus(true, true);
+            }
         }
 
         public void Clear()
         {
             StopAllCoroutines();
             IsPaused = false;
-            CompleteMonsterActiveFocus(true);
+            CompleteMonsterActiveFocus(true, true);
             ClearMonsterBasicAttackHitAreas();
             var buffer = new List<UnitActor>(units); // 순회 중 원본 목록 분리
             units.Clear();
@@ -1066,25 +1428,77 @@ namespace ProjectMT.Shared.Combat
 
         private sealed class ActiveFocusRequest
         {
+            public const float MaxReadyWait = 1.5f;
+
             public ActiveFocusRequest(
                 UnitActor caster,
-                MonsterAttackActiveSkill skill,
-                System.Action commit,
+                MonsterActiveSkill skill,
+                System.Func<UnitActor> targetResolver,
+                System.Func<bool> canArm,
+                System.Action begin,
+                System.Func<bool> commit,
+                System.Action cancel,
+                System.Func<bool> commitSignal,
                 float commitDelay,
-                float totalDuration)
+                float totalDuration,
+                float readyTime,
+                int partySlotIndex,
+                long sequence)
             {
                 Caster = caster;
                 Skill = skill;
+                TargetResolver = targetResolver;
+                CanArm = canArm;
                 Commit = commit;
-                Duration = Mathf.Max(0.35f, totalDuration);
-                CommitDelay = Mathf.Clamp(commitDelay, 0.05f, Duration - 0.1f);
+                Begin = begin;
+                Cancel = cancel;
+                CommitSignal = commitSignal;
+                CommitDelay = Mathf.Max(0.05f, commitDelay);
+                Duration = Mathf.Max(CommitDelay + 0.08f, totalDuration);
+                ReadyTime = readyTime;
+                PartySlotIndex = partySlotIndex;
+                Sequence = sequence;
             }
 
             public UnitActor Caster { get; }
-            public MonsterAttackActiveSkill Skill { get; }
-            public System.Action Commit { get; }
+            public MonsterActiveSkill Skill { get; }
+            public System.Func<UnitActor> TargetResolver { get; }
+            public System.Func<bool> CanArm { get; }
+            public System.Func<bool> Commit { get; }
+            public System.Action Begin { get; }
+            public System.Action Cancel { get; }
+            public System.Func<bool> CommitSignal { get; }
             public float CommitDelay { get; }
             public float Duration { get; }
+            public float ReadyTime { get; }
+            public int PartySlotIndex { get; }
+            public long Sequence { get; }
+            public bool Armed { get; set; }
+
+            public static int Compare(ActiveFocusRequest left, ActiveFocusRequest right)
+            {
+                if (ReferenceEquals(left, right))
+                {
+                    return 0;
+                }
+                if (left == null)
+                {
+                    return 1;
+                }
+                if (right == null)
+                {
+                    return -1;
+                }
+
+                if (Mathf.Abs(left.ReadyTime - right.ReadyTime) > 0.0001f)
+                {
+                    return left.ReadyTime.CompareTo(right.ReadyTime);
+                }
+                var slotComparison = left.PartySlotIndex.CompareTo(right.PartySlotIndex);
+                return slotComparison != 0
+                    ? slotComparison
+                    : left.Sequence.CompareTo(right.Sequence);
+            }
         }
 
 #if UNITY_EDITOR

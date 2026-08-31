@@ -30,11 +30,14 @@ namespace ProjectMT.Shared.Unit
     public enum MonsterActiveProjectileFormation { Single, Fan }
     public enum MonsterActiveInstantMagicTarget { SingleTarget, TargetArea }
     public enum MonsterActiveMagicDirection { GroundUp, SkyDown }
-    public enum MonsterActiveHitEffectType { Knockback, Airborne, Stun, Bleed, Slow }
+    public enum MonsterActiveHitEffectType { Knockback, Airborne, Stun, Bleed, Slow, Pull }
 
     [Serializable]
     public sealed class MonsterActiveHitEffect // 한 Step 적중 뒤 조립하는 상태 효과
     {
+        public const float MaximumPullDistance = 2f;
+        public const float MaximumPullDuration = 1.5f;
+
         [SerializeField] private MonsterActiveHitEffectType type;
         [SerializeField, Min(0f)] private float magnitude = 0.25f;
         [SerializeField, Min(0f)] private float duration = 0.35f;
@@ -60,6 +63,8 @@ namespace ProjectMT.Shared.Unit
                 MonsterActiveHitEffectType.Stun => duration > 0f,
                 MonsterActiveHitEffectType.Bleed => magnitude > 0f && duration > 0f && tickInterval <= duration,
                 MonsterActiveHitEffectType.Slow => magnitude > 0f && magnitude < 1f && duration > 0f,
+                MonsterActiveHitEffectType.Pull => magnitude > 0f && magnitude <= MaximumPullDistance &&
+                                                   duration > 0f && duration <= MaximumPullDuration,
                 _ => false
             };
             if (!Enum.IsDefined(typeof(MonsterActiveHitEffectType), type) || !finite || !contextual)
@@ -278,6 +283,11 @@ namespace ProjectMT.Shared.Unit
                     error = $"VFX/SFX 공간 {index + 1}이 유효하지 않습니다. Step={StepId}, Detail={slotError}";
                     return false;
                 }
+                if (!MonsterActiveAttackVfxCompatibility.TryValidateSlot(this, slot, out slotError))
+                {
+                    error = $"VFX/SFX 공간 {index + 1}이 공격 방식과 맞지 않습니다. Step={StepId}, Detail={slotError}";
+                    return false;
+                }
             }
             error = string.Empty;
             return true;
@@ -380,7 +390,9 @@ namespace ProjectMT.Shared.Unit
             hitEffects = effects == null
                 ? new List<MonsterActiveHitEffect>()
                 : new List<MonsterActiveHitEffect>(effects);
-            presentationSlots = CreateDefaultPresentationSlots(attackPattern);
+            // 공격 형태별 계약의 단일 원본은 Editor의 VFX 계약 템플릿이다.
+            // 여기서 구형 공통 슬롯을 만들면 Workshop/API 생성 경로가 서로 달라진다.
+            presentationSlots = new List<MonsterActivePresentationSlot>();
         }
 
         public void EditorConfigureGeometry(
@@ -442,39 +454,6 @@ namespace ProjectMT.Shared.Unit
                 : new List<MonsterActivePresentationSlot>(slots.Where(slot => slot != null));
         }
 
-        private static List<MonsterActivePresentationSlot> CreateDefaultPresentationSlots(
-            MonsterActiveAttackPattern attackPattern)
-        {
-            var result = new List<MonsterActivePresentationSlot>();
-            result.Add(CreateSlot("telegraph", "판정 예고", MonsterActivePresentationEvent.Telegraph,
-                MonsterActivePresentationAnchor.TargetPoint));
-            result.Add(CreateSlot("launch", "공격 발동", MonsterActivePresentationEvent.Launch,
-                MonsterActivePresentationAnchor.AttackOrigin));
-            if (attackPattern == MonsterActiveAttackPattern.PiercingProjectile ||
-                attackPattern == MonsterActiveAttackPattern.ExplosiveProjectile ||
-                attackPattern == MonsterActiveAttackPattern.PiercingBeam)
-            {
-                result.Add(CreateSlot("travel", attackPattern == MonsterActiveAttackPattern.PiercingBeam
-                        ? "빔 본체"
-                        : "이동체",
-                    MonsterActivePresentationEvent.Travel,
-                    MonsterActivePresentationAnchor.AttackOrigin));
-            }
-            result.Add(CreateSlot("impact", "실제 타격", MonsterActivePresentationEvent.Impact,
-                MonsterActivePresentationAnchor.TargetPoint));
-            return result;
-        }
-
-        private static MonsterActivePresentationSlot CreateSlot(
-            string id,
-            string title,
-            MonsterActivePresentationEvent timing,
-            MonsterActivePresentationAnchor anchor)
-        {
-            var slot = new MonsterActivePresentationSlot();
-            slot.EditorConfigure(id, title, timing, anchor);
-            return slot;
-        }
 #endif
     }
 

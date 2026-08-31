@@ -166,15 +166,39 @@ namespace ProjectMT.EditorTools.MonsterMaker
             return true;
         }
 
-        [MenuItem("Tools/ProjectMT/Monster Maker/기본공격 15종 생성 및 전체 매칭")]
+        [MenuItem("Tools/ProjectMT/Monster Maker/기본공격 초기 설정 · 기존 배정 유지")]
         public static void SetupAll()
         {
-            var validatedDrafts = ValidateSetupTargets();
+            SetupBuiltInProfiles();
+            AssignRecommendationsToUnassigned();
+        }
+
+        [MenuItem("Tools/ProjectMT/Monster Maker/공식 기본공격 15종 생성·복구")]
+        public static void SetupBuiltInProfiles()
+        {
             EnsureFolder("Assets/ProjectMT/02_Shared/Unit/Data", "BasicAttacks");
             var profiles = CreateOrUpdateProfiles();
             if (profiles.Count != 15)
             {
                 throw new InvalidOperationException($"기본공격 Profile은 정확히 15개여야 합니다. Current={profiles.Count}");
+            }
+
+            AssetDatabase.Refresh();
+            Debug.Log("[Monster Maker] 공식 기본공격 15종 생성·복구 완료");
+        }
+
+        [MenuItem("Tools/ProjectMT/Monster Maker/기본공격 미지정 몬스터 추천 배정")]
+        public static void AssignRecommendationsToUnassigned()
+        {
+            var validatedDrafts = ValidateSetupTargets();
+            var profiles = BuiltInProfileIds
+                .Select(LoadProfile)
+                .Where(profile => profile != null)
+                .ToDictionary(profile => profile.AttackId, StringComparer.OrdinalIgnoreCase);
+            if (profiles.Count != BuiltInProfileIds.Count)
+            {
+                throw new InvalidOperationException(
+                    "공식 기본공격 Profile 15종이 모두 필요합니다. 먼저 '공식 기본공격 15종 생성·복구'를 실행하세요.");
             }
 
             var drafts = new List<MonsterMakerDraft>(MonsterProfileIds.Count);
@@ -187,8 +211,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 }
 
                 var draft = validatedDrafts[assignment.Key];
+                if (draft.BasicAttackProfile != null)
+                {
+                    continue;
+                }
 
-                Undo.RecordObject(draft, "기본공격 전체 매칭");
+                Undo.RecordObject(draft, "미지정 기본공격 추천 배정");
                 draft.EditorSetBasicAttackProfile(profile);
                 draft.EditorPreserveLegacyProjectileTuning();
                 EditorUtility.SetDirty(draft);
@@ -212,7 +240,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
 
             AssetDatabase.Refresh();
-            Debug.Log($"[Monster Maker] 기본공격 15종 생성 및 {drafts.Count}마리 전체 매칭 완료");
+            Debug.Log($"[Monster Maker] 기본공격 미지정 몬스터 {drafts.Count}마리 추천 배정 완료 · 기존 배정 유지");
         }
 
         private static Dictionary<string, MonsterMakerDraft> ValidateSetupTargets()
@@ -382,7 +410,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private static void ApplyBuiltInVfxContract(MonsterBasicAttackProfile profile)
         {
-            profile.EditorSetVfxSlots(BuildBuiltInVfxSlots(profile.AttackId));
+            profile.EditorSetVfxSlots(MonsterBasicAttackVfxContractTemplates.Build(profile));
         }
 
         private static MonsterBasicAttackVfxSlot[] BuildBuiltInVfxSlots(string attackId)

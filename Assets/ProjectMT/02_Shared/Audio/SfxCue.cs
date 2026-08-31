@@ -22,6 +22,18 @@ namespace ProjectMT.Shared.Audio
         public float SpatialBlend => spatialBlend;
         public float DuplicateCooldown => duplicateCooldown;
         public SfxPriority Priority => priority;
+        public AudioClip PrimaryClip
+        {
+            get
+            {
+                if (clips == null) return null;
+                for (var index = 0; index < clips.Length; index++)
+                {
+                    if (clips[index] != null) return clips[index];
+                }
+                return null;
+            }
+        }
         public bool HasPlayableClip
         {
             get

@@ -64,7 +64,16 @@ namespace ProjectMT.Shared.Combat
             {
                 lossFill.fillAmount = 1f;
             }
-            SetEnergy(0f, false);
+            // 부모 비활성화 중에는 새 자식을 만들 수 없다. 이미 생성된 게이지만 초기화한다.
+            if (energyBackground != null)
+            {
+                energyBackground.gameObject.SetActive(false);
+            }
+            if (energyFill != null)
+            {
+                energyFill.fillAmount = 0f;
+                energyFill.gameObject.SetActive(false);
+            }
         }
 
         public void Bind(Color color, float healthRatio)

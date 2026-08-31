@@ -57,7 +57,12 @@ namespace ProjectMT.Shared.Combat
                 ReturnToPool();
                 return;
             }
+            if (world.IsPaused)
+            {
+                return;
+            }
 
+            var deltaTime = Time.deltaTime * world.GetMonsterActiveFocusTimeScale(source);
             if (target != null)
             {
                 if (!target.IsAlive)
@@ -67,7 +72,7 @@ namespace ProjectMT.Shared.Combat
                 }
 
                 var targetPosition = target.transform.position + Vector3.up * 0.4f;
-                transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime); // 대상 위치 추적
+                transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * deltaTime); // 대상 위치 추적
                 if ((transform.position - targetPosition).sqrMagnitude <= 0.04f)
                 {
                     world.ApplyMonsterDamage(source, target.Health, damage); // 도착 시 공용 피해 계산 후 한 번 적용
@@ -86,7 +91,7 @@ namespace ProjectMT.Shared.Combat
                 }
 
                 var targetPosition = damageableTarget.Position + Vector3.up * 0.4f;
-                transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
+                transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * deltaTime);
                 if ((transform.position - targetPosition).sqrMagnitude <= 0.04f)
                 {
                     // 08.07 안건준 수정 - 적을 공격할 때와 동일하게 "실제로 깎인 체력"을 표시하도록,

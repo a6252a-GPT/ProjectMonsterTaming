@@ -33,6 +33,17 @@ MonoBehaviour:
     radius: 0
     maxTargets: 1
   rarityActiveSkill: {fileID: 0}
+  activeAttackProfile: {fileID: 0}
+  activeSkillName:
+  activeEnergyMaximum: 1000
+  activeSkillClip: {fileID: 0}
+  activeSkillPlaybackSpeed: 1
+  activeSkillCrossFadeDuration: 0.08
+  activeSkillCommitNormalizedTime: 0.25
+  activeStepMotionModeConfigured: 1
+  useCustomActiveStepMotions: 0
+  activeAttackStepTunings: []
+  activeAttackPresentations: []
   productionMemo: Notion monster batch / Lizard_V1
   vendorPrefab: {fileID: 1081702471385307465, guid: 4d42fbf58f69f7b42a933730260b9ea0, type: 3}
   animatorSource: {fileID: 5956299484279921033, guid: 4d42fbf58f69f7b42a933730260b9ea0, type: 3}
@@ -83,9 +94,169 @@ MonoBehaviour:
       socketOverride: 
   deathClip: {fileID: 1827226128182048838, guid: 9eea4803fcf8fff44a6c1c1df1c9b2e6, type: 3}
   deathSpeed: 1
-  combatType: 1
-  basicAttackProfile: {fileID: 11400000, guid: 46d39a607f1261f4d859b8143b8c2046, type: 2}
-  basicAttackVfxBindings: []
+  combatType: 0
+  basicAttackProfile: {fileID: 11400000, guid: 61002033270fd83468163f34c442e589, type: 2}
+  basicAttackVfxBindings:
+  - attackId: BA_R_02
+    slotId: launch
+    motionId: attack01
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_R_02
+    slotId: projectile
+    motionId:
+    state: 1
+    prefab: {fileID: 4497527978036017099, guid: 2992d6d39f679c749b40ad661f0d0477, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 0.5
+  - attackId: BA_R_02
+    slotId: pierce_hit
+    motionId:
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_R_02
+    slotId: delivery_end
+    motionId:
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_M_03
+    slotId: thrust_path
+    motionId: attack01
+    state: 1
+    prefab: {fileID: 1827827387240226182, guid: 4fda06174f568924da22163fc4a27d95, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 2.5
+    playbackOffset: 0
+    playbackSpeed: 1.5
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0.5433177}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 0.3
+  - attackId: BA_M_03
+    slotId: path_hit
+    motionId:
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_S_03
+    slotId: charge
+    motionId: attack01
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_S_03
+    slotId: beam_body
+    motionId: attack01
+    state: 1
+    prefab: {fileID: 5851401815228968936, guid: b922ed406af8c784da68320f9564ee2c, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1.41
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0.3614179}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 0.3
+  - attackId: BA_S_03
+    slotId: contact_hit
+    motionId:
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_S_03
+    slotId: end
+    motionId: attack01
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
   meleeMode: 1
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5

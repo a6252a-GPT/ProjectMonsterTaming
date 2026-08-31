@@ -82,14 +82,44 @@ namespace ProjectMT.Shared.Combat
             var particles = root.GetComponentsInChildren<ParticleSystem>(true);
             for (var index = 0; index < particles.Length; index++)
             {
-                particles[index].Simulate(deltaTime, false, false, true);
+                // Editor Preview는 0.01초처럼 fixedDeltaTime보다 작은 수동 Tick도 들어옵니다.
+                // fixedTimeStep을 켜면 매 호출의 나머지가 버려져 파티클이 영원히 0개로 남을 수 있습니다.
+                particles[index].Simulate(deltaTime, false, false, false);
+            }
+        }
+
+        public static void SimulateAtTime(
+            GameObject root,
+            float elapsed,
+            float playbackOffset = 0f,
+            float playbackSpeed = 1f)
+        {
+            if (root == null) return;
+            var time = Mathf.Max(0f, elapsed);
+            var offset = Mathf.Max(0f, playbackOffset);
+            var speed = SanitizePlaybackSpeed(playbackSpeed);
+            var playbackState = root.GetComponent<MonsterBasicAttackVfxPlaybackState>() ??
+                                root.AddComponent<MonsterBasicAttackVfxPlaybackState>();
+            var particles = root.GetComponentsInChildren<ParticleSystem>(true);
+            for (var index = 0; index < particles.Length; index++)
+            {
+                var particle = particles[index];
+                var main = particle.main;
+                var authoredSpeed = playbackState.ResolveAuthoredSpeed(particle);
+                main.simulationSpeed = authoredSpeed;
+                particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+                particle.Simulate(offset, false, true, false);
+                main.simulationSpeed = authoredSpeed * speed;
+                particle.Simulate(time, false, false, false);
+                particle.Pause(false);
             }
         }
     }
 
     internal sealed class MonsterBasicAttackVfxPlaybackState : MonoBehaviour // Pool 재사용에도 Vendor 원본 속도를 보존
     {
-        private readonly Dictionary<int, float> authoredSpeeds = new Dictionary<int, float>();
+        [SerializeField] private List<ParticleSystem> authoredParticles = new List<ParticleSystem>();
+        [SerializeField] private List<float> authoredSpeeds = new List<float>();
 
         public float ResolveAuthoredSpeed(ParticleSystem particle)
         {
@@ -98,14 +128,18 @@ namespace ProjectMT.Shared.Combat
                 return 1f;
             }
 
-            var id = particle.GetInstanceID();
-            if (authoredSpeeds.TryGetValue(id, out var speed))
+            var count = Mathf.Min(authoredParticles.Count, authoredSpeeds.Count);
+            for (var index = 0; index < count; index++)
             {
-                return speed;
+                if (authoredParticles[index] == particle)
+                {
+                    return authoredSpeeds[index];
+                }
             }
 
-            speed = Mathf.Max(0f, particle.main.simulationSpeed);
-            authoredSpeeds.Add(id, speed);
+            var speed = Mathf.Max(0f, particle.main.simulationSpeed);
+            authoredParticles.Add(particle);
+            authoredSpeeds.Add(speed);
             return speed;
         }
     }
@@ -418,6 +452,7 @@ namespace ProjectMT.Shared.Combat
                     position = context.AreaCenter;
                     return;
                 case MonsterBasicAttackVfxAnchor.TrajectoryOrigin:
+                    anchor = context.Driver?.AttackOrigin ?? context.Source?.transform;
                     position = context.Origin;
                     return;
             }

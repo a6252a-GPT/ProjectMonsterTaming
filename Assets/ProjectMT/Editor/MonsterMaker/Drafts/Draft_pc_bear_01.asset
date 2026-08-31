@@ -33,6 +33,17 @@ MonoBehaviour:
     radius: 0
     maxTargets: 1
   rarityActiveSkill: {fileID: 0}
+  activeAttackProfile: {fileID: 0}
+  activeSkillName:
+  activeEnergyMaximum: 1000
+  activeSkillClip: {fileID: 0}
+  activeSkillPlaybackSpeed: 1
+  activeSkillCrossFadeDuration: 0.08
+  activeSkillCommitNormalizedTime: 0.25
+  activeStepMotionModeConfigured: 1
+  useCustomActiveStepMotions: 0
+  activeAttackStepTunings: []
+  activeAttackPresentations: []
   productionMemo: Notion monster batch / Example13
   vendorPrefab: {fileID: 1249964366292818, guid: 7c7b348f4fbf4c5478a5cb383db1d9eb, type: 3}
   animatorSource: {fileID: 95514372820104280, guid: 7c7b348f4fbf4c5478a5cb383db1d9eb, type: 3}

@@ -29,7 +29,8 @@ namespace ProjectMT.Shared.Unit
             MonsterActiveSkill activeSkill = null,
             int monsterLevel = 1,
             UnitEntryReason entryReason = UnitEntryReason.InitialDeployment,
-            string displayName = null)
+            string displayName = null,
+            MonsterBattlePresentationSnapshot presentation = default)
         {
             UnitId = unitId ?? string.Empty;
             Stats = stats;
@@ -48,6 +49,7 @@ namespace ProjectMT.Shared.Unit
             MonsterLevel = Mathf.Max(1, monsterLevel);
             EntryReason = entryReason;
             DisplayName = string.IsNullOrWhiteSpace(displayName) ? UnitId : displayName.Trim();
+            Presentation = presentation;
         }
 
         public string UnitId { get; }
@@ -67,6 +69,7 @@ namespace ProjectMT.Shared.Unit
         public int MonsterLevel { get; }
         public UnitEntryReason EntryReason { get; }
         public string DisplayName { get; }
+        public MonsterBattlePresentationSnapshot Presentation { get; }
     }
 
     [DisallowMultipleComponent]
@@ -161,6 +164,17 @@ namespace ProjectMT.Shared.Unit
         public float BodyRadius => Mathf.Max(0.1f, runtimeAssetSet?.BodyProfile?.BodyRadius ?? 0.45f);
         public float SupportOutputMultiplier => supportOutputMultiplier;
         public MonsterSkillRuntime SkillRuntime => monsterSkillRuntime;
+        public MonsterBattlePresentationSnapshot Presentation { get; private set; }
+        public int ActiveFocusPartySlotIndex => Presentation.PartySlotIndex;
+        public bool CanQueueMonsterActiveFocus =>
+            IsAlive && combatReady && canAttack && !isManuallyHeld;
+        public bool CanArmMonsterActiveFocus =>
+            CanQueueMonsterActiveFocus &&
+            !attackActionRunning &&
+            !IsHitStopped &&
+            !IsInHitReaction &&
+            !IsActiveStunned &&
+            !IsActiveAirborne;
 
         public void SetActiveFocusTimeScale(float scale)
         {
@@ -192,6 +206,7 @@ namespace ProjectMT.Shared.Unit
             Shutdown(); // 풀 재사용 전 이전 연결 정리
             UnitId = request.UnitId;
             DisplayName = request.DisplayName;
+            Presentation = request.Presentation;
             Team = request.Team;
             stats = request.Stats;
             canMove = request.CanMove;
@@ -506,6 +521,7 @@ namespace ProjectMT.Shared.Unit
             feedback = null;
             Target = null;
             DisplayName = string.Empty;
+            Presentation = default;
             followAnchor = null;
             hasLastAnchorPosition = false; // 08.07 안건준 추가 - 풀 재사용 전 이동 감지 상태 초기화
             isManuallyHeld = false;
@@ -583,7 +599,10 @@ namespace ProjectMT.Shared.Unit
             float distance,
             float duration,
             float postKnockbackStagger,
-            bool allowPlayerTarget)
+            bool allowPlayerTarget,
+            float maximumDistance = 0.6f,
+            float maximumDuration = 0.24f,
+            bool replaceOngoing = false)
         {
             if ((!allowPlayerTarget && Team == UnitTeam.Player) ||
                 !IsAlive || IsBoss || !combatReady || isManuallyHeld || distance <= 0f)
@@ -597,10 +616,10 @@ namespace ProjectMT.Shared.Unit
                 return false;
             }
 
-            distance = Mathf.Clamp(distance, 0f, 0.6f);
-            duration = Mathf.Clamp(duration, 0.05f, 0.24f);
+            distance = Mathf.Clamp(distance, 0f, Mathf.Max(0f, maximumDistance));
+            duration = Mathf.Clamp(duration, 0.05f, Mathf.Max(0.05f, maximumDuration));
             postKnockbackStagger = Mathf.Clamp(postKnockbackStagger, 0f, 0.3f);
-            if (IsKnockedBack && combatKnockbackElapsed < combatKnockbackDuration * 0.75f)
+            if (!replaceOngoing && IsKnockedBack && combatKnockbackElapsed < combatKnockbackDuration * 0.75f)
             {
                 combatPostKnockbackStaggerDuration = Mathf.Max(
                     combatPostKnockbackStaggerDuration,
@@ -635,6 +654,23 @@ namespace ProjectMT.Shared.Unit
                 duration,
                 postKnockbackStagger,
                 allowPlayerTarget: true);
+        }
+
+        public bool TryApplyActivePull(Vector3 center, float distance, float duration)
+        {
+            var direction = center - transform.position;
+            direction.y = 0f;
+            var centerDistance = direction.magnitude;
+            var travelDistance = Mathf.Min(distance, Mathf.Max(0f, centerDistance - 0.15f));
+            return TryBeginCombatKnockback(
+                direction,
+                travelDistance,
+                duration,
+                0f,
+                allowPlayerTarget: true,
+                maximumDistance: MonsterActiveHitEffect.MaximumPullDistance,
+                maximumDuration: MonsterActiveHitEffect.MaximumPullDuration,
+                replaceOngoing: true);
         }
 
         public bool TryApplyActiveStun(float duration)

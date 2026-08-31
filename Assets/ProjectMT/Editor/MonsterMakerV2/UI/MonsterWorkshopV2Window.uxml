@@ -1,0 +1,65 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Assets/ProjectMT/Editor/MonsterMakerV2/UI/MonsterWorkshopV2Window.uss" />
+    <ui:VisualElement class="workshop-root">
+        <ui:VisualElement class="workshop-header">
+            <ui:VisualElement class="workshop-heading">
+                <ui:Label name="workshop-title" text="조립소 V2" class="workshop-title" />
+                <ui:Label name="workshop-caption" text="저장 프리셋 · 안전한 작업 사본 · 실제 판정 Preview" class="workshop-caption" />
+            </ui:VisualElement>
+            <ui:Label name="dirty-badge" text="저장됨" class="workshop-state workshop-state--saved" />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="mode-tabs">
+            <ui:Button name="mode-basic" text="기본공격" class="mode-tab" />
+            <ui:Button name="mode-attack" text="공격 액티브" class="mode-tab" />
+            <ui:Button name="mode-effect" text="효과형 · 지원 / 수호 / 디버프" class="mode-tab" />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="workshop-columns">
+            <ui:VisualElement class="workshop-panel library-panel">
+                <ui:VisualElement class="panel-heading-row">
+                    <ui:VisualElement>
+                        <ui:Label text="저장된 프리셋" class="panel-title" />
+                        <ui:Label name="library-caption" text="한 목록에서 직접 불러와 수정합니다." class="panel-caption" />
+                    </ui:VisualElement>
+                    <ui:Label name="library-count" text="0개" class="count-badge" />
+                </ui:VisualElement>
+                <ui:TextField name="search-field" label="검색" class="search-field" />
+                <ui:ScrollView name="library-scroll" mode="Vertical" class="library-scroll" />
+                <ui:Button name="new-button" text="+ 빈 프리셋 조립" class="action-button action-button--new" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="workshop-panel assembler-panel">
+                <ui:VisualElement class="panel-heading-row assembler-heading">
+                    <ui:VisualElement class="assembler-heading-text">
+                        <ui:Label name="assembler-title" text="작업 사본" class="panel-title" />
+                        <ui:Label name="assembler-caption" text="원본 저장 전까지 자산과 분리됩니다." class="panel-caption" />
+                    </ui:VisualElement>
+                    <ui:Button name="fork-button" text="복제" class="compact-button" />
+                </ui:VisualElement>
+                <ui:ScrollView name="assembler-scroll" mode="Vertical" class="assembler-scroll" />
+                <ui:VisualElement class="assembler-footer">
+                    <ui:VisualElement class="save-row">
+                        <ui:Button name="save-new-button" text="새 프리셋 저장" class="action-button action-button--save-new" />
+                        <ui:Button name="update-button" text="현재 프리셋 저장" class="action-button action-button--update save-row-last" />
+                    </ui:VisualElement>
+                    <ui:Button name="assign-button" text="현재 몬스터에게 배정" class="action-button action-button--assign" />
+                    <ui:Label name="message-label" text="준비됨" class="message-label" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="workshop-panel preview-panel">
+                <ui:VisualElement class="panel-heading-row preview-heading">
+                    <ui:VisualElement>
+                        <ui:Label text="판정 미리보기" class="panel-title" />
+                        <ui:Label name="preview-status" text="현재 작업 사본을 즉시 확인합니다." class="panel-caption" />
+                    </ui:VisualElement>
+                    <ui:Button name="preview-help-button" text="도움말" class="compact-button" />
+                </ui:VisualElement>
+                <ui:VisualElement name="preview-toolbar" class="preview-toolbar" />
+                <ui:VisualElement name="preview-host" class="preview-host" />
+                <ui:Label name="preview-summary" text="미리보기 준비 중" class="preview-summary" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

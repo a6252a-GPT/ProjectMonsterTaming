@@ -29,6 +29,7 @@ namespace ProjectMT.Shared.Unit
         private float desiredAnimatorSpeed = 1f;
         private float focusTimeScale = 1f;
         private bool locallyPaused;
+        private int activeSkillCommitVersion;
 
         public bool IsReady => animator != null && assetSet != null && motionProfile != null;
         public bool IsAttackPlaying => currentAttack != null;
@@ -41,6 +42,15 @@ namespace ProjectMT.Shared.Unit
             : Mathf.Clamp01(attackElapsed / motionDuration);
         public Transform AttackOrigin => attackOrigin != null ? attackOrigin : transform;
         public Transform HitCenter => hitCenter != null ? hitCenter : transform;
+        public int ActiveSkillCommitVersion => activeSkillCommitVersion;
+
+        public void NotifyActiveSkillCommit() // Animation Event: SkillCommit
+        {
+            unchecked
+            {
+                activeSkillCommitVersion++;
+            }
+        }
 
         public bool TryGetNextAttackMarkerDelay(out float delay)
         {
@@ -236,6 +246,28 @@ namespace ProjectMT.Shared.Unit
             var fallbackDuration = PlayActive();
             commitDelay = fallbackDuration * Mathf.Clamp01(fallbackCommitNormalizedTime);
             return fallbackDuration;
+        }
+
+        public bool TryResolveActiveStepTiming(
+            string stepId,
+            float fallbackCommitNormalizedTime,
+            out float duration,
+            out float commitDelay)
+        {
+            duration = 0f;
+            commitDelay = 0f;
+            var stepMotion = motionProfile?.ResolveActiveStep(stepId);
+            if (stepMotion?.Clip != null)
+            {
+                duration = Mathf.Max(0.05f, stepMotion.Clip.length / stepMotion.PlaybackSpeed);
+                commitDelay = duration * stepMotion.CommitNormalizedTime;
+                return true;
+            }
+            var fallback = motionProfile?.Active;
+            if (fallback?.Clip == null) return false;
+            duration = Mathf.Max(0.05f, fallback.Clip.length / fallback.PlaybackSpeed);
+            commitDelay = duration * Mathf.Clamp01(fallbackCommitNormalizedTime);
+            return true;
         }
 
         public float PlayDeath()

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectMT.Contents.CastleRaidHex;
 using ProjectMT.Features.MainBattle;
 using ProjectMT.Shared.Audio;
@@ -35,15 +36,33 @@ namespace ProjectMT.EditorTools.MonsterMaker
     {
         [SerializeField] private string slotId;
         [SerializeField] private MonsterMakerFeedbackDraft feedback = new MonsterMakerFeedbackDraft();
+        [SerializeField, HideInInspector] private bool assignmentStateConfigured;
+        [SerializeField] private MonsterBasicAttackVfxAssignmentState vfxState;
+        [SerializeField] private MonsterBasicAttackSfxAssignmentState sfxState;
 
         public string SlotId => slotId ?? string.Empty;
         public MonsterMakerFeedbackDraft Feedback => feedback ??= new MonsterMakerFeedbackDraft();
+        public MonsterBasicAttackVfxAssignmentState VfxState => vfxState;
+        public MonsterBasicAttackSfxAssignmentState SfxState => sfxState;
 
 #if UNITY_EDITOR
         public void EditorConfigure(string id, MonsterMakerFeedbackDraft source = null)
         {
             slotId = id?.Trim();
             feedback = source ?? new MonsterMakerFeedbackDraft();
+            EditorEnsureAssignmentState();
+        }
+
+        public void EditorEnsureAssignmentState()
+        {
+            if (assignmentStateConfigured) return;
+            assignmentStateConfigured = true;
+            vfxState = Feedback.VfxPrefab != null
+                ? MonsterBasicAttackVfxAssignmentState.Assigned
+                : MonsterBasicAttackVfxAssignmentState.Undecided;
+            sfxState = Feedback.HasSound
+                ? MonsterBasicAttackSfxAssignmentState.Assigned
+                : MonsterBasicAttackSfxAssignmentState.Undecided;
         }
 #endif
     }
@@ -65,6 +84,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private MonsterMakerFeedbackDraft teleportEnter = new MonsterMakerFeedbackDraft();
         [SerializeField] private List<MonsterMakerActivePresentationSlotDraft> slots =
             new List<MonsterMakerActivePresentationSlotDraft>();
+        [SerializeField, HideInInspector] private List<MonsterMakerActivePresentationSlotDraft> inactiveSlots =
+            new List<MonsterMakerActivePresentationSlotDraft>();
 
         public string StepId => stepId ?? string.Empty;
         public AnimationClip MotionClip => motionClip;
@@ -80,6 +101,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public IReadOnlyList<MonsterMakerActivePresentationSlotDraft> Slots => slots ??
             (IReadOnlyList<MonsterMakerActivePresentationSlotDraft>)
             Array.Empty<MonsterMakerActivePresentationSlotDraft>();
+        public int InactiveSlotCount => inactiveSlots?.Count ?? 0;
 
         public MonsterMakerActivePresentationSlotDraft ResolveSlot(string id)
         {
@@ -112,27 +134,33 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public void EditorSyncSlots(MonsterActiveAttackStep step)
         {
             slots ??= new List<MonsterMakerActivePresentationSlotDraft>();
+            inactiveSlots ??= new List<MonsterMakerActivePresentationSlotDraft>();
             if (step == null)
             {
-                slots.Clear();
+                MergeInactiveSlots(slots);
+                slots = new List<MonsterMakerActivePresentationSlotDraft>();
                 return;
             }
 
             var synced = new List<MonsterMakerActivePresentationSlotDraft>(step.PresentationSlots.Count);
+            var available = new List<MonsterMakerActivePresentationSlotDraft>();
+            available.AddRange(slots.Where(candidate => candidate != null));
+            available.AddRange(inactiveSlots.Where(candidate => candidate != null));
             var migratedTimings = new HashSet<MonsterActivePresentationEvent>();
             for (var slotIndex = 0; slotIndex < step.PresentationSlots.Count; slotIndex++)
             {
                 var contract = step.PresentationSlots[slotIndex];
                 if (contract == null) continue;
                 MonsterMakerActivePresentationSlotDraft existing = null;
-                for (var index = 0; index < slots.Count; index++)
+                for (var index = available.Count - 1; index >= 0; index--)
                 {
-                    if (slots[index] != null && string.Equals(
-                            slots[index].SlotId,
+                    if (string.Equals(
+                            available[index].SlotId,
                             contract.SlotId,
                             StringComparison.OrdinalIgnoreCase))
                     {
-                        existing = slots[index];
+                        existing = available[index];
+                        available.RemoveAt(index);
                         break;
                     }
                 }
@@ -144,9 +172,58 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         : null;
                     existing.EditorConfigure(contract.SlotId, legacy);
                 }
+                existing.EditorEnsureAssignmentState();
                 synced.Add(existing);
             }
             slots = synced;
+            inactiveSlots = available;
+        }
+
+        public void EditorSyncSlots(IReadOnlyList<MonsterActivePresentationSlot> contracts)
+        {
+            slots ??= new List<MonsterMakerActivePresentationSlotDraft>();
+            inactiveSlots ??= new List<MonsterMakerActivePresentationSlotDraft>();
+            if (contracts == null)
+            {
+                MergeInactiveSlots(slots);
+                slots = new List<MonsterMakerActivePresentationSlotDraft>();
+                return;
+            }
+
+            var synced = new List<MonsterMakerActivePresentationSlotDraft>(contracts.Count);
+            var available = new List<MonsterMakerActivePresentationSlotDraft>();
+            available.AddRange(slots.Where(candidate => candidate != null));
+            available.AddRange(inactiveSlots.Where(candidate => candidate != null));
+            for (var slotIndex = 0; slotIndex < contracts.Count; slotIndex++)
+            {
+                var contract = contracts[slotIndex];
+                if (contract == null) continue;
+                var existing = available.LastOrDefault(candidate =>
+                    string.Equals(candidate.SlotId, contract.SlotId, StringComparison.OrdinalIgnoreCase));
+                if (existing != null) available.Remove(existing);
+                else
+                {
+                    existing = new MonsterMakerActivePresentationSlotDraft();
+                    existing.EditorConfigure(contract.SlotId);
+                }
+                existing.EditorEnsureAssignmentState();
+                synced.Add(existing);
+            }
+            slots = synced;
+            inactiveSlots = available;
+        }
+        private void MergeInactiveSlots(IEnumerable<MonsterMakerActivePresentationSlotDraft> source)
+        {
+            foreach (var slot in source)
+            {
+                if (slot == null || inactiveSlots.Any(candidate =>
+                        candidate != null &&
+                        string.Equals(candidate.SlotId, slot.SlotId, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+                inactiveSlots.Add(slot);
+            }
         }
 
         private MonsterMakerFeedbackDraft ResolveLegacyFeedback(MonsterActivePresentationEvent timing)
@@ -161,6 +238,38 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 MonsterActivePresentationEvent.TeleportEnter => teleportEnter,
                 _ => null
             };
+        }
+#endif
+    }
+
+    [Serializable]
+    public sealed class MonsterMakerActiveAttackProfileArchive // 프리셋 변경 시 되돌릴 Step 편집값
+    {
+        [SerializeField] private string profileId;
+        [SerializeField] private List<MonsterActiveAttackStepTuning> tunings =
+            new List<MonsterActiveAttackStepTuning>();
+        [SerializeField] private List<MonsterMakerActiveStepPresentationDraft> presentations =
+            new List<MonsterMakerActiveStepPresentationDraft>();
+
+        public string ProfileId => profileId ?? string.Empty;
+        public List<MonsterActiveAttackStepTuning> Tunings => tunings ??=
+            new List<MonsterActiveAttackStepTuning>();
+        public List<MonsterMakerActiveStepPresentationDraft> Presentations => presentations ??=
+            new List<MonsterMakerActiveStepPresentationDraft>();
+        public int StoredValueCount => Tunings.Count + Presentations.Count +
+                                       Presentations.Sum(item => item?.InactiveSlotCount ?? 0);
+
+#if UNITY_EDITOR
+        public void EditorConfigure(
+            string id,
+            IEnumerable<MonsterActiveAttackStepTuning> storedTunings,
+            IEnumerable<MonsterMakerActiveStepPresentationDraft> storedPresentations)
+        {
+            profileId = id?.Trim();
+            tunings = storedTunings?.Where(item => item != null).ToList() ??
+                      new List<MonsterActiveAttackStepTuning>();
+            presentations = storedPresentations?.Where(item => item != null).ToList() ??
+                            new List<MonsterMakerActiveStepPresentationDraft>();
         }
 #endif
     }
@@ -338,11 +447,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private string displayName;
         [SerializeField] private MonsterRarity rarity = MonsterRarity.Common;
         [SerializeField] private Sprite portrait;
-        [SerializeField] private bool skillLoadoutConfigured;
+        [SerializeField, HideInInspector] private bool skillLoadoutConfigured; // 구 공용 사용값 마이그레이션 전용
+        [SerializeField] private bool usePassiveSkill;
+        [SerializeField] private bool useActiveSkill;
+        [SerializeField, HideInInspector] private bool splitSkillUsageConfigured;
+        [SerializeField, HideInInspector] private int skillUsageSchemaVersion;
         [SerializeField] private MonsterPassiveSkill rarityPassiveSkill;
         [SerializeField] private MonsterMakerPassiveTuningDraft passiveTuning = new MonsterMakerPassiveTuningDraft();
         [SerializeField] private MonsterActiveSkill rarityActiveSkill;
         [SerializeField] private MonsterActiveAttackProfile activeAttackProfile;
+        [SerializeField] private MonsterEffectActiveProfile activeEffectProfile;
         [SerializeField] private string activeSkillName;
         [SerializeField, Min(1)] private int activeEnergyMaximum = 1000;
         [SerializeField] private AnimationClip activeSkillClip;
@@ -355,6 +469,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
             new List<MonsterActiveAttackStepTuning>();
         [SerializeField] private List<MonsterMakerActiveStepPresentationDraft> activeAttackPresentations =
             new List<MonsterMakerActiveStepPresentationDraft>();
+        [SerializeField] private List<MonsterMakerActiveStepPresentationDraft> activeEffectPresentations =
+            new List<MonsterMakerActiveStepPresentationDraft>();
+        [SerializeField, HideInInspector] private string activeAttackAuthoringProfileId;
+        [SerializeField, HideInInspector] private string activeEffectAuthoringProfileId;
+        [SerializeField, HideInInspector] private List<MonsterMakerActiveAttackProfileArchive>
+            inactiveActiveAttackAuthoring = new List<MonsterMakerActiveAttackProfileArchive>();
         [SerializeField, TextArea(2, 5)] private string productionMemo;
 
         [SerializeField] private GameObject vendorPrefab;
@@ -454,13 +574,31 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public string DisplayName => displayName ?? string.Empty;
         public MonsterRarity Rarity => rarity;
         public Sprite Portrait => portrait;
-        public bool SkillLoadoutConfigured => skillLoadoutConfigured;
+        public bool UsePassiveSkill
+        {
+            get
+            {
+                EnsureSplitSkillUsage();
+                return usePassiveSkill;
+            }
+        }
+        public bool UseActiveSkill
+        {
+            get
+            {
+                EnsureSplitSkillUsage();
+                return useActiveSkill;
+            }
+        }
+        public bool SkillLoadoutConfigured => UsePassiveSkill || UseActiveSkill;
         public MonsterPassiveSkill RarityPassiveSkill => rarityPassiveSkill;
         public MonsterMakerPassiveTuningDraft PassiveTuning => passiveTuning;
         public MonsterActiveSkill RarityActiveSkill => rarityActiveSkill;
         public MonsterActiveAttackProfile ActiveAttackProfile => activeAttackProfile;
+        public MonsterEffectActiveProfile ActiveEffectProfile => activeEffectProfile;
+        public bool HasActiveProfile => activeAttackProfile != null || activeEffectProfile != null;
         public string ActiveSkillName => string.IsNullOrWhiteSpace(activeSkillName)
-            ? activeAttackProfile?.DisplayName ?? string.Empty
+            ? activeAttackProfile?.DisplayName ?? activeEffectProfile?.DisplayName ?? string.Empty
             : activeSkillName.Trim();
         public int ActiveEnergyMaximum => activeEnergyMaximum;
         public AnimationClip ActiveSkillClip => activeSkillClip;
@@ -475,6 +613,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
             activeAttackPresentations ??
             (IReadOnlyList<MonsterMakerActiveStepPresentationDraft>)
             Array.Empty<MonsterMakerActiveStepPresentationDraft>();
+        public IReadOnlyList<MonsterMakerActiveStepPresentationDraft> ActiveEffectPresentations =>
+            activeEffectPresentations ??
+            (IReadOnlyList<MonsterMakerActiveStepPresentationDraft>)
+            Array.Empty<MonsterMakerActiveStepPresentationDraft>();
+        public IReadOnlyList<MonsterMakerActiveStepPresentationDraft> CurrentActivePresentations =>
+            activeEffectProfile != null ? ActiveEffectPresentations : ActiveAttackPresentations;
+        public int InactiveActiveAttackAuthoringCount => inactiveActiveAttackAuthoring?.Sum(
+            archive => archive?.StoredValueCount ?? 0) ?? 0;
         public string ProductionMemo => productionMemo ?? string.Empty;
         public GameObject VendorPrefab => vendorPrefab;
         public Animator AnimatorSource => animatorSource;
@@ -573,10 +719,60 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public MonsterMakerFeedbackDraft DeathFeedback => deathFeedback;
         public MonsterMakerFeedbackDraft SpecialFeedback => specialFeedback;
 
+        private void OnEnable()
+        {
+            EnsureSplitSkillUsage();
+        }
+
+        private void EnsureSplitSkillUsage()
+        {
+            if (skillUsageSchemaVersion >= 1)
+            {
+                return;
+            }
+
+            usePassiveSkill = skillLoadoutConfigured;
+            useActiveSkill = skillLoadoutConfigured && rarity >= MonsterRarity.Legendary &&
+                             (rarityActiveSkill != null || activeAttackProfile != null ||
+                              activeEffectProfile != null);
+            splitSkillUsageConfigured = true;
+            skillUsageSchemaVersion = 1;
+        }
+
 #if UNITY_EDITOR
+        public void EditorEnsureSplitSkillUsage()
+        {
+            EnsureSplitSkillUsage();
+        }
+
+        public void EditorRestoreLegacySkillUsage()
+        {
+            splitSkillUsageConfigured = false;
+            skillUsageSchemaVersion = 0;
+            EnsureSplitSkillUsage();
+        }
+
+        public void EditorSetSkillUsage(bool passiveEnabled, bool activeEnabled)
+        {
+            usePassiveSkill = passiveEnabled;
+            useActiveSkill = activeEnabled;
+            splitSkillUsageConfigured = true;
+            skillUsageSchemaVersion = 1;
+            skillLoadoutConfigured = passiveEnabled || activeEnabled;
+        }
+
+        public void EditorCommitSplitSkillUsage()
+        {
+            splitSkillUsageConfigured = true;
+            skillUsageSchemaVersion = 1;
+            skillLoadoutConfigured = usePassiveSkill || useActiveSkill;
+        }
+
         public void EditorSetPassiveTemplate(GenericMonsterPassiveSkill template, bool resetTuning = false)
         {
-            skillLoadoutConfigured = template != null;
+            EnsureSplitSkillUsage();
+            usePassiveSkill = template != null;
+            skillLoadoutConfigured = usePassiveSkill || useActiveSkill;
             rarityPassiveSkill = template;
             passiveTuning ??= new MonsterMakerPassiveTuningDraft();
             if (resetTuning || !passiveTuning.Matches(template))
@@ -587,12 +783,46 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         public void EditorSetActiveAttackProfile(MonsterActiveAttackProfile profile)
         {
+            EnsureSplitSkillUsage();
             activeAttackProfile = profile;
+            if (profile != null)
+            {
+                useActiveSkill = true;
+                skillLoadoutConfigured = true;
+                activeEffectProfile = null;
+                EditorSyncActiveEffectAuthoring();
+            }
             if (profile != null && string.IsNullOrWhiteSpace(activeSkillName))
             {
                 activeSkillName = profile.DisplayName;
             }
             EditorSyncActiveAttackAuthoring();
+        }
+
+        public void EditorSetActiveEffectProfile(MonsterEffectActiveProfile profile)
+        {
+            EnsureSplitSkillUsage();
+            activeEffectProfile = profile;
+            if (profile != null)
+            {
+                useActiveSkill = true;
+                skillLoadoutConfigured = true;
+                activeAttackProfile = null;
+                EditorSyncActiveAttackAuthoring();
+            }
+            if (profile != null && string.IsNullOrWhiteSpace(activeSkillName))
+            {
+                activeSkillName = profile.DisplayName;
+            }
+            EditorSyncActiveEffectAuthoring();
+        }
+
+        public void EditorClearActiveProfiles()
+        {
+            activeAttackProfile = null;
+            activeEffectProfile = null;
+            EditorSyncActiveAttackAuthoring();
+            EditorSyncActiveEffectAuthoring();
         }
 
         public void EditorSetResolvedActiveSkill(MonsterActiveSkill skill)
@@ -604,32 +834,60 @@ namespace ProjectMT.EditorTools.MonsterMaker
         {
             activeAttackStepTunings ??= new List<MonsterActiveAttackStepTuning>();
             activeAttackPresentations ??= new List<MonsterMakerActiveStepPresentationDraft>();
+            inactiveActiveAttackAuthoring ??= new List<MonsterMakerActiveAttackProfileArchive>();
             if (!activeStepMotionModeConfigured)
             {
                 activeStepMotionModeConfigured = true;
                 useCustomActiveStepMotions = activeSkillClip != null;
             }
-            if (activeAttackProfile == null)
+
+            var targetProfileId = activeAttackProfile?.ProfileId ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(activeAttackAuthoringProfileId) &&
+                (activeAttackStepTunings.Count > 0 || activeAttackPresentations.Count > 0))
             {
+                activeAttackAuthoringProfileId = targetProfileId; // 기존 Draft는 현재 연결 프로필 소유값
+            }
+            if (!string.Equals(
+                    activeAttackAuthoringProfileId,
+                    targetProfileId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                ArchiveCurrentActiveAttackAuthoring(activeAttackAuthoringProfileId);
                 activeAttackStepTunings.Clear();
                 activeAttackPresentations.Clear();
+                activeAttackAuthoringProfileId = targetProfileId;
+            }
+            if (activeAttackProfile == null)
+            {
+                ArchiveCurrentActiveAttackAuthoring(activeAttackAuthoringProfileId);
+                activeAttackStepTunings.Clear();
+                activeAttackPresentations.Clear();
+                activeAttackAuthoringProfileId = string.Empty;
                 return;
             }
 
+            var archive = GetOrCreateActiveAttackArchive(targetProfileId);
+            var availableTunings = new List<MonsterActiveAttackStepTuning>();
+            availableTunings.AddRange(activeAttackStepTunings.Where(item => item != null));
+            availableTunings.AddRange(archive.Tunings.Where(item => item != null));
+            var availablePresentations = new List<MonsterMakerActiveStepPresentationDraft>();
+            availablePresentations.AddRange(activeAttackPresentations.Where(item => item != null));
+            availablePresentations.AddRange(archive.Presentations.Where(item => item != null));
             var syncedTunings = new List<MonsterActiveAttackStepTuning>(activeAttackProfile.Steps.Count);
             var syncedPresentations = new List<MonsterMakerActiveStepPresentationDraft>(activeAttackProfile.Steps.Count);
             for (var stepIndex = 0; stepIndex < activeAttackProfile.Steps.Count; stepIndex++)
             {
                 var stepId = activeAttackProfile.Steps[stepIndex].StepId;
                 MonsterActiveAttackStepTuning tuning = null;
-                for (var index = 0; index < activeAttackStepTunings.Count; index++)
+                for (var index = availableTunings.Count - 1; index >= 0; index--)
                 {
-                    if (activeAttackStepTunings[index] != null && string.Equals(
-                            activeAttackStepTunings[index].StepId,
+                    if (string.Equals(
+                            availableTunings[index].StepId,
                             stepId,
                             StringComparison.OrdinalIgnoreCase))
                     {
-                        tuning = activeAttackStepTunings[index];
+                        tuning = availableTunings[index];
+                        availableTunings.RemoveAt(index);
                         break;
                     }
                 }
@@ -641,14 +899,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 syncedTunings.Add(tuning);
 
                 MonsterMakerActiveStepPresentationDraft presentation = null;
-                for (var index = 0; index < activeAttackPresentations.Count; index++)
+                for (var index = availablePresentations.Count - 1; index >= 0; index--)
                 {
-                    if (activeAttackPresentations[index] != null && string.Equals(
-                            activeAttackPresentations[index].StepId,
+                    if (string.Equals(
+                            availablePresentations[index].StepId,
                             stepId,
                             StringComparison.OrdinalIgnoreCase))
                     {
-                        presentation = activeAttackPresentations[index];
+                        presentation = availablePresentations[index];
+                        availablePresentations.RemoveAt(index);
                         break;
                     }
                 }
@@ -668,6 +927,136 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             activeAttackStepTunings = syncedTunings;
             activeAttackPresentations = syncedPresentations;
+            archive.EditorConfigure(targetProfileId, availableTunings, availablePresentations);
+            RemoveEmptyActiveAttackArchives();
+        }
+
+        public void EditorSyncActiveEffectAuthoring()
+        {
+            activeEffectPresentations ??= new List<MonsterMakerActiveStepPresentationDraft>();
+            inactiveActiveAttackAuthoring ??= new List<MonsterMakerActiveAttackProfileArchive>();
+            var targetProfileId = activeEffectProfile?.ProfileId ?? string.Empty;
+            var archiveId = string.IsNullOrWhiteSpace(targetProfileId) ? string.Empty : "effect:" + targetProfileId;
+            if (!string.Equals(activeEffectAuthoringProfileId, targetProfileId, StringComparison.OrdinalIgnoreCase))
+            {
+                ArchiveCurrentActiveEffectAuthoring(activeEffectAuthoringProfileId);
+                activeEffectPresentations.Clear();
+                activeEffectAuthoringProfileId = targetProfileId;
+            }
+            if (activeEffectProfile == null)
+            {
+                ArchiveCurrentActiveEffectAuthoring(activeEffectAuthoringProfileId);
+                activeEffectPresentations.Clear();
+                activeEffectAuthoringProfileId = string.Empty;
+                return;
+            }
+
+            var archive = GetOrCreateActiveAttackArchive(archiveId);
+            var available = new List<MonsterMakerActiveStepPresentationDraft>();
+            available.AddRange(activeEffectPresentations.Where(item => item != null));
+            available.AddRange(archive.Presentations.Where(item => item != null));
+            var synced = new List<MonsterMakerActiveStepPresentationDraft>(activeEffectProfile.Groups.Count);
+            for (var groupIndex = 0; groupIndex < activeEffectProfile.Groups.Count; groupIndex++)
+            {
+                var group = activeEffectProfile.Groups[groupIndex];
+                MonsterMakerActiveStepPresentationDraft presentation = null;
+                for (var index = available.Count - 1; index >= 0; index--)
+                {
+                    if (string.Equals(available[index].StepId, group.GroupId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        presentation = available[index];
+                        available.RemoveAt(index);
+                        break;
+                    }
+                }
+                if (presentation == null)
+                {
+                    presentation = new MonsterMakerActiveStepPresentationDraft();
+                    presentation.EditorSetStepId(group.GroupId);
+                }
+                presentation.EditorEnsureMotion(
+                    activeSkillClip,
+                    activeSkillPlaybackSpeed,
+                    activeSkillCrossFadeDuration,
+                    activeSkillCommitNormalizedTime);
+                presentation.EditorSyncSlots(group.PresentationSlots);
+                synced.Add(presentation);
+            }
+            activeEffectPresentations = synced;
+            archive.EditorConfigure(archiveId, null, available);
+            RemoveEmptyActiveAttackArchives();
+        }
+
+        private void ArchiveCurrentActiveEffectAuthoring(string profileId)
+        {
+            if (string.IsNullOrWhiteSpace(profileId) || activeEffectPresentations.Count == 0)
+            {
+                return;
+            }
+            var archiveId = "effect:" + profileId;
+            var archive = GetOrCreateActiveAttackArchive(archiveId);
+            var presentations = new List<MonsterMakerActiveStepPresentationDraft>(archive.Presentations);
+            foreach (var item in activeEffectPresentations)
+            {
+                if (item == null) continue;
+                presentations.RemoveAll(candidate => candidate != null &&
+                    string.Equals(candidate.StepId, item.StepId, StringComparison.OrdinalIgnoreCase));
+                presentations.Add(item);
+            }
+            archive.EditorConfigure(archiveId, null, presentations);
+        }
+        private void ArchiveCurrentActiveAttackAuthoring(string profileId)
+        {
+            if (string.IsNullOrWhiteSpace(profileId) ||
+                activeAttackStepTunings.Count == 0 && activeAttackPresentations.Count == 0)
+            {
+                return;
+            }
+
+            var archive = GetOrCreateActiveAttackArchive(profileId);
+            var tunings = new List<MonsterActiveAttackStepTuning>(archive.Tunings);
+            foreach (var item in activeAttackStepTunings)
+            {
+                if (item == null) continue;
+                tunings.RemoveAll(candidate => candidate != null &&
+                    string.Equals(candidate.StepId, item.StepId, StringComparison.OrdinalIgnoreCase));
+                tunings.Add(item);
+            }
+            var presentations = new List<MonsterMakerActiveStepPresentationDraft>(archive.Presentations);
+            foreach (var item in activeAttackPresentations)
+            {
+                if (item == null) continue;
+                presentations.RemoveAll(candidate => candidate != null &&
+                    string.Equals(candidate.StepId, item.StepId, StringComparison.OrdinalIgnoreCase));
+                presentations.Add(item);
+            }
+            archive.EditorConfigure(profileId, tunings, presentations);
+        }
+
+        private MonsterMakerActiveAttackProfileArchive GetOrCreateActiveAttackArchive(string profileId)
+        {
+            for (var index = 0; index < inactiveActiveAttackAuthoring.Count; index++)
+            {
+                var candidate = inactiveActiveAttackAuthoring[index];
+                if (candidate != null && string.Equals(
+                        candidate.ProfileId,
+                        profileId,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return candidate;
+                }
+            }
+
+            var archive = new MonsterMakerActiveAttackProfileArchive();
+            archive.EditorConfigure(profileId, null, null);
+            inactiveActiveAttackAuthoring.Add(archive);
+            return archive;
+        }
+
+        private void RemoveEmptyActiveAttackArchives()
+        {
+            inactiveActiveAttackAuthoring.RemoveAll(archive =>
+                archive == null || archive.StoredValueCount == 0);
         }
 
         public void ResolveActiveStepMotion(

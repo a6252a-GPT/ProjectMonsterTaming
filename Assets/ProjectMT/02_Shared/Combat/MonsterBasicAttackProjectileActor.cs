@@ -108,7 +108,8 @@ namespace ProjectMT.Shared.Combat
                 return;
             }
 
-            remainingLifetime -= Time.deltaTime;
+            var deltaTime = Time.deltaTime * world.GetMonsterActiveFocusTimeScale(source);
+            remainingLifetime -= deltaTime;
             if (remainingLifetime <= 0f || !source.IsAlive)
             {
                 ReturnToPool();
@@ -118,13 +119,13 @@ namespace ProjectMT.Shared.Combat
             switch (profile.ProjectileTravel)
             {
                 case MonsterBasicAttackProjectileTravel.Homing:
-                    TickHoming(Time.deltaTime);
+                    TickHoming(deltaTime);
                     break;
                 case MonsterBasicAttackProjectileTravel.Returning:
-                    TickReturning(Time.deltaTime);
+                    TickReturning(deltaTime);
                     break;
                 default:
-                    TickStraight(Time.deltaTime);
+                    TickStraight(deltaTime);
                     break;
             }
         }

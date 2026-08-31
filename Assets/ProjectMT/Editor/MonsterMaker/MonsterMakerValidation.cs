@@ -49,6 +49,13 @@ namespace ProjectMT.EditorTools.MonsterMaker
     {
         public static MonsterMakerValidationReport Validate(MonsterMakerDraft draft)
         {
+            return Validate(draft, draft);
+        }
+
+        internal static MonsterMakerValidationReport Validate(
+            MonsterMakerDraft draft,
+            MonsterMakerDraft catalogIdentityOwner)
+        {
             var report = new MonsterMakerValidationReport();
             if (draft == null)
             {
@@ -56,7 +63,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 return report;
             }
 
-            ValidateIdentity(draft, report);
+            ValidateIdentity(draft, catalogIdentityOwner ?? draft, report);
             ValidateSkills(draft, report);
             ValidateBody(draft, report);
             ValidateStats(draft, report);
@@ -67,6 +74,45 @@ namespace ProjectMT.EditorTools.MonsterMaker
             ValidateCastleRaidAI(draft, report);
             ValidateAscension(draft, report);
             ValidateFeedback(draft, report);
+            return report;
+        }
+
+        public static MonsterMakerValidationReport ValidateActiveAttack(MonsterMakerDraft draft)
+        {
+            var report = new MonsterMakerValidationReport();
+            if (draft == null)
+            {
+                report.Add(MonsterMakerIssueSeverity.Error, "MAKER-DRAFT", "Monster Maker 제작 원본이 없습니다.", null);
+                return report;
+            }
+            if (!draft.UseActiveSkill)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ACTIVE-DISABLED",
+                    "액티브 스킬을 반영하려면 액티브 사용을 켜세요.",
+                    draft);
+                return report;
+            }
+            if (draft.Rarity < MonsterRarity.Legendary)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-ACTIVE-RARITY",
+                    "공격 액티브는 전설·신화 몬스터만 사용할 수 있습니다.",
+                    draft);
+                return report;
+            }
+            if (draft.ActiveAttackProfile == null)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-ACTIVE-PENDING",
+                    "반영할 공격 액티브 프로필이 없습니다.",
+                    draft);
+                return report;
+            }
+            ValidateActiveAttackAuthoring(draft, report);
             return report;
         }
 
@@ -171,6 +217,28 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     }
                 }
             }
+
+            var draftPath = AssetDatabase.GetAssetPath(draft);
+            if (!string.IsNullOrWhiteSpace(draftPath) &&
+                draftPath.StartsWith(MonsterMakerAssetWriter.DraftRoot + "/", StringComparison.Ordinal))
+            {
+                var paths = MonsterMakerAssetWriter.BuildPaths(draft.MonsterId);
+                var combat = AssetDatabase.LoadAssetAtPath<MonsterCombatProfile>(paths[3]);
+                var feedback = AssetDatabase.LoadAssetAtPath<MonsterFeedbackProfile>(paths[5]);
+                var syncState = MonsterBasicAttackBindingProjection.EvaluateRuntimeSync(
+                    draft,
+                    combat,
+                    feedback,
+                    out var syncMessage);
+                if (syncState != MonsterBasicAttackRuntimeSyncState.Synchronized)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Warning,
+                        "MAKER-BASIC-RUNTIME-SYNC",
+                        $"기본공격 변경사항이 게임 자산과 다릅니다. {syncMessage}",
+                        draft);
+                }
+            }
         }
 
         public static string ResolveAnimatorPath(MonsterMakerDraft draft)
@@ -192,7 +260,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 draft.VendorPrefab.transform);
         }
 
-        private static void ValidateIdentity(MonsterMakerDraft draft, MonsterMakerValidationReport report)
+        private static void ValidateIdentity(
+            MonsterMakerDraft draft,
+            MonsterMakerDraft catalogIdentityOwner,
+            MonsterMakerValidationReport report)
         {
             if (string.IsNullOrWhiteSpace(draft.MonsterId))
             {
@@ -209,7 +280,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             else
             {
-                ValidateCatalogIdentityOwnership(draft, report);
+                ValidateCatalogIdentityOwnership(draft, catalogIdentityOwner, report);
             }
 
             if (string.IsNullOrWhiteSpace(draft.DisplayName))
@@ -305,107 +376,107 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private static void ValidateSkills(MonsterMakerDraft draft, MonsterMakerValidationReport report)
         {
-            if (!draft.SkillLoadoutConfigured)
+            if (draft.UsePassiveSkill)
             {
-                if (draft.RarityPassiveSkill != null || draft.RarityActiveSkill != null ||
-                    draft.ActiveAttackProfile != null)
+                var catalog = AssetDatabase.LoadAssetAtPath<MonsterSkillCatalog>(
+                    MonsterSkillCatalog.DefaultAssetPath);
+                var catalogError = string.Empty;
+                if (catalog == null || !catalog.TryValidate(out catalogError))
                 {
                     report.Add(
                         MonsterMakerIssueSeverity.Error,
-                        "MAKER-SKILL-CONFIG-DISABLED",
-                        "범용 스킬 참조가 있지만 스킬 구성 사용이 꺼져 있습니다.",
-                        draft);
+                        "MAKER-SKILL-CATALOG",
+                        "범용 Monster Skill Catalog이 없거나 유효하지 않습니다. " + catalogError,
+                        catalog);
                 }
-
-                return;
-            }
-
-            var catalog = AssetDatabase.LoadAssetAtPath<MonsterSkillCatalog>(MonsterSkillCatalog.DefaultAssetPath);
-            var catalogError = string.Empty;
-            if (catalog == null || !catalog.TryValidate(out catalogError))
-            {
-                report.Add(
-                    MonsterMakerIssueSeverity.Error,
-                    "MAKER-SKILL-CATALOG",
-                    "범용 Monster Skill Catalog이 없거나 유효하지 않습니다. " + catalogError,
-                    catalog);
-                return;
-            }
-
-            if (draft.RarityPassiveSkill == null)
-            {
-                report.Add(
-                    MonsterMakerIssueSeverity.Error,
-                    "MAKER-SKILL-PASSIVE-MISSING",
-                    "범용 패시브가 아직 선택되지 않았습니다.",
-                    draft);
-            }
-            else if (!draft.RarityPassiveSkill.TryValidate(out var passiveError))
-            {
-                report.Add(
-                    MonsterMakerIssueSeverity.Error,
-                    "MAKER-SKILL-PASSIVE-INVALID",
-                    passiveError,
-                    draft.RarityPassiveSkill);
-            }
-            else if (!catalog.Contains(draft.RarityPassiveSkill))
-            {
-                report.Add(
-                    MonsterMakerIssueSeverity.Error,
-                    "MAKER-SKILL-PASSIVE-UNREGISTERED",
-                    "선택한 패시브가 Monster Skill Catalog에 등록되지 않았습니다.",
-                    draft.RarityPassiveSkill);
-            }
-            else if (!draft.RarityPassiveSkill.AuthoringEnabled)
-            {
-                report.Add(
-                    MonsterMakerIssueSeverity.Error,
-                    "MAKER-SKILL-PASSIVE-DISABLED",
-                    "선택한 패시브는 현재 P0 고도화 대상이 아니어서 Monster Maker에서 비활성 상태입니다.",
-                    draft.RarityPassiveSkill);
-            }
-
-            if (draft.RarityPassiveSkill is GenericMonsterPassiveSkill genericPassive)
-            {
-                var tuningError = "몬스터 전용 패시브 수치가 없습니다.";
-                if (draft.PassiveTuning == null || !draft.PassiveTuning.TryValidate(genericPassive, out tuningError))
+                else if (draft.RarityPassiveSkill == null)
                 {
                     report.Add(
                         MonsterMakerIssueSeverity.Error,
-                        "MAKER-SKILL-PASSIVE-TUNING",
-                        tuningError,
+                        "MAKER-SKILL-PASSIVE-MISSING",
+                        "패시브 사용이 켜져 있지만 패시브가 선택되지 않았습니다.",
                         draft);
                 }
+                else if (!draft.RarityPassiveSkill.TryValidate(out var passiveError))
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-SKILL-PASSIVE-INVALID",
+                        passiveError,
+                        draft.RarityPassiveSkill);
+                }
+                else if (!catalog.Contains(draft.RarityPassiveSkill))
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-SKILL-PASSIVE-UNREGISTERED",
+                        "선택한 패시브가 Monster Skill Catalog에 등록되지 않았습니다.",
+                        draft.RarityPassiveSkill);
+                }
+                else if (!draft.RarityPassiveSkill.AuthoringEnabled)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-SKILL-PASSIVE-DISABLED",
+                        "선택한 패시브는 현재 P0 고도화 대상이 아니어서 Monster Maker에서 비활성 상태입니다.",
+                        draft.RarityPassiveSkill);
+                }
+
+                if (draft.RarityPassiveSkill is GenericMonsterPassiveSkill genericPassive)
+                {
+                    var tuningError = "몬스터 전용 패시브 수치가 없습니다.";
+                    if (draft.PassiveTuning == null ||
+                        !draft.PassiveTuning.TryValidate(genericPassive, out tuningError))
+                    {
+                        report.Add(
+                            MonsterMakerIssueSeverity.Error,
+                            "MAKER-SKILL-PASSIVE-TUNING",
+                            tuningError,
+                            draft);
+                    }
+                }
+            }
+
+            if (!draft.UseActiveSkill)
+            {
+                return;
             }
 
             var active = draft.RarityActiveSkill;
             if (draft.Rarity < MonsterRarity.Legendary)
             {
-                if (active != null || draft.ActiveAttackProfile != null)
-                {
-                    report.Add(
-                        MonsterMakerIssueSeverity.Error,
-                        "MAKER-SKILL-ACTIVE-RARITY",
-                        "일반·희귀·영웅 등급은 액티브 공격 프로필을 연결할 수 없습니다.",
-                        active != null ? active : draft.ActiveAttackProfile);
-                }
-
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-ACTIVE-RARITY",
+                    "액티브 사용은 전설·신화 몬스터만 켤 수 있습니다.",
+                    active != null ? active :
+                    draft.ActiveAttackProfile != null ? draft.ActiveAttackProfile :
+                    draft.ActiveEffectProfile != null ? draft.ActiveEffectProfile : draft);
                 return;
             }
 
-            if (draft.ActiveAttackProfile == null)
+            if (!draft.HasActiveProfile)
             {
                 report.Add(
                     MonsterMakerIssueSeverity.Error,
                     "MAKER-SKILL-ACTIVE-PENDING",
-                    "전설·신화 등급은 공격 액티브 프로필이 필요합니다.",
+                    "액티브 사용이 켜져 있지만 공격형 또는 효과형 액티브 프로필이 없습니다.",
+                    draft);
+                return;
+            }
+            if (draft.ActiveAttackProfile != null && draft.ActiveEffectProfile != null)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-ACTIVE-DUPLICATE",
+                    "공격형과 효과형 액티브를 동시에 선택할 수 없습니다.",
                     draft);
                 return;
             }
 
-            ValidateActiveAttackAuthoring(draft, report);
+            if (draft.ActiveEffectProfile != null) ValidateActiveEffectAuthoring(draft, report);
+            else ValidateActiveAttackAuthoring(draft, report);
         }
-
         private static void ValidateActiveAttackAuthoring(
             MonsterMakerDraft draft,
             MonsterMakerValidationReport report)
@@ -481,6 +552,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         draft);
                     continue;
                 }
+                var sourceStep = profile.Steps.FirstOrDefault(step =>
+                    step != null && string.Equals(
+                        step.StepId,
+                        presentation.StepId,
+                        StringComparison.OrdinalIgnoreCase));
+                if (sourceStep == null)
+                {
+                    continue;
+                }
                 if (draft.UseCustomActiveStepMotions && presentation.MotionClip == null)
                 {
                     report.Add(
@@ -510,6 +590,36 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 ValidateFeedbackCue(presentation.Impact, $"{presentation.StepId} 타격", report, draft);
                 ValidateFeedbackCue(presentation.TeleportExit, $"{presentation.StepId} 순간이동 출발", report, draft);
                 ValidateFeedbackCue(presentation.TeleportEnter, $"{presentation.StepId} 순간이동 도착", report, draft);
+                var resolvedSlotIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                for (var slotIndex = 0; slotIndex < sourceStep.PresentationSlots.Count; slotIndex++)
+                {
+                    var contract = sourceStep.PresentationSlots[slotIndex];
+                    if (contract == null) continue;
+                    var slot = presentation.ResolveSlot(contract.SlotId);
+                    if (slot == null || !resolvedSlotIds.Add(contract.SlotId))
+                    {
+                        report.Add(
+                            MonsterMakerIssueSeverity.Error,
+                            "MAKER-ACTIVE-SLOT-MISSING",
+                            $"액티브 Step [{presentation.StepId}]의 공간 [{contract.DisplayName}] 연결이 없습니다.",
+                            draft);
+                        continue;
+                    }
+                    ValidateActivePresentationSlot(
+                        presentation.StepId,
+                        contract,
+                        slot,
+                        report,
+                        draft);
+                }
+                if (presentation.Slots.Count != sourceStep.PresentationSlots.Count)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-ACTIVE-SLOT-COUNT",
+                        $"액티브 Step [{presentation.StepId}]의 현재 공간 수가 프로필 계약과 다릅니다.",
+                        draft);
+                }
             }
             if (presentationIds.Count != profile.Steps.Count)
             {
@@ -527,6 +637,156 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     "MAKER-ACTIVE-LEGACY",
                     "기존 액티브 참조는 전투 반영 시 새 공격 액티브 에셋으로 교체됩니다.",
                     draft.RarityActiveSkill);
+            }
+        }
+
+        private static void ValidateActiveEffectAuthoring(
+            MonsterMakerDraft draft,
+            MonsterMakerValidationReport report)
+        {
+            var profile = draft.ActiveEffectProfile;
+            if (!profile.TryValidate(out var profileError))
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-EFFECT-ACTIVE-PROFILE",
+                    profileError,
+                    profile);
+            }
+            if (string.IsNullOrWhiteSpace(draft.ActiveSkillName))
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ACTIVE-NAME",
+                    "이 몬스터가 사용할 고유 액티브 스킬 이름을 입력하세요.",
+                    draft);
+            }
+            if (draft.ActiveEnergyMaximum < 1)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ACTIVE-ENERGY",
+                    "액티브 최대 기력은 1 이상이어야 합니다.",
+                    draft);
+            }
+
+            var groupIds = new HashSet<string>(
+                profile.Groups.Select(group => group.GroupId),
+                StringComparer.OrdinalIgnoreCase);
+            var presentationIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var presentation in draft.ActiveEffectPresentations)
+            {
+                if (presentation == null || !groupIds.Contains(presentation.StepId) ||
+                    !presentationIds.Add(presentation.StepId))
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-EFFECT-ACTIVE-PRESENTATION-ID",
+                        $"효과 묶음과 일치하지 않거나 중복된 연출 연결입니다: {presentation?.StepId}",
+                        draft);
+                    continue;
+                }
+                var group = profile.Groups.First(candidate =>
+                    string.Equals(candidate.GroupId, presentation.StepId, StringComparison.OrdinalIgnoreCase));
+                if (draft.UseCustomActiveStepMotions && presentation.MotionClip == null)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-EFFECT-ACTIVE-MOTION",
+                        $"전용 모션을 사용하지만 Clip이 비어 있습니다: {group.DisplayName}",
+                        draft);
+                }
+                for (var slotIndex = 0; slotIndex < group.PresentationSlots.Count; slotIndex++)
+                {
+                    var contract = group.PresentationSlots[slotIndex];
+                    var slot = presentation.ResolveSlot(contract.SlotId);
+                    if (slot == null)
+                    {
+                        report.Add(
+                            MonsterMakerIssueSeverity.Error,
+                            "MAKER-EFFECT-ACTIVE-SLOT",
+                            $"효과형 VFX/SFX 연결이 비어 있습니다: {group.GroupId}/{contract.SlotId}",
+                            draft);
+                        continue;
+                    }
+                    ValidateActivePresentationSlot(
+                        group.GroupId,
+                        contract,
+                        slot,
+                        report,
+                        draft);
+                }
+            }
+            if (presentationIds.Count != profile.Groups.Count)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-EFFECT-ACTIVE-PRESENTATION-COUNT",
+                    "프로필이 변경되었습니다. 효과형 액티브 연출 연결을 다시 동기화하세요.",
+                    draft);
+            }
+            if (draft.RarityActiveSkill != null && draft.RarityActiveSkill is not MonsterEffectActiveSkill)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Warning,
+                    "MAKER-EFFECT-ACTIVE-LEGACY",
+                    "기존 액티브 참조는 전투 반영 시 새 효과형 액티브 에셋으로 교체됩니다.",
+                    draft.RarityActiveSkill);
+            }
+        }
+        private static void ValidateActivePresentationSlot(
+            string stepId,
+            MonsterActivePresentationSlot contract,
+            MonsterMakerActivePresentationSlotDraft slot,
+            MonsterMakerValidationReport report,
+            MonsterMakerDraft draft)
+        {
+            var label = $"{stepId} / {contract.DisplayName}";
+            if (slot.VfxState == MonsterBasicAttackVfxAssignmentState.Undecided)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Warning,
+                    "MAKER-ACTIVE-VFX-PENDING",
+                    $"액티브 VFX 사용 여부가 미결정입니다: {label}",
+                    draft);
+            }
+            else if (slot.VfxState == MonsterBasicAttackVfxAssignmentState.Assigned)
+            {
+                if (slot.Feedback.VfxPrefab == null)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-ACTIVE-VFX-MISSING",
+                        $"액티브 VFX 사용 상태이지만 Prefab이 비어 있습니다: {label}",
+                        draft);
+                }
+                else if (!IsFinitePositive(slot.Feedback.VfxLifetime) ||
+                         !IsFinitePositive(slot.Feedback.Scale))
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-ACTIVE-VFX-TUNING",
+                        $"액티브 VFX 수명·크기 값이 유효하지 않습니다: {label}",
+                        draft);
+                }
+            }
+
+            if (slot.SfxState == MonsterBasicAttackSfxAssignmentState.Undecided)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Warning,
+                    "MAKER-ACTIVE-SFX-PENDING",
+                    $"액티브 SFX 사용 여부가 미결정입니다: {label}",
+                    draft);
+            }
+            else if (slot.SfxState == MonsterBasicAttackSfxAssignmentState.Assigned &&
+                     !slot.Feedback.HasSound)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ACTIVE-SFX-MISSING",
+                    $"액티브 SFX 사용 상태이지만 AudioClip이 비어 있습니다: {label}",
+                    draft);
             }
         }
 
@@ -830,39 +1090,42 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     draft);
             }
 
-            if (!draft.SkillLoadoutConfigured)
+            if (draft.UsePassiveSkill)
+            {
+                ValidateAbility(draft.Ascension2, 2, MonsterSkillAugmentTarget.Passive, report, draft);
+                if (draft.RarityPassiveSkill == null)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-ASCENSION-PASSIVE-TARGET",
+                        "2돌파 강화 대상인 패시브를 먼저 선택하세요.",
+                        draft);
+                }
+            }
+            else
             {
                 ValidateLegacyAbility(draft.Ascension2, 2, report, draft);
+            }
+
+            if (draft.UseActiveSkill && draft.Rarity >= MonsterRarity.Legendary)
+            {
+                ValidateAbility(draft.Ascension4, 4, MonsterSkillAugmentTarget.Active, report, draft);
+                if (!draft.HasActiveProfile)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-ASCENSION-ACTIVE-TARGET",
+                        "4돌파 강화 대상인 액티브를 먼저 선택하세요.",
+                        draft);
+                }
+            }
+            else if (draft.UsePassiveSkill)
+            {
+                ValidateAbility(draft.Ascension4, 4, MonsterSkillAugmentTarget.Passive, report, draft);
+            }
+            else
+            {
                 ValidateLegacyAbility(draft.Ascension4, 4, report, draft);
-                return;
-            }
-
-            ValidateAbility(draft.Ascension2, 2, MonsterSkillAugmentTarget.Passive, report, draft);
-            ValidateAbility(
-                draft.Ascension4,
-                4,
-                draft.Rarity >= MonsterRarity.Legendary
-                    ? MonsterSkillAugmentTarget.Active
-                    : MonsterSkillAugmentTarget.Passive,
-                report,
-                draft);
-
-            if (draft.RarityPassiveSkill == null)
-            {
-                report.Add(
-                    MonsterMakerIssueSeverity.Error,
-                    "MAKER-ASCENSION-PASSIVE-TARGET",
-                    "돌파 강화 대상인 범용 패시브를 먼저 선택하세요.",
-                    draft);
-            }
-
-            if (draft.Rarity >= MonsterRarity.Legendary && draft.ActiveAttackProfile == null)
-            {
-                report.Add(
-                    MonsterMakerIssueSeverity.Error,
-                    "MAKER-ASCENSION-ACTIVE-TARGET",
-                    "4돌파 강화 대상인 액티브를 먼저 선택하세요.",
-                    draft);
             }
         }
 
@@ -1022,6 +1285,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private static void ValidateCatalogIdentityOwnership(
             MonsterMakerDraft draft,
+            MonsterMakerDraft catalogIdentityOwner,
             MonsterMakerValidationReport report)
         {
             var catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>(MonsterMakerAssetWriter.MonsterCatalogPath);
@@ -1032,9 +1296,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             var expectedDraftPath = MonsterMakerAssetWriter.BuildDraftPath(draft.MonsterId);
             var expectedDefinitionPath = MonsterMakerAssetWriter.BuildPaths(draft.MonsterId)[0];
-            var ownsRegisteredMonster = EditorUtility.IsPersistent(draft) &&
+            var ownsRegisteredMonster = EditorUtility.IsPersistent(catalogIdentityOwner) &&
                                         string.Equals(
-                                            AssetDatabase.GetAssetPath(draft),
+                                            AssetDatabase.GetAssetPath(catalogIdentityOwner),
                                             expectedDraftPath,
                                             StringComparison.OrdinalIgnoreCase) &&
                                         string.Equals(

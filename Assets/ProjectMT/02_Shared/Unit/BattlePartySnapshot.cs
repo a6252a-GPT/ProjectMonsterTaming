@@ -6,6 +6,39 @@ using UnityEngine;
 namespace ProjectMT.Shared.Unit
 {
     [Serializable]
+    public struct MonsterBattlePresentationSnapshot // 한 판 동안 고정할 몬스터 연출 정보
+    {
+        [SerializeField] private Sprite portrait;
+        [SerializeField] private MonsterRarity rarity;
+        [SerializeField] private int partySlotIndex;
+        [SerializeField] private bool hasRarity;
+        [SerializeField] private bool hasPartySlot;
+
+        public MonsterBattlePresentationSnapshot(Sprite portrait, MonsterRarity rarity, int partySlotIndex)
+        {
+            this.portrait = portrait;
+            this.rarity = rarity;
+            this.partySlotIndex = Mathf.Max(0, partySlotIndex);
+            hasRarity = true;
+            hasPartySlot = true;
+        }
+
+        public Sprite Portrait => portrait;
+        public bool HasRarity => hasRarity;
+        public MonsterRarity Rarity => hasRarity ? rarity : MonsterRarity.Legendary;
+        public bool HasPartySlot => hasPartySlot;
+        public int PartySlotIndex => hasPartySlot ? Mathf.Max(0, partySlotIndex) : int.MaxValue;
+
+        public MonsterBattlePresentationSnapshot WithPartySlot(int slotIndex)
+        {
+            var copy = this;
+            copy.partySlotIndex = Mathf.Max(0, slotIndex);
+            copy.hasPartySlot = true;
+            return copy;
+        }
+    }
+
+    [Serializable]
     public struct LegionStatBonus // 군단 전체에 더할 성장 보너스 비율
     {
         [SerializeField] private float healthRate;
@@ -83,6 +116,7 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private MonsterPassiveSkill passiveSkill; // 등급 카탈로그의 고유 패시브
         [SerializeField] private MonsterActiveSkill activeSkill; // 등급 카탈로그의 고유 액티브
         [SerializeField, Min(1)] private int level = 1; // 패시브 단계 계산에 사용하는 실제 몬스터 레벨
+        [SerializeField] private MonsterBattlePresentationSnapshot presentation; // 전투 연출 고정 정보
 
         public BattleUnitSnapshot(
             string unitId,
@@ -94,7 +128,8 @@ namespace ProjectMT.Shared.Unit
             string displayName = null,
             MonsterPassiveSkill passiveSkill = null,
             MonsterActiveSkill activeSkill = null,
-            int level = 1)
+            int level = 1,
+            MonsterBattlePresentationSnapshot presentation = default)
         {
             this.unitId = unitId;
             this.stats = stats;
@@ -106,6 +141,7 @@ namespace ProjectMT.Shared.Unit
             this.passiveSkill = passiveSkill;
             this.activeSkill = activeSkill;
             this.level = Mathf.Max(1, level);
+            this.presentation = presentation;
         }
 
         public string UnitId => unitId;
@@ -118,6 +154,7 @@ namespace ProjectMT.Shared.Unit
         public MonsterPassiveSkill PassiveSkill => passiveSkill;
         public MonsterActiveSkill ActiveSkill => activeSkill;
         public int Level => Mathf.Max(1, level);
+        public MonsterBattlePresentationSnapshot Presentation => presentation;
     }
 
     [Serializable]

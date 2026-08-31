@@ -18,7 +18,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 "turnSpeed" => "회전 속도",
                 "projectileBasicAttack" => "기본 공격 설정",
                 "meleeAttack" => "근접 공격 설정",
-                "markStrike" => "위치 공격 설정",
+                "markStrike" => "연속 위치 공격 설정",
                 "trackingMark" => "추적 낙인 설정",
                 "trackingMarkLockDuration" => "추적 종료 전 위치 고정시간",
                 "blackHole" => "블랙홀 공격 설정",
@@ -112,6 +112,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 "radius" => "원형 공격 반지름",
                 "width" => "직선 공격 너비",
                 "length" => "직선 공격 길이",
+                "useStun" => "기절 적용",
                 "stunDuration" => "기절 지속시간",
                 _ => ObjectNames.NicifyVariableName(propertyName)
             };
@@ -156,6 +157,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             {
                 "telegraphPrefab" => "공격 범위 오브젝트",
                 "radius" => "공격 범위 반지름 (연출용)",
+                "riseHeight" => "시전 중 상승 높이",
+                "riseCurve" => "시전 중 상승 곡선",
                 "effects" => "연출 (VFX / SFX)",
                 "preCastMotion" => "시전 모션",
                 "preCastMotionSpeed" => "시전 모션 속도",
@@ -187,7 +190,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 "transitionMessage" => "페이즈 전환 문구",
                 "transitionSound" => "페이즈 전환 사운드",
                 "transitionDuration" => "페이즈 전환시간",
-                "markStrikePattern" => "위치 공격 다중 패턴 설정",
+                "markStrikePattern" => "연속 위치 공격 패턴 설정",
                 "twistedBattlefieldPattern" => "연속 장판 공격 페이즈 설정",
                 "fallingBarragePattern" => "낙하 탄막 공격 페이즈 설정",
                 _ => ObjectNames.NicifyVariableName(propertyName)
@@ -212,6 +215,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 "columnCount" => "세로 분할 개수",
                 "rowCount" => "가로 분할 개수",
                 "tileGap" => "장판 사이 간격",
+                "attackInterval" => "공격 사이 회피시간",
                 "dangerColor" => "위험 장판 색상",
                 "safeColor" => "안전지대 색상",
                 _ => ObjectNames.NicifyVariableName(propertyName)
@@ -299,7 +303,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
     {
         public static float GetHeight(
             SerializedProperty property,
-            System.Func<string, string> labelResolver)
+            System.Func<string, string> labelResolver,
+            System.Func<SerializedProperty, bool> shouldDraw = null)
         {
             var height = EditorGUIUtility.singleLineHeight;
             if (!property.isExpanded)
@@ -318,6 +323,16 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             {
                 if (child.depth == property.depth + 1)
                 {
+                    if (shouldDraw != null && !shouldDraw(child))
+                    {
+                        if (!child.NextVisible(false))
+                        {
+                            break;
+                        }
+
+                        continue;
+                    }
+
                     var label = new GUIContent(labelResolver(child.name));
                     height += EditorGUIUtility.standardVerticalSpacing +
                         EditorGUI.GetPropertyHeight(child, label, true);
@@ -336,7 +351,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             Rect position,
             SerializedProperty property,
             GUIContent label,
-            System.Func<string, string> labelResolver)
+            System.Func<string, string> labelResolver,
+            System.Func<SerializedProperty, bool> shouldDraw = null)
         {
             EditorGUI.BeginProperty(position, label, property);
             var line = new Rect(
@@ -361,6 +377,16 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     {
                         if (child.depth == property.depth + 1)
                         {
+                            if (shouldDraw != null && !shouldDraw(child))
+                            {
+                                if (!child.NextVisible(false))
+                                {
+                                    break;
+                                }
+
+                                continue;
+                            }
+
                             var childLabel = new GUIContent(labelResolver(child.name));
                             var childHeight = EditorGUI.GetPropertyHeight(
                                 child,
@@ -389,23 +415,186 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         }
     }
 
+    internal static class FallenCommanderAdvancedPropertyGUI
+    {
+        public static void Draw(
+            Rect position,
+            SerializedProperty property,
+            GUIContent label,
+            System.Func<string, string> labelResolver,
+            string[] commonProperties,
+            string[] advancedProperties,
+            string advancedTitle)
+        {
+            EditorGUI.BeginProperty(position, label, property);
+            var line = new Rect(
+                position.x,
+                position.y,
+                position.width,
+                EditorGUIUtility.singleLineHeight);
+            property.isExpanded = EditorGUI.Foldout(line, property.isExpanded, label, true);
+            if (!property.isExpanded)
+            {
+                EditorGUI.EndProperty();
+                return;
+            }
+
+            EditorGUI.indentLevel++;
+            DrawProperties(ref line, property, labelResolver, commonProperties);
+            line.y += line.height + EditorGUIUtility.standardVerticalSpacing;
+            line.height = EditorGUIUtility.singleLineHeight;
+            var advancedExpanded = GetAdvancedExpanded(property);
+            var nextExpanded = EditorGUI.Foldout(
+                line,
+                advancedExpanded,
+                advancedTitle,
+                true);
+            if (nextExpanded != advancedExpanded)
+            {
+                SetAdvancedExpanded(property, nextExpanded);
+                advancedExpanded = nextExpanded;
+            }
+
+            if (advancedExpanded)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperties(ref line, property, labelResolver, advancedProperties);
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUI.indentLevel--;
+            EditorGUI.EndProperty();
+        }
+
+        public static float GetHeight(
+            SerializedProperty property,
+            System.Func<string, string> labelResolver,
+            string[] commonProperties,
+            string[] advancedProperties,
+            string advancedTitle)
+        {
+            var height = EditorGUIUtility.singleLineHeight;
+            if (!property.isExpanded)
+            {
+                return height;
+            }
+
+            height += GetPropertiesHeight(property, labelResolver, commonProperties);
+            height += EditorGUIUtility.standardVerticalSpacing +
+                EditorGUIUtility.singleLineHeight;
+            if (GetAdvancedExpanded(property))
+            {
+                height += GetPropertiesHeight(property, labelResolver, advancedProperties);
+            }
+
+            return height;
+        }
+
+        private static void DrawProperties(
+            ref Rect line,
+            SerializedProperty owner,
+            System.Func<string, string> labelResolver,
+            string[] propertyNames)
+        {
+            foreach (var propertyName in propertyNames)
+            {
+                var child = owner.FindPropertyRelative(propertyName);
+                if (child == null)
+                {
+                    continue;
+                }
+
+                var childLabel = new GUIContent(labelResolver(child.name));
+                line.y += line.height + EditorGUIUtility.standardVerticalSpacing;
+                line.height = EditorGUI.GetPropertyHeight(child, childLabel, true);
+                EditorGUI.PropertyField(line, child, childLabel, true);
+            }
+        }
+
+        private static float GetPropertiesHeight(
+            SerializedProperty owner,
+            System.Func<string, string> labelResolver,
+            string[] propertyNames)
+        {
+            var height = 0f;
+            foreach (var propertyName in propertyNames)
+            {
+                var child = owner.FindPropertyRelative(propertyName);
+                if (child == null)
+                {
+                    continue;
+                }
+
+                var childLabel = new GUIContent(labelResolver(child.name));
+                height += EditorGUIUtility.standardVerticalSpacing +
+                    EditorGUI.GetPropertyHeight(child, childLabel, true);
+            }
+
+            return height;
+        }
+
+        private static bool GetAdvancedExpanded(SerializedProperty property)
+        {
+            return SessionState.GetBool(GetStateKey(property), false);
+        }
+
+        private static void SetAdvancedExpanded(SerializedProperty property, bool expanded)
+        {
+            SessionState.SetBool(GetStateKey(property), expanded);
+        }
+
+        private static string GetStateKey(SerializedProperty property)
+        {
+            var targetId = property.serializedObject.targetObject == null
+                ? 0
+                : property.serializedObject.targetObject.GetInstanceID();
+            return $"ProjectMT.FallenCommander.TwistedAdvanced.{targetId}." +
+                property.propertyPath;
+        }
+    }
+
     [CustomPropertyDrawer(typeof(FallenCommanderBasicAttackData))]
     public sealed class FallenCommanderBasicAttackDataDrawer : PropertyDrawer
     {
+        private static readonly string[] CommonProperties =
+        {
+            "telegraphPrefab",
+            "warningDuration",
+            "telegraphHoldDuration",
+            "projectilePrefab",
+            "effects",
+            "projectileSpeed",
+            "repeatInterval"
+        };
+
+        private static readonly string[] AdvancedProperties =
+        {
+            "projectileRadius",
+            "maxDistance",
+            "projectileHeight",
+            "patternOverlapDelay"
+        };
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            FallenCommanderLocalizedPropertyGUI.Draw(
+            FallenCommanderAdvancedPropertyGUI.Draw(
                 position,
                 property,
                 label,
-                FallenCommanderInspectorLabels.BasicAttack);
+                FallenCommanderInspectorLabels.BasicAttack,
+                CommonProperties,
+                AdvancedProperties,
+                "기본 공격 투사체 전용 설정 더보기");
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return FallenCommanderLocalizedPropertyGUI.GetHeight(
+            return FallenCommanderAdvancedPropertyGUI.GetHeight(
                 property,
-                FallenCommanderInspectorLabels.BasicAttack);
+                FallenCommanderInspectorLabels.BasicAttack,
+                CommonProperties,
+                AdvancedProperties,
+                "기본 공격 투사체 전용 설정 더보기");
         }
     }
 
@@ -418,14 +607,28 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 position,
                 property,
                 label,
-                FallenCommanderInspectorLabels.Attack);
+                FallenCommanderInspectorLabels.Attack,
+                child => ShouldDrawProperty(property, child));
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             return FallenCommanderLocalizedPropertyGUI.GetHeight(
                 property,
-                FallenCommanderInspectorLabels.Attack);
+                FallenCommanderInspectorLabels.Attack,
+                child => ShouldDrawProperty(property, child));
+        }
+
+        private static bool ShouldDrawProperty(
+            SerializedProperty owner,
+            SerializedProperty child)
+        {
+            if (child.name != "stunDuration")
+            {
+                return true;
+            }
+
+            return owner.FindPropertyRelative("useStun")?.boolValue == true;
         }
     }
 
@@ -640,11 +843,17 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             return height;
         }
 
-        // 기본 공격과 블랙홀 종료 연출에서는 별도의 적중 슬롯을 숨긴다.
+        // 기본 공격은 시전 슬롯을 숨기고 블랙홀 종료 연출은 시전·적중 슬롯을 숨긴다.
         private static bool ShouldDrawProperty(
             SerializedProperty owner,
             string propertyName)
         {
+            if (owner.propertyPath == "projectileBasicAttack.effects" &&
+                propertyName.StartsWith("start"))
+            {
+                return false;
+            }
+
             if (owner.propertyPath == "blackHoleEndEffects")
             {
                 return !propertyName.StartsWith("start") &&
@@ -656,8 +865,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 return true;
             }
 
-            return owner.propertyPath != "projectileBasicAttack.effects" &&
-                owner.propertyPath != "blackHoleEndEffects";
+            return owner.propertyPath != "blackHoleEndEffects";
         }
 
         // 블랙홀 본체 연출을 그릴 때만 같은 에셋의 종료 연출 데이터를 함께 반환한다.
@@ -674,7 +882,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         {
             return property.propertyPath switch
             {
-                "projectileBasicAttack.effects" => "적중",
+                "projectileBasicAttack.effects" => "발동",
                 "blackHoleEndEffects" => "종료",
                 _ => "발동"
             };
@@ -715,40 +923,108 @@ namespace ProjectMT.Contents.FallenCommander.Editor
     [CustomPropertyDrawer(typeof(FallenCommanderTwistedBattlefieldData))]
     public sealed class FallenCommanderTwistedBattlefieldDataDrawer : PropertyDrawer
     {
+        private static readonly string[] CommonProperties =
+        {
+            "telegraphPrefab",
+            "effects",
+            "preCastMotion",
+            "preCastMotionSpeed",
+            "preCastMotionStart",
+            "preCastMotionEnd",
+            "castMotion",
+            "castMotionSpeed",
+            "castMotionStart",
+            "castMotionEnd"
+        };
+
+        private static readonly string[] AdvancedProperties =
+        {
+            "arenaHalfExtents",
+            "columnCount",
+            "rowCount",
+            "tileGap",
+            "attackInterval",
+            "dangerColor",
+            "safeColor"
+        };
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            FallenCommanderLocalizedPropertyGUI.Draw(
+            FallenCommanderAdvancedPropertyGUI.Draw(
                 position,
                 property,
                 label,
-                FallenCommanderInspectorLabels.TwistedBattlefield);
+                FallenCommanderInspectorLabels.TwistedBattlefield,
+                CommonProperties,
+                AdvancedProperties,
+                "연속 장판 전용 설정 더보기");
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return FallenCommanderLocalizedPropertyGUI.GetHeight(
+            return FallenCommanderAdvancedPropertyGUI.GetHeight(
                 property,
-                FallenCommanderInspectorLabels.TwistedBattlefield);
+                FallenCommanderInspectorLabels.TwistedBattlefield,
+                CommonProperties,
+                AdvancedProperties,
+                "연속 장판 전용 설정 더보기");
         }
     }
 
     [CustomPropertyDrawer(typeof(FallenCommanderFallingBarrageData))]
     public sealed class FallenCommanderFallingBarrageDataDrawer : PropertyDrawer
     {
+        private static readonly string[] CommonProperties =
+        {
+            "projectilePrefab",
+            "telegraphPrefab",
+            "effects",
+            "preCastMotion",
+            "preCastMotionSpeed",
+            "preCastMotionStart",
+            "preCastMotionEnd",
+            "castMotion",
+            "castMotionSpeed",
+            "castMotionStart",
+            "castMotionEnd",
+            "randomSpawnHalfExtents",
+            "spawnHeight",
+            "projectileCount",
+            "airHoldDuration",
+            "warningMessage",
+            "warningMessageDuration",
+            "impactRadius"
+        };
+
+        private static readonly string[] AdvancedProperties =
+        {
+            "fallCurve",
+            "minimumSpacing",
+            "commanderSafetyRadius",
+            "initialPoolSize",
+            "telegraphColor"
+        };
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            FallenCommanderLocalizedPropertyGUI.Draw(
+            FallenCommanderAdvancedPropertyGUI.Draw(
                 position,
                 property,
                 label,
-                FallenCommanderInspectorLabels.FallingBarrage);
+                FallenCommanderInspectorLabels.FallingBarrage,
+                CommonProperties,
+                AdvancedProperties,
+                "낙하 탄막 전용 설정 더보기");
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return FallenCommanderLocalizedPropertyGUI.GetHeight(
+            return FallenCommanderAdvancedPropertyGUI.GetHeight(
                 property,
-                FallenCommanderInspectorLabels.FallingBarrage);
+                FallenCommanderInspectorLabels.FallingBarrage,
+                CommonProperties,
+                AdvancedProperties,
+                "낙하 탄막 전용 설정 더보기");
         }
     }
 
@@ -835,20 +1111,39 @@ namespace ProjectMT.Contents.FallenCommander.Editor
     [CustomPropertyDrawer(typeof(FallenCommanderTwistedBattlefieldPhaseData))]
     public sealed class FallenCommanderTwistedBattlefieldPhaseDataDrawer : PropertyDrawer
     {
+        private static readonly string[] CommonProperties =
+        {
+            "warningDuration",
+            "telegraphHoldDuration"
+        };
+
+        private static readonly string[] AdvancedProperties =
+        {
+            "selectionChance",
+            "beatCount",
+            "beatInterval"
+        };
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            FallenCommanderLocalizedPropertyGUI.Draw(
+            FallenCommanderAdvancedPropertyGUI.Draw(
                 position,
                 property,
                 label,
-                FallenCommanderInspectorLabels.TwistedBattlefieldPhase);
+                FallenCommanderInspectorLabels.TwistedBattlefieldPhase,
+                CommonProperties,
+                AdvancedProperties,
+                "연속 장판 전용 설정 더보기");
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return FallenCommanderLocalizedPropertyGUI.GetHeight(
+            return FallenCommanderAdvancedPropertyGUI.GetHeight(
                 property,
-                FallenCommanderInspectorLabels.TwistedBattlefieldPhase);
+                FallenCommanderInspectorLabels.TwistedBattlefieldPhase,
+                CommonProperties,
+                AdvancedProperties,
+                "연속 장판 전용 설정 더보기");
         }
     }
 

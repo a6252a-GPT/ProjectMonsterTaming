@@ -474,7 +474,7 @@ namespace ProjectMT.Contents.FallenCommander
                 presentationConfig,
                 commanderMove.InitialPosition,
                 HandleCommanderStunChanged,
-                HandleBossAttackStarted,
+                hudPresenter == null ? null : hudPresenter.ShowAttackWarning,
                 bossFacingSmoother);
             stateMachine.SetPhase(phaseRuntime.CurrentPhase);
         }
@@ -486,19 +486,6 @@ namespace ProjectMT.Contents.FallenCommander
             Debug.Log(
                 $"군단장 기절 : {(isStunned ? "시작" : "해제")}",
                 this);
-        }
-
-        private void HandleBossAttackStarted(FallenCommanderAttackPattern attack)
-        {
-            if (attack != FallenCommanderAttackPattern.FallingBarrage ||
-                bossConfig?.FallingBarrage == null)
-            {
-                return;
-            }
-
-            hudPresenter?.ShowAttackWarning(
-                bossConfig.FallingBarrage.WarningMessage,
-                bossConfig.FallingBarrage.WarningMessageDuration);
         }
 
         private void ConfigureCommanderSkills()
@@ -882,6 +869,7 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             hudPresenter.SetCommanderHeartSprite(commanderHeartSprite);
+#if UNITY_EDITOR
             debugController = new FallenCommanderDebugController(
                 () => IsRunning,
                 () => battleFlow.IsStartDelayActive,
@@ -895,10 +883,22 @@ namespace ProjectMT.Contents.FallenCommander
                 PublishHudState,
                 ExecuteDebugPhaseJump,
                 () => { StartFinalCharge(); });
+#else
+            debugController = null;
+#endif
             hudPresenter.Bind(
                 this,
                 debugController,
-                context.RunInfo.RunMode == ContentRunMode.SeedTest);
+                ShouldShowDebugControls());
+        }
+
+        private bool ShouldShowDebugControls()
+        {
+#if UNITY_EDITOR
+            return context.RunInfo.RunMode == ContentRunMode.SeedTest;
+#else
+            return false;
+#endif
         }
 
         private void ReleaseHud()

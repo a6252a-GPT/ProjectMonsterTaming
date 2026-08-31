@@ -775,8 +775,8 @@ namespace ProjectMT.Contents.FallenCommander
             SetButtonLabel(debugWideBurstButton, "블랙홀");
             SetButtonLabel(debugChargedWideBurstButton, "충전 광역기");
             SetButtonLabel(debugCorruptionRingButton, "타락의 고리");
-            SetButtonLabel(debugTwistedBattlefieldButton, "연속 장판 공격");
-            SetButtonLabel(debugFallingBarrageButton, "낙하 탄막 공격");
+            SetButtonLabel(debugTwistedBattlefieldButton, "연속 장판");
+            SetButtonLabel(debugFallingBarrageButton, "낙하 탄막");
             SetButtonLabel(debugBossHealthButton, "보스 체력 -10%");
             SetButtonLabel(debugPhase1Button, "1 페이즈");
             SetButtonLabel(debugPhase2Button, "2 페이즈");
@@ -989,7 +989,7 @@ namespace ProjectMT.Contents.FallenCommander
                 new Color(0.25f, 0.45f, 0.85f, 1f));
             debugMarkStrikeButton ??= CreateRuntimeButton(
                 "DebugMarkStrikeButton_Runtime",
-                "위치 공격",
+                "연속 위치 공격",
                 new Vector2(228f, -182f),
                 new Color(0.3f, 0.65f, 0.8f, 1f));
             debugWideBurstButton ??= CreateRuntimeButton(
@@ -1014,12 +1014,12 @@ namespace ProjectMT.Contents.FallenCommander
                 new Color(0.15f, 0.55f, 0.8f, 1f));
             debugTwistedBattlefieldButton ??= CreateRuntimeButton(
                 "DebugTwistedBattlefieldButton_Runtime",
-                "연속 장판 공격",
+                "연속 장판",
                 new Vector2(828f, -182f),
                 new Color(0.85f, 0.18f, 0.28f, 1f));
             debugFallingBarrageButton ??= CreateRuntimeButton(
                 "DebugFallingBarrageButton_Runtime",
-                "낙하 탄막 공격",
+                "낙하 탄막",
                 new Vector2(928f, -182f),
                 new Color(0.7f, 0.16f, 0.75f, 1f));
             debugReduceTimeButton ??= CreateRuntimeButton(

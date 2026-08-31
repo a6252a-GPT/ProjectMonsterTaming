@@ -215,11 +215,19 @@ namespace ProjectMT.Contents.FallenCommander
             var direction = bossActor == null
                 ? Vector3.forward
                 : bossActor.transform.forward;
-            FallenCommanderAttackEffectPlayer.PlayResolve(
+            FallenCommanderAttackEffectPlayer.PlayResolveVfx(
                 attack.Effects,
                 strike.Position,
                 direction,
                 effectParent,
+                bossActor == null ? null : bossActor.transform,
+                commanderRoot,
+                null,
+                Vector3.one * Mathf.Max(0.1f, attack.Radius));
+            FallenCommanderAttackEffectPlayer.PlayResolveSfx(
+                attack.Effects,
+                strike.Position,
+                direction,
                 bossActor == null ? null : bossActor.transform,
                 commanderRoot);
 

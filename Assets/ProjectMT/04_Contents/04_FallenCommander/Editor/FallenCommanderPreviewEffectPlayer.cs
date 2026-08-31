@@ -1,5 +1,3 @@
-using System;
-using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,34 +5,61 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 {
     internal static class FallenCommanderPreviewEffectPlayer
     {
-        private static readonly Type AudioUtilType =
-            typeof(AudioImporter).Assembly.GetType("UnityEditor.AudioUtil");
-        private static readonly MethodInfo PlayPreviewClipMethod =
-            AudioUtilType?.GetMethod(
-                "PlayPreviewClip",
-                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic,
-                null,
-                new[] { typeof(AudioClip), typeof(int), typeof(bool) },
-                null);
-        private static readonly MethodInfo StopPreviewClipsMethod =
-            AudioUtilType?.GetMethod(
-                "StopAllPreviewClips",
-                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+        private static GameObject previewAudioRoot;
 
-        public static bool PlayAudio(AudioClip clip)
+        static FallenCommanderPreviewEffectPlayer()
         {
-            if (clip == null || PlayPreviewClipMethod == null)
+            AssemblyReloadEvents.beforeAssemblyReload += StopAudio;
+            EditorApplication.quitting += StopAudio;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        }
+
+        public static bool PlayAudio(AudioClip clip, float volume)
+        {
+            if (clip == null)
             {
                 return false;
             }
 
-            PlayPreviewClipMethod.Invoke(null, new object[] { clip, 0, false });
+            StopAudio();
+
+            previewAudioRoot = new GameObject("[FallenCommander Audio Preview]");
+            previewAudioRoot.hideFlags = HideFlags.HideAndDontSave;
+
+            if (Object.FindFirstObjectByType<AudioListener>() == null)
+            {
+                previewAudioRoot.AddComponent<AudioListener>();
+            }
+
+            var audioSource = previewAudioRoot.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.clip = clip;
+            audioSource.volume = Mathf.Clamp01(volume);
+            audioSource.spatialBlend = 0f;
+            audioSource.Play();
             return true;
         }
 
         public static void StopAudio()
         {
-            StopPreviewClipsMethod?.Invoke(null, null);
+            if (previewAudioRoot == null)
+            {
+                return;
+            }
+
+            var audioSource = previewAudioRoot.GetComponent<AudioSource>();
+            if (audioSource != null)
+            {
+                audioSource.Stop();
+            }
+
+            Object.DestroyImmediate(previewAudioRoot);
+            previewAudioRoot = null;
+        }
+
+        private static void OnPlayModeStateChanged(PlayModeStateChange state)
+        {
+            StopAudio();
         }
     }
 }

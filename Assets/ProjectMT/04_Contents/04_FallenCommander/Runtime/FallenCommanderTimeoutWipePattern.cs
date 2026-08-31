@@ -8,7 +8,7 @@ namespace ProjectMT.Contents.FallenCommander
     public sealed class FallenCommanderTimeoutWipePattern
     {
         private static readonly Color TelegraphColor =
-            new Color(0.85f, 0.05f, 0.18f, 0.85f);
+            FallenCommanderTelegraphPalette.Danger;
 
         private FallenCommanderTimeoutWipeData data;
         private UnitActor bossActor;
@@ -20,6 +20,8 @@ namespace ProjectMT.Contents.FallenCommander
         private FallenCommanderTelegraphView telegraph;
         private float startedRealtime = -1f;
         private float telegraphHoldDuration;
+        private Vector3 bossStartPosition;
+        private bool hasBossStartPosition;
 
         public bool IsActive { get; private set; }
         public float RemainingWarningTime { get; private set; }
@@ -59,6 +61,11 @@ namespace ProjectMT.Contents.FallenCommander
             RemainingWarningTime = WarningDuration + telegraphHoldDuration;
             startedRealtime = Time.realtimeSinceStartup;
             IsActive = true;
+            if (bossActor != null)
+            {
+                bossStartPosition = bossActor.transform.position;
+                hasBossStartPosition = true;
+            }
 
             animationPresenter?.PlayPreCast(
                 data?.PreCastMotion,
@@ -93,6 +100,7 @@ namespace ProjectMT.Contents.FallenCommander
             RemainingWarningTime = Mathf.Max(
                 0f,
                 RemainingWarningTime - Mathf.Max(0f, unscaledDeltaTime));
+            UpdateBossRise();
             var fillRemaining = Mathf.Max(
                 0f,
                 RemainingWarningTime - telegraphHoldDuration);
@@ -149,12 +157,12 @@ namespace ProjectMT.Contents.FallenCommander
 
             IsActive = false;
             RemainingWarningTime = 0f;
-            ReleaseRuntimeReferences();
         }
 
         // 진행 중인 전멸기와 시작 VFX 및 런타임 참조를 초기 상태로 정리한다.
         public void Cancel()
         {
+            RestoreBossPosition();
             DestroyTelegraph();
             DestroyStartVfx();
             IsActive = false;
@@ -165,6 +173,33 @@ namespace ProjectMT.Contents.FallenCommander
             startedRealtime = -1f;
             data = null;
             ReleaseRuntimeReferences();
+        }
+
+        private void UpdateBossRise()
+        {
+            if (!hasBossStartPosition || bossActor == null || data == null)
+            {
+                return;
+            }
+
+            var totalDuration = Mathf.Max(0.01f, WarningDuration + telegraphHoldDuration);
+            var progress = Mathf.Clamp01(1f - RemainingWarningTime / totalDuration);
+            var curveProgress = data.RiseCurve == null
+                ? Mathf.SmoothStep(0f, 1f, progress)
+                : Mathf.Clamp01(data.RiseCurve.Evaluate(progress));
+            bossActor.transform.position = bossStartPosition +
+                Vector3.up * data.RiseHeight * curveProgress;
+        }
+
+        private void RestoreBossPosition()
+        {
+            if (hasBossStartPosition && bossActor != null)
+            {
+                bossActor.transform.position = bossStartPosition;
+            }
+
+            bossStartPosition = Vector3.zero;
+            hasBossStartPosition = false;
         }
 
         // 전멸기 시작부터 결과 반환까지의 실제 경과시간을 한 번 반환하고 기록을 초기화한다.
@@ -203,6 +238,8 @@ namespace ProjectMT.Contents.FallenCommander
         // 패턴 종료 후 외부 런타임 오브젝트 참조만 해제한다.
         private void ReleaseRuntimeReferences()
         {
+            bossStartPosition = Vector3.zero;
+            hasBossStartPosition = false;
             bossActor = null;
             commanderRoot = null;
             commanderHealth = null;

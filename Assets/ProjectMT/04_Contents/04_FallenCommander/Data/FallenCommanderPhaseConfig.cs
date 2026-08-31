@@ -104,7 +104,7 @@ namespace ProjectMT.Contents.FallenCommander
                 if (phases[index].Allows(FallenCommanderAttackPattern.Mark) &&
                     !phases[index].MarkStrikePattern.TryValidate(out var markStrikeError))
                 {
-                    error = $"{phases[index].Phase} 위치 공격 설정 오류: {markStrikeError}";
+                    error = $"{phases[index].Phase} 연속 위치 공격 설정 오류: {markStrikeError}";
                     return false;
                 }
 
@@ -152,7 +152,7 @@ namespace ProjectMT.Contents.FallenCommander
         private AudioClip transitionSound;
         [SerializeField, InspectorName("페이즈 전환시간"), Min(0.1f)]
         private float transitionDuration = 1f;
-        [SerializeField, InspectorName("위치 공격 다중 패턴 설정")]
+        [SerializeField, InspectorName("연속 위치 공격 패턴 설정")]
         private FallenCommanderMarkStrikePhaseData markStrikePattern = new();
         [SerializeField, InspectorName("연속 장판 공격 페이즈 설정")]
         private FallenCommanderTwistedBattlefieldPhaseData twistedBattlefieldPattern = new();

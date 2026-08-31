@@ -30,7 +30,21 @@ namespace ProjectMT.Contents.FallenCommander
             public FallenCommanderTelegraphView Telegraph;
         }
 
+        private readonly struct RecordedBeat
+        {
+            public RecordedBeat(BattlefieldLayout recordedLayout, bool inverted)
+            {
+                Layout = recordedLayout;
+                IsInverted = inverted;
+            }
+
+            public BattlefieldLayout Layout { get; }
+            public bool IsInverted { get; }
+        }
+
         private readonly List<BattlefieldTile> tiles = new();
+        private readonly List<RecordedBeat> recordedBeats = new();
+        private readonly FallenCommanderResolveVfxPool resolveVfxPool = new();
 
         private FallenCommanderTwistedBattlefieldData data;
         private FallenCommanderTwistedBattlefieldPhaseData phaseData;
@@ -45,7 +59,9 @@ namespace ProjectMT.Contents.FallenCommander
         private BattlefieldLayout previousLayout;
         private float remainingTime;
         private int beatIndex;
+        private int resolveBeatIndex;
         private bool hasPreviousLayout;
+        private bool isResolvingRecordedBeats;
 
         public bool IsActive => state != PatternState.Inactive;
         public FallenCommanderTelegraphView ActiveTelegraph =>
@@ -82,7 +98,10 @@ namespace ProjectMT.Contents.FallenCommander
             effectParent = parent;
             arenaCenter = battlefieldCenter;
             beatIndex = 0;
+            resolveBeatIndex = 0;
             hasPreviousLayout = false;
+            isResolvingRecordedBeats = false;
+            recordedBeats.Clear();
 
             animationPresenter?.PlayPreCast(
                 data.PreCastMotion,
@@ -114,6 +133,12 @@ namespace ProjectMT.Contents.FallenCommander
             {
                 if (remainingTime <= 0f)
                 {
+                    if (isResolvingRecordedBeats)
+                    {
+                        ResolveRecordedBeat();
+                        return !IsActive;
+                    }
+
                     BeginBeat();
                 }
 
@@ -137,19 +162,25 @@ namespace ProjectMT.Contents.FallenCommander
                 return false;
             }
 
-            ResolveBeat();
+            recordedBeats.Add(new RecordedBeat(layout, beatIndex % 2 == 1));
             beatIndex++;
             DestroyTiles();
             if (beatIndex >= phaseData.BeatCount)
             {
-                ReleaseRuntimeState();
-                return true;
+                isResolvingRecordedBeats = true;
+                resolveBeatIndex = 0;
             }
 
             state = PatternState.Interval;
             remainingTime = phaseData.BeatInterval;
             if (remainingTime <= 0f)
             {
+                if (isResolvingRecordedBeats)
+                {
+                    ResolveRecordedBeat();
+                    return !IsActive;
+                }
+
                 BeginBeat();
             }
 
@@ -159,6 +190,7 @@ namespace ProjectMT.Contents.FallenCommander
         // 짝수 박자는 새 배치를 선택하고 홀수 박자는 직전 위험·안전 영역을 반전한다.
         private void BeginBeat()
         {
+            resolveVfxPool.ReleaseAll();
             var isInverted = beatIndex % 2 == 1;
             if (!isInverted)
             {
@@ -174,6 +206,43 @@ namespace ProjectMT.Contents.FallenCommander
             BuildTiles(layout, isInverted);
             remainingTime = phaseData.WarningDuration + phaseData.TelegraphHoldDuration;
             state = PatternState.Warning;
+        }
+
+        // 기억 단계에서 저장한 장판을 같은 순서로 복원한 뒤 경고 표시 없이 공격만 발동한다.
+        private void ResolveRecordedBeat()
+        {
+            if (resolveBeatIndex >= recordedBeats.Count)
+            {
+                ReleaseRuntimeState();
+                return;
+            }
+
+            resolveVfxPool.ReleaseAll();
+            var recordedBeat = recordedBeats[resolveBeatIndex];
+            BuildTiles(recordedBeat.Layout, recordedBeat.IsInverted);
+            HideTileTelegraphs();
+            ResolveBeat();
+            DestroyTiles();
+            resolveBeatIndex++;
+            if (resolveBeatIndex >= recordedBeats.Count)
+            {
+                ReleaseRuntimeState();
+                return;
+            }
+
+            state = PatternState.Interval;
+            remainingTime = data.AttackInterval;
+        }
+
+        private void HideTileTelegraphs()
+        {
+            for (var index = 0; index < tiles.Count; index++)
+            {
+                if (tiles[index].Telegraph != null)
+                {
+                    tiles[index].Telegraph.gameObject.SetActive(false);
+                }
+            }
         }
 
         // 같은 배치가 연속 쌍에서 반복되지 않도록 다음 전장 배치를 무작위로 고른다.
@@ -251,7 +320,9 @@ namespace ProjectMT.Contents.FallenCommander
                 Vector3.forward,
                 visibleSize.x,
                 visibleSize.y,
-                isDangerous ? data.DangerColor : data.SafeColor);
+                isDangerous
+                    ? FallenCommanderTelegraphPalette.Danger
+                    : FallenCommanderTelegraphPalette.Safe);
             telegraph?.SetProgress(isDangerous ? 0f : 1f);
             tiles.Add(new BattlefieldTile
             {
@@ -272,11 +343,28 @@ namespace ProjectMT.Contents.FallenCommander
                 playbackSpeed: data.CastMotionSpeed,
                 normalizedStart: data.CastMotionStart,
                 normalizedEnd: data.CastMotionEnd);
-            FallenCommanderAttackEffectPlayer.PlayResolve(
+            for (var index = 0; index < tiles.Count; index++)
+            {
+                var tile = tiles[index];
+                if (!tile.IsDangerous)
+                {
+                    continue;
+                }
+
+                resolveVfxPool.Play(
+                    data.Effects,
+                    tile.Center,
+                    Vector3.forward,
+                    effectParent,
+                    bossActor == null ? null : bossActor.transform,
+                    commanderRoot,
+                    ResolveTileVfxScale(tile.Size));
+            }
+
+            FallenCommanderAttackEffectPlayer.PlayResolveSfx(
                 data.Effects,
                 arenaCenter,
                 Vector3.forward,
-                effectParent,
                 bossActor == null ? null : bossActor.transform,
                 commanderRoot);
 
@@ -296,6 +384,14 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor,
                 1f,
                 hitPosition));
+        }
+
+        private static Vector3 ResolveTileVfxScale(Vector2 tileSize)
+        {
+            return new Vector3(
+                Mathf.Max(0.01f, tileSize.x),
+                1f,
+                Mathf.Max(0.01f, tileSize.y));
         }
 
         // 군단장의 현재 위치가 포함된 위험 칸을 하나만 찾아 중복 피해를 방지한다.
@@ -331,6 +427,7 @@ namespace ProjectMT.Contents.FallenCommander
         public void Cancel()
         {
             DestroyTiles();
+            resolveVfxPool.ReleaseAll();
             ReleaseRuntimeState();
         }
 
@@ -362,7 +459,10 @@ namespace ProjectMT.Contents.FallenCommander
             state = PatternState.Inactive;
             remainingTime = 0f;
             beatIndex = 0;
+            resolveBeatIndex = 0;
             hasPreviousLayout = false;
+            isResolvingRecordedBeats = false;
+            recordedBeats.Clear();
         }
     }
 }

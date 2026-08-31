@@ -6,7 +6,7 @@ namespace ProjectMT.Contents.FallenCommander
     public sealed class FallenCommanderFinalChargePattern
     {
         private static readonly Color TelegraphColor =
-            new Color(0.9f, 0.08f, 0.12f, 0.85f);
+            FallenCommanderTelegraphPalette.Danger;
 
         private Transform target;
         private FallenCommanderTelegraphView telegraph;

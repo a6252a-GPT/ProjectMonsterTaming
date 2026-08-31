@@ -13,6 +13,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             "ProjectMT.FallenCommander.BossConfig.ShowAllAttacks";
         private const string FinalChargeExpandedKey =
             "ProjectMT.FallenCommander.BossConfig.FinalChargeExpanded";
+        private const string BlackHoleAdvancedExpandedKey =
+            "ProjectMT.FallenCommander.BossConfig.BlackHoleAdvancedExpanded";
 
         private sealed class AttackInspectorDefinition
         {
@@ -55,7 +57,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 new[] { "meleeAttack" },
                 config => config.MeleeAttack),
             new(
-                "3. 위치",
+                "3. 연속 위치",
                 FallenCommanderAttackPreviewKind.MarkStrike,
                 new[] { "markStrike" },
                 config => config.MarkStrike),
@@ -117,11 +119,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 FallenCommanderAttackPreviewKind.TimeoutWipe,
                 new[] { "timeoutWipe" }),
             new(
-                "10. 연속 장판 공격",
+                "10. 연속 장판",
                 FallenCommanderAttackPreviewKind.TwistedBattlefield,
                 new[] { "twistedBattlefield" }),
             new(
-                "11. 낙하 탄막 공격",
+                "11. 낙하 탄막",
                 FallenCommanderAttackPreviewKind.FallingBarrage,
                 new[] { "fallingBarrage" })
         };
@@ -129,6 +131,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private int selectedAttack;
         private bool showAllAttacks;
         private bool finalChargeExpanded;
+        private bool blackHoleAdvancedExpanded;
 
         // 마지막으로 선택한 공격 탭과 전체 보기 상태를 불러온다.
         private void OnEnable()
@@ -139,6 +142,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 AttackDefinitions.Length - 1);
             showAllAttacks = EditorPrefs.GetBool(ShowAllAttacksKey, false);
             finalChargeExpanded = EditorPrefs.GetBool(FinalChargeExpandedKey, true);
+            blackHoleAdvancedExpanded = EditorPrefs.GetBool(
+                BlackHoleAdvancedExpandedKey,
+                false);
         }
 
         // 공통 데이터와 선택된 공격 탭의 데이터만 순서대로 표시한다.
@@ -239,33 +245,45 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
 
             const int columnCount = 3;
+            const float columnSpacing = 2f;
             var rowCount = Mathf.CeilToInt(AttackDefinitions.Length / (float)columnCount);
             for (var row = 0; row < rowCount; row++)
             {
-                using (new EditorGUILayout.HorizontalScope())
+                var rowRect = EditorGUILayout.GetControlRect(
+                    false,
+                    EditorGUIUtility.singleLineHeight);
+                var buttonWidth =
+                    (rowRect.width - columnSpacing * (columnCount - 1)) /
+                    columnCount;
+                for (var column = 0; column < columnCount; column++)
                 {
-                    for (var column = 0; column < columnCount; column++)
+                    var index = row * columnCount + column;
+                    if (index >= AttackDefinitions.Length)
                     {
-                        var index = row * columnCount + column;
-                        if (index >= AttackDefinitions.Length)
-                        {
-                            break;
-                        }
+                        break;
+                    }
 
-                        var selected = GUILayout.Toggle(
-                            selectedAttack == index,
-                            AttackDefinitions[index].Label,
-                            EditorStyles.miniButton);
-                        if (selected && selectedAttack != index)
-                        {
-                            selectedAttack = index;
-                            EditorPrefs.SetInt(SelectedAttackKey, selectedAttack);
-                            GUI.FocusControl(null);
-                        }
+                    var buttonRect = new Rect(
+                        rowRect.x + column * (buttonWidth + columnSpacing),
+                        rowRect.y,
+                        buttonWidth,
+                        rowRect.height);
+                    var selected = GUI.Toggle(
+                        buttonRect,
+                        selectedAttack == index,
+                        AttackDefinitions[index].Label,
+                        EditorStyles.miniButton);
+                    if (selected && selectedAttack != index)
+                    {
+                        selectedAttack = index;
+                        EditorPrefs.SetInt(SelectedAttackKey, selectedAttack);
+                        GUI.FocusControl(null);
                     }
                 }
             }
 
+            EditorGUILayout.Space(4f);
+            DrawSelectedAttackPreview();
             EditorGUILayout.Space(4f);
             if (showAllAttacks)
             {
@@ -282,6 +300,17 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             DrawAttackProperties(AttackDefinitions[selectedAttack], false);
         }
 
+        // 공격 선택 버튼 바로 아래에 현재 선택한 공격의 미리보기 도구를 표시한다.
+        private void DrawSelectedAttackPreview()
+        {
+            using (new EditorGUI.DisabledScope(serializedObject.hasModifiedProperties))
+            {
+                DrawAttackPreviewTools(
+                    (FallenCommanderBossConfig)target,
+                    AttackDefinitions[selectedAttack]);
+            }
+        }
+
         // 선택된 공격에 포함된 SerializedProperty와 전용 도구를 표시한다.
         private void DrawAttackProperties(
             AttackInspectorDefinition definition,
@@ -290,6 +319,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             if (definition.PreviewKind == FallenCommanderAttackPreviewKind.FinalCharge)
             {
                 DrawFinalChargeProperties(definition);
+            }
+            else if (definition.PreviewKind == FallenCommanderAttackPreviewKind.BlackHole)
+            {
+                DrawBlackHoleProperties(definition);
             }
             else
             {
@@ -313,17 +346,58 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
 
             DrawValidationWarnings(definition);
-            using (new EditorGUI.DisabledScope(serializedObject.hasModifiedProperties))
-            {
-                DrawAttackPreviewTools(
-                    (FallenCommanderBossConfig)target,
-                    definition);
-            }
 
             if (showAllAttacks && addBottomSpacing)
             {
                 EditorGUILayout.Space(6f);
             }
+        }
+
+        private void DrawBlackHoleProperties(AttackInspectorDefinition definition)
+        {
+            DrawProperty("blackHole");
+            DrawProperty("blackHoleActiveDuration");
+
+            var nextExpanded = EditorGUILayout.Foldout(
+                blackHoleAdvancedExpanded,
+                "블랙홀 전용 설정 더보기",
+                true);
+            if (nextExpanded != blackHoleAdvancedExpanded)
+            {
+                blackHoleAdvancedExpanded = nextExpanded;
+                EditorPrefs.SetBool(BlackHoleAdvancedExpandedKey, nextExpanded);
+            }
+
+            if (!blackHoleAdvancedExpanded)
+            {
+                return;
+            }
+
+            using (new EditorGUI.IndentLevelScope())
+            {
+                for (var index = 2; index < definition.PropertyNames.Length; index++)
+                {
+                    var propertyName = definition.PropertyNames[index];
+                    if (propertyName != "blackHoleEndEffects")
+                    {
+                        DrawProperty(propertyName);
+                    }
+                }
+            }
+        }
+
+        private void DrawProperty(string propertyName)
+        {
+            var property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                return;
+            }
+
+            EditorGUILayout.PropertyField(
+                property,
+                FallenCommanderInspectorLabels.BossConfig(property),
+                true);
         }
 
         // 충전 광역기의 분산된 설정을 다른 공격과 같은 하나의 접이식 영역에 표시한다.
@@ -580,11 +654,14 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 return;
             }
 
-            ValidateDurationReference(
-                effects,
-                "startVfxPrefab",
-                "startVfxDuration",
-                "시전 효과");
+            if (SupportsStartEffects(effects))
+            {
+                ValidateDurationReference(
+                    effects,
+                    "startVfxPrefab",
+                    "startVfxDuration",
+                    "시전 효과");
+            }
             ValidateDurationReference(
                 effects,
                 "resolveVfxPrefab",
@@ -598,11 +675,14 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     "hitVfxDuration",
                     "적중 VFX");
             }
-            ValidateAudioDuration(
-                effects,
-                "startSfx",
-                "startSfxDuration",
-                "시전 효과음");
+            if (SupportsStartEffects(effects))
+            {
+                ValidateAudioDuration(
+                    effects,
+                    "startSfx",
+                    "startSfxDuration",
+                    "시전 효과음");
+            }
             ValidateAudioDuration(
                 effects,
                 "resolveSfx",
@@ -623,10 +703,15 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         {
             return effects.propertyPath switch
             {
-                "projectileBasicAttack.effects" => "적중 효과",
+                "projectileBasicAttack.effects" => "발동 효과",
                 "blackHoleEndEffects" => "종료 효과",
                 _ => "발동 효과"
             };
+        }
+
+        private static bool SupportsStartEffects(SerializedProperty effects)
+        {
+            return effects.propertyPath != "blackHoleEndEffects";
         }
 
         // 실제 별도 적중 단계가 있는 공격 연출인지 반환한다.
@@ -863,6 +948,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     ? config.PhaseConfig?.GetPhase(FallenCommanderBossPhase.Phase2)
                         ?.TwistedBattlefieldPattern
                     : null;
+                var markStrikePhase = kind == FallenCommanderAttackPreviewKind.MarkStrike
+                    ? config.PhaseConfig?.GetPhase(FallenCommanderBossPhase.Phase2)
+                        ?.MarkStrikePattern
+                    : null;
                 var fallingBarrage = kind == FallenCommanderAttackPreviewKind.FallingBarrage
                     ? config.FallingBarrage
                     : null;
@@ -935,9 +1024,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     SpawnPoint = spawnPoint,
                     FacingTarget = commanderRoot == null ? null : commanderRoot.transform,
                     BasicAttack = basicAttack,
+                    MarkStrikePattern = markStrikePhase,
                     TwistedBattlefield = twistedBattlefield,
                     TwistedBeatCount = twistedPhase?.BeatCount ?? 2,
                     TwistedBeatInterval = twistedPhase?.BeatInterval ?? 0.3f,
+                    TwistedAttackInterval = twistedBattlefield?.AttackInterval ?? 0.8f,
                     FallingBarrage = fallingBarrage,
                     FallingProjectileCount = fallingBarrage?.ProjectileCount ?? 30,
                     FallingSpawnInterval = fallingPhase?.SpawnInterval ?? 0.07f,
@@ -1048,6 +1139,12 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         attack?.CastMotionEnd ?? 1f,
                     WarningDuration = Mathf.Max(0.1f, warningDuration),
                     TelegraphHoldDuration = Mathf.Max(0f, telegraphHoldDuration),
+                    TimeoutRiseHeight = kind == FallenCommanderAttackPreviewKind.TimeoutWipe
+                        ? timeoutWipe?.RiseHeight ?? 0f
+                        : 0f,
+                    TimeoutRiseCurve = kind == FallenCommanderAttackPreviewKind.TimeoutWipe
+                        ? timeoutWipe?.RiseCurve
+                        : null,
                     StartEffectLocalOffset = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargeStartEffectOffset
                         : Vector3.zero

@@ -29,8 +29,8 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("근접 공격 설정")]
         private FallenCommanderAttackData meleeAttack = new FallenCommanderAttackData();
 
-        [Header("3. 위치 공격")]
-        [SerializeField, InspectorName("위치 공격 설정")]
+        [Header("3. 연속 위치 공격")]
+        [SerializeField, InspectorName("연속 위치 공격 설정")]
         private FallenCommanderAttackData markStrike = new FallenCommanderAttackData();
 
         [Header("4. 추적 낙인")]
@@ -299,6 +299,8 @@ namespace ProjectMT.Contents.FallenCommander
         private int rowCount = 2;
         [SerializeField, InspectorName("장판 사이 간격"), Min(0f)]
         private float tileGap = 0.08f;
+        [SerializeField, InspectorName("공격 사이 회피시간"), Min(0.1f)]
+        private float attackInterval = 0.8f;
         [SerializeField, InspectorName("위험 장판 색상")]
         private Color dangerColor = new(1f, 0.08f, 0.04f, 0.82f);
         [SerializeField, InspectorName("안전지대 색상")]
@@ -325,6 +327,7 @@ namespace ProjectMT.Contents.FallenCommander
         public int ColumnCount => Mathf.Clamp(columnCount, 2, 6);
         public int RowCount => Mathf.Clamp(rowCount, 2, 4);
         public float TileGap => Mathf.Max(0f, tileGap);
+        public float AttackInterval => Mathf.Max(0.1f, attackInterval);
         public Color DangerColor => dangerColor;
         public Color SafeColor => safeColor;
 
@@ -346,6 +349,12 @@ namespace ProjectMT.Contents.FallenCommander
             if (columnCount < 2 || rowCount < 2)
             {
                 error = "전장 칸 개수는 가로·세로 모두 2개 이상이어야 합니다.";
+                return false;
+            }
+
+            if (attackInterval < 0.1f)
+            {
+                error = "공격 사이 회피시간은 0.1초 이상이어야 합니다.";
                 return false;
             }
 
@@ -401,7 +410,7 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("탄막 생성 높이"), Min(0.1f)]
         private float spawnHeight = 9f;
         [SerializeField, InspectorName("한 묶음 탄막 개수"), Min(1)]
-        private int projectileCount = 30;
+        private int projectileCount = 20;
         [SerializeField, InspectorName("공중 대기시간"), Min(0f)]
         private float airHoldDuration = 0.6f;
         [SerializeField, InspectorName("낙하 가속 곡선")]
@@ -409,7 +418,7 @@ namespace ProjectMT.Contents.FallenCommander
             new Keyframe(0f, 0f, 0f, 0f),
             new Keyframe(1f, 1f, 2f, 2f));
         [SerializeField, InspectorName("패턴 경고 문구")]
-        private string warningMessage = "경고! 하늘에서 탄막이 쏟아집니다!";
+        private string warningMessage = "경고! 낙하 지점을 확인하세요!";
         [SerializeField, InspectorName("경고 후 공격 대기시간"), Min(0f)]
         private float warningMessageDuration = 2f;
         [SerializeField, InspectorName("착탄 피해 반지름"), Min(0.1f)]
@@ -419,7 +428,7 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("군단장 주변 최소 안전거리"), Min(0f)]
         private float commanderSafetyRadius = 1.5f;
         [SerializeField, InspectorName("풀 초기 준비 개수"), Min(1)]
-        private int initialPoolSize = 16;
+        private int initialPoolSize = 20;
         [SerializeField, InspectorName("경고 장판 색상")]
         private Color telegraphColor = new(1f, 0.12f, 0.04f, 0.82f);
 
@@ -578,6 +587,8 @@ namespace ProjectMT.Contents.FallenCommander
         private float width = 2f;
         [SerializeField, InspectorName("직선 공격 길이"), Min(0.1f)]
         private float length = 8f;
+        [SerializeField, InspectorName("기절 적용")]
+        private bool useStun;
         [SerializeField, InspectorName("기절 지속시간"), Min(0f)]
         private float stunDuration;
 
@@ -601,7 +612,8 @@ namespace ProjectMT.Contents.FallenCommander
         public float Radius => radius;
         public float Width => width;
         public float Length => length;
-        public float StunDuration => stunDuration;
+        public bool UseStun => useStun;
+        public float StunDuration => useStun ? Mathf.Max(0f, stunDuration) : 0f;
 
         private static float ResolveDuration(
             AnimationClip motion,
@@ -732,6 +744,10 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("공격 범위 반지름 (연출용)"), Min(0.1f)]
         [Tooltip("전멸 피해는 전장 전체에 적용되며 이 값은 경고 범위의 표시 크기만 조절합니다.")]
         private float radius = 8f;
+        [SerializeField, InspectorName("시전 중 상승 높이"), Min(0f)]
+        private float riseHeight = 1.5f;
+        [SerializeField, InspectorName("시전 중 상승 곡선")]
+        private AnimationCurve riseCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData effects = new();
         [SerializeField, InspectorName("시전 모션")] private AnimationClip preCastMotion;
@@ -761,6 +777,8 @@ namespace ProjectMT.Contents.FallenCommander
 
         public GameObject TelegraphPrefab => telegraphPrefab;
         public float Radius => Mathf.Max(0.1f, radius);
+        public float RiseHeight => Mathf.Max(0f, riseHeight);
+        public AnimationCurve RiseCurve => riseCurve;
         public FallenCommanderAttackEffectData Effects => effects;
         public AnimationClip PreCastMotion => preCastMotion;
         public float PreCastMotionSpeed => Mathf.Max(0.01f, preCastMotionSpeed);

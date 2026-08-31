@@ -43,8 +43,8 @@ MonoBehaviour:
       selectionChance: 0.18
       waveCount: 2
       waveInterval: 0.8
-      spawnInterval: 0.03
-      spawnTimeJitter: 0.12
+      spawnInterval: 0.04
+      spawnTimeJitter: 0.08
       fallDuration: 1.8
   - phase: 2
     healthRatio: 0.7
@@ -76,8 +76,8 @@ MonoBehaviour:
       selectionChance: 0.18
       waveCount: 2
       waveInterval: 0.9
-      spawnInterval: 0.025
-      spawnTimeJitter: 0.12
+      spawnInterval: 0.04
+      spawnTimeJitter: 0.08
       fallDuration: 2
   - phase: 3
     healthRatio: 0.4
@@ -101,7 +101,7 @@ MonoBehaviour:
       stunDuration: 0
     twistedBattlefieldPattern:
       selectionChance: 0.28
-      beatCount: 4
+      beatCount: 2
       warningDuration: 1
       telegraphHoldDuration: 0.2
       beatInterval: 0.2
@@ -109,6 +109,6 @@ MonoBehaviour:
       selectionChance: 0.25
       waveCount: 3
       waveInterval: 0.65
-      spawnInterval: 0.018
-      spawnTimeJitter: 0.1
+      spawnInterval: 0.04
+      spawnTimeJitter: 0.08
       fallDuration: 1.6

@@ -6,7 +6,7 @@ namespace ProjectMT.Contents.FallenCommander
     public sealed class FallenCommanderTelegraphView : MonoBehaviour
     {
         private const int CircleSegments = 64;
-        private const float GroundOffset = 0.025f;
+        public const float GroundOffset = 0.06f;
         private const float LineNearWidthRatio = 0.12f;
 
         private Transform progressFill;

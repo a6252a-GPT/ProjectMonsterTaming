@@ -289,7 +289,7 @@ namespace ProjectMT.Contents.FallenCommander
             if (shot.Pooled.Telegraph != null)
             {
                 shot.Pooled.Telegraph.transform.SetPositionAndRotation(
-                    shot.Target + Vector3.up * 0.025f,
+                    shot.Target + Vector3.up * FallenCommanderTelegraphView.GroundOffset,
                     Quaternion.identity);
                 shot.Pooled.Telegraph.gameObject.SetActive(true);
                 shot.Pooled.Telegraph.SetProgress(0f);
@@ -312,7 +312,10 @@ namespace ProjectMT.Contents.FallenCommander
                 Vector3.forward,
                 effectParent,
                 bossActor == null ? null : bossActor.transform,
-                commanderRoot);
+                commanderRoot,
+                shot.Pooled?.Projectile == null
+                    ? null
+                    : shot.Pooled.Projectile.transform);
 
             if (!waveDamaged && IsCommanderInside(shot.Target))
             {
@@ -401,7 +404,7 @@ namespace ProjectMT.Contents.FallenCommander
                 effectParent,
                 arenaCenter,
                 data.ImpactRadius,
-                data.TelegraphColor);
+                FallenCommanderTelegraphPalette.Danger);
             if (telegraph == null)
             {
                 Object.Destroy(projectile);

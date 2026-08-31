@@ -20,7 +20,7 @@ namespace ProjectMT.Contents.FallenCommander
         Basic,
         [InspectorName("근접 공격")]
         Melee,
-        [InspectorName("위치 공격")]
+        [InspectorName("연속 위치 공격")]
         Mark,
         [InspectorName("추적 낙인")]
         TrackingMark,
@@ -138,7 +138,7 @@ namespace ProjectMT.Contents.FallenCommander
         private float lineStrikeAlignmentThreshold;
         private float commanderStunRemaining;
         private System.Action<bool> commanderStunChanged;
-        private System.Action<FallenCommanderAttackPattern> attackStarted;
+        private System.Action<string, float> attackWarningRequested;
         private bool isCommanderStunned;
         private bool isActive;
         private bool isBasicWindupActive;
@@ -200,21 +200,21 @@ namespace ProjectMT.Contents.FallenCommander
         private float basicProjectileDistanceRemaining;
 
         private static readonly Color BasicTelegraphColor =
-            new Color(1f, 0.12f, 0.08f, 0.82f);
+            FallenCommanderTelegraphPalette.Danger;
         private static readonly Color MeleeTelegraphColor =
-            new Color(1f, 0.25f, 0.05f, 0.75f);
+            FallenCommanderTelegraphPalette.Danger;
         private static readonly Color LineTelegraphColor =
-            new Color(0.15f, 0.45f, 1f, 0.75f);
+            FallenCommanderTelegraphPalette.Danger;
         private static readonly Color MarkTelegraphColor =
-            new Color(0.9f, 0.15f, 0.8f, 0.75f);
+            FallenCommanderTelegraphPalette.Danger;
         private static readonly Color TrackingMarkTelegraphColor =
-            new Color(0.25f, 0.75f, 1f, 0.75f);
+            FallenCommanderTelegraphPalette.Danger;
         private static readonly Color BlackHoleTelegraphColor =
-            new Color(0.55f, 0.1f, 0.85f, 0.8f);
+            FallenCommanderTelegraphPalette.Danger;
         private static readonly Color CorruptionRingTelegraphColor =
-            new Color(0.65f, 0.05f, 0.15f, 0.8f);
+            FallenCommanderTelegraphPalette.Danger;
         private static readonly Color CorruptionRingSafeColor =
-            new Color(0.1f, 0.9f, 0.45f, 0.8f);
+            FallenCommanderTelegraphPalette.Safe;
 
         // 전투 참조와 보스 공격·페이즈 데이터를 런타임 상태 머신에 연결한다.
         public void Configure(
@@ -228,7 +228,7 @@ namespace ProjectMT.Contents.FallenCommander
             FallenCommanderPresentationConfig presentation,
             Vector3 blackHoleArenaCenter,
             System.Action<bool> stunChanged,
-            System.Action<FallenCommanderAttackPattern> started,
+            System.Action<string, float> warningRequested,
             FallenCommanderBossFacingSmoother facingSmoother)
         {
             Shutdown();
@@ -297,7 +297,7 @@ namespace ProjectMT.Contents.FallenCommander
             lineStrikeAlignmentThreshold = Mathf.Clamp(attacks.LineStrikeAlignmentThreshold, -1f, 1f);
             phaseConfig = attacks.PhaseConfig;
             commanderStunChanged = stunChanged;
-            attackStarted = started;
+            attackWarningRequested = warningRequested;
 
             attackCooldownRemaining = attackInterval;
             currentState = BossState.Idle;
@@ -626,7 +626,7 @@ namespace ProjectMT.Contents.FallenCommander
             telegraphDuration = 0f;
             telegraphHoldDuration = 0f;
             commanderStunChanged = null;
-            attackStarted = null;
+            attackWarningRequested = null;
             attackCooldownRemaining = 0f;
             basicAttackCooldownRemaining = 0f;
             basicPatternDelayRemaining = 0f;
@@ -777,13 +777,6 @@ namespace ProjectMT.Contents.FallenCommander
             isBasicWindupActive = true;
             isBasicProjectileActive = false;
             DestroyActiveBasicTelegraph();
-            FallenCommanderAttackEffectPlayer.PlayStart(
-                basicAttack.Effects,
-                basicProjectilePosition,
-                basicProjectileDirection,
-                bossActor.transform.parent,
-                bossActor.transform,
-                commanderRoot);
 
             activeBasicTelegraph = FallenCommanderTelegraphView.CreateRectangle(
                 basicAttack.TelegraphPrefab,
@@ -1030,7 +1023,9 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             currentState = BossState.FallingBarrage;
-            attackStarted?.Invoke(FallenCommanderAttackPattern.FallingBarrage);
+            attackWarningRequested?.Invoke(
+                fallingBarrageData.WarningMessage,
+                fallingBarrageData.WarningMessageDuration);
         }
 
         private void BeginCircleAttack(
@@ -1136,6 +1131,16 @@ namespace ProjectMT.Contents.FallenCommander
                 basicProjectilePosition,
                 basicProjectileRadius,
                 BasicTelegraphColor);
+            FallenCommanderAttackEffectPlayer.PlayResolve(
+                basicAttack.Effects,
+                basicProjectilePosition,
+                basicProjectileDirection,
+                bossActor.transform.parent,
+                bossActor.transform,
+                commanderRoot,
+                activeBasicProjectile == null
+                    ? null
+                    : activeBasicProjectile.transform);
             isBasicWindupActive = false;
             isBasicProjectileActive = true;
         }
@@ -1159,7 +1164,7 @@ namespace ProjectMT.Contents.FallenCommander
 
             if (hitCommander)
             {
-                FallenCommanderAttackEffectPlayer.PlayResolve(
+                FallenCommanderAttackEffectPlayer.PlayHit(
                     basicAttack.Effects,
                     basicProjectilePosition,
                     basicProjectileDirection,
@@ -1389,13 +1394,20 @@ namespace ProjectMT.Contents.FallenCommander
             var effectDirection = currentState == BossState.LineStrike
                 ? lineStrikeDirection
                 : bossActor.transform.forward;
-            FallenCommanderAttackEffectPlayer.PlayResolve(
-                motion?.Effects,
-                effectPosition,
-                effectDirection,
-                bossActor.transform.parent,
-                bossActor.transform,
-                commanderRoot);
+            if (currentState == BossState.CorruptionRing)
+            {
+                PlayCorruptionRingResolveEffects();
+            }
+            else
+            {
+                FallenCommanderAttackEffectPlayer.PlayResolve(
+                    motion?.Effects,
+                    effectPosition,
+                    effectDirection,
+                    bossActor.transform.parent,
+                    bossActor.transform,
+                    commanderRoot);
+            }
 
             if (IsCommanderInsideCurrentAttack())
             {
@@ -1437,6 +1449,19 @@ namespace ProjectMT.Contents.FallenCommander
             attackCooldownRemaining = attackInterval;
             currentState = BossState.Idle;
             ResumeBossTracking();
+        }
+
+        private void PlayCorruptionRingResolveEffects()
+        {
+            FallenCommanderCorruptionRingEffectPlayer.Play(
+                corruptionRingMotion?.Effects,
+                markStrikePosition,
+                bossActor.transform.forward,
+                bossActor.transform.parent,
+                bossActor.transform,
+                commanderRoot,
+                corruptionRingSafeRadius,
+                corruptionRingOuterRadius);
         }
 
         private bool IsCommanderInsideCurrentAttack()

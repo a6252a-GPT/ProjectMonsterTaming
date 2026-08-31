@@ -62,6 +62,7 @@ namespace ProjectMT.Contents.FallenCommander
         private bool isFinalChargePending;
         private readonly FallenCommanderFinalChargePattern finalChargePattern = new();
         private readonly FallenCommanderTimeoutWipePattern timeoutWipePattern = new();
+        private readonly FallenCommanderDamageDelayQueue delayedDamageQueue = new();
         private bool isDebugPhaseJump;
         private bool isCommanderStunned;
         private int lastLoggedBossHealthPercent;
@@ -107,6 +108,7 @@ namespace ProjectMT.Contents.FallenCommander
             hasTriggeredFinalCharge = false;
             isFinalChargePending = false;
             finalChargePattern.Cancel();
+            delayedDamageQueue.Clear();
             phaseRuntime.Configure(bossConfig.PhaseConfig);
             breakRuntime.Reset();
             isDebugPhaseJump = false;
@@ -198,6 +200,12 @@ namespace ProjectMT.Contents.FallenCommander
         // 전투 준비·타이머·특수 패턴·보스 FSM을 매 프레임 순서대로 갱신한다.
         private void Update()
         {
+            if (!IsRunning)
+            {
+                return;
+            }
+
+            delayedDamageQueue.Tick(Time.deltaTime);
             if (!IsRunning)
             {
                 return;
@@ -475,7 +483,9 @@ namespace ProjectMT.Contents.FallenCommander
                 commanderMove.InitialPosition,
                 HandleCommanderStunChanged,
                 hudPresenter == null ? null : hudPresenter.ShowAttackWarning,
-                bossFacingSmoother);
+                bossFacingSmoother,
+                delayedDamageQueue.Schedule,
+                delayedDamageQueue.Clear);
             stateMachine.SetPhase(phaseRuntime.CurrentPhase);
         }
 
@@ -531,6 +541,12 @@ namespace ProjectMT.Contents.FallenCommander
                 score += Mathf.CeilToInt(report.AppliedDamage);
             }
             LogBossHealthThresholds();
+
+            if (isDebugPhaseJump)
+            {
+                PublishHudState();
+                return;
+            }
 
             var phaseChanged = TryAdvanceBossPhase();
             var finalChargeScheduled = TryStartFinalCharge();
@@ -640,7 +656,7 @@ namespace ProjectMT.Contents.FallenCommander
             var effectDirection = bossActor == null
                 ? Vector3.forward
                 : bossActor.transform.forward;
-            if (!finalChargePattern.Complete(out var commanderInside))
+            if (!finalChargePattern.Complete(out _))
             {
                 return;
             }
@@ -660,30 +676,53 @@ namespace ProjectMT.Contents.FallenCommander
                 normalizedStart: finalChargeConfig.CastMotionStart,
                 normalizedEnd: finalChargeConfig.CastMotionEnd);
 
-            if (commanderHealth != null &&
-                commanderHealth.IsAlive &&
-                commanderInside)
-            {
-                FallenCommanderAttackEffectPlayer.PlayHit(
-                    finalChargeConfig.Effects,
-                    commanderRoot.transform.position,
-                    effectDirection,
-                    bossActor == null ? null : bossActor.transform.parent,
-                    bossActor == null ? null : bossActor.transform,
-                    commanderRoot.transform);
-                commanderHealth.ApplyDamage(new DamageRequest(
-                    bossActor,
-                    1f,
-                    commanderRoot.transform.position));
-                Debug.Log("충전 광역 공격 적중: 하트 1개 피해", this);
-            }
-
             if (!IsRunning || commanderHealth == null || !commanderHealth.IsAlive)
             {
                 return;
             }
 
             InitializeStateMachine();
+            var radius = finalChargeConfig.Radius;
+            var effects = finalChargeConfig.Effects;
+            var stunDuration = finalChargeConfig.StunDuration;
+            var effectParent = bossActor == null ? null : bossActor.transform.parent;
+            var effectAnchor = bossActor == null ? null : bossActor.transform;
+            delayedDamageQueue.Schedule(finalChargeConfig.DamageDelay, () =>
+            {
+                if (!IsRunning ||
+                    commanderRoot == null ||
+                    commanderHealth == null ||
+                    !commanderHealth.IsAlive ||
+                    bossActor == null)
+                {
+                    return;
+                }
+
+                var offset = commanderRoot.transform.position - effectPosition;
+                offset.y = 0f;
+                if (offset.sqrMagnitude > radius * radius)
+                {
+                    return;
+                }
+
+                FallenCommanderAttackEffectPlayer.PlayHit(
+                    effects,
+                    commanderRoot.transform.position,
+                    effectDirection,
+                    effectParent,
+                    effectAnchor,
+                    commanderRoot.transform);
+                commanderHealth.ApplyDamage(new DamageRequest(
+                    bossActor,
+                    1f,
+                    commanderRoot.transform.position));
+                if (stunDuration > 0f)
+                {
+                    stateMachine?.LockCommanderStun(stunDuration);
+                }
+
+                Debug.Log("충전 광역 공격 적중: 하트 1개 피해", this);
+            });
             PublishHudState();
         }
 
@@ -878,6 +917,8 @@ namespace ProjectMT.Contents.FallenCommander
                 () => finalChargePattern.IsActive,
                 () => bossActor,
                 () => stateMachine,
+                PrepareDebugStandardAttack,
+                PrepareDebugPhaseJump,
                 battleFlow,
                 BeginTimeoutWipeSequence,
                 PublishHudState,
@@ -959,7 +1000,8 @@ namespace ProjectMT.Contents.FallenCommander
                 (int)phaseRuntime.CurrentPhase,
                 phaseRuntime.TransitionMessage,
                 TimeoutWipe?.WarningMessage,
-                TimeoutWipe?.WarningPulseInterval ?? 0.45f));
+                TimeoutWipe?.WarningPulseInterval ?? 0.45f,
+                finalChargeConfig.WarningMessage));
         }
 
         private void HandleCommanderDamaged(DamageReport report)
@@ -1028,15 +1070,14 @@ namespace ProjectMT.Contents.FallenCommander
             bossActor.Health.Heal(bossActor.Health.MaxHealth);
             InitializeStateMachine();
 
-            if (targetPhase == FallenCommanderBossPhase.Phase1)
+            var targetPhaseData = bossConfig.PhaseConfig.GetPhase(targetPhase);
+            if (targetPhaseData == null)
             {
                 PublishHudState();
                 return;
             }
 
-            var targetRatio = bossConfig.PhaseConfig
-                .GetPhase(targetPhase)
-                .HealthRatio;
+            var targetRatio = targetPhaseData.HealthRatio;
             var debugDamage = bossActor.Health.MaxHealth * (1f - targetRatio);
             isDebugPhaseJump = true;
             try
@@ -1050,6 +1091,30 @@ namespace ProjectMT.Contents.FallenCommander
             {
                 isDebugPhaseJump = false;
             }
+
+            if (!phaseRuntime.BeginForcedTransition(targetPhase, out targetPhaseData))
+            {
+                PublishHudState();
+                return;
+            }
+
+            stateMachine?.BeginPhaseTransition(
+                targetPhase,
+                phaseRuntime.TransitionRemainingTime);
+            PlayPhaseTransitionSound(targetPhaseData);
+            PublishHudState();
+        }
+
+        private void PrepareDebugStandardAttack()
+        {
+            phaseRuntime.CancelTransition();
+            delayedDamageQueue.Clear();
+        }
+
+        private void PrepareDebugPhaseJump()
+        {
+            PrepareDebugStandardAttack();
+            stateMachine?.PrepareDebugPhaseJump();
         }
 
         private void LogBossHealthThresholds()

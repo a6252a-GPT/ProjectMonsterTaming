@@ -91,6 +91,29 @@ namespace ProjectMT.Contents.FallenCommander
             return true;
         }
 
+        public bool BeginForcedTransition(
+            FallenCommanderBossPhase phase,
+            out FallenCommanderPhaseData phaseData)
+        {
+            phaseData = config?.GetPhase(phase);
+            if (phaseData == null)
+            {
+                return false;
+            }
+
+            CurrentPhase = phase;
+            RequestedPhase = phase;
+            PendingSignatureAttack = phaseData.HasSignatureAttack
+                ? phaseData.SignatureAttack
+                : FallenCommanderAttackPattern.Basic;
+            TransitionRemainingTime = phaseData.TransitionDuration;
+            IntroNoticeRemainingTime = 0f;
+            TransitionMessage = phaseData.TransitionMessage;
+            IsTransitionActive = true;
+            IsWaitingForSignature = false;
+            return true;
+        }
+
         public bool TickTransition(
             float deltaTime,
             out FallenCommanderAttackPattern signatureAttack)

@@ -30,6 +30,11 @@ namespace ProjectMT.Contents.FallenCommander
             public bool Resolved;
         }
 
+        private sealed class WaveDamageState
+        {
+            public bool HasDamaged;
+        }
+
         private readonly List<PooledProjectile> pool = new();
         private readonly List<FallingShot> shots = new();
         private readonly List<Vector3> selectedPositions = new();
@@ -46,7 +51,8 @@ namespace ProjectMT.Contents.FallenCommander
         private float waveElapsed;
         private float remainingTime;
         private int waveIndex;
-        private bool waveDamaged;
+        private WaveDamageState waveDamageState;
+        private System.Action<float, System.Action> damageDelayScheduler;
 
         public bool IsActive => state != PatternState.Inactive;
         public FallenCommanderTelegraphView ActiveTelegraph
@@ -73,7 +79,8 @@ namespace ProjectMT.Contents.FallenCommander
             HealthComponent health,
             FallenCommanderBossAnimationPresenter animations,
             Transform parent,
-            Vector3 battlefieldCenter)
+            Vector3 battlefieldCenter,
+            System.Action<float, System.Action> delayScheduler)
         {
             CancelActiveShots();
             if (patternData == null || !patternData.TryValidate(out _) ||
@@ -91,6 +98,7 @@ namespace ProjectMT.Contents.FallenCommander
             animationPresenter = animations;
             effectParent = parent;
             arenaCenter = battlefieldCenter;
+            damageDelayScheduler = delayScheduler;
             waveIndex = 0;
 
             EnsurePool(data.InitialPoolSize);
@@ -211,7 +219,7 @@ namespace ProjectMT.Contents.FallenCommander
             shots.Clear();
             selectedPositions.Clear();
             waveElapsed = 0f;
-            waveDamaged = false;
+            waveDamageState = new WaveDamageState();
 
             for (var index = 0; index < data.ProjectileCount; index++)
             {
@@ -317,21 +325,48 @@ namespace ProjectMT.Contents.FallenCommander
                     ? null
                     : shot.Pooled.Projectile.transform);
 
-            if (!waveDamaged && IsCommanderInside(shot.Target))
+            var attacker = bossActor;
+            var target = commanderRoot;
+            var targetHealth = commanderHealth;
+            var effects = data.Effects;
+            var delay = data.DamageDelay;
+            var radius = data.ImpactRadius;
+            var parent = effectParent;
+            var impactPosition = shot.Target;
+            var damageState = waveDamageState;
+            ScheduleDamage(delay, () =>
             {
-                waveDamaged = true;
+                if (damageState == null ||
+                    damageState.HasDamaged ||
+                    attacker == null ||
+                    !attacker.IsAlive ||
+                    target == null ||
+                    targetHealth == null ||
+                    !targetHealth.IsAlive)
+                {
+                    return;
+                }
+
+                var offset = target.position - impactPosition;
+                offset.y = 0f;
+                if (offset.sqrMagnitude > radius * radius)
+                {
+                    return;
+                }
+
+                damageState.HasDamaged = true;
                 FallenCommanderAttackEffectPlayer.PlayHit(
-                    data.Effects,
-                    commanderRoot.position,
+                    effects,
+                    target.position,
                     Vector3.forward,
-                    effectParent,
-                    bossActor == null ? null : bossActor.transform,
-                    commanderRoot);
-                commanderHealth.ApplyDamage(new DamageRequest(
-                    bossActor,
+                    parent,
+                    attacker.transform,
+                    target);
+                targetHealth.ApplyDamage(new DamageRequest(
+                    attacker,
                     1f,
-                    commanderRoot.position));
-            }
+                    target.position));
+            });
 
             Return(shot.Pooled);
             shot.Pooled = null;
@@ -346,6 +381,17 @@ namespace ProjectMT.Contents.FallenCommander
 
             return HorizontalSqrDistance(commanderRoot.position, impactPosition) <=
                 data.ImpactRadius * data.ImpactRadius;
+        }
+
+        private void ScheduleDamage(float delay, System.Action apply)
+        {
+            if (damageDelayScheduler == null)
+            {
+                apply?.Invoke();
+                return;
+            }
+
+            damageDelayScheduler.Invoke(Mathf.Max(0f, delay), apply);
         }
 
         private bool AreAllShotsResolved()
@@ -531,7 +577,7 @@ namespace ProjectMT.Contents.FallenCommander
             waveElapsed = 0f;
             remainingTime = 0f;
             waveIndex = 0;
-            waveDamaged = false;
+            waveDamageState = null;
         }
     }
 }

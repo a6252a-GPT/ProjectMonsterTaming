@@ -62,7 +62,6 @@ namespace ProjectMT.Contents.FallenCommander
             TwistedBattlefield = source.TwistedBattlefield;
             FallingBarrage = source.FallingBarrage;
             CloseAttackDistance = source.CloseAttackDistance;
-            LineStrikeMinimumDistance = source.LineStrikeMinimumDistance;
             LineStrikeAlignmentThreshold = source.LineStrikeAlignmentThreshold;
             PhaseConfig = source.PhaseConfig;
         }
@@ -88,7 +87,6 @@ namespace ProjectMT.Contents.FallenCommander
         public FallenCommanderTwistedBattlefieldData TwistedBattlefield { get; }
         public FallenCommanderFallingBarrageData FallingBarrage { get; }
         public float CloseAttackDistance { get; }
-        public float LineStrikeMinimumDistance { get; }
         public float LineStrikeAlignmentThreshold { get; }
         public FallenCommanderPhaseConfig PhaseConfig { get; }
     }
@@ -102,6 +100,10 @@ namespace ProjectMT.Contents.FallenCommander
             TelegraphPrefab = source.FinalChargeTelegraphPrefab;
             TelegraphHoldDuration = source.FinalChargeTelegraphHoldDuration;
             Radius = source.FinalChargeRadius;
+            DamageDelay = source.FinalChargeDamageDelay;
+            WarningMessage = source.FinalChargeWarningMessage;
+            UseStun = source.FinalChargeUseStun;
+            StunDuration = source.FinalChargeStunDuration;
             Effects = source.FinalChargeEffects;
             PreCastMotion = source.FinalChargePreCastMotion;
             PreCastMotionSpeed = source.FinalChargePreCastMotionSpeed;
@@ -120,6 +122,10 @@ namespace ProjectMT.Contents.FallenCommander
         public GameObject TelegraphPrefab { get; }
         public float TelegraphHoldDuration { get; }
         public float Radius { get; }
+        public float DamageDelay { get; }
+        public string WarningMessage { get; }
+        public bool UseStun { get; }
+        public float StunDuration { get; }
         public FallenCommanderAttackEffectData Effects { get; }
         public AnimationClip PreCastMotion { get; }
         public float PreCastMotionSpeed { get; }

@@ -80,7 +80,8 @@ namespace ProjectMT.Contents.FallenCommander
             int bossPhase = 1,
             string phaseTransitionMessage = "",
             string timeoutWipeMessage = "",
-            float timeoutWipePulseInterval = 0.45f)
+            float timeoutWipePulseInterval = 0.45f,
+            string finalChargeWarningMessage = "")
         {
             BossHealth = bossHealth;
             BossMaxHealth = bossMaxHealth;
@@ -110,6 +111,7 @@ namespace ProjectMT.Contents.FallenCommander
             PhaseTransitionMessage = phaseTransitionMessage;
             TimeoutWipeMessage = timeoutWipeMessage;
             TimeoutWipePulseInterval = timeoutWipePulseInterval;
+            FinalChargeWarningMessage = finalChargeWarningMessage;
         }
 
         public float BossHealth { get; }
@@ -140,6 +142,7 @@ namespace ProjectMT.Contents.FallenCommander
         public string PhaseTransitionMessage { get; }
         public string TimeoutWipeMessage { get; }
         public float TimeoutWipePulseInterval { get; }
+        public string FinalChargeWarningMessage { get; }
     }
 
     // 같은 GameObject에 이 컴포넌트를 여러 개 추가하지 못하게 막는다.
@@ -608,7 +611,9 @@ namespace ProjectMT.Contents.FallenCommander
                         : state.TimeoutWipeMessage
                     : state.IsTimeoutWarningActive
                         ? "경고! 곧 전멸 공격이 발동됩니다!"
-                        : "경고! 보스가 강력한 광역 공격을 준비합니다!";
+                        : string.IsNullOrWhiteSpace(state.FinalChargeWarningMessage)
+                            ? "경고! 보스가 강력한 광역 공격을 준비합니다!"
+                            : state.FinalChargeWarningMessage;
             }
 
             if (finalChargeTimeValue != null)

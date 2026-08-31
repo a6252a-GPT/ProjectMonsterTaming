@@ -62,6 +62,7 @@ namespace ProjectMT.Contents.FallenCommander
         private int resolveBeatIndex;
         private bool hasPreviousLayout;
         private bool isResolvingRecordedBeats;
+        private System.Action<float, System.Action> damageDelayScheduler;
 
         public bool IsActive => state != PatternState.Inactive;
         public FallenCommanderTelegraphView ActiveTelegraph =>
@@ -76,7 +77,8 @@ namespace ProjectMT.Contents.FallenCommander
             HealthComponent health,
             FallenCommanderBossAnimationPresenter animations,
             Transform parent,
-            Vector3 battlefieldCenter)
+            Vector3 battlefieldCenter,
+            System.Action<float, System.Action> delayScheduler)
         {
             Cancel();
             if (patternData == null ||
@@ -97,6 +99,7 @@ namespace ProjectMT.Contents.FallenCommander
             animationPresenter = animations;
             effectParent = parent;
             arenaCenter = battlefieldCenter;
+            damageDelayScheduler = delayScheduler;
             beatIndex = 0;
             resolveBeatIndex = 0;
             hasPreviousLayout = false;
@@ -343,6 +346,7 @@ namespace ProjectMT.Contents.FallenCommander
                 playbackSpeed: data.CastMotionSpeed,
                 normalizedStart: data.CastMotionStart,
                 normalizedEnd: data.CastMotionEnd);
+            var dangerTiles = new List<BattlefieldTile>();
             for (var index = 0; index < tiles.Count; index++)
             {
                 var tile = tiles[index];
@@ -350,6 +354,8 @@ namespace ProjectMT.Contents.FallenCommander
                 {
                     continue;
                 }
+
+                dangerTiles.Add(tile);
 
                 resolveVfxPool.Play(
                     data.Effects,
@@ -368,22 +374,58 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor == null ? null : bossActor.transform,
                 commanderRoot);
 
-            if (!TryFindCommanderDangerTile(out var hitPosition))
+            var attacker = bossActor;
+            var target = commanderRoot;
+            var targetHealth = commanderHealth;
+            var effects = data.Effects;
+            var delay = data.DamageDelay;
+            var parent = effectParent;
+            ScheduleDamage(delay, () =>
             {
+                if (attacker == null ||
+                    !attacker.IsAlive ||
+                    target == null ||
+                    targetHealth == null ||
+                    !targetHealth.IsAlive)
+                {
+                    return;
+                }
+
+                for (var index = 0; index < dangerTiles.Count; index++)
+                {
+                    var tile = dangerTiles[index];
+                    var offset = target.position - tile.Center;
+                    if (Mathf.Abs(offset.x) > tile.Size.x * 0.5f ||
+                        Mathf.Abs(offset.z) > tile.Size.y * 0.5f)
+                    {
+                        continue;
+                    }
+
+                    FallenCommanderAttackEffectPlayer.PlayHit(
+                        effects,
+                        target.position,
+                        Vector3.forward,
+                        parent,
+                        attacker.transform,
+                        target);
+                    targetHealth.ApplyDamage(new DamageRequest(
+                        attacker,
+                        1f,
+                        target.position));
+                    return;
+                }
+            });
+        }
+
+        private void ScheduleDamage(float delay, System.Action apply)
+        {
+            if (damageDelayScheduler == null)
+            {
+                apply?.Invoke();
                 return;
             }
 
-            FallenCommanderAttackEffectPlayer.PlayHit(
-                data.Effects,
-                hitPosition,
-                Vector3.forward,
-                effectParent,
-                bossActor == null ? null : bossActor.transform,
-                commanderRoot);
-            commanderHealth.ApplyDamage(new DamageRequest(
-                bossActor,
-                1f,
-                hitPosition));
+            damageDelayScheduler.Invoke(Mathf.Max(0f, delay), apply);
         }
 
         private static Vector3 ResolveTileVfxScale(Vector2 tileSize)

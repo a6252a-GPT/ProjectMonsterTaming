@@ -108,6 +108,13 @@ namespace ProjectMT.Contents.FallenCommander
                     return false;
                 }
 
+                if (phases[index].Allows(FallenCommanderAttackPattern.BlackHole) &&
+                    !phases[index].BlackHolePattern.TryValidate(out var blackHoleError))
+                {
+                    error = $"{phases[index].Phase} 블랙홀 공격 설정 오류: {blackHoleError}";
+                    return false;
+                }
+
                 if (phases[index].Allows(FallenCommanderAttackPattern.TwistedBattlefield) &&
                     !phases[index].TwistedBattlefieldPattern.TryValidate(
                         out var twistedBattlefieldError))
@@ -142,6 +149,10 @@ namespace ProjectMT.Contents.FallenCommander
         private List<FallenCommanderAttackPattern> availableAttacks = new();
         [SerializeField, InspectorName("기본 투사체 중복 공격 허용")]
         private bool allowOverlappingBasicAttack = true;
+        [SerializeField, InspectorName("블랙홀 중 기본 투사체 중복 허용")]
+        private bool allowBasicAttackDuringBlackHole;
+        [SerializeField, InspectorName("낙하 탄막 중 기본 투사체 중복 허용")]
+        private bool allowBasicAttackDuringFallingBarrage;
         [SerializeField, InspectorName("페이즈 대표 공격 사용")]
         private bool hasSignatureAttack;
         [SerializeField, InspectorName("페이즈 대표 공격")]
@@ -154,6 +165,8 @@ namespace ProjectMT.Contents.FallenCommander
         private float transitionDuration = 1f;
         [SerializeField, InspectorName("연속 위치 공격 패턴 설정")]
         private FallenCommanderMarkStrikePhaseData markStrikePattern = new();
+        [SerializeField, InspectorName("블랙홀 공격 페이즈 설정")]
+        private FallenCommanderBlackHolePhaseData blackHolePattern = new();
         [SerializeField, InspectorName("연속 장판 공격 페이즈 설정")]
         private FallenCommanderTwistedBattlefieldPhaseData twistedBattlefieldPattern = new();
         [SerializeField, InspectorName("낙하 탄막 공격 페이즈 설정")]
@@ -163,12 +176,16 @@ namespace ProjectMT.Contents.FallenCommander
         public float HealthRatio => healthRatio;
         public IReadOnlyList<FallenCommanderAttackPattern> AvailableAttacks => availableAttacks;
         public bool AllowOverlappingBasicAttack => allowOverlappingBasicAttack;
+        public bool AllowBasicAttackDuringBlackHole => allowBasicAttackDuringBlackHole;
+        public bool AllowBasicAttackDuringFallingBarrage => allowBasicAttackDuringFallingBarrage;
         public bool HasSignatureAttack => hasSignatureAttack;
         public FallenCommanderAttackPattern SignatureAttack => signatureAttack;
         public string TransitionMessage => transitionMessage;
         public AudioClip TransitionSound => transitionSound;
         public float TransitionDuration => transitionDuration;
         public FallenCommanderMarkStrikePhaseData MarkStrikePattern => markStrikePattern;
+        public FallenCommanderBlackHolePhaseData BlackHolePattern =>
+            blackHolePattern ??= new FallenCommanderBlackHolePhaseData();
         public FallenCommanderTwistedBattlefieldPhaseData TwistedBattlefieldPattern =>
             twistedBattlefieldPattern ??= new FallenCommanderTwistedBattlefieldPhaseData();
         public FallenCommanderFallingBarragePhaseData FallingBarragePattern =>
@@ -180,54 +197,33 @@ namespace ProjectMT.Contents.FallenCommander
             return availableAttacks.Contains(attack);
         }
 
-        // 거리 조건으로 고른 공격을 페이즈 스킬 목록과 연속 공격 방지 규칙에 맞춘다.
-        public FallenCommanderAttackPattern ResolveAttack(
-            FallenCommanderAttackPattern selected,
+        public FallenCommanderAttackPattern SelectRandomAttack(
             FallenCommanderAttackPattern previous)
         {
-            if (selected == FallenCommanderAttackPattern.BlackHole &&
-                previous == FallenCommanderAttackPattern.Ring &&
-                Allows(FallenCommanderAttackPattern.TrackingMark))
+            var candidates = new List<FallenCommanderAttackPattern>();
+            for (var index = 0; index < availableAttacks.Count; index++)
             {
-                return FallenCommanderAttackPattern.TrackingMark;
+                var candidate = availableAttacks[index];
+                if (candidate != previous &&
+                    candidate != FallenCommanderAttackPattern.Basic &&
+                    candidate != FallenCommanderAttackPattern.Melee &&
+                    candidate != FallenCommanderAttackPattern.Line &&
+                    candidate != FallenCommanderAttackPattern.TwistedBattlefield &&
+                    candidate != FallenCommanderAttackPattern.FallingBarrage)
+                {
+                    candidates.Add(candidate);
+                }
             }
 
-            if (Allows(selected) && selected != previous)
+            if (candidates.Count > 0)
             {
-                return selected;
-            }
-
-            if (selected == FallenCommanderAttackPattern.Mark &&
-                Allows(FallenCommanderAttackPattern.TrackingMark) &&
-                previous != FallenCommanderAttackPattern.TrackingMark)
-            {
-                return FallenCommanderAttackPattern.TrackingMark;
-            }
-
-            if (selected == FallenCommanderAttackPattern.TrackingMark &&
-                Allows(FallenCommanderAttackPattern.Mark) &&
-                previous != FallenCommanderAttackPattern.Mark)
-            {
-                return FallenCommanderAttackPattern.Mark;
-            }
-
-            if (Allows(FallenCommanderAttackPattern.Ring) &&
-                previous != FallenCommanderAttackPattern.Ring)
-            {
-                return FallenCommanderAttackPattern.Ring;
-            }
-
-            if (Allows(FallenCommanderAttackPattern.Mark) &&
-                previous != FallenCommanderAttackPattern.Mark)
-            {
-                return FallenCommanderAttackPattern.Mark;
+                return candidates[Random.Range(0, candidates.Count)];
             }
 
             for (var index = 0; index < availableAttacks.Count; index++)
             {
-                if (availableAttacks[index] != previous &&
-                    availableAttacks[index] != FallenCommanderAttackPattern.TwistedBattlefield &&
-                    availableAttacks[index] != FallenCommanderAttackPattern.FallingBarrage)
+                if (availableAttacks[index] != FallenCommanderAttackPattern.Basic &&
+                    availableAttacks[index] != previous)
                 {
                     return availableAttacks[index];
                 }
@@ -235,7 +231,34 @@ namespace ProjectMT.Contents.FallenCommander
 
             return availableAttacks.Count > 0
                 ? availableAttacks[0]
-                : FallenCommanderAttackPattern.Mark;
+                : FallenCommanderAttackPattern.Basic;
+        }
+    }
+
+    [System.Serializable]
+    public sealed class FallenCommanderBlackHolePhaseData
+    {
+        [SerializeField, InspectorName("동시 생성 최소 개수"), Min(1)]
+        private int minimumCount = 1;
+        [SerializeField, InspectorName("동시 생성 최대 개수"), Min(1)]
+        private int maximumCount = 1;
+        [SerializeField, InspectorName("중심부 최소 간격"), Min(0f)]
+        private float minimumCoreSpacing = 2.5f;
+
+        public int MinimumCount => Mathf.Max(1, minimumCount);
+        public int MaximumCount => Mathf.Max(MinimumCount, maximumCount);
+        public float MinimumCoreSpacing => Mathf.Max(0f, minimumCoreSpacing);
+
+        public bool TryValidate(out string error)
+        {
+            if (minimumCount < 1 || maximumCount < minimumCount || minimumCoreSpacing < 0f)
+            {
+                error = "동시 생성 개수와 중심부 최소 간격을 확인해 주세요.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
         }
     }
 

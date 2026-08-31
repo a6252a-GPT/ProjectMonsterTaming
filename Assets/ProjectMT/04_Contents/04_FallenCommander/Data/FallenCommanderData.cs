@@ -83,6 +83,14 @@ namespace ProjectMT.Contents.FallenCommander
         private float finalChargeTelegraphHoldDuration = 0.25f;
         [SerializeField, InspectorName("공격 범위 반지름"), Min(0.1f)]
         private float finalChargeRadius = 10f;
+        [SerializeField, InspectorName("피해 판정 지연시간"), Min(0f)]
+        private float finalChargeDamageDelay;
+        [SerializeField, InspectorName("패턴 경고 문구")]
+        private string finalChargeWarningMessage = "경고! 보스가 강력한 광역 공격을 준비합니다!";
+        [SerializeField, InspectorName("기절 적용")]
+        private bool finalChargeUseStun;
+        [SerializeField, InspectorName("기절 지속시간"), Min(0f)]
+        private float finalChargeStunDuration;
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData finalChargeEffects = new();
         [SerializeField, InspectorName("시전 모션")] private AnimationClip finalChargePreCastMotion;
@@ -117,8 +125,6 @@ namespace ProjectMT.Contents.FallenCommander
         [Header("공격 선택 조건")]
         [SerializeField, InspectorName("근접 공격 선택 거리"), Min(0.1f)]
         private float closeAttackDistance = 3f;
-        [SerializeField, InspectorName("직선 공격 최소 거리"), Min(0.1f)]
-        private float lineStrikeMinimumDistance = 5f;
         [SerializeField, InspectorName("직선 공격 정면 판정 기준"), Range(-1f, 1f)]
         private float lineStrikeAlignmentThreshold = 0.7f;
 
@@ -185,6 +191,12 @@ namespace ProjectMT.Contents.FallenCommander
         public float FinalChargeTelegraphHoldDuration =>
             Mathf.Max(0f, finalChargeTelegraphHoldDuration);
         public float FinalChargeRadius => Mathf.Max(0.1f, finalChargeRadius);
+        public float FinalChargeDamageDelay => Mathf.Max(0f, finalChargeDamageDelay);
+        public string FinalChargeWarningMessage => finalChargeWarningMessage;
+        public bool FinalChargeUseStun => finalChargeUseStun;
+        public float FinalChargeStunDuration => finalChargeUseStun
+            ? Mathf.Max(0f, finalChargeStunDuration)
+            : 0f;
         public FallenCommanderAttackEffectData FinalChargeEffects => finalChargeEffects;
         public AnimationClip FinalChargePreCastMotion => finalChargePreCastMotion;
         public float FinalChargePreCastMotionSpeed => Mathf.Max(0.01f, finalChargePreCastMotionSpeed);
@@ -210,7 +222,6 @@ namespace ProjectMT.Contents.FallenCommander
         public FallenCommanderFallingBarrageData FallingBarrage =>
             fallingBarrage ??= new FallenCommanderFallingBarrageData();
         public float CloseAttackDistance => closeAttackDistance;
-        public float LineStrikeMinimumDistance => lineStrikeMinimumDistance;
         public float LineStrikeAlignmentThreshold => lineStrikeAlignmentThreshold;
         public FallenCommanderPhaseConfig PhaseConfig => phaseConfig;
         public AnimationClip DeathMotion => deathMotion;
@@ -275,6 +286,8 @@ namespace ProjectMT.Contents.FallenCommander
         private GameObject telegraphPrefab;
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData effects = new();
+        [SerializeField, InspectorName("피해 판정 지연시간"), Min(0f)]
+        private float damageDelay;
         [SerializeField, InspectorName("시전 모션")]
         private AnimationClip preCastMotion;
         [SerializeField, InspectorName("시전 모션 속도"), Min(0.01f)]
@@ -308,6 +321,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public GameObject TelegraphPrefab => telegraphPrefab;
         public FallenCommanderAttackEffectData Effects => effects;
+        public float DamageDelay => Mathf.Max(0f, damageDelay);
         public AnimationClip PreCastMotion => preCastMotion;
         public float PreCastMotionSpeed => Mathf.Max(0.01f, preCastMotionSpeed);
         public float PreCastMotionStart => ResolveStart(preCastMotionStart);
@@ -389,6 +403,8 @@ namespace ProjectMT.Contents.FallenCommander
         private GameObject telegraphPrefab;
         [SerializeField, InspectorName("연출 (VFX / SFX)")]
         private FallenCommanderAttackEffectData effects = new();
+        [SerializeField, InspectorName("피해 판정 지연시간"), Min(0f)]
+        private float damageDelay;
         [SerializeField, InspectorName("시전 모션")]
         private AnimationClip preCastMotion;
         [SerializeField, InspectorName("시전 모션 속도"), Min(0.01f)]
@@ -435,6 +451,7 @@ namespace ProjectMT.Contents.FallenCommander
         public GameObject ProjectilePrefab => projectilePrefab;
         public GameObject TelegraphPrefab => telegraphPrefab;
         public FallenCommanderAttackEffectData Effects => effects;
+        public float DamageDelay => Mathf.Max(0f, damageDelay);
         public AnimationClip PreCastMotion => preCastMotion;
         public float PreCastMotionSpeed => Mathf.Max(0.01f, preCastMotionSpeed);
         public float PreCastMotionStart => ResolveStart(preCastMotionStart);
@@ -513,7 +530,9 @@ namespace ProjectMT.Contents.FallenCommander
         [InspectorName("군단장 위치")]
         Commander,
         [InspectorName("투사체 위치")]
-        Projectile
+        Projectile,
+        [InspectorName("바닥 기준")]
+        Ground
     }
 
     [System.Serializable]
@@ -529,6 +548,8 @@ namespace ProjectMT.Contents.FallenCommander
         private GameObject projectilePrefab;
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData effects = new();
+        [SerializeField, InspectorName("피해 판정 지연시간"), Min(0f)]
+        private float damageDelay;
         [SerializeField, InspectorName("투사체 이동 속도"), Min(0.1f)]
         private float projectileSpeed = 8f;
         [SerializeField, InspectorName("투사체 피격 반지름"), Min(0.1f)]
@@ -545,6 +566,7 @@ namespace ProjectMT.Contents.FallenCommander
         public GameObject TelegraphPrefab => telegraphPrefab;
         public GameObject ProjectilePrefab => projectilePrefab;
         public FallenCommanderAttackEffectData Effects => effects;
+        public float DamageDelay => Mathf.Max(0f, damageDelay);
         public float WarningDuration => warningDuration;
         public float TelegraphHoldDuration => Mathf.Max(0f, telegraphHoldDuration);
         public float ProjectileSpeed => projectileSpeed;
@@ -565,6 +587,8 @@ namespace ProjectMT.Contents.FallenCommander
         private float telegraphHoldDuration = 0.25f;
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData effects = new();
+        [SerializeField, InspectorName("피해 판정 지연시간"), Min(0f)]
+        private float damageDelay;
         [SerializeField, InspectorName("시전 모션")] private AnimationClip preCastMotion;
         [SerializeField, InspectorName("시전 모션 속도"), Min(0.01f)] private float preCastMotionSpeed = 1f;
         [SerializeField, InspectorName("시전 모션 시작 지점"), Range(0f, 1f)]
@@ -594,6 +618,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public GameObject TelegraphPrefab => telegraphPrefab;
         public FallenCommanderAttackEffectData Effects => effects;
+        public float DamageDelay => Mathf.Max(0f, damageDelay);
         public AnimationClip PreCastMotion => preCastMotion;
         public AnimationClip CastMotion => castMotion;
         public float PreCastMotionSpeed => Mathf.Max(0.01f, preCastMotionSpeed);
@@ -744,10 +769,19 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("공격 범위 반지름 (연출용)"), Min(0.1f)]
         [Tooltip("전멸 피해는 전장 전체에 적용되며 이 값은 경고 범위의 표시 크기만 조절합니다.")]
         private float radius = 8f;
+        [SerializeField, InspectorName("피해 판정 지연시간"), Min(0f)]
+        private float damageDelay;
         [SerializeField, InspectorName("시전 중 상승 높이"), Min(0f)]
         private float riseHeight = 1.5f;
         [SerializeField, InspectorName("시전 중 상승 곡선")]
         private AnimationCurve riseCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+        [SerializeField, InspectorName("공격 모션 종료 후 하강시간"), Min(0f)]
+        private float descentDuration;
+        [SerializeField, InspectorName("하강 곡선")]
+        private AnimationCurve descentCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+        [SerializeField, InspectorName("시전·발동 VFX 바닥 고정")]
+        [Tooltip("전멸기 중 보스가 상승해도 시전·발동 VFX의 높이는 Ground 기준으로 유지합니다.")]
+        private bool clampVfxToGround = true;
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData effects = new();
         [SerializeField, InspectorName("시전 모션")] private AnimationClip preCastMotion;
@@ -777,8 +811,12 @@ namespace ProjectMT.Contents.FallenCommander
 
         public GameObject TelegraphPrefab => telegraphPrefab;
         public float Radius => Mathf.Max(0.1f, radius);
+        public float DamageDelay => Mathf.Max(0f, damageDelay);
         public float RiseHeight => Mathf.Max(0f, riseHeight);
         public AnimationCurve RiseCurve => riseCurve;
+        public float DescentDuration => Mathf.Max(0f, descentDuration);
+        public AnimationCurve DescentCurve => descentCurve;
+        public bool ClampVfxToGround => clampVfxToGround;
         public FallenCommanderAttackEffectData Effects => effects;
         public AnimationClip PreCastMotion => preCastMotion;
         public float PreCastMotionSpeed => Mathf.Max(0.01f, preCastMotionSpeed);

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
@@ -8,11 +9,22 @@ namespace ProjectMT.Contents.FallenCommander
     {
         private enum PatternState
         {
-            Inactive,
             Warning,
             Active
         }
 
+        private sealed class RuntimeHole
+        {
+            public Vector3 CenterPosition;
+            public PatternState State;
+            public float RemainingTime;
+            public bool HasDamagedCommander;
+            public FallenCommanderTelegraphView Telegraph;
+            public GameObject WarningVfxInstance;
+            public GameObject ActiveVfxInstance;
+        }
+
+        private readonly List<RuntimeHole> activeHoles = new();
         private FallenCommanderAttackData attack;
         private FallenCommanderAttackEffectData endEffects;
         private float activeDuration;
@@ -25,23 +37,21 @@ namespace ProjectMT.Contents.FallenCommander
         private Vector3 arenaCenter;
         private Vector2 arenaHalfExtents;
         private Color telegraphColor;
-
         private UnitActor bossActor;
         private Transform commanderRoot;
         private HealthComponent commanderHealth;
         private FallenCommanderBossAnimationPresenter animationPresenter;
         private Transform effectParent;
-        private PatternState state;
-        private float remainingTime;
-        private bool hasDamagedCommander;
-        private GameObject warningVfxInstance;
-        private GameObject activeVfxInstance;
+        private System.Action<float, System.Action> damageDelayScheduler;
 
-        public bool IsActive => state != PatternState.Inactive;
-        public Vector3 CenterPosition { get; private set; }
-        public FallenCommanderTelegraphView ActiveTelegraph { get; private set; }
+        public bool IsActive => activeHoles.Count > 0;
+        public Vector3 CenterPosition => activeHoles.Count > 0
+            ? activeHoles[0].CenterPosition
+            : Vector3.zero;
+        public FallenCommanderTelegraphView ActiveTelegraph => activeHoles.Count > 0
+            ? activeHoles[0].Telegraph
+            : null;
 
-        // 인스펙터에서 조정한 블랙홀 범위·흡입·연출 데이터를 런타임 모듈에 저장한다.
         public void Configure(
             FallenCommanderAttackData attackData,
             float duration,
@@ -54,7 +64,8 @@ namespace ProjectMT.Contents.FallenCommander
             Vector3 movementCenter,
             Vector2 movementHalfExtents,
             FallenCommanderAttackEffectData endingEffects,
-            Color warningColor)
+            Color warningColor,
+            System.Action<float, System.Action> delayScheduler)
         {
             attack = attackData;
             activeDuration = Mathf.Max(0.1f, duration);
@@ -70,10 +81,11 @@ namespace ProjectMT.Contents.FallenCommander
                 Mathf.Max(0.1f, movementHalfExtents.y));
             endEffects = endingEffects;
             telegraphColor = warningColor;
+            damageDelayScheduler = delayScheduler;
         }
 
-        // 플레이어 근처의 안전하게 보정된 위치에 블랙홀 경고를 시작한다.
         public bool Begin(
+            FallenCommanderBlackHolePhaseData phaseData,
             UnitActor boss,
             Transform commander,
             HealthComponent health,
@@ -82,13 +94,8 @@ namespace ProjectMT.Contents.FallenCommander
             Transform parent)
         {
             Cancel();
-            if (attack == null ||
-                attack.TelegraphPrefab == null ||
-                boss == null ||
-                commander == null ||
-                health == null ||
-                combatWorld == null ||
-                animations == null)
+            if (attack == null || attack.TelegraphPrefab == null || boss == null ||
+                commander == null || health == null || combatWorld == null || animations == null)
             {
                 return false;
             }
@@ -98,40 +105,54 @@ namespace ProjectMT.Contents.FallenCommander
             commanderHealth = health;
             animationPresenter = animations;
             effectParent = parent;
-            CenterPosition = ResolveSpawnPosition(commander.position);
-            remainingTime = Mathf.Max(0.1f, attack.WarningDuration) +
-                attack.TelegraphHoldDuration;
-            hasDamagedCommander = false;
-            state = PatternState.Warning;
 
             animationPresenter.PlayPreCast(
                 attack.PreCastMotion,
                 playbackSpeed: attack.PreCastMotionSpeed,
                 normalizedStart: attack.PreCastMotionStart,
                 normalizedEnd: attack.PreCastMotionEnd);
-            warningVfxInstance = FallenCommanderAttackEffectPlayer.PlayStart(
-                attack.Effects,
-                CenterPosition,
-                Vector3.forward,
-                effectParent,
-                bossActor.transform,
-                commanderRoot);
-            ActiveTelegraph = FallenCommanderTelegraphView.CreateCircle(
-                attack.TelegraphPrefab,
-                effectParent,
-                CenterPosition,
-                attack.Radius,
-                telegraphColor);
-            if (ActiveTelegraph != null)
+
+            var minimumCount = phaseData?.MinimumCount ?? 1;
+            var maximumCount = phaseData?.MaximumCount ?? minimumCount;
+            var holeCount = Random.Range(minimumCount, maximumCount + 1);
+            var minimumSpacing = phaseData?.MinimumCoreSpacing ?? 0f;
+            var centers = new List<Vector3>(holeCount);
+            for (var index = 0; index < holeCount; index++)
             {
-                return true;
+                var hole = new RuntimeHole
+                {
+                    CenterPosition = ResolveSpawnPosition(commander.position, centers, minimumSpacing),
+                    State = PatternState.Warning,
+                    RemainingTime = Mathf.Max(0.1f, attack.WarningDuration) +
+                        attack.TelegraphHoldDuration
+                };
+                centers.Add(hole.CenterPosition);
+                hole.WarningVfxInstance = FallenCommanderAttackEffectPlayer.PlayStart(
+                    attack.Effects,
+                    hole.CenterPosition,
+                    Vector3.forward,
+                    effectParent,
+                    bossActor.transform,
+                    commanderRoot);
+                hole.Telegraph = FallenCommanderTelegraphView.CreateCircle(
+                    attack.TelegraphPrefab,
+                    effectParent,
+                    hole.CenterPosition,
+                    attack.Radius,
+                    telegraphColor);
+                if (hole.Telegraph == null)
+                {
+                    DestroyHole(hole, false);
+                    Cancel();
+                    return false;
+                }
+
+                activeHoles.Add(hole);
             }
 
-            Cancel();
-            return false;
+            return true;
         }
 
-        // 경고 진행도와 활성 중 흡입을 갱신하고 자연 종료 여부를 반환한다.
         public bool Tick(float deltaTime)
         {
             if (!IsActive)
@@ -140,67 +161,110 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             var safeDeltaTime = Mathf.Max(0f, deltaTime);
-            remainingTime = Mathf.Max(0f, remainingTime - safeDeltaTime);
-            if (state == PatternState.Warning)
+            for (var index = activeHoles.Count - 1; index >= 0; index--)
             {
-                var warningDuration = Mathf.Max(0.1f, attack.WarningDuration);
-                var fillRemaining = Mathf.Max(
-                    0f,
-                    remainingTime - attack.TelegraphHoldDuration);
-                ActiveTelegraph?.SetProgress(1f - fillRemaining / warningDuration);
-                if (remainingTime <= 0f)
+                var hole = activeHoles[index];
+                hole.RemainingTime = Mathf.Max(0f, hole.RemainingTime - safeDeltaTime);
+                if (hole.State == PatternState.Warning)
                 {
-                    BeginPulling();
+                    TickWarning(hole);
+                }
+                else
+                {
+                    PullCommander(hole, safeDeltaTime);
                 }
 
-                return false;
+                if (hole.RemainingTime > 0f)
+                {
+                    continue;
+                }
+
+                if (hole.State == PatternState.Warning)
+                {
+                    BeginPulling(hole);
+                    continue;
+                }
+
+                DestroyHole(hole, true);
+                activeHoles.RemoveAt(index);
             }
 
-            PullCommander(safeDeltaTime);
             TryDamageCommander();
-            if (remainingTime > 0f)
+            if (activeHoles.Count > 0)
             {
                 return false;
             }
 
-            Complete();
+            ReleaseReferences();
             return true;
         }
 
-        // 블랙홀 활성 연출과 공격 모션을 시작한다.
-        private void BeginPulling()
+        public void Cancel()
         {
-            state = PatternState.Active;
-            remainingTime = activeDuration;
-            DestroyTelegraph();
-            DestroyEffect(ref warningVfxInstance);
-            animationPresenter.Play(
-                attack.CastMotion,
-                stopAfterMotion: true,
-                durationOverride: attack.CastMotionDuration,
-                playbackSpeed: attack.CastMotionSpeed,
-                normalizedStart: attack.CastMotionStart,
-                normalizedEnd: attack.CastMotionEnd);
-            activeVfxInstance = FallenCommanderAttackEffectPlayer.PlayResolve(
+            for (var index = 0; index < activeHoles.Count; index++)
+            {
+                DestroyHole(activeHoles[index], false);
+            }
+
+            activeHoles.Clear();
+            ReleaseReferences();
+        }
+
+        private void TickWarning(RuntimeHole hole)
+        {
+            var warningDuration = Mathf.Max(0.1f, attack.WarningDuration);
+            var fillRemaining = Mathf.Max(0f, hole.RemainingTime - attack.TelegraphHoldDuration);
+            hole.Telegraph?.SetProgress(1f - fillRemaining / warningDuration);
+        }
+
+        private void BeginPulling(RuntimeHole hole)
+        {
+            var isFirstActiveHole = !HasActiveHole();
+            hole.State = PatternState.Active;
+            hole.RemainingTime = activeDuration;
+            DestroyTelegraph(hole);
+            DestroyEffect(ref hole.WarningVfxInstance);
+            if (isFirstActiveHole)
+            {
+                animationPresenter.Play(
+                    attack.CastMotion,
+                    stopAfterMotion: true,
+                    durationOverride: attack.CastMotionDuration,
+                    playbackSpeed: attack.CastMotionSpeed,
+                    normalizedStart: attack.CastMotionStart,
+                    normalizedEnd: attack.CastMotionEnd);
+            }
+
+            hole.ActiveVfxInstance = FallenCommanderAttackEffectPlayer.PlayResolve(
                 attack.Effects,
-                CenterPosition,
+                hole.CenterPosition,
                 Vector3.forward,
                 effectParent,
                 bossActor.transform,
                 commanderRoot);
         }
 
-        // 중심에 가까울수록 강해지는 속도로 범위 안의 군단장을 끌어당긴다.
-        private void PullCommander(float deltaTime)
+        private bool HasActiveHole()
         {
-            if (commanderRoot == null ||
-                commanderHealth == null ||
-                !commanderHealth.IsAlive)
+            for (var index = 0; index < activeHoles.Count; index++)
+            {
+                if (activeHoles[index].State == PatternState.Active)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void PullCommander(RuntimeHole hole, float deltaTime)
+        {
+            if (commanderRoot == null || commanderHealth == null || !commanderHealth.IsAlive)
             {
                 return;
             }
 
-            var offset = CenterPosition - commanderRoot.position;
+            var offset = hole.CenterPosition - commanderRoot.position;
             offset.y = 0f;
             var distance = offset.magnitude;
             var outerRadius = Mathf.Max(coreRadius + 0.1f, attack.Radius);
@@ -219,67 +283,119 @@ namespace ProjectMT.Contents.FallenCommander
             commanderRoot.position += offset / distance * pullDistance;
         }
 
-        // 중심부에 처음 들어온 순간에만 하트 한 칸 피해를 적용한다.
         private void TryDamageCommander()
         {
-            if (hasDamagedCommander ||
-                commanderRoot == null ||
-                commanderHealth == null ||
-                !commanderHealth.IsAlive)
+            if (commanderRoot == null || commanderHealth == null || !commanderHealth.IsAlive)
             {
                 return;
             }
 
-            var offset = CenterPosition - commanderRoot.position;
+            List<Vector3> hitCenters = null;
+            for (var index = 0; index < activeHoles.Count; index++)
+            {
+                var hole = activeHoles[index];
+                if (hole.State != PatternState.Active || hole.HasDamagedCommander ||
+                    !IsCommanderInCore(hole.CenterPosition, commanderRoot.position))
+                {
+                    continue;
+                }
+
+                hole.HasDamagedCommander = true;
+                hitCenters ??= new List<Vector3>();
+                hitCenters.Add(hole.CenterPosition);
+            }
+
+            if (hitCenters == null)
+            {
+                return;
+            }
+
+            var attacker = bossActor;
+            var target = commanderRoot;
+            var targetHealth = commanderHealth;
+            var effects = attack.Effects;
+            var delay = attack.DamageDelay;
+            var parent = effectParent;
+            ScheduleDamage(delay, () =>
+            {
+                if (attacker == null || !attacker.IsAlive || target == null ||
+                    targetHealth == null || !targetHealth.IsAlive)
+                {
+                    return;
+                }
+
+                for (var index = 0; index < hitCenters.Count; index++)
+                {
+                    if (!IsCommanderInCore(hitCenters[index], target.position))
+                    {
+                        continue;
+                    }
+
+                    FallenCommanderAttackEffectPlayer.PlayHit(
+                        effects,
+                        target.position,
+                        Vector3.forward,
+                        parent,
+                        attacker.transform,
+                        target);
+                    targetHealth.ApplyDamage(new DamageRequest(attacker, 1f, target.position));
+                    return;
+                }
+            });
+        }
+
+        private bool IsCommanderInCore(Vector3 center, Vector3 commanderPosition)
+        {
+            var offset = center - commanderPosition;
             offset.y = 0f;
-            if (offset.sqrMagnitude > coreRadius * coreRadius)
+            return offset.sqrMagnitude <= coreRadius * coreRadius;
+        }
+
+        private void ScheduleDamage(float delay, System.Action apply)
+        {
+            if (damageDelayScheduler == null)
             {
+                apply?.Invoke();
                 return;
             }
 
-            hasDamagedCommander = true;
-            FallenCommanderAttackEffectPlayer.PlayHit(
-                attack.Effects,
-                commanderRoot.position,
-                Vector3.forward,
-                effectParent,
-                bossActor == null ? null : bossActor.transform,
-                commanderRoot);
-            commanderHealth.ApplyDamage(new DamageRequest(
-                bossActor,
-                1f,
-                commanderRoot.position));
+            damageDelayScheduler.Invoke(Mathf.Max(0f, delay), apply);
         }
 
-        // 활성 시간이 끝난 블랙홀의 종료 연출을 재생하고 임시 범위를 정리한다.
-        private void Complete()
+        private Vector3 ResolveSpawnPosition(
+            Vector3 commanderPosition,
+            IReadOnlyList<Vector3> existingCenters,
+            float minimumSpacing)
         {
-            DestroyEffect(ref activeVfxInstance);
-            FallenCommanderAttackEffectPlayer.PlayResolve(
-                endEffects,
-                CenterPosition,
-                Vector3.forward,
-                effectParent,
-                bossActor == null ? null : bossActor.transform,
-                commanderRoot);
-            ReleaseRuntimeState();
+            var bestCandidate = ClampToArena(commanderPosition);
+            var bestDistance = -1f;
+            for (var attempt = 0; attempt < 24; attempt++)
+            {
+                var angle = Random.Range(0f, Mathf.PI * 2f);
+                var distance = Random.Range(spawnMinDistance, spawnMaxDistance);
+                var candidate = commanderPosition + new Vector3(
+                    Mathf.Cos(angle) * distance,
+                    0f,
+                    Mathf.Sin(angle) * distance);
+                candidate = ClampToArena(candidate);
+                var nearestDistance = GetNearestCenterDistance(candidate, existingCenters);
+                if (nearestDistance >= minimumSpacing)
+                {
+                    return candidate;
+                }
+
+                if (nearestDistance > bestDistance)
+                {
+                    bestDistance = nearestDistance;
+                    bestCandidate = candidate;
+                }
+            }
+
+            return bestCandidate;
         }
 
-        // 중단·브레이크·씬 종료 시 남은 블랙홀 범위와 참조를 즉시 정리한다.
-        public void Cancel()
+        private Vector3 ClampToArena(Vector3 candidate)
         {
-            ReleaseRuntimeState();
-        }
-
-        // 플레이어 주변 후보 위치를 이동 가능 영역 안으로 보정한다.
-        private Vector3 ResolveSpawnPosition(Vector3 commanderPosition)
-        {
-            var angle = Random.Range(0f, Mathf.PI * 2f);
-            var distance = Random.Range(spawnMinDistance, spawnMaxDistance);
-            var candidate = commanderPosition + new Vector3(
-                Mathf.Cos(angle) * distance,
-                0f,
-                Mathf.Sin(angle) * distance);
             var outerRadius = Mathf.Max(coreRadius + 0.1f, attack.Radius);
             var allowedX = Mathf.Max(0f, arenaHalfExtents.x - outerRadius);
             var allowedZ = Mathf.Max(0f, arenaHalfExtents.y - outerRadius);
@@ -295,16 +411,56 @@ namespace ProjectMT.Contents.FallenCommander
             return candidate;
         }
 
-        // 생성한 범위 오브젝트와 런타임 참조만 제거한다.
-        private void ReleaseRuntimeState()
+        private static float GetNearestCenterDistance(
+            Vector3 candidate,
+            IReadOnlyList<Vector3> existingCenters)
         {
-            DestroyEffect(ref warningVfxInstance);
-            DestroyEffect(ref activeVfxInstance);
-            DestroyTelegraph();
+            if (existingCenters == null || existingCenters.Count == 0)
+            {
+                return float.PositiveInfinity;
+            }
 
-            state = PatternState.Inactive;
-            remainingTime = 0f;
-            hasDamagedCommander = false;
+            var nearestDistance = float.PositiveInfinity;
+            for (var index = 0; index < existingCenters.Count; index++)
+            {
+                var offset = candidate - existingCenters[index];
+                offset.y = 0f;
+                nearestDistance = Mathf.Min(nearestDistance, offset.magnitude);
+            }
+
+            return nearestDistance;
+        }
+
+        private void DestroyHole(RuntimeHole hole, bool playEndEffect)
+        {
+            DestroyEffect(ref hole.WarningVfxInstance);
+            DestroyEffect(ref hole.ActiveVfxInstance);
+            DestroyTelegraph(hole);
+            if (playEndEffect)
+            {
+                FallenCommanderAttackEffectPlayer.PlayResolve(
+                    endEffects,
+                    hole.CenterPosition,
+                    Vector3.forward,
+                    effectParent,
+                    bossActor == null ? null : bossActor.transform,
+                    commanderRoot);
+            }
+        }
+
+        private static void DestroyTelegraph(RuntimeHole hole)
+        {
+            if (hole.Telegraph == null)
+            {
+                return;
+            }
+
+            Object.Destroy(hole.Telegraph.gameObject);
+            hole.Telegraph = null;
+        }
+
+        private void ReleaseReferences()
+        {
             bossActor = null;
             commanderRoot = null;
             commanderHealth = null;
@@ -312,19 +468,6 @@ namespace ProjectMT.Contents.FallenCommander
             effectParent = null;
         }
 
-        // 경고 단계에서만 사용하는 공격 범위 오브젝트를 제거한다.
-        private void DestroyTelegraph()
-        {
-            if (ActiveTelegraph == null)
-            {
-                return;
-            }
-
-            Object.Destroy(ActiveTelegraph.gameObject);
-            ActiveTelegraph = null;
-        }
-
-        // 블랙홀 모듈이 직접 생성한 진행 중 VFX만 안전하게 제거한다.
         private static void DestroyEffect(ref GameObject instance)
         {
             if (instance != null)

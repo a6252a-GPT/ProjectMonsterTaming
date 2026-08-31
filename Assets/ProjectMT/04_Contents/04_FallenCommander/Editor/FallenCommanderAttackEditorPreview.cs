@@ -74,6 +74,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         public float TelegraphHoldDuration { get; set; }
         public float TimeoutRiseHeight { get; set; }
         public AnimationCurve TimeoutRiseCurve { get; set; }
+        public bool TimeoutClampVfxToGround { get; set; }
         public Vector3 StartEffectLocalOffset { get; set; }
     }
 
@@ -1799,7 +1800,12 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 spec.FacingTarget == null
                     ? (Vector3?)null
                     : spec.FacingTarget.position,
-                projectilePosition);
+                projectilePosition,
+                spec.Kind == FallenCommanderAttackPreviewKind.TimeoutWipe
+                    ? previewBossStartPosition
+                    : (Vector3?)null,
+                spec.Kind == FallenCommanderAttackPreviewKind.TimeoutWipe &&
+                    spec.TimeoutClampVfxToGround);
             var placement = FallenCommanderEffectPlacementResolver.Resolve(
                 spec.Effects,
                 stage,

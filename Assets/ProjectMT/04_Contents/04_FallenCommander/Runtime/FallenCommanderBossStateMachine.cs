@@ -36,50 +36,6 @@ namespace ProjectMT.Contents.FallenCommander
         FallingBarrage
     }
 
-    public static class FallenCommanderAttackSelectionRules
-    {
-        public static FallenCommanderAttackPattern Select(
-            float distance,
-            float forwardAlignment,
-            float closeAttackDistance,
-            float blackHoleRadius,
-            float lineStrikeMinimumDistance,
-            float lineStrikeAlignmentThreshold,
-            FallenCommanderAttackPattern previousAttack)
-        {
-            var safeDistance = Mathf.Max(0f, distance);
-            var closeDistance = Mathf.Max(0.1f, closeAttackDistance);
-            var lineDistance = Mathf.Max(closeDistance, lineStrikeMinimumDistance);
-            var alignment = Mathf.Clamp(forwardAlignment, -1f, 1f);
-            var alignmentThreshold = Mathf.Clamp(lineStrikeAlignmentThreshold, -1f, 1f);
-
-            if (safeDistance <= closeDistance)
-            {
-                return previousAttack == FallenCommanderAttackPattern.Melee
-                    ? FallenCommanderAttackPattern.BlackHole
-                    : FallenCommanderAttackPattern.Melee;
-            }
-
-            if (safeDistance >= lineDistance &&
-                alignment >= alignmentThreshold &&
-                previousAttack != FallenCommanderAttackPattern.Line)
-            {
-                return FallenCommanderAttackPattern.Line;
-            }
-
-            if (alignment < alignmentThreshold &&
-                previousAttack != FallenCommanderAttackPattern.Mark)
-            {
-                return FallenCommanderAttackPattern.Mark;
-            }
-
-            return safeDistance <= Mathf.Max(closeDistance, blackHoleRadius) &&
-                   previousAttack != FallenCommanderAttackPattern.BlackHole
-                ? FallenCommanderAttackPattern.BlackHole
-                : FallenCommanderAttackPattern.Basic;
-        }
-    }
-
     public sealed class FallenCommanderBossStateMachine
     {
         private enum BossState
@@ -134,11 +90,12 @@ namespace ProjectMT.Contents.FallenCommander
         private float corruptionRingSafeRadius;
         private float corruptionRingOuterRadius;
         private float closeAttackDistance;
-        private float lineStrikeMinimumDistance;
         private float lineStrikeAlignmentThreshold;
         private float commanderStunRemaining;
         private System.Action<bool> commanderStunChanged;
         private System.Action<string, float> attackWarningRequested;
+        private System.Action<float, System.Action> damageDelayScheduler;
+        private System.Action clearDelayedDamage;
         private bool isCommanderStunned;
         private bool isActive;
         private bool isBasicWindupActive;
@@ -229,7 +186,9 @@ namespace ProjectMT.Contents.FallenCommander
             Vector3 blackHoleArenaCenter,
             System.Action<bool> stunChanged,
             System.Action<string, float> warningRequested,
-            FallenCommanderBossFacingSmoother facingSmoother)
+            FallenCommanderBossFacingSmoother facingSmoother,
+            System.Action<float, System.Action> delayScheduler,
+            System.Action clearDelayedDamageActions)
         {
             Shutdown();
 
@@ -280,7 +239,8 @@ namespace ProjectMT.Contents.FallenCommander
                 blackHoleArenaCenter,
                 attacks.BlackHoleArenaHalfExtents,
                 attacks.BlackHoleEndEffects,
-                BlackHoleTelegraphColor);
+                BlackHoleTelegraphColor,
+                ScheduleDamage);
             lineStrikeMotion = attacks.LineStrike;
             lineStrikeCastTime = Mathf.Max(0.1f, lineStrikeMotion == null ? 0f : lineStrikeMotion.WarningDuration);
             lineStrikeWidth = Mathf.Max(0.1f, lineStrikeMotion == null ? 0f : lineStrikeMotion.Width);
@@ -293,11 +253,12 @@ namespace ProjectMT.Contents.FallenCommander
             twistedBattlefieldData = attacks.TwistedBattlefield;
             fallingBarrageData = attacks.FallingBarrage;
             closeAttackDistance = Mathf.Max(0.1f, attacks.CloseAttackDistance);
-            lineStrikeMinimumDistance = Mathf.Max(closeAttackDistance, attacks.LineStrikeMinimumDistance);
             lineStrikeAlignmentThreshold = Mathf.Clamp(attacks.LineStrikeAlignmentThreshold, -1f, 1f);
             phaseConfig = attacks.PhaseConfig;
             commanderStunChanged = stunChanged;
             attackWarningRequested = warningRequested;
+            damageDelayScheduler = delayScheduler;
+            clearDelayedDamage = clearDelayedDamageActions;
 
             attackCooldownRemaining = attackInterval;
             currentState = BossState.Idle;
@@ -463,11 +424,39 @@ namespace ProjectMT.Contents.FallenCommander
             fallingBarragePattern.Cancel();
             CancelOverlappingBasicAttack();
             animationPresenter?.StopPlayback();
+            PlayPhaseTransitionMotion(phase);
             stateTimeRemaining = 0f;
             attackCooldownRemaining = Mathf.Max(0.1f, transitionDuration);
             basicAttackCooldownRemaining = basicAttackRepeatInterval;
             currentState = BossState.Idle;
             PauseBossTracking();
+        }
+
+        private void PlayPhaseTransitionMotion(FallenCommanderBossPhase phase)
+        {
+            var phaseData = phaseConfig?.GetPhase(phase);
+            if (phaseData?.HasSignatureAttack != true)
+            {
+                return;
+            }
+
+            switch (phaseData.SignatureAttack)
+            {
+                case FallenCommanderAttackPattern.TwistedBattlefield:
+                    animationPresenter?.PlayPreCast(
+                        twistedBattlefieldData?.PreCastMotion,
+                        playbackSpeed: twistedBattlefieldData?.PreCastMotionSpeed ?? 1f,
+                        normalizedStart: twistedBattlefieldData?.PreCastMotionStart ?? 0f,
+                        normalizedEnd: twistedBattlefieldData?.PreCastMotionEnd ?? 1f);
+                    break;
+                case FallenCommanderAttackPattern.FallingBarrage:
+                    animationPresenter?.PlayPreCast(
+                        fallingBarrageData?.PreCastMotion,
+                        playbackSpeed: fallingBarrageData?.PreCastMotionSpeed ?? 1f,
+                        normalizedStart: fallingBarrageData?.PreCastMotionStart ?? 0f,
+                        normalizedEnd: fallingBarrageData?.PreCastMotionEnd ?? 1f);
+                    break;
+            }
         }
 
         // 전환을 끝내고 페이즈 데이터에 지정된 대표 공격을 시작한다.
@@ -575,7 +564,7 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            BeginFallingBarrage();
+            BeginFallingBarrage(GetDebugFallingBarragePhaseData());
         }
 
         private bool PrepareDebugAttack()
@@ -591,19 +580,35 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             DestroyActiveTelegraph();
+            markStrikePattern.Cancel();
+            blackHolePattern.Cancel();
             twistedBattlefieldPattern.Cancel();
             fallingBarragePattern.Cancel();
+            CancelOverlappingBasicAttack();
+            ReleaseCommanderStun();
+            clearDelayedDamage?.Invoke();
+            animationPresenter?.StopPlayback();
             stateTimeRemaining = 0f;
             isPhaseTransitionActive = false;
             currentState = BossState.Idle;
             attackCooldownRemaining = 0f;
+            basicAttackCooldownRemaining = 0f;
+            basicPatternDelayRemaining = 0f;
+            ResumeBossTracking();
             return true;
+        }
+
+        public void PrepareDebugPhaseJump()
+        {
+            PrepareDebugAttack();
         }
 
         // 생성된 공격 표시와 런타임 참조를 모두 정리한다.
         public void Shutdown()
         {
+            clearDelayedDamage?.Invoke();
             DestroyActiveTelegraph();
+            markStrikePattern.Cancel();
             twistedBattlefieldPattern.Cancel();
             fallingBarragePattern.Dispose();
             CancelOverlappingBasicAttack();
@@ -627,6 +632,8 @@ namespace ProjectMT.Contents.FallenCommander
             telegraphHoldDuration = 0f;
             commanderStunChanged = null;
             attackWarningRequested = null;
+            damageDelayScheduler = null;
+            clearDelayedDamage = null;
             attackCooldownRemaining = 0f;
             basicAttackCooldownRemaining = 0f;
             basicPatternDelayRemaining = 0f;
@@ -665,17 +672,13 @@ namespace ProjectMT.Contents.FallenCommander
                 : Vector3.Dot(
                     bossActor.transform.forward,
                     toCommander / distance);
+            var phaseData = phaseConfig?.GetPhase(currentPhase);
             var selected = TrySelectSpecialPattern(out var specialPattern)
                 ? specialPattern
-                : FallenCommanderAttackSelectionRules.Select(
-                    distance,
-                    alignment,
-                    closeAttackDistance,
-                    blackHoleRadius,
-                    lineStrikeMinimumDistance,
-                    lineStrikeAlignmentThreshold,
-                    LastSelectedAttack);
-            selected = ResolvePhaseAttack(selected);
+                : TrySelectConditionAttack(phaseData, distance, alignment, out var conditionPattern)
+                    ? conditionPattern
+                    : phaseData?.SelectRandomAttack(LastSelectedAttack) ??
+                        FallenCommanderAttackPattern.Basic;
 
             BeginPatternAttack(selected);
         }
@@ -716,14 +719,37 @@ namespace ProjectMT.Contents.FallenCommander
             }
         }
 
-        // 현재 페이즈 데이터의 스킬 장바구니로 공격 후보를 보정한다.
-        private FallenCommanderAttackPattern ResolvePhaseAttack(
-            FallenCommanderAttackPattern selected)
+        private bool TrySelectConditionAttack(
+            FallenCommanderPhaseData phaseData,
+            float distance,
+            float alignment,
+            out FallenCommanderAttackPattern selected)
         {
-            var phase = phaseConfig?.GetPhase(currentPhase);
-            return phase == null
-                ? selected
-                : phase.ResolveAttack(selected, LastSelectedAttack);
+            selected = FallenCommanderAttackPattern.Basic;
+            if (phaseData == null)
+            {
+                return false;
+            }
+
+            var canUseMelee = phaseData.Allows(FallenCommanderAttackPattern.Melee) &&
+                LastSelectedAttack != FallenCommanderAttackPattern.Melee &&
+                distance <= closeAttackDistance;
+            var canUseLine = phaseData.Allows(FallenCommanderAttackPattern.Line) &&
+                LastSelectedAttack != FallenCommanderAttackPattern.Line &&
+                alignment >= lineStrikeAlignmentThreshold;
+            if (canUseMelee)
+            {
+                selected = FallenCommanderAttackPattern.Melee;
+                return true;
+            }
+
+            if (canUseLine)
+            {
+                selected = FallenCommanderAttackPattern.Line;
+                return true;
+            }
+
+            return false;
         }
 
         // 현재 페이즈의 특수 패턴 확률을 한 번만 굴려 선택 결과를 결정한다.
@@ -818,7 +844,8 @@ namespace ProjectMT.Contents.FallenCommander
                     bossActor.transform.parent,
                     markStrikeArenaCenter,
                     MarkTelegraphColor,
-                    LockCommanderStun))
+                    LockCommanderStun,
+                    ScheduleDamage))
             {
                 attackCooldownRemaining = attackInterval;
                 currentState = BossState.Idle;
@@ -866,11 +893,16 @@ namespace ProjectMT.Contents.FallenCommander
         {
             LastSelectedAttack = FallenCommanderAttackPattern.BlackHole;
             DelayNextBasicAttackForPatternStart();
-            CancelOverlappingBasicAttack();
+            var phaseData = phaseConfig?.GetPhase(currentPhase);
+            if (phaseData?.AllowBasicAttackDuringBlackHole != true)
+            {
+                CancelOverlappingBasicAttack();
+            }
             DestroyActiveTelegraph();
             currentState = BossState.BlackHole;
             PauseBossTracking();
             if (!blackHolePattern.Begin(
+                    phaseData?.BlackHolePattern,
                     bossActor,
                     commanderRoot,
                     commanderHealth,
@@ -985,7 +1017,8 @@ namespace ProjectMT.Contents.FallenCommander
                     commanderHealth,
                     animationPresenter,
                     bossActor.transform.parent,
-                    markStrikeArenaCenter))
+                    markStrikeArenaCenter,
+                    ScheduleDamage))
             {
                 twistedBattlefieldPattern.Cancel();
                 attackCooldownRemaining = attackInterval;
@@ -997,14 +1030,17 @@ namespace ProjectMT.Contents.FallenCommander
             currentState = BossState.TwistedBattlefield;
         }
 
-        private void BeginFallingBarrage()
+        private void BeginFallingBarrage(FallenCommanderPhaseData phaseOverride = null)
         {
             LastSelectedAttack = FallenCommanderAttackPattern.FallingBarrage;
-            CancelOverlappingBasicAttack();
-            basicAttackCooldownRemaining = basicAttackRepeatInterval;
+            DelayNextBasicAttackForPatternStart();
+            var phaseData = phaseOverride ?? phaseConfig?.GetPhase(currentPhase);
+            if (phaseData?.AllowBasicAttackDuringFallingBarrage != true)
+            {
+                CancelOverlappingBasicAttack();
+            }
             DestroyActiveTelegraph();
             PauseBossTracking();
-            var phaseData = phaseConfig?.GetPhase(currentPhase);
             if (!fallingBarragePattern.Begin(
                     fallingBarrageData,
                     phaseData?.FallingBarragePattern,
@@ -1013,7 +1049,8 @@ namespace ProjectMT.Contents.FallenCommander
                     commanderHealth,
                     animationPresenter,
                     bossActor.transform.parent,
-                    markStrikeArenaCenter))
+                    markStrikeArenaCenter,
+                    ScheduleDamage))
             {
                 fallingBarragePattern.Cancel();
                 attackCooldownRemaining = attackInterval;
@@ -1026,6 +1063,26 @@ namespace ProjectMT.Contents.FallenCommander
             attackWarningRequested?.Invoke(
                 fallingBarrageData.WarningMessage,
                 fallingBarrageData.WarningMessageDuration);
+        }
+
+        private FallenCommanderPhaseData GetDebugFallingBarragePhaseData()
+        {
+            var currentPhaseData = phaseConfig?.GetPhase(currentPhase);
+            if (currentPhaseData?.Allows(FallenCommanderAttackPattern.FallingBarrage) == true)
+            {
+                return currentPhaseData;
+            }
+
+            var phaseTwoData = phaseConfig?.GetPhase(FallenCommanderBossPhase.Phase2);
+            if (phaseTwoData?.Allows(FallenCommanderAttackPattern.FallingBarrage) == true)
+            {
+                return phaseTwoData;
+            }
+
+            var phaseThreeData = phaseConfig?.GetPhase(FallenCommanderBossPhase.Phase3);
+            return phaseThreeData?.Allows(FallenCommanderAttackPattern.FallingBarrage) == true
+                ? phaseThreeData
+                : currentPhaseData;
         }
 
         private void BeginCircleAttack(
@@ -1067,14 +1124,17 @@ namespace ProjectMT.Contents.FallenCommander
         // 페이즈에서 허용한 경우 다른 패턴과 별개로 기본 투사체 공격을 갱신한다.
         private void TickOverlappingBasicAttack(float deltaTime)
         {
+            var phaseData = phaseConfig?.GetPhase(currentPhase);
             if (!isActive ||
-                phaseConfig?.GetPhase(currentPhase)?.AllowOverlappingBasicAttack != true ||
+                phaseData?.AllowOverlappingBasicAttack != true ||
                 currentState == BossState.Broken ||
                 currentState == BossState.Dead ||
-                currentState == BossState.BlackHole ||
+                (currentState == BossState.BlackHole &&
+                    !phaseData.AllowBasicAttackDuringBlackHole) ||
                 currentState == BossState.CorruptionRing ||
                 currentState == BossState.TwistedBattlefield ||
-                currentState == BossState.FallingBarrage ||
+                (currentState == BossState.FallingBarrage &&
+                    !phaseData.AllowBasicAttackDuringFallingBarrage) ||
                 IsTrackingMarkLocked())
             {
                 return;
@@ -1164,25 +1224,12 @@ namespace ProjectMT.Contents.FallenCommander
 
             if (hitCommander)
             {
-                FallenCommanderAttackEffectPlayer.PlayHit(
-                    basicAttack.Effects,
+                ScheduleBasicProjectileDamage(
                     basicProjectilePosition,
                     basicProjectileDirection,
-                    bossActor.transform.parent,
-                    bossActor.transform,
-                    commanderRoot,
                     activeBasicProjectile == null
                         ? null
                         : activeBasicProjectile.transform);
-                combatWorld.AttackDamageable(
-                    bossActor,
-                    commanderHealth,
-                    bossActor.EffectiveStats);
-
-                if (!isActive)
-                {
-                    return;
-                }
 
                 FinishBasicProjectile();
                 return;
@@ -1229,6 +1276,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         private bool CanStartOverlappingBasicAttack()
         {
+            var phaseData = phaseConfig?.GetPhase(currentPhase);
             return isActive &&
                 bossActor != null &&
                 bossActor.IsAlive &&
@@ -1236,10 +1284,12 @@ namespace ProjectMT.Contents.FallenCommander
                 commanderHealth.IsAlive &&
                 currentState != BossState.Broken &&
                 currentState != BossState.Dead &&
-                currentState != BossState.BlackHole &&
+                (currentState != BossState.BlackHole ||
+                    phaseData?.AllowBasicAttackDuringBlackHole == true) &&
                 currentState != BossState.CorruptionRing &&
                 currentState != BossState.TwistedBattlefield &&
-                currentState != BossState.FallingBarrage &&
+                (currentState != BossState.FallingBarrage ||
+                    phaseData?.AllowBasicAttackDuringFallingBarrage == true) &&
                 !IsTrackingMarkLocked() &&
                 !isBasicWindupActive &&
                 !isBasicProjectileActive;
@@ -1409,31 +1459,15 @@ namespace ProjectMT.Contents.FallenCommander
                     commanderRoot);
             }
 
-            if (IsCommanderInsideCurrentAttack())
+            ScheduleCurrentAttackDamage(
+                currentState,
+                motion,
+                effectPosition,
+                effectDirection);
+
+            if (!isActive || animationPresenter == null)
             {
-                FallenCommanderAttackEffectPlayer.PlayHit(
-                    motion?.Effects,
-                    commanderRoot.position,
-                    effectDirection,
-                    bossActor.transform.parent,
-                    bossActor.transform,
-                    commanderRoot);
-
-                var stunDuration = GetCurrentStunDuration();
-                if (stunDuration > 0f)
-                {
-                    LockCommanderStun(stunDuration);
-                }
-
-                combatWorld.AttackDamageable(
-                    bossActor,
-                    commanderHealth,
-                    bossActor.EffectiveStats);
-
-                if (!isActive)
-                {
-                    return;
-                }
+                return;
             }
 
             animationPresenter.Play(
@@ -1462,6 +1496,170 @@ namespace ProjectMT.Contents.FallenCommander
                 commanderRoot,
                 corruptionRingSafeRadius,
                 corruptionRingOuterRadius);
+        }
+
+        private void ScheduleBasicProjectileDamage(
+            Vector3 impactPosition,
+            Vector3 direction,
+            Transform projectile)
+        {
+            var attacker = bossActor;
+            var target = commanderRoot;
+            var targetHealth = commanderHealth;
+            var world = combatWorld;
+            var effectParent = attacker == null ? null : attacker.transform.parent;
+            var effectAnchor = attacker == null ? null : attacker.transform;
+            var effects = basicAttack?.Effects;
+            var radius = basicProjectileRadius;
+            ScheduleDamage(basicAttack == null ? 0f : basicAttack.DamageDelay, () =>
+            {
+                if (!isActive ||
+                    attacker == null ||
+                    !attacker.IsAlive ||
+                    target == null ||
+                    targetHealth == null ||
+                    !targetHealth.IsAlive ||
+                    world == null)
+                {
+                    return;
+                }
+
+                var offset = target.position - impactPosition;
+                offset.y = 0f;
+                if (offset.sqrMagnitude > radius * radius)
+                {
+                    return;
+                }
+
+                FallenCommanderAttackEffectPlayer.PlayHit(
+                    effects,
+                    impactPosition,
+                    direction,
+                    effectParent,
+                    effectAnchor,
+                    target,
+                    projectile);
+                world.AttackDamageable(attacker, targetHealth, attacker.EffectiveStats);
+            });
+        }
+
+        private void ScheduleCurrentAttackDamage(
+            BossState attackState,
+            FallenCommanderAttackData motion,
+            Vector3 attackPosition,
+            Vector3 attackDirection)
+        {
+            if (motion == null)
+            {
+                return;
+            }
+
+            var attacker = bossActor;
+            var target = commanderRoot;
+            var targetHealth = commanderHealth;
+            var world = combatWorld;
+            var effectParent = attacker == null ? null : attacker.transform.parent;
+            var effectAnchor = attacker == null ? null : attacker.transform;
+            var radius = attackState == BossState.Melee
+                ? meleeAttackRadius
+                : attackState == BossState.TrackingMark
+                    ? trackingMarkRadius
+                    : markStrikeRadius;
+            var safeRadius = corruptionRingSafeRadius;
+            var outerRadius = corruptionRingOuterRadius;
+            var lineWidth = lineStrikeWidth;
+            var lineLength = lineStrikeLength;
+            var stunDuration = attackState == BossState.Melee
+                ? motion.StunDuration
+                : attackState == BossState.LineStrike
+                    ? lineStrikeStunDuration
+                    : 0f;
+            ScheduleDamage(motion.DamageDelay, () =>
+            {
+                if (!isActive ||
+                    attacker == null ||
+                    !attacker.IsAlive ||
+                    target == null ||
+                    targetHealth == null ||
+                    !targetHealth.IsAlive ||
+                    world == null ||
+                    !IsCommanderInsideScheduledAttack(
+                        attackState,
+                        target.position,
+                        attackPosition,
+                        attackDirection,
+                        radius,
+                        safeRadius,
+                        outerRadius,
+                        lineWidth,
+                        lineLength))
+                {
+                    return;
+                }
+
+                FallenCommanderAttackEffectPlayer.PlayHit(
+                    motion.Effects,
+                    target.position,
+                    attackDirection,
+                    effectParent,
+                    effectAnchor,
+                    target);
+                if (stunDuration > 0f)
+                {
+                    LockCommanderStun(stunDuration);
+                }
+
+                world.AttackDamageable(attacker, targetHealth, attacker.EffectiveStats);
+            });
+        }
+
+        private static bool IsCommanderInsideScheduledAttack(
+            BossState attackState,
+            Vector3 commanderPosition,
+            Vector3 attackPosition,
+            Vector3 attackDirection,
+            float radius,
+            float safeRadius,
+            float outerRadius,
+            float lineWidth,
+            float lineLength)
+        {
+            var offset = commanderPosition - attackPosition;
+            offset.y = 0f;
+            if (attackState == BossState.CorruptionRing)
+            {
+                var distanceSquared = offset.sqrMagnitude;
+                return distanceSquared > safeRadius * safeRadius &&
+                    distanceSquared <= outerRadius * outerRadius;
+            }
+
+            if (attackState == BossState.LineStrike)
+            {
+                var forwardDistance = Vector3.Dot(offset, attackDirection);
+                var sideDistance = Mathf.Abs(Vector3.Dot(
+                    offset,
+                    Vector3.Cross(Vector3.up, attackDirection)));
+                var allowedHalfWidth = FallenCommanderTelegraphView.CalculateLineHalfWidth(
+                    lineWidth,
+                    lineLength,
+                    forwardDistance);
+                return forwardDistance >= 0f &&
+                    forwardDistance <= lineLength &&
+                    sideDistance <= allowedHalfWidth;
+            }
+
+            return offset.sqrMagnitude <= radius * radius;
+        }
+
+        private void ScheduleDamage(float delay, System.Action apply)
+        {
+            if (damageDelayScheduler == null)
+            {
+                apply?.Invoke();
+                return;
+            }
+
+            damageDelayScheduler.Invoke(Mathf.Max(0f, delay), apply);
         }
 
         private bool IsCommanderInsideCurrentAttack()
@@ -1540,7 +1738,7 @@ namespace ProjectMT.Contents.FallenCommander
             bossFacingSmoother.SetTrackingEnabled(true);
         }
 
-        private void LockCommanderStun(float duration)
+        public void LockCommanderStun(float duration)
         {
             commanderStunRemaining = Mathf.Max(
                 commanderStunRemaining,

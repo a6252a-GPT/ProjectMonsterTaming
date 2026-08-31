@@ -15,8 +15,10 @@ MonoBehaviour:
   phases:
   - phase: 1
     healthRatio: 1
-    availableAttacks: 020000000500000001000000
+    availableAttacks: 02000000050000000100000003000000
     allowOverlappingBasicAttack: 1
+    allowBasicAttackDuringBlackHole: 0
+    allowBasicAttackDuringFallingBarrage: 0
     hasSignatureAttack: 0
     signatureAttack: 0
     transitionMessage: "1 \uD398\uC774\uC988"
@@ -33,6 +35,10 @@ MonoBehaviour:
       clusterRadius: 1.35
       maxDamagePerGroup: 1
       stunDuration: 0
+    blackHolePattern:
+      minimumCount: 1
+      maximumCount: 1
+      minimumCoreSpacing: 2.5
     twistedBattlefieldPattern:
       selectionChance: 0.2
       beatCount: 2
@@ -48,10 +54,12 @@ MonoBehaviour:
       fallDuration: 1.8
   - phase: 2
     healthRatio: 0.7
-    availableAttacks: 04000000060000000200000005000000010000000700000008000000
+    availableAttacks: 0400000006000000020000000500000001000000070000000800000003000000
     allowOverlappingBasicAttack: 1
+    allowBasicAttackDuringBlackHole: 0
+    allowBasicAttackDuringFallingBarrage: 0
     hasSignatureAttack: 1
-    signatureAttack: 4
+    signatureAttack: 7
     transitionMessage: "2 \uD398\uC774\uC988"
     transitionSound: {fileID: 0}
     transitionDuration: 1
@@ -66,6 +74,10 @@ MonoBehaviour:
       clusterRadius: 1.35
       maxDamagePerGroup: 1
       stunDuration: 0
+    blackHolePattern:
+      minimumCount: 1
+      maximumCount: 1
+      minimumCoreSpacing: 2.5
     twistedBattlefieldPattern:
       selectionChance: 0.2
       beatCount: 2
@@ -83,8 +95,10 @@ MonoBehaviour:
     healthRatio: 0.4
     availableAttacks: 0400000006000000030000000500000001000000020000000700000008000000
     allowOverlappingBasicAttack: 1
+    allowBasicAttackDuringBlackHole: 1
+    allowBasicAttackDuringFallingBarrage: 1
     hasSignatureAttack: 1
-    signatureAttack: 3
+    signatureAttack: 8
     transitionMessage: "3 \uD398\uC774\uC988"
     transitionSound: {fileID: 0}
     transitionDuration: 1
@@ -99,6 +113,10 @@ MonoBehaviour:
       clusterRadius: 1.35
       maxDamagePerGroup: 1
       stunDuration: 0
+    blackHolePattern:
+      minimumCount: 2
+      maximumCount: 3
+      minimumCoreSpacing: 2.5
     twistedBattlefieldPattern:
       selectionChance: 0.28
       beatCount: 2

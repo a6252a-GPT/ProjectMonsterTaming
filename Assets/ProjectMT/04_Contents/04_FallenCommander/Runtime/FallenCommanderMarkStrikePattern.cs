@@ -20,6 +20,7 @@ namespace ProjectMT.Contents.FallenCommander
         private readonly List<Vector3> usedPositions = new();
         private readonly List<Vector3> usedGroupCenters = new();
         private readonly Dictionary<int, int> groupDamageCounts = new();
+        private readonly Dictionary<int, int> delayedGroupDamageCounts = new();
 
         private FallenCommanderAttackData attack;
         private FallenCommanderMarkStrikePhaseData settings;
@@ -31,6 +32,7 @@ namespace ProjectMT.Contents.FallenCommander
         private Vector3 arenaCenter;
         private Color telegraphColor;
         private System.Action<float> stunCommander;
+        private System.Action<float, System.Action> damageDelayScheduler;
         private float timeUntilNextGroup;
         private int spawnedCount;
         private int nextGroupIndex;
@@ -51,7 +53,8 @@ namespace ProjectMT.Contents.FallenCommander
             Transform parent,
             Vector3 randomArenaCenter,
             Color warningColor,
-            System.Action<float> stunAction)
+            System.Action<float> stunAction,
+            System.Action<float, System.Action> delayScheduler)
         {
             Cancel();
             if (attackData == null ||
@@ -74,6 +77,8 @@ namespace ProjectMT.Contents.FallenCommander
             arenaCenter = randomArenaCenter;
             telegraphColor = warningColor;
             stunCommander = stunAction;
+            damageDelayScheduler = delayScheduler;
+            delayedGroupDamageCounts.Clear();
             IsActive = true;
 
             animationPresenter?.PlayPreCast(
@@ -232,29 +237,68 @@ namespace ProjectMT.Contents.FallenCommander
                 commanderRoot);
 
             PlayCastMotionOnce();
-            if (!IsCommanderInside(strike.Position) || !CanDamageGroup(strike.GroupIndex))
+            var attacker = bossActor;
+            var target = commanderRoot;
+            var targetHealth = commanderHealth;
+            var effects = attack.Effects;
+            var radius = attack.Radius;
+            var maximumDamageCount = settings.MaxDamagePerGroup;
+            var stunDuration = settings.StunDuration;
+            var parent = effectParent;
+            var stunAction = stunCommander;
+            ScheduleDamage(attack.DamageDelay, () =>
             {
+                if (attacker == null ||
+                    !attacker.IsAlive ||
+                    target == null ||
+                    targetHealth == null ||
+                    !targetHealth.IsAlive)
+                {
+                    return;
+                }
+
+                var offset = target.position - strike.Position;
+                offset.y = 0f;
+                if (offset.sqrMagnitude > radius * radius)
+                {
+                    return;
+                }
+
+                delayedGroupDamageCounts.TryGetValue(strike.GroupIndex, out var damageCount);
+                if (damageCount >= maximumDamageCount)
+                {
+                    return;
+                }
+
+                delayedGroupDamageCounts[strike.GroupIndex] = damageCount + 1;
+                FallenCommanderAttackEffectPlayer.PlayHit(
+                    effects,
+                    target.position,
+                    direction,
+                    parent,
+                    attacker.transform,
+                    target);
+                if (stunDuration > 0f)
+                {
+                    stunAction?.Invoke(stunDuration);
+                }
+
+                targetHealth.ApplyDamage(new DamageRequest(
+                    attacker,
+                    1f,
+                    target.position));
+            });
+        }
+
+        private void ScheduleDamage(float delay, System.Action apply)
+        {
+            if (damageDelayScheduler == null)
+            {
+                apply?.Invoke();
                 return;
             }
 
-            FallenCommanderAttackEffectPlayer.PlayHit(
-                attack.Effects,
-                commanderRoot.position,
-                direction,
-                effectParent,
-                bossActor == null ? null : bossActor.transform,
-                commanderRoot);
-            if (settings.StunDuration > 0f)
-            {
-                stunCommander?.Invoke(settings.StunDuration);
-            }
-
-            groupDamageCounts.TryGetValue(strike.GroupIndex, out var damageCount);
-            groupDamageCounts[strike.GroupIndex] = damageCount + 1;
-            commanderHealth.ApplyDamage(new DamageRequest(
-                bossActor,
-                1f,
-                commanderRoot.position));
+            damageDelayScheduler.Invoke(Mathf.Max(0f, delay), apply);
         }
 
         // 첫 장판이 발동할 때만 공격 모션을 한 번 재생한다.

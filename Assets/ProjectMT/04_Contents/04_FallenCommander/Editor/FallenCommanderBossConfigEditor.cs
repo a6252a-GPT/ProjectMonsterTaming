@@ -103,6 +103,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     "finalChargeTelegraphPrefab",
                     "finalChargeTelegraphHoldDuration",
                     "finalChargeRadius",
+                    "finalChargeDamageDelay",
+                    "finalChargeWarningMessage",
+                    "finalChargeUseStun",
+                    "finalChargeStunDuration",
                     "finalChargeEffects",
                     "finalChargePreCastMotion",
                     "finalChargePreCastMotionSpeed",
@@ -422,6 +426,12 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             {
                 foreach (var propertyName in definition.PropertyNames)
                 {
+                    if (propertyName == "finalChargeStunDuration" &&
+                        serializedObject.FindProperty("finalChargeUseStun")?.boolValue != true)
+                    {
+                        continue;
+                    }
+
                     var property = serializedObject.FindProperty(propertyName);
                     if (property == null)
                     {
@@ -1145,6 +1155,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     TimeoutRiseCurve = kind == FallenCommanderAttackPreviewKind.TimeoutWipe
                         ? timeoutWipe?.RiseCurve
                         : null,
+                    TimeoutClampVfxToGround = kind == FallenCommanderAttackPreviewKind.TimeoutWipe &&
+                        (timeoutWipe?.ClampVfxToGround ?? true),
                     StartEffectLocalOffset = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargeStartEffectOffset
                         : Vector3.zero

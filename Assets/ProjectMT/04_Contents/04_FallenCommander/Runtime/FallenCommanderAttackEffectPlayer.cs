@@ -13,7 +13,9 @@ namespace ProjectMT.Contents.FallenCommander
             Transform parent,
             Transform boss = null,
             Transform commander = null,
-            Transform projectile = null)
+            Transform projectile = null,
+            Transform ground = null,
+            bool clampHeightToGround = false)
         {
             if (effects == null)
             {
@@ -25,7 +27,9 @@ namespace ProjectMT.Contents.FallenCommander
                 direction,
                 boss,
                 commander,
-                projectile);
+                projectile,
+                ground,
+                clampHeightToGround);
             var placement = FallenCommanderEffectPlacementResolver.Resolve(
                 effects,
                 FallenCommanderEffectStage.Start,
@@ -51,7 +55,9 @@ namespace ProjectMT.Contents.FallenCommander
             Transform parent,
             Transform boss = null,
             Transform commander = null,
-            Transform projectile = null)
+            Transform projectile = null,
+            Transform ground = null,
+            bool clampHeightToGround = false)
         {
             var instance = PlayResolveVfx(
                 effects,
@@ -61,14 +67,18 @@ namespace ProjectMT.Contents.FallenCommander
                 boss,
                 commander,
                 projectile,
-                Vector3.one);
+                Vector3.one,
+                ground,
+                clampHeightToGround);
             PlayResolveSfx(
                 effects,
                 position,
                 direction,
                 boss,
                 commander,
-                projectile);
+                projectile,
+                ground,
+                clampHeightToGround);
             return instance;
         }
 
@@ -80,7 +90,9 @@ namespace ProjectMT.Contents.FallenCommander
             Transform boss = null,
             Transform commander = null,
             Transform projectile = null,
-            Vector3 areaScale = default)
+            Vector3 areaScale = default,
+            Transform ground = null,
+            bool clampHeightToGround = false)
         {
             if (effects == null)
             {
@@ -92,7 +104,9 @@ namespace ProjectMT.Contents.FallenCommander
                 direction,
                 boss,
                 commander,
-                projectile);
+                projectile,
+                ground,
+                clampHeightToGround);
             var placement = FallenCommanderEffectPlacementResolver.Resolve(
                 effects,
                 FallenCommanderEffectStage.Resolve,
@@ -111,7 +125,9 @@ namespace ProjectMT.Contents.FallenCommander
             Vector3 direction,
             Transform boss = null,
             Transform commander = null,
-            Transform projectile = null)
+            Transform projectile = null,
+            Transform ground = null,
+            bool clampHeightToGround = false)
         {
             if (effects == null)
             {
@@ -123,7 +139,9 @@ namespace ProjectMT.Contents.FallenCommander
                 direction,
                 boss,
                 commander,
-                projectile);
+                projectile,
+                ground,
+                clampHeightToGround);
             var placement = FallenCommanderEffectPlacementResolver.Resolve(
                 effects,
                 FallenCommanderEffectStage.Resolve,
@@ -223,14 +241,18 @@ namespace ProjectMT.Contents.FallenCommander
             Vector3 attackDirection,
             Transform boss,
             Transform commander,
-            Transform projectile)
+            Transform projectile,
+            Transform ground = null,
+            bool clampHeightToGround = false)
         {
             return new FallenCommanderEffectPlacementContext(
                 attackPosition,
                 attackDirection,
                 boss == null ? (Vector3?)null : boss.position,
                 commander == null ? (Vector3?)null : commander.position,
-                projectile == null ? (Vector3?)null : projectile.position);
+                projectile == null ? (Vector3?)null : projectile.position,
+                ground == null ? (Vector3?)null : ground.position,
+                clampHeightToGround);
         }
 
         // 지정된 AudioClip을 공격 위치에서 재생하고 설정된 유지시간 뒤 제거한다.

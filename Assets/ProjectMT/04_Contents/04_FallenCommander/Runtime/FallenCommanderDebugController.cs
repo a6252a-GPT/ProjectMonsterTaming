@@ -13,6 +13,8 @@ namespace ProjectMT.Contents.FallenCommander
         private readonly Func<bool> isFinalChargeActive;
         private readonly Func<UnitActor> getBossActor;
         private readonly Func<FallenCommanderBossStateMachine> getStateMachine;
+        private readonly Action prepareStandardAttack;
+        private readonly Action preparePhaseJump;
         private readonly FallenCommanderBattleFlow battleFlow;
         private readonly Action beginTimeoutWipe;
         private readonly Action publishHudState;
@@ -27,6 +29,8 @@ namespace ProjectMT.Contents.FallenCommander
             Func<bool> isFinalChargeActive,
             Func<UnitActor> getBossActor,
             Func<FallenCommanderBossStateMachine> getStateMachine,
+            Action prepareStandardAttack,
+            Action preparePhaseJump,
             FallenCommanderBattleFlow battleFlow,
             Action beginTimeoutWipe,
             Action publishHudState,
@@ -40,6 +44,10 @@ namespace ProjectMT.Contents.FallenCommander
             this.isFinalChargeActive = isFinalChargeActive ?? throw new ArgumentNullException(nameof(isFinalChargeActive));
             this.getBossActor = getBossActor ?? throw new ArgumentNullException(nameof(getBossActor));
             this.getStateMachine = getStateMachine ?? throw new ArgumentNullException(nameof(getStateMachine));
+            this.prepareStandardAttack = prepareStandardAttack ??
+                throw new ArgumentNullException(nameof(prepareStandardAttack));
+            this.preparePhaseJump = preparePhaseJump ??
+                throw new ArgumentNullException(nameof(preparePhaseJump));
             this.battleFlow = battleFlow ?? throw new ArgumentNullException(nameof(battleFlow));
             this.beginTimeoutWipe = beginTimeoutWipe ?? throw new ArgumentNullException(nameof(beginTimeoutWipe));
             this.publishHudState = publishHudState ?? throw new ArgumentNullException(nameof(publishHudState));
@@ -103,6 +111,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void DebugSetBossPhase(int phaseNumber)
         {
+            preparePhaseJump();
             setBossPhase(phaseNumber);
         }
 
@@ -144,6 +153,7 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
+            prepareStandardAttack();
             var stateMachine = getStateMachine();
             if (stateMachine != null)
             {

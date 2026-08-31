@@ -439,12 +439,22 @@ namespace ProjectMT.Features.OfflineReward
             }
 
             var completed = current;
+            var onConfirmed = confirmed;
             current = null;
             acknowledge = null;
+            confirmed = null;
             UIPanelPopAnimator.RequestClose(DisplayRoot, () =>
             {
-                confirmed?.Invoke(completed);
-                confirmed = null;
+                try
+                {
+                    onConfirmed?.Invoke(completed);
+                }
+                catch (Exception exception)
+                {
+                    // 팝업을 닫은 뒤 다음 화면(다음 영수증/출석 등)으로 넘어가는 콜백이라,
+                    // 여기서 예외가 나도 로그만 남기고 삼켜서 이후 화면 흐름이 멈추지 않게 한다.
+                    Debug.LogException(exception);
+                }
             });
         }
 

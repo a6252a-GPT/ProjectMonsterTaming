@@ -566,10 +566,27 @@ namespace ProjectMT.Bootstrap
 
         private void HandleOfflineRewardConfirmed(OfflineRewardPresentation presentation)
         {
-            rewardPresenter?.PlayConfirmed(presentation?.CreateAcquirePresentation());
-            if (!ShowPendingOfflineRewards())
+            try
             {
-                ShowPendingAttendance(); // 접속 정산을 모두 확인한 뒤 출석 표시
+                rewardPresenter?.PlayConfirmed(presentation?.CreateAcquirePresentation());
+                if (!ShowPendingOfflineRewards())
+                {
+                    ShowPendingAttendance(); // 접속 정산을 모두 확인한 뒤 출석 표시
+                }
+            }
+            catch (Exception exception)
+            {
+                // 팝업은 이미 닫힌 뒤라 여기서 예외가 나면 다음 화면 전환(다음 영수증/출석)이 조용히
+                // 끊길 수 있다. 로그만 남기고 최소한 출석 표시는 시도해 화면이 멈추지 않게 한다.
+                Debug.LogException(exception);
+                try
+                {
+                    ShowPendingAttendance();
+                }
+                catch (Exception fallbackException)
+                {
+                    Debug.LogException(fallbackException);
+                }
             }
         }
 

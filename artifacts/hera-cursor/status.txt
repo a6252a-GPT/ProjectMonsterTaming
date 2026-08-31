@@ -1,0 +1,9 @@
+﻿Unity (port 8090): ready
+  Project: C:/Users/ZZ5/Documents/GitHub/ProjectMonsterTaming
+  Version: 6000.3.15f1
+  Docs:    6000.3
+  Compiler: csc=unity_dotnet_sdk_roslyn dotnet=unity_netcore_runtime
+  PID:     25528
+
+Update available: jcsoft-dev → v0.2.17
+Run "hera-agent-unity update" to upgrade.

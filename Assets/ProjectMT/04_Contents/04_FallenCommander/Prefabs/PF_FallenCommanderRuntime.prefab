@@ -4434,7 +4434,6 @@ GameObject:
   - component: {fileID: 4076903577542695784}
   - component: {fileID: 8571904440693775507}
   - component: {fileID: 2989863950120343424}
-  - component: {fileID: 6853934749250278785}
   - component: {fileID: 3165103503961837598}
   m_Layer: 0
   m_Name: FallenCommanderCamera
@@ -4567,14 +4566,6 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!81 &6853934749250278785
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2012734180081904525}
-  m_Enabled: 1
 --- !u!81 &3165103503961837598
 AudioListener:
   m_ObjectHideFlags: 0

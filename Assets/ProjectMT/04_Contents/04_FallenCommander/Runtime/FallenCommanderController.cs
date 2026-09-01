@@ -77,6 +77,9 @@ namespace ProjectMT.Contents.FallenCommander
         private FallenCommanderTimeoutWipeData TimeoutWipe => bossConfig?.TimeoutWipe;
 
         public bool IsRunning => battleFlow.IsRunning;
+#if UNITY_EDITOR
+        public IBossDungeonDebugController DebugController => debugController;
+#endif
         public event Action<FallenCommanderHudState> HudStateChanged;
 
         public void Initialize(ContentContext contentContext)

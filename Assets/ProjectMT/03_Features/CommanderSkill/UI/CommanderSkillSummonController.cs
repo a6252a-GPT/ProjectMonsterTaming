@@ -232,11 +232,12 @@ namespace ProjectMT.Features.CommanderSkill
 
             var requestVersion = lifetimeVersion;
             isSummoning = true;
-            HideResults();
-            SetStatus("소환 결과를 확정하는 중입니다...");
-            RefreshButtons();
             try
             {
+                HideResults();
+                SetStatus("소환 결과를 확정하는 중입니다...");
+                RefreshButtons();
+
                 var expectedCount = progressService.View.CommanderSkills.SummonCount;
                 var ownedBefore = new HashSet<string>(
                     progressService.View.CommanderSkills.OwnedSkills.Select(skill => skill.SkillId),
@@ -275,6 +276,15 @@ namespace ProjectMT.Features.CommanderSkill
 
                 ShowResults(drawCount, resultIds, ownedBefore);
                 SetStatus($"{drawCount:N0}회 스킬 소환이 완료되었습니다");
+            }
+            catch (Exception exception)
+            {
+                // 기획하지 못한 예외가 나도 소환 버튼이 영구히 잠기지 않도록 방어.
+                Debug.LogException(exception, this);
+                if (IsCurrentRequest(requestVersion))
+                {
+                    SetStatus("소환 처리 중 예상치 못한 오류가 발생했습니다");
+                }
             }
             finally
             {

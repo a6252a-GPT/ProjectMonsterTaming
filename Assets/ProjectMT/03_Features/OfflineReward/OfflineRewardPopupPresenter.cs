@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ProjectMT.Features.Equipment;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Equipment;
+using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.UI;
@@ -18,6 +19,8 @@ namespace ProjectMT.Features.OfflineReward
     {
         private const string FrameVariantPrefix = ItemGradeFramePalette.FrameVariantPrefix;
         private const string CommonFrameVariantSuffix = ItemGradeFramePalette.CommonSuffix;
+        private const float ActionButtonDimmedAlpha = 76f / 255f; // 일일/주간 퀘스트 수령 완료 연출과 동일한 값
+        private const float ActionButtonNormalAlpha = 1f;
 
         [SerializeField] private TMP_Text timeText;
         [SerializeField] private TMP_Text stageText;
@@ -42,8 +45,10 @@ namespace ProjectMT.Features.OfflineReward
         [SerializeField] private Sprite commanderExperienceIcon;
         [SerializeField] private Sprite fallbackRewardIcon;
         [SerializeField] private Button adButton;
+        [SerializeField] private TMP_Text adCooldownTimeText; // 비워두면 adButton 하위 "TimeText"를 이름으로 자동 탐색
         [SerializeField] private Button claimButton;
         [SerializeField] private Button closeButton;
+        [SerializeField] private RewardedAdVideoOverlaySelector adVideoOverlay; // 영상별로 나뉜 AdVideoOverlay 중 하나를 골라 재생
         [SerializeField] private GameObject displayRootOverride;
         [SerializeField] private GameObject mainPopupRoot;
         [SerializeField] private GameObject autoDismantleNoticeRoot;
@@ -54,6 +59,7 @@ namespace ProjectMT.Features.OfflineReward
         private readonly Dictionary<string, GameObject> frameVariantTemplates = new Dictionary<string, GameObject>();
         private Func<Task<bool>> acknowledge;
         private Action<OfflineRewardPresentation> confirmed;
+        private Func<OfflineRewardPresentation, Task<bool>> grantDoubleReward;
         private OfflineRewardPresentation current;
         private ItemCatalog itemCatalog;
         private bool busy;
@@ -66,6 +72,7 @@ namespace ProjectMT.Features.OfflineReward
         {
             CacheRewardSlots();
             CacheFrameVariantTemplates();
+            ResolveAdCooldownTimeText();
             adButton?.onClick.RemoveListener(HandleAdClicked);
             adButton?.onClick.AddListener(HandleAdClicked);
             claimButton?.onClick.RemoveListener(HandleClaimClicked);
@@ -74,10 +81,6 @@ namespace ProjectMT.Features.OfflineReward
             closeButton?.onClick.AddListener(HandleClaimClicked);
             autoDismantleNoticeConfirmButton?.onClick.RemoveListener(HandleNoticeConfirmed);
             autoDismantleNoticeConfirmButton?.onClick.AddListener(HandleNoticeConfirmed);
-            if (adButton != null)
-            {
-                adButton.interactable = false; // 광고 SDK 연결 전 비활성 유지
-            }
 
             DisplayRoot.SetActive(false);
         }
@@ -99,13 +102,19 @@ namespace ProjectMT.Features.OfflineReward
             {
                 SetCombatDisplaySuppressed(shouldSuppress);
             }
+
+            if (IsOpen && adCooldownTimeText != null && adCooldownTimeText.gameObject.activeSelf)
+            {
+                UpdateAdCooldownText();
+            }
         }
 
         public void Show(
             OfflineRewardPresentation presentation,
             ItemCatalog catalog,
             Func<Task<bool>> acknowledgeRequest,
-            Action<OfflineRewardPresentation> onConfirmed)
+            Action<OfflineRewardPresentation> onConfirmed,
+            Func<OfflineRewardPresentation, Task<bool>> grantDoubleRewardRequest = null)
         {
             if (presentation == null)
             {
@@ -116,6 +125,7 @@ namespace ProjectMT.Features.OfflineReward
             itemCatalog = catalog;
             acknowledge = acknowledgeRequest;
             confirmed = onConfirmed;
+            grantDoubleReward = grantDoubleRewardRequest;
             busy = false;
             Bind(presentation);
             UIPanelPopAnimator.RequestOpen(DisplayRoot, UIPanelPopStyle.RewardPopup);
@@ -139,11 +149,8 @@ namespace ProjectMT.Features.OfflineReward
                     $"분해 {presentation.AutoDismantledEquipmentCount:N0}개 · " +
                     $"장비 슬롯 강화석 +{presentation.AutoDismantleUpgradeStone:N0}");
             }
-            if (claimButton != null)
-            {
-                claimButton.interactable = true;
-            }
-
+            SetActionButtonsLocked(false); // 새 영수증을 띄울 때마다 그냥받기·2배받기 모두 밝게 초기화
+            RefreshAdRewardAvailability();
             if (closeButton != null)
             {
                 closeButton.interactable = true;
@@ -393,20 +400,56 @@ namespace ProjectMT.Features.OfflineReward
 
         private async void HandleClaimClicked()
         {
+            await ClaimAsync(grantBonus: false);
+        }
+
+        private async Task ClaimAsync(bool grantBonus)
+        {
             if (busy || acknowledge == null || current == null)
             {
+                if (grantBonus)
+                {
+                    SetActionButtonsLocked(false); // 광고 시청 완료 콜백인데 이미 상태가 꼬였다면 잠금만 풀어준다
+                }
+
                 return;
             }
 
             busy = true;
-            if (claimButton != null)
-            {
-                claimButton.interactable = false;
-            }
-
+            SetActionButtonsLocked(true);
             if (closeButton != null)
             {
                 closeButton.interactable = false;
+            }
+
+            if (grantBonus)
+            {
+                Set(statusText, "2배 보상을 지급하는 중입니다...");
+                bool granted;
+                try
+                {
+                    granted = grantDoubleReward != null && await grantDoubleReward(current);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                    granted = false;
+                }
+
+                if (!granted)
+                {
+                    busy = false;
+                    SetActionButtonsLocked(false);
+                    if (closeButton != null)
+                    {
+                        closeButton.interactable = true;
+                    }
+
+                    Set(statusText, "2배 보상 지급에 실패했습니다. 다시 눌러주세요");
+                    return;
+                }
+
+                OfflineRewardAdClaimStore.SaveLastClaimedPeriod(GrowthDungeonDailyKeyRules.GetPeriodId(DateTime.UtcNow));
             }
 
             Set(statusText, "확인 상태 저장 중...");
@@ -425,11 +468,10 @@ namespace ProjectMT.Features.OfflineReward
             if (!saved)
             {
                 Set(statusText, "저장하지 못했습니다. 다시 눌러주세요");
-                if (claimButton != null)
-                {
-                    claimButton.interactable = true;
-                }
-
+                // 2배 보상은 이미 지급됐을 수 있으니(오늘 소진 처리됨) 그냥받기만 풀고,
+                // 광고 버튼은 쿨다운 상태를 다시 확인해 중복 지급을 막는다.
+                SetButtonLockedVisual(claimButton, false);
+                SetButtonLockedVisual(adButton, IsAdRewardOnCooldown());
                 if (closeButton != null)
                 {
                     closeButton.interactable = true;
@@ -439,13 +481,168 @@ namespace ProjectMT.Features.OfflineReward
             }
 
             var completed = current;
+            var onConfirmed = confirmed;
             current = null;
             acknowledge = null;
+            confirmed = null;
+            grantDoubleReward = null;
             UIPanelPopAnimator.RequestClose(DisplayRoot, () =>
             {
-                confirmed?.Invoke(completed);
-                confirmed = null;
+                try
+                {
+                    onConfirmed?.Invoke(completed);
+                }
+                catch (Exception exception)
+                {
+                    // 팝업을 닫은 뒤 다음 화면(다음 영수증/출석 등)으로 넘어가는 콜백이라,
+                    // 여기서 예외가 나도 로그만 남기고 삼켜서 이후 화면 흐름이 멈추지 않게 한다.
+                    Debug.LogException(exception);
+                }
             });
+        }
+
+        private void HandleAdClicked()
+        {
+            if (busy || current == null || adVideoOverlay == null || IsAdRewardOnCooldown())
+            {
+                return;
+            }
+
+            SetActionButtonsLocked(true);
+            Set(statusText, "광고 영상을 재생합니다...");
+            adVideoOverlay.Play(HandleAdWatchedFully, HandleAdSkipped);
+        }
+
+        private void HandleAdPreloadCompleted(bool succeeded)
+        {
+            if (!IsOpen || busy)
+            {
+                return;
+            }
+
+            SetButtonLockedVisual(adButton, !succeeded);
+            if (!succeeded)
+            {
+                Set(statusText, "광고 영상을 준비하지 못했습니다. 일반 보상은 수령할 수 있습니다.");
+            }
+        }
+
+        private void HandleAdSkipped()
+        {
+            // 시청을 중간에 취소한 것뿐이라 아직 아무것도 확정되지 않았다. 두 버튼 다시 선택 가능하게 복구.
+            SetButtonLockedVisual(claimButton, false);
+            SetButtonLockedVisual(adButton, IsAdRewardOnCooldown());
+            Set(statusText, "정산 저장 완료");
+        }
+
+        private async void HandleAdWatchedFully()
+        {
+            await ClaimAsync(grantBonus: true);
+        }
+
+        // Inspector에 직접 연결하지 않아도, adButton(Button_01) 하위의 "TimeText" 이름으로 찾아 붙인다.
+        private void ResolveAdCooldownTimeText()
+        {
+            if (adCooldownTimeText != null || adButton == null)
+            {
+                return;
+            }
+
+            var found = adButton.transform.Find("TimeText");
+            if (found != null)
+            {
+                adCooldownTimeText = found.GetComponent<TMP_Text>();
+            }
+        }
+
+        // 광고시청 2배 보상은 KST 05:00 기준 1일 1회만 허용한다. 이미 오늘 받았다면 버튼을 잠그고
+        // TimeText에 다음 초기화까지 남은 시간을 표시하고, 아니라면 평소처럼 영상을 미리 준비한다.
+        private void RefreshAdRewardAvailability()
+        {
+            var onCooldown = IsAdRewardOnCooldown();
+            if (adCooldownTimeText != null)
+            {
+                adCooldownTimeText.gameObject.SetActive(onCooldown);
+            }
+
+            if (onCooldown)
+            {
+                SetButtonLockedVisual(adButton, true);
+                UpdateAdCooldownText();
+                return;
+            }
+
+            if (adVideoOverlay != null)
+            {
+                // 광고 버튼을 누른 뒤에야 영상을 Prepare하면 소리만 먼저 재생될 수 있다.
+                // 팝업을 읽는 동안 미리 준비하고, 준비가 끝난 뒤에만 2배 보상 버튼을 연다.
+                SetButtonLockedVisual(adButton, true);
+                adVideoOverlay.PreloadNextClip(HandleAdPreloadCompleted);
+            }
+        }
+
+        private static bool IsAdRewardOnCooldown()
+        {
+            var currentPeriod = GrowthDungeonDailyKeyRules.GetPeriodId(DateTime.UtcNow);
+            var lastClaimedPeriod = OfflineRewardAdClaimStore.LoadLastClaimedPeriod();
+            return lastClaimedPeriod >= currentPeriod;
+        }
+
+        private void UpdateAdCooldownText()
+        {
+            if (adCooldownTimeText == null)
+            {
+                return;
+            }
+
+            Set(adCooldownTimeText, FormatCooldownRemaining(GetTimeUntilNextAdReset(DateTime.UtcNow)));
+        }
+
+        // GrowthDungeonDailyKeyRules.GetPeriodId와 동일한 KST 05:00 경계 규칙으로 다음 리셋까지
+        // 남은 시간을 계산한다(그 함수가 쓰는 것과 같은 +offsetHours 이동을 되돌려서 실제 UTC 시각을 구함).
+        private static TimeSpan GetTimeUntilNextAdReset(DateTime utcNow)
+        {
+            var utc = utcNow.Kind == DateTimeKind.Utc ? utcNow : utcNow.ToUniversalTime();
+            var offsetHours = 9 - GrowthDungeonDailyKeyRules.ResetHourKst;
+            var shifted = utc.AddHours(offsetHours);
+            var nextResetShifted = shifted.Date.AddDays(1);
+            var nextResetUtc = nextResetShifted.AddHours(-offsetHours);
+            var remaining = nextResetUtc - utc;
+            return remaining < TimeSpan.Zero ? TimeSpan.Zero : remaining;
+        }
+
+        private static string FormatCooldownRemaining(TimeSpan remaining)
+        {
+            var hours = Math.Max(0, (int)remaining.TotalHours);
+            var minutes = Math.Max(0, remaining.Minutes);
+            return $"남은시간 [ {hours:00} : {minutes:00} ]"; // TimeText에 미리 넣어둔 표기 형식과 동일하게 맞춤
+        }
+
+        // 진행중이든 광고 재생 중이든, 확정되기 전까지 다른 버튼으로 중복 처리되지 않도록 둘 다 잠그고
+        // 일일/주간 퀘스트 수령 완료 연출과 같은 방식(알파 낮추기)으로 어둡게 만든다.
+        private void SetActionButtonsLocked(bool locked)
+        {
+            SetButtonLockedVisual(claimButton, locked);
+            SetButtonLockedVisual(adButton, locked);
+        }
+
+        private static void SetButtonLockedVisual(Button button, bool locked)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.interactable = !locked;
+            var alpha = locked ? ActionButtonDimmedAlpha : ActionButtonNormalAlpha;
+            var graphics = button.GetComponentsInChildren<Graphic>(true);
+            for (var index = 0; index < graphics.Length; index++)
+            {
+                var graphic = graphics[index];
+                var color = graphic.color;
+                color.a = alpha;
+                graphic.color = color;
+            }
         }
 
         private void SetCombatDisplaySuppressed(bool suppressed)
@@ -457,11 +654,6 @@ namespace ProjectMT.Features.OfflineReward
             {
                 feedback.SetDisplaySuppressed(this, suppressed);
             }
-        }
-
-        private void HandleAdClicked()
-        {
-            Set(statusText, "광고 2배는 현재 준비 중입니다");
         }
 
         private static string FormatDuration(long totalSeconds)

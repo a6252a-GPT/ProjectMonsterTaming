@@ -17,16 +17,23 @@ namespace ProjectMT.Features.Equipment
 
             var total = EquipmentLegionBonusCalculator.CalculateTotal();
             EquipmentInventoryRuntime.TryGetEquipped(candidate.Part, out var equipped);
-            var before = EstimatePower(total.AttackPower, total.MaxHealth, total.Defense, total.AttackSpeed,
-                total.CriticalRate, total.CriticalDamage, total.DamageReduction);
-            var after = EstimatePower(
-                Replace(total.AttackPower, equipped, candidate, EquipmentStatType.AttackPower),
-                Replace(total.MaxHealth, equipped, candidate, EquipmentStatType.MaxHealth),
-                Replace(total.Defense, equipped, candidate, EquipmentStatType.Defense),
-                Replace(total.AttackSpeed, equipped, candidate, EquipmentStatType.AttackSpeed),
-                Replace(total.CriticalRate, equipped, candidate, EquipmentStatType.CriticalRate),
-                Replace(total.CriticalDamage, equipped, candidate, EquipmentStatType.CriticalDamage),
-                Replace(total.DamageReduction, equipped, candidate, EquipmentStatType.DamageReduction));
+            var before = EstimatePower(total);
+            var after = EstimatePower(new EquipmentLegionBonus
+            {
+                AttackPower = Replace(total.AttackPower, equipped, candidate, EquipmentStatType.AttackPower),
+                MaxHealth = Replace(total.MaxHealth, equipped, candidate, EquipmentStatType.MaxHealth),
+                Defense = Replace(total.Defense, equipped, candidate, EquipmentStatType.Defense),
+                AttackSpeed = Replace(total.AttackSpeed, equipped, candidate, EquipmentStatType.AttackSpeed),
+                MoveSpeed = Replace(total.MoveSpeed, equipped, candidate, EquipmentStatType.MoveSpeed),
+                CriticalRate = Replace(total.CriticalRate, equipped, candidate, EquipmentStatType.CriticalRate),
+                CriticalDamage = Replace(total.CriticalDamage, equipped, candidate, EquipmentStatType.CriticalDamage),
+                SkillDamage = Replace(total.SkillDamage, equipped, candidate, EquipmentStatType.SkillDamage),
+                BossDamage = Replace(total.BossDamage, equipped, candidate, EquipmentStatType.BossDamage),
+                NormalMonsterDamage = Replace(total.NormalMonsterDamage, equipped, candidate, EquipmentStatType.NormalMonsterDamage),
+                SkillCooldownReduction = Replace(total.SkillCooldownReduction, equipped, candidate, EquipmentStatType.SkillCooldownReduction),
+                DefensePenetration = Replace(total.DefensePenetration, equipped, candidate, EquipmentStatType.DefensePenetration),
+                DamageReduction = Replace(total.DamageReduction, equipped, candidate, EquipmentStatType.DamageReduction)
+            });
             return Mathf.RoundToInt(after - before);
         }
 
@@ -84,18 +91,24 @@ namespace ProjectMT.Features.Equipment
             return result;
         }
 
-        private static float EstimatePower(float attackPower, float maxHealth, float defense, float attackSpeed,
-            float criticalRate, float criticalDamage, float damageReduction)
+        // 스킬피해/보스피해/일반몬스터피해/방어관통은 상황부 데미지 배율이라 공격력과 동일하게,
+        // 스킬 쿨타임 감소·이동속도는 초당 행동 횟수를 늘리는 효과라 공격속도와 동일하게 합산해 근사한다.
+        // (실제 UnitStatsSnapshot.EstimatePower는 이 두 그룹 외 스탯을 반영하지 않기 때문)
+        private static float EstimatePower(EquipmentLegionBonus stats)
         {
+            var damageBonusPercent = stats.AttackPower + stats.SkillDamage + stats.BossDamage +
+                stats.NormalMonsterDamage + stats.DefensePenetration;
+            var attackSpeedBonusPercent = stats.AttackSpeed + stats.SkillCooldownReduction + stats.MoveSpeed;
+
             return new UnitStatsSnapshot
             {
-                damage = 100f * (1f + attackPower / 100f),
-                maxHealth = 1000f * (1f + maxHealth / 100f),
-                defense = 50f * (1f + defense / 100f),
-                attackInterval = 1f / (1f + Mathf.Max(0f, attackSpeed) / 100f),
-                criticalRate = 0.05f + criticalRate / 100f,
-                criticalDamageMultiplier = 1.5f + criticalDamage / 100f,
-                damageReductionRate = Mathf.Clamp01(damageReduction / 100f)
+                damage = 100f * (1f + damageBonusPercent / 100f),
+                maxHealth = 1000f * (1f + stats.MaxHealth / 100f),
+                defense = 50f * (1f + stats.Defense / 100f),
+                attackInterval = 1f / (1f + Mathf.Max(0f, attackSpeedBonusPercent) / 100f),
+                criticalRate = 0.05f + stats.CriticalRate / 100f,
+                criticalDamageMultiplier = 1.5f + stats.CriticalDamage / 100f,
+                damageReductionRate = Mathf.Clamp01(stats.DamageReduction / 100f)
             }.EstimatePower();
         }
     }

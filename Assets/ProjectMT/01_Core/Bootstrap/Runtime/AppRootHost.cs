@@ -257,6 +257,7 @@ namespace ProjectMT.Bootstrap
             }
 
             await gameDataService.ResetToDefaultAsync();
+            OfflineRewardAdClaimStore.Clear(); // 계정 세이브가 아닌 로컬 PlayerPrefs라 별도로 같이 초기화
             sceneLoader.Load(projectConfig.EntrySceneId); // 새 Snapshot으로 다시 진입
             return true;
         }
@@ -574,16 +575,110 @@ namespace ProjectMT.Bootstrap
                 presentation,
                 projectConfig.ItemCatalog,
                 () => offlineRewardCoordinator.AcknowledgeAsync(presentation.ReceiptIds),
-                HandleOfflineRewardConfirmed);
+                HandleOfflineRewardConfirmed,
+                GrantOfflineRewardBonusAsync);
             return true;
+        }
+
+        // 광고 영상을 끝까지 시청했을 때, 이미 지급된 방치 보상과 동일한 만큼을 한 번 더 지급해
+        // 결과적으로 2배가 되도록 한다. 장비는 인스턴스 ID가 겹치면 안 되므로 새 ID로 복제한다.
+        private async Task<bool> GrantOfflineRewardBonusAsync(OfflineRewardPresentation presentation)
+        {
+            if (presentation == null || gameDataService == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                var items = new List<ItemAmount>(3);
+                if (presentation.EquipmentSlotUpgradeStone > 0L)
+                {
+                    items.Add(new ItemAmount(ItemIds.EquipmentSlotUpgradeStone, presentation.EquipmentSlotUpgradeStone));
+                }
+
+                if (presentation.CommanderSkillUpgradeStone > 0L)
+                {
+                    items.Add(new ItemAmount(ItemIds.CommanderSkillUpgradeStone, presentation.CommanderSkillUpgradeStone));
+                }
+
+                if (presentation.LegionPotentialUpgradeStone > 0L)
+                {
+                    items.Add(new ItemAmount(ItemIds.LegionPotentialUpgradeStone, presentation.LegionPotentialUpgradeStone));
+                }
+
+                var bundle = new RewardBundle(presentation.Gold, presentation.CommanderExperience, items);
+                if (!bundle.IsEmpty &&
+                    !await gameDataService.TryApplyAndSaveAsync(GameProgressChange.GrantRewards(bundle)))
+                {
+                    return false;
+                }
+
+                if (presentation.EquipmentRewards.Count > 0)
+                {
+                    var bonusEquipment = new List<EquipmentInstanceData>(presentation.EquipmentRewards.Count);
+                    for (var index = 0; index < presentation.EquipmentRewards.Count; index++)
+                    {
+                        bonusEquipment.Add(CloneEquipmentWithNewInstanceId(presentation.EquipmentRewards[index]));
+                    }
+
+                    if (!await gameDataService.TryApplyAndSaveAsync(GameProgressChange.AcquireEquipment(bonusEquipment)))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                return false;
+            }
+        }
+
+        private static EquipmentInstanceData CloneEquipmentWithNewInstanceId(EquipmentInstanceData source)
+        {
+            var sourceOptions = source.RandomOptions;
+            var clonedOptions = new List<EquipmentOptionRollData>(sourceOptions.Count);
+            for (var index = 0; index < sourceOptions.Count; index++)
+            {
+                if (sourceOptions[index] != null)
+                {
+                    clonedOptions.Add(sourceOptions[index].Clone());
+                }
+            }
+
+            return new EquipmentInstanceData(
+                Guid.NewGuid().ToString("N"),
+                source.Part,
+                source.Grade,
+                clonedOptions);
         }
 
         private void HandleOfflineRewardConfirmed(OfflineRewardPresentation presentation)
         {
-            rewardPresenter?.PlayConfirmed(presentation?.CreateAcquirePresentation());
-            if (!ShowPendingOfflineRewards())
+            try
             {
-                ShowPendingAttendance(); // 접속 정산을 모두 확인한 뒤 출석 표시
+                rewardPresenter?.PlayConfirmed(presentation?.CreateAcquirePresentation());
+                if (!ShowPendingOfflineRewards())
+                {
+                    ShowPendingAttendance(); // 접속 정산을 모두 확인한 뒤 출석 표시
+                }
+            }
+            catch (Exception exception)
+            {
+                // 팝업은 이미 닫힌 뒤라 여기서 예외가 나면 다음 화면 전환(다음 영수증/출석)이 조용히
+                // 끊길 수 있다. 로그만 남기고 최소한 출석 표시는 시도해 화면이 멈추지 않게 한다.
+                Debug.LogException(exception);
+                try
+                {
+                    ShowPendingAttendance();
+                }
+                catch (Exception fallbackException)
+                {
+                    Debug.LogException(fallbackException);
+                }
             }
         }
 

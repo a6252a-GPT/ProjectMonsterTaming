@@ -145,11 +145,13 @@ namespace ProjectMT.Features.MainBattle
             }
 
             isDrawing = true;
-            SetButtonsInteractable(false);
-            HideResults();
             try
             {
-                if (!TryPlanPulls(drawCount, out var plannedPulls))
+                SetButtonsInteractable(false);
+                HideResults();
+
+                // 계획 수량이 요청 수량과 다르면(카탈로그 미등록 등) 저장을 시도하지 않고 중단한다.
+                if (!TryPlanPulls(drawCount, out var plannedPulls) || plannedPulls.Count != drawCount)
                 {
                     SetResult("등급별 몬스터 등록 정보를 확인해 주세요");
                     return;
@@ -207,6 +209,12 @@ namespace ProjectMT.Features.MainBattle
                     : $"{detailText}\n\n사용: {paymentText}");
                 ShowResults(drawCount, order, summaries);
                 LogOwnedRosterDebug(); // 보유 몬스터 이름·등급·돌파·재료를 콘솔에 출력
+            }
+            catch (Exception exception)
+            {
+                // 기획하지 못한 예외가 나도 뽑기 버튼이 영구히 잠기지 않도록 방어.
+                Debug.LogException(exception);
+                SetResult("소환 처리 중 예상치 못한 오류가 발생했습니다");
             }
             finally
             {

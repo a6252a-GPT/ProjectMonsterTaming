@@ -13,6 +13,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             "ProjectMT.FallenCommander.BossConfig.ShowAllAttacks";
         private const string FinalChargeExpandedKey =
             "ProjectMT.FallenCommander.BossConfig.FinalChargeExpanded";
+        private const string BlackHoleAdvancedExpandedKey =
+            "ProjectMT.FallenCommander.BossConfig.BlackHoleAdvancedExpanded";
 
         private sealed class AttackInspectorDefinition
         {
@@ -20,17 +22,20 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 string label,
                 FallenCommanderAttackPreviewKind previewKind,
                 string[] propertyNames,
-                System.Func<FallenCommanderBossConfig, FallenCommanderAttackData> resolveAttack = null)
+                System.Func<FallenCommanderBossConfig, FallenCommanderAttackData> resolveAttack = null,
+                bool supportsPreview = true)
             {
                 Label = label;
                 PreviewKind = previewKind;
                 PropertyNames = propertyNames;
                 ResolveAttack = resolveAttack;
+                SupportsPreview = supportsPreview;
             }
 
             public string Label { get; }
             public FallenCommanderAttackPreviewKind PreviewKind { get; }
             public string[] PropertyNames { get; }
+            public bool SupportsPreview { get; }
             private System.Func<FallenCommanderBossConfig, FallenCommanderAttackData> ResolveAttack { get; }
 
             // 정의에 연결된 일반 공격 데이터를 반환한다.
@@ -52,7 +57,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 new[] { "meleeAttack" },
                 config => config.MeleeAttack),
             new(
-                "3. 위치",
+                "3. 연속 위치",
                 FallenCommanderAttackPreviewKind.MarkStrike,
                 new[] { "markStrike" },
                 config => config.MarkStrike),
@@ -98,6 +103,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     "finalChargeTelegraphPrefab",
                     "finalChargeTelegraphHoldDuration",
                     "finalChargeRadius",
+                    "finalChargeDamageDelay",
+                    "finalChargeWarningMessage",
+                    "finalChargeUseStun",
+                    "finalChargeStunDuration",
                     "finalChargeEffects",
                     "finalChargePreCastMotion",
                     "finalChargePreCastMotionSpeed",
@@ -112,12 +121,21 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             new(
                 "9. 전멸",
                 FallenCommanderAttackPreviewKind.TimeoutWipe,
-                new[] { "timeoutWipe" })
+                new[] { "timeoutWipe" }),
+            new(
+                "10. 연속 장판",
+                FallenCommanderAttackPreviewKind.TwistedBattlefield,
+                new[] { "twistedBattlefield" }),
+            new(
+                "11. 낙하 탄막",
+                FallenCommanderAttackPreviewKind.FallingBarrage,
+                new[] { "fallingBarrage" }),
         };
 
         private int selectedAttack;
         private bool showAllAttacks;
         private bool finalChargeExpanded;
+        private bool blackHoleAdvancedExpanded;
 
         // 마지막으로 선택한 공격 탭과 전체 보기 상태를 불러온다.
         private void OnEnable()
@@ -128,6 +146,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 AttackDefinitions.Length - 1);
             showAllAttacks = EditorPrefs.GetBool(ShowAllAttacksKey, false);
             finalChargeExpanded = EditorPrefs.GetBool(FinalChargeExpandedKey, true);
+            blackHoleAdvancedExpanded = EditorPrefs.GetBool(
+                BlackHoleAdvancedExpandedKey,
+                false);
         }
 
         // 공통 데이터와 선택된 공격 탭의 데이터만 순서대로 표시한다.
@@ -228,33 +249,45 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
 
             const int columnCount = 3;
+            const float columnSpacing = 2f;
             var rowCount = Mathf.CeilToInt(AttackDefinitions.Length / (float)columnCount);
             for (var row = 0; row < rowCount; row++)
             {
-                using (new EditorGUILayout.HorizontalScope())
+                var rowRect = EditorGUILayout.GetControlRect(
+                    false,
+                    EditorGUIUtility.singleLineHeight);
+                var buttonWidth =
+                    (rowRect.width - columnSpacing * (columnCount - 1)) /
+                    columnCount;
+                for (var column = 0; column < columnCount; column++)
                 {
-                    for (var column = 0; column < columnCount; column++)
+                    var index = row * columnCount + column;
+                    if (index >= AttackDefinitions.Length)
                     {
-                        var index = row * columnCount + column;
-                        if (index >= AttackDefinitions.Length)
-                        {
-                            break;
-                        }
+                        break;
+                    }
 
-                        var selected = GUILayout.Toggle(
-                            selectedAttack == index,
-                            AttackDefinitions[index].Label,
-                            EditorStyles.miniButton);
-                        if (selected && selectedAttack != index)
-                        {
-                            selectedAttack = index;
-                            EditorPrefs.SetInt(SelectedAttackKey, selectedAttack);
-                            GUI.FocusControl(null);
-                        }
+                    var buttonRect = new Rect(
+                        rowRect.x + column * (buttonWidth + columnSpacing),
+                        rowRect.y,
+                        buttonWidth,
+                        rowRect.height);
+                    var selected = GUI.Toggle(
+                        buttonRect,
+                        selectedAttack == index,
+                        AttackDefinitions[index].Label,
+                        EditorStyles.miniButton);
+                    if (selected && selectedAttack != index)
+                    {
+                        selectedAttack = index;
+                        EditorPrefs.SetInt(SelectedAttackKey, selectedAttack);
+                        GUI.FocusControl(null);
                     }
                 }
             }
 
+            EditorGUILayout.Space(4f);
+            DrawSelectedAttackPreview();
             EditorGUILayout.Space(4f);
             if (showAllAttacks)
             {
@@ -271,6 +304,17 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             DrawAttackProperties(AttackDefinitions[selectedAttack], false);
         }
 
+        // 공격 선택 버튼 바로 아래에 현재 선택한 공격의 미리보기 도구를 표시한다.
+        private void DrawSelectedAttackPreview()
+        {
+            using (new EditorGUI.DisabledScope(serializedObject.hasModifiedProperties))
+            {
+                DrawAttackPreviewTools(
+                    (FallenCommanderBossConfig)target,
+                    AttackDefinitions[selectedAttack]);
+            }
+        }
+
         // 선택된 공격에 포함된 SerializedProperty와 전용 도구를 표시한다.
         private void DrawAttackProperties(
             AttackInspectorDefinition definition,
@@ -279,6 +323,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             if (definition.PreviewKind == FallenCommanderAttackPreviewKind.FinalCharge)
             {
                 DrawFinalChargeProperties(definition);
+            }
+            else if (definition.PreviewKind == FallenCommanderAttackPreviewKind.BlackHole)
+            {
+                DrawBlackHoleProperties(definition);
             }
             else
             {
@@ -302,17 +350,58 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
 
             DrawValidationWarnings(definition);
-            using (new EditorGUI.DisabledScope(serializedObject.hasModifiedProperties))
-            {
-                DrawAttackPreviewTools(
-                    (FallenCommanderBossConfig)target,
-                    definition);
-            }
 
             if (showAllAttacks && addBottomSpacing)
             {
                 EditorGUILayout.Space(6f);
             }
+        }
+
+        private void DrawBlackHoleProperties(AttackInspectorDefinition definition)
+        {
+            DrawProperty("blackHole");
+            DrawProperty("blackHoleActiveDuration");
+
+            var nextExpanded = EditorGUILayout.Foldout(
+                blackHoleAdvancedExpanded,
+                "블랙홀 전용 설정 더보기",
+                true);
+            if (nextExpanded != blackHoleAdvancedExpanded)
+            {
+                blackHoleAdvancedExpanded = nextExpanded;
+                EditorPrefs.SetBool(BlackHoleAdvancedExpandedKey, nextExpanded);
+            }
+
+            if (!blackHoleAdvancedExpanded)
+            {
+                return;
+            }
+
+            using (new EditorGUI.IndentLevelScope())
+            {
+                for (var index = 2; index < definition.PropertyNames.Length; index++)
+                {
+                    var propertyName = definition.PropertyNames[index];
+                    if (propertyName != "blackHoleEndEffects")
+                    {
+                        DrawProperty(propertyName);
+                    }
+                }
+            }
+        }
+
+        private void DrawProperty(string propertyName)
+        {
+            var property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                return;
+            }
+
+            EditorGUILayout.PropertyField(
+                property,
+                FallenCommanderInspectorLabels.BossConfig(property),
+                true);
         }
 
         // 충전 광역기의 분산된 설정을 다른 공격과 같은 하나의 접이식 영역에 표시한다.
@@ -337,6 +426,12 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             {
                 foreach (var propertyName in definition.PropertyNames)
                 {
+                    if (propertyName == "finalChargeStunDuration" &&
+                        serializedObject.FindProperty("finalChargeUseStun")?.boolValue != true)
+                    {
+                        continue;
+                    }
+
                     var property = serializedObject.FindProperty(propertyName);
                     if (property == null)
                     {
@@ -569,11 +664,14 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 return;
             }
 
-            ValidateDurationReference(
-                effects,
-                "startVfxPrefab",
-                "startVfxDuration",
-                "시전 효과");
+            if (SupportsStartEffects(effects))
+            {
+                ValidateDurationReference(
+                    effects,
+                    "startVfxPrefab",
+                    "startVfxDuration",
+                    "시전 효과");
+            }
             ValidateDurationReference(
                 effects,
                 "resolveVfxPrefab",
@@ -587,11 +685,14 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     "hitVfxDuration",
                     "적중 VFX");
             }
-            ValidateAudioDuration(
-                effects,
-                "startSfx",
-                "startSfxDuration",
-                "시전 효과음");
+            if (SupportsStartEffects(effects))
+            {
+                ValidateAudioDuration(
+                    effects,
+                    "startSfx",
+                    "startSfxDuration",
+                    "시전 효과음");
+            }
             ValidateAudioDuration(
                 effects,
                 "resolveSfx",
@@ -612,17 +713,25 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         {
             return effects.propertyPath switch
             {
-                "projectileBasicAttack.effects" => "적중 효과",
+                "projectileBasicAttack.effects" => "발동 효과",
                 "blackHoleEndEffects" => "종료 효과",
+                "fallingBarrage.impactEffects" => "착탄 효과",
                 _ => "발동 효과"
             };
+        }
+
+        private static bool SupportsStartEffects(SerializedProperty effects)
+        {
+            return effects.propertyPath != "blackHoleEndEffects" &&
+                effects.propertyPath != "fallingBarrage.impactEffects";
         }
 
         // 실제 별도 적중 단계가 있는 공격 연출인지 반환한다.
         private static bool SupportsHitEffects(SerializedProperty effects)
         {
             return effects.propertyPath != "projectileBasicAttack.effects" &&
-                effects.propertyPath != "blackHoleEndEffects";
+                effects.propertyPath != "blackHoleEndEffects" &&
+                effects.propertyPath != "fallingBarrage.impactEffects";
         }
 
         // 참조가 비어 있는데 유지시간만 입력된 연출 설정을 경고한다.
@@ -747,6 +856,21 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     "실제 하트 피해는 적용하지 않습니다.",
                     MessageType.None);
             }
+            else if (definition.PreviewKind == FallenCommanderAttackPreviewKind.TwistedBattlefield)
+            {
+                EditorGUILayout.HelpBox(
+                    $"전체 미리보기는 2페이즈 기준으로 {previewSpec.TwistedBeatCount}회 재생하며, " +
+                    "무작위 장판 다음에는 위험지대와 안전지대가 반전됩니다. 실제 피해는 적용하지 않습니다.",
+                    MessageType.None);
+            }
+            else if (definition.PreviewKind == FallenCommanderAttackPreviewKind.FallingBarrage)
+            {
+                EditorGUILayout.HelpBox(
+                    $"전체 미리보기는 공통 설정의 탄막 {previewSpec.FallingProjectileCount}개가 " +
+                    $"약 {previewSpec.FallingDuration:0.##}초 동안 무작위 위치로 떨어집니다. " +
+                    "실제 피해는 적용하지 않습니다.",
+                    MessageType.None);
+            }
             else
             {
                 EditorGUILayout.HelpBox(
@@ -830,10 +954,33 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 var timeoutWipe = kind == FallenCommanderAttackPreviewKind.TimeoutWipe
                     ? config.TimeoutWipe
                     : null;
+                var twistedBattlefield = kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                    ? config.TwistedBattlefield
+                    : null;
+                var twistedPhase = kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                    ? config.PhaseConfig?.GetPhase(FallenCommanderBossPhase.Phase2)
+                        ?.TwistedBattlefieldPattern
+                    : null;
+                var markStrikePhase = kind == FallenCommanderAttackPreviewKind.MarkStrike
+                    ? config.PhaseConfig?.GetPhase(FallenCommanderBossPhase.Phase2)
+                        ?.MarkStrikePattern
+                    : null;
+                var isFallingBarrage = kind == FallenCommanderAttackPreviewKind.FallingBarrage;
+                FallenCommanderFallingBarrageData fallingBarrage = isFallingBarrage
+                    ? config.FallingBarrage
+                    : null;
+                FallenCommanderFallingBarragePhaseData fallingPhase = isFallingBarrage
+                    ? config.PhaseConfig?.GetPhase(FallenCommanderBossPhase.Phase2)
+                        ?.FallingBarragePattern
+                    : null;
                 var effects = kind == FallenCommanderAttackPreviewKind.FinalCharge
                     ? config.FinalChargeEffects
                     : kind == FallenCommanderAttackPreviewKind.TimeoutWipe
                         ? timeoutWipe?.Effects
+                    : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                        ? twistedBattlefield?.Effects
+                    : isFallingBarrage
+                        ? fallingBarrage?.Effects
                     : kind == FallenCommanderAttackPreviewKind.Basic
                         ? basicAttack?.Effects
                         : attack?.Effects;
@@ -841,6 +988,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     ? config.FinalChargeDuration
                     : kind == FallenCommanderAttackPreviewKind.TimeoutWipe
                         ? timeoutWipe?.WarningDuration ?? 0.1f
+                    : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                        ? twistedPhase?.WarningDuration ?? 1.35f
+                    : isFallingBarrage
+                        ? fallingPhase?.FallDuration ?? 1.6f
                     : kind == FallenCommanderAttackPreviewKind.Basic
                         ? basicAttack?.WarningDuration ?? 0.1f
                         : attack?.WarningDuration ?? 0.1f;
@@ -848,6 +999,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     ? config.FinalChargeTelegraphHoldDuration
                     : kind == FallenCommanderAttackPreviewKind.TimeoutWipe
                         ? timeoutWipe?.TelegraphHoldDuration ?? 0f
+                    : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                        ? twistedPhase?.TelegraphHoldDuration ?? 0.25f
+                    : isFallingBarrage
+                        ? fallingBarrage?.TelegraphHoldDuration ?? 0f
                     : kind == FallenCommanderAttackPreviewKind.Basic
                         ? basicAttack?.TelegraphHoldDuration ?? 0f
                         : attack?.TelegraphHoldDuration ?? 0f;
@@ -857,11 +1012,17 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         ? config.FinalChargeTelegraphPrefab
                     : kind == FallenCommanderAttackPreviewKind.TimeoutWipe
                         ? timeoutWipe?.TelegraphPrefab
+                    : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                        ? twistedBattlefield?.TelegraphPrefab
+                    : isFallingBarrage
+                        ? fallingBarrage?.TelegraphPrefab
                         : attack?.TelegraphPrefab;
                 var telegraphRadius = kind == FallenCommanderAttackPreviewKind.FinalCharge
                     ? config.FinalChargeRadius
                     : kind == FallenCommanderAttackPreviewKind.TimeoutWipe
                         ? timeoutWipe?.Radius ?? 0f
+                    : isFallingBarrage
+                        ? fallingBarrage?.ImpactRadius ?? 0f
                     : attack?.Radius ?? 0f;
                 float ResolveFinalChargeRadius()
                 {
@@ -877,6 +1038,22 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     SpawnPoint = spawnPoint,
                     FacingTarget = commanderRoot == null ? null : commanderRoot.transform,
                     BasicAttack = basicAttack,
+                    MarkStrikePattern = markStrikePhase,
+                    TwistedBattlefield = twistedBattlefield,
+                    TwistedBeatCount = twistedPhase?.BeatCount ?? 2,
+                    TwistedBeatInterval = twistedPhase?.BeatInterval ?? 0.3f,
+                    TwistedAttackInterval = twistedBattlefield?.AttackInterval ?? 0.8f,
+                    FallingBarrage = fallingBarrage,
+                    FallingImpactEffects = isFallingBarrage
+                        ? config.FallingBarrage.ImpactEffects
+                        : null,
+                    FallingProjectileCount = fallingBarrage?.ProjectileCount ?? 30,
+                    FallingWaveCount = fallingPhase?.WaveCount ?? 1,
+                    FallingWaveInterval = fallingPhase?.WaveInterval ?? 0f,
+                    FallingSpawnInterval = fallingPhase?.SpawnInterval ?? 0.07f,
+                    FallingSpawnJitter = fallingPhase?.SpawnTimeJitter ?? 0.06f,
+                    FallingDuration = fallingPhase?.FallDuration ?? 1.6f,
+                    FallingAirHoldDuration = fallingBarrage?.AirHoldDuration ?? 0.6f,
                     Effects = effects,
                     TelegraphPrefab = telegraphPrefab,
                     TelegraphRadius = telegraphRadius,
@@ -911,40 +1088,84 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         : null,
                     PreCastMotion = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargePreCastMotion
+                        : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                            ? twistedBattlefield?.PreCastMotion
+                        : isFallingBarrage
+                            ? fallingBarrage?.PreCastMotion
                         : timeoutWipe?.PreCastMotion ?? attack?.PreCastMotion,
                     PreCastMotionSpeed = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargePreCastMotionSpeed
+                        : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                            ? twistedBattlefield?.PreCastMotionSpeed ?? 1f
+                        : isFallingBarrage
+                            ? fallingBarrage?.PreCastMotionSpeed ?? 1f
                         : timeoutWipe?.PreCastMotionSpeed ??
                         attack?.PreCastMotionSpeed ?? 1f,
                     PreCastMotionStart = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargePreCastMotionStart
+                        : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                            ? twistedBattlefield?.PreCastMotionStart ?? 0f
+                        : isFallingBarrage
+                            ? fallingBarrage?.PreCastMotionStart ?? 0f
                         : timeoutWipe?.PreCastMotionStart ??
                         attack?.PreCastMotionStart ?? 0f,
                     PreCastMotionEnd = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargePreCastMotionEnd
+                        : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                            ? twistedBattlefield?.PreCastMotionEnd ?? 1f
+                        : isFallingBarrage
+                            ? fallingBarrage?.PreCastMotionEnd ?? 1f
                         : timeoutWipe?.PreCastMotionEnd ??
                         attack?.PreCastMotionEnd ?? 1f,
                     CastMotion = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargeCastMotion
+                        : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                            ? twistedBattlefield?.CastMotion
+                        : isFallingBarrage
+                            ? fallingBarrage?.CastMotion
                         : timeoutWipe?.CastMotion ?? attack?.CastMotion,
                     CastMotionDuration = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargeCastMotionDuration
+                        : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                            ? twistedBattlefield?.CastMotionDuration ?? 0f
+                        : isFallingBarrage
+                            ? fallingBarrage?.CastMotionDuration ?? 0f
                         : timeoutWipe?.CastMotionDuration ??
                         attack?.CastMotionDuration ?? 0f,
                     CastMotionSpeed = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargeCastMotionSpeed
+                        : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                            ? twistedBattlefield?.CastMotionSpeed ?? 1f
+                        : isFallingBarrage
+                            ? fallingBarrage?.CastMotionSpeed ?? 1f
                         : timeoutWipe?.CastMotionSpeed ??
                         attack?.CastMotionSpeed ?? 1f,
                     CastMotionStart = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargeCastMotionStart
+                        : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                            ? twistedBattlefield?.CastMotionStart ?? 0f
+                        : isFallingBarrage
+                            ? fallingBarrage?.CastMotionStart ?? 0f
                         : timeoutWipe?.CastMotionStart ??
                         attack?.CastMotionStart ?? 0f,
                     CastMotionEnd = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargeCastMotionEnd
+                        : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
+                            ? twistedBattlefield?.CastMotionEnd ?? 1f
+                        : isFallingBarrage
+                            ? fallingBarrage?.CastMotionEnd ?? 1f
                         : timeoutWipe?.CastMotionEnd ??
                         attack?.CastMotionEnd ?? 1f,
                     WarningDuration = Mathf.Max(0.1f, warningDuration),
                     TelegraphHoldDuration = Mathf.Max(0f, telegraphHoldDuration),
+                    TimeoutRiseHeight = kind == FallenCommanderAttackPreviewKind.TimeoutWipe
+                        ? timeoutWipe?.RiseHeight ?? 0f
+                        : 0f,
+                    TimeoutRiseCurve = kind == FallenCommanderAttackPreviewKind.TimeoutWipe
+                        ? timeoutWipe?.RiseCurve
+                        : null,
+                    TimeoutClampVfxToGround = kind == FallenCommanderAttackPreviewKind.TimeoutWipe &&
+                        (timeoutWipe?.ClampVfxToGround ?? true),
                     StartEffectLocalOffset = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargeStartEffectOffset
                         : Vector3.zero
@@ -968,7 +1189,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         // 공격 단계에 모션·VFX·SFX 중 하나라도 있는지 확인한다.
         private static bool HasCastPresentation(FallenCommanderAttackPreviewSpec previewSpec)
         {
-            return previewSpec.BasicAttack != null ||
+            return previewSpec.Kind == FallenCommanderAttackPreviewKind.TwistedBattlefield ||
+                previewSpec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage ||
+                previewSpec.BasicAttack != null ||
                 previewSpec.CastMotion != null ||
                 previewSpec.Effects?.ResolveVfxPrefab != null ||
                 previewSpec.Effects?.ResolveSfx != null;

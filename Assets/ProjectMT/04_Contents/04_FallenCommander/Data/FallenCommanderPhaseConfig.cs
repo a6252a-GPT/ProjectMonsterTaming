@@ -104,9 +104,34 @@ namespace ProjectMT.Contents.FallenCommander
                 if (phases[index].Allows(FallenCommanderAttackPattern.Mark) &&
                     !phases[index].MarkStrikePattern.TryValidate(out var markStrikeError))
                 {
-                    error = $"{phases[index].Phase} 위치 공격 설정 오류: {markStrikeError}";
+                    error = $"{phases[index].Phase} 연속 위치 공격 설정 오류: {markStrikeError}";
                     return false;
                 }
+
+                if (phases[index].Allows(FallenCommanderAttackPattern.BlackHole) &&
+                    !phases[index].BlackHolePattern.TryValidate(out var blackHoleError))
+                {
+                    error = $"{phases[index].Phase} 블랙홀 공격 설정 오류: {blackHoleError}";
+                    return false;
+                }
+
+                if (phases[index].Allows(FallenCommanderAttackPattern.TwistedBattlefield) &&
+                    !phases[index].TwistedBattlefieldPattern.TryValidate(
+                        out var twistedBattlefieldError))
+                {
+                    error = $"{phases[index].Phase} 연속 장판 공격 설정 오류: " +
+                        twistedBattlefieldError;
+                    return false;
+                }
+
+                if (phases[index].Allows(FallenCommanderAttackPattern.FallingBarrage) &&
+                    !phases[index].FallingBarragePattern.TryValidate(out var fallingBarrageError))
+                {
+                    error = $"{phases[index].Phase} 낙하 탄막 공격 설정 오류: " +
+                        fallingBarrageError;
+                    return false;
+                }
+
             }
 
             error = string.Empty;
@@ -125,6 +150,10 @@ namespace ProjectMT.Contents.FallenCommander
         private List<FallenCommanderAttackPattern> availableAttacks = new();
         [SerializeField, InspectorName("기본 투사체 중복 공격 허용")]
         private bool allowOverlappingBasicAttack = true;
+        [SerializeField, InspectorName("블랙홀 중 기본 투사체 중복 허용")]
+        private bool allowBasicAttackDuringBlackHole;
+        [SerializeField, InspectorName("낙하 탄막 중 기본 투사체 중복 허용")]
+        private bool allowBasicAttackDuringFallingBarrage;
         [SerializeField, InspectorName("페이즈 대표 공격 사용")]
         private bool hasSignatureAttack;
         [SerializeField, InspectorName("페이즈 대표 공격")]
@@ -135,19 +164,48 @@ namespace ProjectMT.Contents.FallenCommander
         private AudioClip transitionSound;
         [SerializeField, InspectorName("페이즈 전환시간"), Min(0.1f)]
         private float transitionDuration = 1f;
-        [SerializeField, InspectorName("위치 공격 다중 패턴 설정")]
+        [SerializeField, InspectorName("전환 화면 색상")]
+        private Color transitionFadeColor = Color.black;
+        [SerializeField, InspectorName("전환 화면 최대 어두움"), Range(0f, 1f)]
+        private float transitionFadeAlpha = 1f;
+        [SerializeField, InspectorName("전환 화면 페이드 시간"), Min(0.01f)]
+        private float transitionFadeDuration = 0.15f;
+        [SerializeField, InspectorName("보스 프리팹 교체")]
+        private GameObject bossPrefabOverride;
+        [SerializeField, InspectorName("보스 크기 배율"), Min(0.1f)]
+        private float bossScaleMultiplier = 1f;
+        [SerializeField, InspectorName("연속 위치 공격 패턴 설정")]
         private FallenCommanderMarkStrikePhaseData markStrikePattern = new();
+        [SerializeField, InspectorName("블랙홀 공격 페이즈 설정")]
+        private FallenCommanderBlackHolePhaseData blackHolePattern = new();
+        [SerializeField, InspectorName("연속 장판 공격 페이즈 설정")]
+        private FallenCommanderTwistedBattlefieldPhaseData twistedBattlefieldPattern = new();
+        [SerializeField, InspectorName("낙하 탄막 공격 페이즈 설정")]
+        private FallenCommanderFallingBarragePhaseData fallingBarragePattern = new();
 
         public FallenCommanderBossPhase Phase => phase;
         public float HealthRatio => healthRatio;
         public IReadOnlyList<FallenCommanderAttackPattern> AvailableAttacks => availableAttacks;
         public bool AllowOverlappingBasicAttack => allowOverlappingBasicAttack;
+        public bool AllowBasicAttackDuringBlackHole => allowBasicAttackDuringBlackHole;
+        public bool AllowBasicAttackDuringFallingBarrage => allowBasicAttackDuringFallingBarrage;
         public bool HasSignatureAttack => hasSignatureAttack;
         public FallenCommanderAttackPattern SignatureAttack => signatureAttack;
         public string TransitionMessage => transitionMessage;
         public AudioClip TransitionSound => transitionSound;
         public float TransitionDuration => transitionDuration;
+        public Color TransitionFadeColor => transitionFadeColor;
+        public float TransitionFadeAlpha => Mathf.Clamp01(transitionFadeAlpha);
+        public float TransitionFadeDuration => Mathf.Max(0.01f, transitionFadeDuration);
+        public GameObject BossPrefabOverride => bossPrefabOverride;
+        public float BossScaleMultiplier => Mathf.Max(0.1f, bossScaleMultiplier);
         public FallenCommanderMarkStrikePhaseData MarkStrikePattern => markStrikePattern;
+        public FallenCommanderBlackHolePhaseData BlackHolePattern =>
+            blackHolePattern ??= new FallenCommanderBlackHolePhaseData();
+        public FallenCommanderTwistedBattlefieldPhaseData TwistedBattlefieldPattern =>
+            twistedBattlefieldPattern ??= new FallenCommanderTwistedBattlefieldPhaseData();
+        public FallenCommanderFallingBarragePhaseData FallingBarragePattern =>
+            fallingBarragePattern ??= new FallenCommanderFallingBarragePhaseData();
 
         // 이 페이즈의 스킬 목록에 지정 공격이 포함되는지 확인한다.
         public bool Allows(FallenCommanderAttackPattern attack)
@@ -155,60 +213,213 @@ namespace ProjectMT.Contents.FallenCommander
             return availableAttacks.Contains(attack);
         }
 
-        // 거리 조건으로 고른 공격을 페이즈 스킬 목록과 연속 공격 방지 규칙에 맞춘다.
-        public FallenCommanderAttackPattern ResolveAttack(
-            FallenCommanderAttackPattern selected,
+        public FallenCommanderAttackPattern SelectRandomAttack(
             FallenCommanderAttackPattern previous)
         {
-            if (selected == FallenCommanderAttackPattern.BlackHole &&
-                previous == FallenCommanderAttackPattern.Ring &&
-                Allows(FallenCommanderAttackPattern.TrackingMark))
+            var candidates = new List<FallenCommanderAttackPattern>();
+            for (var index = 0; index < availableAttacks.Count; index++)
             {
-                return FallenCommanderAttackPattern.TrackingMark;
+                var candidate = availableAttacks[index];
+                if (candidate != previous &&
+                    candidate != FallenCommanderAttackPattern.Basic &&
+                    candidate != FallenCommanderAttackPattern.Melee &&
+                    candidate != FallenCommanderAttackPattern.Line &&
+                    candidate != FallenCommanderAttackPattern.TwistedBattlefield &&
+                    candidate != FallenCommanderAttackPattern.FallingBarrage)
+                {
+                    candidates.Add(candidate);
+                }
             }
 
-            if (Allows(selected) && selected != previous)
+            if (candidates.Count > 0)
             {
-                return selected;
-            }
-
-            if (selected == FallenCommanderAttackPattern.Mark &&
-                Allows(FallenCommanderAttackPattern.TrackingMark) &&
-                previous != FallenCommanderAttackPattern.TrackingMark)
-            {
-                return FallenCommanderAttackPattern.TrackingMark;
-            }
-
-            if (selected == FallenCommanderAttackPattern.TrackingMark &&
-                Allows(FallenCommanderAttackPattern.Mark) &&
-                previous != FallenCommanderAttackPattern.Mark)
-            {
-                return FallenCommanderAttackPattern.Mark;
-            }
-
-            if (Allows(FallenCommanderAttackPattern.Ring) &&
-                previous != FallenCommanderAttackPattern.Ring)
-            {
-                return FallenCommanderAttackPattern.Ring;
-            }
-
-            if (Allows(FallenCommanderAttackPattern.Mark) &&
-                previous != FallenCommanderAttackPattern.Mark)
-            {
-                return FallenCommanderAttackPattern.Mark;
+                return candidates[Random.Range(0, candidates.Count)];
             }
 
             for (var index = 0; index < availableAttacks.Count; index++)
             {
-                if (availableAttacks[index] != previous)
+                var candidate = availableAttacks[index];
+                if (candidate != FallenCommanderAttackPattern.Basic &&
+                    candidate != FallenCommanderAttackPattern.Melee &&
+                    candidate != FallenCommanderAttackPattern.Line &&
+                    candidate != FallenCommanderAttackPattern.TwistedBattlefield &&
+                    candidate != FallenCommanderAttackPattern.FallingBarrage &&
+                    candidate != previous)
                 {
-                    return availableAttacks[index];
+                    return candidate;
                 }
             }
 
-            return availableAttacks.Count > 0
-                ? availableAttacks[0]
-                : FallenCommanderAttackPattern.Mark;
+            return FallenCommanderAttackPattern.Basic;
+        }
+    }
+
+    [System.Serializable]
+    public sealed class FallenCommanderBlackHolePhaseData
+    {
+        [SerializeField, InspectorName("동시 생성 최소 개수"), Min(1)]
+        private int minimumCount = 1;
+        [SerializeField, InspectorName("동시 생성 최대 개수"), Min(1)]
+        private int maximumCount = 1;
+        [SerializeField, InspectorName("중심부 최소 간격"), Min(0f)]
+        private float minimumCoreSpacing = 2.5f;
+
+        public int MinimumCount => Mathf.Max(1, minimumCount);
+        public int MaximumCount => Mathf.Max(MinimumCount, maximumCount);
+        public float MinimumCoreSpacing => Mathf.Max(0f, minimumCoreSpacing);
+
+        public bool TryValidate(out string error)
+        {
+            if (minimumCount < 1 || maximumCount < minimumCount || minimumCoreSpacing < 0f)
+            {
+                error = "동시 생성 개수와 중심부 최소 간격을 확인해 주세요.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+    }
+
+    [System.Serializable]
+    public sealed class FallenCommanderTwistedBattlefieldPhaseData
+    {
+        [SerializeField, InspectorName("등장 확률"), Range(0f, 1f)]
+        private float selectionChance = 0.2f;
+        [SerializeField, InspectorName("연속 공격 횟수"), Min(2)]
+        private int beatCount = 2;
+        [SerializeField, InspectorName("공격 전 경고시간"), Min(0.1f)]
+        private float warningDuration = 1.35f;
+        [SerializeField, InspectorName("충전 완료 유지시간"), Min(0f)]
+        private float telegraphHoldDuration = 0.25f;
+        [SerializeField, InspectorName("다음 장판 전환 간격"), Min(0f)]
+        private float beatInterval = 0.3f;
+
+        public float SelectionChance => Mathf.Clamp01(selectionChance);
+        public int BeatCount => Mathf.Max(2, beatCount);
+        public float WarningDuration => Mathf.Max(0.1f, warningDuration);
+        public float TelegraphHoldDuration => Mathf.Max(0f, telegraphHoldDuration);
+        public float BeatInterval => Mathf.Max(0f, beatInterval);
+
+        // 페이즈별 등장 확률과 연속 공격 시간 설정이 실행 가능한지 검사한다.
+        public bool TryValidate(out string error)
+        {
+            if (selectionChance <= 0f || selectionChance > 1f)
+            {
+                error = "등장 확률은 0보다 크고 1 이하여야 합니다.";
+                return false;
+            }
+
+            if (beatCount < 2)
+            {
+                error = "안전지대 반전을 위해 연속 공격 횟수는 2회 이상이어야 합니다.";
+                return false;
+            }
+
+            if (warningDuration < 0.1f || telegraphHoldDuration < 0f || beatInterval < 0f)
+            {
+                error = "경고시간·유지시간·전환 간격 설정을 확인해 주세요.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+    }
+
+    public interface IFallenCommanderFallingBarragePhaseSettings
+    {
+        float SelectionChance { get; }
+        int WaveCount { get; }
+        float WaveInterval { get; }
+        float SpawnInterval { get; }
+        float SpawnTimeJitter { get; }
+        float FallDuration { get; }
+        bool TryValidate(out string error);
+    }
+
+    [System.Serializable]
+    public sealed class FallenCommanderLegacyFallingBarragePhaseData : IFallenCommanderFallingBarragePhaseSettings
+    {
+        [SerializeField, InspectorName("패턴 등장 확률"), Range(0f, 1f)]
+        private float selectionChance = 0.18f;
+        [SerializeField, InspectorName("반복 묶음 횟수"), Min(1)]
+        private int waveCount = 2;
+        [SerializeField, InspectorName("묶음 사이 간격"), Min(0f)]
+        private float waveInterval = 0.8f;
+        [SerializeField, InspectorName("기본 생성 간격"), Min(0f)]
+        private float spawnInterval = 0.08f;
+        [SerializeField, InspectorName("생성 시간 무작위 범위"), Min(0f)]
+        private float spawnTimeJitter = 0.06f;
+        [SerializeField, InspectorName("착탄까지 걸리는 시간"), Min(0.1f)]
+        private float fallDuration = 1.4f;
+        public float SelectionChance => Mathf.Clamp01(selectionChance);
+        public int WaveCount => Mathf.Max(1, waveCount);
+        public float WaveInterval => Mathf.Max(0f, waveInterval);
+        public float SpawnInterval => Mathf.Max(0f, spawnInterval);
+        public float SpawnTimeJitter => Mathf.Max(0f, spawnTimeJitter);
+        public float FallDuration => Mathf.Max(0.1f, fallDuration);
+
+        public bool TryValidate(out string error)
+        {
+            if (selectionChance <= 0f || selectionChance > 1f)
+            {
+                error = "등장 확률은 0보다 크고 1 이하여야 합니다.";
+                return false;
+            }
+
+            if (waveCount < 1 || fallDuration < 0.1f ||
+                waveInterval < 0f || spawnInterval < 0f || spawnTimeJitter < 0f)
+            {
+                error = "묶음 횟수·생성 간격·낙하시간을 확인해 주세요.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+    }
+
+    [System.Serializable]
+    public sealed class FallenCommanderFallingBarragePhaseData : IFallenCommanderFallingBarragePhaseSettings
+    {
+        [SerializeField, InspectorName("패턴 등장 확률"), Range(0f, 1f)]
+        private float selectionChance = 0.18f;
+        [SerializeField, InspectorName("반복 묶음 횟수"), Min(1)]
+        private int waveCount = 2;
+        [SerializeField, InspectorName("묶음 사이 간격"), Min(0f)]
+        private float waveInterval = 0.8f;
+        [SerializeField, InspectorName("기본 생성 간격"), Min(0f)]
+        private float spawnInterval = 0.08f;
+        [SerializeField, InspectorName("생성 시간 무작위 범위"), Min(0f)]
+        private float spawnTimeJitter = 0.06f;
+        [SerializeField, InspectorName("착탄까지 걸리는 시간"), Min(0.1f)]
+        private float fallDuration = 1.4f;
+
+        public float SelectionChance => Mathf.Clamp01(selectionChance);
+        public int WaveCount => Mathf.Max(1, waveCount);
+        public float WaveInterval => Mathf.Max(0f, waveInterval);
+        public float SpawnInterval => Mathf.Max(0f, spawnInterval);
+        public float SpawnTimeJitter => Mathf.Max(0f, spawnTimeJitter);
+        public float FallDuration => Mathf.Max(0.1f, fallDuration);
+
+        public bool TryValidate(out string error)
+        {
+            if (selectionChance <= 0f || selectionChance > 1f)
+            {
+                error = "등장 확률은 0보다 크고 1 이하여야 합니다.";
+                return false;
+            }
+
+            if (waveCount < 1 || fallDuration < 0.1f || waveInterval < 0f ||
+                spawnInterval < 0f || spawnTimeJitter < 0f)
+            {
+                error = "묶음 횟수·생성 간격·낙하시간을 확인해 주세요.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
         }
     }
 
@@ -234,7 +445,7 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("묶음당 최대 피해 횟수"), Min(1)]
         private int maxDamagePerGroup = 1;
         [SerializeField, InspectorName("피격 기절시간"), Min(0f)]
-        private float stunDuration;
+        private float stunDuration = 3.5f;
 
         public int TotalCount => Mathf.Max(1, totalCount);
         public int SimultaneousCount => Mathf.Clamp(simultaneousCount, 1, TotalCount);

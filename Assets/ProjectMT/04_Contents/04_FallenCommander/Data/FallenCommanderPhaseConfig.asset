@@ -15,13 +15,20 @@ MonoBehaviour:
   phases:
   - phase: 1
     healthRatio: 1
-    availableAttacks: 020000000500000001000000
+    availableAttacks: 02000000050000000100000003000000
     allowOverlappingBasicAttack: 1
+    allowBasicAttackDuringBlackHole: 0
+    allowBasicAttackDuringFallingBarrage: 0
     hasSignatureAttack: 0
     signatureAttack: 0
     transitionMessage: "1 \uD398\uC774\uC988"
     transitionSound: {fileID: 0}
     transitionDuration: 1
+    transitionFadeColor: {r: 0, g: 0, b: 0, a: 1}
+    transitionFadeAlpha: 1
+    transitionFadeDuration: 0.15
+    bossPrefabOverride: {fileID: 0}
+    bossScaleMultiplier: 1
     markStrikePattern:
       totalCount: 3
       simultaneousCount: 3
@@ -32,16 +39,40 @@ MonoBehaviour:
       clusterGroups: 0
       clusterRadius: 1.35
       maxDamagePerGroup: 1
-      stunDuration: 0
+      stunDuration: 3.5
+    blackHolePattern:
+      minimumCount: 1
+      maximumCount: 1
+      minimumCoreSpacing: 2.5
+    twistedBattlefieldPattern:
+      selectionChance: 0.2
+      beatCount: 2
+      warningDuration: 1.35
+      telegraphHoldDuration: 0.25
+      beatInterval: 0.3
+    fallingBarragePattern:
+      selectionChance: 0.18
+      waveCount: 2
+      waveInterval: 0.8
+      spawnInterval: 0.04
+      spawnTimeJitter: 0.08
+      fallDuration: 1.8
   - phase: 2
     healthRatio: 0.7
-    availableAttacks: 0400000006000000020000000500000001000000
+    availableAttacks: 0400000006000000020000000500000001000000070000000800000003000000
     allowOverlappingBasicAttack: 1
+    allowBasicAttackDuringBlackHole: 0
+    allowBasicAttackDuringFallingBarrage: 0
     hasSignatureAttack: 1
-    signatureAttack: 4
+    signatureAttack: 7
     transitionMessage: "2 \uD398\uC774\uC988"
     transitionSound: {fileID: 0}
     transitionDuration: 1
+    transitionFadeColor: {r: 0, g: 0, b: 0, a: 1}
+    transitionFadeAlpha: 1
+    transitionFadeDuration: 0.15
+    bossPrefabOverride: {fileID: 6371891410129973298, guid: a578d12661b866940b8cfd0f86719cc9, type: 3}
+    bossScaleMultiplier: 1
     markStrikePattern:
       totalCount: 7
       simultaneousCount: 1
@@ -52,16 +83,40 @@ MonoBehaviour:
       clusterGroups: 0
       clusterRadius: 1.35
       maxDamagePerGroup: 1
-      stunDuration: 0
+      stunDuration: 3.5
+    blackHolePattern:
+      minimumCount: 1
+      maximumCount: 1
+      minimumCoreSpacing: 2.5
+    twistedBattlefieldPattern:
+      selectionChance: 0.2
+      beatCount: 2
+      warningDuration: 1.35
+      telegraphHoldDuration: 0.25
+      beatInterval: 0.3
+    fallingBarragePattern:
+      selectionChance: 0.18
+      waveCount: 2
+      waveInterval: 0.9
+      spawnInterval: 0.04
+      spawnTimeJitter: 0.08
+      fallDuration: 2
   - phase: 3
     healthRatio: 0.4
-    availableAttacks: 040000000600000003000000050000000100000002000000
+    availableAttacks: 0400000006000000030000000500000001000000020000000700000008000000
     allowOverlappingBasicAttack: 1
+    allowBasicAttackDuringBlackHole: 1
+    allowBasicAttackDuringFallingBarrage: 1
     hasSignatureAttack: 1
-    signatureAttack: 3
+    signatureAttack: 8
     transitionMessage: "3 \uD398\uC774\uC988"
     transitionSound: {fileID: 0}
     transitionDuration: 1
+    transitionFadeColor: {r: 0, g: 0, b: 0, a: 1}
+    transitionFadeAlpha: 1
+    transitionFadeDuration: 0.15
+    bossPrefabOverride: {fileID: 0}
+    bossScaleMultiplier: 1.2
     markStrikePattern:
       totalCount: 10
       simultaneousCount: 3
@@ -72,4 +127,21 @@ MonoBehaviour:
       clusterGroups: 1
       clusterRadius: 1.35
       maxDamagePerGroup: 1
-      stunDuration: 0
+      stunDuration: 3.5
+    blackHolePattern:
+      minimumCount: 2
+      maximumCount: 3
+      minimumCoreSpacing: 2.5
+    twistedBattlefieldPattern:
+      selectionChance: 0.28
+      beatCount: 2
+      warningDuration: 1
+      telegraphHoldDuration: 0.2
+      beatInterval: 0.2
+    fallingBarragePattern:
+      selectionChance: 0.25
+      waveCount: 3
+      waveInterval: 0.65
+      spawnInterval: 0.04
+      spawnTimeJitter: 0.08
+      fallDuration: 1.6

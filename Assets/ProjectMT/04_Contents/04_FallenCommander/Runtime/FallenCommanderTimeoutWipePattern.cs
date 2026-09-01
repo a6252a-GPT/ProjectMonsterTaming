@@ -8,7 +8,7 @@ namespace ProjectMT.Contents.FallenCommander
     public sealed class FallenCommanderTimeoutWipePattern
     {
         private static readonly Color TelegraphColor =
-            new Color(0.85f, 0.05f, 0.18f, 0.85f);
+            FallenCommanderTelegraphPalette.Danger;
 
         private FallenCommanderTimeoutWipeData data;
         private UnitActor bossActor;
@@ -16,10 +16,20 @@ namespace ProjectMT.Contents.FallenCommander
         private HealthComponent commanderHealth;
         private FallenCommanderBossAnimationPresenter animationPresenter;
         private Transform effectParent;
+        private Transform groundAnchor;
         private GameObject startVfxInstance;
         private FallenCommanderTelegraphView telegraph;
         private float startedRealtime = -1f;
         private float telegraphHoldDuration;
+        private Vector3 bossStartPosition;
+        private bool hasBossStartPosition;
+        private FallenCommanderTimeoutBossPositionLock bossPositionLock;
+        private bool isDamagePending;
+        private bool hasAppliedDamage;
+        private bool isDescending;
+        private float damageDelayRemaining;
+        private float castMotionRemaining;
+        private float descentElapsed;
 
         public bool IsActive { get; private set; }
         public float RemainingWarningTime { get; private set; }
@@ -49,6 +59,7 @@ namespace ProjectMT.Contents.FallenCommander
             commanderHealth = health;
             animationPresenter = animations;
             effectParent = parent;
+            groundAnchor = effectParent == null ? null : effectParent.Find("Ground");
             WarningDuration = data == null
                 ? Mathf.Max(0f, fallbackWarningDuration)
                 : data.WarningDuration;
@@ -59,6 +70,19 @@ namespace ProjectMT.Contents.FallenCommander
             RemainingWarningTime = WarningDuration + telegraphHoldDuration;
             startedRealtime = Time.realtimeSinceStartup;
             IsActive = true;
+            if (bossActor != null)
+            {
+                bossStartPosition = bossActor.transform.position;
+                hasBossStartPosition = true;
+                bossPositionLock = bossActor.GetComponent<FallenCommanderTimeoutBossPositionLock>();
+                if (bossPositionLock == null)
+                {
+                    bossPositionLock = bossActor.gameObject.AddComponent<
+                        FallenCommanderTimeoutBossPositionLock>();
+                }
+
+                bossPositionLock.SetPosition(bossStartPosition);
+            }
 
             animationPresenter?.PlayPreCast(
                 data?.PreCastMotion,
@@ -71,7 +95,9 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor == null ? Vector3.forward : bossActor.transform.forward,
                 effectParent,
                 bossActor == null ? null : bossActor.transform,
-                commanderRoot);
+                commanderRoot,
+                ground: groundAnchor,
+                clampHeightToGround: data?.ClampVfxToGround ?? true);
             telegraph = FallenCommanderTelegraphView.CreateCircle(
                 data?.TelegraphPrefab,
                 effectParent,
@@ -90,9 +116,17 @@ namespace ProjectMT.Contents.FallenCommander
                 return false;
             }
 
+            var safeDeltaTime = Mathf.Max(0f, unscaledDeltaTime);
+            if (isDescending)
+            {
+                TickDescent(safeDeltaTime);
+                return !IsActive;
+            }
+
             RemainingWarningTime = Mathf.Max(
                 0f,
-                RemainingWarningTime - Mathf.Max(0f, unscaledDeltaTime));
+                RemainingWarningTime - safeDeltaTime);
+            UpdateBossRise();
             var fillRemaining = Mathf.Max(
                 0f,
                 RemainingWarningTime - telegraphHoldDuration);
@@ -104,12 +138,32 @@ namespace ProjectMT.Contents.FallenCommander
                 return false;
             }
 
-            Resolve();
-            return true;
+            if (!isDamagePending)
+            {
+                BeginResolve();
+            }
+
+            damageDelayRemaining = Mathf.Max(
+                0f,
+                damageDelayRemaining - safeDeltaTime);
+            castMotionRemaining = Mathf.Max(0f, castMotionRemaining - safeDeltaTime);
+            if (!hasAppliedDamage && damageDelayRemaining <= 0f)
+            {
+                ApplyDamage();
+                hasAppliedDamage = true;
+            }
+
+            if (castMotionRemaining > 0f || !hasAppliedDamage)
+            {
+                return false;
+            }
+
+            BeginDescent();
+            return !IsActive;
         }
 
-        // 발동 연출을 재생하고 군단장의 남은 하트를 모두 제거한다.
-        private void Resolve()
+        // 발동 연출을 재생한 뒤 설정된 시간만큼 피해 판정을 기다린다.
+        private void BeginResolve()
         {
             DestroyTelegraph();
             DestroyStartVfx();
@@ -126,8 +180,18 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor == null ? Vector3.forward : bossActor.transform.forward,
                 effectParent,
                 bossActor == null ? null : bossActor.transform,
-                commanderRoot);
+                commanderRoot,
+                ground: groundAnchor,
+                clampHeightToGround: data?.ClampVfxToGround ?? true);
+            isDamagePending = true;
+            damageDelayRemaining = data?.DamageDelay ?? 0f;
+            castMotionRemaining = data?.CastMotionDuration ?? 0f;
+            SetBossPosition(GetPeakPosition());
+        }
 
+        // 전멸 범위는 전체 전장이므로 지연 후 군단장의 남은 하트를 모두 제거한다.
+        private void ApplyDamage()
+        {
             if (commanderHealth != null && commanderHealth.IsAlive)
             {
                 FallenCommanderAttackEffectPlayer.PlayHit(
@@ -147,14 +211,12 @@ namespace ProjectMT.Contents.FallenCommander
                     commanderRoot.position));
             }
 
-            IsActive = false;
-            RemainingWarningTime = 0f;
-            ReleaseRuntimeReferences();
         }
 
         // 진행 중인 전멸기와 시작 VFX 및 런타임 참조를 초기 상태로 정리한다.
         public void Cancel()
         {
+            RestoreBossPosition();
             DestroyTelegraph();
             DestroyStartVfx();
             IsActive = false;
@@ -163,8 +225,122 @@ namespace ProjectMT.Contents.FallenCommander
             telegraphHoldDuration = 0f;
             ResultDelay = 0f;
             startedRealtime = -1f;
+            isDamagePending = false;
+            hasAppliedDamage = false;
+            isDescending = false;
+            damageDelayRemaining = 0f;
+            castMotionRemaining = 0f;
+            descentElapsed = 0f;
             data = null;
             ReleaseRuntimeReferences();
+        }
+
+        private void UpdateBossRise()
+        {
+            if (!hasBossStartPosition || bossActor == null || data == null)
+            {
+                return;
+            }
+
+            var totalDuration = Mathf.Max(0.01f, WarningDuration + telegraphHoldDuration);
+            var progress = Mathf.Clamp01(1f - RemainingWarningTime / totalDuration);
+            var curveProgress = data.RiseCurve == null
+                ? Mathf.SmoothStep(0f, 1f, progress)
+                : Mathf.Clamp01(data.RiseCurve.Evaluate(progress));
+            SetBossPosition(bossStartPosition +
+                Vector3.up * data.RiseHeight * curveProgress);
+        }
+
+        private void BeginDescent()
+        {
+            isDescending = true;
+            descentElapsed = 0f;
+            if (data?.DescentDuration <= 0f)
+            {
+                SetBossPosition(bossStartPosition);
+                Complete();
+            }
+        }
+
+        private void TickDescent(float deltaTime)
+        {
+            if (!hasBossStartPosition || bossActor == null)
+            {
+                Complete();
+                return;
+            }
+
+            var duration = data?.DescentDuration ?? 0f;
+            descentElapsed = Mathf.Min(duration, descentElapsed + deltaTime);
+            var progress = duration <= 0f
+                ? 1f
+                : Mathf.Clamp01(descentElapsed / duration);
+            var curveProgress = data?.DescentCurve == null
+                ? Mathf.SmoothStep(0f, 1f, progress)
+                : Mathf.Clamp01(data.DescentCurve.Evaluate(progress));
+            SetBossPosition(Vector3.Lerp(
+                GetPeakPosition(),
+                bossStartPosition,
+                curveProgress));
+            if (progress >= 1f)
+            {
+                Complete();
+            }
+        }
+
+        private void Complete()
+        {
+            SetBossPosition(bossStartPosition);
+            ReleaseBossPositionLock();
+            IsActive = false;
+            RemainingWarningTime = 0f;
+            isDamagePending = false;
+            hasAppliedDamage = false;
+            isDescending = false;
+            damageDelayRemaining = 0f;
+            castMotionRemaining = 0f;
+            descentElapsed = 0f;
+        }
+
+        private void RestoreBossPosition()
+        {
+            if (hasBossStartPosition && bossActor != null)
+            {
+                SetBossPosition(bossStartPosition);
+            }
+
+            ReleaseBossPositionLock();
+
+            bossStartPosition = Vector3.zero;
+            hasBossStartPosition = false;
+        }
+
+        private Vector3 GetPeakPosition()
+        {
+            return bossStartPosition + Vector3.up * (data?.RiseHeight ?? 0f);
+        }
+
+        private void SetBossPosition(Vector3 position)
+        {
+            if (bossPositionLock != null)
+            {
+                bossPositionLock.SetPosition(position);
+                return;
+            }
+
+            if (bossActor != null)
+            {
+                bossActor.transform.position = position;
+            }
+        }
+
+        private void ReleaseBossPositionLock()
+        {
+            if (bossPositionLock != null)
+            {
+                Object.Destroy(bossPositionLock);
+                bossPositionLock = null;
+            }
         }
 
         // 전멸기 시작부터 결과 반환까지의 실제 경과시간을 한 번 반환하고 기록을 초기화한다.
@@ -203,11 +379,15 @@ namespace ProjectMT.Contents.FallenCommander
         // 패턴 종료 후 외부 런타임 오브젝트 참조만 해제한다.
         private void ReleaseRuntimeReferences()
         {
+            ReleaseBossPositionLock();
+            bossStartPosition = Vector3.zero;
+            hasBossStartPosition = false;
             bossActor = null;
             commanderRoot = null;
             commanderHealth = null;
             animationPresenter = null;
             effectParent = null;
+            groundAnchor = null;
         }
     }
 }

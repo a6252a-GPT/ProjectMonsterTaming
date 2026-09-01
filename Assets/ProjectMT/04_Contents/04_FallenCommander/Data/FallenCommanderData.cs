@@ -29,8 +29,8 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("근접 공격 설정")]
         private FallenCommanderAttackData meleeAttack = new FallenCommanderAttackData();
 
-        [Header("3. 위치 공격")]
-        [SerializeField, InspectorName("위치 공격 설정")]
+        [Header("3. 연속 위치 공격")]
+        [SerializeField, InspectorName("연속 위치 공격 설정")]
         private FallenCommanderAttackData markStrike = new FallenCommanderAttackData();
 
         [Header("4. 추적 낙인")]
@@ -83,6 +83,14 @@ namespace ProjectMT.Contents.FallenCommander
         private float finalChargeTelegraphHoldDuration = 0.25f;
         [SerializeField, InspectorName("공격 범위 반지름"), Min(0.1f)]
         private float finalChargeRadius = 10f;
+        [SerializeField, InspectorName("피해 판정 지연시간"), Min(0f)]
+        private float finalChargeDamageDelay;
+        [SerializeField, InspectorName("패턴 경고 문구")]
+        private string finalChargeWarningMessage = "경고! 보스가 강력한 광역 공격을 준비합니다!";
+        [SerializeField, InspectorName("기절 적용")]
+        private bool finalChargeUseStun;
+        [SerializeField, InspectorName("기절 지속시간"), Min(0f)]
+        private float finalChargeStunDuration = 3.5f;
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData finalChargeEffects = new();
         [SerializeField, InspectorName("시전 모션")] private AnimationClip finalChargePreCastMotion;
@@ -106,11 +114,17 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("전멸기 설정")]
         private FallenCommanderTimeoutWipeData timeoutWipe = new();
 
+        [Header("10. 연속 장판 공격")]
+        [SerializeField, InspectorName("연속 장판 공격 설정")]
+        private FallenCommanderTwistedBattlefieldData twistedBattlefield = new();
+
+        [Header("11. 낙하 탄막")]
+        [SerializeField, InspectorName("낙하 탄막 공격 설정")]
+        private FallenCommanderFallingBarrageData fallingBarrage = new();
+
         [Header("공격 선택 조건")]
         [SerializeField, InspectorName("근접 공격 선택 거리"), Min(0.1f)]
         private float closeAttackDistance = 3f;
-        [SerializeField, InspectorName("직선 공격 최소 거리"), Min(0.1f)]
-        private float lineStrikeMinimumDistance = 5f;
         [SerializeField, InspectorName("직선 공격 정면 판정 기준"), Range(-1f, 1f)]
         private float lineStrikeAlignmentThreshold = 0.7f;
 
@@ -177,6 +191,12 @@ namespace ProjectMT.Contents.FallenCommander
         public float FinalChargeTelegraphHoldDuration =>
             Mathf.Max(0f, finalChargeTelegraphHoldDuration);
         public float FinalChargeRadius => Mathf.Max(0.1f, finalChargeRadius);
+        public float FinalChargeDamageDelay => Mathf.Max(0f, finalChargeDamageDelay);
+        public string FinalChargeWarningMessage => finalChargeWarningMessage;
+        public bool FinalChargeUseStun => finalChargeUseStun;
+        public float FinalChargeStunDuration => finalChargeUseStun
+            ? Mathf.Max(0f, finalChargeStunDuration)
+            : 0f;
         public FallenCommanderAttackEffectData FinalChargeEffects => finalChargeEffects;
         public AnimationClip FinalChargePreCastMotion => finalChargePreCastMotion;
         public float FinalChargePreCastMotionSpeed => Mathf.Max(0.01f, finalChargePreCastMotionSpeed);
@@ -197,8 +217,11 @@ namespace ProjectMT.Contents.FallenCommander
             FinalChargeCastMotionEnd);
         public Vector3 FinalChargeStartEffectOffset => finalChargeStartEffectOffset;
         public FallenCommanderTimeoutWipeData TimeoutWipe => timeoutWipe;
+        public FallenCommanderTwistedBattlefieldData TwistedBattlefield =>
+            twistedBattlefield ??= new FallenCommanderTwistedBattlefieldData();
+        public FallenCommanderFallingBarrageData FallingBarrage =>
+            fallingBarrage ??= new FallenCommanderFallingBarrageData();
         public float CloseAttackDistance => closeAttackDistance;
-        public float LineStrikeMinimumDistance => lineStrikeMinimumDistance;
         public float LineStrikeAlignmentThreshold => lineStrikeAlignmentThreshold;
         public FallenCommanderPhaseConfig PhaseConfig => phaseConfig;
         public AnimationClip DeathMotion => deathMotion;
@@ -256,6 +279,438 @@ namespace ProjectMT.Contents.FallenCommander
         }
     }
 
+    [System.Serializable]
+    public sealed class FallenCommanderTwistedBattlefieldData
+    {
+        [SerializeField, InspectorName("공격 범위 오브젝트")]
+        private GameObject telegraphPrefab;
+        [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
+        private FallenCommanderAttackEffectData effects = new();
+        [SerializeField, InspectorName("피해 판정 지연시간"), Min(0f)]
+        private float damageDelay;
+        [SerializeField, InspectorName("시전 모션")]
+        private AnimationClip preCastMotion;
+        [SerializeField, InspectorName("시전 모션 속도"), Min(0.01f)]
+        private float preCastMotionSpeed = 1f;
+        [SerializeField, InspectorName("시전 모션 시작 지점"), Range(0f, 1f)]
+        private float preCastMotionStart;
+        [SerializeField, InspectorName("시전 모션 종료 지점"), Range(0f, 1f)]
+        private float preCastMotionEnd = 1f;
+        [SerializeField, InspectorName("공격 모션")]
+        private AnimationClip castMotion;
+        [SerializeField, InspectorName("공격 모션 속도"), Min(0.01f)]
+        private float castMotionSpeed = 1f;
+        [SerializeField, InspectorName("공격 모션 시작 지점"), Range(0f, 1f)]
+        private float castMotionStart;
+        [SerializeField, InspectorName("공격 모션 종료 지점"), Range(0f, 1f)]
+        private float castMotionEnd = 1f;
+        [SerializeField, InspectorName("전장 반경")]
+        private Vector2 arenaHalfExtents = new(6f, 4f);
+        [SerializeField, InspectorName("세로 칸 개수"), Range(2, 6)]
+        private int columnCount = 4;
+        [SerializeField, InspectorName("가로 칸 개수"), Range(2, 4)]
+        private int rowCount = 2;
+        [SerializeField, InspectorName("장판 사이 간격"), Min(0f)]
+        private float tileGap = 0.08f;
+        [SerializeField, InspectorName("공격 사이 회피시간"), Min(0.1f)]
+        private float attackInterval = 0.8f;
+        [SerializeField, InspectorName("위험 장판 색상")]
+        private Color dangerColor = new(1f, 0.08f, 0.04f, 0.82f);
+        [SerializeField, InspectorName("안전지대 색상")]
+        private Color safeColor = new(0.08f, 0.85f, 0.42f, 0.72f);
+
+        public GameObject TelegraphPrefab => telegraphPrefab;
+        public FallenCommanderAttackEffectData Effects => effects;
+        public float DamageDelay => Mathf.Max(0f, damageDelay);
+        public AnimationClip PreCastMotion => preCastMotion;
+        public float PreCastMotionSpeed => Mathf.Max(0.01f, preCastMotionSpeed);
+        public float PreCastMotionStart => ResolveStart(preCastMotionStart);
+        public float PreCastMotionEnd => ResolveEnd(preCastMotionStart, preCastMotionEnd);
+        public AnimationClip CastMotion => castMotion;
+        public float CastMotionSpeed => Mathf.Max(0.01f, castMotionSpeed);
+        public float CastMotionStart => ResolveStart(castMotionStart);
+        public float CastMotionEnd => ResolveEnd(castMotionStart, castMotionEnd);
+        public float CastMotionDuration => castMotion == null
+            ? 0f
+            : Mathf.Max(
+                0.01f,
+                castMotion.length * (CastMotionEnd - CastMotionStart) / CastMotionSpeed);
+        public Vector2 ArenaHalfExtents => new(
+            Mathf.Max(0.5f, arenaHalfExtents.x),
+            Mathf.Max(0.5f, arenaHalfExtents.y));
+        public int ColumnCount => Mathf.Clamp(columnCount, 2, 6);
+        public int RowCount => Mathf.Clamp(rowCount, 2, 4);
+        public float TileGap => Mathf.Max(0f, tileGap);
+        public float AttackInterval => Mathf.Max(0.1f, attackInterval);
+        public Color DangerColor => dangerColor;
+        public Color SafeColor => safeColor;
+
+        // 연속 장판 공격의 필수 프리팹과 전장 분할 설정이 실행 가능한지 검사한다.
+        public bool TryValidate(out string error)
+        {
+            if (telegraphPrefab == null)
+            {
+                error = "공격 범위 오브젝트가 필요합니다.";
+                return false;
+            }
+
+            if (arenaHalfExtents.x <= 0f || arenaHalfExtents.y <= 0f)
+            {
+                error = "전장 반경은 X·Y 모두 0보다 커야 합니다.";
+                return false;
+            }
+
+            if (columnCount < 2 || rowCount < 2)
+            {
+                error = "전장 칸 개수는 가로·세로 모두 2개 이상이어야 합니다.";
+                return false;
+            }
+
+            if (attackInterval < 0.1f)
+            {
+                error = "공격 사이 회피시간은 0.1초 이상이어야 합니다.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        // 모션 시작 지점을 유효한 정규화 범위로 제한한다.
+        private static float ResolveStart(float start)
+        {
+            return Mathf.Clamp(start, 0f, 0.999f);
+        }
+
+        // 모션 종료 지점을 시작 지점보다 뒤에 오도록 보정한다.
+        private static float ResolveEnd(float start, float end)
+        {
+            if (start <= 0f && end <= 0f)
+            {
+                return 1f;
+            }
+
+            return Mathf.Clamp(end, ResolveStart(start) + 0.001f, 1f);
+        }
+    }
+
+    public interface IFallenCommanderFallingBarrageSettings
+    {
+        GameObject ProjectilePrefab { get; }
+        GameObject TelegraphPrefab { get; }
+        FallenCommanderAttackEffectData Effects { get; }
+        FallenCommanderAttackEffectData ImpactEffects { get; }
+        float DamageDelay { get; }
+        AnimationClip PreCastMotion { get; }
+        float PreCastMotionSpeed { get; }
+        float PreCastMotionStart { get; }
+        float PreCastMotionEnd { get; }
+        AnimationClip CastMotion { get; }
+        float CastMotionSpeed { get; }
+        float CastMotionStart { get; }
+        float CastMotionEnd { get; }
+        float CastMotionDuration { get; }
+        Vector2 ArenaHalfExtents { get; }
+        float SpawnHeight { get; }
+        float ProjectileSpawnPresentationDuration { get; }
+        int ProjectileCount { get; }
+        float AirHoldDuration { get; }
+        float TelegraphHoldDuration { get; }
+        string WarningMessage { get; }
+        float WarningMessageDuration { get; }
+        float BarrageStartDelay { get; }
+        float ImpactRadius { get; }
+        float MinimumSpacing { get; }
+        float CommanderSafetyRadius { get; }
+        int InitialPoolSize { get; }
+        Vector3 EvaluateProjectilePosition(Vector3 impactPosition, float normalizedTime);
+        float EvaluateFallProgress(float normalizedTime);
+        bool KeepProjectileVisibleUntilImpact { get; }
+        bool TryValidate(out string error);
+    }
+
+    [System.Serializable]
+    public sealed class FallenCommanderLegacyFallingBarrageData : IFallenCommanderFallingBarrageSettings
+    {
+        [SerializeField, InspectorName("낙하 탄막 오브젝트")]
+        private GameObject projectilePrefab;
+        [SerializeField, InspectorName("구체 생성 연출 유지시간"), Min(0f)]
+        private float projectileSpawnPresentationDuration = 0.12f;
+        [SerializeField, InspectorName("공격 범위 오브젝트")]
+        private GameObject telegraphPrefab;
+        [SerializeField, InspectorName("피해 판정 지연시간"), Min(0f)]
+        private float damageDelay;
+        [SerializeField, InspectorName("시전 모션")]
+        private AnimationClip preCastMotion;
+        [SerializeField, InspectorName("시전 모션 속도"), Min(0.01f)]
+        private float preCastMotionSpeed = 1f;
+        [SerializeField, InspectorName("시전 모션 시작 지점"), Range(0f, 1f)]
+        private float preCastMotionStart;
+        [SerializeField, InspectorName("시전 모션 종료 지점"), Range(0f, 1f)]
+        private float preCastMotionEnd = 1f;
+        [SerializeField, InspectorName("공격 모션")]
+        private AnimationClip castMotion;
+        [SerializeField, InspectorName("공격 모션 속도"), Min(0.01f)]
+        private float castMotionSpeed = 1f;
+        [SerializeField, InspectorName("공격 모션 시작 지점"), Range(0f, 1f)]
+        private float castMotionStart;
+        [SerializeField, InspectorName("공격 모션 종료 지점"), Range(0f, 1f)]
+        private float castMotionEnd = 1f;
+        [SerializeField, InspectorName("랜덤 생성 영역 반경")]
+        private Vector2 arenaHalfExtents = new(6f, 4f);
+        [SerializeField, InspectorName("탄막 생성 높이"), Min(0.1f)]
+        private float spawnHeight = 9f;
+        [SerializeField, InspectorName("한 묶음 탄막 개수"), Min(1)]
+        private int projectileCount = 20;
+        [SerializeField, InspectorName("공중 대기시간"), Min(0f)]
+        private float airHoldDuration = 0.6f;
+        [SerializeField, InspectorName("충전 완료 유지시간"), Min(0f)]
+        private float telegraphHoldDuration;
+        [SerializeField, InspectorName("낙하 가속 곡선")]
+        private AnimationCurve fallSpeedCurve = new(
+            new Keyframe(0f, 0f, 0f, 0f),
+            new Keyframe(1f, 1f, 2f, 2f));
+        [SerializeField, InspectorName("패턴 경고 문구")]
+        private string warningMessage = "경고! 낙하 지점을 확인하세요!";
+        [SerializeField, InspectorName("경고 후 공격 대기시간"), Min(0f)]
+        private float warningMessageDuration = 2f;
+        [SerializeField, InspectorName("문구 시작 후 탄막 생성 대기시간"), Min(0f)]
+        private float barrageStartDelay = 1.2f;
+        [SerializeField, InspectorName("착탄 피해 반지름"), Min(0.1f)]
+        private float impactRadius = 1.25f;
+        [SerializeField, InspectorName("탄막 최소 배치 간격"), Min(0f)]
+        private float minimumSpacing = 2.2f;
+        [SerializeField, InspectorName("군단장 주변 최소 안전거리"), Min(0f)]
+        private float commanderSafetyRadius = 1.5f;
+        [SerializeField, InspectorName("풀 초기 준비 개수"), Min(1)]
+        private int initialPoolSize = 20;
+        [SerializeField, InspectorName("경고 장판 색상")]
+        private Color telegraphColor = new(1f, 0.12f, 0.04f, 0.82f);
+
+        public GameObject ProjectilePrefab => projectilePrefab;
+        public FallenCommanderAttackEffectData Effects => null;
+        public FallenCommanderAttackEffectData ImpactEffects => null;
+        public float ProjectileSpawnPresentationDuration =>
+            Mathf.Max(0f, projectileSpawnPresentationDuration);
+        public GameObject TelegraphPrefab => telegraphPrefab;
+        public float DamageDelay => Mathf.Max(0f, damageDelay);
+        public AnimationClip PreCastMotion => preCastMotion;
+        public float PreCastMotionSpeed => Mathf.Max(0.01f, preCastMotionSpeed);
+        public float PreCastMotionStart => ResolveStart(preCastMotionStart);
+        public float PreCastMotionEnd => ResolveEnd(preCastMotionStart, preCastMotionEnd);
+        public AnimationClip CastMotion => castMotion;
+        public float CastMotionSpeed => Mathf.Max(0.01f, castMotionSpeed);
+        public float CastMotionStart => ResolveStart(castMotionStart);
+        public float CastMotionEnd => ResolveEnd(castMotionStart, castMotionEnd);
+        public float CastMotionDuration => castMotion == null
+            ? 0f
+            : Mathf.Max(0.01f, castMotion.length *
+                (CastMotionEnd - CastMotionStart) / CastMotionSpeed);
+        public Vector2 ArenaHalfExtents => new(
+            Mathf.Max(0.5f, arenaHalfExtents.x),
+            Mathf.Max(0.5f, arenaHalfExtents.y));
+        public float SpawnHeight => Mathf.Max(0.1f, spawnHeight);
+        public int ProjectileCount => Mathf.Max(1, projectileCount);
+        public float AirHoldDuration => Mathf.Max(0f, airHoldDuration);
+        public float TelegraphHoldDuration => Mathf.Max(0f, telegraphHoldDuration);
+        public string WarningMessage => warningMessage;
+        public float WarningMessageDuration => Mathf.Max(0f, warningMessageDuration);
+        public float BarrageStartDelay => WarningMessageDuration <= 0f
+            ? 0f
+            : Mathf.Clamp(barrageStartDelay, 0f, Mathf.Max(0f, WarningMessageDuration - 0.01f));
+        public float EvaluateFallProgress(float normalizedTime)
+        {
+            var progress = Mathf.Clamp01(normalizedTime);
+            return Mathf.Clamp01(fallSpeedCurve == null
+                ? progress * progress
+                : fallSpeedCurve.Evaluate(progress));
+        }
+
+        public Vector3 EvaluateProjectilePosition(
+            Vector3 impactPosition,
+            float normalizedTime)
+        {
+            return Vector3.Lerp(
+                impactPosition + Vector3.up * SpawnHeight,
+                impactPosition,
+                EvaluateFallProgress(normalizedTime));
+        }
+        public float ImpactRadius => Mathf.Max(0.1f, impactRadius);
+        public float MinimumSpacing => Mathf.Max(0f, minimumSpacing);
+        public float CommanderSafetyRadius => Mathf.Max(0f, commanderSafetyRadius);
+        public int InitialPoolSize => Mathf.Max(1, initialPoolSize);
+        public Color TelegraphColor => telegraphColor;
+        public bool KeepProjectileVisibleUntilImpact => false;
+
+        public bool TryValidate(out string error)
+        {
+            if (projectilePrefab == null || telegraphPrefab == null)
+            {
+                error = "낙하 탄막과 공격 범위 오브젝트가 모두 필요합니다.";
+                return false;
+            }
+
+            if (arenaHalfExtents.x <= 0f || arenaHalfExtents.y <= 0f ||
+                spawnHeight <= 0f || projectileCount < 1 || airHoldDuration < 0f ||
+                impactRadius <= 0f || initialPoolSize < 1)
+            {
+                error = "생성 영역·높이·피해 반지름·풀 준비 개수를 확인해 주세요.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static float ResolveStart(float start)
+        {
+            return Mathf.Clamp(start, 0f, 0.999f);
+        }
+
+        private static float ResolveEnd(float start, float end)
+        {
+            if (start <= 0f && end <= 0f)
+            {
+                return 1f;
+            }
+
+            return Mathf.Clamp(end, ResolveStart(start) + 0.001f, 1f);
+        }
+    }
+
+    [System.Serializable]
+    public sealed class FallenCommanderFallingBarrageData : IFallenCommanderFallingBarrageSettings
+    {
+        [SerializeField, InspectorName("낙하 탄막 오브젝트")]
+        private GameObject projectilePrefab;
+        [SerializeField, InspectorName("공격 범위 오브젝트")]
+        private GameObject telegraphPrefab;
+        [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
+        private FallenCommanderAttackEffectData effects = new();
+        [SerializeField, InspectorName("착탄 효과 (VFX / SFX)")]
+        private FallenCommanderAttackEffectData impactEffects = new();
+        [SerializeField, InspectorName("피해 판정 지연시간"), Min(0f)]
+        private float damageDelay;
+        [SerializeField, InspectorName("시전 모션")]
+        private AnimationClip preCastMotion;
+        [SerializeField, InspectorName("시전 모션 속도"), Min(0.01f)]
+        private float preCastMotionSpeed = 1f;
+        [SerializeField, InspectorName("시전 모션 시작 지점"), Range(0f, 1f)]
+        private float preCastMotionStart;
+        [SerializeField, InspectorName("시전 모션 종료 지점"), Range(0f, 1f)]
+        private float preCastMotionEnd = 1f;
+        [SerializeField, InspectorName("공격 모션")]
+        private AnimationClip castMotion;
+        [SerializeField, InspectorName("공격 모션 속도"), Min(0.01f)]
+        private float castMotionSpeed = 1f;
+        [SerializeField, InspectorName("공격 모션 시작 지점"), Range(0f, 1f)]
+        private float castMotionStart;
+        [SerializeField, InspectorName("공격 모션 종료 지점"), Range(0f, 1f)]
+        private float castMotionEnd = 1f;
+        [SerializeField, InspectorName("랜덤 생성 영역 반경")]
+        private Vector2 arenaHalfExtents = new(6f, 4f);
+        [SerializeField, InspectorName("탄막 생성 높이"), Min(0.1f)]
+        private float spawnHeight = 9f;
+        [SerializeField, InspectorName("한 묶음 탄막 개수"), Min(1)]
+        private int projectileCount = 20;
+        [SerializeField, InspectorName("공중 대기시간"), Min(0f)]
+        private float airHoldDuration = 0.6f;
+        [SerializeField, InspectorName("충전 완료 유지시간"), Min(0f)]
+        private float telegraphHoldDuration;
+        [SerializeField, InspectorName("낙하 가속 곡선")]
+        private AnimationCurve fallSpeedCurve = new(
+            new Keyframe(0f, 0f, 0f, 0f),
+            new Keyframe(1f, 1f, 2f, 2f));
+        [SerializeField, InspectorName("패턴 경고 문구")]
+        private string warningMessage = "경고! 낙하 지점을 확인하세요!";
+        [SerializeField, InspectorName("경고 후 공격 대기시간"), Min(0f)]
+        private float warningMessageDuration = 2f;
+        [SerializeField, InspectorName("문구 시작 후 탄막 생성 대기시간"), Min(0f)]
+        private float barrageStartDelay = 1.2f;
+        [SerializeField, InspectorName("착탄 피해 반지름"), Min(0.1f)]
+        private float impactRadius = 1.25f;
+        [SerializeField, InspectorName("탄막 최소 배치 간격"), Min(0f)]
+        private float minimumSpacing = 2.2f;
+        [SerializeField, InspectorName("군단장 주변 최소 안전거리"), Min(0f)]
+        private float commanderSafetyRadius = 1.5f;
+        [SerializeField, InspectorName("풀 초기 준비 개수"), Min(1)]
+        private int initialPoolSize = 20;
+
+        public GameObject ProjectilePrefab => projectilePrefab;
+        public GameObject TelegraphPrefab => telegraphPrefab;
+        public FallenCommanderAttackEffectData Effects => effects ??= new FallenCommanderAttackEffectData();
+        public FallenCommanderAttackEffectData ImpactEffects =>
+            impactEffects ??= new FallenCommanderAttackEffectData();
+        public float DamageDelay => Mathf.Max(0f, damageDelay);
+        public AnimationClip PreCastMotion => preCastMotion;
+        public float PreCastMotionSpeed => Mathf.Max(0.01f, preCastMotionSpeed);
+        public float PreCastMotionStart => ResolveStart(preCastMotionStart);
+        public float PreCastMotionEnd => ResolveEnd(preCastMotionStart, preCastMotionEnd);
+        public AnimationClip CastMotion => castMotion;
+        public float CastMotionSpeed => Mathf.Max(0.01f, castMotionSpeed);
+        public float CastMotionStart => ResolveStart(castMotionStart);
+        public float CastMotionEnd => ResolveEnd(castMotionStart, castMotionEnd);
+        public float CastMotionDuration => castMotion == null ? 0f : Mathf.Max(0.01f,
+            castMotion.length * (CastMotionEnd - CastMotionStart) / CastMotionSpeed);
+        public Vector2 ArenaHalfExtents => new(Mathf.Max(0.5f, arenaHalfExtents.x),
+            Mathf.Max(0.5f, arenaHalfExtents.y));
+        public float SpawnHeight => Mathf.Max(0.1f, spawnHeight);
+        public float ProjectileSpawnPresentationDuration => 0f;
+        public int ProjectileCount => Mathf.Max(1, projectileCount);
+        public float AirHoldDuration => Mathf.Max(0f, airHoldDuration);
+        public float TelegraphHoldDuration => Mathf.Max(0f, telegraphHoldDuration);
+        public string WarningMessage => warningMessage;
+        public float WarningMessageDuration => Mathf.Max(0f, warningMessageDuration);
+        public float BarrageStartDelay => WarningMessageDuration <= 0f ? 0f :
+            Mathf.Clamp(barrageStartDelay, 0f, Mathf.Max(0f, WarningMessageDuration - 0.01f));
+        public float ImpactRadius => Mathf.Max(0.1f, impactRadius);
+        public float MinimumSpacing => Mathf.Max(0f, minimumSpacing);
+        public float CommanderSafetyRadius => Mathf.Max(0f, commanderSafetyRadius);
+        public int InitialPoolSize => Mathf.Max(1, initialPoolSize);
+        public bool KeepProjectileVisibleUntilImpact => true;
+
+        public float EvaluateFallProgress(float normalizedTime)
+        {
+            var progress = Mathf.Clamp01(normalizedTime);
+            return Mathf.Clamp01(fallSpeedCurve == null ? progress * progress :
+                fallSpeedCurve.Evaluate(progress));
+        }
+
+        public Vector3 EvaluateProjectilePosition(Vector3 impactPosition, float normalizedTime)
+        {
+            return Vector3.Lerp(impactPosition + Vector3.up * SpawnHeight, impactPosition,
+                EvaluateFallProgress(normalizedTime));
+        }
+
+        public bool TryValidate(out string error)
+        {
+            if (projectilePrefab == null || telegraphPrefab == null)
+            {
+                error = "낙하 탄막과 공격 범위 오브젝트가 모두 필요합니다.";
+                return false;
+            }
+
+            if (arenaHalfExtents.x <= 0f || arenaHalfExtents.y <= 0f || spawnHeight <= 0f ||
+                projectileCount < 1 || airHoldDuration < 0f || impactRadius <= 0f || initialPoolSize < 1)
+            {
+                error = "생성 영역·높이·피해 반지름·풀 준비 개수를 확인해 주세요.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static float ResolveStart(float start) => Mathf.Clamp(start, 0f, 0.999f);
+
+        private static float ResolveEnd(float start, float end)
+        {
+            return start <= 0f && end <= 0f
+                ? 1f
+                : Mathf.Clamp(end, ResolveStart(start) + 0.001f, 1f);
+        }
+    }
+
     public enum FallenCommanderEffectAnchor
     {
         [InspectorName("공격 지점")]
@@ -265,7 +720,9 @@ namespace ProjectMT.Contents.FallenCommander
         [InspectorName("군단장 위치")]
         Commander,
         [InspectorName("투사체 위치")]
-        Projectile
+        Projectile,
+        [InspectorName("바닥 기준")]
+        Ground
     }
 
     [System.Serializable]
@@ -281,6 +738,8 @@ namespace ProjectMT.Contents.FallenCommander
         private GameObject projectilePrefab;
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData effects = new();
+        [SerializeField, InspectorName("피해 판정 지연시간"), Min(0f)]
+        private float damageDelay;
         [SerializeField, InspectorName("투사체 이동 속도"), Min(0.1f)]
         private float projectileSpeed = 8f;
         [SerializeField, InspectorName("투사체 피격 반지름"), Min(0.1f)]
@@ -297,6 +756,7 @@ namespace ProjectMT.Contents.FallenCommander
         public GameObject TelegraphPrefab => telegraphPrefab;
         public GameObject ProjectilePrefab => projectilePrefab;
         public FallenCommanderAttackEffectData Effects => effects;
+        public float DamageDelay => Mathf.Max(0f, damageDelay);
         public float WarningDuration => warningDuration;
         public float TelegraphHoldDuration => Mathf.Max(0f, telegraphHoldDuration);
         public float ProjectileSpeed => projectileSpeed;
@@ -317,6 +777,8 @@ namespace ProjectMT.Contents.FallenCommander
         private float telegraphHoldDuration = 0.25f;
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData effects = new();
+        [SerializeField, InspectorName("피해 판정 지연시간"), Min(0f)]
+        private float damageDelay;
         [SerializeField, InspectorName("시전 모션")] private AnimationClip preCastMotion;
         [SerializeField, InspectorName("시전 모션 속도"), Min(0.01f)] private float preCastMotionSpeed = 1f;
         [SerializeField, InspectorName("시전 모션 시작 지점"), Range(0f, 1f)]
@@ -339,11 +801,14 @@ namespace ProjectMT.Contents.FallenCommander
         private float width = 2f;
         [SerializeField, InspectorName("직선 공격 길이"), Min(0.1f)]
         private float length = 8f;
+        [SerializeField, InspectorName("기절 적용")]
+        private bool useStun;
         [SerializeField, InspectorName("기절 지속시간"), Min(0f)]
-        private float stunDuration;
+        private float stunDuration = 3.5f;
 
         public GameObject TelegraphPrefab => telegraphPrefab;
         public FallenCommanderAttackEffectData Effects => effects;
+        public float DamageDelay => Mathf.Max(0f, damageDelay);
         public AnimationClip PreCastMotion => preCastMotion;
         public AnimationClip CastMotion => castMotion;
         public float PreCastMotionSpeed => Mathf.Max(0.01f, preCastMotionSpeed);
@@ -362,7 +827,8 @@ namespace ProjectMT.Contents.FallenCommander
         public float Radius => radius;
         public float Width => width;
         public float Length => length;
-        public float StunDuration => stunDuration;
+        public bool UseStun => useStun;
+        public float StunDuration => useStun ? Mathf.Max(0f, stunDuration) : 0f;
 
         private static float ResolveDuration(
             AnimationClip motion,
@@ -420,16 +886,16 @@ namespace ProjectMT.Contents.FallenCommander
         private Vector3 resolveVfxScale = Vector3.one;
         [SerializeField, InspectorName("적중 효과 전체 크기 배율"), Min(0.01f)]
         private float resolveVfxScaleMultiplier = 1f;
-        [SerializeField, InspectorName("적중 VFX")] private GameObject hitVfxPrefab;
-        [SerializeField, InspectorName("적중 VFX 유지시간 (0 = 자동)"), Min(0f)]
+        [SerializeField, InspectorName("적중 효과")] private GameObject hitVfxPrefab;
+        [SerializeField, InspectorName("적중 효과 유지시간 (0 = 자동)"), Min(0f)]
         private float hitVfxDuration;
-        [SerializeField, InspectorName("적중 VFX 위치 오프셋")]
+        [SerializeField, InspectorName("적중 효과 위치 오프셋")]
         private Vector3 hitVfxPositionOffset;
-        [SerializeField, InspectorName("적중 VFX 회전 오프셋")]
+        [SerializeField, InspectorName("적중 효과 회전 오프셋")]
         private Vector3 hitVfxRotationOffset;
         [SerializeField, HideInInspector]
         private Vector3 hitVfxScale = Vector3.one;
-        [SerializeField, InspectorName("적중 VFX 전체 크기 배율"), Min(0.01f)]
+        [SerializeField, InspectorName("적중 효과 전체 크기 배율"), Min(0.01f)]
         private float hitVfxScaleMultiplier = 1f;
         [SerializeField, InspectorName("시전 효과음")] private AudioClip startSfx;
         [SerializeField, InspectorName("시전 효과음 유지시간 (0 = 자동)"), Min(0f)] private float startSfxDuration;
@@ -493,6 +959,19 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("공격 범위 반지름 (연출용)"), Min(0.1f)]
         [Tooltip("전멸 피해는 전장 전체에 적용되며 이 값은 경고 범위의 표시 크기만 조절합니다.")]
         private float radius = 8f;
+        [SerializeField, InspectorName("피해 판정 지연시간"), Min(0f)]
+        private float damageDelay;
+        [SerializeField, InspectorName("시전 중 상승 높이"), Min(0f)]
+        private float riseHeight = 1.5f;
+        [SerializeField, InspectorName("시전 중 상승 곡선")]
+        private AnimationCurve riseCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+        [SerializeField, InspectorName("공격 모션 종료 후 하강시간"), Min(0f)]
+        private float descentDuration;
+        [SerializeField, InspectorName("하강 곡선")]
+        private AnimationCurve descentCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+        [SerializeField, InspectorName("시전·발동 효과 바닥 고정")]
+        [Tooltip("전멸기 중 보스가 상승해도 시전·발동 효과의 높이는 Ground 기준으로 유지합니다.")]
+        private bool clampVfxToGround = true;
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData effects = new();
         [SerializeField, InspectorName("시전 모션")] private AnimationClip preCastMotion;
@@ -522,6 +1001,12 @@ namespace ProjectMT.Contents.FallenCommander
 
         public GameObject TelegraphPrefab => telegraphPrefab;
         public float Radius => Mathf.Max(0.1f, radius);
+        public float DamageDelay => Mathf.Max(0f, damageDelay);
+        public float RiseHeight => Mathf.Max(0f, riseHeight);
+        public AnimationCurve RiseCurve => riseCurve;
+        public float DescentDuration => Mathf.Max(0f, descentDuration);
+        public AnimationCurve DescentCurve => descentCurve;
+        public bool ClampVfxToGround => clampVfxToGround;
         public FallenCommanderAttackEffectData Effects => effects;
         public AnimationClip PreCastMotion => preCastMotion;
         public float PreCastMotionSpeed => Mathf.Max(0.01f, preCastMotionSpeed);

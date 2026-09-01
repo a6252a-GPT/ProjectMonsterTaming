@@ -16,13 +16,17 @@ namespace ProjectMT.Contents.FallenCommander
             Vector3 attackDirection,
             Vector3? bossPosition = null,
             Vector3? commanderPosition = null,
-            Vector3? projectilePosition = null)
+            Vector3? projectilePosition = null,
+            Vector3? groundPosition = null,
+            bool clampHeightToGround = false)
         {
             AttackPosition = attackPosition;
             AttackDirection = attackDirection;
             BossPosition = bossPosition;
             CommanderPosition = commanderPosition;
             ProjectilePosition = projectilePosition;
+            GroundPosition = groundPosition;
+            ClampHeightToGround = clampHeightToGround;
         }
 
         public Vector3 AttackPosition { get; }
@@ -30,6 +34,8 @@ namespace ProjectMT.Contents.FallenCommander
         public Vector3? BossPosition { get; }
         public Vector3? CommanderPosition { get; }
         public Vector3? ProjectilePosition { get; }
+        public Vector3? GroundPosition { get; }
+        public bool ClampHeightToGround { get; }
     }
 
     public readonly struct FallenCommanderEffectPlacement
@@ -68,6 +74,10 @@ namespace ProjectMT.Contents.FallenCommander
                 _ => effects?.ResolveVfxAnchor ?? FallenCommanderEffectAnchor.AttackPosition
             };
             var anchorPosition = ResolveAnchorPosition(anchor, context);
+            if (context.ClampHeightToGround && context.GroundPosition.HasValue)
+            {
+                anchorPosition.y = context.GroundPosition.Value.y;
+            }
             var baseRotation = context.AttackDirection.sqrMagnitude > 0.0001f
                 ? Quaternion.LookRotation(context.AttackDirection.normalized, Vector3.up)
                 : Quaternion.identity;
@@ -110,6 +120,11 @@ namespace ProjectMT.Contents.FallenCommander
                     context.CommanderPosition.Value,
                 FallenCommanderEffectAnchor.Projectile when context.ProjectilePosition.HasValue =>
                     context.ProjectilePosition.Value,
+                FallenCommanderEffectAnchor.Ground when context.GroundPosition.HasValue =>
+                    new Vector3(
+                        context.AttackPosition.x,
+                        context.GroundPosition.Value.y,
+                        context.AttackPosition.z),
                 _ => context.AttackPosition
             };
         }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MoreMountains.Feedbacks;
+using MoreMountains.Tools;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
 
@@ -26,6 +27,8 @@ namespace ProjectMT.Integrations.Feel
         private bool safeSpringFeedbacksPrepared;
         private Transform ownedMotionTarget;
         private int ownedMotionTargetId;
+        private Vector3 ownedMotionTargetLocalPosition;
+        private Quaternion ownedMotionTargetLocalRotation;
         private Vector3 ownedMotionTargetScale;
 
         private static float nextGlobalFeedbackTime;
@@ -214,7 +217,21 @@ namespace ProjectMT.Integrations.Feel
             for (var index = 0; index < player.FeedbacksList.Count; index++)
             {
                 var feedback = player.FeedbacksList[index];
-                if (feedback?.GetType() == typeof(MMF_SquashAndStretchSpring))
+                if (feedback?.GetType() == typeof(MMF_PositionSpring))
+                {
+                    var safeFeedback = new BasicAttackSafePositionSpring();
+                    JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(feedback), safeFeedback);
+                    player.FeedbacksList[index] = safeFeedback;
+                    replaced = true;
+                }
+                else if (feedback?.GetType() == typeof(MMF_RotationSpring))
+                {
+                    var safeFeedback = new BasicAttackSafeRotationSpring();
+                    JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(feedback), safeFeedback);
+                    player.FeedbacksList[index] = safeFeedback;
+                    replaced = true;
+                }
+                else if (feedback?.GetType() == typeof(MMF_SquashAndStretchSpring))
                 {
                     var safeFeedback = new BasicAttackSafeSquashAndStretchSpring();
                     JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(feedback), safeFeedback);
@@ -356,7 +373,17 @@ namespace ProjectMT.Integrations.Feel
 
             ownedMotionTarget = targetTransform;
             ownedMotionTargetId = targetId;
+            ownedMotionTargetLocalPosition = SanitizePosition(targetTransform.localPosition);
+            ownedMotionTargetLocalRotation = SanitizeRotation(targetTransform.localRotation);
             ownedMotionTargetScale = SanitizeScale(targetTransform.localScale);
+            if (!IsFinite(targetTransform.localPosition))
+            {
+                targetTransform.localPosition = ownedMotionTargetLocalPosition;
+            }
+            if (!IsFinite(targetTransform.localRotation))
+            {
+                targetTransform.localRotation = ownedMotionTargetLocalRotation;
+            }
             if (!IsFinite(targetTransform.localScale))
             {
                 targetTransform.localScale = ownedMotionTargetScale;
@@ -391,11 +418,26 @@ namespace ProjectMT.Integrations.Feel
                 TargetMotionOwners.Remove(ownedMotionTargetId);
                 if (ownedMotionTarget != null)
                 {
+                    ownedMotionTarget.localPosition = ownedMotionTargetLocalPosition;
+                    ownedMotionTarget.localRotation = ownedMotionTargetLocalRotation;
                     ownedMotionTarget.localScale = SanitizeScale(ownedMotionTargetScale);
                 }
             }
             ownedMotionTarget = null;
             ownedMotionTargetId = 0;
+            ownedMotionTargetLocalPosition = Vector3.zero;
+            ownedMotionTargetLocalRotation = Quaternion.identity;
+            ownedMotionTargetScale = Vector3.one;
+        }
+
+        private static Vector3 SanitizePosition(Vector3 position)
+        {
+            return IsFinite(position) ? position : Vector3.zero;
+        }
+
+        private static Quaternion SanitizeRotation(Quaternion rotation)
+        {
+            return IsFinite(rotation) ? rotation : Quaternion.identity;
         }
 
         private static Vector3 SanitizeScale(Vector3 scale)
@@ -406,6 +448,11 @@ namespace ProjectMT.Integrations.Feel
         private static bool IsFinite(Vector3 value)
         {
             return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+        }
+
+        private static bool IsFinite(Quaternion value)
+        {
+            return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z) && IsFinite(value.w);
         }
 
         private static bool IsFinite(float value)
@@ -456,6 +503,187 @@ namespace ProjectMT.Integrations.Feel
 #endif
     }
 
+    internal static class BasicAttackSpringSafety
+    {
+        private const float MaximumFrameDelta = 0.1f;
+        private const float MinimumSubstepsPerSecond = 240f;
+
+        public static void Simulate(
+            ref Vector3 current,
+            ref Vector3 target,
+            ref Vector3 velocity,
+            Vector3 damping,
+            Vector3 frequency,
+            float deltaTime,
+            Vector3 fallback,
+            float maximumOffset,
+            float maximumVelocity)
+        {
+            target = ClampAround(IsFinite(target) ? target : fallback, fallback, maximumOffset);
+            current = ClampAround(IsFinite(current) ? current : fallback, fallback, maximumOffset);
+            velocity = Clamp(IsFinite(velocity) ? velocity : Vector3.zero, maximumVelocity);
+
+            var remaining = Mathf.Clamp(IsFinite(deltaTime) ? deltaTime : 0f, 0f, MaximumFrameDelta);
+            var maximumFrequency = Mathf.Max(
+                Mathf.Abs(frequency.x),
+                Mathf.Abs(frequency.y),
+                Mathf.Abs(frequency.z));
+            var maximumStep = 1f / Mathf.Max(
+                MinimumSubstepsPerSecond,
+                maximumFrequency * 12f);
+            while (remaining > 0f)
+            {
+                var step = Mathf.Min(remaining, maximumStep);
+                MMMaths.Spring(ref current.x, target.x, ref velocity.x, damping.x, frequency.x, step);
+                MMMaths.Spring(ref current.y, target.y, ref velocity.y, damping.y, frequency.y, step);
+                MMMaths.Spring(ref current.z, target.z, ref velocity.z, damping.z, frequency.z, step);
+                current = ClampAround(IsFinite(current) ? current : fallback, fallback, maximumOffset);
+                velocity = Clamp(IsFinite(velocity) ? velocity : Vector3.zero, maximumVelocity);
+                remaining -= step;
+            }
+        }
+
+        public static void Simulate(
+            ref float current,
+            ref float target,
+            ref float velocity,
+            float damping,
+            float frequency,
+            float deltaTime,
+            float fallback,
+            float maximumOffset,
+            float maximumVelocity)
+        {
+            target = ClampAround(IsFinite(target) ? target : fallback, fallback, maximumOffset);
+            current = ClampAround(IsFinite(current) ? current : fallback, fallback, maximumOffset);
+            velocity = Mathf.Clamp(IsFinite(velocity) ? velocity : 0f, -maximumVelocity, maximumVelocity);
+
+            var remaining = Mathf.Clamp(IsFinite(deltaTime) ? deltaTime : 0f, 0f, MaximumFrameDelta);
+            var maximumStep = 1f / Mathf.Max(
+                MinimumSubstepsPerSecond,
+                Mathf.Abs(frequency) * 12f);
+            while (remaining > 0f)
+            {
+                var step = Mathf.Min(remaining, maximumStep);
+                MMMaths.Spring(ref current, target, ref velocity, damping, frequency, step);
+                current = ClampAround(IsFinite(current) ? current : fallback, fallback, maximumOffset);
+                velocity = Mathf.Clamp(IsFinite(velocity) ? velocity : 0f, -maximumVelocity, maximumVelocity);
+                remaining -= step;
+            }
+        }
+
+        public static Vector3 ClampAround(Vector3 value, Vector3 fallback, float maximumOffset)
+        {
+            if (!IsFinite(value))
+            {
+                return fallback;
+            }
+
+            maximumOffset = Mathf.Max(0.01f, maximumOffset);
+            return new Vector3(
+                Mathf.Clamp(value.x, fallback.x - maximumOffset, fallback.x + maximumOffset),
+                Mathf.Clamp(value.y, fallback.y - maximumOffset, fallback.y + maximumOffset),
+                Mathf.Clamp(value.z, fallback.z - maximumOffset, fallback.z + maximumOffset));
+        }
+
+        private static float ClampAround(float value, float fallback, float maximumOffset)
+        {
+            maximumOffset = Mathf.Max(0.01f, maximumOffset);
+            return Mathf.Clamp(value, fallback - maximumOffset, fallback + maximumOffset);
+        }
+
+        private static Vector3 Clamp(Vector3 value, float maximumMagnitude)
+        {
+            maximumMagnitude = Mathf.Max(0.01f, maximumMagnitude);
+            return new Vector3(
+                Mathf.Clamp(value.x, -maximumMagnitude, maximumMagnitude),
+                Mathf.Clamp(value.y, -maximumMagnitude, maximumMagnitude),
+                Mathf.Clamp(value.z, -maximumMagnitude, maximumMagnitude));
+        }
+
+        public static bool IsFinite(Vector3 value)
+        {
+            return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+        }
+
+        public static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+    }
+
+    [Serializable]
+    internal sealed class BasicAttackSafePositionSpring : MMF_PositionSpring
+    {
+        private const float MaximumPositionOffset = 8f;
+        private const float MaximumPositionVelocity = 120f;
+
+        protected override void UpdateSpring()
+        {
+            BasicAttackSpringSafety.Simulate(
+                ref _currentValue,
+                ref _targetValue,
+                ref _velocity,
+                new Vector3(DampingX, DampingY, DampingZ),
+                new Vector3(FrequencyX, FrequencyY, FrequencyZ),
+                FeedbackDeltaTime,
+                _initialPosition,
+                MaximumPositionOffset,
+                MaximumPositionVelocity);
+            ApplyValue();
+        }
+
+        protected override void ApplyValue()
+        {
+            if (AnimatePositionTarget == null)
+            {
+                return;
+            }
+
+            _currentValue = BasicAttackSpringSafety.ClampAround(
+                _currentValue,
+                _initialPosition,
+                MaximumPositionOffset);
+            base.ApplyValue();
+        }
+    }
+
+    [Serializable]
+    internal sealed class BasicAttackSafeRotationSpring : MMF_RotationSpring
+    {
+        private const float MaximumRotationOffset = 720f;
+        private const float MaximumRotationVelocity = 7200f;
+
+        protected override void UpdateSpring()
+        {
+            BasicAttackSpringSafety.Simulate(
+                ref _currentValue,
+                ref _targetValue,
+                ref _velocity,
+                new Vector3(DampingX, DampingY, DampingZ),
+                new Vector3(FrequencyX, FrequencyY, FrequencyZ),
+                FeedbackDeltaTime,
+                _initialRotation,
+                MaximumRotationOffset,
+                MaximumRotationVelocity);
+            ApplyValue();
+        }
+
+        protected override void ApplyValue()
+        {
+            if (AnimateRotationTarget == null)
+            {
+                return;
+            }
+
+            _currentValue = BasicAttackSpringSafety.ClampAround(
+                _currentValue,
+                _initialRotation,
+                MaximumRotationOffset);
+            base.ApplyValue();
+        }
+    }
+
     [Serializable]
     internal sealed class BasicAttackSafeSquashAndStretchSpring : MMF_SquashAndStretchSpring
     {
@@ -496,6 +724,22 @@ namespace ProjectMT.Integrations.Feel
                     break;
             }
             _coroutine = Owner.StartCoroutine(Spring());
+        }
+
+        protected override void UpdateSpring()
+        {
+            var fallback = GetDriverScale(_initialScale);
+            BasicAttackSpringSafety.Simulate(
+                ref _currentValue,
+                ref _targetValue,
+                ref _velocity,
+                Damping,
+                Frequency,
+                FeedbackDeltaTime,
+                fallback,
+                Mathf.Max(1f, Mathf.Abs(fallback) * 2.5f),
+                Mathf.Max(8f, Mathf.Max(Mathf.Abs(BumpScaleMin), Mathf.Abs(BumpScaleMax)) * 3f));
+            ApplyValue();
         }
 
         protected override void ApplyValue()
@@ -638,6 +882,23 @@ namespace ProjectMT.Integrations.Feel
                     break;
             }
             _coroutine = Owner.StartCoroutine(Spring());
+        }
+
+        protected override void UpdateSpring()
+        {
+            BasicAttackSpringSafety.Simulate(
+                ref _currentValue,
+                ref _targetValue,
+                ref _velocity,
+                new Vector3(DampingX, DampingY, DampingZ),
+                new Vector3(FrequencyX, FrequencyY, FrequencyZ),
+                FeedbackDeltaTime,
+                _initialScale,
+                Mathf.Max(1f, BasicAttackSpringSafety.IsFinite(_initialScale)
+                    ? Mathf.Max(Mathf.Abs(_initialScale.x), Mathf.Abs(_initialScale.y), Mathf.Abs(_initialScale.z)) * 2.5f
+                    : 2.5f),
+                24f);
+            ApplyValue();
         }
 
         protected override void ApplyValue()

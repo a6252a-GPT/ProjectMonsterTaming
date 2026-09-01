@@ -941,10 +941,11 @@ namespace ProjectMT.Shared.Combat
             var amount = owner.EffectiveStats.damage * currentDamageMultiplier;
             var feel = skill.ImpactFeel;
             var feelIntensity = Mathf.Clamp(currentDamageMultiplier, 0.5f, 2f);
+            var feelTarget = ResolveUnitFeelTarget(target);
             var feelOwnsTargetMotion = !feelPlayedForStep &&
                                        world.WillPlayBasicAttackFeelTargetMotion(
                                            feel,
-                                           target.gameObject,
+                                           feelTarget,
                                            feelIntensity);
             var feedbackFlags = feelOwnsTargetMotion
                 ? DamageFeedbackFlags.BasicAttackFeelTargetMotion
@@ -965,7 +966,7 @@ namespace ProjectMT.Shared.Combat
                     target.transform.position,
                     impactRotation,
                     bodyScale,
-                    target.gameObject,
+                    feelTarget,
                     feelIntensity);
                 feelPlayedForStep = true;
             }
@@ -978,6 +979,17 @@ namespace ProjectMT.Shared.Combat
                     owner,
                     owner.transform.position);
             }
+        }
+
+        private static GameObject ResolveUnitFeelTarget(UnitActor actor)
+        {
+            if (actor == null)
+            {
+                return null;
+            }
+
+            var visual = actor.transform.Find("Visual") ?? actor.transform.Find("VisualRoot");
+            return visual != null ? visual.gameObject : actor.gameObject;
         }
 
         private static void ApplyHitEffect(

@@ -131,6 +131,7 @@ namespace ProjectMT.Contents.FallenCommander
                         fallingBarrageError;
                     return false;
                 }
+
             }
 
             error = string.Empty;
@@ -237,16 +238,19 @@ namespace ProjectMT.Contents.FallenCommander
 
             for (var index = 0; index < availableAttacks.Count; index++)
             {
-                if (availableAttacks[index] != FallenCommanderAttackPattern.Basic &&
-                    availableAttacks[index] != previous)
+                var candidate = availableAttacks[index];
+                if (candidate != FallenCommanderAttackPattern.Basic &&
+                    candidate != FallenCommanderAttackPattern.Melee &&
+                    candidate != FallenCommanderAttackPattern.Line &&
+                    candidate != FallenCommanderAttackPattern.TwistedBattlefield &&
+                    candidate != FallenCommanderAttackPattern.FallingBarrage &&
+                    candidate != previous)
                 {
-                    return availableAttacks[index];
+                    return candidate;
                 }
             }
 
-            return availableAttacks.Count > 0
-                ? availableAttacks[0]
-                : FallenCommanderAttackPattern.Basic;
+            return FallenCommanderAttackPattern.Basic;
         }
     }
 
@@ -323,8 +327,19 @@ namespace ProjectMT.Contents.FallenCommander
         }
     }
 
+    public interface IFallenCommanderFallingBarragePhaseSettings
+    {
+        float SelectionChance { get; }
+        int WaveCount { get; }
+        float WaveInterval { get; }
+        float SpawnInterval { get; }
+        float SpawnTimeJitter { get; }
+        float FallDuration { get; }
+        bool TryValidate(out string error);
+    }
+
     [System.Serializable]
-    public sealed class FallenCommanderFallingBarragePhaseData
+    public sealed class FallenCommanderLegacyFallingBarragePhaseData : IFallenCommanderFallingBarragePhaseSettings
     {
         [SerializeField, InspectorName("패턴 등장 확률"), Range(0f, 1f)]
         private float selectionChance = 0.18f;
@@ -355,6 +370,49 @@ namespace ProjectMT.Contents.FallenCommander
 
             if (waveCount < 1 || fallDuration < 0.1f ||
                 waveInterval < 0f || spawnInterval < 0f || spawnTimeJitter < 0f)
+            {
+                error = "묶음 횟수·생성 간격·낙하시간을 확인해 주세요.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+    }
+
+    [System.Serializable]
+    public sealed class FallenCommanderFallingBarragePhaseData : IFallenCommanderFallingBarragePhaseSettings
+    {
+        [SerializeField, InspectorName("패턴 등장 확률"), Range(0f, 1f)]
+        private float selectionChance = 0.18f;
+        [SerializeField, InspectorName("반복 묶음 횟수"), Min(1)]
+        private int waveCount = 2;
+        [SerializeField, InspectorName("묶음 사이 간격"), Min(0f)]
+        private float waveInterval = 0.8f;
+        [SerializeField, InspectorName("기본 생성 간격"), Min(0f)]
+        private float spawnInterval = 0.08f;
+        [SerializeField, InspectorName("생성 시간 무작위 범위"), Min(0f)]
+        private float spawnTimeJitter = 0.06f;
+        [SerializeField, InspectorName("착탄까지 걸리는 시간"), Min(0.1f)]
+        private float fallDuration = 1.4f;
+
+        public float SelectionChance => Mathf.Clamp01(selectionChance);
+        public int WaveCount => Mathf.Max(1, waveCount);
+        public float WaveInterval => Mathf.Max(0f, waveInterval);
+        public float SpawnInterval => Mathf.Max(0f, spawnInterval);
+        public float SpawnTimeJitter => Mathf.Max(0f, spawnTimeJitter);
+        public float FallDuration => Mathf.Max(0.1f, fallDuration);
+
+        public bool TryValidate(out string error)
+        {
+            if (selectionChance <= 0f || selectionChance > 1f)
+            {
+                error = "등장 확률은 0보다 크고 1 이하여야 합니다.";
+                return false;
+            }
+
+            if (waveCount < 1 || fallDuration < 0.1f || waveInterval < 0f ||
+                spawnInterval < 0f || spawnTimeJitter < 0f)
             {
                 error = "묶음 횟수·생성 간격·낙하시간을 확인해 주세요.";
                 return false;

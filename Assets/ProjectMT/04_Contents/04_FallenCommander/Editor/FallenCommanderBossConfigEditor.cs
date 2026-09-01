@@ -129,7 +129,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             new(
                 "11. 낙하 탄막",
                 FallenCommanderAttackPreviewKind.FallingBarrage,
-                new[] { "fallingBarrage" })
+                new[] { "fallingBarrage" }),
         };
 
         private int selectedAttack;
@@ -715,20 +715,23 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             {
                 "projectileBasicAttack.effects" => "발동 효과",
                 "blackHoleEndEffects" => "종료 효과",
+                "fallingBarrage.impactEffects" => "착탄 효과",
                 _ => "발동 효과"
             };
         }
 
         private static bool SupportsStartEffects(SerializedProperty effects)
         {
-            return effects.propertyPath != "blackHoleEndEffects";
+            return effects.propertyPath != "blackHoleEndEffects" &&
+                effects.propertyPath != "fallingBarrage.impactEffects";
         }
 
         // 실제 별도 적중 단계가 있는 공격 연출인지 반환한다.
         private static bool SupportsHitEffects(SerializedProperty effects)
         {
             return effects.propertyPath != "projectileBasicAttack.effects" &&
-                effects.propertyPath != "blackHoleEndEffects";
+                effects.propertyPath != "blackHoleEndEffects" &&
+                effects.propertyPath != "fallingBarrage.impactEffects";
         }
 
         // 참조가 비어 있는데 유지시간만 입력된 연출 설정을 경고한다.
@@ -962,10 +965,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     ? config.PhaseConfig?.GetPhase(FallenCommanderBossPhase.Phase2)
                         ?.MarkStrikePattern
                     : null;
-                var fallingBarrage = kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                var isFallingBarrage = kind == FallenCommanderAttackPreviewKind.FallingBarrage;
+                FallenCommanderFallingBarrageData fallingBarrage = isFallingBarrage
                     ? config.FallingBarrage
                     : null;
-                var fallingPhase = kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                FallenCommanderFallingBarragePhaseData fallingPhase = isFallingBarrage
                     ? config.PhaseConfig?.GetPhase(FallenCommanderBossPhase.Phase2)
                         ?.FallingBarragePattern
                     : null;
@@ -975,7 +979,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         ? timeoutWipe?.Effects
                     : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
                         ? twistedBattlefield?.Effects
-                    : kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                    : isFallingBarrage
                         ? fallingBarrage?.Effects
                     : kind == FallenCommanderAttackPreviewKind.Basic
                         ? basicAttack?.Effects
@@ -986,7 +990,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         ? timeoutWipe?.WarningDuration ?? 0.1f
                     : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
                         ? twistedPhase?.WarningDuration ?? 1.35f
-                    : kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                    : isFallingBarrage
                         ? fallingPhase?.FallDuration ?? 1.6f
                     : kind == FallenCommanderAttackPreviewKind.Basic
                         ? basicAttack?.WarningDuration ?? 0.1f
@@ -997,8 +1001,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         ? timeoutWipe?.TelegraphHoldDuration ?? 0f
                     : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
                         ? twistedPhase?.TelegraphHoldDuration ?? 0.25f
-                    : kind == FallenCommanderAttackPreviewKind.FallingBarrage
-                        ? 0f
+                    : isFallingBarrage
+                        ? fallingBarrage?.TelegraphHoldDuration ?? 0f
                     : kind == FallenCommanderAttackPreviewKind.Basic
                         ? basicAttack?.TelegraphHoldDuration ?? 0f
                         : attack?.TelegraphHoldDuration ?? 0f;
@@ -1010,14 +1014,14 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         ? timeoutWipe?.TelegraphPrefab
                     : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
                         ? twistedBattlefield?.TelegraphPrefab
-                    : kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                    : isFallingBarrage
                         ? fallingBarrage?.TelegraphPrefab
                         : attack?.TelegraphPrefab;
                 var telegraphRadius = kind == FallenCommanderAttackPreviewKind.FinalCharge
                     ? config.FinalChargeRadius
                     : kind == FallenCommanderAttackPreviewKind.TimeoutWipe
                         ? timeoutWipe?.Radius ?? 0f
-                    : kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                    : isFallingBarrage
                         ? fallingBarrage?.ImpactRadius ?? 0f
                     : attack?.Radius ?? 0f;
                 float ResolveFinalChargeRadius()
@@ -1040,6 +1044,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     TwistedBeatInterval = twistedPhase?.BeatInterval ?? 0.3f,
                     TwistedAttackInterval = twistedBattlefield?.AttackInterval ?? 0.8f,
                     FallingBarrage = fallingBarrage,
+                    FallingImpactEffects = isFallingBarrage
+                        ? config.FallingBarrage.ImpactEffects
+                        : null,
                     FallingProjectileCount = fallingBarrage?.ProjectileCount ?? 30,
                     FallingWaveCount = fallingPhase?.WaveCount ?? 1,
                     FallingWaveInterval = fallingPhase?.WaveInterval ?? 0f,
@@ -1083,14 +1090,14 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         ? config.FinalChargePreCastMotion
                         : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
                             ? twistedBattlefield?.PreCastMotion
-                        : kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                        : isFallingBarrage
                             ? fallingBarrage?.PreCastMotion
                         : timeoutWipe?.PreCastMotion ?? attack?.PreCastMotion,
                     PreCastMotionSpeed = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargePreCastMotionSpeed
                         : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
                             ? twistedBattlefield?.PreCastMotionSpeed ?? 1f
-                        : kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                        : isFallingBarrage
                             ? fallingBarrage?.PreCastMotionSpeed ?? 1f
                         : timeoutWipe?.PreCastMotionSpeed ??
                         attack?.PreCastMotionSpeed ?? 1f,
@@ -1098,7 +1105,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         ? config.FinalChargePreCastMotionStart
                         : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
                             ? twistedBattlefield?.PreCastMotionStart ?? 0f
-                        : kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                        : isFallingBarrage
                             ? fallingBarrage?.PreCastMotionStart ?? 0f
                         : timeoutWipe?.PreCastMotionStart ??
                         attack?.PreCastMotionStart ?? 0f,
@@ -1106,7 +1113,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         ? config.FinalChargePreCastMotionEnd
                         : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
                             ? twistedBattlefield?.PreCastMotionEnd ?? 1f
-                        : kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                        : isFallingBarrage
                             ? fallingBarrage?.PreCastMotionEnd ?? 1f
                         : timeoutWipe?.PreCastMotionEnd ??
                         attack?.PreCastMotionEnd ?? 1f,
@@ -1114,14 +1121,14 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         ? config.FinalChargeCastMotion
                         : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
                             ? twistedBattlefield?.CastMotion
-                        : kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                        : isFallingBarrage
                             ? fallingBarrage?.CastMotion
                         : timeoutWipe?.CastMotion ?? attack?.CastMotion,
                     CastMotionDuration = kind == FallenCommanderAttackPreviewKind.FinalCharge
                         ? config.FinalChargeCastMotionDuration
                         : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
                             ? twistedBattlefield?.CastMotionDuration ?? 0f
-                        : kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                        : isFallingBarrage
                             ? fallingBarrage?.CastMotionDuration ?? 0f
                         : timeoutWipe?.CastMotionDuration ??
                         attack?.CastMotionDuration ?? 0f,
@@ -1129,7 +1136,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         ? config.FinalChargeCastMotionSpeed
                         : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
                             ? twistedBattlefield?.CastMotionSpeed ?? 1f
-                        : kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                        : isFallingBarrage
                             ? fallingBarrage?.CastMotionSpeed ?? 1f
                         : timeoutWipe?.CastMotionSpeed ??
                         attack?.CastMotionSpeed ?? 1f,
@@ -1137,7 +1144,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         ? config.FinalChargeCastMotionStart
                         : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
                             ? twistedBattlefield?.CastMotionStart ?? 0f
-                        : kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                        : isFallingBarrage
                             ? fallingBarrage?.CastMotionStart ?? 0f
                         : timeoutWipe?.CastMotionStart ??
                         attack?.CastMotionStart ?? 0f,
@@ -1145,7 +1152,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         ? config.FinalChargeCastMotionEnd
                         : kind == FallenCommanderAttackPreviewKind.TwistedBattlefield
                             ? twistedBattlefield?.CastMotionEnd ?? 1f
-                        : kind == FallenCommanderAttackPreviewKind.FallingBarrage
+                        : isFallingBarrage
                             ? fallingBarrage?.CastMotionEnd ?? 1f
                         : timeoutWipe?.CastMotionEnd ??
                         attack?.CastMotionEnd ?? 1f,

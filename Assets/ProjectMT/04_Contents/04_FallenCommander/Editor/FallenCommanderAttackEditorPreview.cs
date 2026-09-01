@@ -44,6 +44,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         public float TwistedBeatInterval { get; set; } = 0.3f;
         public float TwistedAttackInterval { get; set; } = 0.8f;
         public FallenCommanderFallingBarrageData FallingBarrage { get; set; }
+        public FallenCommanderAttackEffectData FallingImpactEffects { get; set; }
         public int FallingProjectileCount { get; set; } = 12;
         public int FallingWaveCount { get; set; } = 1;
         public float FallingWaveInterval { get; set; }
@@ -83,6 +84,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
     [InitializeOnLoad]
     internal static class FallenCommanderAttackPreviewController
     {
+        private static bool IsFallingBarrage(FallenCommanderAttackPreviewKind kind) =>
+            kind == FallenCommanderAttackPreviewKind.FallingBarrage;
+
         private sealed class PreviewVfxLifetime
         {
             public GameObject Instance { get; set; }
@@ -112,6 +116,9 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             public FallenCommanderTelegraphView Telegraph { get; set; }
             public Vector3 Target { get; set; }
             public float StartDelay { get; set; }
+            public bool Spawned { get; set; }
+            public bool LandingPresented { get; set; }
+            public bool ImpactResolved { get; set; }
             public bool Resolved { get; set; }
         }
 
@@ -178,6 +185,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private static int twistedReplayIndex;
         private static float fallingLastResolveTime;
         private static bool fallingAttackStarted;
+        private static bool fallingCastStarted;
+        private static float fallingLastSpawnTime;
         private static bool isAudioPlaying;
 
         public static bool IsActive => previewBoss != null && spec != null;
@@ -278,7 +287,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         PlayDangerAreaResolvePresentation();
                         PlayHitPresentation();
                     }
-                    else if (previewSpec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage)
+                    else if (IsFallingBarrage(previewSpec.Kind))
                     {
                         BeginFallingBarragePreview(true);
                     }
@@ -301,7 +310,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 }
                 else
                 {
-                    if (previewSpec.Kind != FallenCommanderAttackPreviewKind.FallingBarrage ||
+                    if (!IsFallingBarrage(previewSpec.Kind) ||
                         previewMode != FallenCommanderAttackPreviewMode.Full)
                     {
                         PlayStartPresentation();
@@ -311,7 +320,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     {
                         BeginTwistedBattlefieldBeat();
                     }
-                    else if (previewSpec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage)
+                    else if (IsFallingBarrage(previewSpec.Kind))
                     {
                         BeginFallingBarragePreview(false);
                     }
@@ -436,7 +445,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             {
                 UpdateTwistedBattlefieldPreview();
             }
-            else if (spec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage)
+            else if (IsFallingBarrage(spec.Kind))
             {
                 UpdateFallingBarragePreview();
             }
@@ -1003,19 +1012,23 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 : Mathf.Max(1, spec.FallingWaveCount);
             var count = resolveImmediately ? 1 : Mathf.Max(1, spec.FallingProjectileCount);
             var center = previewBoss == null ? Vector3.zero : previewBoss.transform.position;
-            var extents = data.ArenaHalfExtents;
-            var waveStartTime = data.WarningMessageDuration;
+            var commanderPosition = spec.FacingTarget == null
+                ? center
+                : spec.FacingTarget.position;
+            var waveStartTime = data.BarrageStartDelay;
             for (var waveIndex = 0; waveIndex < waveCount; waveIndex++)
             {
                 var latestStartDelay = 0f;
+                var selectedPositions = new List<Vector3>();
                 for (var index = 0; index < count; index++)
                 {
                     var target = resolveImmediately && spec.FacingTarget != null
                         ? spec.FacingTarget.position
-                        : center + new Vector3(
-                            UnityEngine.Random.Range(-extents.x, extents.x),
-                            0f,
-                            UnityEngine.Random.Range(-extents.y, extents.y));
+                        : SelectFallingPreviewImpactPosition(
+                            data,
+                            center,
+                            commanderPosition,
+                            selectedPositions);
                     var projectile = UnityEngine.Object.Instantiate(
                         data.ProjectilePrefab,
                         previewRoot.transform);
@@ -1059,10 +1072,14 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     {
                         projectile.transform.position = target;
                         telegraph?.SetProgress(1f);
+                        if (spec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage)
+                        {
+                            lockedAttackPosition = target;
+                            PlayFallingBarrageImpactPresentation(target);
+                            PlayResolvePresentation(projectile.transform);
+                        }
                         shot.Resolved = true;
                         lockedAttackPosition = target;
-                        PlayResolvePresentation(projectile.transform);
-                        PlayHitPresentation();
                         continue;
                     }
 
@@ -1070,10 +1087,65 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     telegraph?.gameObject.SetActive(false);
                 }
 
-                waveStartTime += latestStartDelay + data.AirHoldDuration +
+                var waveDuration = Mathf.Max(
+                    latestStartDelay + data.AirHoldDuration +
                     Mathf.Max(0.1f, spec.FallingDuration) +
+                    data.TelegraphHoldDuration);
+                waveStartTime += waveDuration +
                     Mathf.Max(0f, spec.FallingWaveInterval);
             }
+        }
+
+        private static Vector3 SelectFallingPreviewImpactPosition(
+            FallenCommanderFallingBarrageData data,
+            Vector3 center,
+            Vector3 commanderPosition,
+            List<Vector3> selectedPositions)
+        {
+            var extents = data.ArenaHalfExtents;
+            var fallback = center;
+            for (var attempt = 0; attempt < 24; attempt++)
+            {
+                var candidate = center + new Vector3(
+                    UnityEngine.Random.Range(-extents.x, extents.x),
+                    0f,
+                    UnityEngine.Random.Range(-extents.y, extents.y));
+                fallback = candidate;
+                if (HorizontalSqrDistance(candidate, commanderPosition) <
+                    data.CommanderSafetyRadius * data.CommanderSafetyRadius)
+                {
+                    continue;
+                }
+
+                var isSpaced = true;
+                for (var index = 0; index < selectedPositions.Count; index++)
+                {
+                    if (HorizontalSqrDistance(candidate, selectedPositions[index]) <
+                        data.MinimumSpacing * data.MinimumSpacing)
+                    {
+                        isSpaced = false;
+                        break;
+                    }
+                }
+
+                if (!isSpaced)
+                {
+                    continue;
+                }
+
+                selectedPositions.Add(candidate);
+                return candidate;
+            }
+
+            selectedPositions.Add(fallback);
+            return fallback;
+        }
+
+        private static float HorizontalSqrDistance(Vector3 first, Vector3 second)
+        {
+            var x = first.x - second.x;
+            var z = first.z - second.z;
+            return x * x + z * z;
         }
 
         // 낙하 시작시간의 작은 무작위 차이와 실제 낙하시간으로 탄막 위치를 갱신한다.
@@ -1087,7 +1159,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
             if (mode == FallenCommanderAttackPreviewMode.Full &&
                 !fallingAttackStarted &&
-                elapsed >= spec.FallingBarrage.WarningMessageDuration)
+                elapsed >= spec.FallingBarrage.BarrageStartDelay)
             {
                 fallingAttackStarted = true;
                 PlayStartPresentation();
@@ -1102,40 +1174,70 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     continue;
                 }
 
-                shot.Projectile?.SetActive(true);
-                shot.Telegraph?.gameObject.SetActive(true);
+                if (!shot.Spawned)
+                {
+                    shot.Spawned = true;
+                    fallingLastSpawnTime = elapsed;
+                    shot.Projectile?.SetActive(true);
+                    RestartPreviewParticles(shot.Projectile);
+                    shot.Telegraph?.gameObject.SetActive(true);
+                }
+
+                if (shot.ImpactResolved)
+                {
+                    continue;
+                }
+
                 var normalizedTime = Mathf.Clamp01(
                     (elapsed - shot.StartDelay - spec.FallingAirHoldDuration) /
                     fallDuration);
                 var progress = spec.FallingBarrage.EvaluateFallProgress(normalizedTime);
                 if (shot.Projectile != null)
                 {
-                    shot.Projectile.transform.position = Vector3.Lerp(
-                        shot.Target + Vector3.up * spec.FallingBarrage.SpawnHeight,
-                        shot.Target,
-                        progress);
+                    shot.Projectile.transform.position =
+                        spec.FallingBarrage.EvaluateProjectilePosition(
+                            shot.Target,
+                            normalizedTime);
                 }
 
                 shot.Telegraph?.SetProgress(progress);
-                if (normalizedTime < 1f)
+                if (!shot.LandingPresented && normalizedTime >= 1f)
+                {
+                    shot.LandingPresented = true;
+                    if (spec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage)
+                    {
+                        PlayFallingBarrageImpactPresentation(shot.Target);
+                    }
+                }
+                if (normalizedTime < 1f || elapsed < shot.StartDelay +
+                    spec.FallingAirHoldDuration + fallDuration +
+                    spec.FallingBarrage.TelegraphHoldDuration)
                 {
                     continue;
                 }
 
-                shot.Resolved = true;
+                shot.ImpactResolved = true;
+                shot.Projectile?.SetActive(false);
+                shot.Telegraph?.gameObject.SetActive(false);
                 if (mode == FallenCommanderAttackPreviewMode.PreCast)
                 {
                     continue;
                 }
 
                 hasResolved = true;
-                fallingLastResolveTime = elapsed;
+                if (!fallingCastStarted)
+                {
+                    fallingCastStarted = true;
+                    fallingLastResolveTime = elapsed;
+                }
                 lockedAttackPosition = shot.Target;
-                PlayResolvePresentation(shot.Projectile == null
-                    ? null
-                    : shot.Projectile.transform);
-                shot.Projectile?.SetActive(false);
-                shot.Telegraph?.gameObject.SetActive(false);
+                if (spec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage)
+                {
+                    PlayResolvePresentation(shot.Projectile == null
+                        ? null
+                        : shot.Projectile.transform);
+                }
+                shot.Resolved = true;
             }
         }
 
@@ -1159,7 +1261,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             FallingShots.Clear();
         }
 
-        // 미리보기 프리팹의 실제 런타임 동작은 끄고 파티클만 에디터 시간으로 재생한다.
+        // 미리보기 프리팹의 실제 런타임 동작을 끄고, 표시 시점에 실제와 같은 경로로 파티클을 시작한다.
         private static void DisablePreviewBehaviours(GameObject root)
         {
             foreach (var collider in root.GetComponentsInChildren<Collider>(true))
@@ -1174,10 +1276,27 @@ namespace ProjectMT.Contents.FallenCommander.Editor
 
             foreach (var particle in root.GetComponentsInChildren<ParticleSystem>(true))
             {
-                particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+                particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                 particle.Simulate(0f, false, true, true);
-                particle.Play(false);
-                Particles.Add(particle);
+            }
+        }
+
+        private static void RestartPreviewParticles(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            foreach (var particle in root.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                particle.Simulate(0f, false, true, true);
+                particle.Play(true);
+                if (!Particles.Contains(particle))
+                {
+                    Particles.Add(particle);
+                }
             }
         }
 
@@ -1190,7 +1309,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
 
             if (spec.Kind == FallenCommanderAttackPreviewKind.TwistedBattlefield ||
-                spec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage)
+                IsFallingBarrage(spec.Kind))
             {
                 return;
             }
@@ -1515,10 +1634,10 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         // 선택한 미리보기 단계에 맞는 애니메이션 클립을 샘플링한다.
         private static void UpdateMotion()
         {
-            if (spec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage &&
+            if (IsFallingBarrage(spec.Kind) &&
                 mode == FallenCommanderAttackPreviewMode.Full)
             {
-                var attackStartTime = spec.FallingBarrage?.WarningMessageDuration ?? 0f;
+                var attackStartTime = spec.FallingBarrage?.BarrageStartDelay ?? 0f;
                 if (elapsed < attackStartTime)
                 {
                     return;
@@ -1528,7 +1647,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 {
                     Sample(
                         spec.PreCastMotion,
-                        elapsed - attackStartTime,
+                        Mathf.Max(0f, elapsed - fallingLastSpawnTime),
                         spec.PreCastMotionSpeed,
                         spec.PreCastMotionStart,
                         spec.PreCastMotionEnd);
@@ -1641,6 +1760,44 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         private static GameObject PlayResolvePresentation(
             Transform projectileOverride = null)
         {
+            var instance = PlayResolveVfxPresentation(projectileOverride);
+            PlayResolveAudio();
+            return instance;
+        }
+
+        private static void PlayFallingBarrageImpactPresentation(Vector3 position)
+        {
+            var effects = spec?.FallingImpactEffects;
+            if (effects == null)
+            {
+                return;
+            }
+
+            var direction = previewBoss == null ? Vector3.forward : previewBoss.transform.forward;
+            var context = new FallenCommanderEffectPlacementContext(
+                position,
+                direction,
+                previewBoss == null ? (Vector3?)null : previewBoss.transform.position,
+                spec.FacingTarget == null ? (Vector3?)null : spec.FacingTarget.position,
+                null);
+            var placement = FallenCommanderEffectPlacementResolver.Resolve(
+                effects,
+                FallenCommanderEffectStage.Resolve,
+                context);
+            CreateVfx(
+                effects.ResolveVfxPrefab,
+                effects.ResolveVfxDuration,
+                placement.Position,
+                placement.Rotation,
+                placement.Scale,
+                previewRoot.transform);
+            PlayAudio(effects.ResolveSfx, effects.ResolveSfxDuration, effects.SfxVolume);
+        }
+
+        private static GameObject PlayResolveVfxPresentation(
+            Transform projectileOverride = null,
+            bool followProjectile = false)
+        {
             ResolveVfxTransform(
                 FallenCommanderEffectStage.Resolve,
                 projectileOverride,
@@ -1653,11 +1810,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 position,
                 rotation,
                 scale,
-                previewRoot.transform);
-            PlayAudio(
-                spec.Effects?.ResolveSfx,
-                spec.Effects == null ? 0f : spec.Effects.ResolveSfxDuration,
-                spec.Effects == null ? 1f : spec.Effects.SfxVolume);
+                followProjectile && projectileOverride != null &&
+                spec.Effects?.ResolveVfxAnchor ==
+                FallenCommanderEffectAnchor.Projectile
+                    ? projectileOverride
+                    : previewRoot.transform);
             return instance;
         }
 
@@ -1900,6 +2057,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             if (spec.Kind == FallenCommanderAttackPreviewKind.Basic)
             {
                 return basicProjectilePosition;
+            }
+
+            if (IsFallingBarrage(spec.Kind) && !isStart)
+            {
+                return lockedAttackPosition;
             }
 
             if (spec.Kind == FallenCommanderAttackPreviewKind.MarkStrike ||
@@ -2151,7 +2313,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         : 0f);
             }
 
-            if (previewSpec.Kind == FallenCommanderAttackPreviewKind.FallingBarrage)
+            if (IsFallingBarrage(previewSpec.Kind))
             {
                 var fallingDuration = Mathf.Max(0.1f, previewSpec.FallingDuration);
                 var fallingCastDuration = Mathf.Max(
@@ -2167,14 +2329,17 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 var lastStartTime = Mathf.Max(0, previewSpec.FallingProjectileCount - 1) *
                     Mathf.Max(0f, previewSpec.FallingSpawnInterval) +
                     Mathf.Max(0f, previewSpec.FallingSpawnJitter);
-                var waveDuration = lastStartTime +
+                var waveDuration =
+                    lastStartTime +
                     Mathf.Max(0f, previewSpec.FallingAirHoldDuration) +
-                    fallingDuration;
+                    fallingDuration + previewSpec.FallingBarrage.TelegraphHoldDuration;
                 var waveCount = Mathf.Max(1, previewSpec.FallingWaveCount);
-                var barrageDuration = previewSpec.FallingBarrage.WarningMessageDuration +
+                var barrageDuration = Mathf.Max(
+                    previewSpec.FallingBarrage.WarningMessageDuration,
+                    previewSpec.FallingBarrage.BarrageStartDelay +
                     waveDuration * waveCount +
                     Mathf.Max(0f, previewSpec.FallingWaveInterval) *
-                    (waveCount - 1);
+                    (waveCount - 1));
                 return previewMode == FallenCommanderAttackPreviewMode.PreCast
                     ? barrageDuration
                     : barrageDuration + fallingCastDuration;
@@ -2344,6 +2509,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             twistedReplayIndex = 0;
             fallingLastResolveTime = 0f;
             fallingAttackStarted = false;
+            fallingCastStarted = false;
+            fallingLastSpawnTime = 0f;
             isAudioPlaying = false;
         }
 

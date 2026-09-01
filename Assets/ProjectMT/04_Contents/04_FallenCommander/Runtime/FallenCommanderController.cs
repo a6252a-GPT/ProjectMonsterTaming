@@ -26,6 +26,7 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, Min(1)] private int commanderMaxHearts = 5;
         [SerializeField] private Sprite commanderHeartSprite;
         [SerializeField] private Button exitButton;
+        [SerializeField] private FallenCommanderExitConfirmationDialog exitConfirmationDialog;
 
         [Header("Boss")]
         [SerializeField] private FallenCommanderBossConfig bossConfig;
@@ -127,8 +128,7 @@ namespace ProjectMT.Contents.FallenCommander
             commanderRoot.SetActive(true);
             commanderMove.ResetToInitialPosition();
             commanderMove.SetInputEnabled(true);
-            exitButton?.onClick.RemoveListener(Cancel);
-            exitButton?.onClick.AddListener(Cancel);
+            ConfigureExitConfirmation();
 
             InitializeCommanderHealth();
             SpawnBoss();
@@ -191,7 +191,7 @@ namespace ProjectMT.Contents.FallenCommander
             ReleaseCommanderHealth();
 
             commanderMove?.SetInputEnabled(false);
-            exitButton?.onClick.RemoveListener(Cancel);
+            ReleaseExitConfirmation();
             combatWorld?.Clear();
 
             if (commanderRoot != null)
@@ -303,6 +303,11 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             PublishHudState();
+        }
+
+        private void LateUpdate()
+        {
+            ApplyBossHitFeedbackScale();
         }
 
         // 전투 시작에 필요한 참조와 서로 의존하는 보스 설정값을 검증한다.
@@ -728,6 +733,45 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor.transform.localScale =
                     bossBaseLocalScale * phaseData.BossScaleMultiplier;
             }
+        }
+
+        private void ApplyBossHitFeedbackScale()
+        {
+            if (phaseRuntime.IsTransitionActive || bossActor == null)
+            {
+                return;
+            }
+
+            var phaseData = phaseRuntime.CurrentData;
+            if (phaseData == null)
+            {
+                return;
+            }
+
+            var expectedScale = bossBaseLocalScale * phaseData.BossScaleMultiplier;
+            var currentScale = bossActor.transform.localScale;
+            if (IsSameScale(currentScale, expectedScale))
+            {
+                return;
+            }
+
+            var hitPulseScale = new Vector3(
+                ResolveScaleRatio(currentScale.x, bossBaseLocalScale.x),
+                ResolveScaleRatio(currentScale.y, bossBaseLocalScale.y),
+                ResolveScaleRatio(currentScale.z, bossBaseLocalScale.z));
+            bossActor.transform.localScale = Vector3.Scale(expectedScale, hitPulseScale);
+        }
+
+        private static bool IsSameScale(Vector3 left, Vector3 right)
+        {
+            return Mathf.Approximately(left.x, right.x) &&
+                   Mathf.Approximately(left.y, right.y) &&
+                   Mathf.Approximately(left.z, right.z);
+        }
+
+        private static float ResolveScaleRatio(float value, float baseValue)
+        {
+            return Mathf.Abs(baseValue) <= 0.0001f ? 1f : value / baseValue;
         }
 
         private GameObject ResolveBossPrefab(FallenCommanderBossPhase phase)
@@ -1434,7 +1478,7 @@ namespace ProjectMT.Contents.FallenCommander
             ShutdownCommanderSkills();
             stateMachine?.Shutdown();
             commanderMove?.SetInputEnabled(false);
-            exitButton?.onClick.RemoveListener(Cancel);
+            ReleaseExitConfirmation();
             ReleaseHud();
 
             ExitContent(outcome);
@@ -1452,7 +1496,7 @@ namespace ProjectMT.Contents.FallenCommander
             ShutdownCommanderSkills();
             stateMachine?.Shutdown();
             commanderMove?.SetInputEnabled(false);
-            exitButton?.onClick.RemoveListener(Cancel);
+            ReleaseExitConfirmation();
 
             if (isCommanderDeath)
             {
@@ -1538,6 +1582,57 @@ namespace ProjectMT.Contents.FallenCommander
             context?.Exit.Fail(result);
         }
 
+        private void ConfigureExitConfirmation()
+        {
+            exitButton?.onClick.RemoveListener(OpenExitConfirmation);
+            exitButton?.onClick.AddListener(OpenExitConfirmation);
+            if (exitConfirmationDialog == null)
+            {
+                return;
+            }
+
+            exitConfirmationDialog.GiveUpRequested -= Cancel;
+            exitConfirmationDialog.GiveUpRequested += Cancel;
+            exitConfirmationDialog.RetryRequested -= RetryBattle;
+            exitConfirmationDialog.RetryRequested += RetryBattle;
+            exitConfirmationDialog.Initialize();
+        }
+
+        private void ReleaseExitConfirmation()
+        {
+            exitButton?.onClick.RemoveListener(OpenExitConfirmation);
+            if (exitConfirmationDialog == null)
+            {
+                return;
+            }
+
+            exitConfirmationDialog.GiveUpRequested -= Cancel;
+            exitConfirmationDialog.RetryRequested -= RetryBattle;
+            exitConfirmationDialog.Release();
+        }
+
+        private void OpenExitConfirmation()
+        {
+            if (context == null || battleFlow.IsFinishing)
+            {
+                return;
+            }
+
+            exitConfirmationDialog?.Open();
+        }
+
+        private void RetryBattle()
+        {
+            if (context == null || battleFlow.IsFinishing)
+            {
+                return;
+            }
+
+            var restartContext = context;
+            Shutdown();
+            Initialize(restartContext);
+        }
+
         private void Cancel()
         {
             if (context == null || battleFlow.IsFinishing)
@@ -1553,7 +1648,7 @@ namespace ProjectMT.Contents.FallenCommander
             ShutdownCommanderSkills();
             stateMachine?.Shutdown();
             commanderMove?.SetInputEnabled(false);
-            exitButton?.onClick.RemoveListener(Cancel);
+            ReleaseExitConfirmation();
             ReleaseHud();
             context.Exit.Cancel();
         }

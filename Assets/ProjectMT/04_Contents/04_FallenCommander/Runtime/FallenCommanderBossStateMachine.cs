@@ -32,7 +32,7 @@ namespace ProjectMT.Contents.FallenCommander
         Ring,
         [InspectorName("연속 장판 공격")]
         TwistedBattlefield,
-        [InspectorName("낙하 탄막 공격")]
+        [InspectorName("낙하 탄막")]
         FallingBarrage
     }
 
@@ -341,6 +341,7 @@ namespace ProjectMT.Contents.FallenCommander
                     TickFallingBarrage(deltaTime);
                     break;
 
+
                 case BossState.Broken:
                 case BossState.Dead:
                     break;
@@ -448,13 +449,6 @@ namespace ProjectMT.Contents.FallenCommander
                         playbackSpeed: twistedBattlefieldData?.PreCastMotionSpeed ?? 1f,
                         normalizedStart: twistedBattlefieldData?.PreCastMotionStart ?? 0f,
                         normalizedEnd: twistedBattlefieldData?.PreCastMotionEnd ?? 1f);
-                    break;
-                case FallenCommanderAttackPattern.FallingBarrage:
-                    animationPresenter?.PlayPreCast(
-                        fallingBarrageData?.PreCastMotion,
-                        playbackSpeed: fallingBarrageData?.PreCastMotionSpeed ?? 1f,
-                        normalizedStart: fallingBarrageData?.PreCastMotionStart ?? 0f,
-                        normalizedEnd: fallingBarrageData?.PreCastMotionEnd ?? 1f);
                     break;
             }
         }

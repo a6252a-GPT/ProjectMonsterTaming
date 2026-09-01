@@ -192,9 +192,9 @@ MonoBehaviour:
     preCastMotionStart: 0.737
     preCastMotionEnd: 1
     castMotion: {fileID: 7400000, guid: ec3c5725a69975047982eaf81483330d, type: 3}
-    castMotionSpeed: 1
+    castMotionSpeed: 0.5
     castMotionStart: 0.1
-    castMotionEnd: 0.9
+    castMotionEnd: 0.546
     radius: 1.5
     width: 2
     length: 8
@@ -310,7 +310,7 @@ MonoBehaviour:
     hitSfxVolume: 1
   lineStrike:
     telegraphPrefab: {fileID: 5939384426542757584, guid: 948fcdf6ed8511143a58dc45b4bcc3d4, type: 3}
-    warningDuration: 2.5
+    warningDuration: 2
     telegraphHoldDuration: 0.25
     effects:
       startVfxPrefab: {fileID: 0}
@@ -323,7 +323,7 @@ MonoBehaviour:
       resolveVfxPrefab: {fileID: 6794211593868074654, guid: 41e16059ffb359b429a19bcc6c2ace43, type: 3}
       resolveVfxDuration: 1
       resolveVfxAnchor: 1
-      resolveVfxPositionOffset: {x: 0, y: 0, z: 8}
+      resolveVfxPositionOffset: {x: 0, y: 0, z: 10}
       resolveVfxRotationOffset: {x: 0, y: 180, z: 0}
       resolveVfxScale: {x: 0.5, y: 0.5, z: 1}
       resolveVfxScaleMultiplier: 1
@@ -352,7 +352,7 @@ MonoBehaviour:
     castMotionEnd: 1
     radius: 2
     width: 3
-    length: 8
+    length: 10
     useStun: 1
     stunDuration: 3.5
   corruptionRing:
@@ -424,7 +424,7 @@ MonoBehaviour:
     resolveVfxPrefab: {fileID: 344858183500810125, guid: 6083b5b842a6ac44889a2d9ebebabae8, type: 3}
     resolveVfxDuration: 15
     resolveVfxAnchor: 0
-    resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+    resolveVfxPositionOffset: {x: 0, y: 0, z: 1.2}
     resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
     resolveVfxScale: {x: 1, y: 1, z: 1}
     resolveVfxScaleMultiplier: 1
@@ -596,7 +596,7 @@ MonoBehaviour:
     dangerColor: {r: 1, g: 0.08, b: 0.04, a: 0.82}
     safeColor: {r: 0.08, g: 0.85, b: 0.42, a: 0.72}
   fallingBarrage:
-    projectilePrefab: {fileID: 1850910852090788313, guid: 159bd577af07b324096272fb36975101, type: 3}
+    projectilePrefab: {fileID: 1850910852090788313, guid: 7fc322be4bb78a64982ff7bf0ba77f01, type: 3}
     telegraphPrefab: {fileID: 5939384426542757584, guid: 4f2e0a6235579d848969926c9a9bc0f5, type: 3}
     effects:
       startVfxPrefab: {fileID: 0}
@@ -606,7 +606,36 @@ MonoBehaviour:
       startVfxRotationOffset: {x: 0, y: 0, z: 0}
       startVfxScale: {x: 1, y: 1, z: 1}
       startVfxScaleMultiplier: 1
-      resolveVfxPrefab: {fileID: 7591664447213250253, guid: 6209d8f2714921f4cb9a69c3da547434, type: 3}
+      resolveVfxPrefab: {fileID: 0}
+      resolveVfxDuration: 0
+      resolveVfxAnchor: 0
+      resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
+      resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
+      resolveVfxScale: {x: 1, y: 1, z: 1}
+      resolveVfxScaleMultiplier: 1
+      hitVfxPrefab: {fileID: 0}
+      hitVfxDuration: 0
+      hitVfxPositionOffset: {x: 0, y: 0, z: 0}
+      hitVfxRotationOffset: {x: 0, y: 0, z: 0}
+      hitVfxScale: {x: 1, y: 1, z: 1}
+      hitVfxScaleMultiplier: 1
+      startSfx: {fileID: 0}
+      startSfxDuration: 0
+      resolveSfx: {fileID: 0}
+      resolveSfxDuration: 0
+      sfxVolume: 1
+      hitSfx: {fileID: 0}
+      hitSfxDuration: 0
+      hitSfxVolume: 1
+    impactEffects:
+      startVfxPrefab: {fileID: 0}
+      startVfxDuration: 0
+      startVfxAnchor: 0
+      startVfxPositionOffset: {x: 0, y: 0, z: 0}
+      startVfxRotationOffset: {x: 0, y: 0, z: 0}
+      startVfxScale: {x: 1, y: 1, z: 1}
+      startVfxScaleMultiplier: 1
+      resolveVfxPrefab: {fileID: 7591664447213250253, guid: de3588927002fb04a947dbedbdab6d5a, type: 3}
       resolveVfxDuration: 0
       resolveVfxAnchor: 3
       resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
@@ -628,18 +657,19 @@ MonoBehaviour:
       hitSfxDuration: 0
       hitSfxVolume: 1
     damageDelay: 0
-    preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
-    preCastMotionSpeed: 0.01
-    preCastMotionStart: 0
-    preCastMotionEnd: 0.181
-    castMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
-    castMotionSpeed: 1.1
-    castMotionStart: 0.15
+    preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
+    preCastMotionSpeed: 0.5
+    preCastMotionStart: 0.15
+    preCastMotionEnd: 1
+    castMotion: {fileID: 7400000, guid: 27164d3932ee64c49a5215c417da0206, type: 3}
+    castMotionSpeed: 1
+    castMotionStart: 0
     castMotionEnd: 1
     arenaHalfExtents: {x: 7, y: 12}
-    spawnHeight: 7
+    spawnHeight: 6
     projectileCount: 20
-    airHoldDuration: 0.9
+    airHoldDuration: 0.6
+    telegraphHoldDuration: 0
     fallSpeedCurve:
       serializedVersion: 2
       m_Curve:
@@ -666,11 +696,11 @@ MonoBehaviour:
       m_RotationOrder: 4
     warningMessage: "\uACBD\uACE0! \uB099\uD558 \uC9C0\uC810\uC744 \uD655\uC778\uD558\uC138\uC694!"
     warningMessageDuration: 2
-    impactRadius: 1.4
-    minimumSpacing: 2.8
-    commanderSafetyRadius: 1.8
+    barrageStartDelay: 1.2
+    impactRadius: 1.25
+    minimumSpacing: 2.6
+    commanderSafetyRadius: 1.5
     initialPoolSize: 20
-    telegraphColor: {r: 1, g: 0.12, b: 0.04, a: 0.82}
   closeAttackDistance: 3
   lineStrikeAlignmentThreshold: 0.7
   phaseConfig: {fileID: 11400000, guid: 64cd36c9c64817d458ce0ed6311a59e4, type: 2}

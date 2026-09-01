@@ -1327,8 +1327,6 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void ApplyHudLayout()
         {
-            var scoreRect = scoreValue == null ? null : scoreValue.rectTransform;
-            var timerRect = timerValue == null ? null : timerValue.rectTransform;
             var timeoutRect = debugTimeoutButton == null
                 ? null
                 : debugTimeoutButton.GetComponent<RectTransform>();
@@ -1336,25 +1334,11 @@ namespace ProjectMT.Contents.FallenCommander
                 ? null
                 : debugBossKillButton.GetComponent<RectTransform>();
 
-            SetTopRight(scoreRect,
-                new Vector2(468f, -44f), new Vector2(240f, 34f));
-            SetTopRight(timerRect,
-                new Vector2(468f, 0f), new Vector2(240f, 36f));
             LayoutTimeoutButton(timeoutRect);
             SetTopRight(
                 bossKillRect,
                 new Vector2(-32f, -118f),
                 new Vector2(110f, 32f));
-
-            if (scoreValue != null)
-            {
-                scoreValue.alignment = TextAnchor.UpperRight;
-            }
-
-            if (timerValue != null)
-            {
-                timerValue.alignment = TextAnchor.UpperRight;
-            }
 
             if (commanderHeartRoot != null)
             {
@@ -1364,12 +1348,6 @@ namespace ProjectMT.Contents.FallenCommander
                     new Vector2(320f, 48f));
             }
 
-            SetTopLeft(
-                commanderStunNotice == null
-                    ? null
-                    : commanderStunNotice.rectTransform,
-                new Vector2(32f, -84f),
-                new Vector2(220f, 34f));
         }
 
         private static void LayoutTimeoutButton(RectTransform buttonRect)
@@ -1441,7 +1419,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void EnsureCommanderHeartRoot()
         {
-            if (hudRoot == null || commanderHeartRoot != null)
+            if (hudRoot == null)
             {
                 return;
             }
@@ -1449,9 +1427,26 @@ namespace ProjectMT.Contents.FallenCommander
             var uiRoot = hudRoot.transform.parent == null
                 ? hudRoot.transform
                 : hudRoot.transform.parent;
+
+            if (commanderStunNotice == null)
+            {
+                var existingNotice = FindDescendant(
+                    uiRoot,
+                    "CommanderStunNoticeHUD");
+                commanderStunNotice = existingNotice == null
+                    ? null
+                    : existingNotice.GetComponent<Text>();
+            }
+
+            if (commanderHeartRoot != null)
+            {
+                return;
+            }
+
             var existingRoot = FindDescendant(
                 uiRoot,
-                "CommanderHeartHud_Editor");
+                "CommanderHeartHealthBar") ??
+                FindDescendant(uiRoot, "CommanderHeartHud_Editor");
             if (existingRoot != null)
             {
                 commanderHeartRoot = existingRoot as RectTransform;
@@ -1465,40 +1460,37 @@ namespace ProjectMT.Contents.FallenCommander
                     commanderHeartSprite =
                         (commanderHeartGraphics[0] as Image)?.sprite;
                 }
+            }
+            else
+            {
+                var rootObject = new GameObject("CommanderHeartHud_Runtime");
+                rootObject.transform.SetParent(uiRoot, false);
+                commanderHeartRoot = rootObject.AddComponent<RectTransform>();
+                commanderHeartRoot.anchorMin = new Vector2(0f, 1f);
+                commanderHeartRoot.anchorMax = new Vector2(0f, 1f);
+                commanderHeartRoot.pivot = new Vector2(0f, 1f);
+                commanderHeartRoot.anchoredPosition = new Vector2(28f, -24f);
+                commanderHeartRoot.sizeDelta = new Vector2(320f, 48f);
 
-                var existingNotice = FindDescendant(
-                    uiRoot,
-                    "CommanderStunNotice_Editor");
-                commanderStunNotice = existingNotice == null
-                    ? null
-                    : existingNotice.GetComponent<Text>();
-                return;
+                var layout = rootObject.AddComponent<HorizontalLayoutGroup>();
+                layout.spacing = 6f;
+                layout.childAlignment = TextAnchor.MiddleLeft;
+                layout.childControlWidth = false;
+                layout.childControlHeight = false;
+                layout.childForceExpandWidth = false;
+                layout.childForceExpandHeight = false;
             }
 
-            var rootObject = new GameObject("CommanderHeartHud_Runtime");
-            rootObject.transform.SetParent(uiRoot, false);
-            commanderHeartRoot = rootObject.AddComponent<RectTransform>();
-            commanderHeartRoot.anchorMin = new Vector2(0f, 1f);
-            commanderHeartRoot.anchorMax = new Vector2(0f, 1f);
-            commanderHeartRoot.pivot = new Vector2(0f, 1f);
-            commanderHeartRoot.anchoredPosition = new Vector2(28f, -24f);
-            commanderHeartRoot.sizeDelta = new Vector2(320f, 48f);
-
-            var layout = rootObject.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 6f;
-            layout.childAlignment = TextAnchor.MiddleLeft;
-            layout.childControlWidth = false;
-            layout.childControlHeight = false;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = false;
-
-            commanderStunNotice = CreateRuntimeText(
-                "CommanderStunNotice_Runtime",
-                new Vector2(28f, -76f),
-                new Vector2(220f, 34f));
-            commanderStunNotice.fontSize = 24;
-            commanderStunNotice.color = new Color(1f, 0.75f, 0.2f, 1f);
-            commanderStunNotice.gameObject.SetActive(false);
+            if (commanderStunNotice == null)
+            {
+                commanderStunNotice = CreateRuntimeText(
+                    "CommanderStunNotice_Runtime",
+                    new Vector2(28f, -76f),
+                    new Vector2(220f, 34f));
+                commanderStunNotice.fontSize = 24;
+                commanderStunNotice.color = new Color(1f, 0.75f, 0.2f, 1f);
+                commanderStunNotice.gameObject.SetActive(false);
+            }
         }
 
         private static Transform FindDescendant(

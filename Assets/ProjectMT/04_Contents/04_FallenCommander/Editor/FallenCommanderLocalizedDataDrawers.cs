@@ -30,7 +30,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 "blackHoleInnerPullSpeed" => "중심부 흡입 속도",
                 "blackHolePullStrengthCurve" => "중심 거리별 흡입 강도",
                 "blackHoleArenaHalfExtents" => "생성 가능 영역 반경",
-                "blackHoleEndEffects" => "종료 연출 (VFX / SFX)",
+                "blackHoleEndEffects" => "종료 연출 (효과 / 효과음)",
                 "lineStrike" => "직선 공격 설정",
                 "corruptionRing" => "타락의 고리 설정",
                 "corruptionRingSafeRadius" => "안전지대 반지름",
@@ -43,7 +43,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 "finalChargeWarningMessage" => "패턴 경고 문구",
                 "finalChargeUseStun" => "기절 적용",
                 "finalChargeStunDuration" => "기절 지속시간",
-                "finalChargeEffects" => "연출 (VFX / SFX)",
+                "finalChargeEffects" => "연출 (효과 / 효과음)",
                 "finalChargePreCastMotion" => "시전 모션",
                 "finalChargePreCastMotionSpeed" => "시전 모션 속도",
                 "finalChargePreCastMotionStart" => "시전 모션 시작 지점",
@@ -83,7 +83,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             {
                 "telegraphPrefab" => "공격 범위 오브젝트",
                 "projectilePrefab" => "투사체 오브젝트",
-                "effects" => "연출 (VFX / SFX)",
+                "effects" => "연출 (효과 / 효과음)",
                 "damageDelay" => "피해 판정 지연시간",
                 "warningDuration" => "공격 전 경고시간",
                 "telegraphHoldDuration" => "충전 완료 유지시간",
@@ -102,7 +102,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             return propertyName switch
             {
                 "telegraphPrefab" => "공격 범위 오브젝트",
-                "effects" => "연출 (VFX / SFX)",
+                "effects" => "연출 (효과 / 효과음)",
                 "damageDelay" => "피해 판정 지연시간",
                 "preCastMotion" => "시전 모션",
                 "preCastMotionSpeed" => "시전 모션 속도",
@@ -139,11 +139,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 "resolveVfxPositionOffset" => $"{resolveLabel} 효과 위치 오프셋",
                 "resolveVfxRotationOffset" => $"{resolveLabel} 효과 회전 오프셋",
                 "resolveVfxScaleMultiplier" => $"{resolveLabel} 효과 전체 크기 배율",
-                "hitVfxPrefab" => "적중 VFX",
-                "hitVfxDuration" => "적중 VFX 유지시간 (0 = 자동)",
-                "hitVfxPositionOffset" => "적중 VFX 위치 오프셋",
-                "hitVfxRotationOffset" => "적중 VFX 회전 오프셋",
-                "hitVfxScaleMultiplier" => "적중 VFX 전체 크기 배율",
+                "hitVfxPrefab" => "적중 효과",
+                "hitVfxDuration" => "적중 효과 유지시간 (0 = 자동)",
+                "hitVfxPositionOffset" => "적중 효과 위치 오프셋",
+                "hitVfxRotationOffset" => "적중 효과 회전 오프셋",
+                "hitVfxScaleMultiplier" => "적중 효과 전체 크기 배율",
                 "startSfx" => "시전 효과음",
                 "startSfxDuration" => "시전 효과음 유지시간 (0 = 자동)",
                 "resolveSfx" => $"{resolveLabel} 효과음",
@@ -167,7 +167,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 "riseCurve" => "시전 중 상승 곡선",
                 "descentDuration" => "공격 모션 종료 후 하강시간",
                 "descentCurve" => "하강 곡선",
-                "effects" => "연출 (VFX / SFX)",
+                "effects" => "연출 (효과 / 효과음)",
                 "preCastMotion" => "시전 모션",
                 "preCastMotionSpeed" => "시전 모션 속도",
                 "preCastMotionStart" => "시전 모션 시작 지점",
@@ -215,7 +215,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             return propertyName switch
             {
                 "telegraphPrefab" => "공격 범위 오브젝트",
-                "effects" => "연출 (VFX / SFX)",
+                "effects" => "연출 (효과 / 효과음)",
                 "damageDelay" => "피해 판정 지연시간",
                 "preCastMotion" => "시전 모션",
                 "preCastMotionSpeed" => "시전 모션 속도",
@@ -265,24 +265,28 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             return propertyName switch
             {
                 "projectilePrefab" => "낙하 탄막 오브젝트",
-                "telegraphPrefab" => "착탄 경고 오브젝트",
-                "effects" => "연출 (VFX / SFX)",
+                "projectileSpawnPresentationDuration" => "구체 생성 연출 유지시간",
+                "telegraphPrefab" => "공격 범위 오브젝트",
+                "effects" => "연출 (시각 효과 / 효과음)",
+                "impactEffects" => "착탄 효과 (VFX / SFX)",
                 "damageDelay" => "피해 판정 지연시간",
-                "preCastMotion" => "시전 모션",
-                "preCastMotionSpeed" => "시전 모션 속도",
-                "preCastMotionStart" => "시전 모션 시작 지점",
-                "preCastMotionEnd" => "시전 모션 종료 지점",
-                "castMotion" => "공격 모션",
-                "castMotionSpeed" => "공격 모션 속도",
-                "castMotionStart" => "공격 모션 시작 지점",
-                "castMotionEnd" => "공격 모션 종료 지점",
+                "preCastMotion" => "탄막 생성 모션",
+                "preCastMotionSpeed" => "탄막 생성 모션 속도",
+                "preCastMotionStart" => "탄막 생성 모션 시작 지점",
+                "preCastMotionEnd" => "탄막 생성 모션 종료 지점",
+                "castMotion" => "착탄 모션",
+                "castMotionSpeed" => "착탄 모션 속도",
+                "castMotionStart" => "착탄 모션 시작 지점",
+                "castMotionEnd" => "착탄 모션 종료 지점",
                 "arenaHalfExtents" => "랜덤 생성 영역 반경",
                 "spawnHeight" => "탄막 생성 높이",
                 "projectileCount" => "한 묶음 탄막 개수",
                 "airHoldDuration" => "공중 대기시간",
+                "telegraphHoldDuration" => "충전 완료 유지시간",
                 "fallSpeedCurve" => "낙하 가속 곡선",
                 "warningMessage" => "패턴 경고 문구",
-                "warningMessageDuration" => "경고 후 공격 대기시간",
+                "warningMessageDuration" => "경고 문구 유지시간",
+                "barrageStartDelay" => "문구 시작 후 탄막 생성 대기시간",
                 "impactRadius" => "착탄 피해 반지름",
                 "minimumSpacing" => "탄막 최소 배치 간격",
                 "commanderSafetyRadius" => "군단장 주변 최소 안전거리",
@@ -718,7 +722,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 line.height = DrawSection(
                     line,
                     property,
-                    "VFX 설정",
+                    "효과 설정",
                     "Vfx",
                     VfxProperties);
                 line.y += line.height + EditorGUIUtility.standardVerticalSpacing;
@@ -826,6 +830,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 content.y += content.height + EditorGUIUtility.standardVerticalSpacing;
                 content.height = EditorGUI.GetPropertyHeight(child, childLabel, true);
                 EditorGUI.PropertyField(content, child, childLabel, true);
+
             }
 
             EditorGUI.indentLevel--;
@@ -865,6 +870,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                         resolveLabel));
                 height += EditorGUIUtility.standardVerticalSpacing +
                     EditorGUI.GetPropertyHeight(child, childLabel, true);
+
             }
 
             return height;
@@ -885,6 +891,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             {
                 return !propertyName.StartsWith("start") &&
                     !propertyName.StartsWith("hit");
+            }
+
+            if (owner.propertyPath == "fallingBarrage.impactEffects")
+            {
+                return propertyName.StartsWith("resolve") || propertyName == "sfxVolume";
             }
 
             if (!propertyName.StartsWith("hit"))
@@ -911,6 +922,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             {
                 "projectileBasicAttack.effects" => "발동",
                 "blackHoleEndEffects" => "종료",
+                "fallingBarrage.impactEffects" => "착탄",
                 _ => "발동"
             };
         }
@@ -999,14 +1011,23 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         }
     }
 
-    [CustomPropertyDrawer(typeof(FallenCommanderFallingBarrageData))]
-    public sealed class FallenCommanderFallingBarrageDataDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(FallenCommanderLegacyFallingBarrageData))]
+    public sealed class FallenCommanderLegacyFallingBarrageDataDrawer : PropertyDrawer
     {
         private static readonly string[] CommonProperties =
         {
+            "warningMessage",
+            "warningMessageDuration",
+            "barrageStartDelay",
             "projectilePrefab",
+            "projectileSpawnPresentationDuration",
             "telegraphPrefab",
-            "effects",
+            "arenaHalfExtents",
+            "spawnHeight",
+            "projectileCount",
+            "airHoldDuration",
+            "telegraphHoldDuration",
+            "impactRadius",
             "damageDelay",
             "preCastMotion",
             "preCastMotionSpeed",
@@ -1015,19 +1036,12 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             "castMotion",
             "castMotionSpeed",
             "castMotionStart",
-            "castMotionEnd",
-            "randomSpawnHalfExtents",
-            "spawnHeight",
-            "projectileCount",
-            "airHoldDuration",
-            "warningMessage",
-            "warningMessageDuration",
-            "impactRadius"
+            "castMotionEnd"
         };
 
         private static readonly string[] AdvancedProperties =
         {
-            "fallCurve",
+            "fallSpeedCurve",
             "minimumSpacing",
             "commanderSafetyRadius",
             "initialPoolSize",
@@ -1085,6 +1099,39 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                    child.name != "transitionFadeColor" &&
                    child.name != "transitionFadeAlpha" &&
                    child.name != "transitionFadeDuration";
+        }
+    }
+
+    [CustomPropertyDrawer(typeof(FallenCommanderFallingBarrageData))]
+    public sealed class FallenCommanderFallingBarrageDataDrawer : PropertyDrawer
+    {
+        private static readonly string[] CommonProperties =
+        {
+            "warningMessage", "warningMessageDuration", "barrageStartDelay",
+            "projectilePrefab", "telegraphPrefab", "effects", "impactEffects", "arenaHalfExtents",
+            "spawnHeight", "projectileCount", "airHoldDuration", "telegraphHoldDuration",
+            "impactRadius", "damageDelay", "preCastMotion", "preCastMotionSpeed",
+            "preCastMotionStart", "preCastMotionEnd", "castMotion", "castMotionSpeed",
+            "castMotionStart", "castMotionEnd"
+        };
+
+        private static readonly string[] AdvancedProperties =
+        {
+            "fallSpeedCurve", "minimumSpacing", "commanderSafetyRadius", "initialPoolSize"
+        };
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            FallenCommanderAdvancedPropertyGUI.Draw(
+                position, property, label, FallenCommanderInspectorLabels.FallingBarrage,
+                CommonProperties, AdvancedProperties, "낙하 탄막 2 전용 설정 더보기");
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return FallenCommanderAdvancedPropertyGUI.GetHeight(
+                property, FallenCommanderInspectorLabels.FallingBarrage,
+                CommonProperties, AdvancedProperties, "낙하 탄막 2 전용 설정 더보기");
         }
     }
 
@@ -1443,17 +1490,13 @@ namespace ProjectMT.Contents.FallenCommander.Editor
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             FallenCommanderLocalizedPropertyGUI.Draw(
-                position,
-                property,
-                label,
-                FallenCommanderInspectorLabels.FallingBarragePhase);
+                position, property, label, FallenCommanderInspectorLabels.FallingBarragePhase);
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             return FallenCommanderLocalizedPropertyGUI.GetHeight(
-                property,
-                FallenCommanderInspectorLabels.FallingBarragePhase);
+                property, FallenCommanderInspectorLabels.FallingBarragePhase);
         }
     }
 }

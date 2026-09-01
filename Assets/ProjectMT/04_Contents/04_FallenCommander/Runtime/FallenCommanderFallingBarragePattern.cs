@@ -27,6 +27,8 @@ namespace ProjectMT.Contents.FallenCommander
             public Vector3 Target;
             public float StartDelay;
             public PooledProjectile Pooled;
+            public bool LandingPresented;
+            public bool ImpactResolved;
             public bool Resolved;
         }
 
@@ -50,7 +52,9 @@ namespace ProjectMT.Contents.FallenCommander
         private PatternState state;
         private float waveElapsed;
         private float remainingTime;
+        private float attackStartDelayRemaining;
         private int waveIndex;
+        private bool castMotionPlayed;
         private WaveDamageState waveDamageState;
         private System.Action<float, System.Action> damageDelayScheduler;
 
@@ -100,11 +104,13 @@ namespace ProjectMT.Contents.FallenCommander
             arenaCenter = battlefieldCenter;
             damageDelayScheduler = delayScheduler;
             waveIndex = 0;
+            castMotionPlayed = false;
 
             EnsurePool(data.InitialPoolSize);
             state = PatternState.Warning;
             remainingTime = data.WarningMessageDuration;
-            if (remainingTime <= 0f)
+            attackStartDelayRemaining = data.BarrageStartDelay;
+            if (remainingTime <= 0f || attackStartDelayRemaining <= 0f)
             {
                 BeginAttack();
             }
@@ -114,11 +120,6 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void BeginAttack()
         {
-            animationPresenter?.PlayPreCast(
-                data.PreCastMotion,
-                playbackSpeed: data.PreCastMotionSpeed,
-                normalizedStart: data.PreCastMotionStart,
-                normalizedEnd: data.PreCastMotionEnd);
             FallenCommanderAttackEffectPlayer.PlayStart(
                 data.Effects,
                 bossActor.transform.position,
@@ -126,7 +127,6 @@ namespace ProjectMT.Contents.FallenCommander
                 effectParent,
                 bossActor.transform,
                 commanderRoot);
-
             BeginWave();
         }
 
@@ -141,7 +141,10 @@ namespace ProjectMT.Contents.FallenCommander
             if (state == PatternState.Warning)
             {
                 remainingTime = Mathf.Max(0f, remainingTime - safeDeltaTime);
-                if (remainingTime <= 0f)
+                attackStartDelayRemaining = Mathf.Max(
+                    0f,
+                    attackStartDelayRemaining - safeDeltaTime);
+                if (attackStartDelayRemaining <= 0f)
                 {
                     BeginAttack();
                 }
@@ -171,9 +174,15 @@ namespace ProjectMT.Contents.FallenCommander
                 }
 
                 allResolved = false;
-                if (shot.Pooled == null && waveElapsed >= shot.StartDelay)
+                if (!shot.ImpactResolved && shot.Pooled == null &&
+                    waveElapsed >= shot.StartDelay)
                 {
                     ActivateShot(shot);
+                }
+
+                if (shot.ImpactResolved)
+                {
+                    continue;
                 }
 
                 if (shot.Pooled == null)
@@ -185,12 +194,24 @@ namespace ProjectMT.Contents.FallenCommander
                     (waveElapsed - shot.StartDelay - data.AirHoldDuration) /
                     phaseData.FallDuration);
                 var progress = data.EvaluateFallProgress(normalizedTime);
-                shot.Pooled.Projectile.transform.position = Vector3.Lerp(
-                    shot.Target + Vector3.up * data.SpawnHeight,
-                    shot.Target,
-                    progress);
+                shot.Pooled.Projectile.transform.position =
+                    data.EvaluateProjectilePosition(shot.Target, normalizedTime);
                 shot.Pooled.Telegraph?.SetProgress(progress);
-                if (normalizedTime >= 1f)
+                if (!shot.LandingPresented && normalizedTime >= 1f)
+                {
+                    shot.LandingPresented = true;
+                    FallenCommanderAttackEffectPlayer.PlayResolve(
+                        data.ImpactEffects,
+                        shot.Target,
+                        bossActor == null ? Vector3.forward : bossActor.transform.forward,
+                        effectParent,
+                        bossActor == null ? null : bossActor.transform,
+                        commanderRoot,
+                        shot.Pooled?.Projectile == null ? null : shot.Pooled.Projectile.transform);
+                }
+                if (normalizedTime >= 1f && waveElapsed >= shot.StartDelay +
+                    data.AirHoldDuration + phaseData.FallDuration +
+                    data.TelegraphHoldDuration)
                 {
                     ResolveShot(shot);
                 }
@@ -294,6 +315,11 @@ namespace ProjectMT.Contents.FallenCommander
             shot.Pooled.Projectile.transform.SetPositionAndRotation(start, Quaternion.identity);
             shot.Pooled.Projectile.SetActive(true);
             RestartParticles(shot.Pooled.Projectile);
+            animationPresenter?.PlayPreCast(
+                data.PreCastMotion,
+                playbackSpeed: data.PreCastMotionSpeed,
+                normalizedStart: data.PreCastMotionStart,
+                normalizedEnd: data.PreCastMotionEnd);
             if (shot.Pooled.Telegraph != null)
             {
                 shot.Pooled.Telegraph.transform.SetPositionAndRotation(
@@ -306,34 +332,40 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void ResolveShot(FallingShot shot)
         {
-            shot.Resolved = true;
-            animationPresenter?.Play(
-                data.CastMotion,
-                stopAfterMotion: true,
-                durationOverride: data.CastMotionDuration,
-                playbackSpeed: data.CastMotionSpeed,
-                normalizedStart: data.CastMotionStart,
-                normalizedEnd: data.CastMotionEnd);
+            if (shot == null || shot.ImpactResolved)
+            {
+                return;
+            }
+
+            shot.ImpactResolved = true;
+            if (!castMotionPlayed)
+            {
+                castMotionPlayed = true;
+                animationPresenter?.Play(
+                    data.CastMotion,
+                    stopAfterMotion: true,
+                    durationOverride: data.CastMotionDuration,
+                    playbackSpeed: data.CastMotionSpeed,
+                    normalizedStart: data.CastMotionStart,
+                    normalizedEnd: data.CastMotionEnd);
+            }
             FallenCommanderAttackEffectPlayer.PlayResolve(
                 data.Effects,
                 shot.Target,
-                Vector3.forward,
+                bossActor == null ? Vector3.forward : bossActor.transform.forward,
                 effectParent,
                 bossActor == null ? null : bossActor.transform,
                 commanderRoot,
-                shot.Pooled?.Projectile == null
-                    ? null
-                    : shot.Pooled.Projectile.transform);
-
+                shot.Pooled?.Projectile == null ? null : shot.Pooled.Projectile.transform);
             var attacker = bossActor;
             var target = commanderRoot;
             var targetHealth = commanderHealth;
-            var effects = data.Effects;
             var delay = data.DamageDelay;
             var radius = data.ImpactRadius;
-            var parent = effectParent;
             var impactPosition = shot.Target;
             var damageState = waveDamageState;
+            var effects = data.Effects;
+            var parent = effectParent;
             ScheduleDamage(delay, () =>
             {
                 if (damageState == null ||
@@ -355,21 +387,32 @@ namespace ProjectMT.Contents.FallenCommander
                 }
 
                 damageState.HasDamaged = true;
-                FallenCommanderAttackEffectPlayer.PlayHit(
-                    effects,
-                    target.position,
-                    Vector3.forward,
-                    parent,
-                    attacker.transform,
-                    target);
                 targetHealth.ApplyDamage(new DamageRequest(
                     attacker,
                     1f,
                     target.position));
+                FallenCommanderAttackEffectPlayer.PlayHit(
+                    effects,
+                    target.position,
+                    attacker.transform.forward,
+                    parent,
+                    attacker.transform,
+                    target);
             });
+
+            ReturnShot(shot);
+        }
+
+        private void ReturnShot(FallingShot shot)
+        {
+            if (shot == null || shot.Resolved)
+            {
+                return;
+            }
 
             Return(shot.Pooled);
             shot.Pooled = null;
+            shot.Resolved = true;
         }
 
         private bool IsCommanderInside(Vector3 impactPosition)
@@ -576,7 +619,9 @@ namespace ProjectMT.Contents.FallenCommander
             state = PatternState.Inactive;
             waveElapsed = 0f;
             remainingTime = 0f;
+            attackStartDelayRemaining = 0f;
             waveIndex = 0;
+            castMotionPlayed = false;
             waveDamageState = null;
         }
     }

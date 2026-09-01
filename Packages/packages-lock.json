@@ -1,5 +1,14 @@
 {
   "dependencies": {
+    "com.notnull92.hera-agent-unity": {
+      "version": "file:com.notnull92.hera-agent-unity",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.1",
+        "com.unity.ugui": "2.0.0"
+      }
+    },
     "com.unity.ai.inference": {
       "version": "2.6.1",
       "depth": 0,

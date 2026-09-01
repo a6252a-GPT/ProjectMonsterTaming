@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 using ProjectMT.Shared.Unit; // SO 프로필 클래스 사용
@@ -44,36 +43,7 @@ namespace ProjectMT.Contents.TreasureSpirit
         private MonsterRuntimeAssetSet runtimeAssetSet;
 
         private NavMeshAgent agent;
-
-        private bool TryEnsureAgentOnNavMesh()
-        {
-            if (agent == null)
-            {
-                return false;
-            }
-
-            if (!agent.enabled)
-            {
-                agent.enabled = true;
-            }
-
-            if (!agent.isActiveAndEnabled)
-            {
-                return false;
-            }
-
-            if (agent.isOnNavMesh)
-            {
-                return true;
-            }
-
-            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 8f, NavMesh.AllAreas))
-            {
-                agent.Warp(hit.position);
-            }
-
-            return agent.isOnNavMesh;
-        }
+        private Vector3 lastChaseDestination;
 
         private void Awake()
         {
@@ -84,6 +54,16 @@ namespace ProjectMT.Contents.TreasureSpirit
                 agent.updateRotation = true;
                 agent.updatePosition = true;
             }
+        }
+
+        private void OnEnable()
+        {
+            Demo.DemoCombatRoster.RegisterAlly(transform);
+        }
+
+        private void OnDisable()
+        {
+            Demo.DemoCombatRoster.UnregisterAlly(transform);
         }
 
         /// <summary>
@@ -155,18 +135,16 @@ namespace ProjectMT.Contents.TreasureSpirit
 
             if (commander == null)
             {
-                GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-                if (playerObj != null)
-                {
-                    commander = playerObj.transform;
-                }
-                else
+                commander = Demo.DemoDungeonController.Active != null
+                    ? Demo.DemoDungeonController.Active.PlayerTransform
+                    : null;
+                if (commander == null)
                 {
                     return;
                 }
             }
 
-            if (!TryEnsureAgentOnNavMesh())
+            if (!Demo.DemoNavMeshUtil.TryEnsureOnNavMesh(agent))
             {
                 return;
             }
@@ -177,7 +155,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             // 2. 상태별 행동
             if (targetMimic != null)
             {
-                float distanceToEnemy = Vector3.Distance(transform.position, targetMimic.transform.position);
+                float distanceToEnemy = Mathf.Sqrt(Demo.DemoNavMeshUtil.PlanarSqrDistance(transform.position, targetMimic.transform.position));
 
                 if (distanceToEnemy <= attackRange)
                 {
@@ -192,7 +170,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
             else if (targetGuard != null)
             {
-                float distanceToGuard = Vector3.Distance(transform.position, targetGuard.transform.position);
+                float distanceToGuard = Mathf.Sqrt(Demo.DemoNavMeshUtil.PlanarSqrDistance(transform.position, targetGuard.transform.position));
 
                 if (distanceToGuard <= attackRange)
                 {
@@ -214,62 +192,14 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private void FindNearestEnemy()
         {
-            targetMimic = null;
-            targetGuard = null;
-
-#pragma warning disable CS0618
-            Demo.DemoMimicAI[] mimics = FindObjectsOfType<Demo.DemoMimicAI>();
-#pragma warning restore CS0618
-
-            Demo.DemoMimicAI nearestMimic = null;
-            float nearestMimicDistance = detectEnemyRange;
-
-            for (int i = 0; i < mimics.Length; i++)
+            targetMimic = Demo.DemoCombatRoster.FindNearest<Demo.DemoMimicAI>(transform.position, detectEnemyRange);
+            if (targetMimic != null)
             {
-                Demo.DemoMimicAI mimic = mimics[i];
-                if (mimic == null || !mimic.IsAlive)
-                {
-                    continue;
-                }
-
-                float distance = Vector3.Distance(transform.position, mimic.transform.position);
-                if (distance < nearestMimicDistance)
-                {
-                    nearestMimicDistance = distance;
-                    nearestMimic = mimic;
-                }
-            }
-
-            if (nearestMimic != null)
-            {
-                targetMimic = nearestMimic;
+                targetGuard = null;
                 return;
             }
 
-            FindNearestGuard();
-        }
-
-        private void FindNearestGuard()
-        {
-            targetGuard = null;
-#pragma warning disable CS0618
-            GuardAI[] guards = FindObjectsOfType<GuardAI>();
-#pragma warning restore CS0618
-
-            GuardAI nearest = null;
-            float minDistance = detectEnemyRange;
-
-            foreach (var guard in guards)
-            {
-                float distance = Vector3.Distance(transform.position, guard.transform.position);
-                if (distance < minDistance)
-                {
-                    minDistance = distance;
-                    nearest = guard;
-                }
-            }
-
-            targetGuard = nearest;
+            targetGuard = Demo.DemoCombatRoster.FindNearest<GuardAI>(transform.position, detectEnemyRange);
         }
 
         private Vector3 lastCommanderPosition;
@@ -278,7 +208,7 @@ namespace ProjectMT.Contents.TreasureSpirit
         {
             if (commander == null || agent.pathPending) return;
 
-            float distanceToCommander = Vector3.Distance(transform.position, commander.position);
+            float distanceToCommander = Mathf.Sqrt(Demo.DemoNavMeshUtil.PlanarSqrDistance(transform.position, commander.position));
 
             if (distanceToCommander > followOffsetDistance)
             {
@@ -318,7 +248,7 @@ namespace ProjectMT.Contents.TreasureSpirit
 
             agent.isStopped = false;
             agent.speed = baseMoveSpeed;
-            agent.SetDestination(targetMimic.transform.position);
+            Demo.DemoNavMeshUtil.SetDestinationIfMoved(agent, targetMimic.transform.position, ref lastChaseDestination);
         }
 
         private void AttackMimicBehavior()
@@ -338,7 +268,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             if (Time.time >= lastAttackTime + attackCooldown && targetMimic != null && targetMimic.IsAlive)
             {
                 targetMimic.TakeDamage(attackDamage);
-                Debug.Log($"⚔️ 팔로워가 {targetMimic.name}을(를) 공격했습니다! (적용 데미지: {attackDamage})");
+                Demo.DemoDungeonAudio.PlayFollowerAttack(transform.position);
                 lastAttackTime = Time.time;
             }
         }
@@ -349,7 +279,7 @@ namespace ProjectMT.Contents.TreasureSpirit
 
             agent.isStopped = false;
             agent.speed = baseMoveSpeed;
-            agent.SetDestination(targetGuard.transform.position);
+            Demo.DemoNavMeshUtil.SetDestinationIfMoved(agent, targetGuard.transform.position, ref lastChaseDestination);
         }
 
         private void AttackBehavior()
@@ -373,7 +303,7 @@ namespace ProjectMT.Contents.TreasureSpirit
                 if (targetGuard != null)
                 {
                     targetGuard.TakeDamage(attackDamage);
-                    Debug.Log($"⚔️ 팔로워가 {targetGuard.gameObject.name}을(를) 공격했습니다! (적용 데미지: {attackDamage})");
+                    Demo.DemoDungeonAudio.PlayFollowerAttack(transform.position);
                 }
 
                 lastAttackTime = Time.time;
@@ -406,6 +336,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             isDead = true;
             targetMimic = null;
             targetGuard = null;
+            Demo.DemoCombatRoster.UnregisterAlly(transform);
 
             if (agent != null)
             {

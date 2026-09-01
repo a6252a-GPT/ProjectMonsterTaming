@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using ProjectMT.Contents.TreasureSpirit;
 
 namespace ProjectMT.Contents.TreasureSpirit.Demo
 {
@@ -29,7 +28,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private Transform warningDisc;
         private ParticleSystem[] vfxParticles = System.Array.Empty<ParticleSystem>();
         private Light[] vfxLights = System.Array.Empty<Light>();
-        private AudioSource[] vfxAudio = System.Array.Empty<AudioSource>();
+        private static readonly RaycastHit[] floorHits = new RaycastHit[16];
         private float sprayLengthZ = MinSprayLengthZ;
         private float floorY;
         private float ceilingY;
@@ -129,7 +128,19 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             vfxParticles = roots.ToArray();
             vfxLights = GetComponentsInChildren<Light>(true);
-            vfxAudio = GetComponentsInChildren<AudioSource>(true);
+            for (int i = 0; i < vfxLights.Length; i++)
+            {
+                DemoDungeonAtmosphere.TuneLocalFireLight(vfxLights[i]);
+            }
+
+            AudioSource[] prefabAudio = GetComponentsInChildren<AudioSource>(true);
+            for (int i = 0; i < prefabAudio.Length; i++)
+            {
+                if (prefabAudio[i] != null)
+                {
+                    prefabAudio[i].enabled = false;
+                }
+            }
         }
 
         private void Update()
@@ -163,6 +174,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                     }
 
                     SetSprayActive(true);
+                    DemoDungeonAudio.PlayFireIgnite(transform.position);
+                    DemoDungeonAudio.SetFireLoop(transform, true);
                 }
 
                 return;
@@ -174,7 +187,13 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 elapsed = 0f;
                 phase = 0;
                 SetSprayActive(false);
+                DemoDungeonAudio.SetFireLoop(transform, false);
             }
+        }
+
+        private void OnDisable()
+        {
+            DemoDungeonAudio.SetFireLoop(transform, false);
         }
 
         private void PulseWarning()
@@ -218,38 +237,14 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                     vfxLights[i].enabled = active;
                 }
             }
-
-            for (int i = 0; i < vfxAudio.Length; i++)
-            {
-                AudioSource audio = vfxAudio[i];
-                if (audio == null)
-                {
-                    continue;
-                }
-
-                if (active)
-                {
-                    audio.Play();
-                }
-                else
-                {
-                    audio.Stop();
-                }
-            }
         }
 
         private void DetectHits()
         {
-            PlayerCharacterController player = FindFirstObjectByType<PlayerCharacterController>();
-            if (player != null)
+            float range = Mathf.Max(SprayThicknessX, sprayLengthZ) * 0.5f + 1.2f;
+            if (DemoCombatRoster.FindNearestAlly(transform.position, range, false) == null)
             {
-                TryHitBody(player.transform, player, null);
-            }
-
-            FollowerAI follower = FindFirstObjectByType<FollowerAI>();
-            if (follower != null)
-            {
-                TryHitBody(follower.transform, null, follower);
+                return;
             }
 
             float height = Mathf.Max(0.5f, ceilingY - floorY);
@@ -265,29 +260,21 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             for (int i = 0; i < hitCount; i++)
             {
-                TryHit(overlapHits[i], center);
+                TryHit(overlapHits[i]);
             }
         }
 
-        private void TryHit(Collider other, Vector3 origin)
+        private void TryHit(Collider other)
         {
-            if (other == null)
+            if (other == null || !DemoCombatTargetUtil.TryResolveAlly(other, out Transform body))
             {
                 return;
             }
 
-            PlayerCharacterController player = other.GetComponentInParent<PlayerCharacterController>();
-            FollowerAI follower = player == null ? other.GetComponentInParent<FollowerAI>() : null;
-            Transform body = player != null ? player.transform : (follower != null ? follower.transform : null);
-            if (body == null)
-            {
-                return;
-            }
-
-            TryHitBody(body, player, follower);
+            TryHitBody(body);
         }
 
-        private void TryHitBody(Transform body, PlayerCharacterController player, FollowerAI follower)
+        private void TryHitBody(Transform body)
         {
             if (body == null)
             {
@@ -306,20 +293,12 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return;
             }
 
-            int targetId = body.GetInstanceID();
-            if (nextHitTime.TryGetValue(targetId, out float readyAt) && Time.time < readyAt)
+            if (!DemoCombatTargetUtil.TryConsumeHit(nextHitTime, body.GetInstanceID(), hitCooldown))
             {
                 return;
             }
 
-            nextHitTime[targetId] = Time.time + hitCooldown;
-            if (player != null)
-            {
-                player.TakeDamage(damage, transform.position);
-                return;
-            }
-
-            follower?.TakeDamage(damage);
+            DemoCombatTargetUtil.DamageAlly(body, damage, transform.position);
         }
 
         private Transform CreateQuad(string objectName, Material material, Vector3 worldScale, Vector3 localPosition)
@@ -375,12 +354,12 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private static float FindFloorY(Vector3 from, Transform ceiling)
         {
             Vector3 origin = from + Vector3.down * 0.08f;
-            RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, 8f, ~0, QueryTriggerInteraction.Ignore);
+            int hitCount = Physics.RaycastNonAlloc(origin, Vector3.down, floorHits, 8f, ~0, QueryTriggerInteraction.Ignore);
             float best = from.y - 3.4f;
             bool found = false;
-            for (int i = 0; i < hits.Length; i++)
+            for (int i = 0; i < hitCount; i++)
             {
-                RaycastHit hit = hits[i];
+                RaycastHit hit = floorHits[i];
                 if (hit.collider == null || hit.normal.y < 0.45f)
                 {
                     continue;

@@ -18,6 +18,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private Button button;
         private Image fill;
         private CanvasGroup canvasGroup;
+        private CanvasGroup tabCanvasGroup;
+        private DungeonAutomapOverlay automapOverlay;
+        private bool lastVisible;
+        private bool lastCanJump;
+        private float lastFill = -1f;
 
         public static DemoJumpButton Ensure(Transform hudRoot, PlayerCharacterController playerMove)
         {
@@ -90,6 +95,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             view.button = root.GetComponent<Button>();
             view.fill = fillImage;
             view.canvasGroup = root.GetComponent<CanvasGroup>();
+            view.tabCanvasGroup = CreateTabButton(hudRoot, source, view);
             ColorBlock colors = view.button.colors;
             colors.normalColor = Color.white;
             colors.highlightedColor = Color.white;
@@ -105,16 +111,22 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         public void Hide()
         {
+            lastFill = -1f;
+            lastVisible = true;
             if (canvasGroup != null)
             {
                 canvasGroup.alpha = 0f;
                 canvasGroup.interactable = false;
                 canvasGroup.blocksRaycasts = false;
             }
+
+            SetTabVisible(false);
         }
 
         public void Show()
         {
+            lastFill = -1f;
+            lastVisible = false;
             if (canvasGroup != null)
             {
                 canvasGroup.alpha = 1f;
@@ -146,6 +158,17 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private void Refresh()
         {
             bool visible = player != null && player.InputEnabled;
+            bool canJump = visible && player != null && player.CanJump;
+            float fillAmount = player != null ? player.JumpReadyFill : 0f;
+            if (visible == lastVisible && canJump == lastCanJump && Mathf.Abs(fillAmount - lastFill) < 0.001f)
+            {
+                return;
+            }
+
+            lastVisible = visible;
+            lastCanJump = canJump;
+            lastFill = fillAmount;
+
             if (canvasGroup != null)
             {
                 canvasGroup.alpha = visible ? 1f : 0f;
@@ -153,16 +176,86 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 canvasGroup.blocksRaycasts = visible;
             }
 
+            SetTabVisible(visible);
+
             if (button != null)
             {
-                button.interactable = visible && player != null && player.CanJump;
+                button.interactable = canJump;
             }
 
-            if (fill != null && player != null)
+            if (fill != null)
             {
-                fill.fillAmount = player.JumpReadyFill;
+                fill.fillAmount = fillAmount;
                 fill.color = ReadyFill;
             }
+        }
+
+        private void SetTabVisible(bool visible)
+        {
+            if (tabCanvasGroup == null)
+            {
+                return;
+            }
+
+            tabCanvasGroup.alpha = visible ? 1f : 0f;
+            tabCanvasGroup.interactable = visible;
+            tabCanvasGroup.blocksRaycasts = visible;
+        }
+
+        private static CanvasGroup CreateTabButton(Transform hudRoot, TMP_Text source, DemoJumpButton view)
+        {
+            Transform existing = hudRoot.Find("TabMinimapButton");
+            if (existing != null)
+            {
+                Destroy(existing.gameObject);
+            }
+
+            GameObject root = new GameObject("TabMinimapButton", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button), typeof(CanvasGroup));
+            RectTransform rect = root.GetComponent<RectTransform>();
+            rect.SetParent(hudRoot, false);
+            rect.anchorMin = new Vector2(1f, 0f);
+            rect.anchorMax = new Vector2(1f, 0f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(-96f, 176f);
+            rect.sizeDelta = new Vector2(ButtonSize, ButtonSize);
+
+            Image background = root.GetComponent<Image>();
+            background.sprite = null;
+            background.color = DarkRing;
+            background.raycastTarget = true;
+
+            GameObject labelObject = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+            RectTransform labelRect = labelObject.GetComponent<RectTransform>();
+            labelRect.SetParent(rect, false);
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = Vector2.zero;
+            labelRect.offsetMax = Vector2.zero;
+            TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
+            label.text = "미니맵";
+            label.alignment = TextAlignmentOptions.Center;
+            label.fontSize = 13f;
+            label.color = Color.white;
+            label.raycastTarget = false;
+            if (source != null && source.font != null)
+            {
+                label.font = source.font;
+            }
+
+            Button tabButton = root.GetComponent<Button>();
+            tabButton.transition = Selectable.Transition.None;
+            tabButton.onClick.AddListener(view.ToggleAutomap);
+            return root.GetComponent<CanvasGroup>();
+        }
+
+        private void ToggleAutomap()
+        {
+            if (automapOverlay == null)
+            {
+                automapOverlay = Object.FindFirstObjectByType<DungeonAutomapOverlay>();
+            }
+
+            automapOverlay?.Toggle();
         }
 
         private static Sprite GetCircleSprite()

@@ -1,9 +1,13 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Contents.TreasureSpirit;
+using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.Reward;
+using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,6 +26,10 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         [Header("전투 / 유닛")]
         [SerializeField] private GameObject commanderRoot;
         [SerializeField] private PlayerCharacterController commanderMove;
+        [SerializeField] private MonsterCatalog monsterCatalog;
+        [SerializeField] private CombatWorld combatWorld;
+        [SerializeField] private GameObject followerPrefab;
+        [SerializeField] private float followerVisualScale = 1f;
 
         [Header("HUD")]
         [SerializeField] private TMP_Text timerText;
@@ -31,11 +39,15 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         [SerializeField] private Button exitButton;
         [SerializeField] private GameObject cardPanel;
         [SerializeField] private ItemDefinition keyItemDefinition;
+        [SerializeField] private GameObject contentResultOverlayPrefab; // FoodRiot과 같은 PF_ContentResultOverlay
+        [SerializeField] private TreasureSpiritResultAdapter resultAdapter;
 
         [Header("던전 설정")]
         [SerializeField] private float timeLimitSeconds = 100f;
         [SerializeField] private float resultTextHideDelay = 20f;
         [SerializeField] private float keyCardHideDelay = 10f;
+
+        private const string ContentDisplayName = "보물 정령 숨바꼭질";
 
         private ContentContext context;
         private TreasureSpiritStartData startData;
@@ -45,14 +57,38 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private BakedDungeonLoader keyState;
         private Coroutine resultTextHideRoutine;
         private Coroutine keyCardHideRoutine;
+        private Coroutine localResultOverlayRoutine;
+        private GameObject localResultOverlayInstance;
         private readonly DemoLifeHud lifeHud = new DemoLifeHud();
         private DemoJumpButton jumpButton;
+        private readonly List<GameObject> spawnedFollowers = new List<GameObject>();
 
         public bool IsRunning { get; private set; }
+        public static DemoDungeonController Active { get; private set; }
+        public Transform PlayerTransform => commanderMove != null
+            ? commanderMove.transform
+            : commanderRoot != null ? commanderRoot.transform : null;
+
+        private int displayedSeconds = int.MinValue;
+        private int displayedKills = int.MinValue;
+        private int displayedHasKey = -1;
 
         private void Awake()
         {
             BindExitButton();
+        }
+
+        private void OnEnable()
+        {
+            Active = this;
+        }
+
+        private void OnDisable()
+        {
+            if (Active == this)
+            {
+                Active = null;
+            }
         }
 
         public void Initialize(ContentContext contentContext)
@@ -115,6 +151,10 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 commanderRoot.SetActive(true);
             }
 
+            DungeonFogInitializer.RevealPlayerArea(
+                commanderRoot != null ? commanderRoot.transform : null);
+
+            SpawnFollowers();
             bakedDungeonLoader.SpawnRoomContents(difficultyMultiplier);
             bakedDungeonLoader.SpawnEndRoomPrison(this);
 
@@ -125,11 +165,36 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             killCount = 0;
             IsRunning = true;
             Time.timeScale = 1f;
+            DemoDungeonAudio.Active?.StartBeds();
+            displayedSeconds = int.MinValue;
+            displayedKills = int.MinValue;
+            displayedHasKey = -1;
 
             UpdateHud();
             EnsureCardPanel();
             HideCardPanel();
             BeginResultTextAutoHide();
+        }
+
+        private void SpawnFollowers()
+        {
+            Transform commander = commanderMove != null
+                ? commanderMove.transform
+                : commanderRoot != null ? commanderRoot.transform : null;
+            if (commander == null)
+            {
+                Debug.LogError("[DemoDungeonController] 군단장이 없어 팔로워를 스폰할 수 없습니다.");
+                return;
+            }
+
+            DemoPartyFollowerSpawner.Spawn(
+                commander,
+                startData.Party,
+                monsterCatalog,
+                combatWorld,
+                followerPrefab,
+                spawnedFollowers,
+                followerVisualScale);
         }
 
         private void ShutdownInternal()
@@ -138,16 +203,22 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             StopAllCoroutines();
             UnbindLifeHud();
             commanderMove?.SetInputEnabled(false);
+            DemoPartyFollowerSpawner.Despawn(combatWorld, spawnedFollowers);
 
             if (keyState != null)
             {
                 keyState.KeyGranted -= OnKeyGranted;
             }
 
+            DemoDungeonAudio.Active?.StopBeds();
+            DemoCombatRoster.Clear();
+            DemoArrowProjectile.ClearPool();
             bakedDungeonLoader?.ClearMap();
+            DemoDungeonAtmosphere.Restore();
             keyState = null;
             HideCardPanel();
             DemoChestQuizOverlay.HideActive();
+            HideLocalResultOverlay();
             lifeHud.Hide();
             jumpButton?.Hide();
 
@@ -177,6 +248,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         {
             UpdateHud();
             ShowKeyCardPanel();
+            Vector3 keyPosition = commanderMove != null ? commanderMove.transform.position : transform.position;
+            DemoDungeonAudio.PlayKey(keyPosition);
         }
 
         private void BeginResultTextAutoHide()
@@ -382,19 +455,23 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void UpdateHud()
         {
-            if (timerText != null)
+            int seconds = Mathf.CeilToInt(timeRemaining);
+            if (timerText != null && seconds != displayedSeconds)
             {
-                timerText.text = $"남은 시간: {Mathf.CeilToInt(timeRemaining)}초";
+                displayedSeconds = seconds;
+                timerText.text = $"남은 시간: {seconds}초";
             }
 
-            if (statusText != null)
+            int hasKey = keyState != null && keyState.HasKey ? 1 : 0;
+            if (statusText != null && hasKey != displayedHasKey)
             {
-                bool hasKey = keyState != null && keyState.HasKey;
-                statusText.text = hasKey ? "열쇠 획득: O" : "열쇠 획득: X";
+                displayedHasKey = hasKey;
+                statusText.text = hasKey == 1 ? "열쇠 획득: O" : "열쇠 획득: X";
             }
 
-            if (killCountText != null)
+            if (killCountText != null && killCount != displayedKills)
             {
+                displayedKills = killCount;
                 killCountText.text = $"처치 : {killCount}";
             }
         }
@@ -481,13 +558,108 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             commanderMove?.SetInputEnabled(false);
             HideCardPanel();
             DemoChestQuizOverlay.HideActive();
-
+            FindFirstObjectByType<DungeonAutomapOverlay>()?.Hide();
             if (resultText != null)
             {
-                resultText.gameObject.SetActive(false);
+                resultText.text = string.Empty;
             }
 
-            var result = new TreasureSpiritResult(isSuccess, killCount, timeRemaining, summary);
+            var result = new TreasureSpiritResult(
+                isSuccess,
+                killCount,
+                timeRemaining,
+                summary,
+                isSuccess ? resultAdapter?.CapturedMonsterId : null);
+            if (isSuccess)
+            {
+                DemoDungeonAudio.PlayClear();
+            }
+            else
+            {
+                DemoDungeonAudio.PlayFail();
+            }
+
+            if (ShouldShowLocalResultOverlay())
+            {
+                if (localResultOverlayRoutine != null)
+                {
+                    StopCoroutine(localResultOverlayRoutine);
+                }
+
+                localResultOverlayRoutine = StartCoroutine(ShowSharedResultOverlayThenExit(isSuccess, result));
+                return;
+            }
+
+            SubmitExit(isSuccess, result);
+        }
+
+        private IEnumerator ShowSharedResultOverlayThenExit(bool isSuccess, TreasureSpiritResult result)
+        {
+            HideLocalResultOverlay();
+            if (contentResultOverlayPrefab == null)
+            {
+                Debug.LogError("Treasure Spirit content result overlay prefab is missing.");
+                SubmitExit(isSuccess, result);
+                localResultOverlayRoutine = null;
+                yield break;
+            }
+
+            localResultOverlayInstance = Instantiate(contentResultOverlayPrefab);
+            var view = localResultOverlayInstance.GetComponentInChildren<IContentResultView>(true);
+            if (view == null)
+            {
+                Debug.LogError("Treasure Spirit content result overlay is not an IContentResultView.");
+                HideLocalResultOverlay();
+                SubmitExit(isSuccess, result);
+                localResultOverlayRoutine = null;
+                yield break;
+            }
+
+            var runInfo = context != null
+                ? context.RunInfo
+                : new ContentRunInfo(
+                    new ContentId(GrowthDungeonProgressIds.TreasureSpirit),
+                    "1",
+                    ContentRunMode.SeedTest);
+            var outcome = isSuccess ? ContentOutcome.Complete : ContentOutcome.Fail;
+            RewardPresentationRequest rewards = null;
+            if (resultAdapter != null)
+            {
+                resultAdapter.TryCreateRewardPresentation(result, default, runInfo, null, out rewards);
+            }
+
+            var task = view.ShowAsync(
+                new ContentResultPresentation(
+                    runInfo.ContentId,
+                    ContentDisplayName,
+                    outcome,
+                    resultAdapter != null
+                        ? resultAdapter.CreateResultSummary(result, runInfo, outcome)
+                        : result.Message,
+                    rewards));
+            while (!task.IsCompleted)
+            {
+                yield return null;
+            }
+
+            HideLocalResultOverlay();
+            SubmitExit(isSuccess, result);
+            localResultOverlayRoutine = null;
+        }
+
+        private void HideLocalResultOverlay()
+        {
+            if (localResultOverlayInstance == null)
+            {
+                return;
+            }
+
+            Destroy(localResultOverlayInstance);
+            localResultOverlayInstance = null;
+        }
+
+        private void SubmitExit(bool isSuccess, TreasureSpiritResult result)
+        {
             if (isSuccess)
             {
                 context?.Exit.Complete(result);
@@ -496,6 +668,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             {
                 context?.Exit.Fail(result);
             }
+        }
+
+        private bool ShouldShowLocalResultOverlay()
+        {
+            return context == null || context.Exit is DebugContentExit;
         }
 
         private void OnExitButtonClicked()

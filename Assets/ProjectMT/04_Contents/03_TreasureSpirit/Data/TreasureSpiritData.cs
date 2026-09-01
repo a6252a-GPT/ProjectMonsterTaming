@@ -22,17 +22,20 @@ namespace ProjectMT.Contents.TreasureSpirit
             bool cleared,
             int killCount,
             float remainingTime,
-            string message = null)
+            string message = null,
+            string capturedMonsterId = null)
         {
             Cleared = cleared;
             KillCount = Mathf.Max(0, killCount);
             RemainingTime = Mathf.Max(0f, remainingTime);
             Message = message?.Trim() ?? string.Empty;
+            CapturedMonsterId = capturedMonsterId?.Trim() ?? string.Empty;
         }
 
         public bool Cleared { get; }
         public int KillCount { get; }
         public float RemainingTime { get; }
         public string Message { get; }
+        public string CapturedMonsterId { get; }
     }
 }

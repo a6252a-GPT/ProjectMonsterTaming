@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ProjectMT.Contents.TreasureSpirit.Demo
@@ -37,6 +38,87 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             return initialized;
+        }
+
+        public static bool TryGetInteriorBounds(Transform root, out Bounds bounds)
+        {
+            bounds = default;
+            if (root == null)
+            {
+                return false;
+            }
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            bool initialized = false;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null ||
+                    !renderer.gameObject.name.StartsWith(FloorNamePrefix) ||
+                    IsInsideCorridor(renderer.transform, root))
+                {
+                    continue;
+                }
+
+                if (!initialized)
+                {
+                    bounds = renderer.bounds;
+                    initialized = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            return initialized;
+        }
+
+        public static bool TryGetCombinedBounds(IReadOnlyList<Transform> roots, out Bounds bounds)
+        {
+            bounds = default;
+            bool initialized = false;
+            if (roots == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < roots.Count; i++)
+            {
+                if (!TryGetBounds(roots[i], out Bounds piece))
+                {
+                    continue;
+                }
+
+                if (!initialized)
+                {
+                    bounds = piece;
+                    initialized = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(piece);
+                }
+            }
+
+            return initialized;
+        }
+
+        private static bool IsInsideCorridor(Transform target, Transform stopAt)
+        {
+            Transform current = target;
+            while (current != null && current != stopAt)
+            {
+                if (current.name.StartsWith("Corridor", System.StringComparison.Ordinal))
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         public static bool TryGetSurface(Transform root, out Vector3 surfacePoint)

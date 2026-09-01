@@ -33,11 +33,14 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private Vector3[] activePositions = System.Array.Empty<Vector3>();
         private Renderer[] tileRenderers = System.Array.Empty<Renderer>();
         private readonly Dictionary<int, float> nextHitTime = new Dictionary<int, float>();
-        private readonly Collider[] overlapHits = new Collider[16];
+        private readonly Collider[] overlapHits = new Collider[24];
         private float elapsed;
         private Color tileIdleColor = new Color(0.18f, 0.16f, 0.16f);
         private Color tileWarningColor = new Color(0.85f, 0.2f, 0.12f);
         private Color tileActiveColor = new Color(0.55f, 0.08f, 0.08f);
+        private Color appliedTileColor;
+        private bool wasActive;
+        private static readonly MaterialPropertyBlock tileColorBlock = new MaterialPropertyBlock();
 
         public static void SpawnAround(Transform parent, Transform mapRoot, Vector3 chestPosition, Quaternion roomRotation)
         {
@@ -291,6 +294,12 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             bool warning = t >= hiddenDuration && t < hiddenDuration + warningDuration;
             bool active = t >= hiddenDuration + warningDuration;
+            if (active && !wasActive)
+            {
+                DemoDungeonAudio.PlaySpike(transform.position);
+            }
+
+            wasActive = active;
 
             for (int i = 0; i < spikes.Length; i++)
             {
@@ -301,14 +310,15 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 }
 
                 Vector3 target = active ? activePositions[i] : hiddenPositions[i];
-                spike.position = Vector3.Lerp(spike.position, target, Time.deltaTime * 12f);
+                Vector3 current = spike.position;
+                if ((current - target).sqrMagnitude > 0.0001f)
+                {
+                    spike.position = Vector3.Lerp(current, target, Time.deltaTime * 12f);
+                }
             }
 
             Color tileColor = active ? tileActiveColor : (warning ? tileWarningColor : tileIdleColor);
-            for (int i = 0; i < tileRenderers.Length; i++)
-            {
-                SetColor(tileRenderers[i], tileColor);
-            }
+            ApplyTileColor(tileColor);
 
             if (active)
             {
@@ -318,61 +328,52 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void DetectHits()
         {
-            Vector3 halfExtents = new Vector3(TileSize * 0.5f, 0.7f, TileSize * 0.5f);
-
-            for (int i = 0; i < tiles.Length; i++)
+            if (DemoCombatRoster.FindNearestAlly(transform.position, RingRadius + 1f, false) == null)
             {
-                Transform tile = tiles[i];
-                if (tile == null)
-                {
-                    continue;
-                }
+                return;
+            }
 
-                Vector3 boxCenter = tile.position + Vector3.up * halfExtents.y;
-                int hitCount = Physics.OverlapBoxNonAlloc(
-                    boxCenter,
-                    halfExtents,
-                    overlapHits,
-                    tile.rotation,
-                    ~0,
-                    QueryTriggerInteraction.Collide);
+            int hitCount = Physics.OverlapSphereNonAlloc(
+                transform.position + Vector3.up * 0.6f,
+                RingRadius + TileSize,
+                overlapHits,
+                ~0,
+                QueryTriggerInteraction.Collide);
 
-                for (int h = 0; h < hitCount; h++)
-                {
-                    TryHit(overlapHits[h], tile);
-                }
+            for (int h = 0; h < hitCount; h++)
+            {
+                TryHit(overlapHits[h]);
             }
         }
 
-        private void TryHit(Collider other, Transform tile)
+        private void TryHit(Collider other)
         {
             if (other == null || other.transform == transform || other.transform.IsChildOf(transform))
             {
                 return;
             }
 
-            PlayerCharacterController player = other.GetComponentInParent<PlayerCharacterController>();
-            FollowerAI follower = player == null ? other.GetComponentInParent<FollowerAI>() : null;
-            Transform body = player != null ? player.transform : (follower != null ? follower.transform : null);
-            if (body == null || !IsInsideTile(tile, body.position))
+            if (!DemoCombatTargetUtil.TryResolveAlly(other, out Transform body))
             {
                 return;
             }
 
-            int targetId = body.GetInstanceID();
-            if (nextHitTime.TryGetValue(targetId, out float readyAt) && Time.time < readyAt)
+            for (int i = 0; i < tiles.Length; i++)
             {
+                Transform tile = tiles[i];
+                if (!IsInsideTile(tile, body.position))
+                {
+                    continue;
+                }
+
+                if (!DemoCombatTargetUtil.TryConsumeHit(nextHitTime, body.GetInstanceID(), hitCooldown))
+                {
+                    return;
+                }
+
+                DemoCombatTargetUtil.DamageAlly(body, damage, tile != null ? tile.position : transform.position);
                 return;
             }
-
-            nextHitTime[targetId] = Time.time + hitCooldown;
-            if (player != null)
-            {
-                player.TakeDamage(damage, tile != null ? tile.position : transform.position);
-                return;
-            }
-
-            follower.TakeDamage(damage);
         }
 
         private static bool IsInsideTile(Transform tile, Vector3 worldPosition)
@@ -399,6 +400,26 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
         }
 
+        private void ApplyTileColor(Color color)
+        {
+            if (appliedTileColor == color)
+            {
+                return;
+            }
+
+            appliedTileColor = color;
+            tileColorBlock.SetColor("_BaseColor", color);
+            tileColorBlock.SetColor("_Color", color);
+            for (int i = 0; i < tileRenderers.Length; i++)
+            {
+                Renderer renderer = tileRenderers[i];
+                if (renderer != null)
+                {
+                    renderer.SetPropertyBlock(tileColorBlock);
+                }
+            }
+        }
+
         private static void SetColor(Renderer renderer, Color color)
         {
             if (renderer == null)
@@ -406,7 +427,10 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return;
             }
 
-            renderer.material.color = color;
+            renderer.GetPropertyBlock(tileColorBlock);
+            tileColorBlock.SetColor("_BaseColor", color);
+            tileColorBlock.SetColor("_Color", color);
+            renderer.SetPropertyBlock(tileColorBlock);
         }
     }
 }

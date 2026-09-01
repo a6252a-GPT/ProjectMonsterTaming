@@ -19,6 +19,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private Vector3 startPoint;
         private Vector3 endPoint;
         private Vector3 localSpinAxis = Vector3.forward;
+        private Renderer[] bladeRenderers = System.Array.Empty<Renderer>();
         private float travelLength;
         private float elapsed;
         private readonly Dictionary<int, float> nextHitTime = new Dictionary<int, float>();
@@ -28,13 +29,21 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         {
             home = trapHome;
             EnsureHitVolume();
+            CacheBladeRenderers();
             CacheTravelPath();
             CacheLocalSpinAxis();
+            DemoDungeonAudio.SetSawLoop(transform, true);
+        }
+
+        private void OnDisable()
+        {
+            DemoDungeonAudio.SetSawLoop(transform, false);
         }
 
         private void Awake()
         {
             EnsureHitVolume();
+            CacheBladeRenderers();
         }
 
         private void Start()
@@ -61,6 +70,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void DetectHits()
         {
+            if (DemoCombatRoster.FindNearestAlly(transform.position, 3f, false) == null)
+            {
+                return;
+            }
+
             if (!TryGetBladeBounds(out Bounds bounds))
             {
                 return;
@@ -87,28 +101,17 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return;
             }
 
-            PlayerCharacterController player = other.GetComponentInParent<PlayerCharacterController>();
-            FollowerAI follower = player == null ? other.GetComponentInParent<FollowerAI>() : null;
-            Transform body = player != null ? player.transform : (follower != null ? follower.transform : null);
-            if (body == null || !IsTouchingBlade(body.position, bladeBounds))
+            if (!DemoCombatTargetUtil.TryResolveAlly(other, out Transform body) || !IsTouchingBlade(body.position, bladeBounds))
             {
                 return;
             }
 
-            int targetId = body.GetInstanceID();
-            if (nextHitTime.TryGetValue(targetId, out float readyAt) && Time.time < readyAt)
+            if (!DemoCombatTargetUtil.TryConsumeHit(nextHitTime, body.GetInstanceID(), hitCooldown))
             {
                 return;
             }
 
-            nextHitTime[targetId] = Time.time + hitCooldown;
-            if (player != null)
-            {
-                player.TakeDamage(damage, transform.position);
-                return;
-            }
-
-            follower.TakeDamage(damage);
+            DemoCombatTargetUtil.DamageAlly(body, damage, transform.position);
         }
 
         private bool IsTouchingBlade(Vector3 bodyPosition, Bounds bladeBounds)
@@ -124,7 +127,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 Vector3 delta = point - bladeBounds.center;
                 float alongAxis = Vector3.Dot(delta, worldAxis);
                 Vector3 onPlane = delta - worldAxis * alongAxis;
-                if (Mathf.Abs(alongAxis) <= halfThickness && onPlane.magnitude <= radius)
+                if (Mathf.Abs(alongAxis) <= halfThickness && onPlane.sqrMagnitude <= radius * radius)
                 {
                     return true;
                 }
@@ -135,13 +138,12 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private bool TryGetBladeBounds(out Bounds bounds)
         {
-            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
             bool hasBounds = false;
             bounds = new Bounds(transform.position, Vector3.zero);
 
-            for (int i = 0; i < renderers.Length; i++)
+            for (int i = 0; i < bladeRenderers.Length; i++)
             {
-                Renderer renderer = renderers[i];
+                Renderer renderer = bladeRenderers[i];
                 if (renderer == null)
                 {
                     continue;
@@ -159,6 +161,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             return hasBounds;
+        }
+
+        private void CacheBladeRenderers()
+        {
+            bladeRenderers = GetComponentsInChildren<Renderer>(true);
         }
 
         private void CacheTravelPath()

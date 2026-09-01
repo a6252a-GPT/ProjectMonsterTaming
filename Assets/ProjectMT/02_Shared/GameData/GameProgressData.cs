@@ -1965,9 +1965,17 @@ namespace ProjectMT.Shared.GameData
 
         public static GameProgressChange GrantRewards(RewardBundle rewards)
         {
+            return GrantRewards(rewards, null);
+        }
+
+        public static GameProgressChange GrantRewards(RewardBundle rewards, string acquireMonsterId)
+        {
+            var normalizedId = acquireMonsterId?.Trim();
             return new GameProgressChange
             {
-                Rewards = rewards ?? RewardBundle.Empty
+                Rewards = rewards ?? RewardBundle.Empty,
+                HasAcquireMonster = !string.IsNullOrEmpty(normalizedId),
+                AcquireMonsterId = normalizedId
             };
         }
 

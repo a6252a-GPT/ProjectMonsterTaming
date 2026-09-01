@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using ProjectMT.Contents.TreasureSpirit;
 
 namespace ProjectMT.Contents.TreasureSpirit.Demo
 {
@@ -60,7 +59,13 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             float shotInterval = burstDuration / Mathf.Max(1, arrowsPerBurst);
             while (firedInBurst < arrowsPerBurst && elapsed >= firedInBurst * shotInterval)
             {
-                Fire(GetBurstSpawnPosition());
+                Vector3 spawnPosition = GetBurstSpawnPosition();
+                if ((firedInBurst % 2) == 0)
+                {
+                    DemoDungeonAudio.PlayArrow(spawnPosition);
+                }
+
+                DemoArrowProjectile.LaunchFromPool(spawnPosition, fireDirection, arrowSpeed, maxDistance, damage);
                 firedInBurst++;
             }
 
@@ -85,24 +90,83 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                    + right * Random.Range(-burstSpread, burstSpread)
                    + Vector3.up * Random.Range(-0.12f, 0.18f);
         }
-
-        private void Fire(Vector3 spawnPosition)
-        {
-            GameObject arrowObject = DemoArrowProjectile.CreateVisual(spawnPosition, transform.rotation);
-            DemoArrowProjectile projectile = arrowObject.AddComponent<DemoArrowProjectile>();
-            projectile.Launch(fireDirection, arrowSpeed, maxDistance, damage);
-        }
     }
 
     [DisallowMultipleComponent]
     public sealed class DemoArrowProjectile : MonoBehaviour
     {
+        private const int PoolCapacity = 32;
+
+        private static readonly Stack<DemoArrowProjectile> pool = new Stack<DemoArrowProjectile>(PoolCapacity);
+        private static readonly List<DemoArrowProjectile> live = new List<DemoArrowProjectile>(PoolCapacity);
+        private static Material shaftMaterial;
+        private static Material headMaterial;
+        private static Transform poolRoot;
+
         private Vector3 velocity;
+        private Vector3 launchDirection;
+        private float travelSpeed;
         private float maxDistance;
         private float traveled;
         private float damage;
         private readonly Collider[] overlapHits = new Collider[12];
         private readonly Dictionary<int, float> nextHitTime = new Dictionary<int, float>();
+
+        public static void LaunchFromPool(Vector3 position, Vector3 direction, float speed, float travelDistance, float hitDamage)
+        {
+            DemoArrowProjectile projectile = Rent(position, Quaternion.LookRotation(direction, Vector3.up));
+            projectile.Launch(direction, speed, travelDistance, hitDamage);
+        }
+
+        public static void ClearPool()
+        {
+            live.Clear();
+            pool.Clear();
+            if (poolRoot != null)
+            {
+                Object.Destroy(poolRoot.gameObject);
+                poolRoot = null;
+            }
+        }
+
+        private static DemoArrowProjectile Rent(Vector3 position, Quaternion rotation)
+        {
+            DemoArrowProjectile projectile = null;
+            while (pool.Count > 0 && projectile == null)
+            {
+                projectile = pool.Pop();
+            }
+
+            if (projectile == null)
+            {
+                GameObject root = CreateVisual(position, rotation);
+                root.transform.SetParent(PoolRoot, true);
+                projectile = root.AddComponent<DemoArrowProjectile>();
+            }
+            else
+            {
+                projectile.gameObject.SetActive(true);
+                projectile.transform.SetPositionAndRotation(position, rotation);
+            }
+
+            live.Add(projectile);
+            return projectile;
+        }
+
+        private static Transform PoolRoot
+        {
+            get
+            {
+                if (poolRoot == null)
+                {
+                    GameObject root = new GameObject("DemoArrowPool");
+                    Object.DontDestroyOnLoad(root);
+                    poolRoot = root.transform;
+                }
+
+                return poolRoot;
+            }
+        }
 
         public static GameObject CreateVisual(Transform emitter)
         {
@@ -119,7 +183,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             shaft.transform.SetParent(root.transform, false);
             shaft.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
             shaft.transform.localScale = new Vector3(0.045f, 0.2f, 0.045f);
-            SetColor(shaft, new Color(0.42f, 0.28f, 0.14f));
+            SetSharedColor(shaft, ref shaftMaterial, new Color(0.42f, 0.28f, 0.14f));
             DisableCollider(shaft);
 
             GameObject head = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -128,7 +192,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             head.transform.localPosition = new Vector3(0f, 0f, 0.26f);
             head.transform.localRotation = Quaternion.Euler(45f, 0f, 45f);
             head.transform.localScale = new Vector3(0.09f, 0.09f, 0.09f);
-            SetColor(head, new Color(0.55f, 0.55f, 0.58f));
+            SetSharedColor(head, ref headMaterial, new Color(0.55f, 0.55f, 0.58f));
             DisableCollider(head);
 
             return root;
@@ -136,27 +200,31 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         public void Launch(Vector3 direction, float speed, float travelDistance, float hitDamage)
         {
-            velocity = direction.normalized * speed;
+            launchDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward;
+            travelSpeed = speed;
+            velocity = launchDirection * travelSpeed;
             maxDistance = travelDistance;
             damage = hitDamage;
-            transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
+            traveled = 0f;
+            nextHitTime.Clear();
+            transform.rotation = Quaternion.LookRotation(launchDirection, Vector3.up);
         }
 
         private void Update()
         {
-            float step = velocity.magnitude * Time.deltaTime;
+            float step = travelSpeed * Time.deltaTime;
             Vector3 move = velocity * Time.deltaTime;
             if (Physics.Raycast(
                     transform.position,
-                    velocity.normalized,
+                    launchDirection,
                     out RaycastHit hit,
                     step + 0.08f,
                     ~0,
                     QueryTriggerInteraction.Ignore))
             {
-                if (!IsCharacter(hit.collider) && hit.normal.y < 0.55f)
+                if (!DemoCombatTargetUtil.TryResolveAlly(hit.collider, out _) && hit.normal.y < 0.55f)
                 {
-                    Destroy(gameObject);
+                    Recycle();
                     return;
                 }
             }
@@ -167,7 +235,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             if (traveled >= maxDistance)
             {
-                Destroy(gameObject);
+                Recycle();
             }
         }
 
@@ -182,55 +250,49 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             for (int i = 0; i < hitCount; i++)
             {
-                TryHit(overlapHits[i]);
+                if (TryHit(overlapHits[i]))
+                {
+                    return;
+                }
             }
         }
 
-        private void TryHit(Collider other)
+        private bool TryHit(Collider other)
         {
-            if (other == null)
+            if (other == null || !DemoCombatTargetUtil.TryResolveAlly(other, out Transform body))
             {
-                return;
-            }
-
-            PlayerCharacterController player = other.GetComponentInParent<PlayerCharacterController>();
-            FollowerAI follower = player == null ? other.GetComponentInParent<FollowerAI>() : null;
-            Transform body = player != null ? player.transform : (follower != null ? follower.transform : null);
-            if (body == null)
-            {
-                return;
+                return false;
             }
 
             Vector3 delta = body.position + Vector3.up * 0.7f - transform.position;
-            if (delta.magnitude > 0.38f)
+            if (delta.sqrMagnitude > 0.38f * 0.38f)
             {
-                return;
+                return false;
             }
 
-            int targetId = body.GetInstanceID();
-            if (nextHitTime.TryGetValue(targetId, out float readyAt) && Time.time < readyAt)
+            if (!DemoCombatTargetUtil.TryConsumeHit(nextHitTime, body.GetInstanceID(), 0.4f))
             {
-                return;
+                return false;
             }
 
-            nextHitTime[targetId] = Time.time + 0.4f;
-            if (player != null)
-            {
-                player.TakeDamage(damage, transform.position);
-            }
-            else
-            {
-                follower.TakeDamage(damage);
-            }
-
-            Destroy(gameObject);
+            DemoCombatTargetUtil.DamageAlly(body, damage, transform.position);
+            Recycle();
+            return true;
         }
 
-        private static bool IsCharacter(Collider other)
+        private void Recycle()
         {
-            return other != null &&
-                   (other.GetComponentInParent<PlayerCharacterController>() != null ||
-                    other.GetComponentInParent<FollowerAI>() != null);
+            if (!gameObject.activeSelf)
+            {
+                return;
+            }
+
+            live.Remove(this);
+            nextHitTime.Clear();
+            traveled = 0f;
+            gameObject.SetActive(false);
+            transform.SetParent(PoolRoot, false);
+            pool.Push(this);
         }
 
         private static void DisableCollider(GameObject target)
@@ -242,13 +304,25 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
         }
 
-        private static void SetColor(GameObject target, Color color)
+        private static void SetSharedColor(GameObject target, ref Material shared, Color color)
         {
             Renderer renderer = target.GetComponent<Renderer>();
-            if (renderer != null)
+            if (renderer == null)
             {
-                renderer.material.color = color;
+                return;
             }
+
+            if (shared == null)
+            {
+                shared = new Material(renderer.sharedMaterial);
+                shared.color = color;
+                if (shared.HasProperty("_BaseColor"))
+                {
+                    shared.SetColor("_BaseColor", color);
+                }
+            }
+
+            renderer.sharedMaterial = shared;
         }
     }
 }

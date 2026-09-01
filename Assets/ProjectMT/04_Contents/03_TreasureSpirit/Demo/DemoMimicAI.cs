@@ -1,5 +1,5 @@
 using System.Collections;
-using ProjectMT.Contents.TreasureSpirit;
+using ProjectMT.Shared.Unit;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -7,7 +7,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(NavMeshAgent))]
-    public sealed class DemoMimicAI : MonoBehaviour
+    public sealed class DemoMimicAI : MonoBehaviour, IDamageable
     {
         private enum MimicState
         {
@@ -34,10 +34,12 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private Vector3 initialScale;
         private float currentHealth;
         private float lastAttackTime;
+        private Vector3 lastChaseDestination;
         private bool isDead;
 
         public bool IsAlive => !isDead;
         public Transform TargetTransform => transform;
+        public Vector3 Position => transform.position;
 
         public void Initialize(Transform commander, float difficultyMultiplier = 1f)
         {
@@ -45,6 +47,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             var multiplier = Mathf.Max(1f, difficultyMultiplier);
             maxHealth *= multiplier;
             attackDamage *= multiplier;
+            lastAttackTime = Time.time;
         }
 
         private void Awake()
@@ -54,41 +57,21 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             DemoUrpParticleRemapper.Remap(gameObject);
         }
 
+        private void OnEnable()
+        {
+            DemoCombatRoster.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            DemoCombatRoster.Unregister(this);
+        }
+
         private void Start()
         {
             currentHealth = maxHealth;
             agent.speed = moveSpeed;
             agent.autoTraverseOffMeshLink = false;
-        }
-
-        private bool TryEnsureAgentOnNavMesh()
-        {
-            if (agent == null)
-            {
-                return false;
-            }
-
-            if (!agent.enabled)
-            {
-                agent.enabled = true;
-            }
-
-            if (!agent.isActiveAndEnabled)
-            {
-                return false;
-            }
-
-            if (agent.isOnNavMesh)
-            {
-                return true;
-            }
-
-            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 8f, NavMesh.AllAreas))
-            {
-                agent.Warp(hit.position);
-            }
-
-            return agent.isOnNavMesh;
         }
 
         private void Update()
@@ -98,7 +81,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return;
             }
 
-            if (!TryEnsureAgentOnNavMesh())
+            if (!DemoNavMeshUtil.TryEnsureOnNavMesh(agent))
             {
                 return;
             }
@@ -112,7 +95,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return;
             }
 
-            float distance = Vector3.Distance(transform.position, currentTarget.position);
+            float distance = DemoNavMeshUtil.PlanarSqrDistance(transform.position, currentTarget.position);
+            distance = Mathf.Sqrt(distance);
 
             switch (currentState)
             {
@@ -141,26 +125,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void EvaluateTarget()
         {
-            Collider[] hits = Physics.OverlapSphere(transform.position, detectionRange);
-            Transform closestFollower = null;
-            float closestFollowerDistance = float.MaxValue;
-
-            for (int i = 0; i < hits.Length; i++)
-            {
-                Collider hit = hits[i];
-                if (hit == null || hit.GetComponentInParent<FollowerAI>() == null)
-                {
-                    continue;
-                }
-
-                float distance = Vector3.Distance(transform.position, hit.transform.position);
-                if (distance < closestFollowerDistance)
-                {
-                    closestFollowerDistance = distance;
-                    closestFollower = hit.transform;
-                }
-            }
-
+            Transform closestFollower = DemoCombatRoster.FindNearestAlly(transform.position, detectionRange, true);
             if (closestFollower != null)
             {
                 currentTarget = closestFollower;
@@ -169,8 +134,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             if (commanderTarget != null)
             {
-                float commanderDistance = Vector3.Distance(transform.position, commanderTarget.position);
-                if (commanderDistance <= detectionRange ||
+                float commanderSqr = DemoNavMeshUtil.PlanarSqrDistance(transform.position, commanderTarget.position);
+                if (commanderSqr <= detectionRange * detectionRange ||
                     currentState == MimicState.Chase ||
                     currentState == MimicState.Attack)
                 {
@@ -199,7 +164,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             agent.isStopped = false;
-            agent.SetDestination(currentTarget.position);
+            DemoNavMeshUtil.SetDestinationIfMoved(agent, currentTarget.position, ref lastChaseDestination);
         }
 
         private void UpdateAttack(float distance)
@@ -235,8 +200,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return;
             }
 
-            Debug.Log($"[DemoMimicAI] {currentTarget.name} 공격 ({attackDamage} 데미지)");
             ApplyAttackDamage();
+            DemoDungeonAudio.PlayMimic(transform.position);
         }
 
         private void ApplyAttackDamage()
@@ -246,20 +211,19 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return;
             }
 
-            PlayerCharacterController player = currentTarget.GetComponentInParent<PlayerCharacterController>();
-            if (player != null)
-            {
-                player.TakeDamage(attackDamage, transform.position);
-                return;
-            }
+            DemoCombatTargetUtil.DamageAlly(currentTarget, attackDamage, transform.position);
+        }
 
-            FollowerAI follower = currentTarget.GetComponentInParent<FollowerAI>();
-            follower?.TakeDamage(attackDamage);
+        public float ReceiveDamage(UnitActor source, float amount)
+        {
+            float before = currentHealth;
+            TakeDamage(amount);
+            return Mathf.Max(0f, before - currentHealth);
         }
 
         private void ApplyBounce()
         {
-            if (agent.velocity.magnitude <= 0.1f)
+            if (agent.velocity.sqrMagnitude <= 0.01f)
             {
                 return;
             }
@@ -288,10 +252,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 collider.enabled = false;
             }
 
-            DemoDungeonController controller = FindFirstObjectByType<DemoDungeonController>();
-            controller?.AddKillCount();
-
-            Debug.Log("[DemoMimicAI] 미믹 처치");
+            DemoDungeonController.Active?.AddKillCount();
             StartCoroutine(DestroyAfterDelay());
         }
 

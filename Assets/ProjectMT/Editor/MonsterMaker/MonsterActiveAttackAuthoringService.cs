@@ -21,6 +21,13 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 return false;
             }
             if (!source.TryValidate(out error)) return false;
+            for (var stepIndex = 0; stepIndex < source.Steps.Count; stepIndex++)
+            {
+                var step = source.Steps[stepIndex];
+                if (MonsterActiveAttackBlockContractTemplates.TryValidateCurrent(step, out error)) continue;
+                error = $"Step {stepIndex + 1:00}의 VFX/SFX 계약이 유효하지 않습니다. {error}";
+                return false;
+            }
             if (excludedProfile != null && !string.Equals(
                     source.ProfileId,
                     excludedProfile.ProfileId,

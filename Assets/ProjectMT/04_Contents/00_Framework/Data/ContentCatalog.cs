@@ -112,6 +112,28 @@ namespace ProjectMT.Contents.Framework
             return false;
         }
 
+        public bool TryValidate(out string error)
+        {
+            var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < definitions.Count; i++)
+            {
+                var definition = definitions[i];
+                if (definition == null || !definition.ContentId.IsValid)
+                {
+                    error = $"Content Catalog definition is invalid. Index={i}";
+                    return false;
+                }
+
+                if (!ids.Add(definition.ContentId.Value))
+                {
+                    error = $"Content ID is duplicated. Content={definition.ContentId.Value}";
+                    return false;
+                }
+            }
+
+            error = null;
+            return true;
+        }
 #if UNITY_EDITOR
         public void EditorSetDefinitions(IEnumerable<ContentDefinition> values)
         {

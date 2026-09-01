@@ -16,7 +16,11 @@ MonoBehaviour:
   displayName: "\uD30C\uC774\uB860"
   rarity: 3
   portrait: {fileID: 21300000, guid: 2551a52bf47c7374594c62364593359d, type: 3}
-  skillLoadoutConfigured: 0
+  skillLoadoutConfigured: 1
+  usePassiveSkill: 0
+  useActiveSkill: 1
+  splitSkillUsageConfigured: 1
+  skillUsageSchemaVersion: 1
   rarityPassiveSkill: {fileID: 0}
   passiveTuning:
     initialized: 0
@@ -32,7 +36,117 @@ MonoBehaviour:
     threshold: 0
     radius: 0
     maxTargets: 1
-  rarityActiveSkill: {fileID: 0}
+  rarityActiveSkill: {fileID: 11400000, guid: bee5d2338be3f174ba8db28f9a276f90, type: 2}
+  activeAttackProfile: {fileID: 0}
+  activeEffectProfile: {fileID: 11400000, guid: d154ebc792d33cd43a00f0e65bec6e4c, type: 2}
+  activeSkillName: "\uC6A9\uD608 \uACE0\uC591"
+  activeEnergyMaximum: 1000
+  activeSkillClip: {fileID: 0}
+  activeSkillPlaybackSpeed: 1
+  activeSkillCrossFadeDuration: 0.08
+  activeSkillCommitNormalizedTime: 0.25
+  activeStepMotionModeConfigured: 1
+  useCustomActiveStepMotions: 0
+  activeAttackStepTunings: []
+  activeAttackPresentations: []
+  activeEffectPresentations:
+  - stepId: group_01
+    motionConfigured: 1
+    motionClip: {fileID: 0}
+    motionPlaybackSpeed: 1
+    motionCrossFadeDuration: 0.08
+    motionCommitNormalizedTime: 0.25
+    telegraph:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    launch:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    travel:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    impact:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    dashExit:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    dashEnter:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    slots:
+    - slotId: cast_start
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      assignmentStateConfigured: 1
+      vfxState: 0
+      sfxState: 0
+    - slotId: uplift_apply
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      assignmentStateConfigured: 1
+      vfxState: 0
+      sfxState: 0
+    - slotId: target_loop
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      assignmentStateConfigured: 1
+      vfxState: 0
+      sfxState: 0
+    attackBlockBindings: []
+    inactiveSlots: []
+    inactiveAttackBlockBindings: []
+  activeAttackAuthoringProfileId: 
+  activeEffectAuthoringProfileId: pyron_dragonblood_uplift
+  inactiveActiveAttackAuthoring: []
   productionMemo: "2026-08-26 \uC2E0\uADDC \uD6C4\uBCF4 \uC784\uC2DC \uD3B8\uC785.
     \uB4F1\uAE09\xB7\uC2A4\uD0EF\xB7\uAE30\uBCF8\uACF5\uACA9\xB7\uACF5\uACA9 \uBAA8\uC158\uC740
     \uBBF8\uB9AC\uBCF4\uAE30 \uD655\uC778 \uD6C4 \uC7AC\uC870\uC815 \uC608\uC815."

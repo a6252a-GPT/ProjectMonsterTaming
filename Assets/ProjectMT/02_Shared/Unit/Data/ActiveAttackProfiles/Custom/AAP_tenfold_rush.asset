@@ -1,0 +1,837 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 636d839b21812ab49a12f4bee7b8ef7d, type: 3}
+  m_Name: AAP_tenfold_rush(Clone)(Clone)(Clone)
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterActiveAttackProfile
+  profileId: tenfold_rush
+  displayName: "\uD150\uD3F4\uB4DC \uB7EC\uC2DC"
+  description: "9\uD68C\uC758 \uBE60\uB978 \uBCA0\uAE30\uC640 10\uBC88\uC9F8 \uCC98\uD615\uD0C0\uB97C
+    \uC57D 2.5\uCD08\uC5D0 \uBAB0\uC544\uCE58\uB294 \uB2E8\uC77C \uD3ED\uB51C\uAE30.
+    \uBB34\uC791\uC704 \uD53C\uD574 \uD3ED\uC740 \uACFC\uB3C4\uD558\uC9C0 \uC54A\uAC8C
+    \uC81C\uD55C\uD55C\uB2E4."
+  steps:
+  - stepId: step_01
+    displayName: "\uB2E8\uC77C \uD0C0\uACA9"
+    startMode: 0
+    delayAfterPrevious: 0
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 8
+    progression: 0
+    damageMultiplier: 0.12
+    damageMultiplierMode: 1
+    maximumDamageMultiplier: 0.24
+    maxTargets: 1
+    range: 4
+    width: 0.8
+    radius: 0.8
+    forwardOffset: 0
+    angle: 30
+    progressionDuration: 0
+    telegraphDelay: 0.12
+    visualDuration: 0.22
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects: []
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: swing_trail
+      displayName: "\uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: hit
+      displayName: "\uC2E4\uC81C \uBA85\uC911"
+      description: "\uD53C\uD574\uAC00 \uC801\uC6A9\uB41C \uB300\uC0C1 \uC704\uCE58\uC758
+        \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  - stepId: step_02
+    displayName: "\uB2E8\uC77C \uD0C0\uACA9"
+    startMode: 1
+    delayAfterPrevious: 0.2
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 8
+    progression: 0
+    damageMultiplier: 0.12
+    damageMultiplierMode: 1
+    maximumDamageMultiplier: 0.24
+    maxTargets: 1
+    range: 4
+    width: 0.8
+    radius: 0.8
+    forwardOffset: 0
+    angle: 30
+    progressionDuration: 0
+    telegraphDelay: 0.02
+    visualDuration: 0.22
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects: []
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: swing_trail
+      displayName: "\uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: hit
+      displayName: "\uC2E4\uC81C \uBA85\uC911"
+      description: "\uD53C\uD574\uAC00 \uC801\uC6A9\uB41C \uB300\uC0C1 \uC704\uCE58\uC758
+        \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  - stepId: step_03
+    displayName: "\uB2E8\uC77C \uD0C0\uACA9"
+    startMode: 1
+    delayAfterPrevious: 0.2
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 8
+    progression: 0
+    damageMultiplier: 0.12
+    damageMultiplierMode: 1
+    maximumDamageMultiplier: 0.24
+    maxTargets: 1
+    range: 4
+    width: 0.8
+    radius: 0.8
+    forwardOffset: 0
+    angle: 30
+    progressionDuration: 0
+    telegraphDelay: 0.02
+    visualDuration: 0.22
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects: []
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: swing_trail
+      displayName: "\uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: hit
+      displayName: "\uC2E4\uC81C \uBA85\uC911"
+      description: "\uD53C\uD574\uAC00 \uC801\uC6A9\uB41C \uB300\uC0C1 \uC704\uCE58\uC758
+        \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  - stepId: step_04
+    displayName: "\uB2E8\uC77C \uD0C0\uACA9"
+    startMode: 1
+    delayAfterPrevious: 0.2
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 8
+    progression: 0
+    damageMultiplier: 0.12
+    damageMultiplierMode: 1
+    maximumDamageMultiplier: 0.24
+    maxTargets: 1
+    range: 4
+    width: 0.8
+    radius: 0.8
+    forwardOffset: 0
+    angle: 30
+    progressionDuration: 0
+    telegraphDelay: 0.02
+    visualDuration: 0.22
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects: []
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: swing_trail
+      displayName: "\uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: hit
+      displayName: "\uC2E4\uC81C \uBA85\uC911"
+      description: "\uD53C\uD574\uAC00 \uC801\uC6A9\uB41C \uB300\uC0C1 \uC704\uCE58\uC758
+        \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  - stepId: step_05
+    displayName: "\uB2E8\uC77C \uD0C0\uACA9"
+    startMode: 1
+    delayAfterPrevious: 0.2
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 8
+    progression: 0
+    damageMultiplier: 0.12
+    damageMultiplierMode: 1
+    maximumDamageMultiplier: 0.24
+    maxTargets: 1
+    range: 4
+    width: 0.8
+    radius: 0.8
+    forwardOffset: 0
+    angle: 30
+    progressionDuration: 0
+    telegraphDelay: 0.02
+    visualDuration: 0.22
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects: []
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: swing_trail
+      displayName: "\uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: hit
+      displayName: "\uC2E4\uC81C \uBA85\uC911"
+      description: "\uD53C\uD574\uAC00 \uC801\uC6A9\uB41C \uB300\uC0C1 \uC704\uCE58\uC758
+        \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  - stepId: step_06
+    displayName: "\uB2E8\uC77C \uD0C0\uACA9"
+    startMode: 1
+    delayAfterPrevious: 0.2
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 8
+    progression: 0
+    damageMultiplier: 0.12
+    damageMultiplierMode: 1
+    maximumDamageMultiplier: 0.24
+    maxTargets: 1
+    range: 4
+    width: 0.8
+    radius: 0.8
+    forwardOffset: 0
+    angle: 30
+    progressionDuration: 0
+    telegraphDelay: 0.02
+    visualDuration: 0.22
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects: []
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: swing_trail
+      displayName: "\uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: hit
+      displayName: "\uC2E4\uC81C \uBA85\uC911"
+      description: "\uD53C\uD574\uAC00 \uC801\uC6A9\uB41C \uB300\uC0C1 \uC704\uCE58\uC758
+        \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  - stepId: step_07
+    displayName: "\uB2E8\uC77C \uD0C0\uACA9"
+    startMode: 1
+    delayAfterPrevious: 0.2
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 8
+    progression: 0
+    damageMultiplier: 0.12
+    damageMultiplierMode: 1
+    maximumDamageMultiplier: 0.24
+    maxTargets: 1
+    range: 4
+    width: 0.8
+    radius: 0.8
+    forwardOffset: 0
+    angle: 30
+    progressionDuration: 0
+    telegraphDelay: 0.02
+    visualDuration: 0.22
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects: []
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: swing_trail
+      displayName: "\uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: hit
+      displayName: "\uC2E4\uC81C \uBA85\uC911"
+      description: "\uD53C\uD574\uAC00 \uC801\uC6A9\uB41C \uB300\uC0C1 \uC704\uCE58\uC758
+        \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  - stepId: step_08
+    displayName: "\uB2E8\uC77C \uD0C0\uACA9"
+    startMode: 1
+    delayAfterPrevious: 0.2
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 8
+    progression: 0
+    damageMultiplier: 0.12
+    damageMultiplierMode: 1
+    maximumDamageMultiplier: 0.24
+    maxTargets: 1
+    range: 4
+    width: 0.8
+    radius: 0.8
+    forwardOffset: 0
+    angle: 30
+    progressionDuration: 0
+    telegraphDelay: 0.02
+    visualDuration: 0.22
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects: []
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: swing_trail
+      displayName: "\uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: hit
+      displayName: "\uC2E4\uC81C \uBA85\uC911"
+      description: "\uD53C\uD574\uAC00 \uC801\uC6A9\uB41C \uB300\uC0C1 \uC704\uCE58\uC758
+        \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  - stepId: step_09
+    displayName: "\uB2E8\uC77C \uD0C0\uACA9"
+    startMode: 1
+    delayAfterPrevious: 0.2
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 8
+    progression: 0
+    damageMultiplier: 0.12
+    damageMultiplierMode: 1
+    maximumDamageMultiplier: 0.24
+    maxTargets: 1
+    range: 4
+    width: 0.8
+    radius: 0.8
+    forwardOffset: 0
+    angle: 30
+    progressionDuration: 0
+    telegraphDelay: 0.02
+    visualDuration: 0.22
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects: []
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: swing_trail
+      displayName: "\uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: hit
+      displayName: "\uC2E4\uC81C \uBA85\uC911"
+      description: "\uD53C\uD574\uAC00 \uC801\uC6A9\uB41C \uB300\uC0C1 \uC704\uCE58\uC758
+        \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  - stepId: step_10
+    displayName: "\uB2E8\uC77C \uD0C0\uACA9"
+    startMode: 1
+    delayAfterPrevious: 0.22
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 8
+    progression: 0
+    damageMultiplier: 0.9
+    damageMultiplierMode: 1
+    maximumDamageMultiplier: 1.3
+    maxTargets: 1
+    range: 4
+    width: 0.8
+    radius: 0.8
+    forwardOffset: 0
+    angle: 30
+    progressionDuration: 0
+    telegraphDelay: 0.08
+    visualDuration: 0.55
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects: []
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: swing_trail
+      displayName: "\uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: hit
+      displayName: "\uC2E4\uC81C \uBA85\uC911"
+      description: "\uD53C\uD574\uAC00 \uC801\uC6A9\uB41C \uB300\uC0C1 \uC704\uCE58\uC758
+        \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  impactFeel:
+    prefab: {fileID: 0}
+    lifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1

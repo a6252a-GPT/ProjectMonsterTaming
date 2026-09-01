@@ -318,16 +318,22 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
 
                 controller.ConfigureBounds(7, HexSpatialContract.CellOuterRadius);
                 var twoWallDistance = controller.DefaultDistance;
+                var twoWallShadowDistance = controller.RequiredShadowDistance;
                 controller.ConfigureBounds(10, HexSpatialContract.CellOuterRadius);
                 var threeWallDistance = controller.DefaultDistance;
+                var threeWallShadowDistance = controller.RequiredShadowDistance;
                 controller.ConfigureBounds(13, HexSpatialContract.CellOuterRadius);
                 var fourWallDistance = controller.DefaultDistance;
+                var fourWallShadowDistance = controller.RequiredShadowDistance;
 
                 Assert.That(camera.orthographic, Is.False);
                 Assert.That(controller.IsPerspective, Is.True);
                 Assert.That(twoWallDistance, Is.GreaterThan(0f));
                 Assert.That(threeWallDistance, Is.GreaterThan(twoWallDistance));
                 Assert.That(fourWallDistance, Is.GreaterThan(threeWallDistance));
+                Assert.That(threeWallShadowDistance, Is.GreaterThan(twoWallShadowDistance));
+                Assert.That(fourWallShadowDistance, Is.GreaterThan(threeWallShadowDistance));
+                Assert.That(fourWallShadowDistance, Is.GreaterThan(120f));
                 Assert.That(controller.MinimumDistance, Is.LessThan(controller.DefaultDistance));
                 Assert.That(controller.MaximumDistance, Is.GreaterThan(controller.DefaultDistance));
                 Assert.That(controller.InitialZoomRatio, Is.EqualTo(0.70f).Within(0.001f));
@@ -342,6 +348,51 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
             {
                 Object.DestroyImmediate(cameraObject);
                 Object.DestroyImmediate(renderTexture);
+            }
+        }
+
+        [Test]
+        public void PerspectiveCamera_ShadowDistanceOverrideIsScopedAndRestored()
+        {
+            var pipelineAsset = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;
+            var shadowDistanceProperty = pipelineAsset?.GetType().GetProperty("shadowDistance");
+            Assert.That(shadowDistanceProperty, Is.Not.Null, "현재 URP Asset의 shadowDistance를 찾지 못했습니다.");
+
+            var originalShadowDistance = (float)shadowDistanceProperty.GetValue(pipelineAsset);
+            var cameraObject = new GameObject("HexShadowDistanceScopeTest");
+            try
+            {
+                var camera = cameraObject.AddComponent<Camera>();
+                var controller = cameraObject.AddComponent<HexCastleCameraController>();
+                controller.ConfigureBounds(13, HexSpatialContract.CellOuterRadius);
+                var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                var begin = typeof(HexCastleCameraController).GetMethod("HandleBeginCameraRendering", flags);
+                var end = typeof(HexCastleCameraController).GetMethod("HandleEndCameraRendering", flags);
+                Assert.That(begin, Is.Not.Null);
+                Assert.That(end, Is.Not.Null);
+
+                begin.Invoke(controller, new object[]
+                {
+                    default(UnityEngine.Rendering.ScriptableRenderContext),
+                    camera
+                });
+                Assert.That(
+                    (float)shadowDistanceProperty.GetValue(pipelineAsset),
+                    Is.GreaterThanOrEqualTo(controller.RequiredShadowDistance));
+
+                end.Invoke(controller, new object[]
+                {
+                    default(UnityEngine.Rendering.ScriptableRenderContext),
+                    camera
+                });
+                Assert.That(
+                    (float)shadowDistanceProperty.GetValue(pipelineAsset),
+                    Is.EqualTo(originalShadowDistance).Within(0.001f));
+            }
+            finally
+            {
+                shadowDistanceProperty.SetValue(pipelineAsset, originalShadowDistance);
+                Object.DestroyImmediate(cameraObject);
             }
         }
 

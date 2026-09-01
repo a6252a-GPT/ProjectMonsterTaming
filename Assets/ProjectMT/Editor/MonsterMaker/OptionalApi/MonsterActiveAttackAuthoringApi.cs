@@ -21,13 +21,22 @@ namespace ProjectMT.EditorTools.MonsterMaker.OptionalApi
     {
         public string stepId = "step_01";
         public string displayName = "일자 피해";
+        public string startMode = "AfterPreviousComplete";
         public float delayAfterPrevious;
+        public float playbackSpeed = 1f;
         public string targetPolicy = "SameTarget";
+        public bool dashBeforeAttack;
+        public float dashFrontDistance = 1f;
+        public float dashDuration = 0.1f;
+        [Obsolete("순간이동과 돌진은 하나의 돌진 계약으로 통합되었습니다. dashBeforeAttack을 사용하세요.")]
         public bool teleportBeforeAttack;
+        [Obsolete("순간이동과 돌진은 하나의 돌진 계약으로 통합되었습니다. dashFrontDistance를 사용하세요.")]
         public float teleportFrontDistance = 1f;
         public string pattern = "Line";
         public string progression = "Instant";
         public float damageMultiplier = 1f;
+        public bool useDamageRange;
+        public float maximumDamageMultiplier = 1f;
         public int maxTargets = 8;
         public float range = 4f;
         public float width = 1.2f;
@@ -37,10 +46,17 @@ namespace ProjectMT.EditorTools.MonsterMaker.OptionalApi
         public float progressionDuration = 0.25f;
         public float telegraphDelay = 0.12f;
         public float visualDuration = 0.8f;
+        public float hitAreaVisibleDuration = 0.42f;
+        public int hitCount;
+        public float repeatHitInterval = 0.08f;
+        public float secondaryDamageRatio = 1f;
+        public bool repeatImpactFeedback = true;
         public string projectileFormation = "Single";
         public int projectileCount = 1;
         public float projectileFanAngle = 50f;
+        public string projectileTravel = "Homing";
         public float projectileSpeed = 10f;
+        public float projectileLifetime = 3f;
         public float projectileCollisionRadius = 0.25f;
         public float explosionRadius = 1.8f;
         public string instantMagicTarget = "SingleTarget";
@@ -84,8 +100,13 @@ namespace ProjectMT.EditorTools.MonsterMaker.OptionalApi
     [Serializable]
     internal sealed class MonsterActiveAttackAuthoringContract
     {
-        public int schemaVersion = 1;
+        public int schemaVersion = 2;
         public string scope = "한 번 호출할 때 공격 액티브 프로필 하나만 작성합니다.";
+        public string stepIdentity = "Step ID는 step_01부터 순서대로, 표시 이름은 공격 형태에서 자동 생성합니다.";
+        public string vfxSfxContract = "각 Step의 VFX/SFX 공간은 기본공격 공용 계약에서 자동 생성합니다.";
+        public string dataOwnership = "기본공격 프리셋을 가져와도 독립 복사하며 기본공격 자산을 참조 연결하지 않습니다.";
+        public string multiHit = "hitCount 0은 공격 형태 기본값, 직접 공격은 1~3타, 왕복 투사체는 2타 고정입니다.";
+        public string damageRange = "useDamageRange를 켜면 각 Step 실행 때 damageMultiplier~maximumDamageMultiplier를 한 번 독립 추첨합니다.";
         public string[] operations;
         public string[] patterns;
         public string[] progressions;
@@ -94,8 +115,6 @@ namespace ProjectMT.EditorTools.MonsterMaker.OptionalApi
         public string[] instantMagicTargets;
         public string[] magicDirections;
         public string[] hitEffectTypes;
-        public string[] presentationEvents;
-        public string[] presentationAnchors;
         public MonsterActiveAttackAuthoringRequest example;
     }
 
@@ -113,8 +132,6 @@ namespace ProjectMT.EditorTools.MonsterMaker.OptionalApi
                 instantMagicTargets = Enum.GetNames(typeof(MonsterActiveInstantMagicTarget)),
                 magicDirections = Enum.GetNames(typeof(MonsterActiveMagicDirection)),
                 hitEffectTypes = Enum.GetNames(typeof(MonsterActiveHitEffectType)),
-                presentationEvents = Enum.GetNames(typeof(MonsterActivePresentationEvent)),
-                presentationAnchors = Enum.GetNames(typeof(MonsterActivePresentationAnchor)),
                 example = CreateExampleRequest()
             };
             return JsonUtility.ToJson(contract, true);
@@ -267,6 +284,8 @@ namespace ProjectMT.EditorTools.MonsterMaker.OptionalApi
             }
             if (!TryParseEnum(request.targetPolicy, $"Step {index + 1}.targetPolicy",
                     out MonsterActiveTargetPolicy targetPolicy, out error) ||
+                !TryParseEnum(request.startMode, $"Step {index + 1}.startMode",
+                    out MonsterActiveStepStartMode startMode, out error) ||
                 !TryParseEnum(request.pattern, $"Step {index + 1}.pattern",
                     out MonsterActiveAttackPattern pattern, out error) ||
                 !TryParseEnum(request.progression, $"Step {index + 1}.progression",
@@ -290,7 +309,12 @@ namespace ProjectMT.EditorTools.MonsterMaker.OptionalApi
                 request.delayAfterPrevious,
                 targetPolicy,
                 progression,
-                effects);
+                effects,
+                PositiveOr(request.playbackSpeed, 1f),
+                startMode);
+            step.EditorConfigureDamageRange(
+                request.useDamageRange,
+                Mathf.Max(request.damageMultiplier, request.maximumDamageMultiplier));
             step.EditorConfigureGeometry(
                 PositiveOr(request.range, 4f),
                 PositiveOr(request.width, 1.2f),
@@ -300,27 +324,70 @@ namespace ProjectMT.EditorTools.MonsterMaker.OptionalApi
                 request.maxTargets > 0 ? request.maxTargets : 8,
                 Mathf.Max(0f, request.progressionDuration),
                 Mathf.Max(0f, request.telegraphDelay),
-                PositiveOr(request.visualDuration, 0.8f));
-            step.EditorConfigureTeleport(request.teleportBeforeAttack, Mathf.Max(0f, request.teleportFrontDistance));
+                PositiveOr(request.visualDuration, 0.8f),
+                PositiveOr(request.hitAreaVisibleDuration, 0.42f));
+            if (!TryConfigureHitSequence(step, request, index, out error)) return false;
+            // 구형 JSON 요청은 계속 읽되 새 작성 경로에는 돌진 필드만 노출한다.
+#pragma warning disable CS0618
+            var useLegacyDash = !request.dashBeforeAttack && request.teleportBeforeAttack;
+            step.EditorConfigureDash(
+                request.dashBeforeAttack || useLegacyDash,
+                Mathf.Max(0f, useLegacyDash ? request.teleportFrontDistance : request.dashFrontDistance),
+                PositiveOr(request.dashDuration, 0.1f));
+#pragma warning restore CS0618
 
-            if (pattern == MonsterActiveAttackPattern.PiercingProjectile ||
-                pattern == MonsterActiveAttackPattern.ExplosiveProjectile)
+            if (pattern is MonsterActiveAttackPattern.PiercingProjectile or
+                MonsterActiveAttackPattern.ExplosiveProjectile or
+                MonsterActiveAttackPattern.StandardProjectile or
+                MonsterActiveAttackPattern.ReturningProjectile or
+                MonsterActiveAttackPattern.TravelingWave)
             {
-                if (!TryParseEnum(request.projectileFormation, $"Step {index + 1}.projectileFormation",
-                        out MonsterActiveProjectileFormation formation, out error))
+                var supportsFormation = pattern is MonsterActiveAttackPattern.PiercingProjectile or
+                    MonsterActiveAttackPattern.ExplosiveProjectile or
+                    MonsterActiveAttackPattern.StandardProjectile;
+                var formation = MonsterActiveProjectileFormation.Single;
+                if (supportsFormation &&
+                    !TryParseEnum(request.projectileFormation, $"Step {index + 1}.projectileFormation",
+                        out formation, out error))
                 {
                     return false;
                 }
                 var projectileCount = formation == MonsterActiveProjectileFormation.Single
                     ? 1
                     : request.projectileCount >= 2 ? request.projectileCount : 3;
+                var travel = pattern switch
+                {
+                    MonsterActiveAttackPattern.ReturningProjectile =>
+                        MonsterBasicAttackProjectileTravel.Returning,
+                    MonsterActiveAttackPattern.PiercingProjectile or
+                        MonsterActiveAttackPattern.TravelingWave =>
+                        MonsterBasicAttackProjectileTravel.Straight,
+                    _ => MonsterBasicAttackProjectileTravel.Homing
+                };
+                if (pattern is MonsterActiveAttackPattern.StandardProjectile or
+                    MonsterActiveAttackPattern.ExplosiveProjectile)
+                {
+                    if (!TryParseEnum(request.projectileTravel,
+                            $"Step {index + 1}.projectileTravel", out travel, out error))
+                    {
+                        return false;
+                    }
+                    if (travel is not MonsterBasicAttackProjectileTravel.Homing and
+                        not MonsterBasicAttackProjectileTravel.Straight)
+                    {
+                        error = $"Step {index + 1}.projectileTravel은 Homing 또는 Straight여야 합니다.";
+                        return false;
+                    }
+                }
                 step.EditorConfigureProjectile(
                     formation,
                     projectileCount,
                     PositiveOr(request.projectileFanAngle, 50f),
                     PositiveOr(request.projectileSpeed, 10f),
                     PositiveOr(request.projectileCollisionRadius, 0.25f),
-                    PositiveOr(request.explosionRadius, 1.8f));
+                    PositiveOr(request.explosionRadius, 1.8f),
+                    travel,
+                    PositiveOr(request.projectileLifetime, 3f));
             }
             if (pattern == MonsterActiveAttackPattern.InstantMagic)
             {
@@ -333,15 +400,58 @@ namespace ProjectMT.EditorTools.MonsterMaker.OptionalApi
                 }
                 step.EditorConfigureInstantMagic(magicTarget, magicDirection);
             }
-            if (request.presentationSlots != null)
+            if (request.presentationSlots != null && request.presentationSlots.Length > 0)
             {
-                if (!TryBuildPresentationSlots(request.presentationSlots, index, out var slots, out error)) return false;
-                step.EditorSetPresentationSlots(slots);
+                error =
+                    $"Step {index + 1}.presentationSlots 직접 입력은 더 이상 지원하지 않습니다. " +
+                    "공격 형태에서 기본공격과 같은 VFX/SFX 계약을 자동 생성합니다.";
+                return false;
             }
-            else
+            step.EditorSetPresentationSlots(Array.Empty<MonsterActivePresentationSlot>());
+            step.EditorSetAttackBlockVfxSlots(MonsterActiveAttackBlockContractTemplates.Build(step));
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool TryConfigureHitSequence(
+            MonsterActiveAttackStep step,
+            MonsterActiveAttackStepRequest request,
+            int stepIndex,
+            out string error)
+        {
+            var requested = request.hitCount;
+            if (requested < 0 || requested > MonsterBasicAttackProfile.MaximumHitCount)
             {
-                step.EditorSetPresentationSlots(MonsterActiveAttackVfxContractTemplates.Build(step));
+                error = $"Step {stepIndex + 1}.hitCount는 0~{MonsterBasicAttackProfile.MaximumHitCount}여야 합니다.";
+                return false;
             }
+            if (step.Pattern == MonsterActiveAttackPattern.ReturningProjectile &&
+                requested > 0 && requested != 2)
+            {
+                error = $"Step {stepIndex + 1}의 왕복 투사체 hitCount는 2로 고정됩니다.";
+                return false;
+            }
+            if (step.Pattern == MonsterActiveAttackPattern.Breath && requested == 1)
+            {
+                error = $"Step {stepIndex + 1}의 브레스 hitCount는 0(기본값) 또는 2 이상이어야 합니다.";
+                return false;
+            }
+            if (!MonsterActiveAttackStep.SupportsEditableMultiHit(step.Pattern) &&
+                step.Pattern != MonsterActiveAttackPattern.ReturningProjectile && requested > 1)
+            {
+                error = $"Step {stepIndex + 1}의 {step.Pattern} 형태는 기본공격 공용 계약상 1회 판정입니다.";
+                return false;
+            }
+
+            var count = requested > 0 ? requested : step.HitCount;
+            var ratios = new float[count];
+            var ratio = 1f / count;
+            for (var index = 0; index < count; index++) ratios[index] = ratio;
+            step.EditorConfigureHitSequence(
+                ratios,
+                PositiveOr(request.secondaryDamageRatio, 1f),
+                PositiveOr(request.repeatHitInterval, 0.08f),
+                request.repeatImpactFeedback);
             error = string.Empty;
             return true;
         }
@@ -464,11 +574,10 @@ namespace ProjectMT.EditorTools.MonsterMaker.OptionalApi
                 {
                     new MonsterActiveAttackStepRequest
                     {
-                        stepId = "step_01",
-                        displayName = "전방 분쇄",
                         pattern = "Line",
                         progression = "Forward",
                         damageMultiplier = 1.4f,
+                        hitCount = 3,
                         hitEffects = new[]
                         {
                             new MonsterActiveHitEffectRequest
@@ -477,24 +586,6 @@ namespace ProjectMT.EditorTools.MonsterMaker.OptionalApi
                                 magnitude = 0.6f,
                                 duration = 0.45f
                             }
-                        },
-                        presentationSlots = new[]
-                        {
-                            new MonsterActivePresentationSlotRequest
-                            {
-                                slotId = "telegraph",
-                                displayName = "판정 예고",
-                                timing = "Telegraph",
-                                anchor = "TargetPoint"
-                            },
-                            new MonsterActivePresentationSlotRequest
-                            {
-                                slotId = "launch",
-                                displayName = "공격 발동",
-                                timing = "Launch",
-                                anchor = "AttackOrigin"
-                            },
-                            new MonsterActivePresentationSlotRequest()
                         }
                     }
                 }

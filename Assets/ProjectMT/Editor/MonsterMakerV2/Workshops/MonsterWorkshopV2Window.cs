@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using ProjectMT.EditorTools.MonsterMaker;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
@@ -43,11 +44,16 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private ScrollView libraryScroll, assemblerScroll;
         private VisualElement previewToolbar, previewHost;
         private Button modeBasicButton, modeAttackButton, modeEffectButton;
-        private Button newButton, forkButton, saveNewButton, updateButton, assignButton;
+        private Button newButton, forkButton, saveNewButton, updateButton, assignButton, helpToggleButton;
         private IMGUIContainer previewSurface;
         private bool sessionPersistScheduled;
         private double sessionPersistAt;
         private bool libraryDirty = true;
+        private bool assemblerModeInitialized;
+        private WorkshopMode assemblerRenderedMode;
+        private Vector2 basicAssemblerScrollOffset;
+        private Vector2 attackAssemblerScrollOffset;
+        private Vector2 effectAssemblerScrollOffset;
         private bool rebuildPending;
 
 
@@ -133,7 +139,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             modeAttackButton = Q<Button>("mode-attack"); modeEffectButton = Q<Button>("mode-effect");
             newButton = Q<Button>("new-button"); forkButton = Q<Button>("fork-button");
             saveNewButton = Q<Button>("save-new-button"); updateButton = Q<Button>("update-button");
-            assignButton = Q<Button>("assign-button");
+            assignButton = Q<Button>("assign-button"); helpToggleButton = Q<Button>("workshop-help-toggle");
             libraryScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             assemblerScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
 
@@ -143,6 +149,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             newButton.clicked += StartBlankCurrent; forkButton.clicked += ForkCurrent;
             saveNewButton.clicked += SaveCurrentAsNew; updateButton.clicked += UpdateCurrent;
             assignButton.clicked += AssignCurrent;
+            helpToggleButton.clicked += ToggleContextHelp;
             searchField.RegisterValueChangedCallback(evt =>
             {
                 search = evt.newValue ?? string.Empty;
@@ -151,6 +158,27 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             });
             Q<Button>("preview-help-button").clicked += () => EditorUtility.DisplayDialog("조립소 V2 미리보기",
                 "현재 작업 사본의 판정과 순서를 확인합니다. VFX/SFX 공간은 계약이며 실제 몬스터 자산은 Monster Maker V2에서 연결합니다.", "확인");
+            ApplyContextHelpVisibility();
+        }
+
+        private void ToggleContextHelp()
+        {
+            MonsterMakerV2HelpPreferences.ShowContextHelp =
+                !MonsterMakerV2HelpPreferences.ShowContextHelp;
+            ApplyContextHelpVisibility();
+        }
+
+        private void ApplyContextHelpVisibility()
+        {
+            var show = MonsterMakerV2HelpPreferences.ShowContextHelp;
+            rootVisualElement.EnableInClassList("workshop-root--context-help-hidden", !show);
+            foreach (var element in rootVisualElement.Query<VisualElement>(className: "help-text").ToList())
+                element.style.display = show ? StyleKeyword.Null : DisplayStyle.None;
+            foreach (var element in rootVisualElement.Query<VisualElement>(className: "context-help").ToList())
+                element.style.display = show ? StyleKeyword.Null : DisplayStyle.None;
+            if (helpToggleButton == null) return;
+            helpToggleButton.text = show ? "도움말 끄기" : "도움말 켜기";
+            helpToggleButton.EnableInClassList("workshop-help-toggle--hidden", !show);
         }
 
         private T Q<T>(string name) where T : VisualElement => rootVisualElement.Q<T>(name);
@@ -206,6 +234,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             basicPreview = null;
             attackPreview?.Dispose();
             attackPreview = null;
+            DisposeAssignedActivePreview();
+            showAssignedActivePreview = false;
             effectPreviewPlaying = false;
         }
 
@@ -239,7 +269,14 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             RebuildCurrent();
         }
 
-        private void RebuildCurrent() { RefreshLibrary(); RebuildAssembler(); RebuildPreview(); RefreshState(); }
+        private void RebuildCurrent()
+        {
+            RefreshLibrary();
+            RebuildAssembler();
+            RebuildPreview();
+            ApplyContextHelpVisibility();
+            RefreshState();
+        }
 
         private void RefreshLibrary()
         {
@@ -290,6 +327,9 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
 
         private void RebuildAssembler()
         {
+            if (assemblerModeInitialized)
+                SetAssemblerScrollOffset(assemblerRenderedMode, assemblerScroll.scrollOffset);
+            var restoredOffset = GetAssemblerScrollOffset(mode);
             suppressUiCallbacks = true;
             try
             {
@@ -302,6 +342,29 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             {
                 suppressUiCallbacks = false;
             }
+            assemblerRenderedMode = mode;
+            assemblerModeInitialized = true;
+            assemblerScroll.scrollOffset = restoredOffset;
+            var restoredMode = mode;
+            assemblerScroll.schedule.Execute(() =>
+            {
+                if (this != null && assemblerScroll != null && mode == restoredMode)
+                    assemblerScroll.scrollOffset = restoredOffset;
+            });
+        }
+
+        private Vector2 GetAssemblerScrollOffset(WorkshopMode targetMode) => targetMode switch
+        {
+            WorkshopMode.Basic => basicAssemblerScrollOffset,
+            WorkshopMode.Attack => attackAssemblerScrollOffset,
+            _ => effectAssemblerScrollOffset
+        };
+
+        private void SetAssemblerScrollOffset(WorkshopMode targetMode, Vector2 value)
+        {
+            if (targetMode == WorkshopMode.Basic) basicAssemblerScrollOffset = value;
+            else if (targetMode == WorkshopMode.Attack) attackAssemblerScrollOffset = value;
+            else effectAssemblerScrollOffset = value;
         }
 
         private void RebuildPreview()
@@ -395,14 +458,24 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             {
                 attackSerialized.ApplyModifiedProperties();
                 if (MonsterActiveAttackAuthoringService.TryUpdate(attackWorking, attackLoaded, out var error))
-                { var loaded = attackLoaded; LoadAttack(loaded); attackMessage = "현재 공격 액티브 프리셋을 저장했습니다."; }
+                {
+                    var loaded = attackLoaded;
+                    LoadAttack(loaded);
+                    NotifyActiveProfileUpdated();
+                    attackMessage = "현재 공격 액티브 프리셋을 저장했습니다.";
+                }
                 else attackMessage = "오류: " + error;
             }
             else
             {
                 effectSerialized.ApplyModifiedProperties();
                 if (MonsterEffectActiveAuthoringService.TryUpdate(effectWorking, effectLoaded, out var error))
-                { var loaded = effectLoaded; LoadEffect(loaded); effectMessage = "현재 효과형 액티브 프리셋을 저장했습니다."; }
+                {
+                    var loaded = effectLoaded;
+                    LoadEffect(loaded);
+                    NotifyActiveProfileUpdated();
+                    effectMessage = "현재 효과형 액티브 프리셋을 저장했습니다.";
+                }
                 else effectMessage = "오류: " + error;
             }
             libraryDirty = true;
@@ -420,6 +493,18 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             MonsterWorkshopAssignmentEvents.NotifyPresetAssigned();
             libraryDirty = true;
             RefreshState();
+        }
+
+        private void NotifyActiveProfileUpdated()
+        {
+            if (originDraft != null)
+            {
+                Undo.RecordObject(originDraft, "Monster Maker V2 · 액티브 프리셋 구조 동기화");
+                originDraft.EditorSyncActiveAttackAuthoring();
+                originDraft.EditorSyncActiveEffectAuthoring();
+                EditorUtility.SetDirty(originDraft);
+            }
+            MonsterWorkshopAssignmentEvents.NotifyPresetAssigned();
         }
 
         private bool TryResolveCurrentWork(string action)
@@ -469,7 +554,9 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         {
             attackWorking ??= CreateInstance<MonsterActiveAttackProfile>(); attackWorking.hideFlags = EditableWorkCopyFlags;
             var step = new MonsterActiveAttackStep();
-            step.EditorSetPresentationSlots(MonsterActiveAttackVfxContractTemplates.Build(step));
+            step.EditorNormalizeIdentity(0);
+            step.EditorSetPresentationSlots(Array.Empty<MonsterActivePresentationSlot>());
+            step.EditorSetAttackBlockVfxSlots(MonsterActiveAttackBlockContractTemplates.Build(step));
             attackWorking.EditorConfigure(string.Empty, "새 공격 액티브", string.Empty, new[] { step });
             attackSerialized = new SerializedObject(attackWorking); attackLoaded = null; attackMessage = "빈 공격 액티브 작업 사본입니다.";
             attackBaselineJson = JsonUtility.ToJson(attackWorking);
@@ -564,6 +651,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             basicPreview?.Dispose();
             basicPreview = null;
             attackPreview?.Dispose(); attackPreview = null;
+            DisposeAssignedActivePreview();
+            showAssignedActivePreview = false;
             effectPreviewPlaying = false;
             basicSession?.Dispose();
             basicSession = null;
@@ -573,7 +662,9 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
 
         private void OnInspectorUpdate()
         {
-            if (effectPreviewPlaying || attackPreview?.IsPlaying == true ||
+            var assignedChanged = showAssignedActivePreview &&
+                                  assignedActivePreview?.Tick() == true;
+            if (assignedChanged || effectPreviewPlaying || attackPreview?.IsPlaying == true ||
                 (mode == WorkshopMode.Basic && basicPreview?.IsPlaying == true))
                 previewSurface?.MarkDirtyRepaint();
         }
@@ -635,6 +726,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             basicPreview?.Dispose();
             basicPreview = null;
             attackPreview?.Dispose(); attackPreview = null;
+            DisposeAssignedActivePreview();
+            showAssignedActivePreview = false;
             effectPreviewPlaying = false;
         }
 
@@ -664,6 +757,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             if (this == null || assemblerScroll == null || attackWorking == null || effectWorking == null) return;
             RebuildAssembler();
             RefreshPreviewAfterAuthoringChange();
+            ApplyContextHelpVisibility();
             RefreshState();
         }
 
@@ -709,15 +803,136 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             foreach (var button in actions) row.Add(button); return row;
         }
 
+        private static VisualElement ContractDetails(BasicAttackWorkshopVfxSlot slot)
+        {
+            return slot == null
+                ? ContractDetails("비어 있음", BasicAttackWorkshopVfxRole.Custom,
+                    default, default, default, default, default, default, 0f, "계약 데이터가 비어 있습니다.")
+                : ContractDetails(
+                    slot.slotId,
+                    BasicAttackWorkshopVfxRoles.Resolve(slot),
+                    slot.eventType,
+                    slot.anchor,
+                    slot.multiplicity,
+                    slot.assignmentScope,
+                    slot.attachment,
+                    slot.endPolicy,
+                    slot.defaultLifetime,
+                    slot.description);
+        }
+
+        private static VisualElement ContractDetails(MonsterBasicAttackVfxSlot slot)
+        {
+            return slot == null
+                ? ContractDetails("비어 있음", BasicAttackWorkshopVfxRole.Custom,
+                    default, default, default, default, default, default, 0f, "계약 데이터가 비어 있습니다.")
+                : ContractDetails(
+                    slot.SlotId,
+                    BasicAttackWorkshopVfxRoles.Resolve(slot),
+                    slot.EventType,
+                    slot.Anchor,
+                    slot.Multiplicity,
+                    slot.AssignmentScope,
+                    slot.Attachment,
+                    slot.EndPolicy,
+                    slot.DefaultLifetime,
+                    slot.Description);
+        }
+
+        private static VisualElement ContractDetails(
+            string slotId,
+            BasicAttackWorkshopVfxRole role,
+            MonsterBasicAttackVfxEvent eventType,
+            MonsterBasicAttackVfxAnchor anchor,
+            MonsterBasicAttackVfxMultiplicity multiplicity,
+            MonsterBasicAttackVfxAssignmentScope assignmentScope,
+            MonsterBasicAttackVfxAttachment attachment,
+            MonsterBasicAttackVfxEndPolicy endPolicy,
+            float lifetime,
+            string description)
+        {
+            var details = new VisualElement(); details.AddToClassList("contract-details");
+            AddContractDetail(details, "공간 ID", slotId);
+            AddContractDetail(details, "공간 역할", BasicAttackWorkshopVfxRoles.GetLabel(role));
+            AddContractDetail(details, "발생 시점", MonsterBasicAttackVfxEditorLabels.Get(eventType));
+            AddContractDetail(details, "기준 위치", MonsterBasicAttackVfxEditorLabels.Get(anchor));
+            AddContractDetail(details, "재생 횟수", MonsterBasicAttackVfxEditorLabels.Get(multiplicity));
+            AddContractDetail(details, "몬스터 적용", MonsterBasicAttackVfxEditorLabels.Get(assignmentScope));
+            AddContractDetail(details, "부착 방식", MonsterBasicAttackVfxEditorLabels.Get(attachment));
+            AddContractDetail(details, "종료 규칙", MonsterBasicAttackVfxEditorLabels.Get(endPolicy));
+            AddContractDetail(details, "기본 수명",
+                endPolicy is MonsterBasicAttackVfxEndPolicy.Timed or MonsterBasicAttackVfxEndPolicy.ParticleDuration
+                    ? $"{Mathf.Max(0f, lifetime):0.###}초"
+                    : "종료 규칙에서 결정");
+            AddContractDetail(details, "자동 설명", description);
+            return details;
+        }
+
+        private static void AddContractDetail(VisualElement parent, string label, string value)
+        {
+            var row = new VisualElement(); row.AddToClassList("contract-detail-row");
+            var key = new Label(label); key.AddToClassList("contract-detail-label");
+            var content = new Label(string.IsNullOrWhiteSpace(value) ? "-" : value);
+            content.AddToClassList("contract-detail-value");
+            row.Add(key); row.Add(content); parent.Add(row);
+        }
+
+        private static string CreateAutomaticContractId(
+            IEnumerable<string> existingIds,
+            BasicAttackWorkshopVfxRole role)
+        {
+            var source = role == BasicAttackWorkshopVfxRole.Custom ? "vfx" : role.ToString();
+            var stem = new StringBuilder(source.Length + 8);
+            for (var index = 0; index < source.Length; index++)
+            {
+                var character = source[index];
+                if (index > 0 && char.IsUpper(character)) stem.Append('_');
+                stem.Append(char.ToLowerInvariant(character));
+            }
+            return CreateUniqueContractId(existingIds, stem.ToString());
+        }
+
+        private static string CreateUniqueContractId(
+            IEnumerable<string> existingIds,
+            string preferredId)
+        {
+            var ids = new HashSet<string>(existingIds ?? Array.Empty<string>(),
+                StringComparer.OrdinalIgnoreCase);
+            if (!ids.Contains(preferredId)) return preferredId;
+            for (var suffix = 2; suffix < 10000; suffix++)
+            {
+                var candidate = $"{preferredId}_{suffix:00}";
+                if (!ids.Contains(candidate)) return candidate;
+            }
+            return preferredId + "_copy";
+        }
+
         private PropertyField BoundProperty(SerializedObject serialized, SerializedProperty property, string label, Action changed = null)
         {
+            var path = property.propertyPath;
+            var lastValue = CaptureBoundValue(property);
             var field = new PropertyField(property.Copy(), label); field.AddToClassList("editor-field"); field.Bind(serialized);
-            field.RegisterCallback<SerializedPropertyChangeEvent>(_ =>
+            field.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
             {
                 if (suppressUiCallbacks) return;
+                var live = evt.changedProperty ?? serialized.FindProperty(path);
+                var nextValue = CaptureBoundValue(live);
+                if (Equals(lastValue, nextValue)) return;
+                lastValue = nextValue;
                 serialized.ApplyModifiedProperties(); changed?.Invoke(); MarkCurrentDirty();
             });
             return field;
+        }
+
+        private static object CaptureBoundValue(SerializedProperty property)
+        {
+            if (property == null) return null;
+            return property.propertyType switch
+            {
+                SerializedPropertyType.ObjectReference => property.objectReferenceInstanceIDValue,
+                SerializedPropertyType.ManagedReference => property.managedReferenceId,
+                _ => property.boxedValue
+            };
         }
 
         private Label Help(string text, bool warning = false)

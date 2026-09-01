@@ -38,6 +38,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             draftView.Bind(
                 state.SerializedDraft,
                 state.WorkingDraft,
+                state.SourceDraft,
                 !state.IsNew,
                 OnDraftChanged);
             preview.SetDraft(state.WorkingDraft);
@@ -105,6 +106,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             CaptureRecovery();
             UpdateDirtyUi();
             ReloadCatalog(true);
+            BindCurrentDraft();
             ShowNotification(new GUIContent("제작 원본을 저장했습니다."));
             return true;
         }
@@ -192,7 +194,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             ClearRecovery();
             CaptureRecovery();
             ReloadCatalog(true);
-            UpdateAllUi();
+            BindCurrentDraft();
             var action = result.UpdatedExisting ? "갱신" : "생성";
             EditorUtility.DisplayDialog(
                 "전투 반영 완료",
@@ -653,6 +655,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 return;
             }
 
+            state.WorkingDraft.EditorSyncActiveAttackAuthoring();
+            state.WorkingDraft.EditorSyncActiveEffectAuthoring();
             state.RefreshAfterUndo();
             BindCurrentDraft();
         }

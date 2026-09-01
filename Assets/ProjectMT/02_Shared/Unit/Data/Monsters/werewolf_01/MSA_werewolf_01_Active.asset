@@ -1,0 +1,843 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-9029297072637800862
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbe2dec93cbcbf6438c7e81097a0a9b7, type: 3}
+  m_Name: __ActiveAttackBlock_step_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterBasicAttackProfile
+  attackId: active_step_01
+  displayName: "\uB0B4 \uC8FC\uBCC0 \uC6D0\uD615"
+  designMemo: 
+  combatType: 0
+  launchFeedback:
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  projectileFeedback:
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  impactFeedback:
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  launchFeel:
+    prefab: {fileID: 0}
+    lifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  projectileFeel:
+    prefab: {fileID: 0}
+    lifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  impactFeel:
+    prefab: {fileID: 0}
+    lifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  vfxSlots:
+  - slotId: telegraph
+    displayName: "\uD310\uC815 \uC608\uACE0"
+    description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+      \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+      \uD6A8\uACFC"
+    productionMemo: 
+    eventType: 13
+    anchor: 6
+    multiplicity: 1
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: overhead_trail
+    displayName: "\uB0B4\uB824\uCC0D\uAE30 \uADA4\uC801"
+    description: "\uC120\uD0DD\uB41C \uBAA8\uC158\uC758 \uB0B4\uB824\uCC0D\uAE30
+      \uADA4\uC801"
+    productionMemo: 
+    eventType: 1
+    anchor: 1
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 1
+    endPolicy: 2
+    defaultLifetime: 1
+  - slotId: ground_contact
+    displayName: "\uC9C0\uBA74 \uC811\uCD09"
+    description: "\uB0B4\uB824\uCC0D\uAE30\uAC00 \uB2FF\uC740 \uC911\uC2EC\uC810
+      \uD6A8\uACFC"
+    productionMemo: 
+    eventType: 1
+    anchor: 6
+    multiplicity: 1
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: target_hit
+    displayName: "\uB300\uC0C1\uBCC4 \uBA85\uC911"
+    description: "\uBC94\uC704 \uC548\uC5D0\uC11C \uC2E4\uC81C \uD53C\uD574\uB97C
+      \uBC1B\uC740 \uAC01 \uB300\uC0C1\uC758 \uBA85\uC911 \uD6A8\uACFC"
+    productionMemo: 
+    eventType: 3
+    anchor: 5
+    multiplicity: 3
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: area_wave
+    displayName: "\uBC94\uC704 \uD30C\uB3D9"
+    description: "\uBC94\uC704 \uD310\uC815\uC774 \uD574\uACB0\uB41C \uB4A4 \uD3BC\uCCD0\uC9C0\uB294
+      \uC6D0\uD615 \uD6A8\uACFC"
+    productionMemo: 
+    eventType: 6
+    anchor: 6
+    multiplicity: 1
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  inactiveVfxSlots: []
+  recipeVersion: 1
+  deliveryModule: 0
+  collisionModule: 0
+  sequenceModule: 0
+  movementModule: 0
+  presentationKind: 4
+  shape: 3
+  center: 0
+  projectileTravel: 0
+  sweepDirection: 0
+  rangeMultiplier: 3
+  radius: 2.8
+  angle: 90
+  lineWidth: 1.5
+  forwardOffset: 0
+  maxTargets: 8
+  progression: 4
+  progressionDuration: 0.6
+  telegraphDelay: 0.15
+  visualDuration: 1.1
+  magicDirection: 1
+  projectileCarrierPrefab: {fileID: 0}
+  projectileCount: 1
+  projectileSpreadAngle: 0
+  projectileSpeed: 10
+  projectileLifetime: 3
+  projectileCollisionRadius: 0.25
+  damageRatios:
+  - 1
+  secondaryDamageRatio: 1
+  repeatHitInterval: 0.08
+  breathDuration: 1.1
+  repeatImpactFeedback: 1
+  dashDistance: 0
+  dashDuration: 0.1
+  hitAreaVisibleDuration: 0.42
+  delivery: 0
+  stopOnFirstTarget: 0
+--- !u!114 &-2301386744040361609
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbe2dec93cbcbf6438c7e81097a0a9b7, type: 3}
+  m_Name: __ActiveAttackBlock_step_02
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterBasicAttackProfile
+  attackId: active_step_02
+  displayName: "\uB0B4 \uC8FC\uBCC0 \uC6D0\uD615"
+  designMemo: 
+  combatType: 0
+  launchFeedback:
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  projectileFeedback:
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  impactFeedback:
+    sfx: {fileID: 0}
+    vfxPrefab: {fileID: 0}
+    vfxLifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  launchFeel:
+    prefab: {fileID: 0}
+    lifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  projectileFeel:
+    prefab: {fileID: 0}
+    lifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  impactFeel:
+    prefab: {fileID: 0}
+    lifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  vfxSlots:
+  - slotId: telegraph
+    displayName: "\uD310\uC815 \uC608\uACE0"
+    description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+      \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+      \uD6A8\uACFC"
+    productionMemo: 
+    eventType: 13
+    anchor: 6
+    multiplicity: 1
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: overhead_trail
+    displayName: "\uB0B4\uB824\uCC0D\uAE30 \uADA4\uC801"
+    description: "\uC120\uD0DD\uB41C \uBAA8\uC158\uC758 \uB0B4\uB824\uCC0D\uAE30
+      \uADA4\uC801"
+    productionMemo: 
+    eventType: 1
+    anchor: 1
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 1
+    endPolicy: 2
+    defaultLifetime: 1
+  - slotId: ground_contact
+    displayName: "\uC9C0\uBA74 \uC811\uCD09"
+    description: "\uB0B4\uB824\uCC0D\uAE30\uAC00 \uB2FF\uC740 \uC911\uC2EC\uC810
+      \uD6A8\uACFC"
+    productionMemo: 
+    eventType: 1
+    anchor: 6
+    multiplicity: 1
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: target_hit
+    displayName: "\uB300\uC0C1\uBCC4 \uBA85\uC911"
+    description: "\uBC94\uC704 \uC548\uC5D0\uC11C \uC2E4\uC81C \uD53C\uD574\uB97C
+      \uBC1B\uC740 \uAC01 \uB300\uC0C1\uC758 \uBA85\uC911 \uD6A8\uACFC"
+    productionMemo: 
+    eventType: 3
+    anchor: 5
+    multiplicity: 3
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: area_wave
+    displayName: "\uBC94\uC704 \uD30C\uB3D9"
+    description: "\uBC94\uC704 \uD310\uC815\uC774 \uD574\uACB0\uB41C \uB4A4 \uD3BC\uCCD0\uC9C0\uB294
+      \uC6D0\uD615 \uD6A8\uACFC"
+    productionMemo: 
+    eventType: 6
+    anchor: 6
+    multiplicity: 1
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  inactiveVfxSlots: []
+  recipeVersion: 1
+  deliveryModule: 0
+  collisionModule: 0
+  sequenceModule: 0
+  movementModule: 0
+  presentationKind: 4
+  shape: 3
+  center: 0
+  projectileTravel: 0
+  sweepDirection: 0
+  rangeMultiplier: 3
+  radius: 3
+  angle: 90
+  lineWidth: 1.5
+  forwardOffset: 0
+  maxTargets: 8
+  progression: 4
+  progressionDuration: 0.6
+  telegraphDelay: 0.12
+  visualDuration: 1.2
+  magicDirection: 1
+  projectileCarrierPrefab: {fileID: 0}
+  projectileCount: 1
+  projectileSpreadAngle: 0
+  projectileSpeed: 10
+  projectileLifetime: 3
+  projectileCollisionRadius: 0.25
+  damageRatios:
+  - 1
+  secondaryDamageRatio: 1
+  repeatHitInterval: 0.08
+  breathDuration: 1.2
+  repeatImpactFeedback: 1
+  dashDistance: 0
+  dashDuration: 0.1
+  hitAreaVisibleDuration: 0.42
+  delivery: 0
+  stopOnFirstTarget: 0
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 919edd748a38a91498746d1542162c4b, type: 3}
+  m_Name: MSA_werewolf_01_Active
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterAttackActiveSkill
+  skillId: active_werewolf_01
+  displayName: "\uD608\uC6D4 \uD3EC\uD6A8"
+  description: "\uC8FC\uBCC0 \uC801\uC744 \uD3EC\uD6A8\uB85C \uB04C\uC5B4\uB2F9\uAE34
+    \uB4A4 \uB3D9\uC791\uC744 \uB9C8\uCE58\uACE0 \uCDA9\uACA9\uD30C\uB85C \uAE30\uC808\xB7\uCD9C\uD608\uC744
+    \uB0A8\uAE30\uB294 2\uB2E8 \uC218\uD638\uD615 \uC81C\uC555\uAE30."
+  icon: {fileID: 21300000, guid: 450b8f78b692eb142bd6ff158af6f914, type: 3}
+  presentationTier: 3
+  recipe:
+    trigger: 11
+    triggerCount: 1
+    internalCooldown: 0
+    conditions: []
+    target: 1
+    delivery: 0
+    shape: 0
+    effects:
+    - effectId: assembled_attack
+      type: 0
+      valueSource: 1
+      magnitude: 1
+      magnitudeMode: 0
+      maximumMagnitude: 1
+      duration: 0
+      delay: 0
+      repeatInterval: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 1
+  authoringEnabled: 1
+  energyCost: 1100
+  energyPerSecond: 0
+  energyPerBasicAttackHit: 0
+  energyPerDamageReceived: 0
+  sourceProfile: {fileID: 11400000, guid: 66cb78f3a51c0424098e5c25ab73693a, type: 2}
+  steps:
+  - stepId: step_01
+    displayName: "\uB0B4 \uC8FC\uBCC0 \uC6D0\uD615"
+    startMode: 0
+    delayAfterPrevious: 0
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 2
+    progression: 4
+    damageMultiplier: 0.35
+    damageMultiplierMode: 0
+    maximumDamageMultiplier: 0.35
+    maxTargets: 8
+    range: 3
+    width: 1.5
+    radius: 2.8
+    forwardOffset: 0
+    angle: 90
+    progressionDuration: 0.6
+    telegraphDelay: 0.15
+    visualDuration: 1.1
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects:
+    - type: 5
+      magnitude: 1.5
+      duration: 0.25
+      secondaryMagnitude: 0
+      tickInterval: 0.5
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: overhead_trail
+      displayName: "\uB0B4\uB824\uCC0D\uAE30 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uBAA8\uC158\uC758 \uB0B4\uB824\uCC0D\uAE30
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: ground_contact
+      displayName: "\uC9C0\uBA74 \uC811\uCD09"
+      description: "\uB0B4\uB824\uCC0D\uAE30\uAC00 \uB2FF\uC740 \uC911\uC2EC\uC810
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 1
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: target_hit
+      displayName: "\uB300\uC0C1\uBCC4 \uBA85\uC911"
+      description: "\uBC94\uC704 \uC548\uC5D0\uC11C \uC2E4\uC81C \uD53C\uD574\uB97C
+        \uBC1B\uC740 \uAC01 \uB300\uC0C1\uC758 \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: area_wave
+      displayName: "\uBC94\uC704 \uD30C\uB3D9"
+      description: "\uBC94\uC704 \uD310\uC815\uC774 \uD574\uACB0\uB41C \uB4A4 \uD3BC\uCCD0\uC9C0\uB294
+        \uC6D0\uD615 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 6
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  - stepId: step_02
+    displayName: "\uB0B4 \uC8FC\uBCC0 \uC6D0\uD615"
+    startMode: 0
+    delayAfterPrevious: 0.25
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 2
+    progression: 4
+    damageMultiplier: 1.1
+    damageMultiplierMode: 0
+    maximumDamageMultiplier: 1.1
+    maxTargets: 8
+    range: 3
+    width: 1.5
+    radius: 3
+    forwardOffset: 0
+    angle: 90
+    progressionDuration: 0.6
+    telegraphDelay: 0.12
+    visualDuration: 1.2
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects:
+    - type: 2
+      magnitude: 0
+      duration: 0.6
+      secondaryMagnitude: 0
+      tickInterval: 0.5
+    - type: 3
+      magnitude: 0.1
+      duration: 4
+      secondaryMagnitude: 0
+      tickInterval: 1
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: overhead_trail
+      displayName: "\uB0B4\uB824\uCC0D\uAE30 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uBAA8\uC158\uC758 \uB0B4\uB824\uCC0D\uAE30
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: ground_contact
+      displayName: "\uC9C0\uBA74 \uC811\uCD09"
+      description: "\uB0B4\uB824\uCC0D\uAE30\uAC00 \uB2FF\uC740 \uC911\uC2EC\uC810
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 1
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: target_hit
+      displayName: "\uB300\uC0C1\uBCC4 \uBA85\uC911"
+      description: "\uBC94\uC704 \uC548\uC5D0\uC11C \uC2E4\uC81C \uD53C\uD574\uB97C
+        \uBC1B\uC740 \uAC01 \uB300\uC0C1\uC758 \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: area_wave
+      displayName: "\uBC94\uC704 \uD30C\uB3D9"
+      description: "\uBC94\uC704 \uD310\uC815\uC774 \uD574\uACB0\uB41C \uB4A4 \uD3BC\uCCD0\uC9C0\uB294
+        \uC6D0\uD615 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 6
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  attackBlocks:
+  - {fileID: -9029297072637800862}
+  - {fileID: -2301386744040361609}
+  presentations:
+  - stepId: step_01
+    telegraph:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    launch:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    travel:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    impact:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    dashExit:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    dashEnter:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    slots: []
+    attackBlockBindings:
+    - attackId: active_step_01
+      slotId: telegraph
+      motionId: 
+      state: 0
+      prefab: {fileID: 0}
+      sfxState: 0
+      sound: {fileID: 0}
+      soundVolume: 1
+      sfx: {fileID: 0}
+      lifetime: 1
+      playbackOffset: 0
+      playbackSpeed: 1
+      eventTimingOffset: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    - attackId: active_step_01
+      slotId: overhead_trail
+      motionId: step_01
+      state: 0
+      prefab: {fileID: 0}
+      sfxState: 0
+      sound: {fileID: 0}
+      soundVolume: 1
+      sfx: {fileID: 0}
+      lifetime: 1
+      playbackOffset: 0
+      playbackSpeed: 1
+      eventTimingOffset: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    - attackId: active_step_01
+      slotId: ground_contact
+      motionId: 
+      state: 0
+      prefab: {fileID: 0}
+      sfxState: 0
+      sound: {fileID: 0}
+      soundVolume: 1
+      sfx: {fileID: 0}
+      lifetime: 1
+      playbackOffset: 0
+      playbackSpeed: 1
+      eventTimingOffset: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    - attackId: active_step_01
+      slotId: target_hit
+      motionId: 
+      state: 0
+      prefab: {fileID: 0}
+      sfxState: 0
+      sound: {fileID: 0}
+      soundVolume: 1
+      sfx: {fileID: 0}
+      lifetime: 1
+      playbackOffset: 0
+      playbackSpeed: 1
+      eventTimingOffset: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    - attackId: active_step_01
+      slotId: area_wave
+      motionId: 
+      state: 0
+      prefab: {fileID: 0}
+      sfxState: 0
+      sound: {fileID: 0}
+      soundVolume: 1
+      sfx: {fileID: 0}
+      lifetime: 1
+      playbackOffset: 0
+      playbackSpeed: 1
+      eventTimingOffset: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+  - stepId: step_02
+    telegraph:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    launch:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    travel:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    impact:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    dashExit:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    dashEnter:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    slots: []
+    attackBlockBindings:
+    - attackId: active_step_02
+      slotId: telegraph
+      motionId: 
+      state: 0
+      prefab: {fileID: 0}
+      sfxState: 0
+      sound: {fileID: 0}
+      soundVolume: 1
+      sfx: {fileID: 0}
+      lifetime: 1
+      playbackOffset: 0
+      playbackSpeed: 1
+      eventTimingOffset: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    - attackId: active_step_02
+      slotId: overhead_trail
+      motionId: step_02
+      state: 0
+      prefab: {fileID: 0}
+      sfxState: 0
+      sound: {fileID: 0}
+      soundVolume: 1
+      sfx: {fileID: 0}
+      lifetime: 1
+      playbackOffset: 0
+      playbackSpeed: 1
+      eventTimingOffset: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    - attackId: active_step_02
+      slotId: ground_contact
+      motionId: 
+      state: 0
+      prefab: {fileID: 0}
+      sfxState: 0
+      sound: {fileID: 0}
+      soundVolume: 1
+      sfx: {fileID: 0}
+      lifetime: 1
+      playbackOffset: 0
+      playbackSpeed: 1
+      eventTimingOffset: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    - attackId: active_step_02
+      slotId: target_hit
+      motionId: 
+      state: 0
+      prefab: {fileID: 0}
+      sfxState: 0
+      sound: {fileID: 0}
+      soundVolume: 1
+      sfx: {fileID: 0}
+      lifetime: 1
+      playbackOffset: 0
+      playbackSpeed: 1
+      eventTimingOffset: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    - attackId: active_step_02
+      slotId: area_wave
+      motionId: 
+      state: 0
+      prefab: {fileID: 0}
+      sfxState: 0
+      sound: {fileID: 0}
+      soundVolume: 1
+      sfx: {fileID: 0}
+      lifetime: 1
+      playbackOffset: 0
+      playbackSpeed: 1
+      eventTimingOffset: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+  commitNormalizedTime: 0.25
+  mythicExclusive: 0

@@ -214,6 +214,7 @@ namespace ProjectMT.Bootstrap
             sceneLoader.SceneReady += HandleSceneReady;
             sceneLoader.SceneFailed += HandleSceneFailed;
             AccountRuntimeBridge.LogoutRequested += HandleLogoutRequested;
+            AccountRuntimeBridge.DeleteProgressRequested = HandleDeleteProgressRequestedAsync;
 
             initialized = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -548,6 +549,19 @@ namespace ProjectMT.Bootstrap
             sceneLoader.Load(projectConfig.EntrySceneId);
         }
 
+        private async Task<bool> HandleDeleteProgressRequestedAsync()
+        {
+            if (!initialized || gameDataService == null || contentFlow == null || contentFlow.IsRunning ||
+                sceneLoader == null || sceneLoader.IsTransitioning)
+            {
+                return false; // 콘텐츠 실행·씬 전환 중에는 진행 데이터 삭제 금지
+            }
+
+            await gameDataService.ResetToDefaultAsync(); // 저장 성공 뒤 기본 진행값으로 확정
+            sceneLoader.Load(projectConfig.EntrySceneId);
+            return true;
+        }
+
         private bool ShowPendingOfflineRewards()
         {
             if (offlineRewardPresenter == null || offlineRewardCoordinator == null ||
@@ -755,6 +769,7 @@ namespace ProjectMT.Bootstrap
                 }
 
                 AccountRuntimeBridge.LogoutRequested -= HandleLogoutRequested;
+                AccountRuntimeBridge.DeleteProgressRequested = null;
 
                 Instance = null;
             }

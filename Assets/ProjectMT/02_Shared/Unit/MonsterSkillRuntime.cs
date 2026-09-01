@@ -33,6 +33,8 @@ namespace ProjectMT.Shared.Unit
         private float exposureRemaining;
         private float damageReductionRate;
         private float damageReductionRemaining;
+        private float damageReflectRate;
+        private float damageReflectRemaining;
         private float shieldAmount;
         private float shieldRemaining;
         private int remainingActiveHits;
@@ -110,6 +112,8 @@ namespace ProjectMT.Shared.Unit
             exposureRemaining = 0f;
             damageReductionRate = 0f;
             damageReductionRemaining = 0f;
+            damageReflectRate = 0f;
+            damageReflectRemaining = 0f;
             shieldAmount = 0f;
             shieldRemaining = 0f;
             remainingActiveHits = 0;
@@ -304,6 +308,14 @@ namespace ProjectMT.Shared.Unit
             exposureRemaining = Mathf.Max(exposureRemaining, duration);
         }
 
+        public bool TryCleanseExposure()
+        {
+            if (exposureRemaining <= 0f) return false;
+            exposureRate = 0f;
+            exposureRemaining = 0f;
+            return true;
+        }
+
         public void ApplyDamageReduction(float rate, float duration)
         {
             rate = Mathf.Clamp01(rate);
@@ -317,6 +329,25 @@ namespace ProjectMT.Shared.Unit
                 damageReductionRate = rate;
             }
             damageReductionRemaining = Mathf.Max(damageReductionRemaining, duration);
+        }
+
+        public void ApplyDamageReflect(float rate, float duration)
+        {
+            rate = Mathf.Clamp01(rate);
+            duration = Mathf.Max(0f, duration);
+            if (rate <= 0f || duration <= 0f) return;
+            if (rate >= damageReflectRate || damageReflectRemaining <= 0f)
+            {
+                damageReflectRate = rate;
+            }
+            damageReflectRemaining = Mathf.Max(damageReflectRemaining, duration);
+        }
+
+        public float ResolveReflectedDamage(float appliedDamage)
+        {
+            return damageReflectRemaining > 0f
+                ? Mathf.Max(0f, appliedDamage) * damageReflectRate
+                : 0f;
         }
 
         public void GrantShield(float amount, float duration)
@@ -393,6 +424,11 @@ namespace ProjectMT.Shared.Unit
             if (damageReductionRemaining <= 0f)
             {
                 damageReductionRate = 0f;
+            }
+            damageReflectRemaining = Mathf.Max(0f, damageReflectRemaining - deltaTime);
+            if (damageReflectRemaining <= 0f)
+            {
+                damageReflectRate = 0f;
             }
             shieldRemaining = Mathf.Max(0f, shieldRemaining - deltaTime);
             if (shieldRemaining <= 0f)
@@ -672,7 +708,8 @@ namespace ProjectMT.Shared.Unit
                         assembledAttack.Steps[0].StepId,
                         assembledAttack.CommitNormalizedTime,
                         out motionDuration,
-                        out rawCommitDelay);
+                        out rawCommitDelay,
+                        assembledAttack.Steps[0].PlaybackSpeed);
                 }
                 commitDelay = motionDuration > 0f
                     ? Mathf.Clamp(rawCommitDelay, 0.08f, 1.2f)
@@ -954,7 +991,8 @@ namespace ProjectMT.Shared.Unit
             var duration = owner.AnimationDriver.PlayActiveStep(
                 assembledAttack.Steps[0].StepId,
                 assembledAttack.CommitNormalizedTime,
-                out _);
+                out _,
+                assembledAttack.Steps[0].PlaybackSpeed);
             activeFirstStepMotionStarted = duration > 0f;
         }
         private bool CommitAssembledEffect()

@@ -10,21 +10,29 @@ namespace ProjectMT.EditorTools.MonsterMaker
 {
     internal sealed class MonsterActiveAttackAuthoringPreview : IDisposable // 기본공격 조립소형 독립 판정 Preview
     {
+        private static readonly Vector3 DefaultAttackerPosition = new Vector3(0f, 0f, 0.15f);
+        private const float PreviewDashStopDistance = 0.5f;
+        private const float MaximumSimulationStep = 1f / 60f;
         private readonly List<GameObject> targets = new List<GameObject>();
         private readonly List<Vector3> targetPositions = new List<Vector3>();
         private readonly List<PreviewStep> timeline = new List<PreviewStep>();
         private readonly List<FeelPreviewInstance> feelInstances = new List<FeelPreviewInstance>();
+        private readonly List<MonsterBasicAttackProfile> attackBlocks = new List<MonsterBasicAttackProfile>();
         private PreviewRenderUtility utility;
         private GameObject root;
         private GameObject attacker;
         private GameObject delivery;
+        private readonly List<GameObject> deliveries = new List<GameObject>();
         private MonsterAttackAreaIndicator indicator;
+        private readonly List<MonsterAttackAreaIndicator> indicators =
+            new List<MonsterAttackAreaIndicator>();
         private Material groundMaterial;
         private Material sourceMaterial;
         private Material targetMaterial;
         private Material attackMaterial;
         private MonsterActiveAttackProfile profile;
         private double playbackStartedAt;
+        private float playbackElapsed;
         private bool playing;
         private int visibleStepIndex = -1;
         private string status = "프로필을 선택하면 판정 미리보기가 준비됩니다.";
@@ -59,15 +67,45 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public bool Tick()
         {
             if (!playing || timeline.Count == 0) return false;
-            var elapsed = (float)(EditorApplication.timeSinceStartup - playbackStartedAt);
+            var targetElapsed = Mathf.Max(
+                playbackElapsed,
+                (float)(EditorApplication.timeSinceStartup - playbackStartedAt));
+            var endAt = timeline.Max(item => item.EndAt);
+            var simulationEnd = Mathf.Min(targetElapsed, endAt);
+            if (simulationEnd <= playbackElapsed + 0.000001f)
+            {
+                AdvancePlayback(simulationEnd);
+            }
+            else
+            {
+                while (playbackElapsed + 0.000001f < simulationEnd)
+                {
+                    playbackElapsed = Mathf.Min(
+                        simulationEnd,
+                        playbackElapsed + MaximumSimulationStep);
+                    AdvancePlayback(playbackElapsed);
+                }
+            }
+
+            if (targetElapsed >= endAt)
+            {
+                playing = false;
+                ResetPlaybackObjects();
+                ShowStaticStep(0);
+                status = $"재생 완료 · {timeline.Count} Step";
+            }
+            return true;
+        }
+
+        private void AdvancePlayback(float elapsed)
+        {
             var activeIndex = -1;
             for (var index = 0; index < timeline.Count; index++)
             {
                 var item = timeline[index];
-                if (elapsed >= item.StartAt && elapsed <= item.EndAt)
+                if (elapsed >= item.LaunchAt)
                 {
                     activeIndex = index;
-                    break;
                 }
             }
 
@@ -77,26 +115,22 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 ShowStep(timeline[activeIndex]);
             }
 
+            UpdateDash(elapsed, activeIndex);
+
             for (var index = 0; index < timeline.Count; index++)
             {
                 var item = timeline[index];
-                if (!item.Impacted && elapsed >= item.ImpactAt)
+                while (item.NextHitIndex < item.HitTimes.Length &&
+                       elapsed >= item.HitTimes[item.NextHitIndex])
                 {
-                    item.Impacted = true;
-                    PulseVictims(item, elapsed);
+                    var hitIndex = item.NextHitIndex++;
+                    PulseVictims(item, elapsed, hitIndex);
                 }
             }
 
             UpdateDelivery(elapsed, activeIndex);
             UpdateTargetPulses(elapsed);
             UpdateFeelInstances(elapsed);
-            if (elapsed >= timeline[timeline.Count - 1].EndAt)
-            {
-                playing = false;
-                delivery?.SetActive(false);
-                status = $"재생 완료 · {timeline.Count} Step";
-            }
-            return true;
         }
 
         public void Render(Rect rect, bool topDown)
@@ -121,6 +155,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (timeline.Count == 0) return;
             ResetPlaybackObjects();
             playbackStartedAt = EditorApplication.timeSinceStartup;
+            playbackElapsed = 0f;
             playing = true;
             visibleStepIndex = -1;
             status = onlyStepIndex < 0
@@ -131,120 +166,326 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private void BuildTimeline(int onlyStepIndex)
         {
             timeline.Clear();
-            var time = 0f;
-            var previousTargetPosition = targetPositions.Count > 0
-                ? targetPositions[0]
-                : new Vector3(0f, 0f, 3.2f);
+            var previousLaunchAt = 0f;
+            var previousEndAt = 0f;
+            var previousTargetIndex = 0;
+            var projectedAttackerPosition = DefaultAttackerPosition;
             var first = onlyStepIndex < 0 ? 0 : Mathf.Clamp(onlyStepIndex, 0, profile.Steps.Count - 1);
             var last = onlyStepIndex < 0 ? profile.Steps.Count - 1 : first;
             for (var index = first; index <= last; index++)
             {
                 var step = profile.Steps[index];
-                var targetIndex = 0;
-                var targetPosition = ResolveTargetPosition(
+                if (step == null || index < 0 || index >= attackBlocks.Count) continue;
+                var attackBlock = attackBlocks[index];
+                var targetIndex = ResolveTargetIndex(
                     step.TargetPolicy,
-                    previousTargetPosition,
-                    index);
-                previousTargetPosition = targetPosition;
-                time += step.DelayAfterPrevious;
-                var startAt = time;
-                var launchAt = startAt + step.TelegraphDelay;
-                var travel = step.IsProjectile
-                    ? Vector3.Distance(Vector3.zero, targetPosition) / step.ProjectileSpeed
+                    previousTargetIndex,
+                    index > first);
+                previousTargetIndex = targetIndex;
+                var targetPosition = targetPositions.Count > 0
+                    ? targetPositions[Mathf.Clamp(targetIndex, 0, targetPositions.Count - 1)]
+                    : new Vector3(0f, 0f, 3.2f);
+                var startOrigin = projectedAttackerPosition;
+                var forward = targetPosition - projectedAttackerPosition;
+                forward.y = 0f;
+                if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
+                forward.Normalize();
+                var speed = step.PlaybackSpeed;
+                var chainsFromLaunch = index > first &&
+                                       step.StartMode == MonsterActiveStepStartMode.AfterPreviousLaunch;
+                var startAt = chainsFromLaunch
+                    ? previousLaunchAt
+                    : previousEndAt + step.DelayAfterPrevious / speed;
+                var launchAt = chainsFromLaunch
+                    ? previousLaunchAt +
+                      Mathf.Max(step.DelayAfterPrevious, step.TelegraphDelay) / speed
+                    : startAt + step.TelegraphDelay / speed;
+                if (attackBlock.MovementModule == MonsterBasicAttackMovementModule.Dash)
+                {
+                    projectedAttackerPosition = MonsterBasicAttackProfile.ResolveDashDestination(
+                        projectedAttackerPosition,
+                        targetPosition,
+                        step.DashDistance,
+                        PreviewDashStopDistance);
+                }
+                var targetDistance = Vector3.Distance(projectedAttackerPosition, targetPosition);
+                var projectileSpeed = attackBlock.ProjectileSpeed * speed;
+                var usesTargetEndpoint =
+                    attackBlock.ProjectileTravel is MonsterBasicAttackProjectileTravel.Homing or
+                        MonsterBasicAttackProjectileTravel.Returning ||
+                    attackBlock.CollisionModule == MonsterBasicAttackCollisionModule.StopOnFirstTarget;
+                var impactDistance = attackBlock.CollisionModule ==
+                                     MonsterBasicAttackCollisionModule.AreaImpact && !usesTargetEndpoint
+                    ? attackBlock.ResolveRange(1f)
+                    : targetDistance;
+                var travel = attackBlock.UsesProjectileVisual
+                    ? impactDistance / Mathf.Max(0.01f, projectileSpeed)
                     : 0f;
-                var impactAt = launchAt + travel;
-                var endAt = impactAt + Mathf.Max(0.3f, step.ProgressionDuration, step.VisualDuration * 0.5f);
+                var deliveryDistance = attackBlock.UsesProjectileVisual && !usesTargetEndpoint
+                    ? attackBlock.ResolveRange(1f)
+                    : targetDistance;
+                var outboundTravel = deliveryDistance / Mathf.Max(0.01f, projectileSpeed);
+                var deliveryEndAt = launchAt +
+                                    (attackBlock.ProjectileTravel == MonsterBasicAttackProjectileTravel.Returning
+                                        ? outboundTravel * 2f
+                                        : outboundTravel);
+                var hitTimes = new float[attackBlock.HitCount];
+                for (var hitIndex = 0; hitIndex < hitTimes.Length; hitIndex++)
+                {
+                    hitTimes[hitIndex] = attackBlock.SequenceModule ==
+                                         MonsterBasicAttackSequenceModule.ReturnPasses
+                        ? hitIndex == 0
+                            ? launchAt + travel
+                            : deliveryEndAt
+                        : launchAt + travel +
+                          hitIndex * attackBlock.ResolveRepeatHitInterval(attackBlock.BreathDuration) / speed;
+                }
+                var endAt = Mathf.Max(
+                    launchAt + attackBlock.ResolveActivityDuration(speed),
+                    deliveryEndAt);
                 timeline.Add(new PreviewStep(
                     index,
                     step,
+                    attackBlock,
                     targetIndex,
                     targetPosition,
+                    startOrigin,
+                    projectedAttackerPosition,
                     startAt,
                     launchAt,
-                    impactAt,
+                    hitTimes,
+                    deliveryEndAt,
                     endAt));
-                time = endAt;
+                previousLaunchAt = launchAt;
+                previousEndAt = Mathf.Max(previousEndAt, endAt);
             }
         }
 
-        private static Vector3 ResolveTargetPosition(
+        private int ResolveTargetIndex(
             MonsterActiveTargetPolicy policy,
-            Vector3 previous,
-            int stepIndex)
+            int previous,
+            bool hasPreviousStep)
         {
-            if (policy == MonsterActiveTargetPolicy.SameTarget || stepIndex == 0) return previous;
-            var x = Mathf.Abs(previous.x) < 0.2f ? 1.2f : -Mathf.Sign(previous.x) * 1.2f;
-            return new Vector3(x, previous.y, previous.z);
+            if (!hasPreviousStep || policy == MonsterActiveTargetPolicy.SameTarget || targets.Count <= 1)
+                return Mathf.Clamp(previous, 0, Mathf.Max(0, targets.Count - 1));
+            return (Mathf.Clamp(previous, 0, targets.Count - 1) + 1) % targets.Count;
         }
 
         private void ShowStep(PreviewStep item)
         {
             if (item.TargetIndex < 0 || item.TargetIndex >= targetPositions.Count) return;
             var target = item.TargetPosition;
-            targets[item.TargetIndex].transform.localPosition = target;
-            var origin = attacker == null ? Vector3.zero : attacker.transform.localPosition;
+            var origin = item.StartOrigin;
             var forward = target - origin;
             forward.y = 0f;
             if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
             forward.Normalize();
-            if (item.Step.TeleportBeforeAttack && attacker != null)
+            if (attacker != null)
             {
-                attacker.transform.localPosition = target - forward * item.Step.TeleportFrontDistance;
-                origin = attacker.transform.localPosition;
+                attacker.transform.localPosition = origin;
+                attacker.transform.localRotation = Quaternion.LookRotation(forward, Vector3.up);
             }
-            if (indicator != null) UnityEngine.Object.DestroyImmediate(indicator.gameObject);
-            indicator = MonsterAttackAreaIndicator.CreateActive(
-                root.transform,
-                item.Step,
-                origin,
-                forward,
-                target,
-                new Color(0.1f, 1f, 0.85f, 1f),
-                false);
-            status = $"#{item.SourceIndex + 1:00} {item.Step.DisplayName} · {GetPatternLabel(item.Step.Pattern)} · " +
+            ShowIndicators(item.AttackBlock, origin, forward, target);
+            status = $"Step {item.SourceIndex + 1:00} · {item.Step.DisplayName} · " +
                      (item.Step.TargetPolicy == MonsterActiveTargetPolicy.SameTarget ? "같은 대상" : "다른 대상");
+        }
+
+        private void UpdateDash(float elapsed, int activeIndex)
+        {
+            if (attacker == null || activeIndex < 0 || activeIndex >= timeline.Count) return;
+            var item = timeline[activeIndex];
+            if (item.DashApplied ||
+                item.AttackBlock.MovementModule != MonsterBasicAttackMovementModule.Dash ||
+                elapsed < item.LaunchAt)
+            {
+                return;
+            }
+
+            item.DashApplied = true;
+            var forward = item.TargetPosition - item.AttackOrigin;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
+            forward.Normalize();
+            attacker.transform.localPosition = item.AttackOrigin;
+            attacker.transform.localRotation = Quaternion.LookRotation(forward, Vector3.up);
+            ShowIndicators(item.AttackBlock, item.AttackOrigin, forward, item.TargetPosition);
         }
 
         private void UpdateDelivery(float elapsed, int activeIndex)
         {
-            if (delivery == null || activeIndex < 0 || activeIndex >= timeline.Count)
+            if (deliveries.Count == 0 || activeIndex < 0 || activeIndex >= timeline.Count)
             {
-                delivery?.SetActive(false);
+                SetDeliveriesActive(0);
                 return;
             }
             var item = timeline[activeIndex];
-            if (!item.Step.IsProjectile || elapsed < item.LaunchAt || elapsed > item.ImpactAt)
+            if (!item.AttackBlock.UsesProjectileVisual ||
+                elapsed < item.LaunchAt || elapsed > item.DeliveryEndAt)
             {
-                delivery.SetActive(false);
+                SetDeliveriesActive(0);
                 return;
             }
-            delivery.SetActive(true);
-            var origin = attacker == null ? Vector3.zero : attacker.transform.localPosition;
-            var ratio = Mathf.InverseLerp(item.LaunchAt, item.ImpactAt, elapsed);
-            delivery.transform.localPosition = Vector3.Lerp(origin, item.TargetPosition, ratio) +
-                                               Vector3.up * 0.25f;
-            delivery.transform.localScale = item.Step.ProjectileFormation == MonsterActiveProjectileFormation.Fan
-                ? new Vector3(0.65f, 0.18f, 0.35f)
-                : Vector3.one * 0.22f;
+            var ratio = Mathf.InverseLerp(item.LaunchAt, item.DeliveryEndAt, elapsed);
+            if (item.AttackBlock.ProjectileTravel == MonsterBasicAttackProjectileTravel.Returning)
+            {
+                ratio = ratio <= 0.5f ? ratio * 2f : (1f - ratio) * 2f;
+            }
+            var projectileCount = Mathf.Clamp(item.AttackBlock.ProjectileCount, 1, deliveries.Count);
+            SetDeliveriesActive(projectileCount);
+            var forward = item.TargetPosition - item.AttackOrigin;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
+            forward.Normalize();
+            for (var index = 0; index < projectileCount; index++)
+            {
+                var projectile = deliveries[index];
+                var end = ResolveProjectileEndpoint(
+                    item.AttackBlock,
+                    item.AttackOrigin,
+                    item.TargetPosition,
+                    forward,
+                    index);
+                var direction = end - item.AttackOrigin;
+                direction.y = 0f;
+                projectile.transform.localPosition = Vector3.Lerp(item.AttackOrigin, end, ratio) +
+                                                     Vector3.up * 0.25f;
+                projectile.transform.localRotation = Quaternion.LookRotation(
+                    direction.sqrMagnitude < 0.0001f ? forward : direction.normalized,
+                    Vector3.up);
+                projectile.transform.localScale = Vector3.one * 0.22f;
+            }
         }
 
-        private void PulseVictims(PreviewStep item, float elapsed)
+        private void SetDeliveriesActive(int activeCount)
         {
-            var origin = attacker == null ? Vector3.zero : attacker.transform.localPosition;
+            for (var index = 0; index < deliveries.Count; index++)
+            {
+                if (deliveries[index] != null)
+                    deliveries[index].SetActive(index < activeCount);
+            }
+        }
+
+        private void ShowIndicators(
+            MonsterBasicAttackProfile attackBlock,
+            Vector3 origin,
+            Vector3 forward,
+            Vector3 target)
+        {
+            ClearIndicators();
+            if (attackBlock == null || root == null) return;
+            var count = attackBlock.UsesProjectileVisual &&
+                        attackBlock.CollisionModule == MonsterBasicAttackCollisionModule.AreaImpact
+                ? attackBlock.ProjectileCount
+                : 1;
+            for (var index = 0; index < count; index++)
+            {
+                var indicatorTarget = count > 1 ||
+                                      attackBlock.CollisionModule ==
+                                      MonsterBasicAttackCollisionModule.AreaImpact
+                    ? ResolveProjectileEndpoint(attackBlock, origin, target, forward, index)
+                    : target;
+                var created = MonsterAttackAreaIndicator.Create(
+                    root.transform,
+                    attackBlock,
+                    origin,
+                    forward,
+                    indicatorTarget,
+                    1f,
+                    new Color(0.1f, 1f, 0.85f, 1f),
+                    false);
+                if (created == null) continue;
+                indicators.Add(created);
+                indicator ??= created;
+            }
+        }
+
+        private void ClearIndicators()
+        {
+            for (var index = indicators.Count - 1; index >= 0; index--)
+            {
+                if (indicators[index] != null)
+                    UnityEngine.Object.DestroyImmediate(indicators[index].gameObject);
+            }
+            indicators.Clear();
+            indicator = null;
+        }
+
+        private static Vector3 ResolveProjectileEndpoint(
+            MonsterBasicAttackProfile attackBlock,
+            Vector3 origin,
+            Vector3 target,
+            Vector3 forward,
+            int projectileIndex)
+        {
+            if (attackBlock == null) return target;
+            var direction = attackBlock.ResolveProjectileDirection(forward, projectileIndex);
+            var usesTargetEndpoint =
+                attackBlock.ProjectileTravel is MonsterBasicAttackProjectileTravel.Homing or
+                    MonsterBasicAttackProjectileTravel.Returning ||
+                attackBlock.CollisionModule == MonsterBasicAttackCollisionModule.StopOnFirstTarget;
+            return usesTargetEndpoint
+                ? target
+                : origin + direction * attackBlock.ResolveRange(1f);
+        }
+
+        private void PulseVictims(PreviewStep item, float elapsed, int hitIndex)
+        {
+            var origin = item.AttackOrigin;
             var target = item.TargetPosition;
             var forward = target - origin;
             forward.y = 0f;
             if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
             forward.Normalize();
             var applied = 0;
-            for (var index = 0; index < targetPositions.Count && applied < item.Step.MaxTargets; index++)
+            if (item.AttackBlock.CollisionModule == MonsterBasicAttackCollisionModule.AreaImpact &&
+                item.AttackBlock.UsesProjectileVisual)
             {
-                if (!IsInsideShape(item.Step, targetPositions[index], target, origin, forward)) continue;
-                targetPulseTimes[index] = elapsed;
-                applied++;
+                for (var projectileIndex = 0;
+                     projectileIndex < item.AttackBlock.ProjectileCount;
+                     projectileIndex++)
+                {
+                    var center = ResolveProjectileEndpoint(
+                        item.AttackBlock,
+                        origin,
+                        target,
+                        forward,
+                        projectileIndex);
+                    var victimIndices = Enumerable.Range(0, targetPositions.Count)
+                        .Where(index => Vector3.Distance(targetPositions[index], center) <=
+                                        item.AttackBlock.Radius)
+                        .OrderBy(index => (targetPositions[index] - center).sqrMagnitude)
+                        .Take(item.AttackBlock.MaxTargets)
+                        .ToList();
+                    victimIndices.Remove(item.TargetIndex);
+                    victimIndices.Insert(0, item.TargetIndex);
+                    if (victimIndices.Count > item.AttackBlock.MaxTargets)
+                        victimIndices.RemoveAt(victimIndices.Count - 1);
+                    for (var index = 0; index < victimIndices.Count; index++)
+                    {
+                        targetPulseTimes[victimIndices[index]] = elapsed;
+                        applied++;
+                    }
+                    if (victimIndices.Count > 0) SpawnImpactFeel(item, center, forward, elapsed);
+                }
             }
-            if (applied > 0) SpawnImpactFeel(item, target, forward, elapsed);
-            status = $"#{item.SourceIndex + 1:00} 적중 · {applied}명 · 피해 {item.Step.DamageMultiplier:0.##}배";
+            else
+            {
+                for (var index = 0; index < targetPositions.Count && applied < item.Step.MaxTargets; index++)
+                {
+                    if (!IsInsideAttackBlock(
+                            item.AttackBlock,
+                            targetPositions[index],
+                            target,
+                            origin,
+                            forward)) continue;
+                    targetPulseTimes[index] = elapsed;
+                    applied++;
+                }
+                if (applied > 0) SpawnImpactFeel(item, target, forward, elapsed);
+            }
+            var ratio = item.AttackBlock.ResolveDamageRatio(hitIndex) * item.Step.DamageMultiplier;
+            status = $"Step {item.SourceIndex + 1:00} · {hitIndex + 1}/{item.AttackBlock.HitCount}타 " +
+                     $"· 적중 {applied}명 · 피해 {ratio:0.##}배";
         }
 
         private void SpawnImpactFeel(PreviewStep item, Vector3 position, Vector3 forward, float elapsed)
@@ -267,7 +508,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 targets[item.TargetIndex],
                 Mathf.Clamp(item.Step.DamageMultiplier, 0.5f, 2f),
                 BasicAttackFeelPlaybackOptions.None);
-            feelInstances.Add(new FeelPreviewInstance(instance, elapsed + feel.Lifetime));
+            feelInstances.Add(new FeelPreviewInstance(
+                instance,
+                elapsed + feel.Lifetime / item.Step.PlaybackSpeed));
         }
 
         private void UpdateFeelInstances(float elapsed)
@@ -281,40 +524,39 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
         }
 
-        private static bool IsInsideShape(
-            MonsterActiveAttackStep step,
+        private static bool IsInsideAttackBlock(
+            MonsterBasicAttackProfile attackBlock,
             Vector3 point,
             Vector3 primary,
             Vector3 origin,
             Vector3 forward)
         {
+            if (attackBlock == null) return false;
             var delta = point - origin;
             var distance = delta.magnitude;
-            switch (step.Pattern)
+            var range = attackBlock.ResolveRange(1f);
+            switch (attackBlock.Shape)
             {
-                case MonsterActiveAttackPattern.Line:
-                case MonsterActiveAttackPattern.PiercingBeam:
-                    return IsInsideLine(delta, forward, step.Range, step.Width * 0.5f + 0.25f);
-                case MonsterActiveAttackPattern.Cone:
-                    return distance <= step.Range + 0.25f && Vector3.Angle(forward, delta) <= step.Angle * 0.5f;
-                case MonsterActiveAttackPattern.SelfCircle:
-                    return distance <= step.Radius + 0.25f;
-                case MonsterActiveAttackPattern.FrontCircle:
-                    return Vector3.Distance(point, origin + forward * step.ForwardOffset) <= step.Radius + 0.25f;
-                case MonsterActiveAttackPattern.PiercingProjectile:
-                    return step.ProjectileFormation == MonsterActiveProjectileFormation.Fan
-                        ? distance <= step.Range + 0.25f &&
-                          Vector3.Angle(forward, delta) <= step.ProjectileFanAngle * 0.5f
-                        : IsInsideLine(delta, forward, step.Range, step.ProjectileCollisionRadius + 0.25f);
-                case MonsterActiveAttackPattern.ExplosiveProjectile:
-                    return Vector3.Distance(point, primary) <= step.ExplosionRadius + 0.25f ||
-                           (step.ProjectileFormation == MonsterActiveProjectileFormation.Fan &&
-                            distance <= step.Range + 0.25f &&
-                            Vector3.Angle(forward, delta) <= step.ProjectileFanAngle * 0.5f);
-                case MonsterActiveAttackPattern.InstantMagic:
-                    return step.InstantMagicTarget == MonsterActiveInstantMagicTarget.SingleTarget
-                        ? Vector3.Distance(point, primary) < 0.1f
-                        : Vector3.Distance(point, primary) <= step.Radius + 0.25f;
+                case MonsterBasicAttackShape.Line:
+                    return IsInsideLine(
+                        delta,
+                        forward,
+                        range,
+                        attackBlock.LineWidth * 0.5f + 0.25f);
+                case MonsterBasicAttackShape.Fan:
+                    return distance <= range + 0.25f &&
+                           (distance <= 0.001f ||
+                            Vector3.Angle(forward, delta) <= attackBlock.Angle * 0.5f);
+                case MonsterBasicAttackShape.Circle:
+                    var center = attackBlock.Center switch
+                    {
+                        MonsterBasicAttackCenter.Source => origin,
+                        MonsterBasicAttackCenter.Forward => origin + forward * attackBlock.ForwardOffset,
+                        _ => primary
+                    };
+                    return Vector3.Distance(point, center) <= attackBlock.Radius + 0.25f;
+                case MonsterBasicAttackShape.Single:
+                    return Vector3.Distance(point, primary) < 0.1f;
                 default:
                     return false;
             }
@@ -352,17 +594,52 @@ namespace ProjectMT.EditorTools.MonsterMaker
             attackMaterial = CreateMaterial(new Color(1f, 0.8f, 0.15f));
             CreatePrimitive(PrimitiveType.Cube, "Ground", new Vector3(0f, -0.08f, 2f),
                 new Vector3(9f, 0.1f, 9f), groundMaterial);
-            attacker = CreatePrimitive(PrimitiveType.Capsule, "Caster", new Vector3(0f, 0f, 0.15f),
+            attacker = CreatePrimitive(PrimitiveType.Capsule, "Caster", DefaultAttackerPosition,
                 new Vector3(0.55f, 0.45f, 0.55f), sourceMaterial);
-            var targetPosition = new Vector3(0f, 0f, 3.2f);
-            targetPositions.Add(targetPosition);
-            targets.Add(CreatePrimitive(PrimitiveType.Capsule, "Target", targetPosition,
-                Vector3.one * 0.42f, targetMaterial));
-            targetPulseTimes = new float[1];
+            for (var index = 0; index < profile.Steps.Count; index++)
+            {
+                var block = ScriptableObject.CreateInstance<MonsterBasicAttackProfile>();
+                block.name = $"__ActiveAuthoringPreview_{profile.Steps[index].StepId}";
+                block.hideFlags = HideFlags.HideAndDontSave;
+                profile.Steps[index].EditorCompileAttackBlock(block);
+                attackBlocks.Add(block);
+            }
+            var targetCount = ResolveTargetCount();
+            var primaryDistance = ResolvePrimaryTargetDistance();
+            for (var index = 0; index < targetCount; index++)
+            {
+                var lateral = index == 0 ? 0f : (index % 2 == 1 ? 1f : -1f) * ((index + 1) / 2) * 1.2f;
+                var targetPosition = new Vector3(
+                    lateral,
+                    0f,
+                    primaryDistance + (index == 0 ? 0f : 0.22f));
+                targetPositions.Add(targetPosition);
+                targets.Add(CreatePrimitive(
+                    PrimitiveType.Capsule,
+                    $"Target {index + 1:00}",
+                    targetPosition,
+                    Vector3.one * 0.42f,
+                    targetMaterial));
+            }
+            targetPulseTimes = new float[targetCount];
             for (var index = 0; index < targetPulseTimes.Length; index++) targetPulseTimes[index] = -10f;
-            delivery = CreatePrimitive(PrimitiveType.Sphere, "Delivery", Vector3.zero,
-                Vector3.one * 0.22f, attackMaterial);
-            delivery.SetActive(false);
+            var maximumDeliveries = Mathf.Max(1, attackBlocks
+                .Where(block => block != null && block.UsesProjectileVisual)
+                .Select(block => block.ProjectileCount)
+                .DefaultIfEmpty(1)
+                .Max());
+            for (var index = 0; index < maximumDeliveries; index++)
+            {
+                var projectile = CreatePrimitive(
+                    PrimitiveType.Sphere,
+                    $"Delivery {index + 1:00}",
+                    Vector3.zero,
+                    Vector3.one * 0.22f,
+                    attackMaterial);
+                projectile.SetActive(false);
+                deliveries.Add(projectile);
+            }
+            delivery = deliveries[0];
             utility.AddSingleGO(root);
             ShowStaticStep(0);
         }
@@ -372,10 +649,13 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (profile == null || profile.Steps.Count == 0) return;
             index = Mathf.Clamp(index, 0, profile.Steps.Count - 1);
             var step = profile.Steps[index];
+            var attackBlock = index < attackBlocks.Count ? attackBlocks[index] : null;
             var target = targetPositions[0];
-            var forward = target.normalized;
-            indicator = MonsterAttackAreaIndicator.CreateActive(root.transform, step, Vector3.zero,
-                forward, target, new Color(0.1f, 1f, 0.85f, 1f), false);
+            var forward = target - DefaultAttackerPosition;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
+            forward.Normalize();
+            ShowIndicators(attackBlock, DefaultAttackerPosition, forward, target);
             status = $"대기 · #{index + 1:00} {step.DisplayName} · {GetPatternLabel(step.Pattern)}";
         }
 
@@ -441,12 +721,37 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private void ResetPlaybackObjects()
         {
             ClearFeelInstances();
-            if (attacker != null) attacker.transform.localPosition = new Vector3(0f, 0f, 0.15f);
-            if (delivery != null) delivery.SetActive(false);
+            if (attacker != null)
+            {
+                attacker.transform.localPosition = DefaultAttackerPosition;
+                attacker.transform.localRotation = Quaternion.identity;
+            }
+            SetDeliveriesActive(0);
             for (var index = 0; index < targets.Count; index++) targets[index].transform.localScale = Vector3.one * 0.42f;
             for (var index = 0; index < targetPulseTimes.Length; index++) targetPulseTimes[index] = -10f;
-            if (indicator != null) UnityEngine.Object.DestroyImmediate(indicator.gameObject);
-            indicator = null;
+            ClearIndicators();
+        }
+
+        private int ResolveTargetCount()
+        {
+            if (profile?.Steps == null || profile.Steps.Count == 0) return 1;
+            var count = profile.Steps.Max(step => step?.MaxTargets ?? 1);
+            if (profile.Steps.Any(step => step?.TargetPolicy == MonsterActiveTargetPolicy.DifferentTarget))
+                count = Mathf.Max(2, count);
+            return Mathf.Clamp(count, 1, 3);
+        }
+
+        private float ResolvePrimaryTargetDistance()
+        {
+            var step = profile?.Steps.FirstOrDefault(candidate => candidate != null);
+            if (step == null) return 3.2f;
+            var reach = step.Pattern switch
+            {
+                MonsterActiveAttackPattern.SelfCircle => step.Radius * 0.65f,
+                MonsterActiveAttackPattern.FrontCircle => step.ForwardOffset,
+                _ => step.Range * 0.7f
+            };
+            return Mathf.Max(0.8f, reach);
         }
 
         public void Dispose()
@@ -463,15 +768,24 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private void ClearContents()
         {
             playing = false;
+            playbackElapsed = 0f;
             timeline.Clear();
             ClearFeelInstances();
+            for (var index = attackBlocks.Count - 1; index >= 0; index--)
+            {
+                if (attackBlocks[index] != null)
+                    UnityEngine.Object.DestroyImmediate(attackBlocks[index]);
+            }
+            attackBlocks.Clear();
             targets.Clear();
             targetPositions.Clear();
-            indicator = null;
+            ClearIndicators();
             if (root != null) UnityEngine.Object.DestroyImmediate(root);
             root = null;
             attacker = null;
             delivery = null;
+            deliveries.Clear();
+            indicators.Clear();
             DestroyMaterial(ref groundMaterial);
             DestroyMaterial(ref sourceMaterial);
             DestroyMaterial(ref targetMaterial);
@@ -498,6 +812,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
             MonsterActiveAttackPattern.ExplosiveProjectile => "폭발 투사체",
             MonsterActiveAttackPattern.PiercingBeam => "관통 빔",
             MonsterActiveAttackPattern.InstantMagic => "즉발 마법",
+            MonsterActiveAttackPattern.SingleTarget => "단일 대상",
+            MonsterActiveAttackPattern.StandardProjectile => "일반 투사체",
+            MonsterActiveAttackPattern.ReturningProjectile => "왕복 투사체",
+            MonsterActiveAttackPattern.Breath => "브레스",
+            MonsterActiveAttackPattern.TravelingWave => "이동 파동",
+            MonsterActiveAttackPattern.TargetCircle => "대상 중심 원형",
             _ => pattern.ToString()
         };
 
@@ -523,29 +843,45 @@ namespace ProjectMT.EditorTools.MonsterMaker
             public PreviewStep(
                 int sourceIndex,
                 MonsterActiveAttackStep step,
+                MonsterBasicAttackProfile attackBlock,
                 int targetIndex,
                 Vector3 targetPosition,
-                float startAt, float launchAt, float impactAt, float endAt)
+                Vector3 startOrigin,
+                Vector3 attackOrigin,
+                float startAt,
+                float launchAt,
+                float[] hitTimes,
+                float deliveryEndAt,
+                float endAt)
             {
                 SourceIndex = sourceIndex;
                 Step = step;
+                AttackBlock = attackBlock;
                 TargetIndex = targetIndex;
                 TargetPosition = targetPosition;
+                StartOrigin = startOrigin;
+                AttackOrigin = attackOrigin;
                 StartAt = startAt;
                 LaunchAt = launchAt;
-                ImpactAt = impactAt;
+                HitTimes = hitTimes ?? Array.Empty<float>();
+                DeliveryEndAt = deliveryEndAt;
                 EndAt = endAt;
             }
 
             public int SourceIndex { get; }
             public MonsterActiveAttackStep Step { get; }
+            public MonsterBasicAttackProfile AttackBlock { get; }
             public int TargetIndex { get; }
             public Vector3 TargetPosition { get; }
+            public Vector3 StartOrigin { get; }
+            public Vector3 AttackOrigin { get; }
             public float StartAt { get; }
             public float LaunchAt { get; }
-            public float ImpactAt { get; }
+            public float[] HitTimes { get; }
+            public float DeliveryEndAt { get; }
             public float EndAt { get; }
-            public bool Impacted { get; set; }
+            public int NextHitIndex { get; set; }
+            public bool DashApplied { get; set; }
         }
 
         private sealed class FeelPreviewInstance

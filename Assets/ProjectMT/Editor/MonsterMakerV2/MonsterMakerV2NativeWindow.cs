@@ -82,6 +82,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private Button pingButton;
         private Button openDraftButton;
         private Button catalogToggleButton;
+        private Button helpToggleButton;
         private Button pauseButton;
         private Button playActiveButton;
         private DropdownField environmentField;
@@ -264,6 +265,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             pingButton = rootVisualElement.Q<Button>("ping-button");
             openDraftButton = rootVisualElement.Q<Button>("open-draft-button");
             catalogToggleButton = rootVisualElement.Q<Button>("catalog-toggle-button");
+            helpToggleButton = rootVisualElement.Q<Button>("help-toggle-button");
             pauseButton = rootVisualElement.Q<Button>("pause-button");
             playActiveButton = rootVisualElement.Q<Button>("play-active");
             environmentField = rootVisualElement.Q<DropdownField>("environment-field");
@@ -283,7 +285,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                    attackButtons != null && previewRenderHost != null &&
                    bottomWorkspace != null && commandDetailsScroll != null &&
                    sortDefaultButton != null && sortRarityButton != null && pingButton != null &&
-                   catalogPanel != null && openDraftButton != null && catalogToggleButton != null &&
+                    catalogPanel != null && openDraftButton != null && catalogToggleButton != null &&
+                    helpToggleButton != null &&
                    pauseButton != null && playActiveButton != null && environmentField != null &&
                    timelineSlider != null;
         }
@@ -298,6 +301,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             pingButton.clicked += PingSelectedDefinition;
             openDraftButton.clicked += ShowAllDraftMenu;
             catalogToggleButton.clicked += ToggleCatalog;
+            helpToggleButton.clicked += ToggleContextHelp;
             rootVisualElement.Q<Button>("new-draft-button").clicked += CreateNewDraft;
             rootVisualElement.Q<Button>("save-draft-button").clicked += () => TrySaveDraft();
             rootVisualElement.Q<Button>("discard-button").clicked += DiscardCurrentChanges;
@@ -307,6 +311,23 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             rootVisualElement.Q<Button>("validate-button").clicked += ValidateDraft;
             rootVisualElement.Q<Button>("publish-button").clicked += PublishDraft;
             ApplyCatalogVisibility();
+            ApplyContextHelpVisibility();
+        }
+
+        private void ToggleContextHelp()
+        {
+            MonsterMakerV2HelpPreferences.ShowContextHelp =
+                !MonsterMakerV2HelpPreferences.ShowContextHelp;
+            ApplyContextHelpVisibility();
+        }
+
+        private void ApplyContextHelpVisibility()
+        {
+            var show = MonsterMakerV2HelpPreferences.ShowContextHelp;
+            rootVisualElement.EnableInClassList("maker-root--context-help-hidden", !show);
+            if (helpToggleButton == null) return;
+            helpToggleButton.text = show ? "도움말 끄기" : "도움말 켜기";
+            helpToggleButton.EnableInClassList("help-toggle-button--hidden", !show);
         }
 
         private void OnProjectChanged()

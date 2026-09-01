@@ -48,12 +48,12 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 ProjectMT.Shared.Stats.CombatStatConfig.RuntimeDefault).Build(
                 new GameProgressView(GameProgressData.CreateDefault()));
             var exit = new RecordingExit();
+            var runInfo = new ContentRunInfo(
+                new ContentId("castle_raid"),
+                "seed",
+                ContentRunMode.SeedTest);
             var contentContext = new ContentContext(
-                new ContentRunInfo(
-                    new ContentId("castle_raid"),
-                    "seed",
-                    ContentRunMode.SeedTest,
-                    new ContentVariantId("hex")),
+                runInfo,
                 new TestStartData(party),
                 exit);
 
@@ -61,6 +61,7 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
             {
                 Assert.That(sceneRoot, Is.Not.Null);
                 Assert.That(controller, Is.Not.Null);
+                Assert.That(runInfo.VariantId.IsValid, Is.False, "현행 Hex 단일 진입은 Variant를 사용하지 않음");
                 sceneRoot.Initialize(new ContentSceneContext(definition, contentContext));
                 yield return null;
 
@@ -299,6 +300,13 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 Assert.That(controller.CurrentDifficultyLevel, Is.EqualTo(7));
                 Assert.That(controller.CurrentDefenseLayerCount, Is.EqualTo(4));
                 Assert.That(controller.CurrentTheme, Is.Not.EqualTo(previousTheme));
+                previousTheme = controller.CurrentTheme;
+                generationButtons["Difficulty10Button"].onClick.Invoke();
+                yield return null;
+                Assert.That(controller.CurrentDifficultyLevel, Is.EqualTo(10));
+                Assert.That(controller.CurrentDefenseLayerCount, Is.EqualTo(4));
+                Assert.That(controller.CurrentTheme, Is.Not.EqualTo(previousTheme));
+                Assert.That(cameraController.RequiredShadowDistance, Is.GreaterThan(120f));
                 previousTheme = controller.CurrentTheme;
                 generationButtons["Difficulty4Button"].onClick.Invoke();
                 yield return null;

@@ -443,6 +443,7 @@ namespace ProjectMT.Features.Expedition
     {
         public const int LegacyWaveCount = 2; // 구버전 데이터 Fallback
         public const int WaveCount = LegacyWaveCount; // 기존 호출·테스트 호환
+        public const int FallbackEnemiesPerWave = 8; // 데이터 누락 시에도 현재 수량 유지
         public const int FormationColumns = 4; // 한 행 최대 인원
         public const float FormationSpacing = 0.85f; // 유닛 간격
 
@@ -453,7 +454,7 @@ namespace ProjectMT.Features.Expedition
 
         public static int GetLegacyEnemiesPerWave(int stage)
         {
-            return 4 + (Mathf.Max(1, stage) - 1) / 10; // 10단계마다 한 마리 증가
+            return FallbackEnemiesPerWave;
         }
 
         public static int GetTotalEnemies(int stage)

@@ -8,7 +8,8 @@ namespace ProjectMT.Shared.Combat
     {
         None = 0,
         BasicAttackFeelTargetMotion = 1 << 0,
-        PassiveEnhancedNumber = 1 << 1
+        PassiveEnhancedNumber = 1 << 1,
+        SeparateFloatingNumber = 1 << 2 // 다단 피해는 타격별 숫자를 각각 표시
     }
 
     public readonly struct DamageRequest // 피해 적용 전 요청값

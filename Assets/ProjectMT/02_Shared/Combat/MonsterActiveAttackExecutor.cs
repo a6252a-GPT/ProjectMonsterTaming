@@ -29,24 +29,48 @@ namespace ProjectMT.Shared.Combat
             public MonsterActivePresentationEndPolicy EndPolicy;
         }
 
+        private sealed class InFlightAttackBlock
+        {
+            public MonsterBasicAttackVfxContext MotionContext;
+            public float Remaining;
+        }
+
         private readonly List<UnitActor> targetBuffer = new List<UnitActor>();
         private readonly List<UnitActor> stepTargets = new List<UnitActor>();
         private readonly List<PendingHit> pendingHits = new List<PendingHit>();
         private readonly List<DeliveryVisual> deliveryVisuals = new List<DeliveryVisual>();
         private readonly List<TrackedVfx> trackedVfx = new List<TrackedVfx>();
+        private readonly List<InFlightAttackBlock> inFlightAttackBlocks =
+            new List<InFlightAttackBlock>();
         private readonly HashSet<int> uniqueTargets = new HashSet<int>();
+        private readonly HashSet<string> playedOncePerStepSlots =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private readonly MonsterBasicAttackExecutor attackBlockExecutor =
+            new MonsterBasicAttackExecutor();
         private UnitActor owner;
         private CombatWorld world;
         private MonsterAttackActiveSkill skill;
         private UnitActor lockedTarget;
         private UnitActor previousStepTarget;
         private MonsterActiveAttackStep currentStep;
+        private float currentDamageMultiplier;
         private int stepIndex;
         private float waitRemaining;
         private bool stepPrepared;
         private bool feelPlayedForStep;
         private bool firstStepMotionAlreadyPlaying;
         private bool stepFired;
+        private float stepLifetimeRemaining;
+        private float preparedMotionDuration;
+        private float preparedMotionElapsed;
+        private float preparedWaitDuration;
+        private MonsterBasicAttackProfile currentAttackBlock;
+        private MonsterActiveAttackPresentationBinding currentAttackBlockPresentation;
+        private MonsterActionExecutionContext currentAttackBlockContext;
+        private int currentAttackBlockSequence;
+        private bool currentAttackBlockMotionBegun;
+        private bool preparingFromPreviousLaunch;
+        private float launchChainMinimumDelay;
 
         public bool IsRunning { get; private set; }
         public int CompletedStepCount { get; private set; }
@@ -59,7 +83,8 @@ namespace ProjectMT.Shared.Combat
             bool initialStepMotionAlreadyPlaying = false)
         {
             Reset();
-            if (source == null || combatWorld == null || active == null || active.Steps.Count == 0)
+            if (source == null || combatWorld == null || active == null ||
+                active.Steps.Count == 0 || !active.TryValidate(out _))
             {
                 return false;
             }
@@ -70,7 +95,7 @@ namespace ProjectMT.Shared.Combat
             lockedTarget = initialTarget;
             firstStepMotionAlreadyPlaying = initialStepMotionAlreadyPlaying;
             IsRunning = true;
-            PrepareNextStep();
+            PrepareNextStep(false);
             return true;
         }
 
@@ -84,25 +109,43 @@ namespace ProjectMT.Shared.Combat
             }
 
             var remainingDelta = Mathf.Max(0f, deltaTime);
+            TickInFlightAttackBlocks(remainingDelta);
+            if (currentStep == null)
+            {
+                TryFinishAfterInFlightSteps();
+                return !IsRunning;
+            }
             var safety = 0;
             while (IsRunning && safety++ < 96)
             {
-                if (pendingHits.Count > 0 || deliveryVisuals.Count > 0)
+                if (currentStep == null)
                 {
+                    TryFinishAfterInFlightSteps();
+                    break;
+                }
+                if (stepFired)
+                {
+                    var activityRemaining = ResolveStepActivityRemaining();
                     TickPendingHits(remainingDelta);
                     TickDeliveryVisuals(remainingDelta);
-                    if (pendingHits.Count == 0 && deliveryVisuals.Count == 0)
+                    stepLifetimeRemaining = Mathf.Max(0f, stepLifetimeRemaining - remainingDelta);
+                    if (ResolveStepActivityRemaining() <= 0.0001f)
                     {
+                        remainingDelta = Mathf.Max(0f, remainingDelta - activityRemaining);
                         CompleteCurrentStep();
+                        continue;
                     }
                     break;
                 }
 
                 if (waitRemaining > 0f)
                 {
-                    waitRemaining -= remainingDelta;
-                    if (waitRemaining > 0f) break;
-                    remainingDelta = Mathf.Max(0f, -waitRemaining);
+                    if (remainingDelta + 0.0001f < waitRemaining)
+                    {
+                        waitRemaining -= remainingDelta;
+                        break;
+                    }
+                    remainingDelta = Mathf.Max(0f, remainingDelta - waitRemaining);
                     waitRemaining = 0f;
                 }
 
@@ -110,28 +153,24 @@ namespace ProjectMT.Shared.Combat
                 {
                     PrepareCurrentStep();
                     if (!IsRunning) break;
+                    // 타깃 부재로 PrepareCurrentStep이 현재 Step을 넘긴 경우에는
+                    // 다음 Step을 같은 호출에서 새로 준비하고, 이전 Step을 발사하지 않는다.
+                    if (!stepPrepared) continue;
                     if (waitRemaining > 0f) continue;
                 }
 
                 FireCurrentStep();
-                if (pendingHits.Count == 0 && deliveryVisuals.Count == 0)
-                {
-                    CompleteCurrentStep();
-                    continue;
-                }
-                TickPendingHits(remainingDelta);
-                TickDeliveryVisuals(remainingDelta);
-                if (pendingHits.Count == 0 && deliveryVisuals.Count == 0)
-                {
-                    CompleteCurrentStep();
-                }
-                break;
             }
             return !IsRunning;
         }
 
         public void Reset()
         {
+            EndCurrentAttackBlockMotion();
+            for (var index = inFlightAttackBlocks.Count - 1; index >= 0; index--)
+            {
+                MonsterBasicAttackVfxRuntime.EndMotion(inFlightAttackBlocks[index].MotionContext);
+            }
             ReleaseTrackedVfx(null);
             for (var index = deliveryVisuals.Count - 1; index >= 0; index--)
             {
@@ -143,11 +182,23 @@ namespace ProjectMT.Shared.Combat
             lockedTarget = null;
             previousStepTarget = null;
             currentStep = null;
+            currentDamageMultiplier = 0f;
             stepIndex = 0;
             waitRemaining = 0f;
             stepPrepared = false;
             firstStepMotionAlreadyPlaying = false;
             stepFired = false;
+            stepLifetimeRemaining = 0f;
+            preparedMotionDuration = 0f;
+            preparedMotionElapsed = 0f;
+            preparedWaitDuration = 0f;
+            currentAttackBlock = null;
+            currentAttackBlockPresentation = null;
+            currentAttackBlockContext = default;
+            currentAttackBlockSequence = 0;
+            currentAttackBlockMotionBegun = false;
+            preparingFromPreviousLaunch = false;
+            launchChainMinimumDelay = 0f;
             IsRunning = false;
             CompletedStepCount = 0;
             targetBuffer.Clear();
@@ -155,20 +206,39 @@ namespace ProjectMT.Shared.Combat
             pendingHits.Clear();
             deliveryVisuals.Clear();
             trackedVfx.Clear();
+            inFlightAttackBlocks.Clear();
             uniqueTargets.Clear();
+            playedOncePerStepSlots.Clear();
         }
 
-        private void PrepareNextStep()
+        private void PrepareNextStep(bool fromPreviousLaunch)
         {
             if (stepIndex >= skill.Steps.Count)
             {
-                IsRunning = false;
+                currentStep = null;
+                currentAttackBlock = null;
+                currentAttackBlockPresentation = null;
+                TryFinishAfterInFlightSteps();
                 return;
             }
             currentStep = skill.Steps[stepIndex];
+            currentDamageMultiplier = currentStep.ResolveDamageMultiplier(UnityEngine.Random.value);
+            currentAttackBlock = skill.ResolveAttackBlock(currentStep.StepId);
+            currentAttackBlockPresentation = skill.ResolvePresentation(currentStep.StepId);
+            playedOncePerStepSlots.Clear();
             stepPrepared = false;
             stepFired = false;
-            waitRemaining = currentStep.DelayAfterPrevious;
+            stepLifetimeRemaining = 0f;
+            preparedMotionDuration = 0f;
+            preparedMotionElapsed = 0f;
+            preparedWaitDuration = 0f;
+            preparingFromPreviousLaunch = fromPreviousLaunch;
+            launchChainMinimumDelay = fromPreviousLaunch
+                ? ScaleStepDuration(currentStep.DelayAfterPrevious)
+                : 0f;
+            waitRemaining = fromPreviousLaunch
+                ? 0f
+                : ScaleStepDuration(currentStep.DelayAfterPrevious);
         }
 
         private void PrepareCurrentStep()
@@ -182,28 +252,39 @@ namespace ProjectMT.Shared.Combat
 
             previousStepTarget = target;
             var presentation = skill.ResolvePresentation(currentStep.StepId);
-            if (currentStep.TeleportBeforeAttack)
+            if (currentAttackBlock != null)
+            {
+                PrepareCurrentAttackBlock(target);
+                return;
+            }
+            if (currentStep.DashBeforeAttack)
             {
                 PlayPresentationEvent(
                     presentation,
-                    MonsterActivePresentationEvent.TeleportExit,
+                    MonsterActivePresentationEvent.DashExit,
                     target,
-                    presentation?.TeleportExit);
-                var direction = owner.transform.position - target.transform.position;
-                direction.y = 0f;
-                if (direction.sqrMagnitude < 0.0001f) direction = -target.transform.forward;
-                var destination = target.transform.position +
-                                  direction.normalized * currentStep.TeleportFrontDistance;
-                owner.TryTeleportForActive(destination);
+                    presentation?.DashExit);
+                owner.AdvanceForBasicAttack(
+                    target.transform.position,
+                    currentStep.DashDistance,
+                    owner.BodyRadius + target.BodyRadius,
+                    currentStep.DashDuration / currentStep.PlaybackSpeed);
                 PlayPresentationEvent(
                     presentation,
-                    MonsterActivePresentationEvent.TeleportEnter,
+                    MonsterActivePresentationEvent.DashEnter,
                     target,
-                    presentation?.TeleportEnter);
+                    presentation?.DashEnter);
             }
 
             FaceTarget(target);
             var motionCommitDelay = 0f;
+            var resolvedMotionCommitDelay = 0f;
+            owner.AnimationDriver?.TryResolveActiveStepTiming(
+                currentStep.StepId,
+                skill.CommitNormalizedTime,
+                out preparedMotionDuration,
+                out resolvedMotionCommitDelay,
+                currentStep.PlaybackSpeed);
             PlayPresentationEvent(
                 presentation,
                 MonsterActivePresentationEvent.MotionStart,
@@ -214,19 +295,288 @@ namespace ProjectMT.Shared.Combat
                 owner.AnimationDriver?.PlayActiveStep(
                     currentStep.StepId,
                     skill.CommitNormalizedTime,
-                    out motionCommitDelay);
+                    out motionCommitDelay,
+                    currentStep.PlaybackSpeed);
+            }
+            else
+            {
+                preparedMotionElapsed = Mathf.Min(
+                    preparedMotionDuration,
+                    resolvedMotionCommitDelay + ScaleStepDuration(currentStep.DelayAfterPrevious));
             }
             PlayPresentationEvent(
                 presentation,
                 MonsterActivePresentationEvent.Telegraph,
                 target,
                 presentation?.Telegraph);
-            waitRemaining = Mathf.Max(currentStep.TelegraphDelay, motionCommitDelay);
+            preparedWaitDuration = Mathf.Max(
+                ScaleStepDuration(currentStep.TelegraphDelay),
+                motionCommitDelay);
+            waitRemaining = preparingFromPreviousLaunch
+                ? Mathf.Max(preparedWaitDuration, launchChainMinimumDelay)
+                : preparedWaitDuration;
+            preparingFromPreviousLaunch = false;
+            launchChainMinimumDelay = 0f;
             stepPrepared = true;
+        }
+
+        private void PrepareCurrentAttackBlock(UnitActor target)
+        {
+            FaceTarget(target);
+            var motionCommitDelay = 0f;
+            var resolvedMotionCommitDelay = 0f;
+            owner.AnimationDriver?.TryResolveActiveStepTiming(
+                currentStep.StepId,
+                skill.CommitNormalizedTime,
+                out preparedMotionDuration,
+                out resolvedMotionCommitDelay,
+                currentStep.PlaybackSpeed);
+            if (!(stepIndex == 0 && firstStepMotionAlreadyPlaying))
+            {
+                owner.AnimationDriver?.PlayActiveStep(
+                    currentStep.StepId,
+                    skill.CommitNormalizedTime,
+                    out motionCommitDelay,
+                    currentStep.PlaybackSpeed);
+            }
+            else
+            {
+                preparedMotionElapsed = Mathf.Min(
+                    preparedMotionDuration,
+                    resolvedMotionCommitDelay + ScaleStepDuration(currentStep.DelayAfterPrevious));
+            }
+
+            currentAttackBlockSequence = unchecked(
+                (owner.AnimationDriver?.ActionSequenceId ?? 0) * 397 + stepIndex + 1);
+            var hitEffectStep = currentStep;
+            var hitEffectPrimaryTarget = target;
+            var hitEffectOwner = owner;
+            var hitEffectOrigin = owner.AnimationDriver?.AttackOrigin?.position ??
+                                  owner.transform.position;
+            var hitEffectForward = ResolveForward(target);
+            currentAttackBlockContext = new MonsterActionExecutionContext(
+                world,
+                owner,
+                target.Health,
+                owner.EffectiveStats,
+                owner.RuntimeAssetSet,
+                null,
+                owner.AnimationDriver,
+                currentAttackBlock,
+                currentAttackBlockPresentation?.AttackBlockBindings,
+                currentDamageMultiplier,
+                1f,
+                currentStep.PlaybackSpeed,
+                true,
+                (hitTarget, hitPoint) => ApplyAttackBlockHitEffects(
+                    hitEffectStep,
+                    hitEffectPrimaryTarget,
+                    hitTarget,
+                    hitPoint,
+                    hitEffectOwner,
+                    hitEffectOrigin,
+                    hitEffectForward),
+                currentStep.StepId,
+                currentAttackBlockSequence);
+            MonsterBasicAttackVfxRuntime.BeginMotion(
+                CreateCurrentAttackBlockVfxContext(target.Health));
+            currentAttackBlockMotionBegun = true;
+            preparedWaitDuration = Mathf.Max(
+                currentAttackBlock.TelegraphDelay / currentStep.PlaybackSpeed,
+                motionCommitDelay);
+            waitRemaining = preparingFromPreviousLaunch
+                ? Mathf.Max(preparedWaitDuration, launchChainMinimumDelay)
+                : preparedWaitDuration;
+            preparingFromPreviousLaunch = false;
+            launchChainMinimumDelay = 0f;
+            stepPrepared = true;
+        }
+
+        private void FireCurrentAttackBlock()
+        {
+            attackBlockExecutor.Execute(currentAttackBlockContext);
+            stepFired = true;
+            stepPrepared = false;
+            var motionRemaining = Mathf.Max(
+                0f,
+                preparedMotionDuration - preparedMotionElapsed - preparedWaitDuration);
+            stepLifetimeRemaining = Mathf.Max(
+                ResolveCurrentAttackBlockDuration(),
+                motionRemaining);
+            if (ShouldStartNextStepAfterLaunch())
+            {
+                DetachCurrentAttackBlockAndStartNext();
+            }
+        }
+
+        private float ResolveCurrentAttackBlockDuration()
+        {
+            if (currentAttackBlock == null) return 0f;
+            var duration = currentAttackBlock.ResolveActivityDuration(
+                currentStep.PlaybackSpeed,
+                owner?.AnimationDriver?.CurrentBreathDuration ?? 0f);
+            if (currentAttackBlock.UsesProjectileVisual)
+            {
+                var origin = owner?.AnimationDriver?.AttackOrigin?.position ??
+                             owner?.transform.position ?? Vector3.zero;
+                var usesTargetEndpoint =
+                    currentAttackBlock.ProjectileTravel is MonsterBasicAttackProjectileTravel.Homing or
+                        MonsterBasicAttackProjectileTravel.Returning ||
+                    currentAttackBlock.CollisionModule ==
+                    MonsterBasicAttackCollisionModule.StopOnFirstTarget;
+                var distance = usesTargetEndpoint && currentAttackBlockContext.PrimaryTarget != null
+                    ? Vector3.Distance(origin, currentAttackBlockContext.PrimaryTarget.Position)
+                    : currentAttackBlock.ResolveRange(1f);
+                if (currentAttackBlock.ProjectileTravel ==
+                    MonsterBasicAttackProjectileTravel.Returning)
+                {
+                    distance *= 2f;
+                }
+                duration = Mathf.Max(
+                    duration,
+                    distance /
+                    Mathf.Max(
+                        0.01f,
+                        currentAttackBlock.ProjectileSpeed * currentStep.PlaybackSpeed));
+            }
+            return duration;
+        }
+
+        private void ApplyAttackBlockHitEffects(
+            MonsterActiveAttackStep step,
+            UnitActor primaryTarget,
+            UnitActor target,
+            Vector3 hitPoint,
+            UnitActor source,
+            Vector3 launchOrigin,
+            Vector3 launchForward)
+        {
+            if (target == null || step == null) return;
+            var origin = source == null ? launchOrigin : source.transform.position;
+            var forward = source == null
+                ? launchForward
+                : ResolveForward(source, primaryTarget, launchForward);
+            var center = ResolveEffectCenter(step, target, primaryTarget, origin, forward);
+            for (var index = 0; index < step.HitEffects.Count; index++)
+            {
+                ApplyHitEffect(target, step.HitEffects[index], center, source, origin);
+            }
+        }
+
+        private bool ShouldStartNextStepAfterLaunch()
+        {
+            var nextIndex = stepIndex + 1;
+            return nextIndex < skill.Steps.Count &&
+                   skill.Steps[nextIndex] != null &&
+                   skill.Steps[nextIndex].StartMode ==
+                   MonsterActiveStepStartMode.AfterPreviousLaunch;
+        }
+
+        private void DetachCurrentAttackBlockAndStartNext()
+        {
+            var motionContext = CreateCurrentAttackBlockVfxContext(previousStepTarget?.Health);
+            if (stepLifetimeRemaining <= 0.0001f)
+            {
+                MonsterBasicAttackVfxRuntime.EndMotion(motionContext);
+                CompletedStepCount++;
+            }
+            else
+            {
+                inFlightAttackBlocks.Add(new InFlightAttackBlock
+                {
+                    MotionContext = motionContext,
+                    Remaining = stepLifetimeRemaining
+                });
+            }
+            currentAttackBlockMotionBegun = false;
+            stepFired = false;
+            stepIndex++;
+            PrepareNextStep(true);
+        }
+
+        private void TickInFlightAttackBlocks(float deltaTime)
+        {
+            for (var index = inFlightAttackBlocks.Count - 1; index >= 0; index--)
+            {
+                var item = inFlightAttackBlocks[index];
+                item.Remaining = Mathf.Max(0f, item.Remaining - Mathf.Max(0f, deltaTime));
+                if (item.Remaining > 0.0001f) continue;
+                MonsterBasicAttackVfxRuntime.EndMotion(item.MotionContext);
+                inFlightAttackBlocks.RemoveAt(index);
+                CompletedStepCount++;
+            }
+            TryFinishAfterInFlightSteps();
+        }
+
+        private void TryFinishAfterInFlightSteps()
+        {
+            if (!IsRunning || currentStep != null || stepIndex < (skill?.Steps.Count ?? 0) ||
+                inFlightAttackBlocks.Count > 0)
+            {
+                return;
+            }
+            IsRunning = false;
+        }
+
+        private MonsterBasicAttackVfxContext CreateCurrentAttackBlockVfxContext(IDamageable target)
+        {
+            var origin = owner?.AnimationDriver?.AttackOrigin?.position ??
+                         owner?.transform.position ?? Vector3.zero;
+            var hitPoint = target?.Position ?? origin;
+            var forward = hitPoint - origin;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f)
+            {
+                forward = owner == null ? Vector3.forward : owner.transform.forward;
+            }
+            var areaCenter = currentAttackBlock?.Center switch
+            {
+                MonsterBasicAttackCenter.Source => origin,
+                MonsterBasicAttackCenter.Forward =>
+                    origin + forward.normalized * currentAttackBlock.ForwardOffset,
+                _ => hitPoint
+            };
+            return new MonsterBasicAttackVfxContext(
+                world,
+                currentAttackBlock,
+                owner?.RuntimeAssetSet?.FeedbackProfile,
+                owner,
+                target,
+                owner?.AnimationDriver,
+                null,
+                null,
+                origin,
+                hitPoint,
+                areaCenter,
+                Quaternion.LookRotation(
+                    forward.sqrMagnitude < 0.0001f ? Vector3.forward : forward.normalized,
+                    Vector3.up),
+                0,
+                currentAttackBlockPresentation?.AttackBlockBindings,
+                currentStep?.StepId,
+                currentAttackBlockSequence,
+                currentStep?.PlaybackSpeed ?? 1f);
+        }
+
+        private void EndCurrentAttackBlockMotion()
+        {
+            if (!currentAttackBlockMotionBegun || currentAttackBlock == null || owner == null)
+            {
+                currentAttackBlockMotionBegun = false;
+                return;
+            }
+            MonsterBasicAttackVfxRuntime.EndMotion(
+                CreateCurrentAttackBlockVfxContext(previousStepTarget?.Health));
+            currentAttackBlockMotionBegun = false;
         }
 
         private void FireCurrentStep()
         {
+            if (currentAttackBlock != null)
+            {
+                FireCurrentAttackBlock();
+                return;
+            }
             var presentation = skill.ResolvePresentation(currentStep.StepId);
             PlayPresentationEvent(
                 presentation,
@@ -250,6 +600,29 @@ namespace ProjectMT.Shared.Combat
                 presentation?.Travel);
             stepFired = true;
             stepPrepared = false;
+            var motionRemaining = Mathf.Max(
+                0f,
+                preparedMotionDuration - preparedMotionElapsed - preparedWaitDuration);
+            stepLifetimeRemaining = Mathf.Max(
+                ScaleStepDuration(currentStep.VisualDuration),
+                ScaleStepDuration(currentStep.ProgressionDuration),
+                motionRemaining);
+        }
+
+        private float ResolveStepActivityRemaining()
+        {
+            var remaining = stepLifetimeRemaining;
+            for (var index = 0; index < pendingHits.Count; index++)
+            {
+                remaining = Mathf.Max(remaining, pendingHits[index].Delay);
+            }
+            for (var index = 0; index < deliveryVisuals.Count; index++)
+            {
+                remaining = Mathf.Max(
+                    remaining,
+                    deliveryVisuals[index].Duration - deliveryVisuals[index].Elapsed);
+            }
+            return Mathf.Max(0f, remaining);
         }
 
         private void TickPendingHits(float deltaTime)
@@ -283,6 +656,10 @@ namespace ProjectMT.Shared.Combat
 
         private void CompleteCurrentStep()
         {
+            if (currentAttackBlock != null)
+            {
+                EndCurrentAttackBlockMotion();
+            }
             if (stepFired)
             {
                 var presentation = skill.ResolvePresentation(currentStep.StepId);
@@ -312,7 +689,7 @@ namespace ProjectMT.Shared.Combat
             stepTargets.Clear();
             uniqueTargets.Clear();
             stepFired = false;
-            PrepareNextStep();
+            PrepareNextStep(false);
         }
 
         private void SpawnDeliveryVisuals(
@@ -343,7 +720,9 @@ namespace ProjectMT.Shared.Combat
                         : origin + direction * currentStep.Range;
                     var rotation = Quaternion.LookRotation(direction, Vector3.up);
                     var instance = SpawnPresentationVfx(slot.Feedback, origin, rotation, null);
-                    var duration = Mathf.Max(0.05f, Vector3.Distance(origin, end) / currentStep.ProjectileSpeed);
+                    var duration = Mathf.Max(
+                        0.05f / currentStep.PlaybackSpeed,
+                        Vector3.Distance(origin, end) / ResolveStepProjectileSpeed());
                     deliveryVisuals.Add(new DeliveryVisual
                     {
                         Instance = instance,
@@ -494,12 +873,13 @@ namespace ProjectMT.Shared.Combat
                 var delay = 0f;
                 if (currentStep.Progression != MonsterActiveAttackProgression.Instant && maxAxis > minAxis)
                 {
-                    delay += Mathf.InverseLerp(minAxis, maxAxis, axes[index]) * currentStep.ProgressionDuration;
+                    delay += Mathf.InverseLerp(minAxis, maxAxis, axes[index]) *
+                             ScaleStepDuration(currentStep.ProgressionDuration);
                 }
                 if (currentStep.IsProjectile)
                 {
                     delay += Vector3.Distance(origin, stepTargets[index].transform.position) /
-                             currentStep.ProjectileSpeed;
+                             ResolveStepProjectileSpeed();
                 }
                 pendingHits.Add(new PendingHit
                 {
@@ -512,20 +892,38 @@ namespace ProjectMT.Shared.Combat
 
         private Vector3 ResolveEffectCenter(UnitActor target, UnitActor primary, Vector3 origin, Vector3 forward)
         {
-            switch (currentStep.Pattern)
+            return ResolveEffectCenter(currentStep, target, primary, origin, forward);
+        }
+
+        private static Vector3 ResolveEffectCenter(
+            MonsterActiveAttackStep step,
+            UnitActor target,
+            UnitActor primary,
+            Vector3 origin,
+            Vector3 forward)
+        {
+            if (step == null) return origin;
+            switch (step.Pattern)
             {
                 case MonsterActiveAttackPattern.SelfCircle:
                     return origin;
                 case MonsterActiveAttackPattern.FrontCircle:
-                    return origin + forward * currentStep.ForwardOffset;
+                    return origin + forward * step.ForwardOffset;
                 case MonsterActiveAttackPattern.InstantMagic:
                     return primary == null ? origin : primary.transform.position;
                 case MonsterActiveAttackPattern.ExplosiveProjectile:
-                    var closest = primary == null ? origin + forward * currentStep.Range : primary.transform.position;
+                    var closest = primary == null ? origin + forward * step.Range : primary.transform.position;
                     var closestDistance = (target.transform.position - closest).sqrMagnitude;
-                    for (var projectileIndex = 1; projectileIndex < currentStep.ProjectileCount; projectileIndex++)
+                    for (var projectileIndex = 1; projectileIndex < step.ProjectileCount; projectileIndex++)
                     {
-                        var candidate = origin + ResolveProjectileDirection(forward, projectileIndex) * currentStep.Range;
+                        var count = Mathf.Max(1, step.ProjectileCount);
+                        var spreadRatio = count <= 1
+                            ? 0f
+                            : Mathf.Clamp(projectileIndex, 0, count - 1) / (float)(count - 1) - 0.5f;
+                        var direction = Quaternion.AngleAxis(
+                            spreadRatio * step.ProjectileFanAngle,
+                            Vector3.up) * forward;
+                        var candidate = origin + direction * step.Range;
                         var distance = (target.transform.position - candidate).sqrMagnitude;
                         if (distance >= closestDistance) continue;
                         closest = candidate;
@@ -540,9 +938,9 @@ namespace ProjectMT.Shared.Combat
         private void ApplyHit(UnitActor target, Vector3 effectCenter)
         {
             if (target == null || !target.IsAlive || !target.IsCombatReady) return;
-            var amount = owner.EffectiveStats.damage * currentStep.DamageMultiplier;
+            var amount = owner.EffectiveStats.damage * currentDamageMultiplier;
             var feel = skill.ImpactFeel;
-            var feelIntensity = Mathf.Clamp(currentStep.DamageMultiplier, 0.5f, 2f);
+            var feelIntensity = Mathf.Clamp(currentDamageMultiplier, 0.5f, 2f);
             var feelOwnsTargetMotion = !feelPlayedForStep &&
                                        world.WillPlayBasicAttackFeelTargetMotion(
                                            feel,
@@ -573,16 +971,26 @@ namespace ProjectMT.Shared.Combat
             }
             for (var index = 0; index < currentStep.HitEffects.Count; index++)
             {
-                ApplyHitEffect(target, currentStep.HitEffects[index], effectCenter);
+                ApplyHitEffect(
+                    target,
+                    currentStep.HitEffects[index],
+                    effectCenter,
+                    owner,
+                    owner.transform.position);
             }
         }
 
-        private void ApplyHitEffect(UnitActor target, MonsterActiveHitEffect effect, Vector3 effectCenter)
+        private static void ApplyHitEffect(
+            UnitActor target,
+            MonsterActiveHitEffect effect,
+            Vector3 effectCenter,
+            UnitActor source,
+            Vector3 sourcePosition)
         {
             switch (effect.Type)
             {
                 case MonsterActiveHitEffectType.Knockback:
-                    target.TryApplyActiveKnockback(target.transform.position - owner.transform.position,
+                    target.TryApplyActiveKnockback(target.transform.position - sourcePosition,
                         effect.Magnitude, effect.Duration, effect.SecondaryMagnitude);
                     break;
                 case MonsterActiveHitEffectType.Airborne:
@@ -592,7 +1000,10 @@ namespace ProjectMT.Shared.Combat
                     target.TryApplyActiveStun(effect.Duration);
                     break;
                 case MonsterActiveHitEffectType.Bleed:
-                    target.ApplyActiveBleed(owner, effect.Magnitude, effect.Duration, effect.TickInterval);
+                    target.ApplyActiveBleed(source, effect.Magnitude, effect.Duration, effect.TickInterval);
+                    break;
+                case MonsterActiveHitEffectType.Burn:
+                    target.ApplyActiveBurn(source, effect.Magnitude, effect.Duration, effect.TickInterval);
                     break;
                 case MonsterActiveHitEffectType.Slow:
                     target.ApplyActiveSlow(effect.Magnitude, effect.Duration);
@@ -619,13 +1030,15 @@ namespace ProjectMT.Shared.Combat
 
         private Vector3 ResolveProjectileDirection(Vector3 forward, int index)
         {
-            if (currentStep.ProjectileCount <= 1) return forward;
-            if (index <= 0) return forward; // 기준탄은 항상 실제 타깃 방향과 일치
-            var sideIndex = (index + 1) / 2;
-            var sideCount = Mathf.CeilToInt((currentStep.ProjectileCount - 1) * 0.5f);
-            var yawStep = currentStep.ProjectileFanAngle * 0.5f / Mathf.Max(1, sideCount);
-            var yaw = yawStep * sideIndex * (index % 2 == 1 ? -1f : 1f);
-            return Quaternion.AngleAxis(yaw, Vector3.up) * forward;
+            if (currentAttackBlock != null)
+                return currentAttackBlock.ResolveProjectileDirection(forward, index);
+            var count = Mathf.Max(1, currentStep.ProjectileCount);
+            var spreadRatio = count <= 1
+                ? 0f
+                : Mathf.Clamp(index, 0, count - 1) / (float)(count - 1) - 0.5f;
+            return Quaternion.AngleAxis(
+                spreadRatio * currentStep.ProjectileFanAngle,
+                Vector3.up) * forward;
         }
 
         private Vector3 ResolveForward(UnitActor target)
@@ -635,6 +1048,23 @@ namespace ProjectMT.Shared.Combat
                 : target.transform.position - owner.transform.position;
             forward.y = 0f;
             return forward.sqrMagnitude < 0.0001f ? Vector3.forward : forward.normalized;
+        }
+
+        private static Vector3 ResolveForward(
+            UnitActor source,
+            UnitActor target,
+            Vector3 fallback)
+        {
+            if (source == null) return fallback.sqrMagnitude < 0.0001f
+                ? Vector3.forward
+                : fallback.normalized;
+            var forward = target == null
+                ? source.transform.forward
+                : target.transform.position - source.transform.position;
+            forward.y = 0f;
+            return forward.sqrMagnitude < 0.0001f
+                ? Vector3.forward
+                : forward.normalized;
         }
 
         private void FaceTarget(UnitActor target)
@@ -676,6 +1106,11 @@ namespace ProjectMT.Shared.Combat
                     {
                         continue;
                     }
+                    if (slot.Multiplicity == MonsterActivePresentationMultiplicity.OncePerStep &&
+                        !playedOncePerStepSlots.Add(slot.SlotId))
+                    {
+                        continue;
+                    }
                     var count = ResolvePresentationCount(slot, timing);
                     for (var occurrence = 0; occurrence < count; occurrence++)
                     {
@@ -702,7 +1137,7 @@ namespace ProjectMT.Shared.Combat
             int occurrence)
         {
             var rotation = ResolvePresentationRotation(slot, target, occurrence);
-            var position = ResolvePresentationPosition(slot.Anchor, target, occurrence);
+            var position = ResolvePresentationPosition(slot, target, occurrence);
             var parent = slot.Attachment == MonsterActivePresentationAttachment.FollowAnchor
                 ? ResolvePresentationParent(slot.Anchor, target)
                 : null;
@@ -723,7 +1158,7 @@ namespace ProjectMT.Shared.Combat
                 {
                     world.ScheduleMonsterObjectReturn(
                         instance,
-                        slot.UseDuration ? slot.Duration : slot.Feedback.VfxLifetime);
+                        ScaleStepDuration(slot.UseDuration ? slot.Duration : slot.Feedback.VfxLifetime));
                 }
                 return;
             }
@@ -732,7 +1167,7 @@ namespace ProjectMT.Shared.Combat
             {
                 world.ScheduleMonsterObjectReturn(
                     timedInstance,
-                    slot.UseDuration ? slot.Duration : slot.Feedback.VfxLifetime);
+                    ScaleStepDuration(slot.UseDuration ? slot.Duration : slot.Feedback.VfxLifetime));
             }
         }
 
@@ -743,7 +1178,13 @@ namespace ProjectMT.Shared.Combat
             Transform parent)
         {
             var bodyScale = owner.RuntimeAssetSet?.BodyProfile?.VfxScale ?? 1f;
-            var instance = world.SpawnMonsterActiveVfx(cue, position, rotation, parent, bodyScale);
+            var instance = world.SpawnMonsterActiveVfx(
+                cue,
+                position,
+                rotation,
+                parent,
+                bodyScale,
+                currentStep?.PlaybackSpeed ?? 1f);
             if (instance != null && cue?.VfxPrefab != null)
             {
                 MonsterBasicAttackVfxPlayback.ApplyInstanceScale(
@@ -752,6 +1193,12 @@ namespace ProjectMT.Shared.Combat
             }
             return instance;
         }
+
+        private float ScaleStepDuration(float duration) =>
+            Mathf.Max(0f, duration) / Mathf.Max(0.05f, currentStep?.PlaybackSpeed ?? 1f);
+
+        private float ResolveStepProjectileSpeed() =>
+            currentStep.ProjectileSpeed * currentStep.PlaybackSpeed;
 
         private int ResolvePresentationCount(
             MonsterActiveAttackPresentationCueBinding slot,
@@ -767,14 +1214,16 @@ namespace ProjectMT.Shared.Combat
         }
 
         private Vector3 ResolvePresentationPosition(
-            MonsterActivePresentationAnchor anchor,
+            MonsterActiveAttackPresentationCueBinding slot,
             UnitActor target,
             int occurrence)
         {
             var origin = owner.AnimationDriver?.AttackOrigin?.position ?? owner.transform.position;
             var forward = ResolveForward(target);
-            switch (anchor)
+            switch (slot.Anchor)
             {
+                case MonsterActivePresentationAnchor.CasterRoot:
+                    return owner.transform.position;
                 case MonsterActivePresentationAnchor.AttackOrigin:
                 case MonsterActivePresentationAnchor.MarkerSocket:
                 case MonsterActivePresentationAnchor.TrajectoryOrigin:
@@ -794,6 +1243,10 @@ namespace ProjectMT.Shared.Combat
                     }
                     return ResolveEffectCenter(target, previousStepTarget, owner.transform.position, forward);
                 case MonsterActivePresentationAnchor.ProjectileRoot:
+                    if (slot.Timing == MonsterActivePresentationEvent.DeliverySpawn)
+                    {
+                        return origin;
+                    }
                     var direction = ResolveProjectileDirection(forward, occurrence);
                     return currentStep.Pattern == MonsterActiveAttackPattern.ExplosiveProjectile &&
                            target != null && occurrence == 0
@@ -814,9 +1267,14 @@ namespace ProjectMT.Shared.Combat
                 : ResolveForward(target);
             if (currentStep.Pattern == MonsterActiveAttackPattern.InstantMagic)
             {
-                return currentStep.MagicDirection == MonsterActiveMagicDirection.GroundUp
-                    ? Quaternion.LookRotation(Vector3.up, forward)
-                    : Quaternion.LookRotation(Vector3.down, forward);
+                return currentStep.MagicDirection switch
+                {
+                    MonsterActiveMagicDirection.GroundUp =>
+                        Quaternion.LookRotation(Vector3.up, forward),
+                    MonsterActiveMagicDirection.SkyDown =>
+                        Quaternion.LookRotation(Vector3.down, forward),
+                    _ => Quaternion.LookRotation(forward, Vector3.up)
+                };
             }
             return Quaternion.LookRotation(forward, Vector3.up);
         }
@@ -827,6 +1285,7 @@ namespace ProjectMT.Shared.Combat
         {
             return anchor switch
             {
+                MonsterActivePresentationAnchor.CasterRoot => owner.transform,
                 MonsterActivePresentationAnchor.AttackOrigin or
                 MonsterActivePresentationAnchor.MarkerSocket or
                 MonsterActivePresentationAnchor.TrajectoryOrigin => owner.AnimationDriver?.AttackOrigin ?? owner.transform,

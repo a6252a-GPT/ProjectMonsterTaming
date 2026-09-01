@@ -26,19 +26,19 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (step == null) return Array.Empty<MonsterActivePresentationSlot>();
 
             var result = new List<MonsterActivePresentationSlot>();
-            if (step.TeleportBeforeAttack)
+            if (step.DashBeforeAttack)
             {
                 result.Add(Slot(
-                    "teleport_exit",
-                    "순간이동 출발",
-                    "시전자가 원래 위치에서 사라지는 순간",
-                    MonsterActivePresentationEvent.TeleportExit,
+                    "dash_exit",
+                    "돌진 출발",
+                    "시전자가 원래 위치를 떠나기 직전",
+                    MonsterActivePresentationEvent.DashExit,
                     MonsterActivePresentationAnchor.CasterRoot));
                 result.Add(Slot(
-                    "teleport_enter",
-                    "순간이동 도착",
-                    "타깃 앞으로 이동한 직후",
-                    MonsterActivePresentationEvent.TeleportEnter,
+                    "dash_enter",
+                    "돌진 도착",
+                    "타깃 앞으로 돌진한 직후",
+                    MonsterActivePresentationEvent.DashEnter,
                     MonsterActivePresentationAnchor.CasterRoot));
             }
 
@@ -139,9 +139,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     result.Add(Slot(
                         "magic_cast",
                         "즉발 마법 시전",
-                        step.MagicDirection == MonsterActiveMagicDirection.GroundUp
-                            ? "바닥에서 위로 나타나는 마법 시전"
-                            : "위에서 아래로 떨어지는 마법 시전",
+                        step.MagicDirection switch
+                        {
+                            MonsterActiveMagicDirection.GroundUp =>
+                                "바닥에서 위로 나타나는 마법 시전",
+                            MonsterActiveMagicDirection.SkyDown =>
+                                "위에서 아래로 떨어지는 마법 시전",
+                            _ => "공격 시작점에서 정면으로 진행하는 마법 시전"
+                        },
                         MonsterActivePresentationEvent.Launch,
                         MonsterActivePresentationAnchor.AttackOrigin));
                     result.Add(TargetHit());
@@ -171,6 +176,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     string.Equals(slot.SlotId, template.SlotId, StringComparison.OrdinalIgnoreCase));
                 existing ??= source.LastOrDefault(slot =>
                     !consumed.Contains(slot) &&
+                    string.Equals(
+                        GetLegacySlotId(template.SlotId),
+                        slot.SlotId,
+                        StringComparison.OrdinalIgnoreCase));
+                var legacyDashSlot = existing != null &&
+                    !string.Equals(existing.SlotId, template.SlotId, StringComparison.OrdinalIgnoreCase) &&
+                    (string.Equals(template.SlotId, "dash_exit", StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(template.SlotId, "dash_enter", StringComparison.OrdinalIgnoreCase));
+                existing ??= source.LastOrDefault(slot =>
+                    !consumed.Contains(slot) &&
                     slot.Timing == template.Timing &&
                     slot.Anchor == template.Anchor);
                 existing ??= source.LastOrDefault(slot =>
@@ -181,7 +196,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 {
                     consumed.Add(existing);
                     retained++;
-                    reconciled.Add(existing);
+                    reconciled.Add(legacyDashSlot ? template : existing);
                 }
                 else
                 {
@@ -214,6 +229,13 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 source.Count - consumed.Count);
             return reconciled;
         }
+
+        public static string GetLegacySlotId(string slotId) => slotId switch
+        {
+            "dash_exit" => "teleport_exit",
+            "dash_enter" => "teleport_enter",
+            _ => string.Empty
+        };
 
         private static void AddProjectileBase(
             List<MonsterActivePresentationSlot> result,

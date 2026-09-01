@@ -53,6 +53,28 @@ namespace ProjectMT.Core.Config
             return false;
         }
 
+        public bool TryValidate(out string error)
+        {
+            var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < entries.Count; i++)
+            {
+                var entry = entries[i];
+                if (entry == null || !entry.SceneId.IsValid || string.IsNullOrWhiteSpace(entry.ScenePath))
+                {
+                    error = $"Scene Catalog entry is invalid. Index={i}";
+                    return false;
+                }
+
+                if (!ids.Add(entry.SceneId.Value))
+                {
+                    error = $"Scene ID is duplicated. Scene={entry.SceneId.Value}";
+                    return false;
+                }
+            }
+
+            error = null;
+            return true;
+        }
 #if UNITY_EDITOR
         public void EditorSetEntries(IEnumerable<SceneEntry> values)
         {

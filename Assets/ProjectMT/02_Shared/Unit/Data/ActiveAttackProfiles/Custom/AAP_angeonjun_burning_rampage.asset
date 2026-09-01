@@ -1,0 +1,222 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 636d839b21812ab49a12f4bee7b8ef7d, type: 3}
+  m_Name: AAP_angeonjun_burning_rampage(Clone)(Clone)(Clone)
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterActiveAttackProfile
+  profileId: angeonjun_burning_rampage
+  displayName: "\uD654\uB8E1 \uD3ED\uC8FC"
+  description: "\uB2E4\uB2E8 \uBE0C\uB808\uC2A4\uB85C \uD654\uC0C1\uC744 \uB0A8\uAE34
+    \uB4A4 \uC228\uC744 \uACE0\uB974\uACE0 \uB113\uC740 \uD654\uC5FC \uD729\uC4F8\uAE30\uB85C
+    \uB9C8\uBB34\uB9AC\uD558\uB294 2\uB2E8 \uC9C0\uC18D \uD53C\uD574\uAE30."
+  steps:
+  - stepId: step_01
+    displayName: "\uC6D0\uBFD4 \uBE0C\uB808\uC2A4"
+    startMode: 0
+    delayAfterPrevious: 0
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 11
+    progression: 1
+    damageMultiplier: 0.65
+    damageMultiplierMode: 0
+    maximumDamageMultiplier: 0.65
+    maxTargets: 8
+    range: 5
+    width: 2.2
+    radius: 2.5
+    forwardOffset: 0.8
+    angle: 70
+    progressionDuration: 1
+    telegraphDelay: 0.25
+    visualDuration: 1.25
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 0.33333334
+    - 0.33333334
+    - 0.33333334
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.22
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects:
+    - type: 6
+      magnitude: 0.1
+      duration: 4
+      secondaryMagnitude: 0
+      tickInterval: 1
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: start
+      displayName: "\uBE0C\uB808\uC2A4 \uC2DC\uC791"
+      description: "\uBE0C\uB808\uC2A4 \uBAA8\uC158 \uC2DC\uC791 \uC608\uACE0 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 0
+      anchor: 1
+      multiplicity: 0
+      assignmentScope: 1
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: body
+      displayName: "\uBE0C\uB808\uC2A4 \uBCF8\uCCB4"
+      description: "\uACF5\uACA9 \uC6D0\uC810\uC744 \uB530\uB77C \uC720\uC9C0\uB418\uB294
+        \uBE0C\uB808\uC2A4 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 5
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: repeated_hit
+      displayName: "\uBC18\uBCF5 \uBA85\uC911"
+      description: "\uAC01 \uD53C\uD574 \uB2E8\uACC4\uC5D0\uC11C \uC2E4\uC81C \uBA85\uC911\uD55C
+        \uC704\uCE58 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 4
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: end
+      displayName: "\uBE0C\uB808\uC2A4 \uC885\uB8CC"
+      description: "\uBE0C\uB808\uC2A4 \uBAA8\uC158 \uC885\uB8CC \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 10
+      anchor: 1
+      multiplicity: 0
+      assignmentScope: 1
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  - stepId: step_02
+    displayName: "\uBD80\uCC44\uAF34 \uD53C\uD574"
+    startMode: 0
+    delayAfterPrevious: 0.25
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 1
+    progression: 3
+    damageMultiplier: 0.95
+    damageMultiplierMode: 0
+    maximumDamageMultiplier: 0.95
+    maxTargets: 8
+    range: 4.2
+    width: 2.4
+    radius: 2.6
+    forwardOffset: 1
+    angle: 110
+    progressionDuration: 0.65
+    telegraphDelay: 0.12
+    visualDuration: 1.15
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.18
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects:
+    - type: 6
+      magnitude: 0.08
+      duration: 3
+      secondaryMagnitude: 0
+      tickInterval: 1
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: sweep_plane
+      displayName: "\uD729\uC4F8\uAE30 \uBA74"
+      description: "\uC804\uBC29 \uBD80\uCC44\uAF34\uC744 \uC77D\uD788\uAC8C \uD558\uB294
+        \uACF5\uACA9 \uBA74"
+      productionMemo: 
+      eventType: 1
+      anchor: 0
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: target_hit
+      displayName: "\uB300\uC0C1\uBCC4 \uBA85\uC911"
+      description: "\uC2E4\uC81C\uB85C \uD53C\uD574\uB97C \uBC1B\uC740 \uAC01 \uB300\uC0C1\uC758
+        \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  impactFeel:
+    prefab: {fileID: 0}
+    lifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1

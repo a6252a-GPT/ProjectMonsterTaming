@@ -28,6 +28,35 @@ namespace ProjectMT.Features.Equipment
             };
         }
 
+        public bool TryValidate(out string error)
+        {
+            var ids = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+            var parts = new HashSet<EquipmentPart>();
+            for (var i = 0; i < baseItems.Count; i++)
+            {
+                var item = baseItems[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.Id))
+                {
+                    error = $"Equipment Catalog entry is invalid. Index={i}";
+                    return false;
+                }
+
+                if (!ids.Add(item.Id))
+                {
+                    error = $"Equipment base ID is duplicated. Id={item.Id}";
+                    return false;
+                }
+
+                if (!parts.Add(item.Part))
+                {
+                    error = $"Equipment part is duplicated. Part={item.Part}";
+                    return false;
+                }
+            }
+
+            error = null;
+            return true;
+        }
         // 지정한 부위에 해당하는 베이스 아이템을 찾는다 (같은 부위가 여러 개 등록돼 있으면 첫 번째를 사용).
         public EquipmentBaseItemDefinition FindBaseItemForPart(EquipmentPart part)
         {

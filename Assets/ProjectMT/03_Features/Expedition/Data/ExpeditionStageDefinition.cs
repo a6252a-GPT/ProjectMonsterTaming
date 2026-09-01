@@ -39,7 +39,7 @@ namespace ProjectMT.Features.Expedition
     [Serializable]
     public sealed class ExpeditionWaveDefinition // 한 웨이브의 적 수·간격·드랍표
     {
-        [SerializeField, Min(1)] private int baseEnemyCount = 4;
+        [SerializeField, Min(1)] private int baseEnemyCount = 8;
         [SerializeField, Min(0)] private int extraEnemyEveryStages;
         [SerializeField, Min(0f)] private float spawnDelaySeconds;
         [SerializeField] private float formationForwardOffset;

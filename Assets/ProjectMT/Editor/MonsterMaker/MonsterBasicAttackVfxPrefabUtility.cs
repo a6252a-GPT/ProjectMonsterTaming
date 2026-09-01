@@ -8,10 +8,17 @@ using UnityEngine.SceneManagement;
 
 namespace ProjectMT.EditorTools.MonsterMaker
 {
+    internal enum MonsterAttackVfxWrapperOwner
+    {
+        BasicAttack,
+        ActiveAttack
+    }
+
     internal static class MonsterBasicAttackVfxPrefabUtility // 원본 VFX를 보존하는 몬스터 전용 래퍼
     {
         public static bool TryCreateWrapper(
             string monsterId,
+            MonsterAttackVfxWrapperOwner owner,
             string attackId,
             string slotId,
             string motionId,
@@ -41,9 +48,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 ? string.Empty
                 : "_" + SanitizeToken(motionId, "motion");
             var monsterFolder = $"{MonsterMakerAssetWriter.ArtRoot}/{safeMonsterId}";
-            var vfxFolder = monsterFolder + "/VFX";
+            var vfxRoot = monsterFolder + "/VFX";
+            var vfxFolder = vfxRoot + "/" + ResolveOwnerFolderName(owner);
             EnsureFolder(MonsterMakerAssetWriter.ArtRoot, safeMonsterId);
             EnsureFolder(monsterFolder, "VFX");
+            EnsureFolder(vfxRoot, ResolveOwnerFolderName(owner));
 
             var fileName = $"PF_{safeMonsterId}_{safeAttackId}_{safeSlotId}{safeMotionId}_VFX.prefab";
             var outputPath = AssetDatabase.GenerateUniqueAssetPath(vfxFolder + "/" + fileName);
@@ -57,6 +66,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 {
                     error = "원본 VFX Prefab 인스턴스를 만들지 못했습니다.";
                     return false;
+                }
+
+                // 반대 공격 영역의 래퍼를 복사할 때 원본 래퍼 변경이 새 래퍼로 전파되지 않게 끊는다.
+                if (IsOtherOwnerWrapper(sourcePrefab, monsterId, owner) &&
+                    PrefabUtility.IsPartOfPrefabInstance(child))
+                {
+                    PrefabUtility.UnpackPrefabInstance(
+                        child,
+                        PrefabUnpackMode.Completely,
+                        InteractionMode.AutomatedAction);
                 }
 
                 child.name = "VFX";
@@ -93,12 +112,49 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
         }
 
-        public static bool IsMonsterWrapper(GameObject prefab, string monsterId)
+        public static bool IsMonsterWrapper(
+            GameObject prefab,
+            string monsterId,
+            MonsterAttackVfxWrapperOwner owner)
         {
             var path = prefab == null ? string.Empty : AssetDatabase.GetAssetPath(prefab);
-            var folder = $"{MonsterMakerAssetWriter.ArtRoot}/{SanitizeToken(monsterId, "monster")}/VFX/";
-            return !string.IsNullOrWhiteSpace(path) &&
-                   path.StartsWith(folder, StringComparison.OrdinalIgnoreCase);
+            return IsMonsterWrapperPath(path, monsterId, owner);
+        }
+
+        internal static bool IsMonsterWrapperPath(
+            string path,
+            string monsterId,
+            MonsterAttackVfxWrapperOwner owner)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return false;
+
+            var root = $"{MonsterMakerAssetWriter.ArtRoot}/{SanitizeToken(monsterId, "monster")}/VFX";
+            var ownerFolder = root + "/" + ResolveOwnerFolderName(owner) + "/";
+            if (path.StartsWith(ownerFolder, StringComparison.OrdinalIgnoreCase)) return true;
+
+            // 기존 VFX 루트 직속 래퍼는 하위 Active 영역 도입 전 만들어진 기본공격 래퍼다.
+            return owner == MonsterAttackVfxWrapperOwner.BasicAttack &&
+                   path.StartsWith(root + "/", StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals(
+                       path[..path.LastIndexOf('/')],
+                       root,
+                       StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsOtherOwnerWrapper(
+            GameObject prefab,
+            string monsterId,
+            MonsterAttackVfxWrapperOwner owner)
+        {
+            var other = owner == MonsterAttackVfxWrapperOwner.BasicAttack
+                ? MonsterAttackVfxWrapperOwner.ActiveAttack
+                : MonsterAttackVfxWrapperOwner.BasicAttack;
+            return IsMonsterWrapper(prefab, monsterId, other);
+        }
+
+        internal static string ResolveOwnerFolderName(MonsterAttackVfxWrapperOwner owner)
+        {
+            return owner == MonsterAttackVfxWrapperOwner.ActiveAttack ? "Active" : "Basic";
         }
 
         private static void EnsureFolder(string parent, string child)

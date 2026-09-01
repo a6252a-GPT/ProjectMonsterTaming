@@ -23,6 +23,6 @@ MonoBehaviour:
   attackSpeed: 1
   moveSpeed: 2
   attackRange: 4.9
-  ranged: 1
+  ranged: 0
   runtimeAssetKey: monster/silpia_01
   runtimeAssetSet: {fileID: 11400000, guid: 2956527442ef9814c8b966ef42d2def3, type: 2}

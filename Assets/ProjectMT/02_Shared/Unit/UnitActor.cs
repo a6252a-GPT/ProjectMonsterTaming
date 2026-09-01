@@ -130,6 +130,11 @@ namespace ProjectMT.Shared.Unit
         private float activeBleedInterval;
         private float activeBleedDamage;
         private UnitActor activeBleedSource;
+        private float activeBurnRemaining;
+        private float activeBurnTickRemaining;
+        private float activeBurnInterval;
+        private float activeBurnDamage;
+        private UnitActor activeBurnSource;
         private float activeAirborneElapsed;
         private float activeAirborneDuration;
         private float activeAirborneHeight;
@@ -156,6 +161,7 @@ namespace ProjectMT.Shared.Unit
         public bool IsActiveStunned => activeStunRemaining > 0f;
         public bool IsActiveAirborne => activeAirborneDuration > 0f;
         public bool IsActiveSlowed => activeSlowRemaining > 0f;
+        public bool IsActiveBurning => activeBurnRemaining > 0f;
         public bool IsRanged => stats.ranged;
         public bool IsBoss { get; private set; }
         public bool IsCombatReady => combatReady;
@@ -560,24 +566,35 @@ namespace ProjectMT.Shared.Unit
                 return 0f;
             }
 
-            var direction = destination - transform.position;
-            direction.y = 0f;
-            var distance = direction.magnitude;
-            if (distance <= 0.001f)
-            {
-                return 0f;
-            }
-
-            direction /= distance;
-            var advance = Mathf.Min(Mathf.Max(0f, maxDistance), Mathf.Max(0f, distance - Mathf.Max(0.05f, stopDistance)));
+            var start = transform.position;
+            var dashDestination = MonsterBasicAttackProfile.ResolveDashDestination(
+                start,
+                destination,
+                maxDistance,
+                stopDistance);
+            var movement = dashDestination - start;
+            movement.y = 0f;
+            var advance = movement.magnitude;
             if (advance <= 0f)
             {
                 return 0f;
             }
 
-            transform.position += direction * advance; // 전투 중 슬롯 고정 없이 실제 XZ 전진
+            if (!TryDashForAttack(dashDestination))
+            {
+                return 0f;
+            }
+            var direction = movement / advance;
             visualFeedback?.PlayAttackLunge(direction, Mathf.Min(0.3f, advance * 0.35f), visualDuration);
             return advance;
+        }
+
+        public bool TryDashForAttack(Vector3 destination)
+        {
+            if (!IsAlive || !combatReady || isManuallyHeld) return false;
+            destination.y = transform.position.y;
+            transform.position = destination;
+            return true;
         }
 
         public bool TryApplyCombatKnockback(
@@ -700,6 +717,16 @@ namespace ProjectMT.Shared.Unit
             if (activeBleedTickRemaining <= 0f) activeBleedTickRemaining = activeBleedInterval;
         }
 
+        public void ApplyActiveBurn(UnitActor source, float attackPowerRatio, float duration, float tickInterval)
+        {
+            if (!IsAlive || source == null || attackPowerRatio <= 0f || duration <= 0f) return;
+            activeBurnSource = source;
+            activeBurnDamage = Mathf.Max(activeBurnDamage, source.EffectiveStats.damage * attackPowerRatio);
+            activeBurnRemaining = Mathf.Max(activeBurnRemaining, duration);
+            activeBurnInterval = Mathf.Max(0.05f, tickInterval);
+            if (activeBurnTickRemaining <= 0f) activeBurnTickRemaining = activeBurnInterval;
+        }
+
         public void ApplyActiveSlow(float rate, float duration)
         {
             if (!IsAlive || rate <= 0f || rate >= 1f || duration <= 0f) return;
@@ -707,12 +734,60 @@ namespace ProjectMT.Shared.Unit
             activeSlowRemaining = Mathf.Max(activeSlowRemaining, duration);
         }
 
+        public bool TryCleanseOneDebuff()
+        {
+            if (!IsAlive) return false;
+            if (activeStunRemaining > 0f)
+            {
+                activeStunRemaining = 0f;
+                return true;
+            }
+            if (monsterSkillRuntime.TryCleanseExposure()) return true;
+
+            var strongestIndex = -1;
+            var strongestValue = 0f;
+            for (var index = 0; index < monsterBuffs.Count; index++)
+            {
+                var value = GetNegativeModifierStrength(monsterBuffs[index].Modifier);
+                if (value <= strongestValue) continue;
+                strongestIndex = index;
+                strongestValue = value;
+            }
+            if (strongestIndex >= 0)
+            {
+                monsterBuffs.RemoveAt(strongestIndex);
+                RebuildMonsterBuffModifier();
+                return true;
+            }
+            if (activeSlowRemaining > 0f)
+            {
+                activeSlowRemaining = 0f;
+                activeSlowRate = 0f;
+                return true;
+            }
+            if (activeBurnRemaining > 0f)
+            {
+                activeBurnRemaining = 0f;
+                activeBurnTickRemaining = 0f;
+                activeBurnDamage = 0f;
+                activeBurnSource = null;
+                return true;
+            }
+            if (activeBleedRemaining > 0f)
+            {
+                activeBleedRemaining = 0f;
+                activeBleedTickRemaining = 0f;
+                activeBleedDamage = 0f;
+                activeBleedSource = null;
+                return true;
+            }
+            return false;
+        }
+
+        [Obsolete("기본공격과 액티브 이동은 TryDashForAttack 단일 계약을 사용합니다.")]
         public bool TryTeleportForActive(Vector3 destination)
         {
-            if (!IsAlive || !combatReady || isManuallyHeld) return false;
-            destination.y = transform.position.y;
-            transform.position = destination;
-            return true;
+            return TryDashForAttack(destination);
         }
 
         public bool TryApplyCombatStagger(float duration)
@@ -763,6 +838,29 @@ namespace ProjectMT.Shared.Unit
                 }
             }
 
+            if (activeBurnRemaining > 0f)
+            {
+                activeBurnRemaining = Mathf.Max(0f, activeBurnRemaining - deltaTime);
+                activeBurnTickRemaining -= deltaTime;
+                var safety = 0;
+                while (activeBurnRemaining > 0f && activeBurnTickRemaining <= 0f && safety++ < 16)
+                {
+                    if (world == null || activeBurnSource == null || !activeBurnSource.IsAlive ||
+                        !world.ApplyMonsterSkillDamage(activeBurnSource, health, activeBurnDamage))
+                    {
+                        activeBurnRemaining = 0f;
+                        break;
+                    }
+                    activeBurnTickRemaining += activeBurnInterval;
+                }
+                if (activeBurnRemaining <= 0f)
+                {
+                    activeBurnSource = null;
+                    activeBurnDamage = 0f;
+                    activeBurnTickRemaining = 0f;
+                }
+            }
+
             if (!IsAlive) return true;
             if (activeAirborneDuration > 0f)
             {
@@ -806,6 +904,11 @@ namespace ProjectMT.Shared.Unit
             activeBleedInterval = 0f;
             activeBleedDamage = 0f;
             activeBleedSource = null;
+            activeBurnRemaining = 0f;
+            activeBurnTickRemaining = 0f;
+            activeBurnInterval = 0f;
+            activeBurnDamage = 0f;
+            activeBurnSource = null;
             activeAirborneElapsed = 0f;
             activeAirborneDuration = 0f;
             activeAirborneHeight = 0f;
@@ -1100,6 +1203,13 @@ namespace ProjectMT.Shared.Unit
             {
                 forward = Vector3.forward;
             }
+            forward.Normalize();
+            var areaCenter = profile.Center switch
+            {
+                MonsterBasicAttackCenter.Source => origin,
+                MonsterBasicAttackCenter.Forward => origin + forward * profile.ForwardOffset,
+                _ => hitPoint
+            };
             var context = new MonsterBasicAttackVfxContext(
                 world,
                 profile,
@@ -1111,7 +1221,7 @@ namespace ProjectMT.Shared.Unit
                 null,
                 origin,
                 hitPoint,
-                hitPoint,
+                areaCenter,
                 Quaternion.LookRotation(forward, Vector3.up));
             if (begin)
             {
@@ -1199,6 +1309,16 @@ namespace ProjectMT.Shared.Unit
                    Mathf.Abs(modifier.AttackSpeedRate) +
                    Mathf.Abs(modifier.MoveSpeedRate) +
                    Mathf.Abs(modifier.AttackRangeRate);
+        }
+
+        private static float GetNegativeModifierStrength(MonsterStatModifier modifier)
+        {
+            return Mathf.Max(0f, -modifier.HealthRate) +
+                   Mathf.Max(0f, -modifier.AttackRate) +
+                   Mathf.Max(0f, -modifier.DefenseRate) +
+                   Mathf.Max(0f, -modifier.AttackSpeedRate) +
+                   Mathf.Max(0f, -modifier.MoveSpeedRate) +
+                   Mathf.Max(0f, -modifier.AttackRangeRate);
         }
 
         // 08.07 안건준 추가 - 강제 지정된 대상(IDamageable)을 향해 이동·공격한다.

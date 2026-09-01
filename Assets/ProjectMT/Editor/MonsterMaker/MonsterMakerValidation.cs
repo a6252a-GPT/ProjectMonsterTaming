@@ -116,6 +116,45 @@ namespace ProjectMT.EditorTools.MonsterMaker
             return report;
         }
 
+        public static MonsterMakerValidationReport ValidateActiveEffect(MonsterMakerDraft draft)
+        {
+            var report = new MonsterMakerValidationReport();
+            if (draft == null)
+            {
+                report.Add(MonsterMakerIssueSeverity.Error, "MAKER-DRAFT", "Monster Maker 제작 원본이 없습니다.", null);
+                return report;
+            }
+            if (!draft.UseActiveSkill)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ACTIVE-DISABLED",
+                    "액티브 스킬을 반영하려면 액티브 사용을 켜세요.",
+                    draft);
+                return report;
+            }
+            if (draft.Rarity < MonsterRarity.Legendary)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-ACTIVE-RARITY",
+                    "효과형 액티브는 전설·신화 몬스터만 사용할 수 있습니다.",
+                    draft);
+                return report;
+            }
+            if (draft.ActiveEffectProfile == null)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SKILL-ACTIVE-PENDING",
+                    "반영할 효과형 액티브 프로필이 없습니다.",
+                    draft);
+                return report;
+            }
+            ValidateActiveEffectAuthoring(draft, report);
+            return report;
+        }
+
         private static void ValidateBasicAttackVfx(
             MonsterMakerDraft draft,
             MonsterMakerValidationReport report)
@@ -490,6 +529,21 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     profileError,
                     profile);
             }
+            else
+            {
+                foreach (var step in profile.Steps)
+                {
+                    if (MonsterActiveAttackBlockContractTemplates.TryValidateCurrent(step, out var error))
+                    {
+                        continue;
+                    }
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-ACTIVE-BLOCK-CONTRACT",
+                        error,
+                        profile);
+                }
+            }
 
             if (string.IsNullOrWhiteSpace(draft.ActiveSkillName))
             {
@@ -512,30 +566,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var profileStepIds = new HashSet<string>(
                 profile.Steps.Select(step => step.StepId),
                 StringComparer.OrdinalIgnoreCase);
-            var tuningIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var tuning in draft.ActiveAttackStepTunings)
-            {
-                var tuningError = "액티브 Step 튜닝이 비어 있습니다.";
-                if (tuning == null || !tuning.TryValidate(out tuningError))
-                {
-                    report.Add(MonsterMakerIssueSeverity.Error, "MAKER-ACTIVE-TUNING", tuningError, draft);
-                    continue;
-                }
-                if (!profileStepIds.Contains(tuning.StepId) || !tuningIds.Add(tuning.StepId))
-                {
-                    report.Add(
-                        MonsterMakerIssueSeverity.Error,
-                        "MAKER-ACTIVE-TUNING-ID",
-                        $"프로필과 일치하지 않거나 중복된 Step 튜닝입니다. Step={tuning.StepId}",
-                        draft);
-                }
-            }
-            if (tuningIds.Count != profile.Steps.Count)
+            if (draft.ActiveAttackStepTunings.Count != 0)
             {
                 report.Add(
                     MonsterMakerIssueSeverity.Error,
-                    "MAKER-ACTIVE-TUNING-COUNT",
-                    "프로필이 변경되었습니다. 액티브 섹션에서 Step을 다시 동기화하세요.",
+                    "MAKER-ACTIVE-TUNING-LEGACY",
+                    "몬스터별 Step 수치가 현재 투영에 남아 있습니다. 프리셋 동기화로 보관 영역에 이동하세요.",
                     draft);
             }
 
@@ -584,42 +620,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         $"액티브 스텝 [{presentation.StepId}]의 재생 속도·전환 시간·판정 시작 시점이 유효하지 않습니다.",
                         draft);
                 }
-                ValidateFeedbackCue(presentation.Telegraph, $"{presentation.StepId} 예고", report, draft);
-                ValidateFeedbackCue(presentation.Launch, $"{presentation.StepId} 발동", report, draft);
-                ValidateFeedbackCue(presentation.Travel, $"{presentation.StepId} 이동", report, draft);
-                ValidateFeedbackCue(presentation.Impact, $"{presentation.StepId} 타격", report, draft);
-                ValidateFeedbackCue(presentation.TeleportExit, $"{presentation.StepId} 순간이동 출발", report, draft);
-                ValidateFeedbackCue(presentation.TeleportEnter, $"{presentation.StepId} 순간이동 도착", report, draft);
-                var resolvedSlotIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                for (var slotIndex = 0; slotIndex < sourceStep.PresentationSlots.Count; slotIndex++)
-                {
-                    var contract = sourceStep.PresentationSlots[slotIndex];
-                    if (contract == null) continue;
-                    var slot = presentation.ResolveSlot(contract.SlotId);
-                    if (slot == null || !resolvedSlotIds.Add(contract.SlotId))
-                    {
-                        report.Add(
-                            MonsterMakerIssueSeverity.Error,
-                            "MAKER-ACTIVE-SLOT-MISSING",
-                            $"액티브 Step [{presentation.StepId}]의 공간 [{contract.DisplayName}] 연결이 없습니다.",
-                            draft);
-                        continue;
-                    }
-                    ValidateActivePresentationSlot(
-                        presentation.StepId,
-                        contract,
-                        slot,
-                        report,
-                        draft);
-                }
-                if (presentation.Slots.Count != sourceStep.PresentationSlots.Count)
-                {
-                    report.Add(
-                        MonsterMakerIssueSeverity.Error,
-                        "MAKER-ACTIVE-SLOT-COUNT",
-                        $"액티브 Step [{presentation.StepId}]의 현재 공간 수가 프로필 계약과 다릅니다.",
-                        draft);
-                }
+                ValidateActiveAttackBlockBindings(sourceStep, presentation, report, draft);
             }
             if (presentationIds.Count != profile.Steps.Count)
             {
@@ -637,6 +638,97 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     "MAKER-ACTIVE-LEGACY",
                     "기존 액티브 참조는 전투 반영 시 새 공격 액티브 에셋으로 교체됩니다.",
                     draft.RarityActiveSkill);
+            }
+        }
+
+        private static void ValidateActiveAttackBlockBindings(
+            MonsterActiveAttackStep sourceStep,
+            MonsterMakerActiveStepPresentationDraft presentation,
+            MonsterMakerValidationReport report,
+            MonsterMakerDraft draft)
+        {
+            if (presentation.AttackBlockBindings.Count != sourceStep.AttackBlockVfxSlots.Count)
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ACTIVE-BLOCK-COUNT",
+                    $"액티브 Step [{presentation.StepId}]의 공용 공격 블록 연결 수가 다릅니다.",
+                    draft);
+            }
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var contract in sourceStep.AttackBlockVfxSlots)
+            {
+                if (contract == null) continue;
+                var motionId = contract.AssignmentScope ==
+                               MonsterBasicAttackVfxAssignmentScope.MotionSpecific
+                    ? sourceStep.StepId
+                    : string.Empty;
+                var attackId = "active_" + sourceStep.StepId;
+                var binding = presentation.AttackBlockBindings.LastOrDefault(candidate =>
+                    candidate != null &&
+                    string.Equals(candidate.AttackId, attackId, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(candidate.SlotId, contract.SlotId, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(candidate.MotionId, motionId, StringComparison.OrdinalIgnoreCase));
+                var key = $"{attackId}|{contract.SlotId}|{motionId}";
+                if (binding == null || !seen.Add(key))
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-ACTIVE-BLOCK-MISSING",
+                        $"액티브 Step [{presentation.StepId}]의 공간 [{contract.DisplayName}] 연결이 없습니다.",
+                        draft);
+                    continue;
+                }
+                var missingAssignedVfx =
+                    binding.State == MonsterBasicAttackVfxAssignmentState.Assigned &&
+                    binding.Prefab == null;
+                var missingAssignedSfx =
+                    binding.SfxState == MonsterBasicAttackSfxAssignmentState.Assigned &&
+                    !binding.HasSound;
+                if (missingAssignedVfx)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-ACTIVE-VFX-MISSING",
+                        $"공격형 액티브 VFX 사용 상태이지만 Prefab이 비어 있습니다: " +
+                        $"{presentation.StepId} / {contract.DisplayName}",
+                        draft);
+                }
+                if (missingAssignedSfx)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-ACTIVE-SFX-MISSING",
+                        $"공격형 액티브 SFX 사용 상태이지만 음원이 비어 있습니다: " +
+                        $"{presentation.StepId} / {contract.DisplayName}",
+                        draft);
+                }
+                if (!binding.TryValidate(out var bindingError) &&
+                    !missingAssignedVfx && !missingAssignedSfx)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Error,
+                        "MAKER-ACTIVE-BLOCK-INVALID",
+                        bindingError,
+                        draft);
+                    continue;
+                }
+                if (binding.State == MonsterBasicAttackVfxAssignmentState.Undecided)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Warning,
+                        "MAKER-ACTIVE-VFX-PENDING",
+                        $"공격형 액티브 VFX가 미결정입니다: {presentation.StepId} / {contract.DisplayName}",
+                        draft);
+                }
+                if (binding.SfxState == MonsterBasicAttackSfxAssignmentState.Undecided)
+                {
+                    report.Add(
+                        MonsterMakerIssueSeverity.Warning,
+                        "MAKER-ACTIVE-SFX-PENDING",
+                        $"공격형 액티브 SFX가 미결정입니다: {presentation.StepId} / {contract.DisplayName}",
+                        draft);
+                }
             }
         }
 

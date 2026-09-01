@@ -74,7 +74,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
         DeliveryTurn,
         ReturnImpact,
         DeliveryEnd,
-        MotionEnd
+        MotionEnd,
+        AreaImpactPerProjectile,
+        Telegraph,
+        DashExit,
+        DashEnter
     }
 
     [Serializable]
@@ -83,6 +87,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public string slotId = "vfx_slot";
         public string displayName = "새 VFX 공간";
         public string description = "Monster Maker에서 이 공간에 몬스터 고유 VFX를 배정합니다.";
+        public string productionMemo;
         public MonsterBasicAttackVfxEvent eventType = MonsterBasicAttackVfxEvent.RecipeExecute;
         public MonsterBasicAttackVfxAnchor anchor = MonsterBasicAttackVfxAnchor.AttackOrigin;
         public MonsterBasicAttackVfxMultiplicity multiplicity =
@@ -103,6 +108,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 displayName = source?.DisplayName ?? "새 VFX 공간",
                 description = source?.Description ??
                               "Monster Maker에서 이 공간에 몬스터 고유 VFX를 배정합니다.",
+                productionMemo = source?.ProductionMemo ?? string.Empty,
                 eventType = source?.EventType ?? MonsterBasicAttackVfxEvent.RecipeExecute,
                 anchor = source?.Anchor ?? MonsterBasicAttackVfxAnchor.AttackOrigin,
                 multiplicity = source?.Multiplicity ?? MonsterBasicAttackVfxMultiplicity.OncePerExecution,
@@ -130,6 +136,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 attachment,
                 endPolicy,
                 defaultLifetime);
+            result.EditorSetProductionMemo(productionMemo);
             return result;
         }
     }
@@ -173,6 +180,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         private static readonly Definition[] Definitions =
         {
+            Define(BasicAttackWorkshopVfxRole.Telegraph, "예고 · 판정 범위", "판정 예고", "실제 판정 전에 공격 범위 중심에서 한 번 재생합니다.", MonsterBasicAttackVfxEvent.Telegraph, MonsterBasicAttackVfxAnchor.AreaCenter, MonsterBasicAttackVfxMultiplicity.OncePerExecution),
+            Define(BasicAttackWorkshopVfxRole.DashExit, "이동 · 돌진 출발", "돌진 출발", "공격자가 원래 위치를 떠나기 직전에 공격자 중심에서 한 번 재생합니다.", MonsterBasicAttackVfxEvent.DashExit, MonsterBasicAttackVfxAnchor.SourceRoot, MonsterBasicAttackVfxMultiplicity.OncePerExecution),
+            Define(BasicAttackWorkshopVfxRole.DashEnter, "이동 · 돌진 도착", "돌진 도착", "공격자가 새 위치에 도착한 직후 공격자 중심에서 한 번 재생합니다.", MonsterBasicAttackVfxEvent.DashEnter, MonsterBasicAttackVfxAnchor.SourceRoot, MonsterBasicAttackVfxMultiplicity.OncePerExecution),
             Define(BasicAttackWorkshopVfxRole.MotionCueSource, "시작 · 공격자 중심 예고", "공격 시작 예고", "공격 모션이 시작될 때 공격자 중심에서 한 번 재생합니다.", MonsterBasicAttackVfxEvent.MotionStart, MonsterBasicAttackVfxAnchor.SourceRoot, MonsterBasicAttackVfxMultiplicity.OncePerMotion),
             Define(BasicAttackWorkshopVfxRole.MotionCueOrigin, "시작 · 공격 시작점 예고", "공격 시작 예고", "공격 모션이 시작될 때 입·손·무기 등의 공격 시작점에서 한 번 재생합니다.", MonsterBasicAttackVfxEvent.MotionStart, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerMotion),
             Define(BasicAttackWorkshopVfxRole.AttackTrail, "진행 · 휘두름·내려찍기 궤적", "공격 궤적", "실제 공격 실행 순간부터 공격 시작점을 따라가며 모션 종료까지 유지합니다.", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution, MonsterBasicAttackVfxAttachment.FollowAnchor, MonsterBasicAttackVfxEndPolicy.MotionEnd),
@@ -187,6 +197,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             Define(BasicAttackWorkshopVfxRole.TargetImpact, "명중 · 대상 실제 명중", "실제 명중", "피해가 실제로 적용된 대상의 명중 위치마다 재생합니다.", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit),
             Define(BasicAttackWorkshopVfxRole.DamageStageImpact, "명중 · 피해 단계마다", "타격별 명중", "연타·지속 공격의 각 피해 단계가 적용된 명중 위치에서 재생합니다.", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerDamageStage),
             Define(BasicAttackWorkshopVfxRole.AreaImpact, "명중 · 범위 판정 완료", "범위 효과", "원형 범위의 피해 판정이 해결된 중심에서 한 번 재생합니다.", MonsterBasicAttackVfxEvent.AreaResolved, MonsterBasicAttackVfxAnchor.AreaCenter, MonsterBasicAttackVfxMultiplicity.OncePerExecution),
+            Define(BasicAttackWorkshopVfxRole.AreaImpactPerProjectile, "명중 · 투사체별 범위 판정 완료", "범위 폭발", "각 폭발 투사체의 범위 피해 판정이 해결된 중심에서 투사체마다 한 번 재생합니다.", MonsterBasicAttackVfxEvent.AreaResolved, MonsterBasicAttackVfxAnchor.AreaCenter, MonsterBasicAttackVfxMultiplicity.PerProjectile),
             Define(BasicAttackWorkshopVfxRole.SequenceFinish, "종료 · 연타·단계 마무리", "마지막 타격", "마지막 피해 단계가 끝난 실제 명중 위치에서 한 번 재생합니다.", MonsterBasicAttackVfxEvent.SequenceEnd, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.OncePerExecution),
             Define(BasicAttackWorkshopVfxRole.OutboundImpact, "명중 · 왕복 전진 구간", "나가는 경로 명중", "왕복 이동체가 나가는 동안 피해를 준 각 대상 위치에서 재생합니다.", MonsterBasicAttackVfxEvent.OutboundTargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit),
             Define(BasicAttackWorkshopVfxRole.DeliveryTurn, "진행 · 왕복 방향 전환", "회전 전환", "왕복 이동체가 복귀로 방향을 바꾸는 지점에서 이동체마다 한 번 재생합니다.", MonsterBasicAttackVfxEvent.DeliveryTurn, MonsterBasicAttackVfxAnchor.ProjectileRoot, MonsterBasicAttackVfxMultiplicity.PerProjectile),
@@ -305,6 +316,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             slot.eventType = definition.EventType;
             slot.anchor = definition.Anchor;
             slot.multiplicity = definition.Multiplicity;
+            slot.assignmentScope = GetDefaultAssignmentScope(role);
             slot.attachment = definition.Attachment;
             slot.endPolicy = definition.EndPolicy;
             if (string.IsNullOrWhiteSpace(slot.displayName) ||
@@ -318,6 +330,25 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 slot.description = definition.Guide;
             }
+        }
+
+        private static MonsterBasicAttackVfxAssignmentScope GetDefaultAssignmentScope(
+            BasicAttackWorkshopVfxRole role)
+        {
+            return role is BasicAttackWorkshopVfxRole.MotionCueSource or
+                BasicAttackWorkshopVfxRole.MotionCueOrigin or
+                BasicAttackWorkshopVfxRole.AttackTrail or
+                BasicAttackWorkshopVfxRole.SweepPlane or
+                BasicAttackWorkshopVfxRole.AttackPath or
+                BasicAttackWorkshopVfxRole.CastOrLaunch or
+                BasicAttackWorkshopVfxRole.FollowSourceBody or
+                BasicAttackWorkshopVfxRole.FollowOriginBody or
+                BasicAttackWorkshopVfxRole.FollowTrajectoryBody or
+                BasicAttackWorkshopVfxRole.MotionEnd or
+                BasicAttackWorkshopVfxRole.DashExit or
+                BasicAttackWorkshopVfxRole.DashEnter
+                    ? MonsterBasicAttackVfxAssignmentScope.MotionSpecific
+                    : MonsterBasicAttackVfxAssignmentScope.MonsterShared;
         }
 
         private static BasicAttackWorkshopVfxRole Resolve(
@@ -430,6 +461,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 MonsterBasicAttackVfxEvent.DeliveryTurn => "왕복 방향 전환",
                 MonsterBasicAttackVfxEvent.DeliveryEnd => "투사체·이동체 종료",
                 MonsterBasicAttackVfxEvent.MotionEnd => "공격 모션 종료",
+                MonsterBasicAttackVfxEvent.DashExit => "돌진 출발",
+                MonsterBasicAttackVfxEvent.DashEnter => "돌진 도착",
                 _ => value.ToString()
             };
         }

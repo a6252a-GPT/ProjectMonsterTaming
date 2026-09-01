@@ -16,7 +16,11 @@ MonoBehaviour:
   displayName: "\uCC28\uBBFC\uADDC"
   rarity: 3
   portrait: {fileID: 21300000, guid: 9bc12f77527bcea4187b71e62416d6cf, type: 3}
-  skillLoadoutConfigured: 0
+  skillLoadoutConfigured: 1
+  usePassiveSkill: 0
+  useActiveSkill: 1
+  splitSkillUsageConfigured: 1
+  skillUsageSchemaVersion: 1
   rarityPassiveSkill: {fileID: 0}
   passiveTuning:
     initialized: 0
@@ -32,7 +36,211 @@ MonoBehaviour:
     threshold: 0
     radius: 0
     maxTargets: 1
-  rarityActiveSkill: {fileID: 0}
+  rarityActiveSkill: {fileID: 11400000, guid: 909b3210fe6f6484a8684a11b35fc0ca, type: 2}
+  activeAttackProfile: {fileID: 0}
+  activeEffectProfile: {fileID: 11400000, guid: 205186a4bc8970f4abc94e7e46543133, type: 2}
+  activeSkillName: "\uBE59\uACB0 \uC131\uBCBD"
+  activeEnergyMaximum: 1400
+  activeSkillClip: {fileID: 0}
+  activeSkillPlaybackSpeed: 1
+  activeSkillCrossFadeDuration: 0.08
+  activeSkillCommitNormalizedTime: 0.25
+  activeStepMotionModeConfigured: 1
+  useCustomActiveStepMotions: 0
+  activeAttackStepTunings: []
+  activeAttackPresentations: []
+  activeEffectPresentations:
+  - stepId: group_01
+    motionConfigured: 1
+    motionClip: {fileID: 0}
+    motionPlaybackSpeed: 1
+    motionCrossFadeDuration: 0.08
+    motionCommitNormalizedTime: 0.25
+    telegraph:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    launch:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    travel:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    impact:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    dashExit:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    dashEnter:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    slots:
+    - slotId: cast_start
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      assignmentStateConfigured: 1
+      vfxState: 0
+      sfxState: 0
+    - slotId: barrier_apply
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      assignmentStateConfigured: 1
+      vfxState: 0
+      sfxState: 0
+    - slotId: target_loop
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      assignmentStateConfigured: 1
+      vfxState: 0
+      sfxState: 0
+    attackBlockBindings: []
+    inactiveSlots: []
+    inactiveAttackBlockBindings: []
+  - stepId: group_02
+    motionConfigured: 1
+    motionClip: {fileID: 0}
+    motionPlaybackSpeed: 1
+    motionCrossFadeDuration: 0.08
+    motionCommitNormalizedTime: 0.25
+    telegraph:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    launch:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    travel:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    impact:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    dashExit:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    dashEnter:
+      sound: {fileID: 0}
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    slots:
+    - slotId: cast_start
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      assignmentStateConfigured: 1
+      vfxState: 0
+      sfxState: 0
+    - slotId: core_apply
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      assignmentStateConfigured: 1
+      vfxState: 0
+      sfxState: 0
+    - slotId: target_loop
+      feedback:
+        sound: {fileID: 0}
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      assignmentStateConfigured: 1
+      vfxState: 0
+      sfxState: 0
+    attackBlockBindings: []
+    inactiveSlots: []
+    inactiveAttackBlockBindings: []
+  activeAttackAuthoringProfileId: 
+  activeEffectAuthoringProfileId: chamingyu_frozen_bulwark
+  inactiveActiveAttackAuthoring: []
   productionMemo: Notion monster batch / IceGolem
   vendorPrefab: {fileID: 5341242082615092904, guid: 9e2c8b1e275784c409008a200e18b33a, type: 3}
   animatorSource: {fileID: 5233229399799219517, guid: 9e2c8b1e275784c409008a200e18b33a, type: 3}
@@ -85,7 +293,39 @@ MonoBehaviour:
   deathSpeed: 1
   combatType: 0
   basicAttackProfile: {fileID: 11400000, guid: 61002033270fd83468163f34c442e589, type: 2}
-  basicAttackVfxBindings: []
+  basicAttackVfxBindings:
+  - attackId: BA_M_03
+    slotId: thrust_path
+    motionId: attack01
+    state: 2
+    prefab: {fileID: 0}
+    sfxState: 2
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_M_03
+    slotId: path_hit
+    motionId: 
+    state: 1
+    prefab: {fileID: 3150171146269054366, guid: 2aefd2a5de7fc8a43ad9659e4ea73957, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: -0.32734472, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 0.5
   meleeMode: 1
   meleeAreaCenter: 1
   meleeAreaRadius: 2

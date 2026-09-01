@@ -70,13 +70,16 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     SmallButton("삭제", () => DeleteEffectNested(groupIndex, "effects", captured, true), true, list.arraySize > 1)));
                 shell.Add(BoundProperty(effectSerialized, effect.FindPropertyRelative("effectId"), "효과 ID"));
                 shell.Add(EffectEnumPopup(effect.FindPropertyRelative("type"), "효과 종류", allowed, SkillEffectLabel, ScheduleRebuild));
-                shell.Add(EffectEnumPopup(effect.FindPropertyRelative("valueSource"), "수치 기준", EnumValues<MonsterSkillValueSource>(), EffectValueSourceLabel));
-                shell.Add(EffectEnumPopup(effect.FindPropertyRelative("magnitudeMode"), "수치 방식", EnumValues<MonsterSkillMagnitudeMode>(),
-                    value => value == MonsterSkillMagnitudeMode.Fixed ? "고정값" : "범위 무작위", ScheduleRebuild));
-                shell.Add(BoundProperty(effectSerialized, effect.FindPropertyRelative("magnitude"), "기본 수치"));
-                if ((MonsterSkillMagnitudeMode)effect.FindPropertyRelative("magnitudeMode").enumValueIndex == MonsterSkillMagnitudeMode.RandomRange)
-                    shell.Add(BoundProperty(effectSerialized, effect.FindPropertyRelative("maximumMagnitude"), "최대 수치"));
                 var type = (MonsterSkillEffectType)effect.FindPropertyRelative("type").enumValueIndex;
+                if (type != MonsterSkillEffectType.Cleanse)
+                {
+                    shell.Add(EffectEnumPopup(effect.FindPropertyRelative("valueSource"), "수치 기준", EnumValues<MonsterSkillValueSource>(), EffectValueSourceLabel));
+                    shell.Add(EffectEnumPopup(effect.FindPropertyRelative("magnitudeMode"), "수치 방식", EnumValues<MonsterSkillMagnitudeMode>(),
+                        value => value == MonsterSkillMagnitudeMode.Fixed ? "고정값" : "범위 무작위", ScheduleRebuild));
+                    shell.Add(BoundProperty(effectSerialized, effect.FindPropertyRelative("magnitude"), "기본 수치"));
+                    if ((MonsterSkillMagnitudeMode)effect.FindPropertyRelative("magnitudeMode").enumValueIndex == MonsterSkillMagnitudeMode.RandomRange)
+                        shell.Add(BoundProperty(effectSerialized, effect.FindPropertyRelative("maximumMagnitude"), "최대 수치"));
+                }
                 shell.Add(EffectOptionalFloat(effect.FindPropertyRelative("delay"), "효과 시작 딜레이(초)", "시작 딜레이 사용", 0.1f));
                 if (EffectUsesDuration(type) || type == MonsterSkillEffectType.Heal)
                     shell.Add(EffectOptionalFloat(effect.FindPropertyRelative("duration"), "지속 시간(초)", "지속시간 사용", 3f));
@@ -108,15 +111,58 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     SmallButton("삭제", () => DeleteEffectNested(groupIndex, "presentationSlots", captured, false), true)));
                 shell.Add(BoundProperty(effectSerialized, slot.FindPropertyRelative("slotId"), "공간 ID"));
                 shell.Add(BoundProperty(effectSerialized, slot.FindPropertyRelative("displayName"), "표시 이름"));
-                shell.Add(EffectEnumPopup(slot.FindPropertyRelative("timing"), "발생 시점", EnumValues<MonsterActivePresentationEvent>(), ActiveEventLabel));
-                shell.Add(EffectEnumPopup(slot.FindPropertyRelative("anchor"), "기준 위치", EnumValues<MonsterActivePresentationAnchor>(), ActiveAnchorLabel));
-                shell.Add(EffectEnumPopup(slot.FindPropertyRelative("multiplicity"), "재생 횟수", EnumValues<MonsterActivePresentationMultiplicity>(), ActiveMultiplicityLabel));
-                shell.Add(EffectEnumPopup(slot.FindPropertyRelative("attachment"), "부착 방식", EnumValues<MonsterActivePresentationAttachment>(), ActiveAttachmentLabel));
-                shell.Add(EffectEnumPopup(slot.FindPropertyRelative("endPolicy"), "종료 규칙", EnumValues<MonsterActivePresentationEndPolicy>(), ActiveEndLabel));
+                var timingProperty = slot.FindPropertyRelative("timing");
+                var timingChoices = EnumValues<MonsterActivePresentationEvent>()
+                    .Where(MonsterEffectActiveVfxCompatibility.SupportsEvent)
+                    .ToList();
+                shell.Add(EffectEnumPopup(timingProperty, "발생 시점", timingChoices,
+                    ActiveEventLabel, ScheduleRebuild));
+                var timing = (MonsterActivePresentationEvent)timingProperty.enumValueIndex;
+                var anchorProperty = slot.FindPropertyRelative("anchor");
+                var anchorChoices = EnumValues<MonsterActivePresentationAnchor>()
+                    .Where(value => MonsterEffectActiveVfxCompatibility.SupportsAnchor(timing, value))
+                    .ToList();
+                shell.Add(EffectEnumPopup(anchorProperty, "기준 위치", anchorChoices,
+                    ActiveAnchorLabel, ScheduleRebuild));
+                var anchor = (MonsterActivePresentationAnchor)anchorProperty.enumValueIndex;
+                var multiplicityProperty = slot.FindPropertyRelative("multiplicity");
+                var multiplicityChoices = EnumValues<MonsterActivePresentationMultiplicity>()
+                    .Where(value => MonsterEffectActiveVfxCompatibility.SupportsMultiplicity(
+                        timing, anchor, value))
+                    .ToList();
+                shell.Add(EffectEnumPopup(multiplicityProperty, "재생 횟수", multiplicityChoices,
+                    ActiveMultiplicityLabel, ScheduleRebuild));
+                var multiplicity =
+                    (MonsterActivePresentationMultiplicity)multiplicityProperty.enumValueIndex;
+                var attachmentProperty = slot.FindPropertyRelative("attachment");
+                var attachmentChoices = EnumValues<MonsterActivePresentationAttachment>()
+                    .Where(value => MonsterEffectActiveVfxCompatibility.SupportsAttachment(anchor, value))
+                    .ToList();
+                shell.Add(EffectEnumPopup(attachmentProperty, "부착 방식", attachmentChoices,
+                    ActiveAttachmentLabel, ScheduleRebuild));
+                var endProperty = slot.FindPropertyRelative("endPolicy");
+                var endChoices = EnumValues<MonsterActivePresentationEndPolicy>()
+                    .Where(value => MonsterEffectActiveVfxCompatibility.SupportsEndPolicy(
+                        timing, multiplicity, value))
+                    .ToList();
+                shell.Add(EffectEnumPopup(endProperty, "종료 규칙", endChoices,
+                    ActiveEndLabel, ScheduleRebuild));
                 shell.Add(BoundProperty(effectSerialized, slot.FindPropertyRelative("description"), "제작 메모"));
-                shell.Add(BoundProperty(effectSerialized, slot.FindPropertyRelative("useDuration"), "지속시간 직접 사용", ScheduleRebuild));
-                if (slot.FindPropertyRelative("useDuration").boolValue)
-                    shell.Add(BoundProperty(effectSerialized, slot.FindPropertyRelative("duration"), "지속 시간(초)"));
+                var useDuration = slot.FindPropertyRelative("useDuration");
+                if ((MonsterActivePresentationEndPolicy)endProperty.enumValueIndex ==
+                    MonsterActivePresentationEndPolicy.Timed)
+                {
+                    shell.Add(BoundProperty(effectSerialized, useDuration,
+                        "지속시간 직접 사용", ScheduleRebuild));
+                    if (useDuration.boolValue)
+                        shell.Add(BoundProperty(effectSerialized,
+                            slot.FindPropertyRelative("duration"), "지속 시간(초)"));
+                }
+                else if (useDuration.boolValue)
+                {
+                    useDuration.boolValue = false;
+                    effectSerialized.ApplyModifiedProperties();
+                }
                 section.Add(shell);
             }
             section.Add(AddButton("+ VFX/SFX 공간 추가", () => AddEffectSlot(groupIndex)));
@@ -205,10 +251,16 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         {
             effectSerialized.Update(); var list = effectSerialized.FindProperty("groups").GetArrayElementAtIndex(groupIndex).FindPropertyRelative("presentationSlots"); var index = list.arraySize;
             list.InsertArrayElementAtIndex(index); var slot = list.GetArrayElementAtIndex(index);
-            slot.FindPropertyRelative("slotId").stringValue = $"effect_vfx_{index + 1:00}"; slot.FindPropertyRelative("displayName").stringValue = index == 0 ? "시전자 VFX" : "효과 대상 VFX";
-            slot.FindPropertyRelative("timing").enumValueIndex = (int)MonsterActivePresentationEvent.Launch;
-            slot.FindPropertyRelative("anchor").enumValueIndex = index == 0 ? (int)MonsterActivePresentationAnchor.CasterRoot : (int)MonsterActivePresentationAnchor.TargetRoot;
-            slot.FindPropertyRelative("description").stringValue = "Monster Maker V2에서 몬스터 고유 VFX/SFX를 연결합니다."; slot.FindPropertyRelative("duration").floatValue = 1f;
+            ConfigureEffectSlot(
+                slot,
+                $"effect_vfx_{index + 1:00}",
+                index == 0 ? "시전자 VFX" : "효과 대상 VFX",
+                index == 0
+                    ? MonsterActivePresentationEvent.Launch
+                    : MonsterActivePresentationEvent.Impact,
+                index == 0
+                    ? MonsterActivePresentationAnchor.CasterRoot
+                    : MonsterActivePresentationAnchor.TargetRoot);
             effectSerialized.ApplyModifiedProperties(); effectDirty = true; RebuildCurrent();
         }
 
@@ -240,10 +292,10 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private void DeleteEffectNested(int owner, string path, int index, bool requireOne)
         { effectSerialized.Update(); var list = effectSerialized.FindProperty("groups").GetArrayElementAtIndex(owner).FindPropertyRelative(path); if (requireOne && list.arraySize <= 1) { effectMessage = "오류: 효과는 하나 이상 필요합니다."; RefreshState(); return; } list.DeleteArrayElementAtIndex(index); effectSerialized.ApplyModifiedProperties(); effectDirty = true; RebuildCurrent(); }
 
-        private static bool EffectUsesDuration(MonsterSkillEffectType type) => type is MonsterSkillEffectType.Shield or MonsterSkillEffectType.AttackBuff or MonsterSkillEffectType.DefenseBuff or MonsterSkillEffectType.AttackSpeedBuff or MonsterSkillEffectType.AttackDebuff or MonsterSkillEffectType.DefenseDebuff or MonsterSkillEffectType.AttackSpeedDebuff or MonsterSkillEffectType.MoveSpeedDebuff or MonsterSkillEffectType.Mark or MonsterSkillEffectType.Slow or MonsterSkillEffectType.Stun or MonsterSkillEffectType.Pull or MonsterSkillEffectType.Taunt or MonsterSkillEffectType.DamageReduction;
+        private static bool EffectUsesDuration(MonsterSkillEffectType type) => type is MonsterSkillEffectType.Shield or MonsterSkillEffectType.AttackBuff or MonsterSkillEffectType.DefenseBuff or MonsterSkillEffectType.AttackSpeedBuff or MonsterSkillEffectType.AttackDebuff or MonsterSkillEffectType.DefenseDebuff or MonsterSkillEffectType.AttackSpeedDebuff or MonsterSkillEffectType.MoveSpeedDebuff or MonsterSkillEffectType.Mark or MonsterSkillEffectType.Slow or MonsterSkillEffectType.Stun or MonsterSkillEffectType.Pull or MonsterSkillEffectType.Taunt or MonsterSkillEffectType.DamageReduction or MonsterSkillEffectType.DamageReflect;
         private static string EffectRoleLabel(MonsterEffectActiveRole value) => value switch { MonsterEffectActiveRole.Support => "지원", MonsterEffectActiveRole.Guard => "수호", _ => "디버프" };
         private static string EffectTargetLabel(MonsterSkillTargetType value) => value switch { MonsterSkillTargetType.Self => "내 자신", MonsterSkillTargetType.CurrentTarget => "현재 타깃", MonsterSkillTargetType.NearestEnemy => "가장 가까운 적", MonsterSkillTargetType.FarthestEnemy => "가장 먼 적", MonsterSkillTargetType.LowestHealthEnemy => "체력이 가장 낮은 적", MonsterSkillTargetType.HighestAttackEnemy => "공격력이 가장 높은 적", MonsterSkillTargetType.RangedEnemyFirst => "원거리 적 우선", MonsterSkillTargetType.LowestHealthAlly => "체력이 가장 낮은 아군", MonsterSkillTargetType.HighestAttackAlly => "공격력이 가장 높은 아군", MonsterSkillTargetType.NearbyAllies => "주변 아군", MonsterSkillTargetType.AllAllies => "모든 아군", MonsterSkillTargetType.TargetAreaEnemies => "타깃 주변 적", _ => value.ToString() };
-        private static string SkillEffectLabel(MonsterSkillEffectType value) => value switch { MonsterSkillEffectType.Heal => "회복", MonsterSkillEffectType.Shield => "보호막", MonsterSkillEffectType.AttackBuff => "공격력 증가", MonsterSkillEffectType.DefenseBuff => "방어력 증가", MonsterSkillEffectType.AttackSpeedBuff => "공격속도 증가", MonsterSkillEffectType.EnergyGain => "기력 회복", MonsterSkillEffectType.AttackDebuff => "공격력 감소", MonsterSkillEffectType.DefenseDebuff => "방어력 감소", MonsterSkillEffectType.AttackSpeedDebuff => "공격속도 감소", MonsterSkillEffectType.MoveSpeedDebuff => "이동속도 감소", MonsterSkillEffectType.Mark => "표식", MonsterSkillEffectType.Slow => "감속", MonsterSkillEffectType.Stun => "기절", MonsterSkillEffectType.Pull => "끌어당기기", MonsterSkillEffectType.EnergyDrain => "기력 감소", MonsterSkillEffectType.Taunt => "도발", MonsterSkillEffectType.DamageReduction => "피해 감소", _ => value.ToString() };
+        private static string SkillEffectLabel(MonsterSkillEffectType value) => value switch { MonsterSkillEffectType.Heal => "회복", MonsterSkillEffectType.Shield => "보호막", MonsterSkillEffectType.AttackBuff => "공격력 증가", MonsterSkillEffectType.DefenseBuff => "방어력 증가", MonsterSkillEffectType.AttackSpeedBuff => "공격속도 증가", MonsterSkillEffectType.EnergyGain => "기력 회복", MonsterSkillEffectType.AttackDebuff => "공격력 감소", MonsterSkillEffectType.DefenseDebuff => "방어력 감소", MonsterSkillEffectType.AttackSpeedDebuff => "공격속도 감소", MonsterSkillEffectType.MoveSpeedDebuff => "이동속도 감소", MonsterSkillEffectType.Mark => "표식", MonsterSkillEffectType.Slow => "감속", MonsterSkillEffectType.Stun => "기절", MonsterSkillEffectType.Pull => "끌어당기기", MonsterSkillEffectType.EnergyDrain => "기력 감소", MonsterSkillEffectType.Taunt => "도발", MonsterSkillEffectType.DamageReduction => "피해 감소", MonsterSkillEffectType.DamageReflect => "피해 반사", MonsterSkillEffectType.Cleanse => "디버프 정화", _ => value.ToString() };
         private static string EffectValueSourceLabel(MonsterSkillValueSource value) => value switch { MonsterSkillValueSource.Flat => "고정 수치", MonsterSkillValueSource.AttackPowerRatio => "시전자 공격력 비율", MonsterSkillValueSource.MaxHealthRatio => "시전자 최대 체력 비율", MonsterSkillValueSource.TargetMaxHealthRatio => "대상 최대 체력 비율", MonsterSkillValueSource.TargetMissingHealthRatio => "대상 잃은 체력 비율", MonsterSkillValueSource.TargetEnergyCapacityRatio => "대상 최대 기력 비율", _ => "받은 피해 비율" };
         private static string StackPolicyLabel(MonsterSkillStackPolicy value) => value switch { MonsterSkillStackPolicy.Replace => "새 효과로 교체", MonsterSkillStackPolicy.RefreshDuration => "지속시간 갱신", MonsterSkillStackPolicy.Stack => "중첩", _ => "강한 효과 우선" };
     }

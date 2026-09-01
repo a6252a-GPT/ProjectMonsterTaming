@@ -274,6 +274,29 @@
     font-size: 9px;
 }
 .catalog-toggle-button:hover { background-color: rgb(55, 64, 76); color: rgb(221, 226, 234); }
+.help-toggle-button {
+    width: 68px;
+    height: 21px;
+    margin-right: 6px;
+    padding-left: 4px;
+    padding-right: 4px;
+    background-color: rgb(43, 49, 59);
+    border-left-color: rgb(70, 79, 93);
+    border-right-color: rgb(70, 79, 93);
+    border-top-color: rgb(70, 79, 93);
+    border-bottom-color: rgb(70, 79, 93);
+    color: rgb(174, 184, 199);
+    font-size: 9px;
+}
+.help-toggle-button:hover { background-color: rgb(55, 64, 76); color: rgb(221, 226, 234); }
+.help-toggle-button--hidden {
+    background-color: rgb(43, 66, 87);
+    border-left-color: rgb(70, 117, 157);
+    border-right-color: rgb(70, 117, 157);
+    border-top-color: rgb(70, 117, 157);
+    border-bottom-color: rgb(70, 117, 157);
+    color: rgb(180, 216, 243);
+}
 .state-badge--saved { background-color: rgb(39, 86, 68); color: rgb(159, 224, 190); }
 .state-badge--dirty { background-color: rgb(111, 77, 37); color: rgb(255, 210, 139); }
 .draft-status { height: 28px; color: rgb(153, 164, 181); font-size: 10px; white-space: normal; }
@@ -329,6 +352,8 @@
 }
 .draft-subfoldout > .unity-foldout__toggle { min-height: 24px; -unity-font-style: bold; }
 .draft-help { margin-top: 4px; margin-bottom: 4px; }
+.maker-root--context-help-hidden .draft-help--optional,
+.maker-root--context-help-hidden .context-help { display: none; }
 .draft-action-row { flex-direction: row; margin-top: 4px; margin-bottom: 3px; }
 .draft-action-row > Button { min-width: 0; flex-basis: 0; flex-grow: 1; }
 .skill-tab-row {

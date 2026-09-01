@@ -30,7 +30,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             var motion = MonsterBasicAttackVfxAssignmentScope.MotionSpecific;
             var shared = MonsterBasicAttackVfxAssignmentScope.MonsterShared;
-            return profile.PresentationKind switch
+            var slots = profile.PresentationKind switch
             {
                 MonsterBasicAttackPresentationKind.Sweep => new[]
                 {
@@ -51,7 +51,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 },
                 MonsterBasicAttackPresentationKind.Dash => new[]
                 {
-                    Vfx("dash_start", "돌진 시작", "공격 모션이 시작될 때의 예고 효과", MonsterBasicAttackVfxEvent.MotionStart, MonsterBasicAttackVfxAnchor.SourceRoot, MonsterBasicAttackVfxMultiplicity.OncePerMotion, motion),
                     Vfx("dash_trail", "돌진 잔상", "공격자를 따라가는 돌진 효과", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.SourceRoot, MonsterBasicAttackVfxMultiplicity.ContinuousUntilEnd, motion, MonsterBasicAttackVfxAttachment.FollowAnchor, MonsterBasicAttackVfxEndPolicy.MotionEnd),
                     Vfx("hit", "실제 명중", "돌진 뒤 피해가 적용된 위치의 명중 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared)
                 },
@@ -66,7 +65,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     Vfx("launch", "발사", "폭발 투사체가 생성되는 원점 효과", MonsterBasicAttackVfxEvent.RecipeExecute, MonsterBasicAttackVfxAnchor.AttackOrigin, MonsterBasicAttackVfxMultiplicity.OncePerExecution, motion),
                     Delivery("projectile", "폭발 투사체 본체"),
                     Vfx("contact", "대상별 폭발 명중", "폭발 범위에서 실제 피해를 받은 각 대상 효과", MonsterBasicAttackVfxEvent.TargetDamaged, MonsterBasicAttackVfxAnchor.HitPoint, MonsterBasicAttackVfxMultiplicity.PerTargetHit, shared),
-                    Vfx("area_explosion", "범위 폭발", "범위 피해 해결 뒤 중심점 폭발 효과", MonsterBasicAttackVfxEvent.AreaResolved, MonsterBasicAttackVfxAnchor.AreaCenter, MonsterBasicAttackVfxMultiplicity.OncePerExecution, shared)
+                    Vfx("area_explosion", "범위 폭발", "각 폭발 투사체의 범위 피해 해결 뒤 중심점 폭발 효과", MonsterBasicAttackVfxEvent.AreaResolved, MonsterBasicAttackVfxAnchor.AreaCenter, MonsterBasicAttackVfxMultiplicity.PerProjectile, shared)
                 },
                 MonsterBasicAttackPresentationKind.Instant => new[]
                 {
@@ -119,6 +118,46 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 MonsterBasicAttackPresentationKind.Shot => ProjectileSlots(),
                 _ => ContactSlots()
             };
+
+            var prefixes = new List<MonsterBasicAttackVfxSlot>();
+            if (profile.TelegraphDelay > 0f)
+            {
+                prefixes.Add(Vfx(
+                    "telegraph",
+                    "판정 예고",
+                    "판정 전에 실제 공격 범위 중심에서 한 번 재생하는 예고 효과",
+                    MonsterBasicAttackVfxEvent.Telegraph,
+                    MonsterBasicAttackVfxAnchor.AreaCenter,
+                    MonsterBasicAttackVfxMultiplicity.OncePerExecution,
+                    shared));
+            }
+            if (profile.MovementModule != MonsterBasicAttackMovementModule.Dash)
+            {
+                prefixes.AddRange(slots);
+                return prefixes.ToArray();
+            }
+
+            prefixes.AddRange(new[]
+            {
+                Vfx(
+                    "dash_exit",
+                    "돌진 출발",
+                    "공격자가 원래 위치를 떠나기 직전의 전용 효과",
+                    MonsterBasicAttackVfxEvent.DashExit,
+                    MonsterBasicAttackVfxAnchor.SourceRoot,
+                    MonsterBasicAttackVfxMultiplicity.OncePerExecution,
+                    motion),
+                Vfx(
+                    "dash_enter",
+                    "돌진 도착",
+                    "공격자가 새 위치에 도착한 직후의 전용 효과",
+                    MonsterBasicAttackVfxEvent.DashEnter,
+                    MonsterBasicAttackVfxAnchor.SourceRoot,
+                    MonsterBasicAttackVfxMultiplicity.OncePerExecution,
+                    motion)
+            });
+            prefixes.AddRange(slots);
+            return prefixes.ToArray();
         }
 
         internal static List<BasicAttackWorkshopVfxSlot> Reconcile(
@@ -126,8 +165,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
             IReadOnlyList<BasicAttackWorkshopVfxSlot> current,
             out MonsterBasicAttackContractReconcileResult result)
         {
-            var source = current?.Where(slot => slot != null).ToList() ??
+            var active = current?.Where(slot => slot != null).ToList() ??
                          new List<BasicAttackWorkshopVfxSlot>();
+            var source = new List<BasicAttackWorkshopVfxSlot>(active);
+            if (profile != null)
+            {
+                source.AddRange(profile.InactiveVfxSlots
+                    .Where(slot => slot != null)
+                    .Select(BasicAttackWorkshopVfxSlot.From));
+            }
             var templates = Build(profile);
             var reconciled = new List<BasicAttackWorkshopVfxSlot>();
             var consumed = new HashSet<BasicAttackWorkshopVfxSlot>();
@@ -138,13 +184,25 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 var existing = source.LastOrDefault(slot =>
                     string.Equals(slot.slotId, template.SlotId, StringComparison.OrdinalIgnoreCase));
+                var legacyDashExit = false;
+                existing ??= source.LastOrDefault(slot =>
+                    string.Equals(
+                        template.SlotId,
+                        "dash_exit",
+                        StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(slot.slotId, "dash_start", StringComparison.OrdinalIgnoreCase));
+                legacyDashExit = existing != null &&
+                                 string.Equals(template.SlotId, "dash_exit", StringComparison.OrdinalIgnoreCase) &&
+                                 string.Equals(existing.slotId, "dash_start", StringComparison.OrdinalIgnoreCase);
                 var item = BasicAttackWorkshopVfxSlot.From(template);
                 if (existing != null)
                 {
-                    item.displayName = existing.displayName;
-                    item.description = existing.description;
-                    item.defaultLifetime = existing.defaultLifetime;
-                    item.showAdvanced = existing.showAdvanced;
+                    item.productionMemo = !string.IsNullOrWhiteSpace(existing.productionMemo)
+                        ? existing.productionMemo
+                        : !legacyDashExit &&
+                          !string.Equals(existing.description, template.Description, StringComparison.Ordinal)
+                            ? existing.description
+                            : string.Empty;
                     consumed.Add(existing);
                     retained++;
                 }
@@ -155,32 +213,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 reconciled.Add(item);
             }
 
-            foreach (var custom in source)
-            {
-                if (consumed.Contains(custom) ||
-                    templates.Any(template => string.Equals(
-                        template.SlotId,
-                        custom.slotId,
-                        StringComparison.OrdinalIgnoreCase)))
-                {
-                    continue;
-                }
-
-                if (MonsterBasicAttackVfxCompatibility.TryValidateSlot(
-                        profile,
-                        custom.Compile(),
-                        out _))
-                {
-                    reconciled.Add(custom);
-                    retained++;
-                    consumed.Add(custom);
-                }
-            }
-
             result = new MonsterBasicAttackContractReconcileResult(
                 retained,
                 added,
-                source.Count - consumed.Count);
+                active.Count(custom => !consumed.Contains(custom)));
             return reconciled;
         }
 

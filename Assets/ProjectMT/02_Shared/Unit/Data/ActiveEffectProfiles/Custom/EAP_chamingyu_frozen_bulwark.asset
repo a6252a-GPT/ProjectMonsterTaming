@@ -1,0 +1,153 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e307cda9da1873441a5769e7be2ce017, type: 3}
+  m_Name: EAP_chamingyu_frozen_bulwark
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterEffectActiveProfile
+  profileId: chamingyu_frozen_bulwark
+  displayName: "\uBE59\uACB0 \uC131\uBCBD"
+  description: "\uC804\uC6D0\uC5D0\uAC8C \uC2DC\uC804\uC790 \uCD5C\uB300 \uCCB4\uB825
+    12% \uBCF4\uD638\uB9C9\uACFC \uBC29\uC5B4\uB825 20%\uB97C \uC8FC\uACE0 \uC790\uC2E0\uC740
+    \uD53C\uD574\uAC10\uC18C 30%\uC640 \uD53C\uD574\uBC18\uC0AC 20%\uB97C \uC5BB\uC2B5\uB2C8\uB2E4."
+  role: 1
+  groups:
+  - groupId: group_01
+    displayName: "\uBE59\uACB0 \uC7A5\uBCBD"
+    delayAfterPrevious: 0
+    target: 12
+    includeCaster: 1
+    radius: 0
+    maxTargets: 32
+    effects:
+    - effectId: party_shield
+      type: 2
+      valueSource: 2
+      magnitude: 0.12
+      magnitudeMode: 0
+      maximumMagnitude: 0.12
+      duration: 5
+      delay: 0
+      repeatInterval: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 3
+    - effectId: defense_up
+      type: 4
+      valueSource: 0
+      magnitude: 0.2
+      magnitudeMode: 0
+      maximumMagnitude: 0.2
+      duration: 5
+      delay: 0
+      repeatInterval: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 3
+    presentationSlots:
+    - slotId: cast_start
+      displayName: "\uC2DC\uC804\uC790 \uBC1C\uB3D9"
+      timing: 6
+      anchor: 0
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      description: "\uBC1C\uB3D9 \uB610\uB294 \uC801\uC6A9 \uC21C\uAC04 VFX/SFX \uACF5\uAC04"
+      useDuration: 0
+      duration: 1
+    - slotId: barrier_apply
+      displayName: "\uD6A8\uACFC \uC801\uC6A9"
+      timing: 8
+      anchor: 7
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      description: "\uBC1C\uB3D9 \uB610\uB294 \uC801\uC6A9 \uC21C\uAC04 VFX/SFX \uACF5\uAC04"
+      useDuration: 0
+      duration: 1
+    - slotId: target_loop
+      displayName: "\uD6A8\uACFC \uC9C0\uC18D"
+      timing: 8
+      anchor: 5
+      multiplicity: 4
+      attachment: 1
+      endPolicy: 0
+      description: "\uC9C0\uC18D\uC2DC\uAC04 \uB3D9\uC548 \uC7AC\uC0DD\uD560 Loop
+        VFX/SFX \uACF5\uAC04"
+      useDuration: 1
+      duration: 5
+  - groupId: group_02
+    displayName: "\uC131\uBCBD\uC758 \uD575"
+    delayAfterPrevious: 0.05
+    target: 0
+    includeCaster: 1
+    radius: 0
+    maxTargets: 1
+    effects:
+    - effectId: damage_reduction
+      type: 22
+      valueSource: 0
+      magnitude: 0.3
+      magnitudeMode: 0
+      maximumMagnitude: 0.3
+      duration: 5
+      delay: 0
+      repeatInterval: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 3
+    - effectId: damage_reflect
+      type: 23
+      valueSource: 0
+      magnitude: 0.2
+      magnitudeMode: 0
+      maximumMagnitude: 0.2
+      duration: 5
+      delay: 0
+      repeatInterval: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 3
+    presentationSlots:
+    - slotId: cast_start
+      displayName: "\uC2DC\uC804\uC790 \uBC1C\uB3D9"
+      timing: 6
+      anchor: 0
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      description: "\uBC1C\uB3D9 \uB610\uB294 \uC801\uC6A9 \uC21C\uAC04 VFX/SFX \uACF5\uAC04"
+      useDuration: 0
+      duration: 1
+    - slotId: core_apply
+      displayName: "\uD6A8\uACFC \uC801\uC6A9"
+      timing: 8
+      anchor: 7
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      description: "\uBC1C\uB3D9 \uB610\uB294 \uC801\uC6A9 \uC21C\uAC04 VFX/SFX \uACF5\uAC04"
+      useDuration: 0
+      duration: 1
+    - slotId: target_loop
+      displayName: "\uD6A8\uACFC \uC9C0\uC18D"
+      timing: 8
+      anchor: 5
+      multiplicity: 4
+      attachment: 1
+      endPolicy: 0
+      description: "\uC9C0\uC18D\uC2DC\uAC04 \uB3D9\uC548 \uC7AC\uC0DD\uD560 Loop
+        VFX/SFX \uACF5\uAC04"
+      useDuration: 1
+      duration: 5

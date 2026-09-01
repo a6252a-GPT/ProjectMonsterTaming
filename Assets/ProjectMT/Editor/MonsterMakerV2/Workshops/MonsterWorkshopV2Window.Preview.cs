@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using ProjectMT.EditorTools.MonsterMaker;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
@@ -10,6 +11,10 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
 {
     public sealed partial class MonsterWorkshopV2Window
     {
+        private MonsterMakerV2PreviewAdapter assignedActivePreview;
+        private MonsterMakerDraft assignedActivePreviewDraft;
+        private bool showAssignedActivePreview;
+
         partial void BuildPreviewToolbar()
         {
             if (mode == WorkshopMode.Basic) BuildBasicPreviewToolbar();
@@ -58,7 +63,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         {
             attackPreview ??= new ProjectMT.EditorTools.MonsterMaker.MonsterActiveAttackAuthoringPreview();
             attackPreview.SetProfile(attackWorking); attackPreview.Refresh();
-            var labels = attackWorking.Steps.Select((step, index) => $"#{index + 1:00} {step.DisplayName}").ToList();
+            var labels = attackWorking.Steps.Select((step, index) =>
+                $"Step {index + 1:00} · {step.DisplayName}").ToList();
             selectedAttackStep = Mathf.Clamp(selectedAttackStep, 0, Mathf.Max(0, labels.Count - 1));
             if (labels.Count > 0)
             {
@@ -66,9 +72,30 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 popup.RegisterValueChangedCallback(evt => selectedAttackStep = labels.IndexOf(evt.newValue));
                 previewToolbar.Add(popup);
             }
-            previewToolbar.Add(new Button(() => { attackPreview.PlayStep(selectedAttackStep); previewSurface.MarkDirtyRepaint(); }) { text = "선택 Step 재생" });
-            previewToolbar.Add(new Button(() => { attackPreview.PlayAll(); previewSurface.MarkDirtyRepaint(); }) { text = "전체 공격 재생" });
-            previewToolbar.Add(new Button(() => { attackPreview.Dispose(); attackPreview = null; RebuildPreview(); }) { text = "정지" });
+            previewToolbar.Add(new Button(() =>
+            {
+                HideAssignedActivePreview();
+                attackPreview.PlayStep(selectedAttackStep);
+                previewSurface.MarkDirtyRepaint();
+            }) { text = "선택 Step 재생" });
+            previewToolbar.Add(new Button(() =>
+            {
+                HideAssignedActivePreview();
+                attackPreview.PlayAll();
+                previewSurface.MarkDirtyRepaint();
+            }) { text = "전체 공격 재생" });
+            if (CanShowAssignedActivePreview())
+            {
+                previewToolbar.Add(new Button(PlayAssignedActivePreview)
+                    { text = "현재 Draft 배정 VFX 재생" });
+            }
+            previewToolbar.Add(new Button(() =>
+            {
+                HideAssignedActivePreview();
+                attackPreview?.Dispose();
+                attackPreview = null;
+                RebuildPreview();
+            }) { text = "정지" });
             var view = new Button(() => { topDownPreview = !topDownPreview; RebuildPreview(); }) { text = topDownPreview ? "사선 보기" : "탑다운 보기" };
             view.AddToClassList("preview-toolbar-last");
             previewToolbar.Add(view);
@@ -88,7 +115,17 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             }
             previewToolbar.Add(new Button(() => StartEffectPreview(false)) { text = "선택 묶음 재생" });
             previewToolbar.Add(new Button(() => StartEffectPreview(true)) { text = "전체 효과 재생" });
-            var stop = new Button(() => { effectPreviewPlaying = false; previewSurface.MarkDirtyRepaint(); }) { text = "정지" };
+            if (CanShowAssignedActivePreview())
+            {
+                previewToolbar.Add(new Button(PlayAssignedActivePreview)
+                    { text = "현재 Draft 배정 VFX 재생" });
+            }
+            var stop = new Button(() =>
+            {
+                HideAssignedActivePreview();
+                effectPreviewPlaying = false;
+                previewSurface.MarkDirtyRepaint();
+            }) { text = "정지" };
             stop.AddToClassList("preview-toolbar-last");
             previewToolbar.Add(stop);
             previewStatus.text = "대상·HP·기력·보호막·상태 변화 계약을 확인합니다.";
@@ -98,13 +135,77 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private void StartEffectPreview(bool all)
         {
             if (effectWorking.Groups.Count == 0) return;
+            HideAssignedActivePreview();
             effectPreviewAll = all; effectPreviewPlaying = true; effectPreviewStartedAt = EditorApplication.timeSinceStartup;
             previewSurface.MarkDirtyRepaint();
+        }
+
+        private bool CanShowAssignedActivePreview()
+        {
+            if (originDraft?.UseActiveSkill != true) return false;
+            return mode switch
+            {
+                WorkshopMode.Attack =>
+                    originDraft.ActiveAttackProfile != null && attackWorking != null &&
+                    string.Equals(
+                        originDraft.ActiveAttackProfile.ProfileId,
+                        attackWorking.ProfileId,
+                        StringComparison.OrdinalIgnoreCase),
+                WorkshopMode.Effect =>
+                    originDraft.ActiveEffectProfile != null && effectWorking != null &&
+                    string.Equals(
+                        originDraft.ActiveEffectProfile.ProfileId,
+                        effectWorking.ProfileId,
+                        StringComparison.OrdinalIgnoreCase),
+                _ => false
+            };
+        }
+
+        private void PlayAssignedActivePreview()
+        {
+            if (!CanShowAssignedActivePreview()) return;
+            EnsureAssignedActivePreview();
+            if (assignedActivePreview?.CanPlayActiveSkill != true)
+            {
+                previewStatus.text = "현재 Draft의 모델·기본 공격 모션·액티브 모션 조건을 먼저 확인하세요.";
+                DisposeAssignedActivePreview();
+                return;
+            }
+            attackPreview?.Dispose();
+            attackPreview = null;
+            effectPreviewPlaying = false;
+            showAssignedActivePreview = true;
+            assignedActivePreview.PlayActiveSkill();
+            previewStatus.text = "현재 Draft에 실제 배정된 VFX/SFX를 공용 Preview 시간축으로 재생합니다.";
+            previewSurface?.MarkDirtyRepaint();
+        }
+
+        private void EnsureAssignedActivePreview()
+        {
+            if (assignedActivePreview != null && assignedActivePreviewDraft == originDraft) return;
+            DisposeAssignedActivePreview();
+            assignedActivePreview = new MonsterMakerV2PreviewAdapter();
+            assignedActivePreview.SetDraft(originDraft);
+            assignedActivePreviewDraft = originDraft;
+        }
+
+        private void HideAssignedActivePreview()
+        {
+            showAssignedActivePreview = false;
+            DisposeAssignedActivePreview();
+        }
+
+        private void DisposeAssignedActivePreview()
+        {
+            assignedActivePreview?.Dispose();
+            assignedActivePreview = null;
+            assignedActivePreviewDraft = null;
         }
 
         private void RefreshPreviewAfterAuthoringChange()
         {
             if (previewSurface == null) return;
+            HideAssignedActivePreview();
             if (mode == WorkshopMode.Basic)
             {
                 basicPreview?.SetSource(basicSession.WorkingProfile, basicSession.Recipe, originDraft);
@@ -138,8 +239,19 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             }
             else if (mode == WorkshopMode.Attack)
             {
+                if (showAssignedActivePreview && CanShowAssignedActivePreview())
+                {
+                    EnsureAssignedActivePreview();
+                    assignedActivePreview.Draw(rect);
+                    return;
+                }
                 attackPreview ??= new ProjectMT.EditorTools.MonsterMaker.MonsterActiveAttackAuthoringPreview();
                 attackPreview.SetProfile(attackWorking); attackPreview.Tick(); attackPreview.Render(rect, topDownPreview);
+            }
+            else if (showAssignedActivePreview && CanShowAssignedActivePreview())
+            {
+                EnsureAssignedActivePreview();
+                assignedActivePreview.Draw(rect);
             }
             else DrawEffectPreviewV2(rect);
         }

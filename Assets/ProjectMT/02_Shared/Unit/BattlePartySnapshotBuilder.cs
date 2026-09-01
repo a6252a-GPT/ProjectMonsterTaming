@@ -97,14 +97,21 @@ namespace ProjectMT.Shared.Unit
                     ResolvePassiveSkill(monsterId),
                     ResolveActiveSkill(monsterId),
                     owned.Level,
-                    ResolvePresentation(definition, monsterId, slotOffset + index)));
+                    ResolvePresentation(
+                        definition,
+                        monsterId,
+                        slotOffset + index,
+                        owned.Level,
+                        owned.AscensionLevel)));
             }
         }
 
         private MonsterBattlePresentationSnapshot ResolvePresentation(
             MonsterDefinition definition,
             string monsterId,
-            int partySlotIndex)
+            int partySlotIndex,
+            int level,
+            int ascensionLevel)
         {
             var rarity = rarityCatalog != null && rarityCatalog.TryGetRarity(monsterId, out var resolved)
                 ? resolved
@@ -112,7 +119,9 @@ namespace ProjectMT.Shared.Unit
             return new MonsterBattlePresentationSnapshot(
                 definition != null ? definition.Portrait : null,
                 rarity,
-                partySlotIndex);
+                partySlotIndex,
+                level,
+                ascensionLevel);
         }
 
         private MonsterPassiveSkill ResolvePassiveSkill(string monsterId)

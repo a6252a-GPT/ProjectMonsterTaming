@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e307cda9da1873441a5769e7be2ce017, type: 3}
+  m_Name: EAP_neber_absolute_zero
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterEffectActiveProfile
+  profileId: neber_absolute_zero
+  displayName: "\uC808\uB300\uBE59\uC810"
+  description: "\uB300\uC0C1 \uC8FC\uBCC0 \uC801\uC758 \uC774\uB3D9\uC18D\uB3C4\uB97C
+    35%, \uBC29\uC5B4\uB825\uC744 20% \uB0AE\uCDA5\uB2C8\uB2E4."
+  role: 2
+  groups:
+  - groupId: group_01
+    displayName: "\uBE59\uC810 \uC9C0\uB300"
+    delayAfterPrevious: 0
+    target: 13
+    includeCaster: 1
+    radius: 4.5
+    maxTargets: 12
+    effects:
+    - effectId: slow
+      type: 12
+      valueSource: 0
+      magnitude: 0.35
+      magnitudeMode: 0
+      maximumMagnitude: 0.35
+      duration: 5
+      delay: 0
+      repeatInterval: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 3
+    - effectId: defense_down
+      type: 8
+      valueSource: 0
+      magnitude: 0.2
+      magnitudeMode: 0
+      maximumMagnitude: 0.2
+      duration: 5
+      delay: 0
+      repeatInterval: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 3
+    presentationSlots:
+    - slotId: cast_start
+      displayName: "\uC2DC\uC804\uC790 \uBC1C\uB3D9"
+      timing: 6
+      anchor: 0
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      description: "\uBC1C\uB3D9 \uB610\uB294 \uC801\uC6A9 \uC21C\uAC04 VFX/SFX \uACF5\uAC04"
+      useDuration: 0
+      duration: 1
+    - slotId: freeze_apply
+      displayName: "\uD6A8\uACFC \uC801\uC6A9"
+      timing: 8
+      anchor: 7
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      description: "\uBC1C\uB3D9 \uB610\uB294 \uC801\uC6A9 \uC21C\uAC04 VFX/SFX \uACF5\uAC04"
+      useDuration: 0
+      duration: 1
+    - slotId: target_loop
+      displayName: "\uD6A8\uACFC \uC9C0\uC18D"
+      timing: 8
+      anchor: 5
+      multiplicity: 4
+      attachment: 1
+      endPolicy: 0
+      description: "\uC9C0\uC18D\uC2DC\uAC04 \uB3D9\uC548 \uC7AC\uC0DD\uD560 Loop
+        VFX/SFX \uACF5\uAC04"
+      useDuration: 1
+      duration: 5

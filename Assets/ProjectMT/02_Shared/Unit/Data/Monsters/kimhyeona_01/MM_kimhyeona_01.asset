@@ -64,7 +64,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
   active:
-    clip: {fileID: 0}
+    clip: {fileID: 1827226128182048838, guid: 4c7118efd333023418b1fe67ad9c5893, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.08
     loop: 0
@@ -75,7 +75,12 @@ MonoBehaviour:
       localPosition: {x: 0, y: 0, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
-  activeSteps: []
+  activeSteps:
+  - stepId: step_01
+    clip: {fileID: 1827226128182048838, guid: 4c7118efd333023418b1fe67ad9c5893, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.08
+    commitNormalizedTime: 0.4
   death:
     clip: {fileID: 1827226128182048838, guid: 9eea4803fcf8fff44a6c1c1df1c9b2e6, type: 3}
     playbackSpeed: 1

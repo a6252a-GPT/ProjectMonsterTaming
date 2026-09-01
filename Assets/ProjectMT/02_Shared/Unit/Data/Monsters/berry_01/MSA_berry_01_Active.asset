@@ -1,0 +1,116 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1f879f4b623c34458488da7906bbf0d, type: 3}
+  m_Name: MSA_berry_01_Active
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterEffectActiveSkill
+  skillId: active_berry_01
+  displayName: "\uBCC4\uBE5B \uCDA9\uC804"
+  description: "\uC790\uC2E0\uC744 \uC81C\uC678\uD55C \uBAA8\uB4E0 \uC544\uAD70\uC758
+    \uCD5C\uB300 \uAE30\uB825 20%\uB97C \uD68C\uBCF5\uD558\uACE0 \uAC00\uC7A5 \uACF5\uACA9\uB825\uC774
+    \uB192\uC740 \uC544\uAD70\uC5D0\uAC8C 10%\uB97C \uCD94\uAC00 \uD68C\uBCF5\uD569\uB2C8\uB2E4."
+  icon: {fileID: 21300000, guid: 05e7960c3a2d63d4b9eac06d8617d9c3, type: 3}
+  presentationTier: 3
+  recipe:
+    trigger: 11
+    triggerCount: 1
+    internalCooldown: 0
+    conditions: []
+    target: 0
+    delivery: 0
+    shape: 0
+    effects:
+    - effectId: assembled_effect
+      type: 17
+      valueSource: 0
+      magnitude: 0
+      magnitudeMode: 0
+      maximumMagnitude: 0
+      duration: 0
+      delay: 0
+      repeatInterval: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 1
+  authoringEnabled: 1
+  energyCost: 1450
+  energyPerSecond: 0
+  energyPerBasicAttackHit: 0
+  energyPerDamageReceived: 0
+  sourceProfile: {fileID: 11400000, guid: 93a60ba23b1227f4dbcaba8dfe345aa3, type: 2}
+  presentations:
+  - groupId: group_01
+    slots:
+    - slotId: cast_start
+      timing: 6
+      anchor: 0
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      feedback:
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      useDuration: 0
+      duration: 1
+    - slotId: energy_apply
+      timing: 8
+      anchor: 7
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      feedback:
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      useDuration: 0
+      duration: 1
+  - groupId: group_02
+    slots:
+    - slotId: cast_start
+      timing: 6
+      anchor: 0
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      feedback:
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      useDuration: 0
+      duration: 1
+    - slotId: carry_apply
+      timing: 8
+      anchor: 7
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      feedback:
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      useDuration: 0
+      duration: 1
+  commitNormalizedTime: 0.5
+  mythicExclusive: 0

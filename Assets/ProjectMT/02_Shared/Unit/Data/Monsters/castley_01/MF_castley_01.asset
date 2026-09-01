@@ -54,4 +54,68 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
-  basicAttackVfxBindings: []
+  basicAttackVfxBindings:
+  - attackId: BA_M_04
+    slotId: overhead_trail
+    motionId: attack01
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_M_04
+    slotId: ground_contact
+    motionId: 
+    state: 1
+    prefab: {fileID: 4534472219751448391, guid: 0d3b84929431f0847ada90a51eb92439, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: -0.40094528, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 0.4
+  - attackId: BA_M_04
+    slotId: target_hit
+    motionId: 
+    state: 1
+    prefab: {fileID: 2040425376092125431, guid: 93c47846f039d54418ec87250d4b064f, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: -0.3057591, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 0.8
+  - attackId: BA_M_04
+    slotId: area_wave
+    motionId: 
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1

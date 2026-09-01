@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace ProjectMT.Contents.CastleRaidHex
 {
@@ -11,6 +13,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         private const int MousePointerId = -1;
         private const float ScrollUnitsPerNotch = 120f;
         private const float DefaultStructureHeight = 4.8f;
+        private const float ShadowDistancePadding = 12f;
 
         [Header("투영")]
         [SerializeField] private Camera targetCamera;
@@ -60,6 +63,10 @@ namespace ProjectMT.Contents.CastleRaidHex
         private float rotationInput;
         private float rotationPivotDistance;
         private float rotationCenteringElapsed;
+        private float requiredShadowDistance;
+        private float shadowDistanceBeforeOverride;
+        private UniversalRenderPipelineAsset shadowDistanceOverrideAsset;
+        private int shadowDistanceOverrideDepth;
         private bool zoomAnchorActive;
         private bool rotationCentering;
         private bool externalPointerInput;
@@ -78,6 +85,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         public float RotationCenteringDuration => rotationCenteringDuration;
         public float MinimumPanRange => minimumPanRange;
         public float ExtraPanRange => extraPanRange;
+        public float RequiredShadowDistance => requiredShadowDistance;
         public Vector2 TargetGroundCenter => targetGroundCenter;
         public Vector2 RotationFocusGroundCenter => rotationFocusGroundCenter;
         public Vector2 WorldSize => worldSize;
@@ -92,6 +100,10 @@ namespace ProjectMT.Contents.CastleRaidHex
 
         private void OnEnable()
         {
+            RenderPipelineManager.beginCameraRendering -= HandleBeginCameraRendering;
+            RenderPipelineManager.endCameraRendering -= HandleEndCameraRendering;
+            RenderPipelineManager.beginCameraRendering += HandleBeginCameraRendering;
+            RenderPipelineManager.endCameraRendering += HandleEndCameraRendering;
             Initialize();
         }
 
@@ -116,6 +128,9 @@ namespace ProjectMT.Contents.CastleRaidHex
 
         private void OnDisable()
         {
+            RenderPipelineManager.beginCameraRendering -= HandleBeginCameraRendering;
+            RenderPipelineManager.endCameraRendering -= HandleEndCameraRendering;
+            RestoreShadowDistance();
             if (targetCamera != null)
             {
                 targetCamera.ResetProjectionMatrix();
@@ -152,6 +167,9 @@ namespace ProjectMT.Contents.CastleRaidHex
             defaultDistance = Mathf.Max(1f, fitDistance * initialZoomRatio);
             minimumDistance = Mathf.Max(3.5f, defaultDistance * minimumZoomRatio);
             maximumDistance = Mathf.Max(defaultDistance, defaultDistance * maximumZoomRatio);
+            requiredShadowDistance = Mathf.Min(
+                targetCamera.farClipPlane,
+                ResolveRequiredShadowDistance(maximumDistance, bounds.extents));
             boundsConfigured = true;
             defaultViewportHalfExtents = Vector2.zero;
             ResetView();
@@ -828,6 +846,57 @@ namespace ProjectMT.Contents.CastleRaidHex
                 focus - targetCamera.transform.forward * Mathf.Max(0.01f, distance);
         }
 
+        private void HandleBeginCameraRendering(ScriptableRenderContext _, Camera renderingCamera)
+        {
+            if (renderingCamera != targetCamera || requiredShadowDistance <= 0f)
+            {
+                return;
+            }
+
+            if (shadowDistanceOverrideDepth > 0)
+            {
+                shadowDistanceOverrideDepth++;
+                return;
+            }
+
+            if (!(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset pipelineAsset) ||
+                pipelineAsset.shadowDistance >= requiredShadowDistance)
+            {
+                return;
+            }
+
+            shadowDistanceOverrideAsset = pipelineAsset;
+            shadowDistanceBeforeOverride = pipelineAsset.shadowDistance;
+            shadowDistanceOverrideDepth = 1;
+            pipelineAsset.shadowDistance = requiredShadowDistance;
+        }
+
+        private void HandleEndCameraRendering(ScriptableRenderContext _, Camera renderingCamera)
+        {
+            if (renderingCamera != targetCamera || shadowDistanceOverrideDepth <= 0)
+            {
+                return;
+            }
+
+            shadowDistanceOverrideDepth--;
+            if (shadowDistanceOverrideDepth == 0)
+            {
+                RestoreShadowDistance();
+            }
+        }
+
+        private void RestoreShadowDistance()
+        {
+            shadowDistanceOverrideDepth = 0;
+            if (shadowDistanceOverrideAsset != null)
+            {
+                shadowDistanceOverrideAsset.shadowDistance = shadowDistanceBeforeOverride;
+            }
+
+            shadowDistanceOverrideAsset = null;
+            shadowDistanceBeforeOverride = 0f;
+        }
+
         private Camera ResolveCamera()
         {
             if (targetCamera == null)
@@ -942,6 +1011,16 @@ namespace ProjectMT.Contents.CastleRaidHex
             }
 
             return Mathf.Max(1f, fitDistance) * Mathf.Max(1f, padding);
+        }
+
+        public static float ResolveRequiredShadowDistance(float maximumCameraDistance, Vector3 worldExtents)
+        {
+            var safeExtents = new Vector3(
+                Mathf.Abs(worldExtents.x),
+                Mathf.Abs(worldExtents.y),
+                Mathf.Abs(worldExtents.z));
+            return Mathf.Ceil(
+                Mathf.Max(0f, maximumCameraDistance) + safeExtents.magnitude + ShadowDistancePadding);
         }
 
 #if UNITY_EDITOR

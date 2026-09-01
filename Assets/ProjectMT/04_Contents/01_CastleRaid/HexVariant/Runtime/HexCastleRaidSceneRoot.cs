@@ -30,7 +30,8 @@ namespace ProjectMT.Contents.CastleRaidHex
 
             var runInfo = contentSceneContext.ContentContext.RunInfo;
             if (controller == null || contentSceneContext.Definition.ContentId != contentId ||
-                runInfo.ContentId != contentId || runInfo.VariantId != variantId)
+                runInfo.ContentId != contentId ||
+                (runInfo.VariantId.IsValid && runInfo.VariantId != variantId))
             {
                 throw new InvalidOperationException("육각 군단의 역습 씬 연결이 올바르지 않습니다.");
             }

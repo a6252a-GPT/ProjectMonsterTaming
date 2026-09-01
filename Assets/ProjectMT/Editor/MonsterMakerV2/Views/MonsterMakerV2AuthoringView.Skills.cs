@@ -141,7 +141,6 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                         ("보관된 액티브 연결 제거", RemoveActiveAssignment, "danger-button"));
                 }
 
-                BuildInactiveActiveAuthoring(container);
                 return;
             }
 
@@ -154,7 +153,6 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                         ? "액티브를 사용하지 않습니다. 사용을 켜면 프리셋 선택과 조립소 기능이 열립니다."
                         : "액티브 프리셋·모션·VFX/SFX 값은 보존되며 전투에는 반영하지 않습니다.",
                     HelpBoxMessageType.Info);
-                BuildInactiveActiveAuthoring(container);
                 return;
             }
 
@@ -188,7 +186,6 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 BuildAttackActive(container, profileProperty, rarity);
             }
 
-            BuildInactiveActiveAuthoring(container);
         }
         private void BuildAttackActive(
             VisualElement activeArea,
@@ -213,7 +210,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             AddSummary(
                 activeArea,
                 $"현재 액티브 · [{profile.ProfileId}] {profile.DisplayName}",
-                $"공격 Step {profile.Steps.Count}개 · 같은 프리셋도 몬스터별 수치와 연출로 조정");
+                BuildAttackActiveSummary(profile));
             AddProperty(activeArea, "activeSkillName", "몬스터 고유 스킬 이름");
             AddProperty(activeArea, "activeEnergyMaximum", "최대 기력");
             AddHelp(
@@ -224,8 +221,13 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 HelpBoxMessageType.Info);
             BuildActiveRuntimeSync(activeArea);
 
+            AddHelp(
+                activeArea,
+                "피해·범위·타이밍·Step 전체 속도는 공격형 프리셋이 단독 소유합니다. " +
+                "다른 수치가 필요하면 조립소에서 프리셋을 복제해 새 원본으로 만드세요.",
+                HelpBoxMessageType.Info);
+
             BuildActiveMotions(activeArea, profile);
-            BuildActiveTunings(activeArea, profile);
             BuildActivePresentations(activeArea, profile);
 
             var generated = AddProperty(activeArea, "rarityActiveSkill", "생성된 액티브 에셋");
@@ -262,7 +264,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 activeArea,
                 $"현재 액티브 · [{GetEffectRoleLabel(profile.Role)}] " +
                 $"[{profile.ProfileId}] {profile.DisplayName}",
-                $"효과 묶음 {profile.Groups.Count}개 · 몬스터별 이름·기력·모션·연출 연결");
+                BuildEffectActiveSummary(profile));
             AddProperty(activeArea, "activeSkillName", "몬스터 고유 스킬 이름");
             AddProperty(activeArea, "activeEnergyMaximum", "최대 기력");
             AddHelp(
@@ -292,12 +294,25 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 return;
             }
 
-            var paths = MonsterMakerAssetWriter.BuildPaths(draft.MonsterId);
+            if (sourceDraft?.ActiveAttackProfile == null)
+            {
+                AddHelp(
+                    container,
+                    "현재 액티브는 작업 사본에만 있습니다. 상단 전투 반영 시 게임 자산으로 생성됩니다.",
+                    HelpBoxMessageType.Info);
+                AddActionRow(
+                    container,
+                    ("저장하고 공격 액티브 게임 자산 갱신",
+                        syncActiveRuntime, "draft-action-button"));
+                return;
+            }
+
+            var paths = MonsterMakerAssetWriter.BuildPaths(sourceDraft.MonsterId);
             var active = AssetDatabase.LoadAssetAtPath<MonsterAttackActiveSkill>(
-                MonsterMakerAssetWriter.BuildActivePath(draft.MonsterId));
+                MonsterMakerAssetWriter.BuildActivePath(sourceDraft.MonsterId));
             var motion = AssetDatabase.LoadAssetAtPath<MonsterMotionProfile>(paths[2]);
             var runtimeState = MonsterActiveAttackBindingProjection.EvaluateRuntimeSync(
-                draft,
+                sourceDraft,
                 active,
                 motion,
                 out var message);
@@ -305,14 +320,15 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             {
                 AddHelp(
                     container,
-                    "액티브 게임 자산 최신 · 공격/모션/VFX/SFX가 현재 제작값과 일치합니다.",
+                    "저장된 액티브 게임 자산 최신 · 작업 중 변경은 상단 전투 반영 시 함께 적용됩니다.",
                     HelpBoxMessageType.Info);
                 return;
             }
 
             AddHelp(
                 container,
-                $"액티브 게임 자산 미반영 · {message}",
+                $"저장된 액티브 게임 자산 미반영 · {message}\n" +
+                "상단 전투 반영으로 저장 원본과 게임 자산을 함께 갱신하세요.",
                 HelpBoxMessageType.Warning);
 
             var preflight = MonsterMakerValidator.ValidateActiveAttack(draft);
@@ -340,35 +356,22 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     syncActiveRuntime, "draft-action-button"));
         }
 
-        private void BuildInactiveActiveAuthoring(VisualElement container)
+        private static string BuildAttackActiveSummary(MonsterActiveAttackProfile profile)
         {
-            if (draft == null || draft.InactiveActiveAttackAuthoringCount <= 0)
-            {
-                return;
-            }
+            var summary =
+                $"공격 Step {profile.Steps.Count}개 · 예상 실행 {profile.EstimateDuration():0.##}초 · " +
+                "수치는 프리셋 원본";
+            return string.IsNullOrWhiteSpace(profile.Description)
+                ? summary + "\n기획 메모 · 작성되지 않음"
+                : summary + "\n기획 메모 · " + profile.Description;
+        }
 
-            var archives = serializedDraft.FindProperty("inactiveActiveAttackAuthoring");
-            var foldout = AddSubFoldout(
-                container,
-                $"고급 · 이전 액티브 프리셋/공간 값 {draft.InactiveActiveAttackAuthoringCount}개 보관 중",
-                false);
-            AddHelp(
-                foldout,
-                "현재 액티브에는 사용되지 않으며, 이전 프리셋으로 돌아갈 때 복원됩니다. " +
-                "미리보기와 게임 자산에는 출력되지 않습니다.",
-                HelpBoxMessageType.Info);
-            for (var index = 0; archives != null && index < archives.arraySize; index++)
-            {
-                var archive = archives.GetArrayElementAtIndex(index);
-                var id = archive.FindPropertyRelative("profileId")?.stringValue ?? "ID 미지정";
-                var tuningCount = archive.FindPropertyRelative("tunings")?.arraySize ?? 0;
-                var presentationCount =
-                    archive.FindPropertyRelative("presentations")?.arraySize ?? 0;
-                var label = new Label(
-                    $"[{id}] 수치 {tuningCount} · Step/공간 {presentationCount}");
-                label.AddToClassList("summary-body");
-                foldout.Add(label);
-            }
+        private static string BuildEffectActiveSummary(MonsterEffectActiveProfile profile)
+        {
+            var summary = $"효과 묶음 {profile.Groups.Count}개 · 몬스터별 이름·기력·모션·연출 연결";
+            return string.IsNullOrWhiteSpace(profile.Description)
+                ? summary + "\n기획 메모 · 작성되지 않음"
+                : summary + "\n기획 메모 · " + profile.Description;
         }
 
         private void BuildActiveMotions(
@@ -388,9 +391,9 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             {
                 AddHelp(
                     foldout,
-                    "기본 설정입니다. 모든 Step이 기본 공격 01의 모션·재생 속도·첫 판정 시점을 사용합니다.",
+                    "기본 설정입니다. 모든 Step이 기본 공격 01의 모션·Clip 보정 속도·첫 판정 시점을 사용합니다. " +
+                    "모션 전환 보간만 액티브 Step별 독립값이며, Step 전체 속도 배율은 선택한 공격형 프리셋 값이 추가로 적용됩니다.",
                     HelpBoxMessageType.Info);
-                return;
             }
 
             if (presentations == null || presentations.arraySize != profile.Steps.Count)
@@ -406,7 +409,11 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             {
                 AddActionRow(
                     foldout,
-                    ("1번 모션 설정을 전체 Step에 적용", CopyFirstActiveMotion, "draft-action-button"));
+                    (useCustom?.boolValue == true
+                            ? "1번 모션 설정을 전체 Step에 적용"
+                            : "1번 전환 시간을 전체 Step에 적용",
+                        useCustom?.boolValue == true ? CopyFirstActiveMotion : CopyFirstActiveMotionFade,
+                        "draft-action-button"));
             }
 
             for (var index = 0; index < presentations.arraySize; index++)
@@ -415,60 +422,17 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 var item = presentations.GetArrayElementAtIndex(index);
                 var card = AddSubFoldout(
                     foldout,
-                    $"#{index + 1:00} {step.DisplayName}",
+                    $"Step {index + 1:00} · {step.DisplayName}",
                     index == 0);
-                AddRelativeProperty(card, item.FindPropertyRelative("motionClip"), "공격 모션 Clip");
-                AddRelativeProperty(card, item.FindPropertyRelative("motionPlaybackSpeed"), "재생 속도");
-                AddRelativeProperty(card, item.FindPropertyRelative("motionCrossFadeDuration"), "전환 시간(초)");
-                AddRelativeProperty(card, item.FindPropertyRelative("motionCommitNormalizedTime"), "판정 시작 시점(0~1)");
-            }
-        }
-
-        private void BuildActiveTunings(
-            VisualElement container,
-            MonsterActiveAttackProfile profile)
-        {
-            var tunings = serializedDraft.FindProperty("activeAttackStepTunings");
-            var foldout = AddSubFoldout(
-                container,
-                $"몬스터별 Step 수치 · {tunings?.arraySize ?? 0}개",
-                false);
-            AddHelp(
-                foldout,
-                "1배가 프로필 원본입니다. 게이지와 숫자 직접 입력을 함께 사용할 수 있습니다.",
-                HelpBoxMessageType.Info);
-            if (tunings == null || tunings.arraySize != profile.Steps.Count)
-            {
-                AddHelp(
-                    foldout,
-                    "프로필 Step 자동 동기화가 완료되지 않았습니다. 액티브 프리셋을 다시 선택하세요.",
-                    HelpBoxMessageType.Error);
-                return;
-            }
-
-            for (var index = 0; index < tunings.arraySize; index++)
-            {
-                var source = profile.Steps[index];
-                var tuning = tunings.GetArrayElementAtIndex(index);
-                var card = AddSubFoldout(
-                    foldout,
-                    $"#{index + 1:00} {source.DisplayName} · {source.BuildSummary()}",
-                    index == 0);
-                var stepId = AddRelativeProperty(
-                    card,
-                    tuning.FindPropertyRelative("stepId"),
-                    "Step ID");
-                stepId?.SetEnabled(false);
-                AddTuningScale(card, tuning.FindPropertyRelative("damageScale"), "피해 배율");
-                AddTuningScale(card, tuning.FindPropertyRelative("sizeScale"), "크기/범위 배율");
-                AddTuningScale(card, tuning.FindPropertyRelative("timingScale"), "시간 배율");
-                if (source.IsProjectile)
+                if (useCustom?.boolValue == true)
                 {
-                    AddRelativeProperty(
-                        card,
-                        tuning.FindPropertyRelative("projectileCountOverride"),
-                        "투사체 개수 덮어쓰기");
-                    AddHelp(card, "0이면 프로필 원본 개수를 사용합니다.", HelpBoxMessageType.Info);
+                    AddRelativeProperty(card, item.FindPropertyRelative("motionClip"), "공격 모션 Clip");
+                    AddRelativeProperty(card, item.FindPropertyRelative("motionPlaybackSpeed"), "Clip 원본 보정 속도");
+                }
+                AddRelativeProperty(card, item.FindPropertyRelative("motionCrossFadeDuration"), "전환 시간(초)");
+                if (useCustom?.boolValue == true)
+                {
+                    AddRelativeProperty(card, item.FindPropertyRelative("motionCommitNormalizedTime"), "판정 시작 시점(0~1)");
                 }
             }
         }
@@ -480,12 +444,13 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             var presentations = serializedDraft.FindProperty("activeAttackPresentations");
             var foldout = AddSubFoldout(
                 container,
-                $"Step별 VFX/SFX 연결 · {presentations?.arraySize ?? 0}개",
-                false);
+                "몬스터 고유 공격형 액티브 VFX/SFX",
+                true,
+                "active-attack-vfx-root");
             AddHelp(
                 foldout,
-                "조립소에서 만든 공간 계약만 표시합니다. 미연결도 정상이며 FEEL은 공격 프로필의 " +
-                "공통 프리셋을 사용합니다.",
+                "각 Step은 기본공격과 같은 계약 체결 카드를 사용하지만, 배정값과 전용 래퍼는 " +
+                "액티브 전용으로 따로 저장됩니다.",
                 HelpBoxMessageType.Info);
             if (presentations == null || presentations.arraySize != profile.Steps.Count)
             {
@@ -493,6 +458,10 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     foldout,
                     "프로필 Step 자동 동기화가 완료되지 않았습니다. 액티브 프리셋을 다시 선택하세요.",
                     HelpBoxMessageType.Error);
+                AddActionRow(
+                    foldout,
+                    ("액티브 연출 공간 다시 동기화", SyncActiveAttackVfxBindings,
+                        "draft-action-button"));
                 return;
             }
 
@@ -500,47 +469,79 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             {
                 var source = profile.Steps[index];
                 var presentation = presentations.GetArrayElementAtIndex(index);
-                var slots = presentation.FindPropertyRelative("slots");
+                var bindings = presentation.FindPropertyRelative("attackBlockBindings");
+                var rows = ResolveActiveVfxRows(source, bindings);
+                var expected = source.AttackBlockVfxSlots.Count;
                 var step = AddSubFoldout(
                     foldout,
-                    $"#{index + 1:00} {source.DisplayName} · 공간 {source.PresentationSlots.Count}개",
-                    index == 0);
-                if (source.PresentationSlots.Count == 0)
+                    $"Step {index + 1:00} · {source.DisplayName} · 공간 {expected}개",
+                    index == 0,
+                    $"active-attack-vfx-step-{source.StepId}");
+                if (expected == 0)
                 {
                     AddHelp(
                         step,
-                        "이 Step에는 VFX/SFX 공간 계약이 없습니다. 액티브 조립소에서 추가할 수 있습니다.",
-                        HelpBoxMessageType.Info);
+                        "이 Step의 공용 공격 블록 계약이 비어 있습니다. 액티브 조립소에서 공격 형태를 다시 선택해 자동 복구하세요.",
+                        HelpBoxMessageType.Error);
                     continue;
                 }
-
-                for (var slotIndex = 0;
-                     slotIndex < source.PresentationSlots.Count && slotIndex < slots.arraySize;
-                     slotIndex++)
+                if (rows.Count != expected)
                 {
-                    var contract = source.PresentationSlots[slotIndex];
-                    var slot = slots.GetArrayElementAtIndex(slotIndex);
-                    var slotCard = AddSubFoldout(
-                        step,
-                        $"{slotIndex + 1:00} · {contract.DisplayName}",
-                        false);
                     AddHelp(
-                        slotCard,
-                        $"{contract.Timing} · {contract.Anchor}" +
-                        (string.IsNullOrWhiteSpace(contract.Description)
-                            ? string.Empty
-                            : " · " + contract.Description),
+                        step,
+                        $"연출 연결 데이터가 부족합니다. 현재 {rows.Count}개 / 필요 {expected}개",
+                        HelpBoxMessageType.Error);
+                    AddActionRow(
+                        step,
+                        ("액티브 연출 공간 다시 동기화", SyncActiveAttackVfxBindings,
+                            "draft-action-button"));
+                }
+
+                var vfxDecided = rows.Count(row =>
+                    (MonsterBasicAttackVfxAssignmentState)row.Binding
+                        .FindPropertyRelative("state").enumValueIndex !=
+                    MonsterBasicAttackVfxAssignmentState.Undecided);
+                var sfxDecided = rows.Count(row =>
+                    (MonsterBasicAttackSfxAssignmentState)row.Binding
+                        .FindPropertyRelative("sfxState").enumValueIndex !=
+                    MonsterBasicAttackSfxAssignmentState.Undecided);
+                var progress = new ProgressBar
+                {
+                    title = $"VFX 결정 {vfxDecided}/{expected} · SFX 결정 {sfxDecided}/{expected}",
+                    value = expected > 0
+                        ? (vfxDecided + sfxDecided) * 100f / (expected * 2f)
+                        : 0f
+                };
+                progress.style.height = 20f;
+                progress.style.marginBottom = 5f;
+                step.Add(progress);
+
+                for (var slotIndex = 0; slotIndex < rows.Count; slotIndex++)
+                {
+                    BuildBasicVfxCard(
+                        step,
+                        rows[slotIndex],
+                        slotIndex,
+                        "공격형 액티브",
+                        $"active-attack-vfx-{source.StepId}-{rows[slotIndex].Slot.SlotId}");
+                }
+                var inactive = presentation.FindPropertyRelative("inactiveAttackBlockBindings");
+                if (inactive != null && inactive.arraySize > 0)
+                {
+                    AddHelp(
+                        step,
+                        $"현재 공격 형태에서 사용하지 않는 이전 액티브 연결 {inactive.arraySize}개를 보관 중입니다. " +
+                        "형태를 되돌리면 복원됩니다.",
                         HelpBoxMessageType.Info);
-                    BuildFeedbackEditor(
-                        slotCard,
-                        slot.FindPropertyRelative("feedback"),
-                        contract.DisplayName,
-                        "원본 AudioClip",
-                        "액티브 조립소의 공간 계약에 연결되는 몬스터 전용 연출입니다.",
-                        ResolveActivePresentationAnchor(contract.Anchor),
-                        true);
                 }
             }
+        }
+
+        private void SyncActiveAttackVfxBindings()
+        {
+            ApplyObjectMutationAndRebuild(
+                "Monster Maker V2 · 공격형 액티브 연출 공간 동기화",
+                () => draft?.EditorSyncActiveAttackAuthoring());
         }
 
         private void BuildEffectActiveMotions(
@@ -683,52 +684,6 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 MonsterActivePresentationAnchor.TargetPoint => MonsterMakerPreviewAnchor.HitCenter,
                 _ => MonsterMakerPreviewAnchor.Root
             };
-        }
-
-        private void AddTuningScale(
-            VisualElement container,
-            SerializedProperty property,
-            string label)
-        {
-            var row = new VisualElement();
-            row.AddToClassList("draft-action-row");
-            var path = property.propertyPath;
-            var current = Mathf.Max(0.01f, property.floatValue);
-            var slider = new Slider(label, 0.25f, 3f) { value = Mathf.Clamp(current, 0.25f, 3f) };
-            slider.style.flexGrow = 1f;
-            var input = new FloatField { value = current };
-            input.style.flexGrow = 0f;
-            input.style.width = 64f;
-            var syncing = false;
-            slider.RegisterValueChangedCallback(evt =>
-            {
-                if (syncing) return;
-                syncing = true;
-                input.SetValueWithoutNotify(evt.newValue);
-                SetFloatProperty(path, evt.newValue, "Monster Maker V2 · Step 수치 조절");
-                syncing = false;
-            });
-            input.RegisterValueChangedCallback(evt =>
-            {
-                if (syncing) return;
-                var next = float.IsFinite(evt.newValue) ? Mathf.Max(0.01f, evt.newValue) : 1f;
-                syncing = true;
-                input.SetValueWithoutNotify(next);
-                slider.SetValueWithoutNotify(Mathf.Clamp(next, slider.lowValue, slider.highValue));
-                SetFloatProperty(path, next, "Monster Maker V2 · Step 수치 입력");
-                syncing = false;
-            });
-            var reset = new Button(() => ResetTuning(property.propertyPath))
-            {
-                text = "1배"
-            };
-            reset.AddToClassList("draft-action-button");
-            reset.style.flexGrow = 0f;
-            reset.style.width = 42f;
-            row.Add(slider);
-            row.Add(input);
-            row.Add(reset);
-            container.Add(row);
         }
 
         private void BuildPassiveTuning(VisualElement container)
@@ -922,13 +877,6 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             _ => "메인 전투와 군단의 역습에서 같은 전용 수치가 사용됩니다."
         };
 
-        private void ResetTuning(string propertyPath)
-        {
-            ApplyAndRebuild(
-                "Monster Maker V2 · Step 수치 1배 복원",
-                () => serializedDraft.FindProperty(propertyPath).floatValue = 1f);
-        }
-
         private void CopyFirstActiveMotion()
         {
             ApplyAndRebuild(
@@ -948,6 +896,28 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     for (var index = 1; index < presentations.arraySize; index++)
                     {
                         CopyActiveMotion(source, presentations.GetArrayElementAtIndex(index));
+                    }
+                });
+        }
+
+        private void CopyFirstActiveMotionFade()
+        {
+            ApplyAndRebuild(
+                "Monster Maker V2 · 액티브 전환 시간 전체 적용",
+                () =>
+                {
+                    var presentations = serializedDraft.FindProperty("activeAttackPresentations");
+                    if (presentations == null || presentations.arraySize < 2)
+                    {
+                        return;
+                    }
+
+                    var fade = presentations.GetArrayElementAtIndex(0)
+                        .FindPropertyRelative("motionCrossFadeDuration").floatValue;
+                    for (var index = 1; index < presentations.arraySize; index++)
+                    {
+                        presentations.GetArrayElementAtIndex(index)
+                            .FindPropertyRelative("motionCrossFadeDuration").floatValue = fade;
                     }
                 });
         }

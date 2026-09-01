@@ -658,6 +658,95 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
         }
 
+        public static MonsterEffectActiveSkill SynchronizeActiveEffectRuntime(
+            MonsterMakerDraft draft,
+            MonsterCatalog catalog = null,
+            MonsterRarityCatalog rarityCatalog = null)
+        {
+            draft?.EditorSyncActiveEffectAuthoring();
+            var preflight = MonsterMakerValidator.ValidateActiveEffect(draft);
+            if (preflight.HasErrors)
+            {
+                throw new InvalidOperationException(BuildIssueText(preflight.Issues));
+            }
+            if (!EditorUtility.IsPersistent(draft))
+            {
+                throw new InvalidOperationException("액티브만 반영하려면 먼저 Maker 제작 원본을 저장하세요.");
+            }
+
+            catalog ??= AssetDatabase.LoadAssetAtPath<MonsterCatalog>(MonsterCatalogPath);
+            rarityCatalog ??= AssetDatabase.LoadAssetAtPath<MonsterRarityCatalog>(MonsterRarityCatalogPath);
+            if (catalog == null || rarityCatalog == null)
+            {
+                throw new InvalidOperationException("MonsterCatalog 또는 MonsterRarityCatalog을 찾을 수 없습니다.");
+            }
+            var catalogPath = RequirePersistentAssetPath(catalog, "MonsterCatalog");
+            var rarityCatalogPath = RequirePersistentAssetPath(rarityCatalog, "MonsterRarityCatalog");
+            ValidateProductionDraftOwnership(draft, catalogPath, rarityCatalogPath);
+            var paths = BuildPaths(draft.MonsterId);
+            var definition = AssetDatabase.LoadAssetAtPath<MonsterDefinition>(paths[0]);
+            var motion = AssetDatabase.LoadAssetAtPath<MonsterMotionProfile>(paths[2]);
+            var feedback = AssetDatabase.LoadAssetAtPath<MonsterFeedbackProfile>(paths[5]);
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(paths[7]);
+            if (definition == null || motion == null || feedback == null || controller == null)
+            {
+                throw new InvalidOperationException(
+                    "액티브만 반영할 정식 Monster Runtime 기반 자산이 없습니다. 먼저 전체 정식 생성·수정을 한 번 실행하세요.");
+            }
+            if (!catalog.TryGet(draft.MonsterId, out var registeredDefinition) || registeredDefinition != definition)
+            {
+                throw new InvalidOperationException(
+                    "선택한 MonsterCatalog의 몬스터와 현재 Runtime Definition이 일치하지 않습니다.");
+            }
+
+            var activePath = BuildActivePath(draft.MonsterId);
+            var draftPath = RequirePersistentAssetPath(draft, "Monster Maker 제작 원본");
+            var transaction = MonsterMakerWriteTransaction.Capture(
+                new[] { activePath, paths[2], paths[5], paths[7], rarityCatalogPath, draftPath },
+                Array.Empty<string>());
+            try
+            {
+                var generatedSfx = new MonsterMakerGeneratedSfxWriter(feedback, paths[5], draft.MonsterId);
+                ConfigureActiveMotionProjection(draft, motion);
+                controller = ConfigureAnimatorController(paths[7], motion);
+                var active = BuildOrUpdateMonsterActiveAsset(draft, generatedSfx) as MonsterEffectActiveSkill ??
+                             throw new InvalidOperationException("효과형 액티브 Runtime 자산을 만들지 못했습니다.");
+                UpdateRarityActiveReference(rarityCatalog, definition, active);
+                MarkDirty(active, draft, motion, feedback, controller, rarityCatalog);
+                SaveAssetsIfDirty(active, draft, motion, feedback, controller, rarityCatalog);
+                generatedSfx.SaveIfDirty();
+                AssetDatabase.ImportAsset(paths[7], ImportAssetOptions.ForceUpdate);
+
+                if (active.SourceProfile != draft.ActiveEffectProfile ||
+                    !string.Equals(active.SkillId, $"active_{draft.MonsterId}", StringComparison.OrdinalIgnoreCase) ||
+                    active.EnergyCost != draft.ActiveEnergyMaximum)
+                {
+                    throw new InvalidOperationException("효과형 액티브 Runtime 동기화 검증 실패");
+                }
+                transaction.Commit();
+                return active;
+            }
+            catch (Exception syncException)
+            {
+                try
+                {
+                    transaction.Rollback();
+                }
+                catch (Exception rollbackException)
+                {
+                    throw new AggregateException(
+                        "효과형 액티브 Runtime 동기화와 원상복구가 모두 실패했습니다.",
+                        syncException,
+                        rollbackException);
+                }
+                throw;
+            }
+            finally
+            {
+                transaction.Dispose();
+            }
+        }
+
         public static IReadOnlyList<string> BuildPaths(string monsterId)
         {
             var data = DataRoot + "/" + monsterId;
@@ -771,13 +860,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var attack = GetOrCreateActiveSkillAsset<MonsterAttackActiveSkill>(
                 path,
                 $"MSA_{draft.MonsterId}_Active");
+            var compiledAttackBlocks = CompileActiveAttackBlocks(draft, attack);
             attack.EditorConfigure(
                 $"active_{draft.MonsterId}",
                 draft.ActiveSkillName,
                 draft.ActiveAttackProfile.Description,
                 draft.Portrait,
                 draft.ActiveAttackProfile,
-                draft.ActiveAttackStepTunings,
+                compiledAttackBlocks,
+                null,
                 CompileActiveAttackPresentationBindings(draft, generatedSfx),
                 draft.ActiveEnergyMaximum,
                 ResolveActiveCommitNormalizedTime(draft),
@@ -790,6 +881,60 @@ namespace ProjectMT.EditorTools.MonsterMaker
             EditorUtility.SetDirty(attack);
             EditorUtility.SetDirty(draft);
             return attack;
+        }
+
+        private static MonsterBasicAttackProfile[] CompileActiveAttackBlocks(
+            MonsterMakerDraft draft,
+            MonsterAttackActiveSkill owner)
+        {
+            if (draft?.ActiveAttackProfile == null || owner == null)
+            {
+                return Array.Empty<MonsterBasicAttackProfile>();
+            }
+
+            var path = AssetDatabase.GetAssetPath(owner);
+            var generated = AssetDatabase.LoadAllAssetsAtPath(path)
+                .OfType<MonsterBasicAttackProfile>()
+                .Where(candidate => candidate != null &&
+                                    candidate.name.StartsWith("__ActiveAttackBlock_", StringComparison.Ordinal))
+                .ToArray();
+            var existing = generated
+                .GroupBy(candidate => candidate.name, StringComparer.Ordinal)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+            var retained = new HashSet<MonsterBasicAttackProfile>();
+            var result = new List<MonsterBasicAttackProfile>(draft.ActiveAttackProfile.Steps.Count);
+            for (var index = 0; index < draft.ActiveAttackProfile.Steps.Count; index++)
+            {
+                var step = draft.ActiveAttackProfile.Steps[index];
+                if (step == null) continue;
+                var name = "__ActiveAttackBlock_" + step.StepId;
+                if (!existing.TryGetValue(name, out var block))
+                {
+                    block = ScriptableObject.CreateInstance<MonsterBasicAttackProfile>();
+                    block.name = name;
+                    block.hideFlags = HideFlags.HideInHierarchy;
+                    AssetDatabase.AddObjectToAsset(block, owner);
+                }
+                step.EditorCompileAttackBlock(block);
+                var projectileCarrier = block.UsesProjectileVisual
+                    ? draft.ProjectilePrefab != null
+                        ? draft.ProjectilePrefab
+                        : AssetDatabase.LoadAssetAtPath<GameObject>(DefaultProjectilePrefabPath)
+                    : null;
+                block.EditorSetProjectileCarrierPrefab(projectileCarrier);
+                block.EditorSetFeelFeedback(null, null, draft.ActiveAttackProfile.ImpactFeel);
+                block.name = name;
+                block.hideFlags = HideFlags.HideInHierarchy;
+                EditorUtility.SetDirty(block);
+                retained.Add(block);
+                result.Add(block);
+            }
+            foreach (var stale in generated)
+            {
+                if (retained.Contains(stale)) continue;
+                UnityEngine.Object.DestroyImmediate(stale, true);
+            }
+            return result.ToArray();
         }
         private static float ResolveActiveCommitNormalizedTime(MonsterMakerDraft draft)
         {
@@ -870,21 +1015,53 @@ namespace ProjectMT.EditorTools.MonsterMaker
             where T : MonsterActiveSkill
         {
             var existing = AssetDatabase.LoadAllAssetsAtPath(path).OfType<T>().FirstOrDefault();
-            if (existing != null) return existing;
+            if (existing == null)
+            {
+                existing = ScriptableObject.CreateInstance<T>();
+                existing.name = assetName;
+                var main = AssetDatabase.LoadMainAssetAtPath(path);
+                if (main == null)
+                {
+                    AssetDatabase.CreateAsset(existing, path);
+                }
+                else
+                {
+                    existing.hideFlags = HideFlags.HideInHierarchy;
+                    AssetDatabase.AddObjectToAsset(existing, main);
+                }
+            }
 
-            var asset = ScriptableObject.CreateInstance<T>();
-            asset.name = assetName;
-            var main = AssetDatabase.LoadMainAssetAtPath(path);
-            if (main == null)
+            existing.name = assetName;
+            existing.hideFlags = HideFlags.None;
+            if (AssetDatabase.LoadMainAssetAtPath(path) != existing)
             {
-                AssetDatabase.CreateAsset(asset, path);
+                AssetDatabase.SetMainObject(existing, path);
             }
-            else
+
+            foreach (var stale in AssetDatabase.LoadAllAssetsAtPath(path)
+                         .OfType<MonsterActiveSkill>()
+                         .Where(candidate => candidate != null && candidate != existing)
+                         .ToArray())
             {
-                asset.hideFlags = HideFlags.HideInHierarchy;
-                AssetDatabase.AddObjectToAsset(asset, main); // 타입 전환 시 기존 GUID와 이전 연결을 보존합니다.
+                UnityEngine.Object.DestroyImmediate(stale, true);
             }
-            return asset;
+
+            if (existing is MonsterEffectActiveSkill)
+            {
+                foreach (var staleBlock in AssetDatabase.LoadAllAssetsAtPath(path)
+                             .OfType<MonsterBasicAttackProfile>()
+                             .Where(candidate => candidate != null &&
+                                                 candidate.name.StartsWith(
+                                                     "__ActiveAttackBlock_",
+                                                     StringComparison.Ordinal))
+                             .ToArray())
+                {
+                    UnityEngine.Object.DestroyImmediate(staleBlock, true);
+                }
+            }
+
+            EditorUtility.SetDirty(existing);
+            return existing;
         }
         private static T GetOrCreateAsset<T>(string path, string assetName) where T : ScriptableObject
         {
@@ -1236,7 +1413,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     : binding.MotionId;
                 var roleId = $"BasicAttack_{binding.AttackId}_{binding.SlotId}_{motion}";
                 var runtimeSfx = binding.SfxState == MonsterBasicAttackSfxAssignmentState.Assigned
-                    ? generatedSfx.Resolve(binding.Sound, roleId, binding.SoundVolume)
+                    ? generatedSfx.Resolve(binding, roleId)
                     : null;
                 result.Add(binding.EditorCloneForRuntime(
                     runtimeSfx));
@@ -1300,33 +1477,20 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     continue;
                 }
 
-                var role = $"Active_{source.StepId}";
-                var slotBindings = new List<MonsterActiveAttackPresentationCueBinding>();
-                var sourceStep = draft.ActiveAttackProfile?.Steps.FirstOrDefault(step =>
-                    step != null && string.Equals(step.StepId, source.StepId, StringComparison.OrdinalIgnoreCase));
-                if (sourceStep != null)
+                var basicBindings = new List<MonsterBasicAttackVfxBinding>();
+                foreach (var sourceBinding in source.AttackBlockBindings)
                 {
-                    for (var slotIndex = 0; slotIndex < sourceStep.PresentationSlots.Count; slotIndex++)
-                    {
-                        var contract = sourceStep.PresentationSlots[slotIndex];
-                        if (contract == null) continue;
-                        var slotDraft = source.ResolveSlot(contract.SlotId);
-                        var slotBinding = new MonsterActiveAttackPresentationCueBinding();
-                        slotBinding.EditorConfigure(
-                            contract.SlotId,
-                            contract.Timing,
-                            contract.Anchor,
-                            CreateActiveFeedbackCue(
-                                slotDraft,
-                                generatedSfx,
-                                role + "_" + contract.SlotId),
-                            contract.UseDuration,
-                            contract.Duration,
-                            contract.Multiplicity,
-                            contract.Attachment,
-                            contract.EndPolicy);
-                        slotBindings.Add(slotBinding);
-                    }
+                    if (sourceBinding == null) continue;
+                    var motion = string.IsNullOrWhiteSpace(sourceBinding.MotionId)
+                        ? "Shared"
+                        : sourceBinding.MotionId;
+                    var runtimeSfx = sourceBinding.SfxState ==
+                                     MonsterBasicAttackSfxAssignmentState.Assigned
+                        ? generatedSfx.Resolve(
+                            sourceBinding,
+                            $"ActiveBasic_{source.StepId}_{sourceBinding.SlotId}_{motion}")
+                        : null;
+                    basicBindings.Add(sourceBinding.EditorCloneForRuntime(runtimeSfx));
                 }
                 var binding = new MonsterActiveAttackPresentationBinding();
                 binding.EditorConfigure(
@@ -1337,7 +1501,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     null,
                     null,
                     null,
-                    slotBindings.ToArray());
+                    Array.Empty<MonsterActiveAttackPresentationCueBinding>(),
+                    basicBindings.ToArray());
                 result.Add(binding);
             }
             return result.ToArray();
@@ -1387,6 +1552,20 @@ namespace ProjectMT.EditorTools.MonsterMaker
             public SfxCue Resolve(AudioClip sound, string roleId)
             {
                 return Resolve(sound, roleId, null);
+            }
+
+            public SfxCue Resolve(MonsterBasicAttackVfxBinding binding, string roleId)
+            {
+                if (binding == null)
+                {
+                    return null;
+                }
+                if (binding.Sound == null)
+                {
+                    RegisterLegacyGeneratedCue(binding.Sfx);
+                    return binding.Sfx;
+                }
+                return Resolve(binding.Sound, roleId, binding.SoundVolume);
             }
 
             public SfxCue Resolve(AudioClip sound, string roleId, float? volume)
@@ -1545,7 +1724,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private static void UpdateRarityActiveReference(
             MonsterRarityCatalog rarityCatalog,
             MonsterDefinition definition,
-            MonsterAttackActiveSkill active)
+            MonsterActiveSkill active)
         {
             var serialized = new SerializedObject(rarityCatalog);
             var groups = new[]

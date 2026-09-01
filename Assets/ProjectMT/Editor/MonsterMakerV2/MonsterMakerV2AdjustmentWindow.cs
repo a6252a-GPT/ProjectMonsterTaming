@@ -176,6 +176,11 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             }
 
             layout.CloneTree(rootVisualElement);
+            var adjustmentHelp = rootVisualElement.Q<HelpBox>(className: "adjust-help");
+            if (adjustmentHelp != null)
+                adjustmentHelp.style.display = MonsterMakerV2HelpPreferences.ShowContextHelp
+                    ? DisplayStyle.Flex
+                    : DisplayStyle.None;
             titleLabel = rootVisualElement.Q<Label>("adjust-title");
             captionLabel = rootVisualElement.Q<Label>("adjust-caption");
             playbackStatusLabel = rootVisualElement.Q<Label>("vfx-playback-status");
@@ -192,6 +197,13 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             vfxSpeedSlider = rootVisualElement.Q<Slider>("vfx-speed-slider");
             vfxSpeedField = rootVisualElement.Q<FloatField>("vfx-speed-field");
             playPauseButton = rootVisualElement.Q<Button>("vfx-play-pause");
+
+            // 숫자를 지우고 다시 입력하는 중간 상태를 최소값으로 덮어쓰지 않는다.
+            // Enter 또는 포커스 이탈 시에만 아래 변경 콜백이 실행되어 유효 범위를 확정한다.
+            if (vfxScaleField != null) vfxScaleField.isDelayed = true;
+            if (vfxLifetimeField != null) vfxLifetimeField.isDelayed = true;
+            if (vfxOffsetField != null) vfxOffsetField.isDelayed = true;
+            if (vfxSpeedField != null) vfxSpeedField.isDelayed = true;
 
             var previewHost = rootVisualElement.Q<VisualElement>("adjust-preview-host");
             previewIMGUI = new IMGUIContainer(DrawPreviewGUI)

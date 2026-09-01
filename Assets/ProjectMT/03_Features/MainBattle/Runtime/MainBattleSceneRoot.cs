@@ -68,6 +68,7 @@ namespace ProjectMT.Features.MainBattle
         private AttendancePanelController attendancePanel; // 28일 출석 팝업
         private MailboxPanelController mailboxPanel; // 우편 목록·수령 팝업
         private HudQuickMenuController quickMenu; // 출석·우편 알림 배지
+        private MainBattlePartyHudPresenter partyHud; // 좌하단 5인 파티 상태
         private CombatPowerIncreasePresenter combatPowerIncrease; // 총전투력 상승 피드백
         private CombatFeedbackPlayer mainBattleFeedback; // 메인전투 전용 일반 피격 밀림 조절
         private float trackedTotalPower; // 마지막 저장 확정 총전투력
@@ -184,6 +185,8 @@ namespace ProjectMT.Features.MainBattle
             mailboxPanel?.Configure(context.Progress, context.ItemCatalog);
             quickMenu = GetComponentInChildren<HudQuickMenuController>(true);
             quickMenu?.ConfigureNotifications(context.Progress);
+            partyHud = GetComponentInChildren<MainBattlePartyHudPresenter>(true);
+            partyHud?.Configure(expedition);
             ConfigureMonsterDrag();
             ConfigureSpatialMovement();
             ConfigureFormationPlacement();
@@ -225,6 +228,7 @@ namespace ProjectMT.Features.MainBattle
             managementUi?.ConfigureInventoryPage(null);
             managementUi?.ConfigureCommanderSkillPage(null);
             quickMenu?.ConfigureNotifications(null);
+            partyHud?.Configure(null);
             if (context != null)
             {
                 context.Progress.Changed -= HandleProgressChanged;
@@ -276,6 +280,7 @@ namespace ProjectMT.Features.MainBattle
             attendancePanel = null;
             mailboxPanel = null;
             quickMenu = null;
+            partyHud = null;
             combatPowerIncrease?.Hide();
             combatPowerIncrease = null;
             trackedTotalPower = 0f;

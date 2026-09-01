@@ -765,7 +765,8 @@ namespace ProjectMT.Shared.Combat
             IDamageable target,
             float amount,
             DamageFeedbackFlags feedbackFlags,
-            bool applyOutgoingPassive)
+            bool applyOutgoingPassive,
+            bool allowReflect = true)
         {
             if (source == null || target == null || !source.IsAlive || !target.IsAlive || amount <= 0f)
             {
@@ -834,13 +835,30 @@ namespace ProjectMT.Shared.Combat
                 }
             }
 
+            if (allowReflect && targetActor != null && targetActor != source &&
+                targetActor.IsAlive && source.IsAlive)
+            {
+                var reflectedDamage = targetActor.SkillRuntime.ResolveReflectedDamage(appliedDamage);
+                if (reflectedDamage > 0f)
+                {
+                    ApplyMonsterDamageInternal(
+                        targetActor,
+                        source.Health,
+                        reflectedDamage,
+                        DamageFeedbackFlags.None,
+                        false,
+                        false);
+                }
+            }
+
             if (targetActor == null)
             {
                 feedbackPlayer?.PlayDamage(
                     target.Position,
                     appliedDamage,
                     FloatingNumberStyle.EnemyDamage,
-                    target.GetHashCode());
+                    target.GetHashCode(),
+                    feedbackFlags);
             }
 
             return true;
@@ -1069,6 +1087,7 @@ namespace ProjectMT.Shared.Combat
 
         public void ReturnMonsterObject(GameObject instance)
         {
+            MonsterBasicAttackVfxPlayback.StopAndClear(instance);
             poolScope?.Return(instance);
         }
 
@@ -1148,7 +1167,8 @@ namespace ProjectMT.Shared.Combat
             Vector3 position,
             Quaternion rotation,
             Transform parent = null,
-            float vfxScale = 1f)
+            float vfxScale = 1f,
+            float playbackSpeed = 1f)
         {
             if (cue == null || !cue.HasAnyFeedback) return null;
             position += rotation * cue.LocalPosition;
@@ -1169,7 +1189,10 @@ namespace ProjectMT.Shared.Combat
             if (instance == null) return null;
             var scale = cue.Scale * Mathf.Max(0.01f, vfxScale);
             instance.transform.localScale = cue.VfxPrefab.transform.localScale * scale;
-            MonsterBasicAttackVfxPlayback.RestartAtOffset(instance, 0f, playbackSpeed: 1f);
+            MonsterBasicAttackVfxPlayback.RestartAtOffset(
+                instance,
+                0f,
+                playbackSpeed: Mathf.Max(0.05f, playbackSpeed));
             return instance;
         }
 
@@ -1178,7 +1201,8 @@ namespace ProjectMT.Shared.Combat
             Vector3 position,
             Quaternion rotation,
             Transform parent = null,
-            float bodyVfxScale = 1f)
+            float bodyVfxScale = 1f,
+            float playbackSpeedMultiplier = 1f)
         {
             if (binding == null || !binding.IsAssigned)
             {
@@ -1209,7 +1233,8 @@ namespace ProjectMT.Shared.Combat
                 MonsterBasicAttackVfxPlayback.RestartAtOffset(
                     instance,
                     binding.PlaybackOffset,
-                    playbackSpeed: binding.PlaybackSpeed);
+                    playbackSpeed: binding.PlaybackSpeed *
+                                   Mathf.Max(0.05f, playbackSpeedMultiplier));
             }
             return instance;
         }

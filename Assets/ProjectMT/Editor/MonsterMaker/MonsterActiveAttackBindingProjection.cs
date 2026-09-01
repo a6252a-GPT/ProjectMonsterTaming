@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using ProjectMT.Shared.Unit;
+using UnityEditor;
 using UnityEngine;
 
 namespace ProjectMT.EditorTools.MonsterMaker
@@ -55,6 +56,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 return MonsterActiveAttackRuntimeSyncState.StepMismatch;
             }
+            if (!MatchesAttackBlocks(draft, runtime, out message))
+            {
+                return MonsterActiveAttackRuntimeSyncState.StepMismatch;
+            }
             if (!MatchesMotions(draft, motion, out message))
             {
                 return MonsterActiveAttackRuntimeSyncState.MotionMismatch;
@@ -81,9 +86,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             for (var index = 0; index < profile.Steps.Count; index++)
             {
                 var source = profile.Steps[index];
-                var tuning = draft.ActiveAttackStepTunings.FirstOrDefault(candidate => candidate != null &&
-                    string.Equals(candidate.StepId, source.StepId, StringComparison.OrdinalIgnoreCase));
-                var expected = source.CloneWithTuning(tuning);
+                var expected = source.Clone();
                 var actual = runtime.Steps[index];
                 if (actual == null || !string.Equals(expected.StepId, actual.StepId, StringComparison.OrdinalIgnoreCase) ||
                     !string.Equals(JsonUtility.ToJson(expected), JsonUtility.ToJson(actual), StringComparison.Ordinal))
@@ -129,6 +132,81 @@ namespace ProjectMT.EditorTools.MonsterMaker
             return true;
         }
 
+        private static bool MatchesAttackBlocks(
+            MonsterMakerDraft draft,
+            MonsterAttackActiveSkill runtime,
+            out string message)
+        {
+            var profile = draft.ActiveAttackProfile;
+            if (runtime.AttackBlocks.Count != profile.Steps.Count)
+            {
+                message = $"공용 공격 블록 수가 다릅니다. Maker={profile.Steps.Count}, Runtime={runtime.AttackBlocks.Count}";
+                return false;
+            }
+            for (var index = 0; index < profile.Steps.Count; index++)
+            {
+                var source = profile.Steps[index];
+                var actual = runtime.ResolveAttackBlock(source.StepId);
+                var expected = ScriptableObject.CreateInstance<MonsterBasicAttackProfile>();
+                expected.hideFlags = HideFlags.HideAndDontSave;
+                try
+                {
+                    source.EditorCompileAttackBlock(expected);
+                    expected.EditorSetProjectileCarrierPrefab(
+                        expected.UsesProjectileVisual
+                            ? draft.ProjectilePrefab != null
+                                ? draft.ProjectilePrefab
+                                : AssetDatabase.LoadAssetAtPath<GameObject>(
+                                    MonsterMakerAssetWriter.DefaultProjectilePrefabPath)
+                            : null);
+                    expected.EditorSetFeelFeedback(null, null, profile.ImpactFeel);
+                    if (actual == null || !MatchesRuntimeAttackBlock(expected, actual))
+                    {
+                        message = $"공용 공격 블록이 다릅니다: {source.StepId}";
+                        return false;
+                    }
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(expected);
+                }
+            }
+            message = string.Empty;
+            return true;
+        }
+
+        private static bool MatchesRuntimeAttackBlock(
+            MonsterBasicAttackProfile expected,
+            MonsterBasicAttackProfile actual)
+        {
+            return string.Equals(
+                ToRuntimeAttackBlockJson(expected),
+                ToRuntimeAttackBlockJson(actual),
+                StringComparison.Ordinal);
+        }
+
+        private static string ToRuntimeAttackBlockJson(MonsterBasicAttackProfile source)
+        {
+            if (source == null) return string.Empty;
+            var clone = UnityEngine.Object.Instantiate(source);
+            clone.hideFlags = HideFlags.HideAndDontSave;
+            try
+            {
+                var serialized = new SerializedObject(clone);
+                var inactiveSlots = serialized.FindProperty("inactiveVfxSlots");
+                if (inactiveSlots != null)
+                {
+                    inactiveSlots.arraySize = 0; // 편집 보관 슬롯은 실행 계약 비교에서 제외
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                }
+                return JsonUtility.ToJson(clone);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(clone);
+            }
+        }
+
         private static bool MatchesPresentations(
             MonsterMakerDraft draft,
             MonsterAttackActiveSkill runtime,
@@ -146,6 +224,46 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 var source = draft.ActiveAttackPresentations.FirstOrDefault(candidate => candidate != null &&
                     string.Equals(candidate.StepId, step.StepId, StringComparison.OrdinalIgnoreCase));
                 var actual = runtime.ResolvePresentation(step.StepId);
+                if (step.AttackBlockVfxSlots.Count > 0)
+                {
+                    if (source == null || actual == null ||
+                        actual.AttackBlockBindings.Count != step.AttackBlockVfxSlots.Count ||
+                        source.AttackBlockBindings.Count != step.AttackBlockVfxSlots.Count)
+                    {
+                        message = $"Step 공용 공격 블록 연결 수가 다릅니다: {step.StepId}";
+                        return false;
+                    }
+                    for (var slotIndex = 0; slotIndex < step.AttackBlockVfxSlots.Count; slotIndex++)
+                    {
+                        var contract = step.AttackBlockVfxSlots[slotIndex];
+                        var expectedMotion = contract.AssignmentScope ==
+                                             MonsterBasicAttackVfxAssignmentScope.MotionSpecific
+                            ? step.StepId
+                            : string.Empty;
+                        var sourceBinding = source.AttackBlockBindings.FirstOrDefault(candidate =>
+                            candidate != null &&
+                            string.Equals(candidate.AttackId, "active_" + step.StepId,
+                                StringComparison.OrdinalIgnoreCase) &&
+                            string.Equals(candidate.SlotId, contract.SlotId,
+                                StringComparison.OrdinalIgnoreCase) &&
+                            string.Equals(candidate.MotionId, expectedMotion,
+                                StringComparison.OrdinalIgnoreCase));
+                        var actualBinding = actual.AttackBlockBindings.FirstOrDefault(candidate =>
+                            candidate != null &&
+                            string.Equals(candidate.AttackId, "active_" + step.StepId,
+                                StringComparison.OrdinalIgnoreCase) &&
+                            string.Equals(candidate.SlotId, contract.SlotId,
+                                StringComparison.OrdinalIgnoreCase) &&
+                            string.Equals(candidate.MotionId, expectedMotion,
+                                StringComparison.OrdinalIgnoreCase));
+                        if (!MatchesAttackBlockBinding(sourceBinding, actualBinding))
+                        {
+                            message = $"공용 공격 블록 연출이 다릅니다: {step.StepId} / {contract.DisplayName}";
+                            return false;
+                        }
+                    }
+                    continue;
+                }
                 if (source == null || actual == null || actual.Slots.Count != step.PresentationSlots.Count)
                 {
                     message = $"Step 연출 연결이 없습니다: {step.StepId}";
@@ -166,6 +284,35 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
             message = string.Empty;
             return true;
+        }
+
+        private static bool MatchesAttackBlockBinding(
+            MonsterBasicAttackVfxBinding source,
+            MonsterBasicAttackVfxBinding actual)
+        {
+            if (source == null || actual == null ||
+                source.State != actual.State || source.Prefab != actual.Prefab ||
+                source.SfxState != actual.SfxState || source.Sound != actual.Sound ||
+                !Approximately(source.SoundVolume, actual.SoundVolume) ||
+                !Approximately(source.Lifetime, actual.Lifetime) ||
+                !Approximately(source.PlaybackOffset, actual.PlaybackOffset) ||
+                !Approximately(source.PlaybackSpeed, actual.PlaybackSpeed) ||
+                !Approximately(source.EventTimingOffset, actual.EventTimingOffset) ||
+                (source.LocalPosition - actual.LocalPosition).sqrMagnitude > 0.000001f ||
+                Quaternion.Angle(source.LocalRotation, actual.LocalRotation) > 0.001f ||
+                !Approximately(source.Scale, actual.Scale))
+            {
+                return false;
+            }
+            if (source.SfxState != MonsterBasicAttackSfxAssignmentState.Assigned)
+            {
+                return actual.Sfx == null;
+            }
+            if (source.Sound != null)
+            {
+                return actual.Sfx != null && actual.Sfx.HasPlayableClip;
+            }
+            return source.Sfx == actual.Sfx;
         }
 
         private static bool MatchesSlot(

@@ -21,6 +21,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         public float CombatTargetMaximumHealth => stage.CombatTargetMaximumHealth;
         public float LastAppliedDamage => stage.LastAppliedDamage;
         public int PreviewHitCount => stage.PreviewHitCount;
+        public bool HasPresentationVfx => stage.HasPresentationVfx;
         public Camera Camera => stage.Camera;
 
         public void SetDraft(MonsterMakerDraft draft)

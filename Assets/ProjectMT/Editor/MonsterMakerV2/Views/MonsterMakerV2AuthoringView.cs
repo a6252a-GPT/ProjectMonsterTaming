@@ -45,12 +45,16 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private readonly Action<string, string, MonsterMakerPreviewAnchor> openFeedbackVfxAdjust;
         private readonly Dictionary<string, PropertyField> fields =
             new Dictionary<string, PropertyField>(StringComparer.Ordinal);
+        private readonly Dictionary<string, bool> foldoutStates =
+            new Dictionary<string, bool>(StringComparer.Ordinal);
 
         private SerializedObject serializedDraft;
         private MonsterMakerDraft draft;
+        private MonsterMakerDraft sourceDraft;
         private Action changed;
         private bool lockMonsterId;
         private bool building;
+        private string boundDraftStateKey;
 
         public MonsterMakerV2AuthoringView(
             VisualElement root,
@@ -78,16 +82,26 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         public void Bind(
             SerializedObject serializedObject,
             MonsterMakerDraft workingDraft,
+            MonsterMakerDraft persistentDraft,
             bool shouldLockMonsterId,
             Action onChanged)
         {
             serializedDraft = serializedObject;
             draft = workingDraft;
+            sourceDraft = persistentDraft;
             draft?.EditorEnsureSplitSkillUsage();
-            selectedSkillTab = draft != null &&
-                               (draft.HasActiveProfile || draft.UseActiveSkill)
-                ? SkillAuthoringTab.Active
-                : SkillAuthoringTab.Passive;
+            var nextStateKey = persistentDraft != null
+                ? AssetDatabase.GetAssetPath(persistentDraft)
+                : "new-draft";
+            if (!string.Equals(boundDraftStateKey, nextStateKey, StringComparison.Ordinal))
+            {
+                boundDraftStateKey = nextStateKey;
+                foldoutStates.Clear();
+                selectedSkillTab = draft != null &&
+                                   (draft.HasActiveProfile || draft.UseActiveSkill)
+                    ? SkillAuthoringTab.Active
+                    : SkillAuthoringTab.Passive;
+            }
             lockMonsterId = shouldLockMonsterId;
             changed = onChanged;
             Rebuild();
@@ -98,6 +112,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             bindingRoot.Unbind();
             serializedDraft = null;
             draft = null;
+            sourceDraft = null;
             changed = null;
             fields.Clear();
         }
@@ -739,12 +754,20 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             container.Add(row);
         }
 
-        private static Foldout AddSubFoldout(
+        private Foldout AddSubFoldout(
             VisualElement container,
             string title,
-            bool expanded)
+            bool expanded,
+            string stateKey = null)
         {
-            var foldout = new Foldout { text = title, value = expanded };
+            var key = string.IsNullOrWhiteSpace(stateKey)
+                ? "foldout:" + title
+                : stateKey;
+            var value = foldoutStates.TryGetValue(key, out var stored)
+                ? stored
+                : expanded;
+            var foldout = new Foldout { text = title, value = value };
+            foldout.RegisterValueChangedCallback(evt => foldoutStates[key] = evt.newValue);
             foldout.AddToClassList("draft-subfoldout");
             container.Add(foldout);
             return foldout;
@@ -776,6 +799,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         {
             var help = new HelpBox(text, type);
             help.AddToClassList("draft-help");
+            if (type == HelpBoxMessageType.Info) help.AddToClassList("draft-help--optional");
             container.Add(help);
             return help;
         }

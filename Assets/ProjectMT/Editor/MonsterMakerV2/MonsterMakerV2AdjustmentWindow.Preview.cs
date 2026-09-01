@@ -10,7 +10,11 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
     {
         private static readonly int OrbitControlHint =
             "MonsterMakerV2AdjustmentOrbit".GetHashCode();
+        private static readonly int PositionHandleControlHint =
+            "MonsterMakerV2AdjustmentPositionHandle".GetHashCode();
         private const float OrbitSensitivity = 0.35f;
+        private const float PositionHandleLengthPixels = 72f;
+        private const float PositionHandleHitRadius = 11f;
 
         private MonsterMakerDraft draft;
         private MonsterMakerPreviewPositionBinding binding;
@@ -40,6 +44,12 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private float cameraPitch = 12f;
         private float cameraDistanceScale = 1f;
         private bool cameraOrbitActive;
+        private PositionHandleAxis activePositionAxis;
+        private Vector2 positionDragMouseStart;
+        private Vector3 positionDragWorldStart;
+        private Vector3 positionDragAxisWorld;
+        private Vector2 positionDragAxisGui;
+        private float positionDragUnitsPerPixel;
         private string errorMessage;
 
         private bool IsVfxMode => previewVfxPrefab != null && applyVfx != null;
@@ -153,49 +163,172 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private void DrawPositionHandle(Rect previewRect)
         {
             if (!TryGetHandleSpace(out var anchor, out var handleValue)) return;
-
-            var previousMatrix = Handles.matrix;
-            var previousColor = Handles.color;
             var camera = previewUtility.camera;
-            var previousTargetTexture = camera.targetTexture;
-            var previousCameraRect = camera.rect;
-            var previousPixelRect = camera.pixelRect;
-            try
+            var worldPosition = anchor.TransformPoint(handleValue);
+            if (!MonsterPreviewPositionHandleUtility.TryWorldToGuiPoint(
+                    camera,
+                    previewRect,
+                    worldPosition,
+                    out var originGui))
             {
-                Handles.matrix = Matrix4x4.identity;
-                camera.targetTexture = null;
-                Handles.SetCamera(ResolveWindowPreviewRect(previewRect), camera);
-                Handles.color = MonsterPositionReferenceOverlay.EditTargetColor;
-                var worldPosition = anchor.TransformPoint(handleValue);
-                EditorGUI.BeginChangeCheck();
-                var changedWorld = Handles.PositionHandle(worldPosition, anchor.rotation);
-                if (!EditorGUI.EndChangeCheck()) return;
+                return;
+            }
 
-                currentPosition = ConvertHandleValueToStoredValue(anchor.InverseTransformPoint(changedWorld));
-                ApplyValueToPreview();
-                SyncPositionFieldsFromHandle();
-                MarkPreviewDirty();
-            }
-            finally
+            var worldLength = ResolvePositionHandleWorldLength(camera, worldPosition, previewRect.height);
+            var axes = new[]
             {
-                camera.targetTexture = previousTargetTexture;
-                camera.rect = previousCameraRect;
-                camera.pixelRect = previousPixelRect;
-                Handles.matrix = previousMatrix;
-                Handles.color = previousColor;
+                new PositionHandleAxisView(PositionHandleAxis.X, anchor.right, new Color(0.95f, 0.22f, 0.18f, 1f)),
+                new PositionHandleAxisView(PositionHandleAxis.Y, anchor.up, new Color(0.28f, 0.95f, 0.34f, 1f)),
+                new PositionHandleAxisView(PositionHandleAxis.Z, anchor.forward, new Color(0.18f, 0.48f, 1f, 1f))
+            };
+            for (var index = 0; index < axes.Length; index++)
+            {
+                axes[index] = axes[index].WithEnd(
+                    ResolveAxisGuiEnd(camera, previewRect, worldPosition, axes[index].WorldAxis, worldLength, originGui));
             }
+
+            HandlePositionHandleInput(previewRect, anchor, axes, worldLength, originGui, Event.current);
+            if (Event.current.type == EventType.Repaint)
+                DrawPositionAxes(originGui, axes);
         }
 
-        private Rect ResolveWindowPreviewRect(Rect localPreviewRect)
+        private void HandlePositionHandleInput(
+            Rect previewRect,
+            Transform anchor,
+            PositionHandleAxisView[] axes,
+            float worldLength,
+            Vector2 originGui,
+            Event current)
         {
-            if (previewIMGUI == null) return localPreviewRect;
-            var containerRect = previewIMGUI.worldBound;
-            var rootRect = rootVisualElement.worldBound;
-            return new Rect(
-                containerRect.x - rootRect.x + localPreviewRect.x,
-                containerRect.y - rootRect.y + localPreviewRect.y,
-                localPreviewRect.width,
-                localPreviewRect.height);
+            if (current == null) return;
+            var controlId = GUIUtility.GetControlID(PositionHandleControlHint, FocusType.Passive, previewRect);
+            var eventType = current.GetTypeForControl(controlId);
+            if (GUIUtility.hotControl == controlId && activePositionAxis != PositionHandleAxis.None)
+            {
+                if (eventType == EventType.MouseDrag)
+                {
+                    var pixelDelta = Vector2.Dot(
+                        current.mousePosition - positionDragMouseStart,
+                        positionDragAxisGui);
+                    var changedWorld = positionDragWorldStart +
+                                       positionDragAxisWorld * pixelDelta * positionDragUnitsPerPixel;
+                    currentPosition = ConvertHandleValueToStoredValue(anchor.InverseTransformPoint(changedWorld));
+                    ApplyValueToPreview();
+                    SyncPositionFieldsFromHandle();
+                    current.Use();
+                    MarkPreviewDirty();
+                    return;
+                }
+
+                if ((eventType == EventType.MouseUp && current.button == 0) ||
+                    eventType == EventType.MouseLeaveWindow)
+                {
+                    GUIUtility.hotControl = 0;
+                    activePositionAxis = PositionHandleAxis.None;
+                    current.Use();
+                    MarkPreviewDirty();
+                }
+                return;
+            }
+
+            if (eventType != EventType.MouseDown || current.button != 0 ||
+                !previewRect.Contains(current.mousePosition) || GUIUtility.hotControl != 0)
+            {
+                return;
+            }
+
+            var selected = PositionHandleAxis.None;
+            var selectedDistance = PositionHandleHitRadius;
+            var selectedView = default(PositionHandleAxisView);
+            for (var index = 0; index < axes.Length; index++)
+            {
+                var distance = DistanceToSegment(current.mousePosition, originGui, axes[index].GuiEnd);
+                if (distance >= selectedDistance) continue;
+                selected = axes[index].Axis;
+                selectedDistance = distance;
+                selectedView = axes[index];
+            }
+            if (selected == PositionHandleAxis.None) return;
+
+            var guiVector = selectedView.GuiEnd - originGui;
+            var pixelLength = Mathf.Max(1f, guiVector.magnitude);
+            activePositionAxis = selected;
+            positionDragMouseStart = current.mousePosition;
+            positionDragWorldStart = anchor.TransformPoint(
+                binding.ValueMode == MonsterMakerPreviewPositionValueMode.VisualLocal
+                    ? currentPosition + Vector3.up * draft.GroundOffset
+                    : currentPosition);
+            positionDragAxisWorld = selectedView.WorldAxis.normalized;
+            positionDragAxisGui = guiVector / pixelLength;
+            positionDragUnitsPerPixel = worldLength / pixelLength;
+            GUIUtility.hotControl = controlId;
+            current.Use();
+            MarkPreviewDirty();
+        }
+
+        private static Vector2 ResolveAxisGuiEnd(
+            Camera camera,
+            Rect previewRect,
+            Vector3 worldPosition,
+            Vector3 worldAxis,
+            float worldLength,
+            Vector2 originGui)
+        {
+            if (MonsterPreviewPositionHandleUtility.TryWorldToGuiPoint(
+                    camera,
+                    previewRect,
+                    worldPosition + worldAxis.normalized * worldLength,
+                    out var endGui) &&
+                Vector2.Distance(originGui, endGui) >= 8f)
+            {
+                return endGui;
+            }
+
+            var cameraAxis = camera.transform.InverseTransformDirection(worldAxis.normalized);
+            var direction = new Vector2(cameraAxis.x, -cameraAxis.y);
+            if (direction.sqrMagnitude < 0.01f) direction = new Vector2(0.7f, -0.7f);
+            return originGui + direction.normalized * PositionHandleLengthPixels;
+        }
+
+        private static float ResolvePositionHandleWorldLength(Camera camera, Vector3 worldPosition, float pixelHeight)
+        {
+            if (camera == null) return 1f;
+            if (camera.orthographic)
+                return 2f * camera.orthographicSize / Mathf.Max(1f, pixelHeight) * PositionHandleLengthPixels;
+            var depth = Mathf.Max(0.05f, Vector3.Dot(worldPosition - camera.transform.position, camera.transform.forward));
+            var verticalSize = 2f * depth * Mathf.Tan(camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+            return verticalSize / Mathf.Max(1f, pixelHeight) * PositionHandleLengthPixels;
+        }
+
+        internal static float DistanceToSegment(Vector2 point, Vector2 start, Vector2 end)
+        {
+            var segment = end - start;
+            if (segment.sqrMagnitude <= 0.0001f) return Vector2.Distance(point, start);
+            var ratio = Mathf.Clamp01(Vector2.Dot(point - start, segment) / segment.sqrMagnitude);
+            return Vector2.Distance(point, start + segment * ratio);
+        }
+
+        private void DrawPositionAxes(Vector2 origin, PositionHandleAxisView[] axes)
+        {
+            var previousColor = Handles.color;
+            Handles.BeginGUI();
+            for (var index = 0; index < axes.Length; index++)
+            {
+                var color = axes[index].Axis == activePositionAxis
+                    ? Color.Lerp(axes[index].Color, Color.white, 0.52f)
+                    : axes[index].Color;
+                var start = new Vector3(origin.x, origin.y, 0f);
+                var end = new Vector3(axes[index].GuiEnd.x, axes[index].GuiEnd.y, 0f);
+                Handles.color = new Color(0f, 0f, 0f, 0.5f);
+                Handles.DrawAAPolyLine(6f, start, end);
+                Handles.color = color;
+                Handles.DrawAAPolyLine(3f, start, end);
+                Handles.DrawSolidDisc(end, Vector3.forward, 5f);
+            }
+            Handles.color = Color.white;
+            Handles.DrawSolidDisc(new Vector3(origin.x, origin.y, 0f), Vector3.forward, 3.5f);
+            Handles.color = previousColor;
+            Handles.EndGUI();
         }
 
         private void SyncPositionFieldsFromHandle()
@@ -348,6 +481,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 hitCenter.localPosition = draft.HitCenterLocalPosition;
                 valueAnchor = ResolveValueAnchor();
                 PrepareModelOnlyPreview(previewRoot);
+                // Vendor VFX의 과장된 Renderer Bounds가 카메라를 밀어내지 않도록 모델만으로 구도를 고정한다.
+                modelBounds = CalculateModelBounds(previewRoot);
                 if (IsVfxMode)
                 {
                     previewVfx = Instantiate(previewVfxPrefab, valueAnchor).transform;
@@ -356,7 +491,6 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 }
                 ApplyValueToPreview();
                 previewUtility.AddSingleGO(previewRoot);
-                modelBounds = CalculateModelBounds(previewRoot);
                 errorMessage = null;
             }
             catch (Exception exception)
@@ -533,6 +667,11 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private void CleanupPreview()
         {
             EditorApplication.update -= UpdateVfxPreview;
+            if (activePositionAxis != PositionHandleAxis.None)
+            {
+                GUIUtility.hotControl = 0;
+                activePositionAxis = PositionHandleAxis.None;
+            }
             lastTexture = null;
             if (previewRoot != null)
             {
@@ -549,6 +688,42 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 previewUtility.Cleanup();
                 previewUtility = null;
             }
+        }
+
+        private enum PositionHandleAxis
+        {
+            None,
+            X,
+            Y,
+            Z
+        }
+
+        private readonly struct PositionHandleAxisView
+        {
+            public PositionHandleAxisView(PositionHandleAxis axis, Vector3 worldAxis, Color color)
+                : this(axis, worldAxis, Vector2.zero, color)
+            {
+            }
+
+            private PositionHandleAxisView(
+                PositionHandleAxis axis,
+                Vector3 worldAxis,
+                Vector2 guiEnd,
+                Color color)
+            {
+                Axis = axis;
+                WorldAxis = worldAxis;
+                GuiEnd = guiEnd;
+                Color = color;
+            }
+
+            public PositionHandleAxis Axis { get; }
+            public Vector3 WorldAxis { get; }
+            public Vector2 GuiEnd { get; }
+            public Color Color { get; }
+
+            public PositionHandleAxisView WithEnd(Vector2 guiEnd) =>
+                new PositionHandleAxisView(Axis, WorldAxis, guiEnd, Color);
         }
     }
 }

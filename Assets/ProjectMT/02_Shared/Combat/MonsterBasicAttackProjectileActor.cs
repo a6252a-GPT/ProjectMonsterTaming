@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
@@ -39,11 +40,21 @@ namespace ProjectMT.Shared.Combat
         private float impactVfxScale = 1f;
         private float resolvedSpeed;
         private float resolvedHitRadius;
+        private float resolvedRange;
         private float remainingLifetime;
         private float traveled;
         private int passIndex;
+        private int deferredReturnPrimaryId;
         private bool returning;
         private bool running;
+        private IReadOnlyList<MonsterBasicAttackVfxBinding> bindings;
+        private string motionId;
+        private int? sequenceId;
+        private float playbackSpeed = 1f;
+        private bool applyAsSkillDamage;
+        private Action<UnitActor, Vector3> hitCallback;
+        private Renderer[] hiddenCarrierRenderers = Array.Empty<Renderer>();
+        private bool[] hiddenCarrierRendererStates = Array.Empty<bool>();
 
         public void Launch(
             CombatWorld combatWorld,
@@ -58,7 +69,14 @@ namespace ProjectMT.Shared.Combat
             Vector3 launchDirection,
             MonsterBasicAttackProjectileVolley sharedVolley,
             MonsterFeedbackCue feedback,
-            float vfxScale)
+            float vfxScale,
+            IReadOnlyList<MonsterBasicAttackVfxBinding> presentationBindings = null,
+            string attackMotionId = null,
+            int? attackSequenceId = null,
+            float attackPlaybackSpeed = 1f,
+            bool useSkillDamage = false,
+            Action<UnitActor, Vector3> onHit = null,
+            bool hideCarrierVisuals = false)
         {
             world = combatWorld;
             source = owner;
@@ -70,21 +88,79 @@ namespace ProjectMT.Shared.Combat
             baseDamage = Mathf.Max(0f, damage);
             attackRange = Mathf.Max(0.2f, sourceAttackRange);
             impactVfxScale = Mathf.Max(0.01f, vfxScale);
+            bindings = presentationBindings;
+            motionId = attackMotionId;
+            sequenceId = attackSequenceId;
+            playbackSpeed = float.IsNaN(attackPlaybackSpeed) || float.IsInfinity(attackPlaybackSpeed)
+                ? 1f
+                : Mathf.Max(0.05f, attackPlaybackSpeed);
+            applyAsSkillDamage = useSkillDamage;
+            hitCallback = onHit;
             origin = launchOrigin;
             targetPosition = initialTargetPosition;
             launchDirection.y = 0f;
             direction = launchDirection.sqrMagnitude < 0.0001f
                 ? transform.forward
                 : launchDirection.normalized;
-            resolvedSpeed = actionDefinition != null ? actionDefinition.ResolvedSpeed : 0f;
-            resolvedHitRadius = actionDefinition != null ? actionDefinition.ResolvedHitRadius : 0f;
-            remainingLifetime = actionDefinition != null ? actionDefinition.ResolvedLifetime : 0f;
+            resolvedSpeed = actionDefinition != null
+                ? actionDefinition.ResolvedSpeed
+                : profile?.ProjectileSpeed ?? 0f;
+            resolvedHitRadius = actionDefinition != null
+                ? actionDefinition.ResolvedHitRadius
+                : profile?.ProjectileCollisionRadius ?? 0f;
+            resolvedRange = profile?.ResolveRange(attackRange) ?? attackRange;
+            if (profile != null &&
+                profile.ProjectileTravel == MonsterBasicAttackProjectileTravel.Straight &&
+                profile.CollisionModule == MonsterBasicAttackCollisionModule.AreaImpact)
+            {
+                var targetOffset = initialTargetPosition - launchOrigin;
+                targetOffset.y = 0f;
+                var projectedDistance = Vector3.Dot(targetOffset, direction);
+                var lateralOffset = targetOffset - direction * projectedDistance;
+                if (projectedDistance > 0.01f &&
+                    lateralOffset.sqrMagnitude <= Mathf.Pow(Mathf.Max(0.25f, resolvedHitRadius), 2f))
+                {
+                    resolvedRange = Mathf.Min(resolvedRange, projectedDistance);
+                }
+            }
+            remainingLifetime = actionDefinition != null
+                ? actionDefinition.ResolvedLifetime
+                : profile?.ProjectileLifetime ?? 0f;
             traveled = 0f;
             passIndex = 0;
+            deferredReturnPrimaryId = 0;
             returning = false;
             passHitTargetIds.Clear();
-            running = world != null && source != null && action != null && profile != null;
+            running = world != null && source != null && profile != null;
+            ConfigureCarrierVisibility(hideCarrierVisuals);
             AttachProjectileFeel(profile?.ProjectileFeel);
+        }
+
+        private void ConfigureCarrierVisibility(bool hide)
+        {
+            RestoreCarrierVisibility();
+            if (!hide) return;
+            hiddenCarrierRenderers = GetComponentsInChildren<Renderer>(true);
+            hiddenCarrierRendererStates = new bool[hiddenCarrierRenderers.Length];
+            for (var index = 0; index < hiddenCarrierRenderers.Length; index++)
+            {
+                var renderer = hiddenCarrierRenderers[index];
+                if (renderer == null) continue;
+                hiddenCarrierRendererStates[index] = renderer.enabled;
+                renderer.enabled = false;
+            }
+        }
+
+        private void RestoreCarrierVisibility()
+        {
+            var count = Mathf.Min(hiddenCarrierRenderers.Length, hiddenCarrierRendererStates.Length);
+            for (var index = 0; index < count; index++)
+            {
+                if (hiddenCarrierRenderers[index] != null)
+                    hiddenCarrierRenderers[index].enabled = hiddenCarrierRendererStates[index];
+            }
+            hiddenCarrierRenderers = Array.Empty<Renderer>();
+            hiddenCarrierRendererStates = Array.Empty<bool>();
         }
 
         private void LateUpdate()
@@ -97,7 +173,7 @@ namespace ProjectMT.Shared.Combat
 
         private void Update()
         {
-            if (!running || world == null || action == null || profile == null || source == null)
+            if (!running || world == null || profile == null || source == null)
             {
                 ReturnToPool();
                 return;
@@ -108,7 +184,7 @@ namespace ProjectMT.Shared.Combat
                 return;
             }
 
-            var deltaTime = Time.deltaTime * world.GetMonsterActiveFocusTimeScale(source);
+            var deltaTime = Time.deltaTime * world.GetMonsterActiveFocusTimeScale(source) * playbackSpeed;
             remainingLifetime -= deltaTime;
             if (remainingLifetime <= 0f || !source.IsAlive)
             {
@@ -158,15 +234,31 @@ namespace ProjectMT.Shared.Combat
         private void TickStraight(float deltaTime)
         {
             var previous = transform.position;
-            var remainingRange = Mathf.Max(0f, profile.ResolveRange(attackRange) - traveled);
+            var remainingRange = Mathf.Max(0f, resolvedRange - traveled);
             var step = Mathf.Min(resolvedSpeed * deltaTime, remainingRange);
             transform.position += direction * step;
             transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
             traveled += step;
+            if (profile.CollisionModule == MonsterBasicAttackCollisionModule.AreaImpact)
+            {
+                if (traveled + 0.0001f < resolvedRange)
+                {
+                    return;
+                }
+
+                var applied = ApplyAreaImpact(transform.position, 0);
+                if (applied)
+                {
+                    PlayImpactFeedback(transform.position, ResolveTargetGameObject(primaryTarget));
+                }
+                ReturnToPool();
+                return;
+            }
+
             var hitAny = ApplyPassContacts(previous, transform.position, 0);
             if ((profile.StopOnFirstTarget && hitAny) ||
                 volley.HitCount >= profile.MaxTargets ||
-                traveled >= profile.ResolveRange(attackRange))
+                traveled >= resolvedRange)
             {
                 if (volley.HitCount == 0 && profile.ProjectileCount <= 1)
                 {
@@ -199,9 +291,25 @@ namespace ProjectMT.Shared.Combat
                 returning = true;
                 passIndex = 1;
                 passHitTargetIds.Clear();
+                var primaryActor = ResolveActor(primaryTarget);
+                deferredReturnPrimaryId = primaryActor == null
+                    ? 0
+                    : primaryActor.GetInstanceID();
+                if (deferredReturnPrimaryId != 0)
+                {
+                    // 반환을 시작한 같은 프레임에 주 대상 2타가 겹치지 않게 하고,
+                    // 공용 Preview 계약과 같이 귀환 완료 시점에 두 번째 타격을 확정한다.
+                    passHitTargetIds.Add(deferredReturnPrimaryId);
+                }
                 return;
             }
 
+            if (deferredReturnPrimaryId != 0)
+            {
+                passHitTargetIds.Remove(deferredReturnPrimaryId);
+                deferredReturnPrimaryId = 0;
+            }
+            ApplyPrimaryFallback(1);
             ReturnToPool();
         }
 
@@ -257,14 +365,15 @@ namespace ProjectMT.Shared.Combat
                     profile.ImpactFeel,
                     feelTarget,
                     ResolveFeelIntensity());
-                if (world.ApplyMonsterDamage(
-                        source,
+                var hitPoint = target.transform.position + Vector3.up * 0.4f;
+                if (ApplyDamage(
                         target.Health,
                         baseDamage * profile.ResolveDamageRatio(damagePass) * ratio,
-                        ResolveFeelTargetMotionFlags(feelOwnsTargetMotion)))
+                        ResolveDamageFeedbackFlags(feelOwnsTargetMotion),
+                        hitPoint))
                 {
-                    DispatchTargetDamaged(target.Health, target.transform.position + Vector3.up * 0.4f, damagePass);
-                    PlayImpactFeedback(target.transform.position + Vector3.up * 0.4f, feelTarget);
+                    DispatchTargetDamaged(target.Health, hitPoint, damagePass);
+                    PlayImpactFeedback(hitPoint, feelTarget);
                     applied = true;
                 }
             }
@@ -290,16 +399,17 @@ namespace ProjectMT.Shared.Combat
                 profile.ImpactFeel,
                 feelTarget,
                 ResolveFeelIntensity());
-            var applied = world.ApplyMonsterDamage(
-                source,
+            var hitPoint = primaryTarget.Position + Vector3.up * 0.4f;
+            var applied = ApplyDamage(
                 primaryTarget,
                 baseDamage * profile.ResolveDamageRatio(damagePass),
-                ResolveFeelTargetMotionFlags(feelOwnsTargetMotion));
+                ResolveDamageFeedbackFlags(feelOwnsTargetMotion),
+                hitPoint);
             if (applied)
             {
                 DispatchTargetDamaged(
                     primaryTarget,
-                    primaryTarget.Position + Vector3.up * 0.4f,
+                    hitPoint,
                     damagePass);
             }
             return applied;
@@ -352,33 +462,36 @@ namespace ProjectMT.Shared.Combat
             {
                 var target = nearbyTargets[index];
                 var ratio = target == primaryActor ? 1f : profile.SecondaryDamageRatio;
-                var targetApplied = world.ApplyMonsterDamage(
-                    source,
+                var hitPoint = target.transform.position + Vector3.up * 0.4f;
+                var targetApplied = ApplyDamage(
                     target.Health,
                     baseDamage * profile.ResolveDamageRatio(damagePass) * ratio,
-                    ResolveFeelTargetMotionFlags(feelOwnsTargetMotion && target == primaryActor));
+                    ResolveDamageFeedbackFlags(feelOwnsTargetMotion && target == primaryActor),
+                    hitPoint);
                 applied |= targetApplied;
                 if (targetApplied)
                 {
                     DispatchTargetDamaged(
                         target.Health,
-                        target.transform.position + Vector3.up * 0.4f,
+                        hitPoint,
                         damagePass);
                 }
             }
 
             if (primaryActor == null && primaryTarget != null && primaryTarget.IsAlive)
             {
-                var primaryApplied = world.ApplyMonsterDamage(
-                    source,
+                var primaryHitPoint = primaryTarget.Position + Vector3.up * 0.4f;
+                var primaryApplied = ApplyDamage(
                     primaryTarget,
-                    baseDamage * profile.ResolveDamageRatio(damagePass));
+                    baseDamage * profile.ResolveDamageRatio(damagePass),
+                    ResolveDamageFeedbackFlags(false),
+                    primaryHitPoint);
                 applied |= primaryApplied;
                 if (primaryApplied)
                 {
                     DispatchTargetDamaged(
                         primaryTarget,
-                        primaryTarget.Position + Vector3.up * 0.4f,
+                        primaryHitPoint,
                         damagePass);
                 }
             }
@@ -424,7 +537,32 @@ namespace ProjectMT.Shared.Combat
                 hitPoint,
                 resolvedAreaCenter ?? targetPosition,
                 transform.rotation,
-                damageStage);
+                damageStage,
+                bindings,
+                motionId,
+                sequenceId,
+                playbackSpeed);
+        }
+
+        private bool ApplyDamage(
+            IDamageable target,
+            float amount,
+            DamageFeedbackFlags flags,
+            Vector3 hitPoint)
+        {
+            var applied = applyAsSkillDamage
+                ? world.ApplyMonsterSkillDamage(source, target, amount, flags)
+                : world.ApplyMonsterDamage(source, target, amount, flags);
+            if (!applied || hitCallback == null)
+            {
+                return applied;
+            }
+            var actor = ResolveActor(target);
+            if (actor != null)
+            {
+                hitCallback(actor, hitPoint);
+            }
+            return true;
         }
 
         private bool IsPrimary(UnitActor target)
@@ -438,11 +576,16 @@ namespace ProjectMT.Shared.Combat
             return component != null ? component.GetComponent<UnitActor>() : null;
         }
 
-        private static DamageFeedbackFlags ResolveFeelTargetMotionFlags(bool feelOwnsTargetMotion)
+        private DamageFeedbackFlags ResolveDamageFeedbackFlags(bool feelOwnsTargetMotion)
         {
-            return feelOwnsTargetMotion
+            var flags = feelOwnsTargetMotion
                 ? DamageFeedbackFlags.BasicAttackFeelTargetMotion
                 : DamageFeedbackFlags.None;
+            if ((profile?.HitCount ?? 1) > 1)
+            {
+                flags |= DamageFeedbackFlags.SeparateFloatingNumber;
+            }
+            return flags;
         }
 
         private static GameObject ResolveTargetGameObject(IDamageable target)
@@ -534,6 +677,7 @@ namespace ProjectMT.Shared.Combat
 
         private void OnDisable()
         {
+            RestoreCarrierVisibility();
             ReleaseProjectileFeel();
             running = false;
             world = null;
@@ -545,7 +689,15 @@ namespace ProjectMT.Shared.Combat
             impactFeedback = null;
             resolvedSpeed = 0f;
             resolvedHitRadius = 0f;
+            resolvedRange = 0f;
             remainingLifetime = 0f;
+            deferredReturnPrimaryId = 0;
+            bindings = null;
+            motionId = null;
+            sequenceId = null;
+            playbackSpeed = 1f;
+            applyAsSkillDamage = false;
+            hitCallback = null;
             nearbyTargets.Clear();
             passHitTargetIds.Clear();
         }
@@ -562,6 +714,7 @@ namespace ProjectMT.Shared.Combat
             MonsterBasicAttackVfxRuntime.EndDelivery(
                 CreateVfxContext(primaryTarget, transform.position, passIndex, transform.position));
             ReleaseProjectileFeel();
+            RestoreCarrierVisibility();
             world = null;
             owner?.ReturnMonsterObject(gameObject);
         }

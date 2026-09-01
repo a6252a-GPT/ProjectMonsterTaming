@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace ProjectMT.Shared.Unit
 {
@@ -81,20 +82,26 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private MonsterFeedbackCue launch;
         [SerializeField] private MonsterFeedbackCue travel;
         [SerializeField] private MonsterFeedbackCue impact;
-        [SerializeField] private MonsterFeedbackCue teleportExit;
-        [SerializeField] private MonsterFeedbackCue teleportEnter;
+        [FormerlySerializedAs("teleportExit")]
+        [SerializeField] private MonsterFeedbackCue dashExit;
+        [FormerlySerializedAs("teleportEnter")]
+        [SerializeField] private MonsterFeedbackCue dashEnter;
         [SerializeField] private MonsterActiveAttackPresentationCueBinding[] slots =
             Array.Empty<MonsterActiveAttackPresentationCueBinding>();
+        [SerializeField] private MonsterBasicAttackVfxBinding[] attackBlockBindings =
+            Array.Empty<MonsterBasicAttackVfxBinding>();
 
         public string StepId => stepId?.Trim() ?? string.Empty;
         public MonsterFeedbackCue Telegraph => telegraph;
         public MonsterFeedbackCue Launch => launch;
         public MonsterFeedbackCue Travel => travel;
         public MonsterFeedbackCue Impact => impact;
-        public MonsterFeedbackCue TeleportExit => teleportExit;
-        public MonsterFeedbackCue TeleportEnter => teleportEnter;
+        public MonsterFeedbackCue DashExit => dashExit;
+        public MonsterFeedbackCue DashEnter => dashEnter;
         public IReadOnlyList<MonsterActiveAttackPresentationCueBinding> Slots => slots ??
             Array.Empty<MonsterActiveAttackPresentationCueBinding>();
+        public IReadOnlyList<MonsterBasicAttackVfxBinding> AttackBlockBindings => attackBlockBindings ??
+            Array.Empty<MonsterBasicAttackVfxBinding>();
 
         public bool TryValidate(out string error)
         {
@@ -103,7 +110,7 @@ namespace ProjectMT.Shared.Unit
                 error = "액티브 연출의 Step ID가 비어 있습니다.";
                 return false;
             }
-            var cues = new[] { telegraph, launch, travel, impact, teleportExit, teleportEnter };
+            var cues = new[] { telegraph, launch, travel, impact, dashExit, dashEnter };
             for (var index = 0; index < cues.Length; index++)
             {
                 if (cues[index] != null && !cues[index].TryValidate(out var cueError))
@@ -123,6 +130,20 @@ namespace ProjectMT.Shared.Unit
                     return false;
                 }
             }
+            var blockKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (var index = 0; index < AttackBlockBindings.Count; index++)
+            {
+                var binding = AttackBlockBindings[index];
+                var bindingError = "공용 공격 블록 연결이 비어 있습니다.";
+                var key = binding == null
+                    ? string.Empty
+                    : $"{binding.AttackId}|{binding.SlotId}|{binding.MotionId}";
+                if (binding == null || !binding.TryValidate(out bindingError) || !blockKeys.Add(key))
+                {
+                    error = $"액티브 Step 공용 공격 블록 연결이 유효하지 않습니다. Step={StepId}, Detail={bindingError}";
+                    return false;
+                }
+            }
             error = string.Empty;
             return true;
         }
@@ -134,18 +155,20 @@ namespace ProjectMT.Shared.Unit
             MonsterFeedbackCue cast,
             MonsterFeedbackCue moving,
             MonsterFeedbackCue hit,
-            MonsterFeedbackCue warpOut,
-            MonsterFeedbackCue warpIn,
-            MonsterActiveAttackPresentationCueBinding[] slotBindings = null)
+            MonsterFeedbackCue dashOut,
+            MonsterFeedbackCue dashIn,
+            MonsterActiveAttackPresentationCueBinding[] slotBindings = null,
+            MonsterBasicAttackVfxBinding[] basicAttackBindings = null)
         {
             stepId = id?.Trim();
             telegraph = warning;
             launch = cast;
             travel = moving;
             impact = hit;
-            teleportExit = warpOut;
-            teleportEnter = warpIn;
+            dashExit = dashOut;
+            dashEnter = dashIn;
             slots = slotBindings ?? Array.Empty<MonsterActiveAttackPresentationCueBinding>();
+            attackBlockBindings = basicAttackBindings ?? Array.Empty<MonsterBasicAttackVfxBinding>();
         }
 #endif
     }
@@ -155,6 +178,8 @@ namespace ProjectMT.Shared.Unit
     {
         [SerializeField] private MonsterActiveAttackProfile sourceProfile;
         [SerializeField] private MonsterActiveAttackStep[] steps = Array.Empty<MonsterActiveAttackStep>();
+        [SerializeField] private MonsterBasicAttackProfile[] attackBlocks =
+            Array.Empty<MonsterBasicAttackProfile>();
         [SerializeField] private MonsterActiveAttackPresentationBinding[] presentations =
             Array.Empty<MonsterActiveAttackPresentationBinding>();
         [SerializeField, Range(0f, 1f)] private float commitNormalizedTime = 0.25f;
@@ -162,6 +187,8 @@ namespace ProjectMT.Shared.Unit
 
         public MonsterActiveAttackProfile SourceProfile => sourceProfile;
         public IReadOnlyList<MonsterActiveAttackStep> Steps => steps ?? Array.Empty<MonsterActiveAttackStep>();
+        public IReadOnlyList<MonsterBasicAttackProfile> AttackBlocks => attackBlocks ??
+            Array.Empty<MonsterBasicAttackProfile>();
         public IReadOnlyList<MonsterActiveAttackPresentationBinding> Presentations => presentations ??
             Array.Empty<MonsterActiveAttackPresentationBinding>();
         public BasicAttackFeelCue ImpactFeel => sourceProfile?.ImpactFeel;
@@ -180,6 +207,24 @@ namespace ProjectMT.Shared.Unit
                 if (binding != null && string.Equals(binding.StepId, stepId, StringComparison.OrdinalIgnoreCase))
                 {
                     return binding;
+                }
+            }
+            return null;
+        }
+
+        public MonsterBasicAttackProfile ResolveAttackBlock(string stepId)
+        {
+            if (string.IsNullOrWhiteSpace(stepId)) return null;
+            var expectedId = "active_" + stepId.Trim();
+            for (var index = 0; index < AttackBlocks.Count; index++)
+            {
+                var block = AttackBlocks[index];
+                if (block != null && string.Equals(
+                        block.AttackId,
+                        expectedId,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return block;
                 }
             }
             return null;
@@ -204,6 +249,11 @@ namespace ProjectMT.Shared.Unit
                 error = $"컴파일된 공격 Step과 연출 연결 수가 다릅니다. Skill={SkillId}, Step={Steps.Count}, Presentation={Presentations.Count}";
                 return false;
             }
+            if (AttackBlocks.Count != Steps.Count)
+            {
+                error = $"컴파일된 공격 Step과 공용 공격 블록 수가 다릅니다. Skill={SkillId}, Step={Steps.Count}, Block={AttackBlocks.Count}";
+                return false;
+            }
 
             var stepIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             for (var index = 0; index < Steps.Count; index++)
@@ -213,6 +263,23 @@ namespace ProjectMT.Shared.Unit
                 if (step == null || !step.TryValidate(out stepError) || !stepIds.Add(step.StepId))
                 {
                     error = $"컴파일된 공격 Step이 유효하지 않습니다. Skill={SkillId}, Detail={stepError}";
+                    return false;
+                }
+                var block = ResolveAttackBlock(step.StepId);
+                var blockError = "공용 공격 블록이 비어 있습니다.";
+                if (block == null || !block.TryValidate(out blockError))
+                {
+                    error = $"컴파일된 공용 공격 블록이 유효하지 않습니다. Skill={SkillId}, Step={step.StepId}, Detail={blockError}";
+                    return false;
+                }
+                if (step.PresentationSlots.Count > 0 || step.AttackBlockVfxSlots.Count == 0)
+                {
+                    error = $"공격 Step에 구형 액티브 전용 계약이 남아 있거나 공용 공격 블록 계약이 없습니다. Skill={SkillId}, Step={step.StepId}";
+                    return false;
+                }
+                if (!MatchesAttackBlockContract(step, block, out blockError))
+                {
+                    error = $"컴파일된 공용 공격 블록 계약이 Step 원본과 다릅니다. Skill={SkillId}, Step={step.StepId}, Detail={blockError}";
                     return false;
                 }
             }
@@ -257,34 +324,72 @@ namespace ProjectMT.Shared.Unit
             MonsterActiveAttackPresentationBinding binding,
             out string error)
         {
-            if (step == null || binding == null || step.PresentationSlots.Count != binding.Slots.Count)
+            if (step == null || binding == null || step.AttackBlockVfxSlots.Count == 0 ||
+                binding.Slots.Count > 0 ||
+                step.AttackBlockVfxSlots.Count != binding.AttackBlockBindings.Count)
             {
-                error = $"Step={binding?.StepId}, 공간 수가 다릅니다.";
+                error = $"Step={binding?.StepId}, 공용 공격 블록 공간 수가 다르거나 구형 슬롯이 포함되어 있습니다.";
                 return false;
             }
-            for (var contractIndex = 0; contractIndex < step.PresentationSlots.Count; contractIndex++)
+            for (var contractIndex = 0; contractIndex < step.AttackBlockVfxSlots.Count; contractIndex++)
             {
-                var contract = step.PresentationSlots[contractIndex];
-                MonsterActiveAttackPresentationCueBinding compiled = null;
-                for (var slotIndex = 0; slotIndex < binding.Slots.Count; slotIndex++)
+                var contract = step.AttackBlockVfxSlots[contractIndex];
+                var expectedMotion = contract.AssignmentScope ==
+                                     MonsterBasicAttackVfxAssignmentScope.MotionSpecific
+                    ? step.StepId
+                    : string.Empty;
+                var found = false;
+                for (var bindingIndex = 0; bindingIndex < binding.AttackBlockBindings.Count; bindingIndex++)
                 {
-                    var candidate = binding.Slots[slotIndex];
-                    if (candidate != null && contract != null && string.Equals(
-                            candidate.SlotId,
-                            contract.SlotId,
+                    var candidate = binding.AttackBlockBindings[bindingIndex];
+                    if (candidate != null &&
+                        string.Equals(candidate.AttackId, "active_" + step.StepId,
+                            StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(candidate.SlotId, contract.SlotId,
+                            StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(candidate.MotionId, expectedMotion,
                             StringComparison.OrdinalIgnoreCase))
                     {
-                        compiled = candidate;
+                        found = true;
                         break;
                     }
                 }
-                if (contract == null || compiled == null ||
-                    compiled.Timing != contract.Timing || compiled.Anchor != contract.Anchor ||
-                    compiled.Multiplicity != contract.Multiplicity || compiled.Attachment != contract.Attachment ||
-                    compiled.EndPolicy != contract.EndPolicy || compiled.UseDuration != contract.UseDuration ||
-                    compiled.UseDuration && !Mathf.Approximately(compiled.Duration, contract.Duration))
+                if (!found)
                 {
                     error = $"Step={step.StepId}, Slot={contract?.SlotId ?? "비어 있음"}";
+                    return false;
+                }
+            }
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool MatchesAttackBlockContract(
+            MonsterActiveAttackStep step,
+            MonsterBasicAttackProfile block,
+            out string error)
+        {
+            if (step == null || block == null ||
+                step.AttackBlockVfxSlots.Count != block.VfxSlots.Count)
+            {
+                error = "VFX/SFX 공간 수가 다릅니다.";
+                return false;
+            }
+            for (var index = 0; index < step.AttackBlockVfxSlots.Count; index++)
+            {
+                var source = step.AttackBlockVfxSlots[index];
+                var compiled = block.VfxSlots[index];
+                if (source == null || compiled == null ||
+                    !string.Equals(source.SlotId, compiled.SlotId, StringComparison.OrdinalIgnoreCase) ||
+                    source.EventType != compiled.EventType ||
+                    source.Anchor != compiled.Anchor ||
+                    source.Multiplicity != compiled.Multiplicity ||
+                    source.AssignmentScope != compiled.AssignmentScope ||
+                    source.Attachment != compiled.Attachment ||
+                    source.EndPolicy != compiled.EndPolicy ||
+                    !Mathf.Approximately(source.DefaultLifetime, compiled.DefaultLifetime))
+                {
+                    error = $"Slot={source?.SlotId ?? "비어 있음"}";
                     return false;
                 }
             }
@@ -305,28 +410,55 @@ namespace ProjectMT.Shared.Unit
             float commitTime,
             bool isMythic)
         {
+            var blocks = new List<MonsterBasicAttackProfile>();
+            if (profile != null)
+            {
+                for (var index = 0; index < profile.Steps.Count; index++)
+                {
+                    var step = profile.Steps[index];
+                    if (step == null) continue;
+                    var block = ScriptableObject.CreateInstance<MonsterBasicAttackProfile>();
+                    block.name = "__ActiveAttackBlock_" + step.StepId;
+                    block.hideFlags = HideFlags.HideAndDontSave;
+                    step.EditorCompileAttackBlock(block);
+                    block.EditorSetFeelFeedback(null, null, profile.ImpactFeel);
+                    blocks.Add(block);
+                }
+            }
+            EditorConfigure(
+                id,
+                title,
+                body,
+                icon,
+                profile,
+                blocks.ToArray(),
+                tunings,
+                stepPresentations,
+                maximumEnergy,
+                commitTime,
+                isMythic);
+        }
+
+        public void EditorConfigure(
+            string id,
+            string title,
+            string body,
+            Sprite icon,
+            MonsterActiveAttackProfile profile,
+            MonsterBasicAttackProfile[] compiledAttackBlocks,
+            IReadOnlyList<MonsterActiveAttackStepTuning> tunings,
+            MonsterActiveAttackPresentationBinding[] stepPresentations,
+            int maximumEnergy,
+            float commitTime,
+            bool isMythic)
+        {
             var compiledSteps = new List<MonsterActiveAttackStep>();
             if (profile != null)
             {
                 for (var stepIndex = 0; stepIndex < profile.Steps.Count; stepIndex++)
                 {
                     var sourceStep = profile.Steps[stepIndex];
-                    MonsterActiveAttackStepTuning tuning = null;
-                    if (tunings != null)
-                    {
-                        for (var tuningIndex = 0; tuningIndex < tunings.Count; tuningIndex++)
-                        {
-                            if (tunings[tuningIndex] != null && string.Equals(
-                                    tunings[tuningIndex].StepId,
-                                    sourceStep.StepId,
-                                    StringComparison.OrdinalIgnoreCase))
-                            {
-                                tuning = tunings[tuningIndex];
-                                break;
-                            }
-                        }
-                    }
-                    compiledSteps.Add(sourceStep.CloneWithTuning(tuning));
+                    compiledSteps.Add(sourceStep.Clone());
                 }
             }
 
@@ -358,6 +490,7 @@ namespace ProjectMT.Shared.Unit
             EditorSetEnergyGeneration(0f, 0f, 0f);
             sourceProfile = profile;
             steps = compiledSteps.ToArray();
+            attackBlocks = compiledAttackBlocks ?? Array.Empty<MonsterBasicAttackProfile>();
             presentations = stepPresentations ?? Array.Empty<MonsterActiveAttackPresentationBinding>();
             commitNormalizedTime = Mathf.Clamp01(commitTime);
             mythicExclusive = isMythic;

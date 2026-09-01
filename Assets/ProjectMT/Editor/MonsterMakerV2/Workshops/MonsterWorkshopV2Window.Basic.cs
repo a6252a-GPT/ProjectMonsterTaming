@@ -50,13 +50,14 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             {
                 form.Add(BasicFloat("원형 반경(m)", () => recipe.radius, value => recipe.radius = value));
                 form.Add(BasicPopup("원형 중심", EnumValues<MonsterBasicAttackCenter>(), () => recipe.circleCenter,
-                    value => recipe.circleCenter = value, value => value == MonsterBasicAttackCenter.Source ? "내 주변" : "대상 중심", true));
+                    value => recipe.circleCenter = value, BasicCenterLabel, true));
             }
             form.Add(BasicToggle("돌진 사용", () => recipe.dash, value => recipe.dash = value, true, true));
             if (recipe.dash)
             {
                 form.Add(BasicFloat("돌진 거리(m)", () => recipe.dashDistance, value => recipe.dashDistance = value));
-                form.Add(BasicFloat("돌진 시간(초)", () => recipe.dashDuration, value => recipe.dashDuration = value));
+                form.Add(BasicFloat("도착 반동 시간(초)", () => recipe.dashDuration, value => recipe.dashDuration = value));
+                form.Add(Help("돌진은 판정 시점에 즉시 위치를 옮깁니다. 이 시간은 도착 뒤 모델 반동만 조절합니다."));
             }
             else
             {
@@ -125,54 +126,39 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
 
         private void BuildBasicVfxContracts(BasicAttackWorkshopRecipe recipe)
         {
-            var section = Section($"4. VFX/SFX 공간 계약 · {recipe.vfxSlots.Count}개", "실제 자산이 아니라 발생 시점·위치·수명만 정의합니다. 몬스터 고유 VFX/SFX는 Maker V2에서 연결합니다.");
+            var section = Section(
+                $"4. VFX/SFX 공간 계약 · {recipe.vfxSlots.Count}개",
+                "공격 방식에서 ID·이름·발생 규칙을 자동 생성합니다. 제작자는 메모만 기록하고, 실제 자산은 Maker V2에서 연결합니다.");
             for (var index = 0; index < recipe.vfxSlots.Count; index++)
             {
                 var captured = index;
                 var slot = recipe.vfxSlots[index];
                 var card = new VisualElement(); card.AddToClassList("sub-card");
                 card.Add(CardHeader($"공간 {index + 1:00} · {slot.displayName}",
-                    SmallButton("▲", () => MoveBasicSlot(captured, -1), false, index > 0), SmallButton("▼", () => MoveBasicSlot(captured, 1), false, index < recipe.vfxSlots.Count - 1),
-                    SmallButton("복제", () => DuplicateBasicSlot(captured)), SmallButton("삭제", () => DeleteBasicSlot(captured), true)));
-                var roleChoices = BasicAttackWorkshopVfxRoles
-                    .GetCompatibleValues(basicSession.WorkingProfile, slot.editorRole)
-                    .ToList();
-                card.Add(BasicPopup("공간 역할", roleChoices, () => slot.editorRole,
-                    value =>
-                    {
-                        slot.editorRole = value;
-                        if (value == BasicAttackWorkshopVfxRole.Custom) slot.showAdvanced = true;
-                        else BasicAttackWorkshopVfxRoles.Apply(slot, value);
-                    }, BasicAttackWorkshopVfxRoles.GetLabel, false));
-                card.Add(Help(BasicAttackWorkshopVfxRoles.GetGuide(slot.editorRole)));
-                card.Add(BasicText("공간 ID", () => slot.slotId, value => slot.slotId = value));
-                card.Add(BasicText("표시 이름", () => slot.displayName, value => slot.displayName = value));
-                card.Add(BasicText("제작 메모", () => slot.description, value => slot.description = value, true));
-                card.Add(BasicToggle("고급 계약 보기", () => slot.showAdvanced, value => slot.showAdvanced = value, true, false));
-                if (slot.showAdvanced)
-                {
-                    card.Add(BasicPopup("발생 시점", EnumValues<MonsterBasicAttackVfxEvent>(), () => slot.eventType,
-                        value => { slot.eventType = value; slot.editorRole = BasicAttackWorkshopVfxRoles.Resolve(slot); }, MonsterBasicAttackVfxEditorLabels.Get, false));
-                    card.Add(BasicPopup("기준 위치", EnumValues<MonsterBasicAttackVfxAnchor>(), () => slot.anchor,
-                        value => { slot.anchor = value; slot.editorRole = BasicAttackWorkshopVfxRoles.Resolve(slot); }, MonsterBasicAttackVfxEditorLabels.Get, false));
-                    card.Add(BasicPopup("재생 횟수", EnumValues<MonsterBasicAttackVfxMultiplicity>(), () => slot.multiplicity,
-                        value => { slot.multiplicity = value; slot.editorRole = BasicAttackWorkshopVfxRoles.Resolve(slot); }, MonsterBasicAttackVfxEditorLabels.Get, false));
-                    card.Add(BasicPopup("몬스터 적용", EnumValues<MonsterBasicAttackVfxAssignmentScope>(), () => slot.assignmentScope,
-                        value => slot.assignmentScope = value, MonsterBasicAttackVfxEditorLabels.Get, false));
-                    card.Add(BasicPopup("부착 방식", EnumValues<MonsterBasicAttackVfxAttachment>(), () => slot.attachment,
-                        value => { slot.attachment = value; slot.editorRole = BasicAttackWorkshopVfxRoles.Resolve(slot); }, MonsterBasicAttackVfxEditorLabels.Get, false));
-                    card.Add(BasicPopup("종료 규칙", EnumValues<MonsterBasicAttackVfxEndPolicy>(), () => slot.endPolicy,
-                        value => { slot.endPolicy = value; slot.editorRole = BasicAttackWorkshopVfxRoles.Resolve(slot); }, MonsterBasicAttackVfxEditorLabels.Get, false));
-                    if (slot.endPolicy is MonsterBasicAttackVfxEndPolicy.Timed or
-                        MonsterBasicAttackVfxEndPolicy.ParticleDuration)
-                        card.Add(BasicFloat("기본 수명(초)", () => slot.defaultLifetime, value => slot.defaultLifetime = value));
-                }
+                    SmallButton("▲", () => MoveBasicSlot(captured, -1), false, index > 0),
+                    SmallButton("▼", () => MoveBasicSlot(captured, 1), false,
+                        index < recipe.vfxSlots.Count - 1),
+                    SmallButton("복제", () => DuplicateBasicSlot(captured), false,
+                        !slot.Compile().IsDeliveryVisual),
+                    SmallButton("삭제", () => DeleteBasicSlot(captured), true)));
+                card.Add(ContractDetails(slot));
+                card.Add(BasicText(
+                    "제작 메모",
+                    () => slot.productionMemo,
+                    value => slot.productionMemo = value,
+                    true));
                 section.Add(card);
             }
             var contractError = ResolveBasicVfxContractError(recipe);
             if (!string.IsNullOrWhiteSpace(contractError))
                 section.Add(Help("계약 확인 필요 · " + contractError, true));
-            section.Add(AddButton("+ VFX/SFX 공간 추가", AddBasicSlot));
+            if (basicSession.WorkingProfile.InactiveVfxSlots.Count > 0)
+            {
+                section.Add(Help(
+                    $"현재 공격 방식에서 쓰지 않는 이전 계약 {basicSession.WorkingProfile.InactiveVfxSlots.Count}개는 " +
+                    "삭제하지 않고 프리셋 내부에 보관합니다."));
+            }
+            section.Add(AddButton("+ VFX/SFX 공간 추가", ShowAddBasicSlotMenu));
             assemblerScroll.Add(section);
         }
 
@@ -217,20 +203,101 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             assemblerScroll.Add(section);
         }
 
+        private void ShowAddBasicSlotMenu()
+        {
+            var roles = GetAvailableBasicSlotRoles();
+            var menu = new GenericMenu();
+            foreach (var role in roles)
+            {
+                var captured = role;
+                menu.AddItem(
+                    new GUIContent(BasicAttackWorkshopVfxRoles.GetLabel(role)),
+                    false,
+                    () => AddBasicSlotForRole(captured));
+            }
+            if (roles.Count == 0)
+                menu.AddDisabledItem(new GUIContent("현재 공격 방식에 추가 가능한 공간 없음"));
+            menu.ShowAsContext();
+        }
+
+        private List<BasicAttackWorkshopVfxRole> GetAvailableBasicSlotRoles()
+        {
+            var hasDeliveryVisual = basicSession.Recipe.vfxSlots.Any(slot =>
+                slot != null && slot.Compile().IsDeliveryVisual);
+            return BasicAttackWorkshopVfxRoles
+                .GetCompatibleValues(
+                    basicSession.WorkingProfile,
+                    BasicAttackWorkshopVfxRole.Custom)
+                .Where(role => role != BasicAttackWorkshopVfxRole.Custom)
+                .Where(role => !hasDeliveryVisual || role != BasicAttackWorkshopVfxRole.DeliveryVisual)
+                .ToList();
+        }
+
+        private IEnumerable<string> StoredBasicSlotIds()
+        {
+            return basicSession.Recipe.vfxSlots
+                .Where(slot => slot != null)
+                .Select(slot => slot.slotId)
+                .Concat(basicSession.WorkingProfile.InactiveVfxSlots
+                    .Where(slot => slot != null)
+                    .Select(slot => slot.SlotId));
+        }
+
         private void AddBasicSlot()
         {
-            var slot = new BasicAttackWorkshopVfxSlot { slotId = $"vfx_{basicSession.Recipe.vfxSlots.Count + 1:00}", displayName = "새 VFX 공간" };
-            basicSession.Recipe.vfxSlots.Add(slot); basicSession.NotifyChanged(false); RebuildCurrent();
+            var role = GetAvailableBasicSlotRoles().FirstOrDefault();
+            if (role != BasicAttackWorkshopVfxRole.Custom) AddBasicSlotForRole(role);
         }
-        private void DeleteBasicSlot(int index) { basicSession.Recipe.vfxSlots.RemoveAt(index); basicSession.NotifyChanged(false); RebuildCurrent(); }
+
+        private void AddBasicSlotForRole(BasicAttackWorkshopVfxRole role)
+        {
+            if (role == BasicAttackWorkshopVfxRole.Custom) return;
+            var activeIds = new HashSet<string>(
+                basicSession.Recipe.vfxSlots
+                    .Where(slot => slot != null)
+                    .Select(slot => slot.slotId),
+                StringComparer.OrdinalIgnoreCase);
+            var archived = basicSession.WorkingProfile.InactiveVfxSlots
+                .LastOrDefault(slot =>
+                    slot != null &&
+                    !activeIds.Contains(slot.SlotId) &&
+                    BasicAttackWorkshopVfxRoles.Resolve(slot) == role);
+            var slot = archived != null
+                ? BasicAttackWorkshopVfxSlot.From(archived)
+                : new BasicAttackWorkshopVfxSlot
+                {
+                    slotId = CreateAutomaticContractId(StoredBasicSlotIds(), role)
+                };
+            slot.editorRole = role;
+            BasicAttackWorkshopVfxRoles.Apply(slot, role);
+            basicSession.Recipe.vfxSlots.Add(slot);
+            basicSession.NotifyChanged(false);
+            RebuildCurrent();
+        }
+
+        private void DeleteBasicSlot(int index)
+        {
+            if (index < 0 || index >= basicSession.Recipe.vfxSlots.Count) return;
+            basicSession.Recipe.vfxSlots.RemoveAt(index);
+            basicSession.NotifyChanged(false);
+            RebuildCurrent();
+        }
+
         private void DuplicateBasicSlot(int index)
         {
+            if (index < 0 || index >= basicSession.Recipe.vfxSlots.Count) return;
             var source = basicSession.Recipe.vfxSlots[index];
-            var copy = BasicAttackWorkshopVfxSlot.From(source.Compile()); copy.slotId += "_copy";
-            basicSession.Recipe.vfxSlots.Insert(index + 1, copy); basicSession.NotifyChanged(false); RebuildCurrent();
+            if (source == null || source.Compile().IsDeliveryVisual) return;
+            var copy = BasicAttackWorkshopVfxSlot.From(source.Compile());
+            copy.slotId = CreateUniqueContractId(StoredBasicSlotIds(), source.slotId + "_copy");
+            basicSession.Recipe.vfxSlots.Insert(index + 1, copy);
+            basicSession.NotifyChanged(false);
+            RebuildCurrent();
         }
+
         private void MoveBasicSlot(int index, int direction)
         {
+            if (index < 0 || index >= basicSession.Recipe.vfxSlots.Count) return;
             var target = Mathf.Clamp(index + direction, 0, basicSession.Recipe.vfxSlots.Count - 1); if (target == index) return;
             (basicSession.Recipe.vfxSlots[index], basicSession.Recipe.vfxSlots[target]) = (basicSession.Recipe.vfxSlots[target], basicSession.Recipe.vfxSlots[index]);
             basicSession.NotifyChanged(false); RebuildCurrent();
@@ -266,6 +333,12 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
 
         private static string BasicFamilyLabel(BasicAttackWorkshopFamily value) => value switch { BasicAttackWorkshopFamily.Melee => "근접", BasicAttackWorkshopFamily.Ranged => "원거리", _ => "특수" };
         private static string BasicMeleeLabel(BasicAttackWorkshopMeleePattern value) => value switch { BasicAttackWorkshopMeleePattern.Single => "단일", BasicAttackWorkshopMeleePattern.Fan => "부채꼴", BasicAttackWorkshopMeleePattern.Line => "일자", _ => "원형" };
+        private static string BasicCenterLabel(MonsterBasicAttackCenter value) => value switch
+        {
+            MonsterBasicAttackCenter.Source => "내 주변 원형",
+            MonsterBasicAttackCenter.Forward => "내 앞 원형",
+            _ => "대상 중심 원형"
+        };
         private static string BasicSpecialLabel(BasicAttackWorkshopSpecialPattern value) => value switch { BasicAttackWorkshopSpecialPattern.ReturningProjectile => "왕복 투사체", BasicAttackWorkshopSpecialPattern.Breath => "브레스", BasicAttackWorkshopSpecialPattern.Beam => "관통 빔", _ => "이동 파동" };
         private static string BasicImpactLabel(BasicAttackWorkshopProjectileImpact value) => value switch { BasicAttackWorkshopProjectileImpact.StopOnFirstTarget => "첫 대상에서 종료", BasicAttackWorkshopProjectileImpact.Pierce => "관통", _ => "폭발" };
         private static string BasicTravelLabel(MonsterBasicAttackProjectileTravel value) => value switch { MonsterBasicAttackProjectileTravel.Straight => "직선", MonsterBasicAttackProjectileTravel.Homing => "유도", MonsterBasicAttackProjectileTravel.Returning => "왕복", _ => "없음" };

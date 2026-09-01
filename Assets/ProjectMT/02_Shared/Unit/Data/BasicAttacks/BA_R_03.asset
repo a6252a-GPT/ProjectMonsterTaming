@@ -96,7 +96,7 @@ MonoBehaviour:
       \uD3ED\uBC1C \uD6A8\uACFC"
     eventType: 6
     anchor: 6
-    multiplicity: 1
+    multiplicity: 2
     assignmentScope: 0
     attachment: 0
     endPolicy: 0

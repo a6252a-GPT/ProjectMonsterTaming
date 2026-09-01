@@ -1,0 +1,105 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e307cda9da1873441a5769e7be2ce017, type: 3}
+  m_Name: EAP_berry_starlight_charge
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterEffectActiveProfile
+  profileId: berry_starlight_charge
+  displayName: "\uBCC4\uBE5B \uCDA9\uC804"
+  description: "\uC790\uC2E0\uC744 \uC81C\uC678\uD55C \uBAA8\uB4E0 \uC544\uAD70\uC758
+    \uCD5C\uB300 \uAE30\uB825 20%\uB97C \uD68C\uBCF5\uD558\uACE0 \uAC00\uC7A5 \uACF5\uACA9\uB825\uC774
+    \uB192\uC740 \uC544\uAD70\uC5D0\uAC8C 10%\uB97C \uCD94\uAC00 \uD68C\uBCF5\uD569\uB2C8\uB2E4."
+  role: 0
+  groups:
+  - groupId: group_01
+    displayName: "\uBCC4\uBE5B \uBD84\uBC30"
+    delayAfterPrevious: 0
+    target: 12
+    includeCaster: 0
+    radius: 0
+    maxTargets: 32
+    effects:
+    - effectId: party_energy
+      type: 17
+      valueSource: 5
+      magnitude: 0.2
+      magnitudeMode: 0
+      maximumMagnitude: 0.2
+      duration: 0
+      delay: 0
+      repeatInterval: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 3
+    presentationSlots:
+    - slotId: cast_start
+      displayName: "\uC2DC\uC804\uC790 \uBC1C\uB3D9"
+      timing: 6
+      anchor: 0
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      description: "\uBC1C\uB3D9 \uB610\uB294 \uC801\uC6A9 \uC21C\uAC04 VFX/SFX \uACF5\uAC04"
+      useDuration: 0
+      duration: 1
+    - slotId: energy_apply
+      displayName: "\uD6A8\uACFC \uC801\uC6A9"
+      timing: 8
+      anchor: 7
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      description: "\uBC1C\uB3D9 \uB610\uB294 \uC801\uC6A9 \uC21C\uAC04 VFX/SFX \uACF5\uAC04"
+      useDuration: 0
+      duration: 1
+  - groupId: group_02
+    displayName: "\uD575\uC2EC \uCDA9\uC804"
+    delayAfterPrevious: 0.1
+    target: 10
+    includeCaster: 0
+    radius: 0
+    maxTargets: 1
+    effects:
+    - effectId: carry_energy
+      type: 17
+      valueSource: 5
+      magnitude: 0.1
+      magnitudeMode: 0
+      maximumMagnitude: 0.1
+      duration: 0
+      delay: 0
+      repeatInterval: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 3
+    presentationSlots:
+    - slotId: cast_start
+      displayName: "\uC2DC\uC804\uC790 \uBC1C\uB3D9"
+      timing: 6
+      anchor: 0
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      description: "\uBC1C\uB3D9 \uB610\uB294 \uC801\uC6A9 \uC21C\uAC04 VFX/SFX \uACF5\uAC04"
+      useDuration: 0
+      duration: 1
+    - slotId: carry_apply
+      displayName: "\uD6A8\uACFC \uC801\uC6A9"
+      timing: 8
+      anchor: 7
+      multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      description: "\uBC1C\uB3D9 \uB610\uB294 \uC801\uC6A9 \uC21C\uAC04 VFX/SFX \uACF5\uAC04"
+      useDuration: 0
+      duration: 1

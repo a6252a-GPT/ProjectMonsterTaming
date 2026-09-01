@@ -150,6 +150,23 @@ namespace ProjectMT.Features.Expedition
             }
         }
 
+        public void CollectPlayerUnits(List<UnitActor> destination)
+        {
+            if (destination == null)
+            {
+                return;
+            }
+
+            destination.Clear();
+            foreach (var pair in playerSlotByActor)
+            {
+                if (pair.Key != null && pair.Key.IsAlive)
+                {
+                    destination.Add(pair.Key); // 위치 편성 중에도 파티 HUD는 실제 소환 유닛을 표시
+                }
+            }
+        }
+
         public bool TryGetPlayerSlot(UnitActor actor, out int slotIndex)
         {
             if (actor != null && playerSlotByActor.TryGetValue(actor, out slotIndex))

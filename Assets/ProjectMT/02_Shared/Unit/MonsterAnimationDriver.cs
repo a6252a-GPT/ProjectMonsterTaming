@@ -206,7 +206,7 @@ namespace ProjectMT.Shared.Unit
             return true;
         }
 
-        public float PlayActive()
+        public float PlayActive(float speedMultiplier = 1f)
         {
             currentAttack = null;
             var active = motionProfile?.Active;
@@ -215,35 +215,39 @@ namespace ProjectMT.Shared.Unit
                 return 0f;
             }
 
+            var effectiveSpeed = active.PlaybackSpeed * Mathf.Max(0.05f, speedMultiplier);
             PlayAnimatorState(
                 MonsterMotionProfile.ActiveStateName,
-                active.PlaybackSpeed,
+                effectiveSpeed,
                 active.CrossFadeDuration);
             currentStateName = MonsterMotionProfile.ActiveStateName;
-            return Mathf.Max(0.05f, active.Clip.length / active.PlaybackSpeed);
+            return Mathf.Max(0.05f, active.Clip.length / effectiveSpeed);
         }
 
         public float PlayActiveStep(
             string stepId,
             float fallbackCommitNormalizedTime,
-            out float commitDelay)
+            out float commitDelay,
+            float speedMultiplier = 1f)
         {
             commitDelay = 0f;
             currentAttack = null;
             var stepMotion = motionProfile?.ResolveActiveStep(stepId);
             if (IsReady && stepMotion?.Clip != null)
             {
+                var effectiveSpeed =
+                    stepMotion.PlaybackSpeed * Mathf.Max(0.05f, speedMultiplier);
                 PlayAnimatorState(
                     stepMotion.StateName,
-                    stepMotion.PlaybackSpeed,
+                    effectiveSpeed,
                     stepMotion.CrossFadeDuration);
                 currentStateName = stepMotion.StateName;
-                var duration = Mathf.Max(0.05f, stepMotion.Clip.length / stepMotion.PlaybackSpeed);
+                var duration = Mathf.Max(0.05f, stepMotion.Clip.length / effectiveSpeed);
                 commitDelay = duration * stepMotion.CommitNormalizedTime;
                 return duration;
             }
 
-            var fallbackDuration = PlayActive();
+            var fallbackDuration = PlayActive(speedMultiplier);
             commitDelay = fallbackDuration * Mathf.Clamp01(fallbackCommitNormalizedTime);
             return fallbackDuration;
         }
@@ -252,20 +256,25 @@ namespace ProjectMT.Shared.Unit
             string stepId,
             float fallbackCommitNormalizedTime,
             out float duration,
-            out float commitDelay)
+            out float commitDelay,
+            float speedMultiplier = 1f)
         {
             duration = 0f;
             commitDelay = 0f;
             var stepMotion = motionProfile?.ResolveActiveStep(stepId);
             if (stepMotion?.Clip != null)
             {
-                duration = Mathf.Max(0.05f, stepMotion.Clip.length / stepMotion.PlaybackSpeed);
+                var effectiveSpeed =
+                    stepMotion.PlaybackSpeed * Mathf.Max(0.05f, speedMultiplier);
+                duration = Mathf.Max(0.05f, stepMotion.Clip.length / effectiveSpeed);
                 commitDelay = duration * stepMotion.CommitNormalizedTime;
                 return true;
             }
             var fallback = motionProfile?.Active;
             if (fallback?.Clip == null) return false;
-            duration = Mathf.Max(0.05f, fallback.Clip.length / fallback.PlaybackSpeed);
+            var fallbackSpeed =
+                fallback.PlaybackSpeed * Mathf.Max(0.05f, speedMultiplier);
+            duration = Mathf.Max(0.05f, fallback.Clip.length / fallbackSpeed);
             commitDelay = duration * Mathf.Clamp01(fallbackCommitNormalizedTime);
             return true;
         }

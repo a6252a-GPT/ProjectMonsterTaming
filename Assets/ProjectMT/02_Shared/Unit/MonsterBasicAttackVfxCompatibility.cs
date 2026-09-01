@@ -17,8 +17,11 @@ namespace ProjectMT.Shared.Unit
             {
                 MonsterBasicAttackVfxEvent.MotionStart => true,
                 MonsterBasicAttackVfxEvent.RecipeExecute => true,
+                MonsterBasicAttackVfxEvent.Telegraph => profile.TelegraphDelay > 0f,
                 MonsterBasicAttackVfxEvent.TargetDamaged => true,
                 MonsterBasicAttackVfxEvent.MotionEnd => true,
+                MonsterBasicAttackVfxEvent.DashExit or MonsterBasicAttackVfxEvent.DashEnter =>
+                    profile.MovementModule == MonsterBasicAttackMovementModule.Dash,
                 MonsterBasicAttackVfxEvent.DeliverySpawn => profile.UsesProjectileVisual,
                 MonsterBasicAttackVfxEvent.DeliveryEnd => profile.UsesProjectileVisual,
                 MonsterBasicAttackVfxEvent.AreaResolved =>
@@ -139,12 +142,14 @@ namespace ProjectMT.Shared.Unit
                         MonsterBasicAttackVfxEvent.DeliveryTurn or
                         MonsterBasicAttackVfxEvent.DeliveryEnd),
                 MonsterBasicAttackVfxAnchor.TargetRoot =>
-                    targetEvent || eventType == MonsterBasicAttackVfxEvent.SequenceEnd,
+                    targetEvent || eventType is MonsterBasicAttackVfxEvent.SequenceEnd or
+                        MonsterBasicAttackVfxEvent.Telegraph,
                 MonsterBasicAttackVfxAnchor.HitPoint =>
                     targetEvent || eventType == MonsterBasicAttackVfxEvent.SequenceEnd,
                 MonsterBasicAttackVfxAnchor.AreaCenter =>
                     eventType is MonsterBasicAttackVfxEvent.RecipeExecute or
-                        MonsterBasicAttackVfxEvent.AreaResolved,
+                        MonsterBasicAttackVfxEvent.AreaResolved or
+                        MonsterBasicAttackVfxEvent.Telegraph,
                 MonsterBasicAttackVfxAnchor.TrajectoryOrigin =>
                     eventType is MonsterBasicAttackVfxEvent.MotionStart or
                         MonsterBasicAttackVfxEvent.RecipeExecute or

@@ -11,16 +11,27 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private Sprite portrait;
         [SerializeField] private MonsterRarity rarity;
         [SerializeField] private int partySlotIndex;
+        [SerializeField, Min(1)] private int level;
+        [SerializeField, Range(0, 5)] private int ascensionLevel;
         [SerializeField] private bool hasRarity;
         [SerializeField] private bool hasPartySlot;
+        [SerializeField] private bool hasProgression;
 
-        public MonsterBattlePresentationSnapshot(Sprite portrait, MonsterRarity rarity, int partySlotIndex)
+        public MonsterBattlePresentationSnapshot(
+            Sprite portrait,
+            MonsterRarity rarity,
+            int partySlotIndex,
+            int level = 1,
+            int ascensionLevel = 0)
         {
             this.portrait = portrait;
             this.rarity = rarity;
             this.partySlotIndex = Mathf.Max(0, partySlotIndex);
+            this.level = Mathf.Max(1, level);
+            this.ascensionLevel = Mathf.Clamp(ascensionLevel, 0, 5);
             hasRarity = true;
             hasPartySlot = true;
+            hasProgression = true;
         }
 
         public Sprite Portrait => portrait;
@@ -28,6 +39,9 @@ namespace ProjectMT.Shared.Unit
         public MonsterRarity Rarity => hasRarity ? rarity : MonsterRarity.Legendary;
         public bool HasPartySlot => hasPartySlot;
         public int PartySlotIndex => hasPartySlot ? Mathf.Max(0, partySlotIndex) : int.MaxValue;
+        public bool HasProgression => hasProgression;
+        public int Level => hasProgression ? Mathf.Max(1, level) : 1;
+        public int AscensionLevel => hasProgression ? Mathf.Clamp(ascensionLevel, 0, 5) : 0;
 
         public MonsterBattlePresentationSnapshot WithPartySlot(int slotIndex)
         {

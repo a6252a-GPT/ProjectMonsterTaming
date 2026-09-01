@@ -7,10 +7,17 @@ namespace ProjectMT.Shared.Combat
 {
     public sealed class MonsterEffectActiveExecutor // 효과 묶음과 지연 효과를 순서대로 실행
     {
+        private sealed class TrackedVfx
+        {
+            public GameObject Instance;
+            public MonsterActivePresentationEndPolicy EndPolicy;
+        }
+
         private readonly List<UnitActor> targets = new List<UnitActor>();
         private readonly List<UnitActor> candidates = new List<UnitActor>();
         private readonly List<PendingEffect> pendingEffects = new List<PendingEffect>();
         private readonly List<PeriodicHeal> periodicHeals = new List<PeriodicHeal>();
+        private readonly List<TrackedVfx> trackedVfx = new List<TrackedVfx>();
         private UnitActor owner;
         private CombatWorld world;
         private MonsterEffectActiveSkill skill;
@@ -20,7 +27,8 @@ namespace ProjectMT.Shared.Combat
         private bool running;
 
         public bool IsRunning => running;
-        public bool HasLingering => pendingEffects.Count > 0 || periodicHeals.Count > 0;
+        public bool HasLingering =>
+            pendingEffects.Count > 0 || periodicHeals.Count > 0 || trackedVfx.Count > 0;
         public int CompletedGroupCount => Mathf.Clamp(groupIndex, 0, skill?.Groups.Count ?? 0);
 
         public bool Begin(
@@ -124,6 +132,7 @@ namespace ProjectMT.Shared.Combat
 
         private void ResetExecution()
         {
+            ReleaseTrackedVfx(null);
             owner = null;
             world = null;
             skill = null;
@@ -134,6 +143,7 @@ namespace ProjectMT.Shared.Combat
             targets.Clear();
             candidates.Clear();
             pendingEffects.Clear();
+            trackedVfx.Clear();
         }
 
         private void ExecuteGroup(MonsterEffectActiveGroup group)
@@ -166,6 +176,7 @@ namespace ProjectMT.Shared.Combat
             PlayPresentation(group, targets, MonsterActivePresentationEvent.Impact);
             PlayPresentation(group, targets, MonsterActivePresentationEvent.AreaResolved);
             PlayPresentation(group, targets, MonsterActivePresentationEvent.StepEnd);
+            ReleaseTrackedVfx(MonsterActivePresentationEndPolicy.StepEnd);
         }
 
         private void ResolveTargets(MonsterEffectActiveGroup group, List<UnitActor> destination)
@@ -326,6 +337,12 @@ namespace ProjectMT.Shared.Combat
                 case MonsterSkillEffectType.DamageReduction:
                     target.SkillRuntime.ApplyDamageReduction(amount, duration);
                     break;
+                case MonsterSkillEffectType.DamageReflect:
+                    target.SkillRuntime.ApplyDamageReflect(amount, duration);
+                    break;
+                case MonsterSkillEffectType.Cleanse:
+                    target.TryCleanseOneDebuff();
+                    break;
                 case MonsterSkillEffectType.Mark:
                     target.SkillRuntime.ApplyExposure(amount, duration);
                     break;
@@ -431,35 +448,134 @@ namespace ProjectMT.Shared.Combat
                 var slot = presentation.Slots[slotIndex];
                 if (slot == null || slot.Timing != presentationEvent ||
                     slot.Feedback == null || !slot.Feedback.HasAnyFeedback) continue;
-                var perTarget = slot.Multiplicity == MonsterActivePresentationMultiplicity.PerTargetHit ||
-                                slot.Anchor == MonsterActivePresentationAnchor.TargetRoot ||
-                                slot.Anchor == MonsterActivePresentationAnchor.HitPoint;
-                if (perTarget)
+                var occurrenceCount = ResolvePresentationCount(slot, resolvedTargets);
+                for (var occurrence = 0; occurrence < occurrenceCount; occurrence++)
                 {
-                    for (var targetIndex = 0; targetIndex < resolvedTargets.Count; targetIndex++)
-                    {
-                        PlaySlot(slot, resolvedTargets[targetIndex].transform.position);
-                    }
-                    continue;
+                    var target = ResolvePresentationTarget(slot, resolvedTargets, occurrence);
+                    var position = ResolvePresentationPosition(slot.Anchor, target, resolvedTargets);
+                    var rotation = ResolvePresentationRotation(position);
+                    var parent = slot.Attachment == MonsterActivePresentationAttachment.FollowAnchor
+                        ? ResolvePresentationParent(slot.Anchor, target)
+                        : null;
+                    PlaySlot(slot, position, rotation, parent);
                 }
-
-                var position = slot.Anchor is MonsterActivePresentationAnchor.CasterRoot or
-                    MonsterActivePresentationAnchor.AttackOrigin or MonsterActivePresentationAnchor.MarkerSocket
-                    ? owner.transform.position
-                    : ResolveAreaCenter(resolvedTargets);
-                PlaySlot(slot, position);
             }
         }
 
-        private void PlaySlot(MonsterActiveAttackPresentationCueBinding slot, Vector3 position)
+        private static int ResolvePresentationCount(
+            MonsterActiveAttackPresentationCueBinding slot,
+            IReadOnlyList<UnitActor> resolvedTargets)
         {
-            var lifetime = slot.UseDuration ? slot.Duration : 0f;
-            world.PlayMonsterFeedbackAt(
+            var targetsCount = resolvedTargets?.Count ?? 0;
+            if (targetsCount <= 0) return 0;
+            if (slot.Multiplicity == MonsterActivePresentationMultiplicity.PerTargetHit)
+            {
+                return targetsCount;
+            }
+            return slot.Multiplicity == MonsterActivePresentationMultiplicity.ContinuousUntilEnd &&
+                   MonsterEffectActiveVfxCompatibility.IsTargetAnchor(slot.Anchor)
+                ? targetsCount
+                : 1;
+        }
+
+        private static UnitActor ResolvePresentationTarget(
+            MonsterActiveAttackPresentationCueBinding slot,
+            IReadOnlyList<UnitActor> resolvedTargets,
+            int occurrence)
+        {
+            if (resolvedTargets == null || resolvedTargets.Count == 0) return null;
+            if (slot.Multiplicity == MonsterActivePresentationMultiplicity.OncePerStep)
+            {
+                return resolvedTargets[0];
+            }
+            return resolvedTargets[Mathf.Clamp(occurrence, 0, resolvedTargets.Count - 1)];
+        }
+
+        private void PlaySlot(
+            MonsterActiveAttackPresentationCueBinding slot,
+            Vector3 position,
+            Quaternion rotation,
+            Transform parent)
+        {
+            var bodyScale = owner.RuntimeAssetSet?.BodyProfile?.VfxScale ?? 1f;
+            var instance = world.SpawnMonsterActiveVfx(
                 slot.Feedback,
                 position,
-                owner.transform.rotation,
-                owner.RuntimeAssetSet?.BodyProfile?.VfxScale ?? 1f,
-                lifetime);
+                rotation,
+                parent,
+                bodyScale);
+            if (instance == null) return;
+            if (slot.Feedback.VfxPrefab != null)
+            {
+                MonsterBasicAttackVfxPlayback.ApplyInstanceScale(
+                    instance,
+                    slot.Feedback.VfxPrefab.transform.localScale *
+                    slot.Feedback.Scale * Mathf.Max(0.01f, bodyScale));
+            }
+            if (slot.EndPolicy == MonsterActivePresentationEndPolicy.StepEnd)
+            {
+                trackedVfx.Add(new TrackedVfx
+                {
+                    Instance = instance,
+                    EndPolicy = slot.EndPolicy
+                });
+                return;
+            }
+            world.ScheduleMonsterObjectReturn(
+                instance,
+                slot.UseDuration ? slot.Duration : slot.Feedback.VfxLifetime);
+        }
+
+        private Vector3 ResolvePresentationPosition(
+            MonsterActivePresentationAnchor anchor,
+            UnitActor target,
+            IReadOnlyList<UnitActor> resolvedTargets)
+        {
+            var root = owner.transform;
+            var attackOrigin = owner.AnimationDriver?.AttackOrigin ?? root;
+            return anchor switch
+            {
+                MonsterActivePresentationAnchor.CasterRoot => root.position,
+                MonsterActivePresentationAnchor.AttackOrigin or
+                    MonsterActivePresentationAnchor.MarkerSocket => attackOrigin.position,
+                MonsterActivePresentationAnchor.TargetPoint or
+                    MonsterActivePresentationAnchor.TargetRoot =>
+                    target == null ? ResolveAreaCenter(resolvedTargets) : target.transform.position,
+                MonsterActivePresentationAnchor.HitPoint =>
+                    target?.AnimationDriver?.HitCenter?.position ??
+                    target?.transform.position ??
+                    ResolveAreaCenter(resolvedTargets),
+                MonsterActivePresentationAnchor.AreaCenter => ResolveAreaCenter(resolvedTargets),
+                _ => root.position
+            };
+        }
+
+        private Transform ResolvePresentationParent(
+            MonsterActivePresentationAnchor anchor,
+            UnitActor target)
+        {
+            return anchor switch
+            {
+                MonsterActivePresentationAnchor.CasterRoot => owner.transform,
+                MonsterActivePresentationAnchor.AttackOrigin or
+                    MonsterActivePresentationAnchor.MarkerSocket =>
+                    owner.AnimationDriver?.AttackOrigin ?? owner.transform,
+                MonsterActivePresentationAnchor.TargetPoint or
+                    MonsterActivePresentationAnchor.TargetRoot =>
+                    target?.transform,
+                MonsterActivePresentationAnchor.HitPoint =>
+                    target?.AnimationDriver?.HitCenter ?? target?.transform,
+                _ => null
+            };
+        }
+
+        private Quaternion ResolvePresentationRotation(Vector3 position)
+        {
+            var forward = position - owner.transform.position;
+            forward.y = 0f;
+            return forward.sqrMagnitude < 0.0001f
+                ? owner.transform.rotation
+                : Quaternion.LookRotation(forward.normalized, Vector3.up);
         }
 
         private static Vector3 ResolveAreaCenter(IReadOnlyList<UnitActor> resolvedTargets)
@@ -474,6 +590,17 @@ namespace ProjectMT.Shared.Combat
                 count++;
             }
             return count > 0 ? total / count : Vector3.zero;
+        }
+
+        private void ReleaseTrackedVfx(MonsterActivePresentationEndPolicy? policy)
+        {
+            for (var index = trackedVfx.Count - 1; index >= 0; index--)
+            {
+                var tracked = trackedVfx[index];
+                if (policy.HasValue && tracked.EndPolicy != policy.Value) continue;
+                if (tracked.Instance != null) world?.ReturnMonsterObject(tracked.Instance);
+                trackedVfx.RemoveAt(index);
+            }
         }
 
         private UnitTeam OpponentTeam => owner.Team == UnitTeam.Player ? UnitTeam.Enemy : UnitTeam.Player;

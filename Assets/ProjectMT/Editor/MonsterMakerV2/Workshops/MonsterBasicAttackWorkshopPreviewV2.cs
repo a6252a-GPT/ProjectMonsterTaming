@@ -18,6 +18,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             "Assets/ProjectMT/03_Features/Expedition/Prefabs/PF_Enemy_Knight_T1.prefab";
 
         private readonly List<GameObject> projectiles = new List<GameObject>();
+        private readonly List<float> projectileSimulatedAges = new List<float>();
         private readonly List<ContractPreviewVfx> contractVfx = new List<ContractPreviewVfx>();
         private readonly List<PendingContractVfx> pendingContractVfx = new List<PendingContractVfx>();
         private readonly HashSet<string> contractClaims = new HashSet<string>();
@@ -26,13 +27,15 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private BasicAttackWorkshopRecipe recipe;
         private MonsterMakerDraft originDraft;
         private GameObject root, attacker, target, impactPulse, launchVfx, impactVfx, launchFeel, impactFeel;
+        private MonsterAttackAreaIndicator areaIndicator;
         private Material groundMaterial, sourceMaterial, targetMaterial, attackMaterial;
         private Vector3 attackerStart, targetStart;
         private Vector3 targetBaseScale = Vector3.one * 0.45f;
         private string sourceSignature = string.Empty;
         private double playbackStartedAt;
-        private bool playing, deliveryActivated, lastImpactHasFeedback;
+        private bool playing, deliveryActivated, motionEnded, lastImpactHasFeedback;
         private float activationElapsed = -1f, lastImpactElapsed = -1f;
+        private float launchVfxSimulatedAge = -1f, impactVfxSimulatedAge = -1f;
         private int nextImpactIndex;
         private int selectedMotionIndex;
         private MonsterImpactStrength impactStrength = MonsterImpactStrength.Standard;
@@ -103,6 +106,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     var projectile = CreateProjectile(index, attackerStart);
                     projectile.SetActive(false);
                     projectiles.Add(projectile);
+                    projectileSimulatedAges.Add(0f);
                 }
             }
 
@@ -113,7 +117,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             impactPulse = CreatePrimitive(PrimitiveType.Sphere, "Impact / Explosion", targetPoint, Vector3.one * 0.01f, attackMaterial);
             impactPulse.SetActive(false);
 
-            MonsterAttackAreaIndicator.Create(root.transform, profile, Vector3.zero, Vector3.forward,
+            areaIndicator = MonsterAttackAreaIndicator.Create(root.transform, profile, Vector3.zero, Vector3.forward,
                 targetPoint, baseRange, new Color(0.1f, 1f, 0.85f, 1f), false);
             utility.AddSingleGO(root);
             ResetPlaybackObjects();
@@ -127,15 +131,19 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             playbackStartedAt = EditorApplication.timeSinceStartup;
             playing = true;
             deliveryActivated = false;
+            motionEnded = false;
             activationElapsed = -1f;
             lastImpactElapsed = -1f;
             nextImpactIndex = 0;
             ResetPlaybackObjects();
+            if (areaIndicator != null) areaIndicator.gameObject.SetActive(true); // 재생 중에도 실제 판정 범위를 유지
             QueueContractEvent(MonsterBasicAttackVfxEvent.MotionStart, 0f, 0);
             QueueContractEvent(
                 MonsterBasicAttackVfxEvent.RecipeExecute,
                 ResolveActivationTime(ResolveMotionDuration()),
-                0);
+                0,
+                negativeOffsetsOnly: true);
+            QueueContractEvent(MonsterBasicAttackVfxEvent.Telegraph, 0f, 0);
             TickContractVfx(0f);
         }
 
@@ -143,8 +151,10 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         {
             playing = false;
             deliveryActivated = false;
+            motionEnded = false;
             activationElapsed = -1f;
             ResetPlaybackObjects();
+            if (areaIndicator != null) areaIndicator.gameObject.SetActive(true);
         }
 
         internal void Render(Rect rect, bool topDown)
@@ -167,11 +177,18 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             var motionDuration = ResolveMotionDuration();
             var activationTime = ResolveActivationTime(motionDuration);
             var impactTimes = ResolveImpactTimes(motionDuration);
-            if (!deliveryActivated && elapsed >= activationTime) ActivateDelivery(elapsed);
+            if (!deliveryActivated && elapsed >= activationTime)
+                ActivateDelivery(activationTime, elapsed);
             while (nextImpactIndex < impactTimes.Count && elapsed >= impactTimes[nextImpactIndex])
             {
-                TriggerImpact(elapsed, nextImpactIndex);
+                TriggerImpact(impactTimes[nextImpactIndex], elapsed, nextImpactIndex);
                 nextImpactIndex++;
+            }
+            if (!motionEnded && elapsed >= motionDuration)
+            {
+                motionEnded = true;
+                QueueContractEvent(MonsterBasicAttackVfxEvent.MotionEnd, motionDuration, 0);
+                ReleaseContractVfx(MonsterBasicAttackVfxEndPolicy.MotionEnd);
             }
 
             var impactAge = lastImpactElapsed < 0f ? float.MaxValue : elapsed - lastImpactElapsed;
@@ -179,32 +196,57 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             var targetPulse = impactAge < 0.22f ? 1f + Mathf.Sin(Mathf.Clamp01(impactAge / 0.22f) * Mathf.PI) * 0.13f * intensity : 1f;
             target.transform.localScale = targetBaseScale * targetPulse;
 
-            if (profile.MovementModule == MonsterBasicAttackMovementModule.Dash && !deliveryActivated)
-            {
-                var ratio = activationTime <= 0f ? 1f : Mathf.Clamp01(elapsed / activationTime);
-                var direction = (targetStart - attackerStart).normalized;
-                attacker.transform.localPosition = attackerStart + direction * Mathf.Min(profile.DashDistance, 1.5f) * Mathf.SmoothStep(0f, 1f, ratio);
-            }
-
             UpdateProjectiles(elapsed);
             TickContractVfx(elapsed);
-            UpdateTimedObject(launchVfx, activationElapsed, elapsed, profile.LaunchFeedback?.VfxLifetime ?? 0.4f, true);
+            UpdateTimedObject(launchVfx, activationElapsed, elapsed,
+                profile.LaunchFeedback?.VfxLifetime ?? 0.4f, true, ref launchVfxSimulatedAge);
             UpdateTimedObject(launchFeel, activationElapsed, elapsed, profile.LaunchFeel?.Lifetime ?? 0.4f, false);
             var feedbackStartedAt = lastImpactHasFeedback ? lastImpactElapsed : -1f;
-            UpdateTimedObject(impactVfx, feedbackStartedAt, elapsed, profile.ImpactFeedback?.VfxLifetime ?? 0.4f, true);
+            UpdateTimedObject(impactVfx, feedbackStartedAt, elapsed,
+                profile.ImpactFeedback?.VfxLifetime ?? 0.4f, true, ref impactVfxSimulatedAge);
             UpdateTimedObject(impactFeel, feedbackStartedAt, elapsed, profile.ImpactFeel?.Lifetime ?? 0.4f, false);
             UpdateImpactPulse(impactAge);
             if (elapsed >= ResolvePlaybackDuration(motionDuration, impactTimes)) Stop();
         }
 
-        private void ActivateDelivery(float elapsed)
+        private void ActivateDelivery(float eventTime, float elapsed)
         {
             deliveryActivated = true;
-            activationElapsed = elapsed;
+            activationElapsed = eventTime;
+            if (profile.MovementModule == MonsterBasicAttackMovementModule.Dash)
+            {
+                QueueContractEvent(MonsterBasicAttackVfxEvent.DashExit, eventTime, 0);
+                TickContractVfx(elapsed);
+                var destination = ResolveDashDestination();
+                var moved = (destination - attacker.transform.localPosition).sqrMagnitude > 0.000001f;
+                if (moved) attacker.transform.localPosition = destination;
+                QueueContractEvent(MonsterBasicAttackVfxEvent.DashEnter, eventTime, 0);
+            }
+            QueueContractEvent(MonsterBasicAttackVfxEvent.RecipeExecute, eventTime, 0);
+            TickContractVfx(elapsed);
             PlaySfx(recipe?.launchSfx);
             if (profile.UsesProjectileVisual) PlaySfx(recipe?.projectileSfx);
-            foreach (var projectile in projectiles) if (projectile != null) projectile.SetActive(true);
-            if (launchVfx != null) launchVfx.SetActive(true);
+            for (var index = 0; index < projectiles.Count; index++)
+            {
+                var projectile = projectiles[index];
+                if (projectile == null) continue;
+                projectile.transform.localPosition = attacker.transform.localPosition;
+                projectile.SetActive(true);
+                RestartDeliveryVfx(projectile);
+                if (index < projectileSimulatedAges.Count) projectileSimulatedAges[index] = 0f;
+                QueueContractEvent(
+                    MonsterBasicAttackVfxEvent.DeliverySpawn,
+                    eventTime,
+                    0,
+                    projectile);
+            }
+            TickContractVfx(elapsed);
+            if (launchVfx != null)
+            {
+                launchVfx.SetActive(true);
+                MonsterBasicAttackVfxPlayback.RestartAtOffset(launchVfx, 0f);
+                launchVfxSimulatedAge = 0f;
+            }
             if (launchFeel != null)
             {
                 launchFeel.SetActive(true);
@@ -212,30 +254,48 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             }
         }
 
-        private void TriggerImpact(float elapsed, int hitIndex)
+        private void TriggerImpact(float eventTime, float elapsed, int hitIndex)
         {
-            lastImpactElapsed = elapsed;
+            lastImpactElapsed = eventTime;
             var impactEvent = profile.ProjectileTravel == MonsterBasicAttackProjectileTravel.Returning
                 ? hitIndex == 0
                     ? MonsterBasicAttackVfxEvent.OutboundTargetDamaged
                     : MonsterBasicAttackVfxEvent.ReturnTargetDamaged
                 : MonsterBasicAttackVfxEvent.TargetDamaged;
-            QueueContractEvent(impactEvent, elapsed, hitIndex);
+            QueueContractEvent(impactEvent, eventTime, hitIndex);
             var impactCount = ResolveImpactTimes(ResolveMotionDuration()).Count;
             if (hitIndex >= impactCount - 1)
             {
-                if (profile.CollisionModule == MonsterBasicAttackCollisionModule.AreaImpact ||
-                    profile.Shape == MonsterBasicAttackShape.Circle)
+                if (profile.CollisionModule == MonsterBasicAttackCollisionModule.AreaImpact &&
+                    projectiles.Count > 0)
                 {
-                    QueueContractEvent(MonsterBasicAttackVfxEvent.AreaResolved, elapsed, hitIndex);
+                    for (var projectileIndex = 0; projectileIndex < projectiles.Count; projectileIndex++)
+                    {
+                        var projectile = projectiles[projectileIndex];
+                        if (projectile != null)
+                            QueueContractEvent(
+                                MonsterBasicAttackVfxEvent.AreaResolved,
+                                eventTime,
+                                hitIndex,
+                                projectile);
+                    }
                 }
-                QueueContractEvent(MonsterBasicAttackVfxEvent.SequenceEnd, elapsed, hitIndex);
+                else if (profile.Shape == MonsterBasicAttackShape.Circle)
+                {
+                    QueueContractEvent(MonsterBasicAttackVfxEvent.AreaResolved, eventTime, hitIndex);
+                }
+                QueueContractEvent(MonsterBasicAttackVfxEvent.SequenceEnd, eventTime, hitIndex);
             }
             TickContractVfx(elapsed);
             lastImpactHasFeedback = hitIndex == 0 || profile.RepeatImpactFeedback;
             if (!lastImpactHasFeedback) return;
             PlaySfx(recipe?.impactSfx);
-            if (impactVfx != null) impactVfx.SetActive(true);
+            if (impactVfx != null)
+            {
+                impactVfx.SetActive(true);
+                MonsterBasicAttackVfxPlayback.RestartAtOffset(impactVfx, 0f);
+                impactVfxSimulatedAge = 0f;
+            }
             if (impactFeel != null)
             {
                 impactFeel.SetActive(true);
@@ -256,10 +316,21 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             {
                 var projectile = projectiles[index];
                 if (projectile == null) continue;
-                var ratio = projectiles.Count <= 1 ? 0f : index / (float)(projectiles.Count - 1) - 0.5f;
-                var endOffset = Quaternion.Euler(0f, ratio * profile.ProjectileSpreadAngle, 0f) * (targetStart - attackerStart);
-                projectile.transform.localPosition = Vector3.Lerp(attackerStart, attackerStart + endOffset, baseTravel);
-                SimulateParticles(projectile, travelAge);
+                var deliveryOrigin = ResolveDeliveryOrigin();
+                var endOffset = profile.ResolveProjectileDirection(
+                    targetStart - deliveryOrigin,
+                    index);
+                projectile.transform.localPosition = Vector3.Lerp(
+                    deliveryOrigin,
+                    deliveryOrigin + endOffset,
+                    baseTravel);
+                var simulatedAge = index < projectileSimulatedAges.Count
+                    ? projectileSimulatedAges[index]
+                    : 0f;
+                MonsterBasicAttackVfxPlayback.Simulate(
+                    projectile,
+                    Mathf.Max(0f, travelAge - simulatedAge));
+                if (index < projectileSimulatedAges.Count) projectileSimulatedAges[index] = travelAge;
                 var completed = profile.ProjectileTravel == MonsterBasicAttackProjectileTravel.Returning
                     ? travelAge >= travelDuration * 2f
                     : travelAge >= travelDuration;
@@ -268,7 +339,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 {
                     QueueContractEvent(
                         MonsterBasicAttackVfxEvent.DeliveryTurn,
-                        elapsed,
+                        activationElapsed + travelDuration,
                         0,
                         projectile);
                 }
@@ -276,8 +347,14 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 {
                     QueueContractEvent(
                         MonsterBasicAttackVfxEvent.DeliveryEnd,
-                        elapsed,
+                        activationElapsed + travelDuration *
+                        (profile.ProjectileTravel == MonsterBasicAttackProjectileTravel.Returning
+                            ? 2f
+                            : 1f),
                         0,
+                        projectile);
+                    ReleaseContractVfx(
+                        MonsterBasicAttackVfxEndPolicy.DeliveryEnd,
                         projectile);
                     projectile.SetActive(false);
                 }
@@ -321,7 +398,24 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private float ResolveActivationTime(float motionDuration) => ResolveMarker() * motionDuration;
         private float ResolveBaseAttackRange() => profile != null && profile.CombatType == MonsterCombatType.Melee ? 2f : 4f;
         private float ResolveTravelDuration() => profile == null || !profile.UsesProjectileVisual ? 0f :
-            Mathf.Max(0.01f, Vector3.Distance(attackerStart, targetStart) / Mathf.Max(0.01f, profile.ProjectileSpeed));
+            Mathf.Max(0.01f, Vector3.Distance(ResolveDeliveryOrigin(), targetStart) /
+                             Mathf.Max(0.01f, profile.ProjectileSpeed));
+
+        private Vector3 ResolveDeliveryOrigin() =>
+            profile?.MovementModule == MonsterBasicAttackMovementModule.Dash
+                ? ResolveDashDestination()
+                : attackerStart;
+
+        private Vector3 ResolveDashDestination()
+        {
+            var sourceRadius = Mathf.Max(0.05f, originDraft?.BodyRadius ?? 0.5f);
+            const float targetRadius = 0.25f;
+            return MonsterBasicAttackProfile.ResolveDashDestination(
+                attackerStart,
+                targetStart,
+                profile?.DashDistance ?? 0f,
+                sourceRadius + targetRadius);
+        }
 
         private List<float> ResolveImpactTimes(float motionDuration)
         {
@@ -342,11 +436,31 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
 
         private float ResolvePlaybackDuration(float motionDuration, IReadOnlyList<float> impacts)
         {
-            var duration = Mathf.Max(0.05f, motionDuration);
+            var duration = Mathf.Max(0.05f, motionDuration + ResolveMotionEndTail());
             if (impacts.Count > 0) duration = Mathf.Max(duration, impacts[impacts.Count - 1] + 0.45f);
             if (profile.SequenceModule == MonsterBasicAttackSequenceModule.ReturnPasses)
                 duration = Mathf.Max(duration, ResolveActivationTime(motionDuration) + ResolveTravelDuration() * 2f + 0.1f);
             return duration;
+        }
+
+        private float ResolveMotionEndTail()
+        {
+            if (profile == null || originDraft == null) return 0f;
+            var tail = 0f;
+            foreach (var slot in profile.VfxSlots)
+            {
+                if (slot == null || slot.EventType != MonsterBasicAttackVfxEvent.MotionEnd ||
+                    !TryResolveContractPresentation(slot, out var binding) ||
+                    binding.State != MonsterBasicAttackVfxAssignmentState.Assigned)
+                {
+                    continue;
+                }
+                tail = Mathf.Max(
+                    tail,
+                    Mathf.Max(0f, slot.ClampTimingOffset(binding.EventTimingOffset)) +
+                    binding.Lifetime);
+            }
+            return tail;
         }
 
         private string BuildTimingSummary()
@@ -443,7 +557,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 AddBindingChild(holder.transform, deliveryBinding);
             else if (profile.ProjectileFeedback?.VfxPrefab != null)
                 AddFeedbackChild(holder.transform, profile.ProjectileFeedback);
-            else
+            else if (profile.VfxSlots.Count == 0)
             {
                 var marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 marker.name = "Fallback Projectile";
@@ -491,12 +605,22 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 binding.Prefab.transform.localScale *
                 binding.Scale * Mathf.Max(0.01f, originDraft?.VfxScale ?? 1f));
             instance.SetActive(true);
-            MonsterBasicAttackVfxPlayback.RestartAtOffset(
-                instance,
-                binding.PlaybackOffset,
-                playbackSpeed: binding.PlaybackSpeed);
             foreach (var behaviour in instance.GetComponentsInChildren<MonoBehaviour>(true))
                 behaviour.enabled = false;
+        }
+
+        private void RestartDeliveryVfx(GameObject projectile)
+        {
+            if (projectile == null) return;
+            if (TryResolveDeliveryVisual(out var binding) && binding.Prefab != null)
+            {
+                MonsterBasicAttackVfxPlayback.RestartAtOffset(
+                    projectile,
+                    binding.PlaybackOffset,
+                    playbackSpeed: binding.PlaybackSpeed);
+                return;
+            }
+            MonsterBasicAttackVfxPlayback.RestartAtOffset(projectile, 0f);
         }
 
         private bool TryResolveDeliveryVisual(out MonsterBasicAttackVfxBinding binding)
@@ -515,13 +639,17 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             MonsterBasicAttackVfxEvent eventType,
             float eventTime,
             int damageStage,
-            GameObject projectile = null)
+            GameObject projectile = null,
+            bool negativeOffsetsOnly = false)
         {
             if (profile == null || originDraft == null) return;
             foreach (var slot in profile.VfxSlots)
             {
                 if (slot == null || slot.EventType != eventType ||
                     !TryResolveContractPresentation(slot, out var binding))
+                    continue;
+                if (negativeOffsetsOnly &&
+                    slot.ClampTimingOffset(binding.EventTimingOffset) >= 0f)
                     continue;
 
                 var suffix = slot.Multiplicity switch
@@ -533,20 +661,30 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     _ => "once"
                 };
                 var claimPrefix = $"{eventType}|{slot.SlotId}|{suffix}";
-                if (binding.HasSound && contractClaims.Add(claimPrefix + "|sfx"))
-                    PlayContractSfx(binding);
+                var playSfx = binding.HasSound && contractClaims.Add(claimPrefix + "|sfx");
+                var playVfx = !slot.IsDeliveryVisual &&
+                              binding.State == MonsterBasicAttackVfxAssignmentState.Assigned &&
+                              contractClaims.Add(claimPrefix + "|vfx");
+                if (!playSfx && !playVfx) continue;
 
-                if (slot.IsDeliveryVisual ||
-                    binding.State != MonsterBasicAttackVfxAssignmentState.Assigned ||
-                    !contractClaims.Add(claimPrefix + "|vfx"))
-                    continue;
+                ResolveContractPose(
+                    slot.Anchor,
+                    projectile,
+                    out var anchor,
+                    out var position,
+                    out var rotation);
 
                 pendingContractVfx.Add(new PendingContractVfx(
                     Mathf.Max(0f, eventTime + slot.ClampTimingOffset(binding.EventTimingOffset)),
                     slot,
                     binding,
                     damageStage,
-                    projectile));
+                    projectile,
+                    anchor,
+                    position,
+                    rotation,
+                    playSfx,
+                    playVfx));
             }
         }
 
@@ -565,10 +703,14 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
 
         private void TickContractVfx(float elapsed)
         {
-            for (var index = pendingContractVfx.Count - 1; index >= 0; index--)
+            for (var index = 0; index < pendingContractVfx.Count;)
             {
                 var pending = pendingContractVfx[index];
-                if (elapsed + 0.0001f < pending.ExecuteAt) continue;
+                if (elapsed + 0.0001f < pending.ExecuteAt)
+                {
+                    index++;
+                    continue;
+                }
                 pendingContractVfx.RemoveAt(index);
                 SpawnContractVfx(pending, elapsed);
             }
@@ -590,20 +732,20 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     contractVfx.RemoveAt(index);
                     continue;
                 }
-                SimulateContractParticles(
+                MonsterBasicAttackVfxPlayback.Simulate(
                     active.Instance,
-                    active.PlaybackOffset + age * active.PlaybackSpeed);
+                    Mathf.Max(0f, age - active.SimulatedAge));
+                active.SimulatedAge = age;
             }
         }
 
         private void SpawnContractVfx(PendingContractVfx pending, float elapsed)
         {
-            ResolveContractPose(
-                pending.Slot.Anchor,
-                pending.Projectile,
-                out var anchor,
-                out var position,
-                out var rotation);
+            if (pending.PlaySfx) PlayContractSfx(pending.Binding);
+            if (!pending.PlayVfx) return;
+            var anchor = pending.Anchor;
+            var position = pending.Position;
+            var rotation = pending.Rotation;
             position += rotation * pending.Binding.LocalPosition;
             rotation *= pending.Binding.LocalRotation;
 
@@ -634,17 +776,57 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     instance,
                     pending.Binding.PlaybackOffset,
                     playbackSpeed: pending.Binding.PlaybackSpeed);
+                MonsterBasicAttackVfxPlayback.Simulate(
+                    instance,
+                    Mathf.Max(0f, elapsed - pending.ExecuteAt));
             }
             if (pending.Slot.Attachment == MonsterBasicAttackVfxAttachment.FollowAnchor &&
                 anchor != null)
                 instance.transform.SetParent(anchor, true);
             contractVfx.Add(new ContractPreviewVfx(
                 instance,
-                elapsed,
+                pending.ExecuteAt,
                 pending.Binding.Lifetime,
                 pending.Binding.PlaybackOffset,
                 pending.Binding.PlaybackSpeed,
-                pending.Slot.EndPolicy));
+                pending.Slot.EndPolicy,
+                pending.Projectile)
+            {
+                SimulatedAge = Mathf.Max(0f, elapsed - pending.ExecuteAt)
+            });
+        }
+
+        private void ReleaseContractVfx(
+            MonsterBasicAttackVfxEndPolicy endPolicy,
+            GameObject projectile = null)
+        {
+            for (var index = pendingContractVfx.Count - 1; index >= 0; index--)
+            {
+                var pending = pendingContractVfx[index];
+                if (pending.Slot.EndPolicy != endPolicy ||
+                    endPolicy == MonsterBasicAttackVfxEndPolicy.DeliveryEnd &&
+                    pending.Projectile != projectile)
+                {
+                    continue;
+                }
+                pendingContractVfx.RemoveAt(index);
+            }
+            for (var index = contractVfx.Count - 1; index >= 0; index--)
+            {
+                var active = contractVfx[index];
+                if (active.EndPolicy != endPolicy ||
+                    endPolicy == MonsterBasicAttackVfxEndPolicy.DeliveryEnd &&
+                    active.Projectile != projectile)
+                {
+                    continue;
+                }
+                if (active.Instance != null)
+                {
+                    MonsterBasicAttackVfxPlayback.StopAndClear(active.Instance);
+                    UnityEngine.Object.DestroyImmediate(active.Instance);
+                }
+                contractVfx.RemoveAt(index);
+            }
         }
 
         private void ResolveContractPose(
@@ -678,10 +860,17 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     position = target.transform.position + Vector3.up * 0.4f;
                     return;
                 case MonsterBasicAttackVfxAnchor.AreaCenter:
-                    position = profile.Shape == MonsterBasicAttackShape.Circle &&
-                               profile.Center == MonsterBasicAttackCenter.Source
-                        ? attacker.transform.position
-                        : target.transform.position;
+                    position = projectile != null
+                        ? projectile.transform.position
+                        : profile.Center switch
+                        {
+                            MonsterBasicAttackCenter.Source => attacker.transform.position,
+                            MonsterBasicAttackCenter.Forward => attacker.transform.position +
+                                (forward.sqrMagnitude < 0.0001f
+                                    ? Vector3.forward
+                                    : forward.normalized) * profile.ForwardOffset,
+                            _ => target.transform.position
+                        };
                     return;
                 case MonsterBasicAttackVfxAnchor.TrajectoryOrigin:
                     anchor = attacker.transform;
@@ -693,12 +882,6 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 position = anchor.position;
                 rotation = anchor.rotation;
             }
-        }
-
-        private static void SimulateContractParticles(GameObject item, float time)
-        {
-            foreach (var particle in item.GetComponentsInChildren<ParticleSystem>(true))
-                particle.Simulate(Mathf.Max(0f, time), false, true, true);
         }
 
         private static void PlayContractSfx(MonsterBasicAttackVfxBinding binding)
@@ -750,16 +933,31 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         {
             for (var index = contractVfx.Count - 1; index >= 0; index--)
                 if (contractVfx[index].Instance != null)
+                {
+                    MonsterBasicAttackVfxPlayback.StopAndClear(contractVfx[index].Instance);
                     UnityEngine.Object.DestroyImmediate(contractVfx[index].Instance);
+                }
             contractVfx.Clear();
             pendingContractVfx.Clear();
             contractClaims.Clear();
             if (attacker != null) { attacker.transform.localPosition = attackerStart; attacker.transform.localScale = new Vector3(0.55f, 0.45f, 0.55f); }
             if (target != null) { target.transform.localPosition = targetStart; target.transform.localScale = targetBaseScale; }
-            foreach (var projectile in projectiles) if (projectile != null) { projectile.transform.localPosition = attackerStart; projectile.SetActive(false); }
+            for (var index = 0; index < projectiles.Count; index++)
+            {
+                var projectile = projectiles[index];
+                if (projectile != null)
+                {
+                    projectile.transform.localPosition = attackerStart;
+                    MonsterBasicAttackVfxPlayback.StopAndClear(projectile);
+                    projectile.SetActive(false);
+                }
+                if (index < projectileSimulatedAges.Count) projectileSimulatedAges[index] = 0f;
+            }
             if (impactPulse != null) { impactPulse.transform.localPosition = targetStart; impactPulse.transform.localScale = Vector3.one * 0.01f; impactPulse.SetActive(false); }
-            if (launchVfx != null) launchVfx.SetActive(false);
-            if (impactVfx != null) impactVfx.SetActive(false);
+            if (launchVfx != null) { MonsterBasicAttackVfxPlayback.StopAndClear(launchVfx); launchVfx.SetActive(false); }
+            if (impactVfx != null) { MonsterBasicAttackVfxPlayback.StopAndClear(impactVfx); impactVfx.SetActive(false); }
+            launchVfxSimulatedAge = -1f;
+            impactVfxSimulatedAge = -1f;
             ResetFeel(launchFeel);
             ResetFeel(impactFeel);
             nextImpactIndex = 0;
@@ -767,13 +965,37 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             lastImpactHasFeedback = false;
         }
 
-        private static void UpdateTimedObject(GameObject item, float startedAt, float elapsed, float lifetime, bool particles)
+        private static void UpdateTimedObject(
+            GameObject item,
+            float startedAt,
+            float elapsed,
+            float lifetime,
+            bool particles,
+            ref float simulatedAge)
         {
             if (item == null) return;
             var age = startedAt < 0f ? float.MaxValue : elapsed - startedAt;
             var active = age >= 0f && age < Mathf.Max(0.05f, lifetime);
             item.SetActive(active);
-            if (active && particles) SimulateParticles(item, age);
+            if (!particles) return;
+            if (!active)
+            {
+                simulatedAge = -1f;
+                return;
+            }
+            if (simulatedAge < 0f)
+            {
+                MonsterBasicAttackVfxPlayback.RestartAtOffset(item, 0f);
+                simulatedAge = 0f;
+            }
+            MonsterBasicAttackVfxPlayback.Simulate(item, Mathf.Max(0f, age - simulatedAge));
+            simulatedAge = age;
+        }
+
+        private static void UpdateTimedObject(GameObject item, float startedAt, float elapsed, float lifetime, bool particles)
+        {
+            var unusedAge = -1f;
+            UpdateTimedObject(item, startedAt, elapsed, lifetime, particles, ref unusedAge);
         }
 
         private float ResolveImpactIntensity() => impactStrength switch
@@ -794,13 +1016,6 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             if (feelRoot == null) return;
             feelRoot.GetComponentsInChildren<MonoBehaviour>(true).OfType<IBasicAttackFeelRuntime>().FirstOrDefault()?.ResetBasicAttackFeel();
             feelRoot.SetActive(false);
-        }
-
-        private static void SimulateParticles(GameObject item, float time)
-        {
-            if (item == null) return;
-            foreach (var particle in item.GetComponentsInChildren<ParticleSystem>(true))
-                particle.Simulate(Mathf.Max(0f, time), true, true, false);
         }
 
         private static void PlaySfx(SfxCue cue)
@@ -834,7 +1049,11 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             contractClaims.Clear();
             if (root != null) UnityEngine.Object.DestroyImmediate(root);
             root = attacker = target = impactPulse = launchVfx = impactVfx = launchFeel = impactFeel = null;
+            areaIndicator = null;
             projectiles.Clear();
+            projectileSimulatedAges.Clear();
+            launchVfxSimulatedAge = -1f;
+            impactVfxSimulatedAge = -1f;
             DestroyMaterial(ref groundMaterial);
             DestroyMaterial(ref sourceMaterial);
             DestroyMaterial(ref targetMaterial);
@@ -854,13 +1073,23 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 MonsterBasicAttackVfxSlot slot,
                 MonsterBasicAttackVfxBinding binding,
                 int damageStage,
-                GameObject projectile)
+                GameObject projectile,
+                Transform anchor,
+                Vector3 position,
+                Quaternion rotation,
+                bool playSfx,
+                bool playVfx)
             {
                 ExecuteAt = executeAt;
                 Slot = slot;
                 Binding = binding;
                 DamageStage = damageStage;
                 Projectile = projectile;
+                Anchor = anchor;
+                Position = position;
+                Rotation = rotation;
+                PlaySfx = playSfx;
+                PlayVfx = playVfx;
             }
 
             public float ExecuteAt { get; }
@@ -868,9 +1097,14 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             public MonsterBasicAttackVfxBinding Binding { get; }
             public int DamageStage { get; }
             public GameObject Projectile { get; }
+            public Transform Anchor { get; }
+            public Vector3 Position { get; }
+            public Quaternion Rotation { get; }
+            public bool PlaySfx { get; }
+            public bool PlayVfx { get; }
         }
 
-        private readonly struct ContractPreviewVfx
+        private sealed class ContractPreviewVfx
         {
             public ContractPreviewVfx(
                 GameObject instance,
@@ -878,7 +1112,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 float lifetime,
                 float playbackOffset,
                 float playbackSpeed,
-                MonsterBasicAttackVfxEndPolicy endPolicy)
+                MonsterBasicAttackVfxEndPolicy endPolicy,
+                GameObject projectile)
             {
                 Instance = instance;
                 StartedAt = startedAt;
@@ -886,6 +1121,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 PlaybackOffset = playbackOffset;
                 PlaybackSpeed = playbackSpeed;
                 EndPolicy = endPolicy;
+                Projectile = projectile;
             }
 
             public GameObject Instance { get; }
@@ -894,6 +1130,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             public float PlaybackOffset { get; }
             public float PlaybackSpeed { get; }
             public MonsterBasicAttackVfxEndPolicy EndPolicy { get; }
+            public GameObject Projectile { get; }
+            public float SimulatedAge { get; set; }
         }
 
         public void Dispose()

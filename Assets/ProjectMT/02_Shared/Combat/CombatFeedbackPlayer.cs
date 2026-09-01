@@ -215,7 +215,10 @@ namespace ProjectMT.Shared.Combat
             DamageFeedbackFlags feedbackFlags = DamageFeedbackFlags.None)
         {
             var sizeMultiplier = (feedbackFlags & DamageFeedbackFlags.PassiveEnhancedNumber) != 0 ? 1.2f : 1f;
-            floatingNumbers?.Queue(position, amount, style, mergeKey, sizeMultiplier); // 비 UnitActor 대상의 확정 피해 표시
+            var resolvedMergeKey = (feedbackFlags & DamageFeedbackFlags.SeparateFloatingNumber) != 0
+                ? 0
+                : mergeKey;
+            floatingNumbers?.Queue(position, amount, style, resolvedMergeKey, sizeMultiplier); // 비 UnitActor 대상의 확정 피해 표시
             sfxPool?.Play(hitSfx, position);
         }
 

@@ -42,9 +42,9 @@ namespace ProjectMT.Features.Inventory
             "전체",
             "소비",
             "재화",
-            "기타1",
-            "기타2",
-            "기타3"
+            "소환권",
+            "던전 열쇠",
+            "강화 재료"
         };
 
         private static readonly Color SelectedFilterColor = new Color32(244, 197, 72, 255);

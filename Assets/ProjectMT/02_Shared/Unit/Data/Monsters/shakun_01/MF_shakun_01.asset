@@ -56,7 +56,7 @@ MonoBehaviour:
     scale: 1
   basicAttackVfxBindings:
   - attackId: BA_M_05
-    slotId: dash_start
+    slotId: dash_exit
     motionId: attack01
     state: 0
     prefab: {fileID: 0}
@@ -72,7 +72,39 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   - attackId: BA_M_05
-    slotId: dash_start
+    slotId: dash_exit
+    motionId: attack02
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_M_05
+    slotId: dash_enter
+    motionId: attack01
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_M_05
+    slotId: dash_enter
     motionId: attack02
     state: 0
     prefab: {fileID: 0}

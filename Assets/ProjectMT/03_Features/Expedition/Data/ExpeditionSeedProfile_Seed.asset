@@ -48,7 +48,7 @@ MonoBehaviour:
       weight: 1
     ninjaCount: 0
     waves:
-    - baseEnemyCount: 4
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -71,7 +71,7 @@ MonoBehaviour:
       weight: 1
     ninjaCount: 0
     waves:
-    - baseEnemyCount: 4
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -79,7 +79,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 4
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
@@ -102,7 +102,7 @@ MonoBehaviour:
       weight: 1
     ninjaCount: 0
     waves:
-    - baseEnemyCount: 4
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -110,7 +110,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 4
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
@@ -118,7 +118,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 4
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 2.3
@@ -141,7 +141,7 @@ MonoBehaviour:
       weight: 1
     ninjaCount: 0
     waves:
-    - baseEnemyCount: 4
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -164,7 +164,7 @@ MonoBehaviour:
       weight: 1
     ninjaCount: 0
     waves:
-    - baseEnemyCount: 4
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -172,7 +172,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 4
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
@@ -195,7 +195,7 @@ MonoBehaviour:
       weight: 1
     ninjaCount: 0
     waves:
-    - baseEnemyCount: 4
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -203,7 +203,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 4
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
@@ -211,7 +211,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 4
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 2.3
@@ -237,7 +237,7 @@ MonoBehaviour:
       weight: 25
     ninjaCount: 1
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -263,7 +263,7 @@ MonoBehaviour:
       weight: 25
     ninjaCount: 1
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -271,7 +271,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
@@ -297,7 +297,7 @@ MonoBehaviour:
       weight: 25
     ninjaCount: 1
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -305,7 +305,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
@@ -313,7 +313,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 2.3
@@ -339,7 +339,7 @@ MonoBehaviour:
       weight: 25
     ninjaCount: 2
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -365,7 +365,7 @@ MonoBehaviour:
       weight: 25
     ninjaCount: 2
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -373,7 +373,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
@@ -399,7 +399,7 @@ MonoBehaviour:
       weight: 25
     ninjaCount: 2
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -407,7 +407,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
@@ -415,7 +415,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 2.3
@@ -438,7 +438,7 @@ MonoBehaviour:
       weight: 1
     ninjaCount: 2
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -461,7 +461,7 @@ MonoBehaviour:
       weight: 1
     ninjaCount: 2
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -469,7 +469,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
@@ -492,7 +492,7 @@ MonoBehaviour:
       weight: 1
     ninjaCount: 2
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -500,7 +500,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
@@ -508,7 +508,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 2.3
@@ -531,7 +531,7 @@ MonoBehaviour:
       weight: 1
     ninjaCount: 3
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -554,7 +554,7 @@ MonoBehaviour:
       weight: 1
     ninjaCount: 3
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -562,7 +562,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
@@ -585,7 +585,7 @@ MonoBehaviour:
       weight: 1
     ninjaCount: 3
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -593,7 +593,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
@@ -601,7 +601,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 2.3
@@ -624,7 +624,7 @@ MonoBehaviour:
       weight: 1
     ninjaCount: 4
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -632,7 +632,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
@@ -655,7 +655,7 @@ MonoBehaviour:
       weight: 1
     ninjaCount: 4
     waves:
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
@@ -663,7 +663,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
@@ -671,7 +671,7 @@ MonoBehaviour:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-    - baseEnemyCount: 5
+    - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 2.3

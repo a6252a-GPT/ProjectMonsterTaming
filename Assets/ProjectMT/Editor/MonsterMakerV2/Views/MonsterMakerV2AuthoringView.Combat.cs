@@ -189,19 +189,28 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 return;
             }
 
-            var paths = MonsterMakerAssetWriter.BuildPaths(draft.MonsterId);
+            if (sourceDraft == null)
+            {
+                AddHelp(
+                    container,
+                    "새 제작 원본 · 상단 전투 반영 때 기본공격 게임 자산이 생성됩니다.",
+                    HelpBoxMessageType.Info);
+                return;
+            }
+
+            var paths = MonsterMakerAssetWriter.BuildPaths(sourceDraft.MonsterId);
             var combat = AssetDatabase.LoadAssetAtPath<MonsterCombatProfile>(paths[3]);
             var feedback = AssetDatabase.LoadAssetAtPath<MonsterFeedbackProfile>(paths[5]);
             var runtimeState = MonsterBasicAttackBindingProjection.EvaluateRuntimeSync(
-                draft,
+                sourceDraft,
                 combat,
                 feedback,
                 out var message);
             AddHelp(
                 container,
                 runtimeState == MonsterBasicAttackRuntimeSyncState.Synchronized
-                    ? "게임 자산 최신 · 현재 활성 기본공격 계약만 사용 중입니다."
-                    : $"게임 자산 미반영 · {message}\n아래 전투 반영으로 현재 제작값을 갱신하세요.",
+                    ? "저장된 게임 자산 최신 · 작업 중 변경은 상단 전투 반영 시 함께 적용됩니다."
+                    : $"저장된 게임 자산 미반영 · {message}\n상단 전투 반영으로 저장 원본과 게임 자산을 함께 갱신하세요.",
                 runtimeState == MonsterBasicAttackRuntimeSyncState.Synchronized
                     ? HelpBoxMessageType.Info
                     : HelpBoxMessageType.Warning);
@@ -244,7 +253,9 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private void BuildBasicVfxCard(
             VisualElement container,
             BasicVfxRow row,
-            int index)
+            int index,
+            string contextLabel = "기본공격",
+            string foldoutKey = null)
         {
             var motion = string.IsNullOrWhiteSpace(row.MotionId)
                 ? "공용"
@@ -252,7 +263,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             var card = AddSubFoldout(
                 container,
                 $"{index + 1:00} · {row.Slot.DisplayName} · {motion}",
-                index == 0);
+                index == 0,
+                foldoutKey);
             AddHelp(
                 card,
                 $"{ResolveVfxEventLabel(row.Slot.EventType)} · " +
@@ -268,7 +280,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 card,
                 "VFX 결정",
                 vfxState,
-                "Monster Maker V2 · 기본공격 VFX 결정 변경");
+                $"Monster Maker V2 · {contextLabel} VFX 결정 변경");
             if ((MonsterBasicAttackVfxAssignmentState)vfxState.enumValueIndex ==
                 MonsterBasicAttackVfxAssignmentState.Assigned)
             {
@@ -286,14 +298,19 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     .objectReferenceValue as GameObject;
                 var isWrapper = MonsterBasicAttackVfxPrefabUtility.IsMonsterWrapper(
                     assignedPrefab,
-                    draft?.MonsterId);
+                    draft?.MonsterId,
+                    row.WrapperOwner);
                 AddActionRow(
                     card,
                     ("VFX 보정 · 재생",
                         () => openVfxAdjust?.Invoke(row.Slot, bindingPath),
                         "draft-action-button"),
                     (isWrapper ? "전용 Prefab 편집" : "전용 래퍼 만들기",
-                        () => CreateOrEditBasicVfxWrapper(row.Slot, bindingPath, row.MotionId),
+                        () => CreateOrEditBasicVfxWrapper(
+                            row.Slot,
+                            bindingPath,
+                            row.MotionId,
+                            row.WrapperOwner),
                         "draft-action-button"));
             }
 
@@ -302,7 +319,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 card,
                 "SFX 결정",
                 sfxState,
-                "Monster Maker V2 · 기본공격 SFX 결정 변경");
+                $"Monster Maker V2 · {contextLabel} SFX 결정 변경");
             if ((MonsterBasicAttackSfxAssignmentState)sfxState.enumValueIndex ==
                 MonsterBasicAttackSfxAssignmentState.Assigned)
             {
@@ -436,7 +453,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private void CreateOrEditBasicVfxWrapper(
             MonsterBasicAttackVfxSlot slot,
             string bindingPath,
-            string motionId)
+            string motionId,
+            MonsterAttackVfxWrapperOwner owner)
         {
             serializedDraft.ApplyModifiedProperties();
             var binding = serializedDraft.FindProperty(bindingPath);
@@ -447,7 +465,10 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 return;
             }
 
-            if (MonsterBasicAttackVfxPrefabUtility.IsMonsterWrapper(source, draft.MonsterId))
+            if (MonsterBasicAttackVfxPrefabUtility.IsMonsterWrapper(
+                    source,
+                    draft.MonsterId,
+                    owner))
             {
                 AssetDatabase.OpenAsset(source);
                 EditorGUIUtility.PingObject(source);
@@ -457,6 +478,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             var attackId = binding.FindPropertyRelative("attackId").stringValue;
             if (!MonsterBasicAttackVfxPrefabUtility.TryCreateWrapper(
                     draft.MonsterId,
+                    owner,
                     attackId,
                     slot.SlotId,
                     motionId,
@@ -610,6 +632,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 MonsterBasicAttackVfxEvent.DeliveryTurn => "투사체 방향 전환",
                 MonsterBasicAttackVfxEvent.DeliveryEnd => "투사체 종료",
                 MonsterBasicAttackVfxEvent.MotionEnd => "공격 모션 종료",
+                MonsterBasicAttackVfxEvent.DashExit => "돌진 출발",
+                MonsterBasicAttackVfxEvent.DashEnter => "돌진 도착",
                 _ => "지정 시점"
             };
         }
@@ -734,8 +758,42 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                         motionId);
                     if (binding != null)
                     {
-                        rows.Add(new BasicVfxRow(slot, binding, motionId));
+                        rows.Add(new BasicVfxRow(
+                            slot,
+                            binding,
+                            motionId,
+                            MonsterAttackVfxWrapperOwner.BasicAttack));
                     }
+                }
+            }
+            return rows;
+        }
+
+        private List<BasicVfxRow> ResolveActiveVfxRows(
+            MonsterActiveAttackStep step,
+            SerializedProperty bindings)
+        {
+            var rows = new List<BasicVfxRow>();
+            if (step == null || bindings == null) return rows;
+            var attackId = "active_" + step.StepId;
+            foreach (var slot in step.AttackBlockVfxSlots)
+            {
+                if (slot == null) continue;
+                var motionId = slot.AssignmentScope == MonsterBasicAttackVfxAssignmentScope.MotionSpecific
+                    ? step.StepId
+                    : string.Empty;
+                var binding = FindBasicVfxBinding(
+                    bindings,
+                    attackId,
+                    slot.SlotId,
+                    motionId);
+                if (binding != null)
+                {
+                    rows.Add(new BasicVfxRow(
+                        slot,
+                        binding,
+                        motionId,
+                        MonsterAttackVfxWrapperOwner.ActiveAttack));
                 }
             }
             return rows;
@@ -929,16 +987,19 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             public BasicVfxRow(
                 MonsterBasicAttackVfxSlot slot,
                 SerializedProperty binding,
-                string motionId)
+                string motionId,
+                MonsterAttackVfxWrapperOwner wrapperOwner)
             {
                 Slot = slot;
                 Binding = binding;
                 MotionId = motionId;
+                WrapperOwner = wrapperOwner;
             }
 
             public MonsterBasicAttackVfxSlot Slot { get; }
             public SerializedProperty Binding { get; }
             public string MotionId { get; }
+            public MonsterAttackVfxWrapperOwner WrapperOwner { get; }
         }
     }
 }

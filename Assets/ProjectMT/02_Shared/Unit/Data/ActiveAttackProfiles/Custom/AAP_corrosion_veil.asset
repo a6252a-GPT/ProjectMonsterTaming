@@ -1,0 +1,125 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 636d839b21812ab49a12f4bee7b8ef7d, type: 3}
+  m_Name: AAP_corrosion_veil(Clone)(Clone)(Clone)
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterActiveAttackProfile
+  profileId: corrosion_veil
+  displayName: "\uCE68\uC2DD \uC7A5\uB9C9"
+  description: "\uB300\uC0C1 \uC9C0\uC810\uC5D0 \uC7A5\uB9C9\uC744 \uD3BC\uCCD0 \uC57D
+    3\uCD08 \uB3D9\uC548 6\uD68C \uCE68\uC2DD \uD53C\uD574\uB97C \uB204\uC801\uD558\uB294
+    1\uB2E8 \uBC94\uC704 \uC9C0\uC18D \uD53C\uD574\uAE30."
+  steps:
+  - stepId: step_01
+    displayName: "\uB300\uC0C1 \uC911\uC2EC \uC6D0\uD615"
+    startMode: 0
+    delayAfterPrevious: 0
+    playbackSpeed: 1
+    targetPolicy: 0
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
+    pattern: 13
+    progression: 4
+    damageMultiplier: 1.65
+    damageMultiplierMode: 0
+    maximumDamageMultiplier: 1.65
+    maxTargets: 10
+    range: 5
+    width: 1.5
+    radius: 2.8
+    forwardOffset: 0
+    angle: 90
+    progressionDuration: 2.2
+    telegraphDelay: 0.25
+    visualDuration: 2.8
+    hitAreaVisibleDuration: 0.42
+    projectileFormation: 0
+    projectileCount: 1
+    projectileFanAngle: 50
+    projectileSpeed: 10
+    projectileCollisionRadius: 0.25
+    explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
+    instantMagicTarget: 0
+    magicDirection: 0
+    damageRatios:
+    - 0.33333334
+    - 0.33333334
+    - 0.33333334
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.3
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
+    hitEffects:
+    - type: 3
+      magnitude: 0.1
+      duration: 4
+      secondaryMagnitude: 0
+      tickInterval: 1
+    attackBlockVfxSlots:
+    - slotId: telegraph
+      displayName: "\uD310\uC815 \uC608\uACE0"
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: strike_trail
+      displayName: "\uC5F0\uC18D \uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uC5F0\uC18D \uACF5\uACA9 \uBAA8\uC158\uC758
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: per_hit
+      displayName: "\uD0C0\uACA9\uBCC4 \uBA85\uC911"
+      description: "\uAC01 \uD53C\uD574 \uB2E8\uACC4\uC758 \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 4
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: final_hit
+      displayName: "\uB9C8\uC9C0\uB9C9 \uD0C0\uACA9"
+      description: "\uB9C8\uC9C0\uB9C9 \uD53C\uD574 \uB2E8\uACC4 \uB4A4\uC758 \uB9C8\uBB34\uB9AC
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 7
+      anchor: 5
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  impactFeel:
+    prefab: {fileID: 0}
+    lifetime: 1
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1

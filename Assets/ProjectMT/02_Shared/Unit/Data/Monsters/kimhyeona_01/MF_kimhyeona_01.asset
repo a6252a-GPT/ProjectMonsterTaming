@@ -73,7 +73,7 @@ MonoBehaviour:
     scale: 0.3
   - attackId: BA_M_03
     slotId: path_hit
-    motionId:
+    motionId: 
     state: 0
     prefab: {fileID: 0}
     sfxState: 0

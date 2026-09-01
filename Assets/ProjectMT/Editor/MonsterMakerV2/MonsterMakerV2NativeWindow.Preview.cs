@@ -40,6 +40,13 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 ref showPreviewAttackReference,
                 ref showPreviewHitReference);
 
+            // 기준점은 보정할 때 쓰는 기술 정보다. 실제 VFX가 재생되는 동안만 점과
+            // 좌표 카드를 감춰 최종 연출을 깨끗하게 보고, 토글 상태 자체는 보존한다.
+            if (preview.HasPresentationVfx)
+            {
+                return;
+            }
+
             DrawPreviewReferencePoint(
                 previewRect,
                 MonsterMakerPreviewReference.Model,

@@ -17,7 +17,10 @@ namespace ProjectMT.Shared.Unit
         SequenceEnd,
         DeliveryTurn,
         DeliveryEnd,
-        MotionEnd
+        MotionEnd,
+        DashExit,
+        DashEnter,
+        Telegraph
     }
     public enum MonsterBasicAttackVfxAnchor { SourceRoot, AttackOrigin, MarkerSocket, ProjectileRoot, TargetRoot, HitPoint, AreaCenter, TrajectoryOrigin }
     public enum MonsterBasicAttackVfxMultiplicity { OncePerMotion, OncePerExecution, PerProjectile, PerTargetHit, PerDamageStage, ContinuousUntilEnd }
@@ -33,6 +36,7 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private string slotId;
         [SerializeField] private string displayName;
         [SerializeField, TextArea(1, 3)] private string description;
+        [SerializeField, TextArea(1, 3)] private string productionMemo;
         [SerializeField] private MonsterBasicAttackVfxEvent eventType;
         [SerializeField] private MonsterBasicAttackVfxAnchor anchor;
         [SerializeField] private MonsterBasicAttackVfxMultiplicity multiplicity;
@@ -44,6 +48,7 @@ namespace ProjectMT.Shared.Unit
         public string SlotId => slotId ?? string.Empty;
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? SlotId : displayName;
         public string Description => description ?? string.Empty;
+        public string ProductionMemo => productionMemo ?? string.Empty;
         public MonsterBasicAttackVfxEvent EventType => eventType;
         public MonsterBasicAttackVfxAnchor Anchor => anchor;
         public MonsterBasicAttackVfxMultiplicity Multiplicity => multiplicity;
@@ -96,6 +101,24 @@ namespace ProjectMT.Shared.Unit
             return true;
         }
 
+        public MonsterBasicAttackVfxSlot Clone()
+        {
+            return new MonsterBasicAttackVfxSlot
+            {
+                slotId = slotId,
+                displayName = displayName,
+                description = description,
+                productionMemo = productionMemo,
+                eventType = eventType,
+                anchor = anchor,
+                multiplicity = multiplicity,
+                assignmentScope = assignmentScope,
+                attachment = attachment,
+                endPolicy = endPolicy,
+                defaultLifetime = defaultLifetime
+            };
+        }
+
 #if UNITY_EDITOR
         public void EditorConfigure(string id, string label, string guide,
             MonsterBasicAttackVfxEvent timing, MonsterBasicAttackVfxAnchor anchorPoint,
@@ -113,6 +136,16 @@ namespace ProjectMT.Shared.Unit
             attachment = attach;
             endPolicy = end;
             defaultLifetime = Mathf.Max(0.01f, lifetime);
+        }
+
+        public void EditorSetProductionMemo(string memo)
+        {
+            productionMemo = memo?.Trim();
+        }
+
+        public MonsterBasicAttackVfxSlot EditorClone()
+        {
+            return Clone();
         }
 #endif
     }
@@ -222,6 +255,23 @@ namespace ProjectMT.Shared.Unit
             sfx = runtimeSfx;
         }
 
+        public bool EditorNormalizeMissingAssignments()
+        {
+            var changed = false;
+            if (state == MonsterBasicAttackVfxAssignmentState.Assigned && prefab == null)
+            {
+                state = MonsterBasicAttackVfxAssignmentState.Undecided;
+                changed = true;
+            }
+            if (sfxState == MonsterBasicAttackSfxAssignmentState.Assigned &&
+                sound == null && (sfx == null || !sfx.HasPlayableClip))
+            {
+                sfxState = MonsterBasicAttackSfxAssignmentState.Undecided;
+                changed = true;
+            }
+            return changed;
+        }
+
         public MonsterBasicAttackVfxBinding EditorCloneForRuntime(SfxCue runtimeSfx)
         {
             var result = new MonsterBasicAttackVfxBinding();
@@ -273,7 +323,7 @@ namespace ProjectMT.Shared.Unit
                 var candidate = bindings[index];
                 if (candidate == null ||
                     !string.Equals(candidate.AttackId, attackId, StringComparison.OrdinalIgnoreCase) ||
-                    !string.Equals(candidate.SlotId, slot.SlotId, StringComparison.OrdinalIgnoreCase) ||
+                    !MatchesSlotId(candidate.SlotId, slot.SlotId) ||
                     !string.Equals(candidate.MotionId, requiredMotion, StringComparison.OrdinalIgnoreCase)) continue;
                 binding = candidate;
                 return candidate.IsAssigned;
@@ -297,12 +347,22 @@ namespace ProjectMT.Shared.Unit
                 var candidate = bindings[index];
                 if (candidate == null ||
                     !string.Equals(candidate.AttackId, attackId, StringComparison.OrdinalIgnoreCase) ||
-                    !string.Equals(candidate.SlotId, slot.SlotId, StringComparison.OrdinalIgnoreCase) ||
+                    !MatchesSlotId(candidate.SlotId, slot.SlotId) ||
                     !string.Equals(candidate.MotionId, requiredMotion, StringComparison.OrdinalIgnoreCase)) continue;
                 binding = candidate;
                 return candidate.HasPresentation;
             }
             return false;
+        }
+
+        private static bool MatchesSlotId(string candidateId, string contractId)
+        {
+            if (string.Equals(candidateId, contractId, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            return string.Equals(contractId, "dash_exit", StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals(candidateId, "dash_start", StringComparison.OrdinalIgnoreCase);
         }
 
         public static bool TryResolveDeliveryVisual(MonsterBasicAttackProfile profile,

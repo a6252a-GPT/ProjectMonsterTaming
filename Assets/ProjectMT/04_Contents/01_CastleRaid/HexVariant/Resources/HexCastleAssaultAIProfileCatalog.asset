@@ -355,3 +355,30 @@ MonoBehaviour:
     healRatio: 0.24
     attackBuffRate: 0.2
     defenseDamageMultiplier: 0.75
+  - monsterId: kain_01
+    pattern: 0
+    supportFocus: 0
+    supportRange: 5
+    supportCooldown: 4
+    supportDuration: 5
+    healRatio: 0.24
+    attackBuffRate: 0.2
+    defenseDamageMultiplier: 0.75
+  - monsterId: berry_01
+    pattern: 0
+    supportFocus: 0
+    supportRange: 5
+    supportCooldown: 4
+    supportDuration: 5
+    healRatio: 0.24
+    attackBuffRate: 0.2
+    defenseDamageMultiplier: 0.75
+  - monsterId: ruby_01
+    pattern: 0
+    supportFocus: 0
+    supportRange: 5
+    supportCooldown: 4
+    supportDuration: 5
+    healRatio: 0.24
+    attackBuffRate: 0.2
+    defenseDamageMultiplier: 0.75

@@ -66,7 +66,7 @@ MonoBehaviour:
   active:
     clip: {fileID: 7400000, guid: 33d4723e91ac65349a8675586772685a, type: 3}
     playbackSpeed: 1
-    crossFadeDuration: 0.06
+    crossFadeDuration: 0.08
     loop: 0
     startFeedback:
       sfx: {fileID: 0}
@@ -76,17 +76,17 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
   activeSteps:
-  - stepId: step_03
-    clip: {fileID: 7400000, guid: 33d4723e91ac65349a8675586772685a, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    commitNormalizedTime: 0.5
   - stepId: step_01
     clip: {fileID: 7400000, guid: 33d4723e91ac65349a8675586772685a, type: 3}
     playbackSpeed: 1
-    crossFadeDuration: 0.06
+    crossFadeDuration: 0.08
     commitNormalizedTime: 0.5
   - stepId: step_02
+    clip: {fileID: 7400000, guid: 33d4723e91ac65349a8675586772685a, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.04
+    commitNormalizedTime: 0.5
+  - stepId: step_03
     clip: {fileID: 7400000, guid: 33d4723e91ac65349a8675586772685a, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.06

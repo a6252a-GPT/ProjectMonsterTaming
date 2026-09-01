@@ -51,17 +51,26 @@ namespace ProjectMT.Shared.Combat
                 var main = particle.main;
                 var authoredSpeed = playbackState.ResolveAuthoredSpeed(particle);
                 main.simulationSpeed = authoredSpeed; // 시작점은 Vendor 원본 시간축으로 탐색
-                particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
-                particle.Simulate(offset, false, true, true);
+            }
+
+            var roots = ResolveRootParticleSystems(particles);
+            for (var index = 0; index < roots.Count; index++)
+            {
+                roots[index].Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                roots[index].Simulate(offset, true, true, true);
+            }
+
+            for (var index = 0; index < particles.Length; index++)
+            {
+                var particle = particles[index];
+                var main = particle.main;
+                var authoredSpeed = playbackState.ResolveAuthoredSpeed(particle);
                 main.simulationSpeed = authoredSpeed * speed;
-                if (continuePlaying)
-                {
-                    particle.Play(false);
-                }
-                else
-                {
-                    particle.Pause(false);
-                }
+            }
+            for (var index = 0; index < roots.Count; index++)
+            {
+                if (continuePlaying) roots[index].Play(true);
+                else roots[index].Pause(true);
             }
         }
 
@@ -79,13 +88,31 @@ namespace ProjectMT.Shared.Combat
                 return;
             }
 
-            var particles = root.GetComponentsInChildren<ParticleSystem>(true);
-            for (var index = 0; index < particles.Length; index++)
+            var roots = ResolveRootParticleSystems(root.GetComponentsInChildren<ParticleSystem>(true));
+            // Editor가 잠깐 바쁠 때 0.05~0.1초를 한 번에 넘기면 Trail·SubEmitter가
+            // 큰 간격으로 튀어 잔상처럼 보일 수 있다. 총 시간은 유지하고 60Hz 이하로 쪼갠다.
+            var remaining = Mathf.Max(0f, deltaTime);
+            const float maximumStep = 1f / 60f;
+            while (remaining > 0.000001f)
             {
-                // Editor Preview는 0.01초처럼 fixedDeltaTime보다 작은 수동 Tick도 들어옵니다.
-                // fixedTimeStep을 켜면 매 호출의 나머지가 버려져 파티클이 영원히 0개로 남을 수 있습니다.
-                particles[index].Simulate(deltaTime, false, false, false);
+                var step = Mathf.Min(maximumStep, remaining);
+                for (var index = 0; index < roots.Count; index++)
+                {
+                    // fixedTimeStep을 켜면 작은 수동 Tick의 나머지가 버려져 파티클이 멈출 수 있다.
+                    roots[index].Simulate(step, true, false, false);
+                }
+                remaining -= step;
             }
+        }
+
+        public static void StopAndClear(GameObject root)
+        {
+            if (root == null) return;
+            var trails = root.GetComponentsInChildren<TrailRenderer>(true);
+            for (var index = 0; index < trails.Length; index++) trails[index].Clear();
+            var roots = ResolveRootParticleSystems(root.GetComponentsInChildren<ParticleSystem>(true));
+            for (var index = 0; index < roots.Count; index++)
+                roots[index].Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
         public static void SimulateAtTime(
@@ -107,12 +134,51 @@ namespace ProjectMT.Shared.Combat
                 var main = particle.main;
                 var authoredSpeed = playbackState.ResolveAuthoredSpeed(particle);
                 main.simulationSpeed = authoredSpeed;
-                particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
-                particle.Simulate(offset, false, true, false);
-                main.simulationSpeed = authoredSpeed * speed;
-                particle.Simulate(time, false, false, false);
-                particle.Pause(false);
             }
+
+            var roots = ResolveRootParticleSystems(particles);
+            for (var index = 0; index < roots.Count; index++)
+            {
+                roots[index].Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                roots[index].Simulate(offset, true, true, false);
+            }
+
+            for (var index = 0; index < particles.Length; index++)
+            {
+                var particle = particles[index];
+                var main = particle.main;
+                var authoredSpeed = playbackState.ResolveAuthoredSpeed(particle);
+                main.simulationSpeed = authoredSpeed * speed;
+            }
+            for (var index = 0; index < roots.Count; index++)
+            {
+                roots[index].Simulate(time, true, false, false);
+                roots[index].Pause(true);
+            }
+        }
+
+        private static List<ParticleSystem> ResolveRootParticleSystems(ParticleSystem[] particles)
+        {
+            var roots = new List<ParticleSystem>();
+            if (particles == null) return roots;
+            for (var index = 0; index < particles.Length; index++)
+            {
+                var particle = particles[index];
+                if (particle == null) continue;
+                var parent = particle.transform.parent;
+                var hasParticleParent = false;
+                while (parent != null)
+                {
+                    if (parent.GetComponent<ParticleSystem>() != null)
+                    {
+                        hasParticleParent = true;
+                        break;
+                    }
+                    parent = parent.parent;
+                }
+                if (!hasParticleParent) roots.Add(particle);
+            }
+            return roots;
         }
     }
 
@@ -159,7 +225,11 @@ namespace ProjectMT.Shared.Combat
             Vector3 hitPoint,
             Vector3 areaCenter,
             Quaternion rotation,
-            int damageStage = 0)
+            int damageStage = 0,
+            IReadOnlyList<MonsterBasicAttackVfxBinding> bindings = null,
+            string motionIdOverride = null,
+            int? sequenceIdOverride = null,
+            float playbackSpeed = 1f)
         {
             World = world;
             Profile = profile;
@@ -174,8 +244,12 @@ namespace ProjectMT.Shared.Combat
             AreaCenter = areaCenter;
             Rotation = rotation;
             DamageStage = damageStage;
-            SequenceId = driver?.ActionSequenceId ?? 0;
-            MotionId = driver?.CurrentMotionId ?? string.Empty;
+            Bindings = bindings ?? feedback?.BasicAttackVfxBindings;
+            SequenceId = sequenceIdOverride ?? driver?.ActionSequenceId ?? 0;
+            MotionId = motionIdOverride ?? driver?.CurrentMotionId ?? string.Empty;
+            PlaybackSpeed = float.IsNaN(playbackSpeed) || float.IsInfinity(playbackSpeed)
+                ? 1f
+                : Mathf.Max(0.05f, playbackSpeed);
         }
 
         public CombatWorld World { get; }
@@ -191,8 +265,10 @@ namespace ProjectMT.Shared.Combat
         public Vector3 AreaCenter { get; }
         public Quaternion Rotation { get; }
         public int DamageStage { get; }
+        public IReadOnlyList<MonsterBasicAttackVfxBinding> Bindings { get; }
         public int SequenceId { get; }
         public string MotionId { get; }
+        public float PlaybackSpeed { get; }
     }
 
     public static class MonsterBasicAttackVfxRuntime // Preview와 같은 슬롯 선택 규칙을 실행
@@ -201,7 +277,7 @@ namespace ProjectMT.Shared.Combat
             MonsterBasicAttackVfxEvent eventType,
             in MonsterBasicAttackVfxContext context)
         {
-            if (context.World == null || context.Profile == null || context.Feedback == null ||
+            if (context.World == null || context.Profile == null || context.Bindings == null ||
                 context.Source == null)
             {
                 return false;
@@ -215,7 +291,7 @@ namespace ProjectMT.Shared.Combat
                 var slot = slots[index];
                 if (slot == null || slot.EventType != eventType ||
                     !MonsterBasicAttackVfxResolver.TryResolvePresentation(
-                        context.Feedback.BasicAttackVfxBindings,
+                        context.Bindings,
                         context.Profile.AttackId,
                         slot,
                         context.MotionId,
@@ -245,7 +321,8 @@ namespace ProjectMT.Shared.Combat
                     continue;
                 }
 
-                var timingOffset = slot.ClampTimingOffset(binding.EventTimingOffset);
+                var timingOffset = slot.ClampTimingOffset(binding.EventTimingOffset) /
+                                   context.PlaybackSpeed;
                 if (timingOffset < 0f &&
                     eventType == MonsterBasicAttackVfxEvent.RecipeExecute &&
                     registry.HasClaim(slot, context, "vfx"))
@@ -281,6 +358,7 @@ namespace ProjectMT.Shared.Combat
             registry?.BeginSequence(context.SequenceId);
             Dispatch(MonsterBasicAttackVfxEvent.MotionStart, context);
             ScheduleRecipeLeadVfx(context, registry);
+            Dispatch(MonsterBasicAttackVfxEvent.Telegraph, context);
         }
 
         public static void EndMotion(in MonsterBasicAttackVfxContext context)
@@ -315,7 +393,7 @@ namespace ProjectMT.Shared.Combat
             in MonsterBasicAttackVfxContext context,
             MonsterBasicAttackVfxRegistry registry)
         {
-            if (registry == null || context.Profile == null || context.Feedback == null ||
+            if (registry == null || context.Profile == null || context.Bindings == null ||
                 context.Driver == null ||
                 !context.Driver.TryGetNextAttackMarkerDelay(out var markerDelay))
             {
@@ -335,7 +413,7 @@ namespace ProjectMT.Shared.Combat
                     slot.EventType != MonsterBasicAttackVfxEvent.RecipeExecute ||
                     slot.IsDeliveryVisual ||
                     !MonsterBasicAttackVfxResolver.TryResolvePresentation(
-                        context.Feedback.BasicAttackVfxBindings,
+                        context.Bindings,
                         context.Profile.AttackId,
                         slot,
                         context.MotionId,
@@ -345,7 +423,8 @@ namespace ProjectMT.Shared.Combat
                     continue;
                 }
 
-                var timingOffset = slot.ClampTimingOffset(binding.EventTimingOffset);
+                var timingOffset = slot.ClampTimingOffset(binding.EventTimingOffset) /
+                                   context.PlaybackSpeed;
                 if (timingOffset >= 0f || !registry.TryClaim(slot, context, "vfx"))
                 {
                     continue;
@@ -394,7 +473,8 @@ namespace ProjectMT.Shared.Combat
                 position,
                 rotation,
                 parent,
-                context.Source.RuntimeAssetSet?.BodyProfile?.VfxScale ?? 1f);
+                context.Source.RuntimeAssetSet?.BodyProfile?.VfxScale ?? 1f,
+                context.PlaybackSpeed);
             if (instance == null)
             {
                 return false;
@@ -403,7 +483,9 @@ namespace ProjectMT.Shared.Combat
             if (slot.EndPolicy is MonsterBasicAttackVfxEndPolicy.Timed or
                 MonsterBasicAttackVfxEndPolicy.ParticleDuration)
             {
-                context.World.ScheduleMonsterObjectReturn(instance, binding.Lifetime);
+                context.World.ScheduleMonsterObjectReturn(
+                    instance,
+                    binding.Lifetime / context.PlaybackSpeed);
             }
             else
             {

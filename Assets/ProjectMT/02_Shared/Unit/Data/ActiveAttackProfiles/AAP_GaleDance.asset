@@ -10,229 +10,291 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 636d839b21812ab49a12f4bee7b8ef7d, type: 3}
-  m_Name: AAP_GaleDance
+  m_Name: AAP_GaleDance(Clone)(Clone)(Clone)
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterActiveAttackProfile
   profileId: gale_dance
   displayName: "\uC9C8\uD48D \uC5F0\uBB34"
-  description: "\uB300\uC0C1 \uC55E\uC73C\uB85C \uD30C\uACE0\uB4E0 \uB4A4 \uC88C\uC6B0
-    \uBD80\uCC44\uAF34 \uBCA0\uAE30\uB97C \uC787\uACE0 \uC8FC\uBCC0 \uD3ED\uD48D\uC73C\uB85C
-    \uB9C8\uBB34\uB9AC\uD558\uB294 \uADFC\uC811 \uB09C\uC785\uD615 \uACF5\uACA9 \uD504\uB9AC\uC14B."
+  description: "\uB04C\uC5B4\uB2F9\uAE30\uAE30\xB7\uC9C1\uC120 \uC62C\uB824\uCE58\uAE30\xB7\uBD80\uCC44\uAF34
+    \uB9C8\uBB34\uB9AC\uAC00 \uBE60\uB974\uAC8C \uACB9\uCCD0\uC9C0\uB294 \uC57D 2\uCD08\uB300\uC758
+    3\uB2E8 \uBC94\uC704 \uC5F0\uBB34."
   steps:
-  - stepId: step_03
+  - stepId: step_01
     displayName: "\uB0B4 \uC55E \uC6D0\uD615"
+    startMode: 0
     delayAfterPrevious: 0
+    playbackSpeed: 1
     targetPolicy: 0
-    teleportBeforeAttack: 0
-    teleportFrontDistance: 1
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
     pattern: 3
     progression: 0
-    damageMultiplier: 1
+    damageMultiplier: 0.55
+    damageMultiplierMode: 0
+    maximumDamageMultiplier: 0.55
     maxTargets: 8
     range: 4
     width: 1.2
     radius: 1.8
     forwardOffset: 1.5
     angle: 70
-    progressionDuration: 0.25
-    telegraphDelay: 0.12
-    visualDuration: 0.8
+    progressionDuration: 0.5
+    telegraphDelay: 0.15
+    visualDuration: 1.1
+    hitAreaVisibleDuration: 0.42
     projectileFormation: 0
     projectileCount: 1
     projectileFanAngle: 50
     projectileSpeed: 10
     projectileCollisionRadius: 0.25
     explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
     instantMagicTarget: 0
     magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
     hitEffects:
     - type: 5
       magnitude: 0.6
       duration: 0.2
       secondaryMagnitude: 0.12
       tickInterval: 0.5
-    presentationSlots:
+    attackBlockVfxSlots:
     - slotId: telegraph
       displayName: "\uD310\uC815 \uC608\uACE0"
-      timing: 0
-      anchor: 7
-      multiplicity: 0
-      attachment: 0
-      endPolicy: 0
-      description: "\uC2E4\uC81C \uD53C\uD574\uAC00 \uC801\uC6A9\uB418\uAE30 \uC804\uC5D0
-        \uACF5\uACA9 \uBC94\uC704\uB97C \uC54C\uB9AC\uB294 \uD6A8\uACFC"
-      useDuration: 0
-      duration: 1
-    - slotId: front_cast
-      displayName: "\uC804\uBC29 \uC6D0\uD615 \uBC1C\uB3D9"
-      timing: 1
-      anchor: 1
-      multiplicity: 0
-      attachment: 0
-      endPolicy: 0
-      description: "\uACF5\uACA9 \uC6D0\uC810\uC5D0\uC11C \uC804\uBC29 \uC6D0\uD615
-        \uC9C0\uC810\uC744 \uD5A5\uD55C \uBC1C\uB3D9 \uD6A8\uACFC"
-      useDuration: 0
-      duration: 1
-    - slotId: target_hit
-      displayName: "\uB300\uC0C1\uBCC4 \uC2E4\uC81C \uBA85\uC911"
-      timing: 3
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
       anchor: 6
-      multiplicity: 2
+      multiplicity: 1
+      assignmentScope: 0
       attachment: 0
       endPolicy: 0
-      description: "\uD53C\uD574\uAC00 \uC2E4\uC81C \uC801\uC6A9\uB41C \uAC01 \uB300\uC0C1
-        \uC704\uCE58"
-      useDuration: 0
-      duration: 1
+      defaultLifetime: 1
+    - slotId: overhead_trail
+      displayName: "\uB0B4\uB824\uCC0D\uAE30 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uBAA8\uC158\uC758 \uB0B4\uB824\uCC0D\uAE30
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: ground_contact
+      displayName: "\uC9C0\uBA74 \uC811\uCD09"
+      description: "\uB0B4\uB824\uCC0D\uAE30\uAC00 \uB2FF\uC740 \uC911\uC2EC\uC810
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 1
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: target_hit
+      displayName: "\uB300\uC0C1\uBCC4 \uBA85\uC911"
+      description: "\uBC94\uC704 \uC548\uC5D0\uC11C \uC2E4\uC81C \uD53C\uD574\uB97C
+        \uBC1B\uC740 \uAC01 \uB300\uC0C1\uC758 \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
     - slotId: area_wave
-      displayName: "\uC804\uBC29 \uBC94\uC704 \uD30C\uB3D9"
-      timing: 8
-      anchor: 7
-      multiplicity: 0
+      displayName: "\uBC94\uC704 \uD30C\uB3D9"
+      description: "\uBC94\uC704 \uD310\uC815\uC774 \uD574\uACB0\uB41C \uB4A4 \uD3BC\uCCD0\uC9C0\uB294
+        \uC6D0\uD615 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 6
+      anchor: 6
+      multiplicity: 1
+      assignmentScope: 0
       attachment: 0
       endPolicy: 0
-      description: "\uBC94\uC704 \uC548\uC758 \uB300\uC0C1 \uD310\uC815\uC774 \uC644\uB8CC\uB41C
-        \uC911\uC2EC \uC704\uCE58"
-      useDuration: 0
-      duration: 1
-  - stepId: step_01
-    displayName: "\uADF8\uB9BC\uC790 \uB3C4\uC57D"
-    delayAfterPrevious: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  - stepId: step_02
+    displayName: "\uC77C\uC790 \uD53C\uD574"
+    startMode: 1
+    delayAfterPrevious: 0.28
+    playbackSpeed: 1
     targetPolicy: 0
-    teleportBeforeAttack: 0
-    teleportFrontDistance: 1
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
     pattern: 0
     progression: 0
-    damageMultiplier: 0.85
+    damageMultiplier: 0.75
+    damageMultiplierMode: 0
+    maximumDamageMultiplier: 0.75
     maxTargets: 8
     range: 5
     width: 1.5
     radius: 1.8
     forwardOffset: 1.4
     angle: 95
-    progressionDuration: 0.28
-    telegraphDelay: 0
-    visualDuration: 2.5
+    progressionDuration: 0.45
+    telegraphDelay: 0.06
+    visualDuration: 1.1
+    hitAreaVisibleDuration: 0.42
     projectileFormation: 0
     projectileCount: 1
     projectileFanAngle: 50
     projectileSpeed: 10
     projectileCollisionRadius: 0.25
     explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
     instantMagicTarget: 0
     magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
     hitEffects:
     - type: 1
       magnitude: 1
       duration: 0.5
       secondaryMagnitude: 0
       tickInterval: 0.5
-    presentationSlots:
+    attackBlockVfxSlots:
     - slotId: telegraph
       displayName: "\uD310\uC815 \uC608\uACE0"
-      timing: 0
-      anchor: 2
-      multiplicity: 0
-      attachment: 0
-      endPolicy: 0
-      description: "\uC2E4\uC81C \uD53C\uD574\uAC00 \uC801\uC6A9\uB418\uAE30 \uC804\uC5D0
-        \uACF5\uACA9 \uBC94\uC704\uB97C \uC54C\uB9AC\uB294 \uD6A8\uACFC"
-      useDuration: 0
-      duration: 1
-    - slotId: line_path
-      displayName: "\uC77C\uC790 \uACF5\uACA9 \uACBD\uB85C"
-      timing: 1
-      anchor: 8
-      multiplicity: 0
-      attachment: 0
-      endPolicy: 0
-      description: "\uACF5\uACA9 \uC6D0\uC810\uC5D0\uC11C \uC804\uBC29 \uC9C1\uC120
-        \uD310\uC815\uC744 \uBCF4\uC5EC \uC8FC\uB294 \uD6A8\uACFC"
-      useDuration: 0
-      duration: 1
-    - slotId: target_hit
-      displayName: "\uB300\uC0C1\uBCC4 \uC2E4\uC81C \uBA85\uC911"
-      timing: 3
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
       anchor: 6
-      multiplicity: 2
+      multiplicity: 1
+      assignmentScope: 0
       attachment: 0
       endPolicy: 0
-      description: "\uD53C\uD574\uAC00 \uC2E4\uC81C \uC801\uC6A9\uB41C \uAC01 \uB300\uC0C1
-        \uC704\uCE58"
-      useDuration: 0
-      duration: 1
-  - stepId: step_02
+      defaultLifetime: 1
+    - slotId: thrust_path
+      displayName: "\uCC0C\uB974\uAE30 \uACBD\uB85C"
+      description: "\uACF5\uACA9 \uC6D0\uC810\uC5D0\uC11C \uBAA9\uD45C \uBC29\uD5A5\uC73C\uB85C
+        \uBED7\uB294 \uC9C1\uC120 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 1
+      anchor: 7
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: path_hit
+      displayName: "\uACBD\uB85C \uBA85\uC911"
+      description: "\uC9C1\uC120 \uACBD\uB85C\uC5D0\uC11C \uD53C\uD574\uB97C \uBC1B\uC740
+        \uB300\uC0C1 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
+  - stepId: step_03
     displayName: "\uBD80\uCC44\uAF34 \uD53C\uD574"
-    delayAfterPrevious: 0
+    startMode: 1
+    delayAfterPrevious: 0.32
+    playbackSpeed: 1
     targetPolicy: 0
-    teleportBeforeAttack: 0
-    teleportFrontDistance: 1
+    dashBeforeAttack: 0
+    dashFrontDistance: 1
+    dashDuration: 0.1
     pattern: 1
     progression: 0
     damageMultiplier: 1
+    damageMultiplierMode: 0
+    maximumDamageMultiplier: 1
     maxTargets: 8
     range: 4
     width: 1.2
     radius: 1.8
     forwardOffset: 1.5
     angle: 70
-    progressionDuration: 0.25
+    progressionDuration: 0.45
     telegraphDelay: 0.12
-    visualDuration: 0.8
+    visualDuration: 1.25
+    hitAreaVisibleDuration: 0.42
     projectileFormation: 0
     projectileCount: 1
     projectileFanAngle: 50
     projectileSpeed: 10
     projectileCollisionRadius: 0.25
     explosionRadius: 1.8
+    projectileTravel: 1
+    projectileTravelConfigured: 0
     instantMagicTarget: 0
     magicDirection: 0
+    damageRatios:
+    - 1
+    secondaryDamageRatio: 1
+    repeatHitInterval: 0.08
+    projectileLifetime: 3
+    repeatImpactFeedback: 1
     hitEffects: []
-    presentationSlots:
+    attackBlockVfxSlots:
     - slotId: telegraph
       displayName: "\uD310\uC815 \uC608\uACE0"
-      timing: 0
-      anchor: 7
-      multiplicity: 0
-      attachment: 0
-      endPolicy: 0
-      description: "\uC2E4\uC81C \uD53C\uD574\uAC00 \uC801\uC6A9\uB418\uAE30 \uC804\uC5D0
-        \uACF5\uACA9 \uBC94\uC704\uB97C \uC54C\uB9AC\uB294 \uD6A8\uACFC"
-      useDuration: 0
-      duration: 1
-    - slotId: cone_sweep
-      displayName: "\uBD80\uCC44\uAF34 \uACF5\uACA9 \uBA74"
-      timing: 1
-      anchor: 8
-      multiplicity: 0
-      attachment: 0
-      endPolicy: 0
-      description: "\uC804\uBC29 \uBD80\uCC44\uAF34 \uD310\uC815 \uBC29\uD5A5\uC744
-        \uBCF4\uC5EC \uC8FC\uB294 \uD6A8\uACFC"
-      useDuration: 0
-      duration: 1
-    - slotId: target_hit
-      displayName: "\uB300\uC0C1\uBCC4 \uC2E4\uC81C \uBA85\uC911"
-      timing: 3
+      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
+        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 13
       anchor: 6
-      multiplicity: 2
+      multiplicity: 1
+      assignmentScope: 0
       attachment: 0
       endPolicy: 0
-      description: "\uD53C\uD574\uAC00 \uC2E4\uC81C \uC801\uC6A9\uB41C \uAC01 \uB300\uC0C1
-        \uC704\uCE58"
-      useDuration: 0
-      duration: 1
-    - slotId: cone_finish
-      displayName: "\uBD80\uCC44\uAF34 \uD310\uC815 \uC644\uB8CC"
-      timing: 8
-      anchor: 7
-      multiplicity: 0
+      defaultLifetime: 1
+    - slotId: sweep_plane
+      displayName: "\uD729\uC4F8\uAE30 \uBA74"
+      description: "\uC804\uBC29 \uBD80\uCC44\uAF34\uC744 \uC77D\uD788\uAC8C \uD558\uB294
+        \uACF5\uACA9 \uBA74"
+      productionMemo: 
+      eventType: 1
+      anchor: 0
+      multiplicity: 1
+      assignmentScope: 1
       attachment: 0
       endPolicy: 0
-      description: "\uBC94\uC704 \uC548\uC758 \uB300\uC0C1 \uD310\uC815\uC774 \uC644\uB8CC\uB41C
-        \uC911\uC2EC \uC704\uCE58"
-      useDuration: 0
-      duration: 1
+      defaultLifetime: 1
+    - slotId: target_hit
+      displayName: "\uB300\uC0C1\uBCC4 \uBA85\uC911"
+      description: "\uC2E4\uC81C\uB85C \uD53C\uD574\uB97C \uBC1B\uC740 \uAC01 \uB300\uC0C1\uC758
+        \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots: []
+    presentationSlots: []
   impactFeel:
     prefab: {fileID: 0}
     lifetime: 1

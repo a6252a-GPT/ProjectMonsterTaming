@@ -46,7 +46,7 @@ MonoBehaviour:
     overrideBreathDuration: 0
     breathDuration: 0.8
     markers:
-    - normalizedTime: 0.5
+    - normalizedTime: 0.28
       powerRatio: 1
       feedbackOverride:
         sfx: {fileID: 0}
@@ -115,6 +115,29 @@ MonoBehaviour:
       localPosition: {x: 0, y: 0, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
+  active:
+    clip: {fileID: 7400000, guid: b879d93f6ad2e3d4681e180c8716daf1, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.08
+    loop: 0
+    startFeedback:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+  activeSteps:
+  - stepId: group_01
+    clip: {fileID: 7400000, guid: b879d93f6ad2e3d4681e180c8716daf1, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.08
+    commitNormalizedTime: 0.28
+  - stepId: group_02
+    clip: {fileID: 7400000, guid: b879d93f6ad2e3d4681e180c8716daf1, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.08
+    commitNormalizedTime: 0.28
   death:
     clip: {fileID: 7400000, guid: a8b700e4a0e5fbc4495cf90ef5f9df69, type: 3}
     playbackSpeed: 1

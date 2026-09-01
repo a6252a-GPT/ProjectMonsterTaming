@@ -87,7 +87,11 @@ namespace ProjectMT.Shared.Combat
                 (report.Request.FeedbackFlags & DamageFeedbackFlags.PassiveEnhancedNumber) != 0
                     ? 1.2f
                     : 1f;
-            Queue(report.Request.HitPoint, report.AppliedDamage, style, target.GetInstanceID(), passiveScale);
+            var mergeKey =
+                (report.Request.FeedbackFlags & DamageFeedbackFlags.SeparateFloatingNumber) != 0
+                    ? 0
+                    : target.GetInstanceID();
+            Queue(report.Request.HitPoint, report.AppliedDamage, style, mergeKey, passiveScale);
         }
 
         public void Queue(

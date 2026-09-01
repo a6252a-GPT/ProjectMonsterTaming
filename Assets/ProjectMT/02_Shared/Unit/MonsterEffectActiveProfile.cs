@@ -88,7 +88,9 @@ namespace ProjectMT.Shared.Unit
             {
                 var slot = PresentationSlots[index];
                 var slotError = "연출 공간이 비어 있습니다.";
-                if (slot == null || !slot.TryValidate(out slotError) || !slotIds.Add(slot.SlotId))
+                if (slot == null || !slot.TryValidate(out slotError) ||
+                    !MonsterEffectActiveVfxCompatibility.TryValidateSlot(slot, out slotError) ||
+                    !slotIds.Add(slot.SlotId))
                 {
                     error = $"VFX/SFX 계약이 유효하지 않습니다. Group={GroupId}, Detail={slotError}";
                     return false;
@@ -106,7 +108,7 @@ namespace ProjectMT.Shared.Unit
                 MonsterSkillEffectType.AttackSpeedDebuff or MonsterSkillEffectType.MoveSpeedDebuff or
                 MonsterSkillEffectType.Mark or MonsterSkillEffectType.Slow or MonsterSkillEffectType.Stun or
                 MonsterSkillEffectType.Pull or MonsterSkillEffectType.Taunt or
-                MonsterSkillEffectType.DamageReduction;
+                MonsterSkillEffectType.DamageReduction or MonsterSkillEffectType.DamageReflect;
 
         public float EstimateDuration()
         {
@@ -204,7 +206,7 @@ namespace ProjectMT.Shared.Unit
                 MonsterSkillEffectType.AttackSpeedDebuff or MonsterSkillEffectType.MoveSpeedDebuff or
                 MonsterSkillEffectType.Mark or MonsterSkillEffectType.Slow or MonsterSkillEffectType.Stun or
                 MonsterSkillEffectType.Pull or MonsterSkillEffectType.Taunt or
-                MonsterSkillEffectType.DamageReduction;
+                MonsterSkillEffectType.DamageReduction or MonsterSkillEffectType.DamageReflect;
 
         public float EstimateDuration()
         {
@@ -242,10 +244,11 @@ namespace ProjectMT.Shared.Unit
             {
                 MonsterEffectActiveRole.Support => effectType is MonsterSkillEffectType.Heal or
                     MonsterSkillEffectType.AttackBuff or MonsterSkillEffectType.AttackSpeedBuff or
-                    MonsterSkillEffectType.EnergyGain,
+                    MonsterSkillEffectType.EnergyGain or MonsterSkillEffectType.Cleanse,
                 MonsterEffectActiveRole.Guard => effectType is MonsterSkillEffectType.Shield or
                     MonsterSkillEffectType.DefenseBuff or MonsterSkillEffectType.DamageReduction or
-                    MonsterSkillEffectType.Taunt,
+                    MonsterSkillEffectType.DamageReflect or MonsterSkillEffectType.Taunt or
+                    MonsterSkillEffectType.Stun or MonsterSkillEffectType.Pull,
                 MonsterEffectActiveRole.Debuff => effectType is MonsterSkillEffectType.AttackDebuff or
                     MonsterSkillEffectType.DefenseDebuff or MonsterSkillEffectType.AttackSpeedDebuff or
                     MonsterSkillEffectType.MoveSpeedDebuff or MonsterSkillEffectType.Mark or

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace ProjectMT.Shared.Unit
@@ -75,7 +76,8 @@ namespace ProjectMT.Shared.Unit
     public enum MonsterBasicAttackCenter
     {
         Source,
-        PrimaryTarget
+        PrimaryTarget,
+        Forward
     }
 
     public enum MonsterBasicAttackProjectileTravel
@@ -93,13 +95,29 @@ namespace ProjectMT.Shared.Unit
         RightToLeft
     }
 
+    public enum MonsterBasicAttackProgression // 한 공격 블록 안에서 판정이 퍼지는 순서
+    {
+        Simultaneous,
+        Forward,
+        LeftToRight,
+        RightToLeft,
+        Outward
+    }
+
+    public enum MonsterBasicAttackMagicDirection
+    {
+        Forward,
+        GroundUp,
+        SkyDown
+    }
+
     [CreateAssetMenu(menuName = "ProjectMT/Unit/Basic Attack Recipe", fileName = "BA_Custom")]
     public sealed class MonsterBasicAttackProfile : ScriptableObject // 공용 모듈을 조합한 기본공격 Recipe
     {
         public const int CurrentRecipeVersion = 1;
-        public const int MaximumTargets = 4;
+        public const int MaximumTargets = 32;
         public const int MaximumHitCount = 3;
-        public const int MaximumProjectileCount = 3;
+        public const int MaximumProjectileCount = 12;
 
         [SerializeField] private string attackId;
         [SerializeField] private string displayName;
@@ -118,6 +136,8 @@ namespace ProjectMT.Shared.Unit
 
         [Header("몬스터 고유 VFX 공간 계약")]
         [SerializeField] private List<MonsterBasicAttackVfxSlot> vfxSlots = new List<MonsterBasicAttackVfxSlot>();
+        [SerializeField, HideInInspector] private List<MonsterBasicAttackVfxSlot> inactiveVfxSlots =
+            new List<MonsterBasicAttackVfxSlot>();
 
         [Header("조립 모듈")]
         [SerializeField, HideInInspector] private int recipeVersion;
@@ -136,9 +156,16 @@ namespace ProjectMT.Shared.Unit
         [SerializeField, Min(0.05f)] private float radius = 0.35f;
         [SerializeField, Range(5f, 180f)] private float angle = 60f;
         [SerializeField, Min(0.05f)] private float lineWidth = 0.5f;
+        [SerializeField, Min(0f)] private float forwardOffset = 1.5f;
         [SerializeField, Range(1, MaximumTargets)] private int maxTargets = 1;
+        [SerializeField] private MonsterBasicAttackProgression progression;
+        [SerializeField, Min(0f)] private float progressionDuration = 0.25f;
+        [SerializeField, Min(0f)] private float telegraphDelay;
+        [SerializeField, Min(0.05f)] private float visualDuration = 0.8f;
+        [SerializeField] private MonsterBasicAttackMagicDirection magicDirection;
 
         [Header("투사체")]
+        [SerializeField, HideInInspector] private GameObject projectileCarrierPrefab;
         [SerializeField, Range(1, MaximumProjectileCount)] private int projectileCount = 1;
         [SerializeField, Range(0f, 90f)] private float projectileSpreadAngle;
         [SerializeField, Min(0.01f)] private float projectileSpeed = 9f;
@@ -172,6 +199,8 @@ namespace ProjectMT.Shared.Unit
         public BasicAttackFeelCue ImpactFeel => impactFeel;
         public IReadOnlyList<MonsterBasicAttackVfxSlot> VfxSlots => vfxSlots ??
             (IReadOnlyList<MonsterBasicAttackVfxSlot>)Array.Empty<MonsterBasicAttackVfxSlot>();
+        public IReadOnlyList<MonsterBasicAttackVfxSlot> InactiveVfxSlots => inactiveVfxSlots ??
+            (IReadOnlyList<MonsterBasicAttackVfxSlot>)Array.Empty<MonsterBasicAttackVfxSlot>();
         public MonsterCombatType CombatType => combatType;
         public int RecipeVersion => recipeVersion;
         public bool IsModularRecipe => recipeVersion >= CurrentRecipeVersion;
@@ -201,12 +230,21 @@ namespace ProjectMT.Shared.Unit
         public float Radius => Mathf.Max(0.05f, radius);
         public float Angle => Mathf.Clamp(angle, 5f, 180f);
         public float LineWidth => Mathf.Max(0.05f, lineWidth);
+        public float ForwardOffset => Mathf.Max(0f, forwardOffset);
         public int MaxTargets => Mathf.Clamp(maxTargets, 1, MaximumTargets);
+        public MonsterBasicAttackProgression Progression => progression;
+        public float ProgressionDuration => Mathf.Max(0f, progressionDuration);
+        public float TelegraphDelay => Mathf.Max(0f, telegraphDelay);
+        public float VisualDuration => Mathf.Max(0.05f, visualDuration);
+        public MonsterBasicAttackMagicDirection MagicDirection => magicDirection;
+        public GameObject ProjectileCarrierPrefab => projectileCarrierPrefab;
         public int ProjectileCount => Mathf.Clamp(projectileCount, 1, MaximumProjectileCount);
         public float ProjectileSpreadAngle => Mathf.Clamp(projectileSpreadAngle, 0f, 90f);
         public float ProjectileSpeed => Mathf.Max(0.01f, projectileSpeed);
         public float ProjectileLifetime => Mathf.Max(0.01f, projectileLifetime);
         public float ProjectileCollisionRadius => Mathf.Max(0.01f, projectileCollisionRadius);
+        public IReadOnlyList<float> DamageRatios => damageRatios ??
+            (IReadOnlyList<float>)Array.Empty<float>();
         public int HitCount => Mathf.Clamp(damageRatios?.Length ?? 0, 1, MaximumHitCount);
         public float SecondaryDamageRatio => Mathf.Clamp(secondaryDamageRatio, 0.1f, 1f);
         public float RepeatHitInterval => Mathf.Clamp(repeatHitInterval, 0.01f, 0.3f);
@@ -219,6 +257,29 @@ namespace ProjectMT.Shared.Unit
         public bool StopOnFirstTarget => CollisionModule == MonsterBasicAttackCollisionModule.StopOnFirstTarget;
         public bool UsesProjectileVisual => DeliveryModule != MonsterBasicAttackDeliveryModule.Direct;
         public bool UsesPatternSequence => SequenceModule != MonsterBasicAttackSequenceModule.Single;
+
+        public static Vector3 ResolveDashDestination(
+            Vector3 sourcePosition,
+            Vector3 targetPosition,
+            float maximumDistance,
+            float stopDistance)
+        {
+            var direction = targetPosition - sourcePosition;
+            direction.y = 0f;
+            var distance = direction.magnitude;
+            if (distance <= 0.001f)
+            {
+                return sourcePosition;
+            }
+
+            var advance = Mathf.Min(
+                Mathf.Max(0f, maximumDistance),
+                Mathf.Max(0f, distance - Mathf.Max(0.05f, stopDistance)));
+            var destination = sourcePosition + direction / distance * advance;
+            destination.y = sourcePosition.y;
+            return destination;
+        }
+
         public float ResolveRepeatHitInterval(float motionBreathDuration = 0f)
         {
             if (!UsesBreathDurationContract)
@@ -229,6 +290,33 @@ namespace ProjectMT.Shared.Unit
             var duration = motionBreathDuration > 0f ? motionBreathDuration : BreathDuration;
             return Mathf.Max(0.01f, duration / Mathf.Max(1, HitCount));
         }
+
+        public Vector3 ResolveProjectileDirection(Vector3 forward, int projectileIndex)
+        {
+            var count = ProjectileCount;
+            var index = Mathf.Clamp(projectileIndex, 0, count - 1);
+            var spreadRatio = count <= 1
+                ? 0f
+                : index / (float)(count - 1) - 0.5f;
+            return Quaternion.AngleAxis(
+                spreadRatio * ProjectileSpreadAngle,
+                Vector3.up) * forward;
+        }
+
+        public float ResolveActivityDuration(
+            float playbackSpeed = 1f,
+            float motionBreathDuration = 0f)
+        {
+            var duration = Mathf.Max(VisualDuration, ProgressionDuration);
+            if (HitCount > 1)
+            {
+                duration = Mathf.Max(
+                    duration,
+                    ResolveRepeatHitInterval(motionBreathDuration) * (HitCount - 1));
+            }
+            return duration / Mathf.Max(0.05f, playbackSpeed);
+        }
+
         public MonsterProjectileAttackMode LegacyProjectileMode => CollisionModule switch
         {
             MonsterBasicAttackCollisionModule.AreaImpact => MonsterProjectileAttackMode.Area,
@@ -265,6 +353,8 @@ namespace ProjectMT.Shared.Unit
                 !Enum.IsDefined(typeof(MonsterBasicAttackCenter), center) ||
                 !Enum.IsDefined(typeof(MonsterBasicAttackProjectileTravel), projectileTravel) ||
                 !Enum.IsDefined(typeof(MonsterBasicAttackSweepDirection), sweepDirection) ||
+                !Enum.IsDefined(typeof(MonsterBasicAttackProgression), progression) ||
+                !Enum.IsDefined(typeof(MonsterBasicAttackMagicDirection), magicDirection) ||
                 !Enum.IsDefined(typeof(MonsterBasicAttackDeliveryModule), DeliveryModule) ||
                 !Enum.IsDefined(typeof(MonsterBasicAttackCollisionModule), CollisionModule) ||
                 !Enum.IsDefined(typeof(MonsterBasicAttackSequenceModule), SequenceModule) ||
@@ -276,10 +366,11 @@ namespace ProjectMT.Shared.Unit
             }
 
             if (rangeMultiplier < 0.2f || radius <= 0f || angle < 5f || angle > 180f ||
-                lineWidth <= 0f || maxTargets < 1 || maxTargets > MaximumTargets ||
+                lineWidth <= 0f || forwardOffset < 0f || maxTargets < 1 || maxTargets > MaximumTargets ||
                 projectileCount < 1 || projectileCount > MaximumProjectileCount ||
                 damageRatios == null || damageRatios.Length < 1 || damageRatios.Length > MaximumHitCount ||
                 projectileSpeed <= 0f || projectileLifetime <= 0f || projectileCollisionRadius <= 0f ||
+                progressionDuration < 0f || telegraphDelay < 0f || visualDuration <= 0f ||
                 UsesBreathDurationContract && breathDuration <= 0f)
             {
                 error = $"Basic Attack geometry or hit limit is invalid. Profile={name}";
@@ -432,17 +523,16 @@ namespace ProjectMT.Shared.Unit
             if (projectileCount > 1 &&
                 (DeliveryModule != MonsterBasicAttackDeliveryModule.Projectile ||
                  projectileTravel != MonsterBasicAttackProjectileTravel.Straight ||
-                 CollisionModule != MonsterBasicAttackCollisionModule.StopOnFirstTarget))
+                 CollisionModule == MonsterBasicAttackCollisionModule.DirectResolve))
             {
-                error = $"Volley requires Straight Projectile with StopOnFirstTarget collision. Profile={name}";
+                error = $"Volley requires a Straight Projectile collision recipe. Profile={name}";
                 return false;
             }
 
             if (MovementModule == MonsterBasicAttackMovementModule.Dash &&
-                (DeliveryModule != MonsterBasicAttackDeliveryModule.Direct || combatType != MonsterCombatType.Melee ||
-                 dashDistance <= 0f))
+                dashDistance <= 0f)
             {
-                error = $"Dash movement requires a Melee Direct attack and positive distance. Profile={name}";
+                error = $"Dash movement requires a positive distance. Profile={name}";
                 return false;
             }
 
@@ -614,7 +704,10 @@ namespace ProjectMT.Shared.Unit
                 combatType = MonsterCombatType.Ranged;
                 deliveryModule = MonsterBasicAttackDeliveryModule.Projectile;
                 projectileTravel = MonsterBasicAttackProjectileTravel.Straight;
-                collisionModule = MonsterBasicAttackCollisionModule.StopOnFirstTarget;
+                if (collisionModule == MonsterBasicAttackCollisionModule.DirectResolve)
+                {
+                    collisionModule = MonsterBasicAttackCollisionModule.StopOnFirstTarget;
+                }
                 sequenceModule = MonsterBasicAttackSequenceModule.Single;
                 EnsureDamageRatioCount(1);
             }
@@ -626,10 +719,6 @@ namespace ProjectMT.Shared.Unit
 
             if (movementModule == MonsterBasicAttackMovementModule.Dash)
             {
-                combatType = MonsterCombatType.Melee;
-                deliveryModule = MonsterBasicAttackDeliveryModule.Direct;
-                projectileTravel = MonsterBasicAttackProjectileTravel.None;
-                collisionModule = MonsterBasicAttackCollisionModule.DirectResolve;
                 dashDistance = Mathf.Max(0.1f, dashDistance);
             }
 
@@ -680,6 +769,7 @@ namespace ProjectMT.Shared.Unit
             radius = Mathf.Max(0.05f, hitRadius);
             angle = Mathf.Clamp(fanAngle, 5f, 180f);
             lineWidth = Mathf.Max(0.05f, width);
+            forwardOffset = 0f;
             maxTargets = Mathf.Clamp(targetLimit, 1, MaximumTargets);
             projectileCount = Mathf.Clamp(volleyCount, 1, MaximumProjectileCount);
             projectileSpreadAngle = Mathf.Clamp(spreadAngle, 0f, 90f);
@@ -695,7 +785,45 @@ namespace ProjectMT.Shared.Unit
             dashDuration = Mathf.Clamp(advanceDuration, 0.05f, 0.3f);
             stopOnFirstTarget = stopAfterFirstTarget;
             hitAreaVisibleDuration = Mathf.Clamp(areaVisibleDuration, 0.1f, 1f);
+            progression = MonsterBasicAttackProgression.Simultaneous;
+            progressionDuration = 0.25f;
+            telegraphDelay = 0f;
+            visualDuration = Mathf.Max(0.05f, areaVisibleDuration);
+            magicDirection = MonsterBasicAttackMagicDirection.Forward;
             ConfigureModulesFromLegacy();
+            EditorNormalizeModuleCombination();
+        }
+
+        public void EditorConfigureStepExtensions(
+            MonsterBasicAttackCenter hitCenter,
+            float centerForwardOffset,
+            MonsterBasicAttackProgression hitProgression,
+            float hitProgressionDuration,
+            float warningDelay,
+            float effectDuration,
+            MonsterBasicAttackMagicDirection direction = MonsterBasicAttackMagicDirection.Forward)
+        {
+            center = hitCenter;
+            forwardOffset = Mathf.Max(0f, centerForwardOffset);
+            progression = hitProgression;
+            progressionDuration = Mathf.Max(0f, hitProgressionDuration);
+            telegraphDelay = Mathf.Max(0f, warningDelay);
+            visualDuration = Mathf.Max(0.05f, effectDuration);
+            magicDirection = direction;
+        }
+
+        public void EditorConfigureModules(
+            MonsterBasicAttackDeliveryModule deliveryMode,
+            MonsterBasicAttackCollisionModule collisionMode,
+            MonsterBasicAttackSequenceModule sequenceMode,
+            MonsterBasicAttackMovementModule movementMode,
+            MonsterBasicAttackPresentationKind presentation)
+        {
+            deliveryModule = deliveryMode;
+            collisionModule = collisionMode;
+            sequenceModule = sequenceMode;
+            movementModule = movementMode;
+            presentationKind = presentation;
             EditorNormalizeModuleCombination();
         }
 
@@ -713,6 +841,11 @@ namespace ProjectMT.Shared.Unit
         public void EditorSetBreathDuration(float duration)
         {
             breathDuration = Mathf.Max(0.01f, duration);
+        }
+
+        public void EditorSetProjectileCarrierPrefab(GameObject prefab)
+        {
+            projectileCarrierPrefab = prefab;
         }
 
         public void EditorSetDesignMemo(string memo)
@@ -742,9 +875,29 @@ namespace ProjectMT.Shared.Unit
 
         public void EditorSetVfxSlots(IEnumerable<MonsterBasicAttackVfxSlot> slots)
         {
-            vfxSlots = slots == null
+            var next = slots == null
                 ? new List<MonsterBasicAttackVfxSlot>()
-                : new List<MonsterBasicAttackVfxSlot>(slots);
+                : slots.Where(slot => slot != null)
+                    .Select(slot => slot.EditorClone())
+                    .ToList();
+            inactiveVfxSlots ??= new List<MonsterBasicAttackVfxSlot>();
+            foreach (var current in VfxSlots)
+            {
+                if (current == null || next.Any(candidate =>
+                        string.Equals(candidate.SlotId, current.SlotId, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+                inactiveVfxSlots.RemoveAll(candidate => candidate != null &&
+                    string.Equals(candidate.SlotId, current.SlotId, StringComparison.OrdinalIgnoreCase));
+                inactiveVfxSlots.Add(current.EditorClone());
+            }
+            foreach (var active in next)
+            {
+                inactiveVfxSlots.RemoveAll(candidate => candidate != null &&
+                    string.Equals(candidate.SlotId, active.SlotId, StringComparison.OrdinalIgnoreCase));
+            }
+            vfxSlots = next;
         }
 #endif
 

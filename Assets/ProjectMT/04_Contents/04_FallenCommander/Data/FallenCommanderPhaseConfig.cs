@@ -163,6 +163,16 @@ namespace ProjectMT.Contents.FallenCommander
         private AudioClip transitionSound;
         [SerializeField, InspectorName("페이즈 전환시간"), Min(0.1f)]
         private float transitionDuration = 1f;
+        [SerializeField, InspectorName("전환 화면 색상")]
+        private Color transitionFadeColor = Color.black;
+        [SerializeField, InspectorName("전환 화면 최대 어두움"), Range(0f, 1f)]
+        private float transitionFadeAlpha = 1f;
+        [SerializeField, InspectorName("전환 화면 페이드 시간"), Min(0.01f)]
+        private float transitionFadeDuration = 0.15f;
+        [SerializeField, InspectorName("보스 프리팹 교체")]
+        private GameObject bossPrefabOverride;
+        [SerializeField, InspectorName("보스 크기 배율"), Min(0.1f)]
+        private float bossScaleMultiplier = 1f;
         [SerializeField, InspectorName("연속 위치 공격 패턴 설정")]
         private FallenCommanderMarkStrikePhaseData markStrikePattern = new();
         [SerializeField, InspectorName("블랙홀 공격 페이즈 설정")]
@@ -183,6 +193,11 @@ namespace ProjectMT.Contents.FallenCommander
         public string TransitionMessage => transitionMessage;
         public AudioClip TransitionSound => transitionSound;
         public float TransitionDuration => transitionDuration;
+        public Color TransitionFadeColor => transitionFadeColor;
+        public float TransitionFadeAlpha => Mathf.Clamp01(transitionFadeAlpha);
+        public float TransitionFadeDuration => Mathf.Max(0.01f, transitionFadeDuration);
+        public GameObject BossPrefabOverride => bossPrefabOverride;
+        public float BossScaleMultiplier => Mathf.Max(0.1f, bossScaleMultiplier);
         public FallenCommanderMarkStrikePhaseData MarkStrikePattern => markStrikePattern;
         public FallenCommanderBlackHolePhaseData BlackHolePattern =>
             blackHolePattern ??= new FallenCommanderBlackHolePhaseData();
@@ -372,7 +387,7 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("묶음당 최대 피해 횟수"), Min(1)]
         private int maxDamagePerGroup = 1;
         [SerializeField, InspectorName("피격 기절시간"), Min(0f)]
-        private float stunDuration;
+        private float stunDuration = 3.5f;
 
         public int TotalCount => Mathf.Max(1, totalCount);
         public int SimultaneousCount => Mathf.Clamp(simultaneousCount, 1, TotalCount);

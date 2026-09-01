@@ -193,12 +193,17 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 "healthRatio" => "진입 체력 비율 (읽기 전용)",
                 "availableAttacks" => "사용할 공격 목록",
                 "allowOverlappingBasicAttack" => "기본 투사체 중복 공격 허용",
+                "allowBasicAttackDuringBlackHole" => "블랙홀 중 기본 투사체 중복 허용",
+                "allowBasicAttackDuringFallingBarrage" => "낙하 탄막 중 기본 투사체 중복 허용",
                 "hasSignatureAttack" => "페이즈 대표 공격 사용",
                 "signatureAttack" => "페이즈 대표 공격",
                 "transitionMessage" => "페이즈 전환 문구",
                 "transitionSound" => "페이즈 전환 사운드",
                 "transitionDuration" => "페이즈 전환시간",
+                "bossPrefabOverride" => "보스 프리팹 교체",
+                "bossScaleMultiplier" => "보스 크기 배율",
                 "markStrikePattern" => "연속 위치 공격 패턴 설정",
+                "blackHolePattern" => "블랙홀 공격 페이즈 설정",
                 "twistedBattlefieldPattern" => "연속 장판 공격 페이즈 설정",
                 "fallingBarragePattern" => "낙하 탄막 공격 페이즈 설정",
                 _ => ObjectNames.NicifyVariableName(propertyName)
@@ -240,6 +245,17 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 "warningDuration" => "공격 전 경고시간",
                 "telegraphHoldDuration" => "충전 완료 유지시간",
                 "beatInterval" => "다음 장판 전환 간격",
+                _ => ObjectNames.NicifyVariableName(propertyName)
+            };
+        }
+
+        public static string BlackHolePhase(string propertyName)
+        {
+            return propertyName switch
+            {
+                "minimumCount" => "동시 생성 최소 개수",
+                "maximumCount" => "동시 생성 최대 개수",
+                "minimumCoreSpacing" => "중심부 최소 간격",
                 _ => ObjectNames.NicifyVariableName(propertyName)
             };
         }
@@ -1050,14 +1066,25 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 position,
                 property,
                 label,
-                FallenCommanderInspectorLabels.Phase);
+                FallenCommanderInspectorLabels.Phase,
+                ShouldDrawProperty);
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             return FallenCommanderLocalizedPropertyGUI.GetHeight(
                 property,
-                FallenCommanderInspectorLabels.Phase);
+                FallenCommanderInspectorLabels.Phase,
+                ShouldDrawProperty);
+        }
+
+        private static bool ShouldDrawProperty(SerializedProperty child)
+        {
+            return child.name != "bossPrefabOverride" &&
+                   child.name != "bossScaleMultiplier" &&
+                   child.name != "transitionFadeColor" &&
+                   child.name != "transitionFadeAlpha" &&
+                   child.name != "transitionFadeDuration";
         }
     }
 
@@ -1104,6 +1131,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
     [CustomEditor(typeof(FallenCommanderPhaseConfig))]
     public sealed class FallenCommanderPhaseConfigEditor : UnityEditor.Editor
     {
+        private void OnDisable()
+        {
+            FallenCommanderPhaseTransitionEditorPreview.Stop();
+        }
+
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
@@ -1117,7 +1149,252 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 serializedObject.FindProperty("phases"),
                 new GUIContent("페이즈 목록"),
                 true);
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField(
+                "페이즈 전용 설정",
+                EditorStyles.boldLabel);
+            DrawPhaseTwoPresentation(
+                FindPhaseProperty(FallenCommanderBossPhase.Phase2));
+            DrawPhaseThreePresentation(
+                FindPhaseProperty(FallenCommanderBossPhase.Phase3));
+            DrawTransitionPreviewButtons(
+                FindPhaseProperty(FallenCommanderBossPhase.Phase2),
+                FindPhaseProperty(FallenCommanderBossPhase.Phase3));
             serializedObject.ApplyModifiedProperties();
+        }
+
+        private SerializedProperty FindPhaseProperty(FallenCommanderBossPhase phase)
+        {
+            var phases = serializedObject.FindProperty("phases");
+            if (phases == null)
+            {
+                return null;
+            }
+
+            for (var index = 0; index < phases.arraySize; index++)
+            {
+                var item = phases.GetArrayElementAtIndex(index);
+                var phaseProperty = item.FindPropertyRelative("phase");
+                if (phaseProperty != null && phaseProperty.intValue == (int)phase)
+                {
+                    return item;
+                }
+            }
+
+            return null;
+        }
+
+        private static void DrawPhaseTwoPresentation(SerializedProperty phase)
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField("2페이즈 전용 설정", EditorStyles.boldLabel);
+                DrawProperty(
+                    phase,
+                    "bossPrefabOverride",
+                    "보스 프리팹 교체");
+                DrawTransitionScreenFade(phase);
+            }
+        }
+
+        private static void DrawPhaseThreePresentation(SerializedProperty phase)
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField("3페이즈 전용 설정", EditorStyles.boldLabel);
+                DrawProperty(phase, "bossScaleMultiplier", "보스 크기 배율");
+                DrawTransitionScreenFade(phase);
+            }
+        }
+
+        private static void DrawProperty(
+            SerializedProperty phase,
+            string propertyName,
+            string label)
+        {
+            var property = phase?.FindPropertyRelative(propertyName);
+            if (property == null)
+            {
+                EditorGUILayout.LabelField(label, "설정 없음");
+                return;
+            }
+
+            EditorGUILayout.PropertyField(property, new GUIContent(label));
+        }
+
+        private static void DrawTransitionScreenFade(SerializedProperty phase)
+        {
+            EditorGUILayout.Space(EditorGUIUtility.standardVerticalSpacing);
+            EditorGUILayout.LabelField("전환 화면 가리기", EditorStyles.boldLabel);
+            DrawProperty(phase, "transitionFadeColor", "화면 가리기 색상");
+            DrawProperty(phase, "transitionFadeAlpha", "화면 가리기 최대 어두움");
+            DrawProperty(phase, "transitionFadeDuration", "화면 가리기 페이드 시간");
+        }
+
+        private static void DrawTransitionPreviewButtons(
+            SerializedProperty phaseTwo,
+            SerializedProperty phaseThree)
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("2페이즈 전환"))
+                {
+                    PlayTransitionPreview(phaseTwo);
+                }
+
+                if (GUILayout.Button("3페이즈 전환"))
+                {
+                    PlayTransitionPreview(phaseThree);
+                }
+
+                if (GUILayout.Button("재시작"))
+                {
+                    RestartTransitionPreview();
+                }
+            }
+        }
+
+        private static void PlayTransitionPreview(SerializedProperty phaseProperty)
+        {
+            if (!TryGetPreviewContext(
+                    phaseProperty,
+                    out var config,
+                    out var phase,
+                    out var baseBossPrefab,
+                    out var spawnPoint,
+                    out var fadeColor,
+                    out var fadeAlpha,
+                    out var fadeDuration) ||
+                !FallenCommanderPhaseTransitionEditorPreview.Play(
+                    config,
+                    phase,
+                    baseBossPrefab,
+                    spawnPoint,
+                    fadeColor,
+                    fadeAlpha,
+                    fadeDuration))
+            {
+                EditorUtility.DisplayDialog(
+                    "페이즈 전환 미리보기",
+                    "선택한 페이즈의 보스 프리팹과 전환 설정을 확인해 주세요.",
+                    "확인");
+            }
+        }
+
+        private static void RestartTransitionPreview()
+        {
+            if (!FallenCommanderPhaseTransitionEditorPreview.Restart())
+            {
+                EditorUtility.DisplayDialog(
+                    "페이즈 전환 미리보기",
+                    "먼저 2페이즈 또는 3페이즈 전환을 실행해 주세요.",
+                    "확인");
+            }
+        }
+
+        private static bool TryGetPreviewContext(
+            SerializedProperty phaseProperty,
+            out FallenCommanderPhaseConfig config,
+            out FallenCommanderBossPhase phase,
+            out GameObject baseBossPrefab,
+            out Transform spawnPoint,
+            out Color fadeColor,
+            out float fadeAlpha,
+            out float fadeDuration)
+        {
+            config = null;
+            phase = FallenCommanderBossPhase.Phase1;
+            baseBossPrefab = null;
+            spawnPoint = null;
+            fadeColor = Color.black;
+            fadeAlpha = 1f;
+            fadeDuration = 0.15f;
+            if (phaseProperty == null ||
+                phaseProperty.serializedObject.targetObject is not FallenCommanderPhaseConfig phaseConfig)
+            {
+                return false;
+            }
+
+            var phasePropertyValue = phaseProperty.FindPropertyRelative("phase");
+            if (phasePropertyValue == null)
+            {
+                return false;
+            }
+
+            var controllers = Object.FindObjectsByType<FallenCommanderController>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (var index = 0; index < controllers.Length; index++)
+            {
+                var controllerData = new SerializedObject(controllers[index]);
+                var prefab = controllerData.FindProperty("bossPrefab")
+                    ?.objectReferenceValue as GameObject;
+                var controllerSpawnPoint = controllerData.FindProperty("bossSpawnPoint")
+                    ?.objectReferenceValue as Transform;
+                if (prefab != null)
+                {
+                    config = phaseConfig;
+                    phase = (FallenCommanderBossPhase)phasePropertyValue.intValue;
+                    baseBossPrefab = prefab;
+                    spawnPoint = controllerSpawnPoint;
+                    ResolvePreviewFadeSettings(
+                        phaseProperty,
+                        out fadeColor,
+                        out fadeAlpha,
+                        out fadeDuration);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void ResolvePreviewFadeSettings(
+            SerializedProperty phase,
+            out Color fadeColor,
+            out float fadeAlpha,
+            out float fadeDuration)
+        {
+            fadeColor = Color.black;
+            fadeAlpha = 1f;
+            fadeDuration = 0.15f;
+            var color = phase?.FindPropertyRelative("transitionFadeColor");
+            var alpha = phase?.FindPropertyRelative("transitionFadeAlpha");
+            var duration = phase?.FindPropertyRelative("transitionFadeDuration");
+            if (color != null)
+            {
+                fadeColor = color.colorValue;
+            }
+
+            if (alpha != null)
+            {
+                fadeAlpha = alpha.floatValue;
+            }
+
+            if (duration != null)
+            {
+                fadeDuration = duration.floatValue;
+            }
+        }
+    }
+
+    [CustomPropertyDrawer(typeof(FallenCommanderBlackHolePhaseData))]
+    public sealed class FallenCommanderBlackHolePhaseDataDrawer : PropertyDrawer
+    {
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            FallenCommanderLocalizedPropertyGUI.Draw(
+                position,
+                property,
+                label,
+                FallenCommanderInspectorLabels.BlackHolePhase);
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return FallenCommanderLocalizedPropertyGUI.GetHeight(
+                property,
+                FallenCommanderInspectorLabels.BlackHolePhase);
         }
     }
 

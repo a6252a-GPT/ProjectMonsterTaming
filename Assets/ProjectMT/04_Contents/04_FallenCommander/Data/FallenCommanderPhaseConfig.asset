@@ -24,6 +24,11 @@ MonoBehaviour:
     transitionMessage: "1 \uD398\uC774\uC988"
     transitionSound: {fileID: 0}
     transitionDuration: 1
+    transitionFadeColor: {r: 0, g: 0, b: 0, a: 1}
+    transitionFadeAlpha: 1
+    transitionFadeDuration: 0.15
+    bossPrefabOverride: {fileID: 0}
+    bossScaleMultiplier: 1
     markStrikePattern:
       totalCount: 3
       simultaneousCount: 3
@@ -34,7 +39,7 @@ MonoBehaviour:
       clusterGroups: 0
       clusterRadius: 1.35
       maxDamagePerGroup: 1
-      stunDuration: 0
+      stunDuration: 3.5
     blackHolePattern:
       minimumCount: 1
       maximumCount: 1
@@ -63,6 +68,11 @@ MonoBehaviour:
     transitionMessage: "2 \uD398\uC774\uC988"
     transitionSound: {fileID: 0}
     transitionDuration: 1
+    transitionFadeColor: {r: 0, g: 0, b: 0, a: 1}
+    transitionFadeAlpha: 1
+    transitionFadeDuration: 0.15
+    bossPrefabOverride: {fileID: 6371891410129973298, guid: a578d12661b866940b8cfd0f86719cc9, type: 3}
+    bossScaleMultiplier: 1
     markStrikePattern:
       totalCount: 7
       simultaneousCount: 1
@@ -73,7 +83,7 @@ MonoBehaviour:
       clusterGroups: 0
       clusterRadius: 1.35
       maxDamagePerGroup: 1
-      stunDuration: 0
+      stunDuration: 3.5
     blackHolePattern:
       minimumCount: 1
       maximumCount: 1
@@ -102,6 +112,11 @@ MonoBehaviour:
     transitionMessage: "3 \uD398\uC774\uC988"
     transitionSound: {fileID: 0}
     transitionDuration: 1
+    transitionFadeColor: {r: 0, g: 0, b: 0, a: 1}
+    transitionFadeAlpha: 1
+    transitionFadeDuration: 0.15
+    bossPrefabOverride: {fileID: 0}
+    bossScaleMultiplier: 1.2
     markStrikePattern:
       totalCount: 10
       simultaneousCount: 3
@@ -112,7 +127,7 @@ MonoBehaviour:
       clusterGroups: 1
       clusterRadius: 1.35
       maxDamagePerGroup: 1
-      stunDuration: 0
+      stunDuration: 3.5
     blackHolePattern:
       minimumCount: 2
       maximumCount: 3

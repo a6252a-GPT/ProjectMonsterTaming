@@ -90,7 +90,7 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("기절 적용")]
         private bool finalChargeUseStun;
         [SerializeField, InspectorName("기절 지속시간"), Min(0f)]
-        private float finalChargeStunDuration;
+        private float finalChargeStunDuration = 3.5f;
         [SerializeField, InspectorName("연출 (시각 효과 / 효과음)")]
         private FallenCommanderAttackEffectData finalChargeEffects = new();
         [SerializeField, InspectorName("시전 모션")] private AnimationClip finalChargePreCastMotion;
@@ -614,7 +614,7 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("기절 적용")]
         private bool useStun;
         [SerializeField, InspectorName("기절 지속시간"), Min(0f)]
-        private float stunDuration;
+        private float stunDuration = 3.5f;
 
         public GameObject TelegraphPrefab => telegraphPrefab;
         public FallenCommanderAttackEffectData Effects => effects;

@@ -81,7 +81,10 @@ namespace ProjectMT.Contents.FallenCommander
             string phaseTransitionMessage = "",
             string timeoutWipeMessage = "",
             float timeoutWipePulseInterval = 0.45f,
-            string finalChargeWarningMessage = "")
+            string finalChargeWarningMessage = "",
+            Color phaseTransitionFadeColor = default,
+            float phaseTransitionFadeAlpha = 1f,
+            float phaseTransitionFadeDuration = 0.15f)
         {
             BossHealth = bossHealth;
             BossMaxHealth = bossMaxHealth;
@@ -112,6 +115,9 @@ namespace ProjectMT.Contents.FallenCommander
             TimeoutWipeMessage = timeoutWipeMessage;
             TimeoutWipePulseInterval = timeoutWipePulseInterval;
             FinalChargeWarningMessage = finalChargeWarningMessage;
+            PhaseTransitionFadeColor = phaseTransitionFadeColor;
+            PhaseTransitionFadeAlpha = phaseTransitionFadeAlpha;
+            PhaseTransitionFadeDuration = phaseTransitionFadeDuration;
         }
 
         public float BossHealth { get; }
@@ -143,6 +149,9 @@ namespace ProjectMT.Contents.FallenCommander
         public string TimeoutWipeMessage { get; }
         public float TimeoutWipePulseInterval { get; }
         public string FinalChargeWarningMessage { get; }
+        public Color PhaseTransitionFadeColor { get; }
+        public float PhaseTransitionFadeAlpha { get; }
+        public float PhaseTransitionFadeDuration { get; }
     }
 
     // 같은 GameObject에 이 컴포넌트를 여러 개 추가하지 못하게 막는다.
@@ -161,6 +170,7 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField] private Text timerValue;
         [SerializeField] private Text comboScoreValue;
         [SerializeField] private Image breakDurationFill;
+        [SerializeField] private Button debugToggleButton;
         [SerializeField] private Button debugTimeoutButton;
         [SerializeField] private Button debugReduceTimeButton;
         [SerializeField] private Button debugRestartBattleButton;
@@ -185,6 +195,8 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField] private Text finalChargeWarning;
         [SerializeField] private Text finalChargeTimeValue;
         [SerializeField] private Text phaseTransitionNotice;
+        [Header("페이즈 화면 전환")]
+        [SerializeField, InspectorName("화면 가리기 이미지")] private Image phaseTransitionScreenFade;
         [SerializeField, Range(0f, 1f)] private float timeoutWarningMinAlpha = 0.35f;
         [SerializeField, Min(0.05f)] private float timeoutWarningPulseInterval = 0.45f;
 
@@ -195,6 +207,9 @@ namespace ProjectMT.Contents.FallenCommander
         private IBossDungeonAttackDebugController attackDebugController;
         private bool showDebugControls;
         private bool keepRestartVisibleWhenUnbound;
+#if UNITY_EDITOR
+        private bool debugControlsExpanded;
+#endif
         private static Font runtimeKoreanFont;
         private RectTransform commanderHeartRoot;
         private Text commanderStunNotice;
@@ -204,10 +219,20 @@ namespace ProjectMT.Contents.FallenCommander
         private string attackWarningMessage;
         private float attackWarningRemainingTime;
         private bool isPhaseTransitionNoticeActive;
+        private bool isPhaseTransitionScreenFadeActive;
+        private float phaseTransitionFadeCurrentAlpha;
+        private Color phaseTransitionFadeColor = Color.black;
+        private float phaseTransitionFadeAlpha = 1f;
+        private float phaseTransitionFadeDuration = 0.15f;
         private readonly List<Graphic> commanderHeartGraphics = new List<Graphic>();
         private readonly Dictionary<GameObject, bool> hiddenHudRootChildren =
             new Dictionary<GameObject, bool>();
         private int renderedCommanderMaxHearts = -1;
+
+        public bool IsPhaseTransitionScreenCovered =>
+            phaseTransitionScreenFade == null ||
+            !isPhaseTransitionScreenFadeActive ||
+            phaseTransitionFadeCurrentAlpha >= phaseTransitionFadeAlpha - 0.01f;
 
         // Controller와 HUD를 연결한다.
         //Controller.Initialize()에서 호출
@@ -226,6 +251,9 @@ namespace ProjectMT.Contents.FallenCommander
             attackDebugController = targetDebugController;
             showDebugControls = showDebugButtons;
             keepRestartVisibleWhenUnbound = showDebugButtons;
+#if UNITY_EDITOR
+            debugControlsExpanded = false;
+#endif
             if (hudSource != null)
             {
                 // Controller가 HudStateChanged 이벤트를 발생시키면
@@ -242,7 +270,11 @@ namespace ProjectMT.Contents.FallenCommander
             attackWarningMessage = string.Empty;
             attackWarningRemainingTime = 0f;
             isPhaseTransitionNoticeActive = false;
+            isPhaseTransitionScreenFadeActive = false;
+            phaseTransitionFadeCurrentAlpha = 0f;
+            SetPhaseTransitionFadeAlpha(0f);
             EnsureRuntimeControls();
+#if UNITY_EDITOR
             debugRestartBattleButton?.onClick.RemoveListener(
                 HandleDebugRestartBattle);
             debugRestartBattleButton?.onClick.AddListener(
@@ -250,6 +282,8 @@ namespace ProjectMT.Contents.FallenCommander
             ConfigureAttackDebugLabels();
             ApplyHudLayout();
             SetControlVisibility();
+            debugToggleButton?.onClick.RemoveListener(HandleDebugToggle);
+            debugToggleButton?.onClick.AddListener(HandleDebugToggle);
             debugTimeoutButton?.onClick.RemoveListener(HandleDebugTimeout);
             debugTimeoutButton?.onClick.AddListener(HandleDebugTimeout);
             debugReduceTimeButton?.onClick.RemoveListener(HandleDebugReduceTime);
@@ -287,13 +321,19 @@ namespace ProjectMT.Contents.FallenCommander
             debugPhase2Button?.onClick.AddListener(HandleDebugPhase2);
             debugPhase3Button?.onClick.RemoveListener(HandleDebugPhase3);
             debugPhase3Button?.onClick.AddListener(HandleDebugPhase3);
+#endif
             phaseTransitionNotice?.gameObject.SetActive(false);
             attackWarningMessage = string.Empty;
             attackWarningRemainingTime = 0f;
             isPhaseTransitionNoticeActive = false;
+            isPhaseTransitionScreenFadeActive = false;
             isTimeoutWarningPulsing = false;
             SetFinalChargeAlpha(1f);
+            phaseTransitionFadeCurrentAlpha = 0f;
+            SetPhaseTransitionFadeAlpha(0f);
+#if UNITY_EDITOR
             debugBossHealthButton?.onClick.AddListener(HandleDebugBossHealth);
+#endif
         }
 
         // Controller와 HUD의 연결을 해제
@@ -312,6 +352,8 @@ namespace ProjectMT.Contents.FallenCommander
             bossHealthDebugController = null;
             attackDebugController = null;
             showDebugControls = false;
+#if UNITY_EDITOR
+            debugToggleButton?.onClick.RemoveListener(HandleDebugToggle);
             debugTimeoutButton?.onClick.RemoveListener(HandleDebugTimeout);
             debugReduceTimeButton?.onClick.RemoveListener(HandleDebugReduceTime);
             debugBasicAttackButton?.onClick.RemoveListener(HandleDebugBasicAttack);
@@ -331,6 +373,7 @@ namespace ProjectMT.Contents.FallenCommander
             debugPhase1Button?.onClick.RemoveListener(HandleDebugPhase1);
             debugPhase2Button?.onClick.RemoveListener(HandleDebugPhase2);
             debugPhase3Button?.onClick.RemoveListener(HandleDebugPhase3);
+#endif
             SetControlVisibility();
         }
 
@@ -338,46 +381,57 @@ namespace ProjectMT.Contents.FallenCommander
         {
             var hasTimedBattle = timeoutController != null;
             var hasAttackDebug = attackDebugController != null;
+#if UNITY_EDITOR
+            var canShowDebugToggle = showDebugControls ||
+                keepRestartVisibleWhenUnbound;
+            var canShowDebugButtons = canShowDebugToggle &&
+                debugControlsExpanded;
+#else
+            const bool canShowDebugToggle = false;
+            const bool canShowDebugButtons = false;
+#endif
 
             scoreValue?.gameObject.SetActive(hasTimedBattle);
             timerValue?.gameObject.SetActive(hasTimedBattle);
             comboScoreValue?.gameObject.SetActive(false);
+            debugToggleButton?.gameObject.SetActive(canShowDebugToggle);
             debugTimeoutButton?.gameObject.SetActive(
-                hasTimedBattle && showDebugControls);
+                hasTimedBattle && canShowDebugButtons);
             debugReduceTimeButton?.gameObject.SetActive(
-                hasTimedBattle && showDebugControls);
+                hasTimedBattle && canShowDebugButtons);
             debugRestartBattleButton?.gameObject.SetActive(
-                keepRestartVisibleWhenUnbound && hudSource == null);
+                keepRestartVisibleWhenUnbound && hudSource == null &&
+                canShowDebugButtons);
             debugBasicAttackButton?.gameObject.SetActive(
-                hasAttackDebug && showDebugControls);
+                hasAttackDebug && canShowDebugButtons);
             debugHandSlamButton?.gameObject.SetActive(
-                hasAttackDebug && showDebugControls);
+                hasAttackDebug && canShowDebugButtons);
             debugLineStrikeButton?.gameObject.SetActive(
-                hasAttackDebug && showDebugControls);
+                hasAttackDebug && canShowDebugButtons);
             debugMarkStrikeButton?.gameObject.SetActive(
-                hasAttackDebug && showDebugControls);
+                hasAttackDebug && canShowDebugButtons);
             debugTrackingMarkButton?.gameObject.SetActive(
-                hasAttackDebug && showDebugControls);
+                hasAttackDebug && canShowDebugButtons);
             debugWideBurstButton?.gameObject.SetActive(
-                hasAttackDebug && showDebugControls);
+                hasAttackDebug && canShowDebugButtons);
             debugChargedWideBurstButton?.gameObject.SetActive(
-                hasAttackDebug && showDebugControls);
+                hasAttackDebug && canShowDebugButtons);
             debugCorruptionRingButton?.gameObject.SetActive(
-                hasAttackDebug && showDebugControls);
+                hasAttackDebug && canShowDebugButtons);
             debugTwistedBattlefieldButton?.gameObject.SetActive(
-                hasAttackDebug && showDebugControls);
+                hasAttackDebug && canShowDebugButtons);
             debugFallingBarrageButton?.gameObject.SetActive(
-                hasAttackDebug && showDebugControls);
+                hasAttackDebug && canShowDebugButtons);
             debugBossKillButton?.gameObject.SetActive(
-                bossKillController != null && showDebugControls);
+                bossKillController != null && canShowDebugButtons);
             debugBossHealthButton?.gameObject.SetActive(
-                bossHealthDebugController != null && showDebugControls);
+                bossHealthDebugController != null && canShowDebugButtons);
             debugPhase1Button?.gameObject.SetActive(
-                bossHealthDebugController != null && showDebugControls);
+                bossHealthDebugController != null && canShowDebugButtons);
             debugPhase2Button?.gameObject.SetActive(
-                bossHealthDebugController != null && showDebugControls);
+                bossHealthDebugController != null && canShowDebugButtons);
             debugPhase3Button?.gameObject.SetActive(
-                bossHealthDebugController != null && showDebugControls);
+                bossHealthDebugController != null && canShowDebugButtons);
         }
         // HUD 전체의 표시 여부
         public void SetVisible(bool visible)
@@ -439,6 +493,9 @@ namespace ProjectMT.Contents.FallenCommander
                 attackWarningMessage = string.Empty;
                 attackWarningRemainingTime = 0f;
                 isPhaseTransitionNoticeActive = false;
+                isPhaseTransitionScreenFadeActive = false;
+                phaseTransitionFadeCurrentAlpha = 0f;
+                SetPhaseTransitionFadeAlpha(0f);
             }
         }
 
@@ -483,6 +540,8 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void Update()
         {
+            UpdatePhaseTransitionFade();
+
             if (attackWarningRemainingTime > 0f)
             {
                 attackWarningRemainingTime = Mathf.Max(
@@ -523,9 +582,12 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void OnDestroy()
         {
+#if UNITY_EDITOR
+            debugToggleButton?.onClick.RemoveListener(HandleDebugToggle);
             debugRestartBattleButton?.onClick.RemoveListener(
                 HandleDebugRestartBattle);
             DebugRestartBattleRequested = null;
+#endif
             Unbind();
         }
         // Controller가 새로운 HUD 상태를 전달하면 호출
@@ -568,6 +630,13 @@ namespace ProjectMT.Contents.FallenCommander
             if (phaseTransitionNotice != null)
             {
                 isPhaseTransitionNoticeActive = state.IsPhaseTransitionActive;
+                isPhaseTransitionScreenFadeActive =
+                    state.IsPhaseTransitionActive && state.BossPhase > 1;
+                phaseTransitionFadeColor = state.PhaseTransitionFadeColor;
+                phaseTransitionFadeAlpha = Mathf.Clamp01(state.PhaseTransitionFadeAlpha);
+                phaseTransitionFadeDuration = Mathf.Max(
+                    0.01f,
+                    state.PhaseTransitionFadeDuration);
                 var showAttackWarning = attackWarningRemainingTime > 0f &&
                     !string.IsNullOrWhiteSpace(attackWarningMessage);
                 phaseTransitionNotice.gameObject.SetActive(
@@ -669,6 +738,13 @@ namespace ProjectMT.Contents.FallenCommander
             }
         }
 
+#if UNITY_EDITOR
+        private void HandleDebugToggle()
+        {
+            debugControlsExpanded = !debugControlsExpanded;
+            SetControlVisibility();
+        }
+
         private void HandleDebugTimeout()
         {
             timeoutController?.DebugTimeout();
@@ -695,6 +771,7 @@ namespace ProjectMT.Contents.FallenCommander
         {
             attackDebugController?.DebugMeleeAttack();
         }
+#endif
 
         private void SetFinalChargeAlpha(float alpha)
         {
@@ -704,6 +781,36 @@ namespace ProjectMT.Contents.FallenCommander
             }
         }
 
+        private void UpdatePhaseTransitionFade()
+        {
+            if (phaseTransitionScreenFade == null)
+            {
+                return;
+            }
+
+            var targetAlpha = isPhaseTransitionScreenFadeActive
+                ? phaseTransitionFadeAlpha
+                : 0f;
+            phaseTransitionFadeCurrentAlpha = Mathf.MoveTowards(
+                phaseTransitionFadeCurrentAlpha,
+                targetAlpha,
+                Time.unscaledDeltaTime / phaseTransitionFadeDuration);
+            SetPhaseTransitionFadeAlpha(phaseTransitionFadeCurrentAlpha);
+        }
+
+        private void SetPhaseTransitionFadeAlpha(float alpha)
+        {
+            if (phaseTransitionScreenFade == null)
+            {
+                return;
+            }
+
+            var color = phaseTransitionFadeColor;
+            color.a = Mathf.Clamp01(alpha);
+            phaseTransitionScreenFade.color = color;
+        }
+
+#if UNITY_EDITOR
         private void HandleDebugLineStrike()
         {
             attackDebugController?.DebugLineStrike();
@@ -773,6 +880,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void ConfigureAttackDebugLabels()
         {
+            SetButtonLabel(debugToggleButton, "테스트 버튼");
             SetButtonLabel(debugBasicAttackButton, "기본 공격");
             SetButtonLabel(debugHandSlamButton, "근접 공격");
             SetButtonLabel(debugLineStrikeButton, "직선 공격");
@@ -783,9 +891,9 @@ namespace ProjectMT.Contents.FallenCommander
             SetButtonLabel(debugTwistedBattlefieldButton, "연속 장판");
             SetButtonLabel(debugFallingBarrageButton, "낙하 탄막");
             SetButtonLabel(debugBossHealthButton, "보스 체력 -10%");
-            SetButtonLabel(debugPhase1Button, "1 페이즈");
-            SetButtonLabel(debugPhase2Button, "2 페이즈");
-            SetButtonLabel(debugPhase3Button, "3 페이즈");
+            SetButtonLabel(debugPhase1Button, "1페이즈 테스트");
+            SetButtonLabel(debugPhase2Button, "2페이즈 테스트");
+            SetButtonLabel(debugPhase3Button, "3페이즈 테스트");
             SetButtonLabel(debugReduceTimeButton, "시간 -10초");
             SetButtonLabel(debugRestartBattleButton, "전투 재시작");
         }
@@ -800,6 +908,7 @@ namespace ProjectMT.Contents.FallenCommander
                 label.text = text;
             }
         }
+#endif
 
         private void EnsureRuntimeControls()
         {
@@ -861,6 +970,7 @@ namespace ProjectMT.Contents.FallenCommander
                 phaseTransitionNotice.text = "2 페이즈";
             }
 
+#if UNITY_EDITOR
             if (showDebugControls && debugTimeoutButton == null)
             {
                 var buttonObject = new GameObject("DebugTimeoutButton_Runtime");
@@ -903,6 +1013,15 @@ namespace ProjectMT.Contents.FallenCommander
                 var editorButton = hudRoot.transform.Find(
                     "DebugRestartBattleButton_Editor");
                 debugRestartBattleButton = editorButton == null
+                    ? null
+                    : editorButton.GetComponent<Button>();
+            }
+
+            if (debugToggleButton == null)
+            {
+                var editorButton = hudRoot.transform.Find(
+                    "DebugToggleButton_Editor");
+                debugToggleButton = editorButton == null
                     ? null
                     : editorButton.GetComponent<Button>();
             }
@@ -969,8 +1088,6 @@ namespace ProjectMT.Contents.FallenCommander
                     ? null
                     : editorButton.GetComponent<Button>();
             }
-
-            EnsureCommanderHeartRoot();
 
             if (!showDebugControls)
             {
@@ -1087,25 +1204,28 @@ namespace ProjectMT.Contents.FallenCommander
 
                 debugPhase1Button ??= CreateRuntimeButton(
                     "DebugPhase1Button_Runtime",
-                    "1 페이즈",
+                    "1페이즈 테스트",
                     Vector2.zero,
                     new Color(0.25f, 0.55f, 0.8f, 1f),
                     phaseRoot);
                 debugPhase2Button ??= CreateRuntimeButton(
                     "DebugPhase2Button_Runtime",
-                    "2 페이즈",
+                    "2페이즈 테스트",
                     Vector2.zero,
                     new Color(0.7f, 0.45f, 0.15f, 1f),
                     phaseRoot);
                 debugPhase3Button ??= CreateRuntimeButton(
                     "DebugPhase3Button_Runtime",
-                    "3 페이즈",
+                    "3페이즈 테스트",
                     Vector2.zero,
                     new Color(0.65f, 0.15f, 0.2f, 1f),
                     phaseRoot);
             }
+#endif
+            EnsureCommanderHeartRoot();
         }
 
+#if UNITY_EDITOR
         private Button CreateRuntimeButton(
             string name,
             string labelText,
@@ -1148,6 +1268,7 @@ namespace ProjectMT.Contents.FallenCommander
             label.horizontalOverflow = HorizontalWrapMode.Overflow;
             label.verticalOverflow = VerticalWrapMode.Overflow;
         }
+#endif
 
         private Text CreateRuntimeText(string name, Vector2 position, Vector2 size, Transform parent = null)
         {
@@ -1163,6 +1284,7 @@ namespace ProjectMT.Contents.FallenCommander
             text.font = GetRuntimeFont();
             text.fontSize = 26;
             text.color = Color.white;
+            text.raycastTarget = false;
             return text;
         }
 

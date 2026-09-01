@@ -144,7 +144,7 @@ MonoBehaviour:
     preCastMotionSpeed: 1
     preCastMotionStart: 0
     preCastMotionEnd: 1
-    castMotion: {fileID: 0}
+    castMotion: {fileID: 7400000, guid: 27164d3932ee64c49a5215c417da0206, type: 3}
     castMotionSpeed: 1
     castMotionStart: 0
     castMotionEnd: 1
@@ -191,15 +191,15 @@ MonoBehaviour:
     preCastMotionSpeed: 0.2
     preCastMotionStart: 0.737
     preCastMotionEnd: 1
-    castMotion: {fileID: 0}
+    castMotion: {fileID: 7400000, guid: ec3c5725a69975047982eaf81483330d, type: 3}
     castMotionSpeed: 1
     castMotionStart: 0.1
     castMotionEnd: 0.9
     radius: 1.5
     width: 2
     length: 8
-    useStun: 0
-    stunDuration: 0
+    useStun: 1
+    stunDuration: 3.5
   trackingMarkLockDuration: 0.8
   blackHole:
     telegraphPrefab: {fileID: 5939384426542757584, guid: 8a95b41ce36931c4686846c593b9c711, type: 3}
@@ -236,10 +236,10 @@ MonoBehaviour:
       hitSfxVolume: 1
     damageDelay: 0
     preCastMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
-    preCastMotionSpeed: 1
+    preCastMotionSpeed: 0.6
     preCastMotionStart: 0.636
     preCastMotionEnd: 1
-    castMotion: {fileID: 0}
+    castMotion: {fileID: 7400000, guid: 27164d3932ee64c49a5215c417da0206, type: 3}
     castMotionSpeed: 1
     castMotionStart: 0
     castMotionEnd: 1
@@ -247,12 +247,12 @@ MonoBehaviour:
     width: 2
     length: 8
     useStun: 0
-    stunDuration: 0
+    stunDuration: 3.5
   blackHoleActiveDuration: 3.5
   blackHoleCoreRadius: 1.2
   blackHoleSpawnMinDistance: 1.5
   blackHoleSpawnMaxDistance: 3.5
-  blackHoleOuterPullSpeed: 1.5
+  blackHoleOuterPullSpeed: 2
   blackHoleInnerPullSpeed: 4
   blackHolePullStrengthCurve:
     serializedVersion: 2
@@ -390,7 +390,7 @@ MonoBehaviour:
       hitSfxVolume: 1
     damageDelay: 0
     preCastMotion: {fileID: 7400000, guid: 984f4539e99e0c74590661195af335bd, type: 3}
-    preCastMotionSpeed: 0.55
+    preCastMotionSpeed: 0.1
     preCastMotionStart: 0
     preCastMotionEnd: 0.48
     castMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
@@ -401,10 +401,10 @@ MonoBehaviour:
     width: 2
     length: 8
     useStun: 0
-    stunDuration: 0
+    stunDuration: 3.5
   corruptionRingSafeRadius: 3.5
   finalChargeHealthRatio: 0.3
-  finalChargeDuration: 5
+  finalChargeDuration: 0.1
   finalChargeTelegraphPrefab: {fileID: 5939384426542757584, guid: 8798d2c2bd4635941be031039cf5686d, type: 3}
   finalChargeTelegraphHoldDuration: 0.5
   finalChargeRadius: 16
@@ -412,7 +412,7 @@ MonoBehaviour:
   finalChargeWarningMessage: "\uACBD\uACE0! \uBCF4\uC2A4\uAC00 \uAC15\uB825\uD55C
     \uAD11\uC5ED \uACF5\uACA9\uC744 \uC900\uBE44\uD569\uB2C8\uB2E4!"
   finalChargeUseStun: 1
-  finalChargeStunDuration: 3
+  finalChargeStunDuration: 3.5
   finalChargeEffects:
     startVfxPrefab: {fileID: 3090182719152197242, guid: 72a58d6b485ceaa43a825cf9fcfa6aa0, type: 3}
     startVfxDuration: 10
@@ -443,7 +443,7 @@ MonoBehaviour:
     hitSfxDuration: 0
     hitSfxVolume: 1
   finalChargePreCastMotion: {fileID: 7400000, guid: 27164d3932ee64c49a5215c417da0206, type: 3}
-  finalChargePreCastMotionSpeed: 0.35
+  finalChargePreCastMotionSpeed: 0.12
   finalChargePreCastMotionStart: 0
   finalChargePreCastMotionEnd: 0.56
   finalChargeCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
@@ -542,9 +542,9 @@ MonoBehaviour:
     preCastMotionStart: 0
     preCastMotionEnd: 0.18
     castMotion: {fileID: 7400000, guid: 7eb365b59b49b5d4fa4ed0da8d2b8804, type: 3}
-    castMotionSpeed: 0.2
+    castMotionSpeed: 0.1
     castMotionStart: 0.18
-    castMotionEnd: 0.453
+    castMotionEnd: 0.28
     resultDelay: 2
     warningMessage: "\uC2DC\uAC04 \uC885\uB8CC! \uC804\uBA78 \uACF5\uACA9\uC774 \uBC1C\uB3D9\uB429\uB2C8\uB2E4!"
     warningPulseInterval: 0.45
@@ -581,7 +581,7 @@ MonoBehaviour:
       hitSfxVolume: 1
     damageDelay: 0
     preCastMotion: {fileID: 7400000, guid: 984f4539e99e0c74590661195af335bd, type: 3}
-    preCastMotionSpeed: 0.65
+    preCastMotionSpeed: 0.1
     preCastMotionStart: 0.15
     preCastMotionEnd: 0.55
     castMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
@@ -629,9 +629,9 @@ MonoBehaviour:
       hitSfxVolume: 1
     damageDelay: 0
     preCastMotion: {fileID: 7400000, guid: 92c028fb289e1214cb956c9eb09a0990, type: 3}
-    preCastMotionSpeed: 1
+    preCastMotionSpeed: 0.01
     preCastMotionStart: 0
-    preCastMotionEnd: 0.519
+    preCastMotionEnd: 0.181
     castMotion: {fileID: 7400000, guid: ff39f5d3f45957942b842c1ae93746de, type: 3}
     castMotionSpeed: 1.1
     castMotionStart: 0.15
@@ -672,7 +672,6 @@ MonoBehaviour:
     initialPoolSize: 20
     telegraphColor: {r: 1, g: 0.12, b: 0.04, a: 0.82}
   closeAttackDistance: 3
-  lineStrikeMinimumDistance: 5
   lineStrikeAlignmentThreshold: 0.7
   phaseConfig: {fileID: 11400000, guid: 64cd36c9c64817d458ce0ed6311a59e4, type: 2}
   deathMotion: {fileID: 7400000, guid: 7eb365b59b49b5d4fa4ed0da8d2b8804, type: 3}

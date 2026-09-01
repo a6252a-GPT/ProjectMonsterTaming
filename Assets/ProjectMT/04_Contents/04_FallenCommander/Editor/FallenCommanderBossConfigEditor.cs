@@ -1041,6 +1041,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                     TwistedAttackInterval = twistedBattlefield?.AttackInterval ?? 0.8f,
                     FallingBarrage = fallingBarrage,
                     FallingProjectileCount = fallingBarrage?.ProjectileCount ?? 30,
+                    FallingWaveCount = fallingPhase?.WaveCount ?? 1,
+                    FallingWaveInterval = fallingPhase?.WaveInterval ?? 0f,
                     FallingSpawnInterval = fallingPhase?.SpawnInterval ?? 0.07f,
                     FallingSpawnJitter = fallingPhase?.SpawnTimeJitter ?? 0.06f,
                     FallingDuration = fallingPhase?.FallDuration ?? 1.6f,

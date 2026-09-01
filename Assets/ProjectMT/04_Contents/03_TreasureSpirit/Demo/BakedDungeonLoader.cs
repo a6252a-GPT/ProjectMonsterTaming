@@ -112,6 +112,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 DisablePunctualLightShadows(activeMapInstance);
             }
 
+            DemoDungeonAtmosphere.Apply(activeMapInstance);
+            DungeonFogInitializer.Install(activeMapInstance.transform, playerTransform);
             hasKey = false;
         }
 
@@ -119,6 +121,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         {
             PlacePlayer();
             SetupCameraFollow();
+            DungeonFogInitializer.RevealPlayerArea(playerTransform);
         }
 
         public void SpawnRoomContents(float difficultyMultiplier = 1f)

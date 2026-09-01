@@ -59,7 +59,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             Vector3 interactionPoint = DemoChestInteractionSetup.GetInteractionPoint(transform);
             Vector3 toPlayer = playerTransform.position - interactionPoint;
             toPlayer.y = 0f;
-            if (toPlayer.magnitude <= interactRadius)
+            if (toPlayer.sqrMagnitude <= interactRadius * interactRadius)
             {
                 Interact();
             }
@@ -98,6 +98,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void OpenKeyQuiz()
         {
+            DemoDungeonAudio.PlayChestOpen(transform.position);
             DemoDungeonDifficulty difficulty = DemoDungeonDifficultyUtil.Resolve(
                 keyState != null ? keyState.ActiveMapInstance : null);
             DemoChestQuizOverlay.Show(difficulty, playerTransform, OnKeyQuizSolved, OnKeyQuizClosed);
@@ -106,7 +107,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private void OnKeyQuizSolved()
         {
             keyState?.GrantKey();
-            Debug.Log("[DemoChestInteraction] 퀴즈를 풀어 열쇠를 획득했습니다.");
             if (this != null)
             {
                 Destroy(gameObject);
@@ -157,6 +157,9 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 agent.Warp(spawnPosition);
             }
 
+            DemoDungeonAudio.PlayChestOpen(spawnPosition);
+            DemoDungeonAudio.PlayMimic(spawnPosition);
+
             DemoMimicAI mimicAi = mimicObject.GetComponent<DemoMimicAI>();
             if (mimicAi == null)
             {
@@ -164,8 +167,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             mimicAi.Initialize(playerTransform, difficultyMultiplier);
-
-            Debug.Log("[DemoChestInteraction] 상자가 미믹으로 변신했습니다.");
         }
     }
 

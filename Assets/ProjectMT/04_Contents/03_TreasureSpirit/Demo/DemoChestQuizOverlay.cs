@@ -46,12 +46,28 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             DemoChestQuizOverlay overlay = root.AddComponent<DemoChestQuizOverlay>();
             overlay.onSolved = solved;
             overlay.onClosedWithoutSolve = closedWithoutSolve;
-            overlay.playerMove = player != null
-                ? player.GetComponent<PlayerCharacterController>()
-                : FindFirstObjectByType<PlayerCharacterController>();
+            overlay.playerMove = ResolvePlayer(player);
             overlay.Build(difficulty);
             overlay.playerMove?.SetInputEnabled(false);
+            DemoDungeonAudio.PlayQuizUi();
             activeOverlay = overlay;
+        }
+
+        private static PlayerCharacterController ResolvePlayer(Transform player)
+        {
+            if (player != null)
+            {
+                PlayerCharacterController fromTransform = player.GetComponent<PlayerCharacterController>();
+                if (fromTransform != null)
+                {
+                    return fromTransform;
+                }
+            }
+
+            Transform activePlayer = DemoDungeonController.Active != null
+                ? DemoDungeonController.Active.PlayerTransform
+                : null;
+            return activePlayer != null ? activePlayer.GetComponent<PlayerCharacterController>() : null;
         }
 
         public static void HideActive()
@@ -250,6 +266,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             DemoChestQuizQuestion question = questions[questionIndex];
+            DemoDungeonAudio.PlayQuizUi();
             if (choiceIndex == question.CorrectIndex)
             {
                 feedbackText.text = "정답!";
@@ -300,7 +317,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 activeOverlay = null;
             }
 
-            DemoDungeonController controller = FindFirstObjectByType<DemoDungeonController>();
+            DemoDungeonController controller = DemoDungeonController.Active;
             bool dungeonRunning = controller != null && controller.IsRunning;
             if (dungeonRunning)
             {

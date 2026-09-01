@@ -24,6 +24,7 @@ namespace ProjectMT.Contents.TreasureSpirit
         [SerializeField] private int maxLives = 5;
         [SerializeField] private float hitKnockbackSpeed = 5.5f;
         [SerializeField] private float hitKnockbackDecay = 18f;
+        [SerializeField] private float hitInvulnerableDuration = 0.45f;
 
         [Header("점프")]
         [SerializeField, Min(0.1f)] private float jumpHeight = 1.25f;
@@ -38,6 +39,7 @@ namespace ProjectMT.Contents.TreasureSpirit
         private float verticalVelocity;
         private int currentLives;
         private bool isDead;
+        private float hitInvulnerableUntil;
 
         public bool InputEnabled => inputEnabled;
         public int CurrentLives => currentLives;
@@ -66,6 +68,16 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
 
             visualFeedback.RefreshRenderers();
+        }
+
+        private void OnEnable()
+        {
+            Demo.DemoCombatRoster.RegisterAlly(transform);
+        }
+
+        private void OnDisable()
+        {
+            Demo.DemoCombatRoster.UnregisterAlly(transform);
         }
 
         /// <summary>
@@ -240,6 +252,7 @@ namespace ProjectMT.Contents.TreasureSpirit
 
             verticalVelocity = Mathf.Sqrt(Mathf.Max(0.1f, jumpHeight) * -2f * Physics.gravity.y);
             knockbackVelocity = Vector3.zero;
+            Demo.DemoDungeonAudio.PlayJump(transform.position);
             return true;
         }
 
@@ -257,6 +270,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             isDead = false;
             currentLives = Mathf.Max(1, maxLives);
             verticalVelocity = 0f;
+            hitInvulnerableUntil = 0f;
             LivesChanged?.Invoke(currentLives, maxLives);
         }
 
@@ -267,13 +281,14 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         public void TakeDamage(float damage, Vector3 hitOrigin)
         {
-            if (isDead || damage <= 0f)
+            if (isDead || damage <= 0f || Time.time < hitInvulnerableUntil)
             {
                 return;
             }
 
             currentLives = Mathf.Max(0, currentLives - 1);
             LivesChanged?.Invoke(currentLives, maxLives);
+            hitInvulnerableUntil = Time.time + Mathf.Max(0.1f, hitInvulnerableDuration);
             PlayHitReaction(hitOrigin);
             if (currentLives > 0)
             {
@@ -282,9 +297,7 @@ namespace ProjectMT.Contents.TreasureSpirit
 
             isDead = true;
             SetInputEnabled(false);
-
-            Demo.DemoDungeonController controller = FindFirstObjectByType<Demo.DemoDungeonController>();
-            controller?.FailDungeon("함정에 당했습니다");
+            Demo.DemoDungeonController.Active?.FailDungeon("함정에 당했습니다");
         }
 
         private void PlayHitReaction(Vector3 hitOrigin)

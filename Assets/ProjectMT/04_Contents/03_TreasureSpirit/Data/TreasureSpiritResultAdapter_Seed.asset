@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Contents.TreasureSpirit::ProjectMT.Contents.TreasureSpirit.TreasureSpiritResultAdapter
   clearReward: {fileID: 11400000, guid: acd8f991b145b194da3abf862ab2c980, type: 2}
   stageRewards: {fileID: 11400000, guid: 6b532a2baefaafd44ad27f341c45d368, type: 2}
+  capturedMonster: {fileID: 0}

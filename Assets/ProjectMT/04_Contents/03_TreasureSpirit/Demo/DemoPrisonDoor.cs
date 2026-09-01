@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace ProjectMT.Contents.TreasureSpirit.Demo
@@ -34,14 +35,14 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
             else
             {
-                Debug.Log("[DemoPrisonDoor] 열쇠가 필요합니다.");
+                DemoDungeonAudio.PlayLockFail(transform.position);
             }
         }
 
         private void OpenDoor()
         {
             isOpened = true;
-            Debug.Log("[DemoPrisonDoor] 감옥 문을 열었습니다.");
+            DemoDungeonAudio.PlayPrisonDoor(transform.position);
 
             if (doorMeshTransform != null)
             {

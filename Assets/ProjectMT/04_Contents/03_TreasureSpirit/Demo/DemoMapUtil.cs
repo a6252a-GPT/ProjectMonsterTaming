@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -129,6 +130,138 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         {
             return !string.IsNullOrEmpty(roomName) &&
                    (roomName.StartsWith("Room_") || roomName == "StartRoom" || roomName == "EndRoom");
+        }
+
+        public static bool IsCorridorRootName(string objectName)
+        {
+            return !string.IsNullOrEmpty(objectName) &&
+                   objectName.StartsWith("Corridor", StringComparison.Ordinal);
+        }
+
+        public static List<Transform> CollectCorridorRoots(Transform mapRoot)
+        {
+            List<Transform> corridors = new List<Transform>();
+            if (mapRoot == null)
+            {
+                return corridors;
+            }
+
+            List<Transform> rooms = CollectRoomRoots(mapRoot);
+            Transform[] allTransforms = mapRoot.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < allTransforms.Length; i++)
+            {
+                Transform current = allTransforms[i];
+                if (current == null || !IsCorridorRootName(current.name))
+                {
+                    continue;
+                }
+
+                if (IsInsideAny(current, rooms) ||
+                    IsInsideCorridorParent(current) ||
+                    corridors.Contains(current))
+                {
+                    continue;
+                }
+
+                corridors.Add(current);
+            }
+
+            return corridors;
+        }
+
+        public static string GetCorridorGroupKey(string objectName)
+        {
+            if (string.IsNullOrEmpty(objectName))
+            {
+                return objectName;
+            }
+
+            string key = objectName;
+            int cloneSuffix = key.IndexOf(" (", StringComparison.Ordinal);
+            if (cloneSuffix >= 0)
+            {
+                key = key.Substring(0, cloneSuffix);
+            }
+
+            int lastUnderscore = key.LastIndexOf('_');
+            if (lastUnderscore > 0 && lastUnderscore < key.Length - 1)
+            {
+                bool allDigits = true;
+                for (int i = lastUnderscore + 1; i < key.Length; i++)
+                {
+                    if (!char.IsDigit(key[i]))
+                    {
+                        allDigits = false;
+                        break;
+                    }
+                }
+
+                if (allDigits)
+                {
+                    key = key.Substring(0, lastUnderscore);
+                }
+            }
+
+            return key;
+        }
+
+        public static List<List<Transform>> CollectCorridorGroups(Transform mapRoot)
+        {
+            List<List<Transform>> groups = new List<List<Transform>>();
+            Dictionary<string, List<Transform>> grouped = new Dictionary<string, List<Transform>>();
+            List<Transform> corridors = CollectCorridorRoots(mapRoot);
+            for (int i = 0; i < corridors.Count; i++)
+            {
+                Transform corridor = corridors[i];
+                if (corridor == null)
+                {
+                    continue;
+                }
+
+                string key = GetCorridorGroupKey(corridor.name);
+                if (!grouped.TryGetValue(key, out List<Transform> members))
+                {
+                    members = new List<Transform>();
+                    grouped.Add(key, members);
+                    groups.Add(members);
+                }
+
+                members.Add(corridor);
+            }
+
+            return groups;
+        }
+
+        private static bool IsInsideCorridorParent(Transform target)
+        {
+            Transform current = target != null ? target.parent : null;
+            while (current != null)
+            {
+                if (IsCorridorRootName(current.name))
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static bool IsInsideAny(Transform target, List<Transform> ancestors)
+        {
+            Transform current = target.parent;
+            while (current != null)
+            {
+                if (ancestors.Contains(current))
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         public static List<Transform> CollectRoomRoots(Transform mapRoot)

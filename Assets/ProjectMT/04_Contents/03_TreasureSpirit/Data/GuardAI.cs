@@ -1,11 +1,12 @@
 using System.Collections;
+using ProjectMT.Shared.Unit;
 using UnityEngine;
 using UnityEngine.AI;
 
 namespace ProjectMT.Contents.TreasureSpirit
 {
     [RequireComponent(typeof(NavMeshAgent))]
-    public class GuardAI : MonoBehaviour
+    public class GuardAI : MonoBehaviour, IDamageable
     {
         public enum GuardState
         {
@@ -32,6 +33,9 @@ namespace ProjectMT.Contents.TreasureSpirit
         [SerializeField] private float attackDamage = 15f;
         [SerializeField] private int attackMotionCount = 3;
         private float lastAttackTime;
+        private Vector3 lastChaseDestination;
+        private int speedHash;
+        private float lastAnimSpeed = -1f;
 
         [Header("배회 범위 설정")]
         [SerializeField] private float patrolRadius = 8.0f;
@@ -45,6 +49,9 @@ namespace ProjectMT.Contents.TreasureSpirit
         [SerializeField] private float currentHealth;
         [SerializeField] private float deathDestroyDelay = 3.0f;
         private bool isDead;
+
+        public bool IsAlive => !isDead;
+        public Vector3 Position => transform.position;
 
         [Header("타겟 설정")]
         [SerializeField] private Transform commanderTarget; // 기본 군단장(플레이어)
@@ -63,41 +70,21 @@ namespace ProjectMT.Contents.TreasureSpirit
             return agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
         }
 
-        private bool TryEnsureAgentOnNavMesh()
-        {
-            if (agent == null)
-            {
-                return false;
-            }
-
-            if (!agent.enabled)
-            {
-                agent.enabled = true;
-            }
-
-            if (!agent.isActiveAndEnabled)
-            {
-                return false;
-            }
-
-            if (agent.isOnNavMesh)
-            {
-                return true;
-            }
-
-            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 8f, NavMesh.AllAreas))
-            {
-                agent.Warp(hit.position);
-            }
-
-            return agent.isOnNavMesh;
-        }
-
         private void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
             animator = GetComponentInChildren<Animator>();
             CacheAnimatorParameters();
+        }
+
+        private void OnEnable()
+        {
+            Demo.DemoCombatRoster.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            Demo.DemoCombatRoster.Unregister(this);
         }
 
         private void Start()
@@ -117,6 +104,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             var multiplier = Mathf.Max(1f, difficultyMultiplier);
             maxHealth *= multiplier;
             attackDamage *= multiplier;
+            lastAttackTime = Time.time;
         }
 
         public void SetPatrolBounds(Vector3 center, float radius)
@@ -133,15 +121,19 @@ namespace ProjectMT.Contents.TreasureSpirit
                 return;
             }
 
-            if (!TryEnsureAgentOnNavMesh())
+            if (!Demo.DemoNavMeshUtil.TryEnsureOnNavMesh(agent))
             {
                 return;
             }
 
-            CacheAnimatorParameters();
-            if (hasSpeedParameter)
+            if (hasSpeedParameter && animator != null)
             {
-                animator.SetFloat("Speed", agent.velocity.magnitude);
+                float speed = agent.velocity.magnitude;
+                if (Mathf.Abs(speed - lastAnimSpeed) > 0.05f)
+                {
+                    lastAnimSpeed = speed;
+                    animator.SetFloat(speedHash, speed);
+                }
             }
 
             // ★ 실시간 타깃 평가 (팔로워 우선 감지)
@@ -159,7 +151,7 @@ namespace ProjectMT.Contents.TreasureSpirit
                 return;
             }
 
-            float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
+            float distanceToTarget = Mathf.Sqrt(Demo.DemoNavMeshUtil.PlanarSqrDistance(transform.position, currentTarget.position));
 
             switch (currentState)
             {
@@ -180,44 +172,23 @@ namespace ProjectMT.Contents.TreasureSpirit
         // ★ 팔로워 우선 타깃 탐색 메서드
         private void EvaluateTarget()
         {
-            Collider[] hitColliders = Physics.OverlapSphere(transform.position, detectionRange);
-            Transform closestFollower = null;
-            float minFollowerDistance = float.MaxValue;
-
-            foreach (var col in hitColliders)
-            {
-                bool isFollower = col.GetComponentInParent<FollowerAI>() != null;
-
-                if (isFollower)
-                {
-                    float dist = Vector3.Distance(transform.position, col.transform.position);
-                    if (dist < minFollowerDistance)
-                    {
-                        minFollowerDistance = dist;
-                        closestFollower = col.transform;
-                    }
-                }
-            }
-
-            // 1순위: 감지 범위 내 팔로워가 있다면 팔로워를 타깃으로 설정
+            Transform closestFollower = Demo.DemoCombatRoster.FindNearestAlly(transform.position, detectionRange, true);
             if (closestFollower != null)
             {
                 currentTarget = closestFollower;
                 return;
             }
 
-            // 2순위: 범위 내 팔로워가 없고 군단장이 있다면 군단장 타깃 지정
             if (commanderTarget != null)
             {
-                float distToCommander = Vector3.Distance(transform.position, commanderTarget.position);
-                if (distToCommander <= detectionRange || currentState == GuardState.Chase || currentState == GuardState.Attack)
+                float distToCommanderSqr = Demo.DemoNavMeshUtil.PlanarSqrDistance(transform.position, commanderTarget.position);
+                if (distToCommanderSqr <= detectionRange * detectionRange || currentState == GuardState.Chase || currentState == GuardState.Attack)
                 {
                     currentTarget = commanderTarget;
                     return;
                 }
             }
 
-            // 아무도 범위 내에 없으면 타깃 해제
             currentTarget = null;
         }
 
@@ -251,7 +222,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
 
             agent.isStopped = false;
-            agent.SetDestination(currentTarget.position);
+            Demo.DemoNavMeshUtil.SetDestinationIfMoved(agent, currentTarget.position, ref lastChaseDestination);
         }
 
         private void UpdateAttackState(float distanceToTarget)
@@ -309,7 +280,7 @@ namespace ProjectMT.Contents.TreasureSpirit
 
             if (NavMesh.SamplePosition(randomDirection, out NavMeshHit hit, patrolRadius * 0.5f, NavMesh.AllAreas))
             {
-                if (usePatrolOrigin && GetHorizontalDistance(hit.position, patrolOrigin) > patrolRadius)
+                if (usePatrolOrigin && Demo.DemoNavMeshUtil.PlanarSqrDistance(hit.position, patrolOrigin) > patrolRadius * patrolRadius)
                 {
                     return;
                 }
@@ -332,6 +303,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
 
             hasSpeedParameter = HasAnimatorParameter("Speed");
+            speedHash = Animator.StringToHash("Speed");
             hasAttackIndexParameter = HasAnimatorParameter("AttackIndex");
             hasAttackTrigger = HasAnimatorParameter("Attack");
             hasDieTrigger = HasAnimatorParameter("Die");
@@ -357,13 +329,6 @@ namespace ProjectMT.Contents.TreasureSpirit
             return false;
         }
 
-        private static float GetHorizontalDistance(Vector3 a, Vector3 b)
-        {
-            a.y = 0f;
-            b.y = 0f;
-            return Vector3.Distance(a, b);
-        }
-
         private void PerformAttack()
         {
             if (hasAttackTrigger)
@@ -377,9 +342,8 @@ namespace ProjectMT.Contents.TreasureSpirit
                 animator.SetTrigger("Attack");
             }
 
-            string targetName = currentTarget != null ? currentTarget.name : "타겟";
-            Debug.Log($"⚔️ {gameObject.name}이(가) [{targetName}]을(를) 공격했습니다!");
             ApplyAttackDamage();
+            Demo.DemoDungeonAudio.PlayGuardAttack(transform.position);
         }
 
         private void ApplyAttackDamage()
@@ -389,15 +353,14 @@ namespace ProjectMT.Contents.TreasureSpirit
                 return;
             }
 
-            PlayerCharacterController player = currentTarget.GetComponentInParent<PlayerCharacterController>();
-            if (player != null)
-            {
-                player.TakeDamage(attackDamage, transform.position);
-                return;
-            }
+            Demo.DemoCombatTargetUtil.DamageAlly(currentTarget, attackDamage, transform.position);
+        }
 
-            FollowerAI follower = currentTarget.GetComponentInParent<FollowerAI>();
-            follower?.TakeDamage(attackDamage);
+        public float ReceiveDamage(UnitActor source, float amount)
+        {
+            float before = currentHealth;
+            TakeDamage(amount);
+            return Mathf.Max(0f, before - currentHealth);
         }
 
         public void TakeDamage(float damage)
@@ -405,7 +368,6 @@ namespace ProjectMT.Contents.TreasureSpirit
             if (isDead) return;
 
             currentHealth -= damage;
-            Debug.Log($"🛡️ {gameObject.name} 체력 감소: {currentHealth}/{maxHealth}");
 
             if (currentHealth <= 0f)
             {
@@ -427,20 +389,13 @@ namespace ProjectMT.Contents.TreasureSpirit
                 col.enabled = false;
             }
 
-            if (hasDieTrigger)
+            if (hasDieTrigger && animator != null)
             {
                 animator.SetTrigger("Die");
             }
 
-            Debug.Log($"💀 {gameObject.name}이(가) 사망했습니다.");
-
             StartCoroutine(DestroyAfterDelay());
-
-            Demo.DemoDungeonController demoDungeonController = FindFirstObjectByType<Demo.DemoDungeonController>();
-            if (demoDungeonController != null)
-            {
-                demoDungeonController.AddKillCount();
-            }
+            Demo.DemoDungeonController.Active?.AddKillCount();
         }
 
         private IEnumerator DestroyAfterDelay()

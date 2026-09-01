@@ -68,6 +68,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private void OpenDoor()
         {
             isOpen = true;
+            DemoDungeonAudio.PlayDoor(doorPivot != null ? doorPivot.position : transform.position);
             StartCoroutine(DemoDoorRotation.RotateLocalY(doorPivot, openAngle, openSpeed));
             DisableBlockingColliders();
         }
@@ -100,6 +101,30 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private void OnTriggerEnter(Collider other)
         {
             door?.TryOpen(other);
+        }
+    }
+
+    internal static class DemoDoorRotation
+    {
+        public static IEnumerator RotateLocalY(Transform pivot, float openAngle, float openSpeed)
+        {
+            if (pivot == null)
+            {
+                yield break;
+            }
+
+            Quaternion startRotation = pivot.localRotation;
+            Quaternion targetRotation = startRotation * Quaternion.Euler(0f, openAngle, 0f);
+
+            float progress = 0f;
+            while (progress < 1f)
+            {
+                progress += Time.deltaTime * openSpeed;
+                pivot.localRotation = Quaternion.Slerp(startRotation, targetRotation, progress);
+                yield return null;
+            }
+
+            pivot.localRotation = targetRotation;
         }
     }
 }

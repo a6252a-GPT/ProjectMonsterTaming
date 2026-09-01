@@ -317,6 +317,7 @@ MonoBehaviour:
   maxLives: 5
   hitKnockbackSpeed: 5.5
   hitKnockbackDecay: 18
+  hitInvulnerableDuration: 0.45
   jumpHeight: 1.25
 --- !u!54 &8749625303620976928
 Rigidbody:
@@ -862,8 +863,8 @@ Camera:
   m_GameObject: {fileID: 1888280808478736934}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0.07, g: 0.06, b: 0.05, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -1232,8 +1233,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
-  m_Color: {r: 1, g: 0.94, b: 0.83, a: 1}
-  m_Intensity: 1.25
+  m_Color: {r: 1, g: 0.93, b: 0.84, a: 1}
+  m_Intensity: 0.45
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -1388,7 +1389,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxPool
   maxVoices: 12
   prewarmVoices: 6
-  outputGroup: {fileID: 0}
+  outputGroup: {fileID: 7706844724601125460, guid: 57f81f619730a2547a09fa10fa387a51, type: 2}
 --- !u!114 &4419726900330938762
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1505,6 +1506,7 @@ GameObject:
   - component: {fileID: 1481322446448525261}
   - component: {fileID: 1267768219586416169}
   - component: {fileID: 8116193627670385876}
+  - component: {fileID: 8720193340011223344}
   m_Layer: 0
   m_Name: PF_TreasureSpiritRuntime
   m_TagString: Untagged
@@ -1547,6 +1549,10 @@ MonoBehaviour:
   bakedDungeonLoader: {fileID: 3289255519940093335}
   commanderRoot: {fileID: 753868313211258006}
   commanderMove: {fileID: 8195734735657144785}
+  monsterCatalog: {fileID: 11400000, guid: fe8b78d3f8fdc474f867c3d64664a095, type: 2}
+  combatWorld: {fileID: 5795275648492532623}
+  followerPrefab: {fileID: 6359954306265597437, guid: c16a53cef90a01d4290cd0dad4732347, type: 3}
+  followerVisualScale: 1
   timerText: {fileID: 4416037555905286131}
   statusText: {fileID: 5767411675148797210}
   killCountText: {fileID: 1095480108006751366}
@@ -1554,9 +1560,48 @@ MonoBehaviour:
   exitButton: {fileID: 6715952084908088107}
   cardPanel: {fileID: 0}
   keyItemDefinition: {fileID: 11400000, guid: 870985507fc7bf34fa5588405db4bf4e, type: 2}
+  contentResultOverlayPrefab: {fileID: 3810198431009909963, guid: 69159d92b2e62204a92b65cace4a6bfd, type: 3}
+  resultAdapter: {fileID: 11400000, guid: 47b26aef28f34c849b245e3f7122f8da, type: 2}
   timeLimitSeconds: 100
   resultTextHideDelay: 20
   keyCardHideDelay: 5
+--- !u!114 &8720193340011223344
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6317879395377019594}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e2c4a7b91d64f3ea5c0b17d6e9f4a21, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Contents.TreasureSpirit.Demo::ProjectMT.Contents.TreasureSpirit.Demo.DemoDungeonAudio
+  sfxPool: {fileID: 4822670401394671830}
+  bgmGroup: {fileID: -26143947611714011, guid: 57f81f619730a2547a09fa10fa387a51, type: 2}
+  sfxGroup: {fileID: 7706844724601125460, guid: 57f81f619730a2547a09fa10fa387a51, type: 2}
+  bgm: {fileID: 8300000, guid: 8cbf878a925e2c344b0cefe33911b865, type: 3}
+  dungeonAmbience: {fileID: 8300000, guid: 54e89ef54ec71c04db7aa12a97a6dfaf, type: 3}
+  windAmbience: {fileID: 8300000, guid: 71fadb1e40e98b447ae775b31d72fdf6, type: 3}
+  torchAmbience: {fileID: 8300000, guid: 2b530e81b1493f2419c458c4c07a062f, type: 3}
+  jumpSfx: {fileID: 8300000, guid: 92ad3f4cee80c9f48988f4e864df5222, type: 3}
+  chestOpenSfx: {fileID: 8300000, guid: 382c0ba97324f414389a18e86744f25c, type: 3}
+  quizUiSfx: {fileID: 8300000, guid: b5a2b26608bf61242b33cbdb84f07e39, type: 3}
+  keySfx: {fileID: 8300000, guid: 4383581d35bd3f54dac37247f535e7a4, type: 3}
+  collectSfx: {fileID: 8300000, guid: e516b812db55a664ca7df5fc3f7501b9, type: 3}
+  doorSfx: {fileID: 8300000, guid: 6c0f2a7b02480ae4197a439e6b6125c1, type: 3}
+  prisonDoorSfx: {fileID: 8300000, guid: e2bef9f14f6ddc94d91116ab4003844e, type: 3}
+  lockFailSfx: {fileID: 8300000, guid: 230f452cda8df8248b18f630d82b8eb3, type: 3}
+  fireIgniteSfx: {fileID: 8300000, guid: 546f07c6e78d13741834e1b2b2d7c4b0, type: 3}
+  fireLoopSfx: {fileID: 8300000, guid: a42d4b49939323c40848f2934392d683, type: 3}
+  spikeSfx: {fileID: 8300000, guid: 2b65bb5a1a164ef41923961e66fb5c3d, type: 3}
+  sawLoopSfx: {fileID: 8300000, guid: 988b9280bc371184294970dd828e7cec, type: 3}
+  arrowSfx: {fileID: 8300000, guid: 6fa5d6f47e49ab14089a9b57c7eb69eb, type: 3}
+  mimicSfx: {fileID: 8300000, guid: cafc7de1665b64246989ccd5367b8156, type: 3}
+  followerAttackSfx: {fileID: 8300000, guid: c5917d177f7f4de4aa1b91511805ff1a, type: 3}
+  guardAttackSfx: {fileID: 8300000, guid: 2b65bb5a1a164ef41923961e66fb5c3d, type: 3}
+  clearSfx: {fileID: 8300000, guid: e0b2c856088d1684e91973a6d2fb1b90, type: 3}
+  failSfx: {fileID: 8300000, guid: 46ba55b828ea41943b473a77e157c67b, type: 3}
 --- !u!114 &8116193627670385876
 MonoBehaviour:
   m_ObjectHideFlags: 0

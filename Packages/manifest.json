@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "com.notnull92.hera-agent-unity": "file:com.notnull92.hera-agent-unity",
     "com.unity.ai.inference": "2.6.1",
     "com.unity.ai.navigation": "2.0.12",
     "com.unity.burst": "1.8.29",

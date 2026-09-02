@@ -10,7 +10,8 @@ namespace ProjectMT.Features.OfflineReward
     // 실제 광고 SDK 대신 로컬 영상 파일로 "광고 시청" 연출을 대신한다.
     // 0 ~ skipUnlockSeconds: 버튼이 잠겨있고 카운트다운만 보여준다(연속 클릭/즉시 이탈 방지용).
     // skipUnlockSeconds ~ rewardWatchSeconds: 버튼이 "SKIP"으로 열리며, 누르면 보상 없이 원래 팝업으로 돌아간다.
-    // rewardWatchSeconds 이상: 버튼이 "보상받기"로 바뀌며, 누르면 2배 보상을 받고 패널이 닫힌다.
+    // rewardWatchSeconds 이상: 버튼이 "보상받기"로 바뀌며, 누르면 즉시 2배 보상을 받고 패널이 닫힌다.
+    // 영상이 마지막 프레임까지 재생되면, 시청 시간이 30초에 못 미쳐도 자동으로 2배 보상을 지급하고 팝업을 닫는다.
     [DisallowMultipleComponent]
     public sealed class RewardedAdVideoOverlay : MonoBehaviour
     {
@@ -191,7 +192,7 @@ namespace ProjectMT.Features.OfflineReward
             HideVideoUiUntilFirstFrame();
 
             videoPlayer.clip = selectedClip;
-            videoPlayer.isLooping = true; // 영상 길이가 필요 시청 시간보다 짧아도 시간을 채울 때까지 반복
+            videoPlayer.isLooping = false;
 
             // Skip 버튼은 최소 시청 시간이 끝나기 전까지 잠겨있고 숫자 카운트다운을 보여준다.
             // 버튼 이미지의 잠금 색(100,100,100)은 Button의 Disabled Color로 처리되고,
@@ -263,7 +264,7 @@ namespace ProjectMT.Features.OfflineReward
             UnsubscribeVideoEvents();
             videoPlayer.Stop();
             videoPlayer.clip = selectedClip;
-            videoPlayer.isLooping = true;
+            videoPlayer.isLooping = false;
             videoPlayer.prepareCompleted -= HandlePreloadCompleted;
             videoPlayer.prepareCompleted += HandlePreloadCompleted;
             videoPlayer.errorReceived -= HandleErrorReceived;
@@ -347,6 +348,8 @@ namespace ProjectMT.Features.OfflineReward
             videoPlayer.frameReady += HandleFrameReady;
             videoPlayer.errorReceived -= HandleErrorReceived;
             videoPlayer.errorReceived += HandleErrorReceived;
+            videoPlayer.loopPointReached -= HandleVideoEnded;
+            videoPlayer.loopPointReached += HandleVideoEnded;
             videoPlayer.sendFrameReadyEvents = true;
         }
 
@@ -419,6 +422,16 @@ namespace ProjectMT.Features.OfflineReward
             elapsed = 0f;
         }
 
+        private void HandleVideoEnded(VideoPlayer source)
+        {
+            if (source != videoPlayer || !playing || !DisplayRoot.activeSelf)
+            {
+                return;
+            }
+
+            Complete(true);
+        }
+
         // 코덱 미지원(예: 일부 환경의 HEVC) 등으로 재생 자체가 실패하면 무한 대기 대신
         // Skip과 동일하게 처리해 팝업이 멈춰있지 않도록 한다.
         private void HandleErrorReceived(VideoPlayer source, string message)
@@ -449,6 +462,7 @@ namespace ProjectMT.Features.OfflineReward
             videoPlayer.prepareCompleted -= HandlePreloadCompleted;
             videoPlayer.frameReady -= HandleFrameReady;
             videoPlayer.errorReceived -= HandleErrorReceived;
+            videoPlayer.loopPointReached -= HandleVideoEnded;
         }
 
         private void Update()
@@ -501,6 +515,7 @@ namespace ProjectMT.Features.OfflineReward
                     skipButtonText.text = RewardLabel;
                 }
             }
+
         }
 
         private void HandleSkipClicked()

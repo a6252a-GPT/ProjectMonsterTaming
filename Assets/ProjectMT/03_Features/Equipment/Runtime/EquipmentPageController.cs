@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -149,6 +150,7 @@ namespace ProjectMT.Features.Equipment
         private bool requestInFlight;
         private Action combatInputSaved;
         private IGameProgressService progress;
+        private Coroutine pendingInventoryRefresh;
 
         private void Awake()
         {
@@ -173,6 +175,12 @@ namespace ProjectMT.Features.Equipment
         private void OnDisable()
         {
             EquipmentInventoryRuntime.Changed -= HandleInventoryChanged;
+            if (pendingInventoryRefresh != null)
+            {
+                StopCoroutine(pendingInventoryRefresh);
+                pendingInventoryRefresh = null;
+            }
+
             CloseDismantleConfirmation();
             offlineAutoDismantleSettingsPanel?.Close();
             itemComparisonPanel?.Hide();
@@ -363,7 +371,8 @@ namespace ProjectMT.Features.Equipment
         }
 
         // 등급에 맞는 프레임 템플릿을 복제해서 normalArea 밑에 끼워 넣는다.
-        // (이미 올바른 등급 프레임이 끼워져 있으면 아무 것도 하지 않는다.)
+        // 장비 획득처럼 목록이 같은 프레임에 여러 번 갱신될 수 있으므로, 이전 프레임은 Destroy 예약만
+        // 하지 않고 즉시 숨긴다. 그래야 이전 등급 테두리가 새 테두리 위에 잠깐 남지 않는다.
         private void ApplyFrameVariant(Transform normalArea, EquipmentGrade grade)
         {
             if (normalArea == null || !FrameVariantSuffixByGrade.TryGetValue(grade, out var suffix))
@@ -372,20 +381,33 @@ namespace ProjectMT.Features.Equipment
             }
 
             var desiredName = FrameVariantPrefix + suffix;
-            var current = normalArea.childCount > 0 ? normalArea.GetChild(0) : null;
-            if (current != null && current.name == desiredName)
+            Transform desiredFrame = null;
+            for (var index = normalArea.childCount - 1; index >= 0; index--)
             {
-                return; // 이미 올바른 등급 프레임
+                var frame = normalArea.GetChild(index);
+                if (!frame.name.StartsWith(FrameVariantPrefix))
+                {
+                    continue;
+                }
+
+                if (desiredFrame == null && frame.name == desiredName && frame.gameObject.activeSelf)
+                {
+                    desiredFrame = frame;
+                    continue;
+                }
+
+                frame.gameObject.SetActive(false);
+                Destroy(frame.gameObject);
+            }
+
+            if (desiredFrame != null)
+            {
+                return; // 이미 올바른 등급 프레임 하나만 남아 있다.
             }
 
             if (!frameVariantTemplates.TryGetValue(suffix, out var template) || template == null)
             {
                 return;
-            }
-
-            if (current != null)
-            {
-                Destroy(current.gameObject);
             }
 
             var instance = Instantiate(template, normalArea);
@@ -1235,7 +1257,27 @@ namespace ProjectMT.Features.Equipment
         // 이벤트 핸들러 / 새로 그리기
         // ---------------------------------------------------------------
 
-        private void HandleInventoryChanged() => RefreshAll();
+        private void HandleInventoryChanged()
+        {
+            if (!isActiveAndEnabled || pendingInventoryRefresh != null)
+            {
+                return;
+            }
+
+            // 월드 드랍·보상 정산은 같은 프레임에 여러 장비를 연속 저장할 수 있다. 모든 변경이 반영된
+            // 다음 프레임에 현재 필터·등급 정렬 기준으로 한 번만 다시 바인딩해 중간 순서가 남지 않게 한다.
+            pendingInventoryRefresh = StartCoroutine(RefreshInventoryAfterDataChange());
+        }
+
+        private IEnumerator RefreshInventoryAfterDataChange()
+        {
+            yield return null;
+            pendingInventoryRefresh = null;
+            if (isActiveAndEnabled)
+            {
+                RefreshAll();
+            }
+        }
 
         private void RefreshAll()
         {
@@ -1258,13 +1300,17 @@ namespace ProjectMT.Features.Equipment
                 OriginalIndex = index,
                 PowerDelta = EquipmentUpgradeEvaluator.EvaluatePowerDelta(item)
             });
+            // 표시 순서는 "장착 가능 우선" 다음에 사용자가 선택한 등급 순서를 가장 먼저 적용한다.
+            // 이전에는 전투력 차이가 등급보다 먼저 비교되어, 등급 높은순을 골라도 낮은 등급 장비가
+            // 위에 표시될 수 있었다.
             var ordered = evaluated
-                .OrderByDescending(entry => entry.PowerDelta > 0)
-                .ThenByDescending(entry => entry.PowerDelta);
+                .OrderByDescending(entry => entry.PowerDelta > 0);
             ordered = sortGradeDescending
                 ? ordered.ThenByDescending(entry => (int)entry.Item.Grade)
                 : ordered.ThenBy(entry => (int)entry.Item.Grade);
             var list = ordered
+                // 같은 장착 가능 여부·등급 안에서만 더 높은 전투력 상승 장비를 먼저 보여준다.
+                .ThenByDescending(entry => entry.PowerDelta)
                 .ThenBy(entry => entry.Item.Part)
                 .ThenBy(entry => entry.OriginalIndex)
                 .Select(entry => entry.Item)

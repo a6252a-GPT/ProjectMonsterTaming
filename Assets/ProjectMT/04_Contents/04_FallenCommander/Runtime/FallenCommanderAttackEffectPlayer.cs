@@ -43,7 +43,7 @@ namespace ProjectMT.Contents.FallenCommander
                 effects.StartSfx,
                 effects.StartSfxDuration,
                 placement.AnchorPosition,
-                effects.SfxVolume);
+                effects.StartSfxVolume);
             return instance;
         }
 

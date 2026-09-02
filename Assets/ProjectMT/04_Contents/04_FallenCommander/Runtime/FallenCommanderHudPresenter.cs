@@ -1451,8 +1451,15 @@ namespace ProjectMT.Contents.FallenCommander
             {
                 commanderHeartRoot = existingRoot as RectTransform;
                 commanderHeartGraphics.Clear();
-                commanderHeartGraphics.AddRange(
-                    existingRoot.GetComponentsInChildren<Graphic>(true));
+                var existingGraphics = existingRoot.GetComponentsInChildren<Graphic>(true);
+                for (var index = 0; index < existingGraphics.Length; index++)
+                {
+                    var graphic = existingGraphics[index];
+                    if (graphic != null && graphic.transform.parent == existingRoot)
+                    {
+                        commanderHeartGraphics.Add(graphic);
+                    }
+                }
                 renderedCommanderMaxHearts = commanderHeartGraphics.Count;
 
                 if (commanderHeartSprite == null && commanderHeartGraphics.Count > 0)
@@ -1584,7 +1591,7 @@ namespace ProjectMT.Contents.FallenCommander
             for (var index = 0; index < commanderHeartGraphics.Count; index++)
             {
                 var graphic = commanderHeartGraphics[index];
-                if (graphic != null)
+                if (graphic != null && graphic.transform != commanderHeartRoot)
                 {
                     Destroy(graphic.gameObject);
                 }
@@ -1604,12 +1611,14 @@ namespace ProjectMT.Contents.FallenCommander
             var clampedRatio = Mathf.Clamp01(ratio);
             fillImage.fillAmount = clampedRatio;
 
-            // Source Image가 없는 UGUI Image는 Filled 타입이어도 fillAmount를 화면에 반영하지 않는다.
-            // 임시 색상 사각형도 정상 작동하도록 왼쪽을 기준으로 실제 가로 크기를 함께 줄인다.
+            // fillAmount는 Filled 타입에서만 화면에 반영된다.
+            // Simple/Sliced 이미지와 임시 색상 사각형은 왼쪽 기준 가로 배율로 동일하게 표시한다.
             var fillTransform = fillImage.rectTransform;
             fillTransform.pivot = new Vector2(0f, fillTransform.pivot.y);
             var localScale = fillTransform.localScale;
-            localScale.x = fillImage.sprite == null ? clampedRatio : 1f;
+            localScale.x = fillImage.type == Image.Type.Filled
+                ? 1f
+                : clampedRatio;
             fillTransform.localScale = localScale;
         }
 

@@ -1753,7 +1753,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             PlayAudio(
                 spec.Effects?.StartSfx,
                 spec.Effects == null ? 0f : spec.Effects.StartSfxDuration,
-                spec.Effects == null ? 1f : spec.Effects.SfxVolume);
+                spec.Effects == null ? 1f : spec.Effects.StartSfxVolume);
         }
 
         // 발동 VFX와 SFX를 실제 공격 해결 위치 기준으로 재생한다.

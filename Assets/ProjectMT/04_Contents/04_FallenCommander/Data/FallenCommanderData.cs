@@ -19,6 +19,8 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("공격 간격"), Min(0.1f)] private float attackInterval = 2f;
         [SerializeField, InspectorName("공격 가능 거리"), Min(0.1f)] private float attackRange = 8f;
         [SerializeField, InspectorName("회전 속도"), Min(1f)] private float turnSpeed = 90f;
+        [SerializeField, InspectorName("군단장 공격 피해 배율"), Min(0.01f)]
+        private float commanderDamageMultiplier = 5f;
 
         [Header("1. 기본 공격 - 원거리 투사체")]
         [SerializeField, InspectorName("기본 공격 설정")]
@@ -167,6 +169,11 @@ namespace ProjectMT.Contents.FallenCommander
         public float AttackInterval => attackInterval;
         public float AttackRange => attackRange;
         public float TurnSpeed => turnSpeed;
+        public float CommanderDamageMultiplier => Mathf.Max(0.01f, commanderDamageMultiplier);
+        public bool HasValidCommanderDamageMultiplier =>
+            commanderDamageMultiplier > 0f &&
+            !float.IsNaN(commanderDamageMultiplier) &&
+            !float.IsInfinity(commanderDamageMultiplier);
         public FallenCommanderBasicAttackData BasicAttack => projectileBasicAttack;
         public FallenCommanderAttackData MeleeAttack => meleeAttack;
         public FallenCommanderAttackData MarkStrike => markStrike;
@@ -899,6 +906,8 @@ namespace ProjectMT.Contents.FallenCommander
         private float hitVfxScaleMultiplier = 1f;
         [SerializeField, InspectorName("시전 효과음")] private AudioClip startSfx;
         [SerializeField, InspectorName("시전 효과음 유지시간 (0 = 자동)"), Min(0f)] private float startSfxDuration;
+        [SerializeField, InspectorName("시전 효과음 볼륨"), Range(0f, 1f)]
+        private float startSfxVolume = 1f;
         [SerializeField, InspectorName("적중 효과음")] private AudioClip resolveSfx;
         [SerializeField, InspectorName("적중 효과음 유지시간 (0 = 자동)"), Min(0f)] private float resolveSfxDuration;
         [SerializeField, InspectorName("효과음 볼륨"), Range(0f, 1f)] private float sfxVolume = 1f;
@@ -927,6 +936,7 @@ namespace ProjectMT.Contents.FallenCommander
         public Vector3 HitVfxScale => ResolveScale(hitVfxScale) * ResolveScaleMultiplier(hitVfxScaleMultiplier);
         public AudioClip StartSfx => startSfx;
         public float StartSfxDuration => startSfxDuration;
+        public float StartSfxVolume => Mathf.Clamp01(startSfxVolume);
         public AudioClip ResolveSfx => resolveSfx;
         public float ResolveSfxDuration => resolveSfxDuration;
         public float SfxVolume => sfxVolume;

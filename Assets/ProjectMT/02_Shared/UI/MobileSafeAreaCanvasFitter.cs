@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace ProjectMT.Shared.UI
 {
     /// <summary>
-    /// 관리 패널처럼 1920x1080 기준으로 제작된 UI를 화면 비율과 Safe Area 안에 맞춘다.
+    /// 관리 패널처럼 1920x1080 기준으로 제작된 UI를 화면 비율과 Safe Area 크기에 맞춘다.
     /// 넓은 가로 화면에서는 높이를, 좁은 화면에서는 너비를 기준으로 맞춰 UI가 잘리지 않게 한다.
     /// </summary>
     [DisallowMultipleComponent]
@@ -14,12 +14,13 @@ namespace ProjectMT.Shared.UI
 
         [SerializeField] private CanvasScaler canvasScaler;
         [SerializeField] private Vector2 referenceResolution = new(1920f, 1080f);
+        [SerializeField] private bool fitContainerToSafeArea;
 
         private RectTransform targetRect;
         private Vector2 lastScreenSize;
         private Rect lastSafeArea;
 
-        public static MobileSafeAreaCanvasFitter Ensure(GameObject target)
+        public static MobileSafeAreaCanvasFitter Ensure(GameObject target, bool fitContainerToSafeArea = false)
         {
             if (target == null)
             {
@@ -32,6 +33,7 @@ namespace ProjectMT.Shared.UI
                 fitter = target.AddComponent<MobileSafeAreaCanvasFitter>();
             }
 
+            fitter.fitContainerToSafeArea = fitContainerToSafeArea;
             fitter.RefreshLayout();
             return fitter;
         }
@@ -75,7 +77,7 @@ namespace ProjectMT.Shared.UI
                 canvasScaler.matchWidthOrHeight = CalculateFitMatch(safeArea.size, canvasScaler.referenceResolution);
             }
 
-            if (targetRect != null)
+            if (fitContainerToSafeArea && targetRect != null)
             {
                 CalculateSafeAreaAnchors(safeArea, Screen.width, Screen.height, out var anchorMin, out var anchorMax);
                 targetRect.anchorMin = anchorMin;

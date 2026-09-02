@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -33,6 +34,7 @@ namespace ProjectMT.Shared.Input
         public Vector3 InitialPosition { get; private set; } // 08.07 안건준 추가 - 처음 활성화된 위치(리스폰 기준점)
         public bool IsInputEnabled => inputEnabled && isActiveAndEnabled && controlled != null;
         public bool IsEvading { get; private set; }
+        public event Action<bool> EvadeStarted; // true: 전방, false: 후방
 
         private void Awake()
         {
@@ -113,6 +115,7 @@ namespace ProjectMT.Shared.Input
                 return false; // 경계에 완전히 막힌 방향은 실행하지 않음
             }
 
+            EvadeStarted?.Invoke(Vector3.Dot(evadeDirection, controlled.forward) >= 0f);
             evadeRoutine = StartCoroutine(Evade(start, destination));
             return true;
         }

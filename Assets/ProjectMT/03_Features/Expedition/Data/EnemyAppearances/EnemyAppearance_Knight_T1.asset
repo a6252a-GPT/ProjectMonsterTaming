@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Expedition.EnemyAppearanceProfile
   group: 1
   visualScale: 0.75
-  locomotionController: {fileID: 9100000, guid: 006c41f5874bc4c4eab383ed3c09d91c, type: 2}
+  locomotionController: {fileID: 9100000, guid: e02617a5a075aee48b3e3a59752e34f9, type: 2}
   bodyPrefabs:
   - {fileID: 3722618004283386827, guid: 34ce579bc4abd834b864caaab3299999, type: 3}
   - {fileID: 414814277177314731, guid: 0670fa8beef3d4443bef1d0e0da7b65f, type: 3}

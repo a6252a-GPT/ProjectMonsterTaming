@@ -142,6 +142,12 @@ namespace ProjectMT.Contents.FallenCommander
         [SerializeField, InspectorName("사망 후 결과창 대기시간"), Min(0f)]
         private float deathResultDelay = 3f;
 
+        [Header("군단장 회피 연출")]
+        [SerializeField, InspectorName("군단장 전방 회피 모션")]
+        private AnimationClip commanderEvadeForwardMotion;
+        [SerializeField, InspectorName("군단장 후방 회피 모션")]
+        private AnimationClip commanderEvadeBackwardMotion;
+
         [Header("브레이크")]
         [SerializeField, InspectorName("최대 브레이크 게이지"), Min(1f)]
         private float maxBreakGauge = 100f;
@@ -231,6 +237,8 @@ namespace ProjectMT.Contents.FallenCommander
             commanderDeathMotion,
             commanderDeathMotionDuration);
         public float DeathResultDelay => deathResultDelay;
+        public AnimationClip CommanderEvadeForwardMotion => commanderEvadeForwardMotion;
+        public AnimationClip CommanderEvadeBackwardMotion => commanderEvadeBackwardMotion;
         public float MaxBreakGauge => maxBreakGauge;
         public float BreakGaugePerHit => breakGaugePerHit;
         public float BreakGaugeAttackPowerMultiplier => breakGaugeAttackPowerMultiplier;

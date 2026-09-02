@@ -80,7 +80,7 @@ MonoBehaviour:
     clip: {fileID: 7400000, guid: 4618e2b285174f640bd9177b39a95d97, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.08
-    commitNormalizedTime: 0.25
+    commitNormalizedTime: 0.972
   death:
     clip: {fileID: 7400000, guid: b2475350a5bfae74ab08fae56b847d27, type: 3}
     playbackSpeed: 1

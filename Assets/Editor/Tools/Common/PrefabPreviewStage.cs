@@ -75,10 +75,23 @@ internal sealed class PrefabPreviewStage : IDisposable
             return null;
         }
 
-        previewRoot = UnityEngine.Object.Instantiate(prefab);
-        previewRoot.name = "[JC Preview] " + prefab.name;
-        SetHideFlagsRecursive(previewRoot, HideFlags.HideAndDontSave);
-        configure?.Invoke(previewRoot);
+        var activationGuard = new GameObject("[JC Preview Activation Guard]")
+        {
+            hideFlags = HideFlags.HideAndDontSave
+        };
+        activationGuard.SetActive(false);
+        try
+        {
+            previewRoot = UnityEngine.Object.Instantiate(prefab, activationGuard.transform, false);
+            previewRoot.name = "[JC Preview] " + prefab.name;
+            SetHideFlagsRecursive(previewRoot, HideFlags.HideAndDontSave);
+            configure?.Invoke(previewRoot);
+            previewRoot.transform.SetParent(null, true);
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(activationGuard);
+        }
         utility.AddSingleGO(previewRoot);
         RecalculateBounds();
         RebuildFloor();
@@ -90,7 +103,7 @@ internal sealed class PrefabPreviewStage : IDisposable
         ClearAuxiliaries();
         if (previewRoot != null)
         {
-            UnityEngine.Object.DestroyImmediate(previewRoot);
+            DestroyPreviewObject(previewRoot);
             previewRoot = null;
         }
 
@@ -117,7 +130,7 @@ internal sealed class PrefabPreviewStage : IDisposable
             return;
         }
 
-        UnityEngine.Object.DestroyImmediate(instance);
+        DestroyPreviewObject(instance);
     }
 
         public void SetEnvironment(int index)
@@ -420,11 +433,22 @@ internal sealed class PrefabPreviewStage : IDisposable
         {
             if (auxiliaries[index] != null)
             {
-                UnityEngine.Object.DestroyImmediate(auxiliaries[index]);
+                DestroyPreviewObject(auxiliaries[index]);
             }
         }
 
         auxiliaries.Clear();
+    }
+
+    private static void DestroyPreviewObject(GameObject instance)
+    {
+        if (instance == null)
+        {
+            return;
+        }
+
+        instance.SetActive(false);
+        UnityEngine.Object.DestroyImmediate(instance);
     }
 
     private static void SetHideFlagsRecursive(GameObject root, HideFlags flags)

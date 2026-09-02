@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectMT.EditorTools.MonsterMaker;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
 using UnityEngine;
@@ -69,7 +70,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     SmallButton("복제", () => DuplicateEffectNested(groupIndex, "effects", captured, "effectId")),
                     SmallButton("삭제", () => DeleteEffectNested(groupIndex, "effects", captured, true), true, list.arraySize > 1)));
                 shell.Add(BoundProperty(effectSerialized, effect.FindPropertyRelative("effectId"), "효과 ID"));
-                shell.Add(EffectEnumPopup(effect.FindPropertyRelative("type"), "효과 종류", allowed, SkillEffectLabel, ScheduleRebuild));
+                shell.Add(EffectEnumPopup(effect.FindPropertyRelative("type"), "효과 종류", allowed,
+                    SkillEffectLabel, () => ReconcileEffectContracts(groupIndex)));
                 var type = (MonsterSkillEffectType)effect.FindPropertyRelative("type").enumValueIndex;
                 if (type != MonsterSkillEffectType.Cleanse)
                 {
@@ -80,9 +82,11 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     if ((MonsterSkillMagnitudeMode)effect.FindPropertyRelative("magnitudeMode").enumValueIndex == MonsterSkillMagnitudeMode.RandomRange)
                         shell.Add(BoundProperty(effectSerialized, effect.FindPropertyRelative("maximumMagnitude"), "최대 수치"));
                 }
-                shell.Add(EffectOptionalFloat(effect.FindPropertyRelative("delay"), "효과 시작 딜레이(초)", "시작 딜레이 사용", 0.1f));
+                shell.Add(EffectOptionalFloat(effect.FindPropertyRelative("delay"), "효과 시작 딜레이(초)",
+                    "시작 딜레이 사용", 0.1f, () => ReconcileEffectContracts(groupIndex)));
                 if (EffectUsesDuration(type) || type == MonsterSkillEffectType.Heal)
-                    shell.Add(EffectOptionalFloat(effect.FindPropertyRelative("duration"), "지속 시간(초)", "지속시간 사용", 3f));
+                    shell.Add(EffectOptionalFloat(effect.FindPropertyRelative("duration"), "지속 시간(초)",
+                        "지속시간 사용", 3f, () => ReconcileEffectContracts(groupIndex)));
                 if (type == MonsterSkillEffectType.Heal && effect.FindPropertyRelative("duration").floatValue > 0f)
                 {
                     shell.Add(BoundProperty(effectSerialized, effect.FindPropertyRelative("repeatInterval"), "회복 간격(초)"));
@@ -99,73 +103,58 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private void BuildEffectPresentationSlots(VisualElement card, SerializedProperty group, int groupIndex)
         {
             var list = group.FindPropertyRelative("presentationSlots");
-            var section = Section($"4. VFX/SFX 공간 계약 · {list.arraySize}개", "시전자 VFX와 효과받은 대상 VFX를 각각 공간으로 정의합니다.");
+            var model = groupIndex >= 0 && groupIndex < effectWorking.Groups.Count
+                ? effectWorking.Groups[groupIndex]
+                : null;
+            var section = Section(
+                $"4. VFX/SFX 공간 계약 · {list.arraySize}개",
+                "기본공격처럼 역할별 공간을 체결합니다. ID·이름·발생 규칙은 자동이며 제작 메모만 입력합니다.");
+            if (model != null)
+            {
+                var currentMode = MonsterEffectActiveVfxContractTemplates.ResolveTargetMode(model);
+                if (!model.HasDurationPresentation)
+                    currentMode = MonsterEffectTargetPresentationMode.OneShot;
+                var choices = new List<MonsterEffectTargetPresentationMode>
+                {
+                    MonsterEffectTargetPresentationMode.OneShot
+                };
+                if (model.HasDurationPresentation)
+                    choices.Add(MonsterEffectTargetPresentationMode.DurationLifecycle);
+                var modeField = new PopupField<MonsterEffectTargetPresentationMode>(
+                    "적용 대상 VFX 방식",
+                    choices,
+                    currentMode,
+                    EffectTargetPresentationModeLabel,
+                    EffectTargetPresentationModeLabel);
+                modeField.AddToClassList("editor-field");
+                modeField.RegisterValueChangedCallback(evt =>
+                    SetEffectTargetPresentationMode(groupIndex, evt.newValue));
+                section.Add(modeField);
+                section.Add(Help(model.HasDurationPresentation
+                    ? $"지속형을 선택하면 적용 유닛마다 시작 → 지속 → 끝을 재생합니다. " +
+                      $"묶음 발동 후 {model.DurationPresentationStartDelay:0.##}초에 시작하고, " +
+                      $"효과 수치에서 자동 계산된 {model.PresentationDuration:0.##}초 동안 유지됩니다."
+                    : "현재 묶음은 즉시 효과만 있어 적용 유닛마다 1회 재생합니다."));
+            }
             for (var index = 0; index < list.arraySize; index++)
             {
                 var captured = index; var slot = list.GetArrayElementAtIndex(index);
+                var slotModel = model != null && index < model.PresentationSlots.Count
+                    ? model.PresentationSlots[index]
+                    : null;
                 var shell = new VisualElement(); shell.AddToClassList("sub-card");
                 shell.Add(CardHeader($"공간 {index + 1:00} · {slot.FindPropertyRelative("displayName").stringValue}",
                     SmallButton("▲", () => MoveEffectNested(groupIndex, "presentationSlots", captured, -1), false, index > 0),
                     SmallButton("▼", () => MoveEffectNested(groupIndex, "presentationSlots", captured, 1), false, index < list.arraySize - 1),
                     SmallButton("복제", () => DuplicateEffectNested(groupIndex, "presentationSlots", captured, "slotId")),
                     SmallButton("삭제", () => DeleteEffectNested(groupIndex, "presentationSlots", captured, false), true)));
-                shell.Add(BoundProperty(effectSerialized, slot.FindPropertyRelative("slotId"), "공간 ID"));
-                shell.Add(BoundProperty(effectSerialized, slot.FindPropertyRelative("displayName"), "표시 이름"));
-                var timingProperty = slot.FindPropertyRelative("timing");
-                var timingChoices = EnumValues<MonsterActivePresentationEvent>()
-                    .Where(MonsterEffectActiveVfxCompatibility.SupportsEvent)
-                    .ToList();
-                shell.Add(EffectEnumPopup(timingProperty, "발생 시점", timingChoices,
-                    ActiveEventLabel, ScheduleRebuild));
-                var timing = (MonsterActivePresentationEvent)timingProperty.enumValueIndex;
-                var anchorProperty = slot.FindPropertyRelative("anchor");
-                var anchorChoices = EnumValues<MonsterActivePresentationAnchor>()
-                    .Where(value => MonsterEffectActiveVfxCompatibility.SupportsAnchor(timing, value))
-                    .ToList();
-                shell.Add(EffectEnumPopup(anchorProperty, "기준 위치", anchorChoices,
-                    ActiveAnchorLabel, ScheduleRebuild));
-                var anchor = (MonsterActivePresentationAnchor)anchorProperty.enumValueIndex;
-                var multiplicityProperty = slot.FindPropertyRelative("multiplicity");
-                var multiplicityChoices = EnumValues<MonsterActivePresentationMultiplicity>()
-                    .Where(value => MonsterEffectActiveVfxCompatibility.SupportsMultiplicity(
-                        timing, anchor, value))
-                    .ToList();
-                shell.Add(EffectEnumPopup(multiplicityProperty, "재생 횟수", multiplicityChoices,
-                    ActiveMultiplicityLabel, ScheduleRebuild));
-                var multiplicity =
-                    (MonsterActivePresentationMultiplicity)multiplicityProperty.enumValueIndex;
-                var attachmentProperty = slot.FindPropertyRelative("attachment");
-                var attachmentChoices = EnumValues<MonsterActivePresentationAttachment>()
-                    .Where(value => MonsterEffectActiveVfxCompatibility.SupportsAttachment(anchor, value))
-                    .ToList();
-                shell.Add(EffectEnumPopup(attachmentProperty, "부착 방식", attachmentChoices,
-                    ActiveAttachmentLabel, ScheduleRebuild));
-                var endProperty = slot.FindPropertyRelative("endPolicy");
-                var endChoices = EnumValues<MonsterActivePresentationEndPolicy>()
-                    .Where(value => MonsterEffectActiveVfxCompatibility.SupportsEndPolicy(
-                        timing, multiplicity, value))
-                    .ToList();
-                shell.Add(EffectEnumPopup(endProperty, "종료 규칙", endChoices,
-                    ActiveEndLabel, ScheduleRebuild));
+                shell.Add(Help(
+                    $"자동 ID · {slot.FindPropertyRelative("slotId").stringValue}\n" +
+                    MonsterEffectActiveVfxContractTemplates.ContractDetails(slotModel)));
                 shell.Add(BoundProperty(effectSerialized, slot.FindPropertyRelative("description"), "제작 메모"));
-                var useDuration = slot.FindPropertyRelative("useDuration");
-                if ((MonsterActivePresentationEndPolicy)endProperty.enumValueIndex ==
-                    MonsterActivePresentationEndPolicy.Timed)
-                {
-                    shell.Add(BoundProperty(effectSerialized, useDuration,
-                        "지속시간 직접 사용", ScheduleRebuild));
-                    if (useDuration.boolValue)
-                        shell.Add(BoundProperty(effectSerialized,
-                            slot.FindPropertyRelative("duration"), "지속 시간(초)"));
-                }
-                else if (useDuration.boolValue)
-                {
-                    useDuration.boolValue = false;
-                    effectSerialized.ApplyModifiedProperties();
-                }
                 section.Add(shell);
             }
-            section.Add(AddButton("+ VFX/SFX 공간 추가", () => AddEffectSlot(groupIndex)));
+            section.Add(AddButton("+ VFX/SFX 공간 추가", () => ShowAddEffectSlotMenu(groupIndex)));
             card.Add(section);
         }
 
@@ -183,18 +172,102 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             return field;
         }
 
-        private VisualElement EffectOptionalFloat(SerializedProperty property, string valueLabel, string toggleLabel, float defaultValue)
+        private VisualElement EffectOptionalFloat(
+            SerializedProperty property,
+            string valueLabel,
+            string toggleLabel,
+            float defaultValue,
+            Action changed = null)
         {
             var shell = new VisualElement(); var path = property.propertyPath;
             var toggle = new Toggle(toggleLabel) { value = property.floatValue > 0f }; toggle.AddToClassList("editor-field"); shell.Add(toggle);
-            if (toggle.value) shell.Add(BoundProperty(effectSerialized, property, valueLabel));
+            if (toggle.value) shell.Add(BoundProperty(effectSerialized, property, valueLabel, changed));
             toggle.RegisterValueChangedCallback(evt =>
             {
                 if (suppressUiCallbacks) return;
                 effectSerialized.Update(); var live = effectSerialized.FindProperty(path); live.floatValue = evt.newValue ? Mathf.Max(defaultValue, live.floatValue) : 0f;
-                effectSerialized.ApplyModifiedProperties(); effectDirty = true; ScheduleRebuild();
+                effectSerialized.ApplyModifiedProperties(); effectDirty = true; changed?.Invoke();
+                if (changed == null) ScheduleRebuild();
             });
             return shell;
+        }
+
+        private static string EffectTargetPresentationModeLabel(
+            MonsterEffectTargetPresentationMode value) => value switch
+        {
+            MonsterEffectTargetPresentationMode.DurationLifecycle => "지속형 · 시작 → 지속 → 끝",
+            _ => "1회성 · 대상 적용"
+        };
+
+        private void SetEffectTargetPresentationMode(
+            int groupIndex,
+            MonsterEffectTargetPresentationMode mode)
+        {
+            effectSerialized.ApplyModifiedProperties();
+            if (groupIndex < 0 || groupIndex >= effectWorking.Groups.Count) return;
+            var group = effectWorking.Groups[groupIndex];
+            if (mode == MonsterEffectTargetPresentationMode.DurationLifecycle &&
+                !group.HasDurationPresentation)
+            {
+                effectMessage = "오류: 지속시간이 있는 효과를 먼저 설정하세요.";
+                RefreshState();
+                return;
+            }
+            Undo.RecordObject(effectWorking, "효과형 액티브 대상 VFX 방식 변경");
+            ReplaceEffectGroupSlots(
+                group,
+                MonsterEffectActiveVfxContractTemplates.Build(group, mode));
+            effectSerialized.Update();
+            effectDirty = true;
+            effectMessage = $"효과 묶음 {groupIndex + 1:00}의 대상 VFX를 " +
+                            $"[{EffectTargetPresentationModeLabel(mode)}]로 구성했습니다.";
+            RebuildCurrent();
+        }
+
+        private void ReconcileEffectContracts(int groupIndex)
+        {
+            effectSerialized.ApplyModifiedProperties();
+            if (groupIndex < 0 || groupIndex >= effectWorking.Groups.Count) return;
+            var group = effectWorking.Groups[groupIndex];
+            Undo.RecordObject(effectWorking, "효과형 액티브 VFX 지속시간 동기화");
+            ReplaceEffectGroupSlots(
+                group,
+                MonsterEffectActiveVfxContractTemplates.RefreshExisting(group));
+            effectSerialized.Update();
+            effectDirty = true;
+            ScheduleRebuild();
+        }
+
+        private void ReconcileAllEffectContracts()
+        {
+            effectSerialized.ApplyModifiedProperties();
+            Undo.RecordObject(effectWorking, "효과형 액티브 VFX 계약 동기화");
+            for (var index = 0; index < effectWorking.Groups.Count; index++)
+            {
+                var group = effectWorking.Groups[index];
+                ReplaceEffectGroupSlots(
+                    group,
+                    MonsterEffectActiveVfxContractTemplates.RefreshExisting(group));
+            }
+            effectSerialized.Update();
+            effectDirty = true;
+            RebuildCurrent();
+        }
+
+        private static void ReplaceEffectGroupSlots(
+            MonsterEffectActiveGroup group,
+            IEnumerable<MonsterActivePresentationSlot> slots)
+        {
+            group.EditorConfigure(
+                group.GroupId,
+                group.DisplayName,
+                group.DelayAfterPrevious,
+                group.Target,
+                group.IncludeCaster,
+                group.Radius,
+                group.MaxTargets,
+                group.Effects,
+                slots);
         }
 
         private void ReconcileEffectRole()
@@ -215,7 +288,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 }
             }
             effectSerialized.ApplyModifiedProperties(); effectDirty = true;
-            effectMessage = "역할에 맞지 않는 대상·효과만 안전한 기본값으로 정리했습니다."; RebuildCurrent();
+            effectMessage = "역할에 맞지 않는 대상·효과만 안전한 기본값으로 정리했습니다.";
+            ReconcileAllEffectContracts();
         }
 
         private void AddEffectGroup()
@@ -228,10 +302,10 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             group.FindPropertyRelative("includeCaster").boolValue = true; group.FindPropertyRelative("radius").floatValue = 5f; group.FindPropertyRelative("maxTargets").intValue = 8;
             group.FindPropertyRelative("effects").arraySize = 0;
             var slots = group.FindPropertyRelative("presentationSlots"); slots.arraySize = 2;
-            ConfigureEffectSlot(slots.GetArrayElementAtIndex(0), "caster_vfx", "시전자 VFX",
-                MonsterActivePresentationEvent.Launch, MonsterActivePresentationAnchor.CasterRoot);
-            ConfigureEffectSlot(slots.GetArrayElementAtIndex(1), "target_vfx", "효과 대상 VFX",
-                MonsterActivePresentationEvent.Impact, MonsterActivePresentationAnchor.TargetRoot);
+            ConfigureEffectSlot(slots.GetArrayElementAtIndex(0), "cast_start", "시전자 발동",
+                MonsterActivePresentationEvent.MotionStart, MonsterActivePresentationAnchor.CasterRoot);
+            ConfigureEffectSlot(slots.GetArrayElementAtIndex(1), "target_apply", "대상 적용 · 1회",
+                MonsterActivePresentationEvent.EffectApplied, MonsterActivePresentationAnchor.TargetRoot);
             effectSerialized.ApplyModifiedProperties(); AddSkillEffect(index, role);
         }
 
@@ -244,24 +318,47 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             effect.FindPropertyRelative("valueSource").enumValueIndex = (int)MonsterSkillValueSource.AttackPowerRatio; effect.FindPropertyRelative("magnitude").floatValue = 1f;
             effect.FindPropertyRelative("maximumMagnitude").floatValue = 1f; effect.FindPropertyRelative("repeatCount").intValue = 1;
             effect.FindPropertyRelative("stackPolicy").enumValueIndex = (int)MonsterSkillStackPolicy.RefreshDuration;
-            effectSerialized.ApplyModifiedProperties(); effectDirty = true; RebuildCurrent();
+            effectSerialized.ApplyModifiedProperties(); effectDirty = true;
+            ReconcileEffectContracts(groupIndex);
         }
 
-        private void AddEffectSlot(int groupIndex)
+        private void ShowAddEffectSlotMenu(int groupIndex)
         {
-            effectSerialized.Update(); var list = effectSerialized.FindProperty("groups").GetArrayElementAtIndex(groupIndex).FindPropertyRelative("presentationSlots"); var index = list.arraySize;
-            list.InsertArrayElementAtIndex(index); var slot = list.GetArrayElementAtIndex(index);
-            ConfigureEffectSlot(
-                slot,
-                $"effect_vfx_{index + 1:00}",
-                index == 0 ? "시전자 VFX" : "효과 대상 VFX",
-                index == 0
-                    ? MonsterActivePresentationEvent.Launch
-                    : MonsterActivePresentationEvent.Impact,
-                index == 0
-                    ? MonsterActivePresentationAnchor.CasterRoot
-                    : MonsterActivePresentationAnchor.TargetRoot);
-            effectSerialized.ApplyModifiedProperties(); effectDirty = true; RebuildCurrent();
+            effectSerialized.ApplyModifiedProperties();
+            if (groupIndex < 0 || groupIndex >= effectWorking.Groups.Count) return;
+            var group = effectWorking.Groups[groupIndex];
+            var menu = new GenericMenu();
+            var added = false;
+            if (!MonsterEffectActiveVfxContractTemplates.HasRole(
+                    group, MonsterEffectPresentationContractRole.CasterActivation))
+            {
+                added = true;
+                var mode = MonsterEffectActiveVfxContractTemplates.ResolveTargetMode(group);
+                menu.AddItem(new GUIContent("시전자 발동"), false,
+                    () => SetEffectTargetPresentationMode(groupIndex, mode));
+            }
+            if (!MonsterEffectActiveVfxContractTemplates.HasRole(
+                    group, MonsterEffectPresentationContractRole.TargetApplied))
+            {
+                added = true;
+                var mode = MonsterEffectActiveVfxContractTemplates.ResolveTargetMode(group);
+                menu.AddItem(new GUIContent("적용 대상 · 1회"), false,
+                    () => SetEffectTargetPresentationMode(groupIndex, mode));
+            }
+            if (group.HasDurationPresentation &&
+                (!MonsterEffectActiveVfxContractTemplates.HasRole(
+                     group, MonsterEffectPresentationContractRole.TargetLoop) ||
+                 !MonsterEffectActiveVfxContractTemplates.HasRole(
+                     group, MonsterEffectPresentationContractRole.TargetExpired)))
+            {
+                added = true;
+                menu.AddItem(new GUIContent("적용 대상 · 시작/지속/끝"), false,
+                    () => SetEffectTargetPresentationMode(
+                        groupIndex,
+                        MonsterEffectTargetPresentationMode.DurationLifecycle));
+            }
+            if (!added) menu.AddDisabledItem(new GUIContent("추가 가능한 기본 공간 없음"));
+            menu.ShowAsContext();
         }
 
         private static void ConfigureEffectSlot(SerializedProperty slot, string id, string title,
@@ -271,10 +368,15 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             slot.FindPropertyRelative("displayName").stringValue = title;
             slot.FindPropertyRelative("timing").enumValueIndex = (int)timing;
             slot.FindPropertyRelative("anchor").enumValueIndex = (int)anchor;
-            slot.FindPropertyRelative("multiplicity").enumValueIndex = (int)MonsterActivePresentationMultiplicity.OncePerStep;
+            slot.FindPropertyRelative("multiplicity").enumValueIndex = (int)(
+                anchor is MonsterActivePresentationAnchor.TargetPoint or
+                    MonsterActivePresentationAnchor.TargetRoot or
+                    MonsterActivePresentationAnchor.HitPoint
+                    ? MonsterActivePresentationMultiplicity.PerTargetHit
+                    : MonsterActivePresentationMultiplicity.OncePerStep);
             slot.FindPropertyRelative("attachment").enumValueIndex = (int)MonsterActivePresentationAttachment.World;
-            slot.FindPropertyRelative("endPolicy").enumValueIndex = (int)MonsterActivePresentationEndPolicy.Timed;
-            slot.FindPropertyRelative("description").stringValue = "Monster Maker V2에서 몬스터 고유 VFX/SFX를 연결합니다.";
+            slot.FindPropertyRelative("endPolicy").enumValueIndex = (int)MonsterActivePresentationEndPolicy.ParticleDuration;
+            slot.FindPropertyRelative("description").stringValue = string.Empty;
             slot.FindPropertyRelative("useDuration").boolValue = false;
             slot.FindPropertyRelative("duration").floatValue = 1f;
         }
@@ -288,9 +390,38 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private void MoveEffectNested(int owner, string path, int index, int direction)
         { effectSerialized.Update(); var list = effectSerialized.FindProperty("groups").GetArrayElementAtIndex(owner).FindPropertyRelative(path); var target = Mathf.Clamp(index + direction, 0, list.arraySize - 1); if (target != index) list.MoveArrayElement(index, target); effectSerialized.ApplyModifiedProperties(); effectDirty = true; RebuildCurrent(); }
         private void DuplicateEffectNested(int owner, string path, int index, string id)
-        { effectSerialized.Update(); var list = effectSerialized.FindProperty("groups").GetArrayElementAtIndex(owner).FindPropertyRelative(path); list.InsertArrayElementAtIndex(index); list.GetArrayElementAtIndex(index + 1).FindPropertyRelative(id).stringValue += "_copy"; effectSerialized.ApplyModifiedProperties(); effectDirty = true; RebuildCurrent(); }
+        {
+            effectSerialized.Update();
+            var list = effectSerialized.FindProperty("groups").GetArrayElementAtIndex(owner)
+                .FindPropertyRelative(path);
+            list.InsertArrayElementAtIndex(index);
+            list.GetArrayElementAtIndex(index + 1).FindPropertyRelative(id).stringValue += "_copy";
+            effectSerialized.ApplyModifiedProperties();
+            effectDirty = true;
+            if (string.Equals(path, "effects", StringComparison.Ordinal))
+                ReconcileEffectContracts(owner);
+            else
+                RebuildCurrent();
+        }
         private void DeleteEffectNested(int owner, string path, int index, bool requireOne)
-        { effectSerialized.Update(); var list = effectSerialized.FindProperty("groups").GetArrayElementAtIndex(owner).FindPropertyRelative(path); if (requireOne && list.arraySize <= 1) { effectMessage = "오류: 효과는 하나 이상 필요합니다."; RefreshState(); return; } list.DeleteArrayElementAtIndex(index); effectSerialized.ApplyModifiedProperties(); effectDirty = true; RebuildCurrent(); }
+        {
+            effectSerialized.Update();
+            var list = effectSerialized.FindProperty("groups").GetArrayElementAtIndex(owner)
+                .FindPropertyRelative(path);
+            if (requireOne && list.arraySize <= 1)
+            {
+                effectMessage = "오류: 효과는 하나 이상 필요합니다.";
+                RefreshState();
+                return;
+            }
+            list.DeleteArrayElementAtIndex(index);
+            effectSerialized.ApplyModifiedProperties();
+            effectDirty = true;
+            if (string.Equals(path, "effects", StringComparison.Ordinal))
+                ReconcileEffectContracts(owner);
+            else
+                RebuildCurrent();
+        }
 
         private static bool EffectUsesDuration(MonsterSkillEffectType type) => type is MonsterSkillEffectType.Shield or MonsterSkillEffectType.AttackBuff or MonsterSkillEffectType.DefenseBuff or MonsterSkillEffectType.AttackSpeedBuff or MonsterSkillEffectType.AttackDebuff or MonsterSkillEffectType.DefenseDebuff or MonsterSkillEffectType.AttackSpeedDebuff or MonsterSkillEffectType.MoveSpeedDebuff or MonsterSkillEffectType.Mark or MonsterSkillEffectType.Slow or MonsterSkillEffectType.Stun or MonsterSkillEffectType.Pull or MonsterSkillEffectType.Taunt or MonsterSkillEffectType.DamageReduction or MonsterSkillEffectType.DamageReflect;
         private static string EffectRoleLabel(MonsterEffectActiveRole value) => value switch { MonsterEffectActiveRole.Support => "지원", MonsterEffectActiveRole.Guard => "수호", _ => "디버프" };

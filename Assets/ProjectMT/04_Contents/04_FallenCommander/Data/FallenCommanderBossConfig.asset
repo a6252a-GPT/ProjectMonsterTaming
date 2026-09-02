@@ -706,9 +706,11 @@ MonoBehaviour:
   phaseConfig: {fileID: 11400000, guid: 64cd36c9c64817d458ce0ed6311a59e4, type: 2}
   deathMotion: {fileID: 7400000, guid: 7eb365b59b49b5d4fa4ed0da8d2b8804, type: 3}
   deathMotionDuration: 3
-  commanderDeathMotion: {fileID: 8993902097722301239, guid: 1b07e913704cec342817275ba1b2bb81, type: 3}
+  commanderDeathMotion: {fileID: 8993902097722301239, guid: db96155e7f3a58940964b6f3142c9b8c, type: 3}
   commanderDeathMotionDuration: 3
   deathResultDelay: 3
+  commanderEvadeForwardMotion: {fileID: 8993902097722301239, guid: fae4e0dc998df7c4ca36acee5f6cace5, type: 3}
+  commanderEvadeBackwardMotion: {fileID: 8993902097722301239, guid: a41836c262039374e96b12a4d0570b1f, type: 3}
   maxBreakGauge: 100
   breakGaugePerHit: 10
   breakGaugeAttackPowerMultiplier: 0.25

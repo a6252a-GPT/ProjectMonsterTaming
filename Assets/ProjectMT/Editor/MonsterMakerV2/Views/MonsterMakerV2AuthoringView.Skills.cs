@@ -273,6 +273,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 $"기본공격당 {MonsterActiveEnergyConfig.SharedEnergyPerBasicAttack:0.#} · " +
                 "몬스터별 밸런스는 최대 기력으로 조정합니다.",
                 HelpBoxMessageType.Info);
+            BuildEffectActiveRuntimeSync(activeArea);
 
             BuildEffectActiveMotions(activeArea, profile);
             BuildEffectActivePresentations(activeArea, profile);
@@ -285,6 +286,78 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     ? "신화 전용 효과형 액티브 에셋으로 생성됩니다."
                     : "전설 효과형 액티브 에셋으로 생성됩니다.",
                 HelpBoxMessageType.Info);
+        }
+
+        private void BuildEffectActiveRuntimeSync(VisualElement container)
+        {
+            if (draft?.ActiveEffectProfile == null || string.IsNullOrWhiteSpace(draft.MonsterId))
+            {
+                return;
+            }
+
+            if (sourceDraft?.ActiveEffectProfile == null)
+            {
+                AddHelp(
+                    container,
+                    "현재 효과형 액티브는 작업 사본에만 있습니다. " +
+                    "상단 전투 반영 시 게임 자산으로 생성됩니다.",
+                    HelpBoxMessageType.Info);
+                AddActionRow(
+                    container,
+                    ("저장하고 효과 액티브 게임 자산 갱신",
+                        syncActiveRuntime, "draft-action-button"));
+                return;
+            }
+
+            var paths = MonsterMakerAssetWriter.BuildPaths(sourceDraft.MonsterId);
+            var active = AssetDatabase.LoadAssetAtPath<MonsterEffectActiveSkill>(
+                MonsterMakerAssetWriter.BuildActivePath(sourceDraft.MonsterId));
+            var motion = AssetDatabase.LoadAssetAtPath<MonsterMotionProfile>(paths[2]);
+            var runtimeState = MonsterEffectActiveBindingProjection.EvaluateRuntimeSync(
+                sourceDraft,
+                active,
+                motion,
+                out var message);
+            if (runtimeState == MonsterEffectActiveRuntimeSyncState.Synchronized)
+            {
+                AddHelp(
+                    container,
+                    "저장된 효과형 액티브 게임 자산 최신 · " +
+                    "작업 중 변경은 상단 전투 반영 시 함께 적용됩니다.",
+                    HelpBoxMessageType.Info);
+                return;
+            }
+
+            AddHelp(
+                container,
+                $"저장된 효과형 액티브 게임 자산 미반영 · {message}\n" +
+                "상단 전투 반영으로 저장 원본과 게임 자산을 함께 갱신하세요.",
+                HelpBoxMessageType.Warning);
+
+            var preflight = MonsterMakerValidator.ValidateActiveEffect(draft);
+            var errors = preflight.Issues
+                .Where(issue => issue.Severity == MonsterMakerIssueSeverity.Error)
+                .ToArray();
+            if (errors.Length > 0)
+            {
+                var visibleErrors = errors
+                    .Take(2)
+                    .Select(issue => $"• {issue.Message}");
+                var remaining = errors.Length > 2
+                    ? $"\n• 그 외 {errors.Length - 2}개 · " +
+                      "버튼을 누르면 하단에 모두 표시합니다."
+                    : string.Empty;
+                AddHelp(
+                    container,
+                    $"게임 자산 갱신 전 설정 필요 · 오류 {errors.Length}개\n" +
+                    string.Join("\n", visibleErrors) + remaining,
+                    HelpBoxMessageType.Warning);
+            }
+
+            AddActionRow(
+                container,
+                ("저장하고 효과 액티브 게임 자산 갱신",
+                    syncActiveRuntime, "draft-action-button"));
         }
 
         private void BuildActiveRuntimeSync(VisualElement container)
@@ -586,11 +659,19 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             for (var index = 0; index < presentations.arraySize; index++)
             {
                 var group = profile.Groups[index];
-                var item = presentations.GetArrayElementAtIndex(index);
+                var item = FindSerializedElementById(presentations, "stepId", group.GroupId);
                 var card = AddSubFoldout(
                     foldout,
                     $"#{index + 1:00} {group.DisplayName}",
                     index == 0);
+                if (item == null)
+                {
+                    AddHelp(
+                        card,
+                        $"묶음 ID [{group.GroupId}]의 모션 연결이 없습니다. 효과형 연출 공간을 다시 동기화하세요.",
+                        HelpBoxMessageType.Error);
+                    continue;
+                }
                 AddRelativeProperty(card, item.FindPropertyRelative("motionClip"), "공격 모션 Clip");
                 AddRelativeProperty(card, item.FindPropertyRelative("motionPlaybackSpeed"), "재생 속도");
                 AddRelativeProperty(card, item.FindPropertyRelative("motionCrossFadeDuration"), "전환 시간(초)");
@@ -605,11 +686,13 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             var presentations = serializedDraft.FindProperty("activeEffectPresentations");
             var foldout = AddSubFoldout(
                 container,
-                $"묶음별 VFX/SFX 연결 · {presentations?.arraySize ?? 0}개",
-                false);
+                "몬스터 고유 효과형 액티브 VFX/SFX",
+                true,
+                "active-effect-vfx-root");
             AddHelp(
                 foldout,
-                "효과형 조립소에서 만든 공간 계약만 표시합니다. 실제 VFX/SFX는 몬스터별로 연결합니다.",
+                "기본공격·공격형 액티브와 같은 계약 체결 카드입니다. " +
+                "효과형 배정값과 전용 래퍼는 별도 영역에 저장됩니다.",
                 HelpBoxMessageType.Info);
             if (presentations == null || presentations.arraySize != profile.Groups.Count)
             {
@@ -617,18 +700,38 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     foldout,
                     "프로필 효과 묶음 자동 동기화가 완료되지 않았습니다. 액티브 프리셋을 다시 선택하세요.",
                     HelpBoxMessageType.Error);
+                AddActionRow(
+                    foldout,
+                    ("효과형 연출 공간 다시 동기화", SyncActiveEffectVfxBindings,
+                        "draft-action-button"));
                 return;
             }
 
             for (var index = 0; index < presentations.arraySize; index++)
             {
                 var source = profile.Groups[index];
-                var presentation = presentations.GetArrayElementAtIndex(index);
-                var slots = presentation.FindPropertyRelative("slots");
                 var group = AddSubFoldout(
                     foldout,
-                    $"#{index + 1:00} {source.DisplayName} · 공간 {source.PresentationSlots.Count}개",
-                    index == 0);
+                    $"묶음 {index + 1:00} · {source.DisplayName} · 공간 {source.PresentationSlots.Count}개",
+                    index == 0,
+                    $"active-effect-vfx-group-{source.GroupId}");
+                var presentation = FindSerializedElementById(
+                    presentations,
+                    "stepId",
+                    source.GroupId);
+                if (presentation == null)
+                {
+                    AddHelp(
+                        group,
+                        $"묶음 ID [{source.GroupId}]의 연출 연결이 없습니다.",
+                        HelpBoxMessageType.Error);
+                    AddActionRow(
+                        group,
+                        ("효과형 연출 공간 다시 동기화", SyncActiveEffectVfxBindings,
+                            "draft-action-button"));
+                    continue;
+                }
+                var slots = presentation.FindPropertyRelative("slots");
                 if (source.PresentationSlots.Count == 0)
                 {
                     AddHelp(
@@ -638,33 +741,244 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     continue;
                 }
 
+                var vfxDecided = 0;
+                var sfxDecided = 0;
+                var matchedSlotCount = 0;
+                for (var slotIndex = 0; slotIndex < source.PresentationSlots.Count; slotIndex++)
+                {
+                    var contract = source.PresentationSlots[slotIndex];
+                    var stored = FindSerializedElementById(slots, "slotId", contract.SlotId);
+                    if (stored == null) continue;
+                    matchedSlotCount++;
+                    if ((MonsterBasicAttackVfxAssignmentState)stored
+                            .FindPropertyRelative("vfxState").enumValueIndex !=
+                        MonsterBasicAttackVfxAssignmentState.Undecided) vfxDecided++;
+                    if ((MonsterBasicAttackSfxAssignmentState)stored
+                            .FindPropertyRelative("sfxState").enumValueIndex !=
+                        MonsterBasicAttackSfxAssignmentState.Undecided) sfxDecided++;
+                }
+                var expected = source.PresentationSlots.Count;
+                var progress = new ProgressBar
+                {
+                    title = $"VFX 결정 {vfxDecided}/{expected} · SFX 결정 {sfxDecided}/{expected}",
+                    value = expected > 0
+                        ? (vfxDecided + sfxDecided) * 100f / (expected * 2f)
+                        : 0f
+                };
+                progress.style.height = 20f;
+                progress.style.marginBottom = 5f;
+                group.Add(progress);
+
+                if (slots.arraySize != expected || matchedSlotCount != expected)
+                {
+                    AddHelp(
+                        group,
+                        $"연출 연결 ID가 현재 계약과 다릅니다. 일치 {matchedSlotCount}개 / 필요 {expected}개",
+                        HelpBoxMessageType.Error);
+                    AddActionRow(
+                        group,
+                        ("효과형 연출 공간 다시 동기화", SyncActiveEffectVfxBindings,
+                            "draft-action-button"));
+                }
+
                 for (var slotIndex = 0;
                      slotIndex < source.PresentationSlots.Count && slotIndex < slots.arraySize;
                      slotIndex++)
                 {
                     var contract = source.PresentationSlots[slotIndex];
-                    var slot = slots.GetArrayElementAtIndex(slotIndex);
-                    var slotCard = AddSubFoldout(
+                    var slot = FindSerializedElementById(slots, "slotId", contract.SlotId);
+                    if (slot == null) continue;
+                    BuildEffectVfxCard(
                         group,
-                        $"{slotIndex + 1:00} · {contract.DisplayName}",
-                        false);
+                        source,
+                        contract,
+                        slot,
+                        slotIndex,
+                        $"active-effect-vfx-{source.GroupId}-{contract.SlotId}");
+                }
+                var inactive = presentation.FindPropertyRelative("inactiveSlots");
+                if (inactive != null && inactive.arraySize > 0)
+                {
                     AddHelp(
-                        slotCard,
-                        $"{contract.Timing} · {contract.Anchor}" +
-                        (string.IsNullOrWhiteSpace(contract.Description)
-                            ? string.Empty
-                            : " · " + contract.Description),
+                        group,
+                        $"현재 계약에서 쓰지 않는 이전 효과형 연결 {inactive.arraySize}개를 보관 중입니다. " +
+                        "같은 공간 ID를 다시 추가하면 복원됩니다.",
                         HelpBoxMessageType.Info);
-                    BuildFeedbackEditor(
-                        slotCard,
-                        slot.FindPropertyRelative("feedback"),
-                        contract.DisplayName,
-                        "원본 AudioClip",
-                        "효과형 조립소의 공간 계약에 연결되는 몬스터 전용 연출입니다.",
-                        ResolveActivePresentationAnchor(contract.Anchor),
-                        true);
                 }
             }
+        }
+
+        private static SerializedProperty FindSerializedElementById(
+            SerializedProperty array,
+            string idField,
+            string id)
+        {
+            if (array == null || !array.isArray || string.IsNullOrWhiteSpace(id)) return null;
+            for (var index = 0; index < array.arraySize; index++)
+            {
+                var element = array.GetArrayElementAtIndex(index);
+                var storedId = element.FindPropertyRelative(idField)?.stringValue;
+                if (string.Equals(storedId, id, StringComparison.OrdinalIgnoreCase)) return element;
+            }
+            return null;
+        }
+
+        private void BuildEffectVfxCard(
+            VisualElement container,
+            MonsterEffectActiveGroup group,
+            MonsterActivePresentationSlot contract,
+            SerializedProperty slot,
+            int index,
+            string foldoutKey)
+        {
+            var card = AddSubFoldout(
+                container,
+                $"{index + 1:00} · {contract.DisplayName}",
+                index == 0,
+                foldoutKey);
+            AddHelp(
+                card,
+                MonsterEffectActiveVfxContractTemplates.ContractDetails(contract) +
+                (string.IsNullOrWhiteSpace(contract.Description)
+                    ? string.Empty
+                    : "\n제작 메모 · " + contract.Description),
+                HelpBoxMessageType.Info);
+
+            var vfxState = slot.FindPropertyRelative("vfxState");
+            AddAssignmentPopup(
+                card,
+                "VFX 결정",
+                vfxState,
+                "Monster Maker V2 · 효과형 액티브 VFX 결정 변경");
+            var feedback = slot.FindPropertyRelative("feedback");
+            if ((MonsterBasicAttackVfxAssignmentState)vfxState.enumValueIndex ==
+                MonsterBasicAttackVfxAssignmentState.Assigned)
+            {
+                AddRelativeProperty(card, feedback.FindPropertyRelative("vfxPrefab"), "VFX 프리팹");
+                AddHelp(
+                    card,
+                    contract.UseDuration
+                        ? $"지속시간 {contract.Duration:0.##}초는 효과 수치에서 자동 계산됩니다. " +
+                          "위치·회전·크기는 아래 보정 창에서 조절합니다."
+                        : "유지 시간·위치·회전·크기는 아래 VFX 보정 창에서 한 번에 조절합니다.",
+                    HelpBoxMessageType.Info);
+                var feedbackPath = feedback.propertyPath;
+                var assignedPrefab = feedback.FindPropertyRelative("vfxPrefab")
+                    .objectReferenceValue as GameObject;
+                var isWrapper = MonsterBasicAttackVfxPrefabUtility.IsMonsterWrapper(
+                    assignedPrefab,
+                    draft?.MonsterId,
+                    MonsterAttackVfxWrapperOwner.EffectActive);
+                AddActionRow(
+                    card,
+                    ("VFX 보정 · 재생",
+                        () => openFeedbackVfxAdjust?.Invoke(
+                            feedbackPath,
+                            contract.DisplayName,
+                            ResolveActivePresentationAnchor(contract.Anchor)),
+                        "draft-action-button"),
+                    (isWrapper ? "전용 Prefab 편집" : "전용 래퍼 만들기",
+                        () => CreateOrEditEffectVfxWrapper(
+                            group.GroupId,
+                            contract,
+                            feedbackPath),
+                        "draft-action-button"));
+            }
+
+            var sfxState = slot.FindPropertyRelative("sfxState");
+            AddAssignmentPopup(
+                card,
+                "SFX 결정",
+                sfxState,
+                "Monster Maker V2 · 효과형 액티브 SFX 결정 변경");
+            if ((MonsterBasicAttackSfxAssignmentState)sfxState.enumValueIndex ==
+                MonsterBasicAttackSfxAssignmentState.Assigned)
+            {
+                AddRelativeProperty(card, feedback.FindPropertyRelative("sound"), "원본 AudioClip");
+                AddRelativeProperty(card, feedback.FindPropertyRelative("soundVolume"), "SFX 볼륨");
+                var feedbackPath = feedback.propertyPath;
+                AddActionRow(
+                    card,
+                    ("SFX 미리듣기", () => PreviewEffectSound(feedbackPath),
+                        "draft-action-button"),
+                    ("SFX 정지", SfxEditorAudioPreview.StopAll,
+                        "draft-action-button"));
+                var generated = AddRelativeProperty(
+                    card,
+                    feedback.FindPropertyRelative("sfx"),
+                    "생성된 SFX Cue");
+                generated?.SetEnabled(false);
+            }
+        }
+
+        private void PreviewEffectSound(string feedbackPath)
+        {
+            serializedDraft.UpdateIfRequiredOrScript();
+            var feedback = serializedDraft.FindProperty(feedbackPath);
+            var clip = feedback?.FindPropertyRelative("sound").objectReferenceValue as AudioClip;
+            var volume = feedback?.FindPropertyRelative("soundVolume").floatValue ?? 1f;
+            if (clip != null) SfxEditorAudioPreview.Play(clip, 0, false, volume);
+        }
+
+        private void CreateOrEditEffectVfxWrapper(
+            string groupId,
+            MonsterActivePresentationSlot contract,
+            string feedbackPath)
+        {
+            serializedDraft.ApplyModifiedProperties();
+            var feedback = serializedDraft.FindProperty(feedbackPath);
+            var source = feedback?.FindPropertyRelative("vfxPrefab").objectReferenceValue as GameObject;
+            if (source == null || draft == null)
+            {
+                EditorUtility.DisplayDialog("전용 VFX", "먼저 Project에 저장된 VFX Prefab을 지정하세요.", "확인");
+                return;
+            }
+            if (MonsterBasicAttackVfxPrefabUtility.IsMonsterWrapper(
+                    source,
+                    draft.MonsterId,
+                    MonsterAttackVfxWrapperOwner.EffectActive))
+            {
+                AssetDatabase.OpenAsset(source);
+                EditorGUIUtility.PingObject(source);
+                return;
+            }
+            if (!MonsterBasicAttackVfxPrefabUtility.TryCreateWrapper(
+                    draft.MonsterId,
+                    MonsterAttackVfxWrapperOwner.EffectActive,
+                    groupId,
+                    contract.SlotId,
+                    string.Empty,
+                    source,
+                    feedback.FindPropertyRelative("localPosition").vector3Value,
+                    feedback.FindPropertyRelative("localEulerAngles").vector3Value,
+                    feedback.FindPropertyRelative("scale").floatValue,
+                    out var wrapper,
+                    out var error))
+            {
+                EditorUtility.DisplayDialog(
+                    "전용 VFX 래퍼 생성 실패",
+                    string.IsNullOrWhiteSpace(error) ? "알 수 없는 오류입니다." : error,
+                    "확인");
+                return;
+            }
+            ApplyAndRebuild(
+                "Monster Maker V2 · 효과형 전용 VFX 래퍼 연결",
+                () =>
+                {
+                    var refreshed = serializedDraft.FindProperty(feedbackPath);
+                    refreshed.FindPropertyRelative("vfxPrefab").objectReferenceValue = wrapper;
+                    refreshed.FindPropertyRelative("localPosition").vector3Value = Vector3.zero;
+                    refreshed.FindPropertyRelative("localEulerAngles").vector3Value = Vector3.zero;
+                    refreshed.FindPropertyRelative("scale").floatValue = 1f;
+                });
+            EditorGUIUtility.PingObject(wrapper);
+        }
+
+        private void SyncActiveEffectVfxBindings()
+        {
+            ApplyObjectMutationAndRebuild(
+                "Monster Maker V2 · 효과형 액티브 연출 공간 동기화",
+                () => draft?.EditorSyncActiveEffectAuthoring());
         }
 
         private static string GetEffectRoleLabel(MonsterEffectActiveRole role) => role switch
@@ -681,7 +995,10 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             return anchor switch
             {
                 MonsterActivePresentationAnchor.AttackOrigin => MonsterMakerPreviewAnchor.AttackOrigin,
-                MonsterActivePresentationAnchor.TargetPoint => MonsterMakerPreviewAnchor.HitCenter,
+                MonsterActivePresentationAnchor.TargetPoint or
+                    MonsterActivePresentationAnchor.TargetRoot or
+                    MonsterActivePresentationAnchor.HitPoint or
+                    MonsterActivePresentationAnchor.AreaCenter => MonsterMakerPreviewAnchor.HitCenter,
                 _ => MonsterMakerPreviewAnchor.Root
             };
         }

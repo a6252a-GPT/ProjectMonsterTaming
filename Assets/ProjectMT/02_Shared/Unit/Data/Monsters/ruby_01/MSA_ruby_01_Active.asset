@@ -58,17 +58,17 @@ MonoBehaviour:
       endPolicy: 4
       feedback:
         sfx: {fileID: 0}
-        vfxPrefab: {fileID: 0}
-        vfxLifetime: 1
+        vfxPrefab: {fileID: 29059895490230244, guid: 8ee68e8c9890fac4a880dd4cd224ec1a, type: 3}
+        vfxLifetime: 3
         localPosition: {x: 0, y: 0, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
-        scale: 1
+        scale: 0.2
       useDuration: 0
       duration: 1
     - slotId: seal_apply
-      timing: 8
-      anchor: 7
-      multiplicity: 0
+      timing: 11
+      anchor: 5
+      multiplicity: 2
       attachment: 0
       endPolicy: 4
       feedback:
@@ -81,11 +81,26 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: target_loop
-      timing: 8
+      timing: 11
       anchor: 5
       multiplicity: 4
       attachment: 1
       endPolicy: 0
+      feedback:
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 6164151242651960837, guid: 558adf550eac0f148a91088d21a41481, type: 3}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0.60134315, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1.6
+      useDuration: 1
+      duration: 5
+    - slotId: target_end
+      timing: 12
+      anchor: 5
+      multiplicity: 2
+      attachment: 0
+      endPolicy: 4
       feedback:
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 0}
@@ -93,8 +108,8 @@ MonoBehaviour:
         localPosition: {x: 0, y: 0, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
         scale: 1
-      useDuration: 1
-      duration: 5
+      useDuration: 0
+      duration: 1
   - groupId: group_02
     slots:
     - slotId: cast_start
@@ -113,9 +128,9 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: suppress_apply
-      timing: 8
-      anchor: 7
-      multiplicity: 0
+      timing: 11
+      anchor: 5
+      multiplicity: 2
       attachment: 0
       endPolicy: 4
       feedback:
@@ -128,7 +143,7 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: target_loop
-      timing: 8
+      timing: 11
       anchor: 5
       multiplicity: 4
       attachment: 1
@@ -142,5 +157,20 @@ MonoBehaviour:
         scale: 1
       useDuration: 1
       duration: 4
-  commitNormalizedTime: 0.28
+    - slotId: target_end
+      timing: 12
+      anchor: 5
+      multiplicity: 2
+      attachment: 0
+      endPolicy: 4
+      feedback:
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      useDuration: 0
+      duration: 1
+  commitNormalizedTime: 0.25
   mythicExclusive: 0

@@ -439,9 +439,9 @@ MonoBehaviour:
     - attackId: active_step_01
       slotId: telegraph
       motionId: 
-      state: 0
-      prefab: {fileID: 0}
-      sfxState: 0
+      state: 2
+      prefab: {fileID: 5589581968649349843, guid: 323e0a2e13d056d4091494317604b8a0, type: 3}
+      sfxState: 2
       sound: {fileID: 0}
       soundVolume: 1
       sfx: {fileID: 0}
@@ -455,24 +455,24 @@ MonoBehaviour:
     - attackId: active_step_01
       slotId: strike_trail
       motionId: step_01
-      state: 0
-      prefab: {fileID: 0}
+      state: 1
+      prefab: {fileID: 5454244945197580836, guid: 1079a08b913794445847a2da866c396f, type: 3}
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
       sfx: {fileID: 0}
       lifetime: 1
-      playbackOffset: 0
+      playbackOffset: 0.6
       playbackSpeed: 1
-      eventTimingOffset: 0
-      localPosition: {x: 0, y: 0, z: 0}
+      eventTimingOffset: -2
+      localPosition: {x: 0, y: -0.40176517, z: 0.02500379}
       localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 1
+      scale: 1.6
     - attackId: active_step_01
       slotId: per_hit
       motionId: 
-      state: 0
-      prefab: {fileID: 0}
+      state: 1
+      prefab: {fileID: 91396576481047388, guid: 2b971c1516193b94e98786bbab630a9d, type: 3}
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
@@ -500,5 +500,5 @@ MonoBehaviour:
       localPosition: {x: 0, y: 0, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
-  commitNormalizedTime: 0.25
+  commitNormalizedTime: 0.972
   mythicExclusive: 1

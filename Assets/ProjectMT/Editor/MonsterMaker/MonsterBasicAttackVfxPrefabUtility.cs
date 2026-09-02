@@ -11,7 +11,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
     internal enum MonsterAttackVfxWrapperOwner
     {
         BasicAttack,
-        ActiveAttack
+        ActiveAttack,
+        EffectActive
     }
 
     internal static class MonsterBasicAttackVfxPrefabUtility // 원본 VFX를 보존하는 몬스터 전용 래퍼
@@ -146,15 +147,20 @@ namespace ProjectMT.EditorTools.MonsterMaker
             string monsterId,
             MonsterAttackVfxWrapperOwner owner)
         {
-            var other = owner == MonsterAttackVfxWrapperOwner.BasicAttack
-                ? MonsterAttackVfxWrapperOwner.ActiveAttack
-                : MonsterAttackVfxWrapperOwner.BasicAttack;
-            return IsMonsterWrapper(prefab, monsterId, other);
+            return Enum.GetValues(typeof(MonsterAttackVfxWrapperOwner))
+                .Cast<MonsterAttackVfxWrapperOwner>()
+                .Any(candidate => candidate != owner &&
+                                  IsMonsterWrapper(prefab, monsterId, candidate));
         }
 
         internal static string ResolveOwnerFolderName(MonsterAttackVfxWrapperOwner owner)
         {
-            return owner == MonsterAttackVfxWrapperOwner.ActiveAttack ? "Active" : "Basic";
+            return owner switch
+            {
+                MonsterAttackVfxWrapperOwner.ActiveAttack => "Active",
+                MonsterAttackVfxWrapperOwner.EffectActive => "Effect",
+                _ => "Basic"
+            };
         }
 
         private static void EnsureFolder(string parent, string child)

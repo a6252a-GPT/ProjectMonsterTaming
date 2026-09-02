@@ -58,6 +58,7 @@ MonoBehaviour:
     motionCommitNormalizedTime: 0.25
     telegraph:
       sound: {fileID: 0}
+      soundVolume: 1
       sfx: {fileID: 0}
       vfxPrefab: {fileID: 0}
       vfxLifetime: 1
@@ -66,6 +67,7 @@ MonoBehaviour:
       scale: 1
     launch:
       sound: {fileID: 0}
+      soundVolume: 1
       sfx: {fileID: 0}
       vfxPrefab: {fileID: 0}
       vfxLifetime: 1
@@ -74,6 +76,7 @@ MonoBehaviour:
       scale: 1
     travel:
       sound: {fileID: 0}
+      soundVolume: 1
       sfx: {fileID: 0}
       vfxPrefab: {fileID: 0}
       vfxLifetime: 1
@@ -82,6 +85,7 @@ MonoBehaviour:
       scale: 1
     impact:
       sound: {fileID: 0}
+      soundVolume: 1
       sfx: {fileID: 0}
       vfxPrefab: {fileID: 0}
       vfxLifetime: 1
@@ -90,6 +94,7 @@ MonoBehaviour:
       scale: 1
     dashExit:
       sound: {fileID: 0}
+      soundVolume: 1
       sfx: {fileID: 0}
       vfxPrefab: {fileID: 0}
       vfxLifetime: 1
@@ -98,6 +103,7 @@ MonoBehaviour:
       scale: 1
     dashEnter:
       sound: {fileID: 0}
+      soundVolume: 1
       sfx: {fileID: 0}
       vfxPrefab: {fileID: 0}
       vfxLifetime: 1
@@ -108,18 +114,20 @@ MonoBehaviour:
     - slotId: cast_start
       feedback:
         sound: {fileID: 0}
+        soundVolume: 1
         sfx: {fileID: 0}
-        vfxPrefab: {fileID: 0}
-        vfxLifetime: 1
-        localPosition: {x: 0, y: 0, z: 0}
+        vfxPrefab: {fileID: 7298124039744100688, guid: da4c6fe0f01906e4eb5b2e7b751e4f48, type: 3}
+        vfxLifetime: 3
+        localPosition: {x: 0, y: 0.28891712, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
         scale: 1
       assignmentStateConfigured: 1
-      vfxState: 0
+      vfxState: 1
       sfxState: 0
     - slotId: life_apply
       feedback:
         sound: {fileID: 0}
+        soundVolume: 1
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 0}
         vfxLifetime: 1
@@ -132,6 +140,20 @@ MonoBehaviour:
     - slotId: target_loop
       feedback:
         sound: {fileID: 0}
+        soundVolume: 1
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 91871935769221215, guid: 8fe3c21076c24c441a4815166e845f8c, type: 3}
+        vfxLifetime: 4
+        localPosition: {x: 0, y: 0.5732907, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 3
+      assignmentStateConfigured: 1
+      vfxState: 1
+      sfxState: 0
+    - slotId: target_end
+      feedback:
+        sound: {fileID: 0}
+        soundVolume: 1
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 0}
         vfxLifetime: 1
@@ -192,7 +214,7 @@ MonoBehaviour:
     overrideBreathDuration: 0
     breathDuration: 0.8
     markers:
-    - normalizedTime: 0.8
+    - normalizedTime: 0.2
       powerRatio: 1
       socketOverride: 
   deathClip: {fileID: 7400000, guid: 06a7c8284876eeb48bb124e2c6dd06c2, type: 3}
@@ -204,7 +226,7 @@ MonoBehaviour:
     slotId: thrust_path
     motionId: attack01
     state: 1
-    prefab: {fileID: 2786811891644352870, guid: f52010f669dafc24b9ffe92e3c78befd, type: 3}
+    prefab: {fileID: 7722072588384670577, guid: fe1110bd116501a4a9cf9b7ffdeb3c24, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -212,15 +234,15 @@ MonoBehaviour:
     lifetime: 3
     playbackOffset: 0
     playbackSpeed: 1
-    eventTimingOffset: -1.5
-    localPosition: {x: 0, y: 0.8, z: 0.3}
-    localEulerAngles: {x: 0, y: 90, z: 0}
-    scale: 0.3
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0.613394, z: 0.5576265}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1.2
   - attackId: BA_M_03
     slotId: path_hit
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 3230446607781795785, guid: b1127b593e73feb4f87f996026301d59, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -309,6 +331,7 @@ MonoBehaviour:
     attackRangeRate: 0
   spawnFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -317,6 +340,7 @@ MonoBehaviour:
     scale: 1
   hitFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -325,6 +349,7 @@ MonoBehaviour:
     scale: 1
   deathFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -333,6 +358,7 @@ MonoBehaviour:
     scale: 1
   specialFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1

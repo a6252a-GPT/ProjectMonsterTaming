@@ -75,7 +75,7 @@ MonoBehaviour:
     slotId: ground_contact
     motionId: 
     state: 1
-    prefab: {fileID: 3463373973632022023, guid: 44bf36ac6dfa10c4eb503f8fba494cdb, type: 3}
+    prefab: {fileID: 8460470112280648105, guid: 4575fcfed50a15a4187433ec229e6fae, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -90,7 +90,7 @@ MonoBehaviour:
   - attackId: BA_M_04
     slotId: target_hit
     motionId: 
-    state: 1
+    state: 0
     prefab: {fileID: 3927127137047121744, guid: 32d8ea6211779f1439877eb77df691bb, type: 3}
     sfxState: 0
     sound: {fileID: 0}

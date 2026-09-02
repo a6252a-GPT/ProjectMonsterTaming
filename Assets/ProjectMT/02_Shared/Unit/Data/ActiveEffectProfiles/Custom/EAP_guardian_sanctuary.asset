@@ -54,7 +54,7 @@ MonoBehaviour:
       stackPolicy: 3
     presentationSlots:
     - slotId: cast_start
-      displayName: "\uC218\uD638 \uBC1C\uB3D9"
+      displayName: "\uC2DC\uC804\uC790 \uBC1C\uB3D9"
       timing: 6
       anchor: 0
       multiplicity: 0
@@ -64,18 +64,18 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: barrier_apply
-      displayName: "\uBCF4\uD638\uB9C9 \uC801\uC6A9"
-      timing: 8
-      anchor: 7
-      multiplicity: 0
+      displayName: "\uB300\uC0C1 \uC2DC\uC791 \xB7 1\uD68C"
+      timing: 11
+      anchor: 5
+      multiplicity: 2
       attachment: 0
       endPolicy: 4
       description: "\uD6A8\uACFC \uC801\uC6A9 \uC21C\uAC04\uC758 VFX/SFX \uACF5\uAC04"
       useDuration: 0
       duration: 1
     - slotId: barrier_loop
-      displayName: "\uBCF4\uD638\uB9C9 \uC9C0\uC18D"
-      timing: 8
+      displayName: "\uB300\uC0C1 \uC9C0\uC18D"
+      timing: 11
       anchor: 5
       multiplicity: 4
       attachment: 1
@@ -84,6 +84,16 @@ MonoBehaviour:
         Loop VFX/SFX \uACF5\uAC04"
       useDuration: 1
       duration: 5
+    - slotId: target_end
+      displayName: "\uB300\uC0C1 \uB05D \xB7 1\uD68C"
+      timing: 12
+      anchor: 5
+      multiplicity: 2
+      attachment: 0
+      endPolicy: 4
+      description: 
+      useDuration: 0
+      duration: 1
   - groupId: group_02
     displayName: "\uC218\uD638\uC790 \uB3C4\uBC1C"
     delayAfterPrevious: 0.12
@@ -106,11 +116,21 @@ MonoBehaviour:
       repeatCount: 1
       stackPolicy: 3
     presentationSlots:
-    - slotId: taunt_apply
-      displayName: "\uB3C4\uBC1C \uC801\uC6A9"
-      timing: 8
+    - slotId: cast_start
+      displayName: "\uC2DC\uC804\uC790 \uBC1C\uB3D9"
+      timing: 6
       anchor: 0
       multiplicity: 0
+      attachment: 0
+      endPolicy: 4
+      description: 
+      useDuration: 0
+      duration: 1
+    - slotId: taunt_apply
+      displayName: "\uB300\uC0C1 \uC801\uC6A9 \xB7 1\uD68C"
+      timing: 11
+      anchor: 5
+      multiplicity: 2
       attachment: 0
       endPolicy: 4
       description: "\uD6A8\uACFC \uC801\uC6A9 \uC21C\uAC04\uC758 VFX/SFX \uACF5\uAC04"

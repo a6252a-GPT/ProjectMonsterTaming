@@ -139,7 +139,7 @@ MonoBehaviour:
     - appearance: 4
       role: 1
       weight: 1
-    ninjaCount: 0
+    ninjaCount: 1
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
@@ -162,7 +162,7 @@ MonoBehaviour:
     - appearance: 5
       role: 1
       weight: 1
-    ninjaCount: 0
+    ninjaCount: 1
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
@@ -193,7 +193,7 @@ MonoBehaviour:
     - appearance: 6
       role: 1
       weight: 1
-    ninjaCount: 0
+    ninjaCount: 1
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0

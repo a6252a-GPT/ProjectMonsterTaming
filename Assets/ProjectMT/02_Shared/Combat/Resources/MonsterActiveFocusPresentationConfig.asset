@@ -22,10 +22,15 @@ MonoBehaviour:
   mythicCutInBackground: {fileID: 21300000, guid: ce55182a01e12a24fbf589e7ca83374d, type: 3}
   legendaryPreset:
     otherUnitTimeScale: 0.3
+    attackOtherUnitTimeScale: 0.18
+    otherUnitSlowInDuration: 0.25
+    otherUnitSlowHoldDuration: 1.8
+    otherUnitSlowOutDuration: 0.45
+    attackCameraHoldAfterCommitDuration: 0.45
     focusLead: 0.26
     fadeIn: 0.14
-    fadeOut: 0.22
-    minimumVisibleDuration: 1.5
+    fadeOut: 0.3
+    minimumVisibleDuration: 2
     cameraReleaseDuration: 0.48
     dimAlpha: 0.38
     cameraMaxOffset: 1.2
@@ -33,10 +38,15 @@ MonoBehaviour:
     accentColor: {r: 0.90588236, g: 0.827451, b: 0.2901961, a: 1}
   mythicPreset:
     otherUnitTimeScale: 0.22
+    attackOtherUnitTimeScale: 0.12
+    otherUnitSlowInDuration: 0.25
+    otherUnitSlowHoldDuration: 1.8
+    otherUnitSlowOutDuration: 0.45
+    attackCameraHoldAfterCommitDuration: 0.45
     focusLead: 0.34
     fadeIn: 0.16
-    fadeOut: 0.26
-    minimumVisibleDuration: 1.5
+    fadeOut: 0.34
+    minimumVisibleDuration: 2
     cameraReleaseDuration: 0.58
     dimAlpha: 0.52
     cameraMaxOffset: 1.6

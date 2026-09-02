@@ -183,9 +183,7 @@ namespace ProjectMT.Features.Commander
 
             CommanderPotentialRuntime.Changed -= RefreshPotentialPanel;
             CommanderPotentialRuntime.Changed += RefreshPotentialPanel;
-            QuestRuntime.Changed -= RefreshPotentialUnlock;
-            QuestRuntime.Changed += RefreshPotentialUnlock;
-            RefreshPotentialUnlock();
+            KeepPotentialTabAvailable();
         }
 
         private void Unsubscribe()
@@ -196,7 +194,6 @@ namespace ProjectMT.Features.Commander
             }
 
             CommanderPotentialRuntime.Changed -= RefreshPotentialPanel;
-            QuestRuntime.Changed -= RefreshPotentialUnlock;
         }
 
         private async void LevelUp()
@@ -262,11 +259,6 @@ namespace ProjectMT.Features.Commander
         // 능력치 탭이 기본, 잠재능력 탭을 누르면 능력치 쪽 콘텐츠를 숨기고 PotentialPanel을 보여준다.
         private void SelectGrowthTab(bool potential)
         {
-            if (potential && !QuestRuntime.IsUnlocked(QuestUnlockTarget.CommanderPotential))
-            {
-                return;
-            }
-
             SetActiveSafe(statsTabFocus, !potential);
             SetActiveSafe(potentialTabFocus, potential);
             SetActiveSafe(growthScrollView, !potential);
@@ -280,21 +272,16 @@ namespace ProjectMT.Features.Commander
             }
         }
 
-        private void RefreshPotentialUnlock()
+        private void KeepPotentialTabAvailable()
         {
             if (potentialTabButton == null)
             {
                 return;
             }
 
-            var unlocked = QuestRuntime.IsUnlocked(QuestUnlockTarget.CommanderPotential);
-            potentialTabButton.interactable = unlocked;
+            potentialTabButton.interactable = true;
             var lockBadge = FindDeep(potentialTabButton.transform, "LockBadge");
-            SetActiveSafe(lockBadge != null ? lockBadge.gameObject : null, !unlocked);
-            if (!unlocked && potentialPanel != null && potentialPanel.activeSelf)
-            {
-                SelectGrowthTab(false);
-            }
+            SetActiveSafe(lockBadge != null ? lockBadge.gameObject : null, false);
         }
 
         private async void TriggerInitialPotentialRoll()

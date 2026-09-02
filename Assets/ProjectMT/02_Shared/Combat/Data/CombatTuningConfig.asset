@@ -75,7 +75,7 @@ MonoBehaviour:
   criticalOrKillEmphasis: 1.12
   criticalOrKillTargetStopMultiplier: 1.16
   maximumHitStop: 0.06
-  mainBattleEnemySpawnSpreadMultiplier: 1.8
+  mainBattleEnemySpawnSpreadMultiplier: 2
   mainBattlePlayerPairDistance: 0.85
   mainBattleEnemyPairDistance: 0.8
   mainBattleOpposingPairDistance: 0.65

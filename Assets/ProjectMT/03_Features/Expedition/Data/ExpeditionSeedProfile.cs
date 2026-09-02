@@ -446,6 +446,9 @@ namespace ProjectMT.Features.Expedition
         public const int FallbackEnemiesPerWave = 8; // 데이터 누락 시에도 현재 수량 유지
         public const int FormationColumns = 4; // 한 행 최대 인원
         public const float FormationSpacing = 0.85f; // 유닛 간격
+        public const int NinjaStartStage = 20; // 암살자 최초 출현 단계
+        public const float EntryScatterSideDistance = 0.35f; // 같은 입장점 내 좌우 산개
+        public const float EntryScatterForwardDistance = 0.2f; // 같은 입장점 내 앞뒤 산개
 
         public static int GetEnemiesPerWave(int stage)
         {
@@ -475,6 +478,16 @@ namespace ProjectMT.Features.Expedition
 
             var centeredColumn = column - (rowCount - 1) * 0.5f; // 덜 찬 마지막 행 중앙 정렬
             return new Vector2(centeredColumn * FormationSpacing, row * FormationSpacing);
+        }
+
+        public static Vector2 GetEntryScatterOffset(int unitIndex)
+        {
+            unitIndex = Mathf.Max(0, unitIndex);
+            var side = unitIndex % 3 - 1;
+            var forward = unitIndex / 3 % 3 - 1;
+            return new Vector2(
+                side * EntryScatterSideDistance,
+                forward * EntryScatterForwardDistance);
         }
 
         public static Vector3 ResolveBattleForward(

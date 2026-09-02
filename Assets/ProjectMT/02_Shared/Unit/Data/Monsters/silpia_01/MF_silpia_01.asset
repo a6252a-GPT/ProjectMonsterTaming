@@ -75,7 +75,7 @@ MonoBehaviour:
     slotId: path_hit
     motionId: 
     state: 1
-    prefab: {fileID: 213725806574775490, guid: c60b96824904b794997ad794a167f696, type: 3}
+    prefab: {fileID: 8153113478359776592, guid: 974a86d1634e4e24995f85313992eb2f, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1

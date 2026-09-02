@@ -107,6 +107,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             {
                 WorkingDraft.EditorEnsureSplitSkillUsage();
             }
+            RestoreInvalidBasicAttackBindingsFromSource();
             SerializedDraft = new SerializedObject(WorkingDraft);
             Validation = null;
             LastWriteResult = null;
@@ -115,6 +116,62 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 savedWorkingJson,
                 CaptureWorkingJson(),
                 StringComparison.Ordinal);
+        }
+
+        private void RestoreInvalidBasicAttackBindingsFromSource()
+        {
+            if (SourceDraft == null || WorkingDraft == null)
+            {
+                return;
+            }
+
+            foreach (var workingBinding in WorkingDraft.BasicAttackVfxBindings)
+            {
+                if (workingBinding == null || workingBinding.TryValidate(out _))
+                {
+                    continue;
+                }
+
+                MonsterBasicAttackVfxBinding sourceBinding = null;
+                foreach (var candidate in SourceDraft.BasicAttackVfxBindings)
+                {
+                    if (candidate == null || !candidate.TryValidate(out _) ||
+                        !string.Equals(candidate.AttackId, workingBinding.AttackId,
+                            StringComparison.OrdinalIgnoreCase) ||
+                        !string.Equals(candidate.SlotId, workingBinding.SlotId,
+                            StringComparison.OrdinalIgnoreCase) ||
+                        !string.Equals(candidate.MotionId, workingBinding.MotionId,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    sourceBinding = candidate;
+                }
+
+                if (sourceBinding == null)
+                {
+                    continue;
+                }
+
+                workingBinding.EditorConfigure(
+                    sourceBinding.AttackId,
+                    sourceBinding.SlotId,
+                    sourceBinding.MotionId,
+                    sourceBinding.State,
+                    sourceBinding.Prefab,
+                    sourceBinding.Lifetime,
+                    sourceBinding.LocalPosition,
+                    sourceBinding.LocalRotation.eulerAngles,
+                    sourceBinding.Scale,
+                    sourceBinding.PlaybackOffset,
+                    sourceBinding.Sound,
+                    sourceBinding.Sfx,
+                    sourceBinding.SfxState,
+                    sourceBinding.SoundVolume,
+                    sourceBinding.EventTimingOffset,
+                    sourceBinding.PlaybackSpeed);
+            }
         }
 
         public void RestoreInitial()

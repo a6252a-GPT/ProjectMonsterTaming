@@ -63,6 +63,8 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 "deathMotionDuration" => "보스 사망 모션 재생시간 (0 = 자동)",
                 "commanderDeathMotion" => "군단장 사망 모션",
                 "commanderDeathMotionDuration" => "군단장 사망 모션 재생시간 (0 = 자동)",
+                "commanderEvadeForwardMotion" => "군단장 전방 회피 모션",
+                "commanderEvadeBackwardMotion" => "군단장 후방 회피 모션",
                 "deathResultDelay" => "사망 후 결과창 대기시간",
                 "maxBreakGauge" => "최대 브레이크 게이지",
                 "breakGaugePerHit" => "피격 1회당 브레이크 게이지",

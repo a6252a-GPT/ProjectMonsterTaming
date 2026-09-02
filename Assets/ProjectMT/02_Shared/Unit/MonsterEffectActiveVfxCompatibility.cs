@@ -56,7 +56,9 @@ namespace ProjectMT.Shared.Unit
                 MonsterActivePresentationEvent.Launch or
                 MonsterActivePresentationEvent.Impact or
                 MonsterActivePresentationEvent.AreaResolved or
-                MonsterActivePresentationEvent.StepEnd;
+                MonsterActivePresentationEvent.StepEnd or
+                MonsterActivePresentationEvent.EffectApplied or
+                MonsterActivePresentationEvent.EffectExpired;
         }
 
         public static bool SupportsAnchor(
@@ -75,7 +77,9 @@ namespace ProjectMT.Shared.Unit
                     MonsterActivePresentationAnchor.TargetRoot or
                     MonsterActivePresentationAnchor.HitPoint =>
                     timing is MonsterActivePresentationEvent.Impact or
-                        MonsterActivePresentationEvent.AreaResolved,
+                        MonsterActivePresentationEvent.AreaResolved or
+                        MonsterActivePresentationEvent.EffectApplied or
+                        MonsterActivePresentationEvent.EffectExpired,
                 MonsterActivePresentationAnchor.AreaCenter =>
                     timing is MonsterActivePresentationEvent.Impact or
                         MonsterActivePresentationEvent.AreaResolved or
@@ -94,13 +98,16 @@ namespace ProjectMT.Shared.Unit
                 MonsterActivePresentationMultiplicity.OncePerStep => true,
                 MonsterActivePresentationMultiplicity.PerTargetHit =>
                     (timing is MonsterActivePresentationEvent.Impact or
-                        MonsterActivePresentationEvent.AreaResolved) &&
+                        MonsterActivePresentationEvent.AreaResolved or
+                        MonsterActivePresentationEvent.EffectApplied or
+                        MonsterActivePresentationEvent.EffectExpired) &&
                     IsTargetAnchor(anchor),
                 MonsterActivePresentationMultiplicity.ContinuousUntilEnd =>
                     timing is MonsterActivePresentationEvent.MotionStart or
                         MonsterActivePresentationEvent.Launch or
                         MonsterActivePresentationEvent.Impact or
-                        MonsterActivePresentationEvent.AreaResolved,
+                        MonsterActivePresentationEvent.AreaResolved or
+                        MonsterActivePresentationEvent.EffectApplied,
                 _ => false
             };
         }

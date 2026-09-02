@@ -54,7 +54,9 @@ MonoBehaviour:
     instantMagicTarget: 0
     magicDirection: 0
     damageRatios:
-    - 1
+    - 0.33333334
+    - 0.33333334
+    - 0.33333334
     secondaryDamageRatio: 1
     repeatHitInterval: 0.08
     projectileLifetime: 3
@@ -74,6 +76,42 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
+    - slotId: strike_trail
+      displayName: "\uC5F0\uC18D \uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uC5F0\uC18D \uACF5\uACA9 \uBAA8\uC158\uC758
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: per_hit
+      displayName: "\uD0C0\uACA9\uBCC4 \uBA85\uC911"
+      description: "\uAC01 \uD53C\uD574 \uB2E8\uACC4\uC758 \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 4
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: final_hit
+      displayName: "\uB9C8\uC9C0\uB9C9 \uD0C0\uACA9"
+      description: "\uB9C8\uC9C0\uB9C9 \uD53C\uD574 \uB2E8\uACC4 \uB4A4\uC758 \uB9C8\uBB34\uB9AC
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 7
+      anchor: 5
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots:
     - slotId: swing_trail
       displayName: "\uACF5\uACA9 \uADA4\uC801"
       description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
@@ -98,7 +136,6 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
-    inactiveAttackBlockVfxSlots: []
     presentationSlots: []
   - stepId: step_02
     displayName: "\uB2E8\uC77C \uD0C0\uACA9"
@@ -135,7 +172,9 @@ MonoBehaviour:
     instantMagicTarget: 0
     magicDirection: 0
     damageRatios:
-    - 1
+    - 0.33333334
+    - 0.33333334
+    - 0.33333334
     secondaryDamageRatio: 1
     repeatHitInterval: 0.08
     projectileLifetime: 3
@@ -155,6 +194,42 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
+    - slotId: strike_trail
+      displayName: "\uC5F0\uC18D \uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uC5F0\uC18D \uACF5\uACA9 \uBAA8\uC158\uC758
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: per_hit
+      displayName: "\uD0C0\uACA9\uBCC4 \uBA85\uC911"
+      description: "\uAC01 \uD53C\uD574 \uB2E8\uACC4\uC758 \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 4
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: final_hit
+      displayName: "\uB9C8\uC9C0\uB9C9 \uD0C0\uACA9"
+      description: "\uB9C8\uC9C0\uB9C9 \uD53C\uD574 \uB2E8\uACC4 \uB4A4\uC758 \uB9C8\uBB34\uB9AC
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 7
+      anchor: 5
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots:
     - slotId: swing_trail
       displayName: "\uACF5\uACA9 \uADA4\uC801"
       description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
@@ -179,7 +254,6 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
-    inactiveAttackBlockVfxSlots: []
     presentationSlots: []
   - stepId: step_03
     displayName: "\uB2E8\uC77C \uD0C0\uACA9"
@@ -216,7 +290,9 @@ MonoBehaviour:
     instantMagicTarget: 0
     magicDirection: 0
     damageRatios:
-    - 1
+    - 0.33333334
+    - 0.33333334
+    - 0.33333334
     secondaryDamageRatio: 1
     repeatHitInterval: 0.08
     projectileLifetime: 3
@@ -236,6 +312,42 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
+    - slotId: strike_trail
+      displayName: "\uC5F0\uC18D \uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uC5F0\uC18D \uACF5\uACA9 \uBAA8\uC158\uC758
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: per_hit
+      displayName: "\uD0C0\uACA9\uBCC4 \uBA85\uC911"
+      description: "\uAC01 \uD53C\uD574 \uB2E8\uACC4\uC758 \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 4
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: final_hit
+      displayName: "\uB9C8\uC9C0\uB9C9 \uD0C0\uACA9"
+      description: "\uB9C8\uC9C0\uB9C9 \uD53C\uD574 \uB2E8\uACC4 \uB4A4\uC758 \uB9C8\uBB34\uB9AC
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 7
+      anchor: 5
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots:
     - slotId: swing_trail
       displayName: "\uACF5\uACA9 \uADA4\uC801"
       description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
@@ -260,7 +372,6 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
-    inactiveAttackBlockVfxSlots: []
     presentationSlots: []
   - stepId: step_04
     displayName: "\uB2E8\uC77C \uD0C0\uACA9"
@@ -297,7 +408,9 @@ MonoBehaviour:
     instantMagicTarget: 0
     magicDirection: 0
     damageRatios:
-    - 1
+    - 0.33333334
+    - 0.33333334
+    - 0.33333334
     secondaryDamageRatio: 1
     repeatHitInterval: 0.08
     projectileLifetime: 3
@@ -317,6 +430,42 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
+    - slotId: strike_trail
+      displayName: "\uC5F0\uC18D \uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uC5F0\uC18D \uACF5\uACA9 \uBAA8\uC158\uC758
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: per_hit
+      displayName: "\uD0C0\uACA9\uBCC4 \uBA85\uC911"
+      description: "\uAC01 \uD53C\uD574 \uB2E8\uACC4\uC758 \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 4
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: final_hit
+      displayName: "\uB9C8\uC9C0\uB9C9 \uD0C0\uACA9"
+      description: "\uB9C8\uC9C0\uB9C9 \uD53C\uD574 \uB2E8\uACC4 \uB4A4\uC758 \uB9C8\uBB34\uB9AC
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 7
+      anchor: 5
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots:
     - slotId: swing_trail
       displayName: "\uACF5\uACA9 \uADA4\uC801"
       description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
@@ -341,7 +490,6 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
-    inactiveAttackBlockVfxSlots: []
     presentationSlots: []
   - stepId: step_05
     displayName: "\uB2E8\uC77C \uD0C0\uACA9"
@@ -378,7 +526,9 @@ MonoBehaviour:
     instantMagicTarget: 0
     magicDirection: 0
     damageRatios:
-    - 1
+    - 0.33333334
+    - 0.33333334
+    - 0.33333334
     secondaryDamageRatio: 1
     repeatHitInterval: 0.08
     projectileLifetime: 3
@@ -398,6 +548,42 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
+    - slotId: strike_trail
+      displayName: "\uC5F0\uC18D \uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uC5F0\uC18D \uACF5\uACA9 \uBAA8\uC158\uC758
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: per_hit
+      displayName: "\uD0C0\uACA9\uBCC4 \uBA85\uC911"
+      description: "\uAC01 \uD53C\uD574 \uB2E8\uACC4\uC758 \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 4
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: final_hit
+      displayName: "\uB9C8\uC9C0\uB9C9 \uD0C0\uACA9"
+      description: "\uB9C8\uC9C0\uB9C9 \uD53C\uD574 \uB2E8\uACC4 \uB4A4\uC758 \uB9C8\uBB34\uB9AC
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 7
+      anchor: 5
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots:
     - slotId: swing_trail
       displayName: "\uACF5\uACA9 \uADA4\uC801"
       description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
@@ -422,7 +608,6 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
-    inactiveAttackBlockVfxSlots: []
     presentationSlots: []
   - stepId: step_06
     displayName: "\uB2E8\uC77C \uD0C0\uACA9"
@@ -459,7 +644,9 @@ MonoBehaviour:
     instantMagicTarget: 0
     magicDirection: 0
     damageRatios:
-    - 1
+    - 0.33333334
+    - 0.33333334
+    - 0.33333334
     secondaryDamageRatio: 1
     repeatHitInterval: 0.08
     projectileLifetime: 3
@@ -479,6 +666,42 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
+    - slotId: strike_trail
+      displayName: "\uC5F0\uC18D \uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uC5F0\uC18D \uACF5\uACA9 \uBAA8\uC158\uC758
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: per_hit
+      displayName: "\uD0C0\uACA9\uBCC4 \uBA85\uC911"
+      description: "\uAC01 \uD53C\uD574 \uB2E8\uACC4\uC758 \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 4
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: final_hit
+      displayName: "\uB9C8\uC9C0\uB9C9 \uD0C0\uACA9"
+      description: "\uB9C8\uC9C0\uB9C9 \uD53C\uD574 \uB2E8\uACC4 \uB4A4\uC758 \uB9C8\uBB34\uB9AC
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 7
+      anchor: 5
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots:
     - slotId: swing_trail
       displayName: "\uACF5\uACA9 \uADA4\uC801"
       description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
@@ -503,7 +726,6 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
-    inactiveAttackBlockVfxSlots: []
     presentationSlots: []
   - stepId: step_07
     displayName: "\uB2E8\uC77C \uD0C0\uACA9"
@@ -540,7 +762,9 @@ MonoBehaviour:
     instantMagicTarget: 0
     magicDirection: 0
     damageRatios:
-    - 1
+    - 0.33333334
+    - 0.33333334
+    - 0.33333334
     secondaryDamageRatio: 1
     repeatHitInterval: 0.08
     projectileLifetime: 3
@@ -560,6 +784,42 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
+    - slotId: strike_trail
+      displayName: "\uC5F0\uC18D \uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uC5F0\uC18D \uACF5\uACA9 \uBAA8\uC158\uC758
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: per_hit
+      displayName: "\uD0C0\uACA9\uBCC4 \uBA85\uC911"
+      description: "\uAC01 \uD53C\uD574 \uB2E8\uACC4\uC758 \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 4
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: final_hit
+      displayName: "\uB9C8\uC9C0\uB9C9 \uD0C0\uACA9"
+      description: "\uB9C8\uC9C0\uB9C9 \uD53C\uD574 \uB2E8\uACC4 \uB4A4\uC758 \uB9C8\uBB34\uB9AC
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 7
+      anchor: 5
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots:
     - slotId: swing_trail
       displayName: "\uACF5\uACA9 \uADA4\uC801"
       description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
@@ -584,7 +844,6 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
-    inactiveAttackBlockVfxSlots: []
     presentationSlots: []
   - stepId: step_08
     displayName: "\uB2E8\uC77C \uD0C0\uACA9"
@@ -621,7 +880,9 @@ MonoBehaviour:
     instantMagicTarget: 0
     magicDirection: 0
     damageRatios:
-    - 1
+    - 0.33333334
+    - 0.33333334
+    - 0.33333334
     secondaryDamageRatio: 1
     repeatHitInterval: 0.08
     projectileLifetime: 3
@@ -641,6 +902,42 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
+    - slotId: strike_trail
+      displayName: "\uC5F0\uC18D \uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uC5F0\uC18D \uACF5\uACA9 \uBAA8\uC158\uC758
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: per_hit
+      displayName: "\uD0C0\uACA9\uBCC4 \uBA85\uC911"
+      description: "\uAC01 \uD53C\uD574 \uB2E8\uACC4\uC758 \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 4
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: final_hit
+      displayName: "\uB9C8\uC9C0\uB9C9 \uD0C0\uACA9"
+      description: "\uB9C8\uC9C0\uB9C9 \uD53C\uD574 \uB2E8\uACC4 \uB4A4\uC758 \uB9C8\uBB34\uB9AC
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 7
+      anchor: 5
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots:
     - slotId: swing_trail
       displayName: "\uACF5\uACA9 \uADA4\uC801"
       description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
@@ -665,7 +962,6 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
-    inactiveAttackBlockVfxSlots: []
     presentationSlots: []
   - stepId: step_09
     displayName: "\uB2E8\uC77C \uD0C0\uACA9"
@@ -702,7 +998,9 @@ MonoBehaviour:
     instantMagicTarget: 0
     magicDirection: 0
     damageRatios:
-    - 1
+    - 0.33333334
+    - 0.33333334
+    - 0.33333334
     secondaryDamageRatio: 1
     repeatHitInterval: 0.08
     projectileLifetime: 3
@@ -722,6 +1020,42 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
+    - slotId: strike_trail
+      displayName: "\uC5F0\uC18D \uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uC5F0\uC18D \uACF5\uACA9 \uBAA8\uC158\uC758
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: per_hit
+      displayName: "\uD0C0\uACA9\uBCC4 \uBA85\uC911"
+      description: "\uAC01 \uD53C\uD574 \uB2E8\uACC4\uC758 \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 4
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: final_hit
+      displayName: "\uB9C8\uC9C0\uB9C9 \uD0C0\uACA9"
+      description: "\uB9C8\uC9C0\uB9C9 \uD53C\uD574 \uB2E8\uACC4 \uB4A4\uC758 \uB9C8\uBB34\uB9AC
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 7
+      anchor: 5
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots:
     - slotId: swing_trail
       displayName: "\uACF5\uACA9 \uADA4\uC801"
       description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
@@ -746,10 +1080,9 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
-    inactiveAttackBlockVfxSlots: []
     presentationSlots: []
   - stepId: step_10
-    displayName: "\uB2E8\uC77C \uD0C0\uACA9"
+    displayName: "\uB0B4 \uC55E \uC6D0\uD615"
     startMode: 1
     delayAfterPrevious: 0.22
     playbackSpeed: 1
@@ -757,16 +1090,16 @@ MonoBehaviour:
     dashBeforeAttack: 0
     dashFrontDistance: 1
     dashDuration: 0.1
-    pattern: 8
+    pattern: 3
     progression: 0
     damageMultiplier: 0.9
     damageMultiplierMode: 1
     maximumDamageMultiplier: 1.3
-    maxTargets: 1
+    maxTargets: 8
     range: 4
     width: 0.8
-    radius: 0.8
-    forwardOffset: 0
+    radius: 1.8
+    forwardOffset: 1.5
     angle: 30
     progressionDuration: 0
     telegraphDelay: 0.08
@@ -783,7 +1116,9 @@ MonoBehaviour:
     instantMagicTarget: 0
     magicDirection: 0
     damageRatios:
-    - 1
+    - 0.33333334
+    - 0.33333334
+    - 0.33333334
     secondaryDamageRatio: 1
     repeatHitInterval: 0.08
     projectileLifetime: 3
@@ -803,6 +1138,42 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
+    - slotId: strike_trail
+      displayName: "\uC5F0\uC18D \uACF5\uACA9 \uADA4\uC801"
+      description: "\uC120\uD0DD\uB41C \uC5F0\uC18D \uACF5\uACA9 \uBAA8\uC158\uC758
+        \uADA4\uC801"
+      productionMemo: 
+      eventType: 1
+      anchor: 1
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 1
+      endPolicy: 2
+      defaultLifetime: 1
+    - slotId: per_hit
+      displayName: "\uD0C0\uACA9\uBCC4 \uBA85\uC911"
+      description: "\uAC01 \uD53C\uD574 \uB2E8\uACC4\uC758 \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 4
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: final_hit
+      displayName: "\uB9C8\uC9C0\uB9C9 \uD0C0\uACA9"
+      description: "\uB9C8\uC9C0\uB9C9 \uD53C\uD574 \uB2E8\uACC4 \uB4A4\uC758 \uB9C8\uBB34\uB9AC
+        \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 7
+      anchor: 5
+      multiplicity: 1
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots:
     - slotId: swing_trail
       displayName: "\uACF5\uACA9 \uADA4\uC801"
       description: "\uC120\uD0DD\uB41C \uACF5\uACA9 \uBAA8\uC158\uC758 \uD718\uB450\uB984
@@ -827,7 +1198,6 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
-    inactiveAttackBlockVfxSlots: []
     presentationSlots: []
   impactFeel:
     prefab: {fileID: 0}

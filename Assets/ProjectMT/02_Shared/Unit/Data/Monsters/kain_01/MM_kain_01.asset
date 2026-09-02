@@ -116,7 +116,7 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
   active:
-    clip: {fileID: 7400000, guid: b879d93f6ad2e3d4681e180c8716daf1, type: 3}
+    clip: {fileID: 7400000, guid: e9c5add18fadf164a9f5e656dea581d5, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.08
     loop: 0
@@ -129,7 +129,7 @@ MonoBehaviour:
       scale: 1
   activeSteps:
   - stepId: step_01
-    clip: {fileID: 7400000, guid: b879d93f6ad2e3d4681e180c8716daf1, type: 3}
+    clip: {fileID: 7400000, guid: e9c5add18fadf164a9f5e656dea581d5, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.08
     commitNormalizedTime: 0.2
@@ -139,17 +139,17 @@ MonoBehaviour:
     crossFadeDuration: 0.0375
     commitNormalizedTime: 0.2
   - stepId: step_03
-    clip: {fileID: 7400000, guid: b879d93f6ad2e3d4681e180c8716daf1, type: 3}
+    clip: {fileID: 7400000, guid: 33d4723e91ac65349a8675586772685a, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.0375
     commitNormalizedTime: 0.2
   - stepId: step_04
-    clip: {fileID: 7400000, guid: b879d93f6ad2e3d4681e180c8716daf1, type: 3}
+    clip: {fileID: 7400000, guid: e9c5add18fadf164a9f5e656dea581d5, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.0375
     commitNormalizedTime: 0.2
   - stepId: step_05
-    clip: {fileID: 7400000, guid: b879d93f6ad2e3d4681e180c8716daf1, type: 3}
+    clip: {fileID: 7400000, guid: 33d4723e91ac65349a8675586772685a, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.0375
     commitNormalizedTime: 0.2
@@ -159,17 +159,17 @@ MonoBehaviour:
     crossFadeDuration: 0.0375
     commitNormalizedTime: 0.2
   - stepId: step_07
-    clip: {fileID: 7400000, guid: b879d93f6ad2e3d4681e180c8716daf1, type: 3}
+    clip: {fileID: 7400000, guid: 33d4723e91ac65349a8675586772685a, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.0375
     commitNormalizedTime: 0.2
   - stepId: step_08
-    clip: {fileID: 7400000, guid: b879d93f6ad2e3d4681e180c8716daf1, type: 3}
+    clip: {fileID: 7400000, guid: e9c5add18fadf164a9f5e656dea581d5, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.0375
     commitNormalizedTime: 0.2
   - stepId: step_09
-    clip: {fileID: 7400000, guid: b879d93f6ad2e3d4681e180c8716daf1, type: 3}
+    clip: {fileID: 7400000, guid: 33d4723e91ac65349a8675586772685a, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.0375
     commitNormalizedTime: 0.2

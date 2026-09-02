@@ -59,7 +59,7 @@ MonoBehaviour:
     slotId: thrust_path
     motionId: attack01
     state: 1
-    prefab: {fileID: 2786811891644352870, guid: f52010f669dafc24b9ffe92e3c78befd, type: 3}
+    prefab: {fileID: 7722072588384670577, guid: fe1110bd116501a4a9cf9b7ffdeb3c24, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -67,15 +67,15 @@ MonoBehaviour:
     lifetime: 3
     playbackOffset: 0
     playbackSpeed: 1
-    eventTimingOffset: -1.5
-    localPosition: {x: 0, y: 0.8, z: 0.3}
-    localEulerAngles: {x: 0, y: 90, z: 0}
-    scale: 0.3
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0.613394, z: 0.5576265}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1.2
   - attackId: BA_M_03
     slotId: path_hit
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 3230446607781795785, guid: b1127b593e73feb4f87f996026301d59, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1

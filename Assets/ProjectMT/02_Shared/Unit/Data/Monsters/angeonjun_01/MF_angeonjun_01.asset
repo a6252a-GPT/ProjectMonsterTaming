@@ -75,7 +75,7 @@ MonoBehaviour:
     slotId: body
     motionId: attack01
     state: 1
-    prefab: {fileID: 222473768346676621, guid: 3c28e4951356a7d46a5687f21cd0f594, type: 3}
+    prefab: {fileID: 7470252180303246380, guid: 2f44af35b8ebcc44a8455973c20f3985, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -86,7 +86,7 @@ MonoBehaviour:
     eventTimingOffset: -0.25
     localPosition: {x: 0, y: -0.29672492, z: 0.75555277}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 0.6
   - attackId: BA_S_02
     slotId: repeated_hit
     motionId: 

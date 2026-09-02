@@ -37,6 +37,8 @@ namespace ProjectMT.Shared.Unit
         private float damageReflectRemaining;
         private float shieldAmount;
         private float shieldRemaining;
+        private float activeAttackExecutionElapsed;
+        private float activeAttackExpectedDuration;
         private int remainingActiveHits;
         private int basicHitCount;
         private int continuousHits;
@@ -116,6 +118,8 @@ namespace ProjectMT.Shared.Unit
             damageReflectRemaining = 0f;
             shieldAmount = 0f;
             shieldRemaining = 0f;
+            activeAttackExecutionElapsed = 0f;
+            activeAttackExpectedDuration = 0f;
             remainingActiveHits = 0;
             basicHitCount = 0;
             continuousHits = 0;
@@ -151,6 +155,10 @@ namespace ProjectMT.Shared.Unit
 
             if (executingActive)
             {
+                if (activeSkill is MonsterAttackActiveSkill)
+                {
+                    activeAttackExecutionElapsed += deltaTime;
+                }
                 TickExecutingActive(deltaTime);
                 return;
             }
@@ -758,6 +766,13 @@ namespace ProjectMT.Shared.Unit
                 ? config.ResolvePreset(owner.Presentation.Rarity)
                 : default;
             var focusDuration = commitDelay + Mathf.Max(0.08f, preset.FadeOut);
+            var isAttackActive = activeSkill is MonsterAttackActiveSkill;
+            activeAttackExpectedDuration = isAttackActive
+                ? Mathf.Max(
+                    0.1f,
+                    commitDelay +
+                    (((MonsterAttackActiveSkill)activeSkill).SourceProfile?.EstimateDuration() ?? 0f))
+                : 0f;
             if (world.RequestMonsterActiveFocus(
                     owner,
                     activeSkill,
@@ -768,7 +783,9 @@ namespace ProjectMT.Shared.Unit
                     CancelQueuedActiveFocus,
                     IsActiveCommitMarkerReached,
                     commitDelay,
-                    focusDuration))
+                    focusDuration,
+                    isAttackActive ? IsActiveExecutionComplete : null,
+                    isAttackActive ? ResolveActiveAttackExecutionProgress : null))
             {
                 return;
             }
@@ -809,6 +826,7 @@ namespace ProjectMT.Shared.Unit
             }
             executingActive = true;
             waitingForActiveFocus = true;
+            activeAttackExecutionElapsed = 0f;
             activeFirstStepMotionStarted = false;
             activeCommitMarkerBaseline = owner.AnimationDriver != null
                 ? owner.AnimationDriver.ActiveSkillCommitVersion
@@ -848,6 +866,30 @@ namespace ProjectMT.Shared.Unit
                    waitingForActiveFocus &&
                    owner?.AnimationDriver != null &&
                    owner.AnimationDriver.ActiveSkillCommitVersion != activeCommitMarkerBaseline;
+        }
+
+        private bool IsActiveExecutionComplete()
+        {
+            return !executingActive && !waitingForActiveFocus;
+        }
+
+        private float ResolveActiveAttackExecutionProgress()
+        {
+            if (activeSkill is not MonsterAttackActiveSkill)
+            {
+                return 1f;
+            }
+            if (!executingActive && !waitingForActiveFocus)
+            {
+                return 1f;
+            }
+            if (activeAttackExpectedDuration <= 0f)
+            {
+                return 0f;
+            }
+            return Mathf.Min(
+                0.999f,
+                activeAttackExecutionElapsed / activeAttackExpectedDuration);
         }
 
         private UnitActor ResolveEffectActiveTarget(MonsterEffectActiveSkill effectActive)
@@ -943,6 +985,8 @@ namespace ProjectMT.Shared.Unit
             activeFocusQueued = false;
             activeFirstStepMotionStarted = false;
             activeCommitMarkerBaseline = 0;
+            activeAttackExecutionElapsed = 0f;
+            activeAttackExpectedDuration = 0f;
             activeAttackExecutor.Reset();
             activeDamageEffect = null;
             activeTarget = null;
@@ -1082,6 +1126,8 @@ namespace ProjectMT.Shared.Unit
             activeFocusQueued = false;
             activeFirstStepMotionStarted = false;
             activeCommitMarkerBaseline = 0;
+            activeAttackExecutionElapsed = 0f;
+            activeAttackExpectedDuration = 0f;
             activeAttackExecutor.Reset();
             activeDamageEffect = null;
             activeTarget = null;

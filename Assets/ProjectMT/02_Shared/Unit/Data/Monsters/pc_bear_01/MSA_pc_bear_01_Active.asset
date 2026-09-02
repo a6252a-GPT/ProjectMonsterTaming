@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: __ActiveAttackBlock_step_03
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterBasicAttackProfile
   attackId: active_step_03
-  displayName: "\uAD00\uD1B5 \uBE54"
+  displayName: "\uBD80\uCC44\uAF34 \uD53C\uD574"
   designMemo: 
-  combatType: 1
+  combatType: 0
   launchFeedback:
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
@@ -69,6 +69,31 @@ MonoBehaviour:
     attachment: 0
     endPolicy: 0
     defaultLifetime: 1
+  - slotId: sweep_plane
+    displayName: "\uD729\uC4F8\uAE30 \uBA74"
+    description: "\uC804\uBC29 \uBD80\uCC44\uAF34\uC744 \uC77D\uD788\uAC8C \uD558\uB294
+      \uACF5\uACA9 \uBA74"
+    productionMemo: 
+    eventType: 1
+    anchor: 0
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: target_hit
+    displayName: "\uB300\uC0C1\uBCC4 \uBA85\uC911"
+    description: "\uC2E4\uC81C\uB85C \uD53C\uD574\uB97C \uBC1B\uC740 \uAC01 \uB300\uC0C1\uC758
+      \uBA85\uC911 \uD6A8\uACFC"
+    productionMemo: 
+    eventType: 3
+    anchor: 5
+    multiplicity: 3
+    assignmentScope: 0
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  inactiveVfxSlots:
   - slotId: charge
     displayName: "\uBE54 \uCDA9\uC804"
     description: "\uBE54 \uBAA8\uC158 \uC2DC\uC791\uC758 \uCDA9\uC804 \uD6A8\uACFC"
@@ -115,14 +140,13 @@ MonoBehaviour:
     attachment: 0
     endPolicy: 0
     defaultLifetime: 1
-  inactiveVfxSlots: []
   recipeVersion: 1
   deliveryModule: 0
   collisionModule: 0
   sequenceModule: 0
   movementModule: 0
-  presentationKind: 12
-  shape: 2
+  presentationKind: 2
+  shape: 1
   center: 0
   projectileTravel: 0
   sweepDirection: 0
@@ -132,7 +156,7 @@ MonoBehaviour:
   lineWidth: 0.9
   forwardOffset: 1.5
   maxTargets: 10
-  progression: 0
+  progression: 1
   progressionDuration: 0.35
   telegraphDelay: 0.18
   visualDuration: 0.95
@@ -152,7 +176,7 @@ MonoBehaviour:
   dashDistance: 0
   dashDuration: 0.1
   hitAreaVisibleDuration: 0.42
-  delivery: 7
+  delivery: 0
   stopOnFirstTarget: 0
 --- !u!114 &11400000
 MonoBehaviour:
@@ -242,7 +266,12 @@ MonoBehaviour:
     repeatHitInterval: 0.08
     projectileLifetime: 3
     repeatImpactFeedback: 1
-    hitEffects: []
+    hitEffects:
+    - type: 0
+      magnitude: 0.25
+      duration: 0.35
+      secondaryMagnitude: 0
+      tickInterval: 0.5
     attackBlockVfxSlots:
     - slotId: telegraph
       displayName: "\uD310\uC815 \uC608\uACE0"
@@ -300,7 +329,7 @@ MonoBehaviour:
     startMode: 1
     delayAfterPrevious: 0.45
     playbackSpeed: 1
-    targetPolicy: 1
+    targetPolicy: 0
     dashBeforeAttack: 0
     dashFrontDistance: 1
     dashDuration: 0.1
@@ -335,7 +364,12 @@ MonoBehaviour:
     repeatHitInterval: 0.08
     projectileLifetime: 3
     repeatImpactFeedback: 1
-    hitEffects: []
+    hitEffects:
+    - type: 1
+      magnitude: 0.25
+      duration: 0.35
+      secondaryMagnitude: 0
+      tickInterval: 0.5
     attackBlockVfxSlots:
     - slotId: telegraph
       displayName: "\uD310\uC815 \uC608\uACE0"
@@ -401,7 +435,7 @@ MonoBehaviour:
     inactiveAttackBlockVfxSlots: []
     presentationSlots: []
   - stepId: step_03
-    displayName: "\uAD00\uD1B5 \uBE54"
+    displayName: "\uBD80\uCC44\uAF34 \uD53C\uD574"
     startMode: 1
     delayAfterPrevious: 0.5
     playbackSpeed: 1
@@ -409,8 +443,8 @@ MonoBehaviour:
     dashBeforeAttack: 0
     dashFrontDistance: 1
     dashDuration: 0.1
-    pattern: 6
-    progression: 0
+    pattern: 1
+    progression: 1
     damageMultiplier: 1.2
     damageMultiplierMode: 0
     maximumDamageMultiplier: 1.2
@@ -440,7 +474,12 @@ MonoBehaviour:
     repeatHitInterval: 0.08
     projectileLifetime: 3
     repeatImpactFeedback: 1
-    hitEffects: []
+    hitEffects:
+    - type: 1
+      magnitude: 1
+      duration: 0.35
+      secondaryMagnitude: 0
+      tickInterval: 0.5
     attackBlockVfxSlots:
     - slotId: telegraph
       displayName: "\uD310\uC815 \uC608\uACE0"
@@ -455,6 +494,31 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
+    - slotId: sweep_plane
+      displayName: "\uD729\uC4F8\uAE30 \uBA74"
+      description: "\uC804\uBC29 \uBD80\uCC44\uAF34\uC744 \uC77D\uD788\uAC8C \uD558\uB294
+        \uACF5\uACA9 \uBA74"
+      productionMemo: 
+      eventType: 1
+      anchor: 0
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: target_hit
+      displayName: "\uB300\uC0C1\uBCC4 \uBA85\uC911"
+      description: "\uC2E4\uC81C\uB85C \uD53C\uD574\uB97C \uBC1B\uC740 \uAC01 \uB300\uC0C1\uC758
+        \uBA85\uC911 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 3
+      anchor: 5
+      multiplicity: 3
+      assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    inactiveAttackBlockVfxSlots:
     - slotId: charge
       displayName: "\uBE54 \uCDA9\uC804"
       description: "\uBE54 \uBAA8\uC158 \uC2DC\uC791\uC758 \uCDA9\uC804 \uD6A8\uACFC"
@@ -501,7 +565,30 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
-    inactiveAttackBlockVfxSlots: []
+    - slotId: dash_exit
+      displayName: "\uB3CC\uC9C4 \uCD9C\uBC1C"
+      description: "\uACF5\uACA9\uC790\uAC00 \uC6D0\uB798 \uC704\uCE58\uB97C \uB5A0\uB098\uAE30
+        \uC9C1\uC804\uC758 \uC804\uC6A9 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 11
+      anchor: 0
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: dash_enter
+      displayName: "\uB3CC\uC9C4 \uB3C4\uCC29"
+      description: "\uACF5\uACA9\uC790\uAC00 \uC0C8 \uC704\uCE58\uC5D0 \uB3C4\uCC29\uD55C
+        \uC9C1\uD6C4\uC758 \uC804\uC6A9 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 12
+      anchor: 0
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
     presentationSlots: []
   attackBlocks:
   - {fileID: 2141398484355553286}
@@ -588,8 +675,8 @@ MonoBehaviour:
     - attackId: active_step_01
       slotId: projectile
       motionId: 
-      state: 0
-      prefab: {fileID: 0}
+      state: 1
+      prefab: {fileID: 5464305951936604650, guid: ba4f3eb3b3e3ee7468dbe344f98c8666, type: 3}
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
@@ -604,8 +691,8 @@ MonoBehaviour:
     - attackId: active_step_01
       slotId: hit
       motionId: 
-      state: 0
-      prefab: {fileID: 0}
+      state: 1
+      prefab: {fileID: 3927127137047121744, guid: 32d8ea6211779f1439877eb77df691bb, type: 3}
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
@@ -697,8 +784,8 @@ MonoBehaviour:
     - attackId: active_step_02
       slotId: projectile
       motionId: 
-      state: 0
-      prefab: {fileID: 0}
+      state: 1
+      prefab: {fileID: 5464305951936604650, guid: ba4f3eb3b3e3ee7468dbe344f98c8666, type: 3}
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
@@ -729,8 +816,8 @@ MonoBehaviour:
     - attackId: active_step_02
       slotId: area_explosion
       motionId: 
-      state: 0
-      prefab: {fileID: 0}
+      state: 1
+      prefab: {fileID: 8460470112280648105, guid: 4575fcfed50a15a4187433ec229e6fae, type: 3}
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
@@ -739,9 +826,9 @@ MonoBehaviour:
       playbackOffset: 0
       playbackSpeed: 1
       eventTimingOffset: 0
-      localPosition: {x: 0, y: 0, z: 0}
+      localPosition: {x: 0, y: 0.16548634, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 1
+      scale: 0.6
   - stepId: step_03
     telegraph:
       sfx: {fileID: 0}
@@ -804,58 +891,26 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
     - attackId: active_step_03
-      slotId: charge
+      slotId: sweep_plane
       motionId: step_03
-      state: 0
-      prefab: {fileID: 0}
+      state: 1
+      prefab: {fileID: 4726790242865161932, guid: 479177904962d7149a21cba4677d3d8b, type: 3}
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
       sfx: {fileID: 0}
-      lifetime: 1
+      lifetime: 2
       playbackOffset: 0
       playbackSpeed: 1
-      eventTimingOffset: 0
-      localPosition: {x: 0, y: 0, z: 0}
+      eventTimingOffset: 0.1
+      localPosition: {x: 0, y: 0.26976192, z: 0.97515553}
       localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 1
+      scale: 0.5
     - attackId: active_step_03
-      slotId: beam_body
-      motionId: step_03
-      state: 0
-      prefab: {fileID: 0}
-      sfxState: 0
-      sound: {fileID: 0}
-      soundVolume: 1
-      sfx: {fileID: 0}
-      lifetime: 1
-      playbackOffset: 0
-      playbackSpeed: 1
-      eventTimingOffset: 0
-      localPosition: {x: 0, y: 0, z: 0}
-      localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 1
-    - attackId: active_step_03
-      slotId: contact_hit
+      slotId: target_hit
       motionId: 
-      state: 0
-      prefab: {fileID: 0}
-      sfxState: 0
-      sound: {fileID: 0}
-      soundVolume: 1
-      sfx: {fileID: 0}
-      lifetime: 1
-      playbackOffset: 0
-      playbackSpeed: 1
-      eventTimingOffset: 0
-      localPosition: {x: 0, y: 0, z: 0}
-      localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 1
-    - attackId: active_step_03
-      slotId: end
-      motionId: step_03
-      state: 0
-      prefab: {fileID: 0}
+      state: 1
+      prefab: {fileID: 3927127137047121744, guid: 32d8ea6211779f1439877eb77df691bb, type: 3}
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1

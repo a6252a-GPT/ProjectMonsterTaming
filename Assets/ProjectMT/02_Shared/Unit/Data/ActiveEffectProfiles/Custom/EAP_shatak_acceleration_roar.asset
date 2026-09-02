@@ -51,18 +51,18 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: haste_apply
-      displayName: "\uD6A8\uACFC \uC801\uC6A9"
-      timing: 8
-      anchor: 7
-      multiplicity: 0
+      displayName: "\uB300\uC0C1 \uC2DC\uC791 \xB7 1\uD68C"
+      timing: 11
+      anchor: 5
+      multiplicity: 2
       attachment: 0
       endPolicy: 4
       description: "\uBC1C\uB3D9 \uB610\uB294 \uC801\uC6A9 \uC21C\uAC04 VFX/SFX \uACF5\uAC04"
       useDuration: 0
       duration: 1
     - slotId: target_loop
-      displayName: "\uD6A8\uACFC \uC9C0\uC18D"
-      timing: 8
+      displayName: "\uB300\uC0C1 \uC9C0\uC18D"
+      timing: 11
       anchor: 5
       multiplicity: 4
       attachment: 1
@@ -71,3 +71,13 @@ MonoBehaviour:
         VFX/SFX \uACF5\uAC04"
       useDuration: 1
       duration: 6
+    - slotId: target_end
+      displayName: "\uB300\uC0C1 \uB05D \xB7 1\uD68C"
+      timing: 12
+      anchor: 5
+      multiplicity: 2
+      attachment: 0
+      endPolicy: 4
+      description: 
+      useDuration: 0
+      duration: 1

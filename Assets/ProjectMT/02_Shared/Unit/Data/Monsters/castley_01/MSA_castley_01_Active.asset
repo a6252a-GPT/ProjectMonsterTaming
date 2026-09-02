@@ -57,7 +57,7 @@ MonoBehaviour:
       endPolicy: 4
       feedback:
         sfx: {fileID: 0}
-        vfxPrefab: {fileID: 0}
+        vfxPrefab: {fileID: 5998712663261596941, guid: 7dd8dab2a979eab45bda1d6f6852808d, type: 3}
         vfxLifetime: 1
         localPosition: {x: 0, y: 0, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
@@ -65,9 +65,9 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: barrier_apply
-      timing: 8
-      anchor: 7
-      multiplicity: 0
+      timing: 11
+      anchor: 5
+      multiplicity: 2
       attachment: 0
       endPolicy: 4
       feedback:
@@ -80,11 +80,26 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: barrier_loop
-      timing: 8
+      timing: 11
       anchor: 5
       multiplicity: 4
       attachment: 1
       endPolicy: 0
+      feedback:
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 653964908080078641, guid: 4495da2bce71fc4479dc207d6af1d273, type: 3}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0.6625943, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 0.5
+      useDuration: 1
+      duration: 5
+    - slotId: target_end
+      timing: 12
+      anchor: 5
+      multiplicity: 2
+      attachment: 0
+      endPolicy: 4
       feedback:
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 0}
@@ -92,12 +107,12 @@ MonoBehaviour:
         localPosition: {x: 0, y: 0, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
         scale: 1
-      useDuration: 1
-      duration: 5
+      useDuration: 0
+      duration: 1
   - groupId: group_02
     slots:
-    - slotId: taunt_apply
-      timing: 8
+    - slotId: cast_start
+      timing: 6
       anchor: 0
       multiplicity: 0
       attachment: 0
@@ -111,5 +126,20 @@ MonoBehaviour:
         scale: 1
       useDuration: 0
       duration: 1
-  commitNormalizedTime: 0.45
+    - slotId: taunt_apply
+      timing: 11
+      anchor: 5
+      multiplicity: 2
+      attachment: 0
+      endPolicy: 4
+      feedback:
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      useDuration: 0
+      duration: 1
+  commitNormalizedTime: 0.25
   mythicExclusive: 0

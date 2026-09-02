@@ -63,6 +63,34 @@ MonoBehaviour:
       localPosition: {x: 0, y: 0, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
+  active:
+    clip: {fileID: 7400000, guid: 681da7c58cea31e45b3421ee16333001, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.08
+    loop: 0
+    startFeedback:
+      sfx: {fileID: 0}
+      vfxPrefab: {fileID: 0}
+      vfxLifetime: 1
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+  activeSteps:
+  - stepId: step_01
+    clip: {fileID: 7400000, guid: 681da7c58cea31e45b3421ee16333001, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.08
+    commitNormalizedTime: 0.4
+  - stepId: step_02
+    clip: {fileID: 7400000, guid: 681da7c58cea31e45b3421ee16333001, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.08
+    commitNormalizedTime: 0.4
+  - stepId: step_03
+    clip: {fileID: 7400000, guid: 681da7c58cea31e45b3421ee16333001, type: 3}
+    playbackSpeed: 1
+    crossFadeDuration: 0.08
+    commitNormalizedTime: 0.4
   death:
     clip: {fileID: 7400000, guid: cb43514d572d4dc4090a440586421ac7, type: 3}
     playbackSpeed: 1

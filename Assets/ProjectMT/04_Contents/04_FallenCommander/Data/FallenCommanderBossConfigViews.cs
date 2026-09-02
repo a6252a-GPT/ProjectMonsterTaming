@@ -147,6 +147,8 @@ namespace ProjectMT.Contents.FallenCommander
             DeathMotionDuration = source.DeathMotionDuration;
             CommanderDeathMotion = source.CommanderDeathMotion;
             CommanderDeathMotionDuration = source.CommanderDeathMotionDuration;
+            CommanderEvadeForwardMotion = source.CommanderEvadeForwardMotion;
+            CommanderEvadeBackwardMotion = source.CommanderEvadeBackwardMotion;
             DeathResultDelay = source.DeathResultDelay;
             BreakMotion = source.BreakMotion;
             BreakMotionDuration = source.BreakMotionDuration;
@@ -156,6 +158,8 @@ namespace ProjectMT.Contents.FallenCommander
         public float DeathMotionDuration { get; }
         public AnimationClip CommanderDeathMotion { get; }
         public float CommanderDeathMotionDuration { get; }
+        public AnimationClip CommanderEvadeForwardMotion { get; }
+        public AnimationClip CommanderEvadeBackwardMotion { get; }
         public float DeathResultDelay { get; }
         public AnimationClip BreakMotion { get; }
         public float BreakMotionDuration { get; }

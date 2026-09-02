@@ -11,12 +11,15 @@ namespace ProjectMT.Shared.Combat
         {
             public GameObject Instance;
             public MonsterActivePresentationEndPolicy EndPolicy;
+            public string ScopeId;
         }
 
         private readonly List<UnitActor> targets = new List<UnitActor>();
         private readonly List<UnitActor> candidates = new List<UnitActor>();
         private readonly List<PendingEffect> pendingEffects = new List<PendingEffect>();
         private readonly List<PeriodicHeal> periodicHeals = new List<PeriodicHeal>();
+        private readonly List<PendingPresentationLifecycle> presentationLifecycles =
+            new List<PendingPresentationLifecycle>();
         private readonly List<TrackedVfx> trackedVfx = new List<TrackedVfx>();
         private UnitActor owner;
         private CombatWorld world;
@@ -25,10 +28,12 @@ namespace ProjectMT.Shared.Combat
         private int groupIndex;
         private float groupDelay;
         private bool running;
+        private int presentationSequence;
 
         public bool IsRunning => running;
         public bool HasLingering =>
-            pendingEffects.Count > 0 || periodicHeals.Count > 0 || trackedVfx.Count > 0;
+            pendingEffects.Count > 0 || periodicHeals.Count > 0 ||
+            presentationLifecycles.Count > 0 || trackedVfx.Count > 0;
         public int CompletedGroupCount => Mathf.Clamp(groupIndex, 0, skill?.Groups.Count ?? 0);
 
         public bool Begin(
@@ -118,6 +123,32 @@ namespace ProjectMT.Shared.Combat
                 }
             }
 
+            for (var index = presentationLifecycles.Count - 1; index >= 0; index--)
+            {
+                var lifecycle = presentationLifecycles[index];
+                if (!lifecycle.Started)
+                {
+                    lifecycle.RemainingDelay -= deltaTime;
+                    if (lifecycle.RemainingDelay > 0f) continue;
+                    var overshoot = -lifecycle.RemainingDelay;
+                    StartPresentationLifecycle(lifecycle);
+                    if (lifecycle.RemainingDuration <= 0f)
+                    {
+                        presentationLifecycles.RemoveAt(index);
+                        continue;
+                    }
+                    lifecycle.RemainingDuration -= overshoot;
+                }
+                else
+                {
+                    lifecycle.RemainingDuration -= deltaTime;
+                }
+
+                if (lifecycle.RemainingDuration > 0f) continue;
+                EndPresentationLifecycle(lifecycle);
+                presentationLifecycles.RemoveAt(index);
+            }
+
             if (running && groupIndex >= (skill?.Groups.Count ?? 0) && pendingEffects.Count == 0)
             {
                 running = false;
@@ -143,7 +174,9 @@ namespace ProjectMT.Shared.Combat
             targets.Clear();
             candidates.Clear();
             pendingEffects.Clear();
+            presentationLifecycles.Clear();
             trackedVfx.Clear();
+            presentationSequence = 0;
         }
 
         private void ExecuteGroup(MonsterEffectActiveGroup group)
@@ -173,10 +206,57 @@ namespace ProjectMT.Shared.Combat
                     }
                 }
             }
-            PlayPresentation(group, targets, MonsterActivePresentationEvent.Impact);
-            PlayPresentation(group, targets, MonsterActivePresentationEvent.AreaResolved);
-            PlayPresentation(group, targets, MonsterActivePresentationEvent.StepEnd);
+            SchedulePresentationLifecycle(group, targets);
+        }
+
+        private void SchedulePresentationLifecycle(
+            MonsterEffectActiveGroup group,
+            IReadOnlyList<UnitActor> resolvedTargets)
+        {
+            var lifecycle = new PendingPresentationLifecycle(
+                group,
+                resolvedTargets,
+                $"{group.GroupId}:{++presentationSequence}",
+                group.PresentationLifecycleStartDelay,
+                group.PresentationLifecycleDuration);
+            if (lifecycle.RemainingDelay <= 0f)
+            {
+                StartPresentationLifecycle(lifecycle);
+                if (lifecycle.RemainingDuration <= 0f) return;
+            }
+            presentationLifecycles.Add(lifecycle);
+        }
+
+        private void StartPresentationLifecycle(PendingPresentationLifecycle lifecycle)
+        {
+            if (lifecycle == null || lifecycle.Started) return;
+            lifecycle.Started = true;
+            var alive = lifecycle.AliveTargets;
+            if (alive.Count == 0) return;
+            // 기존 저장 계약도 실제 효과 적용 시점으로 함께 이동시킨다.
+            PlayPresentation(lifecycle.Group, alive, MonsterActivePresentationEvent.Impact);
+            PlayPresentation(lifecycle.Group, alive, MonsterActivePresentationEvent.AreaResolved);
+            PlayPresentation(
+                lifecycle.Group,
+                alive,
+                MonsterActivePresentationEvent.EffectApplied,
+                lifecycle.ScopeId);
+            PlayPresentation(lifecycle.Group, alive, MonsterActivePresentationEvent.StepEnd);
             ReleaseTrackedVfx(MonsterActivePresentationEndPolicy.StepEnd);
+        }
+
+        private void EndPresentationLifecycle(PendingPresentationLifecycle lifecycle)
+        {
+            if (lifecycle == null) return;
+            ReleaseTrackedVfx(null, lifecycle.ScopeId);
+            var alive = lifecycle.AliveTargets;
+            if (alive.Count > 0)
+            {
+                PlayPresentation(
+                    lifecycle.Group,
+                    alive,
+                    MonsterActivePresentationEvent.EffectExpired);
+            }
         }
 
         private void ResolveTargets(MonsterEffectActiveGroup group, List<UnitActor> destination)
@@ -438,7 +518,8 @@ namespace ProjectMT.Shared.Combat
         private void PlayPresentation(
             MonsterEffectActiveGroup group,
             IReadOnlyList<UnitActor> resolvedTargets,
-            MonsterActivePresentationEvent presentationEvent)
+            MonsterActivePresentationEvent presentationEvent,
+            string scopeId = null)
         {
             var presentation = skill.ResolvePresentation(group.GroupId);
             if (presentation == null) return;
@@ -457,7 +538,7 @@ namespace ProjectMT.Shared.Combat
                     var parent = slot.Attachment == MonsterActivePresentationAttachment.FollowAnchor
                         ? ResolvePresentationParent(slot.Anchor, target)
                         : null;
-                    PlaySlot(slot, position, rotation, parent);
+                    PlaySlot(slot, position, rotation, parent, scopeId);
                 }
             }
         }
@@ -495,7 +576,8 @@ namespace ProjectMT.Shared.Combat
             MonsterActiveAttackPresentationCueBinding slot,
             Vector3 position,
             Quaternion rotation,
-            Transform parent)
+            Transform parent,
+            string scopeId)
         {
             var bodyScale = owner.RuntimeAssetSet?.BodyProfile?.VfxScale ?? 1f;
             var instance = world.SpawnMonsterActiveVfx(
@@ -512,12 +594,15 @@ namespace ProjectMT.Shared.Combat
                     slot.Feedback.VfxPrefab.transform.localScale *
                     slot.Feedback.Scale * Mathf.Max(0.01f, bodyScale));
             }
-            if (slot.EndPolicy == MonsterActivePresentationEndPolicy.StepEnd)
+            if (slot.EndPolicy == MonsterActivePresentationEndPolicy.StepEnd ||
+                slot.Multiplicity == MonsterActivePresentationMultiplicity.ContinuousUntilEnd &&
+                !string.IsNullOrWhiteSpace(scopeId))
             {
                 trackedVfx.Add(new TrackedVfx
                 {
                     Instance = instance,
-                    EndPolicy = slot.EndPolicy
+                    EndPolicy = slot.EndPolicy,
+                    ScopeId = scopeId
                 });
                 return;
             }
@@ -592,12 +677,16 @@ namespace ProjectMT.Shared.Combat
             return count > 0 ? total / count : Vector3.zero;
         }
 
-        private void ReleaseTrackedVfx(MonsterActivePresentationEndPolicy? policy)
+        private void ReleaseTrackedVfx(
+            MonsterActivePresentationEndPolicy? policy,
+            string scopeId = null)
         {
             for (var index = trackedVfx.Count - 1; index >= 0; index--)
             {
                 var tracked = trackedVfx[index];
                 if (policy.HasValue && tracked.EndPolicy != policy.Value) continue;
+                if (!string.IsNullOrWhiteSpace(scopeId) &&
+                    !string.Equals(tracked.ScopeId, scopeId, StringComparison.Ordinal)) continue;
                 if (tracked.Instance != null) world?.ReturnMonsterObject(tracked.Instance);
                 trackedVfx.RemoveAt(index);
             }
@@ -644,6 +733,47 @@ namespace ProjectMT.Shared.Combat
             public float RemainingDuration { get; set; }
             public float Interval { get; }
             public float NextTick { get; set; }
+        }
+
+        private sealed class PendingPresentationLifecycle
+        {
+            private readonly List<UnitActor> sourceTargets;
+            private readonly List<UnitActor> aliveTargets = new List<UnitActor>();
+
+            public PendingPresentationLifecycle(
+                MonsterEffectActiveGroup group,
+                IReadOnlyList<UnitActor> targets,
+                string scopeId,
+                float delay,
+                float duration)
+            {
+                Group = group;
+                ScopeId = scopeId;
+                RemainingDelay = Mathf.Max(0f, delay);
+                RemainingDuration = Mathf.Max(0f, duration);
+                sourceTargets = targets == null
+                    ? new List<UnitActor>()
+                    : new List<UnitActor>(targets);
+            }
+
+            public MonsterEffectActiveGroup Group { get; }
+            public string ScopeId { get; }
+            public float RemainingDelay { get; set; }
+            public float RemainingDuration { get; set; }
+            public bool Started { get; set; }
+            public IReadOnlyList<UnitActor> AliveTargets
+            {
+                get
+                {
+                    aliveTargets.Clear();
+                    for (var index = 0; index < sourceTargets.Count; index++)
+                    {
+                        var target = sourceTargets[index];
+                        if (target != null && target.IsAlive) aliveTargets.Add(target);
+                    }
+                    return aliveTargets;
+                }
+            }
         }
     }
 }

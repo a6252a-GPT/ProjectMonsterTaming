@@ -90,8 +90,8 @@ MonoBehaviour:
     repeatImpactFeedback: 1
     hitEffects:
     - type: 5
-      magnitude: 0.6
-      duration: 0.2
+      magnitude: 1
+      duration: 0.4
       secondaryMagnitude: 0.12
       tickInterval: 0.5
     attackBlockVfxSlots:
@@ -163,8 +163,8 @@ MonoBehaviour:
     startMode: 1
     delayAfterPrevious: 0.28
     playbackSpeed: 1
-    targetPolicy: 0
-    dashBeforeAttack: 0
+    targetPolicy: 1
+    dashBeforeAttack: 1
     dashFrontDistance: 1
     dashDuration: 0.1
     pattern: 0
@@ -204,6 +204,11 @@ MonoBehaviour:
       duration: 0.5
       secondaryMagnitude: 0
       tickInterval: 0.5
+    - type: 0
+      magnitude: 1
+      duration: 0.35
+      secondaryMagnitude: 0
+      tickInterval: 0.5
     attackBlockVfxSlots:
     - slotId: telegraph
       displayName: "\uD310\uC815 \uC608\uACE0"
@@ -215,6 +220,30 @@ MonoBehaviour:
       anchor: 6
       multiplicity: 1
       assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: dash_exit
+      displayName: "\uB3CC\uC9C4 \uCD9C\uBC1C"
+      description: "\uACF5\uACA9\uC790\uAC00 \uC6D0\uB798 \uC704\uCE58\uB97C \uB5A0\uB098\uAE30
+        \uC9C1\uC804\uC758 \uC804\uC6A9 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 11
+      anchor: 0
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: dash_enter
+      displayName: "\uB3CC\uC9C4 \uB3C4\uCC29"
+      description: "\uACF5\uACA9\uC790\uAC00 \uC0C8 \uC704\uCE58\uC5D0 \uB3C4\uCC29\uD55C
+        \uC9C1\uD6C4\uC758 \uC804\uC6A9 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 12
+      anchor: 0
+      multiplicity: 1
+      assignmentScope: 1
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
@@ -249,8 +278,8 @@ MonoBehaviour:
     startMode: 1
     delayAfterPrevious: 0.32
     playbackSpeed: 1
-    targetPolicy: 0
-    dashBeforeAttack: 0
+    targetPolicy: 1
+    dashBeforeAttack: 1
     dashFrontDistance: 1
     dashDuration: 0.1
     pattern: 1
@@ -284,7 +313,12 @@ MonoBehaviour:
     repeatHitInterval: 0.08
     projectileLifetime: 3
     repeatImpactFeedback: 1
-    hitEffects: []
+    hitEffects:
+    - type: 0
+      magnitude: 1
+      duration: 0.35
+      secondaryMagnitude: 0
+      tickInterval: 0.5
     attackBlockVfxSlots:
     - slotId: telegraph
       displayName: "\uD310\uC815 \uC608\uACE0"
@@ -296,6 +330,30 @@ MonoBehaviour:
       anchor: 6
       multiplicity: 1
       assignmentScope: 0
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: dash_exit
+      displayName: "\uB3CC\uC9C4 \uCD9C\uBC1C"
+      description: "\uACF5\uACA9\uC790\uAC00 \uC6D0\uB798 \uC704\uCE58\uB97C \uB5A0\uB098\uAE30
+        \uC9C1\uC804\uC758 \uC804\uC6A9 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 11
+      anchor: 0
+      multiplicity: 1
+      assignmentScope: 1
+      attachment: 0
+      endPolicy: 0
+      defaultLifetime: 1
+    - slotId: dash_enter
+      displayName: "\uB3CC\uC9C4 \uB3C4\uCC29"
+      description: "\uACF5\uACA9\uC790\uAC00 \uC0C8 \uC704\uCE58\uC5D0 \uB3C4\uCC29\uD55C
+        \uC9C1\uD6C4\uC758 \uC804\uC6A9 \uD6A8\uACFC"
+      productionMemo: 
+      eventType: 12
+      anchor: 0
+      multiplicity: 1
+      assignmentScope: 1
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1
@@ -394,35 +452,35 @@ MonoBehaviour:
     - attackId: active_step_01
       slotId: overhead_trail
       motionId: step_01
-      state: 0
-      prefab: {fileID: 0}
+      state: 1
+      prefab: {fileID: 3846271413535269217, guid: 12436077809ca2342b75e89598803c62, type: 3}
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
       sfx: {fileID: 0}
-      lifetime: 1
+      lifetime: 3
       playbackOffset: 0
       playbackSpeed: 1
-      eventTimingOffset: 0
-      localPosition: {x: 0, y: 0, z: 0}
-      localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 1
+      eventTimingOffset: -0.8
+      localPosition: {x: 0, y: 0, z: -1.2348472}
+      localEulerAngles: {x: 0, y: 180, z: 0}
+      scale: 0.7
     - attackId: active_step_01
       slotId: ground_contact
       motionId: 
-      state: 0
-      prefab: {fileID: 0}
+      state: 1
+      prefab: {fileID: 2405099766717404628, guid: e709dc6f8147ed94e8cc26ab7225d617, type: 3}
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
       sfx: {fileID: 0}
-      lifetime: 1
-      playbackOffset: 0
+      lifetime: 3
+      playbackOffset: 0.9
       playbackSpeed: 1
       eventTimingOffset: 0
-      localPosition: {x: 0, y: 0, z: 0}
+      localPosition: {x: 0, y: -0.35426807, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 1
+      scale: 0.25
     - attackId: active_step_01
       slotId: target_hit
       motionId: 
@@ -517,21 +575,53 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
     - attackId: active_step_02
+      slotId: dash_exit
+      motionId: step_02
+      state: 0
+      prefab: {fileID: 0}
+      sfxState: 0
+      sound: {fileID: 0}
+      soundVolume: 1
+      sfx: {fileID: 0}
+      lifetime: 1
+      playbackOffset: 0
+      playbackSpeed: 1
+      eventTimingOffset: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    - attackId: active_step_02
+      slotId: dash_enter
+      motionId: step_02
+      state: 0
+      prefab: {fileID: 0}
+      sfxState: 0
+      sound: {fileID: 0}
+      soundVolume: 1
+      sfx: {fileID: 0}
+      lifetime: 1
+      playbackOffset: 0
+      playbackSpeed: 1
+      eventTimingOffset: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    - attackId: active_step_02
       slotId: thrust_path
       motionId: step_02
       state: 1
-      prefab: {fileID: 236311996679959251, guid: e66d43dc53a30b340a7d50c8b871a809, type: 3}
+      prefab: {fileID: 1283219538873834884, guid: ffdeb16cfe365df47a86e821851d8b6b, type: 3}
       sfxState: 2
       sound: {fileID: 0}
       soundVolume: 1
       sfx: {fileID: 0}
-      lifetime: 0.85
+      lifetime: 2
       playbackOffset: 0
       playbackSpeed: 1
       eventTimingOffset: 0
-      localPosition: {x: 0, y: 0.8, z: 0.45}
+      localPosition: {x: 0, y: -0.35260034, z: 0.44999993}
       localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 0.35
+      scale: 0.7
     - attackId: active_step_02
       slotId: path_hit
       motionId: 
@@ -610,10 +700,42 @@ MonoBehaviour:
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
     - attackId: active_step_03
+      slotId: dash_exit
+      motionId: step_03
+      state: 0
+      prefab: {fileID: 0}
+      sfxState: 0
+      sound: {fileID: 0}
+      soundVolume: 1
+      sfx: {fileID: 0}
+      lifetime: 1
+      playbackOffset: 0
+      playbackSpeed: 1
+      eventTimingOffset: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    - attackId: active_step_03
+      slotId: dash_enter
+      motionId: step_03
+      state: 0
+      prefab: {fileID: 0}
+      sfxState: 0
+      sound: {fileID: 0}
+      soundVolume: 1
+      sfx: {fileID: 0}
+      lifetime: 1
+      playbackOffset: 0
+      playbackSpeed: 1
+      eventTimingOffset: 0
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      scale: 1
+    - attackId: active_step_03
       slotId: sweep_plane
       motionId: step_03
       state: 1
-      prefab: {fileID: 236311996679959251, guid: e66d43dc53a30b340a7d50c8b871a809, type: 3}
+      prefab: {fileID: 6061807642057999051, guid: 72341286620c7b1479dabba791198b8d, type: 3}
       sfxState: 2
       sound: {fileID: 0}
       soundVolume: 1
@@ -622,14 +744,14 @@ MonoBehaviour:
       playbackOffset: 0
       playbackSpeed: 1
       eventTimingOffset: 0
-      localPosition: {x: 0, y: 0.8, z: 0.45}
+      localPosition: {x: 0, y: 0.29983276, z: 0.45}
       localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 0.42
+      scale: 0.8
     - attackId: active_step_03
       slotId: target_hit
       motionId: 
       state: 1
-      prefab: {fileID: 3305186517166574314, guid: 3cb73259e9ad2b9499bb499e4e8efae7, type: 3}
+      prefab: {fileID: 2165863752904437655, guid: 89a3e5c2bdc788f4d8beaa22b84d2715, type: 3}
       sfxState: 2
       sound: {fileID: 0}
       soundVolume: 1
@@ -640,7 +762,7 @@ MonoBehaviour:
       eventTimingOffset: 0
       localPosition: {x: 0, y: 0, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 0.45
+      scale: 1
   commitNormalizedTime: 0.5
   mythicExclusive: 1
 --- !u!114 &178844856369251405
@@ -868,6 +990,30 @@ MonoBehaviour:
     attachment: 0
     endPolicy: 0
     defaultLifetime: 1
+  - slotId: dash_exit
+    displayName: "\uB3CC\uC9C4 \uCD9C\uBC1C"
+    description: "\uACF5\uACA9\uC790\uAC00 \uC6D0\uB798 \uC704\uCE58\uB97C \uB5A0\uB098\uAE30
+      \uC9C1\uC804\uC758 \uC804\uC6A9 \uD6A8\uACFC"
+    productionMemo: 
+    eventType: 11
+    anchor: 0
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: dash_enter
+    displayName: "\uB3CC\uC9C4 \uB3C4\uCC29"
+    description: "\uACF5\uACA9\uC790\uAC00 \uC0C8 \uC704\uCE58\uC5D0 \uB3C4\uCC29\uD55C
+      \uC9C1\uD6C4\uC758 \uC804\uC6A9 \uD6A8\uACFC"
+    productionMemo: 
+    eventType: 12
+    anchor: 0
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
   - slotId: thrust_path
     displayName: "\uCC0C\uB974\uAE30 \uACBD\uB85C"
     description: "\uACF5\uACA9 \uC6D0\uC810\uC5D0\uC11C \uBAA9\uD45C \uBC29\uD5A5\uC73C\uB85C
@@ -897,7 +1043,7 @@ MonoBehaviour:
   deliveryModule: 0
   collisionModule: 0
   sequenceModule: 0
-  movementModule: 0
+  movementModule: 1
   presentationKind: 3
   shape: 2
   center: 0
@@ -926,10 +1072,10 @@ MonoBehaviour:
   repeatHitInterval: 0.08
   breathDuration: 1.1
   repeatImpactFeedback: 1
-  dashDistance: 0
+  dashDistance: 1
   dashDuration: 0.1
   hitAreaVisibleDuration: 0.42
-  delivery: 0
+  delivery: 3
   stopOnFirstTarget: 0
 --- !u!114 &4413343524964137148
 MonoBehaviour:
@@ -1000,6 +1146,30 @@ MonoBehaviour:
     attachment: 0
     endPolicy: 0
     defaultLifetime: 1
+  - slotId: dash_exit
+    displayName: "\uB3CC\uC9C4 \uCD9C\uBC1C"
+    description: "\uACF5\uACA9\uC790\uAC00 \uC6D0\uB798 \uC704\uCE58\uB97C \uB5A0\uB098\uAE30
+      \uC9C1\uC804\uC758 \uC804\uC6A9 \uD6A8\uACFC"
+    productionMemo: 
+    eventType: 11
+    anchor: 0
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
+  - slotId: dash_enter
+    displayName: "\uB3CC\uC9C4 \uB3C4\uCC29"
+    description: "\uACF5\uACA9\uC790\uAC00 \uC0C8 \uC704\uCE58\uC5D0 \uB3C4\uCC29\uD55C
+      \uC9C1\uD6C4\uC758 \uC804\uC6A9 \uD6A8\uACFC"
+    productionMemo: 
+    eventType: 12
+    anchor: 0
+    multiplicity: 1
+    assignmentScope: 1
+    attachment: 0
+    endPolicy: 0
+    defaultLifetime: 1
   - slotId: sweep_plane
     displayName: "\uD729\uC4F8\uAE30 \uBA74"
     description: "\uC804\uBC29 \uBD80\uCC44\uAF34\uC744 \uC77D\uD788\uAC8C \uD558\uB294
@@ -1029,7 +1199,7 @@ MonoBehaviour:
   deliveryModule: 0
   collisionModule: 0
   sequenceModule: 0
-  movementModule: 0
+  movementModule: 1
   presentationKind: 2
   shape: 1
   center: 0
@@ -1058,8 +1228,8 @@ MonoBehaviour:
   repeatHitInterval: 0.08
   breathDuration: 1.25
   repeatImpactFeedback: 1
-  dashDistance: 0
+  dashDistance: 1
   dashDuration: 0.1
   hitAreaVisibleDuration: 0.42
-  delivery: 0
+  delivery: 3
   stopOnFirstTarget: 0

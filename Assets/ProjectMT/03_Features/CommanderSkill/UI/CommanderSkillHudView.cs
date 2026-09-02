@@ -102,8 +102,9 @@ namespace ProjectMT.Features.CommanderSkill
 
             for (var index = 0; index < CommanderSkillSlotRules.SlotCount; index++)
             {
-                var remaining = runtime.GetCooldownRemaining(index);
-                var duration = runtime.GetCooldownDuration(index);
+                var isCasting = runtime.IsCasting && runtime.CastingSlot == index;
+                var remaining = isCasting ? runtime.CastingRemaining : runtime.GetCooldownRemaining(index);
+                var duration = isCasting ? runtime.CastingDuration : runtime.GetCooldownDuration(index);
                 if (index < cooldownFills.Length && cooldownFills[index] != null)
                 {
                     cooldownFills[index].fillAmount = duration > 0f ? Mathf.Clamp01(remaining / duration) : 0f;
@@ -113,7 +114,9 @@ namespace ProjectMT.Features.CommanderSkill
                 if (index < cooldownTexts.Length && cooldownTexts[index] != null)
                 {
                     cooldownTexts[index].text = remaining > 0.02f
-                        ? (remaining >= 10f ? Mathf.CeilToInt(remaining).ToString() : remaining.ToString("0.0"))
+                        ? isCasting
+                            ? $"시전\n{remaining:0.0}"
+                            : (remaining >= 10f ? Mathf.CeilToInt(remaining).ToString() : remaining.ToString("0.0"))
                         : string.Empty;
                 }
             }

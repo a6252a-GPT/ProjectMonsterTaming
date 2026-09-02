@@ -381,7 +381,7 @@ namespace ProjectMT.EditorTools.Combat
                 "criticalOrKillEmphasis" => "치명타 또는 처치 시 뒤 반동·상승·공격 전진·카메라 강도에 곱하는 강조 배율입니다.",
                 "criticalOrKillTargetStopMultiplier" => "치명타 또는 처치 시 피격 정지 시간에 곱하는 배율입니다. Hit Stop 상한을 넘지는 않습니다.",
                 "maximumHitStop" => "치명타·처치 피격 정지의 절대 상한(초)입니다. 다수전이 지나치게 멈추는 것을 막습니다.",
-                "mainBattleEnemySpawnSpreadMultiplier" => "MainBattle 적이 입장할 때 진형 간격에 추가로 곱하는 값. 현재 1.8이면 기본 프로필을 포함해 이웃 적이 약 1.99m 간격으로 떨어져 등장합니다. 전투 중 밀어내는 값이 아닙니다.",
+                "mainBattleEnemySpawnSpreadMultiplier" => "MainBattle 적이 입장할 때 진형 간격에 추가로 곱하는 값. 현재 2.0이면 기본 프로필을 포함해 이웃 적이 약 2.21m 간격으로 떨어져 등장합니다. 전투 중 밀어내는 값이 아닙니다.",
                 "mainBattlePlayerPairDistance" => "살아 있는 아군 유닛 루트끼리 유지하려는 최소 간격(m). 높일수록 아군 대형이 넓게 퍼지고 모델 겹침이 줄어듭니다.",
                 "mainBattleEnemyPairDistance" => "살아 있는 적 유닛 루트끼리 유지하려는 최소 간격(m). 높일수록 적 무리가 한 점에 포개지지 않습니다.",
                 "mainBattleOpposingPairDistance" => "아군과 적이 교전할 때 유지하려는 접촉 간격(m). 실제 MainBattle 근접 사거리보다 낮게 두면 공격은 유지하면서 몸체 겹침을 줄일 수 있습니다.",

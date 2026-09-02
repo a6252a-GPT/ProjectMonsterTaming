@@ -37,6 +37,60 @@ namespace ProjectMT.Shared.Unit
             (IReadOnlyList<MonsterSkillEffect>)Array.Empty<MonsterSkillEffect>();
         public IReadOnlyList<MonsterActivePresentationSlot> PresentationSlots => presentationSlots ??
             (IReadOnlyList<MonsterActivePresentationSlot>)Array.Empty<MonsterActivePresentationSlot>();
+        public float PresentationStartDelay
+        {
+            get
+            {
+                var delay = float.PositiveInfinity;
+                for (var index = 0; index < Effects.Count; index++)
+                {
+                    var effect = Effects[index];
+                    if (effect != null) delay = Mathf.Min(delay, effect.Delay);
+                }
+                return float.IsPositiveInfinity(delay) ? 0f : Mathf.Max(0f, delay);
+            }
+        }
+        public float DurationPresentationStartDelay
+        {
+            get
+            {
+                var delay = float.PositiveInfinity;
+                for (var index = 0; index < Effects.Count; index++)
+                {
+                    var effect = Effects[index];
+                    if (UsesPresentationDuration(effect))
+                        delay = Mathf.Min(delay, effect.Delay);
+                }
+                return float.IsPositiveInfinity(delay) ? PresentationStartDelay : Mathf.Max(0f, delay);
+            }
+        }
+        public float PresentationDuration
+        {
+            get
+            {
+                var start = DurationPresentationStartDelay;
+                var end = start;
+                for (var index = 0; index < Effects.Count; index++)
+                {
+                    var effect = Effects[index];
+                    if (!UsesPresentationDuration(effect)) continue;
+                    end = Mathf.Max(end, effect.Delay + Mathf.Max(0f, effect.Duration));
+                }
+                return Mathf.Max(0f, end - start);
+            }
+        }
+        public bool HasDurationPresentation => PresentationDuration > 0f;
+        public bool UsesDurationPresentationLifecycle =>
+            HasDurationPresentation && PresentationSlots.Any(slot =>
+                slot != null &&
+                (slot.Multiplicity == MonsterActivePresentationMultiplicity.ContinuousUntilEnd ||
+                 slot.Timing == MonsterActivePresentationEvent.EffectExpired));
+        public float PresentationLifecycleStartDelay => UsesDurationPresentationLifecycle
+            ? DurationPresentationStartDelay
+            : PresentationStartDelay;
+        public float PresentationLifecycleDuration => UsesDurationPresentationLifecycle
+            ? PresentationDuration
+            : 0f;
 
         public bool TryValidate(MonsterEffectActiveRole role, out string error)
         {
@@ -109,6 +163,10 @@ namespace ProjectMT.Shared.Unit
                 MonsterSkillEffectType.Mark or MonsterSkillEffectType.Slow or MonsterSkillEffectType.Stun or
                 MonsterSkillEffectType.Pull or MonsterSkillEffectType.Taunt or
                 MonsterSkillEffectType.DamageReduction or MonsterSkillEffectType.DamageReflect;
+
+        private static bool UsesPresentationDuration(MonsterSkillEffect effect) =>
+            effect != null && effect.Duration > 0f &&
+            (RequiresDuration(effect.Type) || effect.Type == MonsterSkillEffectType.Heal);
 
         public float EstimateDuration()
         {

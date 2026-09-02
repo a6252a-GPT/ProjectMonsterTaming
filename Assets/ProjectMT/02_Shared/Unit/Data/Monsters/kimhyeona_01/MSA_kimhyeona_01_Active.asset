@@ -198,24 +198,24 @@ MonoBehaviour:
     - attackId: active_step_01
       slotId: telegraph
       motionId: 
-      state: 0
-      prefab: {fileID: 0}
+      state: 1
+      prefab: {fileID: 8071903586371711568, guid: 0fe2ed45019dc0940855da26894d238d, type: 3}
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
       sfx: {fileID: 0}
-      lifetime: 1
+      lifetime: 3
       playbackOffset: 0
       playbackSpeed: 1
       eventTimingOffset: 0
-      localPosition: {x: 0, y: 0, z: 0}
+      localPosition: {x: 0, y: -0.41437948, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 1
+      scale: 0.45
     - attackId: active_step_01
       slotId: strike_trail
       motionId: step_01
       state: 0
-      prefab: {fileID: 0}
+      prefab: {fileID: 1332602203538567980, guid: d6ce1ae445fa6214980a3e0efb8aa366, type: 3}
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1

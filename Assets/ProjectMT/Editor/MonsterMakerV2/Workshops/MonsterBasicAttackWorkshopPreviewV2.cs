@@ -590,6 +590,9 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             instance.transform.localPosition = cue.LocalPosition;
             instance.transform.localRotation = cue.LocalRotation;
             instance.transform.localScale = cue.VfxPrefab.transform.localScale * cue.Scale;
+            MonsterBasicAttackVfxPlayback.ApplyBrightnessScale(
+                instance,
+                MonsterBasicAttackVfxPlayback.DefaultMainBattleBrightnessScale);
             foreach (var behaviour in instance.GetComponentsInChildren<MonoBehaviour>(true)) behaviour.enabled = false;
         }
 
@@ -604,6 +607,9 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 instance,
                 binding.Prefab.transform.localScale *
                 binding.Scale * Mathf.Max(0.01f, originDraft?.VfxScale ?? 1f));
+            MonsterBasicAttackVfxPlayback.ApplyBrightnessScale(
+                instance,
+                MonsterBasicAttackVfxPlayback.DefaultMainBattleBrightnessScale);
             instance.SetActive(true);
             foreach (var behaviour in instance.GetComponentsInChildren<MonoBehaviour>(true))
                 behaviour.enabled = false;
@@ -771,6 +777,9 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     instance,
                     pending.Binding.Prefab.transform.localScale *
                     pending.Binding.Scale * Mathf.Max(0.01f, originDraft.VfxScale));
+                MonsterBasicAttackVfxPlayback.ApplyBrightnessScale(
+                    instance,
+                    MonsterBasicAttackVfxPlayback.DefaultMainBattleBrightnessScale);
                 instance.SetActive(true);
                 MonsterBasicAttackVfxPlayback.RestartAtOffset(
                     instance,

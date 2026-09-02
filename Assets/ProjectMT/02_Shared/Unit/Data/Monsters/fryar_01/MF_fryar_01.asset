@@ -59,23 +59,23 @@ MonoBehaviour:
     slotId: sweep_plane
     motionId: attack01
     state: 1
-    prefab: {fileID: 1979234230141364174, guid: 2a9bbafd7c8ec9b45923fd001bf180e4, type: 3}
+    prefab: {fileID: 6138615032361981735, guid: 7d2a998dd7ab40942a3ef7571ca65a42, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1
-    playbackOffset: 0
+    playbackOffset: 1.3
     playbackSpeed: 1
     eventTimingOffset: -0.4
-    localPosition: {x: 0, y: 0.11722508, z: 0}
+    localPosition: {x: 0, y: -0.29660922, z: 0.8437847}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 0.8
   - attackId: BA_M_02
     slotId: target_hit
     motionId: 
     state: 1
-    prefab: {fileID: 2332480497963277563, guid: be8c7bb54feb9c34aa2c22fbc4e1086e, type: 3}
+    prefab: {fileID: 8768694355360870798, guid: 85b5fd57c1cbdfe46a848d7fa95f2a4b, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1

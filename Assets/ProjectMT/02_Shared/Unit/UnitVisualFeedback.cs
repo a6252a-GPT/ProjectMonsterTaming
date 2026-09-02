@@ -12,12 +12,20 @@ namespace ProjectMT.Shared.Unit
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+        private static readonly int EmissiveColorId = Shader.PropertyToID("_Emissive_Color");
 
         [SerializeField] private Renderer[] renderers; // 색상을 바꿀 모든 렌더러
 
         private MaterialPropertyBlock block; // Material 복제 없는 색상 변경
         private Color[] baseColors; // 렌더러별 원래 색
+        private Color[] baseEmissionColors; // 렌더러별 원래 Emission
+        private Color[] baseEmissiveColors; // Toon 계열 렌더러별 원래 Emissive
+        private bool[] hasEmissionColors;
+        private bool[] hasEmissiveColors;
         private Color visualTint = Color.white; // 몬스터 Definition 색상 배율
+        private Color currentColorMultiplier = Color.white; // 피격 펄스 중 Emission 배율 변경 시 현재 색 유지
+        private float emissionBrightnessScale = 1f; // 씬별 자체발광 보정, 원본색·공유 Material은 변경하지 않음
         private Vector3 baseScale; // 원래 크기
         private float pulseRemaining; // 남은 연출 시간
         private float pulseDuration; // 전체 연출 시간
@@ -55,6 +63,10 @@ namespace ProjectMT.Shared.Unit
             renderers = GetComponentsInChildren<Renderer>(true);
             ResolveReactionRoot();
             baseColors = new Color[renderers.Length];
+            baseEmissionColors = new Color[renderers.Length];
+            baseEmissiveColors = new Color[renderers.Length];
+            hasEmissionColors = new bool[renderers.Length];
+            hasEmissiveColors = new bool[renderers.Length];
             for (var i = 0; i < renderers.Length; i++)
             {
                 var material = renderers[i] == null ? null : renderers[i].sharedMaterial;
@@ -70,6 +82,15 @@ namespace ProjectMT.Shared.Unit
                 {
                     baseColors[i] = Color.white;
                 }
+
+                hasEmissionColors[i] = material != null && material.HasProperty(EmissionColorId);
+                baseEmissionColors[i] = hasEmissionColors[i]
+                    ? material.GetColor(EmissionColorId)
+                    : Color.black;
+                hasEmissiveColors[i] = material != null && material.HasProperty(EmissiveColorId);
+                baseEmissiveColors[i] = hasEmissiveColors[i]
+                    ? material.GetColor(EmissiveColorId)
+                    : Color.black;
             }
 
             ResetVisual();
@@ -175,6 +196,15 @@ namespace ProjectMT.Shared.Unit
             ResetVisual();
         }
 
+        public float EmissionBrightnessScale => emissionBrightnessScale;
+
+        public void SetEmissionBrightnessScale(float scale)
+        {
+            emissionBrightnessScale = Mathf.Clamp01(scale);
+            EnsureReady();
+            SetColor(currentColorMultiplier); // 원본색·피격 펄스·Definition Tint는 유지하고 Emission만 갱신
+        }
+
         private void PlayPulse(Color color, float duration, float strength)
         {
             pulseColor = color;
@@ -214,6 +244,7 @@ namespace ProjectMT.Shared.Unit
 
         private void SetColor(Color multiplier)
         {
+            currentColorMultiplier = multiplier;
             if (renderers == null || baseColors == null)
             {
                 return;
@@ -232,8 +263,30 @@ namespace ProjectMT.Shared.Unit
                 block.Clear();
                 block.SetColor(BaseColorId, color);
                 block.SetColor(ColorId, color);
+                if (hasEmissionColors != null && hasEmissionColors[i])
+                {
+                    block.SetColor(
+                        EmissionColorId,
+                        ScaleRgb(baseEmissionColors[i], emissionBrightnessScale));
+                }
+
+                if (hasEmissiveColors != null && hasEmissiveColors[i])
+                {
+                    block.SetColor(
+                        EmissiveColorId,
+                        ScaleRgb(baseEmissiveColors[i], emissionBrightnessScale));
+                }
+
                 targetRenderer.SetPropertyBlock(block); // 공유 Material 유지
             }
+        }
+
+        private static Color ScaleRgb(Color color, float scale)
+        {
+            color.r *= scale;
+            color.g *= scale;
+            color.b *= scale;
+            return color;
         }
 
         private void ResetVisual()
@@ -409,7 +462,11 @@ namespace ProjectMT.Shared.Unit
         {
             EnsureBaseState();
             ResolveReactionRoot();
-            if (renderers == null || baseColors == null || renderers.Length != baseColors.Length)
+            if (renderers == null || baseColors == null || baseEmissionColors == null ||
+                baseEmissiveColors == null || hasEmissionColors == null || hasEmissiveColors == null ||
+                renderers.Length != baseColors.Length || renderers.Length != baseEmissionColors.Length ||
+                renderers.Length != baseEmissiveColors.Length || renderers.Length != hasEmissionColors.Length ||
+                renderers.Length != hasEmissiveColors.Length)
             {
                 RefreshRenderers();
             }

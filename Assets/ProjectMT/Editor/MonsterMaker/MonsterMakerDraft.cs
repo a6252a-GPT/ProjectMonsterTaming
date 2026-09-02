@@ -14,6 +14,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
     public sealed class MonsterMakerFeedbackDraft // 한 애니메이션 시점에 붙이는 선택 사운드·VFX 입력
     {
         [SerializeField] private AudioClip sound;
+        [SerializeField, Range(0f, 1f)] private float soundVolume = 1f;
         [SerializeField, HideInInspector] private SfxCue sfx; // 기존 Draft 수동 Cue 호환
         [SerializeField] private GameObject vfxPrefab;
         [SerializeField, Min(0.01f)] private float vfxLifetime = 1f;
@@ -22,6 +23,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField, Min(0.01f)] private float scale = 1f;
 
         public AudioClip Sound => sound;
+        public float SoundVolume => Mathf.Clamp01(soundVolume);
         public SfxCue Sfx => sfx;
         public GameObject VfxPrefab => vfxPrefab;
         public float VfxLifetime => Mathf.Max(0.01f, vfxLifetime);

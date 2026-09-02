@@ -75,7 +75,7 @@ MonoBehaviour:
     slotId: ground_contact
     motionId: 
     state: 1
-    prefab: {fileID: 7489030523925907512, guid: 1badb47ca14a7d8469c8b3f6ebc557b0, type: 3}
+    prefab: {fileID: 1370917623096615431, guid: f688989e707d79f40a45d17e08ac33ef, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -84,9 +84,9 @@ MonoBehaviour:
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: -0.1531406, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1.2
+    scale: 0.8
   - attackId: BA_M_04
     slotId: target_hit
     motionId: 

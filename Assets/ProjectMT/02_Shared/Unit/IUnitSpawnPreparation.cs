@@ -4,4 +4,12 @@ namespace ProjectMT.Shared.Unit
     {
         bool PrepareForSpawn(UnitSpawnRequest request);
     }
+
+    public interface IUnitCombatAnimation // 레거시 UnitActor 전투 동작 재생 계약
+    {
+        void PlayAttack();
+        void PlayHit();
+        void PlayStun(float duration);
+        float PlayDeath();
+    }
 }

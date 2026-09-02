@@ -7,6 +7,34 @@ namespace ProjectMT.Shared.Combat
 {
     public static class MonsterBasicAttackVfxPlayback // Pool·Preview가 같은 내부 시작점·속도를 사용
     {
+        public const float DefaultMainBattleBrightnessScale = 0.6f;
+
+        public static void ApplyBrightnessScale(GameObject root, float brightnessScale)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            var resolvedScale = float.IsNaN(brightnessScale) || float.IsInfinity(brightnessScale)
+                ? 1f
+                : Mathf.Clamp01(brightnessScale);
+            var state = root.GetComponent<MonsterVfxBrightnessState>();
+            if (resolvedScale >= 0.9999f)
+            {
+                state?.Restore();
+                return;
+            }
+
+            state ??= root.AddComponent<MonsterVfxBrightnessState>();
+            state.Apply(resolvedScale);
+        }
+
+        public static void RestoreBrightness(GameObject root)
+        {
+            root?.GetComponent<MonsterVfxBrightnessState>()?.Restore();
+        }
+
         public static void ApplyInstanceScale(GameObject root, Vector3 localScale)
         {
             if (root == null)
@@ -179,6 +207,286 @@ namespace ProjectMT.Shared.Combat
                 if (!hasParticleParent) roots.Add(particle);
             }
             return roots;
+        }
+    }
+
+    [DisallowMultipleComponent]
+    internal sealed class MonsterVfxBrightnessState : MonoBehaviour // VFX 인스턴스 색·광원 원본을 보존해 Pool 누적 방지
+    {
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int TintColorId = Shader.PropertyToID("_TintColor");
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+        private static readonly int EmissiveColorId = Shader.PropertyToID("_Emissive_Color");
+
+        private readonly List<ParticleSystem> particles = new List<ParticleSystem>();
+        private readonly List<ParticleSystem.MinMaxGradient> particleStartColors =
+            new List<ParticleSystem.MinMaxGradient>();
+        private readonly List<Renderer> renderers = new List<Renderer>();
+        private readonly List<int> rendererMaterialIndexes = new List<int>();
+        private readonly List<MaterialPropertyBlock> rendererPropertyBlocks =
+            new List<MaterialPropertyBlock>();
+        private readonly List<Light> lights = new List<Light>();
+        private readonly List<float> lightIntensities = new List<float>();
+        private bool captured;
+
+        public void Apply(float scale)
+        {
+            EnsureCaptured();
+            Restore();
+
+            var resolvedScale = Mathf.Clamp01(scale);
+            for (var index = 0; index < particles.Count; index++)
+            {
+                var particle = particles[index];
+                if (particle == null)
+                {
+                    continue;
+                }
+
+                var main = particle.main;
+                main.startColor = ScaleGradient(particleStartColors[index], resolvedScale);
+            }
+
+            for (var index = 0; index < renderers.Count; index++)
+            {
+                ApplyRendererScale(
+                    renderers[index],
+                    rendererMaterialIndexes[index],
+                    rendererPropertyBlocks[index],
+                    resolvedScale);
+            }
+
+            for (var index = 0; index < lights.Count; index++)
+            {
+                if (lights[index] != null)
+                {
+                    lights[index].intensity = lightIntensities[index] * resolvedScale;
+                }
+            }
+        }
+
+        public void Restore()
+        {
+            if (!captured)
+            {
+                return;
+            }
+
+            for (var index = 0; index < particles.Count; index++)
+            {
+                var particle = particles[index];
+                if (particle == null)
+                {
+                    continue;
+                }
+
+                var main = particle.main;
+                main.startColor = particleStartColors[index];
+            }
+
+            for (var index = 0; index < renderers.Count; index++)
+            {
+                var renderer = renderers[index];
+                if (renderer != null)
+                {
+                    renderer.SetPropertyBlock(
+                        rendererPropertyBlocks[index],
+                        rendererMaterialIndexes[index]);
+                }
+            }
+
+            for (var index = 0; index < lights.Count; index++)
+            {
+                if (lights[index] != null)
+                {
+                    lights[index].intensity = lightIntensities[index];
+                }
+            }
+        }
+
+        private void EnsureCaptured()
+        {
+            if (captured)
+            {
+                return;
+            }
+
+            captured = true;
+            var foundParticles = GetComponentsInChildren<ParticleSystem>(true);
+            for (var index = 0; index < foundParticles.Length; index++)
+            {
+                var particle = foundParticles[index];
+                particles.Add(particle);
+                particleStartColors.Add(particle.main.startColor);
+            }
+
+            var foundRenderers = GetComponentsInChildren<Renderer>(true);
+            for (var rendererIndex = 0; rendererIndex < foundRenderers.Length; rendererIndex++)
+            {
+                var renderer = foundRenderers[rendererIndex];
+                if (renderer == null || renderer is ParticleSystemRenderer)
+                {
+                    continue; // 파티클은 Start Color 한 곳에서만 보정해 중복 감쇠를 피함
+                }
+
+                var materials = renderer.sharedMaterials;
+                for (var materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    var material = materials[materialIndex];
+                    if (!HasBrightnessColor(material))
+                    {
+                        continue;
+                    }
+
+                    var block = new MaterialPropertyBlock();
+                    renderer.GetPropertyBlock(block, materialIndex);
+                    renderers.Add(renderer);
+                    rendererMaterialIndexes.Add(materialIndex);
+                    rendererPropertyBlocks.Add(block);
+                }
+            }
+
+            var foundLights = GetComponentsInChildren<Light>(true);
+            for (var index = 0; index < foundLights.Length; index++)
+            {
+                lights.Add(foundLights[index]);
+                lightIntensities.Add(foundLights[index].intensity);
+            }
+        }
+
+        private static void ApplyRendererScale(
+            Renderer renderer,
+            int materialIndex,
+            MaterialPropertyBlock originalBlock,
+            float scale)
+        {
+            if (renderer == null)
+            {
+                return;
+            }
+
+            var materials = renderer.sharedMaterials;
+            if (materialIndex < 0 || materialIndex >= materials.Length || materials[materialIndex] == null)
+            {
+                return;
+            }
+
+            var material = materials[materialIndex];
+            var block = new MaterialPropertyBlock();
+            renderer.GetPropertyBlock(block, materialIndex);
+            var hasEmission = false;
+            if (material.HasProperty(EmissionColorId))
+            {
+                block.SetColor(
+                    EmissionColorId,
+                    ScaleRgb(ResolveColor(originalBlock, material, EmissionColorId), scale));
+                hasEmission = true;
+            }
+            if (material.HasProperty(EmissiveColorId))
+            {
+                block.SetColor(
+                    EmissiveColorId,
+                    ScaleRgb(ResolveColor(originalBlock, material, EmissiveColorId), scale));
+                hasEmission = true;
+            }
+
+            if (!hasEmission)
+            {
+                var fallbackColorId = ResolveFallbackColorId(material);
+                if (fallbackColorId != 0)
+                {
+                    block.SetColor(
+                        fallbackColorId,
+                        ScaleRgb(ResolveColor(originalBlock, material, fallbackColorId), scale));
+                }
+            }
+
+            renderer.SetPropertyBlock(block, materialIndex);
+        }
+
+        private static bool HasBrightnessColor(Material material)
+        {
+            return material != null &&
+                   (material.HasProperty(EmissionColorId) ||
+                    material.HasProperty(EmissiveColorId) ||
+                    ResolveFallbackColorId(material) != 0);
+        }
+
+        private static int ResolveFallbackColorId(Material material)
+        {
+            if (material == null)
+            {
+                return 0;
+            }
+            if (material.HasProperty(BaseColorId)) return BaseColorId;
+            if (material.HasProperty(TintColorId)) return TintColorId;
+            return material.HasProperty(ColorId) ? ColorId : 0;
+        }
+
+        private static Color ResolveColor(
+            MaterialPropertyBlock block,
+            Material material,
+            int propertyId)
+        {
+            return block != null && block.HasColor(propertyId)
+                ? block.GetColor(propertyId)
+                : material.GetColor(propertyId);
+        }
+
+        private static ParticleSystem.MinMaxGradient ScaleGradient(
+            ParticleSystem.MinMaxGradient source,
+            float scale)
+        {
+            switch (source.mode)
+            {
+                case ParticleSystemGradientMode.Color:
+                    return new ParticleSystem.MinMaxGradient(ScaleRgb(source.color, scale));
+                case ParticleSystemGradientMode.TwoColors:
+                    return new ParticleSystem.MinMaxGradient(
+                        ScaleRgb(source.colorMin, scale),
+                        ScaleRgb(source.colorMax, scale));
+                case ParticleSystemGradientMode.Gradient:
+                    return new ParticleSystem.MinMaxGradient(ScaleGradient(source.gradient, scale));
+                case ParticleSystemGradientMode.TwoGradients:
+                    return new ParticleSystem.MinMaxGradient(
+                        ScaleGradient(source.gradientMin, scale),
+                        ScaleGradient(source.gradientMax, scale));
+                case ParticleSystemGradientMode.RandomColor:
+                {
+                    var random = new ParticleSystem.MinMaxGradient(ScaleGradient(source.gradient, scale));
+                    random.mode = ParticleSystemGradientMode.RandomColor;
+                    return random;
+                }
+                default:
+                    return source;
+            }
+        }
+
+        private static Gradient ScaleGradient(Gradient source, float scale)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            var colors = source.colorKeys;
+            for (var index = 0; index < colors.Length; index++)
+            {
+                colors[index].color = ScaleRgb(colors[index].color, scale);
+            }
+
+            var result = new Gradient { mode = source.mode };
+            result.SetKeys(colors, source.alphaKeys);
+            return result;
+        }
+
+        private static Color ScaleRgb(Color color, float scale)
+        {
+            color.r *= scale;
+            color.g *= scale;
+            color.b *= scale;
+            return color;
         }
     }
 

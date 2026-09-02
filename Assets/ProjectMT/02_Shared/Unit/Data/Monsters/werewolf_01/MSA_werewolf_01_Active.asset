@@ -669,15 +669,15 @@ MonoBehaviour:
     - attackId: active_step_01
       slotId: ground_contact
       motionId: 
-      state: 0
-      prefab: {fileID: 0}
+      state: 1
+      prefab: {fileID: 3483766327739836261, guid: 41e482e8404b20243a7c0275aff5c51a, type: 3}
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
       sfx: {fileID: 0}
-      lifetime: 1
+      lifetime: 5
       playbackOffset: 0
-      playbackSpeed: 1
+      playbackSpeed: 1.5
       eventTimingOffset: 0
       localPosition: {x: 0, y: 0, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}

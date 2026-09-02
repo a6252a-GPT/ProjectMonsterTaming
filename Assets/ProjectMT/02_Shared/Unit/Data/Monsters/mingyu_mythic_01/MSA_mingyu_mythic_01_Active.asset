@@ -66,9 +66,9 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: barrier_apply
-      timing: 8
-      anchor: 7
-      multiplicity: 0
+      timing: 11
+      anchor: 5
+      multiplicity: 2
       attachment: 0
       endPolicy: 4
       feedback:
@@ -81,7 +81,7 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: target_loop
-      timing: 8
+      timing: 11
       anchor: 5
       multiplicity: 4
       attachment: 1
@@ -95,6 +95,21 @@ MonoBehaviour:
         scale: 1
       useDuration: 1
       duration: 5
+    - slotId: target_end
+      timing: 12
+      anchor: 5
+      multiplicity: 2
+      attachment: 0
+      endPolicy: 4
+      feedback:
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      useDuration: 0
+      duration: 1
   - groupId: group_02
     slots:
     - slotId: cast_start
@@ -113,9 +128,9 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: core_apply
-      timing: 8
-      anchor: 7
-      multiplicity: 0
+      timing: 11
+      anchor: 5
+      multiplicity: 2
       attachment: 0
       endPolicy: 4
       feedback:
@@ -128,7 +143,7 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: target_loop
-      timing: 8
+      timing: 11
       anchor: 5
       multiplicity: 4
       attachment: 1
@@ -142,5 +157,20 @@ MonoBehaviour:
         scale: 1
       useDuration: 1
       duration: 5
+    - slotId: target_end
+      timing: 12
+      anchor: 5
+      multiplicity: 2
+      attachment: 0
+      endPolicy: 4
+      feedback:
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 0}
+        vfxLifetime: 1
+        localPosition: {x: 0, y: 0, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 1
+      useDuration: 0
+      duration: 1
   commitNormalizedTime: 0.5
   mythicExclusive: 0

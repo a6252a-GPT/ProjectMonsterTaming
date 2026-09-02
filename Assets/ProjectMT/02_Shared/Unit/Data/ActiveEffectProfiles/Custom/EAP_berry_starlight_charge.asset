@@ -52,10 +52,10 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: energy_apply
-      displayName: "\uD6A8\uACFC \uC801\uC6A9"
-      timing: 8
-      anchor: 7
-      multiplicity: 0
+      displayName: "\uB300\uC0C1 \uC801\uC6A9 \xB7 1\uD68C"
+      timing: 11
+      anchor: 5
+      multiplicity: 2
       attachment: 0
       endPolicy: 4
       description: "\uBC1C\uB3D9 \uB610\uB294 \uC801\uC6A9 \uC21C\uAC04 VFX/SFX \uACF5\uAC04"
@@ -94,10 +94,10 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: carry_apply
-      displayName: "\uD6A8\uACFC \uC801\uC6A9"
-      timing: 8
-      anchor: 7
-      multiplicity: 0
+      displayName: "\uB300\uC0C1 \uC801\uC6A9 \xB7 1\uD68C"
+      timing: 11
+      anchor: 5
+      multiplicity: 2
       attachment: 0
       endPolicy: 4
       description: "\uBC1C\uB3D9 \uB610\uB294 \uC801\uC6A9 \uC21C\uAC04 VFX/SFX \uACF5\uAC04"

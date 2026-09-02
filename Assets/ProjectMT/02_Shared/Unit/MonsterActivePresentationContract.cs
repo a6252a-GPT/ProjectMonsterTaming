@@ -15,7 +15,9 @@ namespace ProjectMT.Shared.Unit
         DeliverySpawn,
         AreaResolved,
         DeliveryEnd,
-        StepEnd
+        StepEnd,
+        EffectApplied,
+        EffectExpired
     }
 
     public enum MonsterActivePresentationAnchor

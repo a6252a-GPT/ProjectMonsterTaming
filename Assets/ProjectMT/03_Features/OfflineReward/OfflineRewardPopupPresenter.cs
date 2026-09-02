@@ -471,7 +471,7 @@ namespace ProjectMT.Features.OfflineReward
                 // 2배 보상은 이미 지급됐을 수 있으니(오늘 소진 처리됨) 그냥받기만 풀고,
                 // 광고 버튼은 쿨다운 상태를 다시 확인해 중복 지급을 막는다.
                 SetButtonLockedVisual(claimButton, false);
-                SetButtonLockedVisual(adButton, IsAdRewardOnCooldown());
+                SetButtonLockedVisual(adButton, !CanOfferAdReward());
                 if (closeButton != null)
                 {
                     closeButton.interactable = true;
@@ -503,7 +503,7 @@ namespace ProjectMT.Features.OfflineReward
 
         private void HandleAdClicked()
         {
-            if (busy || current == null || adVideoOverlay == null || IsAdRewardOnCooldown())
+            if (busy || current == null || !CanOfferAdReward())
             {
                 return;
             }
@@ -531,7 +531,7 @@ namespace ProjectMT.Features.OfflineReward
         {
             // 시청을 중간에 취소한 것뿐이라 아직 아무것도 확정되지 않았다. 두 버튼 다시 선택 가능하게 복구.
             SetButtonLockedVisual(claimButton, false);
-            SetButtonLockedVisual(adButton, IsAdRewardOnCooldown());
+            SetButtonLockedVisual(adButton, !CanOfferAdReward());
             Set(statusText, "정산 저장 완료");
         }
 
@@ -572,13 +572,21 @@ namespace ProjectMT.Features.OfflineReward
                 return;
             }
 
-            if (adVideoOverlay != null)
+            if (adVideoOverlay == null || grantDoubleReward == null)
             {
-                // 광고 버튼을 누른 뒤에야 영상을 Prepare하면 소리만 먼저 재생될 수 있다.
-                // 팝업을 읽는 동안 미리 준비하고, 준비가 끝난 뒤에만 2배 보상 버튼을 연다.
                 SetButtonLockedVisual(adButton, true);
-                adVideoOverlay.PreloadNextClip(HandleAdPreloadCompleted);
+                return;
             }
+
+            // 광고 버튼을 누른 뒤에야 영상을 Prepare하면 소리만 먼저 재생될 수 있다.
+            // 팝업을 읽는 동안 미리 준비하고, 준비가 끝난 뒤에만 2배 보상 버튼을 연다.
+            SetButtonLockedVisual(adButton, true);
+            adVideoOverlay.PreloadNextClip(HandleAdPreloadCompleted);
+        }
+
+        private bool CanOfferAdReward()
+        {
+            return adVideoOverlay != null && grantDoubleReward != null && !IsAdRewardOnCooldown();
         }
 
         private static bool IsAdRewardOnCooldown()

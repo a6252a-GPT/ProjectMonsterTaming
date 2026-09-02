@@ -57,17 +57,17 @@ MonoBehaviour:
       endPolicy: 4
       feedback:
         sfx: {fileID: 0}
-        vfxPrefab: {fileID: 0}
-        vfxLifetime: 1
-        localPosition: {x: 0, y: 0, z: 0}
+        vfxPrefab: {fileID: 7298124039744100688, guid: da4c6fe0f01906e4eb5b2e7b751e4f48, type: 3}
+        vfxLifetime: 3
+        localPosition: {x: 0, y: 0.28891712, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
         scale: 1
       useDuration: 0
       duration: 1
     - slotId: life_apply
-      timing: 8
-      anchor: 7
-      multiplicity: 0
+      timing: 11
+      anchor: 5
+      multiplicity: 2
       attachment: 0
       endPolicy: 4
       feedback:
@@ -80,11 +80,26 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: target_loop
-      timing: 8
+      timing: 11
       anchor: 5
       multiplicity: 4
       attachment: 1
       endPolicy: 0
+      feedback:
+        sfx: {fileID: 0}
+        vfxPrefab: {fileID: 91871935769221215, guid: 8fe3c21076c24c441a4815166e845f8c, type: 3}
+        vfxLifetime: 4
+        localPosition: {x: 0, y: 0.5732907, z: 0}
+        localEulerAngles: {x: 0, y: 0, z: 0}
+        scale: 3
+      useDuration: 1
+      duration: 4
+    - slotId: target_end
+      timing: 12
+      anchor: 5
+      multiplicity: 2
+      attachment: 0
+      endPolicy: 4
       feedback:
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 0}
@@ -92,7 +107,7 @@ MonoBehaviour:
         localPosition: {x: 0, y: 0, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
         scale: 1
-      useDuration: 1
-      duration: 4
-  commitNormalizedTime: 0.8
+      useDuration: 0
+      duration: 1
+  commitNormalizedTime: 0.2
   mythicExclusive: 1

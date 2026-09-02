@@ -203,6 +203,19 @@ namespace ProjectMT.EditorTools.MonsterMaker
         {
             var group = new MonsterEffectActiveGroup();
             group.EditorConfigure(id, title, delay, target, includeCaster, radius, maxTargets, effects, slots);
+            var mode = group.HasDurationPresentation
+                ? MonsterEffectTargetPresentationMode.DurationLifecycle
+                : MonsterEffectTargetPresentationMode.OneShot;
+            group.EditorConfigure(
+                id,
+                title,
+                delay,
+                target,
+                includeCaster,
+                radius,
+                maxTargets,
+                effects,
+                MonsterEffectActiveVfxContractTemplates.Build(group, mode));
             return group;
         }
 

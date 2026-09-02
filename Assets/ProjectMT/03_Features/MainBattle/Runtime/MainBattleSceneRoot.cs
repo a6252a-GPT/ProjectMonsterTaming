@@ -31,6 +31,9 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private ContentId guardiansTowerContentId = new ContentId("guardians_tower"); // 08.06 안건준 추가 - 수호자의 탑 Hosted 콘텐츠 ID (식량 대소동과 별도)
         [SerializeField] private ContentId fallenCommanderContentId = new ContentId("fallen_commander"); // 군단장 보스전 Hosted 연결부
         [SerializeField] private ExpeditionController expedition; // 원정대 진행 담당
+        [SerializeField, Range(0f, 1f)] private float monsterEmissionBrightnessScale = 0.6f; // 전투 몬스터 원본색은 유지하고 자체발광만 60%
+        [SerializeField, Range(0f, 1f)] private float monsterVfxBrightnessScale =
+            MonsterBasicAttackVfxPlayback.DefaultMainBattleBrightnessScale; // 전투 스킬 VFX 밝기도 60%
         [SerializeField] private MainBattleHostedContentRunner hostedRunner; // 성장 던전 전환 담당
         [SerializeField] private Button foodRiotButton; // 식량 대소동 입장 버튼
         [SerializeField] private Button castleRaidButton; // 군단의 역습 입장 버튼
@@ -130,6 +133,8 @@ namespace ProjectMT.Features.MainBattle
                 commander,
                 context.EquipmentBalanceConfig,
                 playerFormationAnchor);
+            expedition.CombatWorld?.SetUnitEmissionBrightnessScale(monsterEmissionBrightnessScale);
+            expedition.CombatWorld?.SetMonsterVfxBrightnessScale(monsterVfxBrightnessScale);
             mainBattleFeedback = expedition.GetComponentInChildren<CombatFeedbackPlayer>(true);
             mainBattleFeedback?.SetRecoilScale(1f); // 먼 쿼터뷰에서도 평타 반응이 읽히게 유지
             var combatTuning = CombatImpactTuning.ActiveConfig;
@@ -262,6 +267,8 @@ namespace ProjectMT.Features.MainBattle
             mainBattleFeedback?.SetRecoilScale(1f);
             mainBattleFeedback?.ConfigureActualKnockback(0f, 0f, 1f);
             mainBattleFeedback = null;
+            expedition?.CombatWorld?.SetUnitEmissionBrightnessScale(1f);
+            expedition?.CombatWorld?.SetMonsterVfxBrightnessScale(1f);
             expedition?.Shutdown();
             context = null;
             party = null;

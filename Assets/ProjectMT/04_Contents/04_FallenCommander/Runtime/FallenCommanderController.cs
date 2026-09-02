@@ -47,7 +47,7 @@ namespace ProjectMT.Contents.FallenCommander
         private FallenCommanderBossStateMachine stateMachine;
         private FallenCommanderBossFacingSmoother bossFacingSmoother;
         private FallenCommanderBossAnimationPresenter bossAnimationPresenter;
-        private FallenCommanderBossAnimationPresenter commanderDeathAnimationPresenter;
+        private FallenCommanderBossAnimationPresenter commanderAnimationPresenter;
         private FallenCommanderBossDeathPresentation bossDeathPresentation;
         private ICommanderSkillContentBridge commanderSkillBridge;
         private FallenCommanderHudPresenter hudPresenter;
@@ -130,6 +130,8 @@ namespace ProjectMT.Contents.FallenCommander
 
             commanderRoot.SetActive(true);
             commanderMove.ResetToInitialPosition();
+            commanderMove.EvadeStarted -= HandleCommanderEvadeStarted;
+            commanderMove.EvadeStarted += HandleCommanderEvadeStarted;
             commanderMove.SetInputEnabled(true);
             ConfigureExitConfirmation();
 
@@ -170,8 +172,8 @@ namespace ProjectMT.Contents.FallenCommander
             bossAnimationPresenter?.Stop();
             bossAnimationPresenter = null;
 
-            commanderDeathAnimationPresenter?.Stop();
-            commanderDeathAnimationPresenter = null;
+            commanderAnimationPresenter?.Stop();
+            commanderAnimationPresenter = null;
 
             bossDeathPresentation?.Release();
             bossDeathPresentation = null;
@@ -193,7 +195,11 @@ namespace ProjectMT.Contents.FallenCommander
             ReleaseHud();
             ReleaseCommanderHealth();
 
-            commanderMove?.SetInputEnabled(false);
+            if (commanderMove != null)
+            {
+                commanderMove.EvadeStarted -= HandleCommanderEvadeStarted;
+                commanderMove.SetInputEnabled(false);
+            }
             ReleaseExitConfirmation();
             combatWorld?.Clear();
 
@@ -1503,16 +1509,9 @@ namespace ProjectMT.Contents.FallenCommander
 
             if (isCommanderDeath)
             {
-                commanderDeathAnimationPresenter =
-                    commanderRoot.GetComponent<FallenCommanderBossAnimationPresenter>();
-                if (commanderDeathAnimationPresenter == null)
-                {
-                    commanderDeathAnimationPresenter =
-                        commanderRoot.AddComponent<FallenCommanderBossAnimationPresenter>();
-                }
-
-                commanderDeathAnimationPresenter.Configure(commanderRoot.transform);
-                commanderDeathAnimationPresenter.Play(
+                commanderAnimationPresenter = EnsureCommanderAnimationPresenter();
+                commanderAnimationPresenter.Configure(commanderRoot.transform);
+                commanderAnimationPresenter.Play(
                     presentationConfig.CommanderDeathMotion,
                     stopAfterMotion: true,
                     durationOverride: presentationConfig.CommanderDeathMotionDuration);
@@ -1554,11 +1553,36 @@ namespace ProjectMT.Contents.FallenCommander
             yield return new WaitForSecondsRealtime(resultDelay);
             bossDeathPresentation?.Release();
             bossDeathPresentation = null;
-            commanderDeathAnimationPresenter?.Stop();
-            commanderDeathAnimationPresenter = null;
+            commanderAnimationPresenter?.Stop();
+            commanderAnimationPresenter = null;
             deathRoutine = null;
             ReleaseHud();
             ExitContent(outcome);
+        }
+
+        private void HandleCommanderEvadeStarted(bool isForward)
+        {
+            if (!IsRunning || commanderRoot == null)
+            {
+                return;
+            }
+
+            var motion = isForward
+                ? presentationConfig.CommanderEvadeForwardMotion
+                : presentationConfig.CommanderEvadeBackwardMotion;
+            commanderAnimationPresenter = EnsureCommanderAnimationPresenter();
+            commanderAnimationPresenter.Configure(commanderRoot.transform);
+            commanderAnimationPresenter.Play(motion, stopAfterMotion: true);
+        }
+
+        private FallenCommanderBossAnimationPresenter EnsureCommanderAnimationPresenter()
+        {
+            var presenter = commanderAnimationPresenter != null
+                ? commanderAnimationPresenter
+                : commanderRoot.GetComponent<FallenCommanderBossAnimationPresenter>();
+            return presenter != null
+                ? presenter
+                : commanderRoot.AddComponent<FallenCommanderBossAnimationPresenter>();
         }
 
         private void ExitContent(ContentOutcome outcome)

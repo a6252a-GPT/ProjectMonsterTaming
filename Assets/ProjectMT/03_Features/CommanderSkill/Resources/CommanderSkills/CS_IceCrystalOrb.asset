@@ -1,5 +1,42 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-6614797441970118353
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 553a329334129284aa003ad4e3c0c765, type: 3}
+  m_Name: __Damage
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderAreaDamageEffectDefinition
+  effectId: commander_skill_ice_crystal_orb_damage
+  damageKind: 1
+  baseDamage: 13
+  shape: 3
+  center: 1
+  radius: 2.5
+  forwardOffset: 2
+  angle: 90
+  lineWidth: 2
+  maxTargets: 16
+--- !u!114 &-1699248138855766133
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9166a73beb0fe31418013f86c73085f8, type: 3}
+  m_Name: __Targeting
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderSkillTargetingDefinition
+  targetTeam: 0
+  selection: 0
+  range: 10
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18,16 +55,30 @@ MonoBehaviour:
     \uACE1\uC120\uC73C\uB85C \uB0A0\uB824 \uCC29\uD0C4 \uC9C0\uC810 \uC8FC\uBCC0\uC5D0
     \uBC94\uC704 \uD53C\uD574\uB97C \uC900\uB2E4."
   icon: {fileID: 21300000, guid: f6457d5bed3eb114bbbc51ad73bdfa89, type: 3}
+  castTime: 0
   cooldown: 5.4
-  targeting: {fileID: 11400000, guid: ba4268cd8d0514642a83dff1219c5a82, type: 2}
+  targeting: {fileID: -1699248138855766133}
   effects:
-  - {fileID: 11400000, guid: d3edcf5f141f4374e92624031cd33043, type: 2}
+  - {fileID: -6614797441970118353}
+  castingVfxPrefab: {fileID: 0}
+  castingVfxLifetime: 1
+  castingVfxLocalOffset: {x: 0, y: 0, z: 0}
+  castingVfxLocalEuler: {x: 0, y: 0, z: 0}
+  castingVfxScale: 1
+  castingSfx: {fileID: 0}
   castVfxPrefab: {fileID: 2711143355130201332, guid: d1b4ba90dfa5dad479ebe045da58ea1a, type: 3}
   castVfxLifetime: 1.2
+  castVfxLocalOffset: {x: 0, y: 0, z: 0}
+  castVfxLocalEuler: {x: 0, y: 0, z: 0}
+  castVfxScale: 1
   castSfx: {fileID: 11400000, guid: 206ef46e04e0dbe4b91b743630188811, type: 2}
   impactVfxPrefab: {fileID: 4748681987041982144, guid: 2d3b517f9576f5e47838912a58d385f0, type: 3}
   impactVfxLifetime: 1.8
+  impactVfxLocalOffset: {x: 0, y: 0, z: 0}
+  impactVfxLocalEuler: {x: 0, y: 0, z: 0}
+  impactVfxScale: 1
   impactSfx: {fileID: 11400000, guid: b94313b5a3c13e14b96fa03658a28fc0, type: 2}
+  deliveryModule: 1
   projectilePrefab: {fileID: 967645475458175939, guid: 86962769c77b96049b55b6e53dc3cb21, type: 3}
   projectileSpeed: 18
   trajectory: 1

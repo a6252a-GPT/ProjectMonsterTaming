@@ -28,19 +28,19 @@ MonoBehaviour:
     dashFrontDistance: 1
     dashDuration: 0.1
     pattern: 11
-    progression: 1
-    damageMultiplier: 0.65
+    progression: 0
+    damageMultiplier: 0.8
     damageMultiplierMode: 0
     maximumDamageMultiplier: 0.65
     maxTargets: 8
-    range: 5
+    range: 8
     width: 2.2
     radius: 2.5
     forwardOffset: 0.8
-    angle: 70
+    angle: 60
     progressionDuration: 1
     telegraphDelay: 0.25
-    visualDuration: 1.25
+    visualDuration: 2
     hitAreaVisibleDuration: 0.42
     projectileFormation: 0
     projectileCount: 1
@@ -62,10 +62,10 @@ MonoBehaviour:
     repeatImpactFeedback: 1
     hitEffects:
     - type: 6
-      magnitude: 0.1
+      magnitude: 1
       duration: 4
       secondaryMagnitude: 0
-      tickInterval: 1
+      tickInterval: 0.5
     attackBlockVfxSlots:
     - slotId: telegraph
       displayName: "\uD310\uC815 \uC608\uACE0"
@@ -123,92 +123,6 @@ MonoBehaviour:
       anchor: 1
       multiplicity: 0
       assignmentScope: 1
-      attachment: 0
-      endPolicy: 0
-      defaultLifetime: 1
-    inactiveAttackBlockVfxSlots: []
-    presentationSlots: []
-  - stepId: step_02
-    displayName: "\uBD80\uCC44\uAF34 \uD53C\uD574"
-    startMode: 0
-    delayAfterPrevious: 0.25
-    playbackSpeed: 1
-    targetPolicy: 0
-    dashBeforeAttack: 0
-    dashFrontDistance: 1
-    dashDuration: 0.1
-    pattern: 1
-    progression: 3
-    damageMultiplier: 0.95
-    damageMultiplierMode: 0
-    maximumDamageMultiplier: 0.95
-    maxTargets: 8
-    range: 4.2
-    width: 2.4
-    radius: 2.6
-    forwardOffset: 1
-    angle: 110
-    progressionDuration: 0.65
-    telegraphDelay: 0.12
-    visualDuration: 1.15
-    hitAreaVisibleDuration: 0.42
-    projectileFormation: 0
-    projectileCount: 1
-    projectileFanAngle: 50
-    projectileSpeed: 10
-    projectileCollisionRadius: 0.25
-    explosionRadius: 1.8
-    projectileTravel: 1
-    projectileTravelConfigured: 0
-    instantMagicTarget: 0
-    magicDirection: 0
-    damageRatios:
-    - 1
-    secondaryDamageRatio: 1
-    repeatHitInterval: 0.18
-    projectileLifetime: 3
-    repeatImpactFeedback: 1
-    hitEffects:
-    - type: 6
-      magnitude: 0.08
-      duration: 3
-      secondaryMagnitude: 0
-      tickInterval: 1
-    attackBlockVfxSlots:
-    - slotId: telegraph
-      displayName: "\uD310\uC815 \uC608\uACE0"
-      description: "\uD310\uC815 \uC804\uC5D0 \uC2E4\uC81C \uACF5\uACA9 \uBC94\uC704
-        \uC911\uC2EC\uC5D0\uC11C \uD55C \uBC88 \uC7AC\uC0DD\uD558\uB294 \uC608\uACE0
-        \uD6A8\uACFC"
-      productionMemo: 
-      eventType: 13
-      anchor: 6
-      multiplicity: 1
-      assignmentScope: 0
-      attachment: 0
-      endPolicy: 0
-      defaultLifetime: 1
-    - slotId: sweep_plane
-      displayName: "\uD729\uC4F8\uAE30 \uBA74"
-      description: "\uC804\uBC29 \uBD80\uCC44\uAF34\uC744 \uC77D\uD788\uAC8C \uD558\uB294
-        \uACF5\uACA9 \uBA74"
-      productionMemo: 
-      eventType: 1
-      anchor: 0
-      multiplicity: 1
-      assignmentScope: 1
-      attachment: 0
-      endPolicy: 0
-      defaultLifetime: 1
-    - slotId: target_hit
-      displayName: "\uB300\uC0C1\uBCC4 \uBA85\uC911"
-      description: "\uC2E4\uC81C\uB85C \uD53C\uD574\uB97C \uBC1B\uC740 \uAC01 \uB300\uC0C1\uC758
-        \uBA85\uC911 \uD6A8\uACFC"
-      productionMemo: 
-      eventType: 3
-      anchor: 5
-      multiplicity: 3
-      assignmentScope: 0
       attachment: 0
       endPolicy: 0
       defaultLifetime: 1

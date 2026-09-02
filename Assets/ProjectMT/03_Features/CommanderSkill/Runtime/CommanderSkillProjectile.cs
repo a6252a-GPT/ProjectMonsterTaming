@@ -73,7 +73,14 @@ namespace ProjectMT.Features.CommanderSkill
             }
 
             running = false;
-            owner.ResolveImpact(definition, targetPosition, damageMultiplier);
+            owner.ResolveImpact(
+                definition,
+                new CommanderSkillImpactContext(
+                    startPosition,
+                    target,
+                    targetPosition,
+                    targetPosition - startPosition),
+                damageMultiplier);
             owner.ReturnProjectile(gameObject);
         }
 

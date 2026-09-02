@@ -40,7 +40,7 @@ MonoBehaviour:
   - motionId: attack01
     clip: {fileID: 7400000, guid: ce8b91eea3deacc4291aee26457a92c4, type: 3}
     playbackSpeed: 0.5
-    crossFadeDuration: 0.06
+    crossFadeDuration: 1
     weight: 1
     preventImmediateRepeat: 0
     overrideBreathDuration: 1
@@ -80,11 +80,6 @@ MonoBehaviour:
     clip: {fileID: 7400000, guid: ce8b91eea3deacc4291aee26457a92c4, type: 3}
     playbackSpeed: 0.5
     crossFadeDuration: 0.08
-    commitNormalizedTime: 0.45
-  - stepId: step_02
-    clip: {fileID: 7400000, guid: ce8b91eea3deacc4291aee26457a92c4, type: 3}
-    playbackSpeed: 0.5
-    crossFadeDuration: 0.06
     commitNormalizedTime: 0.45
   death:
     clip: {fileID: 7400000, guid: a613a74bc1d5e464bb10e85beed0b153, type: 3}

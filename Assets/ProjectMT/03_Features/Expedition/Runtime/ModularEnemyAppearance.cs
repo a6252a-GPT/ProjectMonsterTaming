@@ -7,9 +7,12 @@ using UnityEngine;
 namespace ProjectMT.Features.Expedition
 {
     [DisallowMultipleComponent]
-    public sealed class ModularEnemyAppearance : MonoBehaviour, IUnitSpawnPreparation // Vendor 파츠를 ProjectMT 적으로 조립
+    public sealed class ModularEnemyAppearance : MonoBehaviour, IUnitSpawnPreparation, IUnitCombatAnimation // Vendor 파츠 조립·레거시 전투 동작
     {
         private static readonly int SpeedId = Animator.StringToHash("Speed");
+        private const string IdleState = "Idle";
+        private const string MoveState = "Move";
+        private const string StunState = "Stun";
         private static readonly string[] RightHandSocketNames = { "+ R Hand", "+R Hand" };
         private static readonly string[] UpperKnightEquipmentPalettes = { "Blue", "Green", "Purple", "Red" };
 
@@ -19,11 +22,16 @@ namespace ProjectMT.Features.Expedition
         private readonly List<GameObject> attachments = new List<GameObject>();
         private GameObject bodyInstance;
         private Animator animator;
+        private UnitActor actor;
+        private System.Random animationRandom;
+        private float transientAnimationRemaining;
+        private bool deathPlaying;
         private Vector3 lastPosition;
 
         public EnemyAppearanceProfile Profile => profile;
         public string CurrentBodyName => bodyInstance == null ? string.Empty : bodyInstance.name;
         public int CurrentAttachmentCount => attachments.Count(item => item != null);
+        public string CurrentAnimationState { get; private set; } = string.Empty;
 
         public bool PrepareForSpawn(UnitSpawnRequest request)
         {
@@ -47,6 +55,8 @@ namespace ProjectMT.Features.Expedition
             ClearCurrentAppearance();
             var seed = request.AppearanceSeed == 0 ? StableHash(request.UnitId) : request.AppearanceSeed;
             var random = new System.Random(seed);
+            animationRandom = new System.Random(seed ^ 0x4D54414E);
+            actor = GetComponent<UnitActor>();
             var bodyPrefab = Pick(profile.BodyPrefabs, random);
             if (bodyPrefab == null)
             {
@@ -115,6 +125,8 @@ namespace ProjectMT.Features.Expedition
                 {
                     animator.Update(0f); // 비활성 Stage 조립 중에는 강제 평가하지 않는다
                 }
+
+                PlayState(IdleState, 0f);
             }
 
             GetComponent<UnitVisualFeedback>()?.RefreshRenderers();
@@ -133,8 +145,149 @@ namespace ProjectMT.Features.Expedition
             var movement = currentPosition - lastPosition;
             movement.y = 0f;
             var speed = Time.deltaTime <= 0f ? 0f : movement.magnitude / Time.deltaTime;
-            animator.SetFloat(SpeedId, speed, 0.08f, Time.deltaTime);
             lastPosition = currentPosition;
+
+            if (deathPlaying)
+            {
+                animator.SetFloat(SpeedId, 0f);
+                return;
+            }
+
+            if (actor != null && actor.IsActiveStunned)
+            {
+                if (!string.Equals(CurrentAnimationState, StunState, StringComparison.Ordinal))
+                {
+                    PlayState(StunState, actor.IsActiveStunned ? transientAnimationRemaining : 0f);
+                }
+
+                transientAnimationRemaining = Mathf.Max(0f, transientAnimationRemaining - Time.deltaTime);
+                animator.SetFloat(SpeedId, 0f);
+                return;
+            }
+
+            transientAnimationRemaining = Mathf.Max(0f, transientAnimationRemaining - Time.deltaTime);
+            if (transientAnimationRemaining > 0f)
+            {
+                animator.SetFloat(SpeedId, 0f);
+                return;
+            }
+
+            animator.SetFloat(SpeedId, speed, 0.08f, Time.deltaTime);
+            var locomotionState = speed > 0.05f ? MoveState : IdleState;
+            if (!string.Equals(CurrentAnimationState, locomotionState, StringComparison.Ordinal))
+            {
+                PlayState(locomotionState, 0f);
+            }
+        }
+
+        public void PlayAttack()
+        {
+            if (deathPlaying)
+            {
+                return;
+            }
+
+            if (IsMage(profile.Group))
+            {
+                PlayState("Attack_Mage", 2.53f);
+                return;
+            }
+
+            var attackIndex = profile.Group == EnemyAppearanceGroup.Ninja
+                ? 6
+                : Next(1, 7);
+            PlayState($"Attack_{attackIndex:00}", ResolveMeleeAttackDuration(attackIndex));
+        }
+
+        public void PlayHit()
+        {
+            if (deathPlaying)
+            {
+                return;
+            }
+
+            var hitIndex = Next(1, 3);
+            var duration = IsMage(profile.Group)
+                ? (hitIndex == 1 ? 0.43f : 0.47f)
+                : (hitIndex == 1 ? 0.67f : 0.87f);
+            PlayState($"Damage_{hitIndex:00}", duration);
+        }
+
+        public void PlayStun(float duration)
+        {
+            if (deathPlaying)
+            {
+                return;
+            }
+
+            PlayState(StunState, Mathf.Max(0.01f, duration));
+        }
+
+        public float PlayDeath()
+        {
+            if (IsMage(profile.Group))
+            {
+                deathPlaying = true;
+                PlayState("Death_01", 2.53f);
+                return 2.53f;
+            }
+
+            var deathIndex = Next(1, 5);
+            var duration = deathIndex switch
+            {
+                1 => 3.17f,
+                2 => 3.17f,
+                3 => 3.33f,
+                _ => 2.83f
+            };
+            deathPlaying = true;
+            PlayState($"Death_{deathIndex:00}", duration);
+            return duration;
+        }
+
+        private void PlayState(string stateName, float duration)
+        {
+            if (animator == null || !animator.isActiveAndEnabled)
+            {
+                return;
+            }
+
+            var stateHash = Animator.StringToHash($"Base Layer.{stateName}");
+            if (!animator.HasState(0, stateHash))
+            {
+                Debug.LogWarning($"Enemy animator state is missing: {stateName}", this);
+                return;
+            }
+
+            animator.CrossFadeInFixedTime(stateHash, 0.06f, 0, 0f);
+            CurrentAnimationState = stateName;
+            transientAnimationRemaining = duration;
+        }
+
+        private int Next(int minimumInclusive, int maximumExclusive)
+        {
+            animationRandom ??= new System.Random(StableHash(gameObject.name));
+            return animationRandom.Next(minimumInclusive, maximumExclusive);
+        }
+
+        private static bool IsMage(EnemyAppearanceGroup group)
+        {
+            return group == EnemyAppearanceGroup.MageTier1 ||
+                   group == EnemyAppearanceGroup.MageTier2 ||
+                   group == EnemyAppearanceGroup.MageTier3;
+        }
+
+        private static float ResolveMeleeAttackDuration(int attackIndex)
+        {
+            return attackIndex switch
+            {
+                1 => 1.33f,
+                2 => 0.73f,
+                3 => 0.77f,
+                4 => 1.10f,
+                5 => 1.27f,
+                _ => 1.13f
+            };
         }
 
         private void AddBackParts(Transform socket, string paletteToken, System.Random random)
@@ -179,6 +332,11 @@ namespace ProjectMT.Features.Expedition
         {
             attachments.Clear();
             animator = null;
+            actor = null;
+            animationRandom = null;
+            transientAnimationRemaining = 0f;
+            deathPlaying = false;
+            CurrentAnimationState = string.Empty;
             for (var index = visualRoot == null ? -1 : visualRoot.childCount - 1; index >= 0; index--)
             {
                 var child = visualRoot.GetChild(index).gameObject;

@@ -46,7 +46,7 @@ MonoBehaviour:
     overrideBreathDuration: 0
     breathDuration: 0.8
     markers:
-    - normalizedTime: 0.8
+    - normalizedTime: 0.2
       powerRatio: 1
       feedbackOverride:
         sfx: {fileID: 0}
@@ -80,7 +80,7 @@ MonoBehaviour:
     clip: {fileID: 7400000, guid: 3b66e2ea77e26bc43b586d43d2763869, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.08
-    commitNormalizedTime: 0.8
+    commitNormalizedTime: 0.2
   death:
     clip: {fileID: 7400000, guid: 06a7c8284876eeb48bb124e2c6dd06c2, type: 3}
     playbackSpeed: 1

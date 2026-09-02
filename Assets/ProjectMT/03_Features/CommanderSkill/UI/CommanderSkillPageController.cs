@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.UI;
+using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -658,6 +659,18 @@ namespace ProjectMT.Features.CommanderSkill
                 return $"피해 {damage:0.#}  ·  {definition.Cooldown:0.#}초";
             }
 
+            if (definition is CommanderEffectSkillDefinition)
+            {
+                var multiplier = GetEffectMultiplier(definition.SkillId, level);
+                for (var index = 0; index < definition.Effects.Count; index++)
+                {
+                    if (definition.Effects[index] is CommanderUnitEffectDefinition effect)
+                    {
+                        return $"{BuildEffectSummary(effect, multiplier)}  ·  {definition.Cooldown:0.#}초";
+                    }
+                }
+            }
+
             return $"쿨타임 {definition.Cooldown:0.#}초";
         }
 
@@ -666,10 +679,92 @@ namespace ProjectMT.Features.CommanderSkill
             if (definition is CommanderAttackSkillDefinition attack && attack.AreaDamageEffect != null)
             {
                 var damage = attack.AreaDamageEffect.BaseDamage * GetEffectMultiplier(definition.SkillId, level);
-                return $"피해 {damage:0.#}  ·  쿨타임 {definition.Cooldown:0.#}초  ·  범위 {attack.AreaDamageEffect.Radius:0.#}m";
+                var shape = attack.AreaDamageEffect.Shape switch
+                {
+                    MonsterBasicAttackShape.Fan => $"부채꼴 {attack.AreaDamageEffect.Angle:0.#}도",
+                    MonsterBasicAttackShape.Line => $"직선 폭 {attack.AreaDamageEffect.LineWidth:0.#}m",
+                    MonsterBasicAttackShape.Circle => $"원형 반경 {attack.AreaDamageEffect.Radius:0.#}m",
+                    _ => "단일 대상"
+                };
+                return $"캐스팅 {definition.CastTime:0.#}초  ·  피해 {damage:0.#}  ·  쿨타임 {definition.Cooldown:0.#}초  ·  {shape}";
             }
 
-            return $"쿨타임 {definition.Cooldown:0.#}초  ·  대상 거리 {definition.TargetRange:0.#}m";
+            if (definition is CommanderEffectSkillDefinition)
+            {
+                var summaries = new List<string>();
+                var multiplier = GetEffectMultiplier(definition.SkillId, level);
+                for (var index = 0; index < definition.Effects.Count; index++)
+                {
+                    if (definition.Effects[index] is CommanderUnitEffectDefinition effect)
+                    {
+                        summaries.Add(BuildEffectSummary(effect, multiplier));
+                    }
+                }
+
+                var effectText = summaries.Count > 0 ? string.Join("  ·  ", summaries) : "효과 없음";
+                return $"캐스팅 {definition.CastTime:0.#}초  ·  쿨타임 {definition.Cooldown:0.#}초  ·  대상 거리 {definition.TargetRange:0.#}m\n{effectText}";
+            }
+
+            return $"캐스팅 {definition.CastTime:0.#}초  ·  쿨타임 {definition.Cooldown:0.#}초  ·  대상 거리 {definition.TargetRange:0.#}m";
+        }
+
+        private static string BuildEffectSummary(CommanderUnitEffectDefinition effect, float multiplier)
+        {
+            var label = effect.EffectType switch
+            {
+                CommanderSkillUnitEffectType.Heal => "회복",
+                CommanderSkillUnitEffectType.Shield => "보호막",
+                CommanderSkillUnitEffectType.AttackBuff => "공격 증가",
+                CommanderSkillUnitEffectType.DefenseBuff => "방어 증가",
+                CommanderSkillUnitEffectType.AttackSpeedBuff => "공속 증가",
+                CommanderSkillUnitEffectType.DamageReduction => "피해 감소",
+                CommanderSkillUnitEffectType.DamageReflect => "피해 반사",
+                CommanderSkillUnitEffectType.Cleanse => "약화 1개 정화",
+                CommanderSkillUnitEffectType.EnergyGain => "기력 회복",
+                CommanderSkillUnitEffectType.AttackDebuff => "공격 감소",
+                CommanderSkillUnitEffectType.DefenseDebuff => "방어 감소",
+                CommanderSkillUnitEffectType.AttackSpeedDebuff => "공속 감소",
+                CommanderSkillUnitEffectType.MoveSpeedDebuff => "이속 감소",
+                CommanderSkillUnitEffectType.Slow => "감속",
+                CommanderSkillUnitEffectType.Stun => "기절",
+                CommanderSkillUnitEffectType.Mark => "받는 피해 증가",
+                _ => "기력 감소"
+            };
+            if (effect.EffectType == CommanderSkillUnitEffectType.Cleanse)
+            {
+                return label;
+            }
+            if (effect.EffectType == CommanderSkillUnitEffectType.Stun)
+            {
+                return $"{label} {effect.Duration:0.#}초";
+            }
+
+            var value = effect.Magnitude * Mathf.Max(0f, multiplier);
+            var source = effect.ValueSource switch
+            {
+                CommanderSkillEffectValueSource.TargetMaxHealthRatio => "최대 체력",
+                CommanderSkillEffectValueSource.TargetMissingHealthRatio => "잃은 체력",
+                CommanderSkillEffectValueSource.TargetEnergyCapacityRatio => "기력 용량",
+                _ => string.Empty
+            };
+            var percentage = effect.ValueSource != CommanderSkillEffectValueSource.Flat ||
+                             effect.EffectType is CommanderSkillUnitEffectType.AttackBuff or
+                                 CommanderSkillUnitEffectType.DefenseBuff or
+                                 CommanderSkillUnitEffectType.AttackSpeedBuff or
+                                 CommanderSkillUnitEffectType.DamageReduction or
+                                 CommanderSkillUnitEffectType.DamageReflect or
+                                 CommanderSkillUnitEffectType.AttackDebuff or
+                                 CommanderSkillUnitEffectType.DefenseDebuff or
+                                 CommanderSkillUnitEffectType.AttackSpeedDebuff or
+                                 CommanderSkillUnitEffectType.MoveSpeedDebuff or
+                                 CommanderSkillUnitEffectType.Slow or CommanderSkillUnitEffectType.Mark;
+            var amount = percentage ? $"{value * 100f:0.#}%" : value.ToString("0.#");
+            var duration = CommanderUnitEffectDefinition.RequiresDuration(effect.EffectType)
+                ? $" / {effect.Duration:0.#}초"
+                : string.Empty;
+            return string.IsNullOrEmpty(source)
+                ? $"{label} {amount}{duration}"
+                : $"{label} {source} {amount}{duration}";
         }
 
         private float GetEffectMultiplier(string skillId, int level)

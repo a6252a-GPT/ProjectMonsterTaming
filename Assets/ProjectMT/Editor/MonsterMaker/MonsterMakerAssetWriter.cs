@@ -836,7 +836,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 var active = GetOrCreateActiveSkillAsset<MonsterEffectActiveSkill>(
                     path,
-                    $"MSE_{draft.MonsterId}_Active");
+                    $"MSA_{draft.MonsterId}_Active");
                 active.EditorConfigure(
                     $"active_{draft.MonsterId}",
                     draft.ActiveSkillName,
@@ -1546,7 +1546,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     return draft?.Sfx;
                 }
 
-                return Resolve(draft.Sound, roleId);
+                return Resolve(draft.Sound, roleId, draft.SoundVolume);
             }
 
             public SfxCue Resolve(AudioClip sound, string roleId)

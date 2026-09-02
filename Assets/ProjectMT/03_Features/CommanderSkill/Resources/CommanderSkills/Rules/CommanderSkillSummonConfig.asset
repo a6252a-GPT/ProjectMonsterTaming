@@ -17,21 +17,39 @@ MonoBehaviour:
   levels:
   - requiredAccumulatedCount: 0
     pool:
-    - skillId: commander_skill_fireball
-      weight: 100
+    - skillId: commander_skill_thunder_lance
+      weight: 80
+    - skillId: commander_skill_guardian_banner
+      weight: 70
+    - skillId: commander_skill_abyssal_shackles
+      weight: 70
     - skillId: commander_skill_ice_crystal_orb
+      weight: 100
+    - skillId: commander_skill_fireball
       weight: 100
   - requiredAccumulatedCount: 30
     pool:
-    - skillId: commander_skill_fireball
-      weight: 100
+    - skillId: commander_skill_thunder_lance
+      weight: 80
+    - skillId: commander_skill_guardian_banner
+      weight: 70
+    - skillId: commander_skill_abyssal_shackles
+      weight: 70
     - skillId: commander_skill_ice_crystal_orb
+      weight: 100
+    - skillId: commander_skill_fireball
       weight: 100
   - requiredAccumulatedCount: 100
     pool:
-    - skillId: commander_skill_fireball
-      weight: 100
+    - skillId: commander_skill_thunder_lance
+      weight: 80
+    - skillId: commander_skill_guardian_banner
+      weight: 70
+    - skillId: commander_skill_abyssal_shackles
+      weight: 70
     - skillId: commander_skill_ice_crystal_orb
+      weight: 100
+    - skillId: commander_skill_fireball
       weight: 100
   offers:
   - drawCount: 10

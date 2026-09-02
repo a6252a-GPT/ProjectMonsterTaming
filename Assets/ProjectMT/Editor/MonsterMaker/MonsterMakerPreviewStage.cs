@@ -99,6 +99,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private readonly PrefabPreviewStage stage = new PrefabPreviewStage();
         private readonly List<PreviewVfx> activeVfx = new List<PreviewVfx>();
         private readonly List<PreviewFloatingNumber> activeFloatingNumbers = new List<PreviewFloatingNumber>();
+        private readonly List<PendingFloatingText> pendingFloatingTexts = new List<PendingFloatingText>();
+        private readonly Dictionary<int, float> nextFloatingTextReleaseAt = new Dictionary<int, float>();
+        private readonly Dictionary<int, RecentFloatingText> recentFloatingTexts =
+            new Dictionary<int, RecentFloatingText>();
         private readonly List<PreviewHitVfx> activeHitVfx = new List<PreviewHitVfx>();
         private readonly List<PreviewProjectile> activeProjectiles = new List<PreviewProjectile>();
         private readonly List<PendingPreviewHit> pendingHits = new List<PendingPreviewHit>();
@@ -146,6 +150,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private float previewClock;
         private float lastAppliedDamage;
         private int previewHitCount;
+        private int floatingTextUniqueKey = int.MinValue;
         private uint floatingNumberSequence;
         private string combatStatus = "표준 적 준비 전";
         private Texture lastRenderedTexture;
@@ -219,6 +224,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public bool IsPlaying => playing;
         public bool RequiresContinuousTick => playing || activeSkillPreviewRunning ||
                                                targetFeedbackActive || pendingFloatingNumber.Active ||
+                                               pendingFloatingTexts.Count > 0 ||
                                                activeVfx.Count > 0 || activeFloatingNumbers.Count > 0 ||
                                                activeHitVfx.Count > 0 || activeProjectiles.Count > 0 ||
                                                pendingHits.Count > 0 || pendingContractVfx.Count > 0 ||
@@ -238,7 +244,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
             : Vector3.Distance(stage.PreviewRoot.transform.position, dummyTarget.transform.position);
         public float LastAppliedDamage => lastAppliedDamage;
         public int PreviewHitCount => previewHitCount;
-        public int ActiveFloatingNumberCount => activeFloatingNumbers.Count + (pendingFloatingNumber.Active ? 1 : 0);
+        public int ActiveFloatingNumberCount => activeFloatingNumbers.Count +
+                                                (pendingFloatingNumber.Active ? 1 : 0) +
+                                                pendingFloatingTexts.Count;
         public int ActiveHitVfxCount => activeHitVfx.Count;
         public int ActiveMarkerVfxCount => activeVfx.Count;
         public int PreviewPlaceholderVfxCount => activeVfx.Count(candidate => candidate.IsPlaceholder) +
@@ -336,6 +344,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             previewClock = 0f;
             lastAppliedDamage = 0f;
             previewHitCount = 0;
+            floatingTextUniqueKey = int.MinValue;
             floatingNumberSequence = 0u;
             combatStatus = "표준 적 준비 전";
             stage.SetFramingScale(source?.PreviewScale ?? 1f);
@@ -490,8 +499,24 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     pendingEffectPreviewGroups.Add(new PendingEffectPreviewGroup(
                         executeAt,
                         group,
-                        groupPresentation));
+                        groupPresentation,
+                        EffectPreviewPhase.Activation));
+                    pendingEffectPreviewGroups.Add(new PendingEffectPreviewGroup(
+                        executeAt + group.PresentationLifecycleStartDelay,
+                        group,
+                        groupPresentation,
+                        EffectPreviewPhase.Applied));
+                    if (group.UsesDurationPresentationLifecycle)
+                    {
+                        pendingEffectPreviewGroups.Add(new PendingEffectPreviewGroup(
+                            executeAt + group.PresentationLifecycleStartDelay +
+                            group.PresentationLifecycleDuration,
+                            group,
+                            groupPresentation,
+                            EffectPreviewPhase.Expired));
+                    }
                 }
+                pendingEffectPreviewGroups.Sort((left, right) => left.ExecuteAt.CompareTo(right.ExecuteAt));
                 combatStatus =
                     $"효과형 액티브 준비 · [{GetEffectRoleLabel(draft.ActiveEffectProfile.Role)}] {draft.ActiveSkillName}";
                 lastTickTime = EditorApplication.timeSinceStartup;
@@ -1162,19 +1187,35 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (pending?.Group == null || stage.PreviewRoot == null) return;
             var targets = ResolveEffectPreviewTargets(pending.Group);
             if (targets.Count == 0) return;
-            PlayEffectPresentationEvent(pending.Group, pending.Presentation,
-                MonsterActivePresentationEvent.MotionStart, targets);
-            PlayEffectPresentationEvent(pending.Group, pending.Presentation,
-                MonsterActivePresentationEvent.Launch, targets);
-            PlayEffectPresentationEvent(pending.Group, pending.Presentation,
-                MonsterActivePresentationEvent.Impact, targets);
-            PlayEffectPresentationEvent(pending.Group, pending.Presentation,
-                MonsterActivePresentationEvent.AreaResolved, targets);
-            PlayEffectPresentationEvent(pending.Group, pending.Presentation,
-                MonsterActivePresentationEvent.StepEnd, targets);
-            ReleaseActivePresentationVfx(MonsterActivePresentationEndPolicy.StepEnd);
-            ReleaseActivePresentationVfx(MonsterActivePresentationEndPolicy.MotionEnd);
-            combatStatus = $"{pending.Group.DisplayName} 적용 · {pending.Group.Effects.Count}개 효과";
+            switch (pending.Phase)
+            {
+                case EffectPreviewPhase.Activation:
+                    PlayEffectPresentationEvent(pending.Group, pending.Presentation,
+                        MonsterActivePresentationEvent.MotionStart, targets);
+                    PlayEffectPresentationEvent(pending.Group, pending.Presentation,
+                        MonsterActivePresentationEvent.Launch, targets);
+                    combatStatus = $"{pending.Group.DisplayName} 발동";
+                    break;
+                case EffectPreviewPhase.Applied:
+                    // 기존 저장 계약도 실제 효과 적용 시점으로 함께 이동시킨다.
+                    PlayEffectPresentationEvent(pending.Group, pending.Presentation,
+                        MonsterActivePresentationEvent.Impact, targets);
+                    PlayEffectPresentationEvent(pending.Group, pending.Presentation,
+                        MonsterActivePresentationEvent.AreaResolved, targets);
+                    PlayEffectPresentationEvent(pending.Group, pending.Presentation,
+                        MonsterActivePresentationEvent.EffectApplied, targets);
+                    PlayEffectPresentationEvent(pending.Group, pending.Presentation,
+                        MonsterActivePresentationEvent.StepEnd, targets);
+                    ReleaseActivePresentationVfx(MonsterActivePresentationEndPolicy.StepEnd);
+                    ReleaseActivePresentationVfx(MonsterActivePresentationEndPolicy.MotionEnd);
+                    combatStatus = $"{pending.Group.DisplayName} 적용 · {targets.Count}명";
+                    break;
+                case EffectPreviewPhase.Expired:
+                    PlayEffectPresentationEvent(pending.Group, pending.Presentation,
+                        MonsterActivePresentationEvent.EffectExpired, targets);
+                    combatStatus = $"{pending.Group.DisplayName} 효과 종료";
+                    break;
+            }
         }
 
         private void PlayEffectPresentationEvent(
@@ -1922,6 +1963,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     MonsterBasicAttackVfxPlayback.ApplyInstanceScale(
                         instance,
                         projectileVisual.transform.localScale * scale * Mathf.Max(0.01f, draft.VfxScale));
+                    MonsterBasicAttackVfxPlayback.ApplyBrightnessScale(
+                        instance,
+                        MonsterBasicAttackVfxPlayback.DefaultMainBattleBrightnessScale);
                     if (carrierOnly)
                     {
                         foreach (var renderer in instance.GetComponentsInChildren<Renderer>(true))
@@ -2262,7 +2306,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
             var feedback = slot.Feedback;
             if (slot.SfxState == MonsterBasicAttackSfxAssignmentState.Assigned)
             {
-                PlaySound(feedback.Sound);
+                if (feedback.Sound != null)
+                    SfxEditorAudioPreview.Play(feedback.Sound, 0, false, feedback.SoundVolume);
                 if (feedback.Sound == null && feedback.Sfx != null && feedback.Sfx.TrySelectClip(out var clip))
                 {
                     SfxEditorAudioPreview.Play(clip, 0, false, feedback.Sfx.SelectVolume());
@@ -2293,6 +2338,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     instance,
                     feedback.VfxPrefab.transform.localScale *
                     feedback.Scale * Mathf.Max(0.01f, draft.VfxScale));
+                MonsterBasicAttackVfxPlayback.ApplyBrightnessScale(
+                    instance,
+                    MonsterBasicAttackVfxPlayback.DefaultMainBattleBrightnessScale);
             }
             stage.AddAuxiliary(instance);
             if (contract.Attachment == MonsterActivePresentationAttachment.FollowAnchor && parent != null)
@@ -2929,6 +2977,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
             instance.transform.SetPositionAndRotation(position, rotation);
             instance.transform.localScale = instance.transform.localScale *
                                             feedback.Scale * Mathf.Max(0.01f, draft.VfxScale);
+            MonsterBasicAttackVfxPlayback.ApplyBrightnessScale(
+                instance,
+                MonsterBasicAttackVfxPlayback.DefaultMainBattleBrightnessScale);
             stage.AddAuxiliary(instance);
             MonsterBasicAttackVfxPlayback.RestartAtOffset(instance, 0f);
             activeVfx.Add(new PreviewVfx(
@@ -2950,6 +3001,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
             instance.transform.SetPositionAndRotation(position, rotation);
             instance.transform.localScale = feel.Prefab.transform.localScale *
                                             feel.Scale * Mathf.Max(0.01f, draft.VfxScale);
+            MonsterBasicAttackVfxPlayback.ApplyBrightnessScale(
+                instance,
+                MonsterBasicAttackVfxPlayback.DefaultMainBattleBrightnessScale);
             stage.AddAuxiliary(instance);
             var runtime = instance.GetComponentsInChildren<MonoBehaviour>(true)
                 .OfType<IBasicAttackFeelRuntime>()
@@ -2988,6 +3042,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
             instance.transform.SetPositionAndRotation(position, rotation);
             instance.transform.localScale = feedback.VfxPrefab.transform.localScale *
                                             feedback.Scale * Mathf.Max(0.01f, draft.VfxScale);
+            MonsterBasicAttackVfxPlayback.ApplyBrightnessScale(
+                instance,
+                MonsterBasicAttackVfxPlayback.DefaultMainBattleBrightnessScale);
             stage.AddAuxiliary(instance);
             MonsterBasicAttackVfxPlayback.RestartAtOffset(instance, 0f);
             activeVfx.Add(new PreviewVfx(instance, feedback.VfxLifetime));
@@ -3190,6 +3247,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     instance,
                     binding.Prefab.transform.localScale *
                     binding.Scale * Mathf.Max(0.01f, draft.VfxScale));
+                MonsterBasicAttackVfxPlayback.ApplyBrightnessScale(
+                    instance,
+                    MonsterBasicAttackVfxPlayback.DefaultMainBattleBrightnessScale);
             }
             stage.AddAuxiliary(instance);
             if (slot.Attachment == MonsterBasicAttackVfxAttachment.FollowAnchor && anchor != null)
@@ -3538,6 +3598,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
                         projectileVisual.transform.localScale *
                         presentationScale *
                         Mathf.Max(0.01f, draft.VfxScale));
+                    MonsterBasicAttackVfxPlayback.ApplyBrightnessScale(
+                        instance,
+                        MonsterBasicAttackVfxPlayback.DefaultMainBattleBrightnessScale);
                     if (carrierOnly)
                     {
                         foreach (var renderer in instance.GetComponentsInChildren<Renderer>(true))
@@ -3785,6 +3848,74 @@ namespace ProjectMT.EditorTools.MonsterMaker
             SpawnFloatingNumber(request);
         }
 
+        private void QueueFloatingText(
+            Vector3 position,
+            string text,
+            CombatStatusTextStyle style,
+            int queueKey)
+        {
+            text = text?.Trim();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return;
+            }
+
+            if (queueKey == 0)
+            {
+                queueKey = floatingTextUniqueKey++;
+                if (floatingTextUniqueKey >= 0)
+                {
+                    floatingTextUniqueKey = int.MinValue;
+                }
+            }
+
+            if (recentFloatingTexts.TryGetValue(queueKey, out var recent) &&
+                recent.Value == text &&
+                previewClock - recent.QueuedAt < FloatingNumberPresenter.StatusDuplicateWindow)
+            {
+                return;
+            }
+
+            var releaseAt = nextFloatingTextReleaseAt.TryGetValue(queueKey, out var next)
+                ? Mathf.Max(previewClock, next)
+                : previewClock;
+            if (releaseAt - previewClock > FloatingNumberPresenter.StatusMaximumQueueDelay)
+            {
+                return;
+            }
+
+            pendingFloatingTexts.Add(new PendingFloatingText
+            {
+                Position = position,
+                Value = text,
+                Style = style,
+                ReleaseAt = releaseAt,
+                QueuedAt = previewClock,
+                QueueKey = queueKey
+            });
+            nextFloatingTextReleaseAt[queueKey] =
+                releaseAt + FloatingNumberPresenter.StatusQueueInterval;
+            recentFloatingTexts[queueKey] = new RecentFloatingText(text, previewClock);
+        }
+
+        private void FlushFloatingTexts()
+        {
+            for (var index = pendingFloatingTexts.Count - 1; index >= 0; index--)
+            {
+                var request = pendingFloatingTexts[index];
+                if (request.ReleaseAt > previewClock)
+                {
+                    continue;
+                }
+
+                pendingFloatingTexts.RemoveAt(index);
+                if (previewClock - request.QueuedAt <= FloatingNumberPresenter.StatusMaximumQueueDelay)
+                {
+                    SpawnFloatingText(request);
+                }
+            }
+        }
+
         private void SpawnFloatingNumber(PendingFloatingNumber request)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(FloatingNumberPrefabPath);
@@ -3833,6 +3964,50 @@ namespace ProjectMT.EditorTools.MonsterMaker
             activeFloatingNumbers.Add(new PreviewFloatingNumber(instance, view));
         }
 
+        private void SpawnFloatingText(PendingFloatingText request)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(FloatingNumberPrefabPath);
+            if (prefab == null)
+            {
+                combatStatus = "데미지 플로팅 Prefab을 찾지 못했습니다";
+                return;
+            }
+
+            var instance = UnityEngine.Object.Instantiate(prefab);
+            var view = instance.GetComponent<FloatingNumberView>();
+            if (view == null)
+            {
+                UnityEngine.Object.DestroyImmediate(instance);
+                combatStatus = "데미지 플로팅 View를 찾지 못했습니다";
+                return;
+            }
+
+            floatingNumberSequence = unchecked(floatingNumberSequence + 1u);
+            var signedDrift = FloatingNumberPresenter.ResolveHorizontalDrift(
+                request.QueueKey,
+                floatingNumberSequence,
+                FloatingNumberPresenter.DefaultHorizontalDrift * 0.14f);
+            instance.name = "[Monster Preview Status] " + request.Value;
+            instance.transform.position = request.Position +
+                                          Vector3.up * FloatingNumberPresenter.DefaultHeightOffset;
+            instance.SetActive(true);
+            view.Play(
+                null,
+                request.Value,
+                FloatingNumberPresenter.ResolveStatusColor(request.Style),
+                0.72f,
+                0.58f,
+                signedDrift,
+                0.08f,
+                0f,
+                0.86f,
+                stage.Camera,
+                null);
+            view.GetComponent<TMPro.TMP_Text>()?.ForceMeshUpdate(true, true);
+            stage.AddAuxiliary(instance);
+            activeFloatingNumbers.Add(new PreviewFloatingNumber(instance, view));
+        }
+
         private void SpawnPreviewHitVfx(Vector3 position)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HitVfxPrefabPath);
@@ -3859,6 +4034,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         private bool TickCombatPresentation(float deltaTime)
         {
             if (playing || targetFeedbackActive || pendingFloatingNumber.Active ||
+                pendingFloatingTexts.Count > 0 ||
                 activeFloatingNumbers.Count > 0 || activeHitVfx.Count > 0 || activeProjectiles.Count > 0 ||
                 pendingHits.Count > 0 || activeHitAreas.Count > 0)
             {
@@ -3876,6 +4052,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
             TickPendingHits();
             TickPreviewProjectiles(deltaTime);
             FlushFloatingNumber();
+            FlushFloatingTexts();
             var targetPulseActive = targetFeedbackActive &&
                                     (dummyTargetVisualFeedback?.Tick(deltaTime) ?? false);
             targetFeedbackActive = targetPulseActive;
@@ -3928,7 +4105,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 activeHitAreas.RemoveAt(index);
             }
 
-            return targetPulseActive || pendingFloatingNumber.Active || activeFloatingNumbers.Count > 0 ||
+            return targetPulseActive || pendingFloatingNumber.Active || pendingFloatingTexts.Count > 0 ||
+                   activeFloatingNumbers.Count > 0 ||
                    activeHitVfx.Count > 0 || activeProjectiles.Count > 0 || pendingHits.Count > 0 ||
                    activeHitAreas.Count > 0;
         }
@@ -4751,6 +4929,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
         {
             targetFeedbackActive = false;
             pendingFloatingNumber = default;
+            pendingFloatingTexts.Clear();
+            nextFloatingTextReleaseAt.Clear();
+            recentFloatingTexts.Clear();
             pendingHits.Clear();
             for (var index = activeFloatingNumbers.Count - 1; index >= 0; index--)
             {
@@ -5028,16 +5209,26 @@ namespace ProjectMT.EditorTools.MonsterMaker
             public PendingEffectPreviewGroup(
                 float executeAt,
                 MonsterEffectActiveGroup group,
-                MonsterMakerActiveStepPresentationDraft presentation)
+                MonsterMakerActiveStepPresentationDraft presentation,
+                EffectPreviewPhase phase)
             {
                 ExecuteAt = executeAt;
                 Group = group;
                 Presentation = presentation;
+                Phase = phase;
             }
 
             public float ExecuteAt { get; }
             public MonsterEffectActiveGroup Group { get; }
             public MonsterMakerActiveStepPresentationDraft Presentation { get; }
+            public EffectPreviewPhase Phase { get; }
+        }
+
+        private enum EffectPreviewPhase
+        {
+            Activation,
+            Applied,
+            Expired
         }
 
         private sealed class PendingContractVfx
@@ -5213,6 +5404,28 @@ namespace ProjectMT.EditorTools.MonsterMaker
             public float ReleaseAt;
         }
 
+        private struct PendingFloatingText
+        {
+            public Vector3 Position;
+            public string Value;
+            public CombatStatusTextStyle Style;
+            public float ReleaseAt;
+            public float QueuedAt;
+            public int QueueKey;
+        }
+
+        private readonly struct RecentFloatingText
+        {
+            public RecentFloatingText(string value, float queuedAt)
+            {
+                Value = value;
+                QueuedAt = queuedAt;
+            }
+
+            public string Value { get; }
+            public float QueuedAt { get; }
+        }
+
         private sealed class PreviewCombatFeedbackPlayer : ICombatFeedbackPlayer
         {
             private readonly MonsterMakerPreviewStage owner;
@@ -5262,6 +5475,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 CombatStatusTextStyle style,
                 int queueKey)
             {
+                owner.QueueFloatingText(position, text, style, queueKey);
             }
         }
     }

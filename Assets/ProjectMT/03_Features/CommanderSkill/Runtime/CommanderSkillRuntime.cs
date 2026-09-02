@@ -28,10 +28,19 @@ namespace ProjectMT.Features.CommanderSkill
         private Func<float> externalDamageMultiplier;
         private CommanderSkillProgressView progressView;
         private float autoScanRemaining;
+        private int castingSlot = -1;
+        private CommanderSkillDefinition castingDefinition;
+        private float castingRemaining;
+        private float castingDuration;
+        private float castingMultiplier;
         private bool configured;
 
         public bool IsPaused => world == null || world.IsPaused || (isInputBlocked?.Invoke() ?? false);
         public bool IsConfigured => configured;
+        public bool IsCasting => castingSlot >= 0 && castingDefinition != null;
+        public int CastingSlot => IsCasting ? castingSlot : -1;
+        public float CastingRemaining => IsCasting ? Mathf.Max(0f, castingRemaining) : 0f;
+        public float CastingDuration => IsCasting ? Mathf.Max(0f, castingDuration) : 0f;
 
         public void Configure(
             IGameProgressService progressService,
@@ -60,9 +69,12 @@ namespace ProjectMT.Features.CommanderSkill
             feedback = gateway;
             effectRunner = gateway == null
                 ? null
-                : new CommanderSkillEffectRunner(new CommanderAreaDamageEffectHandler(gateway));
+                : new CommanderSkillEffectRunner(
+                    new CommanderAreaDamageEffectHandler(gateway),
+                    new CommanderUnitEffectHandler(gateway));
             executors.Clear();
             executors.Add(new CommanderAttackSkillExecutor());
+            executors.Add(new CommanderEffectSkillExecutor());
             configured = progress != null && catalog != null && world != null && castOrigin != null;
             if (progress != null)
             {
@@ -92,6 +104,7 @@ namespace ProjectMT.Features.CommanderSkill
             externalDamageMultiplier = null;
             configured = false;
             autoScanRemaining = 0f;
+            ClearPendingCast();
             for (var index = 0; index < cooldownRemaining.Length; index++)
             {
                 cooldownRemaining[index] = 0f;
@@ -103,6 +116,7 @@ namespace ProjectMT.Features.CommanderSkill
         {
             if (!configured || IsPaused || combat == null || !combat.IsReady ||
                 slotIndex < 0 || slotIndex >= CommanderSkillSlotRules.SlotCount ||
+                IsCasting ||
                 !progressView.IsSlotUnlocked(slotIndex) || cooldownRemaining[slotIndex] > 0f ||
                 !catalog.TryGet(progressView.GetEquippedSkillId(slotIndex), out var definition))
             {
@@ -115,22 +129,26 @@ namespace ProjectMT.Features.CommanderSkill
                 return false;
             }
 
-            var multiplier = GetEffectMultiplier(definition.SkillId, GetOwnedSkillLevel(definition.SkillId)) *
-                             Mathf.Max(0f, externalDamageMultiplier?.Invoke() ?? 1f);
-            var context = new CommanderSkillExecutionContext(
-                this,
-                combat,
-                feedback,
-                castOrigin,
-                multiplier);
-            if (!executor.TryExecute(definition, context))
+            if (definition.CastTime > 0f &&
+                combat.FindTarget(castOrigin.position, definition.Targeting) == null)
             {
-                return false; // 대상·전달 실패 시 쿨타임과 피드백을 시작하지 않음
+                return false; // 대상 없는 빈 캐스팅을 시작하지 않음. 발동 때도 대상은 다시 검증한다.
             }
 
-            cooldownDuration[slotIndex] = definition.Cooldown;
-            cooldownRemaining[slotIndex] = definition.Cooldown;
-            return true;
+            var multiplier = GetEffectMultiplier(definition.SkillId, GetOwnedSkillLevel(definition.SkillId)) *
+                             Mathf.Max(0f, externalDamageMultiplier?.Invoke() ?? 1f);
+            if (definition.CastTime > 0f)
+            {
+                castingSlot = slotIndex;
+                castingDefinition = definition;
+                castingDuration = definition.CastTime;
+                castingRemaining = definition.CastTime;
+                castingMultiplier = multiplier;
+                PlayCastingFeedback(definition, castOrigin.position, castOrigin.rotation);
+                return true;
+            }
+
+            return TryActivate(slotIndex, definition, executor, multiplier);
         }
 
         public float GetCooldownRemaining(int slotIndex)
@@ -147,23 +165,27 @@ namespace ProjectMT.Features.CommanderSkill
                 : 0f;
         }
 
-        internal void ResolveImpact(
+        internal int ResolveImpact(
             CommanderSkillDefinition definition,
-            Vector3 position,
-            float damageMultiplier)
+            CommanderSkillImpactContext impact,
+            float effectMultiplier)
         {
             if (!configured || definition == null)
             {
-                return;
+                return 0;
             }
 
-            effectRunner?.Apply(definition, position, damageMultiplier);
+            var appliedCount = effectRunner?.Apply(definition, impact, effectMultiplier) ?? 0;
             PlayFeedback(
                 definition.ImpactVfxPrefab,
                 definition.ImpactVfxLifetime,
                 definition.ImpactSfx,
-                position,
-                Quaternion.identity);
+                impact.Position,
+                Quaternion.LookRotation(impact.Forward, Vector3.up),
+                definition.ImpactVfxLocalOffset,
+                definition.ImpactVfxLocalEuler,
+                definition.ImpactVfxScale);
+            return appliedCount;
         }
 
         internal void ReturnProjectile(GameObject projectile)
@@ -186,7 +208,31 @@ namespace ProjectMT.Features.CommanderSkill
                 definition.CastVfxLifetime,
                 definition.CastSfx,
                 position,
-                rotation);
+                rotation,
+                definition.CastVfxLocalOffset,
+                definition.CastVfxLocalEuler,
+                definition.CastVfxScale);
+        }
+
+        internal void PlayCastingFeedback(
+            CommanderSkillDefinition definition,
+            Vector3 position,
+            Quaternion rotation)
+        {
+            if (definition == null)
+            {
+                return;
+            }
+
+            PlayFeedback(
+                definition.CastingVfxPrefab,
+                definition.CastingVfxLifetime,
+                definition.CastingSfx,
+                position,
+                rotation,
+                definition.CastingVfxLocalOffset,
+                definition.CastingVfxLocalEuler,
+                definition.CastingVfxScale);
         }
 
         private void Update()
@@ -200,6 +246,16 @@ namespace ProjectMT.Features.CommanderSkill
             for (var index = 0; index < cooldownRemaining.Length; index++)
             {
                 cooldownRemaining[index] = Mathf.Max(0f, cooldownRemaining[index] - deltaTime);
+            }
+
+            if (TickPendingCast(deltaTime))
+            {
+                return;
+            }
+
+            if (IsCasting)
+            {
+                return;
             }
 
             if (!progressView.AutoUseEnabled)
@@ -260,22 +316,91 @@ namespace ProjectMT.Features.CommanderSkill
             return null;
         }
 
+        private bool TryActivate(
+            int slotIndex,
+            CommanderSkillDefinition definition,
+            ICommanderSkillExecutor executor,
+            float multiplier)
+        {
+            var context = new CommanderSkillExecutionContext(
+                this,
+                combat,
+                feedback,
+                castOrigin,
+                multiplier);
+            if (executor == null || !executor.TryExecute(definition, context))
+            {
+                return false; // 대상·전달 실패 시 쿨타임과 피드백을 시작하지 않음
+            }
+
+            cooldownDuration[slotIndex] = definition.Cooldown;
+            cooldownRemaining[slotIndex] = definition.Cooldown;
+            return true;
+        }
+
+        private bool TickPendingCast(float deltaTime)
+        {
+            if (!IsCasting)
+            {
+                return false;
+            }
+
+            castingRemaining = Mathf.Max(0f, castingRemaining - Mathf.Max(0f, deltaTime));
+            if (castingRemaining > 0f)
+            {
+                return false;
+            }
+
+            var slotIndex = castingSlot;
+            var definition = castingDefinition;
+            var multiplier = castingMultiplier;
+            ClearPendingCast();
+
+            if (slotIndex < 0 || slotIndex >= CommanderSkillSlotRules.SlotCount ||
+                definition == null || catalog == null ||
+                !catalog.TryGet(progressView.GetEquippedSkillId(slotIndex), out var current) ||
+                current != definition)
+            {
+                return true;
+            }
+
+            TryActivate(slotIndex, definition, FindExecutor(definition), multiplier);
+            return true;
+        }
+
+        private void ClearPendingCast()
+        {
+            castingSlot = -1;
+            castingDefinition = null;
+            castingRemaining = 0f;
+            castingDuration = 0f;
+            castingMultiplier = 0f;
+        }
+
         private void PlayFeedback(
             GameObject vfxPrefab,
             float lifetime,
             ProjectMT.Shared.Audio.SfxCue sfx,
             Vector3 position,
-            Quaternion rotation)
+            Quaternion rotation,
+            Vector3 localOffset,
+            Vector3 localEuler,
+            float scale)
         {
-            feedback?.PlaySfx(sfx, position);
+            var resolvedPosition = position + rotation * localOffset;
+            var resolvedRotation = rotation * Quaternion.Euler(localEuler);
+            feedback?.PlaySfx(sfx, resolvedPosition);
             if (vfxPrefab == null || feedback == null)
             {
                 return;
             }
 
-            var instance = feedback.Rent(vfxPrefab, position, rotation);
+            var instance = feedback.Rent(vfxPrefab, resolvedPosition, resolvedRotation);
             if (instance != null)
             {
+                MonsterBasicAttackVfxPlayback.ApplyInstanceScale(
+                    instance,
+                    vfxPrefab.transform.localScale * Mathf.Max(0.01f, scale));
                 StartCoroutine(ReturnFeedbackAfter(instance, lifetime));
             }
         }

@@ -58,26 +58,26 @@ MonoBehaviour:
       endPolicy: 4
       feedback:
         sfx: {fileID: 0}
-        vfxPrefab: {fileID: 0}
-        vfxLifetime: 1
+        vfxPrefab: {fileID: 366189514204278032, guid: f08eb3200cf1ce549bb1ec8831578ad6, type: 3}
+        vfxLifetime: 4
         localPosition: {x: 0, y: 0, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
         scale: 1
       useDuration: 0
       duration: 1
     - slotId: energy_apply
-      timing: 8
-      anchor: 7
-      multiplicity: 0
+      timing: 11
+      anchor: 5
+      multiplicity: 2
       attachment: 0
       endPolicy: 4
       feedback:
         sfx: {fileID: 0}
-        vfxPrefab: {fileID: 0}
-        vfxLifetime: 1
-        localPosition: {x: 0, y: 0, z: 0}
+        vfxPrefab: {fileID: 6741700204113233721, guid: 064c0a104da1e3b409b59133512c7ae4, type: 3}
+        vfxLifetime: 2
+        localPosition: {x: 0, y: 0.21400952, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
-        scale: 1
+        scale: 0.3
       useDuration: 0
       duration: 1
   - groupId: group_02
@@ -98,9 +98,9 @@ MonoBehaviour:
       useDuration: 0
       duration: 1
     - slotId: carry_apply
-      timing: 8
-      anchor: 7
-      multiplicity: 0
+      timing: 11
+      anchor: 5
+      multiplicity: 2
       attachment: 0
       endPolicy: 4
       feedback:
@@ -112,5 +112,5 @@ MonoBehaviour:
         scale: 1
       useDuration: 0
       duration: 1
-  commitNormalizedTime: 0.5
+  commitNormalizedTime: 0.25
   mythicExclusive: 0

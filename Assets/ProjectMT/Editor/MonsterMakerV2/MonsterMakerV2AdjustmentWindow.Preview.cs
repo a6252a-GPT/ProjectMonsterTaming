@@ -636,6 +636,9 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             foreach (var item in root.GetComponentsInChildren<MonoBehaviour>(true)) item.enabled = false;
             foreach (var item in root.GetComponentsInChildren<AudioSource>(true)) item.enabled = false;
             foreach (var item in root.GetComponentsInChildren<Camera>(true)) item.enabled = false;
+            MonsterBasicAttackVfxPlayback.ApplyBrightnessScale(
+                root,
+                MonsterBasicAttackVfxPlayback.DefaultMainBattleBrightnessScale);
         }
 
         private static Bounds CalculateModelBounds(GameObject model)

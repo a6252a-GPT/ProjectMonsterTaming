@@ -785,11 +785,20 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private static MonsterActivePresentationSlot[] CreateEffectDefaultSlots()
         {
             var caster = new MonsterActivePresentationSlot();
-            caster.EditorConfigure("caster_vfx", "시전자 VFX", MonsterActivePresentationEvent.Launch,
-                MonsterActivePresentationAnchor.CasterRoot, "스킬을 발동한 몬스터에게 재생합니다.");
+            caster.EditorConfigure(
+                "cast_start",
+                "시전자 발동",
+                MonsterActivePresentationEvent.MotionStart,
+                MonsterActivePresentationAnchor.CasterRoot,
+                playbackEndPolicy: MonsterActivePresentationEndPolicy.ParticleDuration);
             var target = new MonsterActivePresentationSlot();
-            target.EditorConfigure("target_vfx", "효과 대상 VFX", MonsterActivePresentationEvent.Impact,
-                MonsterActivePresentationAnchor.TargetRoot, "효과를 받은 아군 또는 적에게 재생합니다.");
+            target.EditorConfigure(
+                "target_apply",
+                "대상 적용 · 1회",
+                MonsterActivePresentationEvent.EffectApplied,
+                MonsterActivePresentationAnchor.TargetRoot,
+                playbackMultiplicity: MonsterActivePresentationMultiplicity.PerTargetHit,
+                playbackEndPolicy: MonsterActivePresentationEndPolicy.ParticleDuration);
             return new[] { caster, target };
         }
 

@@ -136,7 +136,7 @@ namespace ProjectMT.Features.Expedition
             int randomSeed)
         {
             var boss = bossStage && wave == WaveCount && unitIndex == Mathf.Max(0, enemyCount - 1);
-            var ninjaInWave = GetNinjaCountForWave(wave);
+            var ninjaInWave = GetNinjaCountForWave(stage, wave);
             var eligibleSlots = Mathf.Max(0, enemyCount - (boss ? 1 : 0));
             ninjaInWave = Mathf.Min(ninjaInWave, eligibleSlots);
             if (!boss && unitIndex < ninjaInWave)
@@ -145,7 +145,7 @@ namespace ProjectMT.Features.Expedition
                     EnemyAppearanceGroup.Ninja,
                     ExpeditionEnemyRole.Flanker,
                     false,
-                    GetNinjaCountBeforeWave(wave) + unitIndex);
+                    GetNinjaCountBeforeWave(stage, wave) + unitIndex);
             }
 
             var candidates = spawnPool ?? Array.Empty<ExpeditionSpawnPoolEntry>();
@@ -187,30 +187,31 @@ namespace ProjectMT.Features.Expedition
                 boss);
         }
 
-        public int GetNinjaCountForWave(int wave)
+        public int GetNinjaCountForWave(int stage, int wave)
         {
-            if (NinjaCount <= 0 || WaveCount <= 0 || wave <= 0 || wave > WaveCount)
+            var ninjaCount = stage < ExpeditionStageRules.NinjaStartStage ? 0 : NinjaCount;
+            if (ninjaCount <= 0 || WaveCount <= 0 || wave <= 0 || wave > WaveCount)
             {
                 return 0;
             }
 
-            if (NinjaCount <= WaveCount)
+            if (ninjaCount <= WaveCount)
             {
-                if (NinjaCount == 1)
+                if (ninjaCount == 1)
                 {
                     return wave == (WaveCount + 1) / 2 ? 1 : 0;
                 }
 
-                if (NinjaCount == 2 && WaveCount == 3)
+                if (ninjaCount == 2 && WaveCount == 3)
                 {
                     return wave == 1 || wave == 3 ? 1 : 0;
                 }
 
-                return wave <= NinjaCount ? 1 : 0;
+                return wave <= ninjaCount ? 1 : 0;
             }
 
-            var count = NinjaCount / WaveCount;
-            var remainder = NinjaCount % WaveCount;
+            var count = ninjaCount / WaveCount;
+            var remainder = ninjaCount % WaveCount;
             if (remainder > 0 && wave > WaveCount - remainder)
             {
                 count++;
@@ -219,12 +220,12 @@ namespace ProjectMT.Features.Expedition
             return count;
         }
 
-        private int GetNinjaCountBeforeWave(int wave)
+        private int GetNinjaCountBeforeWave(int stage, int wave)
         {
             var count = 0;
             for (var previous = 1; previous < wave; previous++)
             {
-                count += GetNinjaCountForWave(previous);
+                count += GetNinjaCountForWave(stage, previous);
             }
 
             return count;

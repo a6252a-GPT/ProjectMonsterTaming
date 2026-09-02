@@ -55,24 +55,8 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   basicAttackVfxBindings:
-  - attackId: BA_M_05
-    slotId: dash_exit
-    motionId: attack01
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_M_05
-    slotId: dash_exit
+  - attackId: BA_R_03
+    slotId: launch
     motionId: attack02
     state: 0
     prefab: {fileID: 0}
@@ -87,72 +71,24 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
-  - attackId: BA_M_05
-    slotId: dash_enter
-    motionId: attack01
-    state: 0
-    prefab: {fileID: 0}
+  - attackId: BA_R_03
+    slotId: projectile
+    motionId: 
+    state: 1
+    prefab: {fileID: 1303854408863791526, guid: 2fe89b78bec91494e9717703dd1d5f47, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
     sfx: {fileID: 0}
-    lifetime: 1
+    lifetime: 3
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: -0.28183272, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_M_05
-    slotId: dash_enter
-    motionId: attack02
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_M_05
-    slotId: dash_trail
-    motionId: attack01
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_M_05
-    slotId: dash_trail
-    motionId: attack02
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_M_05
-    slotId: hit
+    scale: 0.6
+  - attackId: BA_R_03
+    slotId: contact
     motionId: 
     state: 0
     prefab: {fileID: 0}
@@ -165,5 +101,21 @@ MonoBehaviour:
     playbackSpeed: 1
     eventTimingOffset: 0
     localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_R_03
+    slotId: area_explosion
+    motionId: 
+    state: 1
+    prefab: {fileID: 9209179269161859635, guid: 137fe4567dda9e2458af4a82b69022e9, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: -0.27416474, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1

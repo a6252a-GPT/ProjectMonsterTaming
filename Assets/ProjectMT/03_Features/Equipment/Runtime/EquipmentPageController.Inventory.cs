@@ -340,13 +340,17 @@ namespace ProjectMT.Features.Equipment
                 OriginalIndex = index,
                 PowerDelta = EquipmentUpgradeEvaluator.EvaluatePowerDelta(item)
             });
+            // 표시 순서는 "장착 가능 우선" 다음에 사용자가 선택한 등급 순서를 가장 먼저 적용한다.
+            // 이전에는 전투력 차이가 등급보다 먼저 비교되어, 등급 높은순을 골라도 낮은 등급 장비가
+            // 위에 표시될 수 있었다.
             var ordered = evaluated
-                .OrderByDescending(entry => entry.PowerDelta > 0)
-                .ThenByDescending(entry => entry.PowerDelta);
+                .OrderByDescending(entry => entry.PowerDelta > 0);
             ordered = sortGradeDescending
                 ? ordered.ThenByDescending(entry => (int)entry.Item.Grade)
                 : ordered.ThenBy(entry => (int)entry.Item.Grade);
             var list = ordered
+                // 같은 장착 가능 여부·등급 안에서만 더 높은 전투력 상승 장비를 먼저 보여준다.
+                .ThenByDescending(entry => entry.PowerDelta)
                 .ThenBy(entry => entry.Item.Part)
                 .ThenBy(entry => entry.OriginalIndex)
                 .Select(entry => entry.Item)

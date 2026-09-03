@@ -91,7 +91,8 @@ namespace ProjectMT.Features.Equipment
         }
 
         // 등급에 맞는 프레임 템플릿을 복제해서 normalArea 밑에 끼워 넣는다.
-        // (이미 올바른 등급 프레임이 끼워져 있으면 아무 것도 하지 않는다.)
+        // 장비 획득처럼 목록이 같은 프레임에 여러 번 갱신될 수 있으므로, 이전 프레임은 Destroy 예약만
+        // 하지 않고 즉시 숨긴다. 그래야 이전 등급 테두리가 새 테두리 위에 잠깐 남지 않는다.
         private void ApplyFrameVariant(Transform normalArea, EquipmentGrade grade)
         {
             if (normalArea == null || !FrameVariantSuffixByGrade.TryGetValue(grade, out var suffix))
@@ -100,20 +101,33 @@ namespace ProjectMT.Features.Equipment
             }
 
             var desiredName = FrameVariantPrefix + suffix;
-            var current = normalArea.childCount > 0 ? normalArea.GetChild(0) : null;
-            if (current != null && current.name == desiredName)
+            Transform desiredFrame = null;
+            for (var index = normalArea.childCount - 1; index >= 0; index--)
             {
-                return; // 이미 올바른 등급 프레임
+                var frame = normalArea.GetChild(index);
+                if (!frame.name.StartsWith(FrameVariantPrefix))
+                {
+                    continue;
+                }
+
+                if (desiredFrame == null && frame.name == desiredName && frame.gameObject.activeSelf)
+                {
+                    desiredFrame = frame;
+                    continue;
+                }
+
+                frame.gameObject.SetActive(false);
+                Destroy(frame.gameObject);
+            }
+
+            if (desiredFrame != null)
+            {
+                return; // 이미 올바른 등급 프레임 하나만 남아 있다.
             }
 
             if (!frameVariantTemplates.TryGetValue(suffix, out var template) || template == null)
             {
                 return;
-            }
-
-            if (current != null)
-            {
-                Destroy(current.gameObject);
             }
 
             var instance = Instantiate(template, normalArea);

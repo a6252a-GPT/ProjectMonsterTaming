@@ -199,7 +199,8 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private int foodRiotBestKills; // 식량 대소동 최고 처치
         [SerializeField] private int guardiansTowerBestKills; // 08.06 안건준 추가 - 수호자의 탑 최고 처치 (식량 대소동과 별도 집계)
         [SerializeField] private int guardiansTowerDifficultyLevel; // 08.07 안건준 추가 - 수호자의 탑 난이도(클리어할 때마다 1씩 증가, 적 수·건물 체력 스케일링에 사용)
-        [SerializeField] private bool castleRaidFirstClear; // 군단의 역습 첫 승리
+        [SerializeField] private bool castleRaidFirstClear; // v21 이하 군단의 역습 첫 승리 호환값
+        [SerializeField] private int castleRaidHighestClearedStage; // 군단의 역습 1~100 최고 클리어 단계
         [SerializeField] private CommanderProgressData commander = CommanderProgressData.CreateDefault(); // 군단장 성장값
         [SerializeField] private MonsterRosterData monsters = MonsterRosterData.CreateDefault(); // 보유·편성값
         [SerializeField] private MainBattleFormationData mainBattleFormation = MainBattleFormationData.CreateDefault(); // 본부대 시작 위치
@@ -242,7 +243,8 @@ namespace ProjectMT.Shared.GameData
         public int FoodRiotBestKills => foodRiotBestKills;
         public int GuardiansTowerBestKills => guardiansTowerBestKills; // 08.06 안건준 추가
         public int GuardiansTowerDifficultyLevel => guardiansTowerDifficultyLevel; // 08.07 안건준 추가
-        public bool CastleRaidFirstClear => castleRaidFirstClear;
+        public bool CastleRaidFirstClear => castleRaidFirstClear || castleRaidHighestClearedStage > 0;
+        public int CastleRaidHighestClearedStage => castleRaidHighestClearedStage;
         public CommanderProgressView Commander => new CommanderProgressView(commander);
         public MonsterRosterView Monsters => monsters?.CreateView() ?? MonsterRosterData.CreateDefault().CreateView();
         public MainBattleFormationView MainBattleFormation =>
@@ -299,6 +301,7 @@ namespace ProjectMT.Shared.GameData
                 guardiansTowerBestKills = guardiansTowerBestKills, // 08.06 안건준 추가
                 guardiansTowerDifficultyLevel = guardiansTowerDifficultyLevel, // 08.07 안건준 추가
                 castleRaidFirstClear = castleRaidFirstClear,
+                castleRaidHighestClearedStage = castleRaidHighestClearedStage,
                 commander = commander?.Clone() ?? CommanderProgressData.CreateDefault(),
                 monsters = monsters?.Clone() ?? MonsterRosterData.CreateDefault(),
                 mainBattleFormation = mainBattleFormation?.Clone() ?? MainBattleFormationData.CreateDefault(),
@@ -353,6 +356,7 @@ namespace ProjectMT.Shared.GameData
             GuardiansTowerBestKills = data.GuardiansTowerBestKills; // 08.06 안건준 추가
             GuardiansTowerDifficultyLevel = data.GuardiansTowerDifficultyLevel; // 08.07 안건준 추가
             CastleRaidFirstClear = data.CastleRaidFirstClear;
+            CastleRaidHighestClearedStage = data.CastleRaidHighestClearedStage;
             Commander = data.Commander;
             Monsters = data.Monsters;
             MainBattleFormation = data.MainBattleFormation;
@@ -385,6 +389,7 @@ namespace ProjectMT.Shared.GameData
         public int GuardiansTowerBestKills { get; } // 08.06 안건준 추가
         public int GuardiansTowerDifficultyLevel { get; } // 08.07 안건준 추가
         public bool CastleRaidFirstClear { get; }
+        public int CastleRaidHighestClearedStage { get; }
         public CommanderProgressView Commander { get; }
         public MonsterRosterView Monsters { get; }
         public MainBattleFormationView MainBattleFormation { get; }
@@ -442,6 +447,7 @@ namespace ProjectMT.Shared.GameData
         internal int GuardiansTowerBestKills { get; private set; } // 08.06 안건준 추가
         internal bool IncrementGuardiansTowerDifficulty { get; private set; } // 08.07 안건준 추가
         internal bool MarkCastleRaidCleared { get; private set; }
+        internal int CastleRaidClearedStage { get; private set; }
         internal bool HasAcquireMonster { get; private set; }
         internal string AcquireMonsterId { get; private set; }
         internal bool HasFormationChange { get; private set; }

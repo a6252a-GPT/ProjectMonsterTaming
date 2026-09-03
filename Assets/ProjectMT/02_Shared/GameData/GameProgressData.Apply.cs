@@ -50,10 +50,13 @@ namespace ProjectMT.Shared.GameData
                 return false;
             }
 
-            if (change.MarkCastleRaidCleared && castleRaidFirstClear &&
-                change.Rewards != null && !change.Rewards.IsEmpty)
+            if (change.MarkCastleRaidCleared &&
+                (!CastleRaidStageRules.IsValidStage(change.CastleRaidClearedStage) ||
+                 change.CastleRaidClearedStage > castleRaidHighestClearedStage + 1 ||
+                 (change.CastleRaidClearedStage <= castleRaidHighestClearedStage &&
+                  change.Rewards != null && !change.Rewards.IsEmpty)))
             {
-                return false; // 최초 보상 중복 지급 차단
+                return false; // 건너뛴 단계 진행과 최초 보상 중복 지급 차단
             }
 
             if (change.HasGrowthDungeonDailyKeyRefresh &&
@@ -254,6 +257,9 @@ namespace ProjectMT.Shared.GameData
             if (change.MarkCastleRaidCleared)
             {
                 castleRaidFirstClear = true;
+                castleRaidHighestClearedStage = Math.Max(
+                    castleRaidHighestClearedStage,
+                    change.CastleRaidClearedStage);
             }
 
             if (change.CommanderExperience > 0L)

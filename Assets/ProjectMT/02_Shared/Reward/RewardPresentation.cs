@@ -18,18 +18,21 @@ namespace ProjectMT.Shared.Reward
             RewardPresentationKind kind,
             string label,
             long amount,
-            string itemId = null)
+            string itemId = null,
+            Sprite icon = null)
         {
             Kind = kind;
             Label = label ?? string.Empty;
             Amount = Math.Max(0L, amount);
             ItemId = itemId ?? string.Empty;
+            Icon = icon;
         }
 
         public RewardPresentationKind Kind { get; }
         public string Label { get; }
         public long Amount { get; }
         public string ItemId { get; }
+        public Sprite Icon { get; }
         public bool IsValid => Amount > 0L;
     }
 
@@ -60,10 +63,15 @@ namespace ProjectMT.Shared.Reward
         public IReadOnlyList<RewardPresentationItem> Items => items;
         public bool IsEmpty => items.Length == 0;
 
-        public static RewardPresentationRequest Gold(long amount)
+        public static RewardPresentationRequest Gold(long amount, ItemCatalog itemCatalog = null)
         {
             return new RewardPresentationRequest(
-                new RewardPresentationItem(RewardPresentationKind.Gold, "골드", amount));
+                new RewardPresentationItem(
+                    RewardPresentationKind.Gold,
+                    "골드",
+                    amount,
+                    ItemIds.Gold,
+                    ResolveItemIcon(itemCatalog, ItemIds.Gold)));
         }
 
         public static RewardPresentationRequest FromBundle(
@@ -77,7 +85,12 @@ namespace ProjectMT.Shared.Reward
 
             var rewardItems = new List<RewardPresentationItem>(2 + bundle.Items.Count)
             {
-                new RewardPresentationItem(RewardPresentationKind.Gold, "골드", bundle.Gold),
+                new RewardPresentationItem(
+                    RewardPresentationKind.Gold,
+                    "골드",
+                    bundle.Gold,
+                    ItemIds.Gold,
+                    ResolveItemIcon(itemCatalog, ItemIds.Gold)),
                 new RewardPresentationItem(
                     RewardPresentationKind.CommanderExperience,
                     "군단장 경험치",
@@ -91,18 +104,30 @@ namespace ProjectMT.Shared.Reward
                     continue;
                 }
 
-                var label = itemCatalog != null &&
-                            itemCatalog.TryGet(itemReward.ItemId, out var definition)
-                    ? definition.DisplayName
-                    : ItemIds.GetFallbackDisplayName(itemReward.ItemId);
+                var label = ItemIds.GetFallbackDisplayName(itemReward.ItemId);
+                Sprite icon = null;
+                if (itemCatalog != null && itemCatalog.TryGet(itemReward.ItemId, out var definition))
+                {
+                    label = definition.DisplayName;
+                    icon = definition.Icon;
+                }
+
                 rewardItems.Add(new RewardPresentationItem(
                     RewardPresentationKind.Item,
                     label,
                     itemReward.Amount,
-                    itemReward.ItemId));
+                    itemReward.ItemId,
+                    icon));
             }
 
             return new RewardPresentationRequest(rewardItems.ToArray());
+        }
+
+        private static Sprite ResolveItemIcon(ItemCatalog itemCatalog, string itemId)
+        {
+            return itemCatalog != null && itemCatalog.TryGet(itemId, out var definition)
+                ? definition.Icon
+                : null;
         }
     }
 

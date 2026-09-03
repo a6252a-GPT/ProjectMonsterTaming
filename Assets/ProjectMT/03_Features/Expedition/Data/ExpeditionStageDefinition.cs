@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectMT.Features.WorldDrops;
 using ProjectMT.Shared.Items;
+using ProjectMT.Shared.Unit;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace ProjectMT.Features.Expedition
 {
@@ -43,10 +46,25 @@ namespace ProjectMT.Features.Expedition
         [SerializeField, Min(0)] private int extraEnemyEveryStages;
         [SerializeField, Min(0f)] private float spawnDelaySeconds;
         [SerializeField] private float formationForwardOffset;
+        [SerializeField, Range(1f, 1000f)] private float healthPercent = 100f;
+        [SerializeField, Range(1f, 1000f)] private float damagePercent = 100f;
+        [SerializeField, Range(0f, 1000f)] private float defensePercent = 100f;
+        [SerializeField] private ExpeditionSpawnPoolEntry[] spawnPool = Array.Empty<ExpeditionSpawnPoolEntry>();
         [SerializeField] private ExpeditionDropDefinition[] drops = Array.Empty<ExpeditionDropDefinition>();
 
+        public int BaseEnemyCount => Mathf.Max(1, baseEnemyCount);
+        public int ExtraEnemyEveryStages => Mathf.Max(0, extraEnemyEveryStages);
         public float SpawnDelaySeconds => Mathf.Max(0f, spawnDelaySeconds);
         public float FormationForwardOffset => formationForwardOffset;
+        public float HealthPercent => Mathf.Clamp(healthPercent, 1f, 1000f);
+        public float DamagePercent => Mathf.Clamp(damagePercent, 1f, 1000f);
+        public float DefensePercent => Mathf.Clamp(defensePercent, 0f, 1000f);
+        public float HealthMultiplier => HealthPercent * 0.01f;
+        public float DamageMultiplier => DamagePercent * 0.01f;
+        public float DefenseMultiplier => DefensePercent * 0.01f;
+        public IReadOnlyList<ExpeditionSpawnPoolEntry> SpawnPool =>
+            spawnPool ?? Array.Empty<ExpeditionSpawnPoolEntry>();
+        public bool HasSpawnPool => spawnPool != null && spawnPool.Any(entry => entry != null);
         public IReadOnlyList<ExpeditionDropDefinition> Drops => drops ?? Array.Empty<ExpeditionDropDefinition>();
 
         public int ResolveEnemyCount(int stage, int bandMinimumStage)
@@ -58,6 +76,43 @@ namespace ProjectMT.Features.Expedition
         }
 
 #if UNITY_EDITOR
+        public ExpeditionWaveDefinition EditorCopyWithBalance(
+            int enemyCount,
+            int growthInterval,
+            float delaySeconds,
+            float forwardOffset)
+        {
+            return EditorCopyWithBalance(
+                enemyCount, growthInterval, delaySeconds, forwardOffset,
+                HealthPercent, DamagePercent, DefensePercent, SpawnPool);
+        }
+
+        public ExpeditionWaveDefinition EditorCopyWithBalance(
+            int enemyCount,
+            int growthInterval,
+            float delaySeconds,
+            float forwardOffset,
+            float waveHealthPercent,
+            float waveDamagePercent,
+            float waveDefensePercent,
+            IEnumerable<ExpeditionSpawnPoolEntry> waveSpawnPool)
+        {
+            return new ExpeditionWaveDefinition
+            {
+                baseEnemyCount = Mathf.Max(1, enemyCount),
+                extraEnemyEveryStages = Mathf.Max(0, growthInterval),
+                spawnDelaySeconds = Mathf.Max(0f, delaySeconds),
+                formationForwardOffset = forwardOffset,
+                healthPercent = Mathf.Clamp(waveHealthPercent, 1f, 1000f),
+                damagePercent = Mathf.Clamp(waveDamagePercent, 1f, 1000f),
+                defensePercent = Mathf.Clamp(waveDefensePercent, 0f, 1000f),
+                spawnPool = waveSpawnPool?.Where(entry => entry != null).ToArray() ??
+                    Array.Empty<ExpeditionSpawnPoolEntry>(),
+                drops = drops == null ? Array.Empty<ExpeditionDropDefinition>() :
+                    (ExpeditionDropDefinition[])drops.Clone()
+            };
+        }
+
         public static ExpeditionWaveDefinition EditorCreate(
             int enemyCount,
             int growthInterval,
@@ -71,6 +126,10 @@ namespace ProjectMT.Features.Expedition
                 extraEnemyEveryStages = Mathf.Max(0, growthInterval),
                 spawnDelaySeconds = Mathf.Max(0f, delaySeconds),
                 formationForwardOffset = forwardOffset,
+                healthPercent = 100f,
+                damagePercent = 100f,
+                defensePercent = 100f,
+                spawnPool = Array.Empty<ExpeditionSpawnPoolEntry>(),
                 drops = dropTable ?? Array.Empty<ExpeditionDropDefinition>()
             };
         }
@@ -87,14 +146,14 @@ namespace ProjectMT.Features.Expedition
         [SerializeField] private EnemyAppearanceGroup rangedAppearance = EnemyAppearanceGroup.Peasant;
         [SerializeField, Min(0)] private int rangedEveryUnits;
         [SerializeField] private ExpeditionSpawnPoolEntry[] spawnPool = Array.Empty<ExpeditionSpawnPoolEntry>();
-        [SerializeField, Range(0, 4)] private int ninjaCount;
+        [SerializeField, FormerlySerializedAs("ninjaCount"), HideInInspector] private int legacyNinjaCount;
         [SerializeField] private ExpeditionWaveDefinition[] waves = Array.Empty<ExpeditionWaveDefinition>();
 
         public string DefinitionId => definitionId?.Trim() ?? string.Empty;
         public int MinimumStage => Mathf.Max(1, minimumStage);
         public int MaximumStage => Mathf.Max(0, maximumStage);
         public int WaveCount => waves?.Length ?? 0;
-        public int NinjaCount => Mathf.Clamp(ninjaCount, 0, 4);
+        public int LegacyNinjaCount => Mathf.Clamp(legacyNinjaCount, 0, 4);
         public IReadOnlyList<ExpeditionSpawnPoolEntry> SpawnPool =>
             spawnPool ?? Array.Empty<ExpeditionSpawnPoolEntry>();
 
@@ -136,47 +195,50 @@ namespace ProjectMT.Features.Expedition
             int randomSeed)
         {
             var boss = bossStage && wave == WaveCount && unitIndex == Mathf.Max(0, enemyCount - 1);
-            var ninjaInWave = GetNinjaCountForWave(stage, wave);
-            var eligibleSlots = Mathf.Max(0, enemyCount - (boss ? 1 : 0));
-            ninjaInWave = Mathf.Min(ninjaInWave, eligibleSlots);
-            if (!boss && unitIndex < ninjaInWave)
+            TryGetWave(wave, out var waveDefinition);
+            var candidates = waveDefinition?.HasSpawnPool == true
+                ? waveDefinition.SpawnPool
+                : SpawnPool;
+            var waveHealthMultiplier = waveDefinition?.HealthMultiplier ?? 1f;
+            var waveDamageMultiplier = waveDefinition?.DamageMultiplier ?? 1f;
+            var waveDefenseMultiplier = waveDefinition?.DefenseMultiplier ?? 1f;
+            var totalPercentage = 0f;
+            for (var index = 0; index < candidates.Count; index++)
             {
-                return new ExpeditionEnemySpawn(
-                    EnemyAppearanceGroup.Ninja,
-                    ExpeditionEnemyRole.Flanker,
-                    false,
-                    GetNinjaCountBeforeWave(stage, wave) + unitIndex);
+                var candidate = candidates[index];
+                if (candidate != null && candidate.Percentage > 0f &&
+                    (!boss || candidate.Role != ExpeditionEnemyRole.Flanker))
+                    totalPercentage += candidate.Percentage;
             }
 
-            var candidates = spawnPool ?? Array.Empty<ExpeditionSpawnPoolEntry>();
-            var totalWeight = 0;
-            for (var index = 0; index < candidates.Length; index++)
-            {
-                if (candidates[index] != null && candidates[index].Role != ExpeditionEnemyRole.Flanker)
-                {
-                    totalWeight += candidates[index].Weight;
-                }
-            }
-
-            if (totalWeight > 0)
+            if (totalPercentage > 0f)
             {
                 var fallbackSeed = stage * 397 ^ wave * 31 ^ unitIndex;
                 var random = new System.Random(randomSeed == 0 ? fallbackSeed : randomSeed);
-                var roll = random.Next(totalWeight);
-                for (var index = 0; index < candidates.Length; index++)
+                var roll = (float)random.NextDouble() * totalPercentage;
+                for (var index = 0; index < candidates.Count; index++)
                 {
                     var candidate = candidates[index];
-                    if (candidate == null || candidate.Role == ExpeditionEnemyRole.Flanker)
+                    if (candidate == null || candidate.Percentage <= 0f ||
+                        (boss && candidate.Role == ExpeditionEnemyRole.Flanker))
                     {
                         continue;
                     }
 
-                    if (roll < candidate.Weight)
+                    if (roll < candidate.Percentage)
                     {
-                        return new ExpeditionEnemySpawn(candidate.Appearance, candidate.Role, boss);
+                        return new ExpeditionEnemySpawn(
+                            candidate.Appearance,
+                            candidate.Role,
+                            boss,
+                            candidate.Role == ExpeditionEnemyRole.Flanker ? unitIndex : -1,
+                            candidate.ResolveRarity(random, boss),
+                            waveHealthMultiplier,
+                            waveDamageMultiplier,
+                            waveDefenseMultiplier);
                     }
 
-                    roll -= candidate.Weight;
+                    roll -= candidate.Percentage;
                 }
             }
 
@@ -184,54 +246,28 @@ namespace ProjectMT.Features.Expedition
             return new ExpeditionEnemySpawn(
                 ResolveAppearance(ranged),
                 ranged ? ExpeditionEnemyRole.Ranged : ExpeditionEnemyRole.Melee,
-                boss);
-        }
-
-        public int GetNinjaCountForWave(int stage, int wave)
-        {
-            var ninjaCount = stage < ExpeditionStageRules.NinjaStartStage ? 0 : NinjaCount;
-            if (ninjaCount <= 0 || WaveCount <= 0 || wave <= 0 || wave > WaveCount)
-            {
-                return 0;
-            }
-
-            if (ninjaCount <= WaveCount)
-            {
-                if (ninjaCount == 1)
-                {
-                    return wave == (WaveCount + 1) / 2 ? 1 : 0;
-                }
-
-                if (ninjaCount == 2 && WaveCount == 3)
-                {
-                    return wave == 1 || wave == 3 ? 1 : 0;
-                }
-
-                return wave <= ninjaCount ? 1 : 0;
-            }
-
-            var count = ninjaCount / WaveCount;
-            var remainder = ninjaCount % WaveCount;
-            if (remainder > 0 && wave > WaveCount - remainder)
-            {
-                count++;
-            }
-
-            return count;
-        }
-
-        private int GetNinjaCountBeforeWave(int stage, int wave)
-        {
-            var count = 0;
-            for (var previous = 1; previous < wave; previous++)
-            {
-                count += GetNinjaCountForWave(stage, previous);
-            }
-
-            return count;
+                boss,
+                -1,
+                MonsterRarity.Common,
+                waveHealthMultiplier,
+                waveDamageMultiplier,
+                waveDefenseMultiplier);
         }
 
 #if UNITY_EDITOR
+        public void EditorConfigureWaveTable(params ExpeditionWaveDefinition[] waveDefinitions)
+        {
+            waves = waveDefinitions == null || waveDefinitions.Length == 0
+                ? new[] { ExpeditionWaveDefinition.EditorCreate(8, 0, 0f, 0f) }
+                : waveDefinitions;
+        }
+
+        public void EditorConfigureSpawnPool(params ExpeditionSpawnPoolEntry[] entries)
+        {
+            spawnPool = entries ?? Array.Empty<ExpeditionSpawnPoolEntry>();
+            legacyNinjaCount = 0;
+        }
+
         public static ExpeditionStageDefinition EditorCreate(
             string id,
             int minimum,
@@ -257,7 +293,6 @@ namespace ProjectMT.Features.Expedition
             string id,
             int minimum,
             int maximum,
-            int ninjas,
             ExpeditionSpawnPoolEntry[] pool,
             params ExpeditionWaveDefinition[] waveDefinitions)
         {
@@ -267,9 +302,21 @@ namespace ProjectMT.Features.Expedition
                 minimumStage = Mathf.Max(1, minimum),
                 maximumStage = Mathf.Max(0, maximum),
                 spawnPool = pool ?? Array.Empty<ExpeditionSpawnPoolEntry>(),
-                ninjaCount = Mathf.Clamp(ninjas, 0, 4),
                 waves = waveDefinitions ?? Array.Empty<ExpeditionWaveDefinition>()
             };
+        }
+
+        public static ExpeditionStageDefinition EditorCreate(
+            string id,
+            int minimum,
+            int maximum,
+            int legacyNinjas,
+            ExpeditionSpawnPoolEntry[] pool,
+            params ExpeditionWaveDefinition[] waveDefinitions)
+        {
+            var definition = EditorCreate(id, minimum, maximum, pool, waveDefinitions);
+            definition.legacyNinjaCount = Mathf.Clamp(legacyNinjas, 0, 4);
+            return definition;
         }
 #endif
     }

@@ -17,6 +17,10 @@ MonoBehaviour:
   rarity: 2
   portrait: {fileID: 21300000, guid: a79ffc6e63b656342b8678065edfd703, type: 3}
   skillLoadoutConfigured: 1
+  usePassiveSkill: 1
+  useActiveSkill: 0
+  splitSkillUsageConfigured: 1
+  skillUsageSchemaVersion: 1
   rarityPassiveSkill: {fileID: 11400000, guid: db1a9e83e78fdfb45ac51154908f5cac, type: 2}
   passiveTuning:
     initialized: 1
@@ -33,6 +37,22 @@ MonoBehaviour:
     radius: 0
     maxTargets: 1
   rarityActiveSkill: {fileID: 0}
+  activeAttackProfile: {fileID: 0}
+  activeEffectProfile: {fileID: 0}
+  activeSkillName: 
+  activeEnergyMaximum: 1000
+  activeSkillClip: {fileID: 0}
+  activeSkillPlaybackSpeed: 1
+  activeSkillCrossFadeDuration: 0.08
+  activeSkillCommitNormalizedTime: 0.25
+  activeStepMotionModeConfigured: 0
+  useCustomActiveStepMotions: 0
+  activeAttackStepTunings: []
+  activeAttackPresentations: []
+  activeEffectPresentations: []
+  activeAttackAuthoringProfileId: 
+  activeEffectAuthoringProfileId: 
+  inactiveActiveAttackAuthoring: []
   productionMemo: "\uBAAC\uC2A4\uD130 \uB9AC\uC6CC\uD06C 2026-08-26 / Cute Phoenix_A
     / Phoenix \uC804\uC6A9 \uC560\uB2C8\uBA54\uC774\uC158 / BA_R_05 \uC720\uC9C0"
   vendorPrefab: {fileID: 8215003284720749345, guid: de547c06f495e104f9c9602a9786b36a, type: 3}
@@ -52,9 +72,9 @@ MonoBehaviour:
   rigMode: 0
   previewScale: 1
   vfxScale: 1
-  maxHealth: 100
-  attackPower: 10
-  defense: 3
+  maxHealth: 128
+  attackPower: 14.5
+  defense: 5
   attackSpeed: 1
   moveSpeed: 2
   attackRange: 4.4
@@ -164,6 +184,7 @@ MonoBehaviour:
     attackRangeRate: 0
   spawnFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -172,6 +193,7 @@ MonoBehaviour:
     scale: 1
   hitFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -180,6 +202,7 @@ MonoBehaviour:
     scale: 1
   deathFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -188,6 +211,7 @@ MonoBehaviour:
     scale: 1
   specialFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1

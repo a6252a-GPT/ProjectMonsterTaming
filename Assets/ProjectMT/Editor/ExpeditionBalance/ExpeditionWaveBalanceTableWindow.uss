@@ -1,0 +1,289 @@
+.wave-root {
+    flex-grow: 1;
+    padding: 12px;
+    background-color: rgb(24, 27, 33);
+    color: rgb(222, 227, 234);
+}
+
+.wave-header {
+    height: 58px;
+    min-height: 58px;
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 14px;
+    padding-right: 14px;
+    background-color: rgb(31, 36, 44);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+.wave-title { font-size: 18px; -unity-font-style: bold; color: rgb(241, 245, 250); }
+.wave-subtitle { margin-top: 3px; font-size: 11px; color: rgb(151, 161, 176); }
+.wave-count {
+    padding: 5px 10px;
+    background-color: rgb(44, 52, 64);
+    color: rgb(167, 210, 255);
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    -unity-font-style: bold;
+}
+
+.wave-toolbar {
+    height: 40px;
+    min-height: 40px;
+    flex-shrink: 0;
+    margin-top: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgb(31, 35, 42);
+}
+.wave-toolbar > * { margin-right: 6px; }
+.wave-toolbar .unity-base-field { width: 205px; }
+.wave-toolbar .unity-base-field__label { min-width: 34px; width: 34px; color: rgb(170, 179, 191); }
+
+.wave-button {
+    height: 25px;
+    color: rgb(211, 218, 228);
+    background-color: rgb(50, 57, 68);
+    border-left-color: rgb(71, 81, 96);
+    border-right-color: rgb(71, 81, 96);
+    border-top-color: rgb(71, 81, 96);
+    border-bottom-color: rgb(71, 81, 96);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+}
+.wave-button:hover { background-color: rgb(62, 72, 87); }
+.wave-button--primary {
+    background-color: rgb(31, 104, 162);
+    border-left-color: rgb(59, 137, 199);
+    border-right-color: rgb(59, 137, 199);
+    border-top-color: rgb(59, 137, 199);
+    border-bottom-color: rgb(59, 137, 199);
+    color: white;
+    -unity-font-style: bold;
+}
+
+.wave-global-foldout {
+    margin-top: 5px;
+    flex-shrink: 0;
+    color: rgb(151, 161, 176);
+}
+
+.wave-global-card {
+    min-height: 72px;
+    margin-top: 2px;
+    padding: 6px 8px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    background-color: rgb(31, 36, 44);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgb(49, 58, 70);
+    border-right-color: rgb(49, 58, 70);
+    border-top-color: rgb(49, 58, 70);
+    border-bottom-color: rgb(49, 58, 70);
+}
+.wave-global-item { width: 147px; margin-right: 6px; margin-bottom: 4px; }
+.wave-global-item > .unity-label { font-size: 10px; color: rgb(161, 172, 186); }
+.wave-global-item .unity-base-field__input {
+    min-height: 23px;
+    background-color: rgb(20, 23, 28);
+    color: rgb(232, 237, 244);
+    -unity-text-align: middle-right;
+}
+
+.wave-formula {
+    min-height: 26px;
+    flex-shrink: 0;
+    margin-top: 4px;
+    padding: 5px 10px;
+    background-color: rgb(27, 45, 58);
+    color: rgb(160, 207, 235);
+    font-size: 11px;
+    white-space: normal;
+}
+
+.wave-composition-editor {
+    margin-top: 6px;
+    padding: 8px;
+    flex-shrink: 0;
+    background-color: rgb(29, 35, 43);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgb(57, 99, 130);
+    border-right-color: rgb(57, 99, 130);
+    border-top-color: rgb(57, 99, 130);
+    border-bottom-color: rgb(57, 99, 130);
+}
+.wave-composition-toolbar { height: 28px; flex-direction: row; align-items: center; }
+.wave-composition-toolbar > * { margin-right: 5px; }
+.wave-composition-title { width: 220px; color: rgb(174, 220, 251); -unity-font-style: bold; }
+.wave-exception-row { min-height: 29px; flex-direction: row; align-items: center; }
+.wave-exception-field { width: 145px; margin-right: 8px; }
+.wave-exception-field .unity-base-field__label { min-width: 55px; width: 55px; color: rgb(174, 184, 197); }
+.wave-exception-field .unity-base-field__input {
+    min-height: 23px;
+    background-color: rgb(19, 22, 27);
+    color: rgb(232, 237, 244);
+    -unity-text-align: middle-right;
+}
+.wave-internal-foldout { margin-top: 2px; margin-bottom: 3px; color: rgb(139, 150, 164); }
+.wave-composition-row { min-height: 28px; flex-direction: row; align-items: center; }
+.wave-composition-cell {
+    min-height: 26px;
+    flex-shrink: 0;
+    padding-left: 3px;
+    padding-right: 3px;
+    justify-content: center;
+    border-right-width: 1px;
+    border-right-color: rgb(48, 56, 67);
+}
+.wave-composition-cell > .unity-label { font-size: 10px; -unity-text-align: middle-center; }
+.wave-composition-cell .unity-base-field__input {
+    min-height: 23px;
+    background-color: rgb(19, 22, 27);
+    color: rgb(232, 237, 244);
+}
+.wave-composition-heading { color: rgb(180, 191, 205); -unity-font-style: bold; }
+.wave-composition-total {
+    height: 24px;
+    margin-top: 4px;
+    padding-right: 10px;
+    color: rgb(142, 218, 255);
+    -unity-text-align: middle-right;
+    -unity-font-style: bold;
+}
+.wc-appearance { width: 160px; }
+.wc-role { width: 90px; }
+.wc-percent { width: 90px; }
+.wc-rarity { width: 105px; }
+.wc-stats { width: 330px; }
+.wc-actions { width: 75px; }
+
+.wave-table-frame {
+    flex-grow: 1;
+    min-height: 0;
+    margin-top: 6px;
+    overflow: hidden;
+    background-color: rgb(20, 23, 28);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgb(51, 58, 69);
+    border-right-color: rgb(51, 58, 69);
+    border-top-color: rgb(51, 58, 69);
+    border-bottom-color: rgb(51, 58, 69);
+}
+.wave-table-content { min-width: 1306px; flex-shrink: 0; }
+.wave-table-scroll { flex-grow: 1; min-height: 0; }
+.wave-table-header, .wave-row { flex-direction: row; flex-shrink: 0; }
+.wave-table-header { height: 35px; background-color: rgb(43, 49, 59); }
+.wave-row {
+    min-height: 37px;
+    background-color: rgb(28, 32, 39);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(45, 51, 61);
+}
+.wave-row:hover { background-color: rgb(34, 40, 49); }
+.wave-row--dirty { background-color: rgb(45, 43, 30); }
+
+.wave-cell {
+    flex-shrink: 0;
+    min-height: 34px;
+    padding-left: 4px;
+    padding-right: 4px;
+    justify-content: center;
+    border-right-width: 1px;
+    border-right-color: rgb(47, 54, 64);
+}
+.wave-cell > .unity-label { font-size: 10px; white-space: normal; -unity-text-align: middle-center; }
+.wave-header-cell { background-color: rgb(43, 49, 59); }
+.wave-header-cell > .unity-label { color: rgb(194, 202, 214); -unity-font-style: bold; }
+.wave-derived { background-color: rgba(33, 91, 126, 0.16); color: rgb(143, 211, 255); }
+.wave-derived--accent { color: rgb(110, 224, 255); -unity-font-style: bold; }
+.wave-number-field .unity-base-field__input {
+    min-height: 24px;
+    padding-left: 3px;
+    padding-right: 3px;
+    background-color: rgb(19, 22, 27);
+    color: rgb(232, 237, 244);
+    -unity-text-align: middle-right;
+}
+.wave-inline { flex-grow: 1; flex-direction: row; align-items: center; }
+.wave-inline-count { width: 44px; flex-shrink: 0; margin-right: 4px; }
+.wave-inline-count .unity-base-field__input {
+    min-height: 24px;
+    padding-left: 2px;
+    padding-right: 2px;
+    background-color: rgb(19, 22, 27);
+    color: rgb(232, 237, 244);
+    -unity-text-align: middle-right;
+}
+.wave-invalid { background-color: rgba(145, 48, 38, 0.45); color: rgb(255, 148, 132); }
+.wave-mini-button {
+    min-width: 44px;
+    height: 22px;
+    margin-right: 3px;
+    font-size: 9px;
+    color: rgb(211, 218, 228);
+    background-color: rgb(50, 57, 68);
+}
+.wave-composition-button {
+    height: 27px;
+    flex-grow: 1;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    font-size: 9px;
+    white-space: nowrap;
+    color: rgb(178, 216, 240);
+    background-color: rgb(39, 56, 69);
+    border-left-color: rgb(66, 91, 109);
+    border-right-color: rgb(66, 91, 109);
+    border-top-color: rgb(66, 91, 109);
+    border-bottom-color: rgb(66, 91, 109);
+}
+.wave-composition-button:hover { background-color: rgb(48, 70, 87); }
+.wave-composition-button--selected { background-color: rgb(35, 91, 128); color: white; }
+.wave-composition-button--invalid { background-color: rgb(100, 50, 44); color: rgb(255, 177, 158); }
+
+.ww-stage { width: 58px; }
+.ww-small { width: 58px; }
+.ww-wave { width: 268px; }
+.ww-count { width: 60px; }
+.ww-composition { width: 100px; }
+.ww-percent { width: 72px; }
+.ww-timing { width: 67px; }
+.ww-total { width: 70px; }
+.ww-total-hp { width: 100px; }
+.ww-derived { width: 92px; }
+
+.wave-footer {
+    height: 29px;
+    min-height: 29px;
+    flex-shrink: 0;
+    margin-top: 5px;
+    padding-left: 8px;
+    padding-right: 8px;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgb(31, 35, 42);
+}
+.wave-dirty { width: 150px; color: rgb(139, 150, 164); -unity-font-style: bold; }
+.wave-dirty--active { color: rgb(255, 200, 90); }
+.wave-status { flex-grow: 1; color: rgb(137, 180, 213); }
+.wave-status--warning { color: rgb(255, 174, 91); }

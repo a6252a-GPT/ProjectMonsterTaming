@@ -17,8 +17,8 @@ MonoBehaviour:
   portrait: {fileID: 21300000, guid: 80a1e81118fb757409ab35d8df4b50e2, type: 3}
   previewPrefab: {fileID: 7255419177770050467, guid: 1fe00e1e2f828b14d91a67c71cfcfcff, type: 3}
   visualTint: {r: 1, g: 1, b: 1, a: 1}
-  maxHealth: 108
-  attackPower: 14
+  maxHealth: 117
+  attackPower: 12.3
   defense: 4
   attackSpeed: 1.1
   moveSpeed: 2

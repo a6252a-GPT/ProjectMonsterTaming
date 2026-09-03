@@ -2559,7 +2559,6 @@ MonoBehaviour:
   commanderMetaText: {fileID: 783186655571852487}
   goldValueText: {fileID: 7208150975184397566}
   diamondValueText: {fileID: 6993244715211540317}
-  ascensionValueText: {fileID: 3622637405838476432}
 --- !u!1 &5906172146190199901
 GameObject:
   m_ObjectHideFlags: 0
@@ -7503,6 +7502,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: ResourceBarRoot_GUIPro
       objectReference: {fileID: 0}
+    - target: {fileID: 3107537498817320418, guid: 61bb384d88c27ff43a54a142831f0bcf, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 83d0167c8075b4a949af5a465c11e558, type: 3}
+    - target: {fileID: 3107537498817320418, guid: 61bb384d88c27ff43a54a142831f0bcf, type: 3}
+      propertyPath: m_PreserveAspect
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3876458400362595473, guid: 61bb384d88c27ff43a54a142831f0bcf, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4819963814387292270, guid: 61bb384d88c27ff43a54a142831f0bcf, type: 3}
       propertyPath: m_fontSizeMax
       value: 28
@@ -7550,6 +7561,14 @@ PrefabInstance:
     - target: {fileID: 5181236984731220941, guid: 61bb384d88c27ff43a54a142831f0bcf, type: 3}
       propertyPath: m_HorizontalAlignment
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5500570252322185336, guid: 61bb384d88c27ff43a54a142831f0bcf, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 27a59dab114bd4e238d2f3bb43620532, type: 3}
+    - target: {fileID: 5500570252322185336, guid: 61bb384d88c27ff43a54a142831f0bcf, type: 3}
+      propertyPath: m_PreserveAspect
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8387773782598226647, guid: 61bb384d88c27ff43a54a142831f0bcf, type: 3}
       propertyPath: m_Spacing
@@ -7727,17 +7746,6 @@ MonoBehaviour:
   m_FlexibleWidth: 0
   m_FlexibleHeight: 0
   m_LayoutPriority: 1
---- !u!114 &3622637405838476432 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1490054948489099264, guid: 61bb384d88c27ff43a54a142831f0bcf, type: 3}
-  m_PrefabInstance: {fileID: 2804489753029442704}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!224 &6820522855098124495 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 8668534229640180831, guid: 61bb384d88c27ff43a54a142831f0bcf, type: 3}

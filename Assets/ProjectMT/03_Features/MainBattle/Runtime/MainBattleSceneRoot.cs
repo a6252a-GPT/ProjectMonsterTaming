@@ -63,6 +63,7 @@ namespace ProjectMT.Features.MainBattle
         private MainBattleManagementUiController managementUi; // 관리창 상호 배타 제어
         private MainBattleHudProgressView hudProgressView; // 상단 계정·재화 표시
         private GrowthDungeonStageEntryController growthDungeonEntry; // 단계 선택·파밍 입장
+        private CastleRaidStageSelectionController castleRaidEntry; // 군단의 역습 1~100 단계 선택
         private CommanderGrowthPageView commanderGrowthPage; // 저장 편성 총전투력 표시
         private CommanderSkillRuntime commanderSkillRuntime; // 군단장 스킬 실행
         private CommanderSkillHudView commanderSkillHud; // 우측 하단 AUTO·6슬롯 HUD
@@ -103,6 +104,7 @@ namespace ProjectMT.Features.MainBattle
                 throw new InvalidOperationException("MainBattle party is missing.");
             }
             growthDungeonEntry = GetComponentInChildren<GrowthDungeonStageEntryController>(true);
+            castleRaidEntry = GetComponentInChildren<CastleRaidStageSelectionController>(true);
             if (growthDungeonEntry == null)
             {
                 foodRiotButton?.onClick.AddListener(OpenFoodRiot); // 신규 컨트롤러 누락 시 기존 진입 보존
@@ -166,6 +168,12 @@ namespace ProjectMT.Features.MainBattle
                 TryOpenContent,
                 () => managementUi?.CloseAllPages(),
                 SetStatus);
+            castleRaidEntry?.Configure(
+                context.Progress,
+                context.ContentLauncher,
+                castleRaidContentId,
+                EnterCastleRaidStage,
+                SetStatus);
             if (managementUi != null)
             {
                 managementUi.GrowthDungeonPageOpened += RefreshGrowthDungeonUi;
@@ -214,6 +222,7 @@ namespace ProjectMT.Features.MainBattle
             monsterDrag?.Shutdown();
             dragIndicator?.Shutdown();
             growthDungeonEntry?.Shutdown();
+            castleRaidEntry?.Shutdown();
             foodRiotButton?.onClick.RemoveListener(OpenFoodRiot);
             castleRaidButton?.onClick.RemoveListener(OpenCastleRaid);
             towerButton?.onClick.RemoveListener(OpenGuardiansTower); // 08.06 안건준 추가
@@ -670,23 +679,41 @@ namespace ProjectMT.Features.MainBattle
 
         public void OpenCastleRaid()
         {
+            managementUi?.CloseAllPages();
             if (!TryOpenContent())
             {
                 return;
             }
 
-            managementUi?.CloseAllPages();
+            if (castleRaidEntry == null)
+            {
+                SetStatus("군단의 역습 단계 선택 UI를 불러오지 못했습니다");
+                return;
+            }
+
+            castleRaidEntry.Open();
+            SetStatus("군단의 역습 · 공략할 스테이지를 선택하세요");
+        }
+
+        private bool EnterCastleRaidStage(int stage)
+        {
+            if (!TryOpenContent())
+            {
+                return false;
+            }
+
             party = context.RefreshParty();
             expedition.StopWithoutResult(); // 별도 씬 이동 전 무정산 종료
-            if (context.ContentLauncher.StartSeparate(castleRaidContentId, party))
+            if (context.ContentLauncher.StartSeparate(castleRaidContentId, party, stage))
             {
-                SetStatus("군단의 역습 · 육각 전장");
+                SetStatus($"군단의 역습 · STAGE {stage:000} · 난이도 {CastleRaidStageRules.ResolveDifficulty(stage)}");
                 _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.CastleRaidEnter, 1L);
+                return true;
             }
-            else
-            {
-                expedition.StartFromSavedMode(); // 입장 실패 시 메인 복구
-            }
+
+            expedition.StartFromSavedMode(); // 입장 실패 시 메인 복구
+            SetStatus("입장 상태가 변경되었습니다 · 스테이지를 다시 확인해 주세요");
+            return false;
         }
 
         private bool TryOpenContent()

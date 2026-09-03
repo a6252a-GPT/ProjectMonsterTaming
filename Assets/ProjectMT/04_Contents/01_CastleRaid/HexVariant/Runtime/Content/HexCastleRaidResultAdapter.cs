@@ -3,6 +3,7 @@ using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Reward;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace ProjectMT.Contents.CastleRaidHex
 {
@@ -11,7 +12,8 @@ namespace ProjectMT.Contents.CastleRaidHex
         fileName = "HexCastleRaidResultAdapter")]
     public sealed class HexCastleRaidResultAdapter : ContentResultAdapter
     {
-        [SerializeField] private RewardDefinition firstClearReward;
+        [FormerlySerializedAs("firstClearReward")]
+        [SerializeField] private RewardDefinition stageOneReward;
 
         public override bool TryCreateProgressChange(IContentResultData result, out GameProgressChange change)
         {
@@ -21,7 +23,9 @@ namespace ProjectMT.Contents.CastleRaidHex
                 return false;
             }
 
-            change = GameProgressChange.RecordCastleRaidClear();
+            change = GameProgressChange.RecordCastleRaidClear(
+                CastleRaidStageRules.MinimumStage,
+                RewardBundle.Empty);
             return true;
         }
 
@@ -36,16 +40,27 @@ namespace ProjectMT.Contents.CastleRaidHex
                 return false;
             }
 
-            var rewards = RewardBundle.Empty;
-            if (!progress.CastleRaidFirstClear && firstClearReward != null &&
-                !firstClearReward.TryCreate(1L, out rewards))
+            return TryCreateStageProgressChange(
+                CastleRaidStageRules.MinimumStage,
+                progress,
+                out change);
+        }
+
+        public override bool TryCreateProgressChange(
+            IContentResultData result,
+            GameProgressView progress,
+            ContentRunInfo runInfo,
+            out GameProgressChange change)
+        {
+            if (!(result is IObjectiveCompletionResultData castleResult) ||
+                !castleResult.ObjectiveCompleted ||
+                !TryResolveStage(runInfo, out var stage))
             {
                 change = null;
                 return false;
             }
 
-            change = GameProgressChange.RecordCastleRaidClear(rewards);
-            return true;
+            return TryCreateStageProgressChange(stage, progress, out change);
         }
 
         public override bool TryCreateRewardPresentation(
@@ -55,8 +70,9 @@ namespace ProjectMT.Contents.CastleRaidHex
             out RewardPresentationRequest presentation)
         {
             if (!(result is IObjectiveCompletionResultData castleResult) || !castleResult.ObjectiveCompleted ||
-                progress.CastleRaidFirstClear || firstClearReward == null ||
-                !firstClearReward.TryCreate(1L, out var rewards) || rewards.IsEmpty)
+                progress.CastleRaidFirstClear ||
+                !TryCreateFirstClearReward(CastleRaidStageRules.MinimumStage, out var rewards) ||
+                rewards.IsEmpty)
             {
                 presentation = null;
                 return false;
@@ -66,10 +82,90 @@ namespace ProjectMT.Contents.CastleRaidHex
             return true;
         }
 
+        public override bool TryCreateRewardPresentation(
+            IContentResultData result,
+            GameProgressView progress,
+            ContentRunInfo runInfo,
+            ItemCatalog itemCatalog,
+            out RewardPresentationRequest presentation)
+        {
+            if (!(result is IObjectiveCompletionResultData castleResult) ||
+                !castleResult.ObjectiveCompleted ||
+                !TryResolveStage(runInfo, out var stage) ||
+                !CastleRaidStageRules.IsNewClear(stage, progress.CastleRaidHighestClearedStage) ||
+                !TryCreateFirstClearReward(stage, out var rewards) || rewards.IsEmpty)
+            {
+                presentation = null;
+                return false;
+            }
+
+            presentation = RewardPresentationRequest.FromBundle(rewards, itemCatalog);
+            return true;
+        }
+
+        public override string CreateResultSummary(
+            IContentResultData result,
+            ContentRunInfo runInfo,
+            ContentOutcome outcome)
+        {
+            if (!TryResolveStage(runInfo, out var stage))
+            {
+                return outcome == ContentOutcome.Fail
+                    ? "요새 공략에 실패했습니다."
+                    : "요새 공략을 완료했습니다.";
+            }
+
+            return outcome == ContentOutcome.Fail
+                ? $"STAGE {stage:000} 공략에 실패했습니다."
+                : $"STAGE {stage:000} 왕궁을 파괴했습니다.";
+        }
+
+        private bool TryCreateStageProgressChange(
+            int stage,
+            GameProgressView progress,
+            out GameProgressChange change)
+        {
+            if (!CastleRaidStageRules.IsValidStage(stage) ||
+                stage > progress.CastleRaidHighestClearedStage + 1)
+            {
+                change = null;
+                return false;
+            }
+
+            var rewards = RewardBundle.Empty;
+            if (CastleRaidStageRules.IsNewClear(stage, progress.CastleRaidHighestClearedStage) &&
+                !TryCreateFirstClearReward(stage, out rewards))
+            {
+                change = null;
+                return false;
+            }
+
+            change = GameProgressChange.RecordCastleRaidClear(stage, rewards);
+            return true;
+        }
+
+        private bool TryCreateFirstClearReward(int stage, out RewardBundle rewards)
+        {
+            rewards = CastleRaidStageRules.CreateFirstClearReward(stage);
+            return rewards != null && !rewards.IsEmpty;
+        }
+
+        private static bool TryResolveStage(ContentRunInfo runInfo, out int stage)
+        {
+            if (runInfo.RunMode == ContentRunMode.SeedTest)
+            {
+                stage = CastleRaidStageRules.MinimumStage;
+                return true;
+            }
+
+            return int.TryParse(runInfo.StageId, out stage) &&
+                   CastleRaidStageRules.IsValidStage(stage);
+        }
+
 #if UNITY_EDITOR
         public void EditorConfigureReward(RewardDefinition reward)
         {
-            firstClearReward = reward;
+            stageOneReward = reward;
         }
 #endif
     }

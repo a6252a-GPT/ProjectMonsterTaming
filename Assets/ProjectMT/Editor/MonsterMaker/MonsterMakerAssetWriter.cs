@@ -566,6 +566,151 @@ namespace ProjectMT.EditorTools.MonsterMaker
             }
         }
 
+        public static MonsterDefinition SynchronizeBalanceStats(
+            MonsterMakerDraft draft,
+            float health,
+            float attack,
+            float defenseValue,
+            float attacksPerSecond,
+            float movementSpeed,
+            float range,
+            MonsterCatalog catalog = null,
+            MonsterRarityCatalog rarityCatalog = null)
+        {
+            if (draft == null)
+            {
+                throw new InvalidOperationException("능력치를 반영할 Maker Draft가 필요합니다.");
+            }
+            ValidateBalanceStats(health, attack, defenseValue, attacksPerSecond, movementSpeed, range);
+
+            catalog ??= AssetDatabase.LoadAssetAtPath<MonsterCatalog>(MonsterCatalogPath);
+            rarityCatalog ??= AssetDatabase.LoadAssetAtPath<MonsterRarityCatalog>(MonsterRarityCatalogPath);
+            if (catalog == null || rarityCatalog == null)
+            {
+                throw new InvalidOperationException("MonsterCatalog 또는 MonsterRarityCatalog을 찾을 수 없습니다.");
+            }
+
+            var catalogPath = RequirePersistentAssetPath(catalog, "MonsterCatalog");
+            var rarityCatalogPath = RequirePersistentAssetPath(rarityCatalog, "MonsterRarityCatalog");
+            ValidateProductionDraftOwnership(draft, catalogPath, rarityCatalogPath);
+
+            var definitionPath = BuildPaths(draft.MonsterId)[0];
+            var definition = AssetDatabase.LoadAssetAtPath<MonsterDefinition>(definitionPath);
+            if (definition == null)
+            {
+                throw new InvalidOperationException($"정식 MonsterDefinition을 찾을 수 없습니다: {draft.MonsterId}");
+            }
+            if (!catalog.TryGet(draft.MonsterId, out var registeredDefinition) ||
+                registeredDefinition != definition)
+            {
+                throw new InvalidOperationException(
+                    $"MonsterCatalog 등록과 정식 Definition이 일치하지 않습니다: {draft.MonsterId}");
+            }
+
+            var draftPath = RequirePersistentAssetPath(draft, "Maker Draft");
+            var transaction = MonsterMakerWriteTransaction.Capture(
+                new[] { draftPath, definitionPath },
+                Array.Empty<string>());
+            try
+            {
+                draft.EditorSetBalanceStats(
+                    health, attack, defenseValue, attacksPerSecond, movementSpeed, range);
+                definition.EditorConfigure(
+                    draft.MonsterId,
+                    health,
+                    attack,
+                    defenseValue,
+                    attacksPerSecond,
+                    movementSpeed,
+                    range,
+                    draft.CombatType == MonsterCombatType.Ranged);
+                MarkDirty(draft, definition);
+                SaveAssetsIfDirty(draft, definition);
+
+                if (!definition.TryValidate(out var validationError))
+                {
+                    throw new InvalidOperationException(validationError);
+                }
+                if (!BalanceStatsMatch(
+                        draft, definition, health, attack, defenseValue,
+                        attacksPerSecond, movementSpeed, range))
+                {
+                    throw new InvalidOperationException(
+                        $"능력치 Runtime 동기화 검증에 실패했습니다: {draft.MonsterId}");
+                }
+
+                transaction.Commit();
+                return definition;
+            }
+            catch (Exception syncException)
+            {
+                try
+                {
+                    transaction.Rollback();
+                }
+                catch (Exception rollbackException)
+                {
+                    throw new AggregateException(
+                        "능력치 동기화와 원상복구가 모두 실패했습니다.",
+                        syncException,
+                        rollbackException);
+                }
+                throw;
+            }
+            finally
+            {
+                transaction.Dispose();
+            }
+        }
+
+        private static void ValidateBalanceStats(
+            float health,
+            float attack,
+            float defenseValue,
+            float attacksPerSecond,
+            float movementSpeed,
+            float range)
+        {
+            if (!IsFinitePositive(health) || !IsFiniteNonNegative(attack) ||
+                !IsFiniteNonNegative(defenseValue) || !IsFinitePositive(attacksPerSecond) ||
+                !IsFiniteNonNegative(movementSpeed) || !IsFinitePositive(range))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(health),
+                    "체력·공격속도·사거리는 0보다 커야 하며, 공격력·방어력·이동속도는 0 이상이어야 합니다.");
+            }
+        }
+
+        private static bool BalanceStatsMatch(
+            MonsterMakerDraft draft,
+            MonsterDefinition definition,
+            float health,
+            float attack,
+            float defenseValue,
+            float attacksPerSecond,
+            float movementSpeed,
+            float range)
+        {
+            return Mathf.Approximately(draft.MaxHealth, health) &&
+                   Mathf.Approximately(draft.AttackPower, attack) &&
+                   Mathf.Approximately(draft.Defense, defenseValue) &&
+                   Mathf.Approximately(draft.AttackSpeed, attacksPerSecond) &&
+                   Mathf.Approximately(draft.MoveSpeed, movementSpeed) &&
+                   Mathf.Approximately(draft.AttackRange, range) &&
+                   Mathf.Approximately(definition.MaxHealth, health) &&
+                   Mathf.Approximately(definition.AttackPower, attack) &&
+                   Mathf.Approximately(definition.Defense, defenseValue) &&
+                   Mathf.Approximately(definition.AttackSpeed, attacksPerSecond) &&
+                   Mathf.Approximately(definition.MoveSpeed, movementSpeed) &&
+                   Mathf.Approximately(definition.AttackRange, range);
+        }
+
+        private static bool IsFinitePositive(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value) && value > 0f;
+
+        private static bool IsFiniteNonNegative(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value) && value >= 0f;
+
         public static MonsterAttackActiveSkill SynchronizeActiveAttackRuntime(
             MonsterMakerDraft draft,
             MonsterCatalog catalog = null,

@@ -98,7 +98,14 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
                 var camera = roots.SelectMany(value => value.GetComponentsInChildren<Camera>(true)).Single();
                 var inputSurface = roots.SelectMany(value =>
                         value.GetComponentsInChildren<HexCastleDeploymentInputSurface>(true))
+                    .Where(value => value.gameObject.activeInHierarchy)
                     .Single();
+                var productionHud = roots
+                    .SelectMany(value => value.GetComponentsInChildren<Canvas>(true))
+                    .Select(value => value.gameObject)
+                    .Single(value =>
+                        value.activeInHierarchy &&
+                        value.name.StartsWith("PF_CastleRaidHexHUD", System.StringComparison.Ordinal));
                 var controllerData = new SerializedObject(controller);
                 var inputData = new SerializedObject(inputSurface);
                 var rootData = new SerializedObject(sceneRoot);
@@ -124,17 +131,13 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
                 AssertReference(controllerData, "exitButton");
                 AssertReference(controllerData, "inputSurface");
                 AssertReference(inputData, "cameraController");
-                Assert.That(controllerData.FindProperty("unitButtons").arraySize, Is.EqualTo(8));
-                Assert.That(controllerData.FindProperty("unitButtonLabels").arraySize, Is.EqualTo(8));
-                Assert.That(controllerData.FindProperty("unitAiTagButtons").arraySize, Is.EqualTo(8));
-                Assert.That(controllerData.FindProperty("unitAiTagLabels").arraySize, Is.EqualTo(8));
+                Assert.That(controllerData.FindProperty("unitButtons").arraySize, Is.EqualTo(10));
+                Assert.That(controllerData.FindProperty("unitButtonLabels").arraySize, Is.EqualTo(10));
+                Assert.That(controllerData.FindProperty("unitAiTagButtons").arraySize, Is.EqualTo(10));
+                Assert.That(controllerData.FindProperty("unitAiTagLabels").arraySize, Is.EqualTo(10));
                 Assert.That(controllerData.FindProperty("difficultyButtons").arraySize, Is.EqualTo(10));
-                Assert.That(roots.SelectMany(value => value.GetComponentsInChildren<Button>(true))
-                    .Count(value => value.name == "AITag"), Is.EqualTo(8));
-                Assert.That(roots.SelectMany(value => value.GetComponentsInChildren<Button>(true))
-                    .Single(value => value.name == "UnitButton_9").gameObject.activeSelf, Is.False);
-                Assert.That(roots.SelectMany(value => value.GetComponentsInChildren<Button>(true))
-                    .Single(value => value.name == "UnitButton_10").gameObject.activeSelf, Is.False);
+                Assert.That(productionHud.GetComponentsInChildren<Button>(false)
+                    .Count(value => value.name == "AITag"), Is.EqualTo(10));
                 Assert.That(controllerData.FindProperty("difficultyLevel").intValue, Is.EqualTo(4));
                 Assert.That(controllerData.FindProperty("generationSeed").intValue, Is.EqualTo(10801));
                 Assert.That(camera.orthographic, Is.False);
@@ -146,10 +149,10 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
                     Is.EqualTo(new Vector3(0f, -4.34f, 4.73f)));
                 Assert.That(stageMap.transform.rotation, Is.EqualTo(Quaternion.identity));
                 Assert.That(stageMap.transform.localScale, Is.EqualTo(Vector3.one));
-                Assert.That(roots.SelectMany(value => value.GetComponentsInChildren<Button>(true))
+                Assert.That(productionHud.GetComponentsInChildren<Button>(false)
                     .Count(value => value.name == "RotateCameraLeftButton" || value.name == "RotateCameraRightButton"),
                     Is.EqualTo(2));
-                Assert.That(roots.SelectMany(value => value.GetComponentsInChildren<HexCastleCameraHoldButton>(true)).Count(),
+                Assert.That(productionHud.GetComponentsInChildren<HexCastleCameraHoldButton>(false).Length,
                     Is.EqualTo(2));
                 var combatFeedback = roots.SelectMany(value =>
                         value.GetComponentsInChildren<CombatFeedbackPlayer>(true))
@@ -162,7 +165,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
                 AssertReference(floatingData, "poolScope");
                 AssertReference(floatingData, "numberPrefab");
                 AssertReference(floatingData, "worldCamera");
-                var generationControls = roots.SelectMany(value => value.GetComponentsInChildren<Transform>(true))
+                var generationControls = productionHud.GetComponentsInChildren<Transform>(true)
                     .Single(value => value.name == "GenerationControls");
                 Assert.That(generationControls.gameObject.activeSelf, Is.True);
                 Assert.That(Enumerable.Range(1, 10)

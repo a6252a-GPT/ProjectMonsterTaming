@@ -44,6 +44,15 @@ namespace ProjectMT.Shared.GameData
             foodRiotBestKills = Math.Max(0, foodRiotBestKills);
             guardiansTowerBestKills = Math.Max(0, guardiansTowerBestKills); // 08.06 안건준 추가
             guardiansTowerDifficultyLevel = Math.Max(0, guardiansTowerDifficultyLevel); // 08.07 안건준 추가
+            castleRaidHighestClearedStage = Math.Clamp(
+                castleRaidHighestClearedStage,
+                0,
+                CastleRaidStageRules.MaximumStage);
+            if (castleRaidFirstClear && castleRaidHighestClearedStage == 0)
+            {
+                castleRaidHighestClearedStage = CastleRaidStageRules.MinimumStage;
+            }
+            castleRaidFirstClear = castleRaidHighestClearedStage > 0;
             commander ??= CommanderProgressData.CreateDefault();
             commander.Repair();
             monsters ??= MonsterRosterData.CreateDefault();
@@ -121,6 +130,11 @@ namespace ProjectMT.Shared.GameData
             {
                 monsters ??= MonsterRosterData.CreateDefault();
                 monsters.MigrateRetiredMonsterIds(); // 퇴역·개명 ID의 보유 진행과 편성을 현재 정식 ID로 보존
+            }
+
+            if (sourceDataVersion <= 21 && castleRaidFirstClear && castleRaidHighestClearedStage == 0)
+            {
+                castleRaidHighestClearedStage = CastleRaidStageRules.MinimumStage;
             }
 
             if (sourceDataVersion <= 12)

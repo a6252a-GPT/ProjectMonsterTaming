@@ -30,6 +30,7 @@ namespace ProjectMT.Features.WorldDrops
         public int ActiveCount => activeViews.Count;
         public int TemplateCount => templates.Count;
         public int PendingItemTypeCount => buffer.ItemTypeCount;
+        public event Action<IReadOnlyList<ItemAmount>> ItemsConfirmed;
 
         public static WorldItemDropRuntime Create(
             Transform parent,
@@ -174,6 +175,15 @@ namespace ProjectMT.Features.WorldDrops
                     {
                         Debug.LogError("월드 드랍 저장 Snapshot을 획득 버퍼에서 확정하지 못했습니다.");
                         return false;
+                    }
+
+                    try
+                    {
+                        ItemsConfirmed?.Invoke(snapshot); // 저장 확정 뒤에만 획득 UI로 전달
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogException(exception); // 표시 실패가 이미 끝난 저장을 되돌리지 않음
                     }
                 }
 

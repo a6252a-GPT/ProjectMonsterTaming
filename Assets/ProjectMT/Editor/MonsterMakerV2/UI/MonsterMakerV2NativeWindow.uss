@@ -445,8 +445,38 @@
     flex-grow: 1;
 }
 
-.preview-header { align-items: flex-start; }
-.environment-field { width: 180px; }
+.preview-header { align-items: center; }
+.preview-analysis-tools {
+    height: 28px;
+    flex-direction: row;
+    flex-shrink: 0;
+    align-items: center;
+    margin-left: 8px;
+    margin-right: 7px;
+    padding: 2px;
+    background-color: rgb(27, 31, 37);
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+.preview-tool-button {
+    width: 90px;
+    height: 24px;
+    margin-left: 1px;
+    margin-right: 1px;
+    padding-left: 6px;
+    padding-right: 6px;
+    background-color: rgb(43, 61, 75);
+    color: rgb(178, 216, 240);
+    border-left-color: rgb(65, 88, 105);
+    border-right-color: rgb(65, 88, 105);
+    border-top-color: rgb(65, 88, 105);
+    border-bottom-color: rgb(65, 88, 105);
+    font-size: 9px;
+}
+.preview-tool-button:hover { background-color: rgb(52, 77, 96); color: rgb(223, 239, 250); }
+.environment-field { width: 160px; flex-shrink: 0; }
 .environment-field > .unity-base-field__label { min-width: 36px; width: 36px; }
 .view-toolbar {
     height: 32px;

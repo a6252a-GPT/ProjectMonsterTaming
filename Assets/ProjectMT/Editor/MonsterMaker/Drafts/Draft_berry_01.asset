@@ -253,9 +253,9 @@ MonoBehaviour:
   rigMode: 0
   previewScale: 1
   vfxScale: 1
-  maxHealth: 92
-  attackPower: 11
-  defense: 2
+  maxHealth: 140
+  attackPower: 12.6
+  defense: 6
   attackSpeed: 1.15
   moveSpeed: 2.2
   attackRange: 4.4

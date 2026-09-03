@@ -16,10 +16,16 @@ namespace ProjectMT.Features.Expedition
         [SerializeField, Min(0.1f)] private float resultDelaySeconds = 0.8f; // 결과 표시 대기
         [SerializeField, Min(1f)] private float enemyBaseHealth = 28f; // 1단계 적 체력
         [SerializeField, Min(0.1f)] private float enemyBaseDamage = 4f; // 1단계 적 공격력
-        [SerializeField, Min(0f)] private float enemyHealthGrowthPerStage = 0.11f; // 단계당 체력 증가율
+        [SerializeField, Min(0f)] private float enemyBaseDefense = 2f; // 1단계 적 방어력
+        [SerializeField, Min(0f)] private float enemyHealthGrowthPerStage = 0.065983f; // 단계당 복리 체력 증가율
         [SerializeField, Min(0f)] private float enemyDamageGrowthPerStage = 0.07f; // 단계당 공격 증가율
+        [SerializeField, Min(0f)] private float enemyDefenseGrowthPerStage = 0.04f; // 단계당 방어 증가율
         [SerializeField, Min(0.2f)] private float enemyMeleeAttackRange = 2f; // 근접 적 기본 사거리
         [SerializeField, Min(0.2f)] private float enemyRangedAttackRange = 4.1f; // 원거리 적 기본 사거리
+
+        [Header("Enemy Type Balance")]
+        [SerializeField] private ExpeditionEnemyTypeBalance[] enemyTypeBalances =
+            Array.Empty<ExpeditionEnemyTypeBalance>();
 
         [Header("Enemy Arrival")]
         [SerializeField, Min(0.5f)] private float enemyEntryDistance = 3.2f;
@@ -51,6 +57,18 @@ namespace ProjectMT.Features.Expedition
         public float WaveIntervalSeconds => waveIntervalSeconds;
         public float ChallengeTimeLimitSeconds => challengeTimeLimitSeconds;
         public float ResultDelaySeconds => resultDelaySeconds;
+        public float EnemyBaseHealth => Mathf.Max(1f, enemyBaseHealth);
+        public float EnemyBaseDamage => Mathf.Max(0.1f, enemyBaseDamage);
+        public float EnemyBaseDefense => Mathf.Max(0f, enemyBaseDefense);
+        public float EnemyHealthGrowthPerStage => Mathf.Max(0f, enemyHealthGrowthPerStage);
+        public float EnemyDamageGrowthPerStage => Mathf.Max(0f, enemyDamageGrowthPerStage);
+        public float EnemyDefenseGrowthPerStage => Mathf.Max(0f, enemyDefenseGrowthPerStage);
+        public float EnemyMeleeAttackRange => Mathf.Max(0.2f, enemyMeleeAttackRange);
+        public float EnemyRangedAttackRange => Mathf.Max(0.2f, enemyRangedAttackRange);
+        public IReadOnlyList<ExpeditionEnemyTypeBalance> EnemyTypeBalances =>
+            enemyTypeBalances ?? Array.Empty<ExpeditionEnemyTypeBalance>();
+        public IReadOnlyList<ExpeditionStageDefinition> Stages =>
+            stages ?? Array.Empty<ExpeditionStageDefinition>();
         public WorldItemDropVisualCatalog WorldItemDropVisualCatalog => worldItemDropVisualCatalog;
         public string EnemyWorldDropItemId => enemyWorldDropItemId ?? string.Empty;
         public int EnemyWorldDropQuantity => Mathf.Max(1, enemyWorldDropQuantity);
@@ -96,6 +114,21 @@ namespace ProjectMT.Features.Expedition
 
             definition = null;
             return false;
+        }
+
+        public ExpeditionEnemyTypeBalance ResolveEnemyTypeBalance(EnemyAppearanceGroup group)
+        {
+            if (enemyTypeBalances != null)
+            {
+                for (var index = 0; index < enemyTypeBalances.Length; index++)
+                {
+                    var balance = enemyTypeBalances[index];
+                    if (balance != null && balance.Group == group) return balance;
+                }
+            }
+
+            return ExpeditionEnemyTypeBalance.CreateDefault(
+                group, EnemyMeleeAttackRange, EnemyRangedAttackRange);
         }
 
         public int GetWaveCount(int stage)
@@ -245,9 +278,9 @@ namespace ProjectMT.Features.Expedition
             var stageOffset = Mathf.Max(0, stage - 1);
             var result = new UnitStatsSnapshot
             {
-                maxHealth = enemyBaseHealth * (1f + enemyHealthGrowthPerStage * stageOffset) *
-                            ResolveEnemyHealthTierMultiplier(stage),
+                maxHealth = ResolveNormalEnemyHealth(stage),
                 damage = enemyBaseDamage * (1f + enemyDamageGrowthPerStage * stageOffset),
+                defense = enemyBaseDefense * (1f + enemyDefenseGrowthPerStage * stageOffset),
                 moveSpeed = ranged ? 2.28f : 2.58f,
                 attackRange = ranged ? enemyRangedAttackRange : enemyMeleeAttackRange,
                 attackInterval = ranged ? 1.2f : 1f,
@@ -269,44 +302,46 @@ namespace ProjectMT.Features.Expedition
             ExpeditionEnemySpawn spawn)
         {
             stage = Mathf.Clamp(stage, 1, ExpeditionCampaignRules.MaximumStage);
-            var ranged = spawn.IsRanged;
+            var typeBalance = ResolveEnemyTypeBalance(spawn.Appearance);
+            var ranged = typeBalance.Role == ExpeditionEnemyRole.Ranged;
             var normalStageOffset = stage - 1;
-            var health = enemyBaseHealth * (1f + enemyHealthGrowthPerStage * normalStageOffset) *
-                         ResolveEnemyHealthTierMultiplier(stage);
+            var health = ResolveNormalEnemyHealth(stage);
             var damage = enemyBaseDamage * (1f + enemyDamageGrowthPerStage * normalStageOffset);
+            var defense = enemyBaseDefense * (1f + enemyDefenseGrowthPerStage * normalStageOffset);
             if (difficulty == ExpeditionDifficulty.Hard)
             {
-                var normal100Health = enemyBaseHealth *
-                                      (1f + enemyHealthGrowthPerStage * (ExpeditionCampaignRules.MaximumStage - 1)) *
-                                      ResolveEnemyHealthTierMultiplier(ExpeditionCampaignRules.MaximumStage);
+                var normal100Health = ResolveNormalEnemyHealth(ExpeditionCampaignRules.MaximumStage);
                 var normal100Damage = enemyBaseDamage *
                                       (1f + enemyDamageGrowthPerStage * (ExpeditionCampaignRules.MaximumStage - 1));
+                var normal100Defense = enemyBaseDefense *
+                                       (1f + enemyDefenseGrowthPerStage * (ExpeditionCampaignRules.MaximumStage - 1));
                 health = normal100Health * 1.6f * (1f + 0.08f * normalStageOffset);
                 damage = normal100Damage * 1.3f * (1f + 0.055f * normalStageOffset);
+                defense = normal100Defense * 1.3f * (1f + 0.04f * normalStageOffset);
             }
 
             var result = new UnitStatsSnapshot
             {
                 maxHealth = health,
                 damage = damage,
-                moveSpeed = ranged ? 2.28f : 2.58f,
-                attackRange = ranged ? enemyRangedAttackRange : enemyMeleeAttackRange,
-                attackInterval = ranged ? 1.2f : 1f,
-                projectileSpeed = ranged ? 8f : 0f,
+                defense = defense,
+                moveSpeed = typeBalance.MoveSpeed,
+                attackRange = typeBalance.AttackRange,
+                attackInterval = typeBalance.AttackInterval,
+                projectileSpeed = typeBalance.ProjectileSpeed,
                 ranged = ranged
             };
 
-            ApplyUpperKnightStats(spawn.Appearance, ref result);
-            if (spawn.IsNinja)
-            {
-                result.maxHealth *= 0.7f;
-                result.damage *= 1.1f;
-                result.moveSpeed = 2.58f * 1.6f;
-                result.attackRange = enemyMeleeAttackRange;
-                result.attackInterval = 0.85f;
-                result.projectileSpeed = 0f;
-                result.ranged = false;
-            }
+            result.maxHealth *= typeBalance.HealthMultiplier;
+            result.damage *= typeBalance.DamageMultiplier;
+            result.defense *= typeBalance.DefenseMultiplier;
+
+            result.maxHealth *= ExpeditionEnemyRarityRules.GetHealthMultiplier(spawn.Rarity);
+            result.damage *= ExpeditionEnemyRarityRules.GetDamageMultiplier(spawn.Rarity);
+            result.defense *= ExpeditionEnemyRarityRules.GetDefenseMultiplier(spawn.Rarity);
+            result.maxHealth *= spawn.WaveHealthMultiplier;
+            result.damage *= spawn.WaveDamageMultiplier;
+            result.defense *= spawn.WaveDefenseMultiplier;
 
             if (difficulty == ExpeditionDifficulty.Hard)
             {
@@ -322,39 +357,10 @@ namespace ProjectMT.Features.Expedition
             return result;
         }
 
-        private static float ResolveEnemyHealthTierMultiplier(int stage)
+        private float ResolveNormalEnemyHealth(int stage)
         {
-            if (stage <= 15)
-            {
-                return 1f;
-            }
-
-            if (stage <= 30)
-            {
-                return 2f;
-            }
-
-            if (stage <= 45)
-            {
-                return 3.5f;
-            }
-
-            if (stage <= 60)
-            {
-                return 8f;
-            }
-
-            if (stage <= 75)
-            {
-                return 18f;
-            }
-
-            if (stage <= 90)
-            {
-                return 43f;
-            }
-
-            return 47f;
+            var stageOffset = Mathf.Max(0, stage - 1);
+            return enemyBaseHealth * Mathf.Pow(1f + enemyHealthGrowthPerStage, stageOffset);
         }
 
         private static void FloorEnemyCombatStats(ref UnitStatsSnapshot stats)
@@ -363,30 +369,59 @@ namespace ProjectMT.Features.Expedition
             stats.damage = Mathf.Max(1f, Mathf.Floor(stats.damage));
         }
 
-        private static void ApplyUpperKnightStats(EnemyAppearanceGroup appearance, ref UnitStatsSnapshot stats)
+#if UNITY_EDITOR
+        public void EditorConfigureCombatBalance(
+            float baseHealth,
+            float healthGrowthPerStage,
+            float baseDamage,
+            float damageGrowthPerStage,
+            float meleeAttackRange,
+            float rangedAttackRange,
+            float challengeTimeLimit,
+            float defaultWaveInterval)
         {
-            switch (appearance)
-            {
-                case EnemyAppearanceGroup.UpperKnightLower:
-                    stats.maxHealth *= 1.08f;
-                    stats.damage *= 1.05f;
-                    break;
-                case EnemyAppearanceGroup.UpperKnightMid:
-                    stats.maxHealth *= 1.18f;
-                    stats.damage *= 1.1f;
-                    break;
-                case EnemyAppearanceGroup.UpperKnightHigh:
-                    stats.maxHealth *= 1.3f;
-                    stats.damage *= 1.18f;
-                    break;
-                case EnemyAppearanceGroup.UpperKnightFinal:
-                    stats.maxHealth *= 1.45f;
-                    stats.damage *= 1.28f;
-                    break;
-            }
+            EditorConfigureCombatBalance(
+                baseHealth,
+                healthGrowthPerStage,
+                baseDamage,
+                damageGrowthPerStage,
+                enemyBaseDefense,
+                enemyDefenseGrowthPerStage,
+                meleeAttackRange,
+                rangedAttackRange,
+                challengeTimeLimit,
+                defaultWaveInterval);
         }
 
-#if UNITY_EDITOR
+        public void EditorConfigureCombatBalance(
+            float baseHealth,
+            float healthGrowthPerStage,
+            float baseDamage,
+            float damageGrowthPerStage,
+            float baseDefense,
+            float defenseGrowthPerStage,
+            float meleeAttackRange,
+            float rangedAttackRange,
+            float challengeTimeLimit,
+            float defaultWaveInterval)
+        {
+            enemyBaseHealth = Mathf.Max(1f, baseHealth);
+            enemyHealthGrowthPerStage = Mathf.Max(0f, healthGrowthPerStage);
+            enemyBaseDamage = Mathf.Max(0.1f, baseDamage);
+            enemyDamageGrowthPerStage = Mathf.Max(0f, damageGrowthPerStage);
+            enemyBaseDefense = Mathf.Max(0f, baseDefense);
+            enemyDefenseGrowthPerStage = Mathf.Max(0f, defenseGrowthPerStage);
+            enemyMeleeAttackRange = Mathf.Max(0.2f, meleeAttackRange);
+            enemyRangedAttackRange = Mathf.Max(0.2f, rangedAttackRange);
+            challengeTimeLimitSeconds = Mathf.Max(1f, challengeTimeLimit);
+            waveIntervalSeconds = Mathf.Max(0.1f, defaultWaveInterval);
+        }
+
+        public void EditorConfigureEnemyTypeBalances(params ExpeditionEnemyTypeBalance[] balances)
+        {
+            enemyTypeBalances = balances ?? Array.Empty<ExpeditionEnemyTypeBalance>();
+        }
+
         public void EditorConfigureStageTable(params ExpeditionStageDefinition[] definitions)
         {
             stages = definitions ?? Array.Empty<ExpeditionStageDefinition>();
@@ -446,7 +481,6 @@ namespace ProjectMT.Features.Expedition
         public const int FallbackEnemiesPerWave = 8; // 데이터 누락 시에도 현재 수량 유지
         public const int FormationColumns = 4; // 한 행 최대 인원
         public const float FormationSpacing = 0.85f; // 유닛 간격
-        public const int NinjaStartStage = 20; // 암살자 최초 출현 단계
         public const float EntryScatterSideDistance = 0.35f; // 같은 입장점 내 좌우 산개
         public const float EntryScatterForwardDistance = 0.2f; // 같은 입장점 내 앞뒤 산개
 

@@ -190,7 +190,7 @@ MonoBehaviour:
   previewScale: 1
   vfxScale: 0.55
   maxHealth: 135
-  attackPower: 20
+  attackPower: 15
   defense: 6
   attackSpeed: 1
   moveSpeed: 2.2

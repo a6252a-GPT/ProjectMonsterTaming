@@ -77,32 +77,17 @@ namespace ProjectMT.Features.OfflineReward
         public bool Capped { get; }
         public bool MixedBasis { get; }
 
-        public RewardPresentationRequest CreateAcquirePresentation()
+        public RewardPresentationRequest CreateAcquirePresentation(ItemCatalog itemCatalog = null)
         {
-            var items = new List<RewardPresentationItem>(5)
+            var items = new List<ItemAmount>(3)
             {
-                new RewardPresentationItem(RewardPresentationKind.Gold, "골드", Gold),
-                new RewardPresentationItem(
-                    RewardPresentationKind.CommanderExperience,
-                    "군단장 경험치",
-                    CommanderExperience),
-                new RewardPresentationItem(
-                    RewardPresentationKind.Item,
-                    ItemIds.GetFallbackDisplayName(ItemIds.EquipmentSlotUpgradeStone),
-                    EquipmentSlotUpgradeStone,
-                    ItemIds.EquipmentSlotUpgradeStone),
-                new RewardPresentationItem(
-                    RewardPresentationKind.Item,
-                    ItemIds.GetFallbackDisplayName(ItemIds.CommanderSkillUpgradeStone),
-                    CommanderSkillUpgradeStone,
-                    ItemIds.CommanderSkillUpgradeStone),
-                new RewardPresentationItem(
-                    RewardPresentationKind.Item,
-                    ItemIds.GetFallbackDisplayName(ItemIds.LegionPotentialUpgradeStone),
-                    LegionPotentialUpgradeStone,
-                    ItemIds.LegionPotentialUpgradeStone)
+                new ItemAmount(ItemIds.EquipmentSlotUpgradeStone, EquipmentSlotUpgradeStone),
+                new ItemAmount(ItemIds.CommanderSkillUpgradeStone, CommanderSkillUpgradeStone),
+                new ItemAmount(ItemIds.LegionPotentialUpgradeStone, LegionPotentialUpgradeStone)
             };
-            return new RewardPresentationRequest(items.ToArray());
+            return RewardPresentationRequest.FromBundle(
+                new RewardBundle(Gold, CommanderExperience, items),
+                itemCatalog);
         }
 
         public static bool TryCreate(

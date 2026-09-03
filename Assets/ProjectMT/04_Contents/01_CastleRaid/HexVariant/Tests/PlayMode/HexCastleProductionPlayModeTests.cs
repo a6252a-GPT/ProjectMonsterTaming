@@ -489,6 +489,94 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
         }
 
         [UnityTest]
+        public IEnumerator ProgressionStage_UsesSelectedStageRulesAndHidesDevGenerationControls()
+        {
+            const int stage = CastleRaidStageRules.MaximumStage;
+            var load = SceneManager.LoadSceneAsync("03_CastleRaidHex", LoadSceneMode.Additive);
+            while (load != null && !load.isDone)
+            {
+                yield return null;
+            }
+
+            var productionScene = SceneManager.GetSceneByName("03_CastleRaidHex");
+            var sceneRoot = Object.FindFirstObjectByType<HexCastleRaidSceneRoot>();
+            var controller = Object.FindFirstObjectByType<HexCastleRaidController>();
+            var definition = ScriptableObject.CreateInstance<ContentDefinition>();
+            definition.EditorConfigure(
+                new ContentId("castle_raid"),
+                ContentOpenMode.SeparateScene,
+                new SceneId("castle_raid_hex"),
+                null,
+                null);
+            var monsterCatalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>(
+                "Assets/ProjectMT/02_Shared/Unit/Data/MonsterCatalog.asset");
+            var rarityCatalog = AssetDatabase.LoadAssetAtPath<MonsterRarityCatalog>(
+                "Assets/ProjectMT/02_Shared/Unit/Data/MonsterRarityCatalog.asset");
+            Assert.That(monsterCatalog, Is.Not.Null);
+            Assert.That(rarityCatalog, Is.Not.Null);
+            var party = new BattlePartySnapshotBuilder(
+                monsterCatalog,
+                rarityCatalog,
+                ProjectMT.Shared.Stats.CombatStatConfig.RuntimeDefault).Build(
+                new GameProgressView(GameProgressData.CreateDefault()));
+            var exit = new RecordingExit();
+            var runInfo = new ContentRunInfo(
+                new ContentId("castle_raid"),
+                stage.ToString(),
+                ContentRunMode.Challenge);
+
+            try
+            {
+                Assert.That(sceneRoot, Is.Not.Null);
+                Assert.That(controller, Is.Not.Null);
+                sceneRoot.Initialize(new ContentSceneContext(
+                    definition,
+                    new ContentContext(runInfo, new TestStartData(party), exit)));
+                yield return null;
+
+                Assert.That(controller.IsRunning, Is.True);
+                Assert.That(controller.CurrentDifficultyLevel,
+                    Is.EqualTo(CastleRaidStageRules.ResolveDifficulty(stage)));
+                Assert.That(controller.CurrentSeed,
+                    Is.EqualTo(CastleRaidStageRules.ResolveGenerationSeed(stage)));
+                Assert.That(controller.CurrentTheme,
+                    Is.EqualTo(HexCastleThemeCatalog.Themes[(stage - 1) % HexCastleThemeCatalog.Themes.Count]));
+                Assert.That(controller.ActiveStage, Is.Not.Null);
+                Assert.That(controller.ActiveStage.IsComplete, Is.True);
+
+                var productionHud = productionScene.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<Canvas>(true))
+                    .Select(value => value.gameObject)
+                    .Single(value =>
+                        value.activeInHierarchy &&
+                        value.name.StartsWith("PF_CastleRaidHexHUD", System.StringComparison.Ordinal));
+                var sceneTransforms = productionHud.GetComponentsInChildren<Transform>(true);
+                var generationControls = sceneTransforms.Single(value => value.name == "GenerationControls");
+                Assert.That(generationControls.gameObject.activeSelf, Is.False,
+                    "정식 진행형 입장에서는 DEV 성 생성 컨트롤이 보여서는 안 됩니다.");
+                var castleInfo = sceneTransforms.Single(value => value.name == "CastleInfoText")
+                    .GetComponent<TMP_Text>();
+                Assert.That(castleInfo, Is.Not.Null);
+                Assert.That(castleInfo.text, Does.Contain("STAGE 100"));
+                Assert.That(castleInfo.text, Does.Contain("난이도 10"));
+            }
+            finally
+            {
+                sceneRoot?.Shutdown();
+                Object.Destroy(definition);
+            }
+
+            if (productionScene.IsValid() && productionScene.isLoaded)
+            {
+                var unload = SceneManager.UnloadSceneAsync(productionScene);
+                while (unload != null && !unload.isDone)
+                {
+                    yield return null;
+                }
+            }
+        }
+
+        [UnityTest]
         public IEnumerator KnightConfigure_InitializesFeelJumpFeedbackInPlayMode()
         {
             var groundRoot = new GameObject("GroundCell");

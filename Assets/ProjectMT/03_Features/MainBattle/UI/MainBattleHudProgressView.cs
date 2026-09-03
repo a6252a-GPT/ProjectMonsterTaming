@@ -10,7 +10,6 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private TMP_Text commanderMetaText;
         [SerializeField] private TMP_Text goldValueText;
         [SerializeField] private TMP_Text diamondValueText;
-        [SerializeField] private TMP_Text ascensionValueText;
 
         private IGameProgressService progress;
 
@@ -54,7 +53,6 @@ namespace ProjectMT.Features.MainBattle
                 SetText(commanderMetaText, "Lv. — · 다음 도전 —");
                 SetText(goldValueText, "—");
                 SetText(diamondValueText, "—");
-                SetText(ascensionValueText, "—");
                 return;
             }
 
@@ -62,7 +60,6 @@ namespace ProjectMT.Features.MainBattle
             SetText(commanderMetaText, $"Lv. {view.Commander.Level} · 다음 도전 {view.CurrentChallengeStage}");
             SetText(goldValueText, $"{view.Gold:N0}");
             SetText(diamondValueText, $"{view.Diamond:N0}");
-            SetText(ascensionValueText, $"{view.AscensionCurrency:N0}");
         }
 
         private static void SetText(TMP_Text target, string value)
@@ -77,13 +74,11 @@ namespace ProjectMT.Features.MainBattle
         public void EditorConfigure(
             TMP_Text commanderMeta,
             TMP_Text goldValue,
-            TMP_Text diamondValue,
-            TMP_Text ascensionValue)
+            TMP_Text diamondValue)
         {
             commanderMetaText = commanderMeta;
             goldValueText = goldValue;
             diamondValueText = diamondValue;
-            ascensionValueText = ascensionValue;
         }
 #endif
     }

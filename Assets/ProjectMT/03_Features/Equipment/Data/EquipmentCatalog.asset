@@ -14,26 +14,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Equipment.EquipmentCatalog
   baseItems:
   - id: weapon_basic
-    displayName: 무기
+    displayName: "\uBB34\uAE30"
     part: 0
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: 16278931200de4b05a8a9546c8dbb27d, type: 3}
   - id: helmet_basic
-    displayName: 투구
+    displayName: "\uD22C\uAD6C"
     part: 1
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: d65167ad98cc548a7be10522652f0a36, type: 3}
   - id: armor_basic
-    displayName: 갑옷
+    displayName: "\uAC11\uC637"
     part: 2
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: a8feb20481d354ffb8779ea234fa1d58, type: 3}
   - id: glove_basic
-    displayName: 장갑
+    displayName: "\uC7A5\uAC11"
     part: 3
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: a9344245f59214aa99b887ee28c6b934, type: 3}
   - id: boots_basic
-    displayName: 하의
+    displayName: "\uD558\uC758"
     part: 4
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: 093006c5d112b4b2ea98a4ef519b30e2, type: 3}
   - id: ring_basic
-    displayName: 장신구
+    displayName: "\uC7A5\uC2E0\uAD6C"
     part: 5
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: 7e921b6d4de454eab86d24397afc2b0a, type: 3}

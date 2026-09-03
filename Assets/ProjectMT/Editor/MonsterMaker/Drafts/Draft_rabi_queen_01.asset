@@ -17,6 +17,10 @@ MonoBehaviour:
   rarity: 2
   portrait: {fileID: 21300000, guid: 2c161ecb39d37a14abf5516350daf6f9, type: 3}
   skillLoadoutConfigured: 1
+  usePassiveSkill: 1
+  useActiveSkill: 0
+  splitSkillUsageConfigured: 1
+  skillUsageSchemaVersion: 1
   rarityPassiveSkill: {fileID: 11400000, guid: d925cf18fd037f5408dcb8e1a4ac7d06, type: 2}
   passiveTuning:
     initialized: 1
@@ -33,6 +37,22 @@ MonoBehaviour:
     radius: 0
     maxTargets: 1
   rarityActiveSkill: {fileID: 0}
+  activeAttackProfile: {fileID: 0}
+  activeEffectProfile: {fileID: 0}
+  activeSkillName: 
+  activeEnergyMaximum: 1000
+  activeSkillClip: {fileID: 0}
+  activeSkillPlaybackSpeed: 1
+  activeSkillCrossFadeDuration: 0.08
+  activeSkillCommitNormalizedTime: 0.25
+  activeStepMotionModeConfigured: 0
+  useCustomActiveStepMotions: 0
+  activeAttackStepTunings: []
+  activeAttackPresentations: []
+  activeEffectPresentations: []
+  activeAttackAuthoringProfileId: 
+  activeEffectAuthoringProfileId: 
+  inactiveActiveAttackAuthoring: []
   productionMemo: "\uBAAC\uC2A4\uD130 \uB9AC\uC6CC\uD06C 2026-08-26 / Rabby_Queen_White
     / Rabby \uC804\uC6A9 \uC560\uB2C8\uBA54\uC774\uC158 / BA_R_01 \uC720\uC9C0"
   vendorPrefab: {fileID: 6733014878611864065, guid: 68d7b79f706834246a6538ec21c092da, type: 3}
@@ -52,9 +72,9 @@ MonoBehaviour:
   rigMode: 0
   previewScale: 1
   vfxScale: 0.85
-  maxHealth: 110
-  attackPower: 12
-  defense: 4
+  maxHealth: 125
+  attackPower: 18
+  defense: 5
   attackSpeed: 1
   moveSpeed: 2
   attackRange: 4.6
@@ -164,6 +184,7 @@ MonoBehaviour:
     attackRangeRate: 0
   spawnFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -172,6 +193,7 @@ MonoBehaviour:
     scale: 1
   hitFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -180,6 +202,7 @@ MonoBehaviour:
     scale: 1
   deathFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -188,6 +211,7 @@ MonoBehaviour:
     scale: 1
   specialFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1

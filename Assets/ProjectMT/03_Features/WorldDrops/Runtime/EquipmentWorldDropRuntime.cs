@@ -32,6 +32,7 @@ namespace ProjectMT.Features.WorldDrops
         public int TemplateCount => templates.Count;
         public int PendingCount => buffer.Count;
         public int ReservedCount => reservedInstanceIds.Count;
+        public event Action<IReadOnlyList<EquipmentInstanceData>> EquipmentConfirmed;
         public int AvailableCapacity => Mathf.Max(
             0,
             EquipmentSaveData.MaxTotalQuantity - ResolveOwnedCount() - reservedInstanceIds.Count);
@@ -182,6 +183,15 @@ namespace ProjectMT.Features.WorldDrops
                     for (var index = 0; index < snapshot.Count; index++)
                     {
                         reservedInstanceIds.Remove(snapshot[index].InstanceId);
+                    }
+
+                    try
+                    {
+                        EquipmentConfirmed?.Invoke(snapshot); // 고유 장비 저장 확정 뒤에만 획득 UI로 전달
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogException(exception); // 표시 실패가 이미 끝난 저장을 되돌리지 않음
                     }
                 }
 

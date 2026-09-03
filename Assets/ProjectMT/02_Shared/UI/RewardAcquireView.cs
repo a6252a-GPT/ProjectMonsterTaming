@@ -2,6 +2,7 @@ using System;
 using ProjectMT.Shared.Pooling;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace ProjectMT.Shared.UI
 {
@@ -9,7 +10,8 @@ namespace ProjectMT.Shared.UI
     [RequireComponent(typeof(RectTransform), typeof(CanvasGroup))]
     public sealed class RewardAcquireView : MonoBehaviour // 보상 한 줄의 HUD 방향 이동·페이드
     {
-        [SerializeField] private TMP_Text labelText; // 아이콘 대체 기호와 수량 표시
+        [SerializeField] private Image itemIcon; // ItemDefinition 또는 장비 부위의 실제 아이콘
+        [SerializeField] private TMP_Text labelText; // 이름과 수량 표시
 
         private RectTransform rectTransform; // UI 이동 대상
         private CanvasGroup canvasGroup; // 입력 없이 투명도만 제어
@@ -59,6 +61,12 @@ namespace ProjectMT.Shared.UI
                 canvasGroup.alpha = 1f;
             }
 
+            if (itemIcon != null)
+            {
+                itemIcon.sprite = null;
+                itemIcon.gameObject.SetActive(false);
+            }
+
             var callback = released;
             released = null;
             callback?.Invoke();
@@ -66,6 +74,7 @@ namespace ProjectMT.Shared.UI
 
         public void Play(
             ScenePoolScope pool,
+            Sprite icon,
             string label,
             Color color,
             Vector2 from,
@@ -80,6 +89,22 @@ namespace ProjectMT.Shared.UI
             targetPosition = to;
             startedAt = Time.unscaledTime;
             duration = Mathf.Max(0.2f, playDuration);
+            if (itemIcon != null)
+            {
+                itemIcon.sprite = icon;
+                itemIcon.color = Color.white;
+                itemIcon.preserveAspect = true;
+                itemIcon.gameObject.SetActive(icon != null);
+            }
+
+            if (labelText != null)
+            {
+                var labelRect = labelText.rectTransform;
+                var offsetMin = labelRect.offsetMin;
+                offsetMin.x = icon != null ? 82f : 18f;
+                labelRect.offsetMin = offsetMin;
+            }
+
             labelText.text = label ?? string.Empty;
             labelText.color = color;
             rectTransform.anchoredPosition = startPosition;
@@ -126,8 +151,9 @@ namespace ProjectMT.Shared.UI
         }
 
 #if UNITY_EDITOR
-        public void EditorConfigure(TMP_Text text)
+        public void EditorConfigure(Image icon, TMP_Text text)
         {
+            itemIcon = icon;
             labelText = text;
             ResolveReferences();
         }

@@ -947,6 +947,37 @@ namespace ProjectMT.EditorTools.MonsterMaker
         }
 
 #if UNITY_EDITOR
+        public void EditorSetBalanceStats(
+            float health,
+            float attack,
+            float defenseValue,
+            float attacksPerSecond,
+            float movementSpeed,
+            float range)
+        {
+            if (!IsFinitePositive(health) || !IsFiniteNonNegative(attack) ||
+                !IsFiniteNonNegative(defenseValue) || !IsFinitePositive(attacksPerSecond) ||
+                !IsFiniteNonNegative(movementSpeed) || !IsFinitePositive(range))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(health),
+                    "Monster balance stats must be finite and inside the runtime-valid range.");
+            }
+
+            maxHealth = health;
+            attackPower = attack;
+            defense = defenseValue;
+            attackSpeed = attacksPerSecond;
+            moveSpeed = movementSpeed;
+            attackRange = range;
+        }
+
+        private static bool IsFinitePositive(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value) && value > 0f;
+
+        private static bool IsFiniteNonNegative(float value) =>
+            !float.IsNaN(value) && !float.IsInfinity(value) && value >= 0f;
+
         public void EditorEnsureSplitSkillUsage()
         {
             EnsureSplitSkillUsage();

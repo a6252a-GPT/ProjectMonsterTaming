@@ -17,10 +17,104 @@ MonoBehaviour:
   resultDelaySeconds: 0.8
   enemyBaseHealth: 28
   enemyBaseDamage: 4
-  enemyHealthGrowthPerStage: 0.11
+  enemyBaseDefense: 2
+  enemyHealthGrowthPerStage: 0.065983
   enemyDamageGrowthPerStage: 0.07
+  enemyDefenseGrowthPerStage: 0.04
   enemyMeleeAttackRange: 3.5
   enemyRangedAttackRange: 5.5
+  enemyTypeBalances:
+  - group: 0
+    healthMultiplier: 1
+    damageMultiplier: 1
+    defenseMultiplier: 1
+    attackInterval: 1
+    moveSpeed: 2.58
+    attackRange: 3.5
+  - group: 1
+    healthMultiplier: 1
+    damageMultiplier: 1
+    defenseMultiplier: 1
+    attackInterval: 1
+    moveSpeed: 2.58
+    attackRange: 3.5
+  - group: 2
+    healthMultiplier: 1
+    damageMultiplier: 1
+    defenseMultiplier: 1
+    attackInterval: 1
+    moveSpeed: 2.58
+    attackRange: 3.5
+  - group: 3
+    healthMultiplier: 1
+    damageMultiplier: 1
+    defenseMultiplier: 1
+    attackInterval: 1
+    moveSpeed: 2.58
+    attackRange: 3.5
+  - group: 4
+    healthMultiplier: 1
+    damageMultiplier: 1
+    defenseMultiplier: 1
+    attackInterval: 1.2
+    moveSpeed: 2.28
+    attackRange: 5.5
+  - group: 5
+    healthMultiplier: 1
+    damageMultiplier: 1
+    defenseMultiplier: 1
+    attackInterval: 1.2
+    moveSpeed: 2.28
+    attackRange: 5.5
+  - group: 6
+    healthMultiplier: 1
+    damageMultiplier: 1
+    defenseMultiplier: 1
+    attackInterval: 1.2
+    moveSpeed: 2.28
+    attackRange: 5.5
+  - group: 7
+    healthMultiplier: 1
+    damageMultiplier: 1
+    defenseMultiplier: 1
+    attackInterval: 1
+    moveSpeed: 2.58
+    attackRange: 3.5
+  - group: 8
+    healthMultiplier: 1.08
+    damageMultiplier: 1.05
+    defenseMultiplier: 1.05
+    attackInterval: 1
+    moveSpeed: 2.58
+    attackRange: 3.5
+  - group: 9
+    healthMultiplier: 1.18
+    damageMultiplier: 1.1
+    defenseMultiplier: 1.1
+    attackInterval: 1
+    moveSpeed: 2.58
+    attackRange: 3.5
+  - group: 10
+    healthMultiplier: 1.3
+    damageMultiplier: 1.18
+    defenseMultiplier: 1.18
+    attackInterval: 1
+    moveSpeed: 2.58
+    attackRange: 3.5
+  - group: 11
+    healthMultiplier: 1.45
+    damageMultiplier: 1.28
+    defenseMultiplier: 1.28
+    attackInterval: 1
+    moveSpeed: 2.58
+    attackRange: 3.5
+  - group: 12
+    healthMultiplier: 0.7
+    damageMultiplier: 1.1
+    defenseMultiplier: 0.8
+    attackInterval: 0.85
+    moveSpeed: 4.128
+    attackRange: 3.5
   enemyEntryDistance: 3.2
   enemySpawnIntervalSeconds: 0.16
   enemyMarchDurationSeconds: 1
@@ -33,48 +127,372 @@ MonoBehaviour:
   bossHealthMultiplier: 10
   bossVisualScaleMultiplier: 2.5
   stages:
-  - definitionId: normal_01_05
+  - definitionId: stage_001
     minimumStage: 1
+    maximumStage: 1
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_002
+    minimumStage: 2
+    maximumStage: 2
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_003
+    minimumStage: 3
+    maximumStage: 3
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_004
+    minimumStage: 4
+    maximumStage: 4
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_005
+    minimumStage: 5
     maximumStage: 5
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 0
-      role: 0
-      weight: 1
-    - appearance: 7
-      role: 0
-      weight: 1
-    ninjaCount: 0
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_06_10
+  - definitionId: stage_006
     minimumStage: 6
+    maximumStage: 6
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_007
+    minimumStage: 7
+    maximumStage: 7
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_008
+    minimumStage: 8
+    maximumStage: 8
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_009
+    minimumStage: 9
+    maximumStage: 9
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_010
+    minimumStage: 10
     maximumStage: 10
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 0
-      role: 0
-      weight: 1
-    - appearance: 7
-      role: 0
-      weight: 1
-    ninjaCount: 0
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -83,29 +501,323 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_11_15
+  - definitionId: stage_011
     minimumStage: 11
+    maximumStage: 11
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_012
+    minimumStage: 12
+    maximumStage: 12
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_013
+    minimumStage: 13
+    maximumStage: 13
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_014
+    minimumStage: 14
+    maximumStage: 14
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_015
+    minimumStage: 15
     maximumStage: 15
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 0
-      role: 0
-      weight: 1
-    - appearance: 7
-      role: 0
-      weight: 1
-    ninjaCount: 0
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -114,6 +826,18 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -122,52 +846,428 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 0
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 7
+        percentage: 50
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_16_20
+  - definitionId: stage_016
     minimumStage: 16
+    maximumStage: 16
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 1
+        percentage: 75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 4
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_017
+    minimumStage: 17
+    maximumStage: 17
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 1
+        percentage: 75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 4
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_018
+    minimumStage: 18
+    maximumStage: 18
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 1
+        percentage: 75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 4
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_019
+    minimumStage: 19
+    maximumStage: 19
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 1
+        percentage: 75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 4
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_020
+    minimumStage: 20
     maximumStage: 20
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 1
-      role: 0
-      weight: 3
-    - appearance: 4
-      role: 1
-      weight: 1
-    ninjaCount: 1
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 1
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 4
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_21_25
+  - definitionId: stage_021
     minimumStage: 21
+    maximumStage: 21
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 2
+        percentage: 70.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 5
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 2
+        percentage: 70.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 5
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_022
+    minimumStage: 22
+    maximumStage: 22
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 2
+        percentage: 70.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 5
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 2
+        percentage: 70.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 5
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_023
+    minimumStage: 23
+    maximumStage: 23
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 2
+        percentage: 70.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 5
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 2
+        percentage: 70.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 5
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_024
+    minimumStage: 24
+    maximumStage: 24
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 2
+        percentage: 70.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 5
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 2
+        percentage: 70.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 5
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_025
+    minimumStage: 25
     maximumStage: 25
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 2
-      role: 0
-      weight: 3
-    - appearance: 5
-      role: 1
-      weight: 1
-    ninjaCount: 1
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 2
+        percentage: 70.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 5
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -176,29 +1276,379 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 2
+        percentage: 70.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 5
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_26_30
+  - definitionId: stage_026
     minimumStage: 26
+    maximumStage: 26
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_027
+    minimumStage: 27
+    maximumStage: 27
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_028
+    minimumStage: 28
+    maximumStage: 28
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_029
+    minimumStage: 29
+    maximumStage: 29
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_030
+    minimumStage: 30
     maximumStage: 30
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 3
-      role: 0
-      weight: 3
-    - appearance: 6
-      role: 1
-      weight: 1
-    ninjaCount: 1
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -207,6 +1657,22 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -215,58 +1681,504 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 71.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.1666665
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_31_35
+  - definitionId: stage_031
     minimumStage: 31
+    maximumStage: 31
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 52.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 13.125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_032
+    minimumStage: 32
+    maximumStage: 32
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 52.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 13.125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_033
+    minimumStage: 33
+    maximumStage: 33
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 52.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 13.125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_034
+    minimumStage: 34
+    maximumStage: 34
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 52.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 13.125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_035
+    minimumStage: 35
     maximumStage: 35
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 3
-      role: 0
-      weight: 60
-    - appearance: 8
-      role: 0
-      weight: 15
-    - appearance: 6
-      role: 1
-      weight: 25
-    ninjaCount: 1
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 52.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 13.125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_36_40
+  - definitionId: stage_036
     minimumStage: 36
+    maximumStage: 36
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 45.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 24.375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 45.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 24.375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_037
+    minimumStage: 37
+    maximumStage: 37
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 45.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 24.375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 45.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 24.375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_038
+    minimumStage: 38
+    maximumStage: 38
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 45.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 24.375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 45.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 24.375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_039
+    minimumStage: 39
+    maximumStage: 39
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 45.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 24.375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 45.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 24.375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_040
+    minimumStage: 40
     maximumStage: 40
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 3
-      role: 0
-      weight: 49
-    - appearance: 8
-      role: 0
-      weight: 26
-    - appearance: 6
-      role: 1
-      weight: 25
-    ninjaCount: 1
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 45.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 24.375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -275,32 +2187,435 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 45.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 24.375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.4375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 6.25
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_41_45
+  - definitionId: stage_041
     minimumStage: 41
+    maximumStage: 41
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_042
+    minimumStage: 42
+    maximumStage: 42
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_043
+    minimumStage: 43
+    maximumStage: 43
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_044
+    minimumStage: 44
+    maximumStage: 44
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_045
+    minimumStage: 45
     maximumStage: 45
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 3
-      role: 0
-      weight: 38
-    - appearance: 8
-      role: 0
-      weight: 37
-    - appearance: 6
-      role: 1
-      weight: 25
-    ninjaCount: 1
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -309,6 +2624,26 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -317,58 +2652,508 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 3
+        percentage: 36.416664
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 8
+        percentage: 35.458332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 23.958332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 4.166666
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_46_50
+  - definitionId: stage_046
     minimumStage: 46
+    maximumStage: 46
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 37.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_047
+    minimumStage: 47
+    maximumStage: 47
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 37.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_048
+    minimumStage: 48
+    maximumStage: 48
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 37.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_049
+    minimumStage: 49
+    maximumStage: 49
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 37.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_050
+    minimumStage: 50
     maximumStage: 50
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 8
-      role: 0
-      weight: 50
-    - appearance: 9
-      role: 0
-      weight: 25
-    - appearance: 6
-      role: 1
-      weight: 25
-    ninjaCount: 2
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 37.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_51_55
+  - definitionId: stage_051
     minimumStage: 51
+    maximumStage: 51
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 43.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 43.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_052
+    minimumStage: 52
+    maximumStage: 52
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 43.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 43.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_053
+    minimumStage: 53
+    maximumStage: 53
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 43.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 43.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_054
+    minimumStage: 54
+    maximumStage: 54
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 43.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 43.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_055
+    minimumStage: 55
     maximumStage: 55
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 8
-      role: 0
-      weight: 25
-    - appearance: 9
-      role: 0
-      weight: 50
-    - appearance: 6
-      role: 1
-      weight: 25
-    ninjaCount: 2
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 43.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -377,32 +3162,435 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 43.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_56_60
+  - definitionId: stage_056
     minimumStage: 56
+    maximumStage: 56
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_057
+    minimumStage: 57
+    maximumStage: 57
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_058
+    minimumStage: 58
+    maximumStage: 58
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_059
+    minimumStage: 59
+    maximumStage: 59
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_060
+    minimumStage: 60
     maximumStage: 60
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 8
-      role: 0
-      weight: 25
-    - appearance: 9
-      role: 0
-      weight: 50
-    - appearance: 6
-      role: 1
-      weight: 25
-    ninjaCount: 2
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -411,6 +3599,26 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -419,52 +3627,452 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 8
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 9
+        percentage: 45.833332
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_61_65
+  - definitionId: stage_061
     minimumStage: 61
+    maximumStage: 61
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_062
+    minimumStage: 62
+    maximumStage: 62
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_063
+    minimumStage: 63
+    maximumStage: 63
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_064
+    minimumStage: 64
+    maximumStage: 64
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_065
+    minimumStage: 65
     maximumStage: 65
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 9
-      role: 0
-      weight: 3
-    - appearance: 6
-      role: 1
-      weight: 1
-    ninjaCount: 2
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_66_70
+  - definitionId: stage_066
     minimumStage: 66
+    maximumStage: 66
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_067
+    minimumStage: 67
+    maximumStage: 67
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_068
+    minimumStage: 68
+    maximumStage: 68
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_069
+    minimumStage: 69
+    maximumStage: 69
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_070
+    minimumStage: 70
     maximumStage: 70
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 9
-      role: 0
-      weight: 3
-    - appearance: 6
-      role: 1
-      weight: 1
-    ninjaCount: 2
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -473,29 +4081,379 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_71_75
+  - definitionId: stage_071
     minimumStage: 71
+    maximumStage: 71
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_072
+    minimumStage: 72
+    maximumStage: 72
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_073
+    minimumStage: 73
+    maximumStage: 73
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_074
+    minimumStage: 74
+    maximumStage: 74
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_075
+    minimumStage: 75
     maximumStage: 75
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 9
-      role: 0
-      weight: 3
-    - appearance: 6
-      role: 1
-      weight: 1
-    ninjaCount: 2
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -504,6 +4462,22 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -512,52 +4486,448 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 9
+        percentage: 68.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 22.916666
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 8.333333
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_76_80
+  - definitionId: stage_076
     minimumStage: 76
+    maximumStage: 76
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 46.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 15.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 37.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_077
+    minimumStage: 77
+    maximumStage: 77
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 46.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 15.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 37.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_078
+    minimumStage: 78
+    maximumStage: 78
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 46.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 15.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 37.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_079
+    minimumStage: 79
+    maximumStage: 79
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 46.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 15.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 37.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_080
+    minimumStage: 80
     maximumStage: 80
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 10
-      role: 0
-      weight: 3
-    - appearance: 6
-      role: 1
-      weight: 1
-    ninjaCount: 3
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 46.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 15.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 37.5
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_81_85
+  - definitionId: stage_081
     minimumStage: 81
+    maximumStage: 81
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 60.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 60.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_082
+    minimumStage: 82
+    maximumStage: 82
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 60.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 60.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_083
+    minimumStage: 83
+    maximumStage: 83
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 60.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 60.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_084
+    minimumStage: 84
+    maximumStage: 84
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 60.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 60.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_085
+    minimumStage: 85
     maximumStage: 85
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 10
-      role: 0
-      weight: 3
-    - appearance: 6
-      role: 1
-      weight: 1
-    ninjaCount: 3
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 60.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -566,29 +4936,379 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 60.9375
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.3125
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_86_90
+  - definitionId: stage_086
     minimumStage: 86
+    maximumStage: 86
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_087
+    minimumStage: 87
+    maximumStage: 87
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_088
+    minimumStage: 88
+    maximumStage: 88
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_089
+    minimumStage: 89
+    maximumStage: 89
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_090
+    minimumStage: 90
     maximumStage: 90
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 10
-      role: 0
-      weight: 3
-    - appearance: 6
-      role: 1
-      weight: 1
-    ninjaCount: 3
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -597,6 +5317,22 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -605,29 +5341,283 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 10
+        percentage: 65.625
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 21.875
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 12.5
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_91_95
+  - definitionId: stage_091
     minimumStage: 91
+    maximumStage: 91
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_092
+    minimumStage: 92
+    maximumStage: 92
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_093
+    minimumStage: 93
+    maximumStage: 93
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_094
+    minimumStage: 94
+    maximumStage: 94
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_095
+    minimumStage: 95
     maximumStage: 95
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 11
-      role: 0
-      weight: 3
-    - appearance: 6
-      role: 1
-      weight: 1
-    ninjaCount: 4
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -636,29 +5626,55 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 56.25
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 18.75
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 25
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
         chance: 1
-  - definitionId: normal_96_100
+  - definitionId: stage_096
     minimumStage: 96
-    maximumStage: 100
+    maximumStage: 96
     meleeAppearance: 0
     rangedAppearance: 0
     rangedEveryUnits: 0
-    spawnPool:
-    - appearance: 11
-      role: 0
-      weight: 3
-    - appearance: 6
-      role: 1
-      weight: 1
-    ninjaCount: 4
+    spawnPool: []
+    legacyNinjaCount: 0
     waves:
     - baseEnemyCount: 8
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -667,6 +5683,22 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2
@@ -675,6 +5707,346 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 2
       formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_097
+    minimumStage: 97
+    maximumStage: 97
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_098
+    minimumStage: 98
+    maximumStage: 98
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_099
+    minimumStage: 99
+    maximumStage: 99
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+  - definitionId: stage_100
+    minimumStage: 100
+    maximumStage: 100
+    meleeAppearance: 0
+    rangedAppearance: 0
+    rangedEveryUnits: 0
+    spawnPool: []
+    legacyNinjaCount: 0
+    waves:
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 0
+      formationForwardOffset: 0
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 1.15
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
+      drops:
+      - itemId: currency_gold
+        quantity: 2
+        chance: 1
+    - baseEnemyCount: 8
+      extraEnemyEveryStages: 0
+      spawnDelaySeconds: 2
+      formationForwardOffset: 2.3
+      healthPercent: 100
+      damagePercent: 100
+      defensePercent: 100
+      spawnPool:
+      - appearance: 11
+        percentage: 62.5
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 6
+        percentage: 20.833334
+        minimumRarity: 0
+        maximumRarity: 0
+      - appearance: 12
+        percentage: 16.666666
+        minimumRarity: 0
+        maximumRarity: 0
       drops:
       - itemId: currency_gold
         quantity: 2

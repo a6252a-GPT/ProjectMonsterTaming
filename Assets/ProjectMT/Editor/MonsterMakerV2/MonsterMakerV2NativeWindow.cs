@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ProjectMT.EditorTools.ExpeditionBalance;
 using ProjectMT.EditorTools.MonsterMaker;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
@@ -81,6 +82,9 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private Button sortRarityButton;
         private Button pingButton;
         private Button openDraftButton;
+        private Button balanceTableButton;
+        private Button waveTableButton;
+        private Button enemyTableButton;
         private Button catalogToggleButton;
         private Button helpToggleButton;
         private Button pauseButton;
@@ -264,6 +268,9 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             sortRarityButton = rootVisualElement.Q<Button>("sort-rarity");
             pingButton = rootVisualElement.Q<Button>("ping-button");
             openDraftButton = rootVisualElement.Q<Button>("open-draft-button");
+            balanceTableButton = rootVisualElement.Q<Button>("balance-table-button");
+            waveTableButton = rootVisualElement.Q<Button>("wave-table-button");
+            enemyTableButton = rootVisualElement.Q<Button>("enemy-table-button");
             catalogToggleButton = rootVisualElement.Q<Button>("catalog-toggle-button");
             helpToggleButton = rootVisualElement.Q<Button>("help-toggle-button");
             pauseButton = rootVisualElement.Q<Button>("pause-button");
@@ -285,7 +292,9 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                    attackButtons != null && previewRenderHost != null &&
                    bottomWorkspace != null && commandDetailsScroll != null &&
                    sortDefaultButton != null && sortRarityButton != null && pingButton != null &&
-                    catalogPanel != null && openDraftButton != null && catalogToggleButton != null &&
+                    catalogPanel != null && openDraftButton != null && balanceTableButton != null &&
+                    waveTableButton != null && enemyTableButton != null &&
+                    catalogToggleButton != null &&
                     helpToggleButton != null &&
                    pauseButton != null && playActiveButton != null && environmentField != null &&
                    timelineSlider != null;
@@ -300,6 +309,9 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             sortRarityButton.clicked += () => SetCatalogSortMode(CatalogSortMode.Rarity);
             pingButton.clicked += PingSelectedDefinition;
             openDraftButton.clicked += ShowAllDraftMenu;
+            balanceTableButton.clicked += OpenBalanceTable;
+            waveTableButton.clicked += OpenWaveBalanceTable;
+            enemyTableButton.clicked += OpenEnemyBalanceTable;
             catalogToggleButton.clicked += ToggleCatalog;
             helpToggleButton.clicked += ToggleContextHelp;
             rootVisualElement.Q<Button>("new-draft-button").clicked += CreateNewDraft;
@@ -312,6 +324,48 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             rootVisualElement.Q<Button>("publish-button").clicked += PublishDraft;
             ApplyCatalogVisibility();
             ApplyContextHelpVisibility();
+        }
+
+        private void OpenBalanceTable()
+        {
+            if (state?.IsDirty == true)
+            {
+                EditorUtility.DisplayDialog(
+                    "몬스터 밸런스 표",
+                    "현재 Monster Maker에 저장하지 않은 변경이 있습니다. 먼저 원본을 저장하거나 변경을 버린 뒤 밸런스 표를 여세요.",
+                    "확인");
+                return;
+            }
+
+            MonsterBalanceTableWindow.OpenWindow();
+        }
+
+        private void OpenWaveBalanceTable()
+        {
+            if (state?.IsDirty == true)
+            {
+                EditorUtility.DisplayDialog(
+                    "원정대 적 웨이브 표",
+                    "현재 Monster Maker에 저장하지 않은 변경이 있습니다. 먼저 원본을 저장하거나 변경을 버린 뒤 웨이브 표를 여세요.",
+                    "확인");
+                return;
+            }
+
+            ExpeditionWaveBalanceTableWindow.OpenWindow();
+        }
+
+        private void OpenEnemyBalanceTable()
+        {
+            if (state?.IsDirty == true)
+            {
+                EditorUtility.DisplayDialog(
+                    "원정대 적 리스트 표",
+                    "현재 Monster Maker에 저장하지 않은 변경이 있습니다. 먼저 원본을 저장하거나 변경을 버린 뒤 적 리스트 표를 여세요.",
+                    "확인");
+                return;
+            }
+
+            ExpeditionEnemyBalanceTableWindow.OpenWindow();
         }
 
         private void ToggleContextHelp()

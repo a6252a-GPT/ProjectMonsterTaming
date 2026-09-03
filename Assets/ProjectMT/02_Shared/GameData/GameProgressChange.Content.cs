@@ -236,14 +236,20 @@ namespace ProjectMT.Shared.GameData
 
         public static GameProgressChange RecordCastleRaidClear() // 성 파괴 기록 요청
         {
-            return RecordCastleRaidClear(RewardBundle.Empty);
+            return RecordCastleRaidClear(CastleRaidStageRules.MinimumStage, RewardBundle.Empty);
         }
 
         public static GameProgressChange RecordCastleRaidClear(RewardBundle rewards)
         {
+            return RecordCastleRaidClear(CastleRaidStageRules.MinimumStage, rewards);
+        }
+
+        public static GameProgressChange RecordCastleRaidClear(int stage, RewardBundle rewards)
+        {
             return new GameProgressChange
             {
                 MarkCastleRaidCleared = true,
+                CastleRaidClearedStage = stage,
                 Rewards = rewards ?? RewardBundle.Empty
             };
         }

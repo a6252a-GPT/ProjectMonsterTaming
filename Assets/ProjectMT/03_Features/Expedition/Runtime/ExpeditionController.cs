@@ -232,6 +232,16 @@ namespace ProjectMT.Features.Expedition
             ResetPlayerTracking();
             CollectAllWorldDrops(); // 씬 종료 전에 남은 드랍을 전부 획득 확정
             _ = FlushWorldDropsCheckpointAsync(); // 씬 종료 뒤에도 시작한 저장 Task가 획득분을 확정
+            if (worldItemDrops != null)
+            {
+                worldItemDrops.ItemsConfirmed -= HandleWorldItemsConfirmed;
+            }
+
+            if (equipmentWorldDrops != null)
+            {
+                equipmentWorldDrops.EquipmentConfirmed -= HandleEquipmentConfirmed;
+            }
+
             worldItemDrops?.Initialize(null, null, null, null);
             equipmentWorldDrops?.Initialize(null, null, null, null);
             combatWorld?.Clear();

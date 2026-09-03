@@ -68,6 +68,47 @@ namespace ProjectMT.Features.OfflineReward
         private GameObject DisplayRoot => displayRootOverride != null ? displayRootOverride : gameObject;
         public bool IsOpen => DisplayRoot.activeSelf;
 
+        public RewardPresentationRequest BuildConfirmedAcquirePresentation(
+            OfflineRewardPresentation presentation)
+        {
+            if (presentation == null)
+            {
+                return new RewardPresentationRequest();
+            }
+
+            var baseRequest = presentation.CreateAcquirePresentation(itemCatalog);
+            var items = new List<RewardPresentationItem>(
+                baseRequest.Items.Count + presentation.EquipmentRewards.Count);
+            for (var index = 0; index < baseRequest.Items.Count; index++)
+            {
+                items.Add(baseRequest.Items[index]);
+            }
+
+            for (var index = 0; index < presentation.EquipmentRewards.Count; index++)
+            {
+                var equipment = presentation.EquipmentRewards[index];
+                if (equipment == null)
+                {
+                    continue;
+                }
+
+                var definition = equipmentCatalog != null
+                    ? equipmentCatalog.GetDefinitionForPart(equipment.Part, equipment.Grade)
+                    : null;
+                var partIndex = (int)equipment.Part;
+                var partIcon = equipmentPartIcons != null && partIndex >= 0 && partIndex < equipmentPartIcons.Length
+                    ? equipmentPartIcons[partIndex]
+                    : null;
+                items.Add(new RewardPresentationItem(
+                    RewardPresentationKind.Item,
+                    definition?.DisplayName ?? EquipmentPartInfo.GetDisplayName(equipment.Part),
+                    1L,
+                    icon: partIcon ?? definition?.Icon ?? fallbackRewardIcon));
+            }
+
+            return new RewardPresentationRequest(items.ToArray());
+        }
+
         private void Awake()
         {
             CacheRewardSlots();
@@ -219,7 +260,7 @@ namespace ProjectMT.Features.OfflineReward
         {
             CacheRewardSlots();
             CacheFrameVariantTemplates();
-            var request = presentation.CreateAcquirePresentation();
+            var request = presentation.CreateAcquirePresentation(itemCatalog);
             var items = request?.Items;
             var itemCount = items?.Count ?? 0;
             var equipmentCount = presentation.EquipmentRewards.Count;

@@ -1,5 +1,6 @@
 using System.Collections;
 using ProjectMT.Shared.Audio;
+using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Pooling;
 using ProjectMT.Shared.Reward;
 using UnityEngine;
@@ -82,6 +83,7 @@ namespace ProjectMT.Shared.UI
             activeItemCount++;
             view.Play(
                 poolScope,
+                ResolveIcon(item),
                 FormatLabel(item),
                 ResolveColor(item.Kind),
                 displayRoot.InverseTransformPoint(worldSpawnPosition),
@@ -100,7 +102,22 @@ namespace ProjectMT.Shared.UI
             var label = string.IsNullOrWhiteSpace(item.Label)
                 ? item.Kind == RewardPresentationKind.Gold ? "골드" : "보상"
                 : item.Label;
-            return $"●  {label} +{item.Amount:N0}";
+            return $"{label} +{item.Amount:N0}";
+        }
+
+        private static Sprite ResolveIcon(RewardPresentationItem item)
+        {
+            if (item.Icon != null)
+            {
+                return item.Icon;
+            }
+
+            var itemId = item.Kind == RewardPresentationKind.Gold ? ItemIds.Gold : item.ItemId;
+            var catalog = ItemCatalogHub.Current;
+            return !string.IsNullOrWhiteSpace(itemId) && catalog != null &&
+                   catalog.TryGet(itemId, out var definition)
+                ? definition.Icon
+                : null;
         }
 
         private static Color ResolveColor(RewardPresentationKind kind)

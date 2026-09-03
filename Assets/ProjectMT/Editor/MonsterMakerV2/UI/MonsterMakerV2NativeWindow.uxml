@@ -100,6 +100,11 @@
                         <ui:Label text="Live Preview" class="panel-title" />
                         <ui:Label name="preview-state" text="모델과 Motion을 확인합니다." class="panel-caption" />
                     </ui:VisualElement>
+                    <ui:VisualElement class="preview-analysis-tools">
+                        <ui:Button name="balance-table-button" text="몬스터 밸런스" tooltip="운영 몬스터 44종의 능력치를 한 화면에서 비교·수정합니다." class="preview-tool-button" />
+                        <ui:Button name="wave-table-button" text="적 웨이브" tooltip="원정대 1~100단계의 웨이브별 수량·구성·HP·공격·방어 배율을 비교·수정합니다." class="preview-tool-button" />
+                        <ui:Button name="enemy-table-button" text="적 리스트" tooltip="원정대 적 13종의 역할·능력치 배율·공속·이동속도·사거리를 비교·수정합니다." class="preview-tool-button" />
+                    </ui:VisualElement>
                     <ui:DropdownField name="environment-field" label="환경" class="environment-field" />
                 </ui:VisualElement>
 

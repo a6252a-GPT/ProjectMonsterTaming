@@ -18,8 +18,8 @@ MonoBehaviour:
   previewPrefab: {fileID: 5223471892760376560, guid: 902ce9330c0b9024fa50d456432bba51, type: 3}
   visualTint: {r: 1, g: 1, b: 1, a: 1}
   maxHealth: 150
-  attackPower: 19
-  defense: 9
+  attackPower: 15.6
+  defense: 8
   attackSpeed: 0.9
   moveSpeed: 1.8
   attackRange: 3.4

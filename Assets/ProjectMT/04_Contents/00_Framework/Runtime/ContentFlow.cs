@@ -167,7 +167,7 @@ namespace ProjectMT.Contents.Framework
 
         public bool StartSeparate(ContentId contentId, BattlePartySnapshot party)
         {
-            return StartSeparate(contentId, party, default);
+            return StartSeparate(contentId, party, default(ContentVariantId));
         }
 
         public bool StartSeparate(ContentId contentId, BattlePartySnapshot party, ContentVariantId variantId)
@@ -196,6 +196,47 @@ namespace ProjectMT.Contents.Framework
                 new ContentRunInfo(contentId, "seed", ContentRunMode.SeedTest, variantId),
                 targetSceneId); // 씬 이동 전 실행 등록
             sceneNavigator.Load(targetSceneId);
+            return true;
+        }
+
+        public bool StartSeparate(ContentId contentId, BattlePartySnapshot party, int stage)
+        {
+            if (IsRunning ||
+                !TryGetDefinition(contentId, ContentOpenMode.SeparateScene, out var definition) ||
+                !definition.TryResolveSceneId(default, out var targetSceneId) ||
+                !TryValidateCastleRaidEntry(stage, out var runMode))
+            {
+                return false;
+            }
+
+            if (!TryCreateStartData(definition, party, out var startData))
+            {
+                return false;
+            }
+
+            Phase = ContentFlowPhase.Entering;
+            activeRun = CreateRun(
+                definition,
+                startData,
+                null,
+                new ContentRunInfo(contentId, stage.ToString(), runMode),
+                targetSceneId);
+            sceneNavigator.Load(targetSceneId);
+            return true;
+        }
+
+        public bool TryGetCastleRaidState(ContentId contentId, out CastleRaidEntryState state)
+        {
+            state = default;
+            if (!TryGetDefinition(contentId, ContentOpenMode.SeparateScene, out var definition))
+            {
+                return false;
+            }
+
+            state = new CastleRaidEntryState(
+                contentId,
+                definition.DisplayName,
+                progress.View.CastleRaidHighestClearedStage);
             return true;
         }
 
@@ -269,6 +310,21 @@ namespace ProjectMT.Contents.Framework
 
             view.Items.TryGetQuantity(definition.DungeonKeyItemId, out var keyQuantity);
             return stage <= highestClearedStage && keyQuantity > 0L; // 파밍은 입장 시 한 개 예약
+        }
+
+        private bool TryValidateCastleRaidEntry(int stage, out ContentRunMode runMode)
+        {
+            runMode = default;
+            var highestClearedStage = progress.View.CastleRaidHighestClearedStage;
+            if (!CastleRaidStageRules.IsSelectable(stage, highestClearedStage))
+            {
+                return false;
+            }
+
+            runMode = CastleRaidStageRules.IsNewClear(stage, highestClearedStage)
+                ? ContentRunMode.Challenge
+                : ContentRunMode.Farming;
+            return true;
         }
 
         private bool TryGetDefinition(ContentId contentId, ContentOpenMode expectedMode, out ContentDefinition definition)
@@ -347,7 +403,8 @@ namespace ProjectMT.Contents.Framework
                 return;
             }
 
-            if (runInfo.RunMode != ContentRunMode.SeedTest)
+            if (runInfo.RunMode != ContentRunMode.SeedTest &&
+                !string.IsNullOrEmpty(run.Definition.DungeonKeyItemId))
             {
                 if (!int.TryParse(runInfo.StageId, out var stage) ||
                     !change.TryAttachGrowthDungeonSettlement(

@@ -5,6 +5,7 @@ using System.Linq;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Combat;
+using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Pooling;
 using ProjectMT.Shared.Unit;
 using TMPro;
@@ -92,6 +93,8 @@ namespace ProjectMT.Contents.CastleRaidHex
         private int deployedCount;
         private bool resultSent;
         private bool generationInProgress;
+        private bool progressionStageRun;
+        private int progressionStage;
 
         public bool IsRunning { get; private set; }
         public int DeployedCount => deployedCount;
@@ -122,6 +125,8 @@ namespace ProjectMT.Contents.CastleRaidHex
             {
                 throw new ArgumentException("부대 투입 시작값이 필요합니다.", nameof(contentContext));
             }
+
+            ConfigureProgressionStage(contentContext.RunInfo);
 
             ValidateSceneReferences();
             CreateStage();
@@ -328,6 +333,25 @@ namespace ProjectMT.Contents.CastleRaidHex
             startData = null;
             context = null;
             resultSent = false;
+            progressionStageRun = false;
+            progressionStage = 0;
+        }
+
+        private void ConfigureProgressionStage(ContentRunInfo runInfo)
+        {
+            progressionStageRun = runInfo.RunMode != ContentRunMode.SeedTest &&
+                                  int.TryParse(runInfo.StageId, out progressionStage) &&
+                                  CastleRaidStageRules.IsValidStage(progressionStage);
+            if (!progressionStageRun)
+            {
+                progressionStage = 0;
+                return;
+            }
+
+            difficultyLevel = CastleRaidStageRules.ResolveDifficulty(progressionStage);
+            generationSeed = CastleRaidStageRules.ResolveGenerationSeed(progressionStage);
+            var themes = HexCastleThemeCatalog.Themes;
+            stageTheme = themes[(progressionStage - 1) % themes.Count];
         }
 
         private void ValidateSceneReferences()
@@ -563,6 +587,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             unitAiTagActions = new UnityAction[unitButtons.Length];
             difficultyButtonActions = new UnityAction[difficultyButtons.Length];
             aiDescriptionPanel.SetActive(false);
+            aiDescriptionPanel.GetComponent<Button>()?.onClick.AddListener(HideAiDescription);
             for (var index = 0; index < unitButtons.Length; index++)
             {
                 var capturedIndex = index;
@@ -634,6 +659,7 @@ namespace ProjectMT.Contents.CastleRaidHex
                 }
             }
             regenerateCastleButton?.onClick.RemoveListener(GenerateAnotherCastle);
+            aiDescriptionPanel?.GetComponent<Button>()?.onClick.RemoveListener(HideAiDescription);
             unitButtonActions = Array.Empty<UnityAction>();
             unitAiTagActions = Array.Empty<UnityAction>();
             difficultyButtonActions = Array.Empty<UnityAction>();
@@ -701,17 +727,32 @@ namespace ProjectMT.Contents.CastleRaidHex
             {
                 castleInfoText.text = layout == null
                     ? "육각 성을 준비하는 중입니다"
-                    : $"난이도 {layout.DifficultyLevel} · {HexCastleThemeCatalog.ResolveLabel(layout.Theme)} · " +
-                      $"{layout.DefenseLayerCount}중벽 · Seed {layout.Seed}";
+                    : progressionStageRun
+                        ? $"STAGE {progressionStage:000} · 난이도 {layout.DifficultyLevel} · " +
+                          $"{HexCastleThemeCatalog.ResolveLabel(layout.Theme)} · {layout.DefenseLayerCount}중벽"
+                        : $"DEV 난이도 {layout.DifficultyLevel} · {HexCastleThemeCatalog.ResolveLabel(layout.Theme)} · " +
+                          $"{layout.DefenseLayerCount}중벽 · Seed {layout.Seed}";
             }
 
-            var canGenerate = IsRunning && !generationInProgress;
+            var canGenerate = IsRunning && !generationInProgress && !progressionStageRun;
+            var generationControls = regenerateCastleButton != null
+                ? regenerateCastleButton.transform.parent?.gameObject
+                : null;
+            generationControls?.SetActive(!progressionStageRun);
             if (difficultyButtons != null)
             {
                 foreach (var button in difficultyButtons)
                 {
+                    if (button != null)
+                    {
+                        button.gameObject.SetActive(!progressionStageRun);
+                    }
                     SetGenerationButtonState(button, canGenerate);
                 }
+            }
+            if (regenerateCastleButton != null)
+            {
+                regenerateCastleButton.gameObject.SetActive(!progressionStageRun);
             }
             SetGenerationButtonState(regenerateCastleButton, canGenerate);
         }
@@ -918,6 +959,11 @@ namespace ProjectMT.Contents.CastleRaidHex
                 $"<b>{ResolveUnitLabel(index)} · {HexCastleAssaultAIPresentation.ResolveTag(profile)}</b>\n" +
                 HexCastleAssaultAIPresentation.ResolveDescription(profile);
             aiDescriptionPanel.SetActive(true);
+        }
+
+        private void HideAiDescription()
+        {
+            aiDescriptionPanel?.SetActive(false);
         }
 
         private HexCastleAssaultAIProfile ResolveUnitAiProfile(int index)

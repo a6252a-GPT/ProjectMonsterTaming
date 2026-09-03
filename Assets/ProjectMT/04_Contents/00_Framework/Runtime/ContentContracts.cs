@@ -172,7 +172,9 @@ namespace ProjectMT.Contents.Framework
             int stage);
         bool StartSeparate(ContentId contentId, BattlePartySnapshot party);
         bool StartSeparate(ContentId contentId, BattlePartySnapshot party, ContentVariantId variantId);
+        bool StartSeparate(ContentId contentId, BattlePartySnapshot party, int stage);
         bool TryGetGrowthDungeonState(ContentId contentId, out GrowthDungeonEntryState state);
+        bool TryGetCastleRaidState(ContentId contentId, out CastleRaidEntryState state);
     }
 
     public interface IGrowthDungeonSweepService // RuntimePrefab을 열지 않는 1회 소탕 정산
@@ -245,6 +247,34 @@ namespace ProjectMT.Contents.Framework
         public long KeyQuantity { get; }
         public bool SupportsSweep { get; }
         public bool CanSweep => SupportsSweep && HighestClearedStage > 0 && KeyQuantity > 0L;
+    }
+
+    public readonly struct CastleRaidEntryState // 1~100 단계 선택·입장 검증용 Snapshot
+    {
+        public CastleRaidEntryState(ContentId contentId, string displayName, int highestClearedStage)
+        {
+            ContentId = contentId;
+            DisplayName = displayName ?? contentId.Value;
+            HighestClearedStage = Math.Clamp(
+                highestClearedStage,
+                0,
+                CastleRaidStageRules.MaximumStage);
+            NextChallengeStage = CastleRaidStageRules.ResolveNextChallengeStage(HighestClearedStage);
+            MaximumSelectableStage = CastleRaidStageRules.ResolveMaximumSelectableStage(HighestClearedStage);
+            HasChallengeStage = CastleRaidStageRules.HasChallengeStage(HighestClearedStage);
+        }
+
+        public ContentId ContentId { get; }
+        public string DisplayName { get; }
+        public int HighestClearedStage { get; }
+        public int NextChallengeStage { get; }
+        public int MaximumSelectableStage { get; }
+        public bool HasChallengeStage { get; }
+
+        public bool IsSelectable(int stage)
+        {
+            return CastleRaidStageRules.IsSelectable(stage, HighestClearedStage);
+        }
     }
 
     public readonly struct ContentRunInfo // 한 판의 고정 식별 정보

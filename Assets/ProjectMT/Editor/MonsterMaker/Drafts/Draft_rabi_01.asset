@@ -17,6 +17,10 @@ MonoBehaviour:
   rarity: 0
   portrait: {fileID: 21300000, guid: 6bacf9e0dd386954595f599b939acdbc, type: 3}
   skillLoadoutConfigured: 1
+  usePassiveSkill: 1
+  useActiveSkill: 0
+  splitSkillUsageConfigured: 1
+  skillUsageSchemaVersion: 1
   rarityPassiveSkill: {fileID: 11400000, guid: 508b5618d2aff4541907b3ee645b40bc, type: 2}
   passiveTuning:
     initialized: 1
@@ -33,6 +37,22 @@ MonoBehaviour:
     radius: 0
     maxTargets: 1
   rarityActiveSkill: {fileID: 0}
+  activeAttackProfile: {fileID: 0}
+  activeEffectProfile: {fileID: 0}
+  activeSkillName: 
+  activeEnergyMaximum: 1000
+  activeSkillClip: {fileID: 0}
+  activeSkillPlaybackSpeed: 1
+  activeSkillCrossFadeDuration: 0.08
+  activeSkillCommitNormalizedTime: 0.25
+  activeStepMotionModeConfigured: 0
+  useCustomActiveStepMotions: 0
+  activeAttackStepTunings: []
+  activeAttackPresentations: []
+  activeEffectPresentations: []
+  activeAttackAuthoringProfileId: 
+  activeEffectAuthoringProfileId: 
+  inactiveActiveAttackAuthoring: []
   productionMemo: "\uBAAC\uC2A4\uD130 \uB9AC\uC6CC\uD06C 2026-08-26 / Rabby_Brown
     / Rabby \uC804\uC6A9 \uC560\uB2C8\uBA54\uC774\uC158 / BA_M_01 \uBC0F \uAE30\uC874
     SFX \uC720\uC9C0"
@@ -54,8 +74,8 @@ MonoBehaviour:
   previewScale: 1
   vfxScale: 0.75
   maxHealth: 120
-  attackPower: 18
-  defense: 6
+  attackPower: 13.6
+  defense: 5
   attackSpeed: 1.1
   moveSpeed: 2.1
   attackRange: 3.5
@@ -197,6 +217,7 @@ MonoBehaviour:
     attackRangeRate: 0
   spawnFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -205,6 +226,7 @@ MonoBehaviour:
     scale: 1
   hitFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -213,6 +235,7 @@ MonoBehaviour:
     scale: 1
   deathFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1
@@ -221,6 +244,7 @@ MonoBehaviour:
     scale: 1
   specialFeedback:
     sound: {fileID: 0}
+    soundVolume: 1
     sfx: {fileID: 0}
     vfxPrefab: {fileID: 0}
     vfxLifetime: 1

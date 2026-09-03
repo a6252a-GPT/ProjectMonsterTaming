@@ -371,9 +371,9 @@ MonoBehaviour:
     dashDuration: 0.1
     pattern: 2
     progression: 4
-    damageMultiplier: 0.35
+    damageMultiplier: 0.45862067
     damageMultiplierMode: 0
-    maximumDamageMultiplier: 0.35
+    maximumDamageMultiplier: 0.45862067
     maxTargets: 8
     range: 3
     width: 1.5
@@ -481,9 +481,9 @@ MonoBehaviour:
     dashDuration: 0.1
     pattern: 2
     progression: 4
-    damageMultiplier: 1.1
+    damageMultiplier: 1.4413793
     damageMultiplierMode: 0
-    maximumDamageMultiplier: 1.1
+    maximumDamageMultiplier: 1.4413793
     maxTargets: 8
     range: 3
     width: 1.5

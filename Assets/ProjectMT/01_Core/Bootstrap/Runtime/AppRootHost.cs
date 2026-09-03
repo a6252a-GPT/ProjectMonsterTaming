@@ -660,7 +660,10 @@ namespace ProjectMT.Bootstrap
         {
             try
             {
-                rewardPresenter?.PlayConfirmed(presentation?.CreateAcquirePresentation());
+                var acquirePresentation = offlineRewardPresenter != null
+                    ? offlineRewardPresenter.BuildConfirmedAcquirePresentation(presentation)
+                    : presentation?.CreateAcquirePresentation(projectConfig.ItemCatalog);
+                rewardPresenter?.PlayConfirmed(acquirePresentation);
                 if (!ShowPendingOfflineRewards())
                 {
                     ShowPendingAttendance(); // 접속 정산을 모두 확인한 뒤 출석 표시

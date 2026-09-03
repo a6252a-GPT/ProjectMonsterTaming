@@ -1166,6 +1166,7 @@ namespace ProjectMT.Contents.FallenCommander.Editor
             }
 
             var fallDuration = Mathf.Max(0.1f, spec.FallingDuration);
+            var spawnAudioPlayed = false;
             for (var index = 0; index < FallingShots.Count; index++)
             {
                 var shot = FallingShots[index];
@@ -1178,6 +1179,11 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 {
                     shot.Spawned = true;
                     fallingLastSpawnTime = elapsed;
+                    if (!spawnAudioPlayed)
+                    {
+                        spawnAudioPlayed = true;
+                        PlayStartAudio();
+                    }
                     shot.Projectile?.SetActive(true);
                     RestartPreviewParticles(shot.Projectile);
                     shot.Telegraph?.gameObject.SetActive(true);
@@ -1750,6 +1756,14 @@ namespace ProjectMT.Contents.FallenCommander.Editor
                 startVfxInstance = instance;
             }
 
+            if (!IsFallingBarrage(spec.Kind))
+            {
+                PlayStartAudio();
+            }
+        }
+
+        private static void PlayStartAudio()
+        {
             PlayAudio(
                 spec.Effects?.StartSfx,
                 spec.Effects == null ? 0f : spec.Effects.StartSfxDuration,

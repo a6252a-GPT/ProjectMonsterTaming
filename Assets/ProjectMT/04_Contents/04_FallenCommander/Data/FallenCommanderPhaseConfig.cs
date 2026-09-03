@@ -233,11 +233,8 @@ namespace ProjectMT.Contents.FallenCommander
                 var candidate = availableAttacks[index];
                 if (candidate != previous &&
                     (canSelect == null || canSelect(candidate)) &&
-                    candidate != FallenCommanderAttackPattern.Basic &&
-                    candidate != FallenCommanderAttackPattern.Melee &&
-                    candidate != FallenCommanderAttackPattern.Line &&
-                    candidate != FallenCommanderAttackPattern.TwistedBattlefield &&
-                    candidate != FallenCommanderAttackPattern.FallingBarrage)
+                    IsRandomAttack(candidate) &&
+                    !candidates.Contains(candidate))
                 {
                     candidates.Add(candidate);
                 }
@@ -248,22 +245,15 @@ namespace ProjectMT.Contents.FallenCommander
                 return candidates[Random.Range(0, candidates.Count)];
             }
 
-            for (var index = 0; index < availableAttacks.Count; index++)
-            {
-                var candidate = availableAttacks[index];
-                if (candidate != FallenCommanderAttackPattern.Basic &&
-                    (canSelect == null || canSelect(candidate)) &&
-                    candidate != FallenCommanderAttackPattern.Melee &&
-                    candidate != FallenCommanderAttackPattern.Line &&
-                    candidate != FallenCommanderAttackPattern.TwistedBattlefield &&
-                    candidate != FallenCommanderAttackPattern.FallingBarrage &&
-                    candidate != previous)
-                {
-                    return candidate;
-                }
-            }
-
             return FallenCommanderAttackPattern.Basic;
+        }
+
+        public static bool IsRandomAttack(FallenCommanderAttackPattern attack)
+        {
+            return attack == FallenCommanderAttackPattern.Mark ||
+                   attack == FallenCommanderAttackPattern.TrackingMark ||
+                   attack == FallenCommanderAttackPattern.BlackHole ||
+                   attack == FallenCommanderAttackPattern.Ring;
         }
     }
 

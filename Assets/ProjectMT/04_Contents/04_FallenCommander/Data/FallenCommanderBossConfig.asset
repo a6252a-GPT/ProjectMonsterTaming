@@ -47,6 +47,7 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 0
+      startSfxVolume: 1
       resolveSfx: {fileID: 8300000, guid: b379b4a2b45449d4f9f4d01a5f8b9bde, type: 3}
       resolveSfxDuration: 0
       sfxVolume: 0.385
@@ -87,6 +88,7 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 2
+      startSfxVolume: 1
       resolveSfx: {fileID: 8300000, guid: e43876ae899bc47b1ba06f1df6d24c0e, type: 3}
       resolveSfxDuration: 1
       sfxVolume: 1
@@ -134,9 +136,10 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 3
-      resolveSfx: {fileID: 0}
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: 868933fa698ca477f8d58a1a1b84d9e3, type: 3}
       resolveSfxDuration: 1.2
-      sfxVolume: 1
+      sfxVolume: 0.686
       hitSfx: {fileID: 0}
       hitSfxDuration: 0
       hitSfxVolume: 1
@@ -181,6 +184,7 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 0
+      startSfxVolume: 1
       resolveSfx: {fileID: 8300000, guid: f362b354a4b1140c89a5bbd89fec4e30, type: 3}
       resolveSfxDuration: 0
       sfxVolume: 1
@@ -229,8 +233,9 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 5
-      resolveSfx: {fileID: 0}
-      resolveSfxDuration: 1.8
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: 1691443b094e722449d79a19f5e7dba7, type: 3}
+      resolveSfxDuration: 4
       sfxVolume: 1
       hitSfx: {fileID: 0}
       hitSfxDuration: 0
@@ -303,6 +308,7 @@ MonoBehaviour:
     hitVfxScaleMultiplier: 1
     startSfx: {fileID: 0}
     startSfxDuration: 0
+    startSfxVolume: 1
     resolveSfx: {fileID: 0}
     resolveSfxDuration: 0
     sfxVolume: 1
@@ -336,7 +342,8 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 2.5
-      resolveSfx: {fileID: 0}
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: b379b4a2b45449d4f9f4d01a5f8b9bde, type: 3}
       resolveSfxDuration: 1.2
       sfxVolume: 1
       hitSfx: {fileID: 0}
@@ -383,7 +390,8 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 2.5
-      resolveSfx: {fileID: 0}
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: 0eedd29f0339b456a935c3460c7ea947, type: 3}
       resolveSfxDuration: 1.5
       sfxVolume: 1
       hitSfx: {fileID: 0}
@@ -437,6 +445,7 @@ MonoBehaviour:
     hitVfxScaleMultiplier: 1
     startSfx: {fileID: 8300000, guid: cc69f37d07dfb489c93ab3bdbd0cf6f3, type: 3}
     startSfxDuration: 0
+    startSfxVolume: 1
     resolveSfx: {fileID: 8300000, guid: e62a382fb7ebfb940bde754a201987ef, type: 3}
     resolveSfxDuration: 0
     sfxVolume: 1
@@ -532,7 +541,8 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 8300000, guid: 0f6fc81a2e60c4c96bd103a0cabda014, type: 3}
       startSfxDuration: 0
-      resolveSfx: {fileID: 0}
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: 26f794fd1203d414584c0bc545306786, type: 3}
       resolveSfxDuration: 0
       sfxVolume: 1
       hitSfx: {fileID: 0}
@@ -574,7 +584,8 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 0
-      resolveSfx: {fileID: 0}
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: 25e88ecef550df34e874e1429fd49fac, type: 3}
       resolveSfxDuration: 0
       sfxVolume: 1
       hitSfx: {fileID: 0}
@@ -622,6 +633,7 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 8300000, guid: 4abc0365195154c13ba3015330fd0475, type: 3}
       startSfxDuration: 0
+      startSfxVolume: 1
       resolveSfx: {fileID: 8300000, guid: 0ff47f6ac74994a95bf231010c0804cc, type: 3}
       resolveSfxDuration: 0
       sfxVolume: 1
@@ -651,6 +663,7 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 0
+      startSfxVolume: 1
       resolveSfx: {fileID: 0}
       resolveSfxDuration: 0
       sfxVolume: 1

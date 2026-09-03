@@ -147,6 +147,7 @@ namespace ProjectMT.Shared.GameData
             };
 
         [SerializeField] private List<OwnedMonsterData> ownedMonsters = new List<OwnedMonsterData>();
+        [SerializeField] private List<string> collectedMonsterIds = new List<string>();
         [SerializeField] private string[] mainPartySlots = new string[MainPartySlotCount];
         [SerializeField] private string[] reservePartySlots = new string[ReservePartySlotCount];
 
@@ -164,6 +165,9 @@ namespace ProjectMT.Shared.GameData
             var clone = new MonsterRosterData
             {
                 ownedMonsters = new List<OwnedMonsterData>(),
+                collectedMonsterIds = collectedMonsterIds == null
+                    ? new List<string>()
+                    : new List<string>(collectedMonsterIds),
                 mainPartySlots = ResizeSlots(mainPartySlots, MainPartySlotCount),
                 reservePartySlots = ResizeSlots(reservePartySlots, ReservePartySlotCount)
             };
@@ -203,6 +207,30 @@ namespace ProjectMT.Shared.GameData
             {
                 ownedMonsters.Add(new OwnedMonsterData(StarterMonsterId));
             }
+
+            collectedMonsterIds ??= new List<string>();
+            var collectedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var repairedCollectedIds = new List<string>(collectedMonsterIds.Count + ownedMonsters.Count);
+            for (var index = 0; index < collectedMonsterIds.Count; index++)
+            {
+                var id = collectedMonsterIds[index]?.Trim();
+                if (!string.IsNullOrEmpty(id) && collectedIds.Add(id))
+                {
+                    repairedCollectedIds.Add(id);
+                }
+            }
+
+            // 기존 저장 데이터에는 최초 수집 목록이 없으므로 현재 보유 목록을 최초 수집 기록으로 보완한다.
+            for (var index = 0; index < ownedMonsters.Count; index++)
+            {
+                var id = ownedMonsters[index].MonsterId;
+                if (!string.IsNullOrEmpty(id) && collectedIds.Add(id))
+                {
+                    repairedCollectedIds.Add(id);
+                }
+            }
+
+            collectedMonsterIds = repairedCollectedIds;
 
             ownedIds.Clear();
             for (var index = 0; index < ownedMonsters.Count; index++)
@@ -259,6 +287,13 @@ namespace ProjectMT.Shared.GameData
             }
 
             ownedMonsters = migrated;
+            if (collectedMonsterIds != null)
+            {
+                for (var index = 0; index < collectedMonsterIds.Count; index++)
+                {
+                    collectedMonsterIds[index] = ResolveRetiredMonsterId(collectedMonsterIds[index]);
+                }
+            }
             MigrateSlotIds(mainPartySlots);
             MigrateSlotIds(reservePartySlots);
             Repair();
@@ -273,7 +308,30 @@ namespace ProjectMT.Shared.GameData
             }
 
             ownedMonsters.Add(new OwnedMonsterData(normalizedId));
+            collectedMonsterIds ??= new List<string>();
+            if (!ContainsCollectedMonster(normalizedId))
+            {
+                collectedMonsterIds.Add(normalizedId);
+            }
             return true;
+        }
+
+        private bool ContainsCollectedMonster(string monsterId)
+        {
+            if (collectedMonsterIds == null || string.IsNullOrWhiteSpace(monsterId))
+            {
+                return false;
+            }
+
+            for (var index = 0; index < collectedMonsterIds.Count; index++)
+            {
+                if (string.Equals(collectedMonsterIds[index], monsterId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         internal bool TryAssign(string monsterId, MonsterPartyKind targetKind)
@@ -502,6 +560,7 @@ namespace ProjectMT.Shared.GameData
         }
 
         internal IReadOnlyList<OwnedMonsterData> OwnedMonsters => ownedMonsters;
+        internal IReadOnlyList<string> CollectedMonsterIds => collectedMonsterIds;
         internal string[] MainPartySlots => mainPartySlots;
         internal string[] ReservePartySlots => reservePartySlots;
     }
@@ -526,6 +585,7 @@ namespace ProjectMT.Shared.GameData
     {
         private readonly OwnedMonsterView[] ownedMonsters;
         private readonly string[] ownedMonsterIds;
+        private readonly string[] collectedMonsterIds;
         private readonly string[] mainPartySlots;
         private readonly string[] reservePartySlots;
 
@@ -540,12 +600,15 @@ namespace ProjectMT.Shared.GameData
                 ownedMonsterIds[index] = owned[index].MonsterId;
             }
 
+            collectedMonsterIds = Copy(data.CollectedMonsterIds);
+
             mainPartySlots = Copy(data.MainPartySlots);
             reservePartySlots = Copy(data.ReservePartySlots);
         }
 
         public IReadOnlyList<OwnedMonsterView> OwnedMonsters => ownedMonsters ?? Array.Empty<OwnedMonsterView>();
         public IReadOnlyList<string> OwnedMonsterIds => ownedMonsterIds ?? Array.Empty<string>();
+        public IReadOnlyList<string> CollectedMonsterIds => collectedMonsterIds ?? Array.Empty<string>();
         public IReadOnlyList<string> MainPartySlots => mainPartySlots ?? Array.Empty<string>();
         public IReadOnlyList<string> ReservePartySlots => reservePartySlots ?? Array.Empty<string>();
 
@@ -556,6 +619,22 @@ namespace ProjectMT.Shared.GameData
                 for (var index = 0; index < ownedMonsterIds.Length; index++)
                 {
                     if (string.Equals(ownedMonsterIds[index], monsterId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public bool HasCollected(string monsterId)
+        {
+            if (!string.IsNullOrWhiteSpace(monsterId) && collectedMonsterIds != null)
+            {
+                for (var index = 0; index < collectedMonsterIds.Length; index++)
+                {
+                    if (string.Equals(collectedMonsterIds[index], monsterId, StringComparison.OrdinalIgnoreCase))
                     {
                         return true;
                     }
@@ -595,6 +674,22 @@ namespace ProjectMT.Shared.GameData
 
             var copy = new string[values.Length];
             Array.Copy(values, copy, values.Length);
+            return copy;
+        }
+
+        private static string[] Copy(IReadOnlyList<string> values)
+        {
+            if (values == null || values.Count == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            var copy = new string[values.Count];
+            for (var index = 0; index < values.Count; index++)
+            {
+                copy[index] = values[index] ?? string.Empty;
+            }
+
             return copy;
         }
     }

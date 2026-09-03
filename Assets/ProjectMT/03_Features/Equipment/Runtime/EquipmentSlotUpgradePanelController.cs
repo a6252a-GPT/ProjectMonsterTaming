@@ -59,6 +59,18 @@ namespace ProjectMT.Features.Equipment
         private Action combatInputSaved;
 
         public event Action<bool> OpenStateChanged;
+        public bool HasSelectedPart => hasSelectedPart;
+        public Button QuestUpgradeButton => upgradeButton;
+
+        public Button QuestFirstPartButton
+        {
+            get
+            {
+                return selectButtons.TryGetValue(EquipmentPart.Weapon, out var weaponButton)
+                    ? weaponButton
+                    : null;
+            }
+        }
 
         private void Awake()
         {

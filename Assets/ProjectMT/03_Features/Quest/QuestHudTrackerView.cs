@@ -29,6 +29,23 @@ namespace ProjectMT.Features.Quest
         private void Awake()
         {
             ResolveReferences();
+            EnsureNavigationController();
+        }
+
+        // "QuestMove" 버튼/"ClickImage" 점멸(QuestHudNavigationController)과 각 페이지 내부 버튼 위치의
+        // 클릭 힌트(QuestClickPointHintController)는 이 오브젝트(트래커 위젯 루트)에 자동으로 붙여서
+        // 인스펙터에서 따로 부착할 필요가 없게 한다.
+        private void EnsureNavigationController()
+        {
+            if (GetComponent<QuestHudNavigationController>() == null)
+            {
+                gameObject.AddComponent<QuestHudNavigationController>();
+            }
+
+            if (GetComponent<QuestClickPointHintController>() == null)
+            {
+                gameObject.AddComponent<QuestClickPointHintController>();
+            }
         }
 
         private void OnEnable()

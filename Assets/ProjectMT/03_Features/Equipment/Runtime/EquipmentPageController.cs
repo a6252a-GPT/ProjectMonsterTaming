@@ -146,10 +146,20 @@ namespace ProjectMT.Features.Equipment
         private EquipmentGrade dismantleGradeThreshold = EquipmentGrade.Common;
         private readonly HashSet<string> dismantleSelection = new HashSet<string>();
         private EquipmentPageMode currentMode = EquipmentPageMode.Equip;
+        private int questDismantleHintStep;
         private bool requestInFlight;
         private Action combatInputSaved;
         private IGameProgressService progress;
         private Coroutine pendingInventoryRefresh;
+
+        // 퀘스트 안내용 읽기 전용 상태·버튼 노출. 실제 장비 기능의 동작은 바꾸지 않는다.
+        public bool IsDismantleMode => currentMode == EquipmentPageMode.Dismantle;
+        public int QuestDismantleHintStep => questDismantleHintStep;
+        public Button QuestDismantleModeTabButton => dismantleModeTabButton;
+        public Button QuestDismantleGradeButton => dismantleGradeButton;
+        public Button QuestDismantleAutoSelectButton => dismantleAutoSelectButton;
+        public Button QuestDismantleActionButton => dismantleButton;
+        public Button QuestAutoEquipButton => equipButton;
 
         private void Awake()
         {

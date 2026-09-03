@@ -86,6 +86,7 @@ namespace ProjectMT.Features.Equipment
             }
 
             dismantleGradeThreshold = (EquipmentGrade)(((int)dismantleGradeThreshold + 1) % 5);
+            questDismantleHintStep = Mathf.Max(questDismantleHintStep, 1);
             ClearDismantleSelection();
             RefreshSelection();
         }
@@ -111,6 +112,7 @@ namespace ProjectMT.Features.Equipment
             if (dismantleSelection.Count > 0)
             {
                 ClearDismantleSelection();
+                questDismantleHintStep = Mathf.Min(questDismantleHintStep, 1);
                 RefreshSelection();
                 return;
             }
@@ -125,6 +127,8 @@ namespace ProjectMT.Features.Equipment
             {
                 selectedInstanceId = null;
             }
+
+            questDismantleHintStep = Mathf.Max(questDismantleHintStep, 2);
 
             CloseDismantleConfirmation();
             RefreshSelection();

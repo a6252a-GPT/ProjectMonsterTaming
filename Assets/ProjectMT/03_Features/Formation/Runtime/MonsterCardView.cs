@@ -37,6 +37,9 @@ namespace ProjectMT.Features.Formation
         private Action<string> selectedAction;
 
         internal MonsterRarityCatalog RarityCatalog => rarityCatalog;
+        public Button ClickButton => button;
+        public bool IsAssigned => assignmentBadge != null && assignmentBadge.activeSelf;
+        public bool IsBreakthroughReady => breakthroughReadyBadge != null && breakthroughReadyBadge.activeSelf;
 
         private void Awake()
         {

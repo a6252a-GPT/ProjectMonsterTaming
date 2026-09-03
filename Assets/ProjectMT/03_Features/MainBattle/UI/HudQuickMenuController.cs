@@ -116,6 +116,18 @@ namespace ProjectMT.Features.MainBattle
             SetMenuOpen(false);
         }
 
+        // 퀘스트 이동 등 외부에서 확장 메뉴를 직접 펼쳐야 할 때 사용(토글이 아니라 항상 연다).
+        public void OpenExpandedMenu()
+        {
+            SetMenuOpen(true);
+        }
+
+        // 퀘스트 이동 등 외부에서 편성 페이지로 바로 이동해야 할 때 사용.
+        public void OpenFormationPage()
+        {
+            OpenFormation();
+        }
+
         // 상점 등 다른 페이지가 열려 있는 동안에는 고정 바로가기 버튼이 그 뒤에서 눌리지 않도록 막는다.
         private void HandleAnyPageOpenChanged(bool anyPageOpen)
         {

@@ -361,6 +361,12 @@ namespace ProjectMT.Contents.FallenCommander
                     $"Fallen Commander phase settings are invalid: {phaseError}");
             }
 
+            if (!bossConfig.HasValidCommanderDamageMultiplier)
+            {
+                throw new InvalidOperationException(
+                    "Fallen Commander damage multiplier must be a finite value greater than zero.");
+            }
+
             if (!bossConfig.TwistedBattlefield.TryValidate(
                     out var twistedBattlefieldError))
             {
@@ -570,7 +576,8 @@ namespace ProjectMT.Contents.FallenCommander
                     commanderMove == null ||
                     !commanderMove.IsInputEnabled ||
                     isCommanderStunned,
-                () => breakRuntime.IsBroken ? bossConfig.BreakDamageMultiplier : 1f);
+                () => bossStats.CommanderDamageMultiplier *
+                    (breakRuntime.IsBroken ? bossConfig.BreakDamageMultiplier : 1f));
         }
 
         private void ShutdownCommanderSkills()

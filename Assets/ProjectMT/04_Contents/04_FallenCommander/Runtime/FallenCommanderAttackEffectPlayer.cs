@@ -15,7 +15,8 @@ namespace ProjectMT.Contents.FallenCommander
             Transform commander = null,
             Transform projectile = null,
             Transform ground = null,
-            bool clampHeightToGround = false)
+            bool clampHeightToGround = false,
+            bool playSfx = true)
         {
             if (effects == null)
             {
@@ -39,12 +40,35 @@ namespace ProjectMT.Contents.FallenCommander
                 effects.StartVfxDuration,
                 parent,
                 placement);
-            PlaySfx(
-                effects.StartSfx,
-                effects.StartSfxDuration,
-                placement.AnchorPosition,
-                effects.SfxVolume);
+            if (playSfx)
+            {
+                PlaySfx(
+                    effects.StartSfx,
+                    effects.StartSfxDuration,
+                    placement.AnchorPosition,
+                    effects.StartSfxVolume);
+            }
             return instance;
+        }
+
+        public static void PlayStartSfx(
+            FallenCommanderAttackEffectData effects,
+            Vector3 position,
+            Vector3 direction,
+            Transform boss = null,
+            Transform commander = null)
+        {
+            if (effects == null)
+            {
+                return;
+            }
+
+            var context = CreatePlacementContext(
+                position, direction, boss, commander, null, null, false);
+            var placement = FallenCommanderEffectPlacementResolver.Resolve(
+                effects, FallenCommanderEffectStage.Start, context);
+            PlaySfx(effects.StartSfx, effects.StartSfxDuration,
+                placement.AnchorPosition, effects.StartSfxVolume);
         }
 
         // 공격 발동 또는 해결 슬롯에 지정된 VFX와 SFX를 재생한다.

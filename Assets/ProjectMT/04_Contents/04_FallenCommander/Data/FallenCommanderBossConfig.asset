@@ -18,6 +18,7 @@ MonoBehaviour:
   attackInterval: 3.5
   attackRange: 8
   turnSpeed: 90
+  commanderDamageMultiplier: 5
   projectileBasicAttack:
     telegraphPrefab: {fileID: 1008657052338794460, guid: 329f7a8bf8861d84bbf8ac716f846107, type: 3}
     warningDuration: 0.5
@@ -46,10 +47,11 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 0
+      startSfxVolume: 1
       resolveSfx: {fileID: 8300000, guid: b379b4a2b45449d4f9f4d01a5f8b9bde, type: 3}
       resolveSfxDuration: 0
       sfxVolume: 0.385
-      hitSfx: {fileID: 0}
+      hitSfx: {fileID: 8300000, guid: 06769cc81815440e98189d7523f477a6, type: 3}
       hitSfxDuration: 0
       hitSfxVolume: 1
     damageDelay: 0
@@ -86,10 +88,11 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 2
-      resolveSfx: {fileID: 0}
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: e43876ae899bc47b1ba06f1df6d24c0e, type: 3}
       resolveSfxDuration: 1
       sfxVolume: 1
-      hitSfx: {fileID: 0}
+      hitSfx: {fileID: 8300000, guid: 7b77e22682e1244b0935647db2a56bac, type: 3}
       hitSfxDuration: 0
       hitSfxVolume: 1
     damageDelay: 0
@@ -133,9 +136,10 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 3
-      resolveSfx: {fileID: 0}
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: 868933fa698ca477f8d58a1a1b84d9e3, type: 3}
       resolveSfxDuration: 1.2
-      sfxVolume: 1
+      sfxVolume: 0.686
       hitSfx: {fileID: 0}
       hitSfxDuration: 0
       hitSfxVolume: 1
@@ -180,10 +184,11 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 0
-      resolveSfx: {fileID: 0}
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: f362b354a4b1140c89a5bbd89fec4e30, type: 3}
       resolveSfxDuration: 0
       sfxVolume: 1
-      hitSfx: {fileID: 0}
+      hitSfx: {fileID: 8300000, guid: 609ce607f6524f9448531ffe3d31df1f, type: 3}
       hitSfxDuration: 0
       hitSfxVolume: 1
     damageDelay: 0
@@ -228,8 +233,9 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 5
-      resolveSfx: {fileID: 0}
-      resolveSfxDuration: 1.8
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: 1691443b094e722449d79a19f5e7dba7, type: 3}
+      resolveSfxDuration: 4
       sfxVolume: 1
       hitSfx: {fileID: 0}
       hitSfxDuration: 0
@@ -302,6 +308,7 @@ MonoBehaviour:
     hitVfxScaleMultiplier: 1
     startSfx: {fileID: 0}
     startSfxDuration: 0
+    startSfxVolume: 1
     resolveSfx: {fileID: 0}
     resolveSfxDuration: 0
     sfxVolume: 1
@@ -335,7 +342,8 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 2.5
-      resolveSfx: {fileID: 0}
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: b379b4a2b45449d4f9f4d01a5f8b9bde, type: 3}
       resolveSfxDuration: 1.2
       sfxVolume: 1
       hitSfx: {fileID: 0}
@@ -382,7 +390,8 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 2.5
-      resolveSfx: {fileID: 0}
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: 0eedd29f0339b456a935c3460c7ea947, type: 3}
       resolveSfxDuration: 1.5
       sfxVolume: 1
       hitSfx: {fileID: 0}
@@ -404,7 +413,7 @@ MonoBehaviour:
     stunDuration: 3.5
   corruptionRingSafeRadius: 3.5
   finalChargeHealthRatio: 0.3
-  finalChargeDuration: 0.1
+  finalChargeDuration: 5
   finalChargeTelegraphPrefab: {fileID: 5939384426542757584, guid: 8798d2c2bd4635941be031039cf5686d, type: 3}
   finalChargeTelegraphHoldDuration: 0.5
   finalChargeRadius: 16
@@ -417,14 +426,14 @@ MonoBehaviour:
     startVfxPrefab: {fileID: 3090182719152197242, guid: 72a58d6b485ceaa43a825cf9fcfa6aa0, type: 3}
     startVfxDuration: 10
     startVfxAnchor: 0
-    startVfxPositionOffset: {x: 0, y: 0, z: 0}
+    startVfxPositionOffset: {x: 0, y: 4.5, z: 0}
     startVfxRotationOffset: {x: 0, y: 0, z: 0}
     startVfxScale: {x: 1, y: 1, z: 1}
-    startVfxScaleMultiplier: 1
+    startVfxScaleMultiplier: 2
     resolveVfxPrefab: {fileID: 344858183500810125, guid: 6083b5b842a6ac44889a2d9ebebabae8, type: 3}
-    resolveVfxDuration: 15
+    resolveVfxDuration: 0
     resolveVfxAnchor: 0
-    resolveVfxPositionOffset: {x: 0, y: 0, z: 1.2}
+    resolveVfxPositionOffset: {x: 0, y: 0, z: 0}
     resolveVfxRotationOffset: {x: 0, y: 0, z: 0}
     resolveVfxScale: {x: 1, y: 1, z: 1}
     resolveVfxScaleMultiplier: 1
@@ -434,12 +443,13 @@ MonoBehaviour:
     hitVfxRotationOffset: {x: 0, y: 0, z: 0}
     hitVfxScale: {x: 1, y: 1, z: 1}
     hitVfxScaleMultiplier: 1
-    startSfx: {fileID: 0}
+    startSfx: {fileID: 8300000, guid: cc69f37d07dfb489c93ab3bdbd0cf6f3, type: 3}
     startSfxDuration: 0
-    resolveSfx: {fileID: 0}
+    startSfxVolume: 1
+    resolveSfx: {fileID: 8300000, guid: e62a382fb7ebfb940bde754a201987ef, type: 3}
     resolveSfxDuration: 0
     sfxVolume: 1
-    hitSfx: {fileID: 0}
+    hitSfx: {fileID: 8300000, guid: d7312a38cc250b64092297b88508fb7f, type: 3}
     hitSfxDuration: 0
     hitSfxVolume: 1
   finalChargePreCastMotion: {fileID: 7400000, guid: 27164d3932ee64c49a5215c417da0206, type: 3}
@@ -529,9 +539,10 @@ MonoBehaviour:
       hitVfxRotationOffset: {x: 0, y: 0, z: 0}
       hitVfxScale: {x: 1, y: 1, z: 1}
       hitVfxScaleMultiplier: 1
-      startSfx: {fileID: 0}
+      startSfx: {fileID: 8300000, guid: 0f6fc81a2e60c4c96bd103a0cabda014, type: 3}
       startSfxDuration: 0
-      resolveSfx: {fileID: 0}
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: 26f794fd1203d414584c0bc545306786, type: 3}
       resolveSfxDuration: 0
       sfxVolume: 1
       hitSfx: {fileID: 0}
@@ -573,7 +584,8 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 0
-      resolveSfx: {fileID: 0}
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: 25e88ecef550df34e874e1429fd49fac, type: 3}
       resolveSfxDuration: 0
       sfxVolume: 1
       hitSfx: {fileID: 0}
@@ -619,12 +631,13 @@ MonoBehaviour:
       hitVfxRotationOffset: {x: 0, y: 0, z: 0}
       hitVfxScale: {x: 1, y: 1, z: 1}
       hitVfxScaleMultiplier: 1
-      startSfx: {fileID: 0}
+      startSfx: {fileID: 8300000, guid: 4abc0365195154c13ba3015330fd0475, type: 3}
       startSfxDuration: 0
-      resolveSfx: {fileID: 0}
+      startSfxVolume: 1
+      resolveSfx: {fileID: 8300000, guid: 0ff47f6ac74994a95bf231010c0804cc, type: 3}
       resolveSfxDuration: 0
       sfxVolume: 1
-      hitSfx: {fileID: 0}
+      hitSfx: {fileID: 8300000, guid: 1592d5139f6b8b243a6de9b910fe5879, type: 3}
       hitSfxDuration: 0
       hitSfxVolume: 1
     impactEffects:
@@ -650,6 +663,7 @@ MonoBehaviour:
       hitVfxScaleMultiplier: 1
       startSfx: {fileID: 0}
       startSfxDuration: 0
+      startSfxVolume: 1
       resolveSfx: {fileID: 0}
       resolveSfxDuration: 0
       sfxVolume: 1

@@ -27,6 +27,7 @@ namespace ProjectMT.Contents.FallenCommander
             AttackInterval = source.AttackInterval;
             AttackRange = source.AttackRange;
             TurnSpeed = source.TurnSpeed;
+            CommanderDamageMultiplier = source.CommanderDamageMultiplier;
         }
 
         public float BaseMaxHealth { get; }
@@ -35,6 +36,7 @@ namespace ProjectMT.Contents.FallenCommander
         public float AttackInterval { get; }
         public float AttackRange { get; }
         public float TurnSpeed { get; }
+        public float CommanderDamageMultiplier { get; }
     }
 
     public sealed class FallenCommanderAttackSetConfig

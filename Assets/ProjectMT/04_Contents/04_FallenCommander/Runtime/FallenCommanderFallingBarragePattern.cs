@@ -126,7 +126,8 @@ namespace ProjectMT.Contents.FallenCommander
                 bossActor.transform.forward,
                 effectParent,
                 bossActor.transform,
-                commanderRoot);
+                commanderRoot,
+                playSfx: false);
             BeginWave();
         }
 
@@ -165,6 +166,7 @@ namespace ProjectMT.Contents.FallenCommander
 
             waveElapsed += safeDeltaTime;
             var allResolved = true;
+            var spawnPresentationPlayed = false;
             for (var index = 0; index < shots.Count; index++)
             {
                 var shot = shots[index];
@@ -177,7 +179,11 @@ namespace ProjectMT.Contents.FallenCommander
                 if (!shot.ImpactResolved && shot.Pooled == null &&
                     waveElapsed >= shot.StartDelay)
                 {
-                    ActivateShot(shot);
+                    if (ActivateShot(shot) && !spawnPresentationPlayed)
+                    {
+                        spawnPresentationPlayed = true;
+                        PlaySpawnPresentation();
+                    }
                 }
 
                 if (shot.ImpactResolved)
@@ -302,24 +308,19 @@ namespace ProjectMT.Contents.FallenCommander
             return fallback;
         }
 
-        private void ActivateShot(FallingShot shot)
+        private bool ActivateShot(FallingShot shot)
         {
             shot.Pooled = Rent();
             if (shot.Pooled == null)
             {
                 shot.Resolved = true;
-                return;
+                return false;
             }
 
             var start = shot.Target + Vector3.up * data.SpawnHeight;
             shot.Pooled.Projectile.transform.SetPositionAndRotation(start, Quaternion.identity);
             shot.Pooled.Projectile.SetActive(true);
             RestartParticles(shot.Pooled.Projectile);
-            animationPresenter?.PlayPreCast(
-                data.PreCastMotion,
-                playbackSpeed: data.PreCastMotionSpeed,
-                normalizedStart: data.PreCastMotionStart,
-                normalizedEnd: data.PreCastMotionEnd);
             if (shot.Pooled.Telegraph != null)
             {
                 shot.Pooled.Telegraph.transform.SetPositionAndRotation(
@@ -328,6 +329,22 @@ namespace ProjectMT.Contents.FallenCommander
                 shot.Pooled.Telegraph.gameObject.SetActive(true);
                 shot.Pooled.Telegraph.SetProgress(0f);
             }
+            return true;
+        }
+
+        private void PlaySpawnPresentation()
+        {
+            animationPresenter?.PlayPreCast(
+                data.PreCastMotion,
+                playbackSpeed: data.PreCastMotionSpeed,
+                normalizedStart: data.PreCastMotionStart,
+                normalizedEnd: data.PreCastMotionEnd);
+            FallenCommanderAttackEffectPlayer.PlayStartSfx(
+                data.Effects,
+                bossActor.transform.position,
+                bossActor.transform.forward,
+                bossActor.transform,
+                commanderRoot);
         }
 
         private void ResolveShot(FallingShot shot)

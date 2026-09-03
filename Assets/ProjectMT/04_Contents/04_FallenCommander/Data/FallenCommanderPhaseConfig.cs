@@ -101,6 +101,12 @@ namespace ProjectMT.Contents.FallenCommander
                     return false;
                 }
 
+                if (!phases[index].AttackCooldowns.TryValidate(out var cooldownError))
+                {
+                    error = $"{phases[index].Phase} 공격별 쿨타임 설정 오류: {cooldownError}";
+                    return false;
+                }
+
                 if (phases[index].Allows(FallenCommanderAttackPattern.Mark) &&
                     !phases[index].MarkStrikePattern.TryValidate(out var markStrikeError))
                 {
@@ -174,6 +180,8 @@ namespace ProjectMT.Contents.FallenCommander
         private GameObject bossPrefabOverride;
         [SerializeField, InspectorName("보스 크기 배율"), Min(0.1f)]
         private float bossScaleMultiplier = 1f;
+        [SerializeField, InspectorName("공격별 쿨타임 설정")]
+        private FallenCommanderAttackCooldownData attackCooldowns = new();
         [SerializeField, InspectorName("연속 위치 공격 패턴 설정")]
         private FallenCommanderMarkStrikePhaseData markStrikePattern = new();
         [SerializeField, InspectorName("블랙홀 공격 페이즈 설정")]
@@ -199,6 +207,8 @@ namespace ProjectMT.Contents.FallenCommander
         public float TransitionFadeDuration => Mathf.Max(0.01f, transitionFadeDuration);
         public GameObject BossPrefabOverride => bossPrefabOverride;
         public float BossScaleMultiplier => Mathf.Max(0.1f, bossScaleMultiplier);
+        public FallenCommanderAttackCooldownData AttackCooldowns =>
+            attackCooldowns ??= new FallenCommanderAttackCooldownData();
         public FallenCommanderMarkStrikePhaseData MarkStrikePattern => markStrikePattern;
         public FallenCommanderBlackHolePhaseData BlackHolePattern =>
             blackHolePattern ??= new FallenCommanderBlackHolePhaseData();
@@ -214,18 +224,17 @@ namespace ProjectMT.Contents.FallenCommander
         }
 
         public FallenCommanderAttackPattern SelectRandomAttack(
-            FallenCommanderAttackPattern previous)
+            FallenCommanderAttackPattern previous,
+            System.Predicate<FallenCommanderAttackPattern> canSelect = null)
         {
             var candidates = new List<FallenCommanderAttackPattern>();
             for (var index = 0; index < availableAttacks.Count; index++)
             {
                 var candidate = availableAttacks[index];
                 if (candidate != previous &&
-                    candidate != FallenCommanderAttackPattern.Basic &&
-                    candidate != FallenCommanderAttackPattern.Melee &&
-                    candidate != FallenCommanderAttackPattern.Line &&
-                    candidate != FallenCommanderAttackPattern.TwistedBattlefield &&
-                    candidate != FallenCommanderAttackPattern.FallingBarrage)
+                    (canSelect == null || canSelect(candidate)) &&
+                    IsRandomAttack(candidate) &&
+                    !candidates.Contains(candidate))
                 {
                     candidates.Add(candidate);
                 }
@@ -236,21 +245,68 @@ namespace ProjectMT.Contents.FallenCommander
                 return candidates[Random.Range(0, candidates.Count)];
             }
 
-            for (var index = 0; index < availableAttacks.Count; index++)
+            return FallenCommanderAttackPattern.Basic;
+        }
+
+        public static bool IsRandomAttack(FallenCommanderAttackPattern attack)
+        {
+            return attack == FallenCommanderAttackPattern.Mark ||
+                   attack == FallenCommanderAttackPattern.TrackingMark ||
+                   attack == FallenCommanderAttackPattern.BlackHole ||
+                   attack == FallenCommanderAttackPattern.Ring;
+        }
+    }
+
+    [System.Serializable]
+    public sealed class FallenCommanderAttackCooldownData
+    {
+        [SerializeField, InspectorName("근접 공격 쿨타임"), Min(0f)]
+        private float melee = 7f;
+        [SerializeField, InspectorName("연속 위치 공격 쿨타임"), Min(0f)]
+        private float mark = 8f;
+        [SerializeField, InspectorName("추적 낙인 쿨타임"), Min(0f)]
+        private float trackingMark = 8f;
+        [SerializeField, InspectorName("블랙홀 쿨타임"), Min(0f)]
+        private float blackHole = 10f;
+        [SerializeField, InspectorName("직선 공격 쿨타임"), Min(0f)]
+        private float line = 10f;
+        [SerializeField, InspectorName("타락의 고리 쿨타임"), Min(0f)]
+        private float ring = 10f;
+        [SerializeField, InspectorName("연속 장판 공격 쿨타임"), Min(0f)]
+        private float twistedBattlefield = 14f;
+        [SerializeField, InspectorName("낙하 탄막 쿨타임"), Min(0f)]
+        private float fallingBarrage = 14f;
+
+        public float GetCooldown(FallenCommanderAttackPattern attack)
+        {
+            return attack switch
             {
-                var candidate = availableAttacks[index];
-                if (candidate != FallenCommanderAttackPattern.Basic &&
-                    candidate != FallenCommanderAttackPattern.Melee &&
-                    candidate != FallenCommanderAttackPattern.Line &&
-                    candidate != FallenCommanderAttackPattern.TwistedBattlefield &&
-                    candidate != FallenCommanderAttackPattern.FallingBarrage &&
-                    candidate != previous)
-                {
-                    return candidate;
-                }
+                FallenCommanderAttackPattern.Melee => Mathf.Max(0f, melee),
+                FallenCommanderAttackPattern.Mark => Mathf.Max(0f, mark),
+                FallenCommanderAttackPattern.TrackingMark => Mathf.Max(0f, trackingMark),
+                FallenCommanderAttackPattern.BlackHole => Mathf.Max(0f, blackHole),
+                FallenCommanderAttackPattern.Line => Mathf.Max(0f, line),
+                FallenCommanderAttackPattern.Ring => Mathf.Max(0f, ring),
+                FallenCommanderAttackPattern.TwistedBattlefield =>
+                    Mathf.Max(0f, twistedBattlefield),
+                FallenCommanderAttackPattern.FallingBarrage =>
+                    Mathf.Max(0f, fallingBarrage),
+                _ => 0f
+            };
+        }
+
+        public bool TryValidate(out string error)
+        {
+            if (melee < 0f || mark < 0f || trackingMark < 0f || blackHole < 0f ||
+                line < 0f || ring < 0f || twistedBattlefield < 0f ||
+                fallingBarrage < 0f)
+            {
+                error = "모든 공격 쿨타임은 0초 이상이어야 합니다.";
+                return false;
             }
 
-            return FallenCommanderAttackPattern.Basic;
+            error = string.Empty;
+            return true;
         }
     }
 

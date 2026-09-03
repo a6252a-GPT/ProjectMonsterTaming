@@ -103,6 +103,11 @@ namespace ProjectMT.Contents.FallenCommander
         private bool isPhaseTransitionActive;
         private FallenCommanderBossPhase currentPhase = FallenCommanderBossPhase.Phase1;
         private FallenCommanderPhaseConfig phaseConfig;
+        private readonly float[] patternCooldownRemaining =
+            new float[System.Enum.GetValues(typeof(FallenCommanderAttackPattern)).Length];
+        private readonly System.Collections.Generic.HashSet<FallenCommanderAttackPattern>
+            usedRandomAttacks = new();
+        private bool preferRandomAttack;
         private Vector3 markStrikeArenaCenter;
 
         private FallenCommanderBasicAttackData basicAttack;
@@ -261,8 +266,9 @@ namespace ProjectMT.Contents.FallenCommander
             clearDelayedDamage = clearDelayedDamageActions;
 
             attackCooldownRemaining = attackInterval;
+            ResetPatternCooldowns();
             currentState = BossState.Idle;
-            LastSelectedAttack = FallenCommanderAttackPattern.Mark;
+            LastSelectedAttack = FallenCommanderAttackPattern.Basic;
 
             isActive =
                 combatWorld != null &&
@@ -306,6 +312,7 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             TickCommanderStun(deltaTime);
+            TickPatternCooldowns(deltaTime);
 
             if (isPhaseTransitionActive)
             {
@@ -406,6 +413,10 @@ namespace ProjectMT.Contents.FallenCommander
 
         public void SetPhase(FallenCommanderBossPhase phase)
         {
+            if (currentPhase != phase)
+            {
+                ResetAttackRotation();
+            }
             currentPhase = phase;
         }
 
@@ -419,6 +430,7 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             currentPhase = phase;
+            ResetPatternCooldowns();
             isPhaseTransitionActive = true;
             DestroyActiveTelegraph();
             twistedBattlefieldPattern.Cancel();
@@ -588,6 +600,7 @@ namespace ProjectMT.Contents.FallenCommander
             attackCooldownRemaining = 0f;
             basicAttackCooldownRemaining = 0f;
             basicPatternDelayRemaining = 0f;
+            ResetPatternCooldowns();
             ResumeBossTracking();
             return true;
         }
@@ -631,6 +644,7 @@ namespace ProjectMT.Contents.FallenCommander
             attackCooldownRemaining = 0f;
             basicAttackCooldownRemaining = 0f;
             basicPatternDelayRemaining = 0f;
+            ResetPatternCooldowns();
             basicWindupRemaining = 0f;
             commanderStunRemaining = 0f;
             stateTimeRemaining = 0f;
@@ -667,19 +681,85 @@ namespace ProjectMT.Contents.FallenCommander
                     bossActor.transform.forward,
                     toCommander / distance);
             var phaseData = phaseConfig?.GetPhase(currentPhase);
-            var selected = TrySelectSpecialPattern(out var specialPattern)
+            BeginPatternAttack(SelectNextAttack(phaseData, distance, alignment));
+        }
+
+        private FallenCommanderAttackPattern SelectNextAttack(
+            FallenCommanderPhaseData phaseData,
+            float distance,
+            float alignment)
+        {
+            if (preferRandomAttack && TrySelectRandomAttack(phaseData, out var randomPattern))
+            {
+                return randomPattern;
+            }
+
+            return TrySelectSpecialPattern(phaseData, out var specialPattern)
                 ? specialPattern
                 : TrySelectConditionAttack(phaseData, distance, alignment, out var conditionPattern)
                     ? conditionPattern
-                    : phaseData?.SelectRandomAttack(LastSelectedAttack) ??
-                        FallenCommanderAttackPattern.Basic;
+                    : TrySelectRandomAttack(phaseData, out randomPattern)
+                        ? randomPattern
+                        : FallenCommanderAttackPattern.Basic;
+        }
 
-            BeginPatternAttack(selected);
+        private bool TrySelectRandomAttack(
+            FallenCommanderPhaseData phaseData,
+            out FallenCommanderAttackPattern selected)
+        {
+            selected = FallenCommanderAttackPattern.Basic;
+            if (phaseData == null)
+            {
+                return false;
+            }
+
+            var hasUnusedAttack = false;
+            foreach (var attack in phaseData.AvailableAttacks)
+            {
+                if (FallenCommanderPhaseData.IsRandomAttack(attack) &&
+                    !usedRandomAttacks.Contains(attack))
+                {
+                    hasUnusedAttack = true;
+                    break;
+                }
+            }
+
+            if (!hasUnusedAttack)
+            {
+                usedRandomAttacks.Clear();
+            }
+
+            selected = phaseData.SelectRandomAttack(
+                LastSelectedAttack,
+                attack => IsPatternCooldownReady(attack) && !usedRandomAttacks.Contains(attack));
+            return selected != FallenCommanderAttackPattern.Basic;
+        }
+
+        private void RecordAttackSelection(FallenCommanderAttackPattern selected)
+        {
+            if (selected == FallenCommanderAttackPattern.Basic)
+            {
+                return;
+            }
+
+            LastSelectedAttack = selected;
+            preferRandomAttack = !FallenCommanderPhaseData.IsRandomAttack(selected);
+            if (!preferRandomAttack)
+            {
+                usedRandomAttacks.Add(selected);
+            }
+        }
+
+        private void ResetAttackRotation()
+        {
+            usedRandomAttacks.Clear();
+            preferRandomAttack = false;
         }
 
         // 선택된 패턴에 대응하는 실제 공격 상태를 시작한다.
         private void BeginPatternAttack(FallenCommanderAttackPattern selected)
         {
+            StartPatternCooldown(selected);
             switch (selected)
             {
                 case FallenCommanderAttackPattern.Basic:
@@ -711,6 +791,11 @@ namespace ProjectMT.Contents.FallenCommander
                     BeginLineStrike();
                     break;
             }
+
+            if (currentState != BossState.Idle)
+            {
+                RecordAttackSelection(selected);
+            }
         }
 
         private bool TrySelectConditionAttack(
@@ -727,9 +812,11 @@ namespace ProjectMT.Contents.FallenCommander
 
             var canUseMelee = phaseData.Allows(FallenCommanderAttackPattern.Melee) &&
                 LastSelectedAttack != FallenCommanderAttackPattern.Melee &&
+                IsPatternCooldownReady(FallenCommanderAttackPattern.Melee) &&
                 distance <= closeAttackDistance;
             var canUseLine = phaseData.Allows(FallenCommanderAttackPattern.Line) &&
                 LastSelectedAttack != FallenCommanderAttackPattern.Line &&
+                IsPatternCooldownReady(FallenCommanderAttackPattern.Line) &&
                 alignment >= lineStrikeAlignmentThreshold;
             if (canUseMelee)
             {
@@ -747,9 +834,10 @@ namespace ProjectMT.Contents.FallenCommander
         }
 
         // 현재 페이즈의 특수 패턴 확률을 한 번만 굴려 선택 결과를 결정한다.
-        private bool TrySelectSpecialPattern(out FallenCommanderAttackPattern selected)
+        private bool TrySelectSpecialPattern(
+            FallenCommanderPhaseData phase,
+            out FallenCommanderAttackPattern selected)
         {
-            var phase = phaseConfig?.GetPhase(currentPhase);
             selected = FallenCommanderAttackPattern.Basic;
             if (phase == null)
             {
@@ -757,11 +845,13 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             var fallingChance = phase.Allows(FallenCommanderAttackPattern.FallingBarrage) &&
-                LastSelectedAttack != FallenCommanderAttackPattern.FallingBarrage
+                LastSelectedAttack != FallenCommanderAttackPattern.FallingBarrage &&
+                IsPatternCooldownReady(FallenCommanderAttackPattern.FallingBarrage)
                 ? phase.FallingBarragePattern.SelectionChance
                 : 0f;
             var twistedChance = phase.Allows(FallenCommanderAttackPattern.TwistedBattlefield) &&
-                LastSelectedAttack != FallenCommanderAttackPattern.TwistedBattlefield
+                LastSelectedAttack != FallenCommanderAttackPattern.TwistedBattlefield &&
+                IsPatternCooldownReady(FallenCommanderAttackPattern.TwistedBattlefield)
                 ? phase.TwistedBattlefieldPattern.SelectionChance
                 : 0f;
             var roll = Random.value;
@@ -778,6 +868,51 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             return false;
+        }
+
+        private void TickPatternCooldowns(float deltaTime)
+        {
+            var safeDeltaTime = Mathf.Max(0f, deltaTime);
+            for (var index = 0; index < patternCooldownRemaining.Length; index++)
+            {
+                patternCooldownRemaining[index] = Mathf.Max(
+                    0f,
+                    patternCooldownRemaining[index] - safeDeltaTime);
+            }
+        }
+
+        private bool IsPatternCooldownReady(FallenCommanderAttackPattern attack)
+        {
+            var index = (int)attack;
+            return index < 0 || index >= patternCooldownRemaining.Length ||
+                   patternCooldownRemaining[index] <= 0f;
+        }
+
+        private void StartPatternCooldown(FallenCommanderAttackPattern attack)
+        {
+            if (attack == FallenCommanderAttackPattern.Basic)
+            {
+                return;
+            }
+
+            var index = (int)attack;
+            if (index < 0 || index >= patternCooldownRemaining.Length)
+            {
+                return;
+            }
+
+            var phaseData = phaseConfig?.GetPhase(currentPhase);
+            patternCooldownRemaining[index] =
+                phaseData?.AttackCooldowns.GetCooldown(attack) ?? 0f;
+        }
+
+        private void ResetPatternCooldowns()
+        {
+            ResetAttackRotation();
+            for (var index = 0; index < patternCooldownRemaining.Length; index++)
+            {
+                patternCooldownRemaining[index] = 0f;
+            }
         }
 
         private void BeginBasicAttack()

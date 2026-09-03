@@ -225,7 +225,8 @@ namespace ProjectMT.Shared.GameData
             ApplyQuestProgressReset(change);
 
             if (change.HasSettleOfflineReward &&
-                !TryApplyOfflineEquipmentSettlement(change.OfflineReceipt))
+                !TryApplyOfflineEquipmentSettlement(change.OfflineReceipt,
+                    (equipmentBalanceConfig ?? EquipmentBalanceConfig.RuntimeDefault).MaximumItemLevel))
             {
                 return false;
             }
@@ -412,7 +413,8 @@ namespace ProjectMT.Shared.GameData
             if (change.HasAcquireEquipment)
             {
                 equipment ??= EquipmentSaveData.CreateDefault();
-                if (!equipment.TryAcquire(change.AcquireEquipmentInstances))
+                if (!equipment.TryAcquire(change.AcquireEquipmentInstances,
+                        (equipmentBalanceConfig ?? EquipmentBalanceConfig.RuntimeDefault).MaximumItemLevel))
                 {
                     return false;
                 }

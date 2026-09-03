@@ -15,10 +15,12 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private static Sprite circleSprite;
 
         private PlayerCharacterController player;
-        private Button button;
-        private Image fill;
-        private CanvasGroup canvasGroup;
-        private CanvasGroup tabCanvasGroup;
+        [SerializeField] private Button button;
+        [SerializeField] private Image fill;
+        [SerializeField] private CanvasGroup canvasGroup;
+        [SerializeField] private CanvasGroup tabCanvasGroup;
+        [SerializeField] private Button authoredMapButton;
+        [SerializeField] private bool authoredPresentation;
         private DungeonAutomapOverlay automapOverlay;
         private bool lastVisible;
         private bool lastCanJump;
@@ -32,6 +34,21 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             Transform existing = hudRoot.Find("JumpButton");
+            var authored = existing != null ? existing.GetComponent<DemoJumpButton>() : null;
+            if (authored != null && authored.authoredPresentation)
+            {
+                authored.player = playerMove;
+                authored.button.onClick.RemoveListener(authored.HandleClicked);
+                authored.button.onClick.AddListener(authored.HandleClicked);
+                if (authored.authoredMapButton != null)
+                {
+                    authored.authoredMapButton.onClick.RemoveListener(authored.ToggleAutomap);
+                    authored.authoredMapButton.onClick.AddListener(authored.ToggleAutomap);
+                }
+                authored.lastFill = -1f;
+                authored.Refresh();
+                return authored;
+            }
             if (existing != null)
             {
                 Destroy(existing.gameObject);
@@ -186,7 +203,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             if (fill != null)
             {
                 fill.fillAmount = fillAmount;
-                fill.color = ReadyFill;
+                if (!authoredPresentation) fill.color = ReadyFill;
             }
         }
 

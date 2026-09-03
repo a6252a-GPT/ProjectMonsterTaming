@@ -504,7 +504,7 @@ namespace ProjectMT.Features.Equipment
 
             if (statText != null)
             {
-                statText.text = hasItem ? item.Definition.GetCoreStatSummary() : "장착된 장비가 없습니다";
+                statText.text = hasItem ? item.GetCoreStatSummary() : "장착된 장비가 없습니다";
             }
 
             if (statText2 != null)

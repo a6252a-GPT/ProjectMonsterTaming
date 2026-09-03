@@ -87,6 +87,55 @@ namespace ProjectMT.Shared.GameData
             };
         }
 
+        public static GameProgressChange RecordCastleRaidClear(
+            int stage,
+            RewardBundle rewards,
+            IReadOnlyList<EquipmentInstanceData> equipment)
+        {
+            var equipmentCopy = CopyEquipment(equipment);
+            return new GameProgressChange
+            {
+                MarkCastleRaidCleared = true,
+                CastleRaidClearedStage = stage,
+                Rewards = rewards ?? RewardBundle.Empty,
+                HasAcquireEquipment = equipmentCopy.Count > 0,
+                AcquireEquipmentInstances = equipmentCopy
+            };
+        }
+
+        public static GameProgressChange GrantRewardsAndEquipment(
+            RewardBundle rewards,
+            IReadOnlyList<EquipmentInstanceData> equipment)
+        {
+            var equipmentCopy = CopyEquipment(equipment);
+            return new GameProgressChange
+            {
+                Rewards = rewards ?? RewardBundle.Empty,
+                HasAcquireEquipment = equipmentCopy.Count > 0,
+                AcquireEquipmentInstances = equipmentCopy
+            };
+        }
+
+        private static List<EquipmentInstanceData> CopyEquipment(
+            IReadOnlyList<EquipmentInstanceData> equipment)
+        {
+            var copy = new List<EquipmentInstanceData>(equipment?.Count ?? 0);
+            if (equipment == null)
+            {
+                return copy;
+            }
+
+            for (var index = 0; index < equipment.Count; index++)
+            {
+                if (equipment[index] != null)
+                {
+                    copy.Add(equipment[index].Clone());
+                }
+            }
+
+            return copy;
+        }
+
         // 지정한 인스턴스를 장착한다. 같은 부위에 이미 장착 중인 장비가 있으면 자동으로 교체된다.
         public static GameProgressChange EquipItem(string instanceId)
         {

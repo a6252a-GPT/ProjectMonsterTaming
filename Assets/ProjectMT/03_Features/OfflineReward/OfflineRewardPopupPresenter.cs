@@ -22,6 +22,7 @@ namespace ProjectMT.Features.OfflineReward
         private const float ActionButtonDimmedAlpha = 76f / 255f; // 일일/주간 퀘스트 수령 완료 연출과 동일한 값
         private const float ActionButtonNormalAlpha = 1f;
 
+        [SerializeField] private bool useRewardFocusedLayout; // 재화 강조형은 골드/경험치를 상단에 분리 표시
         [SerializeField] private TMP_Text timeText;
         [SerializeField] private TMP_Text stageText;
         [SerializeField] private TMP_Text capText;
@@ -64,6 +65,8 @@ namespace ProjectMT.Features.OfflineReward
         private ItemCatalog itemCatalog;
         private bool busy;
         private bool combatDisplaySuppressed;
+        private bool inventoryBlockedNotice;
+        private Action inventoryBlockedClosed;
 
         private GameObject DisplayRoot => displayRootOverride != null ? displayRootOverride : gameObject;
         public bool IsOpen => DisplayRoot.activeSelf;
@@ -103,7 +106,9 @@ namespace ProjectMT.Features.OfflineReward
                     RewardPresentationKind.Item,
                     definition?.DisplayName ?? EquipmentPartInfo.GetDisplayName(equipment.Part),
                     1L,
-                    icon: partIcon ?? definition?.Icon ?? fallbackRewardIcon));
+                    icon: partIcon ?? definition?.Icon ?? fallbackRewardIcon,
+                    equipmentLevel: equipment.ItemLevel,
+                    equipmentInstanceId: equipment.InstanceId));
             }
 
             return new RewardPresentationRequest(items.ToArray());
@@ -162,6 +167,8 @@ namespace ProjectMT.Features.OfflineReward
                 return;
             }
 
+            inventoryBlockedNotice = false;
+            inventoryBlockedClosed = null;
             current = presentation;
             itemCatalog = catalog;
             acknowledge = acknowledgeRequest;
@@ -199,52 +206,78 @@ namespace ProjectMT.Features.OfflineReward
             }
         }
 
+        public void ShowInventoryBlocked(Action onClosed)
+        {
+            current = null;
+            acknowledge = null;
+            confirmed = null;
+            inventoryBlockedNotice = true;
+            inventoryBlockedClosed = onClosed;
+            busy = false;
+            UIPanelPopAnimator.RequestOpen(DisplayRoot, UIPanelPopStyle.RewardPopup);
+            MobileSafeAreaCanvasFitter.Ensure(DisplayRoot);
+            mainPopupRoot?.SetActive(false);
+            autoDismantleNoticeRoot?.SetActive(true);
+            Set(autoDismantleNoticeText,
+                "장비 보관함에 공간이 부족합니다.\n" +
+                "보관함을 정리하면 같은 방치 보상을 다시 정산합니다.\n" +
+                "보호 장비와 보상은 유지됩니다.");
+            SetCombatDisplaySuppressed(true);
+        }
+
         public void Hide()
         {
-            HandleClaimClicked(); // X도 지급 완료 영수증을 확인 처리
+            if (inventoryBlockedNotice)
+            {
+                HandleNoticeConfirmed();
+                return;
+            }
+
+            HandleClaimClicked();
         }
 
         private void HandleNoticeConfirmed()
         {
+            if (inventoryBlockedNotice)
+            {
+                inventoryBlockedNotice = false;
+                var closed = inventoryBlockedClosed;
+                inventoryBlockedClosed = null;
+                SetCombatDisplaySuppressed(false);
+                UIPanelPopAnimator.RequestClose(DisplayRoot, () => closed?.Invoke());
+                return;
+            }
+
             autoDismantleNoticeRoot?.SetActive(false);
             mainPopupRoot?.SetActive(true);
         }
 
         private void Bind(OfflineRewardPresentation presentation)
         {
+            if (useRewardFocusedLayout)
+            {
+                BindRewardFocusedSummary(presentation);
+                BindRewardList(presentation);
+                return;
+            }
+
             Set(timeText, $"방치 시간  {FormatDuration(presentation.ElapsedSeconds)}");
-            Set(
-                stageText,
-                presentation.MixedBasis
-                    ? "최종 원정대 : 접속별 기준"
-                    : $"최종 원정대 : {presentation.BasisStage}");
-            Set(capText, presentation.Capped ? "최대 누적 시간이 적용되었습니다" : "정상 누적");
-            Set(
-                goldRateText,
-                presentation.MixedBasis
-                    ? $"+{presentation.Gold:N0} · 접속별 합산"
-                    : $"+{presentation.Gold:N0} · {presentation.GoldPerMinute:N0}/60s");
-            Set(
-                experienceRateText,
-                presentation.MixedBasis
-                    ? $"+{presentation.CommanderExperience:N0} · 접속별 합산"
-                    : $"+{presentation.CommanderExperience:N0} · {presentation.CommanderExperiencePerMinute:N0}/60s");
-            Set(
-                stoneRateText,
-                presentation.MixedBasis
-                    ? $"+{presentation.UpgradeStone:N0} · 접속별 합산"
-                    : $"+{presentation.UpgradeStone:N0} · 무작위 1/60s");
-            Set(
-                equipmentRateText,
-                presentation.MixedBasis
-                    ? $"획득 {presentation.EquipmentRewards.Count:N0}개 · 접속별 합산"
-                    : $"획득 {presentation.EquipmentRewards.Count:N0}개 · 분당 " +
-                      $"{presentation.EquipmentChanceBasisPointsPerMinute / 100f:0.##}%");
-            Set(
-                autoDismantleRateText,
-                presentation.AutoDismantledEquipmentCount > 0
-                    ? $"분해 {presentation.AutoDismantledEquipmentCount:N0}개 · +{presentation.AutoDismantleUpgradeStone:N0}"
-                    : "자동분해 없음");
+            Set(stageText, presentation.MixedBasis
+                ? SummaryLines("최종 원정대", "접속별 기준 적용")
+                : SummaryLines($"최종 원정대 {presentation.BasisStage:N0}", "누적 보상 기준"));
+            Set(capText, presentation.Capped
+                ? "최대 누적 시간이 적용되었습니다"
+                : presentation.MixedBasis ? "접속별 누적 보상을 합산했습니다" : "최종 원정대 기준으로 누적된 보상입니다");
+            Set(goldRateText, SummaryLines($"골드 +{presentation.Gold:N0}", presentation.MixedBasis
+                ? "누적 획득량" : $"분당 {presentation.GoldPerMinute:N0}"));
+            Set(experienceRateText, SummaryLines($"경험치 +{presentation.CommanderExperience:N0}", presentation.MixedBasis
+                ? "누적 획득량" : $"분당 {presentation.CommanderExperiencePerMinute:N0}"));
+            Set(stoneRateText, SummaryLines($"강화석 +{presentation.UpgradeStone:N0}", "종류 무작위"));
+            Set(equipmentRateText, SummaryLines($"장비 {presentation.EquipmentRewards.Count:N0}개", presentation.MixedBasis
+                ? "누적 획득량" : $"분당 {presentation.EquipmentChanceBasisPointsPerMinute / 100f:0.##}% 확률"));
+            Set(autoDismantleRateText, presentation.AutoDismantledEquipmentCount > 0
+                ? SummaryLines($"{presentation.AutoDismantledEquipmentCount:N0}개 자동분해", $"강화석 +{presentation.AutoDismantleUpgradeStone:N0}")
+                : SummaryLines("자동분해 없음", "분해된 장비가 없습니다"));
             Set(goldRewardText, $"골드\n+{presentation.Gold:N0}");
             Set(experienceRewardText, $"군단장 경험치\n+{presentation.CommanderExperience:N0}");
             Set(stoneRewardText, $"무작위 강화석\n+{presentation.UpgradeStone:N0}");
@@ -257,15 +290,58 @@ namespace ProjectMT.Features.OfflineReward
             BindRewardList(presentation);
         }
 
+        private void BindRewardFocusedSummary(OfflineRewardPresentation presentation)
+        {
+            Set(timeText, FormatDuration(presentation.ElapsedSeconds));
+            Set(stageText, presentation.MixedBasis ? "접속별 기준" : $"{presentation.BasisStage:N0} 단계 기준");
+            Set(capText, presentation.Capped
+                ? "최대 시간 도달"
+                : presentation.MixedBasis ? "접속별 합산" : "누적 보상");
+            Set(goldRewardText, $"{presentation.Gold:N0}");
+            Set(experienceRewardText, $"{presentation.CommanderExperience:N0}");
+            Set(goldRateText, presentation.MixedBasis ? "누적 획득량" : $"분당 {presentation.GoldPerMinute:N0}");
+            Set(experienceRateText, presentation.MixedBasis ? "누적 획득량" : $"분당 {presentation.CommanderExperiencePerMinute:N0}");
+            Set(stoneRateText, presentation.AutoDismantledEquipmentCount > 0 ? "자동분해 보상 포함" : "누적 획득 보상");
+            Set(equipmentRateText, presentation.MixedBasis
+                ? $"획득 장비 {presentation.EquipmentRewards.Count:N0}개 · 접속별 합산"
+                : $"장비 획득 확률  분당 {presentation.EquipmentChanceBasisPointsPerMinute / 100f:0.##}%");
+            Set(autoDismantleRateText, presentation.AutoDismantledEquipmentCount > 0
+                ? $"자동분해 {presentation.AutoDismantledEquipmentCount:N0}개" : "자동분해 없음");
+            Set(stoneRewardText, presentation.AutoDismantledEquipmentCount > 0
+                ? $"강화석 +{presentation.AutoDismantleUpgradeStone:N0} 포함" : "분해된 장비가 없습니다");
+            Set(statusText, "보상이 모두 준비되었습니다");
+        }
+
+        private static string SummaryLines(string primary, string secondary)
+        {
+            return $"{primary}\n<size=84%><color=#C8C5BF>{secondary}</color></size>";
+        }
+
         private void BindRewardList(OfflineRewardPresentation presentation)
         {
             CacheRewardSlots();
             CacheFrameVariantTemplates();
             var request = presentation.CreateAcquirePresentation(itemCatalog);
             var items = request?.Items;
+            if (useRewardFocusedLayout && items != null)
+            {
+                var itemRewards = new List<RewardPresentationItem>(items.Count);
+                for (var index = 0; index < items.Count; index++)
+                {
+                    if (items[index].Kind == RewardPresentationKind.Item)
+                    {
+                        itemRewards.Add(items[index]);
+                    }
+                }
+                items = itemRewards; // 상단 재화는 목록에서만 제외하며 실제 지급 요청은 보존
+            }
             var itemCount = items?.Count ?? 0;
             var equipmentCount = presentation.EquipmentRewards.Count;
             var count = itemCount + equipmentCount;
+            if (useRewardFocusedLayout && equipmentRewardText != null)
+            {
+                equipmentRewardText.gameObject.SetActive(count == 0);
+            }
             EnsureRewardSlotCount(count);
             for (var index = 0; index < rewardSlots.Count; index++)
             {
@@ -307,6 +383,10 @@ namespace ProjectMT.Features.OfflineReward
             if (rewardScrollRect != null)
             {
                 rewardScrollRect.verticalNormalizedPosition = 1f;
+                if (useRewardFocusedLayout)
+                {
+                    rewardScrollRect.horizontalNormalizedPosition = 0f;
+                }
             }
         }
 
@@ -415,7 +495,8 @@ namespace ProjectMT.Features.OfflineReward
                 partIcon ?? definition?.Icon ?? fallbackRewardIcon,
                 1L,
                 definition?.DisplayName ?? EquipmentPartInfo.GetDisplayName(equipment.Part),
-                ResolveEquipmentFrame(equipment.Grade));
+                ResolveEquipmentFrame(equipment.Grade),
+                equipment.ItemLevel);
         }
 
         private GameObject ResolveEquipmentFrame(EquipmentGrade grade)

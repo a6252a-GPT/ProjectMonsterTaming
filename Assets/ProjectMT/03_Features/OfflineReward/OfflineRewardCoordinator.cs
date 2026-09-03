@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using ProjectMT.Features.Equipment;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 
 namespace ProjectMT.Features.OfflineReward
 {
-    public interface IUtcClock // 방치 계산을 기기 UTC와 테스트 시간에서 공용 사용
+    public interface IUtcClock
     {
         DateTime UtcNow { get; }
     }
@@ -15,44 +16,44 @@ namespace ProjectMT.Features.OfflineReward
     public sealed class SystemUtcClock : IUtcClock
     {
         public static readonly SystemUtcClock Instance = new SystemUtcClock();
-
-        private SystemUtcClock()
-        {
-        }
-
+        private SystemUtcClock() { }
         public DateTime UtcNow => DateTime.UtcNow;
     }
 
-    public sealed class OfflineRewardCoordinator // 로그인·Pause·Resume 방치 정산 순서 관리
+    public sealed class OfflineRewardCoordinator
     {
         private readonly IGameProgressService progress;
         private readonly OfflineRewardConfig config;
         private readonly EquipmentBalanceConfig equipmentBalance;
         private readonly IUtcClock clock;
-        private readonly SemaphoreSlim gate = new SemaphoreSlim(1, 1); // Pause·Resume·확인 저장 직렬화
-        private bool inactive; // 중복 Pause·활성 상태 Resume의 시작점 변경 차단
+        private readonly Random rewardRandom;
+        private readonly SemaphoreSlim gate = new SemaphoreSlim(1, 1);
+        private bool inactive;
+        private PendingOfflineSettlement pending;
 
         public OfflineRewardCoordinator(
             IGameProgressService progressService,
             OfflineRewardConfig rewardConfig,
             IUtcClock utcClock = null,
-            EquipmentBalanceConfig equipmentBalanceConfig = null)
+            EquipmentBalanceConfig equipmentBalanceConfig = null,
+            Random random = null)
         {
             progress = progressService ?? throw new ArgumentNullException(nameof(progressService));
             config = rewardConfig ?? throw new ArgumentNullException(nameof(rewardConfig));
             equipmentBalance = equipmentBalanceConfig ?? EquipmentBalanceConfig.RuntimeDefault;
             clock = utcClock ?? SystemUtcClock.Instance;
+            rewardRandom = random;
         }
 
-        public Task<bool> PrepareOnLoginAsync()
-        {
-            return TrySettleCurrentIntervalAsync(false);
-        }
+        public OfflineRewardCalculationStatus LastStatus { get; private set; } =
+            OfflineRewardCalculationStatus.NotDue;
+        public bool HasPendingSettlement => pending != null;
 
-        public Task<bool> ResumeAsync()
-        {
-            return TrySettleCurrentIntervalAsync(true);
-        }
+        public Task<bool> PrepareOnLoginAsync() => TrySettleCurrentIntervalAsync(false);
+        public Task<bool> ResumeAsync() => TrySettleCurrentIntervalAsync(true);
+        public Task<bool> RetryPendingAsync() => pending == null
+            ? Task.FromResult(true)
+            : TrySettleCurrentIntervalAsync(false);
 
         public async Task<bool> MarkInactiveAsync()
         {
@@ -61,7 +62,7 @@ namespace ProjectMT.Features.OfflineReward
             {
                 if (inactive)
                 {
-                    return true; // Pause·Quit 중복 콜백은 최초 시작점을 유지
+                    return true;
                 }
 
                 if (!progress.IsLoaded)
@@ -69,12 +70,18 @@ namespace ProjectMT.Features.OfflineReward
                     return false;
                 }
 
+                if (pending != null)
+                {
+                    inactive = true;
+                    return true; // 보류 중인 추첨의 시간 경계를 덮어쓰지 않는다.
+                }
+
                 var view = progress.View;
                 var saved = await progress.TryApplyAndSaveAsync(
                     GameProgressChange.MarkOfflineInactive(
                         view.OfflineRewards.LastActiveUtc,
                         clock.UtcNow,
-                        Math.Max(1, view.LastClearedStage)));
+                        ExpeditionEquipmentLevelResolver.ResolveHighestClearedStage(view)));
                 inactive = saved;
                 return saved;
             }
@@ -101,8 +108,7 @@ namespace ProjectMT.Features.OfflineReward
         public bool TryGetPendingPresentation(out OfflineRewardPresentation presentation)
         {
             return OfflineRewardPresentation.TryCreate(
-                progress.View.OfflineRewards.PendingReceipts,
-                out presentation);
+                progress.View.OfflineRewards.PendingReceipts, out presentation);
         }
 
         private async Task<bool> TrySettleCurrentIntervalAsync(bool requireInactive)
@@ -110,61 +116,121 @@ namespace ProjectMT.Features.OfflineReward
             await gate.WaitAsync();
             try
             {
-                if (requireInactive && !inactive)
+                if (requireInactive && !inactive && pending == null)
                 {
-                    return true; // 실제 Pause 없이 들어온 Resume는 활성 시간을 정산하지 않음
+                    return true;
                 }
 
-                if (requireInactive)
+                if (!progress.IsLoaded || !config.TryValidate(out _) || !equipmentBalance.TryValidate(out _))
                 {
-                    inactive = false; // Resume 이벤트는 한 번만 처리
-                }
-
-                if (!progress.IsLoaded || config == null || !config.TryValidate(out _))
-                {
+                    LastStatus = OfflineRewardCalculationStatus.InvalidData;
                     return false;
                 }
 
-                var view = progress.View;
-                var offline = view.OfflineRewards;
                 var nowUtc = clock.UtcNow.ToUniversalTime();
-                if (!offline.HasLastActive ||
-                    !OfflineRewardReceiptData.TryParseUtc(offline.LastActiveUtc, out var fromUtc) ||
-                    nowUtc <= fromUtc)
+                while (true)
                 {
-                    return await progress.TryApplyAndSaveAsync(
-                        GameProgressChange.MarkOfflineInactive(
-                            offline.LastActiveUtc,
-                            nowUtc,
-                            Math.Max(1, view.LastClearedStage)));
-                }
+                    var view = progress.View;
+                    var offline = view.OfflineRewards;
+                    if (pending != null && pending.ExpectedLastActiveUtc != offline.LastActiveUtc)
+                    {
+                        pending = null; // 외부 초기화 또는 이미 확정된 구간은 다시 지급하지 않는다.
+                    }
 
-                if (!OfflineRewardCalculator.TryCalculate(
-                        fromUtc,
-                        nowUtc,
-                        offline.LastActiveStage,
-                        Guid.NewGuid().ToString("N"),
-                        config,
-                        view.Equipment,
-                        equipmentBalance,
-                        null,
-                        out var calculation))
-                {
-                    return true; // 최소 인정시간 전에는 기존 시작점을 유지
-                }
+                    if (pending == null)
+                    {
+                        if (!offline.HasLastActive ||
+                            !OfflineRewardReceiptData.TryParseUtc(offline.LastActiveUtc, out var fromUtc) ||
+                            nowUtc <= fromUtc)
+                        {
+                            LastStatus = OfflineRewardCalculationStatus.NotDue;
+                            var marked = await progress.TryApplyAndSaveAsync(
+                                GameProgressChange.MarkOfflineInactive(
+                                    offline.LastActiveUtc,
+                                    nowUtc,
+                                    ExpeditionEquipmentLevelResolver.ResolveHighestClearedStage(view)));
+                            if (marked) inactive = false;
+                            return marked;
+                        }
 
-                return await progress.TryApplyAndSaveAsync(
-                    GameProgressChange.SettleOfflineReward(
-                        offline.LastActiveUtc,
-                        nowUtc,
-                        Math.Max(1, view.LastClearedStage),
-                        calculation.Receipt,
-                        calculation.Rewards));
+                        LastStatus = OfflineRewardCalculator.TryRoll(
+                            fromUtc, nowUtc, offline.LastActiveStage, Guid.NewGuid().ToString("N"),
+                            config, equipmentBalance, rewardRandom, out var snapshot);
+                        if (LastStatus == OfflineRewardCalculationStatus.NotDue)
+                        {
+                            inactive = false;
+                            return true;
+                        }
+
+                        if (LastStatus != OfflineRewardCalculationStatus.Ready)
+                        {
+                            return false;
+                        }
+
+                        pending = new PendingOfflineSettlement(
+                            offline.LastActiveUtc, nowUtc,
+                            ExpeditionEquipmentLevelResolver.ResolveHighestClearedStage(view), snapshot);
+                    }
+
+                    LastStatus = OfflineRewardCalculator.TryPlan(
+                        pending.Snapshot, view, equipmentBalance, out var calculation);
+                    if (LastStatus == OfflineRewardCalculationStatus.InventoryBlocked)
+                    {
+                        inactive = false;
+                        return true; // 진입은 허용하고 인벤토리 정리 후 같은 추첨으로 재계획한다.
+                    }
+
+                    if (LastStatus != OfflineRewardCalculationStatus.Ready)
+                    {
+                        return false;
+                    }
+
+                    var currentPlan = pending;
+                    var saved = await progress.TryApplyAndSaveAsync(
+                        GameProgressChange.SettleOfflineReward(
+                            currentPlan.ExpectedLastActiveUtc,
+                            currentPlan.ToUtc,
+                            currentPlan.NextBasisStage,
+                            calculation.Receipt,
+                            calculation.Rewards));
+                    if (!saved)
+                    {
+                        return false; // 다음 호출에서도 ID·레벨·옵션·재화 추첨을 그대로 유지한다.
+                    }
+
+                    pending = null;
+                    inactive = false;
+                    if (currentPlan.ToUtc >= nowUtc)
+                    {
+                        return true;
+                    }
+                    // 이전 실패 구간 저장이 끝난 뒤 현재 시각까지의 다음 구간을 따로 계산한다.
+                }
             }
             finally
             {
                 gate.Release();
             }
+        }
+
+        private sealed class PendingOfflineSettlement
+        {
+            public PendingOfflineSettlement(
+                string expectedLastActiveUtc,
+                DateTime toUtc,
+                int nextBasisStage,
+                OfflineRewardRollSnapshot snapshot)
+            {
+                ExpectedLastActiveUtc = expectedLastActiveUtc;
+                ToUtc = toUtc;
+                NextBasisStage = nextBasisStage;
+                Snapshot = snapshot;
+            }
+
+            public string ExpectedLastActiveUtc { get; }
+            public DateTime ToUtc { get; }
+            public int NextBasisStage { get; }
+            public OfflineRewardRollSnapshot Snapshot { get; }
         }
     }
 }

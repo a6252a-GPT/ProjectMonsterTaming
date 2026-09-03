@@ -27,6 +27,8 @@ namespace ProjectMT.Contents.CastleRaidHex
         private float cellSize;
         private int seed;
         private int spawnSequence;
+        private float trainingAttackMultiplier = 1f;
+        private float churchMoveSpeedMultiplier = 1f;
 
         public int AliveUnitCount => units.Count(value => value != null && value.IsAlive);
         public IReadOnlyList<HexCastleGarrisonUnit> Units => units;
@@ -34,7 +36,19 @@ namespace ProjectMT.Contents.CastleRaidHex
         public int ActiveProductionReservationCount => productionReservations.Count;
         public int ActiveResponseReservationCount => responseReservations.Count;
         public bool IsConfigured => catalog != null && catalog.IsComplete && cells != null;
+        public float TrainingAttackMultiplier => trainingAttackMultiplier;
+        public float ChurchMoveSpeedMultiplier => churchMoveSpeedMultiplier;
         public event Action<HexCastleGarrisonUnit> UnitSpawned;
+
+        public void ApplyBuildingEffects(bool hasActiveTrainingYard, bool churchDestroyed)
+        {
+            trainingAttackMultiplier = hasActiveTrainingYard ? tuning.TrainingAttackMultiplier : 1f;
+            churchMoveSpeedMultiplier = churchDestroyed ? tuning.ChurchRageMoveSpeedMultiplier : 1f;
+            for (var index = 0; index < units.Count; index++)
+            {
+                units[index]?.ApplyBuildingModifiers(trainingAttackMultiplier, churchMoveSpeedMultiplier);
+            }
+        }
 
         public void Configure(
             HexCastleGarrisonCatalog targetCatalog,
@@ -329,6 +343,7 @@ namespace ProjectMT.Contents.CastleRaidHex
                 this,
                 difficultyProfile?.ResolveHealthMultiplier(role) ?? 1f,
                 difficultyProfile?.ResolveAttackMultiplier(role) ?? 1f);
+            unit.ApplyBuildingModifiers(trainingAttackMultiplier, churchMoveSpeedMultiplier);
             units.Add(unit);
             UnitSpawned?.Invoke(unit);
         }

@@ -7,13 +7,14 @@ namespace ProjectMT.Features.Equipment
     // 신규 장비의 추가 옵션은 그룹 가중치로 뽑고 같은 장비 안에서는 중복하지 않는다.
     public static class EquipmentRandomOptionRoller
     {
-        public static List<EquipmentOptionRollData> Roll(EquipmentGrade grade, Random random)
+        public static List<EquipmentOptionRollData> Roll(EquipmentGrade grade, int itemLevel, Random random)
         {
-            return Roll(grade, EquipmentBalanceConfig.RuntimeDefault, random);
+            return Roll(grade, itemLevel, EquipmentBalanceConfig.RuntimeDefault, random);
         }
 
         public static List<EquipmentOptionRollData> Roll(
             EquipmentGrade grade,
+            int itemLevel,
             EquipmentBalanceConfig balance,
             Random random)
         {
@@ -22,6 +23,10 @@ namespace ProjectMT.Features.Equipment
                 throw new ArgumentNullException(nameof(balance));
             }
 
+            if (!balance.TryValidate(out var error)) throw new ArgumentException(error, nameof(balance));
+            if (itemLevel < 1 || itemLevel > balance.MaximumItemLevel)
+                throw new ArgumentOutOfRangeException(nameof(itemLevel));
+            if (!Enum.IsDefined(typeof(EquipmentGrade), grade)) throw new ArgumentOutOfRangeException(nameof(grade));
             var rng = random ?? new Random();
             var optionCount = balance.GetRandomOptionCount(grade);
             var gradeMultiplier = balance.GetRandomOptionGradeMultiplier(grade);
@@ -35,7 +40,10 @@ namespace ProjectMT.Features.Equipment
 
                 var randomMultiplier = balance.MinimumRandomMultiplier + (float)rng.NextDouble() *
                     (balance.MaximumRandomMultiplier - balance.MinimumRandomMultiplier);
-                var value = EquipmentOptionInfo.GetBaseValue(type, balance) * gradeMultiplier * randomMultiplier;
+                var levelMultiplier = EquipmentLevelRules.GetMultiplier(itemLevel, balance.GetOptionGrowthPerLevel(type));
+                var value = EquipmentOptionInfo.GetBaseValue(type, balance) * gradeMultiplier * levelMultiplier * randomMultiplier;
+                if (float.IsNaN(value) || float.IsInfinity(value) || value <= 0f)
+                    throw new InvalidOperationException("Equipment option value is invalid.");
                 result.Add(new EquipmentOptionRollData(type, value));
             }
 

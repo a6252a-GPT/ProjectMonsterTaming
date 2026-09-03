@@ -515,6 +515,45 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
         }
 
         [Test]
+        public void ExteriorDeployment_FollowsWallContourAcrossAllThemesAndLayers()
+        {
+            var generator = new HexCastleFoundationGenerator();
+            var expandedCount = 0;
+            foreach (var theme in HexCastleSilhouettePlanner.SupportedThemes)
+            for (var layers = 2; layers <= 4; layers++)
+            {
+                var layout = generator.Generate(26639, layers, theme);
+                var outerWall = layout.Cells.Values.Where(cell => cell.IsWallPathCell &&
+                    cell.DefenseLayer == layers).Select(cell => cell.Coordinates).ToHashSet();
+                var radius = outerWall.Max(coordinates => coordinates.DistanceFromOrigin);
+                var deployments = layout.Enumerate(HexCastleCellKind.Deployment).ToArray();
+                expandedCount += deployments.Count(cell => cell.Coordinates.DistanceFromOrigin <= radius);
+                Assert.That(deployments.All(cell => !cell.NoDeploy && !cell.InitialBlocked), Is.True);
+                foreach (var cell in deployments)
+                foreach (var direction in HexCoordinates.Directions)
+                {
+                    if (!layout.Cells.TryGetValue(cell.Coordinates + direction, out var adjacent)) continue;
+                    Assert.That(adjacent.Kind, Is.Not.EqualTo(HexCastleCellKind.Ground),
+                        $"{theme}/{layers}: 외부 열린 바닥 누락 {adjacent.Coordinates}");
+                    Assert.That(adjacent.IsBuildingCell, Is.False, $"{theme}/{layers}: 성 외부 건물");
+                }
+
+                Assert.That(layout.Enumerate(HexCastleCellKind.Ground).Any(), Is.True);
+                Assert.That(layout.Cells.Values.Where(cell => cell.IsWallPathCell || cell.IsBuildingCell)
+                    .All(cell => cell.NoDeploy), Is.True);
+                var plan = HexCastleSilhouettePlanner.Build(theme, 26639,
+                    HexCastleFoundationGenerator.ResolveCanonicalWallRadii(layers));
+                for (var band = 0; band < layers - 1; band++)
+                foreach (var coordinate in HexCastleSilhouetteBandResolver.Resolve(plan,
+                             layout.BattlefieldRadius, band).Cells)
+                    Assert.That(layout.Cells[coordinate].NoDeploy, Is.True,
+                        $"{theme}/{layers}: 성 안쪽 배치 허용 {coordinate}");
+            }
+
+            Assert.That(expandedCount, Is.GreaterThan(0), "굴곡 안쪽 반경의 성 외부 배치 칸이 추가되어야 한다.");
+        }
+
+        [Test]
         public void DeploymentAreaVisual_ShowsOnlyAvailableDeploymentHexCells()
         {
             var root = new GameObject("HexDeploymentAreaVisualTest");

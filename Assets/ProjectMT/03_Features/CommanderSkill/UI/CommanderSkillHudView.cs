@@ -13,6 +13,7 @@ namespace ProjectMT.Features.CommanderSkill
         [SerializeField] private Button autoButton;
         [SerializeField] private Image autoRing;
         [SerializeField] private TMP_Text autoText;
+        [SerializeField] private TMP_Text autoStateText;
 
         [Header("Slots")]
         [SerializeField] private Button[] slotButtons = new Button[CommanderSkillSlotRules.SlotCount];
@@ -20,8 +21,9 @@ namespace ProjectMT.Features.CommanderSkill
         [SerializeField] private Image[] cooldownFills = new Image[CommanderSkillSlotRules.SlotCount];
         [SerializeField] private TMP_Text[] cooldownTexts = new TMP_Text[CommanderSkillSlotRules.SlotCount];
         [SerializeField] private GameObject[] lockRoots = new GameObject[CommanderSkillSlotRules.SlotCount];
+        [SerializeField] private Image[] slotRings;
 
-        private static readonly Color AutoEnabledColor = new Color32(255, 188, 67, 255);
+        private static readonly Color AutoEnabledColor = new Color32(222, 213, 178, 255);
         private static readonly Color AutoDisabledColor = new Color32(111, 118, 126, 255);
         private IGameProgressService progress;
         private CommanderSkillCatalog catalog;
@@ -182,7 +184,13 @@ namespace ProjectMT.Features.CommanderSkill
             if (autoText != null)
             {
                 autoText.color = autoColor;
-                autoText.text = view.AutoUseEnabled ? "AUTO" : "OFF";
+                autoText.text = autoStateText != null ? "AUTO" : view.AutoUseEnabled ? "AUTO" : "OFF";
+            }
+
+            if (autoStateText != null)
+            {
+                autoStateText.color = autoColor;
+                autoStateText.text = view.AutoUseEnabled ? "ON" : "OFF";
             }
 
             for (var index = 0; index < CommanderSkillSlotRules.SlotCount; index++)
@@ -191,6 +199,12 @@ namespace ProjectMT.Features.CommanderSkill
                 var skillId = view.GetEquippedSkillId(index);
                 CommanderSkillDefinition definition = null;
                 var hasSkill = catalog != null && catalog.TryGet(skillId, out definition);
+                if (slotRings != null && index < slotRings.Length && slotRings[index] != null)
+                {
+                    slotRings[index].color = unlocked && hasSkill
+                        ? new Color32(222, 199, 144, 255)
+                        : new Color32(96, 117, 122, 160);
+                }
                 if (index < lockRoots.Length && lockRoots[index] != null)
                 {
                     lockRoots[index].SetActive(!unlocked);
@@ -240,6 +254,12 @@ namespace ProjectMT.Features.CommanderSkill
         }
 
 #if UNITY_EDITOR
+        public void EditorConfigurePresentation(TMP_Text autoState, Image[] rings)
+        {
+            autoStateText = autoState;
+            slotRings = rings;
+        }
+
         public void EditorConfigure(
             Button autoToggle,
             Image autoBorder,

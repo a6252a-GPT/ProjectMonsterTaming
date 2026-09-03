@@ -45,7 +45,7 @@ MonoBehaviour:
   activeSkillPlaybackSpeed: 1
   activeSkillCrossFadeDuration: 0.08
   activeSkillCommitNormalizedTime: 0.25
-  activeStepMotionModeConfigured: 0
+  activeStepMotionModeConfigured: 1
   useCustomActiveStepMotions: 0
   activeAttackStepTunings: []
   activeAttackPresentations: []
@@ -105,7 +105,7 @@ MonoBehaviour:
   deathClip: {fileID: 7400000, guid: 07647718d2e036b40a9b035d67d9736b, type: 3}
   deathSpeed: 1
   combatType: 1
-  basicAttackProfile: {fileID: 11400000, guid: 8b8f8c0eac3de8f4fa4b87f291e8f574, type: 2}
+  basicAttackProfile: {fileID: 11400000, guid: 4532259f592e84546ae7138d3fffd0ac, type: 2}
   basicAttackVfxBindings:
   - attackId: BA_S_04
     slotId: start
@@ -171,6 +171,70 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  - attackId: BA_R_03
+    slotId: launch
+    motionId: attack01
+    state: 2
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_R_03
+    slotId: projectile
+    motionId: 
+    state: 1
+    prefab: {fileID: 2439347719323675977, guid: ad12e86e8c4650a4aa3f41a331710e2c, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 3
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_R_03
+    slotId: contact
+    motionId: 
+    state: 1
+    prefab: {fileID: 7871796167905569758, guid: 162101220ae9837499e5fbf731f32ef8, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_R_03
+    slotId: area_explosion
+    motionId: 
+    state: 1
+    prefab: {fileID: 8255459344283744246, guid: 7a80819bbb449894c869a49eb326f91e, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 3
   meleeMode: 0
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5
@@ -179,7 +243,7 @@ MonoBehaviour:
   projectileMode: 0
   projectilePrefab: {fileID: 0}
   overrideProjectileTuning: 0
-  projectileSpeed: 8
+  projectileSpeed: 9
   projectileLifetime: 3
   projectileHitRadius: 0.25
   projectileMaxPiercingTargets: 2

@@ -86,6 +86,7 @@ namespace ProjectMT.Shared.UI
                 ResolveIcon(item),
                 FormatLabel(item),
                 ResolveColor(item.Kind),
+                item.EquipmentLevel,
                 displayRoot.InverseTransformPoint(worldSpawnPosition),
                 displayRoot.InverseTransformPoint(targetAnchor.position),
                 itemDuration,

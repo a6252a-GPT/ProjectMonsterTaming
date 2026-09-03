@@ -12,6 +12,7 @@ namespace ProjectMT.Shared.UI
     {
         [SerializeField] private Image itemIcon; // ItemDefinition 또는 장비 부위의 실제 아이콘
         [SerializeField] private TMP_Text labelText; // 이름과 수량 표시
+        [SerializeField] private TMP_Text equipmentLevelText; // 장비만 아이콘 하단 중앙에 표시
 
         private RectTransform rectTransform; // UI 이동 대상
         private CanvasGroup canvasGroup; // 입력 없이 투명도만 제어
@@ -67,6 +68,12 @@ namespace ProjectMT.Shared.UI
                 itemIcon.gameObject.SetActive(false);
             }
 
+            if (equipmentLevelText != null)
+            {
+                equipmentLevelText.text = string.Empty;
+                equipmentLevelText.gameObject.SetActive(false);
+            }
+
             var callback = released;
             released = null;
             callback?.Invoke();
@@ -77,6 +84,19 @@ namespace ProjectMT.Shared.UI
             Sprite icon,
             string label,
             Color color,
+            Vector2 from,
+            Vector2 to,
+            float playDuration,
+            Action onReleased)
+        {
+            Play(pool, icon, label, color, 0, from, to, playDuration, onReleased);
+        }
+        public void Play(
+            ScenePoolScope pool,
+            Sprite icon,
+            string label,
+            Color color,
+            int equipmentLevel,
             Vector2 from,
             Vector2 to,
             float playDuration,
@@ -107,6 +127,11 @@ namespace ProjectMT.Shared.UI
 
             labelText.text = label ?? string.Empty;
             labelText.color = color;
+            if (equipmentLevelText != null)
+            {
+                equipmentLevelText.text = equipmentLevel > 0 ? $"Lv.{equipmentLevel}" : string.Empty;
+                equipmentLevelText.gameObject.SetActive(equipmentLevel > 0);
+            }
             rectTransform.anchoredPosition = startPosition;
             rectTransform.localScale = Vector3.one;
             canvasGroup.alpha = 1f;
@@ -148,15 +173,31 @@ namespace ProjectMT.Shared.UI
             {
                 labelText = GetComponentInChildren<TMP_Text>(true);
             }
+
+            if (equipmentLevelText == null)
+            {
+                var texts = GetComponentsInChildren<TMP_Text>(true);
+                for (var index = 0; index < texts.Length; index++)
+                {
+                    if (texts[index].name == "Text_Level")
+                    {
+                        equipmentLevelText = texts[index];
+                        break;
+                    }
+                }
+            }
         }
 
 #if UNITY_EDITOR
-        public void EditorConfigure(Image icon, TMP_Text text)
+        public void EditorConfigure(Image icon, TMP_Text text, TMP_Text level = null)
         {
             itemIcon = icon;
             labelText = text;
+            equipmentLevelText = level;
             ResolveReferences();
         }
 #endif
     }
 }
+
+

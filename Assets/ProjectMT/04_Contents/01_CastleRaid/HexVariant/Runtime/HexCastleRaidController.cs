@@ -5,8 +5,10 @@ using System.Linq;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Combat;
+using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Pooling;
+using ProjectMT.Shared.Reward;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -15,14 +17,43 @@ using UnityEngine.UI;
 
 namespace ProjectMT.Contents.CastleRaidHex
 {
+    public enum HexCastleRaidFailureReason
+    {
+        None = 0,
+        TimeExpired = 1,
+        AssaultEliminated = 2
+    }
+
     public sealed class HexCastleRaidResult : IObjectiveCompletionResultData
     {
-        public HexCastleRaidResult(bool palaceDestroyed)
+        public HexCastleRaidResult(
+            bool palaceDestroyed,
+            RewardBundle lootRewards = null,
+            HexCastleRaidFailureReason failureReason = HexCastleRaidFailureReason.None)
+            : this(
+                palaceDestroyed,
+                lootRewards,
+                Array.Empty<EquipmentInstanceData>(),
+                failureReason)
+        {
+        }
+
+        public HexCastleRaidResult(
+            bool palaceDestroyed,
+            RewardBundle lootRewards,
+            IReadOnlyList<EquipmentInstanceData> equipmentRewards,
+            HexCastleRaidFailureReason failureReason = HexCastleRaidFailureReason.None)
         {
             PalaceDestroyed = palaceDestroyed;
+            LootRewards = lootRewards ?? RewardBundle.Empty;
+            EquipmentRewards = equipmentRewards ?? Array.Empty<EquipmentInstanceData>();
+            FailureReason = failureReason;
         }
 
         public bool PalaceDestroyed { get; }
+        public RewardBundle LootRewards { get; }
+        public IReadOnlyList<EquipmentInstanceData> EquipmentRewards { get; }
+        public HexCastleRaidFailureReason FailureReason { get; }
         public bool ObjectiveCompleted => PalaceDestroyed;
     }
 
@@ -31,6 +62,7 @@ namespace ProjectMT.Contents.CastleRaidHex
     {
         private const int DefaultDifficultyLevel = 4;
         private const int DefaultGenerationSeed = 10801;
+        public const float BattleDurationSeconds = 180f;
 
         [Header("Stage")]
         [SerializeField] private HexCastleThemeOneRules themeRules;
@@ -83,6 +115,8 @@ namespace ProjectMT.Contents.CastleRaidHex
         private HexCastleAssaultWorld assaultWorld;
         private HexCastleTrapWorld trapWorld;
         private HexCastleDeploymentAreaVisual deploymentAreaVisual;
+        private HexCastleBattleHudView battleHudView;
+        private HexCastleLootSession lootSession;
         private HexCastleAssaultAIProfileCatalog aiProfileCatalog;
         private HexCastleCellRuntime palaceCore;
         private UnityAction[] unitButtonActions = Array.Empty<UnityAction>();
@@ -95,6 +129,12 @@ namespace ProjectMT.Contents.CastleRaidHex
         private bool generationInProgress;
         private bool progressionStageRun;
         private int progressionStage;
+        private bool battleStarted;
+        private bool runFailed;
+        private bool churchDestroyed;
+        private bool ownsTimePause;
+        private float previousTimeScale = 1f;
+        private float remainingBattleSeconds = BattleDurationSeconds;
 
         public bool IsRunning { get; private set; }
         public int DeployedCount => deployedCount;
@@ -111,6 +151,13 @@ namespace ProjectMT.Contents.CastleRaidHex
                                                    difficultyLevel,
                                                    generationSeed);
         public int CurrentSeed => layout?.Seed ?? generationSeed;
+        public bool BattleStarted => battleStarted;
+        public bool IsFailureVisible => runFailed;
+        public float RemainingBattleSeconds => remainingBattleSeconds;
+        public HexCastleBattleHudView BattleHudView => battleHudView;
+        private BattleUnitSnapshot[] DeploymentUnits => startData is HexCastleRaidStartData hex
+            ? hex.DeploymentUnits
+            : startData?.Party?.Units ?? Array.Empty<BattleUnitSnapshot>();
         public string CurrentStageId => layout == null
             ? string.Empty
             : $"HEX_PROC_T{HexCastleThemeCatalog.ResolveCode(layout.Theme)}_D{layout.DifficultyLevel:00}_" +
@@ -126,19 +173,47 @@ namespace ProjectMT.Contents.CastleRaidHex
                 throw new ArgumentException("부대 투입 시작값이 필요합니다.", nameof(contentContext));
             }
 
-            ConfigureProgressionStage(contentContext.RunInfo);
+            if (startData is HexCastleRaidStartData hexStartData)
+            {
+                hexStartData.EquipmentRewards.Initialize(contentContext.Progress.View);
+            }
 
+            ConfigureProgressionStage(contentContext.RunInfo);
+            battleHudView = statusText == null
+                ? null
+                : statusText.GetComponentInParent<HexCastleBattleHudView>(true);
             ValidateSceneReferences();
             CreateStage();
             ConfigureDefenseRuntime();
+            ConfigureLootRuntime();
             ConfigureHud();
             selectedUnitIndex = -1;
             deployedCount = 0;
             resultSent = false;
+            battleStarted = false;
+            runFailed = false;
+            churchDestroyed = false;
+            remainingBattleSeconds = BattleDurationSeconds;
             IsRunning = true;
+            battleHudView.SetTimer(remainingBattleSeconds, false);
             SetStatus("몬스터를 선택한 뒤 외곽 육각 칸에 배치하세요");
             UpdateHud();
             UpdateGenerationHud();
+        }
+
+        private void Update()
+        {
+            if (!IsRunning || resultSent || runFailed || !battleStarted)
+            {
+                return;
+            }
+
+            remainingBattleSeconds = Mathf.Max(0f, remainingBattleSeconds - Time.deltaTime);
+            battleHudView?.SetTimer(remainingBattleSeconds, true);
+            if (remainingBattleSeconds <= 0f)
+            {
+                BeginFailure(HexCastleRaidFailureReason.TimeExpired);
+            }
         }
 
         public bool TrySelectUnit(int index)
@@ -192,7 +267,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             }
 
             var deployedIndex = selectedUnitIndex;
-            var snapshot = startData.Party.Units[deployedIndex];
+            var snapshot = DeploymentUnits[deployedIndex];
             var assaultPrefab = snapshot?.RuntimeAssetSet?.VisualAdapterPrefab;
             if (snapshot == null || assaultPrefab == null)
             {
@@ -230,6 +305,11 @@ namespace ProjectMT.Contents.CastleRaidHex
 
             remainingDeployments[deployedIndex]--;
             deployedCount++;
+            if (!battleStarted)
+            {
+                battleStarted = true;
+                battleHudView?.SetTimer(remainingBattleSeconds, true);
+            }
             selectedUnitIndex = remainingDeployments[deployedIndex] > 0 ? deployedIndex : -1;
             SetStatus(remainingDeployments[deployedIndex] > 0
                 ? $"{ResolveUnitLabel(deployedIndex)} {remainingDeployments[deployedIndex]}마리 남음"
@@ -247,6 +327,7 @@ namespace ProjectMT.Contents.CastleRaidHex
 
             resultSent = true;
             IsRunning = false;
+            RestoreTimeScale();
             UpdateDeploymentAreaVisual();
             combatWorld?.SetRunning(false);
             context?.Exit.Cancel();
@@ -254,10 +335,13 @@ namespace ProjectMT.Contents.CastleRaidHex
 
         public void Shutdown()
         {
+            RestoreTimeScale();
             IsRunning = false;
             deploymentAreaVisual?.SetVisible(false);
             StopAllCoroutines();
             UnbindHud();
+            battleHudView?.Unbind();
+            battleHudView?.HideFailure();
             cameraController?.StopRotation();
             if (palaceCore != null)
             {
@@ -269,6 +353,7 @@ namespace ProjectMT.Contents.CastleRaidHex
                 if (cell != null)
                 {
                     cell.Damaged -= HandleCellDamaged;
+                    cell.Destroyed -= HandleCellDestroyed;
                 }
             }
 
@@ -326,6 +411,8 @@ namespace ProjectMT.Contents.CastleRaidHex
             assaultWorld = null;
             trapWorld = null;
             deploymentAreaVisual = null;
+            battleHudView = null;
+            lootSession = null;
             aiProfileCatalog = null;
             proceduralStage = null;
             stageInstance = null;
@@ -335,6 +422,10 @@ namespace ProjectMT.Contents.CastleRaidHex
             resultSent = false;
             progressionStageRun = false;
             progressionStage = 0;
+            battleStarted = false;
+            runFailed = false;
+            churchDestroyed = false;
+            remainingBattleSeconds = BattleDurationSeconds;
         }
 
         private void ConfigureProgressionStage(ContentRunInfo runInfo)
@@ -368,7 +459,11 @@ namespace ProjectMT.Contents.CastleRaidHex
                 difficultyButtons == null || difficultyButtons.Length != 10 ||
                 difficultyButtons.Any(value => value == null) || regenerateCastleButton == null ||
                 rotateCameraLeftButton == null || rotateCameraRightButton == null ||
-                exitButton == null || inputSurface == null)
+                exitButton == null || inputSurface == null || battleHudView == null ||
+                !battleHudView.HasRuntimeBindings || battleHudView.ItemCatalog == null ||
+                battleHudView.ItemDropVisualCatalog == null ||
+                battleHudView.EquipmentBalanceConfig == null ||
+                battleHudView.EquipmentDropVisualCatalog == null)
             {
                 throw new InvalidOperationException("육각 군단의 역습 정식 씬 참조가 불완전합니다.");
             }
@@ -404,6 +499,8 @@ namespace ProjectMT.Contents.CastleRaidHex
                 cell.InitializeState();
                 cell.Damaged -= HandleCellDamaged;
                 cell.Damaged += HandleCellDamaged;
+                cell.Destroyed -= HandleCellDestroyed;
+                cell.Destroyed += HandleCellDestroyed;
                 runtimeCells.Add(cell.Coordinates, cell);
             }
 
@@ -459,6 +556,7 @@ namespace ProjectMT.Contents.CastleRaidHex
                 combatWorld,
                 tuning,
                 difficultyProfile);
+            garrisonWorld.ApplyBuildingEffects(HasActiveTrainingYard(), false);
 
             aiProfileCatalog = Resources.Load<HexCastleAssaultAIProfileCatalog>(
                 HexCastleAssaultAIProfileCatalog.DefaultResourcesPath);
@@ -505,6 +603,27 @@ namespace ProjectMT.Contents.CastleRaidHex
             }
 
             SpawnInitialGarrison(difficultyProfile);
+        }
+
+        private void ConfigureLootRuntime()
+        {
+            var rewardStage = progressionStageRun
+                ? progressionStage
+                : (CurrentDifficultyLevel - 1) * 10 + 1;
+            lootSession = new HexCastleLootSession(
+                stageInstance.transform,
+                runtimeCells.Values,
+                context.Progress,
+                battleHudView.ItemCatalog,
+                battleHudView.ItemDropVisualCatalog,
+                battleHudView.EquipmentBalanceConfig,
+                battleHudView.EquipmentDropVisualCatalog,
+                stageInstance.transform,
+                deploymentCamera,
+                rewardStage,
+                CurrentDifficultyLevel,
+                CurrentSeed,
+                (startData as HexCastleRaidStartData)?.EquipmentRewards);
         }
 
         private void HandleTrapTriggered(HexCastleAssaultUnit unit, HexCastleTrapRuntime trap)
@@ -583,6 +702,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         private void ConfigureHud()
         {
             remainingDeployments = new int[Mathf.Min(startData.UnitSlotCount, unitButtons.Length)];
+            battleHudView.ConfigureDeployment(remainingDeployments.Length);
             unitButtonActions = new UnityAction[unitButtons.Length];
             unitAiTagActions = new UnityAction[unitButtons.Length];
             difficultyButtonActions = new UnityAction[difficultyButtons.Length];
@@ -601,7 +721,15 @@ namespace ProjectMT.Contents.CastleRaidHex
                     continue;
                 }
 
-                remainingDeployments[index] = startData.SummonsPerSlot;
+                if (button.transform is RectTransform slotRect)
+                {
+                    slotRect.anchoredPosition = new Vector2(
+                        (index - (remainingDeployments.Length - 1) * 0.5f) *
+                        (battleHudView.HasDeploymentPresentation ? HexCastleBattleHudView.DeploymentSlotSpacing : 164f),
+                        slotRect.anchoredPosition.y); // 본부대·예비를 합친 투입 목록을 중앙 정렬
+                }
+
+                remainingDeployments[index] = ResolveSummonsForSlot(index);
                 unitButtonActions[index] = () => TrySelectUnit(capturedIndex);
                 button.onClick.AddListener(unitButtonActions[index]);
                 unitAiTagActions[index] = () => ToggleAiDescription(capturedIndex);
@@ -616,6 +744,7 @@ namespace ProjectMT.Contents.CastleRaidHex
                 difficultyButtons[index].onClick.AddListener(difficultyButtonActions[index]);
             }
             regenerateCastleButton.onClick.AddListener(GenerateAnotherCastle);
+            battleHudView.Bind(RetrySameRun, ExitAfterFailure);
             inputSurface.Configure(this, cameraController);
             UpdateGenerationHud();
         }
@@ -659,6 +788,7 @@ namespace ProjectMT.Contents.CastleRaidHex
                 }
             }
             regenerateCastleButton?.onClick.RemoveListener(GenerateAnotherCastle);
+            battleHudView?.Unbind();
             aiDescriptionPanel?.GetComponent<Button>()?.onClick.RemoveListener(HideAiDescription);
             unitButtonActions = Array.Empty<UnityAction>();
             unitAiTagActions = Array.Empty<UnityAction>();
@@ -669,6 +799,32 @@ namespace ProjectMT.Contents.CastleRaidHex
         private void GenerateAnotherCastle()
         {
             RestartWithDifficulty(CurrentDifficultyLevel);
+        }
+
+        public void RetrySameRun()
+        {
+            if (!runFailed || context == null)
+            {
+                return;
+            }
+
+            var retryContext = context;
+            RestoreTimeScale();
+            Shutdown();
+            Initialize(retryContext);
+        }
+
+        public void ExitAfterFailure()
+        {
+            if (!runFailed || context == null || resultSent)
+            {
+                return;
+            }
+
+            resultSent = true;
+            RestoreTimeScale();
+            battleHudView?.HideFailure();
+            context.Exit.Cancel(); // 실패창은 콘텐츠 내부에서 이미 표시했으므로 중복 공통 결과창 없이 복귀
         }
 
         private void RestartWithDifficulty(int targetDifficultyLevel)
@@ -728,8 +884,8 @@ namespace ProjectMT.Contents.CastleRaidHex
                 castleInfoText.text = layout == null
                     ? "육각 성을 준비하는 중입니다"
                     : progressionStageRun
-                        ? $"STAGE {progressionStage:000} · 난이도 {layout.DifficultyLevel} · " +
-                          $"{HexCastleThemeCatalog.ResolveLabel(layout.Theme)} · {layout.DefenseLayerCount}중벽"
+                        ? $"<b><size=22>STAGE {progressionStage:000}</size></b>\n" +
+                          $"난이도 {layout.DifficultyLevel} · {HexCastleThemeCatalog.ResolveLabel(layout.Theme)} · {layout.DefenseLayerCount}중벽"
                         : $"DEV 난이도 {layout.DifficultyLevel} · {HexCastleThemeCatalog.ResolveLabel(layout.Theme)} · " +
                           $"{layout.DefenseLayerCount}중벽 · Seed {layout.Seed}";
             }
@@ -779,10 +935,15 @@ namespace ProjectMT.Contents.CastleRaidHex
 
             resultSent = true;
             IsRunning = false;
+            RestoreTimeScale();
             UpdateDeploymentAreaVisual();
             combatWorld?.SetRunning(false);
             SetStatus("왕궁 파괴 완료");
-            context.Exit.Complete(new HexCastleRaidResult(true));
+            var loot = lootSession?.CaptureRewards() ?? HexCastleLootCapture.Empty;
+            context.Exit.Complete(new HexCastleRaidResult(
+                true,
+                loot.ItemRewards,
+                loot.EquipmentRewards));
         }
 
         private void HandleUnitDied(HexCastleAssaultUnit unit)
@@ -812,6 +973,37 @@ namespace ProjectMT.Contents.CastleRaidHex
                 FloatingNumberStyle.EnemyDamage,
                 cell.GetInstanceID(),
                 assaultWorld?.ConsumePassiveDamageFeedback(cell.GetInstanceID()) ?? DamageFeedbackFlags.None);
+        }
+
+        private void HandleCellDestroyed(HexCastleCellRuntime cell)
+        {
+            if (cell == null || resultSent)
+            {
+                return;
+            }
+
+            if (cell.BuildingRole == HexCastleBuildingRole.Church)
+            {
+                churchDestroyed = true;
+                SetStatus("교회 파괴 · 수비대가 격분해 이동속도가 증가합니다");
+            }
+
+            if (cell.BuildingRole == HexCastleBuildingRole.TrainingYard ||
+                cell.BuildingRole == HexCastleBuildingRole.Church)
+            {
+                garrisonWorld?.ApplyBuildingEffects(HasActiveTrainingYard(), churchDestroyed);
+            }
+
+            if (lootSession?.HandleDestroyed(cell) == true)
+            {
+                SetStatus("보급 건물 파괴 · 전리품은 공략 성공 시 확정됩니다");
+            }
+        }
+
+        private bool HasActiveTrainingYard()
+        {
+            return runtimeCells.Values.Any(value =>
+                value != null && value.BuildingRole == HexCastleBuildingRole.TrainingYard && value.IsAlive);
         }
 
         private void HandleUnitDamaged(HexCastleAssaultUnit unit, DamageReport report)
@@ -874,12 +1066,48 @@ namespace ProjectMT.Contents.CastleRaidHex
                 return;
             }
 
-            resultSent = true;
+            BeginFailure(HexCastleRaidFailureReason.AssaultEliminated);
+        }
+
+        private void BeginFailure(HexCastleRaidFailureReason reason)
+        {
+            if (!IsRunning || resultSent || runFailed)
+            {
+                return;
+            }
+
+            runFailed = true;
             IsRunning = false;
             UpdateDeploymentAreaVisual();
             combatWorld?.SetRunning(false);
-            SetStatus("공격 부대가 전멸했습니다");
-            context.Exit.Fail(new HexCastleRaidResult(false));
+            SetStatus(reason == HexCastleRaidFailureReason.TimeExpired
+                ? "제한 시간 180초가 종료되었습니다"
+                : "공격 부대가 전멸했습니다");
+            PauseTimeScale();
+            battleHudView?.ShowFailure(reason, progressionStage);
+        }
+
+        private void PauseTimeScale()
+        {
+            if (ownsTimePause)
+            {
+                return;
+            }
+
+            previousTimeScale = Time.timeScale;
+            Time.timeScale = 0f;
+            ownsTimePause = true;
+        }
+
+        private void RestoreTimeScale()
+        {
+            if (!ownsTimePause)
+            {
+                return;
+            }
+
+            Time.timeScale = previousTimeScale;
+            ownsTimePause = false;
         }
 
         private Vector3 ResolveDeploymentOffset(HexCoordinates coordinates)
@@ -898,20 +1126,20 @@ namespace ProjectMT.Contents.CastleRaidHex
 
         private string ResolveUnitLabel(int index)
         {
-            if (startData?.Party?.Units == null || index < 0 || index >= startData.Party.Units.Length)
+            if (index < 0 || index >= DeploymentUnits.Length)
             {
                 return $"유닛 {index + 1}";
             }
 
-            var unit = startData.Party.Units[index];
-            return unit == null ? $"유닛 {index + 1}" : unit.DisplayName;
+            var unit = DeploymentUnits[index];
+            return unit == null ? "미편성" : unit.DisplayName;
         }
 
         private void UpdateHud()
         {
             if (deploymentText != null)
             {
-                deploymentText.text = $"배치 {deployedCount} / {remainingDeployments.Length * startData.SummonsPerSlot}";
+                deploymentText.text = $"남은 병력  {RemainingDeploymentCount} / {startData.DeploymentLimit}";
             }
 
             for (var index = 0; index < unitButtons.Length; index++)
@@ -925,8 +1153,21 @@ namespace ProjectMT.Contents.CastleRaidHex
                 unitButtons[index].interactable = remaining > 0;
                 if (index < unitButtonLabels.Length && unitButtonLabels[index] != null)
                 {
-                    unitButtonLabels[index].text = $"{ResolveUnitLabel(index)}\n{remaining}";
+                    unitButtonLabels[index].text = battleHudView.HasDeploymentPresentation
+                        ? ResolveUnitLabel(index)
+                        : $"{ResolveUnitLabel(index)}\n{remaining}";
                 }
+
+                var snapshot = index < DeploymentUnits.Length
+                    ? DeploymentUnits[index]
+                    : null;
+                var rarity = snapshot != null && snapshot.Presentation.HasRarity
+                    ? snapshot.Presentation.Rarity
+                    : MonsterRarity.Common;
+                battleHudView.SetDeploymentSlot(index, snapshot?.Presentation.Portrait, remaining,
+                    index == selectedUnitIndex && IsRunning && !runFailed, rarity, snapshot != null);
+                if (index < unitAiTagButtons.Length && unitAiTagButtons[index] != null)
+                    unitAiTagButtons[index].gameObject.SetActive(snapshot != null);
 
                 if (index < unitAiTagLabels.Length && unitAiTagLabels[index] != null)
                 {
@@ -968,13 +1209,19 @@ namespace ProjectMT.Contents.CastleRaidHex
 
         private HexCastleAssaultAIProfile ResolveUnitAiProfile(int index)
         {
-            if (aiProfileCatalog == null || startData?.Party?.Units == null ||
-                index < 0 || index >= startData.Party.Units.Length)
+            if (aiProfileCatalog == null || index < 0 || index >= DeploymentUnits.Length)
             {
                 return null;
             }
 
-            return aiProfileCatalog.Resolve(startData.Party.Units[index]?.UnitId);
+            return aiProfileCatalog.Resolve(DeploymentUnits[index]?.UnitId);
+        }
+
+        private int ResolveSummonsForSlot(int index)
+        {
+            return startData is HexCastleRaidStartData hexStartData
+                ? hexStartData.ResolveSummonsForSlot(index)
+                : Mathf.Max(1, startData.SummonsPerSlot);
         }
 
         private void SetStatus(string message)

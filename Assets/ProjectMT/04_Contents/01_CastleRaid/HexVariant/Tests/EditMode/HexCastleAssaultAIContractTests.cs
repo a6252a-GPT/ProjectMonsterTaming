@@ -133,7 +133,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
 
             Assert.That(catalog, Is.Not.Null);
             Assert.That(catalog.TryValidate(out var error), Is.True, error);
-            Assert.That(catalog.Entries.Count, Is.EqualTo(41));
+            Assert.That(catalog.Entries.Count, Is.EqualTo(42));
             Assert.That(catalog.Resolve("aru_01").Pattern, Is.EqualTo(HexCastleAssaultPattern.TacticalSupport));
             Assert.That(catalog.Resolve("aru_01").SupportFocus, Is.EqualTo(HexCastleAssaultSupportFocus.DefenseBuff));
             Assert.That(catalog.Resolve("chamchi_01").Pattern, Is.EqualTo(HexCastleAssaultPattern.DefenderHunter));

@@ -1195,6 +1195,7 @@ namespace ProjectMT.Contents.FallenCommander
             }
 
             hudPresenter.SetCommanderHeartSprite(commanderHeartSprite);
+            hudPresenter.SetStage(int.TryParse(context.RunInfo.StageId, out var hudStage) ? hudStage : 1);
 #if UNITY_EDITOR
             debugController = new FallenCommanderDebugController(
                 () => IsRunning,

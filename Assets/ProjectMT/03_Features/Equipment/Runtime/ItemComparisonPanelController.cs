@@ -31,6 +31,7 @@ namespace ProjectMT.Features.Equipment
         private TMP_Text itemNameText;
         private TMP_Text gradeText;
         private TMP_Text partText;
+        private TMP_Text itemLevelText;
         private readonly List<Transform> coreOptionRows = new List<Transform>();
         private readonly List<TMP_Text> coreOptionNameTexts = new List<TMP_Text>();
         private readonly List<TMP_Text> coreOptionValueTexts = new List<TMP_Text>();
@@ -50,6 +51,7 @@ namespace ProjectMT.Features.Equipment
         private TMP_Text compareItemNameText;
         private TMP_Text compareGradeText;
         private TMP_Text comparePartText;
+        private TMP_Text compareItemLevelText;
         private TMP_Text comparePowerDeltaText;
         private readonly List<Transform> compareCoreOptionRows = new List<Transform>();
         private readonly List<TMP_Text> compareCoreOptionNameTexts = new List<TMP_Text>();
@@ -150,7 +152,13 @@ namespace ProjectMT.Features.Equipment
                 partText.text = EquipmentPartInfo.GetDisplayName(item.Part);
             }
 
-            ApplyCoreOptions(item.Definition.CoreStatContributions);
+            if (itemLevelText != null)
+            {
+                itemLevelText.text = $"Lv.{item.ItemLevel}";
+                itemLevelText.gameObject.SetActive(true);
+            }
+
+            ApplyCoreOptions(item.CoreContributions);
             ApplyBonusOptions(item.Instance?.RandomOptions);
             ApplyEquippedRibbon(item);
         }
@@ -242,7 +250,7 @@ namespace ProjectMT.Features.Equipment
 
                 if (coreOptionValueTexts[i] != null)
                 {
-                    coreOptionValueTexts[i].text = $"+{contribution.Value:0.0}%";
+                    coreOptionValueTexts[i].text = $"+{contribution.Value:0.##}%";
                 }
             }
         }
@@ -273,7 +281,7 @@ namespace ProjectMT.Features.Equipment
 
                 if (bonusOptionValueTexts[i] != null)
                 {
-                    bonusOptionValueTexts[i].text = $"+{option.Value:0.0}%";
+                    bonusOptionValueTexts[i].text = $"+{option.Value:0.##}%";
                 }
             }
         }
@@ -337,6 +345,12 @@ namespace ProjectMT.Features.Equipment
                 comparePartText.text = EquipmentPartInfo.GetDisplayName(clickedItem.Part);
             }
 
+            if (compareItemLevelText != null)
+            {
+                compareItemLevelText.text = $"Lv.{clickedItem.ItemLevel}";
+                compareItemLevelText.gameObject.SetActive(true);
+            }
+
             ApplyCompareCoreOptions(clickedItem, equippedItem);
             ApplyCompareOptions(clickedItem, equippedItem);
             ApplyPowerDelta(equippedItem, clickedItem);
@@ -347,9 +361,9 @@ namespace ProjectMT.Features.Equipment
         // 비교 대상이 없다는 뜻이므로 화살표를 숨긴다.
         private void ApplyCompareCoreOptions(EquipmentItemView clickedItem, EquipmentItemView equippedItem)
         {
-            var clickedCore = clickedItem.Definition?.CoreStatContributions;
+            var clickedCore = clickedItem.CoreContributions;
             var count = clickedCore?.Count ?? 0;
-            var equippedCore = equippedItem.Definition?.CoreStatContributions;
+            var equippedCore = equippedItem.CoreContributions;
 
             for (var i = 0; i < compareCoreOptionRows.Count; i++)
             {
@@ -374,7 +388,7 @@ namespace ProjectMT.Features.Equipment
 
                 if (compareCoreOptionValueTexts[i] != null)
                 {
-                    compareCoreOptionValueTexts[i].text = $"+{clickedContribution.Value:0.0}%";
+                    compareCoreOptionValueTexts[i].text = $"+{clickedContribution.Value:0.##}%";
                 }
 
                 ApplyCompareCoreArrow(i, clickedContribution, equippedCore);
@@ -455,7 +469,7 @@ namespace ProjectMT.Features.Equipment
 
                 if (compareOptionValueTexts[i] != null)
                 {
-                    compareOptionValueTexts[i].text = $"+{clickedOption.Value:0.0}%";
+                    compareOptionValueTexts[i].text = $"+{clickedOption.Value:0.##}%";
                 }
 
                 ApplyCompareArrow(i, clickedOption, equippedOptions);
@@ -591,6 +605,7 @@ namespace ProjectMT.Features.Equipment
             frameBgImage = frame?.Find("Bg")?.GetComponent<Image>();
             frameInnerBorderImage = frame?.Find("InnerBorder1")?.GetComponent<Image>();
             iconImage = itemSlot != null ? itemSlot.Find("Icon")?.GetComponent<Image>() : null;
+            itemLevelText = itemSlot != null ? FindDeep(itemSlot, "Text_Level")?.GetComponent<TMP_Text>() : null;
 
             var group1 = FindDeep(root, "Group_1");
             itemNameText = group1?.Find("Text_ItemName")?.GetComponent<TMP_Text>();
@@ -662,6 +677,9 @@ namespace ProjectMT.Features.Equipment
             compareFrameBgImage = frame?.Find("Bg")?.GetComponent<Image>();
             compareFrameInnerBorderImage = frame?.Find("InnerBorder1")?.GetComponent<Image>();
             compareIconImage = itemSlot != null ? itemSlot.Find("Icon")?.GetComponent<Image>() : null;
+            compareItemLevelText = itemSlot != null
+                ? FindDeep(itemSlot, "Text_Level")?.GetComponent<TMP_Text>()
+                : null;
 
             var group1 = FindDeep(root, "Group_1");
             compareItemNameText = group1?.Find("Text_ItemName")?.GetComponent<TMP_Text>();

@@ -19,13 +19,17 @@ namespace ProjectMT.Shared.Reward
             string label,
             long amount,
             string itemId = null,
-            Sprite icon = null)
+            Sprite icon = null,
+            int equipmentLevel = 0,
+            string equipmentInstanceId = null)
         {
             Kind = kind;
             Label = label ?? string.Empty;
             Amount = Math.Max(0L, amount);
             ItemId = itemId ?? string.Empty;
             Icon = icon;
+            EquipmentLevel = Math.Max(0, equipmentLevel);
+            EquipmentInstanceId = equipmentInstanceId ?? string.Empty;
         }
 
         public RewardPresentationKind Kind { get; }
@@ -33,6 +37,9 @@ namespace ProjectMT.Shared.Reward
         public long Amount { get; }
         public string ItemId { get; }
         public Sprite Icon { get; }
+        public int EquipmentLevel { get; }
+        public string EquipmentInstanceId { get; }
+        public bool IsEquipment => EquipmentLevel > 0 && !string.IsNullOrEmpty(EquipmentInstanceId);
         public bool IsValid => Amount > 0L;
     }
 

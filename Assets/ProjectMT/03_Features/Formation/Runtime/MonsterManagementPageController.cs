@@ -9,6 +9,7 @@ using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace ProjectMT.Features.Formation
@@ -47,6 +48,9 @@ namespace ProjectMT.Features.Formation
         [SerializeField] private TMP_Text defenseStatLabel;
         [SerializeField] private TMP_Text moveSpeedStatLabel;
 
+        [Header("Reversible Skill Layout")]
+        [SerializeField] private bool useSkillSummaryLayout = true; // 끄면 기존 능력치 배치로 복원
+
         [Header("Growth Action")]
         [SerializeField] private TMP_Text nextLevelLabel;
         [SerializeField] private TMP_Text goldCostLabel;
@@ -81,7 +85,12 @@ namespace ProjectMT.Features.Formation
         private readonly List<UnityAction> stageActions = new List<UnityAction>();
         private IGameProgressService progress;
         private MonsterCatalog catalog;
-        private GameObject previewInstance;
+        private MonsterPreviewPresentation preview;
+        private MonsterManagementSkillLayout skillLayout;
+        private RenderTexture ownedPreviewTexture;
+        private RenderTexture originalCameraTexture;
+        private Texture originalImageTexture;
+        private float originalCameraAspect;
         private string selectedMonsterId;
         private int selectedBreakthroughStage = 1;
         private bool showingBreakthrough;
@@ -99,9 +108,12 @@ namespace ProjectMT.Features.Formation
             ConfigureStageActions();
             breakthroughActionButton?.onClick.AddListener(HandleBreakthroughClicked);
             UIButtonClickPunch.EnsureOn(levelUpButton?.gameObject);
+            originalImageTexture = previewImage != null ? previewImage.texture : null;
             var previewMask = 1 << PreviewLayer;
             if (previewCamera != null)
             {
+                originalCameraTexture = previewCamera.targetTexture;
+                originalCameraAspect = previewCamera.aspect;
                 previewCamera.cullingMask = previewMask;
                 previewCamera.clearFlags = CameraClearFlags.SolidColor;
                 previewCamera.backgroundColor = new Color(0f, 0f, 0f, 0f);
@@ -116,15 +128,20 @@ namespace ProjectMT.Features.Formation
 
         private void Update()
         {
-            if (IsOpen && previewInstance != null)
-            {
-                previewInstance.transform.Rotate(0f, 18f * Time.unscaledDeltaTime, 0f, Space.World);
-            }
+            if (!IsOpen) return;
+            if (Keyboard.current?.escapeKey.wasPressedThisFrame == true) skillLayout?.TryCloseDetail();
+            if (preview == null) return;
+            if (EnsurePreviewTexture()) preview.FitCamera(previewCamera);
+            preview.Tick(Time.unscaledDeltaTime);
         }
 
         private void OnDisable()
         {
+            ClearSkillLayout();
             ClearPreview();
+            ReleasePreviewTexture();
+            if (previewCamera != null) previewCamera.enabled = false;
+            if (previewLight != null) previewLight.enabled = false;
         }
 
         private void OnDestroy()
@@ -159,6 +176,7 @@ namespace ProjectMT.Features.Formation
             }
 
             SetPageOpen(false, false);
+            ClearSkillLayout();
             ClearPreview();
             progress = null;
             catalog = null;
@@ -213,6 +231,7 @@ namespace ProjectMT.Features.Formation
             if (!open)
             {
                 ClearPreview();
+                ReleasePreviewTexture();
             }
 
             var isNowOpen = open && gameObject.activeInHierarchy;
@@ -422,6 +441,7 @@ namespace ProjectMT.Features.Formation
                 SetText(selectedNameLabel, "보유 몬스터 없음");
                 SetText(selectedLevelLabel, string.Empty);
                 SetText(rarityLabel, string.Empty);
+                RefreshSkillSummary(string.Empty);
                 SetControlsInteractable(false);
                 ClearPreview();
                 return;
@@ -435,6 +455,7 @@ namespace ProjectMT.Features.Formation
             MonsterCardView.GetRarityPalette(rarity, out var rarityColor, out var rarityBorder, out _);
             SetColor(rarityBadge, rarityColor);
             SetOutlineColor(rarityBadgeOutline, rarityBorder);
+            RefreshSkillSummary(selectedMonsterId);
 
             var currentMultiplier = MonsterLevelRules.GetStatMultiplier(owned.Level);
             var hasNextLevel = MonsterLevelRules.TryGetNextLevelCost(owned.Level, out var cost);
@@ -450,7 +471,9 @@ namespace ProjectMT.Features.Formation
 
             SetText(nextLevelLabel, hasNextLevel ? $"Lv. {owned.Level} → Lv. {owned.Level + 1}" : "최대 레벨");
             SetText(goldCostLabel, hasNextLevel
-                ? $"필요 골드  {cost:N0}  /  보유 {view.Gold:N0}"
+                ? skillLayout != null
+                    ? $"필요 골드  {cost:N0}\n<size=90%><color=#AAA69C>보유 {view.Gold:N0}</color></size>"
+                    : $"필요 골드  {cost:N0}  /  보유 {view.Gold:N0}"
                 : $"보유 골드  {view.Gold:N0}");
             SetText(levelUpButtonLabel, hasNextLevel ? "레벨업" : "최대 레벨");
             if (levelUpButton != null)
@@ -470,6 +493,26 @@ namespace ProjectMT.Features.Formation
             {
                 breakthroughTabButton.interactable = !isBusy;
             }
+        }
+
+        private void RefreshSkillSummary(string monsterId)
+        {
+            if (!useSkillSummaryLayout) { ClearSkillLayout(); return; }
+            skillLayout ??= MonsterManagementSkillLayout.Create(growthContent, attackStatLabel);
+            skillLayout?.Bind(rarityCatalog, monsterId, !showingBreakthrough);
+        }
+
+        public void SetSkillSummaryLayoutEnabled(bool enabled)
+        {
+            useSkillSummaryLayout = enabled;
+            if (!enabled) ClearSkillLayout();
+            if (IsOpen && progress != null && catalog != null) RefreshView();
+        }
+
+        private void ClearSkillLayout()
+        {
+            skillLayout?.Dispose();
+            skillLayout = null;
         }
 
         private void RefreshBreakthrough(OwnedMonsterView owned)
@@ -630,59 +673,61 @@ namespace ProjectMT.Features.Formation
 
         private void ShowPreview(MonsterDefinition definition)
         {
-            ClearPreview();
-            var canShow = IsOpen && definition != null && definition.PreviewPrefab != null && previewAnchor != null;
+            var canShow = IsOpen && MonsterPreviewPresentation.CanShow(definition) && previewAnchor != null;
             previewPlaceholder?.SetActive(!canShow);
-            if (!canShow)
-            {
-                return;
-            }
-
-            previewInstance = Instantiate(definition.PreviewPrefab, previewAnchor);
-            previewInstance.name = $"Preview_{definition.MonsterId}";
-            previewInstance.transform.SetPositionAndRotation(previewAnchor.position, Quaternion.Euler(0f, 180f, 0f));
-            SetLayerRecursively(previewInstance, PreviewLayer);
-            ApplyPreviewTint(previewInstance, definition.VisualTint);
-            DisablePreviewGameplay(previewInstance);
-            FitPreviewCamera(previewInstance);
+            if (!canShow) { ClearPreview(); return; }
+            if (preview != null && preview.Root != null && preview.MonsterId == definition.MonsterId) return;
+            ClearPreview();
+            EnsurePreviewTexture();
+            preview = MonsterPreviewPresentation.Create(definition, previewAnchor, PreviewLayer, 165f);
+            preview?.FitToSlot(2f, 3.2f, 3.2f);
+            preview?.FitCamera(previewCamera);
         }
 
         private void ClearPreview()
         {
-            if (previewInstance != null)
-            {
-                Destroy(previewInstance);
-                previewInstance = null;
-            }
+            preview?.Dispose();
+            preview = null;
         }
 
-        private void FitPreviewCamera(GameObject target)
+        private bool EnsurePreviewTexture()
         {
-            if (previewCamera == null || target == null)
+            if (previewImage == null || previewCamera == null) return false;
+            var rect = previewImage.rectTransform.rect;
+            if (rect.width < 1f || rect.height < 1f) return false;
+            // 패널 배치/크기는 보존하고 렌더링 표면만 같은 비율로 만든다.
+            var scale = Mathf.Min(2f, 1024f / Mathf.Max(rect.width, rect.height));
+            var width = Mathf.Max(32, Mathf.RoundToInt(rect.width * scale));
+            var height = Mathf.Max(32, Mathf.RoundToInt(rect.height * scale));
+            if (ownedPreviewTexture != null && ownedPreviewTexture.width == width && ownedPreviewTexture.height == height)
+                return false;
+            ReleasePreviewTexture();
+            ownedPreviewTexture = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32)
             {
-                return;
-            }
+                name = "RT_MonsterPreview_Runtime",
+                antiAliasing = 4,
+                filterMode = FilterMode.Bilinear,
+                hideFlags = HideFlags.DontSave
+            };
+            ownedPreviewTexture.Create();
+            previewCamera.targetTexture = ownedPreviewTexture;
+            previewCamera.aspect = rect.width / rect.height;
+            previewImage.texture = ownedPreviewTexture;
+            return true;
+        }
 
-            var renderers = target.GetComponentsInChildren<Renderer>(true);
-            if (renderers.Length == 0)
+        private void ReleasePreviewTexture()
+        {
+            if (ownedPreviewTexture == null) return;
+            if (previewCamera != null)
             {
-                return;
+                previewCamera.targetTexture = originalCameraTexture;
+                previewCamera.aspect = originalCameraAspect;
             }
-
-            var bounds = renderers[0].bounds;
-            for (var index = 1; index < renderers.Length; index++)
-            {
-                bounds.Encapsulate(renderers[index].bounds);
-            }
-
-            var targetCenter = previewAnchor.position;
-            target.transform.position += targetCenter - bounds.center;
-            var radius = Mathf.Max(0.5f, bounds.extents.magnitude);
-            var distance = Mathf.Max(1.8f, radius / Mathf.Tan(previewCamera.fieldOfView * 0.5f * Mathf.Deg2Rad) * 1.25f);
-            previewCamera.transform.position = targetCenter + new Vector3(0f, radius * 0.15f, -distance);
-            previewCamera.transform.LookAt(targetCenter);
-            previewCamera.nearClipPlane = 0.05f;
-            previewCamera.farClipPlane = Mathf.Max(20f, distance + radius * 4f);
+            if (previewImage != null) previewImage.texture = originalImageTexture;
+            ownedPreviewTexture.Release();
+            MonsterPreviewPresentation.DestroyOwned(ownedPreviewTexture);
+            ownedPreviewTexture = null;
         }
 
         private void SetControlsInteractable(bool interactable)
@@ -715,41 +760,7 @@ namespace ProjectMT.Features.Formation
             rosterList?.SetCardsInteractable(interactable);
         }
 
-        private static void DisablePreviewGameplay(GameObject root)
-        {
-            foreach (var behaviour in root.GetComponentsInChildren<Behaviour>(true))
-            {
-                behaviour.enabled = false;
-            }
 
-            foreach (var collider in root.GetComponentsInChildren<Collider>(true))
-            {
-                collider.enabled = false;
-            }
-
-            foreach (var body in root.GetComponentsInChildren<Rigidbody>(true))
-            {
-                body.detectCollisions = false;
-                body.isKinematic = true;
-            }
-        }
-
-        private static void ApplyPreviewTint(GameObject root, Color tint)
-        {
-            foreach (var feedback in root.GetComponentsInChildren<UnitVisualFeedback>(true))
-            {
-                feedback.SetTint(tint);
-            }
-        }
-
-        private static void SetLayerRecursively(GameObject root, int layer)
-        {
-            root.layer = layer;
-            foreach (Transform child in root.transform)
-            {
-                SetLayerRecursively(child.gameObject, layer);
-            }
-        }
 
         private static string GetAssignmentLabel(MonsterRosterView roster, string monsterId)
         {
@@ -810,7 +821,7 @@ namespace ProjectMT.Features.Formation
                 : "돌파 효과 정보 없음";
         }
 
-        private static void SetStatComparison(
+        private void SetStatComparison(
             TMP_Text target,
             float baseValue,
             float currentMultiplier,
@@ -823,11 +834,12 @@ namespace ProjectMT.Features.Formation
                 (baseValue * nextMultiplier).ToString(format));
         }
 
-        private static void SetStatComparison(
+        private void SetStatComparison(
             TMP_Text target,
             string currentValue,
             string nextValue)
         {
+            if (skillLayout != null && skillLayout.TrySetStatComparison(target, currentValue, nextValue)) return;
             if (target != null)
             {
                 target.richText = true;

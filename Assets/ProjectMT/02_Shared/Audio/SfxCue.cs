@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ProjectMT.Shared.Audio
@@ -19,6 +20,9 @@ namespace ProjectMT.Shared.Audio
         [SerializeField, Min(0f)] private float duplicateCooldown = 0.04f; // 같은 Cue 연속 재생 제한
         [SerializeField] private SfxPriority priority = SfxPriority.Normal; // Voice 부족 시 우선순위
 
+        public IReadOnlyList<AudioClip> Clips => clips;
+        public Vector2 VolumeRange => volumeRange;
+        public Vector2 PitchRange => pitchRange;
         public float SpatialBlend => spatialBlend;
         public float DuplicateCooldown => duplicateCooldown;
         public SfxPriority Priority => priority;

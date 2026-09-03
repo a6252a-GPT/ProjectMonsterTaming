@@ -181,6 +181,7 @@ namespace ProjectMT.Features.MainBattle
             RefreshGrowthDungeonUi();
             hudProgressView = GetComponentInChildren<MainBattleHudProgressView>(true);
             hudProgressView?.Configure(context.Progress);
+            hudProgressView?.SetCombatPower(party.TotalPower);
             ResolveMonsterManagementPage()?.Configure(context.Progress, context.MonsterCatalog);
             if (monsterManagementPage != null)
             {
@@ -813,6 +814,7 @@ namespace ProjectMT.Features.MainBattle
 
             party = updatedParty;
             trackedTotalPower = updatedParty.TotalPower;
+            hudProgressView?.SetCombatPower(trackedTotalPower);
             expedition.SetPartyForNextRun(updatedParty); // 현재 소환 유닛은 유지
             commanderGrowthPage?.SetParty(updatedParty);
             SetStatus("편성 저장 완료 · 다음 전투부터 적용");
@@ -834,6 +836,7 @@ namespace ProjectMT.Features.MainBattle
             var previousPower = trackedTotalPower;
             var currentPower = updatedParty.TotalPower;
             trackedTotalPower = currentPower;
+            hudProgressView?.SetCombatPower(currentPower);
             party = updatedParty;
             expedition.SetPartyForNextRun(updatedParty);
             commanderGrowthPage?.SetParty(updatedParty);

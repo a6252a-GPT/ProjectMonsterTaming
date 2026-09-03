@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using ProjectMT.Contents.Framework;
 
 namespace ProjectMT.Contents.TreasureSpirit.Demo
 {
@@ -15,6 +16,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private Image[] hearts = System.Array.Empty<Image>();
         private GameObject root;
         private static Sprite heartSprite;
+        private GrowthDungeonHudView authoredHud;
 
         public void Ensure(Transform hudRoot)
         {
@@ -25,6 +27,13 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             if (root != null)
             {
+                return;
+            }
+
+            authoredHud = hudRoot.GetComponent<GrowthDungeonHudView>();
+            if (authoredHud != null)
+            {
+                hearts = authoredHud.Hearts;
                 return;
             }
 
@@ -80,6 +89,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         public void SetLives(int current, int max)
         {
+            if (authoredHud != null)
+            {
+                authoredHud.SetHearts(current, max);
+                return;
+            }
             int filled = Mathf.Clamp(current, 0, hearts.Length);
             int visible = Mathf.Clamp(max, 0, hearts.Length);
             for (int i = 0; i < hearts.Length; i++)

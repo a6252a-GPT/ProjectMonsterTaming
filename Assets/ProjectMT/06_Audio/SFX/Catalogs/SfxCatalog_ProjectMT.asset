@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f075a90d539ffc41a8b4aae081251bd, type: 3}
+  m_Name: SfxCatalog_ProjectMT
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCatalog
+  categories:
+  - id: unassigned
+    displayName: "\uBBF8\uBD84\uB958"
+    folderName: Unassigned
+    accentColor: {r: 0.45, g: 0.49, b: 0.55, a: 1}
+  - id: common
+    displayName: "\uACF5\uC6A9"
+    folderName: Common
+    accentColor: {r: 0.25, g: 0.67, b: 0.82, a: 1}
+  - id: ui
+    displayName: "UI \xB7 \uC2DC\uC2A4\uD15C"
+    folderName: UI
+    accentColor: {r: 0.38, g: 0.76, b: 0.66, a: 1}
+  - id: main_battle
+    displayName: "\uBA54\uC778 \uC804\uD22C"
+    folderName: MainBattle
+    accentColor: {r: 0.87, g: 0.58, b: 0.3, a: 1}
+  - id: expedition
+    displayName: "\uC6D0\uC815\uB300"
+    folderName: Expedition
+    accentColor: {r: 0.3, g: 0.63, b: 0.86, a: 1}
+  - id: monster_basic
+    displayName: "\uBAAC\uC2A4\uD130 \uAE30\uBCF8\uACF5\uACA9"
+    folderName: Monsters/BasicAttack
+    accentColor: {r: 0.82, g: 0.46, b: 0.35, a: 1}
+  - id: monster_active
+    displayName: "\uBAAC\uC2A4\uD130 \uC561\uD2F0\uBE0C"
+    folderName: Monsters/Active
+    accentColor: {r: 0.78, g: 0.36, b: 0.56, a: 1}
+  - id: commander_skill
+    displayName: "\uAD70\uB2E8\uC7A5 \uC2A4\uD0AC"
+    folderName: CommanderSkills
+    accentColor: {r: 0.62, g: 0.48, b: 0.88, a: 1}
+  - id: castle_raid
+    displayName: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5"
+    folderName: CastleRaid
+    accentColor: {r: 0.83, g: 0.67, b: 0.32, a: 1}
+  - id: food_riot
+    displayName: "\uC2DD\uB7C9 \uB300\uC18C\uB3D9"
+    folderName: FoodRiot
+    accentColor: {r: 0.52, g: 0.72, b: 0.34, a: 1}
+  - id: treasure_spirit
+    displayName: "\uBCF4\uBB3C \uC815\uB839"
+    folderName: TreasureSpirit
+    accentColor: {r: 0.86, g: 0.7, b: 0.28, a: 1}
+  - id: fallen_commander
+    displayName: "\uD0C0\uB77D\uD55C \uAD70\uB2E8\uC7A5"
+    folderName: FallenCommander
+    accentColor: {r: 0.72, g: 0.36, b: 0.4, a: 1}
+  - id: guardian_trial
+    displayName: "\uACE0\uB300 \uC218\uD638\uC218"
+    folderName: GuardianTrial
+    accentColor: {r: 0.34, g: 0.66, b: 0.54, a: 1}
+  entries:
+  - cue: {fileID: 11400000, guid: 704a3df66ad0f5b4e9f0b5c8da3d424f, type: 2}
+    categoryId: castle_raid
+  - cue: {fileID: 11400000, guid: a1f0ca9052a3cef448f3f2abd4a6bf2b, type: 2}
+    categoryId: castle_raid
+  - cue: {fileID: 11400000, guid: bd145491fc71d9b4782ea20efb3d4c99, type: 2}
+    categoryId: castle_raid
+  - cue: {fileID: 11400000, guid: 86b8560abe49bdb40add6bb24fd51864, type: 2}
+    categoryId: castle_raid
+  - cue: {fileID: 11400000, guid: 97d87375652b96b4c8003d9fd8deb8fe, type: 2}
+    categoryId: castle_raid
+  - cue: {fileID: 11400000, guid: 1306efe48e423b44480c4333a269e927, type: 2}
+    categoryId: commander_skill
+  - cue: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
+    categoryId: commander_skill
+  - cue: {fileID: 11400000, guid: 206ef46e04e0dbe4b91b743630188811, type: 2}
+    categoryId: commander_skill
+  - cue: {fileID: 11400000, guid: b94313b5a3c13e14b96fa03658a28fc0, type: 2}
+    categoryId: commander_skill

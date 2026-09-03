@@ -10,7 +10,6 @@ namespace ProjectMT.Features.Formation
     [DisallowMultipleComponent]
     public sealed class MonsterCardView : MonoBehaviour // 보유 목록·편성 슬롯 공용 카드
     {
-        private static readonly Color32 CardSurfaceColor = new Color32(0x22, 0x24, 0x2B, 0xFF);
         private const float NotOwnedCardAlpha = 100f / 255f; // 도감 미보유 카드 흐림 표시(배경·테두리·몬스터 공통)
 
         [SerializeField] private Button button;
@@ -72,16 +71,14 @@ namespace ProjectMT.Features.Formation
             }
 
             SetText(nameLabel, definition.DisplayName);
-            SetNameVisible(false);
-            SetText(levelLabel, $"Lv. {owned.Level}");
+            SetNameVisible(true);
+            SetText(levelLabel, owned.Level.ToString());
             levelBadge?.SetActive(true);
             var rarity = MonsterRarity.Common;
             rarityCatalog?.TryGetRarity(definition.MonsterId, out rarity);
             ApplyRarity(rarity);
             ApplyAscension(owned.AscensionLevel);
-            var hasAssignment = !string.IsNullOrEmpty(assignment);
-            assignmentBadge?.SetActive(hasAssignment);
-            SetText(assignmentLabel, assignment);
+            ApplyAssignment(assignment);
             breakthroughReadyBadge?.SetActive(
                 owned.AscensionMaterialCount > 0 &&
                 !MonsterAscension.IsMaxAscension(owned.AscensionLevel));
@@ -181,8 +178,8 @@ namespace ProjectMT.Features.Formation
 
         private void ApplyRarity(MonsterRarity rarity)
         {
-            GetRarityPalette(rarity, out _, out var innerBorder, out var highlight);
-            SetColor(rarityBackground, CardSurfaceColor);
+            GetRarityPalette(rarity, out var background, out var innerBorder, out var highlight);
+            SetColor(rarityBackground, background);
             SetColor(rarityInnerBorder, innerBorder);
             SetColor(rarityHighlight, highlight);
 
@@ -248,6 +245,30 @@ namespace ProjectMT.Features.Formation
             }
         }
 
+        private void ApplyAssignment(string assignment)
+        {
+            var hasAssignment = !string.IsNullOrEmpty(assignment);
+            assignmentBadge?.SetActive(hasAssignment);
+            if (!hasAssignment || assignmentBadge == null)
+            {
+                SetText(assignmentLabel, string.Empty);
+                return;
+            }
+
+            var isReserve = assignment.StartsWith("예비", StringComparison.Ordinal);
+            var spaceIndex = assignment.LastIndexOf(' ');
+            var partyLabel = isReserve ? "예비" : "본대";
+            SetText(assignmentLabel, spaceIndex >= 0 ? $"{partyLabel}\n{assignment.Substring(spaceIndex + 1)}" : partyLabel);
+            foreach (var image in assignmentBadge.GetComponentsInChildren<Image>(true))
+            {
+                switch (image.name)
+                {
+                    case "Bg": image.color = isReserve ? new Color32(0x91, 0x5A, 0xE0, 0xFF) : new Color32(0x1B, 0x70, 0xD3, 0xFF); break;
+                    case "InnerBorder": image.color = isReserve ? new Color32(0xC6, 0x79, 0xEF, 0xFF) : new Color32(0x21, 0x91, 0xDE, 0xFF); break;
+                    case "Border": image.color = isReserve ? new Color32(0x00, 0x00, 0x00, 0xFF) : new Color32(0x00, 0x04, 0x08, 0xFF); break;
+                }
+            }
+        }
         private void SetNameVisible(bool visible)
         {
             if (nameLabel != null)
@@ -355,3 +376,4 @@ namespace ProjectMT.Features.Formation
 #endif
     }
 }
+

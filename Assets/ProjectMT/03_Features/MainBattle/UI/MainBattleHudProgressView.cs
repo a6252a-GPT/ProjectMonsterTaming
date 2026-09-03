@@ -10,6 +10,8 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private TMP_Text commanderMetaText;
         [SerializeField] private TMP_Text goldValueText;
         [SerializeField] private TMP_Text diamondValueText;
+        [SerializeField] private TMP_Text commanderLevelText;
+        [SerializeField] private TMP_Text combatPowerText;
 
         private IGameProgressService progress;
 
@@ -39,6 +41,12 @@ namespace ProjectMT.Features.MainBattle
             }
 
             progress = null;
+            SetText(combatPowerText, "전투력 —");
+        }
+
+        public void SetCombatPower(float totalPower) // 편성에서 확정한 계산값을 그대로 표시
+        {
+            SetText(combatPowerText, $"전투력 {Mathf.RoundToInt(Mathf.Max(0f, totalPower)):N0}");
         }
 
         private void OnDestroy()
@@ -50,14 +58,18 @@ namespace ProjectMT.Features.MainBattle
         {
             if (progress == null)
             {
-                SetText(commanderMetaText, "Lv. — · 다음 도전 —");
+                SetText(commanderMetaText, commanderLevelText != null ? "다음 도전 —" : "Lv. — · 다음 도전 —");
+                SetText(commanderLevelText, "Lv. —");
                 SetText(goldValueText, "—");
                 SetText(diamondValueText, "—");
                 return;
             }
 
             var view = progress.View;
-            SetText(commanderMetaText, $"Lv. {view.Commander.Level} · 다음 도전 {view.CurrentChallengeStage}");
+            SetText(commanderMetaText, commanderLevelText != null
+                ? $"다음 도전 {view.CurrentChallengeStage}"
+                : $"Lv. {view.Commander.Level} · 다음 도전 {view.CurrentChallengeStage}");
+            SetText(commanderLevelText, $"Lv. {view.Commander.Level}");
             SetText(goldValueText, $"{view.Gold:N0}");
             SetText(diamondValueText, $"{view.Diamond:N0}");
         }
@@ -71,6 +83,12 @@ namespace ProjectMT.Features.MainBattle
         }
 
 #if UNITY_EDITOR
+        public void EditorConfigureProfile(TMP_Text level, TMP_Text power)
+        {
+            commanderLevelText = level;
+            combatPowerText = power;
+        }
+
         public void EditorConfigure(
             TMP_Text commanderMeta,
             TMP_Text goldValue,

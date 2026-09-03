@@ -2,8 +2,10 @@ using System;
 using System.Linq;
 using ProjectMT.Contents.CastleRaidHex;
 using ProjectMT.Features.MainBattle;
+using ProjectMT.Features.WorldDrops;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.Combat;
+using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Pooling;
@@ -17,7 +19,7 @@ using UnityEngine.UI;
 
 namespace ProjectMT.Contents.CastleRaidHex.Editor
 {
-    public static class CastleRaidUiSetupUtility // 군단의 역습 정식 선택 UI·HUD·씬 연결 재현 도구
+    public static partial class CastleRaidUiSetupUtility // 군단의 역습 정식 선택 UI·HUD·씬 연결 재현 도구
     {
         private const string PagePrefabPath =
             "Assets/ProjectMT/03_Features/MainBattle/Prefabs/PF_CastleRaidStageSelectionPage.prefab";
@@ -28,6 +30,16 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
         private const string DevUiScenePath = "Assets/ProjectMT/00_Scenes/DEV_UIManagement_02.unity";
         private const string StandardMediumPath =
             "Assets/ProjectMT/02_Shared/UI/Prefabs/Standard/PF_UIStandard_PopupMedium.prefab";
+        private const string StandardCompactDialogPath =
+            "Assets/ProjectMT/02_Shared/UI/Prefabs/Standard/PF_UIStandard_CompactDialog.prefab";
+        private const string ItemCatalogPath =
+            "Assets/ProjectMT/02_Shared/Items/Data/ItemCatalog.asset";
+        private const string ItemDropVisualCatalogPath =
+            "Assets/ProjectMT/03_Features/WorldDrops/Data/WorldItemDropVisualCatalog.asset";
+        private const string EquipmentBalanceConfigPath =
+            "Assets/ProjectMT/02_Shared/Equipment/Data/EquipmentBalanceConfig.asset";
+        private const string EquipmentDropVisualCatalogPath =
+            "Assets/ProjectMT/03_Features/WorldDrops/Data/EquipmentDropChestVisualCatalog.asset";
         private const string GuiRoot =
             "Assets/ThirdParty/08_UI/GUI Pro - Minimal Game Dark/GUI Pro-MinimalGame";
         private const string CardBg = GuiRoot +
@@ -101,6 +113,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
 
             var pagePrefab = BuildStageSelectionPage();
             var hudPrefab = BuildBattleHud();
+            ApplyBattleTimerAndFailureUi();
             ConnectCastleRaidScene(hudPrefab);
             ConnectMainBattleScene(pagePrefab);
             ConnectDevUiScene(pagePrefab);
@@ -111,6 +124,164 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
         public static void RunOnceFromCommandLine()
         {
             RebuildAll();
+        }
+
+        [MenuItem("Tools/ProjectMT/Castle Raid/Apply Battle Timer And Failure UI")]
+        public static void ApplyBattleTimerAndFailureUi()
+        {
+            font = ResolveFont();
+            if (font == null)
+            {
+                throw new InvalidOperationException("정식 TMP 폰트를 찾지 못했습니다.");
+            }
+
+            var rootObject = PrefabUtility.LoadPrefabContents(HudPrefabPath);
+            try
+            {
+                var root = rootObject.GetComponent<RectTransform>();
+                if (root == null)
+                {
+                    throw new InvalidOperationException("군단의 역습 HUD Root가 RectTransform이 아닙니다.");
+                }
+
+                RemoveOwnedChild(root, "BattleTimerBadge");
+                RemoveOwnedChild(root, "FailureOverlay");
+
+                var statusPanel = FindChild(root, "StatusPanel") as RectTransform;
+                var statusText = statusPanel == null ? null : FindChild(statusPanel, "StatusText")?.GetComponent<TMP_Text>();
+                if (statusPanel == null || statusText == null)
+                {
+                    throw new InvalidOperationException("기존 HUD의 StatusPanel/StatusText를 찾지 못했습니다.");
+                }
+
+                statusText.rectTransform.anchoredPosition = new Vector2(-78f, 0f);
+                statusText.rectTransform.sizeDelta = new Vector2(510f, 38f);
+                var timerPanel = Panel(
+                    "BattleTimerBadge",
+                    statusPanel,
+                    new Vector2(286f, 0f),
+                    new Vector2(134f, 48f),
+                    new Color32(35, 43, 54, 255),
+                    CardBg);
+                var timerAccent = Image(
+                    "UrgencyAccent",
+                    timerPanel.rectTransform,
+                    new Vector2(-61f, 0f),
+                    new Vector2(5f, 38f),
+                    null,
+                    new Color32(198, 145, 55, 255),
+                    false);
+                Text(
+                    "Caption",
+                    timerPanel.rectTransform,
+                    "제한 시간",
+                    new Vector2(-18f, 12f),
+                    new Vector2(76f, 16f),
+                    10f,
+                    TextAlignmentOptions.Center,
+                    new Color32(184, 193, 204, 255),
+                    FontStyles.Bold);
+                var timerText = Text(
+                    "TimerText",
+                    timerPanel.rectTransform,
+                    "03:00",
+                    new Vector2(25f, -8f),
+                    new Vector2(82f, 25f),
+                    21f,
+                    TextAlignmentOptions.Center,
+                    Color.white,
+                    FontStyles.Bold);
+
+                var overlay = Image(
+                    "FailureOverlay",
+                    root,
+                    Vector2.zero,
+                    Vector2.zero,
+                    null,
+                    new Color32(3, 5, 9, 204),
+                    true);
+                Stretch(overlay.rectTransform);
+                var dialogPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(StandardCompactDialogPath);
+                if (dialogPrefab == null)
+                {
+                    throw new InvalidOperationException("표준 CompactDialog 프리팹을 찾지 못했습니다.");
+                }
+
+                var dialog = (GameObject)PrefabUtility.InstantiatePrefab(dialogPrefab, overlay.rectTransform);
+                dialog.name = "FailureDialog_Standard";
+                var dialogRect = dialog.GetComponent<RectTransform>();
+                dialogRect.anchorMin = dialogRect.anchorMax = new Vector2(0.5f, 0.5f);
+                dialogRect.anchoredPosition = Vector2.zero;
+                dialogRect.localScale = Vector3.one;
+                var reasonText = FindChild(dialogRect, "Text_Title")?.GetComponent<TMP_Text>() ??
+                                 FindChild(dialogRect, "TitleText")?.GetComponent<TMP_Text>();
+                var detailText = FindChild(dialogRect, "MessageText")?.GetComponent<TMP_Text>();
+                var retryButton = FindChild(dialogRect, "RetryButton")?.GetComponent<Button>();
+                if (reasonText == null || detailText == null || retryButton == null)
+                {
+                    throw new InvalidOperationException("표준 실패 Dialog의 텍스트/버튼 구성이 불완전합니다.");
+                }
+
+                reasonText.text = "공략 실패";
+                reasonText.font = font;
+                detailText.text = "같은 요새를 비용 없이 다시 공략할 수 있습니다.";
+                detailText.font = font;
+                detailText.fontSize = 18f;
+                retryButton.gameObject.SetActive(true);
+                retryButton.name = "FreeRetryButton";
+                retryButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(-124f, -132f);
+                SetButtonLabel(retryButton, "무료 재도전");
+
+                var leaveObject = UnityEngine.Object.Instantiate(retryButton.gameObject, dialogRect);
+                leaveObject.name = "LeaveButton";
+                var leaveButton = leaveObject.GetComponent<Button>();
+                leaveButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(124f, -132f);
+                SetButtonLabel(leaveButton, "나가기");
+                var leaveGraphic = leaveButton.targetGraphic as UnityEngine.UI.Image;
+                if (leaveGraphic != null)
+                {
+                    leaveGraphic.color = new Color32(102, 57, 57, 255);
+                }
+
+                FindChild(dialogRect, "SavingVisual")?.gameObject.SetActive(false);
+                FindChild(dialogRect, "FailedVisual")?.gameObject.SetActive(true);
+
+                var itemCatalog = AssetDatabase.LoadAssetAtPath<ItemCatalog>(ItemCatalogPath);
+                var dropCatalog = AssetDatabase.LoadAssetAtPath<WorldItemDropVisualCatalog>(ItemDropVisualCatalogPath);
+                var equipmentBalance = AssetDatabase.LoadAssetAtPath<EquipmentBalanceConfig>(
+                    EquipmentBalanceConfigPath);
+                var equipmentDropCatalog = AssetDatabase.LoadAssetAtPath<EquipmentDropChestVisualCatalog>(
+                    EquipmentDropVisualCatalogPath);
+                if (itemCatalog == null || dropCatalog == null ||
+                    equipmentBalance == null || equipmentDropCatalog == null)
+                {
+                    throw new InvalidOperationException("군단의 역습 아이템·장비 월드 드랍 카탈로그를 찾지 못했습니다.");
+                }
+
+                var view = rootObject.GetComponent<HexCastleBattleHudView>() ??
+                           rootObject.AddComponent<HexCastleBattleHudView>();
+                view.EditorConfigure(
+                    timerText,
+                    timerAccent,
+                    overlay.gameObject,
+                    reasonText,
+                    detailText,
+                    retryButton,
+                    leaveButton,
+                    itemCatalog,
+                    dropCatalog,
+                    equipmentBalance,
+                    equipmentDropCatalog);
+                overlay.gameObject.SetActive(false);
+                PolishBattleHud(rootObject);
+                PrefabUtility.SaveAsPrefabAsset(rootObject, HudPrefabPath);
+                AssetDatabase.SaveAssets();
+                Debug.Log("[CastleRaidUiSetupUtility] 표준 실패 Dialog와 180초 HUD를 적용했습니다.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(rootObject);
+            }
         }
 
         private static GameObject BuildStageSelectionPage()
@@ -142,6 +313,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
                 bindings.ProgressFill, bindings.SelectedStage, bindings.SelectedFront,
                 bindings.SelectedTheme, bindings.Reward, bindings.ClearState, false, 26, 27);
 
+            PolishStageSelection(root.gameObject);
             var saved = PrefabUtility.SaveAsPrefabAsset(root.gameObject, PagePrefabPath);
             UnityEngine.Object.DestroyImmediate(root.gameObject);
             return saved;
@@ -628,6 +800,38 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             return AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
                        "Assets/ProjectMT/05_Art/Fonts/FontAssets/TMP_SpoqaHanSansNeo_Body.asset") ??
                    TMP_Settings.defaultFontAsset;
+        }
+
+        private static Transform FindChild(Transform root, string name)
+        {
+            return root == null
+                ? null
+                : root.GetComponentsInChildren<Transform>(true)
+                    .FirstOrDefault(value => value.name == name);
+        }
+
+        private static void RemoveOwnedChild(Transform root, string name)
+        {
+            var child = FindChild(root, name);
+            if (child != null)
+            {
+                UnityEngine.Object.DestroyImmediate(child.gameObject);
+            }
+        }
+
+        private static void SetButtonLabel(Button button, string value)
+        {
+            var label = button == null
+                ? null
+                : button.GetComponentsInChildren<TMP_Text>(true).FirstOrDefault(text => text.name == "Label");
+            if (label == null)
+            {
+                throw new InvalidOperationException($"표준 버튼 Label을 찾지 못했습니다: {button?.name}");
+            }
+
+            label.font = font;
+            label.text = value;
+            label.fontSize = 17f;
         }
 
         private static RectTransform Rect(

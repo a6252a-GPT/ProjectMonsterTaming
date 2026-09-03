@@ -23,6 +23,6 @@ MonoBehaviour:
   attackSpeed: 1.05
   moveSpeed: 2.1
   attackRange: 4.6
-  ranged: 1
+  ranged: 0
   runtimeAssetKey: monster/astell_01
   runtimeAssetSet: {fileID: 11400000, guid: c7f9df57991364e4eaae22203a2d6752, type: 2}

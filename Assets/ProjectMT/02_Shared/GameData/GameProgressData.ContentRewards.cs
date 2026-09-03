@@ -251,7 +251,7 @@ namespace ProjectMT.Shared.GameData
             return true;
         }
 
-        private bool TryApplyOfflineEquipmentSettlement(OfflineRewardReceiptData receipt)
+        private bool TryApplyOfflineEquipmentSettlement(OfflineRewardReceiptData receipt, int maximumItemLevel)
         {
             if (receipt == null || !receipt.IsValid)
             {
@@ -275,7 +275,7 @@ namespace ProjectMT.Shared.GameData
             }
 
             return receipt.EquipmentRewards.Count == 0 ||
-                   equipment.TryAcquire(receipt.EquipmentRewards);
+                   equipment.TryAcquire(receipt.EquipmentRewards, maximumItemLevel);
         }
 
         private static void AddExpectedItem(

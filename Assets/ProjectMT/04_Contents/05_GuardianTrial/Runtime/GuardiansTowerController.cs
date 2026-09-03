@@ -71,6 +71,7 @@ namespace ProjectMT.Contents.GuardianTrial
         [SerializeField, Min(0f)] private float unitCollisionRadius = 0.4f; // 군단장/아군 쪽 반경
 
         [Header("HUD")]
+        [SerializeField] private GrowthDungeonHudView growthHud;
         [SerializeField] private TMP_Text timerText; // 남은 시간 표시
         [SerializeField] private TMP_Text resultText; // 조작 안내·결과 문구 + 08.07 추가: 버프 해제 알림도 여기에 표시
         [SerializeField] private TMP_Text enemyGaugeText; // "잡은 수량 X / 남은 수량 Y"
@@ -137,7 +138,7 @@ namespace ProjectMT.Contents.GuardianTrial
             var structureHealthMultiplier = difficultyMultiplier;
             if (difficultyLevelText != null)
             {
-                difficultyLevelText.text = $"난이도 {difficultyLevel + 1}"; // 저장된 난이도(0부터)를 1부터 표시
+                difficultyLevelText.text = growthHud != null ? $"{difficultyLevel + 1}단계" : $"난이도 {difficultyLevel + 1}"; // 저장된 난이도(0부터)를 1부터 표시
             }
 
             enemyTotalCount = Mathf.Clamp(startData.EnemyCount, 1, MaxEnemyCount); // 08.07 안건준 수정 - 난이도로 늘어나지 않고 시작 수만 사용(상한만 유지)
@@ -145,7 +146,7 @@ namespace ProjectMT.Contents.GuardianTrial
             IsRunning = true;
             if (resultText != null)
             {
-                resultText.text = "이동 키나 조이스틱으로 움직이세요";
+                resultText.text = growthHud != null ? "기둥을 파괴해 적 버프를 해제하세요" : "이동 키나 조이스틱으로 움직이세요";
             }
 
             SpawnFollowers();
@@ -725,6 +726,21 @@ namespace ProjectMT.Contents.GuardianTrial
 
         private void UpdateHud()
         {
+            if (growthHud != null)
+            {
+                growthHud.SetTimer(timeRemaining);
+                growthHud.SetObjective($"처치 {killCount} · 잔여 {enemyAliveCount}");
+                var alive = 0;
+                foreach (var structure in structures)
+                {
+                    if (structure == null) continue;
+                    var health = structure.Health;
+                    if (structure.IsAlive) alive++;
+                    growthHud.SetStructure((int)structure.Role, health != null && health.MaxHealth > 0f ? health.CurrentHealth / health.MaxHealth : 0f);
+                }
+                growthHud.SetStructuresRemaining(alive, structures.Length);
+                return;
+            }
             if (timerText != null)
             {
                 timerText.text = $"남은 시간 {Mathf.CeilToInt(timeRemaining)}초";

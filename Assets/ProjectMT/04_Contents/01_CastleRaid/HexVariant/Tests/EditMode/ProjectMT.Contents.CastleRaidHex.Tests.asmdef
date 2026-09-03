@@ -3,6 +3,7 @@
   "rootNamespace": "ProjectMT.Contents.CastleRaidHex.Tests",
   "references": [
     "ProjectMT.Contents.CastleRaidHex",
+    "ProjectMT.Contents.Framework",
     "ProjectMT.Shared",
     "MoreMountains.Tools"
   ],

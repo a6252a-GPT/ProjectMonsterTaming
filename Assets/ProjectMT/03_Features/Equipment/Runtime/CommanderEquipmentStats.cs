@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using ProjectMT.Features.Commander;
 using ProjectMT.Shared.Equipment;
+using ProjectMT.Shared.GameData;
 
 namespace ProjectMT.Features.Equipment
 {
-    public struct EquipmentLegionBonus // 장착 장비가 편성 전체에 주는 백분율 합계
+    public struct EquipmentLegionBonus
     {
         public float AttackPower;
         public float MaxHealth;
@@ -46,38 +48,100 @@ namespace ProjectMT.Features.Equipment
     {
         public static EquipmentLegionBonus CalculateTotal()
         {
-            var values = new float[Enum.GetValues(typeof(EquipmentStatType)).Length];
+            if (EquipmentInventoryRuntime.TryGetProgressView(out var progress, out var balance))
+            {
+                return CalculateTotal(progress, balance);
+            }
 
+            var values = CreateValues();
             foreach (EquipmentPart part in Enum.GetValues(typeof(EquipmentPart)))
             {
-                // 부위 슬롯 영구 강화 보너스. 장비 장착 여부와 무관하게 적용한다.
-                var slotLevel = EquipmentSlotUpgradeRuntime.GetLevel(part);
-                if (slotLevel > 0)
-                {
-                    Accumulate(EquipmentSlotUpgradeCalculator.GetBonusContributions(part, slotLevel), values);
-                }
+                Accumulate(
+                    EquipmentSlotUpgradeCalculator.GetBonusContributions(
+                        part,
+                        EquipmentSlotUpgradeRuntime.GetLevel(part)),
+                    values);
 
-                if (!EquipmentInventoryRuntime.TryGetEquipped(part, out var item) || item.Definition == null)
+                if (EquipmentInventoryRuntime.TryGetEquipped(part, out var item))
                 {
-                    continue;
-                }
-
-                Accumulate(item.Definition.CoreStatContributions, values);
-
-                var options = item.Instance?.RandomOptions;
-                if (options != null)
-                {
-                    for (var i = 0; i < options.Count; i++)
-                    {
-                        var contributions = EquipmentOptionInfo.ResolveContributions(options[i].Type, options[i].Value);
-                        Accumulate(contributions, values);
-                    }
+                    Accumulate(item.TotalContributions, values);
                 }
             }
 
-            // 군단장 잠재능력 슬롯 기여분도 장비와 같은 방식으로 합산한다.
             Accumulate(CommanderPotentialCalculator.GetContributions(CommanderPotentialRuntime.GetView()), values);
+            return Build(values);
+        }
 
+        // 저장 View를 입력받는 순수 경로. 자동분해·재시도 계획에서도 런타임 전역 상태 없이 같은 값을 쓴다.
+        public static EquipmentLegionBonus CalculateTotal(
+            GameProgressView progress,
+            EquipmentBalanceConfig balance)
+        {
+            if (balance == null)
+            {
+                throw new ArgumentNullException(nameof(balance));
+            }
+
+            var values = CreateValues();
+            foreach (EquipmentPart part in Enum.GetValues(typeof(EquipmentPart)))
+            {
+                Accumulate(
+                    EquipmentSlotUpgradeCalculator.GetBonusContributions(
+                        part,
+                        progress.EquipmentSlotUpgrade.GetLevel(part)),
+                    values);
+                if (progress.Equipment.TryGetEquipped(part, out var instance) && instance != null)
+                {
+                    Accumulate(EquipmentStatCalculator.GetTotalContributions(instance, balance), values);
+                }
+            }
+
+            Accumulate(CommanderPotentialCalculator.GetContributions(progress.CommanderPotential), values);
+            return Build(values);
+        }
+
+        public static EquipmentLegionBonus CalculateEquipmentTotal(
+            EquipmentSaveDataView equipment,
+            EquipmentBalanceConfig balance)
+        {
+            if (balance == null)
+            {
+                throw new ArgumentNullException(nameof(balance));
+            }
+
+            var values = CreateValues();
+            foreach (EquipmentPart part in Enum.GetValues(typeof(EquipmentPart)))
+            {
+                if (equipment.TryGetEquipped(part, out var instance) && instance != null)
+                {
+                    Accumulate(EquipmentStatCalculator.GetTotalContributions(instance, balance), values);
+                }
+            }
+
+            return Build(values);
+        }
+
+        internal static void Accumulate(
+            IReadOnlyList<EquipmentStatContribution> contributions,
+            float[] values)
+        {
+            if (contributions == null)
+            {
+                return;
+            }
+
+            for (var index = 0; index < contributions.Count; index++)
+            {
+                var contribution = contributions[index];
+                values[(int)contribution.StatType] += contribution.Value;
+            }
+        }
+
+        private static float[] CreateValues() =>
+            new float[Enum.GetValues(typeof(EquipmentStatType)).Length];
+
+        private static EquipmentLegionBonus Build(float[] values)
+        {
             return new EquipmentLegionBonus
             {
                 AttackPower = Get(values, EquipmentStatType.AttackPower),
@@ -94,22 +158,6 @@ namespace ProjectMT.Features.Equipment
                 DefensePenetration = Get(values, EquipmentStatType.DefensePenetration),
                 DamageReduction = Get(values, EquipmentStatType.DamageReduction)
             };
-        }
-
-        private static void Accumulate(
-            System.Collections.Generic.IReadOnlyList<EquipmentStatContribution> contributions,
-            float[] values)
-        {
-            if (contributions == null)
-            {
-                return;
-            }
-
-            for (var i = 0; i < contributions.Count; i++)
-            {
-                var contribution = contributions[i];
-                values[(int)contribution.StatType] += contribution.Value;
-            }
         }
 
         private static float Get(float[] values, EquipmentStatType statType) => values[(int)statType];

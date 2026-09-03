@@ -26,6 +26,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         [Header("HUD")]
         [SerializeField] private TMP_Text timerText;
+        [SerializeField] private GrowthDungeonHudView growthHud;
         [SerializeField] private TMP_Text statusText;
         [SerializeField] private TMP_Text killCountText;
         [SerializeField] private TMP_Text resultText;
@@ -103,6 +104,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 ? selectedStage
                 : 1;
             difficultyMultiplier = GrowthDungeonStageRules.ResolveDifficultyMultiplier(stage);
+            growthHud?.SetStage(stage);
 
             bakedDungeonLoader.LoadNextMap();
             keyState = bakedDungeonLoader;
@@ -424,6 +426,13 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void UpdateHud()
         {
+            if (growthHud != null)
+            {
+                growthHud.SetTimer(timeRemaining);
+                growthHud.SetObjective($"감옥 열쇠 {(keyState != null && keyState.HasKey ? 1 : 0)} / 1");
+                growthHud.SetAuxiliary(killCount.ToString());
+                return;
+            }
             int seconds = Mathf.CeilToInt(timeRemaining);
             if (timerText != null && seconds != displayedSeconds)
             {

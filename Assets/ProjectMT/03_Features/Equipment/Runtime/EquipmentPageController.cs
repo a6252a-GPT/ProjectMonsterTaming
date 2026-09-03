@@ -38,7 +38,7 @@ namespace ProjectMT.Features.Equipment
             public Image ItemIcon;
             public Transform NormalArea;
             public GameObject AddIndicator; // 비어있을 때 표시하는 "+" 표시(Add_1)
-            public GameObject TextLevel; // 슬롯이 비어있을 때는 숨겨야 하는 목업 레벨 텍스트(값은 건드리지 않음)
+            public GameObject TextLevel; // 현재 인스턴스의 하단 레벨 표시, 빈 슬롯에서 초기화
             public GameObject CheckObject;
             public GameObject FocusObject;
             public GameObject LockObject;
@@ -53,6 +53,7 @@ namespace ProjectMT.Features.Equipment
             public GameObject Root;
             public Image Frame;
             public Image Icon;
+            public TMP_Text LevelText;
         }
 
         [SerializeField] private EquipmentCatalog catalog;
@@ -260,7 +261,8 @@ namespace ProjectMT.Features.Equipment
                 {
                     Root = previewRoot.gameObject,
                     Frame = previewRoot.GetComponent<Image>(),
-                    Icon = previewRoot.Find("Icon")?.GetComponent<Image>()
+                    Icon = previewRoot.Find("Icon")?.GetComponent<Image>(),
+                    LevelText = previewRoot.Find("Text_Level")?.GetComponent<TMP_Text>()
                 });
             }
 

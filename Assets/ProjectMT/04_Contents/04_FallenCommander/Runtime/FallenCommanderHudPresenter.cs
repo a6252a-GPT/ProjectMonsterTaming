@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using ProjectMT.Contents.Framework;
 
 namespace ProjectMT.Contents.FallenCommander
 {
@@ -161,6 +162,7 @@ namespace ProjectMT.Contents.FallenCommander
         public event Action DebugRestartBattleRequested;
 
         [SerializeField] private GameObject hudRoot;
+        [SerializeField] private GrowthDungeonHudView growthHud;
         [SerializeField] private Image bossHealthFill;
         [SerializeField] private Image breakGaugeFill;
         [SerializeField] private Text bossHealthValue;
@@ -565,6 +567,8 @@ namespace ProjectMT.Contents.FallenCommander
             SetFinalChargeAlpha(Mathf.Lerp(timeoutWarningMinAlpha, 1f, pulse));
         }
 
+        public void SetStage(int stage) { growthHud?.SetStage(stage); }
+
         public void ShowAttackWarning(string message, float duration)
         {
             attackWarningMessage = message;
@@ -594,6 +598,7 @@ namespace ProjectMT.Contents.FallenCommander
         // 전달받은 전투 상태를 체력·게이지·경고·페이즈 UI에 반영한다.
         private void Render(FallenCommanderHudState state)
         {
+            RenderGrowthHud(state);
             // 현재 체력을 0~1 비율로 계산한다.
             // 최대 체력이 0이면 나눗셈을 할 수 없으므로 0을 사용한다.
             var healthRatio = state.BossMaxHealth > 0f
@@ -917,23 +922,23 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
-            if (scoreValue == null)
+            if (scoreValue == null && growthHud == null)
             {
                 scoreValue = CreateRuntimeText("ScoreValue_Runtime", new Vector2(28f, -118f), new Vector2(220f, 30f));
             }
 
-            if (timerValue == null)
+            if (timerValue == null && growthHud == null)
             {
                 timerValue = CreateRuntimeText("TimerValue_Runtime", new Vector2(710f, -118f), new Vector2(175f, 30f));
             }
 
-            if (comboScoreValue == null)
+            if (comboScoreValue == null && growthHud == null)
             {
                 comboScoreValue = CreateRuntimeText("ComboScoreValue_Runtime", new Vector2(366f, -180f), new Vector2(220f, 30f));
                 comboScoreValue.color = new Color(1f, 0.85f, 0.25f, 1f);
             }
 
-            if (breakDurationFill == null)
+            if (breakDurationFill == null && growthHud == null)
             {
                 breakDurationFill = CreateRuntimeGauge(
                     "BreakDurationGauge_Runtime",
@@ -1419,6 +1424,7 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void EnsureCommanderHeartRoot()
         {
+            if (growthHud != null) return;
             if (hudRoot == null)
             {
                 return;
@@ -1523,6 +1529,11 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void RenderCommanderHearts(int currentHearts, int maxHearts)
         {
+            if (growthHud != null)
+            {
+                growthHud.SetHearts(currentHearts, maxHearts);
+                return;
+            }
             EnsureCommanderHeartRoot();
 
             var safeMaxHearts = Mathf.Max(0, maxHearts);
@@ -1584,6 +1595,27 @@ namespace ProjectMT.Contents.FallenCommander
                 text.color = new Color(0.95f, 0.15f, 0.2f, 1f);
                 commanderHeartGraphics.Add(text);
             }
+        }
+
+        private void RenderGrowthHud(FallenCommanderHudState state)
+        {
+            if (growthHud == null) return;
+            growthHud.SetTimer(state.RemainingTime);
+            growthHud.SetObjective($"PHASE {state.BossPhase}");
+            var ratio = state.IsBroken
+                ? (state.BreakDuration > 0f ? state.BreakRemainingTime / state.BreakDuration : 0f)
+                : (state.MaxBreakGauge > 0f ? state.RemainingBreakGauge / state.MaxBreakGauge : 0f);
+            growthHud.SetBoss(state.BossHealth, state.BossMaxHealth, ratio, state.IsBroken, state.BreakRemainingTime);
+            string title = null;
+            string detail = null;
+            if (state.IsTimeoutWipeActive) { title = "전멸 공격"; detail = state.TimeoutWipeMessage; }
+            else if (state.IsTimeoutWarningActive) { title = "시간 종료 임박"; detail = $"전멸까지 {state.RemainingTime:0.0}초"; }
+            else if (state.IsPhaseTransitionActive) { title = $"PHASE {state.BossPhase}"; detail = state.PhaseTransitionMessage; }
+            else if (state.IsFinalChargeActive) { title = "광역 공격 준비"; detail = $"공격까지 {state.FinalChargeRemainingTime:0.0}초 · 범위 밖으로 회피하세요"; }
+            else if (state.IsCommanderStunned) { title = "기절"; detail = $"{state.CommanderStunRemainingTime:0.0}초 후 회복"; }
+            else if (attackWarningRemainingTime > 0f) { title = attackWarningMessage; detail = "전조 범위 밖으로 회피하세요"; }
+            else if (state.IsBroken) { title = "BREAK"; detail = $"{state.BreakRemainingTime:0.0}초 동안 공격 기회"; }
+            growthHud.SetWarning(title, detail);
         }
 
         private void ClearCommanderHearts()

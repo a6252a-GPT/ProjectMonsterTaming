@@ -473,6 +473,29 @@ namespace ProjectMT.Features.CommanderSkill
             if (currentRateSummaryText != null)
             {
                 currentRateSummaryText.text = BuildProbabilityText(level, compact: true);
+                if (currentRateSummaryText.TryGetComponent<SummonProbabilityStripView>(out var strip))
+                {
+                    var entries = new List<SummonProbabilityStripView.Entry>();
+                    var total = summonConfig?.GetTotalWeight(level) ?? 0;
+                    if (total > 0 && catalog != null)
+                    {
+                        foreach (var entry in summonConfig.GetPool(level))
+                        {
+                            if (entry == null || entry.Weight <= 0 || !catalog.TryGet(entry.SkillId, out var definition))
+                                continue;
+                            var color = definition.Category switch
+                            {
+                                CommanderSkillCategory.Buff => new Color32(130, 213, 171, 255),
+                                CommanderSkillCategory.Debuff => new Color32(193, 137, 234, 255),
+                                _ => new Color32(243, 190, 94, 255)
+                            };
+                            entries.Add(new SummonProbabilityStripView.Entry(
+                                definition.DisplayName, entry.Weight * 100f / total, color, definition.Icon));
+                        }
+                    }
+                    strip.Show(entries);
+                    currentRateSummaryText.enabled = entries.Count == 0;
+                }
             }
 
             RefreshButtons();
@@ -515,7 +538,7 @@ namespace ProjectMT.Features.CommanderSkill
                 if (offerTexts != null && index < offerTexts.Length && offerTexts[index] != null)
                 {
                     offerTexts[index].text = validOffer
-                        ? $"{drawCount:N0}회 소환\n<color=#B9C8D8>{BuildPaymentText(payment)}</color>"
+                        ? $"{drawCount:N0}회 소환\n<size=65%><color=#E1D5CE>{BuildPaymentText(payment)}</color></size>"
                         : $"{drawCount:N0}회 · 준비 중";
                 }
             }

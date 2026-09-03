@@ -25,6 +25,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         [SerializeField] private HexCastleGateRole gateRole;
         [SerializeField] private int gatePassageMask;
         [SerializeField] private HexCastleLootKind lootKind;
+        [SerializeField, Min(0)] private int rewardValue;
         [SerializeField] private bool initialBlocked;
         [SerializeField, Min(0f)] private float maxHealth;
         [SerializeField] private HealthComponent health;
@@ -54,6 +55,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         public int GatePassageMask => gatePassageMask;
         public bool AllowsDefenderTraversal => gateRole == HexCastleGateRole.OpenDefenderPassage;
         public HexCastleLootKind LootKind => lootKind;
+        public int RewardValue => rewardValue;
         public bool InitialBlocked => initialBlocked;
         public float MaxHealth => maxHealth;
         public float CurrentHealth => health == null ? 0f : health.CurrentHealth;
@@ -103,6 +105,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             gateRole = cell.GateRole;
             gatePassageMask = cell.GatePassageMask;
             lootKind = cell.LootKind;
+            rewardValue = cell.RewardValue;
             initialBlocked = cell.InitialBlocked;
             maxHealth = Mathf.Max(0f, cell.MaxHealth);
             health = targetHealth;

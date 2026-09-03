@@ -102,7 +102,8 @@ namespace ProjectMT.Features.Expedition
                 return;
             }
 
-            var instance = EquipmentDropRoller.RollSingle(equipmentBalanceConfig, equipmentRandom);
+            var basisStage = ExpeditionEquipmentLevelResolver.ResolveRunStage(currentDifficulty, currentStage);
+            var instance = EquipmentDropRoller.RollSingle(equipmentBalanceConfig, basisStage, equipmentRandom);
             equipmentWorldDrops.TrySpawn(new EquipmentWorldDropRequest(instance, position));
         }
 
@@ -179,7 +180,9 @@ namespace ProjectMT.Features.Expedition
                     RewardPresentationKind.Item,
                     label,
                     1L,
-                    icon: icon));
+                    icon: icon,
+                    equipmentLevel: instance.ItemLevel,
+                    equipmentInstanceId: instance.InstanceId));
             }
 
             if (items.Count > 0)

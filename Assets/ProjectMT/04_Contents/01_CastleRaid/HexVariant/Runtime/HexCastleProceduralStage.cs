@@ -94,6 +94,12 @@ namespace ProjectMT.Contents.CastleRaidHex
                 throw new ArgumentNullException(nameof(turretAttackCatalog));
             }
 
+            var boardShader = Resources.Load<Shader>("CRHex_GroundShadows");
+            if (boardShader == null)
+            {
+                throw new InvalidOperationException("군단의 역습 바닥 그림자 Shader가 필요합니다.");
+            }
+
             var root = new GameObject(
                 $"Runtime_HEX_T{HexCastleThemeCatalog.ResolveCode(layout.Theme)}_D{layout.DifficultyLevel:00}_" +
                 $"W{layout.DefenseLayerCount}_{layout.Seed}");
@@ -108,28 +114,10 @@ namespace ProjectMT.Contents.CastleRaidHex
             var cellsRoot = CreateChild("00_Cells", root.transform);
             var trapsRoot = CreateChild("01_Traps", root.transform);
             var generatedAssets = new List<Object>();
-            var boardShader = Shader.Find("Universal Render Pipeline/Lit") ?? visualSet.KayKitMaterial.shader;
             var boardMaterial = new Material(boardShader)
             {
-                name = "MAT_CRHex_ProceduralGround_Runtime",
-                color = new Color(0.48f, 0.68f, 0.30f, 1f)
+                name = "MAT_CRHex_GroundShadows_Runtime"
             };
-            if (boardMaterial.HasProperty("_BaseMap"))
-            {
-                boardMaterial.SetTexture("_BaseMap", Texture2D.whiteTexture);
-            }
-            if (boardMaterial.HasProperty("_BaseColor"))
-            {
-                boardMaterial.SetColor("_BaseColor", boardMaterial.color);
-            }
-            if (boardMaterial.HasProperty("_Metallic"))
-            {
-                boardMaterial.SetFloat("_Metallic", 0f);
-            }
-            if (boardMaterial.HasProperty("_Smoothness"))
-            {
-                boardMaterial.SetFloat("_Smoothness", 0.02f);
-            }
             generatedAssets.Add(boardMaterial);
             generatedAssets.Add(CreateBoardSurface(root.transform, layout.Cells.Keys, boardMaterial));
 
@@ -461,6 +449,13 @@ namespace ProjectMT.Contents.CastleRaidHex
             var renderer = board.gameObject.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = material;
             renderer.enabled = false; // 정식 배경 지형을 가리지 않도록 절차 바닥은 판정용 Mesh만 유지한다
+            var shadowSurface = CreateChild("01_GroundShadows", parent);
+            shadowSurface.localPosition = Vector3.up * 0.024f; // 평탄한 전장 바닥 위에 실제 광원 그림자만 표시
+            shadowSurface.gameObject.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var shadowRenderer = shadowSurface.gameObject.AddComponent<MeshRenderer>();
+            shadowRenderer.sharedMaterial = material;
+            shadowRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            shadowRenderer.receiveShadows = true;
             return mesh;
         }
 

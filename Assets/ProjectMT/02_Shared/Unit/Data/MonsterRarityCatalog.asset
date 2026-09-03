@@ -22,10 +22,6 @@ MonoBehaviour:
     rarity: 1
     passiveSkill: {fileID: 11400000, guid: fae62af51e037384284c3490f620a914, type: 2}
     activeSkill: {fileID: 0}
-  - monster: {fileID: 11400000, guid: e46bf3888ffaff643ad33c27c069832d, type: 2}
-    rarity: 2
-    passiveSkill: {fileID: 11400000, guid: e5d9f948e40af0047a7bbd93bcbb2b57, type: 2}
-    activeSkill: {fileID: 0}
   - monster: {fileID: 11400000, guid: 823db34c519b6a74d9ec88aabc23ca06, type: 2}
     rarity: 2
     passiveSkill: {fileID: 11400000, guid: 686492b7d1a80e34c9940da25e6667e6, type: 2}
@@ -37,10 +33,6 @@ MonoBehaviour:
   - monster: {fileID: 11400000, guid: 41ac54ac93a1618498fdae8a9dc824b7, type: 2}
     rarity: 1
     passiveSkill: {fileID: 11400000, guid: 471f74bde8a74924a83845fd2767d154, type: 2}
-    activeSkill: {fileID: 0}
-  - monster: {fileID: 11400000, guid: d8bbcb6f7b42a5f47a3a7bf846631caa, type: 2}
-    rarity: 1
-    passiveSkill: {fileID: 11400000, guid: 1ab1ca3afa3c62b478b888895f9d48da, type: 2}
     activeSkill: {fileID: 0}
   - monster: {fileID: 11400000, guid: 69f45d26179365249a36c5ec44cf928e, type: 2}
     rarity: 0
@@ -69,10 +61,6 @@ MonoBehaviour:
   - monster: {fileID: 11400000, guid: 57921e4acff8c254db7ae01975cda828, type: 2}
     rarity: 2
     passiveSkill: {fileID: 11400000, guid: 0e92c1a7294885643a5d7142869c4cc1, type: 2}
-    activeSkill: {fileID: 0}
-  - monster: {fileID: 11400000, guid: 1bc2fb090687dd0479185ffe68f43e4e, type: 2}
-    rarity: 2
-    passiveSkill: {fileID: 0}
     activeSkill: {fileID: 0}
   - monster: {fileID: 11400000, guid: cfa4011631352454582c79e2fd895fc2, type: 2}
     rarity: 2
@@ -114,11 +102,23 @@ MonoBehaviour:
     rarity: 0
     passiveSkill: {fileID: 11400000, guid: 8b964806f4f6edd4e870589a6c42b97d, type: 2}
     activeSkill: {fileID: 0}
+  - monster: {fileID: 11400000, guid: 49bb4fec9f7d45d44a1681fc8f5a268c, type: 2}
+    rarity: 2
+    passiveSkill: {fileID: 0}
+    activeSkill: {fileID: 0}
+  - monster: {fileID: 11400000, guid: d8bbcb6f7b42a5f47a3a7bf846631caa, type: 2}
+    rarity: 1
+    passiveSkill: {fileID: 11400000, guid: 1ab1ca3afa3c62b478b888895f9d48da, type: 2}
+    activeSkill: {fileID: 0}
+  - monster: {fileID: 11400000, guid: e46bf3888ffaff643ad33c27c069832d, type: 2}
+    rarity: 2
+    passiveSkill: {fileID: 11400000, guid: e5d9f948e40af0047a7bbd93bcbb2b57, type: 2}
+    activeSkill: {fileID: 0}
   - monster: {fileID: 11400000, guid: 2d86aec57d14cde4f937cd87989b55b8, type: 2}
     rarity: 2
     passiveSkill: {fileID: 0}
     activeSkill: {fileID: 0}
-  - monster: {fileID: 11400000, guid: 49bb4fec9f7d45d44a1681fc8f5a268c, type: 2}
+  - monster: {fileID: 11400000, guid: 1bc2fb090687dd0479185ffe68f43e4e, type: 2}
     rarity: 2
     passiveSkill: {fileID: 0}
     activeSkill: {fileID: 0}

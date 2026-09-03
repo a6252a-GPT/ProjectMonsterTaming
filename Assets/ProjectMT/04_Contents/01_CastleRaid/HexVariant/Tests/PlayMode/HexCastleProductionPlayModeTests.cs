@@ -200,9 +200,9 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 Assert.That(cameraController.UsesExternalPointerInput, Is.True);
                 Assert.That(cameraController.InitialZoomRatio, Is.EqualTo(0.70f).Within(0.001f));
 
-                var aiTagButtons = Object.FindObjectsByType<Button>(
-                        FindObjectsInactive.Include,
-                        FindObjectsSortMode.None)
+                var battleHud = controller.BattleHudView;
+                Assert.That(battleHud, Is.Not.Null);
+                var aiTagButtons = battleHud.GetComponentsInChildren<Button>(true)
                     .Where(value => value.name == "AITag" && value.gameObject.activeInHierarchy)
                     .OrderBy(value => value.transform.parent.name)
                     .ToArray();
@@ -211,10 +211,8 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                     value.GetComponentInChildren<TMP_Text>().text != "AI"), Is.True);
                 aiTagButtons[0].onClick.Invoke();
                 yield return null;
-                var aiDescription = Object.FindObjectsByType<TMP_Text>(
-                        FindObjectsInactive.Include,
-                        FindObjectsSortMode.None)
-                    .Single(value => value.name == "Description" &&
+                var aiDescription = battleHud.GetComponentsInChildren<TMP_Text>(true)
+                    .Single(value => value.name == "DescriptionText" &&
                                      value.transform.parent.name == "AIProfileDescriptionPanel");
                 Assert.That(aiDescription.gameObject.activeInHierarchy, Is.True);
                 Assert.That(aiDescription.text, Does.Contain("·"));
@@ -252,9 +250,7 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                         Is.LessThan(0.01f), "절차 조립이 발리스타 원본 모델 축을 덮어쓰면 안 됩니다.");
                 }
 
-                var generationButtons = Object.FindObjectsByType<Button>(
-                        FindObjectsInactive.Include,
-                        FindObjectsSortMode.None)
+                var generationButtons = battleHud.GetComponentsInChildren<Button>(true)
                     .Where(value => Enumerable.Range(1, 10)
                                         .Any(level => value.name == $"Difficulty{level}Button") ||
                                     value.name == "RegenerateCastleButton")
@@ -347,9 +343,7 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 inputSurface.OnPointerUp(secondTouch);
                 cameraController.ResetView();
 
-                var rotateRightButton = Object.FindObjectsByType<Button>(
-                        FindObjectsInactive.Include,
-                        FindObjectsSortMode.None)
+                var rotateRightButton = battleHud.GetComponentsInChildren<Button>(true)
                     .Single(value => value.name == "RotateCameraRightButton");
                 var holdButton = rotateRightButton.GetComponent<HexCastleCameraHoldButton>();
                 var cameraPosition = Camera.main.transform.position;
@@ -563,6 +557,138 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
             finally
             {
                 sceneRoot?.Shutdown();
+                Object.Destroy(definition);
+            }
+
+            if (productionScene.IsValid() && productionScene.isLoaded)
+            {
+                var unload = SceneManager.UnloadSceneAsync(productionScene);
+                while (unload != null && !unload.isDone)
+                {
+                    yield return null;
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator TimeoutRetry_PreservesRunAndDiscardsDestroyedBuildingLoot()
+        {
+            const int stage = 37;
+            var originalTimeScale = Time.timeScale;
+            var load = SceneManager.LoadSceneAsync("03_CastleRaidHex", LoadSceneMode.Additive);
+            while (load != null && !load.isDone)
+            {
+                yield return null;
+            }
+
+            var productionScene = SceneManager.GetSceneByName("03_CastleRaidHex");
+            var sceneRoot = Object.FindFirstObjectByType<HexCastleRaidSceneRoot>();
+            var controller = Object.FindFirstObjectByType<HexCastleRaidController>();
+            var definition = ScriptableObject.CreateInstance<ContentDefinition>();
+            definition.EditorConfigure(
+                new ContentId("castle_raid"),
+                ContentOpenMode.SeparateScene,
+                new SceneId("castle_raid_hex"),
+                null,
+                null);
+            var monsterCatalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>(
+                "Assets/ProjectMT/02_Shared/Unit/Data/MonsterCatalog.asset");
+            var rarityCatalog = AssetDatabase.LoadAssetAtPath<MonsterRarityCatalog>(
+                "Assets/ProjectMT/02_Shared/Unit/Data/MonsterRarityCatalog.asset");
+            Assert.That(monsterCatalog, Is.Not.Null);
+            Assert.That(rarityCatalog, Is.Not.Null);
+            var party = new BattlePartySnapshotBuilder(
+                monsterCatalog,
+                rarityCatalog,
+                ProjectMT.Shared.Stats.CombatStatConfig.RuntimeDefault).Build(
+                new GameProgressView(GameProgressData.CreateDefault()));
+            var startData = new HexCastleRaidStartData(party);
+            var exit = new RecordingExit();
+            var runInfo = new ContentRunInfo(
+                new ContentId("castle_raid"),
+                stage.ToString(),
+                ContentRunMode.Challenge);
+
+            try
+            {
+                Assert.That(sceneRoot, Is.Not.Null);
+                Assert.That(controller, Is.Not.Null);
+                sceneRoot.Initialize(new ContentSceneContext(
+                    definition,
+                    new ContentContext(runInfo, startData, exit)));
+                yield return null;
+
+                var initialSeed = controller.CurrentSeed;
+                var initialDifficulty = controller.CurrentDifficultyLevel;
+                var initialStageId = controller.CurrentStageId;
+                var rewardCell = controller.ActiveStage
+                    .GetComponentsInChildren<HexCastleCellRuntime>(true)
+                    .First(value => value.Kind == HexCastleCellKind.RewardBuilding &&
+                                    value.LootKind == HexCastleLootKind.Equipment);
+                rewardCell.ApplyDamage(100000f, rewardCell.transform.position);
+                yield return null;
+
+                var deploymentCell = controller.ActiveStage
+                    .GetComponentsInChildren<HexCastleCellRuntime>(true)
+                    .First(value => value.Kind == HexCastleCellKind.Deployment && !value.InitialBlocked);
+                Assert.That(controller.TrySelectUnit(0), Is.True);
+                Assert.That(controller.TryDeployAtCell(deploymentCell.Coordinates), Is.True);
+                Assert.That(controller.BattleStarted, Is.True);
+                Assert.That(controller.RemainingBattleSeconds,
+                    Is.LessThanOrEqualTo(HexCastleRaidController.BattleDurationSeconds));
+
+                var remainingField = typeof(HexCastleRaidController).GetField(
+                    "remainingBattleSeconds",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                Assert.That(remainingField, Is.Not.Null);
+                remainingField.SetValue(controller, 0.001f);
+                yield return null;
+
+                Assert.That(controller.IsFailureVisible, Is.True);
+                Assert.That(controller.IsRunning, Is.False);
+                Assert.That(Time.timeScale, Is.EqualTo(0f));
+                Assert.That(exit.CompletedResult, Is.Null);
+                Assert.That(exit.FailedResult, Is.Null);
+                Assert.That(exit.Cancelled, Is.False);
+                var battleHud = controller.BattleHudView;
+                Assert.That(battleHud, Is.Not.Null);
+                Assert.That(battleHud.IsFailurePanelVisible, Is.True);
+                Assert.That(battleHud.DisplayedFailureReason, Is.EqualTo("제한 시간 초과"));
+                Assert.That(battleHud.DisplayedTimer, Is.EqualTo("00:00"));
+
+                controller.RetrySameRun();
+                yield return null;
+
+                Assert.That(controller.IsRunning, Is.True);
+                Assert.That(controller.IsFailureVisible, Is.False);
+                Assert.That(battleHud.IsFailurePanelVisible, Is.False);
+                Assert.That(controller.BattleStarted, Is.False);
+                Assert.That(controller.RemainingBattleSeconds,
+                    Is.EqualTo(HexCastleRaidController.BattleDurationSeconds).Within(0.01f));
+                Assert.That(controller.CurrentStageId, Is.EqualTo(initialStageId));
+                Assert.That(controller.CurrentDifficultyLevel, Is.EqualTo(initialDifficulty));
+                Assert.That(controller.CurrentSeed, Is.EqualTo(initialSeed));
+                Assert.That(controller.RemainingDeploymentCount, Is.EqualTo(startData.DeploymentLimit));
+                Assert.That(Time.timeScale, Is.EqualTo(originalTimeScale));
+
+                var palace = controller.ActiveStage
+                    .GetComponentsInChildren<HexCastleCellRuntime>(true)
+                    .Single(value => value.Coordinates == new HexCoordinates(0, 0));
+                palace.ApplyDamage(100000f, palace.transform.position);
+                yield return null;
+
+                Assert.That(exit.CompletedResult, Is.TypeOf<HexCastleRaidResult>());
+                var result = (HexCastleRaidResult)exit.CompletedResult;
+                Assert.That(result.PalaceDestroyed, Is.True);
+                Assert.That(result.LootRewards.IsEmpty, Is.True,
+                    "무료 재도전 전 파괴한 건물 보상은 새 Run으로 이월되면 안 됩니다.");
+                Assert.That(result.EquipmentRewards, Is.Empty,
+                    "무료 재도전 전 파괴한 장비 건물 보상은 새 Run으로 이월되면 안 됩니다.");
+            }
+            finally
+            {
+                sceneRoot?.Shutdown();
+                Time.timeScale = originalTimeScale;
                 Object.Destroy(definition);
             }
 

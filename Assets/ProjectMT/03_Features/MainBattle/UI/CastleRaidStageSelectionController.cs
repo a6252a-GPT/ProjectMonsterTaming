@@ -33,6 +33,20 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private TMP_Text rewardLabel;
         [SerializeField] private TMP_Text clearStateLabel;
 
+        [Header("GUI Presentation")]
+        [SerializeField] private bool polishedPresentation;
+        [SerializeField] private TMP_Text diamondValueLabel;
+        [SerializeField] private TMP_Text ticketValueLabel;
+        [SerializeField] private Image[] selectionFrames = Array.Empty<Image>();
+        [SerializeField] private Image[] statePlates = Array.Empty<Image>();
+        [SerializeField] private CanvasGroup enterButtonSkin;
+        [SerializeField] private TMP_Text progressCountLabel;
+        [SerializeField] private TMP_Text visibleFrontLabel;
+        [SerializeField] private Image[] rowStatusIcons = Array.Empty<Image>();
+        [SerializeField] private Sprite clearedStatusIcon;
+        [SerializeField] private Sprite challengeStatusIcon;
+        [SerializeField] private Sprite lockedStatusIcon;
+
         [Header("Preview")]
         [SerializeField] private bool previewWithoutRuntime;
         [SerializeField, Range(0, CastleRaidStageRules.MaximumStage)] private int previewHighestClearedStage = 26;
@@ -201,12 +215,33 @@ namespace ProjectMT.Features.MainBattle
                     : nextChallenge ? challengeStageColor
                     : selectable ? replayStageColor : lockedStageColor;
 
+                if (polishedPresentation)
+                {
+                    button.image.color = selected ? new Color32(67, 48, 47, 255)
+                        : new Color32(34, 33, 39, 255);
+                    if (index < rowStatusIcons.Length && rowStatusIcons[index] != null)
+                    {
+                        rowStatusIcons[index].sprite = cleared ? clearedStatusIcon : nextChallenge ? challengeStatusIcon : lockedStatusIcon;
+                        rowStatusIcons[index].rectTransform.sizeDelta = nextChallenge ? new Vector2(12f, 12f) : new Vector2(24f, 24f);
+                        rowStatusIcons[index].color = cleared ? new Color32(57, 190, 180, 255)
+                            : nextChallenge ? new Color32(211, 157, 67, 255) : new Color32(108, 108, 115, 255);
+                    }
+                    if (index < selectionFrames.Length && selectionFrames[index] != null)
+                        selectionFrames[index].enabled = selected;
+                    if (index < statePlates.Length && statePlates[index] != null)
+                        statePlates[index].color = cleared ? new Color32(32, 78, 73, 255)
+                            : nextChallenge ? new Color32(122, 79, 35, 255) : new Color32(48, 46, 49, 255);
+                }
+
                 if (index < stageNumberLabels.Length && stageNumberLabels[index] != null)
                 {
                     stageNumberLabels[index].text = $"STAGE {stage:000}";
                     stageNumberLabels[index].color = selectable || selected
                         ? Color.white
                         : new Color(0.55f, 0.58f, 0.62f, 1f);
+                    if (polishedPresentation)
+                        stageNumberLabels[index].color = selectable || selected
+                            ? new Color32(241, 231, 211, 255) : new Color32(133, 132, 137, 255);
                 }
 
                 if (index < stageRewardLabels.Length && stageRewardLabels[index] != null)
@@ -217,6 +252,14 @@ namespace ProjectMT.Features.MainBattle
                     stageRewardLabels[index].color = selectable || selected
                         ? new Color32(255, 224, 151, 255)
                         : new Color32(136, 132, 120, 255);
+                    if (polishedPresentation)
+                    {
+                        stageRewardLabels[index].text =
+                            $"<pos=0>{CastleRaidStageRules.ResolveDiamondReward(stage):N0}" +
+                            $"<pos=138>{CastleRaidStageRules.ResolveMonsterSummonTicketReward(stage):N0}";
+                        stageRewardLabels[index].color = selectable || selected
+                            ? new Color32(241, 231, 211, 255) : new Color32(133, 132, 137, 255);
+                    }
                 }
 
                 if (index < stageStateLabels.Length && stageStateLabels[index] != null)
@@ -238,6 +281,16 @@ namespace ProjectMT.Features.MainBattle
             }
 
             Canvas.ForceUpdateCanvases();
+            if (polishedPresentation && stageScrollRect.content != null)
+            {
+                var firstVisible = Mathf.Max(0, selectedStage - 2);
+                var row = stageButtons[firstVisible].GetComponent<RectTransform>();
+                var offset = selectedStage <= 2 ? 0f : -row.anchoredPosition.y - row.rect.height * 0.5f;
+                var available = stageScrollRect.content.rect.height - stageScrollRect.viewport.rect.height;
+                stageScrollRect.verticalNormalizedPosition = available <= 0f ? 1f : 1f - Mathf.Clamp01(offset / available);
+                RefreshVisibleFrontHeader(Vector2.zero);
+                return;
+            }
             var normalizedIndex = (selectedStage - CastleRaidStageRules.MinimumStage) /
                                   (float)(stageButtons.Length - 1);
             stageScrollRect.verticalNormalizedPosition = 1f - Mathf.Clamp01(normalizedIndex);
@@ -255,6 +308,9 @@ namespace ProjectMT.Features.MainBattle
             {
                 progressLabel.text = $"공략 진척도  {state.HighestClearedStage:000} / {CastleRaidStageRules.MaximumStage:000}";
             }
+            if (polishedPresentation && progressLabel != null) progressLabel.text = "공략 진행도";
+            if (progressCountLabel != null)
+                progressCountLabel.text = $"{state.HighestClearedStage:000} / {CastleRaidStageRules.MaximumStage:000}";
             if (progressFill != null)
             {
                 var normalizedProgress = state.HighestClearedStage /
@@ -276,7 +332,7 @@ namespace ProjectMT.Features.MainBattle
             }
             if (selectedThemeLabel != null)
             {
-                selectedThemeLabel.text = $"절차 요새 {themeIndex:00} · 스테이지 고유 전장";
+                selectedThemeLabel.text = polishedPresentation ? $"절차 요새 {themeIndex:00}" : $"절차 요새 {themeIndex:00} · 스테이지 고유 전장";
             }
             if (rewardLabel != null)
             {
@@ -284,6 +340,10 @@ namespace ProjectMT.Features.MainBattle
                     $"다이아 {CastleRaidStageRules.ResolveDiamondReward(selectedStage):N0}\n" +
                     $"소환권 {CastleRaidStageRules.ResolveMonsterSummonTicketReward(selectedStage):N0}";
             }
+            if (diamondValueLabel != null)
+                diamondValueLabel.text = CastleRaidStageRules.ResolveDiamondReward(selectedStage).ToString("N0");
+            if (ticketValueLabel != null)
+                ticketValueLabel.text = CastleRaidStageRules.ResolveMonsterSummonTicketReward(selectedStage).ToString("N0");
             if (clearStateLabel != null)
             {
                 clearStateLabel.text = cleared
@@ -294,18 +354,40 @@ namespace ProjectMT.Features.MainBattle
                 clearStateLabel.color = cleared
                     ? new Color32(128, 238, 210, 255)
                     : nextChallenge ? new Color32(255, 226, 153, 255) : new Color32(180, 184, 191, 255);
+                if (polishedPresentation)
+                    clearStateLabel.text = cleared ? "최초 보상 획득 완료 · 재도전 가능"
+                        : nextChallenge ? "첫 클리어 시 보상을 획득합니다"
+                        : "이전 스테이지 클리어 후 도전 가능";
             }
             if (enterButton != null)
             {
                 enterButton.interactable = selectable;
                 enterButton.image.color = selectable
-                    ? new Color32(192, 132, 45, 255)
+                    ? new Color32(167, 116, 42, 255)
                     : new Color32(55, 59, 65, 255);
+                if (polishedPresentation)
+                    enterButton.image.color = selectable ? new Color32(119, 55, 65, 255) : new Color32(48, 46, 49, 255);
+                if (enterButtonSkin != null) enterButtonSkin.alpha = selectable ? 1f : 0.15f;
             }
             if (enterButtonLabel != null)
             {
                 enterButtonLabel.text = !selectable ? "잠김" : cleared ? "재도전" : "공략 시작";
             }
+        }
+
+        private void RefreshVisibleFrontHeader(Vector2 unused)
+        {
+            if (visibleFrontLabel == null || stageScrollRect == null) return;
+            var top = stageScrollRect.content.anchoredPosition.y;
+            var firstStage = 1;
+            for (var index = 0; index < stageButtons.Length; index++)
+            {
+                var row = stageButtons[index].GetComponent<RectTransform>();
+                firstStage = index + 1;
+                if (-row.anchoredPosition.y + row.rect.height * 0.5f > top) break;
+            }
+            var difficulty = CastleRaidStageRules.ResolveDifficulty(firstStage);
+            visibleFrontLabel.text = $"전선 {CastleRaidStageRules.ResolveFirstStage(difficulty):000}-{CastleRaidStageRules.ResolveLastStage(difficulty):000}";
         }
 
         private void BindListeners()
@@ -315,6 +397,7 @@ namespace ProjectMT.Features.MainBattle
                 return;
             }
 
+            stageScrollRect?.onValueChanged.AddListener(RefreshVisibleFrontHeader);
             closeButton?.onClick.AddListener(Close);
             enterButton?.onClick.AddListener(EnterSelectedStage);
             UIButtonClickPunch.EnsureOn(closeButton?.gameObject);
@@ -339,6 +422,7 @@ namespace ProjectMT.Features.MainBattle
                 return;
             }
 
+            stageScrollRect?.onValueChanged.RemoveListener(RefreshVisibleFrontHeader);
             closeButton?.onClick.RemoveListener(Close);
             enterButton?.onClick.RemoveListener(EnterSelectedStage);
             for (var index = 0; index < stageButtons.Length && index < stageActions.Length; index++)

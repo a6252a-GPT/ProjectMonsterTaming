@@ -506,6 +506,23 @@ namespace ProjectMT.Features.MainBattle
             if (probabilityText != null)
             {
                 probabilityText.text = BuildProbabilityText();
+                if (probabilityText.TryGetComponent<SummonProbabilityStripView>(out var strip))
+                {
+                    var entries = new List<SummonProbabilityStripView.Entry>();
+                    if (probability != null && probability.RarityRates != null)
+                    {
+                        foreach (var rate in probability.RarityRates)
+                        {
+                            if (rate == null) continue;
+                            ProjectMT.Features.Formation.MonsterCardView.GetRarityPalette(
+                                rate.Rarity, out _, out _, out var color);
+                            entries.Add(new SummonProbabilityStripView.Entry(
+                                RarityLabel(rate.Rarity), rate.DropRatePercent, color));
+                        }
+                    }
+                    strip.Show(entries);
+                    probabilityText.enabled = entries.Count == 0;
+                }
             }
 
             if (pityText != null)
@@ -646,7 +663,7 @@ namespace ProjectMT.Features.MainBattle
 
             var pity = progress.View.GachaPity;
             return $"희귀 보정 {pity.PullsSinceRareOrBetter}/{GetRareGuarantee()}   " +
-                   $"영웅 {pity.PullsSinceEpicOrBetter}/{GetCeiling(MonsterRarity.Epic)}   " +
+                   $"영웅 {pity.PullsSinceEpicOrBetter}/{GetCeiling(MonsterRarity.Epic)}\n" +
                    $"전설 {pity.PullsSinceLegendaryOrBetter}/{GetCeiling(MonsterRarity.Legendary)}   " +
                    $"신화 {pity.PullsSinceMythicOrBetter}/{GetCeiling(MonsterRarity.Mythic)}";
         }

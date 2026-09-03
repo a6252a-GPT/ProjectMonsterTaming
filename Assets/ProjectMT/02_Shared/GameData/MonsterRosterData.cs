@@ -122,8 +122,8 @@ namespace ProjectMT.Shared.GameData
     [Serializable]
     public sealed class MonsterRosterData // 보유·본부대·예비 부대 저장 원본
     {
-        public const int MainPartySlotCount = 10;
-        public const int ReservePartySlotCount = 2;
+        public const int MainPartySlotCount = 5; // 슬롯 확장 없이 고정 편성
+        public const int ReservePartySlotCount = 3;
         public const string StarterMonsterId = "lumi_01";
 
         private static readonly Dictionary<string, string> RetiredMonsterIds =

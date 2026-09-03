@@ -25,6 +25,7 @@ namespace ProjectMT.Contents.FoodRiot
         [SerializeField] private Vector2 vegetableAreaHalfExtents = new Vector2(5.5f, 3.5f); // 활동 구역 반쪽 크기
 
         [Header("HUD")]
+        [SerializeField] private GrowthDungeonHudView growthHud;
         [SerializeField] private TMP_Text timerText; // 남은 시간 표시
         [SerializeField] private TMP_Text killText; // 처치 수 표시
         [SerializeField] private TMP_Text resultText; // 조작 안내·결과 문구
@@ -68,10 +69,11 @@ namespace ProjectMT.Contents.FoodRiot
                 ? selectedStage
                 : 1;
             difficultyMultiplier = GrowthDungeonStageRules.ResolveDifficultyMultiplier(stage);
+            growthHud?.SetStage(stage);
             IsRunning = true;
             if (resultText != null)
             {
-                resultText.text = "이동 키나 조이스틱으로 움직이세요";
+                resultText.text = growthHud != null ? "제한 시간 안에 식량을 처치하세요" : "이동 키나 조이스틱으로 움직이세요";
             }
 
             SpawnFollowers();
@@ -242,6 +244,12 @@ namespace ProjectMT.Contents.FoodRiot
 
         private void UpdateHud()
         {
+            if (growthHud != null)
+            {
+                growthHud.SetTimer(timeRemaining);
+                growthHud.SetObjective($"처치 {killCount}");
+                return;
+            }
             if (timerText != null)
             {
                 timerText.text = $"남은 시간 {Mathf.CeilToInt(timeRemaining)}초";

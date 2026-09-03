@@ -94,7 +94,7 @@ namespace ProjectMT.Features.Settings
             deleteConfirmRoot?.SetActive(false);
             ApplyRuntimeSettings();
             RefreshControls();
-            SetStatus("현재 기기에 저장된 설정입니다.");
+            SetStatus("설정은 변경 즉시 저장됩니다.");
             OpenStateChanged?.Invoke(true);
         }
 
@@ -119,8 +119,8 @@ namespace ProjectMT.Features.Settings
 
             RefreshSelection(tabButtons, (int)tab);
             SetStatus(tab == Tab.Account
-                ? "외부 계정·지원 기능은 서비스 계약 연결 후 활성화됩니다."
-                : "변경한 값은 즉시 적용하고 이 기기에 저장합니다.");
+                ? "계정 연동·고객지원·약관 안내는 준비 중입니다."
+                : "설정은 변경 즉시 저장됩니다.");
         }
 
         private void BindControls()
@@ -284,9 +284,29 @@ namespace ProjectMT.Features.Settings
                 deleteDataButton.interactable = true;
             }
 
+            RefreshSwitchVisual(sleepModeToggle);
+            RefreshSwitchVisual(damageNumbersToggle);
+            RefreshSwitchVisual(unitHealthBarsToggle);
+            RefreshSwitchVisual(vibrationToggle);
             refreshing = false;
         }
 
+        private static void RefreshSwitchVisual(Toggle toggle) // GUI 스위치의 표시만 현재 설정과 동기화
+        {
+            if (toggle == null)
+            {
+                return;
+            }
+
+            var visual = toggle.transform.Find("GuiSwitch");
+            if (visual == null)
+            {
+                return;
+            }
+
+            visual.Find("On")?.gameObject.SetActive(toggle.isOn);
+            visual.Find("Off")?.gameObject.SetActive(!toggle.isOn);
+        }
         private void ResetCurrentTab()
         {
             var defaults = LocalSettingsStore.CreateDefaults();

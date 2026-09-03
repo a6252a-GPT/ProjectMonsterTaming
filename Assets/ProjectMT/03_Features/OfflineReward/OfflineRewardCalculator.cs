@@ -8,7 +8,15 @@ using ProjectMT.Shared.Reward;
 
 namespace ProjectMT.Features.OfflineReward
 {
-    public sealed class OfflineRewardCalculation // 저장 후보와 표시 영수증을 함께 생성한 계산 결과
+    public enum OfflineRewardCalculationStatus
+    {
+        NotDue,
+        Ready,
+        InventoryBlocked,
+        InvalidData
+    }
+
+    public sealed class OfflineRewardCalculation
     {
         public OfflineRewardCalculation(RewardBundle rewards, OfflineRewardReceiptData receipt)
         {
@@ -20,7 +28,20 @@ namespace ProjectMT.Features.OfflineReward
         public OfflineRewardReceiptData Receipt { get; }
     }
 
-    public static class OfflineRewardCalculator // 시간·단계만 입력받는 순수 방치 보상 계산
+    // 최초 추첨값만 보관한다. 인벤토리 잠금·장착 변경 뒤에도 이 원시값으로 정리 계획만 다시 만든다.
+    public sealed class OfflineRewardRollSnapshot
+    {
+        internal OfflineRewardRollSnapshot(OfflineRewardCalculation raw, bool legacy)
+        {
+            Raw = raw;
+            IsLegacy = legacy;
+        }
+
+        internal OfflineRewardCalculation Raw { get; }
+        internal bool IsLegacy { get; }
+    }
+
+    public static class OfflineRewardCalculator
     {
         private const int BasisPointDenominator = 10000;
 
@@ -33,15 +54,8 @@ namespace ProjectMT.Features.OfflineReward
             out OfflineRewardCalculation calculation)
         {
             return TryCalculate(
-                fromUtc,
-                toUtc,
-                basisStage,
-                receiptId,
-                config,
-                default,
-                EquipmentBalanceConfig.RuntimeDefault,
-                null,
-                out calculation);
+                fromUtc, toUtc, basisStage, receiptId, config, default,
+                EquipmentBalanceConfig.RuntimeDefault, null, out calculation);
         }
 
         public static bool TryCalculate(
@@ -56,45 +70,65 @@ namespace ProjectMT.Features.OfflineReward
             out OfflineRewardCalculation calculation)
         {
             calculation = null;
+            var status = TryRoll(
+                fromUtc, toUtc, basisStage, receiptId, config, equipmentBalance, random, out var snapshot);
+            return status == OfflineRewardCalculationStatus.Ready &&
+                   TryPlan(snapshot, equipment, equipmentBalance, null, out calculation) ==
+                   OfflineRewardCalculationStatus.Ready;
+        }
+
+        public static OfflineRewardCalculationStatus TryRoll(
+            DateTime fromUtc,
+            DateTime toUtc,
+            int basisStage,
+            string receiptId,
+            OfflineRewardConfig config,
+            EquipmentBalanceConfig equipmentBalance,
+            Random random,
+            out OfflineRewardRollSnapshot snapshot)
+        {
+            snapshot = null;
             fromUtc = fromUtc.ToUniversalTime();
             toUtc = toUtc.ToUniversalTime();
-            if (config == null || !config.TryValidate(out _) || toUtc <= fromUtc ||
+            equipmentBalance ??= EquipmentBalanceConfig.RuntimeDefault;
+            if (config == null || !config.TryValidate(out _) ||
+                !equipmentBalance.TryValidate(out _) || basisStage < 1 || toUtc <= fromUtc ||
                 string.IsNullOrWhiteSpace(receiptId))
             {
-                return false;
+                return OfflineRewardCalculationStatus.InvalidData;
             }
 
             var rawSeconds = (long)Math.Floor((toUtc - fromUtc).TotalSeconds);
             if (rawSeconds < config.MinimumOfflineSeconds)
             {
-                return false;
+                return OfflineRewardCalculationStatus.NotDue;
             }
 
             var rewardedSeconds = Math.Min(rawSeconds, config.MaximumAccumulationSeconds);
-            var stage = Math.Max(1, basisStage);
+            var stage = basisStage;
             if (!config.TryResolveRate(stage, out var rate))
             {
-                return false;
+                return OfflineRewardCalculationStatus.InvalidData;
             }
 
             if (!config.UsesScaledRewards && !config.UsesIndependentRewards)
             {
-                return TryCalculateLegacy(
-                    fromUtc,
-                    toUtc,
-                    rawSeconds,
-                    rewardedSeconds,
-                    stage,
-                    receiptId,
-                    config,
-                    rate,
-                    out calculation);
+                if (!TryCalculateLegacy(
+                        fromUtc, toUtc, rawSeconds, rewardedSeconds, stage, receiptId, config, rate,
+                        out var legacyCalculation))
+                {
+                    return OfflineRewardCalculationStatus.InvalidData;
+                }
+
+                snapshot = new OfflineRewardRollSnapshot(legacyCalculation, true);
+                return OfflineRewardCalculationStatus.Ready;
             }
 
-            equipmentBalance ??= EquipmentBalanceConfig.RuntimeDefault;
             var rng = random ?? new Random();
             var minutes = rewardedSeconds / 60L;
-            var multiplier = config.UsesIndependentRewards ? BasisPointDenominator : rate.RewardMultiplierBasisPoints;
+            var multiplier = config.UsesIndependentRewards
+                ? BasisPointDenominator
+                : rate.RewardMultiplierBasisPoints;
             var receiptGoldRate = config.UsesIndependentRewards
                 ? rate.GoldPerMinute
                 : config.BaseGoldPerMinute;
@@ -110,7 +144,7 @@ namespace ProjectMT.Features.OfflineReward
                 if (!TryMultiply(minutes, rate.GoldPerMinute, out gold) ||
                     !TryMultiply(minutes, rate.CommanderExperiencePerMinute, out experience))
                 {
-                    return false;
+                    return OfflineRewardCalculationStatus.InvalidData;
                 }
 
                 randomStoneCount = rewardedSeconds / rate.UpgradeStoneIntervalSeconds;
@@ -120,18 +154,17 @@ namespace ProjectMT.Features.OfflineReward
                      !TryScale(minutes, config.BaseCommanderExperiencePerMinute, multiplier, out experience) ||
                      !TryScale(minutes, config.BaseUpgradeStonePerMinute, multiplier, out randomStoneCount))
             {
-                return false;
+                return OfflineRewardCalculationStatus.InvalidData;
             }
             else
             {
                 effectiveEquipmentChance = ResolveEffectiveChance(
-                    config.BaseEquipmentChanceBasisPointsPerMinute,
-                    multiplier);
+                    config.BaseEquipmentChanceBasisPointsPerMinute, multiplier);
             }
 
             if (randomStoneCount > int.MaxValue)
             {
-                return false;
+                return OfflineRewardCalculationStatus.InvalidData;
             }
 
             var slotStones = 0L;
@@ -141,15 +174,9 @@ namespace ProjectMT.Features.OfflineReward
             {
                 switch (rng.Next(3))
                 {
-                    case 0:
-                        slotStones++;
-                        break;
-                    case 1:
-                        skillStones++;
-                        break;
-                    default:
-                        potentialStones++;
-                        break;
+                    case 0: slotStones++; break;
+                    case 1: skillStones++; break;
+                    default: potentialStones++; break;
                 }
             }
 
@@ -158,63 +185,120 @@ namespace ProjectMT.Features.OfflineReward
             {
                 if (rng.Next(BasisPointDenominator) < effectiveEquipmentChance)
                 {
-                    rolledEquipment.Add(EquipmentDropRoller.RollSingle(equipmentBalance, rng));
+                    rolledEquipment.Add(EquipmentDropRoller.RollSingle(equipmentBalance, stage, rng));
                 }
             }
 
-            if (!TryPlanInventory(
-                    equipment,
-                    rolledEquipment,
-                    out var keptEquipment,
-                    out var existingDismantleIds,
-                    out var autoDismantledCount,
-                    out var autoDismantleStones,
-                    out var existingDismantleStones) ||
-                slotStones > long.MaxValue - autoDismantleStones)
+            var items = new List<ItemAmount>(3);
+            AddItem(items, ItemIds.EquipmentSlotUpgradeStone, slotStones);
+            AddItem(items, ItemIds.CommanderSkillUpgradeStone, skillStones);
+            AddItem(items, ItemIds.LegionPotentialUpgradeStone, potentialStones);
+            var rewards = new RewardBundle(gold, experience, items);
+            if (rewards.IsEmpty && rolledEquipment.Count == 0)
             {
-                return false;
+                return OfflineRewardCalculationStatus.NotDue;
             }
 
-            var itemRewards = new List<ItemAmount>(3);
-            AddItem(itemRewards, ItemIds.EquipmentSlotUpgradeStone, slotStones + autoDismantleStones);
-            AddItem(itemRewards, ItemIds.CommanderSkillUpgradeStone, skillStones);
-            AddItem(itemRewards, ItemIds.LegionPotentialUpgradeStone, potentialStones);
-            var rewards = new RewardBundle(gold, experience, itemRewards);
-            if (rewards.IsEmpty && keptEquipment.Count == 0)
+            var rawReceipt = OfflineRewardReceiptData.Create(
+                receiptId, fromUtc, toUtc, rewardedSeconds, stage, gold, experience,
+                slotStones, skillStones, potentialStones, receiptGoldRate, receiptExperienceRate,
+                multiplier, effectiveEquipmentChance, rolledEquipment, Array.Empty<string>(),
+                rolledEquipment.Count, 0, 0L, 0L, rawSeconds > rewardedSeconds, config.BalanceVersion);
+            if (!rawReceipt.IsValid)
             {
-                return false;
+                return OfflineRewardCalculationStatus.InvalidData;
             }
 
-            var receipt = OfflineRewardReceiptData.Create(
-                receiptId,
-                fromUtc,
-                toUtc,
-                rewardedSeconds,
-                stage,
-                gold,
-                experience,
-                slotStones,
-                skillStones,
-                potentialStones,
-                receiptGoldRate,
-                receiptExperienceRate,
-                multiplier,
-                effectiveEquipmentChance,
-                keptEquipment,
-                existingDismantleIds,
-                rolledEquipment.Count,
-                autoDismantledCount,
-                autoDismantleStones,
-                existingDismantleStones,
-                rawSeconds > rewardedSeconds,
-                config.BalanceVersion);
-            if (!receipt.IsValid)
+            snapshot = new OfflineRewardRollSnapshot(
+                new OfflineRewardCalculation(rewards, rawReceipt), false);
+            return OfflineRewardCalculationStatus.Ready;
+        }
+
+        public static OfflineRewardCalculationStatus TryPlan(
+            OfflineRewardRollSnapshot snapshot,
+            GameProgressView progress,
+            EquipmentBalanceConfig equipmentBalance,
+            out OfflineRewardCalculation calculation)
+        {
+            calculation = null;
+            equipmentBalance ??= EquipmentBalanceConfig.RuntimeDefault;
+            if (!equipmentBalance.TryValidate(out _))
             {
-                return false;
+                return OfflineRewardCalculationStatus.InvalidData;
             }
 
-            calculation = new OfflineRewardCalculation(rewards, receipt);
-            return true;
+            return TryPlan(
+                snapshot,
+                progress.Equipment,
+                equipmentBalance,
+                EquipmentLegionBonusCalculator.CalculateTotal(progress, equipmentBalance),
+                out calculation);
+        }
+
+        public static OfflineRewardCalculationStatus TryPlan(
+            OfflineRewardRollSnapshot snapshot,
+            EquipmentSaveDataView equipment,
+            EquipmentBalanceConfig equipmentBalance,
+            EquipmentLegionBonus? baselineBonus,
+            out OfflineRewardCalculation calculation)
+        {
+            calculation = null;
+            equipmentBalance ??= EquipmentBalanceConfig.RuntimeDefault;
+            var raw = snapshot?.Raw;
+            if (raw?.Receipt == null || !raw.Receipt.IsValid || !equipmentBalance.TryValidate(out _))
+            {
+                return OfflineRewardCalculationStatus.InvalidData;
+            }
+
+            if (snapshot.IsLegacy)
+            {
+                calculation = new OfflineRewardCalculation(raw.Rewards, raw.Receipt.Clone());
+                return OfflineRewardCalculationStatus.Ready;
+            }
+
+            var receipt = raw.Receipt;
+            var status = TryPlanInventory(
+                equipment,
+                equipmentBalance,
+                baselineBonus ?? EquipmentLegionBonusCalculator.CalculateEquipmentTotal(equipment, equipmentBalance),
+                receipt.EquipmentRewards,
+                out var kept,
+                out var existingDismantleIds,
+                out var dismantledCount,
+                out var dismantleStones,
+                out var existingDismantleStones);
+            if (status != OfflineRewardCalculationStatus.Ready)
+            {
+                return status;
+            }
+
+            if (receipt.EquipmentSlotUpgradeStone > long.MaxValue - dismantleStones ||
+                !OfflineRewardReceiptData.TryParseUtc(receipt.SettledFromUtc, out var fromUtc) ||
+                !OfflineRewardReceiptData.TryParseUtc(receipt.SettledToUtc, out var toUtc))
+            {
+                return OfflineRewardCalculationStatus.InvalidData;
+            }
+
+            var items = new List<ItemAmount>(3);
+            AddItem(items, ItemIds.EquipmentSlotUpgradeStone, receipt.EquipmentSlotUpgradeStone + dismantleStones);
+            AddItem(items, ItemIds.CommanderSkillUpgradeStone, receipt.CommanderSkillUpgradeStone);
+            AddItem(items, ItemIds.LegionPotentialUpgradeStone, receipt.LegionPotentialUpgradeStone);
+            var rewards = new RewardBundle(receipt.Gold, receipt.CommanderExperience, items);
+            var plannedReceipt = OfflineRewardReceiptData.Create(
+                receipt.ReceiptId, fromUtc, toUtc, receipt.ElapsedSeconds, receipt.BasisStage,
+                receipt.Gold, receipt.CommanderExperience, receipt.EquipmentSlotUpgradeStone,
+                receipt.CommanderSkillUpgradeStone, receipt.LegionPotentialUpgradeStone,
+                receipt.GoldPerMinute, receipt.CommanderExperiencePerMinute,
+                receipt.RewardMultiplierBasisPoints, receipt.EquipmentChanceBasisPointsPerMinute,
+                kept, existingDismantleIds, receipt.RolledEquipmentCount, dismantledCount,
+                dismantleStones, existingDismantleStones, receipt.Capped, receipt.BalanceVersion);
+            if (!plannedReceipt.IsValid)
+            {
+                return OfflineRewardCalculationStatus.InvalidData;
+            }
+
+            calculation = new OfflineRewardCalculation(rewards, plannedReceipt);
+            return OfflineRewardCalculationStatus.Ready;
         }
 
         private static bool TryCalculateLegacy(
@@ -266,8 +350,10 @@ namespace ProjectMT.Features.OfflineReward
             return receipt.IsValid;
         }
 
-        private static bool TryPlanInventory(
+        private static OfflineRewardCalculationStatus TryPlanInventory(
             EquipmentSaveDataView current,
+            EquipmentBalanceConfig equipmentBalance,
+            EquipmentLegionBonus baselineBonus,
             IReadOnlyList<EquipmentInstanceData> rolled,
             out List<EquipmentInstanceData> kept,
             out List<string> existingDismantleIds,
@@ -283,6 +369,8 @@ namespace ProjectMT.Features.OfflineReward
             var existing = current.Instances;
             var newEquipment = rolled ?? Array.Empty<EquipmentInstanceData>();
             var discardedNewIds = new HashSet<string>(StringComparer.Ordinal);
+            var replacementProtectedIds =
+                EquipmentUpgradeEvaluator.GetBestReplacementInstanceIds(current, newEquipment, equipmentBalance, baselineBonus);
             var remainingNewCount = 0;
             var proactivelyDismantledCount = 0;
             var hasProactiveThreshold = OfflineAutoDismantlePolicyInfo.TryGetMaximumGrade(
@@ -293,10 +381,11 @@ namespace ProjectMT.Features.OfflineReward
                 var instance = newEquipment[index];
                 if (instance == null)
                 {
-                    return false;
+                    return OfflineRewardCalculationStatus.InvalidData;
                 }
 
-                if (!hasProactiveThreshold || instance.Grade > proactiveMaximumGrade)
+                if (!hasProactiveThreshold || instance.Grade > proactiveMaximumGrade ||
+                    replacementProtectedIds.Contains(instance.InstanceId))
                 {
                     remainingNewCount++;
                     continue;
@@ -305,7 +394,7 @@ namespace ProjectMT.Features.OfflineReward
                 var stone = EquipmentDismantleRules.GetUpgradeStoneAmount(instance.Grade);
                 if (stone <= 0 || autoDismantleStones > long.MaxValue - stone)
                 {
-                    return false;
+                    return OfflineRewardCalculationStatus.InvalidData;
                 }
 
                 discardedNewIds.Add(instance.InstanceId);
@@ -329,7 +418,8 @@ namespace ProjectMT.Features.OfflineReward
             for (var index = 0; index < existing.Count; index++)
             {
                 var instance = existing[index];
-                if (instance != null && !instance.IsLocked && !equippedIds.Contains(instance.InstanceId))
+                if (instance != null && !instance.IsLocked && !equippedIds.Contains(instance.InstanceId) &&
+                    !replacementProtectedIds.Contains(instance.InstanceId))
                 {
                     candidates.Add(new DismantleCandidate(instance, false));
                 }
@@ -337,7 +427,8 @@ namespace ProjectMT.Features.OfflineReward
 
             for (var index = 0; index < newEquipment.Count; index++)
             {
-                if (!discardedNewIds.Contains(newEquipment[index].InstanceId))
+                if (!discardedNewIds.Contains(newEquipment[index].InstanceId) &&
+                    !replacementProtectedIds.Contains(newEquipment[index].InstanceId))
                 {
                     candidates.Add(new DismantleCandidate(newEquipment[index], true));
                 }
@@ -346,7 +437,7 @@ namespace ProjectMT.Features.OfflineReward
             candidates.Sort(CompareCandidates);
             if (candidates.Count < overflow)
             {
-                return false;
+                return OfflineRewardCalculationStatus.InventoryBlocked;
             }
 
             for (var index = 0; index < overflow; index++)
@@ -355,7 +446,7 @@ namespace ProjectMT.Features.OfflineReward
                 var stone = EquipmentDismantleRules.GetUpgradeStoneAmount(candidate.Instance.Grade);
                 if (stone <= 0 || autoDismantleStones > long.MaxValue - stone)
                 {
-                    return false;
+                    return OfflineRewardCalculationStatus.InvalidData;
                 }
 
                 autoDismantleStones += stone;
@@ -379,7 +470,7 @@ namespace ProjectMT.Features.OfflineReward
             }
 
             autoDismantledCount = proactivelyDismantledCount + overflow;
-            return true;
+            return OfflineRewardCalculationStatus.Ready;
         }
 
         private static int CompareCandidates(DismantleCandidate left, DismantleCandidate right)
@@ -390,9 +481,15 @@ namespace ProjectMT.Features.OfflineReward
                 return gradeComparison;
             }
 
+            var levelComparison = left.Instance.ItemLevel.CompareTo(right.Instance.ItemLevel);
+            if (levelComparison != 0)
+            {
+                return levelComparison;
+            }
+
             if (left.IsNew != right.IsNew)
             {
-                return left.IsNew ? -1 : 1; // 같은 등급이면 신규 보상을 먼저 정리해 기존 선택을 보존
+                return left.IsNew ? -1 : 1;
             }
 
             return string.CompareOrdinal(left.Instance.InstanceId, right.Instance.InstanceId);

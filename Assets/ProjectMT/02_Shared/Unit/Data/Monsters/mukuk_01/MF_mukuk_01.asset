@@ -55,10 +55,10 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   basicAttackVfxBindings:
-  - attackId: BA_S_04
-    slotId: start
+  - attackId: BA_R_03
+    slotId: launch
     motionId: attack01
-    state: 0
+    state: 2
     prefab: {fileID: 0}
     sfxState: 0
     sound: {fileID: 0}
@@ -71,27 +71,27 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
-  - attackId: BA_S_04
-    slotId: wave_body
+  - attackId: BA_R_03
+    slotId: projectile
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 2439347719323675977, guid: ad12e86e8c4650a4aa3f41a331710e2c, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
     sfx: {fileID: 0}
-    lifetime: 1
+    lifetime: 3
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
-  - attackId: BA_S_04
-    slotId: path_hit
+  - attackId: BA_R_03
+    slotId: contact
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 7871796167905569758, guid: 162101220ae9837499e5fbf731f32ef8, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -103,11 +103,11 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
-  - attackId: BA_S_04
-    slotId: disappear
+  - attackId: BA_R_03
+    slotId: area_explosion
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 8255459344283744246, guid: 7a80819bbb449894c869a49eb326f91e, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -118,4 +118,4 @@ MonoBehaviour:
     eventTimingOffset: 0
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 3

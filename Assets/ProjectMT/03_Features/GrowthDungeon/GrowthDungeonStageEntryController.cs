@@ -537,6 +537,9 @@ namespace ProjectMT.Features.GrowthDungeon
         private TMP_Text rewardTitle;
         private TMP_Text rewardAmount;
         private TMP_Text keyCount;
+        private TMP_Text highestStageText;
+        private TMP_Text enterCostText;
+        private TMP_Text sweepCostText;
         private bool initialized;
 
         public void Initialize(
@@ -575,11 +578,12 @@ namespace ProjectMT.Features.GrowthDungeon
             SetText(stageLabel, runtimeAvailable
                 ? (isChallenge ? "도전 단계" : "파밍 단계")
                 : "준비 중");
-            SetText(stageValue, Mathf.Max(1, selectedStage).ToString());
+            SetText(stageValue, Mathf.Max(1, selectedStage).ToString("00"));
+            SetText(highestStageText, $"최고 클리어  {Mathf.Max(0, state.HighestClearedStage)}단계");
             SetText(rewardTitle, runtimeAvailable
-                ? (isChallenge ? "도전 클리어 보상 · 200%" : "파밍 보상 · 100%")
+                ? (isChallenge ? "도전 클리어 보상  <color=#E0BC7A>200%</color>" : "파밍 보상  <color=#E0BC7A>100%</color>")
                 : displayName);
-            SetText(rewardAmount, runtimeAvailable ? "클리어 결과 기준" : "콘텐츠 준비 중");
+            SetText(rewardAmount, runtimeAvailable ? "클리어 결과에 따라 획득" : "콘텐츠 준비 중");
             SetText(
                 keyCount,
                 $"{Math.Min(state.KeyQuantity, GrowthDungeonDailyKeyRules.MaximumQuantity)} / " +
@@ -603,9 +607,12 @@ namespace ProjectMT.Features.GrowthDungeon
                 SetButtonText(
                     enterButton,
                     runtimeAvailable
-                        ? (isChallenge ? "도전 입장\n열쇠 미소모" : "파밍 입장\n열쇠 1개")
+                        ? (isChallenge ? "도전 입장" : "파밍 입장")
                         : "준비 중");
             }
+            SetText(enterCostText, runtimeAvailable
+                ? (isChallenge ? "열쇠 미소모" : "열쇠 1개 사용")
+                : string.Empty);
 
             if (sweepButton != null)
             {
@@ -613,30 +620,42 @@ namespace ProjectMT.Features.GrowthDungeon
                 SetButtonText(
                     sweepButton,
                     runtimeAvailable && state.HighestClearedStage > 0
-                        ? $"{state.HighestClearedStage}단계 소탕\n열쇠 1개"
+                        ? $"{state.HighestClearedStage}단계 소탕"
                         : "소탕 불가");
             }
+            SetText(sweepCostText, runtimeAvailable && state.HighestClearedStage > 0
+                ? "열쇠 1개 사용"
+                : string.Empty);
         }
 
         private void ResolveReferences()
         {
             closeButton ??= transform.Find("CloseTouchArea_80x80")?.GetComponent<Button>();
-            previousButton ??= transform.Find(
-                "ContentRoot/MainContent/StageSelectorRoot/PreviousStageButton")?.GetComponent<Button>();
-            nextButton ??= transform.Find(
-                "ContentRoot/MainContent/StageSelectorRoot/NextStageButton")?.GetComponent<Button>();
-            enterButton ??= transform.Find("FooterActionRoot/EnterButton")?.GetComponent<Button>();
-            sweepButton ??= transform.Find("FooterActionRoot/SweepButton")?.GetComponent<Button>();
-            stageLabel ??= transform.Find(
-                "ContentRoot/MainContent/StageSelectorRoot/StageLabel")?.GetComponent<TMP_Text>();
-            stageValue ??= transform.Find(
-                "ContentRoot/MainContent/StageSelectorRoot/StageValue")?.GetComponent<TMP_Text>();
-            rewardTitle ??= transform.Find(
-                "ContentRoot/MainContent/ClearRewardRoot/RewardTitle")?.GetComponent<TMP_Text>();
-            rewardAmount ??= transform.Find(
-                "ContentRoot/MainContent/ClearRewardRoot/RewardAmount")?.GetComponent<TMP_Text>();
-            keyCount ??= transform.Find(
-                "ContentRoot/MainContent/DungeonKeyRoot/KeyCount")?.GetComponent<TMP_Text>();
+            previousButton ??= FindComponent<Button>("ApprovedVisualRoot/StageSelection/PreviousStageButton",
+                "ContentRoot/MainContent/StageSelectorRoot/PreviousStageButton");
+            nextButton ??= FindComponent<Button>("ApprovedVisualRoot/StageSelection/NextStageButton",
+                "ContentRoot/MainContent/StageSelectorRoot/NextStageButton");
+            enterButton ??= FindComponent<Button>("ApprovedVisualRoot/EnterButton", "FooterActionRoot/EnterButton");
+            sweepButton ??= FindComponent<Button>("ApprovedVisualRoot/SweepButton", "FooterActionRoot/SweepButton");
+            stageLabel ??= FindComponent<TMP_Text>("ApprovedVisualRoot/StageSelection/StageLabel",
+                "ContentRoot/MainContent/StageSelectorRoot/StageLabel");
+            stageValue ??= FindComponent<TMP_Text>("ApprovedVisualRoot/StageSelection/StageValue",
+                "ContentRoot/MainContent/StageSelectorRoot/StageValue");
+            rewardTitle ??= FindComponent<TMP_Text>("ApprovedVisualRoot/RewardAndKey/RewardTitle",
+                "ContentRoot/MainContent/ClearRewardRoot/RewardTitle");
+            rewardAmount ??= FindComponent<TMP_Text>("ApprovedVisualRoot/RewardAndKey/RewardAmount",
+                "ContentRoot/MainContent/ClearRewardRoot/RewardAmount");
+            keyCount ??= FindComponent<TMP_Text>("ApprovedVisualRoot/RewardAndKey/KeyCount",
+                "ContentRoot/MainContent/DungeonKeyRoot/KeyCount");
+            highestStageText ??= transform.Find("ApprovedVisualRoot/StageSelection/HighestStageText")?.GetComponent<TMP_Text>();
+            enterCostText ??= transform.Find("ApprovedVisualRoot/EnterCostText")?.GetComponent<TMP_Text>();
+            sweepCostText ??= transform.Find("ApprovedVisualRoot/SweepCostText")?.GetComponent<TMP_Text>();
+        }
+
+        private T FindComponent<T>(string preferredPath, string fallbackPath) where T : Component
+        {
+            return transform.Find(preferredPath)?.GetComponent<T>() ??
+                transform.Find(fallbackPath)?.GetComponent<T>();
         }
 
         private static void SetButtonText(Button button, string value)

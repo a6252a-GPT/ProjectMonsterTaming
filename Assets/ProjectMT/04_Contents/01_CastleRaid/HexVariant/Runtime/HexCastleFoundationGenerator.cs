@@ -52,7 +52,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         public const int PalaceFootprintRadius = 1;
         public const int PalaceGuardBarracksCount = 1;
         public const int PalaceGuardTurretCount = 2;
-        public const int FoundationRulesVersionBase = 1000;
+        public const int FoundationRulesVersionBase = 1001;
 
         private static readonly int[] CanonicalWallRadii = { 3, 5, 8, 11 };
 
@@ -143,6 +143,7 @@ namespace ProjectMT.Contents.CastleRaidHex
                 wallRadii,
                 tuning,
                 difficultyProfile);
+            ExpandExteriorDeployment(cells); // 실제 성벽 굴곡 바깥의 열린 바닥까지 배치 영역으로 연결
             var palaceGuardDirection = ApplyPalaceGuardBarracks(
                 cells,
                 seed,
@@ -177,6 +178,28 @@ namespace ProjectMT.Contents.CastleRaidHex
             return coordinate.DistanceFromOrigin > outerWallRadius
                 ? new HexCastleCell(coordinate, HexCastleCellKind.Deployment)
                 : new HexCastleCell(coordinate, HexCastleCellKind.Ground);
+        }
+
+        private static void ExpandExteriorDeployment(IDictionary<HexCoordinates, HexCastleCell> cells)
+        {
+            var queue = new Queue<HexCoordinates>(cells.Values
+                .Where(cell => cell.Kind == HexCastleCellKind.Deployment)
+                .Select(cell => cell.Coordinates));
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                foreach (var direction in HexCoordinates.Directions)
+                {
+                    var next = current + direction;
+                    if (!cells.TryGetValue(next, out var cell) || cell.Kind != HexCastleCellKind.Ground)
+                    {
+                        continue;
+                    }
+
+                    cells[next] = new HexCastleCell(next, HexCastleCellKind.Deployment);
+                    queue.Enqueue(next);
+                }
+            }
         }
 
         private static void ApplyPalace(

@@ -21,6 +21,8 @@ namespace ProjectMT.Features.Quest
         [SerializeField] private TMP_Text rewardAmountText;
         [SerializeField] private Button rewardButton;
         [SerializeField] private QuestType trackedType = QuestType.Main;
+        [SerializeField] private bool compactPresentation;
+        [SerializeField] private CanvasGroup claimHighlight;
 
         private QuestId trackedQuestId;
         private bool canClaimTracked;
@@ -48,6 +50,19 @@ namespace ProjectMT.Features.Quest
             if (rewardButton != null)
             {
                 rewardButton.onClick.RemoveListener(HandleClaimClicked);
+            }
+
+            if (claimHighlight != null)
+            {
+                claimHighlight.gameObject.SetActive(false);
+            }
+        }
+
+        private void Update()
+        {
+            if (claimHighlight != null && claimHighlight.gameObject.activeSelf)
+            {
+                claimHighlight.alpha = 0.65f + 0.2f * Mathf.Sin(Time.unscaledTime * 1.96f); // 수령 가능할 때만 완만한 강조
             }
         }
 
@@ -81,8 +96,10 @@ namespace ProjectMT.Features.Quest
 
             Apply(
                 QuestMissionCategoryInfo.GetDisplayName(definition.ConditionType),
-                FormatDescription(definition, progress),
-                FormatStatus(progress));
+                compactPresentation ? ResolveDescription(definition) : FormatDescription(definition, progress),
+                compactPresentation
+                    ? $"{progress.CurrentProgress}/{QuestRuntime.ResolveTargetValue(definition)}"
+                    : FormatStatus(progress));
             ApplyRewardIcon(definition);
         }
 
@@ -97,7 +114,7 @@ namespace ProjectMT.Features.Quest
                 rewardIcon.enabled = sprite != null;
             }
 
-            SetText(rewardAmountText, rewardItem.Amount > 0L ? $"X {rewardItem.Amount:N0}" : string.Empty);
+            SetText(rewardAmountText, rewardItem.Amount > 0L ? $"×{rewardItem.Amount:N0}" : string.Empty);
         }
 
         private static ItemAmount ResolveRewardItem(QuestDefinition definition, out Sprite sprite)
@@ -137,7 +154,7 @@ namespace ProjectMT.Features.Quest
 
             // 수령 성공 시 다음 퀘스트로 화면이 바로 바뀌므로, 지금 퀘스트 보상은 수령 전에 미리 스냅샷해 둔다.
             var claimedQuestId = trackedQuestId;
-            var spawnPosition = rewardButton != null ? rewardButton.transform.position : transform.position;
+            var spawnPosition = rewardIcon != null ? rewardIcon.transform.position : transform.position;
             var presentation = BuildRewardPresentation(claimedQuestId);
             try
             {
@@ -172,6 +189,13 @@ namespace ProjectMT.Features.Quest
             {
                 rewardButton.interactable = canClaimTracked && !isClaiming;
             }
+
+            if (claimHighlight != null)
+            {
+                claimHighlight.interactable = false;
+                claimHighlight.blocksRaycasts = false;
+                claimHighlight.gameObject.SetActive(canClaimTracked && !isClaiming);
+            }
         }
 
         private void Apply(string mission, string description, string status)
@@ -184,16 +208,19 @@ namespace ProjectMT.Features.Quest
         private static string FormatDescription(QuestDefinition definition, QuestProgressEntryView progress)
         {
             // {target} 토큰은 지금 사이클의 실제 목표 수치로 치환되어 문장 안에 바로 노출된다.
-            var resolvedDescription = QuestRuntime.ResolveDescription(definition);
-            var body = string.IsNullOrWhiteSpace(resolvedDescription)
-                ? definition.DisplayName
-                : resolvedDescription.Trim();
+            var body = ResolveDescription(definition);
             // 반복 퀘스트는 사이클마다 목표가 올라가므로 definition.TargetValue(1회차 기준)가 아니라
             // 지금 사이클 기준으로 다시 계산된 값을 보여준다.
             return $"{body} ({progress.CurrentProgress}/{QuestRuntime.ResolveTargetValue(definition)})";
         }
 
         // 목표를 채우면 보상 수령 여부와 상관없이 "완료"로 표시하고, 그 전에는 "진행 중"으로 표시한다.
+        private static string ResolveDescription(QuestDefinition definition)
+        {
+            var description = QuestRuntime.ResolveDescription(definition);
+            return string.IsNullOrWhiteSpace(description) ? definition.DisplayName : description.Trim();
+        }
+
         private static string FormatStatus(QuestProgressEntryView progress)
         {
             return progress.Completed ? "완료" : "진행 중";
@@ -357,6 +384,12 @@ namespace ProjectMT.Features.Quest
         }
 
 #if UNITY_EDITOR
+        public void EditorConfigureCompactPresentation(CanvasGroup highlight)
+        {
+            compactPresentation = true;
+            claimHighlight = highlight;
+        }
+
         public void EditorConfigure(
             TMP_Text mission,
             TMP_Text description,

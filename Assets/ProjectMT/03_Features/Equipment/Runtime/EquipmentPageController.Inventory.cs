@@ -68,7 +68,7 @@ namespace ProjectMT.Features.Equipment
                 ItemIcon = FindDeep(slotRoot, "Item")?.GetComponent<Image>(),
                 NormalArea = FindDeep(slotRoot, "NormalArea"),
                 AddIndicator = FindDeep(slotRoot, "Add_1")?.gameObject,
-                TextLevel = FindDeep(slotRoot, "Text_Level")?.gameObject,
+                TextLevel = slotRoot.Find("Text_Level")?.gameObject,
                 CheckObject = FindDeep(slotRoot, "Check")?.gameObject,
                 FocusObject = FindDeep(slotRoot, "Focus")?.gameObject,
                 LockObject = FindDeep(slotRoot, "Lock")?.gameObject
@@ -148,31 +148,31 @@ namespace ProjectMT.Features.Equipment
             inventoryScrollRect.verticalNormalizedPosition = 1f;
         }
 
-        // 인벤토리에서도 장착 중인 아이템을 구분할 수 있도록 아이콘 아래에 "[장착]" 텍스트를 표시한다.
         private TMP_Text CreateEquippedLabel(Transform slotRoot)
         {
-            var existing = FindDeep(slotRoot, "EquippedLabel")?.GetComponent<TMP_Text>();
-            if (existing != null)
+            var text = FindDeep(slotRoot, "EquippedLabel")?.GetComponent<TMP_Text>();
+            if (text == null)
             {
-                return existing;
+                var labelObject = new GameObject("EquippedLabel", typeof(RectTransform));
+                labelObject.transform.SetParent(slotRoot, false);
+                text = labelObject.AddComponent<TextMeshProUGUI>();
             }
 
-            var labelObject = new GameObject("EquippedLabel", typeof(RectTransform));
-            labelObject.transform.SetParent(slotRoot, false);
-            var rect = labelObject.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0f, 0f);
-            rect.anchorMax = new Vector2(1f, 0f);
-            rect.pivot = new Vector2(0.5f, 0f);
-            rect.anchoredPosition = new Vector2(0f, 10f);
-            rect.sizeDelta = new Vector2(0f, 24f);
-
-            var text = labelObject.AddComponent<TextMeshProUGUI>();
+            var rect = text.rectTransform;
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = Vector2.one;
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.offsetMin = new Vector2(8f, -28f);
+            rect.offsetMax = new Vector2(-48f, -6f); // 하단 레벨과 우상단 추천 화살표의 영역을 비운다.
             if (equippedLabelFont != null)
             {
                 text.font = equippedLabelFont;
             }
 
             text.fontSize = 18f;
+            text.enableAutoSizing = true;
+            text.fontSizeMin = 12f;
+            text.fontSizeMax = 18f;
             text.fontStyle = FontStyles.Bold;
             text.alignment = TextAlignmentOptions.Center;
             text.color = Color.white;
@@ -338,7 +338,7 @@ namespace ProjectMT.Features.Equipment
             {
                 Item = item,
                 OriginalIndex = index,
-                PowerDelta = EquipmentUpgradeEvaluator.EvaluatePowerDelta(item)
+                PowerDelta = EquipmentUpgradeEvaluator.EvaluatePowerDeltaExact(item)
             });
             // 표시 순서는 "장착 가능 우선" 다음에 사용자가 선택한 등급 순서를 가장 먼저 적용한다.
             // 이전에는 전투력 차이가 등급보다 먼저 비교되어, 등급 높은순을 골라도 낮은 등급 장비가
@@ -414,10 +414,15 @@ namespace ProjectMT.Features.Equipment
 
             ApplyFrameVariant(view.NormalArea, item.Grade); // 등급에 맞는 기존 프레임(테두리)으로 교체
 
-            // Lv 표시는 나중에 실제 레벨 시스템이 붙으면 다시 켤 것이므로, 지금은 항상 비활성화한다.
             if (view.TextLevel != null)
             {
-                view.TextLevel.SetActive(false);
+                var levelText = view.TextLevel.GetComponent<TMP_Text>();
+                if (levelText != null)
+                {
+                    levelText.text = $"Lv.{item.ItemLevel}";
+                }
+
+                view.TextLevel.SetActive(true);
             }
 
             if (view.EquippedLabelText != null)
@@ -440,7 +445,7 @@ namespace ProjectMT.Features.Equipment
             if (view.UpgradeArrow != null)
             {
                 view.UpgradeArrow.gameObject.SetActive(currentMode == EquipmentPageMode.Equip &&
-                                                       EquipmentUpgradeEvaluator.EvaluatePowerDelta(item) > 0);
+                                                       EquipmentUpgradeEvaluator.EvaluatePowerDeltaExact(item) > 0);
             }
 
             if (view.LockObject != null)
@@ -477,6 +482,12 @@ namespace ProjectMT.Features.Equipment
 
             if (view.TextLevel != null)
             {
+                var levelText = view.TextLevel.GetComponent<TMP_Text>();
+                if (levelText != null)
+                {
+                    levelText.text = string.Empty;
+                }
+
                 view.TextLevel.SetActive(false);
             }
 
@@ -561,7 +572,7 @@ namespace ProjectMT.Features.Equipment
                     // 기본옵션(핵심 능력치)과 추가 랜덤 옵션을 서로 다른 텍스트 칸에 나눠서 표시한다.
                     if (coreStatText != null)
                     {
-                        coreStatText.text = selectedItem.Definition.GetCoreStatSummary();
+                        coreStatText.text = selectedItem.GetCoreStatSummary();
                     }
 
                     optionStatText.text = randomOptionText;
@@ -569,7 +580,7 @@ namespace ProjectMT.Features.Equipment
                 else if (coreStatText != null)
                 {
                     // Tools > ProjectMT > 장비창 메뉴를 아직 실행하지 않아 전용 칸이 없는 경우의 임시 대체.
-                    var combined = selectedItem.Definition.GetCoreStatSummary();
+                    var combined = selectedItem.GetCoreStatSummary();
                     if (!string.IsNullOrEmpty(randomOptionText))
                     {
                         combined += "\n[랜덤 옵션]\n" + randomOptionText;
@@ -634,7 +645,7 @@ namespace ProjectMT.Features.Equipment
         }
 
         // "추가 랜덤 옵션" 전용 텍스트 칸에 넣을 내용만 만든다(핵심 능력치는 별도로
-        // selectedItem.Definition.GetCoreStatSummary()가 표시).
+        // selectedItem.GetCoreStatSummary()가 표시).
         private static string BuildRandomOptionText(EquipmentItemView item)
         {
             var options = item.Instance?.RandomOptions;

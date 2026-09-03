@@ -1,0 +1,1225 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4911071f32b49764988b776eb6d8698e, type: 3}
+  m_Name: SfxSpaceCatalog_ProjectMT
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxSpaceCatalog
+  entries:
+  - id: "SYS-01"
+    priority: 0
+    categoryId: "ui"
+    area: "공통 UI"
+    eventName: "기본 버튼 선택·확인"
+    coverageState: 3
+    evidence: "`UIButtonClickPunch`는 시각 Punch만 처리하며 공용 UI SFX 호출 경로가 없다."
+    completionCriteria: "공용 UI Cue를 연결하고 대표 화면 3곳에서 중복 재생 없이 들림"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "SYS-02"
+    priority: 0
+    categoryId: "ui"
+    area: "공통 UI"
+    eventName: "취소·뒤로가기·패널 닫기"
+    coverageState: 3
+    evidence: "`UIPanelPopAnimator`는 Tween만 처리한다. 패널 수명 이벤트에 Audio 호출이 없다."
+    completionCriteria: "뒤로가기와 닫기 버튼이 같은 공용 Cue 정책으로 재생됨"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "SYS-03"
+    priority: 1
+    categoryId: "ui"
+    area: "공통 UI"
+    eventName: "패널 열기·팝업 등장"
+    coverageState: 3
+    evidence: "공용 Panel 표시 애니메이터에 SFX 공간이 없다."
+    completionCriteria: "중첩 팝업에서도 1회만 재생되고 화면별 볼륨 편차가 없음"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "SYS-04"
+    priority: 1
+    categoryId: "ui"
+    area: "공통 UI"
+    eventName: "탭·정렬·필터 전환"
+    coverageState: 3
+    evidence: "UI 기능 코드 전역 검색에서 전환 SFX 호출을 찾지 못했다."
+    completionCriteria: "탭/정렬/필터 공용 Cue 또는 명시적 무음 정책 확정"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "SYS-05"
+    priority: 1
+    categoryId: "ui"
+    area: "공통 UI"
+    eventName: "토글·슬라이더 값 변경"
+    coverageState: 3
+    evidence: "Settings 포함 조작 UI에 공용 변화음 경로가 없다."
+    completionCriteria: "토글과 슬라이더에 과밀하지 않은 변화음 적용·실기기 확인"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "SYS-06"
+    priority: 0
+    categoryId: "ui"
+    area: "공통 UI"
+    eventName: "비활성·잠금·재화 부족·잘못된 조작"
+    coverageState: 3
+    evidence: "기능별 오류 표시는 있으나 공용 거부음 호출 경로가 없다."
+    completionCriteria: "동일 의미의 거부 사건이 한 Cue 정책으로 재생됨"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "SYS-07"
+    priority: 1
+    categoryId: "ui"
+    area: "Title/계정"
+    eventName: "시작·계정 선택·로그인 성공/실패"
+    coverageState: 3
+    evidence: "`00_Entry` 직접 AudioClip/SfxCue 의존성 0개다."
+    completionCriteria: "성공/실패가 구분되고 중복 콜백에도 1회만 재생됨"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "SYS-08"
+    priority: 1
+    categoryId: "ui"
+    area: "로딩/저장"
+    eventName: "로딩 완료·저장 성공·저장 오류"
+    coverageState: 3
+    evidence: "전역 Audio Controller는 있으나 기능 이벤트 연결이 없다."
+    completionCriteria: "저장 실패 등 중요한 사건만 정책적으로 재생됨"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "SYS-09"
+    priority: 1
+    categoryId: "ui"
+    area: "설정"
+    eventName: "SFX 볼륨 미리듣기"
+    coverageState: 3
+    evidence: "SFX Mixer 볼륨 제어는 있으나 변경 후 확인용 Preview Cue가 없다."
+    completionCriteria: "슬라이더 조작 중 대표 Cue로 최종 체감 볼륨 확인 가능"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "SYS-10"
+    priority: 2
+    categoryId: "ui"
+    area: "접근성/모바일"
+    eventName: "앱 Pause·복귀·오디오 포커스 복구 확인"
+    coverageState: 4
+    evidence: "SFX 개별 사건보다 모바일 수명·Mixer 복구 QA 범위다."
+    completionCriteria: "Android Pause/Resume 뒤 루프·중복·음소거 회귀 없음"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "COM-01"
+    priority: 0
+    categoryId: "common"
+    area: "공용 전투"
+    eventName: "일반 피격 Hit"
+    coverageState: 2
+    evidence: "핵심 생산 Scene/콘텐츠 Prefab의 `CombatFeedbackPlayer.hitSfx`가 비어 있다. 전체 직렬화 검색은 7/27 배정이나 현행 핵심 생산본은 0이다."
+    completionCriteria: "근접·원거리·다단 피격에서 Cooldown 정책대로 재생됨"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "COM-02"
+    priority: 0
+    categoryId: "common"
+    area: "공용 전투"
+    eventName: "유닛 사망 Death"
+    coverageState: 2
+    evidence: "`deathSfx` 직렬화 0/6, 생산 전투 피드백도 비어 있다."
+    completionCriteria: "사망 확정 시 1회, Pool 반환 뒤 잔재 없이 재생됨"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "COM-03"
+    priority: 0
+    categoryId: "common"
+    area: "공용 전투"
+    eventName: "약한 결정타 Weak Climax"
+    coverageState: 2
+    evidence: "`weakClimaxSfx` 0/6이다."
+    completionCriteria: "약한 결정타 판정에서 Hit와 의도한 레이어링으로 재생됨"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "COM-04"
+    priority: 0
+    categoryId: "common"
+    area: "공용 전투"
+    eventName: "강한 결정타 Strong Climax"
+    coverageState: 2
+    evidence: "`strongClimaxSfx` 0/6이다."
+    completionCriteria: "강한 결정타가 약한 결정타와 명확히 구분됨"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "COM-05"
+    priority: 0
+    categoryId: "monster_basic"
+    area: "몬스터 기본공격"
+    eventName: "우선 제작 5종 무쿠크·샤탁·루미·아르·루의 발사/휘두름/Impact"
+    coverageState: 2
+    evidence: "운영 기본공격 `sound` 전체 0/250이다. 과거 노션 일부 후보는 생산 연결이 아니다."
+    completionCriteria: "`BA_M_01`부터 5종의 실제 타격 시점·공간 위치·Cue가 Preview와 Runtime에서 일치"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "COM-06"
+    priority: 2
+    categoryId: "monster_basic"
+    area: "몬스터 기본공격"
+    eventName: "나머지 운영 몬스터의 기본공격 사건"
+    coverageState: 2
+    evidence: "운영 44종 범위의 출시용 Sound 배정이 확인되지 않는다."
+    completionCriteria: "44종 전체 Profile별 필수 사건 배정·Preview·생산 Runtime 검증"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "COM-07"
+    priority: 1
+    categoryId: "monster_active"
+    area: "공격형 액티브"
+    eventName: "Step별 발동·투사체·Impact·종료"
+    coverageState: 2
+    evidence: "공격형 조립 계약에는 Sound 공간이 있으나 생산/초안 `sound`와 Runtime `sfx`가 모두 0이다."
+    completionCriteria: "Step 시간축과 공간 Anchor에 맞춰 재생되고 연타 시 Voice 제한 통과"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "COM-08"
+    priority: 1
+    categoryId: "monster_active"
+    area: "효과형 액티브"
+    eventName: "시전자 발동·대상 적용·지속 시작/Loop/끝"
+    coverageState: 2
+    evidence: "효과형 계약은 VFX/SFX 구조를 지원하지만 Draft/Runtime 배정은 0이다."
+    completionCriteria: "1회성/지속형 각각 시작·Loop 정지·끝이 정상 동작"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "COM-09"
+    priority: 1
+    categoryId: "monster_active"
+    area: "액티브 Focus"
+    eventName: "전설 Focus 시작"
+    coverageState: 2
+    evidence: "`MonsterActiveFocusPresentationConfig.legendaryStartSfx`가 비어 있다."
+    completionCriteria: "전설 Focus 시작에 1회, Queue 연속 발동에도 겹침 제어됨"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "COM-10"
+    priority: 1
+    categoryId: "monster_active"
+    area: "액티브 Focus"
+    eventName: "신화 Focus 시작"
+    coverageState: 2
+    evidence: "`mythicStartSfx`가 비어 있다."
+    completionCriteria: "신화와 전설이 청각적으로 구분되고 연출 길이에 맞음"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "COM-11"
+    priority: 1
+    categoryId: "common"
+    area: "상태효과"
+    eventName: "버프·디버프 적용"
+    coverageState: 3
+    evidence: "상태효과 플로팅/VFX는 있으나 공용 상태 SFX Hook을 찾지 못했다."
+    completionCriteria: "중요한 상태만 화이트리스트로 연결해 난청·과밀 방지"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "COM-12"
+    priority: 2
+    categoryId: "common"
+    area: "상태효과"
+    eventName: "지속 Tick·해제·면역/저항"
+    coverageState: 3
+    evidence: "반복 Tick과 해제 사건에 Audio 정책이 없다."
+    completionCriteria: "Tick 주기 제한, 해제/저항 구분, 다수 대상 Voice 상한 검증"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "COM-13"
+    priority: 1
+    categoryId: "commander_skill"
+    area: "군단장 스킬"
+    eventName: "화염구·얼음 수정구 Casting/발동/Impact"
+    coverageState: 1
+    evidence: "두 스킬 모두 Cast·Impact Cue는 정상이다. `castingSfx`는 0/2다."
+    completionCriteria: "필요한 경우 Casting 배정 후 3단계 시간축과 중단 처리 검증"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "COM-14"
+    priority: 1
+    categoryId: "commander_skill"
+    area: "군단장 스킬"
+    eventName: "천둥 창·수호의 깃발·심연의 족쇄 발동/Impact"
+    coverageState: 2
+    evidence: "신규 3종의 Cast·Impact Cue가 비어 있다."
+    completionCriteria: "3종 각각 Casting/발동/Impact 중 필요한 사건을 승인 후 배정·재생 검증"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "MB-01"
+    priority: 0
+    categoryId: "main_battle"
+    area: "MainBattle"
+    eventName: "전투 시작·첫 웨이브 시작"
+    coverageState: 3
+    evidence: "`01_MainBattle` 직접 Audio 의존성 0개이며 웨이브 시작 SFX Hook이 없다."
+    completionCriteria: "입장/전투 시작 중복 없이 한 번 재생됨"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "MB-02"
+    priority: 1
+    categoryId: "main_battle"
+    area: "MainBattle"
+    eventName: "일반 웨이브 전환·증원 등장"
+    coverageState: 3
+    evidence: "웨이브 이벤트는 있으나 SFX 호출이 없다."
+    completionCriteria: "웨이브 경고와 실제 Spawn 타이밍이 일치"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "MB-03"
+    priority: 1
+    categoryId: "main_battle"
+    area: "MainBattle"
+    eventName: "엘리트·보스 등장 경고"
+    coverageState: 3
+    evidence: "공용 Climax Cue와 별개로 등장 경고 공간이 없다."
+    completionCriteria: "UI 경고·Spawn·카메라 연출과 동기화"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "MB-04"
+    priority: 1
+    categoryId: "main_battle"
+    area: "MainBattle HUD"
+    eventName: "파티 기력 만충·액티브 준비"
+    coverageState: 3
+    evidence: "HUD 발광은 있으나 준비음 호출이 없다."
+    completionCriteria: "80~90% 연출과 만충 사건을 혼동하지 않고 1회 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "MB-05"
+    priority: 1
+    categoryId: "main_battle"
+    area: "MainBattle 조작"
+    eventName: "몬스터 선택·드래그 시작·유효 배치"
+    coverageState: 3
+    evidence: "편성/배치 입력에 Audio 호출이 없다."
+    completionCriteria: "시작·성공·실패가 구분되고 반복 Drag에서 과밀하지 않음"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "MB-06"
+    priority: 1
+    categoryId: "main_battle"
+    area: "MainBattle 조작"
+    eventName: "예비대 교체·편성 적용"
+    coverageState: 3
+    evidence: "Runtime 편성 반영 사건에 SFX 경로가 없다."
+    completionCriteria: "실제 교체 완료 때만 재생됨"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "MB-07"
+    priority: 0
+    categoryId: "main_battle"
+    area: "MainBattle 결과"
+    eventName: "승리·보상 진입"
+    coverageState: 3
+    evidence: "결과/보상 화면에 공용 결과 Cue가 없다."
+    completionCriteria: "승리 확정과 보상 표시가 자연스럽게 연결됨"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "MB-08"
+    priority: 0
+    categoryId: "main_battle"
+    area: "MainBattle 결과"
+    eventName: "패배·재도전"
+    coverageState: 3
+    evidence: "패배/재시도 조작에 Audio 호출이 없다."
+    completionCriteria: "패배 연출과 재도전 버튼음을 분리해 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "EXP-01"
+    priority: 1
+    categoryId: "expedition"
+    area: "원정대"
+    eventName: "단계 선택·출정·전투 시작"
+    coverageState: 3
+    evidence: "Expedition 기능의 선택/입장 흐름에 SFX 호출이 없다."
+    completionCriteria: "출정 확정과 전장 조작 시작이 중복되지 않게 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "EXP-02"
+    priority: 1
+    categoryId: "expedition"
+    area: "원정대"
+    eventName: "웨이브 전환·새 적 역할 최초 등장"
+    coverageState: 3
+    evidence: "웨이브와 역할별 적 등장에 경고 SFX Hook이 없다."
+    completionCriteria: "일반 웨이브와 암살자·마법사·군단장 첫 등장을 필요한 강도로 구분"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "EXP-03"
+    priority: 0
+    categoryId: "expedition"
+    area: "원정대"
+    eventName: "아군·적 피격/사망/결정타"
+    coverageState: 2
+    evidence: "공용 CombatFeedback 생산 Cue가 비어 있어 원정대 전투도 공용 누락의 영향을 받는다."
+    completionCriteria: "COM-01~04 배정 뒤 1~100단계 전투에서 Voice 상한 검증"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "EXP-04"
+    priority: 1
+    categoryId: "expedition"
+    area: "원정대"
+    eventName: "단계 승리·패배·다음 단계 진입"
+    coverageState: 3
+    evidence: "결과 및 연속 진행 사건에 Audio 호출이 없다."
+    completionCriteria: "결과 확정과 다음 단계 시작이 각각 1회 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "EXP-05"
+    priority: 1
+    categoryId: "expedition"
+    area: "원정대"
+    eventName: "Gold·Equipment·Key 보상 획득"
+    coverageState: 2
+    evidence: "보상 데이터는 있으나 공용 `RewardAcquirePresenter.acquireSfx`가 비어 있다."
+    completionCriteria: "실제 지급 성공 뒤 보상 등급/종류 정책에 맞춰 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FORM-01"
+    priority: 1
+    categoryId: "ui"
+    area: "편성"
+    eventName: "슬롯 선택·배치 교환·저장 적용·불가"
+    coverageState: 3
+    evidence: "Formation 화면과 저장 흐름에 공용 조작 SFX Hook이 없다."
+    completionCriteria: "선택/교환/적용/거부가 데이터 성공 여부와 일치"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TUT-01"
+    priority: 1
+    categoryId: "ui"
+    area: "튜토리얼/해금"
+    eventName: "단계 강조·완료·기능/콘텐츠 해금"
+    coverageState: 3
+    evidence: "TutorialUnlock 흐름에 전용 SFX 공간이 없다."
+    completionCriteria: "강제 진행 단계와 실제 해금 확정에만 1회 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "ECO-01"
+    priority: 0
+    categoryId: "ui"
+    area: "공용 보상"
+    eventName: "아이템·재화 획득 Overlay"
+    coverageState: 2
+    evidence: "`RewardAcquirePresenter.acquireSfx` 0/1이다."
+    completionCriteria: "일반 획득 Overlay가 1회 재생되고 연속 획득 묶음 정책 통과"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "ECO-02"
+    priority: 0
+    categoryId: "ui"
+    area: "월드 드롭"
+    eventName: "아이템 출현·줍기"
+    coverageState: 3
+    evidence: "월드 드롭 기능은 있으나 공용 출현/줍기 SFX 연결이 없다."
+    completionCriteria: "출현과 실제 획득을 구분하고 거리 감쇠 정책 확정"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "ECO-03"
+    priority: 1
+    categoryId: "ui"
+    area: "오프라인 보상"
+    eventName: "보상 수령·광고 2배 적용"
+    coverageState: 3
+    evidence: "화면·보상 기능은 있으나 SFX 호출이 없다."
+    completionCriteria: "수령 확정/2배 성공 시점에 각각 1회 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "ECO-04"
+    priority: 1
+    categoryId: "ui"
+    area: "출석"
+    eventName: "일일 보상 수령·누적 보상 수령"
+    coverageState: 3
+    evidence: "Attendance 기능에 전용 SFX 경로가 없다."
+    completionCriteria: "실제 저장 성공 뒤 획득 Cue 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "ECO-05"
+    priority: 1
+    categoryId: "ui"
+    area: "우편"
+    eventName: "우편 열기·첨부 수령·일괄 수령"
+    coverageState: 3
+    evidence: "Mail/Mailbox 기능에 Audio 호출이 없다."
+    completionCriteria: "빈 첨부·일괄 수령을 구분하고 보상음 중복 없음"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "ECO-06"
+    priority: 1
+    categoryId: "ui"
+    area: "퀘스트"
+    eventName: "진행 완료·보상 수령"
+    coverageState: 3
+    evidence: "Quest/Daily Missions 이벤트에 SFX Hook이 없다."
+    completionCriteria: "완료 알림과 수령음을 분리해 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "ECO-07"
+    priority: 1
+    categoryId: "ui"
+    area: "상점"
+    eventName: "상품 선택·구매 성공·구매 불가"
+    coverageState: 3
+    evidence: "Shop Presenter 계열은 표시 전용이며 공용 구매음이 없다."
+    completionCriteria: "저장/재화 차감 성공 뒤만 구매음 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "ECO-08"
+    priority: 1
+    categoryId: "ui"
+    area: "몬스터 뽑기"
+    eventName: "1/10회 소환 시작·등급 공개·결과 확정"
+    coverageState: 3
+    evidence: "Summon 화면/로직에 출시용 SFX 호출을 찾지 못했다."
+    completionCriteria: "시작·Reveal·고등급 공개·결과의 단계별 Cue 동기화"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "ECO-09"
+    priority: 1
+    categoryId: "ui"
+    area: "군단장 스킬 소환"
+    eventName: "소환 시작·Reveal·결과"
+    coverageState: 3
+    evidence: "전용 소환 시스템은 있으나 Presentation SFX가 없다."
+    completionCriteria: "몬스터 뽑기와 공유/분리 정책을 확정하고 실제 소모 뒤 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "ECO-10"
+    priority: 1
+    categoryId: "ui"
+    area: "장비"
+    eventName: "장착·해제·강화 성공/실패·분해"
+    coverageState: 3
+    evidence: "Equipment 기능 전역에 공용 SFX 경로가 없다."
+    completionCriteria: "데이터 변경 성공 후만 사건별 Cue 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "ECO-11"
+    priority: 1
+    categoryId: "ui"
+    area: "인벤토리"
+    eventName: "선택·사용·수량 변경·버리기"
+    coverageState: 3
+    evidence: "Inventory 조작에 Audio 호출이 없다."
+    completionCriteria: "위험 조작은 확인/취소와 분리되고 실제 반영 후 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "ECO-12"
+    priority: 1
+    categoryId: "ui"
+    area: "성장"
+    eventName: "몬스터/군단장 레벨업·돌파·잠재능력 적용"
+    coverageState: 3
+    evidence: "MonsterGrowth/Commander/Potential에 성장 SFX Hook이 없다."
+    completionCriteria: "작은 성장과 돌파급 성장을 강도로 구분"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "ECO-13"
+    priority: 2
+    categoryId: "ui"
+    area: "도감"
+    eventName: "신규 등록·보상 수령"
+    coverageState: 3
+    evidence: "Collection 이벤트에 전용 SFX가 없다."
+    completionCriteria: "신규 발견과 단순 목록 열기를 구분"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "ECO-14"
+    priority: 1
+    categoryId: "ui"
+    area: "광고"
+    eventName: "광고 성공 보상·실패/취소"
+    coverageState: 3
+    evidence: "광고 SDK 자체보다 결과 피드백 Audio 공간이 없다."
+    completionCriteria: "성공 콜백 1회, 실패/취소 무보상 정책과 일치"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "CR-01"
+    priority: 0
+    categoryId: "castle_raid"
+    area: "군단의 역습"
+    eventName: "활성 포탑 7프로필 발사/명중/폭발"
+    coverageState: 0
+    evidence: "Cannon Lv1~2, Ballista Lv1~2, Fireball Lv1~3이 요구 Cue를 충족한다. 5개 Cue 모두 실제 Vendor Clip을 해석한다. 미사용 Cannon Lv3 파일은 활성 Catalog에서 제외한다."
+    completionCriteria: "현재 7프로필 실전 발사·Hit/Explosion의 3D 위치와 Voice 상한 재검증"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "CR-02"
+    priority: 1
+    categoryId: "castle_raid"
+    area: "군단의 역습"
+    eventName: "전투 입장·스테이지 시작"
+    coverageState: 3
+    evidence: "Scene 직접 Audio 의존성 0개, 입장 SFX Hook 없음."
+    completionCriteria: "난이도 선택 확정 후 전장 로드/시작 중 1회 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "CR-03"
+    priority: 1
+    categoryId: "castle_raid"
+    area: "군단의 역습"
+    eventName: "포탑 설치·배치 불가"
+    coverageState: 3
+    evidence: "배치 Preview/확정에 공용 SFX 공간이 없다."
+    completionCriteria: "유효 설치/거부가 구분되고 연속 입력 Cooldown 적용"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "CR-04"
+    priority: 1
+    categoryId: "castle_raid"
+    area: "군단의 역습"
+    eventName: "포탑 업그레이드·최대 레벨"
+    coverageState: 3
+    evidence: "공격 Cue 외 성장/조작 SFX가 없다."
+    completionCriteria: "자원 차감 성공 후 재생, 최대 단계 거부음 분리"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "CR-05"
+    priority: 1
+    categoryId: "castle_raid"
+    area: "군단의 역습"
+    eventName: "성벽·성채 피격/위험 경고"
+    coverageState: 3
+    evidence: "건물 피격 사건에 Audio 연결이 없다."
+    completionCriteria: "일반 타격 스팸을 제한하고 임계 체력 경고를 구분"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "CR-06"
+    priority: 1
+    categoryId: "castle_raid"
+    area: "군단의 역습"
+    eventName: "병영 생산·아군 출전"
+    coverageState: 3
+    evidence: "Barracks Spawn 사건에 SFX가 없다."
+    completionCriteria: "생산 완료와 전장 등장 타이밍 중 하나로 정책 확정"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "CR-07"
+    priority: 1
+    categoryId: "castle_raid"
+    area: "군단의 역습"
+    eventName: "함정 발동·피해"
+    coverageState: 3
+    evidence: "함정/방어 오브젝트별 SFX Hook이 없다."
+    completionCriteria: "함정 종류와 공간 위치에 맞게 3D 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "CR-08"
+    priority: 1
+    categoryId: "castle_raid"
+    area: "군단의 역습"
+    eventName: "적 웨이브·성벽 돌파"
+    coverageState: 3
+    evidence: "적 Spawn/목표 도달 경고에 Audio 호출이 없다."
+    completionCriteria: "화면 밖 사건도 필요할 때만 경고하고 반복 제한"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "CR-09"
+    priority: 0
+    categoryId: "castle_raid"
+    area: "군단의 역습"
+    eventName: "승리·패배"
+    coverageState: 3
+    evidence: "콘텐츠 결과 SFX 공간이 없다."
+    completionCriteria: "전투 종료 1회, 이후 UI 버튼음과 중복 없음"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "CR-10"
+    priority: 1
+    categoryId: "castle_raid"
+    area: "군단의 역습"
+    eventName: "단계 보상 획득"
+    coverageState: 2
+    evidence: "공용 `RewardAcquirePresenter`의 획득 Cue가 비어 있다."
+    completionCriteria: "인벤토리 실제 아이콘/보상 적용 뒤 획득음 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FR-01"
+    priority: 1
+    categoryId: "food_riot"
+    area: "식량 대소동"
+    eventName: "콘텐츠 입장·시작"
+    coverageState: 3
+    evidence: "Runtime Prefab 직접 AudioClip/SfxCue 의존성 0개다."
+    completionCriteria: "카운트다운/조작 시작과 동기화"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FR-02"
+    priority: 1
+    categoryId: "food_riot"
+    area: "식량 대소동"
+    eventName: "식량 출현·줍기·배달"
+    coverageState: 3
+    evidence: "핵심 수집/운반 사건에 Audio Hook이 없다."
+    completionCriteria: "출현/줍기/납품을 구분하고 다량 수집 Cooldown 적용"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FR-03"
+    priority: 1
+    categoryId: "food_riot"
+    area: "식량 대소동"
+    eventName: "적 피격·처치·군단장 피격"
+    coverageState: 2
+    evidence: "공용 CombatFeedback 4종이 모두 비어 있다."
+    completionCriteria: "공용 전투 Cue 배정 뒤 콘텐츠 Prefab에서 실제 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FR-04"
+    priority: 1
+    categoryId: "food_riot"
+    area: "식량 대소동"
+    eventName: "제한시간 임박·목표 달성"
+    coverageState: 3
+    evidence: "Timer/목표 사건에 SFX가 없다."
+    completionCriteria: "경고 반복 간격과 달성 1회 정책 확정"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FR-05"
+    priority: 1
+    categoryId: "food_riot"
+    area: "식량 대소동"
+    eventName: "성공·실패·보상"
+    coverageState: 3
+    evidence: "결과 SFX 경로가 없다."
+    completionCriteria: "종료 상태별 Cue와 보상 획득 Cue가 중복되지 않음"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-01"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "점프"
+    coverageState: 0
+    evidence: "`DemoDungeonAudio.jumpSfx` 배정 및 재생 호출 확인."
+    completionCriteria: "생산 경로에서 실제 동작·볼륨 확인"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-02"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "상자 열기"
+    coverageState: 0
+    evidence: "`chestOpenSfx` 배정 및 호출 확인."
+    completionCriteria: "상자당 1회 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-03"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "퀴즈 UI 등장"
+    coverageState: 0
+    evidence: "`quizUiSfx` 배정 및 호출 확인."
+    completionCriteria: "UI 표시와 동기화"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-04"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "열쇠 획득"
+    coverageState: 0
+    evidence: "`keySfx` 배정 및 호출 확인."
+    completionCriteria: "획득 확정 시 1회 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-05"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "일반 수집"
+    coverageState: 0
+    evidence: "`collectSfx` 배정 및 호출 확인."
+    completionCriteria: "연속 수집 시 과밀하지 않음"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-06"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "일반 문"
+    coverageState: 0
+    evidence: "`doorSfx` 배정 및 호출 확인."
+    completionCriteria: "문 상태 변경과 동기화"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-07"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "감옥 문"
+    coverageState: 0
+    evidence: "`prisonDoorSfx` 배정 및 호출 확인."
+    completionCriteria: "일반 문과 구분됨"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-08"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "잠금 실패"
+    coverageState: 0
+    evidence: "`lockFailSfx` 배정 및 호출 확인."
+    completionCriteria: "실패 시에만 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-09"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "불 점화"
+    coverageState: 0
+    evidence: "`fireIgniteSfx` 배정 및 호출 확인."
+    completionCriteria: "Loop 시작 전에 1회 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-10"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "불 Loop"
+    coverageState: 0
+    evidence: "`fireLoopSfx` 배정 및 호출 확인."
+    completionCriteria: "종료/비활성 시 Loop가 반드시 정지"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-11"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "가시 함정"
+    coverageState: 0
+    evidence: "`spikeSfx` 배정 및 호출 확인."
+    completionCriteria: "반복 발동 Cooldown 확인"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-12"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "톱날 Loop"
+    coverageState: 0
+    evidence: "`sawLoopSfx` 배정 및 호출 확인."
+    completionCriteria: "거리 감쇠와 비활성 정지 확인"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-13"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "화살 함정"
+    coverageState: 0
+    evidence: "`arrowSfx` 배정 및 호출 확인."
+    completionCriteria: "발사/Impact 정책 확인"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-14"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "미믹 등장·공격"
+    coverageState: 0
+    evidence: "`mimicSfx` 배정 및 호출 확인."
+    completionCriteria: "등장 사건과 동기화"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-15"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "추종자 공격"
+    coverageState: 0
+    evidence: "`followerAttackSfx` 배정 및 호출 확인."
+    completionCriteria: "다수 공격 Voice 제한 확인"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-16"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "경비 공격"
+    coverageState: 0
+    evidence: "`guardAttackSfx` 배정 및 호출 확인."
+    completionCriteria: "다수 공격 Voice 제한 확인"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-17"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "클리어"
+    coverageState: 0
+    evidence: "`clearSfx` 배정 및 호출 확인."
+    completionCriteria: "결과 UI와 중복 없이 1회 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-18"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "실패"
+    coverageState: 0
+    evidence: "`failSfx` 배정 및 호출 확인."
+    completionCriteria: "실패 확정 시 1회 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "TS-19"
+    priority: 1
+    categoryId: "treasure_spirit"
+    area: "보물 정령"
+    eventName: "공용 피격·사망·결정타"
+    coverageState: 2
+    evidence: "전용 18사건은 정상이나 콘텐츠 Prefab의 공용 CombatFeedback 4종은 비어 있다."
+    completionCriteria: "COM-01~04 배정 후 보물 정령 전투에서도 재생 확인"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-01"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "투사체 기본공격 시작/발동/Hit"
+    coverageState: 1
+    evidence: "Start 비어 있음, Resolve·Hit 배정."
+    completionCriteria: "필요한 시작음 여부 확정 후 3단계 시간축 검증"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-02"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "근접공격 시작/발동/Hit"
+    coverageState: 1
+    evidence: "Start 비어 있음, Resolve·Hit 배정."
+    completionCriteria: "공격 애니메이션과 발동/Hit 동기화"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-03"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "표식 강타 시작/발동/Hit"
+    coverageState: 1
+    evidence: "Resolve만 배정, Start·Hit 비어 있음."
+    completionCriteria: "필요한 단계 승인·배정 후 실제 판정 동기화"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-04"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "추적 표식 시작/발동/Hit"
+    coverageState: 1
+    evidence: "Resolve·Hit 배정, Start 비어 있음."
+    completionCriteria: "표식 생성과 피해 사건을 구분해 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-05"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "블랙홀 시작/발동/Hit"
+    coverageState: 1
+    evidence: "Resolve만 배정, Start·Hit 비어 있음."
+    completionCriteria: "생성·유지·피해·종료 사건 정책 확정"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-06"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "블랙홀 종료 효과"
+    coverageState: 2
+    evidence: "`blackHoleEndEffects` Start·Resolve·Hit 모두 비어 있다."
+    completionCriteria: "종료 연출에 필요한 단계를 배정하고 Loop 잔류 없음"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-07"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "선형 강타 시작/발동/Hit"
+    coverageState: 1
+    evidence: "Resolve만 배정, Start·Hit 비어 있음."
+    completionCriteria: "예고와 실제 타격을 청각적으로 구분"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-08"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "타락 고리 시작/발동/Hit"
+    coverageState: 1
+    evidence: "Resolve만 배정, Start·Hit 비어 있음."
+    completionCriteria: "범위 생성·피해 시간축 검증"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-09"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "최종 돌진 시작/발동/Hit"
+    coverageState: 0
+    evidence: "Start·Resolve·Hit 모두 배정됐다."
+    completionCriteria: "실제 전투에서 3단계 동기화·볼륨 확인"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-10"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "시간초과 전멸 시작/발동/Hit"
+    coverageState: 1
+    evidence: "Start·Resolve 배정, Hit 비어 있음."
+    completionCriteria: "전멸 확정 사건과 결과음 중복 여부 확인"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-11"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "뒤틀린 전장 시작/발동/Hit"
+    coverageState: 1
+    evidence: "Resolve만 배정, Start·Hit 비어 있음."
+    completionCriteria: "바닥 연출의 시작/유지 정책 확정"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-12"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "낙하 탄막 시작/발동/Hit"
+    coverageState: 0
+    evidence: "주 효과 Start·Resolve·Hit 모두 배정됐다."
+    completionCriteria: "다발 낙하 시 Voice 폭주 없이 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-13"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "낙하 탄막 개별 Impact 보조"
+    coverageState: 2
+    evidence: "`impactEffects` Start·Resolve·Hit가 모두 비어 있다."
+    completionCriteria: "주 효과와 개별 Impact의 역할을 정하고 필요할 때만 배정"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-14"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "3단계 Phase 전환"
+    coverageState: 2
+    evidence: "`transitionSound` 0/3이다."
+    completionCriteria: "Phase 전환 연출별 1회 재생"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-15"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "Break 시작·회복"
+    coverageState: 3
+    evidence: "Break 상태 이벤트는 있으나 명시적 SFX 공간을 찾지 못했다."
+    completionCriteria: "Break/복귀가 공격음과 구분되도록 Hook·Cue 검증"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-16"
+    priority: 0
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "보스 피격·사망·결정타"
+    coverageState: 2
+    evidence: "Runtime Prefab의 공용 CombatFeedback 4종이 비어 있다."
+    completionCriteria: "COM-01~04 공용 배정 뒤 보스전 실전 확인"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-17"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "군단장 사망·회피"
+    coverageState: 3
+    evidence: "전투 Controller 이벤트에는 명시적 SFX 공간이 없다."
+    completionCriteria: "사망/회피 판정과 1회 재생 보장"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "FC-18"
+    priority: 1
+    categoryId: "fallen_commander"
+    area: "타락 군단장"
+    eventName: "승리·패배·나가기 확인"
+    coverageState: 3
+    evidence: "결과·Exit Confirm에 SFX 호출이 없다."
+    completionCriteria: "상태별 결과음과 공용 버튼음 중복 없음"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "GT-01"
+    priority: 1
+    categoryId: "guardian_trial"
+    area: "고대 수호수"
+    eventName: "콘텐츠 입장·전투 시작"
+    coverageState: 3
+    evidence: "Runtime Prefab 직접 AudioClip/SfxCue 의존성 0개다."
+    completionCriteria: "입장·카운트다운·조작 시작 동기화"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "GT-02"
+    priority: 1
+    categoryId: "guardian_trial"
+    area: "고대 수호수"
+    eventName: "적 웨이브·강적 등장"
+    coverageState: 3
+    evidence: "웨이브/적 등장 SFX Hook이 없다."
+    completionCriteria: "Spawn과 경고 타이밍 일치"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "GT-03"
+    priority: 1
+    categoryId: "guardian_trial"
+    area: "고대 수호수"
+    eventName: "군단장·적 피격/사망"
+    coverageState: 2
+    evidence: "공용 CombatFeedback 생산 연결이 비어 있다."
+    completionCriteria: "COM-01~04 배정 뒤 콘텐츠 실전 확인"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "GT-04"
+    priority: 1
+    categoryId: "guardian_trial"
+    area: "고대 수호수"
+    eventName: "수호수 피해·위험·단계 상승"
+    coverageState: 3
+    evidence: "목표 오브젝트/무한 단계 사건에 Audio 경로가 없다."
+    completionCriteria: "일반 피해 스팸을 제한하고 위험/단계 전환을 구분"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""
+  - id: "GT-05"
+    priority: 1
+    categoryId: "guardian_trial"
+    area: "고대 수호수"
+    eventName: "성공·실패·보상"
+    coverageState: 3
+    evidence: "결과 SFX 경로가 없다."
+    completionCriteria: "결과 확정·보상 적용·버튼 입력의 중복 재생 없음"
+    assignmentState: 0
+    cue: {fileID: 0}
+    note: ""

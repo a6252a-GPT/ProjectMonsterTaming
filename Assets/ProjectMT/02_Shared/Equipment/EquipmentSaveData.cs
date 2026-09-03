@@ -52,6 +52,12 @@ namespace ProjectMT.Shared.Equipment
             return clone;
         }
 
+        internal void MigrateLegacyLevels()
+        {
+            if (instances == null) return;
+            foreach (var instance in instances) instance?.MigrateLegacyLevel();
+        }
+
         internal void Repair()
         {
             if (!OfflineAutoDismantlePolicyInfo.IsValid(offlineAutoDismantlePolicy))
@@ -99,9 +105,9 @@ namespace ProjectMT.Shared.Equipment
         }
 
         // 신규 장비 묶음은 일부 유실 없이 전량 검증·전량 추가한다.
-        internal bool TryAcquire(IReadOnlyList<EquipmentInstanceData> newInstances)
+        internal bool TryAcquire(IReadOnlyList<EquipmentInstanceData> newInstances, int maximumItemLevel)
         {
-            if (newInstances == null || newInstances.Count == 0 ||
+            if (maximumItemLevel < 1 || newInstances == null || newInstances.Count == 0 ||
                 instances.Count + newInstances.Count > MaxTotalQuantity)
             {
                 return false;
@@ -111,8 +117,10 @@ namespace ProjectMT.Shared.Equipment
             var acceptedIds = new HashSet<string>(StringComparer.Ordinal);
             for (var i = 0; i < newInstances.Count; i++)
             {
-                var candidate = newInstances[i]?.Clone();
-                if (candidate == null || !candidate.IsValidForAcquire() ||
+                var source = newInstances[i];
+                if (source == null || source.ItemLevel < 1 || source.ItemLevel > maximumItemLevel) return false;
+                var candidate = source.Clone();
+                if (candidate == null || !candidate.IsValidForAcquire(maximumItemLevel) ||
                     FindIndex(candidate.InstanceId) >= 0 || !acceptedIds.Add(candidate.InstanceId))
                 {
                     return false;

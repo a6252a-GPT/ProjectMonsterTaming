@@ -223,7 +223,7 @@ MonoBehaviour:
   deathClip: {fileID: 1827226128182048838, guid: c4cec172c220dba45837d3ba5d179ecd, type: 3}
   deathSpeed: 1
   combatType: 1
-  basicAttackProfile: {fileID: 11400000, guid: 46d39a607f1261f4d859b8143b8c2046, type: 2}
+  basicAttackProfile: {fileID: 11400000, guid: 41702aed9ca465540b77938847649334, type: 2}
   basicAttackVfxBindings:
   - attackId: BA_R_02
     slotId: launch
@@ -278,6 +278,54 @@ MonoBehaviour:
     motionId: 
     state: 0
     prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_R_05
+    slotId: multi_launch
+    motionId: attack01
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_R_05
+    slotId: projectile
+    motionId: 
+    state: 1
+    prefab: {fileID: 6741734988720072826, guid: b0f543f57045de94cb7178a7449dbef6, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 3
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0.84707355, z: 0.4490379}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_R_05
+    slotId: hit
+    motionId: 
+    state: 1
+    prefab: {fileID: 4126085730423287020, guid: 2404aadc0ce1d2a40a975e0a603faa72, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1

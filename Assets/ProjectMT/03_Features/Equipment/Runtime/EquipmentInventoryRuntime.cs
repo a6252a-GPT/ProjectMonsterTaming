@@ -12,21 +12,53 @@ namespace ProjectMT.Features.Equipment
     // 보유 인스턴스(옵션 포함) + 부위·등급이 결정하는 고정 정보(아이콘·핵심 능력치) + 현재 장착 여부.
     public readonly struct EquipmentItemView
     {
-        public EquipmentItemView(EquipmentInstanceData instance, EquipmentDefinition definition, bool isEquipped)
+        public EquipmentItemView(
+            EquipmentInstanceData instance,
+            EquipmentDefinition definition,
+            bool isEquipped,
+            EquipmentBalanceConfig balance)
         {
             Instance = instance;
             Definition = definition;
             IsEquipped = isEquipped;
+            Balance = balance;
         }
 
         public EquipmentInstanceData Instance { get; }
         public EquipmentDefinition Definition { get; }
         public bool IsEquipped { get; }
         public bool IsLocked => Instance?.IsLocked ?? false;
+        public EquipmentBalanceConfig Balance { get; }
 
         public string InstanceId => Instance?.InstanceId ?? string.Empty;
         public EquipmentPart Part => Instance?.Part ?? default;
         public EquipmentGrade Grade => Instance?.Grade ?? default;
+        public int ItemLevel => Instance?.ItemLevel ?? 0;
+        public IReadOnlyList<EquipmentStatContribution> CoreContributions =>
+            Instance == null || Balance == null
+                ? Array.Empty<EquipmentStatContribution>()
+                : EquipmentStatCalculator.GetCoreContributions(Instance, Balance);
+        public IReadOnlyList<EquipmentStatContribution> TotalContributions =>
+            Instance == null || Balance == null
+                ? Array.Empty<EquipmentStatContribution>()
+                : EquipmentStatCalculator.GetTotalContributions(Instance, Balance);
+
+        public string GetCoreStatSummary()
+        {
+            var values = CoreContributions;
+            if (values.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var lines = new string[values.Count];
+            for (var index = 0; index < values.Count; index++)
+            {
+                lines[index] = $"{EquipmentGradeStatTable.GetStatDisplayName(values[index].StatType)} +{values[index].Value:0.##}%";
+            }
+
+            return string.Join("\n", lines);
+        }
     }
 
     // 08.10 안건준 재작성 - 보유 장비 인벤토리 + 장착 상태 조회용 파사드.
@@ -97,10 +129,26 @@ namespace ProjectMT.Features.Equipment
 
                 var definition = catalog.GetDefinitionForPart(instance.Part, instance.Grade, balance);
                 var equippedId = equipmentView.GetEquippedInstanceId(instance.Part);
-                result.Add(new EquipmentItemView(instance, definition, equippedId == instance.InstanceId));
+                result.Add(new EquipmentItemView(instance, definition, equippedId == instance.InstanceId, balance));
             }
 
             return result;
+        }
+
+        internal static bool TryGetProgressView(
+            out GameProgressView view,
+            out EquipmentBalanceConfig equipmentBalance)
+        {
+            if (IsReady)
+            {
+                view = progress.View;
+                equipmentBalance = balance;
+                return true;
+            }
+
+            view = default;
+            equipmentBalance = null;
+            return false;
         }
 
         public static int TotalQuantity => IsReady ? progress.View.Equipment.Instances.Count : 0;
@@ -129,7 +177,7 @@ namespace ProjectMT.Features.Equipment
             if (IsReady && progress.View.Equipment.TryGetEquipped(part, out var instance))
             {
                 var definition = catalog.GetDefinitionForPart(instance.Part, instance.Grade, balance);
-                item = new EquipmentItemView(instance, definition, true);
+                item = new EquipmentItemView(instance, definition, true, balance);
                 return true;
             }
 

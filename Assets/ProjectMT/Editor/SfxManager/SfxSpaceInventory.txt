@@ -1,0 +1,113 @@
+# ProjectMT SFX space inventory v1
+# Source: ProjectMT 개인파일/Docs/85C_SFX_필요전수조사표.md
+# id`tpriority`tcategoryId`tarea`teventName`tcoverageState`tevidence`tcompletionCriteria
+SYS-01	P0	ui	공통 UI	기본 버튼 선택·확인	MissingHook	`UIButtonClickPunch`는 시각 Punch만 처리하며 공용 UI SFX 호출 경로가 없다.	공용 UI Cue를 연결하고 대표 화면 3곳에서 중복 재생 없이 들림
+SYS-02	P0	ui	공통 UI	취소·뒤로가기·패널 닫기	MissingHook	`UIPanelPopAnimator`는 Tween만 처리한다. 패널 수명 이벤트에 Audio 호출이 없다.	뒤로가기와 닫기 버튼이 같은 공용 Cue 정책으로 재생됨
+SYS-03	P1	ui	공통 UI	패널 열기·팝업 등장	MissingHook	공용 Panel 표시 애니메이터에 SFX 공간이 없다.	중첩 팝업에서도 1회만 재생되고 화면별 볼륨 편차가 없음
+SYS-04	P1	ui	공통 UI	탭·정렬·필터 전환	MissingHook	UI 기능 코드 전역 검색에서 전환 SFX 호출을 찾지 못했다.	탭/정렬/필터 공용 Cue 또는 명시적 무음 정책 확정
+SYS-05	P1	ui	공통 UI	토글·슬라이더 값 변경	MissingHook	Settings 포함 조작 UI에 공용 변화음 경로가 없다.	토글과 슬라이더에 과밀하지 않은 변화음 적용·실기기 확인
+SYS-06	P0	ui	공통 UI	비활성·잠금·재화 부족·잘못된 조작	MissingHook	기능별 오류 표시는 있으나 공용 거부음 호출 경로가 없다.	동일 의미의 거부 사건이 한 Cue 정책으로 재생됨
+SYS-07	P1	ui	Title/계정	시작·계정 선택·로그인 성공/실패	MissingHook	`00_Entry` 직접 AudioClip/SfxCue 의존성 0개다.	성공/실패가 구분되고 중복 콜백에도 1회만 재생됨
+SYS-08	P1	ui	로딩/저장	로딩 완료·저장 성공·저장 오류	MissingHook	전역 Audio Controller는 있으나 기능 이벤트 연결이 없다.	저장 실패 등 중요한 사건만 정책적으로 재생됨
+SYS-09	P1	ui	설정	SFX 볼륨 미리듣기	MissingHook	SFX Mixer 볼륨 제어는 있으나 변경 후 확인용 Preview Cue가 없다.	슬라이더 조작 중 대표 Cue로 최종 체감 볼륨 확인 가능
+SYS-10	P2	ui	접근성/모바일	앱 Pause·복귀·오디오 포커스 복구 확인	FollowUp	SFX 개별 사건보다 모바일 수명·Mixer 복구 QA 범위다.	Android Pause/Resume 뒤 루프·중복·음소거 회귀 없음
+COM-01	P0	common	공용 전투	일반 피격 Hit	EmptySlot	핵심 생산 Scene/콘텐츠 Prefab의 `CombatFeedbackPlayer.hitSfx`가 비어 있다. 전체 직렬화 검색은 7/27 배정이나 현행 핵심 생산본은 0이다.	근접·원거리·다단 피격에서 Cooldown 정책대로 재생됨
+COM-02	P0	common	공용 전투	유닛 사망 Death	EmptySlot	`deathSfx` 직렬화 0/6, 생산 전투 피드백도 비어 있다.	사망 확정 시 1회, Pool 반환 뒤 잔재 없이 재생됨
+COM-03	P0	common	공용 전투	약한 결정타 Weak Climax	EmptySlot	`weakClimaxSfx` 0/6이다.	약한 결정타 판정에서 Hit와 의도한 레이어링으로 재생됨
+COM-04	P0	common	공용 전투	강한 결정타 Strong Climax	EmptySlot	`strongClimaxSfx` 0/6이다.	강한 결정타가 약한 결정타와 명확히 구분됨
+COM-05	P0	monster_basic	몬스터 기본공격	우선 제작 5종 무쿠크·샤탁·루미·아르·루의 발사/휘두름/Impact	EmptySlot	운영 기본공격 `sound` 전체 0/250이다. 과거 노션 일부 후보는 생산 연결이 아니다.	`BA_M_01`부터 5종의 실제 타격 시점·공간 위치·Cue가 Preview와 Runtime에서 일치
+COM-06	P2	monster_basic	몬스터 기본공격	나머지 운영 몬스터의 기본공격 사건	EmptySlot	운영 44종 범위의 출시용 Sound 배정이 확인되지 않는다.	44종 전체 Profile별 필수 사건 배정·Preview·생산 Runtime 검증
+COM-07	P1	monster_active	공격형 액티브	Step별 발동·투사체·Impact·종료	EmptySlot	공격형 조립 계약에는 Sound 공간이 있으나 생산/초안 `sound`와 Runtime `sfx`가 모두 0이다.	Step 시간축과 공간 Anchor에 맞춰 재생되고 연타 시 Voice 제한 통과
+COM-08	P1	monster_active	효과형 액티브	시전자 발동·대상 적용·지속 시작/Loop/끝	EmptySlot	효과형 계약은 VFX/SFX 구조를 지원하지만 Draft/Runtime 배정은 0이다.	1회성/지속형 각각 시작·Loop 정지·끝이 정상 동작
+COM-09	P1	monster_active	액티브 Focus	전설 Focus 시작	EmptySlot	`MonsterActiveFocusPresentationConfig.legendaryStartSfx`가 비어 있다.	전설 Focus 시작에 1회, Queue 연속 발동에도 겹침 제어됨
+COM-10	P1	monster_active	액티브 Focus	신화 Focus 시작	EmptySlot	`mythicStartSfx`가 비어 있다.	신화와 전설이 청각적으로 구분되고 연출 길이에 맞음
+COM-11	P1	common	상태효과	버프·디버프 적용	MissingHook	상태효과 플로팅/VFX는 있으나 공용 상태 SFX Hook을 찾지 못했다.	중요한 상태만 화이트리스트로 연결해 난청·과밀 방지
+COM-12	P2	common	상태효과	지속 Tick·해제·면역/저항	MissingHook	반복 Tick과 해제 사건에 Audio 정책이 없다.	Tick 주기 제한, 해제/저항 구분, 다수 대상 Voice 상한 검증
+COM-13	P1	commander_skill	군단장 스킬	화염구·얼음 수정구 Casting/발동/Impact	Partial	두 스킬 모두 Cast·Impact Cue는 정상이다. `castingSfx`는 0/2다.	필요한 경우 Casting 배정 후 3단계 시간축과 중단 처리 검증
+COM-14	P1	commander_skill	군단장 스킬	천둥 창·수호의 깃발·심연의 족쇄 발동/Impact	EmptySlot	신규 3종의 Cast·Impact Cue가 비어 있다.	3종 각각 Casting/발동/Impact 중 필요한 사건을 승인 후 배정·재생 검증
+MB-01	P0	main_battle	MainBattle	전투 시작·첫 웨이브 시작	MissingHook	`01_MainBattle` 직접 Audio 의존성 0개이며 웨이브 시작 SFX Hook이 없다.	입장/전투 시작 중복 없이 한 번 재생됨
+MB-02	P1	main_battle	MainBattle	일반 웨이브 전환·증원 등장	MissingHook	웨이브 이벤트는 있으나 SFX 호출이 없다.	웨이브 경고와 실제 Spawn 타이밍이 일치
+MB-03	P1	main_battle	MainBattle	엘리트·보스 등장 경고	MissingHook	공용 Climax Cue와 별개로 등장 경고 공간이 없다.	UI 경고·Spawn·카메라 연출과 동기화
+MB-04	P1	main_battle	MainBattle HUD	파티 기력 만충·액티브 준비	MissingHook	HUD 발광은 있으나 준비음 호출이 없다.	80~90% 연출과 만충 사건을 혼동하지 않고 1회 재생
+MB-05	P1	main_battle	MainBattle 조작	몬스터 선택·드래그 시작·유효 배치	MissingHook	편성/배치 입력에 Audio 호출이 없다.	시작·성공·실패가 구분되고 반복 Drag에서 과밀하지 않음
+MB-06	P1	main_battle	MainBattle 조작	예비대 교체·편성 적용	MissingHook	Runtime 편성 반영 사건에 SFX 경로가 없다.	실제 교체 완료 때만 재생됨
+MB-07	P0	main_battle	MainBattle 결과	승리·보상 진입	MissingHook	결과/보상 화면에 공용 결과 Cue가 없다.	승리 확정과 보상 표시가 자연스럽게 연결됨
+MB-08	P0	main_battle	MainBattle 결과	패배·재도전	MissingHook	패배/재시도 조작에 Audio 호출이 없다.	패배 연출과 재도전 버튼음을 분리해 재생
+EXP-01	P1	expedition	원정대	단계 선택·출정·전투 시작	MissingHook	Expedition 기능의 선택/입장 흐름에 SFX 호출이 없다.	출정 확정과 전장 조작 시작이 중복되지 않게 재생
+EXP-02	P1	expedition	원정대	웨이브 전환·새 적 역할 최초 등장	MissingHook	웨이브와 역할별 적 등장에 경고 SFX Hook이 없다.	일반 웨이브와 암살자·마법사·군단장 첫 등장을 필요한 강도로 구분
+EXP-03	P0	expedition	원정대	아군·적 피격/사망/결정타	EmptySlot	공용 CombatFeedback 생산 Cue가 비어 있어 원정대 전투도 공용 누락의 영향을 받는다.	COM-01~04 배정 뒤 1~100단계 전투에서 Voice 상한 검증
+EXP-04	P1	expedition	원정대	단계 승리·패배·다음 단계 진입	MissingHook	결과 및 연속 진행 사건에 Audio 호출이 없다.	결과 확정과 다음 단계 시작이 각각 1회 재생
+EXP-05	P1	expedition	원정대	Gold·Equipment·Key 보상 획득	EmptySlot	보상 데이터는 있으나 공용 `RewardAcquirePresenter.acquireSfx`가 비어 있다.	실제 지급 성공 뒤 보상 등급/종류 정책에 맞춰 재생
+FORM-01	P1	ui	편성	슬롯 선택·배치 교환·저장 적용·불가	MissingHook	Formation 화면과 저장 흐름에 공용 조작 SFX Hook이 없다.	선택/교환/적용/거부가 데이터 성공 여부와 일치
+TUT-01	P1	ui	튜토리얼/해금	단계 강조·완료·기능/콘텐츠 해금	MissingHook	TutorialUnlock 흐름에 전용 SFX 공간이 없다.	강제 진행 단계와 실제 해금 확정에만 1회 재생
+ECO-01	P0	ui	공용 보상	아이템·재화 획득 Overlay	EmptySlot	`RewardAcquirePresenter.acquireSfx` 0/1이다.	일반 획득 Overlay가 1회 재생되고 연속 획득 묶음 정책 통과
+ECO-02	P0	ui	월드 드롭	아이템 출현·줍기	MissingHook	월드 드롭 기능은 있으나 공용 출현/줍기 SFX 연결이 없다.	출현과 실제 획득을 구분하고 거리 감쇠 정책 확정
+ECO-03	P1	ui	오프라인 보상	보상 수령·광고 2배 적용	MissingHook	화면·보상 기능은 있으나 SFX 호출이 없다.	수령 확정/2배 성공 시점에 각각 1회 재생
+ECO-04	P1	ui	출석	일일 보상 수령·누적 보상 수령	MissingHook	Attendance 기능에 전용 SFX 경로가 없다.	실제 저장 성공 뒤 획득 Cue 재생
+ECO-05	P1	ui	우편	우편 열기·첨부 수령·일괄 수령	MissingHook	Mail/Mailbox 기능에 Audio 호출이 없다.	빈 첨부·일괄 수령을 구분하고 보상음 중복 없음
+ECO-06	P1	ui	퀘스트	진행 완료·보상 수령	MissingHook	Quest/Daily Missions 이벤트에 SFX Hook이 없다.	완료 알림과 수령음을 분리해 재생
+ECO-07	P1	ui	상점	상품 선택·구매 성공·구매 불가	MissingHook	Shop Presenter 계열은 표시 전용이며 공용 구매음이 없다.	저장/재화 차감 성공 뒤만 구매음 재생
+ECO-08	P1	ui	몬스터 뽑기	1/10회 소환 시작·등급 공개·결과 확정	MissingHook	Summon 화면/로직에 출시용 SFX 호출을 찾지 못했다.	시작·Reveal·고등급 공개·결과의 단계별 Cue 동기화
+ECO-09	P1	ui	군단장 스킬 소환	소환 시작·Reveal·결과	MissingHook	전용 소환 시스템은 있으나 Presentation SFX가 없다.	몬스터 뽑기와 공유/분리 정책을 확정하고 실제 소모 뒤 재생
+ECO-10	P1	ui	장비	장착·해제·강화 성공/실패·분해	MissingHook	Equipment 기능 전역에 공용 SFX 경로가 없다.	데이터 변경 성공 후만 사건별 Cue 재생
+ECO-11	P1	ui	인벤토리	선택·사용·수량 변경·버리기	MissingHook	Inventory 조작에 Audio 호출이 없다.	위험 조작은 확인/취소와 분리되고 실제 반영 후 재생
+ECO-12	P1	ui	성장	몬스터/군단장 레벨업·돌파·잠재능력 적용	MissingHook	MonsterGrowth/Commander/Potential에 성장 SFX Hook이 없다.	작은 성장과 돌파급 성장을 강도로 구분
+ECO-13	P2	ui	도감	신규 등록·보상 수령	MissingHook	Collection 이벤트에 전용 SFX가 없다.	신규 발견과 단순 목록 열기를 구분
+ECO-14	P1	ui	광고	광고 성공 보상·실패/취소	MissingHook	광고 SDK 자체보다 결과 피드백 Audio 공간이 없다.	성공 콜백 1회, 실패/취소 무보상 정책과 일치
+CR-01	P0	castle_raid	군단의 역습	활성 포탑 7프로필 발사/명중/폭발	Connected	Cannon Lv1~2, Ballista Lv1~2, Fireball Lv1~3이 요구 Cue를 충족한다. 5개 Cue 모두 실제 Vendor Clip을 해석한다. 미사용 Cannon Lv3 파일은 활성 Catalog에서 제외한다.	현재 7프로필 실전 발사·Hit/Explosion의 3D 위치와 Voice 상한 재검증
+CR-02	P1	castle_raid	군단의 역습	전투 입장·스테이지 시작	MissingHook	Scene 직접 Audio 의존성 0개, 입장 SFX Hook 없음.	난이도 선택 확정 후 전장 로드/시작 중 1회 재생
+CR-03	P1	castle_raid	군단의 역습	포탑 설치·배치 불가	MissingHook	배치 Preview/확정에 공용 SFX 공간이 없다.	유효 설치/거부가 구분되고 연속 입력 Cooldown 적용
+CR-04	P1	castle_raid	군단의 역습	포탑 업그레이드·최대 레벨	MissingHook	공격 Cue 외 성장/조작 SFX가 없다.	자원 차감 성공 후 재생, 최대 단계 거부음 분리
+CR-05	P1	castle_raid	군단의 역습	성벽·성채 피격/위험 경고	MissingHook	건물 피격 사건에 Audio 연결이 없다.	일반 타격 스팸을 제한하고 임계 체력 경고를 구분
+CR-06	P1	castle_raid	군단의 역습	병영 생산·아군 출전	MissingHook	Barracks Spawn 사건에 SFX가 없다.	생산 완료와 전장 등장 타이밍 중 하나로 정책 확정
+CR-07	P1	castle_raid	군단의 역습	함정 발동·피해	MissingHook	함정/방어 오브젝트별 SFX Hook이 없다.	함정 종류와 공간 위치에 맞게 3D 재생
+CR-08	P1	castle_raid	군단의 역습	적 웨이브·성벽 돌파	MissingHook	적 Spawn/목표 도달 경고에 Audio 호출이 없다.	화면 밖 사건도 필요할 때만 경고하고 반복 제한
+CR-09	P0	castle_raid	군단의 역습	승리·패배	MissingHook	콘텐츠 결과 SFX 공간이 없다.	전투 종료 1회, 이후 UI 버튼음과 중복 없음
+CR-10	P1	castle_raid	군단의 역습	단계 보상 획득	EmptySlot	공용 `RewardAcquirePresenter`의 획득 Cue가 비어 있다.	인벤토리 실제 아이콘/보상 적용 뒤 획득음 재생
+FR-01	P1	food_riot	식량 대소동	콘텐츠 입장·시작	MissingHook	Runtime Prefab 직접 AudioClip/SfxCue 의존성 0개다.	카운트다운/조작 시작과 동기화
+FR-02	P1	food_riot	식량 대소동	식량 출현·줍기·배달	MissingHook	핵심 수집/운반 사건에 Audio Hook이 없다.	출현/줍기/납품을 구분하고 다량 수집 Cooldown 적용
+FR-03	P1	food_riot	식량 대소동	적 피격·처치·군단장 피격	EmptySlot	공용 CombatFeedback 4종이 모두 비어 있다.	공용 전투 Cue 배정 뒤 콘텐츠 Prefab에서 실제 재생
+FR-04	P1	food_riot	식량 대소동	제한시간 임박·목표 달성	MissingHook	Timer/목표 사건에 SFX가 없다.	경고 반복 간격과 달성 1회 정책 확정
+FR-05	P1	food_riot	식량 대소동	성공·실패·보상	MissingHook	결과 SFX 경로가 없다.	종료 상태별 Cue와 보상 획득 Cue가 중복되지 않음
+TS-01	P1	treasure_spirit	보물 정령	점프	Connected	`DemoDungeonAudio.jumpSfx` 배정 및 재생 호출 확인.	생산 경로에서 실제 동작·볼륨 확인
+TS-02	P1	treasure_spirit	보물 정령	상자 열기	Connected	`chestOpenSfx` 배정 및 호출 확인.	상자당 1회 재생
+TS-03	P1	treasure_spirit	보물 정령	퀴즈 UI 등장	Connected	`quizUiSfx` 배정 및 호출 확인.	UI 표시와 동기화
+TS-04	P1	treasure_spirit	보물 정령	열쇠 획득	Connected	`keySfx` 배정 및 호출 확인.	획득 확정 시 1회 재생
+TS-05	P1	treasure_spirit	보물 정령	일반 수집	Connected	`collectSfx` 배정 및 호출 확인.	연속 수집 시 과밀하지 않음
+TS-06	P1	treasure_spirit	보물 정령	일반 문	Connected	`doorSfx` 배정 및 호출 확인.	문 상태 변경과 동기화
+TS-07	P1	treasure_spirit	보물 정령	감옥 문	Connected	`prisonDoorSfx` 배정 및 호출 확인.	일반 문과 구분됨
+TS-08	P1	treasure_spirit	보물 정령	잠금 실패	Connected	`lockFailSfx` 배정 및 호출 확인.	실패 시에만 재생
+TS-09	P1	treasure_spirit	보물 정령	불 점화	Connected	`fireIgniteSfx` 배정 및 호출 확인.	Loop 시작 전에 1회 재생
+TS-10	P1	treasure_spirit	보물 정령	불 Loop	Connected	`fireLoopSfx` 배정 및 호출 확인.	종료/비활성 시 Loop가 반드시 정지
+TS-11	P1	treasure_spirit	보물 정령	가시 함정	Connected	`spikeSfx` 배정 및 호출 확인.	반복 발동 Cooldown 확인
+TS-12	P1	treasure_spirit	보물 정령	톱날 Loop	Connected	`sawLoopSfx` 배정 및 호출 확인.	거리 감쇠와 비활성 정지 확인
+TS-13	P1	treasure_spirit	보물 정령	화살 함정	Connected	`arrowSfx` 배정 및 호출 확인.	발사/Impact 정책 확인
+TS-14	P1	treasure_spirit	보물 정령	미믹 등장·공격	Connected	`mimicSfx` 배정 및 호출 확인.	등장 사건과 동기화
+TS-15	P1	treasure_spirit	보물 정령	추종자 공격	Connected	`followerAttackSfx` 배정 및 호출 확인.	다수 공격 Voice 제한 확인
+TS-16	P1	treasure_spirit	보물 정령	경비 공격	Connected	`guardAttackSfx` 배정 및 호출 확인.	다수 공격 Voice 제한 확인
+TS-17	P1	treasure_spirit	보물 정령	클리어	Connected	`clearSfx` 배정 및 호출 확인.	결과 UI와 중복 없이 1회 재생
+TS-18	P1	treasure_spirit	보물 정령	실패	Connected	`failSfx` 배정 및 호출 확인.	실패 확정 시 1회 재생
+TS-19	P1	treasure_spirit	보물 정령	공용 피격·사망·결정타	EmptySlot	전용 18사건은 정상이나 콘텐츠 Prefab의 공용 CombatFeedback 4종은 비어 있다.	COM-01~04 배정 후 보물 정령 전투에서도 재생 확인
+FC-01	P1	fallen_commander	타락 군단장	투사체 기본공격 시작/발동/Hit	Partial	Start 비어 있음, Resolve·Hit 배정.	필요한 시작음 여부 확정 후 3단계 시간축 검증
+FC-02	P1	fallen_commander	타락 군단장	근접공격 시작/발동/Hit	Partial	Start 비어 있음, Resolve·Hit 배정.	공격 애니메이션과 발동/Hit 동기화
+FC-03	P1	fallen_commander	타락 군단장	표식 강타 시작/발동/Hit	Partial	Resolve만 배정, Start·Hit 비어 있음.	필요한 단계 승인·배정 후 실제 판정 동기화
+FC-04	P1	fallen_commander	타락 군단장	추적 표식 시작/발동/Hit	Partial	Resolve·Hit 배정, Start 비어 있음.	표식 생성과 피해 사건을 구분해 재생
+FC-05	P1	fallen_commander	타락 군단장	블랙홀 시작/발동/Hit	Partial	Resolve만 배정, Start·Hit 비어 있음.	생성·유지·피해·종료 사건 정책 확정
+FC-06	P1	fallen_commander	타락 군단장	블랙홀 종료 효과	EmptySlot	`blackHoleEndEffects` Start·Resolve·Hit 모두 비어 있다.	종료 연출에 필요한 단계를 배정하고 Loop 잔류 없음
+FC-07	P1	fallen_commander	타락 군단장	선형 강타 시작/발동/Hit	Partial	Resolve만 배정, Start·Hit 비어 있음.	예고와 실제 타격을 청각적으로 구분
+FC-08	P1	fallen_commander	타락 군단장	타락 고리 시작/발동/Hit	Partial	Resolve만 배정, Start·Hit 비어 있음.	범위 생성·피해 시간축 검증
+FC-09	P1	fallen_commander	타락 군단장	최종 돌진 시작/발동/Hit	Connected	Start·Resolve·Hit 모두 배정됐다.	실제 전투에서 3단계 동기화·볼륨 확인
+FC-10	P1	fallen_commander	타락 군단장	시간초과 전멸 시작/발동/Hit	Partial	Start·Resolve 배정, Hit 비어 있음.	전멸 확정 사건과 결과음 중복 여부 확인
+FC-11	P1	fallen_commander	타락 군단장	뒤틀린 전장 시작/발동/Hit	Partial	Resolve만 배정, Start·Hit 비어 있음.	바닥 연출의 시작/유지 정책 확정
+FC-12	P1	fallen_commander	타락 군단장	낙하 탄막 시작/발동/Hit	Connected	주 효과 Start·Resolve·Hit 모두 배정됐다.	다발 낙하 시 Voice 폭주 없이 재생
+FC-13	P1	fallen_commander	타락 군단장	낙하 탄막 개별 Impact 보조	EmptySlot	`impactEffects` Start·Resolve·Hit가 모두 비어 있다.	주 효과와 개별 Impact의 역할을 정하고 필요할 때만 배정
+FC-14	P1	fallen_commander	타락 군단장	3단계 Phase 전환	EmptySlot	`transitionSound` 0/3이다.	Phase 전환 연출별 1회 재생
+FC-15	P1	fallen_commander	타락 군단장	Break 시작·회복	MissingHook	Break 상태 이벤트는 있으나 명시적 SFX 공간을 찾지 못했다.	Break/복귀가 공격음과 구분되도록 Hook·Cue 검증
+FC-16	P0	fallen_commander	타락 군단장	보스 피격·사망·결정타	EmptySlot	Runtime Prefab의 공용 CombatFeedback 4종이 비어 있다.	COM-01~04 공용 배정 뒤 보스전 실전 확인
+FC-17	P1	fallen_commander	타락 군단장	군단장 사망·회피	MissingHook	전투 Controller 이벤트에는 명시적 SFX 공간이 없다.	사망/회피 판정과 1회 재생 보장
+FC-18	P1	fallen_commander	타락 군단장	승리·패배·나가기 확인	MissingHook	결과·Exit Confirm에 SFX 호출이 없다.	상태별 결과음과 공용 버튼음 중복 없음
+GT-01	P1	guardian_trial	고대 수호수	콘텐츠 입장·전투 시작	MissingHook	Runtime Prefab 직접 AudioClip/SfxCue 의존성 0개다.	입장·카운트다운·조작 시작 동기화
+GT-02	P1	guardian_trial	고대 수호수	적 웨이브·강적 등장	MissingHook	웨이브/적 등장 SFX Hook이 없다.	Spawn과 경고 타이밍 일치
+GT-03	P1	guardian_trial	고대 수호수	군단장·적 피격/사망	EmptySlot	공용 CombatFeedback 생산 연결이 비어 있다.	COM-01~04 배정 뒤 콘텐츠 실전 확인
+GT-04	P1	guardian_trial	고대 수호수	수호수 피해·위험·단계 상승	MissingHook	목표 오브젝트/무한 단계 사건에 Audio 경로가 없다.	일반 피해 스팸을 제한하고 위험/단계 전환을 구분
+GT-05	P1	guardian_trial	고대 수호수	성공·실패·보상	MissingHook	결과 SFX 경로가 없다.	결과 확정·보상 적용·버튼 입력의 중복 재생 없음

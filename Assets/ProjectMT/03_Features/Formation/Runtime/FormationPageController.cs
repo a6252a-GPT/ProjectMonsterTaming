@@ -16,7 +16,6 @@ namespace ProjectMT.Features.Formation
     public sealed class FormationPageController : MonoBehaviour // 보유 목록과 편성을 한 화면에서 관리
     {
         private const int PreviewLayer = 5; // Unity 기본 UI 레이어만 미리보기 카메라에 노출
-        private const float FormationPreviewTargetSize = 1.15f;
 
         [Header("Page")]
         [SerializeField] private GameObject pageRoot;
@@ -46,6 +45,7 @@ namespace ProjectMT.Features.Formation
         [SerializeField] private MonsterCardView cardPrefab;
         [SerializeField] private TMP_Text ownedCountLabel;
         [SerializeField] private TMP_Text capacityLabel;
+        [SerializeField] private TMP_Text formationGuideLabel;
 
         [Header("Preview")]
         [SerializeField] private RawImage previewImage;
@@ -55,15 +55,18 @@ namespace ProjectMT.Features.Formation
         [SerializeField] private Transform formationPreviewSlotsRoot;
         [SerializeField] private Material activeSlotMaterial;
         [SerializeField] private Material lockedSlotMaterial;
+        [SerializeField] private Color mainPartyRingColor = new Color32(231, 190, 94, 255);
+        [SerializeField] private Color reservePartyRingColor = new Color32(79, 189, 184, 255);
         [SerializeField] private Camera worldCamera;
 
         private readonly List<MonsterCardView> formationCards = new List<MonsterCardView>();
         private readonly List<Transform> formationPreviewSlots = new List<Transform>();
-        private readonly List<GameObject> formationPreviewInstances = new List<GameObject>();
+        private readonly List<MonsterPreviewPresentation> formationPreviewInstances = new List<MonsterPreviewPresentation>();
+        private MaterialPropertyBlock ringProperties;
         private IGameProgressService progress;
         private MonsterCatalog catalog;
         private Func<BattlePartySnapshot> refreshParty;
-        private GameObject previewInstance;
+        private MonsterPreviewPresentation preview;
         private string selectedMonsterId;
         private MonsterPartyKind activeParty = MonsterPartyKind.Main;
         private bool isBusy;
@@ -86,16 +89,24 @@ namespace ProjectMT.Features.Formation
             formationButton?.onClick.AddListener(HandleFormationClicked);
             positionFormationButton?.onClick.AddListener(HandlePositionFormationClicked);
             CacheFormationPreviewSlots();
+            if (formationGuideLabel == null && pageRoot != null)
+            {
+                foreach (var label in pageRoot.GetComponentsInChildren<TMP_Text>(true))
+                {
+                    if (label.name != "Guide") continue;
+                    formationGuideLabel = label;
+                    break;
+                }
+            }
             CaptureTabColors();
             SetPageOpen(false);
         }
 
         private void Update()
         {
-            if (IsOpen && previewInstance != null)
-            {
-                previewInstance.transform.Rotate(0f, 18f * Time.unscaledDeltaTime, 0f, Space.World);
-            }
+            if (!IsOpen) return;
+            preview?.Tick(Time.unscaledDeltaTime);
+            foreach (var instance in formationPreviewInstances) instance?.Tick(Time.unscaledDeltaTime);
         }
 
         private void OnDisable()
@@ -389,12 +400,15 @@ namespace ProjectMT.Features.Formation
         {
             var mainSlots = roster.MainPartySlots;
             var reserveSlots = roster.ReservePartySlots;
-            SetText(mainTabLabel, $"본부대 {mainSlots.Count} / 10");
-            SetText(reserveTabLabel, $"예비부대 {reserveSlots.Count} / 5");
+            SetText(mainTabLabel, $"본부대 {CountAssigned(mainSlots)} / {MonsterRosterData.MainPartySlotCount}");
+            SetText(reserveTabLabel, $"예비부대 {CountAssigned(reserveSlots)} / {MonsterRosterData.ReservePartySlotCount}");
 
             var activeSlots = activeParty == MonsterPartyKind.Main ? mainSlots : reserveSlots;
-            var maximum = activeParty == MonsterPartyKind.Main ? 10 : 5;
-            SetText(capacityLabel, $"현재 {activeSlots.Count} / 최대 {maximum}");
+            var maximum = activeParty == MonsterPartyKind.Main
+                ? MonsterRosterData.MainPartySlotCount
+                : MonsterRosterData.ReservePartySlotCount;
+            SetText(capacityLabel, $"{GetPartyName(activeParty)} 편집 · {CountAssigned(activeSlots)} / {maximum}");
+            SetText(formationGuideLabel, "금색 원: 본부대 5 · 청록색 원: 예비 3 · 탭으로 편집 부대 선택");
             SetTabVisual(mainTabButton, activeParty == MonsterPartyKind.Main);
             SetTabVisual(reserveTabButton, activeParty == MonsterPartyKind.Reserve);
             if (positionFormationButton != null)
@@ -415,6 +429,8 @@ namespace ProjectMT.Features.Formation
                 card.gameObject.SetActive(visible);
                 if (!visible)
                 {
+                    formationPreviewInstances[index]?.Dispose();
+                    formationPreviewInstances[index] = null;
                     continue;
                 }
 
@@ -480,9 +496,8 @@ namespace ProjectMT.Features.Formation
         private void RefreshFormationPreview(MonsterRosterView roster)
         {
             CacheFormationPreviewSlots();
-            ClearFormationPreview();
-            var slots = activeParty == MonsterPartyKind.Main ? roster.MainPartySlots : roster.ReservePartySlots;
-            var visibleSlotCount = activeParty == MonsterPartyKind.Main ? 10 : 5;
+            while (formationPreviewInstances.Count < formationPreviewSlots.Count) formationPreviewInstances.Add(null);
+            var visibleSlotCount = MonsterRosterData.MainPartySlotCount + MonsterRosterData.ReservePartySlotCount;
 
             for (var index = 0; index < formationPreviewSlots.Count; index++)
             {
@@ -494,39 +509,58 @@ namespace ProjectMT.Features.Formation
                     continue;
                 }
 
-                var unlocked = index < slots.Count;
+                var isMain = index < MonsterRosterData.MainPartySlotCount;
+                var slots = isMain ? roster.MainPartySlots : roster.ReservePartySlots;
+                var partyIndex = isMain ? index : index - MonsterRosterData.MainPartySlotCount;
+                slotRoot.localPosition = GetFormationPreviewSlotPosition(
+                    isMain ? MonsterPartyKind.Main : MonsterPartyKind.Reserve, partyIndex);
                 var ring = slotRoot.Find("GroundSlotRing")?.GetComponent<MeshRenderer>();
                 if (ring != null)
                 {
-                    ring.sharedMaterial = unlocked ? activeSlotMaterial : lockedSlotMaterial;
+                    ring.sharedMaterial = activeSlotMaterial;
+                    ringProperties ??= new MaterialPropertyBlock();
+                    ring.GetPropertyBlock(ringProperties);
+                    var color = isMain ? mainPartyRingColor : reservePartyRingColor;
+                    ringProperties.SetColor("_BaseColor", color);
+                    ringProperties.SetColor("_Color", color);
+                    ring.SetPropertyBlock(ringProperties); // 공유 원본 Material 색상은 보존
                 }
 
-                if (!unlocked || string.IsNullOrEmpty(slots[index]) ||
-                    !catalog.TryGet(slots[index], out var definition) || definition.PreviewPrefab == null)
+                if (partyIndex >= slots.Count || string.IsNullOrEmpty(slots[partyIndex]) ||
+                    !catalog.TryGet(slots[partyIndex], out var definition) || !MonsterPreviewPresentation.CanShow(definition))
                 {
+                    formationPreviewInstances[index]?.Dispose();
+                    formationPreviewInstances[index] = null;
                     continue;
                 }
 
+                var previous = formationPreviewInstances[index];
+                if (previous != null && previous.Root != null && previous.MonsterId == definition.MonsterId) continue;
+                previous?.Dispose();
+                formationPreviewInstances[index] = null;
                 var anchor = slotRoot.Find("MonsterPreviewAnchor") ?? slotRoot;
-                var anchorWasActive = anchor.gameObject.activeSelf;
-                anchor.gameObject.SetActive(false); // Gameplay OnEnable 전에 Preview 전용 상태로 전환
-                try
-                {
-                    var instance = Instantiate(definition.PreviewPrefab, anchor);
-                    instance.name = $"FormationPreview_{index + 1:00}_{definition.MonsterId}";
-                    instance.transform.localPosition = Vector3.zero;
-                    instance.transform.localRotation = Quaternion.identity;
-                    SetLayerRecursively(instance, PreviewLayer);
-                    FitFormationPreviewModel(instance, anchor);
-                    DisablePreviewGameplay(instance);
-                    ApplyPreviewTint(instance, definition.VisualTint);
-                    formationPreviewInstances.Add(instance);
-                }
-                finally
-                {
-                    anchor.gameObject.SetActive(anchorWasActive);
-                }
+                var instance = MonsterPreviewPresentation.Create(definition, anchor, PreviewLayer, 0f, index * 0.173f);
+                formationPreviewInstances[index] = instance;
+                instance?.UseAuthoredScale(slotRoot); // 정식 모델 사이의 크기 차이를 같은 상자로 정규화하지 않음
             }
+        }
+
+        public static Vector3 GetFormationPreviewSlotPosition(MonsterPartyKind party, int index)
+        {
+            var count = party == MonsterPartyKind.Main
+                ? MonsterRosterData.MainPartySlotCount
+                : MonsterRosterData.ReservePartySlotCount;
+            if (index < 0 || index >= count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            const float radius = 3.45f; // 기존 원형 크기 유지
+            var totalCount = MonsterRosterData.MainPartySlotCount + MonsterRosterData.ReservePartySlotCount;
+            var slotIndex = party == MonsterPartyKind.Main ? index : MonsterRosterData.MainPartySlotCount + index;
+            var angle = -90f + (slotIndex - 0.5f) * (360f / totalCount); // 45도 균등 간격·반 칸 회전으로 중앙 가림 완화
+            var radians = angle * Mathf.Deg2Rad;
+            return new Vector3(Mathf.Sin(radians) * radius, 0f, -Mathf.Cos(radians) * radius);
         }
 
         private void RefreshSelectedDetails(GameProgressView view)
@@ -632,74 +666,27 @@ namespace ProjectMT.Features.Formation
 
         private void ShowPreview(MonsterDefinition definition)
         {
-            ClearPreview();
-            if (!IsOpen || definition == null || definition.PreviewPrefab == null || previewAnchor == null)
+            if (!IsOpen || !MonsterPreviewPresentation.CanShow(definition) || previewAnchor == null)
             {
+                ClearPreview();
                 return;
             }
-
-            previewInstance = Instantiate(definition.PreviewPrefab, previewAnchor);
-            previewInstance.name = $"Preview_{definition.MonsterId}";
-            previewInstance.transform.SetPositionAndRotation(previewAnchor.position, Quaternion.Euler(0f, 180f, 0f));
-            SetLayerRecursively(previewInstance, PreviewLayer);
-            ApplyPreviewTint(previewInstance, definition.VisualTint);
-            DisablePreviewGameplay(previewInstance);
-            FitPreviewCamera(previewInstance);
+            if (preview != null && preview.Root != null && preview.MonsterId == definition.MonsterId) return;
+            ClearPreview();
+            preview = MonsterPreviewPresentation.Create(definition, previewAnchor, PreviewLayer, 165f);
+            preview?.FitCamera(previewCamera); // 구형 단일 몬스터 표시 경로만 사용. 정식 편성 카메라는 건드리지 않는다.
         }
 
         private void ClearPreview()
         {
-            if (previewInstance != null)
-            {
-                Destroy(previewInstance);
-                previewInstance = null;
-            }
+            preview?.Dispose();
+            preview = null;
         }
 
         private void ClearFormationPreview()
         {
-            for (var index = formationPreviewInstances.Count - 1; index >= 0; index--)
-            {
-                if (formationPreviewInstances[index] != null)
-                {
-                    Destroy(formationPreviewInstances[index]);
-                }
-            }
-
+            foreach (var instance in formationPreviewInstances) instance?.Dispose();
             formationPreviewInstances.Clear();
-        }
-
-        private static void FitFormationPreviewModel(GameObject instance, Transform anchor)
-        {
-            var renderers = instance.GetComponentsInChildren<Renderer>(true);
-            if (renderers.Length == 0)
-            {
-                return;
-            }
-
-            var bounds = renderers[0].bounds;
-            for (var index = 1; index < renderers.Length; index++)
-            {
-                bounds.Encapsulate(renderers[index].bounds);
-            }
-
-            var maximumSize = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z);
-            if (maximumSize > 0.001f)
-            {
-                var scale = FormationPreviewTargetSize / maximumSize;
-                instance.transform.localScale *= scale;
-                bounds = renderers[0].bounds;
-                for (var index = 1; index < renderers.Length; index++)
-                {
-                    bounds.Encapsulate(renderers[index].bounds);
-                }
-            }
-
-            var target = anchor.position;
-            instance.transform.position += new Vector3(
-                target.x - bounds.center.x,
-                target.y - bounds.min.y,
-                target.z - bounds.center.z);
         }
 
         private void CacheFormationPreviewSlots()
@@ -768,34 +755,7 @@ namespace ProjectMT.Features.Formation
             }
         }
 
-        private void FitPreviewCamera(GameObject target)
-        {
-            if (previewCamera == null || target == null)
-            {
-                return;
-            }
 
-            var renderers = target.GetComponentsInChildren<Renderer>(true);
-            if (renderers.Length == 0)
-            {
-                return;
-            }
-
-            var bounds = renderers[0].bounds;
-            for (var index = 1; index < renderers.Length; index++)
-            {
-                bounds.Encapsulate(renderers[index].bounds);
-            }
-
-            var targetCenter = previewAnchor.position;
-            target.transform.position += targetCenter - bounds.center;
-            var radius = Mathf.Max(0.5f, bounds.extents.magnitude);
-            var distance = Mathf.Max(1.8f, radius / Mathf.Tan(previewCamera.fieldOfView * 0.5f * Mathf.Deg2Rad) * 1.25f);
-            previewCamera.transform.position = targetCenter + new Vector3(0f, radius * 0.15f, -distance);
-            previewCamera.transform.LookAt(targetCenter);
-            previewCamera.nearClipPlane = 0.05f;
-            previewCamera.farClipPlane = Mathf.Max(20f, distance + radius * 4f);
-        }
 
         private void SetControlsInteractable(bool interactable)
         {
@@ -837,41 +797,7 @@ namespace ProjectMT.Features.Formation
             ownedRosterList?.SetCardsInteractable(interactable);
         }
 
-        private static void DisablePreviewGameplay(GameObject root)
-        {
-            foreach (var behaviour in root.GetComponentsInChildren<Behaviour>(true))
-            {
-                behaviour.enabled = false;
-            }
 
-            foreach (var collider in root.GetComponentsInChildren<Collider>(true))
-            {
-                collider.enabled = false;
-            }
-
-            foreach (var body in root.GetComponentsInChildren<Rigidbody>(true))
-            {
-                body.detectCollisions = false;
-                body.isKinematic = true;
-            }
-        }
-
-        private static void ApplyPreviewTint(GameObject root, Color tint)
-        {
-            foreach (var feedback in root.GetComponentsInChildren<UnitVisualFeedback>(true))
-            {
-                feedback.SetTint(tint); // 공유 Material을 복제하지 않고 Preview만 색상 변경
-            }
-        }
-
-        private static void SetLayerRecursively(GameObject root, int layer)
-        {
-            root.layer = layer;
-            foreach (Transform child in root.transform)
-            {
-                SetLayerRecursively(child.gameObject, layer);
-            }
-        }
 
         private static bool TryGetAssignment(
             MonsterRosterView roster,
@@ -938,7 +864,7 @@ namespace ProjectMT.Features.Formation
 
         private static string GetPartyName(MonsterPartyKind partyKind)
         {
-            return partyKind == MonsterPartyKind.Main ? "메인" : "예비";
+            return partyKind == MonsterPartyKind.Main ? "본부대" : "예비부대";
         }
 
         private void SetStatus(string message)

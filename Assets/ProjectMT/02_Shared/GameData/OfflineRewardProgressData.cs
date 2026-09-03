@@ -170,6 +170,12 @@ namespace ProjectMT.Shared.GameData
             return receipt;
         }
 
+        internal void MigrateLegacyEquipmentLevels()
+        {
+            if (equipmentRewards == null) return;
+            foreach (var equipment in equipmentRewards) equipment?.MigrateLegacyLevel();
+        }
+
         public OfflineRewardReceiptData Clone()
         {
             return new OfflineRewardReceiptData
@@ -225,7 +231,7 @@ namespace ProjectMT.Shared.GameData
             for (var index = 0; index < EquipmentRewards.Count; index++)
             {
                 var equipment = EquipmentRewards[index]?.Clone();
-                if (equipment == null || !equipment.IsValidForAcquire() ||
+                if (equipment == null || !equipment.IsValidForAcquire(int.MaxValue) ||
                     !knownEquipmentIds.Add(equipment.InstanceId))
                 {
                     return false;
@@ -361,6 +367,12 @@ namespace ProjectMT.Shared.GameData
             }
 
             return clone;
+        }
+
+        internal void MigrateLegacyEquipmentLevels()
+        {
+            if (pendingReceipts == null) return;
+            foreach (var receipt in pendingReceipts) receipt?.MigrateLegacyEquipmentLevels();
         }
 
         internal void Repair()

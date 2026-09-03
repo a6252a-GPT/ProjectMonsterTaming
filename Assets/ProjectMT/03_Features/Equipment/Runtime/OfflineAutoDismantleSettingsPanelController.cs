@@ -111,7 +111,9 @@ namespace ProjectMT.Features.Equipment
                 : OfflineAutoDismantlePolicy.Common;
             if (currentSelectionText != null)
             {
-                currentSelectionText.text = $"현재 설정  ·  {OfflineAutoDismantlePolicyInfo.GetDisplayName(policy)}";
+                currentSelectionText.text =
+                    $"현재 설정  ·  {OfflineAutoDismantlePolicyInfo.GetDisplayName(policy)}\n" +
+                    "현재 장착보다 좋은 장비는 부위별 1개 보관";
             }
 
             for (var index = 0; index < Policies.Length; index++)

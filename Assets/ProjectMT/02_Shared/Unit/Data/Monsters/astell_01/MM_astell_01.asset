@@ -63,32 +63,19 @@ MonoBehaviour:
       localPosition: {x: 0, y: 0, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
-  - motionId: attack02
-    clip: {fileID: 1827226128182048838, guid: 3a41b69e7a628204cb2c9f707b9a5c7c, type: 3}
+  active:
+    clip: {fileID: 0}
     playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 1
-    overrideBreathDuration: 0
-    breathDuration: 0.8
-    markers:
-    - normalizedTime: 0.5
-      powerRatio: 1
-      feedbackOverride:
-        sfx: {fileID: 0}
-        vfxPrefab: {fileID: 0}
-        vfxLifetime: 1
-        localPosition: {x: 0, y: 0, z: 0}
-        localEulerAngles: {x: 0, y: 0, z: 0}
-        scale: 1
-      socketOverride: 
-    attackStartOverride:
+    crossFadeDuration: 0.08
+    loop: 0
+    startFeedback:
       sfx: {fileID: 0}
       vfxPrefab: {fileID: 0}
       vfxLifetime: 1
       localPosition: {x: 0, y: 0, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
+  activeSteps: []
   death:
     clip: {fileID: 1827226128182048838, guid: c7bef5db584ea4a4bb4fa6865f154665, type: 3}
     playbackSpeed: 1

@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Reward;
@@ -23,9 +26,17 @@ namespace ProjectMT.Contents.CastleRaidHex
                 return false;
             }
 
+            TryCreateFirstClearReward(CastleRaidStageRules.MinimumStage, out var firstClear);
+            if (!RewardBundle.TryCombine(firstClear, ResolveLootRewards(result), out var combined))
+            {
+                change = null;
+                return false;
+            }
+
             change = GameProgressChange.RecordCastleRaidClear(
                 CastleRaidStageRules.MinimumStage,
-                RewardBundle.Empty);
+                combined,
+                ResolveEquipmentRewards(result));
             return true;
         }
 
@@ -43,6 +54,8 @@ namespace ProjectMT.Contents.CastleRaidHex
             return TryCreateStageProgressChange(
                 CastleRaidStageRules.MinimumStage,
                 progress,
+                ResolveLootRewards(result),
+                ResolveEquipmentRewards(result),
                 out change);
         }
 
@@ -60,7 +73,12 @@ namespace ProjectMT.Contents.CastleRaidHex
                 return false;
             }
 
-            return TryCreateStageProgressChange(stage, progress, out change);
+            return TryCreateStageProgressChange(
+                stage,
+                progress,
+                ResolveLootRewards(result),
+                ResolveEquipmentRewards(result),
+                out change);
         }
 
         public override bool TryCreateRewardPresentation(
@@ -69,10 +87,22 @@ namespace ProjectMT.Contents.CastleRaidHex
             ItemCatalog itemCatalog,
             out RewardPresentationRequest presentation)
         {
-            if (!(result is IObjectiveCompletionResultData castleResult) || !castleResult.ObjectiveCompleted ||
-                progress.CastleRaidFirstClear ||
-                !TryCreateFirstClearReward(CastleRaidStageRules.MinimumStage, out var rewards) ||
-                rewards.IsEmpty)
+            if (!(result is IObjectiveCompletionResultData castleResult) || !castleResult.ObjectiveCompleted)
+            {
+                presentation = null;
+                return false;
+            }
+
+            var rewards = ResolveLootRewards(result);
+            if (!progress.CastleRaidFirstClear &&
+                TryCreateFirstClearReward(CastleRaidStageRules.MinimumStage, out var firstClear) &&
+                !RewardBundle.TryCombine(firstClear, rewards, out rewards))
+            {
+                presentation = null;
+                return false;
+            }
+
+            if (rewards.IsEmpty)
             {
                 presentation = null;
                 return false;
@@ -91,9 +121,22 @@ namespace ProjectMT.Contents.CastleRaidHex
         {
             if (!(result is IObjectiveCompletionResultData castleResult) ||
                 !castleResult.ObjectiveCompleted ||
-                !TryResolveStage(runInfo, out var stage) ||
-                !CastleRaidStageRules.IsNewClear(stage, progress.CastleRaidHighestClearedStage) ||
-                !TryCreateFirstClearReward(stage, out var rewards) || rewards.IsEmpty)
+                !TryResolveStage(runInfo, out var stage))
+            {
+                presentation = null;
+                return false;
+            }
+
+            var rewards = ResolveLootRewards(result);
+            if (CastleRaidStageRules.IsNewClear(stage, progress.CastleRaidHighestClearedStage) &&
+                TryCreateFirstClearReward(stage, out var firstClear) &&
+                !RewardBundle.TryCombine(firstClear, rewards, out rewards))
+            {
+                presentation = null;
+                return false;
+            }
+
+            if (rewards.IsEmpty)
             {
                 presentation = null;
                 return false;
@@ -115,14 +158,19 @@ namespace ProjectMT.Contents.CastleRaidHex
                     : "요새 공략을 완료했습니다.";
             }
 
+            var failureReason = (result as HexCastleRaidResult)?.FailureReason;
             return outcome == ContentOutcome.Fail
-                ? $"STAGE {stage:000} 공략에 실패했습니다."
+                ? failureReason == HexCastleRaidFailureReason.TimeExpired
+                    ? $"STAGE {stage:000} 제한 시간을 초과했습니다."
+                    : $"STAGE {stage:000} 공격 부대가 전멸했습니다."
                 : $"STAGE {stage:000} 왕궁을 파괴했습니다.";
         }
 
         private bool TryCreateStageProgressChange(
             int stage,
             GameProgressView progress,
+            RewardBundle lootRewards,
+            IReadOnlyList<EquipmentInstanceData> equipmentRewards,
             out GameProgressChange change)
         {
             if (!CastleRaidStageRules.IsValidStage(stage) ||
@@ -132,16 +180,33 @@ namespace ProjectMT.Contents.CastleRaidHex
                 return false;
             }
 
-            var rewards = RewardBundle.Empty;
-            if (CastleRaidStageRules.IsNewClear(stage, progress.CastleRaidHighestClearedStage) &&
-                !TryCreateFirstClearReward(stage, out rewards))
+            lootRewards ??= RewardBundle.Empty;
+            equipmentRewards ??= Array.Empty<EquipmentInstanceData>();
+            if (!CastleRaidStageRules.IsNewClear(stage, progress.CastleRaidHighestClearedStage))
+            {
+                change = GameProgressChange.GrantRewardsAndEquipment(lootRewards, equipmentRewards);
+                return true;
+            }
+
+            if (!TryCreateFirstClearReward(stage, out var firstClearRewards) ||
+                !RewardBundle.TryCombine(firstClearRewards, lootRewards, out var rewards))
             {
                 change = null;
                 return false;
             }
 
-            change = GameProgressChange.RecordCastleRaidClear(stage, rewards);
+            change = GameProgressChange.RecordCastleRaidClear(stage, rewards, equipmentRewards);
             return true;
+        }
+
+        private static RewardBundle ResolveLootRewards(IContentResultData result)
+        {
+            return (result as HexCastleRaidResult)?.LootRewards ?? RewardBundle.Empty;
+        }
+
+        private static IReadOnlyList<EquipmentInstanceData> ResolveEquipmentRewards(IContentResultData result)
+        {
+            return (result as HexCastleRaidResult)?.EquipmentRewards ?? Array.Empty<EquipmentInstanceData>();
         }
 
         private bool TryCreateFirstClearReward(int stage, out RewardBundle rewards)

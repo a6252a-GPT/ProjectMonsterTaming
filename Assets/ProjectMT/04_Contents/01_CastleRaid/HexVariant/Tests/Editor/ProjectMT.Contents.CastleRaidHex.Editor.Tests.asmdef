@@ -8,6 +8,7 @@
     "ProjectMT.Core",
     "ProjectMT.Features",
     "ProjectMT.Shared",
+    "Unity.TextMeshPro",
     "Unity.AI.Navigation"
   ],
   "includePlatforms": [

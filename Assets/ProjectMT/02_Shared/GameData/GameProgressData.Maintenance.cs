@@ -182,6 +182,12 @@ namespace ProjectMT.Shared.GameData
                 equipment.MigrateOfflineAutoDismantlePolicy(); // 기존 계정은 안전한 기본값으로 시작
             }
 
+            if (sourceDataVersion < 24)
+            {
+                equipment?.MigrateLegacyLevels();
+                offlineRewards?.MigrateLegacyEquipmentLevels();
+            }
+
             Repair();
         }
 

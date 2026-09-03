@@ -75,12 +75,7 @@ namespace ProjectMT.Features.Equipment
                     continue;
                 }
 
-                // Lv 표시는 나중에 실제 레벨 시스템이 붙으면 다시 켤 것이므로, 지금은 항상 비활성화한다.
-                var commanderLevelText = slotTransform.Find("Text_Level")?.gameObject;
-                if (commanderLevelText != null)
-                {
-                    commanderLevelText.SetActive(false);
-                }
+                var commanderLevelText = slotTransform.Find("Text_Level")?.GetComponent<TMP_Text>();
 
                 var icon = itemFrame.Find("Item")?.GetComponent<Image>();
                 var normalArea = itemFrame.Find("NormalArea");
@@ -104,6 +99,11 @@ namespace ProjectMT.Features.Equipment
 
                     icon.gameObject.SetActive(true);
                     icon.color = Color.white; // 아이콘은 고유 색 그대로 유지
+                    if (commanderLevelText != null)
+                    {
+                        commanderLevelText.text = $"Lv.{equipped.ItemLevel}";
+                        commanderLevelText.gameObject.SetActive(true);
+                    }
 
                     ApplyFrameVariant(normalArea, equipped.Grade); // 등급에 맞는 기존 프레임(테두리)으로 교체
                 }
@@ -115,6 +115,11 @@ namespace ProjectMT.Features.Equipment
                     }
 
                     icon.gameObject.SetActive(false);
+                    if (commanderLevelText != null)
+                    {
+                        commanderLevelText.text = string.Empty;
+                        commanderLevelText.gameObject.SetActive(false);
+                    }
 
                     if (addIndicator != null)
                     {

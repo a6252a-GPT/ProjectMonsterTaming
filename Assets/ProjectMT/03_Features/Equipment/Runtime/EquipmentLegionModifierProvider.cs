@@ -29,9 +29,10 @@ namespace ProjectMT.Features.Equipment
                     continue;
                 }
 
-                var coreStats = EquipmentGradeStatTable.GetCoreStatContributions(part, instance.Grade, balance);
-                AppendContributions(coreStats, $"equipment:{instance.InstanceId}:core", destination);
-
+                AppendContributions(
+                    EquipmentStatCalculator.GetCoreContributions(instance, balance),
+                    $"equipment:{instance.InstanceId}:core",
+                    destination);
                 var options = instance.RandomOptions;
                 for (var index = 0; index < options.Count; index++)
                 {

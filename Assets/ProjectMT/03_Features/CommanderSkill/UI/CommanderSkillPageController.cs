@@ -21,6 +21,12 @@ namespace ProjectMT.Features.CommanderSkill
             Debuff
         }
 
+        private sealed class SkillFrameView
+        {
+            public Image Background;
+            public Image Border;
+        }
+
         private sealed class SlotView
         {
             public Button Button;
@@ -29,6 +35,7 @@ namespace ProjectMT.Features.CommanderSkill
             public TMP_Text NumberText;
             public GameObject LockRoot;
             public GameObject FocusRoot;
+            public SkillFrameView Frame;
         }
 
         private sealed class SkillCardView
@@ -42,22 +49,26 @@ namespace ProjectMT.Features.CommanderSkill
             public TMP_Text LevelText;
             public GameObject EquippedRoot;
             public GameObject FocusRoot;
+            public SkillFrameView Frame;
             public string SkillId;
+            public Image Background;
         }
 
-        private static readonly Color SelectedColor = new Color32(255, 188, 67, 255);
-        private static readonly Color NormalColor = new Color32(225, 230, 238, 255);
-        private static readonly Color DisabledColor = new Color32(110, 116, 126, 255);
+        private static readonly Color SelectedColor = new Color32(226, 187, 82, 255);
+        private static readonly Color NormalColor = new Color32(222, 216, 207, 255);
+        private static readonly Color DisabledColor = new Color32(154, 147, 138, 255);
 
         private readonly SlotView[] slots = new SlotView[CommanderSkillSlotRules.SlotCount];
         private readonly List<SkillCardView> cards = new List<SkillCardView>(12);
         private readonly Button[] filterButtons = new Button[4];
         private readonly TMP_Text[] filterLabels = new TMP_Text[4];
         private readonly Image[] filterBackgrounds = new Image[4];
+        private readonly Image[] filterBorders = new Image[4];
 
         private Button closeButton;
         private TMP_Text ownedCountText;
         private Image detailIcon;
+        private SkillFrameView detailFrame;
         private TMP_Text detailNameText;
         private TMP_Text detailCategoryText;
         private TMP_Text detailStatsText;
@@ -70,6 +81,8 @@ namespace ProjectMT.Features.CommanderSkill
         private TMP_Text levelUpButtonText;
         private Button equipButton;
         private TMP_Text equipButtonText;
+        private Image levelUpButtonBorder;
+        private Image equipButtonBorder;
 
         private IGameProgressService progress;
         private CommanderSkillCatalog catalog;
@@ -195,6 +208,7 @@ namespace ProjectMT.Features.CommanderSkill
             closeButton = FindDeep(transform, "CloseTouchArea_80x80")?.GetComponent<Button>();
             ownedCountText = FindDeep(transform, "OwnedSkillCount")?.GetComponent<TMP_Text>();
             detailIcon = FindDeep(transform, "SelectedSkillIcon")?.GetComponent<Image>();
+            detailFrame = CacheSkillFrame(FindDeep(transform, "SelectedSkillIconFrame"));
             detailNameText = FindDeep(transform, "SelectedSkillName")?.GetComponent<TMP_Text>();
             detailCategoryText = FindDeep(transform, "SelectedSkillCategory")?.GetComponent<TMP_Text>();
             detailStatsText = FindDeep(transform, "SelectedSkillStats")?.GetComponent<TMP_Text>();
@@ -207,6 +221,8 @@ namespace ProjectMT.Features.CommanderSkill
             levelUpButtonText = levelUpButton?.GetComponentInChildren<TMP_Text>(true);
             equipButton = FindDeep(transform, "SkillEquipButton")?.GetComponent<Button>();
             equipButtonText = equipButton?.GetComponentInChildren<TMP_Text>(true);
+            levelUpButtonBorder = FindDeep(levelUpButton?.transform, "InnerBorder1")?.GetComponent<Image>();
+            equipButtonBorder = FindDeep(equipButton?.transform, "InnerBorder1")?.GetComponent<Image>();
 
             for (var index = 0; index < slots.Length; index++)
             {
@@ -220,7 +236,8 @@ namespace ProjectMT.Features.CommanderSkill
                         LevelText = FindDeep(root, "SkillLevel")?.GetComponent<TMP_Text>(),
                         NumberText = FindDeep(root, "SlotNumber")?.GetComponent<TMP_Text>(),
                         LockRoot = FindDeep(root, "SlotLock")?.gameObject,
-                        FocusRoot = FindDeep(root, "SlotFocus")?.gameObject
+                        FocusRoot = FindDeep(root, "SlotFocus")?.gameObject,
+                        Frame = CacheSkillFrame(root)
                     };
             }
 
@@ -242,7 +259,9 @@ namespace ProjectMT.Features.CommanderSkill
                     StatsText = FindDeep(root, "SkillCardStats")?.GetComponent<TMP_Text>(),
                     LevelText = FindDeep(root, "SkillLevel")?.GetComponent<TMP_Text>(),
                     EquippedRoot = FindDeep(root, "EquippedBadge")?.gameObject,
-                    FocusRoot = FindDeep(root, "CardFocus")?.gameObject
+                    FocusRoot = FindDeep(root, "CardFocus")?.gameObject,
+                    Frame = CacheSkillFrame(root),
+                    Background = FindDeep(root, "CardBackground")?.GetComponent<Image>()
                 });
             }
 
@@ -253,6 +272,7 @@ namespace ProjectMT.Features.CommanderSkill
                 filterButtons[index] = filter?.GetComponent<Button>();
                 filterLabels[index] = filter?.GetComponentInChildren<TMP_Text>(true);
                 filterBackgrounds[index] = filter?.GetComponent<Image>();
+                filterBorders[index] = FindDeep(filter, "InnerBorder1")?.GetComponent<Image>();
             }
         }
 
@@ -481,6 +501,7 @@ namespace ProjectMT.Features.CommanderSkill
                 slot.Button.interactable = unlocked && !requestInFlight;
                 slot.LockRoot?.SetActive(!unlocked);
                 slot.FocusRoot?.SetActive(index == selectedSlotIndex);
+                RefreshSkillFrame(slot.Frame, hasDefinition ? definition : null);
                 if (slot.NumberText != null)
                 {
                     slot.NumberText.text = $"{index + 1}번";
@@ -533,6 +554,13 @@ namespace ProjectMT.Features.CommanderSkill
                 card.LevelText.text = $"Lv.{owned.Level}";
                 card.EquippedRoot?.SetActive(FindEquippedSlot(view, owned.SkillId) >= 0);
                 card.FocusRoot?.SetActive(owned.SkillId == selectedSkillId);
+                RefreshSkillFrame(card.Frame, definition);
+                if (card.Background != null)
+                {
+                    card.Background.color = owned.SkillId == selectedSkillId
+                        ? new Color32(55, 48, 43, 255)
+                        : new Color32(48, 43, 51, 255);
+                }
             }
 
             for (var index = visibleCount; index < cards.Count; index++)
@@ -560,8 +588,15 @@ namespace ProjectMT.Features.CommanderSkill
                 if (filterBackgrounds[index] != null)
                 {
                     filterBackgrounds[index].color = selected
-                        ? new Color32(78, 59, 30, 245)
-                        : new Color32(32, 36, 43, 235);
+                        ? new Color32(69, 65, 60, 255)
+                        : new Color32(37, 35, 37, 255);
+                }
+
+                if (filterBorders[index] != null)
+                {
+                    filterBorders[index].color = selected
+                        ? new Color32(130, 118, 106, 255)
+                        : new Color32(85, 80, 75, 255);
                 }
             }
         }
@@ -571,6 +606,7 @@ namespace ProjectMT.Features.CommanderSkill
             var hasOwned = TryGetOwnedSkill(selectedSkillId, out var owned);
             CommanderSkillDefinition definition = null;
             var hasDefinition = hasOwned && catalog.TryGet(selectedSkillId, out definition);
+            RefreshSkillFrame(detailFrame, hasDefinition ? definition : null);
             if (detailIcon != null)
             {
                 detailIcon.sprite = hasDefinition ? definition.Icon : null;
@@ -622,6 +658,7 @@ namespace ProjectMT.Features.CommanderSkill
             if (levelUpButton != null)
             {
                 levelUpButton.interactable = canLevelUp;
+                RefreshActionButton(levelUpButton, levelUpButtonBorder, canLevelUp);
             }
 
             if (levelUpButtonText != null)
@@ -638,6 +675,7 @@ namespace ProjectMT.Features.CommanderSkill
             if (equipButton != null)
             {
                 equipButton.interactable = hasOwned && slotUnlocked && !isSameSkill && !requestInFlight;
+                RefreshActionButton(equipButton, equipButtonBorder, false);
             }
 
             if (equipButtonText != null)
@@ -648,6 +686,64 @@ namespace ProjectMT.Features.CommanderSkill
             if (feedbackText != null)
             {
                 feedbackText.text = requestInFlight ? "저장 중..." : feedbackMessage;
+            }
+        }
+
+        private static SkillFrameView CacheSkillFrame(Transform root)
+        {
+            var normal = FindDeep(root, "ItemFrame_01_Normal_Yellow");
+            return new SkillFrameView
+            {
+                Background = FindDeep(normal, "Bg")?.GetComponent<Image>(),
+                Border = FindDeep(normal, "InnerBorder1")?.GetComponent<Image>()
+            };
+        }
+
+        private static void RefreshSkillFrame(SkillFrameView frame, CommanderSkillDefinition definition)
+        {
+            var background = new Color32(57, 54, 56, 255);
+            var border = new Color32(102, 96, 91, 255);
+            if (definition != null)
+            {
+                if (definition.Category == CommanderSkillCategory.Buff)
+                {
+                    background = new Color32(80, 110, 62, 255);
+                    border = new Color32(127, 153, 82, 255);
+                }
+                else if (definition.Category == CommanderSkillCategory.Debuff)
+                {
+                    background = new Color32(101, 68, 119, 255);
+                    border = new Color32(142, 89, 165, 255);
+                }
+                else if (definition is CommanderAttackSkillDefinition attack && attack.AreaDamageEffect != null)
+                {
+                    (background, border) = attack.AreaDamageEffect.DamageKind switch
+                    {
+                        CommanderSkillDamageKind.Fire => (new Color32(163, 41, 42, 255), new Color32(214, 55, 49, 255)),
+                        CommanderSkillDamageKind.Ice => (new Color32(49, 93, 153, 255), new Color32(66, 120, 183, 255)),
+                        CommanderSkillDamageKind.Arcane => (new Color32(98, 71, 119, 255), new Color32(145, 96, 167, 255)),
+                        _ => (background, border)
+                    };
+                }
+            }
+
+            if (frame?.Background != null) frame.Background.color = background;
+            if (frame?.Border != null) frame.Border.color = border;
+        }
+
+        private static void RefreshActionButton(Button button, Image border, bool primary)
+        {
+            if (button.targetGraphic != null)
+            {
+                button.targetGraphic.color = primary
+                    ? new Color32(115, 44, 44, 255)
+                    : new Color32(68, 64, 61, 255);
+            }
+            if (border != null)
+            {
+                border.color = primary
+                    ? new Color32(167, 103, 90, 255)
+                    : new Color32(143, 131, 118, 255);
             }
         }
 

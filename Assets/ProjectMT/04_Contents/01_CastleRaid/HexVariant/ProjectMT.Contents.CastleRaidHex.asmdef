@@ -9,6 +9,7 @@
     "Unity.TextMeshPro",
     "ProjectMT.Core",
     "ProjectMT.Shared",
+    "ProjectMT.Features",
     "ProjectMT.Contents.Framework",
     "MoreMountains.Tools"
   ],

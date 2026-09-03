@@ -43,6 +43,7 @@ namespace ProjectMT.Bootstrap
         private BattlePartySnapshotBuilder partyBuilder; // 저장 편성 해석기
         private CommanderGrowthConfig commanderGrowthConfig; // 군단장 경험치·레벨 규칙
         private OfflineRewardCoordinator offlineRewardCoordinator; // 종료·복귀 방치 정산 흐름
+        private bool retryingOfflineSettlement;
         private DebugPanelController debugPanel; // 개발 빌드 전용 도구 패널
         private bool initialized; // 중복 초기화 방지
         private SceneId readySceneId; // 마지막 초기화 완료 씬
@@ -184,6 +185,8 @@ namespace ProjectMT.Bootstrap
                 throw new InvalidOperationException("Offline reward login settlement could not be saved.");
             }
 
+            gameDataService.Changed += RetryBlockedOfflineSettlement;
+
             partyBuilder = new BattlePartySnapshotBuilder(
                 projectConfig.MonsterCatalog,
                 projectConfig.MonsterRarityCatalog,
@@ -304,7 +307,10 @@ namespace ProjectMT.Bootstrap
             }
 
             var before = gameDataService.View.Equipment.Instances.Count;
-            var drops = EquipmentDropRoller.RollDrop();
+            var basisStage = ExpeditionEquipmentLevelResolver.ResolveHighestClearedStage(gameDataService.View);
+            var drops = EquipmentDropRoller.RollDrop(
+                projectConfig.EquipmentBalanceConfig ?? EquipmentBalanceConfig.RuntimeDefault,
+                basisStage);
             var saved = await gameDataService.TryApplyAndSaveAsync(
                 GameProgressChange.AcquireEquipment(drops));
             if (!saved)
@@ -565,19 +571,59 @@ namespace ProjectMT.Bootstrap
 
         private bool ShowPendingOfflineRewards()
         {
-            if (offlineRewardPresenter == null || offlineRewardCoordinator == null ||
-                !offlineRewardCoordinator.TryGetPendingPresentation(out var presentation))
+            if (offlineRewardPresenter == null || offlineRewardCoordinator == null)
             {
                 return false;
             }
 
-            offlineRewardPresenter.Show(
-                presentation,
-                projectConfig.ItemCatalog,
-                () => offlineRewardCoordinator.AcknowledgeAsync(presentation.ReceiptIds),
-                HandleOfflineRewardConfirmed,
-                GrantOfflineRewardBonusAsync);
-            return true;
+            if (offlineRewardCoordinator.TryGetPendingPresentation(out var presentation))
+            {
+                offlineRewardPresenter.Show(
+                    presentation,
+                    projectConfig.ItemCatalog,
+                    () => offlineRewardCoordinator.AcknowledgeAsync(presentation.ReceiptIds),
+                    HandleOfflineRewardConfirmed,
+                    GrantOfflineRewardBonusAsync);
+                return true;
+            }
+
+            if (offlineRewardCoordinator.LastStatus == OfflineRewardCalculationStatus.InventoryBlocked)
+            {
+                offlineRewardPresenter.ShowInventoryBlocked(() => ShowPendingAttendance());
+                return true;
+            }
+
+            return false;
+        }
+
+        private async void RetryBlockedOfflineSettlement()
+        {
+            if (!initialized || retryingOfflineSettlement || offlineRewardCoordinator == null ||
+                !offlineRewardCoordinator.HasPendingSettlement ||
+                offlineRewardCoordinator.LastStatus != OfflineRewardCalculationStatus.InventoryBlocked)
+            {
+                return;
+            }
+
+            retryingOfflineSettlement = true;
+            try
+            {
+                if (await offlineRewardCoordinator.RetryPendingAsync() &&
+                    offlineRewardCoordinator.LastStatus == OfflineRewardCalculationStatus.Ready &&
+                    readySceneId == projectConfig.MainBattleSceneId &&
+                    offlineRewardPresenter != null && !offlineRewardPresenter.IsOpen)
+                {
+                    ShowPendingOfflineRewards();
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+            finally
+            {
+                retryingOfflineSettlement = false;
+            }
         }
 
         // 광고 영상을 끝까지 시청했을 때, 이미 지급된 방치 보상과 동일한 만큼을 한 번 더 지급해
@@ -652,7 +698,7 @@ namespace ProjectMT.Bootstrap
             return new EquipmentInstanceData(
                 Guid.NewGuid().ToString("N"),
                 source.Part,
-                source.Grade,
+                source.Grade, source.ItemLevel,
                 clonedOptions);
         }
 
@@ -864,6 +910,11 @@ namespace ProjectMT.Bootstrap
                     sceneLoader.SceneLoadStarted -= HandleSceneLoadStarted;
                     sceneLoader.SceneReady -= HandleSceneReady;
                     sceneLoader.SceneFailed -= HandleSceneFailed;
+                }
+
+                if (gameDataService != null)
+                {
+                    gameDataService.Changed -= RetryBlockedOfflineSettlement;
                 }
 
                 AccountRuntimeBridge.LogoutRequested -= HandleLogoutRequested;

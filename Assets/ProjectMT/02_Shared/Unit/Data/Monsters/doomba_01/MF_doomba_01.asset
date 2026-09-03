@@ -68,9 +68,9 @@ MonoBehaviour:
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 180, y: 110, z: 0}
-    scale: 0.5
+    localPosition: {x: 0, y: 0.3874442, z: 0}
+    localEulerAngles: {x: 180, y: 90, z: 0}
+    scale: 1
   - attackId: BA_M_02
     slotId: target_hit
     motionId: 

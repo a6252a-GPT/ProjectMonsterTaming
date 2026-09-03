@@ -287,6 +287,12 @@ namespace ProjectMT.Features.Equipment
                 preview.Root.SetActive(visible);
                 if (!visible)
                 {
+                    if (preview.LevelText != null)
+                    {
+                        preview.LevelText.text = string.Empty;
+                        preview.LevelText.gameObject.SetActive(false);
+                    }
+
                     continue;
                 }
 
@@ -300,6 +306,12 @@ namespace ProjectMT.Features.Equipment
                 if (preview.Frame != null)
                 {
                     preview.Frame.color = GetDismantlePreviewColor(item.Grade);
+                }
+
+                if (preview.LevelText != null)
+                {
+                    preview.LevelText.text = $"Lv.{item.ItemLevel}";
+                    preview.LevelText.gameObject.SetActive(true);
                 }
             }
         }

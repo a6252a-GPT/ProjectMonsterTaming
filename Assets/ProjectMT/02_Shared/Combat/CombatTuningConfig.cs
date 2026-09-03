@@ -99,7 +99,7 @@ namespace ProjectMT.Shared.Combat
         [SerializeField, Range(0.01f, 0.12f)] private float maximumHitStop = 0.06f;
 
         [Header("MainBattle 실시간 전투 간격")]
-        [SerializeField, Range(0.75f, 3f)] private float mainBattleEnemySpawnSpreadMultiplier = 2f;
+        [SerializeField, Range(0.75f, 3f)] private float mainBattleEnemySpawnSpreadMultiplier = 2.2624435f; // 최종 이웃 간격 2.5m
         [SerializeField, Range(0.4f, 3f)] private float mainBattlePlayerPairDistance = 0.85f;
         [SerializeField, Range(0.4f, 3f)] private float mainBattleEnemyPairDistance = 0.8f;
         [SerializeField, Range(0.4f, 2f)] private float mainBattleOpposingPairDistance = 0.65f;
@@ -293,7 +293,7 @@ namespace ProjectMT.Shared.Combat
             criticalOrKillEmphasis = 1.12f;
             criticalOrKillTargetStopMultiplier = 1.16f;
             maximumHitStop = 0.06f;
-            mainBattleEnemySpawnSpreadMultiplier = 2f;
+            mainBattleEnemySpawnSpreadMultiplier = 2.2624435f;
             mainBattlePlayerPairDistance = 0.85f;
             mainBattleEnemyPairDistance = 0.8f;
             mainBattleOpposingPairDistance = 0.65f;

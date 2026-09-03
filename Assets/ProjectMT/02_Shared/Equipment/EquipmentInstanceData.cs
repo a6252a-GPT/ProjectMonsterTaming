@@ -14,6 +14,7 @@ namespace ProjectMT.Shared.Equipment
         [SerializeField] private string instanceId;
         [SerializeField] private EquipmentPart part;
         [SerializeField] private EquipmentGrade grade;
+        [SerializeField] private int itemLevel; // 구형 누락값은 버전 이관에서만 보완
         [SerializeField] private List<EquipmentOptionRollData> randomOptions = new List<EquipmentOptionRollData>();
         [SerializeField] private bool isLocked;
 
@@ -21,12 +22,14 @@ namespace ProjectMT.Shared.Equipment
             string instanceId,
             EquipmentPart part,
             EquipmentGrade grade,
+            int itemLevel,
             List<EquipmentOptionRollData> randomOptions,
             bool isLocked = false)
         {
             this.instanceId = instanceId;
             this.part = part;
             this.grade = grade;
+            this.itemLevel = itemLevel;
             this.randomOptions = randomOptions ?? new List<EquipmentOptionRollData>();
             this.isLocked = isLocked;
         }
@@ -34,6 +37,7 @@ namespace ProjectMT.Shared.Equipment
         public string InstanceId => instanceId;
         public EquipmentPart Part => part;
         public EquipmentGrade Grade => grade;
+        public int ItemLevel => itemLevel;
         public IReadOnlyList<EquipmentOptionRollData> RandomOptions => randomOptions;
         public bool IsLocked => isLocked;
 
@@ -43,13 +47,10 @@ namespace ProjectMT.Shared.Equipment
             var clonedOptions = new List<EquipmentOptionRollData>(sourceOptions.Count);
             for (var i = 0; i < sourceOptions.Count; i++)
             {
-                if (sourceOptions[i] != null)
-                {
-                    clonedOptions.Add(sourceOptions[i].Clone());
-                }
+                clonedOptions.Add(sourceOptions[i]?.Clone());
             }
 
-            return new EquipmentInstanceData(instanceId, part, grade, clonedOptions, isLocked);
+            return new EquipmentInstanceData(instanceId, part, grade, itemLevel, clonedOptions, isLocked);
         }
 
         internal bool TrySetLocked(bool expectedValue, bool nextValue)
@@ -66,7 +67,7 @@ namespace ProjectMT.Shared.Equipment
         internal bool Repair()
         {
             instanceId = instanceId?.Trim();
-            if (string.IsNullOrEmpty(instanceId) ||
+            if (itemLevel < 1 || string.IsNullOrEmpty(instanceId) ||
                 !Enum.IsDefined(typeof(EquipmentPart), part) ||
                 !Enum.IsDefined(typeof(EquipmentGrade), grade))
             {
@@ -83,10 +84,20 @@ namespace ProjectMT.Shared.Equipment
             return true;
         }
 
-        // 기존 저장의 중복 옵션은 유지하되 신규 획득 데이터에는 허용하지 않는다.
-        internal bool IsValidForAcquire()
+        internal void MigrateLegacyLevel()
         {
-            if (!Repair())
+            if (itemLevel == 0) itemLevel = 1; // 옵션 확정값은 보존
+        }
+
+        internal bool IsValidForAcquire(int maximumItemLevel)
+        {
+            if (randomOptions != null)
+            {
+                if (randomOptions.Count > MaxRandomOptionCount) return false;
+                foreach (var option in randomOptions)
+                    if (option == null || !option.Repair()) return false; // 신규 손상값을 보정으로 숨기지 않음
+            }
+            if (itemLevel < 1 || itemLevel > maximumItemLevel || !Repair())
             {
                 return false;
             }

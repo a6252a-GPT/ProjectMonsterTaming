@@ -69,6 +69,8 @@ namespace ProjectMT.Contents.CastleRaidHex
         private float responseDelayRemaining;
         private float passiveStaggerRemaining;
         private float jumpElapsed;
+        private float baseMoveSpeed;
+        private float baseAttackDamage;
         private int routeIndex;
         private int patrolSequence;
         private int jumpCount;
@@ -97,6 +99,12 @@ namespace ProjectMT.Contents.CastleRaidHex
         public float ResponseDelayRemaining => responseDelayRemaining;
         public bool IsAlive => health != null && health.IsAlive && gameObject.activeInHierarchy;
         public bool IsConfigured => cells != null && health != null;
+
+        public void ApplyBuildingModifiers(float attackMultiplier, float moveSpeedMultiplier)
+        {
+            attackDamage = baseAttackDamage * Mathf.Max(1f, attackMultiplier);
+            moveSpeed = baseMoveSpeed * Mathf.Max(1f, moveSpeedMultiplier);
+        }
 
         public void Configure(
             HexCastleGarrisonUnitRole unitRole,
@@ -163,6 +171,9 @@ namespace ProjectMT.Contents.CastleRaidHex
                 detectionRangeCells = tuning.FarmerDetectionRangeCells;
                 leashRangeCells = tuning.FarmerLeashRangeCells;
             }
+
+            baseMoveSpeed = moveSpeed;
+            baseAttackDamage = attackDamage;
 
             renderers = visualRoot == null
                 ? Array.Empty<Renderer>()

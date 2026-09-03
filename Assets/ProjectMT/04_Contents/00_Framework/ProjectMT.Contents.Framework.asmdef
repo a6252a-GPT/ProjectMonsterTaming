@@ -3,7 +3,9 @@
   "rootNamespace": "ProjectMT.Contents.Framework",
   "references": [
     "ProjectMT.Core",
-    "ProjectMT.Shared"
+    "ProjectMT.Shared",
+    "UnityEngine.UI",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

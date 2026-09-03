@@ -139,7 +139,7 @@ MonoBehaviour:
       sfxState: 0
     - slotId: target_loop
       feedback:
-        sound: {fileID: 0}
+        sound: {fileID: 8300000, guid: 550ccdf1f620ecb49a0e485a6549b234, type: 3}
         soundVolume: 1
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 54367611267842656, guid: ef6882ec0fb8e254bbf1a6cf59fb4bdc, type: 3}
@@ -149,7 +149,7 @@ MonoBehaviour:
         scale: 1
       assignmentStateConfigured: 1
       vfxState: 1
-      sfxState: 0
+      sfxState: 1
     - slotId: target_end
       feedback:
         sound: {fileID: 0}
@@ -1260,8 +1260,8 @@ MonoBehaviour:
     motionId: 
     state: 1
     prefab: {fileID: 1199014096830578932, guid: 9b647d8e08d92c84e9a1777fb8b09d9f, type: 3}
-    sfxState: 2
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 8ce1d67f405db4979b29c6fd1a4d37db, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1

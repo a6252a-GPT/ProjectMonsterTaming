@@ -125,8 +125,8 @@ MonoBehaviour:
     motionId: attack01
     state: 1
     prefab: {fileID: 5492344958117361843, guid: dd98d3af6fbe63a42951c3ac5c569515, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 9a2c18fc7052c4c4694591f661a70f79, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1
@@ -141,8 +141,8 @@ MonoBehaviour:
     motionId: attack02
     state: 0
     prefab: {fileID: 5500161761263087781, guid: b558ac9453276ca40a07e0063346c5f3, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 9c06c5a07f897e0469cc088fd8a4349b, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1
@@ -158,7 +158,7 @@ MonoBehaviour:
     state: 0
     prefab: {fileID: 5500161761263087781, guid: b558ac9453276ca40a07e0063346c5f3, type: 3}
     sfxState: 0
-    sound: {fileID: 0}
+    sound: {fileID: 8300000, guid: 4a2f51aa66bf94047a5afe75f64067e1, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 3
@@ -173,7 +173,7 @@ MonoBehaviour:
     motionId: 
     state: 1
     prefab: {fileID: 9216221113199418791, guid: 58e9d49aab4c26e4182845b2d79c59d7, type: 3}
-    sfxState: 0
+    sfxState: 1
     sound: {fileID: 0}
     soundVolume: 1
     sfx: {fileID: 0}

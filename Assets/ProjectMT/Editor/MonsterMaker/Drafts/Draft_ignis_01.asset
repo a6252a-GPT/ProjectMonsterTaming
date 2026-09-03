@@ -157,8 +157,8 @@ MonoBehaviour:
     motionId: attack03
     state: 1
     prefab: {fileID: 1950821157413962, guid: fb5ba37c59a9a284f86bdcd397b06776, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 3d833893e28a8ed4b909168e95fec196, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1
@@ -173,8 +173,8 @@ MonoBehaviour:
     motionId: 
     state: 1
     prefab: {fileID: 1801918589960200, guid: 6953498a5ce2ecb4eaa9390c957cbe80, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 79895ae0606a9c34b8da61c44023dce0, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1

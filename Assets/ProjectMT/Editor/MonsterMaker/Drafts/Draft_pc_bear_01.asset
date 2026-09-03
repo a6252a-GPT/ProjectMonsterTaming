@@ -148,8 +148,8 @@ MonoBehaviour:
       motionId: 
       state: 1
       prefab: {fileID: 5464305951936604650, guid: ba4f3eb3b3e3ee7468dbe344f98c8666, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 5a01886e2682a6247a3e24db144b19f3, type: 3}
       soundVolume: 1
       sfx: {fileID: 0}
       lifetime: 3
@@ -164,8 +164,8 @@ MonoBehaviour:
       motionId: 
       state: 1
       prefab: {fileID: 3927127137047121744, guid: 32d8ea6211779f1439877eb77df691bb, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: b45f8297bea83494bba3f9d5569f3b79, type: 3}
       soundVolume: 1
       sfx: {fileID: 0}
       lifetime: 1
@@ -404,8 +404,8 @@ MonoBehaviour:
       motionId: step_03
       state: 1
       prefab: {fileID: 4726790242865161932, guid: 479177904962d7149a21cba4677d3d8b, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 1d71d518a178dd342aeebf91e35124fa, type: 3}
       soundVolume: 1
       sfx: {fileID: 0}
       lifetime: 2
@@ -420,8 +420,8 @@ MonoBehaviour:
       motionId: 
       state: 1
       prefab: {fileID: 3927127137047121744, guid: 32d8ea6211779f1439877eb77df691bb, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: b2f997c435693e9408a7755f46b9db7d, type: 3}
       soundVolume: 1
       sfx: {fileID: 0}
       lifetime: 1
@@ -591,8 +591,8 @@ MonoBehaviour:
     motionId: attack01
     state: 1
     prefab: {fileID: 8679266786258473969, guid: 0ea9e4dcdfcec8648b69665e203d9a4f, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 3e96e16156bd54f43a41ebaf9c481f52, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1
@@ -623,8 +623,8 @@ MonoBehaviour:
     motionId: 
     state: 0
     prefab: {fileID: 3927127137047121744, guid: 32d8ea6211779f1439877eb77df691bb, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 9f4d6e9995fbbbb49bce10593fd465c6, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1

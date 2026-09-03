@@ -128,8 +128,8 @@ MonoBehaviour:
     motionId: 
     state: 0
     prefab: {fileID: 1367524025346344, guid: 64c5a6e8823ab1347b119c3148fd71d8, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 0323546f4164b184dbe9f880fad932c8, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 3

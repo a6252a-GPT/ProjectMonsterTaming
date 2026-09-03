@@ -113,7 +113,7 @@ MonoBehaviour:
     slots:
     - slotId: cast_start
       feedback:
-        sound: {fileID: 0}
+        sound: {fileID: 8300000, guid: 697b8e763f6492f4382236c6c1d215f7, type: 3}
         soundVolume: 1
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 7298124039744100688, guid: da4c6fe0f01906e4eb5b2e7b751e4f48, type: 3}
@@ -123,7 +123,7 @@ MonoBehaviour:
         scale: 1
       assignmentStateConfigured: 1
       vfxState: 1
-      sfxState: 0
+      sfxState: 1
     - slotId: life_apply
       feedback:
         sound: {fileID: 0}
@@ -139,7 +139,7 @@ MonoBehaviour:
       sfxState: 0
     - slotId: target_loop
       feedback:
-        sound: {fileID: 0}
+        sound: {fileID: 8300000, guid: a9b0e201b604bc243b3443d63a003ee9, type: 3}
         soundVolume: 1
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 91871935769221215, guid: 8fe3c21076c24c441a4815166e845f8c, type: 3}
@@ -227,8 +227,8 @@ MonoBehaviour:
     motionId: attack01
     state: 1
     prefab: {fileID: 7722072588384670577, guid: fe1110bd116501a4a9cf9b7ffdeb3c24, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: df2c29fd864cea54488f91585eda94fa, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 3

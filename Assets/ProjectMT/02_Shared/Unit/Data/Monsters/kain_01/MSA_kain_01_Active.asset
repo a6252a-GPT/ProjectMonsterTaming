@@ -2490,10 +2490,10 @@ MonoBehaviour:
       motionId: step_01
       state: 1
       prefab: {fileID: 4317999751745903880, guid: bd58944cdf4061f4ca18aaeb6a62b90c, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 868933fa698ca477f8d58a1a1b84d9e3, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: 2651019640965354849, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -2506,10 +2506,10 @@ MonoBehaviour:
       motionId: 
       state: 1
       prefab: {fileID: 3273038533473548251, guid: 060ba07432dfabc44aaed05898aa0c7a, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 7cce3a0936ffd46acb9868f983af44b5, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: 5672610714089064448, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -2522,10 +2522,10 @@ MonoBehaviour:
       motionId: 
       state: 0
       prefab: {fileID: 0}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 341260199b9e3c14884b6e4e24a0c4e6, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: -1303024059587530909, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -2599,10 +2599,10 @@ MonoBehaviour:
       motionId: step_02
       state: 1
       prefab: {fileID: 4317999751745903880, guid: bd58944cdf4061f4ca18aaeb6a62b90c, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 868933fa698ca477f8d58a1a1b84d9e3, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: -1521547169542619702, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -2615,10 +2615,10 @@ MonoBehaviour:
       motionId: 
       state: 1
       prefab: {fileID: 3273038533473548251, guid: 060ba07432dfabc44aaed05898aa0c7a, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: f2e30ebb95e825641acbc3fbbb3b0379, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: 6236429859443953227, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -2708,10 +2708,10 @@ MonoBehaviour:
       motionId: step_03
       state: 1
       prefab: {fileID: 4317999751745903880, guid: bd58944cdf4061f4ca18aaeb6a62b90c, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 868933fa698ca477f8d58a1a1b84d9e3, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: 1196517926036356235, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -2817,10 +2817,10 @@ MonoBehaviour:
       motionId: step_04
       state: 1
       prefab: {fileID: 4317999751745903880, guid: bd58944cdf4061f4ca18aaeb6a62b90c, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 868933fa698ca477f8d58a1a1b84d9e3, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: -6613155669290954062, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -2942,10 +2942,10 @@ MonoBehaviour:
       motionId: 
       state: 1
       prefab: {fileID: 3273038533473548251, guid: 060ba07432dfabc44aaed05898aa0c7a, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 868933fa698ca477f8d58a1a1b84d9e3, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: -6238201138999872910, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -3035,10 +3035,10 @@ MonoBehaviour:
       motionId: step_06
       state: 1
       prefab: {fileID: 4317999751745903880, guid: bd58944cdf4061f4ca18aaeb6a62b90c, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 868933fa698ca477f8d58a1a1b84d9e3, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: 8253690894997562194, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -3144,10 +3144,10 @@ MonoBehaviour:
       motionId: step_07
       state: 1
       prefab: {fileID: 4317999751745903880, guid: bd58944cdf4061f4ca18aaeb6a62b90c, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 868933fa698ca477f8d58a1a1b84d9e3, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: 2603880794196946692, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -3253,10 +3253,10 @@ MonoBehaviour:
       motionId: step_08
       state: 1
       prefab: {fileID: 4317999751745903880, guid: bd58944cdf4061f4ca18aaeb6a62b90c, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 80ec02203cef541338b91d5d2eacfc38, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: 8040437822486525876, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -3269,10 +3269,10 @@ MonoBehaviour:
       motionId: 
       state: 1
       prefab: {fileID: 3273038533473548251, guid: 060ba07432dfabc44aaed05898aa0c7a, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: fd50b234071eb4233884faea09712761, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: -4948999973437596873, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -3362,10 +3362,10 @@ MonoBehaviour:
       motionId: step_09
       state: 1
       prefab: {fileID: 4317999751745903880, guid: bd58944cdf4061f4ca18aaeb6a62b90c, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 868933fa698ca477f8d58a1a1b84d9e3, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: 1180057907367612087, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -3378,10 +3378,10 @@ MonoBehaviour:
       motionId: 
       state: 1
       prefab: {fileID: 3273038533473548251, guid: 060ba07432dfabc44aaed05898aa0c7a, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: fd50b234071eb4233884faea09712761, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: 8962603888643010833, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -3471,10 +3471,10 @@ MonoBehaviour:
       motionId: step_10
       state: 1
       prefab: {fileID: 1043212140908705569, guid: a7a9f0ca11789a748a3640dbdc82f491, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 3c372a28fe976c54c967b75d67350756, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: -7660380070144851012, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -3487,10 +3487,10 @@ MonoBehaviour:
       motionId: 
       state: 1
       prefab: {fileID: 5596407787817797596, guid: a317ab86765053742bcbdbeb3a4beb43, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 796714b00753cb94eb5447799270d552, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: -8920918816791915892, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -3503,10 +3503,10 @@ MonoBehaviour:
       motionId: 
       state: 0
       prefab: {fileID: 0}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 967b98abe30c8954fa8b60f2b0ace694, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: 4705133317255072424, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1

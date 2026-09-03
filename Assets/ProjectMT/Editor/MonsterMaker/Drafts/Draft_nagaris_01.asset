@@ -309,11 +309,11 @@ MonoBehaviour:
     sound: {fileID: 0}
     soundVolume: 1
     sfx: {fileID: 0}
-    lifetime: 1
+    lifetime: 3
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: -0.29
-    localPosition: {x: 0, y: 0, z: 0.7951942}
+    localPosition: {x: 0, y: -0.2, z: 0.7951942}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1.2
   - attackId: BA_S_02

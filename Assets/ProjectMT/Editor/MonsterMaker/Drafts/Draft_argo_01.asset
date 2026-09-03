@@ -133,7 +133,7 @@ MonoBehaviour:
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0.1
-    localPosition: {x: 0, y: 0, z: 1.0634624}
+    localPosition: {x: 0, y: -0.1, z: 1.0634624}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 0.8
   - attackId: BA_R_05

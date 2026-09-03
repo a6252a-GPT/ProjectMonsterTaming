@@ -136,11 +136,11 @@ MonoBehaviour:
       sound: {fileID: 0}
       soundVolume: 1
       sfx: {fileID: 0}
-      lifetime: 1
+      lifetime: 7
       playbackOffset: 0
       playbackSpeed: 1
       eventTimingOffset: 0
-      localPosition: {x: 0, y: 0.7581795, z: 1.3611472}
+      localPosition: {x: 0, y: 0.1, z: 1.3611472}
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 0.6
     - attackId: active_step_01
@@ -156,7 +156,7 @@ MonoBehaviour:
       playbackOffset: 0
       playbackSpeed: 1
       eventTimingOffset: 0
-      localPosition: {x: 0, y: -0.3, z: 0}
+      localPosition: {x: 0, y: 0.1, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 0.5
     inactiveSlots: []
@@ -232,29 +232,29 @@ MonoBehaviour:
       sound: {fileID: 0}
       soundVolume: 1
       sfx: {fileID: 0}
-      lifetime: 1
+      lifetime: 3
       playbackOffset: 3
       playbackSpeed: 3
       eventTimingOffset: 0.2
-      localPosition: {x: 0, y: 0.94897974, z: 1.3710558}
+      localPosition: {x: 0, y: 0, z: 1.3710558}
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
     - attackId: active_step_02
       slotId: charge
       motionId: step_02
-      state: 0
-      prefab: {fileID: 3791934906843715960, guid: a3c8b97fe7d3adf4888d5a77b3bb7804, type: 3}
+      state: 1
+      prefab: {fileID: 2457285412779223385, guid: 92692d3172192594a8e580c75e71ee60, type: 3}
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
       sfx: {fileID: 0}
-      lifetime: 1
+      lifetime: 10
       playbackOffset: 0
-      playbackSpeed: 1
+      playbackSpeed: 1.55
       eventTimingOffset: 0
-      localPosition: {x: 0, y: 0, z: 0}
+      localPosition: {x: 0, y: -0.3, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
-      scale: 1
+      scale: 2
     - attackId: active_step_02
       slotId: beam_body
       motionId: step_02
@@ -266,9 +266,9 @@ MonoBehaviour:
       sfx: {fileID: 0}
       lifetime: 3
       playbackOffset: 1
-      playbackSpeed: 2
+      playbackSpeed: 1
       eventTimingOffset: 0
-      localPosition: {x: 0, y: 0.97358435, z: 1.0360335}
+      localPosition: {x: 0, y: 0, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
     - attackId: active_step_02
@@ -280,7 +280,7 @@ MonoBehaviour:
       sound: {fileID: 0}
       soundVolume: 1
       sfx: {fileID: 0}
-      lifetime: 1
+      lifetime: 5
       playbackOffset: 0
       playbackSpeed: 1
       eventTimingOffset: 0
@@ -376,11 +376,11 @@ MonoBehaviour:
       sound: {fileID: 0}
       soundVolume: 1
       sfx: {fileID: 0}
-      lifetime: 1
+      lifetime: 10
       playbackOffset: 0
       playbackSpeed: 1
       eventTimingOffset: 0
-      localPosition: {x: 0, y: 0, z: 0}
+      localPosition: {x: 0, y: -0.3, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 1
     - attackId: active_step_03
@@ -408,7 +408,7 @@ MonoBehaviour:
       sound: {fileID: 0}
       soundVolume: 1
       sfx: {fileID: 0}
-      lifetime: 5.43
+      lifetime: 10
       playbackOffset: 0
       playbackSpeed: 0.5
       eventTimingOffset: 0
@@ -466,7 +466,7 @@ MonoBehaviour:
   hpBarHeight: 1.2
   attackOriginPath: AttackOrigin
   hitCenterPath: HitCenter
-  attackOriginLocalPosition: {x: 0, y: 0.3, z: 0.6}
+  attackOriginLocalPosition: {x: 0, y: 0.5, z: 0.6}
   hitCenterLocalPosition: {x: 0, y: 0.5, z: 0}
   rigMode: 0
   previewScale: 1
@@ -526,23 +526,23 @@ MonoBehaviour:
     slotId: projectile
     motionId: 
     state: 1
-    prefab: {fileID: 0}
+    prefab: {fileID: 1517588531989122639, guid: ddc3380681ba1fb4b96d7fc1463fca02, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
     sfx: {fileID: 0}
-    lifetime: 1
+    lifetime: 6
     playbackOffset: 0
-    playbackSpeed: 1
+    playbackSpeed: 0.57
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: 0.7630608, z: 2.719884}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 0.8
   - attackId: BA_R_03
     slotId: contact
     motionId: 
     state: 1
-    prefab: {fileID: 4502575113726086031, guid: 6d91f6bf703e68d4e80962633fda2c40, type: 3}
+    prefab: {fileID: 1978266488057773170, guid: 634b6ec72f889bd40b64dc7112d44116, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -551,14 +551,14 @@ MonoBehaviour:
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: -0.8700161, z: -0.01119709}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 0.8
   - attackId: BA_R_03
     slotId: area_explosion
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 4470130016990481759, guid: 21577f9498310a546ab5a0466706bbdf, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1

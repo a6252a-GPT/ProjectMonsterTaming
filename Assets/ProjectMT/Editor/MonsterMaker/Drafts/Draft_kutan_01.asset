@@ -135,7 +135,7 @@ MonoBehaviour:
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: -0.34, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 0.4
   meleeMode: 0

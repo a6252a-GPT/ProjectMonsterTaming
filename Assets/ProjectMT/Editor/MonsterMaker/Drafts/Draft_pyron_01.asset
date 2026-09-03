@@ -219,32 +219,8 @@ MonoBehaviour:
     - normalizedTime: 0.5
       powerRatio: 1
       socketOverride: 
-  - motionId: attack02
-    clip: {fileID: 7400000, guid: 525892ff6a8e901458f4f6af1463fd6c, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 1
-    overrideBreathDuration: 0
-    breathDuration: 0.8
-    markers:
-    - normalizedTime: 0.5
-      powerRatio: 1
-      socketOverride: 
   - motionId: attack03
     clip: {fileID: 7400000, guid: 816ffc95802e2f244b06b193d4e31bbb, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 1
-    overrideBreathDuration: 0
-    breathDuration: 0.8
-    markers:
-    - normalizedTime: 0.5
-      powerRatio: 1
-      socketOverride: 
-  - motionId: attack04
-    clip: {fileID: 7400000, guid: 61e3c68fd3db67642af8322a6b4c981c, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.06
     weight: 1
@@ -279,8 +255,8 @@ MonoBehaviour:
   - attackId: BA_R_03
     slotId: launch
     motionId: attack02
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 3305186517166574314, guid: a427771355de5cf4ca95cf881fd871f9, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -311,7 +287,7 @@ MonoBehaviour:
   - attackId: BA_R_03
     slotId: launch
     motionId: attack04
-    state: 0
+    state: 1
     prefab: {fileID: 0}
     sfxState: 0
     sound: {fileID: 0}
@@ -327,8 +303,8 @@ MonoBehaviour:
   - attackId: BA_R_03
     slotId: projectile
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 1840672898717558257, guid: ee21a55def7a588449f1b13d4836da80, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -337,14 +313,14 @@ MonoBehaviour:
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: 0.72782415, z: 0.60478795}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 0.8
   - attackId: BA_R_03
     slotId: contact
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 1444971686239000, guid: 2a08b3071ec108040959cc25cf08be4b, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -355,12 +331,12 @@ MonoBehaviour:
     eventTimingOffset: 0
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 2
   - attackId: BA_R_03
     slotId: area_explosion
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 3305186517166574314, guid: 92394081379a4494e8b7f7d4d80134b9, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -369,9 +345,9 @@ MonoBehaviour:
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: 0.5390836, z: 0.012242526}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 2
   meleeMode: 0
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5

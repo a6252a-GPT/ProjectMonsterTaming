@@ -116,11 +116,11 @@ MonoBehaviour:
         sound: {fileID: 0}
         soundVolume: 1
         sfx: {fileID: 0}
-        vfxPrefab: {fileID: 0}
+        vfxPrefab: {fileID: 6576627982781535916, guid: ce6ed0ce1612a1246bd96523e990e15d, type: 3}
         vfxLifetime: 1
         localPosition: {x: 0, y: 0, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
-        scale: 1
+        scale: 0.4
       assignmentStateConfigured: 1
       vfxState: 0
       sfxState: 0
@@ -129,24 +129,24 @@ MonoBehaviour:
         sound: {fileID: 0}
         soundVolume: 1
         sfx: {fileID: 0}
-        vfxPrefab: {fileID: 0}
+        vfxPrefab: {fileID: 6576627982781535916, guid: ce6ed0ce1612a1246bd96523e990e15d, type: 3}
         vfxLifetime: 1
-        localPosition: {x: 0, y: 0, z: 0}
+        localPosition: {x: 0, y: -0.28274164, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
-        scale: 1
+        scale: 0.4
       assignmentStateConfigured: 1
-      vfxState: 0
+      vfxState: 1
       sfxState: 0
     - slotId: target_loop
       feedback:
         sound: {fileID: 0}
         soundVolume: 1
         sfx: {fileID: 0}
-        vfxPrefab: {fileID: 0}
+        vfxPrefab: {fileID: 6576627982781535916, guid: ce6ed0ce1612a1246bd96523e990e15d, type: 3}
         vfxLifetime: 1
-        localPosition: {x: 0, y: 0, z: 0}
+        localPosition: {x: 0, y: 0.43706542, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
-        scale: 1
+        scale: 2
       assignmentStateConfigured: 1
       vfxState: 0
       sfxState: 0

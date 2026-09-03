@@ -45,7 +45,7 @@ MonoBehaviour:
   activeSkillPlaybackSpeed: 1
   activeSkillCrossFadeDuration: 0.08
   activeSkillCommitNormalizedTime: 0.25
-  activeStepMotionModeConfigured: 0
+  activeStepMotionModeConfigured: 1
   useCustomActiveStepMotions: 0
   activeAttackStepTunings: []
   activeAttackPresentations: []
@@ -103,18 +103,6 @@ MonoBehaviour:
     - normalizedTime: 0.5
       powerRatio: 1
       socketOverride: 
-  - motionId: attack02
-    clip: {fileID: 1827226128182048838, guid: 516c7f364ad56904a8fe71033bf1d799, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 1
-    overrideBreathDuration: 0
-    breathDuration: 0.8
-    markers:
-    - normalizedTime: 0.5
-      powerRatio: 1
-      socketOverride: 
   - motionId: attack03
     clip: {fileID: 1827226128182048838, guid: d2c2b29b303347040a827646430e7ecd, type: 3}
     playbackSpeed: 1
@@ -136,7 +124,7 @@ MonoBehaviour:
     slotId: sweep_plane
     motionId: attack01
     state: 0
-    prefab: {fileID: 0}
+    prefab: {fileID: 1989842276948574, guid: a2a2ee42c28dc4e41ad1cfa224045c3d, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -152,7 +140,7 @@ MonoBehaviour:
     slotId: sweep_plane
     motionId: attack02
     state: 0
-    prefab: {fileID: 0}
+    prefab: {fileID: 1357030889595668, guid: 73f7f754e5d0b89409c9debabd4c48c6, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -163,12 +151,12 @@ MonoBehaviour:
     eventTimingOffset: 0
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 5
   - attackId: BA_M_02
     slotId: sweep_plane
     motionId: attack03
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 1950821157413962, guid: fb5ba37c59a9a284f86bdcd397b06776, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -177,14 +165,14 @@ MonoBehaviour:
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: 0.1393672, z: 0.9033652}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 7
   - attackId: BA_M_02
     slotId: target_hit
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 1801918589960200, guid: 6953498a5ce2ecb4eaa9390c957cbe80, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -193,9 +181,9 @@ MonoBehaviour:
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: -0.29378387, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 2
   meleeMode: 0
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5

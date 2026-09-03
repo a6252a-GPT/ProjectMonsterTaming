@@ -45,7 +45,7 @@ MonoBehaviour:
   activeSkillPlaybackSpeed: 1
   activeSkillCrossFadeDuration: 0.08
   activeSkillCommitNormalizedTime: 0.25
-  activeStepMotionModeConfigured: 0
+  activeStepMotionModeConfigured: 1
   useCustomActiveStepMotions: 0
   activeAttackStepTunings: []
   activeAttackPresentations: []
@@ -106,7 +106,55 @@ MonoBehaviour:
   deathSpeed: 1
   combatType: 1
   basicAttackProfile: {fileID: 11400000, guid: 22c64b93822d90c469347167cf20a0d0, type: 2}
-  basicAttackVfxBindings: []
+  basicAttackVfxBindings:
+  - attackId: BA_R_01
+    slotId: launch
+    motionId: attack01
+    state: 0
+    prefab: {fileID: 8365207078527959830, guid: 1597147601f068840927e3fdaec6d8b9, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_R_01
+    slotId: projectile
+    motionId: 
+    state: 0
+    prefab: {fileID: 1367524025346344, guid: 64c5a6e8823ab1347b119c3148fd71d8, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 3
+    playbackOffset: 3
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 2
+  - attackId: BA_R_01
+    slotId: hit
+    motionId: 
+    state: 1
+    prefab: {fileID: 1227067792111776, guid: 3f3edfb72885bb3478e21934ec87329b, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 3
   meleeMode: 0
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5

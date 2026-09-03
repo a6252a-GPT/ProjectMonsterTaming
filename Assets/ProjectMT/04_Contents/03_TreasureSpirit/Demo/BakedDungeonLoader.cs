@@ -10,9 +10,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         [Header("베이크된 던전 프리팹")]
         [SerializeField] private GameObject[] dungeonMapPrefabs;
 
-        [Header("맵 순환 (1→2→3→4→5→1)")]
-        [SerializeField] private int startMapIndex;
-
         [Header("룸 마커 스폰 (Chest_pt / Guard_pt)")]
         [SerializeField] private GameObject chestPrefab;
         [SerializeField] private GameObject mimicPrefab;
@@ -29,6 +26,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         [Header("플레이어 / 카메라")]
         [SerializeField] private Transform playerTransform;
+        [SerializeField] private MazeCameraFollow cameraFollow;
         [SerializeField] private float playerSpawnHeightOffset = 0.05f;
 
         [Header("렌더링")]
@@ -39,13 +37,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private BakedDungeonMapMetadata activeMetadata;
         private bool hasKey;
 
-        private static int nextMapIndex = -1;
-
         public bool HasKey => hasKey;
         public event Action KeyGranted;
         public GameObject ActiveMapInstance => activeMapInstance;
 
-        public void LoadNextMap()
+        public void LoadMapForStage(int stage)
         {
             ClearMap();
 
@@ -56,18 +52,12 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return;
             }
 
-            if (nextMapIndex < 0)
-            {
-                nextMapIndex = Mathf.Clamp(startMapIndex, 0, prefabs.Length - 1);
-            }
-
-            if (!TrySelectValidPrefab(prefabs, out int selectedIndex, out GameObject prefabRoot))
+            int requestedIndex = Mathf.Clamp(stage - 1, 0, prefabs.Length - 1);
+            if (!TrySelectValidPrefab(prefabs, requestedIndex, out _, out GameObject prefabRoot))
             {
                 Debug.LogError("[BakedDungeonLoader] 로드할 수 있는 던전 맵 프리팹이 없습니다.");
                 return;
             }
-
-            nextMapIndex = (selectedIndex + 1) % prefabs.Length;
 
             activeMapInstance = Instantiate(
                 prefabRoot,
@@ -76,13 +66,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 transform);
             activeMapInstance.name = $"{prefabRoot.name}_Runtime";
             PrepareLoadedMap();
-
-            Debug.Log(
-                $"[BakedDungeonLoader] 맵 로드: {prefabRoot.name} (index={selectedIndex + 1}/{prefabs.Length}, 다음={nextMapIndex + 1}) " +
-                $"Start_pt={DemoMapUtil.CollectMarkers(activeMapInstance.transform, DemoMapUtil.StartMarkerName).Count} " +
-                $"Prison_pt={DemoMapUtil.CollectMarkers(activeMapInstance.transform, DemoMapUtil.PrisonMarkerName).Count} " +
-                $"Chest_pt={DemoMapUtil.CollectChestMarkers(activeMapInstance.transform).Count} " +
-                $"Guard_pt={DemoMapUtil.CollectMarkers(activeMapInstance.transform, DemoMapUtil.GuardMarkerName).Count}");
         }
 
         private void PrepareLoadedMap()
@@ -113,7 +96,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             DemoDungeonAtmosphere.Apply(activeMapInstance);
-            DungeonFogInitializer.Install(activeMapInstance.transform, playerTransform);
+            DungeonFogInitializer.Install(activeMapInstance.transform);
             hasKey = false;
         }
 
@@ -121,7 +104,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         {
             PlacePlayer();
             SetupCameraFollow();
-            DungeonFogInitializer.RevealPlayerArea(playerTransform);
+            DungeonFogInitializer.RevealPlayerArea(activeMapInstance != null ? activeMapInstance.transform : null, playerTransform);
         }
 
         public void SpawnRoomContents(float difficultyMultiplier = 1f)
@@ -380,31 +363,27 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return;
             }
 
-            Camera mainCamera = Camera.main;
-            if (mainCamera == null)
+            if (cameraFollow == null)
             {
-                return;
+                cameraFollow = MazeCameraFollow.ResolveFrom(transform);
             }
 
-            MazeCameraFollow cameraFollow = mainCamera.GetComponent<MazeCameraFollow>();
-            if (cameraFollow != null)
-            {
-                cameraFollow.BindTarget(playerTransform, true);
-            }
+            cameraFollow?.BindTarget(playerTransform, true);
         }
 
         private bool TrySelectValidPrefab(
             GameObject[] prefabs,
+            int startIndex,
             out int selectedIndex,
             out GameObject prefabRoot)
         {
             selectedIndex = -1;
             prefabRoot = null;
 
-            int startIndex = Mathf.Clamp(nextMapIndex, 0, prefabs.Length - 1);
+            int begin = Mathf.Clamp(startIndex, 0, prefabs.Length - 1);
             for (int offset = 0; offset < prefabs.Length; offset++)
             {
-                int index = (startIndex + offset) % prefabs.Length;
+                int index = (begin + offset) % prefabs.Length;
                 if (TryResolvePrefab(prefabs[index], out prefabRoot))
                 {
                     selectedIndex = index;
@@ -418,8 +397,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private static void DisablePunctualLightShadows(GameObject mapRoot)
         {
             Light[] lights = mapRoot.GetComponentsInChildren<Light>(true);
-            int disabledCount = 0;
-
             for (int i = 0; i < lights.Length; i++)
             {
                 Light light = lights[i];
@@ -434,12 +411,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 }
 
                 light.shadows = LightShadows.None;
-                disabledCount++;
-            }
-
-            if (disabledCount > 0)
-            {
-                Debug.Log($"[BakedDungeonLoader] 포인트/스팟 라이트 섀도우 {disabledCount}개 비활성화 (URP shadow atlas 경고 방지)");
             }
         }
     }

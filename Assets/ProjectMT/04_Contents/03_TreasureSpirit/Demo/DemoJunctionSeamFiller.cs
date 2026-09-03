@@ -31,14 +31,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             Transform folder = new GameObject("SeamFillers").transform;
             folder.SetParent(mapRoot, false);
-            int filled = FillFloorSeams(floors, folder);
-            Debug.Log($"[DemoJunctionSeamFiller] 바닥 이음 {filled} ({mapRoot.name})");
+            FillFloorSeams(floors, folder);
         }
 
-        private static int FillFloorSeams(List<Renderer> pieces, Transform folder)
+        private static void FillFloorSeams(List<Renderer> pieces, Transform folder)
         {
-            int filled = 0;
-
             for (int i = 0; i < pieces.Count; i++)
             {
                 Renderer first = pieces[i];
@@ -62,11 +59,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                     }
 
                     CreateFillBox(folder, center, size, first);
-                    filled++;
                 }
             }
-
-            return filled;
         }
 
         private static bool TryGetSeam(Bounds a, Bounds b, out Vector3 center, out Vector3 size)

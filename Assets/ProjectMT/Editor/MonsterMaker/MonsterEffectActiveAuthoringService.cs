@@ -106,8 +106,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
             try
             {
                 var flags = target.hideFlags;
+                var assetName = ResolveAssetName(target);
                 Undo.RecordObject(target, "효과형 액티브 프리셋 업데이트");
                 EditorUtility.CopySerialized(source, target);
+                target.name = assetName;
                 target.hideFlags = flags;
                 EditorUtility.SetDirty(target);
                 AssetDatabase.SaveAssetIfDirty(target);
@@ -126,6 +128,17 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (profile == null) return false;
             var path = AssetDatabase.GetAssetPath(profile).Replace('\\', '/');
             return path.StartsWith(ProfileRoot + "/", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string ResolveAssetName(MonsterEffectActiveProfile profile)
+        {
+            var path = AssetDatabase.GetAssetPath(profile);
+            if (string.IsNullOrEmpty(path))
+            {
+                return profile != null ? profile.name : string.Empty;
+            }
+
+            return System.IO.Path.GetFileNameWithoutExtension(path);
         }
 
         public static void EnsureProfileFolder()

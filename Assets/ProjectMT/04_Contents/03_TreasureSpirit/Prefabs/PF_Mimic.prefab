@@ -311,6 +311,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Mimic_TongueWhip
       objectReference: {fileID: 0}
+    - target: {fileID: 4093828219172938874, guid: f9b1d48faaae53046a7b43b2cb59d5cb, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4093828219172938875, guid: f9b1d48faaae53046a7b43b2cb59d5cb, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

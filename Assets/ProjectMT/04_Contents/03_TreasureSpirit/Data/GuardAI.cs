@@ -6,7 +6,7 @@ using UnityEngine.AI;
 namespace ProjectMT.Contents.TreasureSpirit
 {
     [RequireComponent(typeof(NavMeshAgent))]
-    public class GuardAI : MonoBehaviour, IDamageable
+    public class GuardAI : MonoBehaviour, IDamageable, Demo.IIceSlowable
     {
         public enum GuardState
         {
@@ -45,10 +45,11 @@ namespace ProjectMT.Contents.TreasureSpirit
         private bool usePatrolOrigin;
 
         [Header("체력 설정")]
-        [SerializeField] private float maxHealth = 100f;
-        [SerializeField] private float currentHealth;
+        [SerializeField] private float maxHealth = Demo.DemoIceCombat.GuardHealth;
+        private float currentHealth;
         [SerializeField] private float deathDestroyDelay = 3.0f;
         private bool isDead;
+        private float iceSlowUntil;
 
         public bool IsAlive => !isDead;
         public Vector3 Position => transform.position;
@@ -90,7 +91,7 @@ namespace ProjectMT.Contents.TreasureSpirit
         private void Start()
         {
             currentHealth = maxHealth;
-            agent.speed = patrolSpeed;
+            RefreshMoveSpeed();
             SetRandomPatrolDestination();
         }
 
@@ -102,7 +103,8 @@ namespace ProjectMT.Contents.TreasureSpirit
         public void ConfigureDifficulty(float difficultyMultiplier) // 성장 단계 전투 배율 적용
         {
             var multiplier = Mathf.Max(1f, difficultyMultiplier);
-            maxHealth *= multiplier;
+            maxHealth = Demo.DemoIceCombat.GuardHealth;
+            currentHealth = maxHealth;
             attackDamage *= multiplier;
             lastAttackTime = Time.time;
         }
@@ -116,7 +118,7 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private void Update()
         {
-            if (isDead)
+            if (isDead || Demo.DemoDungeonController.IsGameplayPaused)
             {
                 return;
             }
@@ -125,6 +127,8 @@ namespace ProjectMT.Contents.TreasureSpirit
             {
                 return;
             }
+
+            RefreshMoveSpeed();
 
             if (hasSpeedParameter && animator != null)
             {
@@ -144,7 +148,7 @@ namespace ProjectMT.Contents.TreasureSpirit
                 if (currentState != GuardState.Patrol)
                 {
                     currentState = GuardState.Patrol;
-                    agent.speed = patrolSpeed;
+                    RefreshMoveSpeed();
                     SetRandomPatrolDestination();
                 }
                 PatrolBehavior();
@@ -197,7 +201,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             if (distanceToTarget <= detectionRange)
             {
                 currentState = GuardState.Chase;
-                agent.speed = chaseSpeed;
+                RefreshMoveSpeed();
                 return;
             }
 
@@ -209,7 +213,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             if (distanceToTarget > loseTargetRange)
             {
                 currentState = GuardState.Patrol;
-                agent.speed = patrolSpeed;
+                RefreshMoveSpeed();
                 SetRandomPatrolDestination();
                 return;
             }
@@ -222,6 +226,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
 
             agent.isStopped = false;
+            RefreshMoveSpeed();
             Demo.DemoNavMeshUtil.SetDestinationIfMoved(agent, currentTarget.position, ref lastChaseDestination);
         }
 
@@ -250,7 +255,13 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private void PatrolBehavior()
         {
-            if (!IsAgentReady() || agent.pathPending)
+            if (!IsAgentReady())
+            {
+                return;
+            }
+
+            agent.isStopped = false;
+            if (agent.pathPending)
             {
                 return;
             }
@@ -273,6 +284,7 @@ namespace ProjectMT.Contents.TreasureSpirit
                 return;
             }
 
+            agent.isStopped = false;
             Vector3 origin = usePatrolOrigin ? patrolOrigin : transform.position;
             Vector3 randomDirection = Random.insideUnitSphere * patrolRadius;
             randomDirection.y = 0f;
@@ -358,14 +370,22 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         public float ReceiveDamage(UnitActor source, float amount)
         {
-            float before = currentHealth;
+            if (!IsAlive)
+            {
+                return 0f;
+            }
+
+            var before = currentHealth;
             TakeDamage(amount);
             return Mathf.Max(0f, before - currentHealth);
         }
 
         public void TakeDamage(float damage)
         {
-            if (isDead) return;
+            if (isDead)
+            {
+                return;
+            }
 
             currentHealth -= damage;
 
@@ -375,10 +395,41 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
         }
 
+        public void ApplyMoveSlow(float duration)
+        {
+            if (isDead || duration <= 0f)
+            {
+                return;
+            }
+
+            iceSlowUntil = Mathf.Max(iceSlowUntil, Time.time + duration);
+            Demo.DemoIceSlowVfx.Play(transform, iceSlowUntil - Time.time);
+            RefreshMoveSpeed();
+        }
+
+        private void RefreshMoveSpeed()
+        {
+            if (!IsAgentReady())
+            {
+                return;
+            }
+
+            float baseSpeed = currentState == GuardState.Chase || currentState == GuardState.Attack
+                ? chaseSpeed
+                : patrolSpeed;
+            agent.speed = baseSpeed * (Time.time < iceSlowUntil ? 0.5f : 1f);
+        }
+
         private void Die()
         {
+            if (isDead)
+            {
+                return;
+            }
+
             isDead = true;
             currentState = GuardState.Dead;
+            Demo.DemoIceSlowVfx.Stop(transform);
 
             agent.isStopped = true;
             agent.enabled = false;

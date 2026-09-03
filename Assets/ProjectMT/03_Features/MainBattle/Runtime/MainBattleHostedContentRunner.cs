@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Core;
 using ProjectMT.Features.Expedition;
 using UnityEngine;
 
@@ -28,7 +29,7 @@ namespace ProjectMT.Features.MainBattle
             }
 
             expedition.StopWithoutResult(); // 보상 없이 현재 Run 종료
-            mainGameplayRoot.SetActive(false); // 메인 플레이 영역 전체 비활성
+            MagicaClothActivation.SetActive(mainGameplayRoot, false); // 메인 플레이 영역 전체 비활성
             CacheAndHideStageMapRoots(); // Hosted 전용 배경과 겹치지 않게 숨긴다.
             CacheAndHideGlobalDebugPanel(); // DEV 전용 HUD와 겹치는 전역 디버그 버튼 숨김
             if (growthDungeonHost.Open(context))
@@ -39,7 +40,7 @@ namespace ProjectMT.Features.MainBattle
 
             RestoreGlobalDebugPanel(); // 열기 실패 시 전역 디버그 버튼 복구
             RestoreStageMapRoots(); // 열기 실패 시 원래 활성 상태 복구
-            mainGameplayRoot.SetActive(true); // 열기 실패 시 메인 복구
+            MagicaClothActivation.SetActive(mainGameplayRoot, true); // 열기 실패 시 메인 복구
             expedition.StartFromSavedMode(); // 저장된 모드로 새 Run
             return false;
         }
@@ -61,13 +62,18 @@ namespace ProjectMT.Features.MainBattle
                 return;
             }
 
-            growthDungeonHost.Close(); // Controller 종료 후 Prefab 비활성
             IsOpen = false;
+            if (!PlaySession.CanMutateWorld)
+            {
+                return;
+            }
+
+            growthDungeonHost.Close(); // Controller 종료 후 Prefab 비활성
             RestoreGlobalDebugPanel(); // Hosted 종료 뒤 전역 디버그 버튼 복구
             RestoreStageMapRoots(); // 메인 카메라가 켜지기 전에 배경 복구
             if (mainGameplayRoot != null)
             {
-                mainGameplayRoot.SetActive(true);
+                MagicaClothActivation.SetActive(mainGameplayRoot, true);
             }
 
             if (restartExpedition)
@@ -94,7 +100,7 @@ namespace ProjectMT.Features.MainBattle
 
                 stageMapRoots.Add(root);
                 stageMapActiveStates.Add(root.activeSelf);
-                root.SetActive(false);
+                SetStageMapRootActive(root, false);
             }
         }
 
@@ -103,14 +109,58 @@ namespace ProjectMT.Features.MainBattle
             var count = Mathf.Min(stageMapRoots.Count, stageMapActiveStates.Count);
             for (var index = 0; index < count; index++)
             {
-                if (stageMapRoots[index] != null)
+                var root = stageMapRoots[index];
+                if (root != null)
                 {
-                    stageMapRoots[index].SetActive(stageMapActiveStates[index]);
+                    SetStageMapRootActive(root, stageMapActiveStates[index]);
                 }
             }
 
             stageMapRoots.Clear();
             stageMapActiveStates.Clear();
+        }
+
+        // Terrain이 꺼진 채 다시 켜질 때 Unity가 MeshCollider를 붙이며 경고를 낸다.
+        // 콜라이더를 먼저 끄고 루트만 전환한 뒤, 컴포넌트 활성 상태를 원래대로 되돌린다.
+        private static void SetStageMapRootActive(GameObject root, bool active)
+        {
+            var terrains = root.GetComponentsInChildren<Terrain>(true);
+            var terrainColliders = new TerrainCollider[terrains.Length];
+            for (var index = 0; index < terrains.Length; index++)
+            {
+                var terrain = terrains[index];
+                if (terrain == null)
+                {
+                    continue;
+                }
+
+                var meshCollider = terrain.GetComponent<MeshCollider>();
+                if (meshCollider != null)
+                {
+                    meshCollider.enabled = false;
+                    UnityEngine.Object.Destroy(meshCollider);
+                }
+
+                var terrainCollider = terrain.GetComponent<TerrainCollider>();
+                if (terrainCollider == null)
+                {
+                    continue;
+                }
+
+                terrainColliders[index] = terrainCollider;
+                terrainCollider.enabled = false;
+            }
+
+            root.SetActive(active);
+
+            for (var index = 0; index < terrainColliders.Length; index++)
+            {
+                var terrainCollider = terrainColliders[index];
+                if (terrainCollider != null)
+                {
+                    terrainCollider.enabled = true;
+                }
+            }
         }
 
         private void CacheAndHideGlobalDebugPanel()

@@ -43,6 +43,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void Update()
         {
+            if (DemoDungeonController.IsGameplayPaused)
+            {
+                return;
+            }
+
             elapsed += Time.deltaTime;
             if (resting)
             {
@@ -212,6 +217,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void Update()
         {
+            if (DemoDungeonController.IsGameplayPaused)
+            {
+                return;
+            }
+
             float step = travelSpeed * Time.deltaTime;
             Vector3 move = velocity * Time.deltaTime;
             if (Physics.Raycast(

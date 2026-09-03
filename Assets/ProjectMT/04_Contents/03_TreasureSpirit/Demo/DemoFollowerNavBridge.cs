@@ -57,7 +57,9 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void Update()
         {
-            if (actor == null || !actor.IsAlive || commander == null || !DemoNavMeshUtil.TryEnsureOnNavMesh(agent))
+            if (actor == null || !actor.IsAlive || commander == null ||
+                DemoDungeonController.IsGameplayPaused ||
+                !DemoNavMeshUtil.TryEnsureOnNavMesh(agent))
             {
                 return;
             }

@@ -29,8 +29,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 DemoFirePillarTrap.Spawn(parent, ceiling, count);
                 count++;
             }
-
-            Debug.Log($"[DemoFirePillarTrapInstaller] Ceiling_SquareLarge Fire Spray {count}개 설치 ({mapRoot.name})");
         }
 
         private static bool IsCeilingSquareLarge(string objectName)

@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Core;
 using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
@@ -19,10 +20,10 @@ namespace ProjectMT.Bootstrap
         [SerializeField] private Sprite filledStarSprite; // 획득 별
         [SerializeField] private Sprite emptyStarSprite; // 실패 별
 
-        public const int FixedSuccessStarCount = 3; // 조건 시스템 전까지 성공은 3별 고정
-
         private TaskCompletionSource<bool> closeSource;
         private bool confirmed; // 중복 확인 차단
+
+        public const int FixedSuccessStarCount = 3; // 조건 시스템 전까지 성공은 3별 고정
 
         public bool IsVisible => panelRoot != null && panelRoot.activeSelf;
 
@@ -35,6 +36,12 @@ namespace ProjectMT.Bootstrap
         private void OnDestroy()
         {
             confirmButton?.onClick.RemoveListener(HandleConfirmed);
+            if (!PlaySession.CanMutateWorld)
+            {
+                closeSource = null;
+                return;
+            }
+
             CompleteClose();
         }
 

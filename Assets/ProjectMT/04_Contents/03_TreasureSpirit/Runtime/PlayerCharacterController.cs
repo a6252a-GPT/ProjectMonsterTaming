@@ -29,6 +29,13 @@ namespace ProjectMT.Contents.TreasureSpirit
         [Header("점프")]
         [SerializeField, Min(0.1f)] private float jumpHeight = 1.25f;
 
+        [Header("얼음마법")]
+        [SerializeField, Min(1f)] private float iceArrowSpeed = 14f;
+        [SerializeField, Min(2f)] private float iceArrowRange = 10f;
+        [SerializeField, Min(1f)] private float iceArrowDamage = Demo.DemoIceCombat.ArrowDamage;
+        [SerializeField, Min(0.2f)] private float lanternCooldown = 3f;
+        [SerializeField, Min(0.1f)] private float iceSlowSeconds = 8f;
+
         private CharacterController characterController;
         private UnitVisualFeedback visualFeedback;
         private MazeCameraFollow cameraFollow;
@@ -40,6 +47,7 @@ namespace ProjectMT.Contents.TreasureSpirit
         private int currentLives;
         private bool isDead;
         private float hitInvulnerableUntil;
+        private float lanternReadyAt;
 
         public bool InputEnabled => inputEnabled;
         public int CurrentLives => currentLives;
@@ -47,6 +55,13 @@ namespace ProjectMT.Contents.TreasureSpirit
         public bool IsJumping => characterController != null && !characterController.isGrounded;
         public bool CanJump => inputEnabled && !isDead && characterController != null && characterController.isGrounded;
         public float JumpReadyFill => CanJump ? 1f : 0f;
+        public bool CanLanternStrike =>
+            inputEnabled &&
+            !isDead &&
+            Time.time >= lanternReadyAt;
+        public float LanternReadyFill => lanternCooldown <= 0.01f
+            ? 1f
+            : Mathf.Clamp01(1f - (lanternReadyAt - Time.time) / lanternCooldown);
         public event Action<int, int> LivesChanged;
 
         private void Awake()
@@ -68,6 +83,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
 
             visualFeedback.RefreshRenderers();
+            cameraFollow = MazeCameraFollow.ResolveFrom(transform);
         }
 
         private void OnEnable()
@@ -112,6 +128,12 @@ namespace ProjectMT.Contents.TreasureSpirit
                 return;
             }
 
+            if (Demo.DemoDungeonController.IsGameplayPaused)
+            {
+                UpdateAnimation(0f);
+                return;
+            }
+
             Vector3 moveDelta = Vector3.zero;
             if (!inputEnabled || isDead)
             {
@@ -122,6 +144,11 @@ namespace ProjectMT.Contents.TreasureSpirit
                 if (WasJumpPressed())
                 {
                     TryJump();
+                }
+
+                if (WasLanternPressed())
+                {
+                    TryLanternStrike();
                 }
 
                 Vector2 inputDirection = ReadDirection();
@@ -243,6 +270,46 @@ namespace ProjectMT.Contents.TreasureSpirit
             return gamepad != null && gamepad.buttonSouth.wasPressedThisFrame;
         }
 
+        private static bool WasLanternPressed()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null && (keyboard.fKey.wasPressedThisFrame || keyboard.jKey.wasPressedThisFrame))
+            {
+                return true;
+            }
+
+            Gamepad gamepad = Gamepad.current;
+            return gamepad != null && gamepad.buttonWest.wasPressedThisFrame;
+        }
+
+        public bool TryLanternStrike()
+        {
+            if (!CanLanternStrike)
+            {
+                return false;
+            }
+
+            lanternReadyAt = Time.time + lanternCooldown;
+            Vector3 forward = transform.forward;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f)
+            {
+                forward = Vector3.forward;
+            }
+
+            forward.Normalize();
+            Vector3 origin = transform.position + Vector3.up * 1.15f + forward * 0.35f;
+            Demo.DemoDungeonAudio.PlayIceArrow(origin);
+            Demo.DemoIceArrowProjectile.Launch(
+                origin,
+                forward,
+                iceArrowSpeed,
+                iceArrowRange,
+                iceArrowDamage,
+                iceSlowSeconds);
+            return true;
+        }
+
         public bool TryJump()
         {
             if (!CanJump)
@@ -271,6 +338,7 @@ namespace ProjectMT.Contents.TreasureSpirit
             currentLives = Mathf.Max(1, maxLives);
             verticalVelocity = 0f;
             hitInvulnerableUntil = 0f;
+            lanternReadyAt = 0f;
             LivesChanged?.Invoke(currentLives, maxLives);
         }
 
@@ -281,7 +349,8 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         public void TakeDamage(float damage, Vector3 hitOrigin)
         {
-            if (isDead || damage <= 0f || Time.time < hitInvulnerableUntil)
+            if (isDead || damage <= 0f || Time.time < hitInvulnerableUntil ||
+                Demo.DemoDungeonController.IsGameplayPaused)
             {
                 return;
             }
@@ -312,13 +381,6 @@ namespace ProjectMT.Contents.TreasureSpirit
             }
 
             knockbackVelocity = away.normalized * hitKnockbackSpeed;
-
-            if (cameraFollow == null)
-            {
-                Camera mainCamera = Camera.main;
-                cameraFollow = mainCamera != null ? mainCamera.GetComponent<MazeCameraFollow>() : null;
-            }
-
             cameraFollow?.PlayHitShake();
         }
 

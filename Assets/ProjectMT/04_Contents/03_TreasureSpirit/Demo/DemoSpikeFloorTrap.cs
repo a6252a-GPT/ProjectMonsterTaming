@@ -283,7 +283,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void Update()
         {
-            if (spikes.Length == 0)
+            if (spikes.Length == 0 || DemoDungeonController.IsGameplayPaused)
             {
                 return;
             }

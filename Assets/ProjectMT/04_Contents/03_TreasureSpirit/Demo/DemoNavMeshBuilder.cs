@@ -65,7 +65,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return false;
             }
 
-            Debug.Log($"[DemoNavMeshBuilder] NavMesh 베이크 완료 (floors={sources.Count}, verts={vertexCount})");
             return true;
         }
 

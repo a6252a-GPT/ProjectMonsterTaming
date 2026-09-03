@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 636d839b21812ab49a12f4bee7b8ef7d, type: 3}
-  m_Name: AAP_corrosion_veil(Clone)(Clone)(Clone)
+  m_Name: AAP_corrosion_veil
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterActiveAttackProfile
   profileId: corrosion_veil
   displayName: "\uCE68\uC2DD \uC7A5\uB9C9"

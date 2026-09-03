@@ -19,8 +19,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
-            int adjustedCount = 0;
-
             for (int i = 0; i < transforms.Length; i++)
             {
                 Transform target = transforms[i];
@@ -37,12 +35,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
                 scale.y = TargetScaleY;
                 target.localScale = scale;
-                adjustedCount++;
-            }
-
-            if (adjustedCount > 0)
-            {
-                Debug.Log($"[DemoWallHeightAdjuster] localScale.y 1→0.6 적용: {adjustedCount}개 ({root.name})");
             }
         }
 

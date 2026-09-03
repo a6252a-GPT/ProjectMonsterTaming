@@ -49,6 +49,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             overlay.playerMove = ResolvePlayer(player);
             overlay.Build(difficulty);
             overlay.playerMove?.SetInputEnabled(false);
+            DemoDungeonController.Active?.SetGameplayPaused(true);
             DemoDungeonAudio.PlayQuizUi();
             activeOverlay = overlay;
         }
@@ -319,6 +320,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             DemoDungeonController controller = DemoDungeonController.Active;
             bool dungeonRunning = controller != null && controller.IsRunning;
+            controller?.SetGameplayPaused(false);
             if (dungeonRunning)
             {
                 playerMove?.SetInputEnabled(true);

@@ -128,7 +128,7 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         private void Update()
         {
-            if (isDead)
+            if (isDead || Demo.DemoDungeonController.IsGameplayPaused)
             {
                 return;
             }
@@ -321,7 +321,7 @@ namespace ProjectMT.Contents.TreasureSpirit
 
         public void TakeDamage(float damage)
         {
-            if (isDead || damage <= 0f)
+            if (isDead || damage <= 0f || Demo.DemoDungeonController.IsGameplayPaused)
             {
                 return;
             }

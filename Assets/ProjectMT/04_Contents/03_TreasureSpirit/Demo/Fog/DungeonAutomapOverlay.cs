@@ -19,18 +19,20 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private Vector2 lastMarkerUv = new Vector2(-1f, -1f);
         private float lastMarkerYaw = float.NaN;
 
+        private static Sprite triangleSprite;
+
         public static DungeonAutomapOverlay Ensure(Transform parent, DungeonExplorationMap map, Transform playerTransform)
         {
-            DungeonAutomapOverlay overlay = parent != null
-                ? parent.GetComponentInChildren<DungeonAutomapOverlay>(true)
-                : FindFirstObjectByType<DungeonAutomapOverlay>();
+            if (parent == null)
+            {
+                return null;
+            }
+
+            DungeonAutomapOverlay overlay = parent.GetComponentInChildren<DungeonAutomapOverlay>(true);
             if (overlay == null)
             {
                 GameObject root = new GameObject("AutomapOverlay", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
-                if (parent != null)
-                {
-                    root.transform.SetParent(parent, false);
-                }
+                root.transform.SetParent(parent, false);
 
                 Canvas canvas = root.GetComponent<Canvas>();
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -50,11 +52,15 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         {
             explorationMap = map;
             player = playerTransform;
+            lastMarkerUv = new Vector2(-1f, -1f);
+            lastMarkerYaw = float.NaN;
             if (mapImage != null && map != null)
             {
                 mapImage.texture = map.DisplayTexture;
             }
         }
+
+        public bool IsVisible => visible;
 
         public void Hide()
         {
@@ -111,7 +117,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             GameObject markerObject = CreateImage("PlayerMarker", mapImage.rectTransform, new Color(1f, 0.22f, 0.16f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(18f, 22f));
             playerMarker = markerObject.GetComponent<RectTransform>();
             Image markerImage = markerObject.GetComponent<Image>();
-            markerImage.sprite = CreateTriangleSprite();
+            markerImage.sprite = GetTriangleSprite();
             markerImage.preserveAspect = true;
             markerImage.raycastTarget = false;
 
@@ -285,6 +291,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             image.color = color;
             image.raycastTarget = false;
             return created;
+        }
+
+        private static Sprite GetTriangleSprite()
+        {
+            return triangleSprite != null ? triangleSprite : triangleSprite = CreateTriangleSprite();
         }
 
         private static Sprite CreateTriangleSprite()

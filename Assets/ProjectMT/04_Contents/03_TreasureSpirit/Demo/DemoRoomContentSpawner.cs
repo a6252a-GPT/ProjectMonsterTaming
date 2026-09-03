@@ -61,9 +61,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             chestMarkers.Sort(CompareMarkerRooms);
 
-            int keyChestCount = 0;
-            int mimicCount = 0;
-
             for (int i = 0; i < chestMarkers.Count; i++)
             {
                 Transform marker = chestMarkers[i];
@@ -81,7 +78,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                     }
 
                     SpawnKeyChest(contentRoot, chestPrefab, room, position, rotation, playerTransform, keyState);
-                    keyChestCount++;
                 }
                 else
                 {
@@ -93,12 +89,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
                     SpawnMimicChest(
                         contentRoot, chestPrefab, mimicPrefab, room, position, rotation, playerTransform, difficultyMultiplier);
-                    mimicCount++;
                 }
             }
-
-            Debug.Log(
-                $"[DemoRoomContentSpawner] Chest_pt {chestMarkers.Count}개: 열쇠 상자 {keyChestCount}개, 미믹 상자 {mimicCount}개");
         }
 
         private static int CompareMarkerRooms(Transform a, Transform b)
@@ -175,7 +167,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return;
             }
 
-            int spawnedCount = 0;
             int guardsPerMarker = Mathf.Max(1, guardsPerRoom);
 
             for (int i = 0; i < guardMarkers.Count; i++)
@@ -204,12 +195,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                     guardObject.name = $"DemoGuard_{room.name}_{i + 1}_{g + 1}";
 
                     ConfigureGuard(guardObject, patrolCenter, patrolRadius, playerTransform, difficultyMultiplier);
-                    spawnedCount++;
                 }
             }
-
-            Debug.Log(
-                $"[DemoRoomContentSpawner] Guard_pt {guardMarkers.Count}개 x {guardsPerMarker}명 = 경비병 {spawnedCount}명 배치");
         }
 
         private static void ConfigureGuard(

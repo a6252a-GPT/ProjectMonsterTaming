@@ -68,7 +68,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         public static void DamageAlly(Transform body, float damage, Vector3 hitOrigin)
         {
-            if (body == null || damage <= 0f)
+            if (body == null || damage <= 0f || DemoDungeonController.IsGameplayPaused)
             {
                 return;
             }

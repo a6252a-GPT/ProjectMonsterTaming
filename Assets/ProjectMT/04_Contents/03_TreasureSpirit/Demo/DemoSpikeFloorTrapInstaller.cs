@@ -36,8 +36,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                     $"맵={mapRoot.name}");
                 return;
             }
-
-            Debug.Log($"[DemoSpikeFloorTrapInstaller] 상자 가시 바닥 {installedCount}개 설치 ({mapRoot.name})");
         }
     }
 }

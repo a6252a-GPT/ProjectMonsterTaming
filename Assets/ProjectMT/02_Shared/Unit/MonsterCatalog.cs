@@ -77,7 +77,26 @@ namespace ProjectMT.Shared.Unit
 
         private void OnValidate()
         {
-            SyncDependentRarityCatalogs(); // 인스펙터에서 직접 몬스터를 추가/삭제해도 도감 카탈로그에 즉시 반영
+            if (UnityEditor.EditorApplication.isUpdating || UnityEditor.EditorApplication.isCompiling)
+            {
+                return;
+            }
+
+            UnityEditor.EditorApplication.delayCall -= SyncDependentRarityCatalogsDelayed;
+            UnityEditor.EditorApplication.delayCall += SyncDependentRarityCatalogsDelayed;
+        }
+
+        private void SyncDependentRarityCatalogsDelayed()
+        {
+            UnityEditor.EditorApplication.delayCall -= SyncDependentRarityCatalogsDelayed;
+            if (this == null ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isCompiling)
+            {
+                return;
+            }
+
+            SyncDependentRarityCatalogs();
         }
 
         // 이 MonsterCatalog를 sourceCatalog로 쓰는 모든 MonsterRarityCatalog(도감)를 찾아 동기화한다.

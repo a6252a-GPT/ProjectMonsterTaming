@@ -80,6 +80,7 @@ namespace ProjectMT.Features.Settings
         {
             BindControls();
             data = LocalSettingsStore.Load();
+            LocalSettingsStore.ApplyTargetFrameRate();
             ShowTab(Tab.System);
             deleteConfirmRoot?.SetActive(false);
             RefreshControls();

@@ -149,6 +149,7 @@ namespace ProjectMT.Features.Equipment
         private bool requestInFlight;
         private Action combatInputSaved;
         private IGameProgressService progress;
+        private Coroutine pendingInventoryRefresh;
 
         private void Awake()
         {
@@ -173,6 +174,12 @@ namespace ProjectMT.Features.Equipment
         private void OnDisable()
         {
             EquipmentInventoryRuntime.Changed -= HandleInventoryChanged;
+            if (pendingInventoryRefresh != null)
+            {
+                StopCoroutine(pendingInventoryRefresh);
+                pendingInventoryRefresh = null;
+            }
+
             CloseDismantleConfirmation();
             offlineAutoDismantleSettingsPanel?.Close();
             itemComparisonPanel?.Hide();

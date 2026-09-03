@@ -79,6 +79,7 @@ namespace ProjectMT.Features.MainBattle
 
         private void Awake()
         {
+            MobileSafeAreaCanvasFitter.Ensure(gameObject);
             if (commanderGrowthButton == null || shopButton == null ||
                 commanderGrowthPage == null || shopPage == null || shopCloseButton == null ||
                 equipmentButton == null || equipmentPage == null || equipmentCloseButton == null ||

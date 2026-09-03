@@ -49,6 +49,19 @@ namespace ProjectMT.Features.Settings
     {
         private const string PlayerPrefsKey = "ProjectMT.LocalSettings.v1";
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void ApplySavedFrameRateBeforeSceneLoad()
+        {
+            ApplyTargetFrameRate();
+        }
+
+        public static int ApplyTargetFrameRate()
+        {
+            var targetFrameRate = Load().targetFrameRate;
+            Application.targetFrameRate = targetFrameRate;
+            return targetFrameRate;
+        }
+
         public static LocalSettingsData Load()
         {
             var json = PlayerPrefs.GetString(PlayerPrefsKey, string.Empty);

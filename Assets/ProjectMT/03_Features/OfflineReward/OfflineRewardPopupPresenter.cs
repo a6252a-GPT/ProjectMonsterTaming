@@ -170,6 +170,7 @@ namespace ProjectMT.Features.OfflineReward
             busy = false;
             Bind(presentation);
             UIPanelPopAnimator.RequestOpen(DisplayRoot, UIPanelPopStyle.RewardPopup);
+            MobileSafeAreaCanvasFitter.Ensure(DisplayRoot);
 
             // DisplayRoot는 기본 비활성이라 Awake()에서 EnsureOn을 부르면 초기화가 미뤄진다.
             // 막 활성화된 직후인 여기서 붙여야 클릭 연출이 확실히 동작한다.

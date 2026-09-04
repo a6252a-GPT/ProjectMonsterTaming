@@ -47,6 +47,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         [SerializeField] private AudioClip spikeSfx;
         [SerializeField] private AudioClip sawLoopSfx;
         [SerializeField] private AudioClip arrowSfx;
+        [SerializeField] private AudioClip iceArrowSfx;
         [SerializeField] private AudioClip mimicSfx;
         [SerializeField] private AudioClip followerAttackSfx;
         [SerializeField] private AudioClip guardAttackSfx;
@@ -189,6 +190,21 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         public static void PlayMimic(Vector3 position)
         {
             Active?.Play(Active.mimicSfx, position, 0.9f, true, 0.05f);
+        }
+
+        public static void PlayIceArrow(Vector3 position)
+        {
+            if (Active == null)
+            {
+                return;
+            }
+
+            Active.Play(
+                Active.iceArrowSfx != null ? Active.iceArrowSfx : Active.arrowSfx,
+                position,
+                1.1f,
+                true,
+                0.06f);
         }
 
         public static void PlayFollowerAttack(Vector3 position)

@@ -26,8 +26,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
                 door.Configure(doorTransform);
             }
-
-            Debug.Log($"[DemoDoorBinder] 문 {doors.Length}개 연결");
         }
 
         private static Transform[] CollectDoors(Transform mapRoot)

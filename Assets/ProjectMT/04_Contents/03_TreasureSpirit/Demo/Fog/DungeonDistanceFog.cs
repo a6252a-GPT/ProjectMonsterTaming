@@ -27,10 +27,10 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private readonly Vector4[] lights = new Vector4[MaxLights];
         private float nextLightRefresh;
 
-        public void Initialize(Transform dungeonRoot, Transform playerTransform)
+        public void Initialize(Transform dungeonRoot)
         {
             mapRoot = dungeonRoot;
-            BindPlayer(playerTransform);
+            BindPlayer(null);
             CacheLights();
             EnsurePlane();
             RefreshLights();
@@ -126,8 +126,14 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 return;
             }
 
-            Vector3 position = player != null ? player.position : transform.position;
-            material.SetVector(PlayerPosId, position);
+            if (player == null)
+            {
+                material.SetVector(PlayerPosId, new Vector3(0f, -9999f, 0f));
+                material.SetFloat(ClearRadiusId, 0f);
+                return;
+            }
+
+            material.SetVector(PlayerPosId, player.position);
             float radius = playerMove != null && playerMove.IsJumping ? JumpRadius : GroundRadius;
             material.SetFloat(ClearRadiusId, radius);
         }

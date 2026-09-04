@@ -4,6 +4,20 @@ using UnityEngine;
 
 namespace ProjectMT.Contents.TreasureSpirit.Demo
 {
+    internal interface IIceSlowable
+    {
+        void ApplyMoveSlow(float duration);
+    }
+
+    internal static class DemoIceCombat
+    {
+        public const float ArrowDamage = 40f;
+        public const int MimicHitsToKill = 3;
+        public const int GuardHitsToKill = 4;
+        public const float MimicHealth = ArrowDamage * MimicHitsToKill;
+        public const float GuardHealth = ArrowDamage * GuardHitsToKill;
+    }
+
     internal static class DemoCombatRoster
     {
         private static readonly List<IDamageable> enemies = new List<IDamageable>(16);
@@ -22,6 +36,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         public static void Unregister(IDamageable enemy)
         {
             enemies.Remove(enemy);
+        }
+
+        public static bool IsEnemy(IDamageable enemy)
+        {
+            return enemy != null && enemies.Contains(enemy);
         }
 
         public static void RegisterAlly(Transform body)

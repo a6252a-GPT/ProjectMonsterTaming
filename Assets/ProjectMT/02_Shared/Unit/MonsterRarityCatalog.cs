@@ -25,7 +25,12 @@ namespace ProjectMT.Shared.Unit
 
         private void OnValidate()
         {
-            SyncWithSourceCatalog(); // 기준 카탈로그 변경 시 동기화
+            if (UnityEditor.EditorApplication.isUpdating || UnityEditor.EditorApplication.isCompiling)
+            {
+                return;
+            }
+
+            SyncWithSourceCatalog();
         }
 
         // MonsterCatalog.OnValidate가 이 도감 카탈로그를 대신 갱신할 때 호출한다.

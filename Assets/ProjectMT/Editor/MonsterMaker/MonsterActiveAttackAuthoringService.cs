@@ -122,7 +122,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
             {
                 var originalHideFlags = target.hideFlags;
                 Undo.RecordObject(target, "공격 액티브 프리셋 업데이트");
+                var assetName = ResolveAssetName(target);
                 EditorUtility.CopySerialized(source, target);
+                target.name = assetName;
                 target.hideFlags = originalHideFlags;
                 EditorUtility.SetDirty(target);
                 AssetDatabase.SaveAssetIfDirty(target);
@@ -145,6 +147,17 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         public static string BuildCustomAssetPath(string profileId) =>
             $"{CustomProfileRoot}/AAP_{profileId}.asset";
+
+        private static string ResolveAssetName(MonsterActiveAttackProfile profile)
+        {
+            var path = AssetDatabase.GetAssetPath(profile);
+            if (string.IsNullOrEmpty(path))
+            {
+                return profile != null ? profile.name : string.Empty;
+            }
+
+            return System.IO.Path.GetFileNameWithoutExtension(path);
+        }
 
         public static void EnsureProfileFolder()
         {

@@ -1676,7 +1676,7 @@ MonoBehaviour:
   attackMotionCount: 3
   patrolRadius: 8
   waitAtPatrolPoint: 2
-  maxHealth: 100
+  maxHealth: 160
   currentHealth: 0
   deathDestroyDelay: 3
   targetPlayer: {fileID: 0}

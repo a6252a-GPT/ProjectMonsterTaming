@@ -449,7 +449,6 @@ MonoBehaviour:
   - {fileID: 5266390021749569353, guid: 5e796f7386e39aa4689bb40c2ee9da3b, type: 3}
   - {fileID: 4939918238588314618, guid: 156ab314b017f57469b01f2613ef49ea, type: 3}
   - {fileID: 6947390783818347766, guid: 1001b59f03163d64c8ae170bdf0ab9df, type: 3}
-  startMapIndex: 6
   chestPrefab: {fileID: 8111757877157432391, guid: a105dc230d1322943bbdff8ecfba2a7e, type: 3}
   mimicPrefab: {fileID: 1000013768157686, guid: c87759c4b502f20468a940a9164fa93f, type: 3}
   guardPrefab: {fileID: 9151998103618918405, guid: 7c6491b74c708764a80dcd6a730525e3, type: 3}
@@ -461,6 +460,7 @@ MonoBehaviour:
   prisonContentLocalOffset: {x: 0, y: 0, z: -1}
   prisonYawOffset: -90
   playerTransform: {fileID: 3393907525866477710}
+  cameraFollow: {fileID: 0}
   playerSpawnHeightOffset: 0.05
   disablePunctualLightShadows: 1
 --- !u!1 &739652474520552000
@@ -716,6 +716,11 @@ MonoBehaviour:
   hitKnockbackDecay: 18
   hitInvulnerableDuration: 0.45
   jumpHeight: 1.25
+  iceArrowSpeed: 14
+  iceArrowRange: 10
+  iceArrowDamage: 40
+  lanternCooldown: 3
+  iceSlowSeconds: 8
 --- !u!54 &8749625303620976928
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2210,7 +2215,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
+  field of view: 50
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
@@ -2295,6 +2300,7 @@ MonoBehaviour:
   target: {fileID: 3393907525866477710}
   offset: {x: 0, y: 6, z: -2}
   followSpeed: 10
+  fieldOfView: 50
 --- !u!1 &1993265598003113138
 GameObject:
   m_ObjectHideFlags: 0
@@ -5504,6 +5510,10 @@ MonoBehaviour:
   bakedDungeonLoader: {fileID: 3289255519940093335}
   commanderRoot: {fileID: 753868313211258006}
   commanderMove: {fileID: 8195734735657144785}
+  monsterCatalog: {fileID: 11400000, guid: fe8b78d3f8fdc474f867c3d64664a095, type: 2}
+  combatWorld: {fileID: 5795275648492532623}
+  followerPrefab: {fileID: 6359954306265597437, guid: c16a53cef90a01d4290cd0dad4732347, type: 3}
+  followerVisualScale: 1
   timerText: {fileID: 3176291915506373625}
   growthHud: {fileID: 8671154660235142517}
   statusText: {fileID: 8824712017526694626}
@@ -5514,6 +5524,7 @@ MonoBehaviour:
   keyItemDefinition: {fileID: 11400000, guid: 870985507fc7bf34fa5588405db4bf4e, type: 2}
   contentResultOverlayPrefab: {fileID: 3810198431009909963, guid: 69159d92b2e62204a92b65cace4a6bfd, type: 3}
   resultAdapter: {fileID: 11400000, guid: 47b26aef28f34c849b245e3f7122f8da, type: 2}
+  iceSkillIcon: {fileID: 21300000, guid: f6457d5bed3eb114bbbc51ad73bdfa89, type: 3}
   timeLimitSeconds: 100
   resultTextHideDelay: 20
   keyCardHideDelay: 5
@@ -5580,6 +5591,7 @@ MonoBehaviour:
   spikeSfx: {fileID: 8300000, guid: 2b65bb5a1a164ef41923961e66fb5c3d, type: 3}
   sawLoopSfx: {fileID: 8300000, guid: 988b9280bc371184294970dd828e7cec, type: 3}
   arrowSfx: {fileID: 8300000, guid: 6fa5d6f47e49ab14089a9b57c7eb69eb, type: 3}
+  iceArrowSfx: {fileID: 8300000, guid: dac2e10163bd35c42b1f330d4e814445, type: 3}
   mimicSfx: {fileID: 8300000, guid: cafc7de1665b64246989ccd5367b8156, type: 3}
   followerAttackSfx: {fileID: 8300000, guid: c5917d177f7f4de4aa1b91511805ff1a, type: 3}
   guardAttackSfx: {fileID: 8300000, guid: 2b65bb5a1a164ef41923961e66fb5c3d, type: 3}

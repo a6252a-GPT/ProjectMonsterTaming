@@ -15,8 +15,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             MeshFilter[] meshFilters = mapRoot.GetComponentsInChildren<MeshFilter>(true);
-            int bakedCount = 0;
-
             for (int i = 0; i < meshFilters.Length; i++)
             {
                 MeshFilter meshFilter = meshFilters[i];
@@ -30,16 +28,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                     continue;
                 }
 
-                if (TryBakeFloorCollider(meshFilter))
-                {
-                    bakedCount++;
-                }
+                TryBakeFloorCollider(meshFilter);
             }
-
-            Debug.Log($"[DemoMapColliderBaker] 바닥 콜라이더 {bakedCount}개");
         }
 
-        private static bool TryBakeFloorCollider(MeshFilter meshFilter)
+        private static void TryBakeFloorCollider(MeshFilter meshFilter)
         {
             Mesh mesh = meshFilter.sharedMesh;
             GameObject target = meshFilter.gameObject;
@@ -56,7 +49,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             boxCollider.size = size;
             boxCollider.isTrigger = false;
             boxCollider.enabled = true;
-            return true;
         }
     }
 }

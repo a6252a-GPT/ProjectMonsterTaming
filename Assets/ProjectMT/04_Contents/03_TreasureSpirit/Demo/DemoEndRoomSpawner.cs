@@ -69,8 +69,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
             SpawnPrisonVisualContent(prisonObject, prisonContentPrefab, prisonContentLocalOffset);
             ConfigurePrisonDoor(prisonObject, keyState, controller);
-
-            Debug.Log($"[DemoEndRoomSpawner] PF_Prison 배치 ({PrisonMarkerName}, yaw={prisonYawOffset}): {prisonObject.transform.position}");
         }
 
         private static void SpawnPrisonVisualContent(

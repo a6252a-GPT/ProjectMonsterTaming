@@ -26,8 +26,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             Transform[] transforms = mapRoot.GetComponentsInChildren<Transform>(true);
-            int sewerCount = 0;
-
             for (int i = 0; i < transforms.Length; i++)
             {
                 Transform current = transforms[i];
@@ -36,12 +34,15 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                     continue;
                 }
 
-                sewerCount += isHard1
-                    ? InstallHard1XAxis(current)
-                    : InstallOnSewerSquare(current);
+                if (isHard1)
+                {
+                    InstallHard1XAxis(current);
+                }
+                else
+                {
+                    InstallOnSewerSquare(current);
+                }
             }
-
-            Debug.Log($"[DemoArrowTrapInstaller] Sewer_Square 화살 연사 {sewerCount}개 설치 ({mapRoot.name})");
         }
 
         private static bool HasMapTag(Transform mapRoot, string tag)

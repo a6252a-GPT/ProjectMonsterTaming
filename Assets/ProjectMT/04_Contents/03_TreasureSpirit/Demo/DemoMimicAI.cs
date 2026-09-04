@@ -7,7 +7,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(NavMeshAgent))]
-    public sealed class DemoMimicAI : MonoBehaviour, IDamageable
+    public sealed class DemoMimicAI : MonoBehaviour, IDamageable, IIceSlowable
     {
         private enum MimicState
         {
@@ -24,7 +24,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         [SerializeField] private float loseTargetRange = 10f;
         [SerializeField] private float attackCooldown = 1.2f;
         [SerializeField] private float attackDamage = 15f;
-        [SerializeField] private float maxHealth = 80f;
+        [SerializeField] private float maxHealth = DemoIceCombat.MimicHealth;
         [SerializeField] private float deathDestroyDelay = 2f;
 
         private NavMeshAgent agent;
@@ -36,6 +36,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private float lastAttackTime;
         private Vector3 lastChaseDestination;
         private bool isDead;
+        private float iceSlowUntil;
 
         public bool IsAlive => !isDead;
         public Transform TargetTransform => transform;
@@ -45,7 +46,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         {
             commanderTarget = commander;
             var multiplier = Mathf.Max(1f, difficultyMultiplier);
-            maxHealth *= multiplier;
+            maxHealth = DemoIceCombat.MimicHealth;
+            currentHealth = maxHealth;
             attackDamage *= multiplier;
             lastAttackTime = Time.time;
         }
@@ -55,6 +57,27 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             agent = GetComponent<NavMeshAgent>();
             initialScale = transform.localScale;
             DemoUrpParticleRemapper.Remap(gameObject);
+            DisableTongueVfx();
+        }
+
+        private void DisableTongueVfx()
+        {
+            Transform[] transforms = GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                Transform current = transforms[i];
+                if (current == null || current == transform)
+                {
+                    continue;
+                }
+
+                if (current.name.IndexOf("Tongue", System.StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    continue;
+                }
+
+                current.gameObject.SetActive(false);
+            }
         }
 
         private void OnEnable()
@@ -76,7 +99,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void Update()
         {
-            if (isDead)
+            if (isDead || DemoDungeonController.IsGameplayPaused)
             {
                 return;
             }
@@ -84,6 +107,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             if (!DemoNavMeshUtil.TryEnsureOnNavMesh(agent))
             {
                 return;
+            }
+
+            if (agent != null)
+            {
+                agent.speed = moveSpeed * (Time.time < iceSlowUntil ? 0.5f : 1f);
             }
 
             EvaluateTarget();
@@ -120,6 +148,21 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             if (currentHealth <= 0f)
             {
                 Die();
+            }
+        }
+
+        public void ApplyMoveSlow(float duration)
+        {
+            if (isDead || duration <= 0f)
+            {
+                return;
+            }
+
+            iceSlowUntil = Mathf.Max(iceSlowUntil, Time.time + duration);
+            DemoIceSlowVfx.Play(transform, iceSlowUntil - Time.time);
+            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            {
+                agent.speed = moveSpeed * 0.5f;
             }
         }
 
@@ -216,7 +259,12 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         public float ReceiveDamage(UnitActor source, float amount)
         {
-            float before = currentHealth;
+            if (!IsAlive)
+            {
+                return 0f;
+            }
+
+            var before = currentHealth;
             TakeDamage(amount);
             return Mathf.Max(0f, before - currentHealth);
         }
@@ -242,6 +290,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             isDead = true;
             currentState = MimicState.Dead;
             currentTarget = null;
+            DemoIceSlowVfx.Stop(transform);
 
             agent.isStopped = true;
             agent.enabled = false;

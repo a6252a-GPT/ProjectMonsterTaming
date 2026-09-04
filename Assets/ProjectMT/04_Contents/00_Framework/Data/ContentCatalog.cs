@@ -129,6 +129,12 @@ namespace ProjectMT.Contents.Framework
                     error = $"Content ID is duplicated. Content={definition.ContentId.Value}";
                     return false;
                 }
+
+                if (definition.StartDataFactory == null)
+                {
+                    error = $"Content start data factory is missing. Content={definition.ContentId.Value}";
+                    return false;
+                }
             }
 
             error = null;

@@ -1,10 +1,13 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Contents.TreasureSpirit;
+using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Reward;
+using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,7 +15,7 @@ using UnityEngine.UI;
 namespace ProjectMT.Contents.TreasureSpirit.Demo
 {
     /// <summary>
-    /// 베이크 던전 데모 컨트롤러. BakedDungeonLoader로 5종 맵을 순환합니다.
+    /// 베이크 던전 데모 컨트롤러. 성장 던전 단계에 맞는 베이크 맵을 로드합니다.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class DemoDungeonController : MonoBehaviour, IContentController
@@ -23,6 +26,10 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         [Header("전투 / 유닛")]
         [SerializeField] private GameObject commanderRoot;
         [SerializeField] private PlayerCharacterController commanderMove;
+        [SerializeField] private MonsterCatalog monsterCatalog;
+        [SerializeField] private CombatWorld combatWorld;
+        [SerializeField] private GameObject followerPrefab;
+        [SerializeField] private float followerVisualScale = 1f;
 
         [Header("HUD")]
         [SerializeField] private TMP_Text timerText;
@@ -35,6 +42,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         [SerializeField] private ItemDefinition keyItemDefinition;
         [SerializeField] private GameObject contentResultOverlayPrefab; // FoodRiot과 같은 PF_ContentResultOverlay
         [SerializeField] private TreasureSpiritResultAdapter resultAdapter;
+        [SerializeField] private Sprite iceSkillIcon;
 
         [Header("던전 설정")]
         [SerializeField] private float timeLimitSeconds = 100f;
@@ -55,12 +63,19 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private GameObject localResultOverlayInstance;
         private readonly DemoLifeHud lifeHud = new DemoLifeHud();
         private DemoJumpButton jumpButton;
+        private readonly List<GameObject> spawnedFollowers = new List<GameObject>();
 
         public bool IsRunning { get; private set; }
+        public bool IsPaused { get; private set; }
         public static DemoDungeonController Active { get; private set; }
+        public static bool IsGameplayPaused => Active != null && Active.IsPaused;
         public Transform PlayerTransform => commanderMove != null
             ? commanderMove.transform
             : commanderRoot != null ? commanderRoot.transform : null;
+        public CombatWorld CombatWorld => combatWorld;
+        public Transform ActiveMapRoot => bakedDungeonLoader != null && bakedDungeonLoader.ActiveMapInstance != null
+            ? bakedDungeonLoader.ActiveMapInstance.transform
+            : null;
 
         private int displayedSeconds = int.MinValue;
         private int displayedKills = int.MinValue;
@@ -106,7 +121,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             difficultyMultiplier = GrowthDungeonStageRules.ResolveDifficultyMultiplier(stage);
             growthHud?.SetStage(stage);
 
-            bakedDungeonLoader.LoadNextMap();
+            bakedDungeonLoader.LoadMapForStage(stage);
             keyState = bakedDungeonLoader;
 
             if (bakedDungeonLoader.ActiveMapInstance == null)
@@ -146,8 +161,10 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             DungeonFogInitializer.RevealPlayerArea(
+                mapInstance.transform,
                 commanderRoot != null ? commanderRoot.transform : null);
 
+            SpawnFollowers();
             bakedDungeonLoader.SpawnRoomContents(difficultyMultiplier);
             bakedDungeonLoader.SpawnEndRoomPrison(this);
 
@@ -157,7 +174,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             timeRemaining = startData != null ? startData.DurationSeconds : timeLimitSeconds;
             killCount = 0;
             IsRunning = true;
-            Time.timeScale = 1f;
+            SetGameplayPaused(false);
             DemoDungeonAudio.Active?.StartBeds();
             displayedSeconds = int.MinValue;
             displayedKills = int.MinValue;
@@ -169,12 +186,42 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             BeginResultTextAutoHide();
         }
 
+        private void SpawnFollowers()
+        {
+            Transform commander = commanderMove != null
+                ? commanderMove.transform
+                : commanderRoot != null ? commanderRoot.transform : null;
+            if (commander == null)
+            {
+                Debug.LogError("[DemoDungeonController] 군단장이 없어 팔로워를 스폰할 수 없습니다.");
+                return;
+            }
+
+            DemoPartyFollowerSpawner.Spawn(
+                commander,
+                startData.Party,
+                monsterCatalog,
+                combatWorld,
+                followerPrefab,
+                spawnedFollowers,
+                followerVisualScale);
+        }
+
+        public void SetGameplayPaused(bool paused)
+        {
+            IsPaused = paused && IsRunning;
+            combatWorld?.SetPaused(IsPaused);
+        }
+
         private void ShutdownInternal()
         {
             IsRunning = false;
+            IsPaused = false;
+            combatWorld?.SetPaused(false);
             StopAllCoroutines();
             UnbindLifeHud();
             commanderMove?.SetInputEnabled(false);
+            DemoPartyFollowerSpawner.Despawn(combatWorld, spawnedFollowers);
 
             if (keyState != null)
             {
@@ -184,6 +231,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             DemoDungeonAudio.Active?.StopBeds();
             DemoCombatRoster.Clear();
             DemoArrowProjectile.ClearPool();
+            DemoIceArrowProjectile.ClearPool();
             bakedDungeonLoader?.ClearMap();
             DemoDungeonAtmosphere.Restore();
             keyState = null;
@@ -201,7 +249,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void Update()
         {
-            if (!IsRunning)
+            if (!IsRunning || IsPaused)
             {
                 return;
             }
@@ -459,7 +507,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             Transform hudRoot = ResolveHudRoot();
             lifeHud.Ensure(hudRoot);
             lifeHud.Show();
-            jumpButton = DemoJumpButton.Ensure(hudRoot, commanderMove);
+            jumpButton = DemoJumpButton.Ensure(hudRoot, commanderMove, iceSkillIcon);
+            jumpButton?.BindAutomap(
+                bakedDungeonLoader != null && bakedDungeonLoader.ActiveMapInstance != null
+                    ? bakedDungeonLoader.ActiveMapInstance.transform
+                    : null);
             jumpButton?.Show();
 
             if (commanderMove == null)
@@ -536,7 +588,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             commanderMove?.SetInputEnabled(false);
             HideCardPanel();
             DemoChestQuizOverlay.HideActive();
-            FindFirstObjectByType<DungeonAutomapOverlay>()?.Hide();
+            jumpButton?.HideAutomap();
             if (resultText != null)
             {
                 resultText.text = string.Empty;
@@ -689,7 +741,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             difficultyMultiplier = 1f;
             timeRemaining = 0f;
             killCount = 0;
-            Time.timeScale = 1f;
         }
     }
 }

@@ -94,6 +94,11 @@ namespace ProjectMT.Bootstrap
                 throw new InvalidOperationException($"ItemCatalog is invalid. {itemCatalogError}");
             }
 
+            if (!projectConfig.ContentCatalog.TryValidate(out var contentCatalogError))
+            {
+                throw new InvalidOperationException($"ContentCatalog is invalid. {contentCatalogError}");
+            }
+
             ItemCatalogHub.Bind(projectConfig.ItemCatalog); // Bootstrap↔Features 순환 참조 없이 카탈로그 공유
             RewardPresentationHub.Bind(rewardPresenter); // Bootstrap↔Features 순환 참조 없이 보상 연출 공유
 

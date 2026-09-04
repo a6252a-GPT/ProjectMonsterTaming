@@ -16,9 +16,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
 
             Transform[] transforms = mapRoot.GetComponentsInChildren<Transform>(true);
-            int installedCount = 0;
-            int homeCount = 0;
-
             for (int i = 0; i < transforms.Length; i++)
             {
                 Transform home = transforms[i];
@@ -26,8 +23,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 {
                     continue;
                 }
-
-                homeCount++;
 
                 Transform blade = FindSawbladeUnder(home);
                 bool createdBlade = false;
@@ -53,15 +48,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 }
 
                 trap.Initialize(home, createdBlade);
-                installedCount++;
             }
-
-            if (homeCount == 0)
-            {
-                return;
-            }
-
-            Debug.Log($"[DemoSawbladeTrapInstaller] 톱날 함정 {installedCount}개 설치 (집 {homeCount}개, {mapRoot.name})");
         }
 
         private static bool IsTrapHome(Transform target)

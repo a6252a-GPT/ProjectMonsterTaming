@@ -7,15 +7,15 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
     internal sealed class DemoLifeHud
     {
         private const int HeartCount = 5;
-        private const float HeartSize = 52f;
-        private const float HeartSpacing = 8f;
+        private const float HeartSize = 44f;
+        private const float HeartSpacing = 6f;
 
-        private static readonly Color FilledColor = new Color(0.92f, 0.18f, 0.3f, 1f);
-        private static readonly Color EmptyColor = new Color(0.22f, 0.18f, 0.2f, 0.7f);
+        private static readonly Color FilledColor = new Color(0.94f, 0.22f, 0.34f, 1f);
+        private static readonly Color EmptyColor = new Color(0.16f, 0.1f, 0.12f, 0.72f);
+        private static readonly Color OutlineColor = new Color(0.05f, 0.02f, 0.03f, 0.9f);
 
         private Image[] hearts = System.Array.Empty<Image>();
         private GameObject root;
-        private static Sprite heartSprite;
         private GrowthDungeonHudView authoredHud;
 
         public void Ensure(Transform hudRoot)
@@ -43,16 +43,16 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 Object.Destroy(existing.gameObject);
             }
 
-            ShiftOverlappingHud(hudRoot);
+            PlaceStatusColumn(hudRoot);
 
-            root = new GameObject("LifeHud", typeof(RectTransform));
+            root = new GameObject("LifeHud", typeof(RectTransform), typeof(CanvasGroup));
             RectTransform rootRect = root.GetComponent<RectTransform>();
             rootRect.SetParent(hudRoot, false);
             rootRect.SetAsFirstSibling();
             rootRect.anchorMin = new Vector2(0f, 1f);
             rootRect.anchorMax = new Vector2(0f, 1f);
             rootRect.pivot = new Vector2(0f, 1f);
-            rootRect.anchoredPosition = new Vector2(24f, -18f);
+            rootRect.anchoredPosition = new Vector2(28f, -22f);
             float width = HeartCount * HeartSize + (HeartCount - 1) * HeartSpacing;
             rootRect.sizeDelta = new Vector2(width, HeartSize);
 
@@ -64,11 +64,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
 
-            Sprite sprite = GetHeartSprite();
+            Sprite sprite = DemoHudArt.Heart;
             hearts = new Image[HeartCount];
             for (int i = 0; i < HeartCount; i++)
             {
-                GameObject heartObject = new GameObject($"Heart_{i}", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement));
+                GameObject heartObject = new GameObject($"Heart_{i}", typeof(RectTransform), typeof(LayoutElement));
                 RectTransform rect = heartObject.GetComponent<RectTransform>();
                 rect.SetParent(rootRect, false);
 
@@ -78,11 +78,8 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 element.preferredWidth = HeartSize;
                 element.preferredHeight = HeartSize;
 
-                Image image = heartObject.GetComponent<Image>();
-                image.sprite = sprite;
-                image.preserveAspect = true;
-                image.raycastTarget = false;
-                image.color = FilledColor;
+                CreateHeartLayer(rect, "Outline", sprite, OutlineColor, -3f);
+                Image image = CreateHeartLayer(rect, "Fill", sprite, FilledColor, 0f);
                 hearts[i] = image;
             }
         }
@@ -103,7 +100,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                     continue;
                 }
 
-                hearts[i].gameObject.SetActive(i < visible);
+                hearts[i].transform.parent.gameObject.SetActive(i < visible);
                 hearts[i].color = i < filled ? FilledColor : EmptyColor;
             }
         }
@@ -124,54 +121,46 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             }
         }
 
-        private static void ShiftOverlappingHud(Transform hudRoot)
+        private static Image CreateHeartLayer(
+            RectTransform parent,
+            string objectName,
+            Sprite sprite,
+            Color color,
+            float outset)
         {
-            Transform killText = hudRoot.Find("KillText");
-            if (killText is RectTransform killRect)
-            {
-                killRect.anchoredPosition = new Vector2(140f, -156f);
-            }
-
-            Transform statusText = hudRoot.Find("StatusText");
-            if (statusText is RectTransform statusRect)
-            {
-                statusRect.anchoredPosition = new Vector2(140f, -248f);
-            }
+            GameObject layer = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            RectTransform rect = layer.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(outset, outset);
+            rect.offsetMax = new Vector2(-outset, -outset);
+            Image image = layer.GetComponent<Image>();
+            image.sprite = sprite;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            image.color = color;
+            return image;
         }
 
-        private static Sprite GetHeartSprite()
+        private static void PlaceStatusColumn(Transform hudRoot)
         {
-            if (heartSprite != null)
+            const float left = 28f;
+            const float killTop = -(22f + HeartSize + 12f);
+            PlaceHudText(hudRoot, "KillText", left, killTop);
+            PlaceHudText(hudRoot, "StatusText", left, killTop - 38f);
+        }
+
+        private static void PlaceHudText(Transform hudRoot, string childName, float x, float y)
+        {
+            if (hudRoot.Find(childName) is RectTransform rect)
             {
-                return heartSprite;
+                rect.anchorMin = new Vector2(0f, 1f);
+                rect.anchorMax = new Vector2(0f, 1f);
+                rect.pivot = new Vector2(0f, 1f);
+                rect.anchoredPosition = new Vector2(x, y);
+                rect.sizeDelta = new Vector2(280f, 36f);
             }
-
-            const int size = 64;
-            Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            texture.wrapMode = TextureWrapMode.Clamp;
-            texture.filterMode = FilterMode.Bilinear;
-
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    float nx = (x / (size - 1f) - 0.5f) * 2.55f;
-                    float ny = (y / (size - 1f) - 0.42f) * 2.7f;
-                    float a = nx * nx + ny * ny - 1f;
-                    float value = a * a * a - nx * nx * ny * ny * ny;
-                    float alpha = Mathf.Clamp01(0.5f - value * 18f);
-                    texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
-                }
-            }
-
-            texture.Apply(false, true);
-            heartSprite = Sprite.Create(
-                texture,
-                new Rect(0f, 0f, size, size),
-                new Vector2(0.5f, 0.5f),
-                64f);
-            heartSprite.name = "DemoLifeHeart";
-            return heartSprite;
         }
     }
 }

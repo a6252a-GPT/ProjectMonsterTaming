@@ -269,7 +269,12 @@ namespace ProjectMT.Features.Inventory
 
         private void Refresh()
         {
-            if (!referencesReady || progress == null || catalog == null)
+            if (this == null || !referencesReady || progress == null || catalog == null)
+            {
+                return;
+            }
+
+            if (!EnsureSlotsAlive())
             {
                 return;
             }
@@ -278,7 +283,11 @@ namespace ProjectMT.Features.Inventory
             visibleEntries = currentFilter.HasValue
                 ? ItemInventoryProjection.Build(progress.View.Items, catalog, currentFilter)
                 : allEntries;
-            capacityText.text = $"{allEntries.Count:N0} / {slots.Count:N0}";
+            if (capacityText != null)
+            {
+                capacityText.text = $"{allEntries.Count:N0} / {slots.Count:N0}";
+            }
+
             for (var index = 0; index < slots.Count; index++)
             {
                 if (index < visibleEntries.Count)
@@ -484,7 +493,10 @@ namespace ProjectMT.Features.Inventory
         {
             for (var index = 0; index < slots.Count; index++)
             {
-                slots[index].SetSelected(index == selectedIndex);
+                if (slots[index].IsAlive)
+                {
+                    slots[index].SetSelected(index == selectedIndex);
+                }
             }
         }
 
@@ -598,7 +610,47 @@ namespace ProjectMT.Features.Inventory
 
         private void HandleProgressChanged()
         {
+            if (this == null || !isActiveAndEnabled)
+            {
+                return;
+            }
+
             Refresh();
+        }
+
+        private bool EnsureSlotsAlive()
+        {
+            if (slotContent == null)
+            {
+                return false;
+            }
+
+            var needsRebuild = slots.Count == 0;
+            if (!needsRebuild)
+            {
+                for (var index = 0; index < slots.Count; index++)
+                {
+                    if (!slots[index].IsAlive)
+                    {
+                        needsRebuild = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!needsRebuild)
+            {
+                return true;
+            }
+
+            for (var index = 0; index < slots.Count; index++)
+            {
+                slots[index].RemoveListener();
+            }
+
+            BuildSlotBindings();
+            referencesReady = slots.Count > 0;
+            return referencesReady;
         }
 
         private void DetachProgress()
@@ -825,8 +877,15 @@ namespace ProjectMT.Features.Inventory
 
             public UnityAction ClickAction { get; set; }
 
+            public bool IsAlive => root != null;
+
             public void Bind(ItemInventoryEntryView entry, Sprite itemIcon)
             {
+                if (root == null)
+                {
+                    return;
+                }
+
                 root.SetActive(true);
                 button.interactable = entry.Definition != null;
                 normalArea?.gameObject.SetActive(true);
@@ -848,6 +907,11 @@ namespace ProjectMT.Features.Inventory
 
             public void Clear()
             {
+                if (root == null)
+                {
+                    return;
+                }
+
                 root.SetActive(true);
                 button.interactable = false;
                 normalArea?.gameObject.SetActive(true);
@@ -865,12 +929,17 @@ namespace ProjectMT.Features.Inventory
 
             public void SetSelected(bool selected)
             {
+                if (selection == null || button == null)
+                {
+                    return;
+                }
+
                 selection.SetActive(selected && button.interactable);
             }
 
             public void RemoveListener()
             {
-                if (ClickAction != null)
+                if (ClickAction != null && button != null)
                 {
                     button.onClick.RemoveListener(ClickAction);
                 }

@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Core;
 using ProjectMT.Shared.UI;
 using TMPro;
 using UnityEngine;
@@ -32,7 +33,6 @@ namespace ProjectMT.Bootstrap
         private static readonly float[] OneSlotX = { 0f };
         private static readonly float[] TwoSlotX = { -102f, 102f };
         private static readonly float[] ThreeSlotX = { -188f, 0f, 188f };
-
         private TaskCompletionSource<bool> closeSource;
         private bool confirmed; // 중복 확인 차단
         private ContentResultPresentation currentPresentation;
@@ -49,6 +49,12 @@ namespace ProjectMT.Bootstrap
         private void OnDestroy()
         {
             confirmButton?.onClick.RemoveListener(HandleConfirmed);
+            if (!PlaySession.CanMutateWorld)
+            {
+                closeSource = null;
+                return;
+            }
+
             CompleteClose();
         }
 

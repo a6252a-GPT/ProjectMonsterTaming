@@ -354,9 +354,15 @@ namespace ProjectMT.Contents.Framework
             out IContentStartData startData)
         {
             startData = null;
-            if (definition.StartDataFactory == null || party == null)
+            if (definition.StartDataFactory == null)
             {
-                Debug.LogError($"Content start data factory or party is missing. Content={definition.ContentId}");
+                Debug.LogError($"Content start data factory is missing. Content={definition.ContentId}");
+                return false;
+            }
+
+            if (party == null)
+            {
+                Debug.LogError($"Content party is missing. Content={definition.ContentId}");
                 return false;
             }
 

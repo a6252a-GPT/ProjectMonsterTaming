@@ -56,7 +56,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private void Update()
         {
-            if (travelLength <= 0.001f)
+            if (travelLength <= 0.001f || DemoDungeonController.IsGameplayPaused)
             {
                 return;
             }

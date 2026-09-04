@@ -43,9 +43,10 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         public Bounds WorldBounds => worldBounds;
         public IReadOnlyList<AutomapPoi> PointsOfInterest => pointsOfInterest;
 
-        public void Initialize(Transform mapRoot, Transform playerTransform)
+        public void Initialize(Transform mapRoot)
         {
-            player = playerTransform;
+            player = null;
+            lastStampPixel = new Vector2Int(int.MinValue, 0);
             if (!TryResolveBounds(mapRoot, out worldBounds))
             {
                 worldBounds = new Bounds(mapRoot != null ? mapRoot.position : Vector3.zero, new Vector3(64f, 4f, 64f));
@@ -65,6 +66,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         public void SetPlayer(Transform playerTransform)
         {
             player = playerTransform;
+            lastStampPixel = new Vector2Int(int.MinValue, 0);
         }
 
         public Vector2 WorldToNormalized(Vector3 worldPosition)

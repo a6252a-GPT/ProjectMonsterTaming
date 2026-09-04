@@ -61,6 +61,7 @@ namespace ProjectMT.Features.Quest
         private HudQuickMenuController hudMenu;
         private QuestClickPointHintController pageHintController;
         private QuestHudTrackerView trackerView;
+        private ShopCategoryMenu shopCategoryMenu;
 
         private string trackedQuestId;
         private bool hasDestination;
@@ -159,6 +160,7 @@ namespace ProjectMT.Features.Quest
             managementUi ??= FindFirstObjectByType<MainBattleManagementUiController>(FindObjectsInactive.Include);
             hudMenu ??= FindFirstObjectByType<HudQuickMenuController>(FindObjectsInactive.Include);
             pageHintController ??= FindFirstObjectByType<QuestClickPointHintController>(FindObjectsInactive.Include);
+            shopCategoryMenu ??= FindFirstObjectByType<ShopCategoryMenu>(FindObjectsInactive.Include);
         }
 
         private void RefreshTrackedDestination()
@@ -394,7 +396,13 @@ namespace ProjectMT.Features.Quest
         // 대상 화면 열기
         // ---------------------------------------------------------------
 
-        private void OpenShop() => managementUi?.OpenShopPage();
+        // 몬스터 뽑기 관련 퀘스트는 상점을 열 때 항상 몬스터 뽑기 탭(PF_ShopPage의 기본 상태)으로 강제 전환한다.
+        // OpenShopPage()만 부르면 플레이어가 최근에 열어 둔 다른 상점 탭(다이아 등)이 그대로 보이는 문제가 있었다.
+        private void OpenShop()
+        {
+            managementUi?.OpenShopPage();
+            shopCategoryMenu?.ShowMonsterShop();
+        }
 
         private void OpenMonsterManagement() => managementUi?.OpenMonsterManagementPage();
 

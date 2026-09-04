@@ -118,6 +118,10 @@ namespace ProjectMT.Features.GrowthDungeon
             UIButtonClickPunch.EnsureOn(treasureSpiritEnterButton?.gameObject);
             UIButtonClickPunch.EnsureOn(fallenCommanderEnterButton?.gameObject);
             UIButtonClickPunch.EnsureOn(guardiansTowerEnterButton?.gameObject);
+            UIButtonClickSound.EnsureOn(foodRiotEnterButton?.gameObject);
+            UIButtonClickSound.EnsureOn(treasureSpiritEnterButton?.gameObject);
+            UIButtonClickSound.EnsureOn(fallenCommanderEnterButton?.gameObject);
+            UIButtonClickSound.EnsureOn(guardiansTowerEnterButton?.gameObject);
         }
 
         private void OnEnable()

@@ -402,6 +402,8 @@ namespace ProjectMT.Features.MainBattle
             enterButton?.onClick.AddListener(EnterSelectedStage);
             UIButtonClickPunch.EnsureOn(closeButton?.gameObject);
             UIButtonClickPunch.EnsureOn(enterButton?.gameObject);
+            UIButtonClickSound.EnsureOn(closeButton?.gameObject);
+            UIButtonClickSound.EnsureOn(enterButton?.gameObject);
 
             stageActions = new UnityAction[stageButtons.Length];
             for (var index = 0; index < stageButtons.Length; index++)
@@ -410,6 +412,7 @@ namespace ProjectMT.Features.MainBattle
                 stageActions[index] = () => SelectStageSlot(captured);
                 stageButtons[index]?.onClick.AddListener(stageActions[index]);
                 UIButtonClickPunch.EnsureOn(stageButtons[index]?.gameObject);
+                UIButtonClickSound.EnsureOn(stageButtons[index]?.gameObject);
             }
 
             listenersBound = true;

@@ -34,6 +34,16 @@ namespace ProjectMT.Shared.Equipment
             this.isLocked = isLocked;
         }
 
+        // 구형 테스트/도구 호출 호환: 레벨을 생략한 장비는 기본 레벨 1로 만든다.
+        public EquipmentInstanceData(
+            string instanceId,
+            EquipmentPart part,
+            EquipmentGrade grade,
+            List<EquipmentOptionRollData> randomOptions)
+            : this(instanceId, part, grade, 1, randomOptions)
+        {
+        }
+
         public string InstanceId => instanceId;
         public EquipmentPart Part => part;
         public EquipmentGrade Grade => grade;

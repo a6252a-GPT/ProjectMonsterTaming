@@ -1,5 +1,6 @@
 using System;
 using DG.Tweening;
+using ProjectMT.Shared.Audio;
 using UnityEngine;
 
 namespace ProjectMT.Shared.UI
@@ -80,6 +81,7 @@ namespace ProjectMT.Shared.UI
             isClosing = false;
             PlayOpen();
             UIButtonClickPunch.ApplyToAllButtonsUnder(transform);
+            UIButtonClickSound.ApplyToAllButtonsUnder(transform);
         }
 
         private void OnDisable()
@@ -182,6 +184,7 @@ namespace ProjectMT.Shared.UI
 
         private void PlayOpen()
         {
+            AudioManager.PlayPopupOpen();
             sequence?.Kill();
 
             var target = animationTarget;
@@ -260,6 +263,7 @@ namespace ProjectMT.Shared.UI
             }
 
             isClosing = true;
+            AudioManager.PlayPopupClose();
             sequence?.Kill();
 
             var target = animationTarget;

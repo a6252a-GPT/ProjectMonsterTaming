@@ -269,8 +269,9 @@ namespace ProjectMT.Features.Quest
 
             if (definition.ConditionType == QuestConditionType.ExpeditionClear)
             {
-                var derived = Math.Max(0L, progress.View.LastClearedStage);
-                var current = Math.Min(derived, definition.TargetValue);
+                // 표시용 현재값은 목표치로 자르지 않고 실제 값을 그대로 보여준다(다른 패널과 동일한 수치 유지).
+                // "완료" 판정에만 목표치와 비교한다.
+                var current = Math.Max(0L, progress.View.LastClearedStage);
                 var completed = current >= definition.TargetValue;
                 return new QuestProgressEntryView(
                     definition.QuestId,
@@ -283,8 +284,10 @@ namespace ProjectMT.Features.Quest
 
             if (IsThresholdCondition(definition.ConditionType))
             {
-                var currentValue = Math.Max(0L, ResolveThresholdCurrentValue(definition.ConditionType));
-                var current = Math.Min(currentValue, definition.TargetValue);
+                // 표시용 현재값은 목표치로 자르지 않고 실제 값을 그대로 보여준다.
+                // 예: 군단장 전투력 퀘스트가 군단장 성장 패널의 전투력 표시와 동일한 수치를 보이도록.
+                // "완료" 판정에만 목표치와 비교한다.
+                var current = Math.Max(0L, ResolveThresholdCurrentValue(definition.ConditionType));
                 var completed = current >= definition.TargetValue;
                 return new QuestProgressEntryView(
                     definition.QuestId,

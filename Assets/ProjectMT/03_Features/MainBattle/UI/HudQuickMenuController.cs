@@ -83,6 +83,12 @@ namespace ProjectMT.Features.MainBattle
             UIButtonClickPunch.EnsureOn(attendanceButton?.gameObject);
             UIButtonClickPunch.EnsureOn(mailboxButton?.gameObject);
             UIButtonClickPunch.EnsureOn(menuButton?.gameObject);
+            UIButtonClickSound.EnsureOn(contentButton?.gameObject);
+            UIButtonClickSound.EnsureOn(summonButton?.gameObject);
+            UIButtonClickSound.EnsureOn(shopButton?.gameObject);
+            UIButtonClickSound.EnsureOn(attendanceButton?.gameObject);
+            UIButtonClickSound.EnsureOn(mailboxButton?.gameObject);
+            UIButtonClickSound.EnsureOn(menuButton?.gameObject);
         }
 
         private void OnDestroy()

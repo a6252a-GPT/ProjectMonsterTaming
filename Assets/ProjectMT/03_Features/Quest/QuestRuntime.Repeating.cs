@@ -60,14 +60,18 @@ namespace ProjectMT.Features.Quest
                 ? ResolveThresholdCurrentValue(template.ConditionType)
                 : saved.CurrentProgress;
 
-            var clamped = Math.Max(0L, Math.Min(currentValue, resolvedTarget));
-            var completed = clamped >= resolvedTarget;
+            // 표시용 현재값은 목표치로 자르지 않고 실제 값을 그대로 보여준다.
+            // 예: 군단장 전투력 반복 퀘스트가 군단장 성장 패널의 전투력 표시와 동일한 수치를 보이도록.
+            // "완료" 판정에만 목표치와 비교한다.
+            var current = Math.Max(0L, currentValue);
+            var completed = current >= resolvedTarget;
             return new QuestProgressEntryView(
                 template.QuestId,
-                clamped,
+                current,
                 completed,
                 completed && saved.RewardClaimed,
-                saved.RepeatCycleCount);
+                saved.RepeatCycleCount,
+                resolvedTarget);
         }
 
         // cycleCount(지금까지 이 템플릿을 완료한 횟수)만큼 targetValue에 repeatIncrement를 누적한다.

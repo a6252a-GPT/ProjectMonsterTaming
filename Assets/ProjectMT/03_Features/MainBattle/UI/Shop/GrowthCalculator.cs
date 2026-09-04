@@ -329,6 +329,7 @@ namespace ProjectMT.Features.MainBattle
                 ? button.transform
                 : button.transform.parent != null ? button.transform.parent : button.transform;
             UIButtonClickPunch.EnsureOn(button.gameObject, visualRoot);
+            UIButtonClickSound.EnsureOn(button.gameObject);
         }
 
         private Button ResolveRowButton(string rowName, Button fallback)

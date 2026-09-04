@@ -348,6 +348,16 @@ namespace ProjectMT.Shared.GameData
             };
         }
 
+        // 구형 테스트/도구 호출 호환: 세 번째 인자는 과거 중복 수량 값이며,
+        // 현재는 스킬 밸런스 설정에서 필요한 수량을 결정하므로 사용하지 않는다.
+        public static GameProgressChange LevelUpCommanderSkill(
+            string skillId,
+            int expectedLevel,
+            int legacyExpectedDuplicateCount)
+        {
+            return LevelUpCommanderSkill(skillId, expectedLevel);
+        }
+
         public static GameProgressChange ClaimMonsterCollectionFiveStarReward(string monsterId)
         {
             return new GameProgressChange

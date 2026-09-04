@@ -70,6 +70,7 @@ namespace ProjectMT.Features.Formation
         private string selectedMonsterId;
         private MonsterPartyKind activeParty = MonsterPartyKind.Main;
         private bool isBusy;
+        private bool questFormationCardExplicitlySelected;
         private Color mainTabActiveColor;
         private Color reserveTabInactiveColor;
         private bool tabColorsCaptured;
@@ -78,6 +79,42 @@ namespace ProjectMT.Features.Formation
         public event Action<bool> OpenStateChanged;
         public event Action PositionFormationRequested;
         public bool IsOpen => pageRoot != null && pageRoot.activeSelf;
+        public bool HasQuestFormationCardSelection => questFormationCardExplicitlySelected;
+        public Button QuestFormationActionButton => formationButton;
+
+        public Button QuestFormationCandidateButton
+        {
+            get
+            {
+                var cards = ownedRosterList?.Cards;
+                if (cards == null)
+                {
+                    return null;
+                }
+
+                for (var index = 0; index < cards.Count; index++)
+                {
+                    var card = cards[index];
+                    if (card != null && card.gameObject.activeInHierarchy && !card.IsAssigned &&
+                        card.ClickButton != null && card.ClickButton.interactable)
+                    {
+                        return card.ClickButton;
+                    }
+                }
+
+                for (var index = 0; index < cards.Count; index++)
+                {
+                    var card = cards[index];
+                    if (card != null && card.gameObject.activeInHierarchy && card.ClickButton != null &&
+                        card.ClickButton.interactable)
+                    {
+                        return card.ClickButton;
+                    }
+                }
+
+                return null;
+            }
+        }
 
         private void Awake()
         {
@@ -182,6 +219,7 @@ namespace ProjectMT.Features.Formation
             }
 
             SetPageOpen(true);
+            questFormationCardExplicitlySelected = false;
             SetStatus(string.Empty);
             RefreshView();
             ownedRosterList?.ResetScrollPosition();
@@ -264,6 +302,7 @@ namespace ProjectMT.Features.Formation
             if (!isBusy && !string.IsNullOrWhiteSpace(monsterId))
             {
                 selectedMonsterId = monsterId;
+                questFormationCardExplicitlySelected = true;
                 SetStatus(string.Empty);
                 RefreshView();
             }

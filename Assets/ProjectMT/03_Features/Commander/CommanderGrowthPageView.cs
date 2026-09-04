@@ -58,6 +58,11 @@ namespace ProjectMT.Features.Commander
         private Slider potentialSlider; // 위 경험치를 시각적으로 보여주는 슬라이더
         private readonly PotentialRowRefs[] potentialRows = new PotentialRowRefs[CommanderPotentialData.SlotCount];
 
+        // 퀘스트 클릭 힌트에서 현재 열려 있는 탭을 판단할 때 사용한다.
+        public bool IsPotentialTabSelected => potentialPanel != null && potentialPanel.activeInHierarchy;
+        public Button QuestStatsTabButton => statsTabButton;
+        public Button QuestPotentialTabButton => potentialTabButton;
+
         private IGameProgressService progress;
         private CommanderGrowthConfig config;
         private Action combatInputSaved;
@@ -128,6 +133,12 @@ namespace ProjectMT.Features.Commander
         public void Close()
         {
             UIPanelPopAnimator.RequestClose(gameObject);
+        }
+
+        // 퀘스트 이동 등 외부에서 잠재능력 탭으로 바로 전환해야 할 때 사용.
+        public void SelectPotentialTab()
+        {
+            SelectGrowthTab(true);
         }
 
         private void Refresh()

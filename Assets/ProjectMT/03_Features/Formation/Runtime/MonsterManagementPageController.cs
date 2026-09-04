@@ -95,9 +95,48 @@ namespace ProjectMT.Features.Formation
         private int selectedBreakthroughStage = 1;
         private bool showingBreakthrough;
         private bool isBusy;
+        private bool questBreakthroughCardExplicitlySelected;
 
         public event Action<bool> OpenStateChanged;
         public bool IsOpen => this != null && gameObject.activeInHierarchy;
+        public bool IsBreakthroughTabActive => showingBreakthrough;
+        public bool HasQuestBreakthroughCardSelection => questBreakthroughCardExplicitlySelected;
+        public Button QuestBreakthroughTabButton => breakthroughTabButton;
+        public Button QuestBreakthroughActionButton => breakthroughActionButton;
+
+        public Button QuestBreakthroughCandidateButton
+        {
+            get
+            {
+                var cards = rosterList?.Cards;
+                if (cards == null)
+                {
+                    return null;
+                }
+
+                for (var index = 0; index < cards.Count; index++)
+                {
+                    var card = cards[index];
+                    if (card != null && card.gameObject.activeInHierarchy && card.IsBreakthroughReady &&
+                        card.ClickButton != null && card.ClickButton.interactable)
+                    {
+                        return card.ClickButton;
+                    }
+                }
+
+                for (var index = 0; index < cards.Count; index++)
+                {
+                    var card = cards[index];
+                    if (card != null && card.gameObject.activeInHierarchy && card.ClickButton != null &&
+                        card.ClickButton.interactable)
+                    {
+                        return card.ClickButton;
+                    }
+                }
+
+                return null;
+            }
+        }
 
         private void Awake()
         {
@@ -198,6 +237,7 @@ namespace ProjectMT.Features.Formation
             }
 
             showingBreakthrough = false;
+            questBreakthroughCardExplicitlySelected = false;
             selectedBreakthroughStage = 0;
             SetPageOpen(true, true);
             SetStatus(string.Empty);
@@ -260,6 +300,7 @@ namespace ProjectMT.Features.Formation
             if (!isBusy)
             {
                 showingBreakthrough = true;
+                questBreakthroughCardExplicitlySelected = false;
                 RefreshView();
             }
         }
@@ -269,6 +310,7 @@ namespace ProjectMT.Features.Formation
             if (!isBusy && !string.IsNullOrWhiteSpace(monsterId))
             {
                 selectedMonsterId = monsterId;
+                questBreakthroughCardExplicitlySelected = true;
                 selectedBreakthroughStage = 0;
                 SetStatus(string.Empty);
                 RefreshView();

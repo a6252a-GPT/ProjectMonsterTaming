@@ -61,6 +61,12 @@ namespace ProjectMT.Features.MainBattle
         // 페이지가 하나라도 열리고/닫힐 때 알림. HUD 고정 버튼 등 뒤쪽 UI의 클릭 가능 상태를 맞추는 데 사용.
         public event Action<bool> AnyPageOpenChanged;
 
+        // 퀘스트 클릭 힌트(QuestClickPointHintController)가 페이지 내부의 "ClickPoint"를 찾을 때 쓰는 루트.
+        public GameObject ShopPageRoot => shopPage;
+        public GameObject CommanderGrowthPageRoot => commanderGrowthPage;
+        public GameObject MonsterManagementPageRoot => monsterManagementPage != null ? monsterManagementPage.gameObject : null;
+        public GameObject GrowthDungeonPageRoot => growthDungeonPage;
+
         public bool IsAnyPageOpen =>
             (commanderGrowthPage != null && commanderGrowthPage.activeSelf) ||
             (shopPage != null && shopPage.activeSelf) ||

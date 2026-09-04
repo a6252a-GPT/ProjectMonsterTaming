@@ -42,7 +42,13 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
+            var modeChanged = currentMode != mode;
             currentMode = mode;
+            if (modeChanged && currentMode == EquipmentPageMode.Dismantle)
+            {
+                // 장비 분해 퀘스트: 분해 탭 → 전체 선택 → 분해.
+                questDismantleHintStep = 1;
+            }
             CloseDismantleConfirmation();
             offlineAutoDismantleSettingsPanel?.Close();
             itemComparisonPanel?.Hide();

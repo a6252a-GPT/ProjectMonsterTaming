@@ -38,6 +38,28 @@ namespace ProjectMT.Features.Quest
             return catalog != null && catalog.TryGet(questId, out var definition) && definition.IsRepeatingTemplate;
         }
 
+        // 반복 퀘스트 전체에서 이미 수령한 횟수를 합산해 튜토리얼 클릭 힌트를 계속 보여줄지 판정한다.
+        // 템플릿마다 따로 세지 않으므로, 어떤 템플릿이 뽑히더라도 첫 10개까지만 안내된다.
+        public static bool AreRepeatingQuestClickHintsEnabled(QuestType type, int completedQuestLimit)
+        {
+            if (catalog == null || completedQuestLimit <= 0)
+            {
+                return false;
+            }
+
+            var completedQuestCount = 0;
+            foreach (var candidate in catalog.GetRepeatingTemplates(type))
+            {
+                completedQuestCount += GetProgress(candidate.QuestId).RepeatCycleCount;
+                if (completedQuestCount >= completedQuestLimit)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         // 화면에 표시할 "지금 목표 수치"를 돌려준다. 일반 퀘스트는 카탈로그 고정값 그대로,
         // 반복 템플릿은 지금까지 완료한 사이클 수만큼 반영된 값이다(definition.TargetValue는 1회차 기준값일 뿐).
         public static long ResolveTargetValue(QuestDefinition definition)

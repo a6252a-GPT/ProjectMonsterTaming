@@ -16,6 +16,14 @@ namespace ProjectMT.Features.Equipment
             return RollDrop(EquipmentBalanceConfig.RuntimeDefault, basisStage, random);
         }
 
+        // 구형 호출 호환: 기준 스테이지를 생략하면 1단계 기준으로 처리한다.
+        public static List<EquipmentInstanceData> RollDrop(
+            EquipmentBalanceConfig balance,
+            Random random)
+        {
+            return RollDrop(balance, 1, random);
+        }
+
         public static List<EquipmentInstanceData> RollDrop(
             EquipmentBalanceConfig balance,
             int basisStage,
@@ -49,6 +57,14 @@ namespace ProjectMT.Features.Equipment
                 grade,
                 itemLevel,
                 randomOptions);
+        }
+
+        // 구형 호출 호환: 기준 스테이지를 생략하면 1단계 기준으로 처리한다.
+        public static EquipmentInstanceData RollSingle(
+            EquipmentBalanceConfig balance,
+            Random random)
+        {
+            return RollSingle(balance, 1, random);
         }
 
         private static void Validate(EquipmentBalanceConfig balance, int basisStage)

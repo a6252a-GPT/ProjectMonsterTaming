@@ -115,7 +115,7 @@ namespace ProjectMT.Features.Quest
                 QuestMissionCategoryInfo.GetDisplayName(definition.ConditionType),
                 compactPresentation ? ResolveDescription(definition) : FormatDescription(definition, progress),
                 compactPresentation
-                    ? $"{progress.CurrentProgress}/{QuestRuntime.ResolveTargetValue(definition)}"
+                    ? $"{progress.CurrentProgress:N0}/{QuestRuntime.ResolveTargetValue(definition):N0}"
                     : FormatStatus(progress));
             ApplyRewardIcon(definition);
         }
@@ -228,7 +228,7 @@ namespace ProjectMT.Features.Quest
             var body = ResolveDescription(definition);
             // 반복 퀘스트는 사이클마다 목표가 올라가므로 definition.TargetValue(1회차 기준)가 아니라
             // 지금 사이클 기준으로 다시 계산된 값을 보여준다.
-            return $"{body} ({progress.CurrentProgress}/{QuestRuntime.ResolveTargetValue(definition)})";
+            return $"{body} ({progress.CurrentProgress:N0}/{QuestRuntime.ResolveTargetValue(definition):N0})";
         }
 
         // 목표를 채우면 보상 수령 여부와 상관없이 "완료"로 표시하고, 그 전에는 "진행 중"으로 표시한다.

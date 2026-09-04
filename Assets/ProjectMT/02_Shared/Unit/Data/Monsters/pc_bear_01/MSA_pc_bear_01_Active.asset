@@ -677,10 +677,10 @@ MonoBehaviour:
       motionId: 
       state: 1
       prefab: {fileID: 5464305951936604650, guid: ba4f3eb3b3e3ee7468dbe344f98c8666, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 5a01886e2682a6247a3e24db144b19f3, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: -62913263430178210, guid: 33478b2553ba0404ca7b06038d3fd1e0, type: 2}
       lifetime: 3
       playbackOffset: 0
       playbackSpeed: 1
@@ -693,10 +693,10 @@ MonoBehaviour:
       motionId: 
       state: 1
       prefab: {fileID: 3927127137047121744, guid: 32d8ea6211779f1439877eb77df691bb, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: b45f8297bea83494bba3f9d5569f3b79, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: -396563211296521391, guid: 33478b2553ba0404ca7b06038d3fd1e0, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1
@@ -895,10 +895,10 @@ MonoBehaviour:
       motionId: step_03
       state: 1
       prefab: {fileID: 4726790242865161932, guid: 479177904962d7149a21cba4677d3d8b, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 1d71d518a178dd342aeebf91e35124fa, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: 9201901292424408736, guid: 33478b2553ba0404ca7b06038d3fd1e0, type: 2}
       lifetime: 2
       playbackOffset: 0
       playbackSpeed: 1
@@ -911,10 +911,10 @@ MonoBehaviour:
       motionId: 
       state: 1
       prefab: {fileID: 3927127137047121744, guid: 32d8ea6211779f1439877eb77df691bb, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: b2f997c435693e9408a7755f46b9db7d, type: 3}
       soundVolume: 1
-      sfx: {fileID: 0}
+      sfx: {fileID: 9004521625066587746, guid: 33478b2553ba0404ca7b06038d3fd1e0, type: 2}
       lifetime: 1
       playbackOffset: 0
       playbackSpeed: 1

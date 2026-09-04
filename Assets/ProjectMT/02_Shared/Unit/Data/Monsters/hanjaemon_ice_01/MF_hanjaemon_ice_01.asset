@@ -1,5 +1,24 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-3974837312318017188
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_hanjaemon_ice_01_ActiveBasic_step_03_ground_contact_Shared
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: f8f3d8b4def422d408b9478fca7f6901, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -74,24 +93,24 @@ MonoBehaviour:
   - attackId: BA_R_03
     slotId: projectile
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    state: 1
+    prefab: {fileID: 1517588531989122639, guid: ddc3380681ba1fb4b96d7fc1463fca02, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 20a3d969d6373984ba5c730b3c4cad43, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
+    sfx: {fileID: 7238809899657677377}
+    lifetime: 6
     playbackOffset: 0
-    playbackSpeed: 1
+    playbackSpeed: 0.57
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: 0.7630608, z: 2.719884}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 0.8
   - attackId: BA_R_03
     slotId: contact
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 1978266488057773170, guid: 634b6ec72f889bd40b64dc7112d44116, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -100,14 +119,14 @@ MonoBehaviour:
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: -0.8700161, z: -0.01119709}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 0.8
   - attackId: BA_R_03
     slotId: area_explosion
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 4470130016990481759, guid: 21577f9498310a546ab5a0466706bbdf, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -119,3 +138,79 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+--- !u!114 &2789203311462262133
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_hanjaemon_ice_01_ActiveBasic_step_02_charge_step_02
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: d5483e090d902024ca714544f7caa20a, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
+--- !u!114 &3331934469914104088
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_hanjaemon_ice_01_ActiveBasic_step_01_sweep_plane_step_01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: a456bea8a9f210545a2dbe839a1a19dc, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
+--- !u!114 &6492986047154493582
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_hanjaemon_ice_01_ActiveBasic_step_02_beam_body_step_02
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 9ae56310c0f568a4b909855c7919122f, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
+--- !u!114 &7238809899657677377
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_hanjaemon_ice_01_BasicAttack_BA_R_03_projectile_Shared
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 20a3d969d6373984ba5c730b3c4cad43, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1

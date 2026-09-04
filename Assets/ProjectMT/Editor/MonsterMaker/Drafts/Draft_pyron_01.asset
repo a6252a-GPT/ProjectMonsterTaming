@@ -19,7 +19,6 @@ MonoBehaviour:
   skillLoadoutConfigured: 0
   usePassiveSkill: 0
   useActiveSkill: 0
-  splitSkillUsageConfigured: 1
   skillUsageSchemaVersion: 1
   rarityPassiveSkill: {fileID: 0}
   passiveTuning:
@@ -287,7 +286,7 @@ MonoBehaviour:
   - attackId: BA_R_03
     slotId: launch
     motionId: attack04
-    state: 1
+    state: 0
     prefab: {fileID: 0}
     sfxState: 0
     sound: {fileID: 0}

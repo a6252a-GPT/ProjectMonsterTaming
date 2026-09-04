@@ -1,5 +1,43 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-7220889668165953290
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_kimhyeona_01_ActiveBasic_step_01_per_hit_Shared
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: bf638b96c16230b4c85cf3126b64fcb0, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
+--- !u!114 &-994150356707492553
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_kimhyeona_01_BasicAttack_BA_M_03_thrust_path_attack01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 81b5e26609a47654c8d3fd66ea28d424, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -60,10 +98,10 @@ MonoBehaviour:
     motionId: attack01
     state: 1
     prefab: {fileID: 1827827387240226182, guid: 4fda06174f568924da22163fc4a27d95, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 81b5e26609a47654c8d3fd66ea28d424, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: -994150356707492553}
     lifetime: 2.5
     playbackOffset: 0
     playbackSpeed: 1.5
@@ -76,10 +114,10 @@ MonoBehaviour:
     motionId: 
     state: 0
     prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 3d7acdbc20b1b4245823d706ccd63f15, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: 3710205638457680360}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
@@ -87,3 +125,41 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+--- !u!114 &3710205638457680360
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_kimhyeona_01_BasicAttack_BA_M_03_path_hit_Shared
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 3d7acdbc20b1b4245823d706ccd63f15, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
+--- !u!114 &8967500169698752966
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_kimhyeona_01_ActiveBasic_step_01_telegraph_Shared
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 0533e5eaab94e634ea4a355a60b957ba, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1

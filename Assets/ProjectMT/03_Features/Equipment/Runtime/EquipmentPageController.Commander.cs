@@ -76,6 +76,7 @@ namespace ProjectMT.Features.Equipment
                 }
 
                 var commanderLevelText = slotTransform.Find("Text_Level")?.GetComponent<TMP_Text>();
+                EquipmentLevelIconResolver.NormalizeMainSlotLevel(commanderLevelText);
 
                 var icon = itemFrame.Find("Item")?.GetComponent<Image>();
                 var normalArea = itemFrame.Find("NormalArea");

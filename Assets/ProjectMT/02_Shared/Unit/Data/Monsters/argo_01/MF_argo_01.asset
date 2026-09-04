@@ -1,5 +1,24 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-2196095914890272981
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_argo_01_BasicAttack_BA_R_05_multi_launch_attack02
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 9c06c5a07f897e0469cc088fd8a4349b, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -54,4 +73,87 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
-  basicAttackVfxBindings: []
+  basicAttackVfxBindings:
+  - attackId: BA_R_05
+    slotId: multi_launch
+    motionId: attack01
+    state: 1
+    prefab: {fileID: 5492344958117361843, guid: dd98d3af6fbe63a42951c3ac5c569515, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 9a2c18fc7052c4c4694591f661a70f79, type: 3}
+    soundVolume: 1
+    sfx: {fileID: 3623865697826983932}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0.1
+    localPosition: {x: 0, y: -0.1, z: 1.0634624}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 0.8
+  - attackId: BA_R_05
+    slotId: multi_launch
+    motionId: attack02
+    state: 0
+    prefab: {fileID: 5500161761263087781, guid: b558ac9453276ca40a07e0063346c5f3, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 9c06c5a07f897e0469cc088fd8a4349b, type: 3}
+    soundVolume: 1
+    sfx: {fileID: -2196095914890272981}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_R_05
+    slotId: projectile
+    motionId: 
+    state: 0
+    prefab: {fileID: 5500161761263087781, guid: b558ac9453276ca40a07e0063346c5f3, type: 3}
+    sfxState: 0
+    sound: {fileID: 8300000, guid: 4a2f51aa66bf94047a5afe75f64067e1, type: 3}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 3
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_R_05
+    slotId: hit
+    motionId: 
+    state: 1
+    prefab: {fileID: 9216221113199418791, guid: 58e9d49aab4c26e4182845b2d79c59d7, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+--- !u!114 &3623865697826983932
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_argo_01_BasicAttack_BA_R_05_multi_launch_attack01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 9a2c18fc7052c4c4694591f661a70f79, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1

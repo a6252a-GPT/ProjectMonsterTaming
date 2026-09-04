@@ -1,5 +1,43 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-5998169282969927032
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_shakun_01_EffectActive_group_01_haste_apply
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 83ae2c05823334d90839fab0ef78e1db, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
+--- !u!114 &-822298042749822982
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_shakun_01_BasicAttack_BA_R_03_contact_Shared
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: b8a15153151b741cdb5b09ec223aa42d, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -60,10 +98,10 @@ MonoBehaviour:
     motionId: attack02
     state: 0
     prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 8c0a9e3a46a4c7d44aa73bb9c66da0c2, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: 7337651965031425554}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
@@ -92,10 +130,10 @@ MonoBehaviour:
     motionId: 
     state: 0
     prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: b8a15153151b741cdb5b09ec223aa42d, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: -822298042749822982}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
@@ -119,3 +157,60 @@ MonoBehaviour:
     localPosition: {x: 0, y: -0.27416474, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+--- !u!114 &5474991965887999985
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_shakun_01_EffectActive_group_01_target_end
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 4980f96b94b2f4b4dba103fe9c355fa2, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
+--- !u!114 &6273152602231446990
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_shakun_01_EffectActive_group_01_target_loop
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 1aeca0e0ada044ecc826a15a86124afe, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
+--- !u!114 &7337651965031425554
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_shakun_01_BasicAttack_BA_R_03_launch_attack02
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 8c0a9e3a46a4c7d44aa73bb9c66da0c2, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1

@@ -1,5 +1,43 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-7392577149379026894
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_ignis_01_BasicAttack_BA_M_02_sweep_plane_attack03
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 3d833893e28a8ed4b909168e95fec196, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
+--- !u!114 &-6269026405643419402
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_ignis_01_BasicAttack_BA_M_02_target_hit_Shared
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 79895ae0606a9c34b8da61c44023dce0, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59,23 +97,7 @@ MonoBehaviour:
     slotId: sweep_plane
     motionId: attack01
     state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_M_02
-    slotId: sweep_plane
-    motionId: attack02
-    state: 0
-    prefab: {fileID: 0}
+    prefab: {fileID: 1989842276948574, guid: a2a2ee42c28dc4e41ad1cfa224045c3d, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -90,32 +112,32 @@ MonoBehaviour:
   - attackId: BA_M_02
     slotId: sweep_plane
     motionId: attack03
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    state: 1
+    prefab: {fileID: 1950821157413962, guid: fb5ba37c59a9a284f86bdcd397b06776, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 3d833893e28a8ed4b909168e95fec196, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: -7392577149379026894}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: 0.1393672, z: 0.9033652}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 7
   - attackId: BA_M_02
     slotId: target_hit
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    state: 1
+    prefab: {fileID: 1801918589960200, guid: 6953498a5ce2ecb4eaa9390c957cbe80, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 79895ae0606a9c34b8da61c44023dce0, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: -6269026405643419402}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: -0.29378387, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 2

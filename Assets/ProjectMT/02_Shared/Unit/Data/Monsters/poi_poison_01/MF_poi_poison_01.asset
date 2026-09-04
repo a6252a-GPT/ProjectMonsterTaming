@@ -1,5 +1,24 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-4553014801248013439
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_poi_poison_01_BasicAttack_BA_M_01_hit_Shared
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 3e8be1bd2915cab49b3e885553d95d30, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -56,10 +75,10 @@ MonoBehaviour:
     scale: 1
   basicAttackVfxBindings:
   - attackId: BA_M_01
-    slotId: hit
-    motionId: 
-    state: 1
-    prefab: {fileID: 1188432315835894, guid: e76cd799ebba2c34fabe37837548d639, type: 3}
+    slotId: swing_trail
+    motionId: attack01
+    state: 0
+    prefab: {fileID: 0}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -71,3 +90,19 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  - attackId: BA_M_01
+    slotId: hit
+    motionId: 
+    state: 1
+    prefab: {fileID: 5434010266877595090, guid: a09a0e08205eaf84ea9a40f5993922f4, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 3e8be1bd2915cab49b3e885553d95d30, type: 3}
+    soundVolume: 1
+    sfx: {fileID: -4553014801248013439}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 0.5

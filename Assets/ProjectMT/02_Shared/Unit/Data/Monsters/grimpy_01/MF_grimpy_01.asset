@@ -1,5 +1,24 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-2830386753547673557
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_grimpy_01_BasicAttack_BA_M_01_swing_trail_attack01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 7d23a87264f1e3349bc09fbb9df5fff2, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -60,10 +79,10 @@ MonoBehaviour:
     motionId: attack01
     state: 0
     prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 7d23a87264f1e3349bc09fbb9df5fff2, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: -2830386753547673557}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
@@ -76,10 +95,10 @@ MonoBehaviour:
     motionId: 
     state: 1
     prefab: {fileID: 1678266536710752, guid: e9f2eebd4297d16468c064220662eea2, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 2c2870865bdd20b4181e320a68d0bb3d, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: 3322305425068727487}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
@@ -87,3 +106,22 @@ MonoBehaviour:
     localPosition: {x: 0, y: -0.42317164, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 0.8
+--- !u!114 &3322305425068727487
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_grimpy_01_BasicAttack_BA_M_01_hit_Shared
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 2c2870865bdd20b4181e320a68d0bb3d, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1

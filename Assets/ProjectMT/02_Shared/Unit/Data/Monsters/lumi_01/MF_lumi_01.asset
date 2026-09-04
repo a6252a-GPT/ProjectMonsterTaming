@@ -1,5 +1,24 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-8314169153261585536
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_lumi_01_BasicAttack_BA_M_05_hit_Shared
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 26a7531ca396152418fff98c5206e578, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -60,10 +79,10 @@ MonoBehaviour:
     motionId: attack01
     state: 0
     prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 08d409ddf9a2a0544a49053cf8f822a8, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: 9143518533695291107}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
@@ -76,10 +95,10 @@ MonoBehaviour:
     motionId: attack01
     state: 0
     prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 65ebe4a5c42cca147a037a3fb7b83bf1, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: 8808743889424434308}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
@@ -106,16 +125,54 @@ MonoBehaviour:
   - attackId: BA_M_05
     slotId: hit
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    state: 1
+    prefab: {fileID: 8801250762101326386, guid: 7c26f8fccaea99e43ba463e3264feb62, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 26a7531ca396152418fff98c5206e578, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: -8314169153261585536}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: 0.4052856, z: 0.51001805}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+--- !u!114 &8808743889424434308
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_lumi_01_BasicAttack_BA_M_05_dash_enter_attack01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 65ebe4a5c42cca147a037a3fb7b83bf1, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
+--- !u!114 &9143518533695291107
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_lumi_01_BasicAttack_BA_M_05_dash_exit_attack01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 08d409ddf9a2a0544a49053cf8f822a8, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1

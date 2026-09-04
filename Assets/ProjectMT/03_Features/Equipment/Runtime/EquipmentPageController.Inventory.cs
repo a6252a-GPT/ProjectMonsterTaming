@@ -84,6 +84,10 @@ namespace ProjectMT.Features.Equipment
 
             var capturedView = view;
             view.ClickButton.onClick.AddListener(() => HandleSlotClicked(capturedView));
+            EquipmentLevelIconResolver.NormalizeMainSlotLevel(view.TextLevel?.GetComponent<TMP_Text>());
+
+            var holdTrigger = PointerHoldTrigger.EnsureOn(slotRoot.gameObject);
+            holdTrigger?.Configure(() => HandleSlotHoldStart(capturedView), null);
 
             slots.Add(view);
         }
@@ -256,6 +260,19 @@ namespace ProjectMT.Features.Equipment
                 selectedInstanceId = null;
                 CloseDismantleConfirmation();
                 RefreshSelection();
+                return;
+            }
+
+            selectedInstanceId = view.BoundInstanceId;
+            RefreshSelection();
+            ShowItemComparisonPopup(view.BoundInstanceId);
+        }
+
+        // 누르는 순간 비교창을 열어 모바일과 스크롤뷰 안에서도 즉시 반응하게 한다.
+        private void HandleSlotHoldStart(SlotView view)
+        {
+            if (currentMode != EquipmentPageMode.Equip || string.IsNullOrEmpty(view.BoundInstanceId))
+            {
                 return;
             }
 

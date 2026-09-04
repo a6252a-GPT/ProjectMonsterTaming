@@ -1,5 +1,24 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-6868384353506633415
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_nagaris_01_BasicAttack_BA_S_02_repeated_hit_Shared
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 5766de5714e5caa4bacd1ba77f6ccfb7, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -57,189 +76,13 @@ MonoBehaviour:
   basicAttackVfxBindings:
   - attackId: BA_S_02
     slotId: start
-    motionId: attack01
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: start
-    motionId: attack02
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: start
     motionId: attack03
     state: 0
     prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: c9e179e95a744cc4d9af9c9315b96972, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: start
-    motionId: attack04
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: start
-    motionId: attack05
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: start
-    motionId: attack06
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: start
-    motionId: attack07
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: start
-    motionId: attack08
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: start
-    motionId: attack09
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: start
-    motionId: attack10
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: body
-    motionId: attack01
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: body
-    motionId: attack02
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: 2851797408389682453}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
@@ -250,172 +93,28 @@ MonoBehaviour:
   - attackId: BA_S_02
     slotId: body
     motionId: attack03
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 8648502179410783575, guid: 0b41012c8fcc3ea42afdd3e9dba11a47, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
     sfx: {fileID: 0}
-    lifetime: 1
+    lifetime: 3
     playbackOffset: 0
     playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    eventTimingOffset: -0.29
+    localPosition: {x: 0, y: -0.2, z: 0.7951942}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: body
-    motionId: attack04
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: body
-    motionId: attack05
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: body
-    motionId: attack06
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: body
-    motionId: attack07
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: body
-    motionId: attack08
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: body
-    motionId: attack09
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: body
-    motionId: attack10
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 1.2
   - attackId: BA_S_02
     slotId: repeated_hit
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    state: 1
+    prefab: {fileID: 3017430761128806937, guid: b891c07d8bd68a2428e566e2dc18e5ca, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 5766de5714e5caa4bacd1ba77f6ccfb7, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: end
-    motionId: attack01
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: end
-    motionId: attack02
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: -6868384353506633415}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
@@ -439,115 +138,22 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
-  - attackId: BA_S_02
-    slotId: end
-    motionId: attack04
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: end
-    motionId: attack05
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: end
-    motionId: attack06
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: end
-    motionId: attack07
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: end
-    motionId: attack08
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: end
-    motionId: attack09
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_S_02
-    slotId: end
-    motionId: attack10
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
-    lifetime: 1
-    playbackOffset: 0
-    playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+--- !u!114 &2851797408389682453
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_nagaris_01_BasicAttack_BA_S_02_start_attack03
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: c9e179e95a744cc4d9af9c9315b96972, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1

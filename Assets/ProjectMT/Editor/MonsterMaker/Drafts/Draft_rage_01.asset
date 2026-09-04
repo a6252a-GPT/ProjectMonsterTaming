@@ -19,7 +19,6 @@ MonoBehaviour:
   skillLoadoutConfigured: 1
   usePassiveSkill: 1
   useActiveSkill: 0
-  splitSkillUsageConfigured: 1
   skillUsageSchemaVersion: 1
   rarityPassiveSkill: {fileID: 11400000, guid: bfaefc1bcc35d744cba50a4abd514928, type: 2}
   passiveTuning:

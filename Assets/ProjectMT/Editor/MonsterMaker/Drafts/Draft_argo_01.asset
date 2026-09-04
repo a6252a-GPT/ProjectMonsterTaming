@@ -19,7 +19,6 @@ MonoBehaviour:
   skillLoadoutConfigured: 1
   usePassiveSkill: 1
   useActiveSkill: 0
-  splitSkillUsageConfigured: 1
   skillUsageSchemaVersion: 1
   rarityPassiveSkill: {fileID: 11400000, guid: 6ee1b6bedd8437d49a882952f6871d37, type: 2}
   passiveTuning:
@@ -173,7 +172,7 @@ MonoBehaviour:
     motionId: 
     state: 1
     prefab: {fileID: 9216221113199418791, guid: 58e9d49aab4c26e4182845b2d79c59d7, type: 3}
-    sfxState: 1
+    sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
     sfx: {fileID: 0}

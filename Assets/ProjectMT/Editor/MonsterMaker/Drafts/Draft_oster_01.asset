@@ -19,7 +19,6 @@ MonoBehaviour:
   skillLoadoutConfigured: 1
   usePassiveSkill: 0
   useActiveSkill: 1
-  splitSkillUsageConfigured: 1
   skillUsageSchemaVersion: 1
   rarityPassiveSkill: {fileID: 0}
   passiveTuning:
@@ -470,18 +469,6 @@ MonoBehaviour:
     breathDuration: 0.8
     markers:
     - normalizedTime: 0.51
-      powerRatio: 1
-      socketOverride: 
-  - motionId: attack02
-    clip: {fileID: 0}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 0
-    overrideBreathDuration: 0
-    breathDuration: 0.8
-    markers:
-    - normalizedTime: 0.5
       powerRatio: 1
       socketOverride: 
   deathClip: {fileID: 1827226128182048838, guid: ed7f3a387b3a8e94bb6dfadaf6bf14fd, type: 3}

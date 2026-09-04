@@ -71,7 +71,7 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 4
       feedback:
-        sfx: {fileID: 0}
+        sfx: {fileID: -5998169282969927032, guid: b5ceb95fdb35d4945988c0d854c4ea74, type: 2}
         vfxPrefab: {fileID: 0}
         vfxLifetime: 1
         localPosition: {x: 0, y: 0, z: 0}
@@ -86,7 +86,7 @@ MonoBehaviour:
       attachment: 1
       endPolicy: 0
       feedback:
-        sfx: {fileID: 0}
+        sfx: {fileID: 6273152602231446990, guid: b5ceb95fdb35d4945988c0d854c4ea74, type: 2}
         vfxPrefab: {fileID: 5672367718899253312, guid: 43d12d0fc036cd447afcc37db2dd289b, type: 3}
         vfxLifetime: 1
         localPosition: {x: 0, y: 1.4726937, z: 0}
@@ -101,7 +101,7 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 4
       feedback:
-        sfx: {fileID: 0}
+        sfx: {fileID: 5474991965887999985, guid: b5ceb95fdb35d4945988c0d854c4ea74, type: 2}
         vfxPrefab: {fileID: 0}
         vfxLifetime: 1
         localPosition: {x: 0, y: 0, z: 0}

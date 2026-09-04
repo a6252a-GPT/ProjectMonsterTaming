@@ -56,7 +56,7 @@ MonoBehaviour:
       attachment: 0
       endPolicy: 4
       feedback:
-        sfx: {fileID: 0}
+        sfx: {fileID: -4084273230170439814, guid: c44ae7e88d9f4454398267b7eb3231e8, type: 2}
         vfxPrefab: {fileID: 7298124039744100688, guid: da4c6fe0f01906e4eb5b2e7b751e4f48, type: 3}
         vfxLifetime: 3
         localPosition: {x: 0, y: 0.28891712, z: 0}

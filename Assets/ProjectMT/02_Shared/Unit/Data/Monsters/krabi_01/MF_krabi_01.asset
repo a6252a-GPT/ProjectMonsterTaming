@@ -55,15 +55,15 @@ MonoBehaviour:
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
   basicAttackVfxBindings:
-  - attackId: BA_R_01
-    slotId: launch
+  - attackId: BA_R_05
+    slotId: multi_launch
     motionId: attack01
     state: 0
     prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 7235fcd45d90b1f4196ed97181074ad3, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: 4648431782810828719}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
@@ -71,31 +71,31 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
-  - attackId: BA_R_01
+  - attackId: BA_R_05
     slotId: projectile
     motionId: 
     state: 0
-    prefab: {fileID: 0}
+    prefab: {fileID: 3305186517166574314, guid: 620e7349ebf84a64ea443a1a86b8279e, type: 3}
     sfxState: 0
-    sound: {fileID: 0}
+    sound: {fileID: 8300000, guid: 29f60e0b163f3b044be4b9acc11237a7, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
-    lifetime: 1
+    lifetime: 5
     playbackOffset: 0
-    playbackSpeed: 1
+    playbackSpeed: 0.06
     eventTimingOffset: 0
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
-  - attackId: BA_R_01
+    scale: 0.4
+  - attackId: BA_R_05
     slotId: hit
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    state: 1
+    prefab: {fileID: 69906001918393858, guid: 9416caa7ec1f33d4db80998353d68aa6, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 79f5d48cad0d68e48a8212ebc71b6c30, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: 5135250008909037952}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
@@ -103,3 +103,41 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+--- !u!114 &4648431782810828719
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_krabi_01_BasicAttack_BA_R_05_multi_launch_attack01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 7235fcd45d90b1f4196ed97181074ad3, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
+--- !u!114 &5135250008909037952
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_krabi_01_BasicAttack_BA_R_05_hit_Shared
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 79f5d48cad0d68e48a8212ebc71b6c30, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1

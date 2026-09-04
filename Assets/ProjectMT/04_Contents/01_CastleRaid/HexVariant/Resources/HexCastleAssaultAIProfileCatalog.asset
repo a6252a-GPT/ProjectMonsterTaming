@@ -23,8 +23,8 @@ MonoBehaviour:
     attackBuffRate: 0.2
     defenseDamageMultiplier: 0.75
   - monsterId: aru_01
-    pattern: 6
-    supportFocus: 2
+    pattern: 5
+    supportFocus: 0
     supportRange: 5
     supportCooldown: 4
     supportDuration: 5
@@ -266,7 +266,7 @@ MonoBehaviour:
     attackBuffRate: 0.2
     defenseDamageMultiplier: 0.75
   - monsterId: piru_01
-    pattern: 0
+    pattern: 5
     supportFocus: 0
     supportRange: 5
     supportCooldown: 4
@@ -383,6 +383,24 @@ MonoBehaviour:
     attackBuffRate: 0.2
     defenseDamageMultiplier: 0.75
   - monsterId: pyron_01
+    pattern: 0
+    supportFocus: 0
+    supportRange: 5
+    supportCooldown: 4
+    supportDuration: 5
+    healRatio: 0.24
+    attackBuffRate: 0.2
+    defenseDamageMultiplier: 0.75
+  - monsterId: ignis_01
+    pattern: 0
+    supportFocus: 0
+    supportRange: 5
+    supportCooldown: 4
+    supportDuration: 5
+    healRatio: 0.24
+    attackBuffRate: 0.2
+    defenseDamageMultiplier: 0.75
+  - monsterId: nagaris_01
     pattern: 0
     supportFocus: 0
     supportRange: 5

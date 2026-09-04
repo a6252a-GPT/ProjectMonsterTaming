@@ -100,10 +100,10 @@ TextureImporter:
       name: Federica_Set06_Weapon
       rect:
         serializedVersion: 2
-        x: 0
-        y: 1045
-        width: 209
-        height: 209
+        x: 30
+        y: 1023
+        width: 189
+        height: 189
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -122,10 +122,10 @@ TextureImporter:
       name: Federica_Set06_Helmet
       rect:
         serializedVersion: 2
-        x: 209
-        y: 1045
-        width: 209
-        height: 209
+        x: 238
+        y: 1014
+        width: 191
+        height: 191
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -144,10 +144,10 @@ TextureImporter:
       name: Federica_Set06_Armor
       rect:
         serializedVersion: 2
-        x: 418
-        y: 1045
-        width: 209
-        height: 209
+        x: 439
+        y: 1017
+        width: 191
+        height: 191
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -166,10 +166,10 @@ TextureImporter:
       name: Federica_Set06_Glove
       rect:
         serializedVersion: 2
-        x: 627
-        y: 1045
-        width: 209
-        height: 209
+        x: 646
+        y: 1031
+        width: 177
+        height: 177
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -188,10 +188,10 @@ TextureImporter:
       name: Federica_Set06_Boots
       rect:
         serializedVersion: 2
-        x: 836
-        y: 1045
-        width: 209
-        height: 209
+        x: 845
+        y: 1021
+        width: 183
+        height: 183
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -210,10 +210,10 @@ TextureImporter:
       name: Federica_Set06_Ring
       rect:
         serializedVersion: 2
-        x: 1045
-        y: 1045
-        width: 209
-        height: 209
+        x: 1044
+        y: 1033
+        width: 172
+        height: 172
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -232,10 +232,10 @@ TextureImporter:
       name: Federica_Set07_Weapon
       rect:
         serializedVersion: 2
-        x: 0
-        y: 836
-        width: 209
-        height: 209
+        x: 24
+        y: 790
+        width: 202
+        height: 202
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -254,10 +254,10 @@ TextureImporter:
       name: Federica_Set07_Helmet
       rect:
         serializedVersion: 2
-        x: 209
-        y: 836
-        width: 209
-        height: 209
+        x: 232
+        y: 799
+        width: 191
+        height: 191
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -276,10 +276,10 @@ TextureImporter:
       name: Federica_Set07_Armor
       rect:
         serializedVersion: 2
-        x: 418
-        y: 836
-        width: 209
-        height: 209
+        x: 430
+        y: 783
+        width: 203
+        height: 203
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -298,10 +298,10 @@ TextureImporter:
       name: Federica_Set07_Glove
       rect:
         serializedVersion: 2
-        x: 627
-        y: 836
-        width: 209
-        height: 209
+        x: 645
+        y: 794
+        width: 180
+        height: 180
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -320,10 +320,10 @@ TextureImporter:
       name: Federica_Set07_Boots
       rect:
         serializedVersion: 2
-        x: 836
-        y: 836
-        width: 209
-        height: 209
+        x: 845
+        y: 787
+        width: 183
+        height: 183
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -342,10 +342,10 @@ TextureImporter:
       name: Federica_Set07_Ring
       rect:
         serializedVersion: 2
-        x: 1045
-        y: 836
-        width: 209
-        height: 209
+        x: 1040
+        y: 801
+        width: 173
+        height: 173
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -364,10 +364,10 @@ TextureImporter:
       name: Federica_Set08_Weapon
       rect:
         serializedVersion: 2
-        x: 0
-        y: 627
-        width: 209
-        height: 209
+        x: 26
+        y: 578
+        width: 195
+        height: 195
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -386,10 +386,10 @@ TextureImporter:
       name: Federica_Set08_Helmet
       rect:
         serializedVersion: 2
-        x: 209
-        y: 627
-        width: 209
-        height: 209
+        x: 230
+        y: 574
+        width: 189
+        height: 189
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -408,10 +408,10 @@ TextureImporter:
       name: Federica_Set08_Armor
       rect:
         serializedVersion: 2
-        x: 418
-        y: 627
-        width: 209
-        height: 209
+        x: 434
+        y: 569
+        width: 193
+        height: 193
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -430,10 +430,10 @@ TextureImporter:
       name: Federica_Set08_Glove
       rect:
         serializedVersion: 2
-        x: 627
-        y: 627
-        width: 209
-        height: 209
+        x: 644
+        y: 583
+        width: 172
+        height: 172
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -453,9 +453,9 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 836
-        y: 627
-        width: 209
-        height: 209
+        y: 572
+        width: 187
+        height: 187
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -474,10 +474,10 @@ TextureImporter:
       name: Federica_Set08_Ring
       rect:
         serializedVersion: 2
-        x: 1045
-        y: 627
-        width: 209
-        height: 209
+        x: 1036
+        y: 584
+        width: 171
+        height: 171
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -496,10 +496,10 @@ TextureImporter:
       name: Federica_Set09_Weapon
       rect:
         serializedVersion: 2
-        x: 0
-        y: 418
-        width: 209
-        height: 209
+        x: 28
+        y: 370
+        width: 180
+        height: 180
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -518,10 +518,10 @@ TextureImporter:
       name: Federica_Set09_Helmet
       rect:
         serializedVersion: 2
-        x: 209
-        y: 418
-        width: 209
-        height: 209
+        x: 228
+        y: 359
+        width: 189
+        height: 189
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -540,10 +540,10 @@ TextureImporter:
       name: Federica_Set09_Armor
       rect:
         serializedVersion: 2
-        x: 418
-        y: 418
-        width: 209
-        height: 209
+        x: 428
+        y: 353
+        width: 206
+        height: 206
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -562,10 +562,10 @@ TextureImporter:
       name: Federica_Set09_Glove
       rect:
         serializedVersion: 2
-        x: 627
-        y: 418
-        width: 209
-        height: 209
+        x: 644
+        y: 369
+        width: 171
+        height: 171
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -584,10 +584,10 @@ TextureImporter:
       name: Federica_Set09_Boots
       rect:
         serializedVersion: 2
-        x: 836
-        y: 418
-        width: 209
-        height: 209
+        x: 825
+        y: 354
+        width: 206
+        height: 206
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -606,10 +606,10 @@ TextureImporter:
       name: Federica_Set09_Ring
       rect:
         serializedVersion: 2
-        x: 1045
-        y: 418
-        width: 209
-        height: 209
+        x: 1030
+        y: 372
+        width: 173
+        height: 173
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -628,10 +628,10 @@ TextureImporter:
       name: Federica_Set10_Weapon
       rect:
         serializedVersion: 2
-        x: 0
-        y: 209
-        width: 209
-        height: 209
+        x: 14
+        y: 138
+        width: 204
+        height: 204
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -650,10 +650,10 @@ TextureImporter:
       name: Federica_Set10_Helmet
       rect:
         serializedVersion: 2
-        x: 209
-        y: 209
-        width: 209
-        height: 209
+        x: 229
+        y: 151
+        width: 173
+        height: 173
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -672,10 +672,10 @@ TextureImporter:
       name: Federica_Set10_Armor
       rect:
         serializedVersion: 2
-        x: 418
-        y: 209
-        width: 209
-        height: 209
+        x: 420
+        y: 136
+        width: 208
+        height: 208
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -694,10 +694,10 @@ TextureImporter:
       name: Federica_Set10_Glove
       rect:
         serializedVersion: 2
-        x: 627
-        y: 209
-        width: 209
-        height: 209
+        x: 644
+        y: 155
+        width: 172
+        height: 172
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -716,10 +716,10 @@ TextureImporter:
       name: Federica_Set10_Boots
       rect:
         serializedVersion: 2
-        x: 836
-        y: 209
-        width: 209
-        height: 209
+        x: 835
+        y: 144
+        width: 187
+        height: 187
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -738,10 +738,10 @@ TextureImporter:
       name: Federica_Set10_Ring
       rect:
         serializedVersion: 2
-        x: 1045
-        y: 209
-        width: 209
-        height: 209
+        x: 1027
+        y: 155
+        width: 174
+        height: 174
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}

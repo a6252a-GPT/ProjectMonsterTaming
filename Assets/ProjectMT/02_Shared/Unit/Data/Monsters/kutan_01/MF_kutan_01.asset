@@ -1,5 +1,24 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-3926906117794293329
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_kutan_01_BasicAttack_BA_M_01_swing_trail_attack01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: a788fde29ade25f4982ba8360bfdf057, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -60,10 +79,10 @@ MonoBehaviour:
     motionId: attack01
     state: 0
     prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: a788fde29ade25f4982ba8360bfdf057, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: -3926906117794293329}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
@@ -75,15 +94,34 @@ MonoBehaviour:
     slotId: hit
     motionId: 
     state: 1
-    prefab: {fileID: 1839826149959910, guid: 3b1cd6b8d62bb764faef4498c20bc5e6, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
-    soundVolume: 1
-    sfx: {fileID: 0}
+    prefab: {fileID: 1007489450165806, guid: 6e1e59f2c5ce521499157f9b16215908, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: fecf3023392694f41abeb24af2996ec3, type: 3}
+    soundVolume: 0.065
+    sfx: {fileID: 8353487444806414527}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: -0.34, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 0.4
+--- !u!114 &8353487444806414527
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_kutan_01_BasicAttack_BA_M_01_hit_Shared
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: fecf3023392694f41abeb24af2996ec3, type: 3}
+  volumeRange: {x: 0.065, y: 0.065}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1

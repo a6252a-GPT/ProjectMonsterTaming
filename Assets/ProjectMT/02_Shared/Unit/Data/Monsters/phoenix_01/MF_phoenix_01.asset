@@ -90,16 +90,35 @@ MonoBehaviour:
   - attackId: BA_R_05
     slotId: hit
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    state: 1
+    prefab: {fileID: 1884517729446559184, guid: 3d298d6356cf3314395150df63a8197a, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: cc447f1e835234dce9b9c40d4fbf2159, type: 3}
     soundVolume: 1
-    sfx: {fileID: 0}
+    sfx: {fileID: 5514411222843889970}
     lifetime: 1
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: -1, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+--- !u!114 &5514411222843889970
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: __MonsterMakerSfx_phoenix_01_BasicAttack_BA_R_05_hit_Shared
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: cc447f1e835234dce9b9c40d4fbf2159, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.98, y: 1.02}
+  spatialBlend: 1
+  duplicateCooldown: 0.05
+  priority: 1

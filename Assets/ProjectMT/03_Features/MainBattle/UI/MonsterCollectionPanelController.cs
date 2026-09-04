@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using ProjectMT.Features.Formation;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Unit;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -38,6 +39,11 @@ namespace ProjectMT.Features.MainBattle
             "CommonTab", "RareTab", "EpicTab", "LegendaryTab", "MythicTab"
         };
 
+        private static readonly string[] TabLabels =
+        {
+            "일반", "희귀", "영웅", "전설", "신화"
+        };
+
         // BoxMenu 하위 버튼. 인덱스가 AttackFilter 값과 그대로 대응한다.
         private static readonly string[] AttackButtonNames =
         {
@@ -49,6 +55,8 @@ namespace ProjectMT.Features.MainBattle
 
         private readonly List<Button> tabButtons = new List<Button>();
         private readonly List<GameObject> tabFocusIndicators = new List<GameObject>();
+        private readonly List<TMP_Text> tabProgressLabels = new List<TMP_Text>();
+        private readonly List<GameObject> tabRewardIndicators = new List<GameObject>();
         private readonly List<MonsterRosterListView> rosterLists = new List<MonsterRosterListView>();
         private readonly List<IReadOnlyList<MonsterDefinition>> monstersByRarity =
             new List<IReadOnlyList<MonsterDefinition>>();
@@ -62,12 +70,15 @@ namespace ProjectMT.Features.MainBattle
         private int selectedTabIndex;
         private AttackFilter selectedAttackFilter = AttackFilter.All;
         private MonsterRosterView ownedRoster;
+        private IGameProgressService progressService;
+        private bool claimInProgress;
 
         public void Configure(MonsterRarityCatalog rarityCatalog, IGameProgressService progressService)
         {
             ResolveReferences();
             LoadCatalog(rarityCatalog);
-            ownedRoster = progressService != null ? progressService.View.Monsters : default;
+            SetProgressService(progressService);
+            ownedRoster = this.progressService != null ? this.progressService.View.Monsters : default;
             RefreshCounts();
             selectedAttackFilter = AttackFilter.All;
             ApplyAttackFocusIndicators();
@@ -107,6 +118,10 @@ namespace ProjectMT.Features.MainBattle
                 var tabButton = tabTransform != null ? tabTransform.GetComponent<Button>() : null;
                 tabButtons.Add(tabButton);
                 tabFocusIndicators.Add(FindFocusIndicator(tabTransform));
+                tabProgressLabels.Add(tabTransform != null
+                    ? tabTransform.GetComponentInChildren<TMP_Text>(true)
+                    : null);
+                tabRewardIndicators.Add(FindNamedDescendant(tabTransform, "Alert_Dot_01_Red"));
 
                 var capturedIndex = i;
                 tabButton?.onClick.AddListener(() => SelectTab(capturedIndex));
@@ -129,6 +144,49 @@ namespace ProjectMT.Features.MainBattle
             return buttonTransform != null && buttonTransform.childCount > FocusIndicatorChildIndex
                 ? buttonTransform.GetChild(FocusIndicatorChildIndex).gameObject
                 : null;
+        }
+
+        private static GameObject FindNamedDescendant(Transform root, string childName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            var descendants = root.GetComponentsInChildren<Transform>(true);
+            for (var index = 0; index < descendants.Length; index++)
+            {
+                if (descendants[index].name == childName)
+                {
+                    return descendants[index].gameObject;
+                }
+            }
+
+            return null;
+        }
+
+        private void SetProgressService(IGameProgressService next)
+        {
+            if (ReferenceEquals(progressService, next))
+            {
+                return;
+            }
+
+            if (progressService != null)
+            {
+                progressService.Changed -= HandleProgressChanged;
+            }
+
+            progressService = next;
+            if (progressService != null)
+            {
+                progressService.Changed += HandleProgressChanged;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            SetProgressService(null);
         }
 
         private void LoadCatalog(MonsterRarityCatalog rarityCatalog)
@@ -168,8 +226,34 @@ namespace ProjectMT.Features.MainBattle
                     }
                 }
 
-                rosterLists[i]?.SetCountText($"{owned} / {list.Count}");
+                rosterLists[i]?.SetCountText($"보유 {owned}/{list.Count}");
+                if (i < tabProgressLabels.Count && tabProgressLabels[i] != null)
+                {
+                    tabProgressLabels[i].text = $"{TabLabels[i]} {owned}/{list.Count}";
+                }
+
+                if (i < tabRewardIndicators.Count && tabRewardIndicators[i] != null)
+                {
+                    tabRewardIndicators[i].SetActive(HasClaimableReward(list));
+                }
             }
+        }
+
+        private bool HasClaimableReward(IReadOnlyList<MonsterDefinition> monsters)
+        {
+            for (var index = 0; index < monsters.Count; index++)
+            {
+                var definition = monsters[index];
+                if (definition != null &&
+                    ownedRoster.TryGetOwnedMonster(definition.MonsterId, out var owned) &&
+                    MonsterAscension.IsMaxAscension(owned.AscensionLevel) &&
+                    !owned.CollectionFiveStarRewardClaimed)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void SelectTab(int index)
@@ -221,8 +305,16 @@ namespace ProjectMT.Features.MainBattle
             for (var i = 0; i < visibleCount; i++)
             {
                 var definition = filtered[i];
-                var isOwned = definition != null && ownedRoster.Owns(definition.MonsterId);
-                cards[i]?.BindCatalogEntry(definition, rarity, isOwned);
+                var owned = default(OwnedMonsterView);
+                var isOwned = definition != null &&
+                              ownedRoster.TryGetOwnedMonster(definition.MonsterId, out owned);
+                cards[i]?.BindCatalogEntry(
+                    definition,
+                    rarity,
+                    isOwned,
+                    isOwned ? owned.AscensionLevel : 0,
+                    isOwned && owned.CollectionFiveStarRewardClaimed,
+                    ClaimFiveStarReward);
             }
 
             rosterList.ResetScrollPosition();
@@ -253,6 +345,37 @@ namespace ProjectMT.Features.MainBattle
             }
 
             return filteredScratch;
+        }
+
+        private async void ClaimFiveStarReward(string monsterId)
+        {
+            if (claimInProgress || progressService == null || string.IsNullOrWhiteSpace(monsterId))
+            {
+                return;
+            }
+
+            claimInProgress = true;
+            try
+            {
+                var applied = await progressService.TryApplyAndSaveAsync(
+                    GameProgressChange.ClaimMonsterCollectionFiveStarReward(monsterId));
+                if (!applied)
+                {
+                    Debug.LogWarning($"도감 5성 보상을 수령하지 못했습니다. Monster={monsterId}", this);
+                    HandleProgressChanged();
+                }
+            }
+            finally
+            {
+                claimInProgress = false;
+            }
+        }
+
+        private void HandleProgressChanged()
+        {
+            ownedRoster = progressService != null ? progressService.View.Monsters : default;
+            RefreshCounts();
+            RefreshActiveList();
         }
     }
 }

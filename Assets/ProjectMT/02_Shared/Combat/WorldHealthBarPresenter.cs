@@ -8,6 +8,8 @@ namespace ProjectMT.Shared.Combat
     public sealed class WorldHealthBarPresenter : MonoBehaviour // 피격 일반 유닛 HP바 풀·좌표 갱신
     {
         public const float DefaultVisibleSeconds = 1.35f;
+        public const float DefaultFadeSeconds = 0.35f;
+        public const float HeightOffset = 0.15f;
         public static readonly Color FriendlyColor = new Color32(70, 218, 116, 255);
         public static readonly Color HostileColor = new Color32(239, 79, 72, 255);
 
@@ -16,6 +18,7 @@ namespace ProjectMT.Shared.Combat
         [SerializeField] private WorldHealthBarView viewPrefab;
         [SerializeField] private Camera worldCamera;
         [SerializeField, Min(0.1f)] private float visibleSeconds = DefaultVisibleSeconds;
+        [SerializeField, Min(0.05f)] private float fadeSeconds = DefaultFadeSeconds;
         [SerializeField, Range(1, 64)] private int maxActiveBars = 24;
 
         private readonly Dictionary<int, ActiveBar> active = new Dictionary<int, ActiveBar>();
@@ -48,9 +51,10 @@ namespace ProjectMT.Shared.Combat
             var ratio = ResolveHealthRatio(target.Health);
             if (active.TryGetValue(key, out var current))
             {
-                if (!current.Persistent) current.HideAt = Time.unscaledTime + visibleSeconds;
+                current.FadeAt = Time.unscaledTime + visibleSeconds;
+                current.ReleaseAt = current.FadeAt + fadeSeconds;
                 current.View.SetHealthRatio(ratio);
-                current.View.SetEnergy(ResolveEnergyRatio(target), current.Persistent);
+                current.View.SetOpacity(1f);
                 active[key] = current;
                 return;
             }
@@ -67,36 +71,14 @@ namespace ProjectMT.Shared.Combat
             }
 
             view.Bind(target.Team == UnitTeam.Player ? FriendlyColor : HostileColor, ratio);
-            view.SetEnergy(0f, false);
-            active.Add(key, new ActiveBar(target, view, Time.unscaledTime + visibleSeconds, false));
+            var fadeAt = Time.unscaledTime + visibleSeconds;
+            active.Add(key, new ActiveBar(target, view, fadeAt, fadeAt + fadeSeconds));
             UpdatePosition(target, view);
         }
 
         public void TrackActiveSkill(UnitActor target)
         {
-            if (!visible || target == null || target.IsBoss || target.Health == null ||
-                target.SkillRuntime.ActiveSkill == null || container == null || viewPrefab == null ||
-                !isActiveAndEnabled)
-            {
-                return;
-            }
-
-            var key = target.GetInstanceID();
-            if (active.TryGetValue(key, out var current))
-            {
-                current.Persistent = true;
-                current.HideAt = float.PositiveInfinity;
-                current.View.SetEnergy(ResolveEnergyRatio(target), true);
-                active[key] = current;
-                return;
-            }
-            if (active.Count >= Mathf.Max(1, maxActiveBars)) return;
-            var view = RentView();
-            if (view == null) return;
-            view.Bind(target.Team == UnitTeam.Player ? FriendlyColor : HostileColor, ResolveHealthRatio(target.Health));
-            view.SetEnergy(ResolveEnergyRatio(target), true);
-            active.Add(key, new ActiveBar(target, view, float.PositiveInfinity, true));
-            UpdatePosition(target, view);
+            // 월드 HP바는 기력 추적 없이 피격 피드백으로만 표시한다.
         }
 
         public void Untrack(UnitActor target)
@@ -127,14 +109,17 @@ namespace ProjectMT.Shared.Combat
                 var entry = pair.Value;
                 if (!visible || entry.Target == null || !entry.Target.gameObject.activeInHierarchy ||
                     entry.Target.Health == null ||
-                    !entry.Target.IsAlive || !entry.Persistent && now >= entry.HideAt)
+                    !entry.Target.IsAlive || now >= entry.ReleaseAt)
                 {
                     releaseKeys.Add(pair.Key);
                     continue;
                 }
 
                 entry.View.SetHealthRatio(ResolveHealthRatio(entry.Target.Health));
-                entry.View.SetEnergy(ResolveEnergyRatio(entry.Target), entry.Persistent);
+                var opacity = now <= entry.FadeAt
+                    ? 1f
+                    : 1f - Mathf.InverseLerp(entry.FadeAt, entry.ReleaseAt, now);
+                entry.View.SetOpacity(opacity);
                 UpdatePosition(entry.Target, entry.View);
             }
 
@@ -162,7 +147,7 @@ namespace ProjectMT.Shared.Combat
                 return;
             }
 
-            var height = target.RuntimeAssetSet?.BodyProfile?.HpBarHeight ?? 1.2f;
+            var height = (target.RuntimeAssetSet?.BodyProfile?.HpBarHeight ?? 1.2f) + HeightOffset;
             var screen = worldCamera.WorldToScreenPoint(target.transform.position + Vector3.up * height);
             var onScreen = screen.z > 0f && screen.x >= 0f && screen.x <= Screen.width &&
                            screen.y >= 0f && screen.y <= Screen.height;
@@ -241,12 +226,6 @@ namespace ProjectMT.Shared.Combat
                 : 0f;
         }
 
-        private static float ResolveEnergyRatio(UnitActor target)
-        {
-            var capacity = target?.SkillRuntime.EnergyCapacity ?? 0f;
-            return capacity > 0f ? Mathf.Clamp01(target.SkillRuntime.Energy / capacity) : 0f;
-        }
-
 #if UNITY_EDITOR
         public void EditorConfigure(
             Canvas targetCanvas,
@@ -263,18 +242,18 @@ namespace ProjectMT.Shared.Combat
 
         private struct ActiveBar
         {
-            public ActiveBar(UnitActor target, WorldHealthBarView view, float hideAt, bool persistent)
+            public ActiveBar(UnitActor target, WorldHealthBarView view, float fadeAt, float releaseAt)
             {
                 Target = target;
                 View = view;
-                HideAt = hideAt;
-                Persistent = persistent;
+                FadeAt = fadeAt;
+                ReleaseAt = releaseAt;
             }
 
             public UnitActor Target;
             public WorldHealthBarView View;
-            public float HideAt;
-            public bool Persistent;
+            public float FadeAt;
+            public float ReleaseAt;
         }
     }
 }

@@ -415,6 +415,23 @@ namespace ProjectMT.Shared.Combat
             }
         }
 
+        public void NotifyMonsterActiveExecutionComplete(UnitActor caster)
+        {
+            if (caster == null || activeFocus == null || activeFocus.Caster != caster || !activeFocusCommitted)
+            {
+                return;
+            }
+
+            var focusStart = Mathf.Max(0f, activeFocus.CommitDelay - activeFocusPreset.FocusLead);
+            var presentationFinishedAt = focusStart + activeFocusPreset.MinimumVisibleDuration;
+            if (activeFocusElapsed < presentationFinishedAt)
+            {
+                return;
+            }
+
+            CompleteMonsterActiveFocus(false, false);
+        }
+
         public void CancelMonsterActiveFocus(UnitActor caster)
         {
             if (caster == null)
@@ -459,7 +476,7 @@ namespace ProjectMT.Shared.Combat
             }
             if (activeFocus.Skill is not MonsterAttackActiveSkill)
             {
-                return activeFocusVisible ? activeFocusPreset.OtherUnitTimeScale : 1f;
+                return 1f; // 효과형 액티브는 Focus 연출만 공유하고 주변 유닛은 감속하지 않는다.
             }
             if (activeFocusSlowStartedAt < 0f)
             {
@@ -483,22 +500,28 @@ namespace ProjectMT.Shared.Combat
 
         private float ResolveAttackFocusProgressScale(float progress)
         {
-            const float blendFraction = 0.2f; // 전체 스킬의 앞·뒤 20%를 완화 구간으로 사용
+            const float slowInEnd = 0.2f;
+            const float slowHoldEnd = 0.6f;
+            const float slowReleaseEnd = 0.7f;
             progress = Mathf.Clamp01(progress);
-            if (progress < blendFraction)
+            if (progress < slowInEnd)
             {
-                var ratio = Mathf.SmoothStep(0f, 1f, progress / blendFraction);
+                var ratio = Mathf.SmoothStep(0f, 1f, progress / slowInEnd);
                 return Mathf.Lerp(1f, activeFocusPreset.AttackOtherUnitTimeScale, ratio);
             }
-            if (progress > 1f - blendFraction)
+            if (progress < slowHoldEnd)
+            {
+                return activeFocusPreset.AttackOtherUnitTimeScale;
+            }
+            if (progress < slowReleaseEnd)
             {
                 var ratio = Mathf.SmoothStep(
                     0f,
                     1f,
-                    (progress - (1f - blendFraction)) / blendFraction);
+                    (progress - slowHoldEnd) / (slowReleaseEnd - slowHoldEnd));
                 return Mathf.Lerp(activeFocusPreset.AttackOtherUnitTimeScale, 1f, ratio);
             }
-            return activeFocusPreset.AttackOtherUnitTimeScale;
+            return 1f;
         }
 
         private float ResolveAttackFocusSlowInScale()

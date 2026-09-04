@@ -297,9 +297,13 @@ namespace ProjectMT.Features.Equipment
                 }
 
                 var item = selectedItems[index];
-                if (preview.Icon != null && partIconSprites.TryGetValue(item.Part, out var icon))
+                if (preview.Icon != null)
                 {
-                    preview.Icon.sprite = icon;
+                    partIconSprites.TryGetValue(item.Part, out var fallbackSprite);
+                    preview.Icon.sprite = EquipmentLevelIconResolver.Resolve(
+                        item.Part,
+                        item.ItemLevel,
+                        fallbackSprite ?? item.Definition.Icon);
                     preview.Icon.color = Color.white;
                 }
 

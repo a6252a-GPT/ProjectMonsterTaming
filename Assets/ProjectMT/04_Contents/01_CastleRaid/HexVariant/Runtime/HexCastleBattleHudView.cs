@@ -123,7 +123,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             slot.Portrait.sprite = portrait;
             slot.Portrait.enabled = portrait != null;
             slot.Count.text = !occupied ? string.Empty : remaining > 0 ? $"×{remaining}" : "완료";
-            slot.Count.fontSize = remaining > 0 ? 22f : 16f;
+            slot.Count.fontSize = remaining > 0 ? 18f : 15f;
             slot.Selection.enabled = selected && remaining > 0;
             slot.Visual.alpha = !occupied ? 0.28f : remaining > 0 ? 1f : 0.42f;
             foreach (var style in deploymentRarityStyles)

@@ -122,6 +122,7 @@ namespace ProjectMT.Features.Equipment
 
             if (desiredFrame != null)
             {
+                EnsureLegendarySpecialBorder(desiredFrame, grade);
                 return; // 이미 올바른 등급 프레임 하나만 남아 있다.
             }
 
@@ -133,6 +134,7 @@ namespace ProjectMT.Features.Equipment
             var instance = Instantiate(template, normalArea);
             instance.name = desiredName;
             instance.SetActive(true);
+            EnsureLegendarySpecialBorder(instance.transform, grade);
 
             var rect = instance.GetComponent<RectTransform>();
             if (rect != null)
@@ -141,6 +143,20 @@ namespace ProjectMT.Features.Equipment
                 rect.anchorMax = Vector2.one;
                 rect.offsetMin = Vector2.zero;
                 rect.offsetMax = Vector2.zero;
+            }
+        }
+
+        private static void EnsureLegendarySpecialBorder(Transform frame, EquipmentGrade grade)
+        {
+            if (frame == null || grade != EquipmentGrade.Legendary)
+            {
+                return;
+            }
+
+            var specialBorder = frame.Find("SpecialBorder");
+            if (specialBorder != null)
+            {
+                specialBorder.gameObject.SetActive(true);
             }
         }
 

@@ -131,13 +131,14 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
                 AssertReference(controllerData, "exitButton");
                 AssertReference(controllerData, "inputSurface");
                 AssertReference(inputData, "cameraController");
-                Assert.That(controllerData.FindProperty("unitButtons").arraySize, Is.EqualTo(10));
-                Assert.That(controllerData.FindProperty("unitButtonLabels").arraySize, Is.EqualTo(10));
-                Assert.That(controllerData.FindProperty("unitAiTagButtons").arraySize, Is.EqualTo(10));
-                Assert.That(controllerData.FindProperty("unitAiTagLabels").arraySize, Is.EqualTo(10));
+                var unitSlotCount = controllerData.FindProperty("unitButtons").arraySize;
+                Assert.That(unitSlotCount, Is.EqualTo(10));
+                Assert.That(controllerData.FindProperty("unitButtonLabels").arraySize, Is.EqualTo(unitSlotCount));
+                Assert.That(controllerData.FindProperty("unitAiTagButtons").arraySize, Is.EqualTo(unitSlotCount));
+                Assert.That(controllerData.FindProperty("unitAiTagLabels").arraySize, Is.EqualTo(unitSlotCount));
                 Assert.That(controllerData.FindProperty("difficultyButtons").arraySize, Is.EqualTo(10));
                 Assert.That(productionHud.GetComponentsInChildren<Button>(false)
-                    .Count(value => value.name == "AITag"), Is.EqualTo(10));
+                    .Count(value => value.name == "AITag"), Is.EqualTo(8));
                 Assert.That(controllerData.FindProperty("difficultyLevel").intValue, Is.EqualTo(4));
                 Assert.That(controllerData.FindProperty("generationSeed").intValue, Is.EqualTo(10801));
                 Assert.That(camera.orthographic, Is.False);

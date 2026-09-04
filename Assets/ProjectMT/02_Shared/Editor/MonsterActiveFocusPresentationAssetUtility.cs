@@ -108,9 +108,9 @@ namespace ProjectMT.Shared.Editor
             {
                 material.shader = shader;
             }
-            material.SetFloat("_LeftFeather", 0.08f);
-            material.SetFloat("_RightFeather", 0.14f);
-            material.SetFloat("_TopFeather", 0.11f);
+            material.SetFloat("_LeftFeather", 0.02f);
+            material.SetFloat("_RightFeather", 0.35f);
+            material.SetFloat("_TopFeather", 0.04f);
             EditorUtility.SetDirty(material);
             return material;
         }
@@ -129,9 +129,12 @@ namespace ProjectMT.Shared.Editor
                 typeof(MonsterActiveFocusPresenter));
             try
             {
+                root.transform.localPosition = Vector3.zero;
+                root.transform.localRotation = Quaternion.identity;
+                root.transform.localScale = Vector3.one;
                 var canvas = root.GetComponent<Canvas>();
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                canvas.sortingOrder = 460;
+                canvas.sortingOrder = MonsterActiveFocusPresenter.CanvasSortingOrder;
                 var scaler = root.GetComponent<CanvasScaler>();
                 scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 scaler.referenceResolution = new Vector2(1920f, 1080f);
@@ -154,12 +157,12 @@ namespace ProjectMT.Shared.Editor
                 bannerRect.anchorMin = new Vector2(0f, 0.5f);
                 bannerRect.anchorMax = new Vector2(0f, 0.5f);
                 bannerRect.pivot = new Vector2(0f, 0.5f);
-                bannerRect.anchoredPosition = new Vector2(20f, 0f);
-                bannerRect.sizeDelta = new Vector2(740f, 460f);
-                banner.sprite = defaultBackground;
+                bannerRect.anchoredPosition = new Vector2(0f, -140f);
+                bannerRect.sizeDelta = new Vector2(520f, 220f);
+                banner.sprite = null;
                 banner.preserveAspect = false;
-                banner.color = Color.white;
-                banner.material = edgeFadeMaterial;
+                banner.color = Color.clear;
+                banner.material = null;
                 banner.raycastTarget = false;
                 var bannerGroup = banner.gameObject.AddComponent<CanvasGroup>();
 
@@ -167,34 +170,34 @@ namespace ProjectMT.Shared.Editor
                     "GradeGeometry",
                     bannerRect,
                     new Color32(0xE7, 0xD3, 0x4A, 0x3D));
-                SetCenterRect(accent.rectTransform, new Vector2(34f, 12f), new Vector2(650f, 320f));
-                accent.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 6f);
+                SetCenterRect(accent.rectTransform, Vector2.zero, Vector2.zero);
+                accent.gameObject.SetActive(false);
 
                 var accentGlass = CreateImage(
                     "UpperGlass",
                     bannerRect,
                     new Color32(0xE7, 0xD3, 0x4A, 0x1F));
-                SetCenterRect(accentGlass.rectTransform, new Vector2(115f, 130f), new Vector2(560f, 96f));
-                accentGlass.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -7f);
+                SetCenterRect(accentGlass.rectTransform, Vector2.zero, Vector2.zero);
+                accentGlass.gameObject.SetActive(false);
 
                 var energyEdge = CreateImage(
                     "EnergyEdge",
                     bannerRect,
                     new Color32(0xE7, 0xD3, 0x4A, 0x7A));
-                SetCenterRect(energyEdge.rectTransform, new Vector2(12f, -190f), new Vector2(680f, 4f));
-                energyEdge.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -3f);
+                SetCenterRect(energyEdge.rectTransform, Vector2.zero, Vector2.zero);
+                energyEdge.gameObject.SetActive(false);
 
                 var lightShard = CreateImage(
                     "LightShard",
                     bannerRect,
                     new Color32(0xE7, 0xD3, 0x4A, 0x33));
-                SetCenterRect(lightShard.rectTransform, new Vector2(292f, 164f), new Vector2(116f, 44f));
-                lightShard.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 24f);
+                SetCenterRect(lightShard.rectTransform, Vector2.zero, Vector2.zero);
+                lightShard.gameObject.SetActive(false);
 
                 var portraitStageObject = new GameObject("PortraitStage", typeof(RectTransform));
                 portraitStageObject.transform.SetParent(bannerRect, false);
                 var portraitStage = portraitStageObject.GetComponent<RectTransform>();
-                SetLeftRect(portraitStage, new Vector2(182f, 28f), new Vector2(450f, 390f));
+                SetLeftRect(portraitStage, new Vector2(217f, 34f), new Vector2(180f, 180f));
 
                 var portrait = CreateImage("Portrait", portraitStage, Color.white);
                 portrait.preserveAspect = true;
@@ -214,8 +217,9 @@ namespace ProjectMT.Shared.Editor
                 var skillStrip = CreateImage(
                     "SkillNameStrip",
                     bannerRect,
-                    new Color(0.012f, 0.018f, 0.045f, 0.94f));
-                SetLeftRect(skillStrip.rectTransform, new Vector2(46f, -164f), new Vector2(600f, 96f));
+                    new Color(0.018f, 0.020f, 0.018f, 0.76f));
+                SetLeftRect(skillStrip.rectTransform, Vector2.zero, new Vector2(470f, 96f));
+                skillStrip.material = edgeFadeMaterial;
 
                 var rarity = CreateText(
                     "Rarity",
@@ -224,10 +228,10 @@ namespace ProjectMT.Shared.Editor
                     FontStyles.Bold,
                     new Color32(0xE7, 0xD3, 0x4A, 0xFF),
                     config.OwnerFont);
-                SetLeftRect(rarity.rectTransform, new Vector2(20f, 34f), new Vector2(540f, 18f));
+                SetLeftRect(rarity.rectTransform, new Vector2(42f, 30f), new Vector2(175f, 18f));
                 var skill = CreateText(
-                    "SkillName", skillStrip.transform, 36f, FontStyles.Bold, Color.white, config.SkillFont);
-                SetLeftRect(skill.rectTransform, new Vector2(20f, 5f), new Vector2(550f, 44f));
+                    "SkillName", skillStrip.transform, 30f, FontStyles.Bold, Color.white, config.SkillFont);
+                SetLeftRect(skill.rectTransform, new Vector2(42f, 1f), new Vector2(175f, 38f));
                 var owner = CreateText(
                     "OwnerName",
                     skillStrip.transform,
@@ -235,7 +239,8 @@ namespace ProjectMT.Shared.Editor
                     FontStyles.Normal,
                     new Color(0.78f, 0.84f, 0.93f, 0.78f),
                     config.OwnerFont);
-                SetLeftRect(owner.rectTransform, new Vector2(22f, -31f), new Vector2(546f, 20f));
+                SetLeftRect(owner.rectTransform, new Vector2(42f, -29f), new Vector2(175f, 18f));
+                portraitStage.SetAsLastSibling();
 
                 var presenter = root.GetComponent<MonsterActiveFocusPresenter>();
                 presenter.EditorConfigure(
@@ -261,11 +266,52 @@ namespace ProjectMT.Shared.Editor
                 {
                     throw new System.InvalidOperationException("Failed to save active focus HUD prefab.");
                 }
-                return savedPresenter;
+                PruneUnreferencedOwnedRootChildren();
+                return AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath)
+                    ?.GetComponent<MonsterActiveFocusPresenter>();
             }
             finally
             {
                 Object.DestroyImmediate(root);
+            }
+        }
+
+        private static void PruneUnreferencedOwnedRootChildren()
+        {
+            var prefabRoot = PrefabUtility.LoadPrefabContents(PrefabPath);
+            try
+            {
+                var presenter = prefabRoot.GetComponent<MonsterActiveFocusPresenter>();
+                if (presenter == null)
+                {
+                    throw new System.InvalidOperationException("Active focus HUD presenter is missing after save.");
+                }
+
+                var serializedPresenter = new SerializedObject(presenter);
+                var referencedCutIn = serializedPresenter.FindProperty("bannerRect")?.objectReferenceValue as RectTransform;
+                var referencedDim = serializedPresenter.FindProperty("dimOverlay")?.objectReferenceValue as Image;
+                prefabRoot.transform.localPosition = Vector3.zero;
+                prefabRoot.transform.localRotation = Quaternion.identity;
+                prefabRoot.transform.localScale = Vector3.one;
+                EditorUtility.SetDirty(prefabRoot.transform);
+                for (var childIndex = prefabRoot.transform.childCount - 1; childIndex >= 0; childIndex--)
+                {
+                    var child = prefabRoot.transform.GetChild(childIndex);
+                    var isUnreferencedCutIn = child.name == "ActiveSkillCutIn"
+                        && (referencedCutIn == null || child != referencedCutIn.transform);
+                    var isUnreferencedDim = child.name == "FocusDim"
+                        && (referencedDim == null || child != referencedDim.transform);
+                    if (isUnreferencedCutIn || isUnreferencedDim)
+                    {
+                        Object.DestroyImmediate(child.gameObject);
+                    }
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, PrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
             }
         }
 

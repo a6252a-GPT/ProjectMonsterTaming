@@ -40,6 +40,9 @@ namespace ProjectMT.Features.Quest
         private GameObject dailyFocusObject;
         private GameObject weeklyFocusObject;
         private GameObject achievementsFocusObject;
+        private GameObject dailyAlertDotObject;
+        private GameObject weeklyAlertDotObject;
+        private GameObject achievementsAlertDotObject;
         private GameObject dailyScrollRectObject;
         private GameObject weeklyScrollRectObject;
         private Button dailyTabButton;
@@ -250,6 +253,10 @@ namespace ProjectMT.Features.Quest
                 achievementsFocusObject = found != null ? found.gameObject : null;
             }
 
+            dailyAlertDotObject ??= FindTabAlertDot("DailyTab");
+            weeklyAlertDotObject ??= FindTabAlertDot("WeeklyTab");
+            achievementsAlertDotObject ??= FindTabAlertDot("AchievementsTab");
+
             if (dailyScrollRectObject == null)
             {
                 var found = FindChild(transform, "DailyScrollRect");
@@ -412,15 +419,31 @@ namespace ProjectMT.Features.Quest
 
             if (!QuestRuntime.IsReady)
             {
+                ApplyTabAlertDots(0, 0);
                 return;
             }
 
             var dailyResult = RefreshSlots(QuestType.Daily, dailySlots);
             var weeklyResult = RefreshSlots(QuestType.Weekly, weeklySlots);
+            ApplyTabAlertDots(dailyResult.claimableCount, weeklyResult.claimableCount);
 
             var current = currentTab == QuestType.Daily ? dailyResult : weeklyResult;
             ApplyStepMilestones(current.achievedCount, current.totalCount);
             ApplyClaimAllState(current.claimableCount);
+        }
+
+        private GameObject FindTabAlertDot(string tabName)
+        {
+            var tab = FindChild(transform, tabName);
+            var alertDot = FindChild(tab, "Alert_Dot_01_Red");
+            return alertDot != null ? alertDot.gameObject : null;
+        }
+
+        private void ApplyTabAlertDots(int dailyClaimableCount, int weeklyClaimableCount)
+        {
+            dailyAlertDotObject?.SetActive(dailyClaimableCount > 0);
+            weeklyAlertDotObject?.SetActive(weeklyClaimableCount > 0);
+            achievementsAlertDotObject?.SetActive(false);
         }
 
         // 일일/주간 탭 중 지금 선택된 쪽의 배경·포커스·스크롤렉트를 활성화한다

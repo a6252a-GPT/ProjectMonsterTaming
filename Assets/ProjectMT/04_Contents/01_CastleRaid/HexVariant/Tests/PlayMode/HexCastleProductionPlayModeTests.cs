@@ -74,11 +74,9 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 Assert.That(boardRenderer, Is.Not.Null, "절차 보드 Renderer");
                 Assert.That(boardRenderer.enabled, Is.False, "정식 배경 지형을 가리지 않는 숨김 보드");
                 Assert.That(boardRenderer.sharedMaterial.shader.name,
-                    Is.EqualTo("Universal Render Pipeline/Lit"));
-                Assert.That(boardRenderer.sharedMaterial.mainTexture, Is.EqualTo(Texture2D.whiteTexture),
-                    "건물 아틀라스를 상속하지 않는 단색 임시 풀바닥");
-                Assert.That(boardRenderer.sharedMaterial.color.g,
-                    Is.GreaterThan(boardRenderer.sharedMaterial.color.r));
+                    Is.EqualTo("ProjectMT/CastleRaidHex/GroundShadows"));
+                Assert.That(boardRenderer.sharedMaterial.HasProperty("_ShadowOpacity"), Is.True);
+                Assert.That(boardRenderer.sharedMaterial.GetFloat("_ShadowOpacity"), Is.InRange(0f, 1f));
                 var initialDeploymentAreaVisual = controller.DeploymentAreaVisual;
                 Assert.That(initialDeploymentAreaVisual, Is.Not.Null, "육각 배치 가능 영역 표시");
                 Assert.That(initialDeploymentAreaVisual.AllowedCellCount,
@@ -551,7 +549,7 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 var castleInfo = sceneTransforms.Single(value => value.name == "CastleInfoText")
                     .GetComponent<TMP_Text>();
                 Assert.That(castleInfo, Is.Not.Null);
-                Assert.That(castleInfo.text, Does.Contain("STAGE 100"));
+                Assert.That(castleInfo.text, Does.Contain("100단계"));
                 Assert.That(castleInfo.text, Does.Contain("난이도 10"));
             }
             finally
@@ -603,6 +601,7 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 ProjectMT.Shared.Stats.CombatStatConfig.RuntimeDefault).Build(
                 new GameProgressView(GameProgressData.CreateDefault()));
             var startData = new HexCastleRaidStartData(party);
+            var progress = new InMemoryGameProgressService();
             var exit = new RecordingExit();
             var runInfo = new ContentRunInfo(
                 new ContentId("castle_raid"),
@@ -615,7 +614,7 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 Assert.That(controller, Is.Not.Null);
                 sceneRoot.Initialize(new ContentSceneContext(
                     definition,
-                    new ContentContext(runInfo, startData, exit)));
+                    new ContentContext(runInfo, startData, exit, progress)));
                 yield return null;
 
                 var initialSeed = controller.CurrentSeed;

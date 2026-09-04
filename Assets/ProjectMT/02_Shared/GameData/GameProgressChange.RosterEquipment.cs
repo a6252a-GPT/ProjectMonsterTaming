@@ -338,15 +338,22 @@ namespace ProjectMT.Shared.GameData
 
         public static GameProgressChange LevelUpCommanderSkill(
             string skillId,
-            int expectedLevel,
-            int expectedDuplicateCount)
+            int expectedLevel)
         {
             return new GameProgressChange
             {
                 HasLevelUpCommanderSkill = true,
                 CommanderSkillToLevelUpId = skillId?.Trim() ?? string.Empty,
-                ExpectedCommanderSkillLevel = expectedLevel,
-                ExpectedCommanderSkillDuplicateCount = expectedDuplicateCount
+                ExpectedCommanderSkillLevel = expectedLevel
+            };
+        }
+
+        public static GameProgressChange ClaimMonsterCollectionFiveStarReward(string monsterId)
+        {
+            return new GameProgressChange
+            {
+                HasClaimMonsterCollectionFiveStarReward = true,
+                CollectionRewardMonsterId = monsterId?.Trim()
             };
         }
     }

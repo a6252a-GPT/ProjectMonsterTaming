@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
@@ -15,6 +16,9 @@ namespace ProjectMT.Contents.FallenCommander
     [DisallowMultipleComponent]
     public sealed class FallenCommanderController : MonoBehaviour, IContentController, IBossDungeonHudSource
     {
+        private const string CommanderDamageVoiceResourcePath =
+            "Audio/CommanderVoice/SFX_CommanderDamageVoice";
+
         [Header("Battle")]
         [SerializeField] private CombatWorld combatWorld;
         [SerializeField] private GameObject bossPrefab;
@@ -71,6 +75,7 @@ namespace ProjectMT.Contents.FallenCommander
         private bool isDebugPhaseJump;
         private bool isCommanderStunned;
         private int lastLoggedBossHealthPercent;
+        private SfxCue commanderDamageVoice;
 
         private float RemainingBreakGauge =>
             breakRuntime.RemainingGauge(bossConfig.MaxBreakGauge);
@@ -95,6 +100,8 @@ namespace ProjectMT.Contents.FallenCommander
                     "FallenCommanderStartData is required.",
                     nameof(contentContext));
             }
+
+            commanderDamageVoice = Resources.Load<SfxCue>(CommanderDamageVoiceResourcePath);
 
             ValidateReferences();
             BeginBattle();
@@ -1296,6 +1303,13 @@ namespace ProjectMT.Contents.FallenCommander
 
         private void HandleCommanderDamaged(DamageReport report)
         {
+            if (commanderRoot != null)
+            {
+                combatWorld?.PlayMonsterSfx(
+                    commanderDamageVoice,
+                    commanderRoot.transform.position);
+            }
+
             PublishHudState();
             Debug.Log(
                 $"군단장 체력: {report.RemainingHealth} / {commanderHealth.MaxHealth}",

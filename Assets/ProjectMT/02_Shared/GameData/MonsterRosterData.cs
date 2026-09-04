@@ -18,12 +18,14 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private int level = 1;
         [SerializeField] private int ascensionLevel; // 직접 완료한 돌파 횟수 (0~5)
         [SerializeField] private int ascensionMaterialCount; // 같은 몬스터 중복 획득 재료
+        [SerializeField] private bool collectionFiveStarRewardClaimed; // 도감 5돌파 보상 최초 1회 수령
 
         public OwnedMonsterData(
             string id,
             int initialLevel = 1,
             int initialAscensionLevel = 0,
-            int initialAscensionMaterialCount = 0)
+            int initialAscensionMaterialCount = 0,
+            bool initialCollectionFiveStarRewardClaimed = false)
         {
             monsterId = id?.Trim();
             level = Math.Max(1, initialLevel);
@@ -33,16 +35,23 @@ namespace ProjectMT.Shared.GameData
             ascensionMaterialCount = Math.Max(
                 0,
                 Math.Min(initialAscensionMaterialCount, GetRemainingAscensionCount()));
+            collectionFiveStarRewardClaimed = initialCollectionFiveStarRewardClaimed;
         }
 
         public string MonsterId => monsterId;
         public int Level => level;
         public int AscensionLevel => ascensionLevel;
         public int AscensionMaterialCount => ascensionMaterialCount;
+        public bool CollectionFiveStarRewardClaimed => collectionFiveStarRewardClaimed;
 
         public OwnedMonsterData Clone()
         {
-            return new OwnedMonsterData(monsterId, level, ascensionLevel, ascensionMaterialCount);
+            return new OwnedMonsterData(
+                monsterId,
+                level,
+                ascensionLevel,
+                ascensionMaterialCount,
+                collectionFiveStarRewardClaimed);
         }
 
         internal bool Repair()
@@ -74,6 +83,7 @@ namespace ProjectMT.Shared.GameData
                 retired.ascensionLevel + retired.ascensionMaterialCount);
             ascensionLevel = Math.Max(ascensionLevel, retired.ascensionLevel);
             ascensionMaterialCount = Math.Max(0, preservedProgress - ascensionLevel);
+            collectionFiveStarRewardClaimed |= retired.collectionFiveStarRewardClaimed;
             Repair(); // 합쳐진 진행값을 현재 돌파 상한에 맞춘다
         }
 
@@ -110,6 +120,17 @@ namespace ProjectMT.Shared.GameData
 
             ascensionMaterialCount--;
             ascensionLevel++;
+            return true;
+        }
+
+        internal bool TryClaimCollectionFiveStarReward()
+        {
+            if (!MonsterAscension.IsMaxAscension(ascensionLevel) || collectionFiveStarRewardClaimed)
+            {
+                return false;
+            }
+
+            collectionFiveStarRewardClaimed = true;
             return true;
         }
 
@@ -353,6 +374,12 @@ namespace ProjectMT.Shared.GameData
             return index >= 0 && ownedMonsters[index].TryAscend(expectedAscensionLevel);
         }
 
+        internal bool TryClaimCollectionFiveStarReward(string monsterId)
+        {
+            var index = FindOwnedIndex(monsterId);
+            return index >= 0 && ownedMonsters[index].TryClaimCollectionFiveStarReward();
+        }
+
         internal bool TryGetOwned(string monsterId, out OwnedMonsterData owned)
         {
             var index = FindOwnedIndex(monsterId);
@@ -514,12 +541,14 @@ namespace ProjectMT.Shared.GameData
             Level = Math.Max(1, data?.Level ?? 1);
             AscensionLevel = Math.Max(0, data?.AscensionLevel ?? 0);
             AscensionMaterialCount = Math.Max(0, data?.AscensionMaterialCount ?? 0);
+            CollectionFiveStarRewardClaimed = data?.CollectionFiveStarRewardClaimed ?? false;
         }
 
         public string MonsterId { get; }
         public int Level { get; }
         public int AscensionLevel { get; } // 직접 완료한 돌파 횟수
         public int AscensionMaterialCount { get; } // 보유한 중복 돌파 재료
+        public bool CollectionFiveStarRewardClaimed { get; } // 도감 5돌파 보상 수령 여부
     }
 
     public readonly struct MonsterRosterView // 외부에 전달할 보유·편성 복사값

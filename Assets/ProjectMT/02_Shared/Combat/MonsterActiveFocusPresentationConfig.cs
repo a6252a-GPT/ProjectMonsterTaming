@@ -17,6 +17,8 @@ namespace ProjectMT.Shared.Combat
         [SerializeField, Range(0f, 1.5f)] private float attackCameraHoldAfterCommitDuration;
         [SerializeField, Range(0.08f, 0.6f)] private float focusLead;
         [SerializeField, Range(0.05f, 0.3f)] private float fadeIn;
+        [SerializeField, Range(0.1f, 0.8f)] private float spotlightSettleDuration;
+        [SerializeField, Range(1f, 3f)] private float casterSpotlightStartScale;
         [SerializeField, Range(0.05f, 0.5f)] private float fadeOut;
         [SerializeField, Range(0.5f, 3f)] private float minimumVisibleDuration;
         [SerializeField, Range(0.2f, 1f)] private float cameraReleaseDuration;
@@ -30,6 +32,8 @@ namespace ProjectMT.Shared.Combat
             float attackOtherUnitTimeScale,
             float focusLead,
             float fadeIn,
+            float spotlightSettleDuration,
+            float casterSpotlightStartScale,
             float fadeOut,
             float minimumVisibleDuration,
             float cameraReleaseDuration,
@@ -46,6 +50,8 @@ namespace ProjectMT.Shared.Combat
             attackCameraHoldAfterCommitDuration = 0.45f;
             this.focusLead = Mathf.Clamp(focusLead, 0.08f, 0.6f);
             this.fadeIn = Mathf.Clamp(fadeIn, 0.05f, 0.3f);
+            this.spotlightSettleDuration = Mathf.Clamp(spotlightSettleDuration, 0.1f, 0.8f);
+            this.casterSpotlightStartScale = Mathf.Clamp(casterSpotlightStartScale, 1f, 3f);
             this.fadeOut = Mathf.Clamp(fadeOut, 0.05f, 0.5f);
             this.minimumVisibleDuration = Mathf.Clamp(minimumVisibleDuration, 0.5f, 3f);
             this.cameraReleaseDuration = Mathf.Clamp(cameraReleaseDuration, 0.2f, 1f);
@@ -72,6 +78,10 @@ namespace ProjectMT.Shared.Combat
             attackCameraHoldAfterCommitDuration <= 0f ? 0.45f : attackCameraHoldAfterCommitDuration;
         public float FocusLead => focusLead <= 0f ? 0.26f : focusLead;
         public float FadeIn => fadeIn <= 0f ? 0.12f : fadeIn;
+        public float SpotlightSettleDuration =>
+            spotlightSettleDuration <= 0f ? 0.55f : spotlightSettleDuration;
+        public float CasterSpotlightStartScale =>
+            casterSpotlightStartScale <= 0f ? 3f : casterSpotlightStartScale;
         public float FadeOut => fadeOut <= 0f ? 0.12f : fadeOut;
         public float MinimumVisibleDuration => minimumVisibleDuration <= 0f ? 2f : minimumVisibleDuration;
         public float CameraReleaseDuration => cameraReleaseDuration <= 0f ? 0.48f : cameraReleaseDuration;
@@ -81,6 +91,18 @@ namespace ProjectMT.Shared.Combat
         public Color AccentColor => accentColor.a <= 0f
             ? new Color(0.3f, 0.78f, 1f, 1f)
             : accentColor;
+
+        public float ResolveCasterSpotlightScale(float elapsed)
+        {
+            return ResolveSpotlightScale(elapsed, CasterSpotlightStartScale);
+        }
+
+        private float ResolveSpotlightScale(float elapsed, float startScale)
+        {
+            var t = Mathf.Clamp01(Mathf.Max(0f, elapsed) / SpotlightSettleDuration);
+            var eased = Mathf.SmoothStep(0f, 1f, t);
+            return Mathf.Lerp(startScale, 1f, eased);
+        }
     }
 
     [CreateAssetMenu(
@@ -90,10 +112,10 @@ namespace ProjectMT.Shared.Combat
     {
         private const string ResourcesPath = "MonsterActiveFocusPresentationConfig";
         public static MonsterActiveFocusPreset LegendaryDefault => new MonsterActiveFocusPreset(
-            0.30f, 0.18f, 0.26f, 0.14f, 0.30f, 2f, 0.48f, 0.38f, 1.2f, -1.5f,
+            0.30f, 0.18f, 0.26f, 0.14f, 0.55f, 3f, 0.30f, 2f, 0.48f, 0.6f, 1.2f, -1.5f,
             new Color32(0xE7, 0xD3, 0x4A, 0xFF));
         public static MonsterActiveFocusPreset MythicDefault => new MonsterActiveFocusPreset(
-            0.22f, 0.12f, 0.34f, 0.16f, 0.34f, 2f, 0.58f, 0.52f, 1.6f, -2.5f,
+            0.22f, 0.12f, 0.34f, 0.16f, 0.55f, 3f, 0.34f, 2f, 0.58f, 0.6f, 1.6f, -2.5f,
             new Color32(0xD6, 0x37, 0x35, 0xFF));
 
         [SerializeField] private TMP_FontAsset ownerFont;

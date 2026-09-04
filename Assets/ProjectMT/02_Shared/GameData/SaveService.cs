@@ -16,7 +16,7 @@ namespace ProjectMT.Shared.GameData
 
     public sealed class SaveService // 진행 데이터 직렬화 담당
     {
-        public const int CurrentDataVersion = 24; // 장비 레벨·구형 인벤토리와 영수증 Lv.1 이관
+        public const int CurrentDataVersion = 25; // 몬스터별 도감 5돌파 보상 수령 상태
         private const int MinimumSupportedDataVersion = 1;
         private const string LegacyFoodRiotBestKillsJsonKey = "\"vegetableRiotBestKills\""; // 개명 전 저장 키
         private const string FoodRiotBestKillsJsonKey = "\"foodRiotBestKills\""; // 현재 저장 키

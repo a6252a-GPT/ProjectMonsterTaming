@@ -179,14 +179,29 @@ namespace ProjectMT.Shared.GameData
             if (change.HasLevelUpCommanderSkill)
             {
                 commanderSkills ??= CommanderSkillProgressData.CreateDefault();
-                if (!commanderSkills.TryLevelUp(
-                        change.CommanderSkillToLevelUpId,
-                        change.ExpectedCommanderSkillLevel,
-                        change.ExpectedCommanderSkillDuplicateCount,
-                        commanderSkillBalanceConfig))
+                var balance = commanderSkillBalanceConfig ?? CommanderSkillBalanceConfig.RuntimeDefault;
+                if (!balance.TryGetRule(change.CommanderSkillToLevelUpId, out var rule) ||
+                    !rule.TryGetNextLevelGoldCost(change.ExpectedCommanderSkillLevel, out var goldCost))
                 {
                     return false;
                 }
+
+                var nextCommanderSkills = commanderSkills.Clone(balance, commanderSkillSummonConfig);
+                if (!ItemInventoryTransactions.TrySpend(
+                        items,
+                        new[] { new ItemAmount(ItemIds.Gold, goldCost) },
+                        itemCatalog,
+                        out var spentSkillUpgradeItems) ||
+                    !nextCommanderSkills.TryLevelUp(
+                        change.CommanderSkillToLevelUpId,
+                        change.ExpectedCommanderSkillLevel,
+                        balance))
+                {
+                    return false;
+                }
+
+                items = spentSkillUpgradeItems;
+                commanderSkills = nextCommanderSkills;
             }
 
             if (change.ItemCosts != null && change.ItemCosts.Count > 0)
@@ -385,6 +400,22 @@ namespace ProjectMT.Shared.GameData
                  !monsters.TryAscend(change.AscendMonsterId, change.ExpectedAscensionLevel)))
             {
                 return false;
+            }
+
+            if (change.HasClaimMonsterCollectionFiveStarReward)
+            {
+                if (string.IsNullOrWhiteSpace(change.CollectionRewardMonsterId) ||
+                    !monsters.TryClaimCollectionFiveStarReward(change.CollectionRewardMonsterId) ||
+                    !ItemInventoryTransactions.TryGrantCoreBalance(
+                        items,
+                        ItemIds.Diamond,
+                        MonsterCollectionRewardRules.FiveStarDiamondReward,
+                        out var collectionRewardItems))
+                {
+                    return false;
+                }
+
+                items = collectionRewardItems; // 수령 플래그와 다이아를 같은 저장 후보에서 확정
             }
 
             if (change.GachaPulls != null)

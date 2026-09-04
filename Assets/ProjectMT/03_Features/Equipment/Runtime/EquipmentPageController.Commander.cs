@@ -98,6 +98,12 @@ namespace ProjectMT.Features.Equipment
                     }
 
                     icon.gameObject.SetActive(true);
+                    partIconSprites.TryGetValue(pair.Key, out var fallbackSprite);
+                    icon.sprite = EquipmentLevelIconResolver.Resolve(
+                        pair.Key,
+                        equipped.ItemLevel,
+                        fallbackSprite ?? equipped.Definition.Icon);
+                    EquipmentLevelIconResolver.NormalizeMainSlotIcon(icon);
                     icon.color = Color.white; // 아이콘은 고유 색 그대로 유지
                     if (commanderLevelText != null)
                     {

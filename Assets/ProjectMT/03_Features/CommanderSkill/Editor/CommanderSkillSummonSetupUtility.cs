@@ -100,32 +100,33 @@ namespace ProjectMT.EditorTools.CommanderSkill
             var balance = Require<CommanderSkillBalanceConfig>(BalancePath);
             catalog = Require<CommanderSkillCatalog>(CatalogPath);
             var projectConfig = Require<ProjectConfig>(ProjectConfigPath);
-            var curve = AnimationCurve.Linear(1f, 1f, 200f, 4.98f);
-            curve.preWrapMode = WrapMode.ClampForever;
-            curve.postWrapMode = WrapMode.ClampForever;
-            var fireGrowth = new CommanderSkillGrowthRule();
-            fireGrowth.EditorConfigure(CommanderSkillIds.Fireball, 200, 1, curve);
-            var iceGrowth = new CommanderSkillGrowthRule();
-            iceGrowth.EditorConfigure(CommanderSkillIds.IceCrystalOrb, 200, 1, curve);
-            balance.EditorConfigure(fireGrowth, iceGrowth);
+            if (!balance.TryValidate(out var balanceError))
+            {
+                throw new InvalidOperationException(
+                    $"Commander skill balance config is invalid. {balanceError}");
+            }
 
             var summon = AssetDatabase.LoadAssetAtPath<CommanderSkillSummonConfig>(SummonPath);
             if (summon == null)
             {
                 summon = ScriptableObject.CreateInstance<CommanderSkillSummonConfig>();
                 AssetDatabase.CreateAsset(summon, SummonPath);
+                summon.EditorConfigure(
+                    ItemIds.CommanderSkillSummonTicket,
+                    new[] { CreateLevel(0, catalog), CreateLevel(30, catalog), CreateLevel(100, catalog) },
+                    new[] { CreateOffer(10), CreateOffer(30), CreateOffer(300) },
+                    30);
+                EditorUtility.SetDirty(summon);
+            }
+            else if (!summon.TryValidate(balance, out var summonError))
+            {
+                throw new InvalidOperationException(
+                    $"Commander skill summon config is invalid. {summonError}");
             }
 
-            summon.EditorConfigure(
-                ItemIds.CommanderSkillSummonTicket,
-                new[] { CreateLevel(0), CreateLevel(30), CreateLevel(100) },
-                new[] { CreateOffer(10), CreateOffer(30), CreateOffer(300) },
-                30);
             catalog.EditorConfigure(balance, summon, catalog.Skills.ToArray());
             projectConfig.EditorConfigureCommanderSkillBalance(balance);
             projectConfig.EditorConfigureCommanderSkillSummon(summon);
-            EditorUtility.SetDirty(balance);
-            EditorUtility.SetDirty(summon);
             EditorUtility.SetDirty(catalog);
             EditorUtility.SetDirty(projectConfig);
             if (!catalog.TryValidate(out var error))
@@ -134,14 +135,21 @@ namespace ProjectMT.EditorTools.CommanderSkill
             }
         }
 
-        private static CommanderSkillSummonLevelRule CreateLevel(int threshold)
+        private static CommanderSkillSummonLevelRule CreateLevel(
+            int threshold,
+            CommanderSkillCatalog catalog)
         {
-            var fire = new CommanderSkillSummonPoolEntry();
-            fire.EditorConfigure(CommanderSkillIds.Fireball, 100);
-            var ice = new CommanderSkillSummonPoolEntry();
-            ice.EditorConfigure(CommanderSkillIds.IceCrystalOrb, 100);
+            var entries = catalog.Skills
+                .Where(skill => skill != null)
+                .Select(skill =>
+                {
+                    var entry = new CommanderSkillSummonPoolEntry();
+                    entry.EditorConfigure(skill.SkillId, 100);
+                    return entry;
+                })
+                .ToArray();
             var level = new CommanderSkillSummonLevelRule();
-            level.EditorConfigure(threshold, fire, ice);
+            level.EditorConfigure(threshold, entries);
             return level;
         }
 

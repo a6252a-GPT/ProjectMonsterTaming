@@ -79,19 +79,15 @@ namespace ProjectMT.Shared.CommanderSkill
 
         internal bool TryLevelUp(
             int expectedLevel,
-            int expectedDuplicateCount,
             CommanderSkillGrowthRule rule)
         {
             var levelCap = rule?.MaxLevel ?? CommanderSkillLevelRules.MaxLevel;
-            var duplicateCost = rule?.RequiredDuplicateCount ?? CommanderSkillLevelRules.RequiredDuplicateCount;
-            if (level != expectedLevel || duplicateCount != expectedDuplicateCount ||
-                level >= levelCap || duplicateCount < duplicateCost)
+            if (level != expectedLevel || level >= levelCap)
             {
                 return false;
             }
 
             level++;
-            duplicateCount -= duplicateCost;
             return true;
         }
     }
@@ -272,7 +268,6 @@ namespace ProjectMT.Shared.CommanderSkill
         internal bool TryLevelUp(
             string skillId,
             int expectedLevel,
-            int expectedDuplicateCount,
             CommanderSkillBalanceConfig balanceConfig = null)
         {
             var balance = balanceConfig ?? CommanderSkillBalanceConfig.RuntimeDefault;
@@ -287,7 +282,7 @@ namespace ProjectMT.Shared.CommanderSkill
                 var owned = ownedSkills[index];
                 if (owned != null && owned.SkillId == skillId)
                 {
-                    return owned.TryLevelUp(expectedLevel, expectedDuplicateCount, rule);
+                    return owned.TryLevelUp(expectedLevel, rule);
                 }
             }
 

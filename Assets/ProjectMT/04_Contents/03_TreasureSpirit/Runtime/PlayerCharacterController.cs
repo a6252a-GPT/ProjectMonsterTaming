@@ -303,6 +303,7 @@ namespace ProjectMT.Contents.TreasureSpirit
         private void PlayHitReaction(Vector3 hitOrigin)
         {
             visualFeedback?.PlayHit();
+            Demo.DemoDungeonAudio.PlayCommanderDamage(transform.position);
 
             Vector3 away = transform.position - hitOrigin;
             away.y = 0f;

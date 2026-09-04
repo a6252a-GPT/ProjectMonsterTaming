@@ -30,14 +30,14 @@ Material:
     m_Ints: []
     m_Floats:
     - _ColorMask: 15
-    - _LeftFeather: 0.08
-    - _RightFeather: 0.14
+    - _LeftFeather: 0.02
+    - _RightFeather: 0.35
     - _Stencil: 0
     - _StencilComp: 8
     - _StencilOp: 0
     - _StencilReadMask: 255
     - _StencilWriteMask: 255
-    - _TopFeather: 0.11
+    - _TopFeather: 0.04
     - _UseUIAlphaClip: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}

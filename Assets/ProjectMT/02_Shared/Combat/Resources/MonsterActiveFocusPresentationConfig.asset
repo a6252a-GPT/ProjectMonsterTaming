@@ -29,10 +29,12 @@ MonoBehaviour:
     attackCameraHoldAfterCommitDuration: 0.45
     focusLead: 0.26
     fadeIn: 0.14
+    spotlightSettleDuration: 0.55
+    casterSpotlightStartScale: 3
     fadeOut: 0.3
     minimumVisibleDuration: 2
     cameraReleaseDuration: 0.48
-    dimAlpha: 0.38
+    dimAlpha: 0.6
     cameraMaxOffset: 1.2
     cameraFovDelta: -1.5
     accentColor: {r: 0.90588236, g: 0.827451, b: 0.2901961, a: 1}
@@ -45,10 +47,12 @@ MonoBehaviour:
     attackCameraHoldAfterCommitDuration: 0.45
     focusLead: 0.34
     fadeIn: 0.16
+    spotlightSettleDuration: 0.55
+    casterSpotlightStartScale: 3
     fadeOut: 0.34
     minimumVisibleDuration: 2
     cameraReleaseDuration: 0.58
-    dimAlpha: 0.52
+    dimAlpha: 0.6
     cameraMaxOffset: 1.6
     cameraFovDelta: -2.5
     accentColor: {r: 0.8392157, g: 0.21568628, b: 0.20784314, a: 1}

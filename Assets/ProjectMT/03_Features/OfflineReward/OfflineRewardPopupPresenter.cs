@@ -102,11 +102,15 @@ namespace ProjectMT.Features.OfflineReward
                 var partIcon = equipmentPartIcons != null && partIndex >= 0 && partIndex < equipmentPartIcons.Length
                     ? equipmentPartIcons[partIndex]
                     : null;
+                var equipmentIcon = EquipmentLevelIconResolver.Resolve(
+                    equipment.Part,
+                    equipment.ItemLevel,
+                    partIcon ?? definition?.Icon ?? fallbackRewardIcon);
                 items.Add(new RewardPresentationItem(
                     RewardPresentationKind.Item,
                     definition?.DisplayName ?? EquipmentPartInfo.GetDisplayName(equipment.Part),
                     1L,
-                    icon: partIcon ?? definition?.Icon ?? fallbackRewardIcon,
+                    icon: equipmentIcon,
                     equipmentLevel: equipment.ItemLevel,
                     equipmentInstanceId: equipment.InstanceId));
             }
@@ -492,7 +496,10 @@ namespace ProjectMT.Features.OfflineReward
                 ? equipmentPartIcons[partIndex]
                 : null;
             slot.Bind(
-                partIcon ?? definition?.Icon ?? fallbackRewardIcon,
+                EquipmentLevelIconResolver.Resolve(
+                    equipment.Part,
+                    equipment.ItemLevel,
+                    partIcon ?? definition?.Icon ?? fallbackRewardIcon),
                 1L,
                 definition?.DisplayName ?? EquipmentPartInfo.GetDisplayName(equipment.Part),
                 ResolveEquipmentFrame(equipment.Grade),

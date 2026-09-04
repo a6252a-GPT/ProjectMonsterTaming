@@ -26,6 +26,9 @@ namespace ProjectMT.Features.MainBattle
     {
         // 한 줄에 몬스터 몇 개까지 적을지 (초과하면 줄바꿈 + 빈 줄 삽입)
         private const int ResultLineGroupSize = 3;
+        private static readonly Vector2 SummonButtonSize = new Vector2(644f, 116f);
+        private static readonly Vector2 OneDrawButtonPosition = new Vector2(-334f, -347f);
+        private static readonly Vector2 TenDrawButtonPosition = new Vector2(334f, -347f);
 
         // 이번 뽑기 묶음에서 한 몬스터가 몇 번 나왔는지, 그중 신규 획득이 있었는지 누적한다.
         private sealed class PullSummary
@@ -76,9 +79,15 @@ namespace ProjectMT.Features.MainBattle
 
         private void Awake()
         {
+            ApplySummonButtonLayout();
             oneDrawButton?.onClick.AddListener(HandleOneDrawClicked);
             tenDrawButton?.onClick.AddListener(HandleTenDrawClicked);
             resultCloseButton?.onClick.AddListener(HideResults);
+        }
+
+        private void OnEnable()
+        {
+            ApplySummonButtonLayout();
         }
 
         private void OnDestroy()
@@ -88,6 +97,32 @@ namespace ProjectMT.Features.MainBattle
             resultCloseButton?.onClick.RemoveListener(HideResults);
             UnsubscribeProgress();
             ClearResultItems();
+        }
+
+        private void ApplySummonButtonLayout()
+        {
+            ApplySummonButtonRect(oneDrawButton, OneDrawButtonPosition);
+            ApplySummonButtonRect(tenDrawButton, TenDrawButtonPosition);
+
+            var content = oneDrawButton != null ? oneDrawButton.transform.parent : null;
+            var legacyGrid = content != null ? content.GetComponent<GridLayoutGroup>() : null;
+            if (legacyGrid != null)
+            {
+                legacyGrid.enabled = false;
+            }
+        }
+
+        private static void ApplySummonButtonRect(Button button, Vector2 anchoredPosition)
+        {
+            if (button == null || button.transform is not RectTransform rect)
+            {
+                return;
+            }
+
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = SummonButtonSize;
         }
 
         // MainBattleSceneRoot가 씬 진입 시 호출. 저장 서비스·카탈로그 참조를 받아서 뽑기를 활성화한다.

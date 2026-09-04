@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
@@ -13,6 +14,8 @@ namespace ProjectMT.Features.CommanderSkill
     public sealed class CommanderSkillRuntime : MonoBehaviour // 쿨타임·자동사용·투사체 수명 관리
     {
         private const float AutoScanInterval = 0.1f;
+        private const string CommanderSkillVoiceResourcePath =
+            "Audio/CommanderVoice/SFX_CommanderSkillVoice";
         private readonly float[] cooldownRemaining = new float[CommanderSkillSlotRules.SlotCount];
         private readonly float[] cooldownDuration = new float[CommanderSkillSlotRules.SlotCount];
 
@@ -34,6 +37,7 @@ namespace ProjectMT.Features.CommanderSkill
         private float castingDuration;
         private float castingMultiplier;
         private bool configured;
+        private SfxCue commanderSkillVoice;
 
         public bool IsPaused => world == null || world.IsPaused || (isInputBlocked?.Invoke() ?? false);
         public bool IsConfigured => configured;
@@ -64,6 +68,7 @@ namespace ProjectMT.Features.CommanderSkill
             castOrigin = origin;
             isInputBlocked = inputBlocked;
             externalDamageMultiplier = damageMultiplier;
+            commanderSkillVoice = Resources.Load<SfxCue>(CommanderSkillVoiceResourcePath);
             var gateway = world == null ? null : new CommanderSkillCombatGateway(world);
             combat = gateway;
             feedback = gateway;
@@ -145,10 +150,17 @@ namespace ProjectMT.Features.CommanderSkill
                 castingRemaining = definition.CastTime;
                 castingMultiplier = multiplier;
                 PlayCastingFeedback(definition, castOrigin.position, castOrigin.rotation);
+                PlayCommanderSkillVoice();
                 return true;
             }
 
-            return TryActivate(slotIndex, definition, executor, multiplier);
+            var activated = TryActivate(slotIndex, definition, executor, multiplier);
+            if (activated)
+            {
+                PlayCommanderSkillVoice();
+            }
+
+            return activated;
         }
 
         public float GetCooldownRemaining(int slotIndex)
@@ -402,6 +414,14 @@ namespace ProjectMT.Features.CommanderSkill
                     instance,
                     vfxPrefab.transform.localScale * Mathf.Max(0.01f, scale));
                 StartCoroutine(ReturnFeedbackAfter(instance, lifetime));
+            }
+        }
+
+        private void PlayCommanderSkillVoice()
+        {
+            if (castOrigin != null)
+            {
+                feedback?.PlaySfx(commanderSkillVoice, castOrigin.position);
             }
         }
 

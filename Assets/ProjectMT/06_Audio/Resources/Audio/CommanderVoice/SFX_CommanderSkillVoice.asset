@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: SFX_CommanderSkillVoice
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 38af7f950ca6e46caa431192ac15f26c, type: 3}
+  - {fileID: 8300000, guid: df990db31c202452c93595fcc82c744b, type: 3}
+  - {fileID: 8300000, guid: 7821ef871f1a04da2a15e2beebccc6ba, type: 3}
+  volumeRange: {x: 0.9, y: 1}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.15
+  priority: 2

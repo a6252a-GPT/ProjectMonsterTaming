@@ -52,6 +52,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         [SerializeField] private AudioClip guardAttackSfx;
         [SerializeField] private AudioClip clearSfx;
         [SerializeField] private AudioClip failSfx;
+        [SerializeField] private AudioClip commanderDamageSfx;
 
         private Bed[] beds;
         private AudioSource[] oneShotVoices;
@@ -132,6 +133,11 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         public static void PlayJump(Vector3 position)
         {
             Active?.Play(Active.jumpSfx, position, 0.7f, true, 0.08f);
+        }
+
+        public static void PlayCommanderDamage(Vector3 position)
+        {
+            Active?.Play(Active.commanderDamageSfx, position, 1f, false, 0.25f);
         }
 
         public static void PlayChestOpen(Vector3 position)

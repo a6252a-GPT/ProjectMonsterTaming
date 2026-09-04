@@ -7,15 +7,25 @@ namespace ProjectMT.Shared.CommanderSkill
     [Serializable]
     public sealed class CommanderSkillGrowthRule // 스킬별 레벨 성장 원본
     {
+        private const long DefaultBaseGoldCost = 100L;
+        private const float DefaultGoldCostGrowthMultiplier = 1.06f;
+        private const long GoldCostRoundingUnit = 10L;
+
         [SerializeField] private string skillId;
         [SerializeField, Min(1)] private int maxLevel = 200;
         [SerializeField, Min(1)] private int requiredDuplicateCount = 1;
+        [SerializeField, Min(1)] private long baseGoldCost = DefaultBaseGoldCost;
+        [SerializeField, Min(1f)] private float goldCostGrowthMultiplier = DefaultGoldCostGrowthMultiplier;
         [SerializeField] private AnimationCurve damageMultiplierByLevel =
             AnimationCurve.Linear(1f, 1f, 200f, 4.98f);
 
         public string SkillId => skillId?.Trim() ?? string.Empty;
         public int MaxLevel => Mathf.Max(1, maxLevel);
         public int RequiredDuplicateCount => Mathf.Max(1, requiredDuplicateCount);
+        public long BaseGoldCost => baseGoldCost > 0L ? baseGoldCost : DefaultBaseGoldCost;
+        public float GoldCostGrowthMultiplier => goldCostGrowthMultiplier >= 1f
+            ? goldCostGrowthMultiplier
+            : DefaultGoldCostGrowthMultiplier;
 
         public CommanderSkillGrowthRule()
         {
@@ -31,6 +41,33 @@ namespace ProjectMT.Shared.CommanderSkill
             maxLevel = Mathf.Max(1, levelCap);
             requiredDuplicateCount = Mathf.Max(1, duplicateCost);
             damageMultiplierByLevel = damageCurve ?? AnimationCurve.Linear(1f, 1f, maxLevel, 1f);
+        }
+
+        public bool TryGetNextLevelGoldCost(int currentLevel, out long cost)
+        {
+            cost = 0L;
+            if (currentLevel < 1 || currentLevel >= MaxLevel)
+            {
+                return false;
+            }
+
+            var rawCost = BaseGoldCost * Math.Pow(GoldCostGrowthMultiplier, currentLevel - 1);
+            if (double.IsNaN(rawCost) || rawCost <= 0d)
+            {
+                return false;
+            }
+
+            if (double.IsInfinity(rawCost) || rawCost >= long.MaxValue)
+            {
+                cost = long.MaxValue;
+                return true;
+            }
+
+            var rounded = Math.Round(
+                rawCost / GoldCostRoundingUnit,
+                MidpointRounding.AwayFromZero) * GoldCostRoundingUnit;
+            cost = Math.Max(GoldCostRoundingUnit, (long)rounded);
+            return true;
         }
 
         public float GetDamageMultiplier(int level)
@@ -53,9 +90,18 @@ namespace ProjectMT.Shared.CommanderSkill
                 return false;
             }
 
-            if (maxLevel < 1 || requiredDuplicateCount < 1)
+            if (maxLevel < 1 || requiredDuplicateCount < 1 || baseGoldCost < 0L ||
+                (goldCostGrowthMultiplier != 0f && goldCostGrowthMultiplier < 1f) ||
+                float.IsNaN(goldCostGrowthMultiplier) ||
+                float.IsInfinity(goldCostGrowthMultiplier))
             {
-                error = $"{SkillId}: level cap or duplicate cost is invalid.";
+                error = $"{SkillId}: level cap, duplicate reserve, or gold cost is invalid.";
+                return false;
+            }
+
+            if (!TryGetNextLevelGoldCost(1, out _) && MaxLevel > 1)
+            {
+                error = $"{SkillId}: gold cost curve is invalid.";
                 return false;
             }
 
@@ -86,11 +132,15 @@ namespace ProjectMT.Shared.CommanderSkill
             string id,
             int levelCap,
             int duplicateCost,
-            AnimationCurve damageCurve)
+            AnimationCurve damageCurve,
+            long goldBaseCost = DefaultBaseGoldCost,
+            float goldGrowthMultiplier = DefaultGoldCostGrowthMultiplier)
         {
             skillId = id?.Trim() ?? string.Empty;
             maxLevel = Mathf.Max(1, levelCap);
             requiredDuplicateCount = Mathf.Max(1, duplicateCost);
+            baseGoldCost = Math.Max(1L, goldBaseCost);
+            goldCostGrowthMultiplier = Mathf.Max(1f, goldGrowthMultiplier);
             damageMultiplierByLevel = damageCurve ?? AnimationCurve.Linear(1f, 1f, maxLevel, 1f);
         }
 #endif

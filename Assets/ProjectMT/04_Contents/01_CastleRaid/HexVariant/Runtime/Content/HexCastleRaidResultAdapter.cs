@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
+using ProjectMT.Features.Equipment;
 using ProjectMT.Shared.Equipment;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
@@ -17,6 +18,7 @@ namespace ProjectMT.Contents.CastleRaidHex
     {
         [FormerlySerializedAs("firstClearReward")]
         [SerializeField] private RewardDefinition stageOneReward;
+        [SerializeField] private EquipmentCatalog equipmentCatalog;
 
         public override bool TryCreateProgressChange(IContentResultData result, out GameProgressChange change)
         {
@@ -102,13 +104,14 @@ namespace ProjectMT.Contents.CastleRaidHex
                 return false;
             }
 
-            if (rewards.IsEmpty)
+            var equipmentRewards = ResolveEquipmentRewards(result);
+            if (rewards.IsEmpty && equipmentRewards.Count == 0)
             {
                 presentation = null;
                 return false;
             }
 
-            presentation = RewardPresentationRequest.FromBundle(rewards, itemCatalog);
+            presentation = CreateRewardPresentation(rewards, equipmentRewards, itemCatalog);
             return true;
         }
 
@@ -136,14 +139,54 @@ namespace ProjectMT.Contents.CastleRaidHex
                 return false;
             }
 
-            if (rewards.IsEmpty)
+            var equipmentRewards = ResolveEquipmentRewards(result);
+            if (rewards.IsEmpty && equipmentRewards.Count == 0)
             {
                 presentation = null;
                 return false;
             }
 
-            presentation = RewardPresentationRequest.FromBundle(rewards, itemCatalog);
+            presentation = CreateRewardPresentation(rewards, equipmentRewards, itemCatalog);
             return true;
+        }
+
+        private RewardPresentationRequest CreateRewardPresentation(
+            RewardBundle rewards,
+            IReadOnlyList<EquipmentInstanceData> equipmentRewards,
+            ItemCatalog itemCatalog)
+        {
+            var basePresentation = RewardPresentationRequest.FromBundle(rewards, itemCatalog);
+            equipmentRewards ??= Array.Empty<EquipmentInstanceData>();
+            var items = new List<RewardPresentationItem>(basePresentation.Items.Count + equipmentRewards.Count);
+            for (var index = 0; index < basePresentation.Items.Count; index++)
+            {
+                items.Add(basePresentation.Items[index]);
+            }
+
+            for (var index = 0; index < equipmentRewards.Count; index++)
+            {
+                var equipment = equipmentRewards[index];
+                if (equipment == null)
+                {
+                    continue;
+                }
+
+                var definition = equipmentCatalog != null
+                    ? equipmentCatalog.GetDefinitionForPart(equipment.Part, equipment.Grade)
+                    : null;
+                var label = definition != null
+                    ? definition.DisplayName
+                    : $"{EquipmentGradeInfo.GetDisplayName(equipment.Grade)} {EquipmentPartInfo.GetDisplayName(equipment.Part)}";
+                items.Add(new RewardPresentationItem(
+                    RewardPresentationKind.Item,
+                    label,
+                    1L,
+                    icon: definition != null ? definition.Icon : null,
+                    equipmentLevel: equipment.ItemLevel,
+                    equipmentInstanceId: equipment.InstanceId));
+            }
+
+            return new RewardPresentationRequest(items.ToArray());
         }
 
         public override string CreateResultSummary(

@@ -202,6 +202,8 @@ namespace ProjectMT.Bootstrap
                 rewardPresenter,
                 finishFeedbackPresenter,
                 resultOverlayPresenter);
+            contentFlow.HostedRunStarted += HandleHostedRunStarted;
+            contentFlow.HostedRunFinished += HandleHostedRunFinished;
             growthDungeonSweepService = new GrowthDungeonSweepService(
                 projectConfig.ContentCatalog,
                 gameDataService,
@@ -530,12 +532,31 @@ namespace ProjectMT.Bootstrap
         {
             readySceneId = sceneId;
             sceneLoadingOverlay?.Hide();
+            if (sceneId == projectConfig.EntrySceneId)
+            {
+                globalAudioController?.PlayEntryBgm();
+            }
+
             if (sceneId == projectConfig.MainBattleSceneId)
             {
+                globalAudioController?.PlayMainBattleBgm();
                 if (!ShowPendingOfflineRewards())
                 {
                     ShowPendingAttendance(); // 오프라인 정산이 없으면 출석부터 표시
                 }
+            }
+        }
+
+        private void HandleHostedRunStarted(ContentId contentId)
+        {
+            globalAudioController?.ApplyHostedContentBgm(contentId);
+        }
+
+        private void HandleHostedRunFinished(ContentId contentId)
+        {
+            if (readySceneId == projectConfig.MainBattleSceneId)
+            {
+                globalAudioController?.PlayMainBattleBgm();
             }
         }
 
@@ -915,6 +936,12 @@ namespace ProjectMT.Bootstrap
                 if (gameDataService != null)
                 {
                     gameDataService.Changed -= RetryBlockedOfflineSettlement;
+                }
+
+                if (contentFlow != null)
+                {
+                    contentFlow.HostedRunStarted -= HandleHostedRunStarted;
+                    contentFlow.HostedRunFinished -= HandleHostedRunFinished;
                 }
 
                 AccountRuntimeBridge.LogoutRequested -= HandleLogoutRequested;

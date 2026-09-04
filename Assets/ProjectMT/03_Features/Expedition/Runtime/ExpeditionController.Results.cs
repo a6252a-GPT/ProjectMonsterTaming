@@ -75,7 +75,9 @@ namespace ProjectMT.Features.Expedition
             settling = true;
             CollectAllWorldDrops(); // 전투 종료 시 남은 표현도 획득으로 확정
             combatWorld.SetPaused(true); // 결과 연출 동안 전투 정지
-            SetResult(currentMode == ExpeditionRunMode.Challenge ? "승리 정산 중..." : string.Empty);
+            SetResult(resultFlash == null && currentMode == ExpeditionRunMode.Challenge
+                ? "승리 정산 중..."
+                : string.Empty);
             _ = ResolveVictoryAsync(++operationVersion); // 저장 후 새 Run 시작
         }
 
@@ -144,7 +146,15 @@ namespace ProjectMT.Features.Expedition
                     var notice = ExpeditionResultNoticeFormatter.ChallengeVictory(
                         settledStage,
                         RewardPresentationRequest.FromBundle(rewards, itemCatalog));
-                    SetResult(settledDifficulty == ExpeditionDifficulty.Hard ? $"하드 {notice}" : notice);
+                    if (resultFlash != null)
+                    {
+                        SetResult(string.Empty);
+                        resultFlash.ShowClear(settledStage);
+                    }
+                    else
+                    {
+                        SetResult(settledDifficulty == ExpeditionDifficulty.Hard ? $"하드 {notice}" : notice);
+                    }
 
                     // 새로운 단계를 처음 클리어했을 때만 "원정대 클리어" 퀘스트 진행(반복 클리어는 제외).
                     _ = QuestRuntime.AdvanceAllOfConditionAsync(QuestConditionType.ExpeditionClear, 1L);
@@ -157,7 +167,9 @@ namespace ProjectMT.Features.Expedition
 
             if (settledMode == ExpeditionRunMode.Challenge || !saved)
             {
-                await Task.Delay(TimeSpan.FromSeconds(profile.ResultDelaySeconds));
+                await Task.Delay(TimeSpan.FromSeconds(Mathf.Max(
+                    profile.ResultDelaySeconds,
+                    resultFlash != null ? resultFlash.SequenceDuration : 0f)));
             }
 
             if (this == null || version != operationVersion)
@@ -180,7 +192,9 @@ namespace ProjectMT.Features.Expedition
             settling = true;
             CollectAllWorldDrops(); // 패배도 남은 드랍을 전부 획득 확정
             combatWorld.SetPaused(true);
-            SetResult(currentMode == ExpeditionRunMode.Challenge ? "도전 실패" : string.Empty);
+            SetResult(resultFlash == null && currentMode == ExpeditionRunMode.Challenge
+                ? "도전 실패"
+                : string.Empty);
             _ = ResolveDefeatAsync(++operationVersion); // 실패 단계에서 반복 전환
         }
 
@@ -214,12 +228,27 @@ namespace ProjectMT.Features.Expedition
                     }
                 }
 
-                SetResult(ExpeditionResultNoticeFormatter.ChallengeDefeat(
+                var notice = ExpeditionResultNoticeFormatter.ChallengeDefeat(
                     lastClearedStage,
-                    repeatModeSaved));
+                    repeatModeSaved);
+                if (resultFlash != null)
+                {
+                    SetResult(string.Empty);
+                    resultFlash.ShowFailure(notice);
+                }
+                else
+                {
+                    SetResult(notice);
+                }
+            }
+            else
+            {
+                resultFlash?.ShowFailure($"{currentStage}단계 반복사냥을 다시 시작합니다");
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(profile.ResultDelaySeconds));
+            await Task.Delay(TimeSpan.FromSeconds(Mathf.Max(
+                profile.ResultDelaySeconds,
+                resultFlash != null ? resultFlash.SequenceDuration : 0f)));
             if (this == null || version != operationVersion)
             {
                 return;

@@ -482,7 +482,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             if (draft.RegisterInCatalog)
             {
                 AddBoundField(catalog, "maxLevel", "최대 레벨");
-                AddBoundField(catalog, "requiredDuplicateCount", "레벨업 중복 재료");
+                AddBoundField(catalog, "requiredDuplicateCount", "각성용 중복 기준 (예약)");
+                AddBoundField(catalog, "baseGoldCost", "강화 시작 골드");
+                AddBoundField(catalog, "goldCostGrowthMultiplier", "레벨당 골드 증가율");
                 AddBoundField(catalog, "maxLevelEffectMultiplier", "최대 레벨 효과 배율");
                 AddBoundField(catalog, "includeInSummonPool", "소환 풀 포함", true);
                 if (draft.IncludeInSummonPool)

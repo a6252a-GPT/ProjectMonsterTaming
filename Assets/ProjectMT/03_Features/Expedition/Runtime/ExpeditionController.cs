@@ -106,6 +106,7 @@ namespace ProjectMT.Features.Expedition
         private float reinforcementWarningRemaining;
         private float reinforcementNoticeRemaining;
         private bool ownsRuntimeReinforcementWarning;
+        private ExpeditionResultFlashPresenter resultFlash;
 
         public bool IsRunning => running;
         public bool IsSettling => settling;
@@ -144,6 +145,7 @@ namespace ProjectMT.Features.Expedition
             bossIntro ??= FindFirstObjectByType<ExpeditionBossIntroPresenter>(FindObjectsInactive.Include);
             mainBattleAIProfiles ??= MainBattleAIProfileCatalog.LoadDefault();
             EnsureReinforcementWarningText();
+            resultFlash = ExpeditionResultFlashPresenter.ResolveOrCreate(resultText);
             equipmentBalanceConfig = equipmentBalance ?? EquipmentBalanceConfig.RuntimeDefault;
             equipmentRandom = new System.Random();
             playerFormationAnchor = formationAnchor ?? playerFormationAnchor;
@@ -187,6 +189,7 @@ namespace ProjectMT.Features.Expedition
             formationPlacementActive = false;
             StopBossIntro();
             bossHud?.Hide();
+            resultFlash?.HideImmediate();
             ResetWaveTracking();
             ResetPlayerTracking();
             CollectAllWorldDrops(); // 무정산 종료도 남은 드랍을 전부 획득 확정
@@ -223,6 +226,7 @@ namespace ProjectMT.Features.Expedition
             formationPlacementActive = false;
             StopBossIntro();
             bossHud?.Hide();
+            resultFlash?.HideImmediate();
             if (modeButton != null)
             {
                 modeButton.onClick.RemoveListener(ToggleMode);
@@ -254,6 +258,7 @@ namespace ProjectMT.Features.Expedition
             activeRunParty = null;
             worldItemDrops = null;
             equipmentWorldDrops = null;
+            resultFlash = null;
             formationFrameConfigured = false;
             ReleaseRuntimeReinforcementWarningText();
             InvalidateHudCache();

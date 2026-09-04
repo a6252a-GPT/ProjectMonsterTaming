@@ -175,6 +175,7 @@ namespace ProjectMT.Features.Expedition
                     label = item.Definition.DisplayName;
                     icon = item.Definition.Icon;
                 }
+                icon = EquipmentLevelIconResolver.Resolve(instance.Part, instance.ItemLevel, icon);
 
                 items.Add(new RewardPresentationItem(
                     RewardPresentationKind.Item,

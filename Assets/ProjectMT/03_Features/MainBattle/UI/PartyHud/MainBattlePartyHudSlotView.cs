@@ -9,6 +9,9 @@ namespace ProjectMT.Features.MainBattle
     {
         private static readonly Color ActiveStarColor = new Color32(255, 205, 65, 255);
         private static readonly Color InactiveStarColor = new Color32(103, 108, 118, 255);
+        private static readonly Color MissionGlowColor = new Color32(119, 212, 173, 255);
+        private static readonly Color MissionBorderColor = new Color32(131, 205, 179, 255);
+        private static readonly Color MissionBackgroundTint = new Color32(30, 66, 57, 250);
 
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private MainBattlePartyHudPortraitGraphic portrait;
@@ -209,28 +212,28 @@ namespace ProjectMT.Features.MainBattle
             {
                 var wave = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * Mathf.PI * 1.2f);
                 pulse = Mathf.Lerp(0.82f, 1f, wave);
-                pulseScale = Mathf.Lerp(1f, 1.025f, wave); // 정보판 전체가 천천히 호흡한다.
+                pulseScale = Mathf.Lerp(1f, 1.018f, wave); // 임무 강조보다 튀지 않게 호흡 폭을 줄인다.
             }
 
             EnergyGlowIntensity = intensity * pulse;
-            SetGlowGraphic(energyGlowOuter, 0.03f + 0.16f * EnergyGlowIntensity, pulseScale);
-            SetGlowGraphic(energyGlow, 0.12f + 0.32f * EnergyGlowIntensity, pulseScale);
+            SetGlowGraphic(energyGlowOuter, 0.02f + 0.12f * EnergyGlowIntensity, pulseScale);
+            SetGlowGraphic(energyGlow, 0.08f + 0.25f * EnergyGlowIntensity, pulseScale);
 
             if (infoPanelBorder != null)
             {
-                var borderBlend = 0.3f + 0.6f * EnergyGlowIntensity;
+                var borderBlend = 0.2f + 0.45f * EnergyGlowIntensity;
                 infoPanelBorder.color = Color.Lerp(
                     infoPanelBorderBaseColor,
-                    new Color32(92, 230, 255, 255),
+                    MissionBorderColor,
                     borderBlend);
             }
 
             if (infoPanelBackground != null)
             {
-                var backgroundBlend = 0.12f + 0.3f * EnergyGlowIntensity;
+                var backgroundBlend = 0.08f + 0.22f * EnergyGlowIntensity;
                 infoPanelBackground.color = Color.Lerp(
                     infoPanelBackgroundBaseColor,
-                    new Color32(24, 78, 92, 250),
+                    MissionBackgroundTint,
                     backgroundBlend);
             }
         }
@@ -245,7 +248,11 @@ namespace ProjectMT.Features.MainBattle
                 return;
             }
 
-            glow.color = new Color(0.16f, 0.88f, 1f, Mathf.Clamp01(alpha));
+            glow.color = new Color(
+                MissionGlowColor.r,
+                MissionGlowColor.g,
+                MissionGlowColor.b,
+                Mathf.Clamp01(alpha));
             glow.rectTransform.localScale = Vector3.one * scale;
             glow.gameObject.SetActive(true);
         }

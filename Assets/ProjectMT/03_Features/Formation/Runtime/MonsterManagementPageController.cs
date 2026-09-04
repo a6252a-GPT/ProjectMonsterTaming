@@ -48,8 +48,8 @@ namespace ProjectMT.Features.Formation
         [SerializeField] private TMP_Text defenseStatLabel;
         [SerializeField] private TMP_Text moveSpeedStatLabel;
 
-        [Header("Reversible Skill Layout")]
-        [SerializeField] private bool useSkillSummaryLayout = true; // 끄면 기존 능력치 배치로 복원
+        [Header("Prefab Skill Presentation")]
+        [SerializeField] private bool useSkillSummaryLayout = true; // 정식 Prefab UI 데이터 바인딩 사용
 
         [Header("Growth Action")]
         [SerializeField] private TMP_Text nextLevelLabel;

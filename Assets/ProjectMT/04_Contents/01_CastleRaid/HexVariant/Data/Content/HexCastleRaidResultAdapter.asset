@@ -12,4 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 413dadfa34f8bed44bb239ed7c2715a5, type: 3}
   m_Name: HexCastleRaidResultAdapter
   m_EditorClassIdentifier: ProjectMT.Contents.CastleRaidHex::ProjectMT.Contents.CastleRaidHex.HexCastleRaidResultAdapter
-  firstClearReward: {fileID: 11400000, guid: c51d8da8f75812e45bd4a28c09396004, type: 2}
+  stageOneReward: {fileID: 11400000, guid: c51d8da8f75812e45bd4a28c09396004, type: 2}
+  equipmentCatalog: {fileID: 11400000, guid: 59eb9213f8974b2faf9e124286231dce, type: 2}

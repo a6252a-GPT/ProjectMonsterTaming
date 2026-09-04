@@ -249,17 +249,24 @@ namespace ProjectMT.Features.Quest
                 return false;
             }
 
+            var claimBundle = ResolveQuestClaimReward(bundle, out var rewardCapped);
+
             if (!TryPickRepeatingTemplate(definition.QuestType, templateId, out var nextDefinition, out var startsNewCycle))
             {
                 return false; // 카탈로그에 반복 템플릿이 하나도 없음(설정 확인 필요)
             }
 
             var applied = await progress.TryApplyAndSaveAsync(
-                GameProgressChange.ClaimRepeatingQuestReward(templateId, bundle, nextDefinition.QuestId, startsNewCycle));
+                GameProgressChange.ClaimRepeatingQuestReward(
+                    templateId,
+                    claimBundle,
+                    nextDefinition.QuestId,
+                    startsNewCycle));
             if (applied)
             {
                 Debug.Log($"[Quest] 반복 임무 보상 수령: {definition.DisplayName} -> 다음: {nextDefinition.DisplayName}");
-                RewardClaimed?.Invoke(templateId, bundle);
+                LogCappedQuestReward(definition, rewardCapped);
+                RewardClaimed?.Invoke(templateId, claimBundle);
             }
 
             return applied;

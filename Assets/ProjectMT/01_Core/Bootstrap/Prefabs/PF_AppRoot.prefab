@@ -635,6 +635,17 @@ MonoBehaviour:
   bgmSource: {fileID: 3063102030161783347}
   bgmVolumeParameter: BGMVolume
   sfxVolumeParameter: SFXVolume
+  entryBgm: {fileID: 8300000, guid: 392dfd91820d7442a925a46fdeb7452e, type: 3}
+  mainBattleBgms:
+  - {fileID: 8300000, guid: 053ca73acc9f54d14b7d126b34e1664d, type: 3}
+  - {fileID: 8300000, guid: d80bf6373810f4e4ab55568710d790e7, type: 3}
+  contentBgmBindings:
+  - contentId: food_riot
+    clip: {fileID: 8300000, guid: a71f7b96e582944dd92b9003e0633d4b, type: 3}
+  - contentId: treasure_spirit
+    clip: {fileID: 0}
+  - contentId: fallen_commander
+    clip: {fileID: 8300000, guid: fef2c932313534516a2b1c27a762caf9, type: 3}
 --- !u!1001 &2477113164746433277
 PrefabInstance:
   m_ObjectHideFlags: 0

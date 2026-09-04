@@ -84,6 +84,8 @@ namespace ProjectMT.Contents.Framework
 
         public bool IsRunning => activeRun != null;
         public ContentFlowPhase Phase { get; private set; } = ContentFlowPhase.Idle;
+        public event Action<ContentId> HostedRunStarted;
+        public event Action<ContentId> HostedRunFinished;
 
         public bool StartHosted(ContentId contentId, BattlePartySnapshot party, IHostedContentRunner runner)
         {
@@ -137,6 +139,7 @@ namespace ProjectMT.Contents.Framework
             if (runner.Open(run.Context))
             {
                 Phase = ContentFlowPhase.Playing;
+                NotifyHostedRunStarted(contentId);
                 return true;
             }
 
@@ -560,6 +563,7 @@ namespace ProjectMT.Contents.Framework
             if (run.Runner != null)
             {
                 run.Runner.Close();
+                NotifyHostedRunFinished(run.Definition.ContentId);
             }
             else
             {
@@ -568,6 +572,30 @@ namespace ProjectMT.Contents.Framework
 
             activeRun = null; // 종료·복귀 요청 뒤 실행 잠금 해제
             Phase = ContentFlowPhase.Idle;
+        }
+
+        private void NotifyHostedRunStarted(ContentId contentId)
+        {
+            try
+            {
+                HostedRunStarted?.Invoke(contentId);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception); // BGM 등 부가 표현 오류가 콘텐츠 입장을 취소하지 않음
+            }
+        }
+
+        private void NotifyHostedRunFinished(ContentId contentId)
+        {
+            try
+            {
+                HostedRunFinished?.Invoke(contentId);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception); // 복귀 표현 오류가 실행 잠금 해제를 막지 않음
+            }
         }
 
         private void ShowSaving()

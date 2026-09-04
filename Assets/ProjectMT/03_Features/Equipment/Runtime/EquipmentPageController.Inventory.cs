@@ -85,9 +85,6 @@ namespace ProjectMT.Features.Equipment
             var capturedView = view;
             view.ClickButton.onClick.AddListener(() => HandleSlotClicked(capturedView));
 
-            var holdTrigger = PointerHoldTrigger.EnsureOn(slotRoot.gameObject);
-            holdTrigger?.Configure(() => HandleSlotHoldStart(capturedView), null);
-
             slots.Add(view);
         }
 
@@ -267,19 +264,6 @@ namespace ProjectMT.Features.Equipment
             ShowItemComparisonPopup(view.BoundInstanceId);
         }
 
-        // 누르는 순간 비교창을 열어 모바일에서도 즉시 반응하게 한다.
-        private void HandleSlotHoldStart(SlotView view)
-        {
-            if (currentMode != EquipmentPageMode.Equip || string.IsNullOrEmpty(view.BoundInstanceId))
-            {
-                return;
-            }
-
-            selectedInstanceId = view.BoundInstanceId;
-            RefreshSelection();
-            ShowItemComparisonPopup(view.BoundInstanceId);
-        }
-
         private void ShowItemComparisonPopup(string instanceId)
         {
             if (!EquipmentInventoryRuntime.TryGetItem(instanceId, out var item) || item.Definition == null)
@@ -304,6 +288,7 @@ namespace ProjectMT.Features.Equipment
             {
                 icon = item.Definition.Icon;
             }
+            icon = EquipmentLevelIconResolver.Resolve(item.Part, item.ItemLevel, icon);
             itemComparisonPanel.Show(item, icon);
         }
 
@@ -402,10 +387,12 @@ namespace ProjectMT.Features.Equipment
             if (view.ItemIcon != null)
             {
                 view.ItemIcon.gameObject.SetActive(true);
-                if (partIconSprites.TryGetValue(item.Part, out var partSprite) && partSprite != null)
-                {
-                    view.ItemIcon.sprite = partSprite;
-                }
+                partIconSprites.TryGetValue(item.Part, out var partSprite);
+                view.ItemIcon.sprite = EquipmentLevelIconResolver.Resolve(
+                    item.Part,
+                    item.ItemLevel,
+                    partSprite ?? item.Definition.Icon);
+                EquipmentLevelIconResolver.NormalizeMainSlotIcon(view.ItemIcon);
 
                 view.ItemIcon.color = currentMode == EquipmentPageMode.Dismantle && (item.IsEquipped || item.IsLocked)
                     ? new Color32(125, 125, 125, 255)

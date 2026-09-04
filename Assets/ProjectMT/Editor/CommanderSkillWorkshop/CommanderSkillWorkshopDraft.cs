@@ -133,6 +133,8 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         [SerializeField] private bool registerInCatalog = true;
         [SerializeField, Min(1)] private int maxLevel = 200;
         [SerializeField, Min(1)] private int requiredDuplicateCount = 1;
+        [SerializeField, Min(1)] private long baseGoldCost = 100L;
+        [SerializeField, Min(1f)] private float goldCostGrowthMultiplier = 1.06f;
         [SerializeField, Min(0.01f)] private float maxLevelEffectMultiplier = 4.98f;
 
         [Header("Summon")]
@@ -189,6 +191,8 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         public bool RegisterInCatalog => registerInCatalog;
         public int MaxLevel => maxLevel;
         public int RequiredDuplicateCount => requiredDuplicateCount;
+        public long BaseGoldCost => baseGoldCost;
+        public float GoldCostGrowthMultiplier => goldCostGrowthMultiplier;
         public float MaxLevelEffectMultiplier => maxLevelEffectMultiplier;
         public bool IncludeInSummonPool => includeInSummonPool;
         public int MinimumSummonLevel => minimumSummonLevel;
@@ -255,6 +259,8 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             registerInCatalog = true;
             maxLevel = 200;
             requiredDuplicateCount = 1;
+            baseGoldCost = 100L;
+            goldCostGrowthMultiplier = 1.06f;
             maxLevelEffectMultiplier = 4.98f;
             includeInSummonPool = true;
             minimumSummonLevel = 1;
@@ -366,6 +372,8 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             }
             maxLevel = rule.MaxLevel;
             requiredDuplicateCount = rule.RequiredDuplicateCount;
+            baseGoldCost = rule.BaseGoldCost;
+            goldCostGrowthMultiplier = rule.GoldCostGrowthMultiplier;
             maxLevelEffectMultiplier = rule.GetDamageMultiplier(rule.MaxLevel);
         }
 

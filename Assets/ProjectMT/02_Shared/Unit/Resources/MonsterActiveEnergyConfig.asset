@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35881b3be1167ec4eab95b36d6a933b2, type: 3}
   m_Name: MonsterActiveEnergyConfig
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.MonsterActiveEnergyConfig
-  energyPerSecond: 40
-  energyPerBasicAttack: 120
+  energyPerSecond: 20
+  energyPerBasicAttack: 60

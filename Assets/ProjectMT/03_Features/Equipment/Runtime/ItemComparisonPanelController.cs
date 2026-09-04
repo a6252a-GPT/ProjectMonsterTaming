@@ -131,9 +131,9 @@ namespace ProjectMT.Features.Equipment
 
             if (iconImage != null)
             {
-                iconImage.sprite = icon;
+                iconImage.sprite = EquipmentLevelIconResolver.Resolve(item.Part, item.ItemLevel, icon);
                 iconImage.color = Color.white;
-                iconImage.enabled = icon != null;
+                iconImage.enabled = iconImage.sprite != null;
             }
 
             if (itemNameText != null)
@@ -324,9 +324,12 @@ namespace ProjectMT.Features.Equipment
 
             if (compareIconImage != null)
             {
-                compareIconImage.sprite = icon;
+                compareIconImage.sprite = EquipmentLevelIconResolver.Resolve(
+                    clickedItem.Part,
+                    clickedItem.ItemLevel,
+                    icon);
                 compareIconImage.color = Color.white;
-                compareIconImage.enabled = icon != null;
+                compareIconImage.enabled = compareIconImage.sprite != null;
             }
 
             if (compareItemNameText != null)

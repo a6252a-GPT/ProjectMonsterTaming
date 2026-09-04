@@ -98,6 +98,10 @@ namespace ProjectMT.Features.Expedition
                     displayName: units[i].DisplayName,
                     presentation: units[i].Presentation.WithPartySlot(i));
                 var actor = combatWorld.SpawnUnit(playerUnitPrefab, request, position, Quaternion.identity);
+                if (!placementMode && actor != null)
+                {
+                    actor.SkillRuntime.GrantActiveEnergy(MonsterActiveEnergyConfig.StageStartEnergy);
+                }
                 ApplyPlayerAIProfile(actor, units[i].UnitId);
                 TrackPlayerUnit(actor, i);
             }

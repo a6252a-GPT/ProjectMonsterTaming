@@ -451,7 +451,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                         draft.SkillId,
                         draft.MaxLevel,
                         draft.RequiredDuplicateCount,
-                        curve);
+                        curve,
+                        draft.BaseGoldCost,
+                        draft.GoldCostGrowthMultiplier);
                     rules.Add(newRule);
                 }
 

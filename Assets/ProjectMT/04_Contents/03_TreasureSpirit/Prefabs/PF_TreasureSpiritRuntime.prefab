@@ -184,7 +184,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -252, y: -168}
+  m_AnchoredPosition: {x: -252, y: -28}
   m_SizeDelta: {x: 504, y: 54}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &108169629463202652
@@ -1794,7 +1794,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -58, y: -69}
+  m_AnchoredPosition: {x: -58, y: -145}
   m_SizeDelta: {x: 116, y: 39}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &7728510353914113889
@@ -2086,7 +2086,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 46, y: 188}
+  m_AnchoredPosition: {x: 80, y: 224}
   m_SizeDelta: {x: 144, y: 144}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &5992741962111548704
@@ -2962,7 +2962,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.50980395}
+  m_Color: {r: 0.015686275, g: 0.043137256, b: 0.05490196, a: 0.50980395}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3163,7 +3163,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -188, y: -177}
+  m_AnchoredPosition: {x: -188, y: -37}
   m_SizeDelta: {x: 300, y: 33}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &2918905596324773147
@@ -3494,7 +3494,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 152, y: -175}
+  m_AnchoredPosition: {x: 152, y: -35}
   m_SizeDelta: {x: 76, y: 35}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &7466832983970989591
@@ -3867,7 +3867,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.54901963}
+  m_Color: {r: 0.015686275, g: 0.043137256, b: 0.05490196, a: 0.54901963}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -5078,7 +5078,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -58, y: -28}
+  m_AnchoredPosition: {x: -58, y: -104}
   m_SizeDelta: {x: 116, y: 116}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &5763246091126554846
@@ -5563,7 +5563,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Contents.TreasureSpirit.Demo::ProjectMT.Contents.TreasureSpirit.Demo.DemoDungeonAudio
   bgmGroup: {fileID: -26143947611714011, guid: 57f81f619730a2547a09fa10fa387a51, type: 2}
   sfxGroup: {fileID: 7706844724601125460, guid: 57f81f619730a2547a09fa10fa387a51, type: 2}
-  bgm: {fileID: 8300000, guid: 8cbf878a925e2c344b0cefe33911b865, type: 3}
+  bgm: {fileID: 8300000, guid: 07e2dd7125f9e4cdbb205c00b8bbf6da, type: 3}
   dungeonAmbience: {fileID: 8300000, guid: 54e89ef54ec71c04db7aa12a97a6dfaf, type: 3}
   windAmbience: {fileID: 8300000, guid: 71fadb1e40e98b447ae775b31d72fdf6, type: 3}
   torchAmbience: {fileID: 8300000, guid: 2b530e81b1493f2419c458c4c07a062f, type: 3}
@@ -5585,6 +5585,7 @@ MonoBehaviour:
   guardAttackSfx: {fileID: 8300000, guid: 2b65bb5a1a164ef41923961e66fb5c3d, type: 3}
   clearSfx: {fileID: 8300000, guid: e0b2c856088d1684e91973a6d2fb1b90, type: 3}
   failSfx: {fileID: 8300000, guid: 46ba55b828ea41943b473a77e157c67b, type: 3}
+  commanderDamageSfx: {fileID: 8300000, guid: 0327a165632464518bc224dbea7120af, type: 3}
 --- !u!1 &6352259965208151042
 GameObject:
   m_ObjectHideFlags: 0
@@ -5694,7 +5695,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -230, y: -181}
+  m_AnchoredPosition: {x: -230, y: -41}
   m_SizeDelta: {x: 27, y: 27}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &2119946605414194898
@@ -5769,7 +5770,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -252, y: -168}
+  m_AnchoredPosition: {x: -252, y: -28}
   m_SizeDelta: {x: 504, y: 54}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &8710604026005013727
@@ -7261,7 +7262,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -58, y: -110}
+  m_AnchoredPosition: {x: -58, y: -186}
   m_SizeDelta: {x: 116, y: 22}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &4423261878265987847

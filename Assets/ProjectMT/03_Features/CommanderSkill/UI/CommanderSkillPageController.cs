@@ -386,8 +386,7 @@ namespace ProjectMT.Features.CommanderSkill
                 var saved = await progressService.TryApplyAndSaveAsync(
                     GameProgressChange.LevelUpCommanderSkill(
                         owned.SkillId,
-                        owned.Level,
-                        owned.DuplicateCount));
+                        owned.Level));
                 if (IsCurrentRequest(requestVersion))
                 {
                     feedbackMessage = saved
@@ -452,7 +451,8 @@ namespace ProjectMT.Features.CommanderSkill
                 return;
             }
 
-            var view = progress.View.CommanderSkills;
+            var progressView = progress.View;
+            var view = progressView.CommanderSkills;
             selectedSlotIndex = Mathf.Clamp(selectedSlotIndex, 0, CommanderSkillSlotRules.SlotCount - 1);
             if (TryGetOwnedSkill(selectedSkillId, out _))
             {
@@ -478,11 +478,12 @@ namespace ProjectMT.Features.CommanderSkill
             }
 
             EnsureSelection();
-            var view = progress.View.CommanderSkills;
+            var progressView = progress.View;
+            var view = progressView.CommanderSkills;
             RefreshSlots(view);
             RefreshCards(view);
             RefreshFilters();
-            RefreshDetail(view);
+            RefreshDetail(view, progressView.Gold);
         }
 
         private void RefreshSlots(CommanderSkillProgressView view)
@@ -601,7 +602,7 @@ namespace ProjectMT.Features.CommanderSkill
             }
         }
 
-        private void RefreshDetail(CommanderSkillProgressView view)
+        private void RefreshDetail(CommanderSkillProgressView view, long gold)
         {
             var hasOwned = TryGetOwnedSkill(selectedSkillId, out var owned);
             CommanderSkillDefinition definition = null;
@@ -642,9 +643,7 @@ namespace ProjectMT.Features.CommanderSkill
 
             if (detailMaterialText != null)
             {
-                detailMaterialText.text = hasOwned && TryGetGrowthRule(owned.SkillId, out var materialRule)
-                    ? $"중복 재료 {owned.DuplicateCount} / {materialRule.RequiredDuplicateCount}"
-                    : string.Empty;
+                detailMaterialText.text = BuildLevelUpCostText(gold, hasOwned, owned);
             }
 
             if (selectedSlotText != null)
@@ -652,9 +651,10 @@ namespace ProjectMT.Features.CommanderSkill
                 selectedSlotText.text = $"선택 슬롯  {selectedSlotIndex + 1}번";
             }
 
-            var canLevelUp = hasOwned && TryGetGrowthRule(owned.SkillId, out var levelRule) &&
-                             owned.Level < levelRule.MaxLevel &&
-                             owned.DuplicateCount >= levelRule.RequiredDuplicateCount && !requestInFlight;
+            var levelUpCost = 0L;
+            var hasLevelUpCost = hasOwned && TryGetGrowthRule(owned.SkillId, out var levelRule) &&
+                                 levelRule.TryGetNextLevelGoldCost(owned.Level, out levelUpCost);
+            var canLevelUp = hasLevelUpCost && gold >= levelUpCost && !requestInFlight;
             if (levelUpButton != null)
             {
                 levelUpButton.interactable = canLevelUp;
@@ -664,9 +664,9 @@ namespace ProjectMT.Features.CommanderSkill
             if (levelUpButtonText != null)
             {
                 levelUpButtonText.text = hasOwned && TryGetGrowthRule(owned.SkillId, out var capRule) &&
-                                             owned.Level >= capRule.MaxLevel
+                                         owned.Level >= capRule.MaxLevel
                     ? "최대 레벨"
-                    : "레벨업";
+                    : hasLevelUpCost ? $"강화  {levelUpCost:N0} 골드" : "강화 불가";
             }
 
             var slotUnlocked = view.IsSlotUnlocked(selectedSlotIndex);
@@ -866,6 +866,26 @@ namespace ProjectMT.Features.CommanderSkill
         private float GetEffectMultiplier(string skillId, int level)
         {
             return TryGetGrowthRule(skillId, out var rule) ? rule.GetDamageMultiplier(level) : 1f;
+        }
+
+        private string BuildLevelUpCostText(
+            long gold,
+            bool hasOwned,
+            OwnedCommanderSkillView owned)
+        {
+            if (!hasOwned || !TryGetGrowthRule(owned.SkillId, out var rule))
+            {
+                return string.Empty;
+            }
+
+            if (!rule.TryGetNextLevelGoldCost(owned.Level, out var cost))
+            {
+                return "최대 레벨";
+            }
+
+            return gold >= cost
+                ? $"보유 골드 {gold:N0} / 필요 {cost:N0}"
+                : $"골드 부족  {gold:N0} / {cost:N0}";
         }
 
         private bool TryGetGrowthRule(string skillId, out CommanderSkillGrowthRule rule)

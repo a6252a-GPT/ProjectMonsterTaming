@@ -992,6 +992,7 @@ namespace ProjectMT.Shared.Unit
             activeTarget = null;
             remainingActiveHits = 0;
             nextActiveHitDelay = 0f;
+            world?.NotifyMonsterActiveExecutionComplete(owner);
         }
 
         private bool CommitAssembledAttack()

@@ -53,6 +53,8 @@ namespace ProjectMT.Features.Equipment
         private TMP_Text upgradeMaterialText; // 강화 재료(보유/필요) 표시
         private TMP_Text upHeaderStatText; // 현재(다음 1강화) 강화 능력 증가율 표시
         private TMP_Text downHeaderStatText; // 다다음(그 다음 강화) 강화 능력 증가율 표시
+        private GameObject selectedSlotDisplay; // 선택 부위의 현재 장착 장비를 크게 보여 주는 슬롯
+        private TMP_Text selectedSlotLevelText; // 선택 부위의 슬롯 강화 레벨
 
         private EquipmentPart currentPart = EquipmentPart.Weapon;
         private bool hasSelectedPart;
@@ -129,7 +131,22 @@ namespace ProjectMT.Features.Equipment
 
             foreach (var pair in slotDisplays)
             {
-                pair.Value?.SetActive(pair.Key == part);
+                if (pair.Value == null)
+                {
+                    continue;
+                }
+
+                pair.Value.SetActive(true);
+                var focus = pair.Value.transform.Find("ItemFrame_01/Focus");
+                if (focus != null)
+                {
+                    focus.gameObject.SetActive(pair.Key == part);
+                    var focusGlow = focus.Find("FocusGlow");
+                    if (focusGlow != null)
+                    {
+                        focusGlow.gameObject.SetActive(pair.Key == part);
+                    }
+                }
             }
 
             RefreshDetailPanel();
@@ -155,6 +172,8 @@ namespace ProjectMT.Features.Equipment
             upgradeMaterialText = FindDeep(transform, "UpgradeMaterialText")?.GetComponent<TMP_Text>();
             upHeaderStatText = FindDeep(transform, "UpHeaderStat")?.GetComponent<TMP_Text>();
             downHeaderStatText = FindDeep(transform, "DownHeaderStat")?.GetComponent<TMP_Text>();
+            selectedSlotDisplay = FindDeep(transform, "SelectedEquipmentSlot")?.gameObject;
+            selectedSlotLevelText = FindDeep(transform, "SelectedSlotLevel")?.GetComponent<TMP_Text>();
 
             var upgradeButtonTransform = FindDeep(transform, "UpgradeButton");
             if (upgradeButtonTransform != null)
@@ -313,9 +332,24 @@ namespace ProjectMT.Features.Equipment
         }
 
         // 슬롯 아이콘과 배경(등급 프레임 또는 회색 배경)을 갱신한다.
-        private void RefreshSlotVisual(EquipmentPart part, bool hasItem, EquipmentGrade grade)
+        private void RefreshSlotVisual(EquipmentPart part, bool hasItem, EquipmentGrade grade, int itemLevel)
         {
             if (!slotDisplays.TryGetValue(part, out var slotObject) || slotObject == null)
+            {
+                return;
+            }
+
+            RefreshSlotVisual(slotObject, part, hasItem, grade, itemLevel);
+        }
+
+        private void RefreshSlotVisual(
+            GameObject slotObject,
+            EquipmentPart part,
+            bool hasItem,
+            EquipmentGrade grade,
+            int itemLevel)
+        {
+            if (slotObject == null)
             {
                 return;
             }
@@ -343,7 +377,12 @@ namespace ProjectMT.Features.Equipment
             if (icon != null)
             {
                 icon.gameObject.SetActive(true);
-                if (!hasItem && partIconSprites.TryGetValue(part, out var fallbackSprite) && fallbackSprite != null)
+                partIconSprites.TryGetValue(part, out var fallbackSprite);
+                if (hasItem)
+                {
+                    icon.sprite = EquipmentLevelIconResolver.Resolve(part, itemLevel, fallbackSprite ?? icon.sprite);
+                }
+                else if (fallbackSprite != null)
                 {
                     icon.sprite = fallbackSprite;
                 }
@@ -473,6 +512,8 @@ namespace ProjectMT.Features.Equipment
 
         private void RefreshAll()
         {
+            RefreshAllSlotVisuals();
+
             if (!hasSelectedPart)
             {
                 SelectPart(currentPart);
@@ -486,12 +527,49 @@ namespace ProjectMT.Features.Equipment
             RefreshLevelTexts();
         }
 
+        private void RefreshAllSlotVisuals()
+        {
+            foreach (EquipmentPart part in Enum.GetValues(typeof(EquipmentPart)))
+            {
+                var hasItem = EquipmentInventoryRuntime.TryGetEquipped(part, out var item) && item.Definition != null;
+                RefreshSlotVisual(
+                    part,
+                    hasItem,
+                    hasItem ? item.Grade : EquipmentGrade.Common,
+                    hasItem ? item.ItemLevel : 0);
+            }
+        }
+
         // Header("무기 : 레어")·StatText(기본 옵션)·StatText2(슬롯 강화 보너스) 갱신.
         private void RefreshDetailPanel()
         {
             var hasItem = EquipmentInventoryRuntime.TryGetEquipped(currentPart, out var item) && item.Definition != null;
 
-            RefreshSlotVisual(currentPart, hasItem, hasItem ? item.Grade : EquipmentGrade.Common);
+            RefreshSlotVisual(
+                currentPart,
+                hasItem,
+                hasItem ? item.Grade : EquipmentGrade.Common,
+                hasItem ? item.ItemLevel : 0);
+
+            RefreshSlotVisual(
+                selectedSlotDisplay,
+                currentPart,
+                hasItem,
+                hasItem ? item.Grade : EquipmentGrade.Common,
+                hasItem ? item.ItemLevel : 0);
+
+            if (selectedSlotDisplay != null)
+            {
+                var selectedPartLabel = selectedSlotDisplay.transform.Find("PartLabel")?.GetComponent<TMP_Text>();
+                if (selectedPartLabel != null)
+                {
+                    selectedPartLabel.text = EquipmentPartInfo.GetDisplayName(currentPart);
+                }
+            }
+
+            SetOptionalText(
+                selectedSlotLevelText,
+                $"슬롯 강화 Lv. {EquipmentSlotUpgradeRuntime.GetLevel(currentPart)}");
 
             if (headerText != null)
             {
@@ -592,18 +670,18 @@ namespace ProjectMT.Features.Equipment
             lines.Add($"{EquipmentGradeStatTable.GetStatDisplayName(statType)} +{value:0.00}%");
         }
 
-        // 부위별 "+N" 레벨 텍스트 및 총합(TotalText) 갱신.
+        // 부위별 슬롯 강화 레벨 텍스트 및 총합(TotalText) 갱신.
         private void RefreshLevelTexts()
         {
             foreach (var pair in levelTexts)
             {
                 var level = EquipmentSlotUpgradeRuntime.GetLevel(pair.Key);
-                pair.Value.text = level > 0 ? $"+{level}" : string.Empty;
+                pair.Value.text = $"강화 Lv. {level}";
             }
 
             if (totalText != null)
             {
-                totalText.text = $"LV : {EquipmentSlotUpgradeRuntime.TotalLevel}";
+                totalText.text = $"총 강화 Lv. {EquipmentSlotUpgradeRuntime.TotalLevel}";
             }
         }
 

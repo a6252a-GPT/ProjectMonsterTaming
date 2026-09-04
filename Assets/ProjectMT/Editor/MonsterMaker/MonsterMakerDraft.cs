@@ -657,7 +657,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField, HideInInspector] private bool skillLoadoutConfigured; // 구 공용 사용값 마이그레이션 전용
         [SerializeField] private bool usePassiveSkill;
         [SerializeField] private bool useActiveSkill;
-        [SerializeField, HideInInspector] private bool splitSkillUsageConfigured;
         [SerializeField, HideInInspector] private int skillUsageSchemaVersion;
         [SerializeField] private MonsterPassiveSkill rarityPassiveSkill;
         [SerializeField] private MonsterMakerPassiveTuningDraft passiveTuning = new MonsterMakerPassiveTuningDraft();
@@ -942,7 +941,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
             useActiveSkill = skillLoadoutConfigured && rarity >= MonsterRarity.Legendary &&
                              (rarityActiveSkill != null || activeAttackProfile != null ||
                               activeEffectProfile != null);
-            splitSkillUsageConfigured = true;
             skillUsageSchemaVersion = 1;
         }
 
@@ -985,7 +983,6 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
         public void EditorRestoreLegacySkillUsage()
         {
-            splitSkillUsageConfigured = false;
             skillUsageSchemaVersion = 0;
             EnsureSplitSkillUsage();
         }
@@ -994,14 +991,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
         {
             usePassiveSkill = passiveEnabled;
             useActiveSkill = activeEnabled;
-            splitSkillUsageConfigured = true;
             skillUsageSchemaVersion = 1;
             skillLoadoutConfigured = passiveEnabled || activeEnabled;
         }
 
         public void EditorCommitSplitSkillUsage()
         {
-            splitSkillUsageConfigured = true;
             skillUsageSchemaVersion = 1;
             skillLoadoutConfigured = usePassiveSkill || useActiveSkill;
         }

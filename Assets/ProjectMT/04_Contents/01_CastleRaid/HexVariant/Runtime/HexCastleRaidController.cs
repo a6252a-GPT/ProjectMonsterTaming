@@ -882,12 +882,16 @@ namespace ProjectMT.Contents.CastleRaidHex
             if (castleInfoText != null)
             {
                 castleInfoText.text = layout == null
-                    ? "육각 성을 준비하는 중입니다"
+                    ? "<size=17><color=#DCC594>전투 준비</color></size>\n" +
+                      "<b><size=30>군단의 역습</size></b>\n" +
+                      "<size=16>육각 성을 준비하는 중입니다</size>"
                     : progressionStageRun
-                        ? $"<b><size=22>STAGE {progressionStage:000}</size></b>\n" +
-                          $"난이도 {layout.DifficultyLevel} · {HexCastleThemeCatalog.ResolveLabel(layout.Theme)} · {layout.DefenseLayerCount}중벽"
-                        : $"DEV 난이도 {layout.DifficultyLevel} · {HexCastleThemeCatalog.ResolveLabel(layout.Theme)} · " +
-                          $"{layout.DefenseLayerCount}중벽 · Seed {layout.Seed}";
+                        ? $"<size=17><color=#DCC594>{progressionStage}단계</color></size>\n" +
+                          $"<b><size=30>군단의 역습</size></b>\n" +
+                          $"<size=16>난이도 {layout.DifficultyLevel} · {HexCastleThemeCatalog.ResolveLabel(layout.Theme)} · {layout.DefenseLayerCount}중벽</size>"
+                        : "<size=17><color=#DCC594>개발 전투</color></size>\n" +
+                          "<b><size=30>군단의 역습</size></b>\n" +
+                          $"<size=15>난이도 {layout.DifficultyLevel} · {HexCastleThemeCatalog.ResolveLabel(layout.Theme)} · {layout.DefenseLayerCount}중벽 · Seed {layout.Seed}</size>";
             }
 
             var canGenerate = IsRunning && !generationInProgress && !progressionStageRun;

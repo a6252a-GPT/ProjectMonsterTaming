@@ -16,6 +16,8 @@ MonoBehaviour:
   - skillId: commander_skill_thunder_lance
     maxLevel: 200
     requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -43,6 +45,8 @@ MonoBehaviour:
   - skillId: commander_skill_guardian_banner
     maxLevel: 200
     requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -70,6 +74,8 @@ MonoBehaviour:
   - skillId: commander_skill_abyssal_shackles
     maxLevel: 200
     requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -97,6 +103,8 @@ MonoBehaviour:
   - skillId: commander_skill_ice_crystal_orb
     maxLevel: 200
     requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -124,6 +132,8 @@ MonoBehaviour:
   - skillId: commander_skill_fireball
     maxLevel: 200
     requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:

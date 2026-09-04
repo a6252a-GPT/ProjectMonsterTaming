@@ -5,8 +5,9 @@ namespace ProjectMT.Shared.Unit
     [CreateAssetMenu(menuName = "ProjectMT/Unit/Monster Active Energy Config", fileName = "MonsterActiveEnergyConfig")]
     public sealed class MonsterActiveEnergyConfig : ScriptableObject // 모든 몬스터가 공유하는 기력 획득 규칙
     {
-        public const float FallbackEnergyPerSecond = 40f;
-        public const float FallbackEnergyPerBasicAttack = 120f;
+        public const float StageStartEnergy = 500f;
+        public const float FallbackEnergyPerSecond = 20f;
+        public const float FallbackEnergyPerBasicAttack = 60f;
         private const string ResourcesPath = "MonsterActiveEnergyConfig";
         [SerializeField, Min(0f)] private float energyPerSecond = FallbackEnergyPerSecond;
         [SerializeField, Min(0f)] private float energyPerBasicAttack = FallbackEnergyPerBasicAttack;

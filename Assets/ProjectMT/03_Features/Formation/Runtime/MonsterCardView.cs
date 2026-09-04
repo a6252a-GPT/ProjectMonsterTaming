@@ -11,6 +11,8 @@ namespace ProjectMT.Features.Formation
     public sealed class MonsterCardView : MonoBehaviour // 보유 목록·편성 슬롯 공용 카드
     {
         private const float NotOwnedCardAlpha = 100f / 255f; // 도감 미보유 카드 흐림 표시(배경·테두리·몬스터 공통)
+        private const float DefaultAscensionStarY = -116f;
+        private const float CollectionAscensionStarY = -108f;
 
         [SerializeField] private Button button;
         [SerializeField] private Image portraitImage;
@@ -28,23 +30,41 @@ namespace ProjectMT.Features.Formation
         [SerializeField] private Image rarityAura;
         [SerializeField] private Image rarityInnerBorder;
         [SerializeField] private Image rarityHighlight;
+        [SerializeField] private Image rarityBorderHighlight;
+        [Header("Rarity Pattern Background")]
+        [SerializeField] private Image rarityPatternBackground;
+        [SerializeField] private Sprite commonPatternBackground;
+        [SerializeField] private Sprite rarePatternBackground;
+        [SerializeField] private Sprite epicPatternBackground;
+        [SerializeField] private Sprite legendaryPatternBackground;
+        [SerializeField] private Sprite mythicPatternBackground;
         [SerializeField] private Image[] ascensionStars = Array.Empty<Image>();
         [SerializeField] private Sprite ascensionFilledStar;
         [SerializeField] private Sprite ascensionEmptyStar;
 
+        [Header("Monster Collection Reward")]
+        [SerializeField] private GameObject collectionRewardRoot;
+        [SerializeField] private Button collectionRewardButton;
+        [SerializeField] private Image collectionRewardBackground;
+        [SerializeField] private Image collectionRewardIcon;
+        [SerializeField] private TMP_Text collectionRewardLabel;
+
         private string monsterId;
         private Action<string> selectedAction;
+        private Action<string> collectionRewardAction;
 
         internal MonsterRarityCatalog RarityCatalog => rarityCatalog;
 
         private void Awake()
         {
             button?.onClick.AddListener(HandleClicked);
+            collectionRewardButton?.onClick.AddListener(HandleCollectionRewardClicked);
         }
 
         private void OnDestroy()
         {
             button?.onClick.RemoveListener(HandleClicked);
+            collectionRewardButton?.onClick.RemoveListener(HandleCollectionRewardClicked);
         }
 
         public void BindMonster(
@@ -62,6 +82,8 @@ namespace ProjectMT.Features.Formation
 
             monsterId = owned.MonsterId;
             selectedAction = onSelected;
+            collectionRewardAction = null;
+            collectionRewardRoot?.SetActive(false);
             if (portraitImage != null)
             {
                 portraitImage.sprite = definition.Portrait;
@@ -77,6 +99,7 @@ namespace ProjectMT.Features.Formation
             var rarity = MonsterRarity.Common;
             rarityCatalog?.TryGetRarity(definition.MonsterId, out rarity);
             ApplyRarity(rarity);
+            ApplyCollectionStarLayout(false);
             ApplyAscension(owned.AscensionLevel);
             ApplyAssignment(assignment);
             breakthroughReadyBadge?.SetActive(
@@ -90,7 +113,13 @@ namespace ProjectMT.Features.Formation
         }
 
         // 도감 목록 전용(레벨·편성 배지 없음). 미보유 몬스터는 흐리게 표시한다.
-        public void BindCatalogEntry(MonsterDefinition definition, MonsterRarity rarity, bool isOwned)
+        public void BindCatalogEntry(
+            MonsterDefinition definition,
+            MonsterRarity rarity,
+            bool isOwned,
+            int ascensionLevel,
+            bool fiveStarRewardClaimed,
+            Action<string> onClaimFiveStarReward)
         {
             if (definition == null)
             {
@@ -113,7 +142,13 @@ namespace ProjectMT.Features.Formation
             SetText(levelLabel, string.Empty);
             levelBadge?.SetActive(false);
             ApplyRarity(rarity);
-            ApplyAscension(0, showStars: false);
+            ApplyCollectionStarLayout(true);
+            ApplyAscension(isOwned ? ascensionLevel : 0);
+            ApplyCollectionReward(
+                isOwned,
+                ascensionLevel,
+                fiveStarRewardClaimed,
+                onClaimFiveStarReward);
             assignmentBadge?.SetActive(false);
             breakthroughReadyBadge?.SetActive(false);
             selectionFrame?.SetActive(false);
@@ -136,6 +171,8 @@ namespace ProjectMT.Features.Formation
             SetAlpha(rarityBackground, NotOwnedCardAlpha);
             SetAlpha(rarityInnerBorder, NotOwnedCardAlpha);
             SetAlpha(rarityHighlight, NotOwnedCardAlpha);
+            SetAlpha(rarityBorderHighlight, NotOwnedCardAlpha);
+            SetAlpha(rarityPatternBackground, NotOwnedCardAlpha);
             SetAlpha(rarityAura, NotOwnedCardAlpha);
         }
 
@@ -155,6 +192,8 @@ namespace ProjectMT.Features.Formation
         {
             monsterId = null;
             selectedAction = null;
+            collectionRewardAction = null;
+            collectionRewardRoot?.SetActive(false);
             if (portraitImage != null)
             {
                 portraitImage.sprite = null;
@@ -166,6 +205,7 @@ namespace ProjectMT.Features.Formation
             SetText(levelLabel, string.Empty);
             levelBadge?.SetActive(false);
             ApplyRarity(MonsterRarity.Common);
+            ApplyCollectionStarLayout(false);
             ApplyAscension(0);
             assignmentBadge?.SetActive(false);
             breakthroughReadyBadge?.SetActive(false);
@@ -182,6 +222,8 @@ namespace ProjectMT.Features.Formation
             SetColor(rarityBackground, background);
             SetColor(rarityInnerBorder, innerBorder);
             SetColor(rarityHighlight, highlight);
+            ApplyRarityBorderHighlight(rarity);
+            ApplyRarityPatternBackground(rarity);
 
             var hasPortrait = portraitImage != null && portraitImage.sprite != null;
             if (hasPortrait)
@@ -269,6 +311,64 @@ namespace ProjectMT.Features.Formation
                 }
             }
         }
+
+        // 도감에서는 별 아래에 고정 보상 띠가 들어가므로 별만 살짝 올려 서로 겹치지 않게 한다.
+        private void ApplyCollectionStarLayout(bool isCollection)
+        {
+            var targetY = isCollection ? CollectionAscensionStarY : DefaultAscensionStarY;
+            foreach (var star in ascensionStars)
+            {
+                if (star == null)
+                {
+                    continue;
+                }
+
+                var rect = star.rectTransform;
+                var position = rect.anchoredPosition;
+                position.y = targetY;
+                rect.anchoredPosition = position;
+            }
+        }
+
+        private void ApplyCollectionReward(
+            bool isOwned,
+            int ascensionLevel,
+            bool rewardClaimed,
+            Action<string> onClaim)
+        {
+            collectionRewardRoot?.SetActive(true);
+            var reachedFiveStar = isOwned && MonsterAscension.IsMaxAscension(ascensionLevel);
+            var claimable = reachedFiveStar && !rewardClaimed;
+            collectionRewardAction = claimable ? onClaim : null;
+
+            if (collectionRewardButton != null)
+            {
+                collectionRewardButton.interactable = claimable;
+            }
+
+            if (!reachedFiveStar)
+            {
+                SetText(collectionRewardLabel, "5성  500");
+                SetColor(collectionRewardBackground, new Color32(0x22, 0x23, 0x27, 0xEE));
+                SetColor(collectionRewardLabel, new Color32(0xA5, 0xA8, 0xAF, 0xFF));
+                SetColor(collectionRewardIcon, new Color(1f, 1f, 1f, 0.48f));
+                return;
+            }
+
+            if (rewardClaimed)
+            {
+                SetText(collectionRewardLabel, "수령 완료");
+                SetColor(collectionRewardBackground, new Color32(0x30, 0x31, 0x35, 0xF2));
+                SetColor(collectionRewardLabel, new Color32(0xB8, 0xBA, 0xC0, 0xFF));
+                SetColor(collectionRewardIcon, new Color(1f, 1f, 1f, 0.58f));
+                return;
+            }
+
+            SetText(collectionRewardLabel, "500 받기");
+            SetColor(collectionRewardBackground, new Color32(0x72, 0x4C, 0x16, 0xFF));
+            SetColor(collectionRewardLabel, new Color32(0xFF, 0xEC, 0xB0, 0xFF));
+            SetColor(collectionRewardIcon, Color.white);
+        }
         private void SetNameVisible(bool visible)
         {
             if (nameLabel != null)
@@ -313,6 +413,57 @@ namespace ProjectMT.Features.Formation
             }
         }
 
+        private void ApplyRarityBorderHighlight(MonsterRarity rarity)
+        {
+            if (rarityBorderHighlight == null)
+            {
+                return;
+            }
+
+            var showSpecialBorder = rarity == MonsterRarity.Legendary || rarity == MonsterRarity.Mythic;
+            var specialBorder = rarityBorderHighlight.transform.parent;
+            (specialBorder != null ? specialBorder.gameObject : rarityBorderHighlight.gameObject).SetActive(showSpecialBorder);
+            if (!showSpecialBorder)
+            {
+                return;
+            }
+
+            rarityBorderHighlight.color = rarity == MonsterRarity.Legendary
+                ? new Color32(0xFF, 0xF3, 0xAD, 0xFF)
+                : new Color32(0xF7, 0x4D, 0x52, 0xFF);
+        }
+        private void ApplyRarityPatternBackground(MonsterRarity rarity)
+        {
+            if (rarityPatternBackground == null)
+            {
+                return;
+            }
+
+            Sprite patternSprite;
+            switch (rarity)
+            {
+                case MonsterRarity.Rare:
+                    patternSprite = rarePatternBackground;
+                    break;
+                case MonsterRarity.Epic:
+                    patternSprite = epicPatternBackground;
+                    break;
+                case MonsterRarity.Legendary:
+                    patternSprite = legendaryPatternBackground;
+                    break;
+                case MonsterRarity.Mythic:
+                    patternSprite = mythicPatternBackground;
+                    break;
+                default:
+                    patternSprite = commonPatternBackground;
+                    break;
+            }
+
+            rarityPatternBackground.sprite = patternSprite;
+            rarityPatternBackground.color = Color.white;
+            rarityPatternBackground.enabled = patternSprite != null;
+        }
+
         private static void SetColor(Graphic target, Color color)
         {
             if (target != null)
@@ -334,6 +485,14 @@ namespace ProjectMT.Features.Formation
             if (!string.IsNullOrEmpty(monsterId))
             {
                 selectedAction?.Invoke(monsterId);
+            }
+        }
+
+        private void HandleCollectionRewardClicked()
+        {
+            if (!string.IsNullOrEmpty(monsterId))
+            {
+                collectionRewardAction?.Invoke(monsterId);
             }
         }
 
@@ -372,6 +531,21 @@ namespace ProjectMT.Features.Formation
         {
             ApplyRarity(rarity);
             ApplyAscension(ascensionLevel);
+        }
+
+
+        public void EditorConfigureCollectionReward(
+            GameObject rewardRoot,
+            Button rewardButton,
+            Image rewardBackground,
+            Image rewardIcon,
+            TMP_Text rewardLabel)
+        {
+            collectionRewardRoot = rewardRoot;
+            collectionRewardButton = rewardButton;
+            collectionRewardBackground = rewardBackground;
+            collectionRewardIcon = rewardIcon;
+            collectionRewardLabel = rewardLabel;
         }
 #endif
     }

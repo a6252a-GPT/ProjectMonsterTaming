@@ -423,6 +423,8 @@ namespace ProjectMT.Shared.GameData
         internal int ExpeditionRepeatClearStage { get; private set; }
         internal RewardBundle Rewards { get; private set; }
         internal IReadOnlyList<ItemAmount> ItemCosts { get; private set; }
+        internal bool HasClaimMonsterCollectionFiveStarReward { get; private set; }
+        internal string CollectionRewardMonsterId { get; private set; }
         internal bool HasGrowthDungeonClear { get; private set; }
         internal string GrowthDungeonContentId { get; private set; }
         internal int GrowthDungeonClearedStage { get; private set; }
@@ -535,6 +537,5 @@ namespace ProjectMT.Shared.GameData
         internal bool HasLevelUpCommanderSkill { get; private set; }
         internal string CommanderSkillToLevelUpId { get; private set; }
         internal int ExpectedCommanderSkillLevel { get; private set; }
-        internal int ExpectedCommanderSkillDuplicateCount { get; private set; }
     }
 }

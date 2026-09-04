@@ -23,7 +23,7 @@ namespace ProjectMT.Shared.GameData
         public Task<bool> TryApplyAndSaveAsync(GameProgressChange change)
         {
             var applied = current.TryApply(change, itemCatalog: itemCatalog);
-            if (applied)
+            if (applied && !change.SuppressChangedNotification)
             {
                 Changed?.Invoke();
             }

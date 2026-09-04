@@ -238,10 +238,10 @@ MonoBehaviour:
   rarityText: {fileID: 3520639187895688717}
   countText: {fileID: 2293809910651680870}
   newBadge: {fileID: 6911539772128962968}
-  cardName: {fileID: 4932479745687892917}
-  levelBadge: {fileID: 3075728008524753625}
-  assignmentBadge: {fileID: 5581660252597721956}
-  breakthroughReadyBadge: {fileID: 5676033716500713690}
+  cardName: {fileID: 390528684516475682}
+  levelBadge: {fileID: 6703743610940674283}
+  assignmentBadge: {fileID: 6872683567027658829}
+  breakthroughReadyBadge: {fileID: 7593295212068262487}
 --- !u!1 &3614600343732150402
 GameObject:
   m_ObjectHideFlags: 0
@@ -1059,24 +1059,9 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 744cee3804d54044b96c61b54f805bd8, type: 3}
---- !u!1 &3075728008524753625 stripped
+--- !u!1 &390528684516475682 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 3281719788692594567, guid: 744cee3804d54044b96c61b54f805bd8, type: 3}
-  m_PrefabInstance: {fileID: 514585260264142174}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &4932479745687892917 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 4852519337262253803, guid: 744cee3804d54044b96c61b54f805bd8, type: 3}
-  m_PrefabInstance: {fileID: 514585260264142174}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &5581660252597721956 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5355385771101728314, guid: 744cee3804d54044b96c61b54f805bd8, type: 3}
-  m_PrefabInstance: {fileID: 514585260264142174}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &5676033716500713690 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5323674802011530628, guid: 744cee3804d54044b96c61b54f805bd8, type: 3}
+  m_CorrespondingSourceObject: {fileID: 166425746397902460, guid: 744cee3804d54044b96c61b54f805bd8, type: 3}
   m_PrefabInstance: {fileID: 514585260264142174}
   m_PrefabAsset: {fileID: 0}
 --- !u!224 &5988075746869825597 stripped
@@ -1095,3 +1080,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27af1e1e81bf4324184c3ea069ea433c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.Formation.MonsterCardView
+--- !u!1 &6703743610940674283 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6497664958616823221, guid: 744cee3804d54044b96c61b54f805bd8, type: 3}
+  m_PrefabInstance: {fileID: 514585260264142174}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &6872683567027658829 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6360351354957534483, guid: 744cee3804d54044b96c61b54f805bd8, type: 3}
+  m_PrefabInstance: {fileID: 514585260264142174}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7593295212068262487 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7945723388963776265, guid: 744cee3804d54044b96c61b54f805bd8, type: 3}
+  m_PrefabInstance: {fileID: 514585260264142174}
+  m_PrefabAsset: {fileID: 0}

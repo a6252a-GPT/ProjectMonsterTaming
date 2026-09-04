@@ -28,10 +28,7 @@ namespace ProjectMT.Features.MainBattle
         {
             monsterCard?.BindMonster(definition, owned, false, string.Empty, null);
             monsterCard?.SetInteractable(false);
-            cardName?.SetActive(false);
-            levelBadge?.SetActive(false);
-            assignmentBadge?.SetActive(false);
-            breakthroughReadyBadge?.SetActive(false);
+            monsterCard?.HideContextBadgesForResult();
             if (nameText != null)
             {
                 nameText.text = definition == null ? "정보 없음" : definition.DisplayName;

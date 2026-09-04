@@ -24,7 +24,6 @@ namespace ProjectMT.Features.Quest
         private const float HighlightPadding = 8f;
         private const float HighlightLineThickness = 4f;
         private const float HintFadeDuration = 0.32f;
-        private const int RepeatingQuestClickHintLimit = 10;
         private const QuestType TrackedType = QuestType.Main;
         private static readonly Color HighlightColor = new Color(1f, 0.87f, 0.08f, 0.96f);
 
@@ -90,7 +89,7 @@ namespace ProjectMT.Features.Quest
 
         // ClickPoint별로 "표시가 시작된 시각"을 기록해 각자 독립적으로 10초 후 꺼지게 한다.
         private readonly Dictionary<Transform, float> hintShownAt = new Dictionary<Transform, float>();
-        private readonly HashSet<Transform> disabledHints = new HashSet<Transform>();
+        private readonly Dictionary<Transform, string> activeHintIds = new Dictionary<Transform, string>();
 
         // 상점이 열리면 몬스터 소환 페이지가 이미 선택되어 있으므로, 접힌 하위 메뉴 버튼이 아니라
         // MonsterShop의 실제 OneButton(1회)을 우선 가리킨다. 실제 뽑기 버튼을 누르면 힌트를 종료한다.
@@ -113,7 +112,7 @@ namespace ProjectMT.Features.Quest
         {
             QuestRuntime.Changed += ForceRefreshNow;
             hintShownAt.Clear();
-            disabledHints.Clear();
+            activeHintIds.Clear();
             lastTrackedQuestId = null;
             tickTimer = RefreshInterval; // 켜지는 즉시 한 번 갱신
         }
@@ -125,7 +124,7 @@ namespace ProjectMT.Features.Quest
             RemoveMonsterGachaListeners();
             referencesResolved = false;
             hintShownAt.Clear();
-            disabledHints.Clear();
+            activeHintIds.Clear();
             lastTrackedQuestId = null;
             HasVisibleHint = false;
             QuestTutorialSpotlight.Hide(this);
@@ -154,18 +153,11 @@ namespace ProjectMT.Features.Quest
 
             var trackedQuestId = (string)null;
             var completedAwaitingClaim = false;
-            var isRepeatingQuest = false;
-            var showRepeatingQuestClickHints = false;
             if (QuestRuntime.IsReady &&
                 QuestRuntime.TryGetTrackedQuest(TrackedType, out var definition, out var progressView))
             {
                 trackedQuestId = definition.QuestId.Value;
                 completedAwaitingClaim = progressView.Completed && !progressView.RewardClaimed;
-                isRepeatingQuest = definition.IsRepeatingTemplate;
-                showRepeatingQuestClickHints = isRepeatingQuest &&
-                    QuestRuntime.AreRepeatingQuestClickHintsEnabled(
-                        definition.QuestType,
-                        RepeatingQuestClickHintLimit);
             }
 
             if (!string.Equals(lastTrackedQuestId, trackedQuestId, StringComparison.OrdinalIgnoreCase))
@@ -178,15 +170,12 @@ namespace ProjectMT.Features.Quest
             // 이 프레임에 실제 대상이 된 힌트만 남겨 페이드 애니메이션을 중간에 끊지 않는다.
             activeHintTargets.Clear();
             activeSpotlightTarget = null;
-            // 반복 퀘스트는 전체 10개까지 버튼을 안내한다. 11번째 반복 퀘스트부터는 이동할
-            // 패널만 열고, 패널 내부 손가락/노란 테두리 힌트는 만들지 않는다.
-            var pageQuestId = completedAwaitingClaim || (isRepeatingQuest && !showRepeatingQuestClickHints)
-                ? null
-                : trackedQuestId;
+            var pageQuestId = completedAwaitingClaim ? null : trackedQuestId;
             var anyPageTargetActive = false;
             anyPageTargetActive |= ApplyHint(
                 shopClickPoint,
                 Matches(pageQuestId, ShopQuestIds),
+                "shop_gacha",
                 shopHintTargetsButton);
 
             var potentialQuest = Matches(pageQuestId, PotentialQuestIds);
@@ -199,70 +188,86 @@ namespace ProjectMT.Features.Quest
             anyPageTargetActive |= ApplyHint(
                 commanderGrowthView?.QuestPotentialTabButton?.transform ?? potentialTabButton,
                 potentialQuest && !isPotentialTabSelected,
+                "commander_potential_tab",
                 true);
             anyPageTargetActive |= ApplyHint(
                 commanderGrowthView?.QuestStatsTabButton?.transform ?? statsTabButton,
                 growthStatsQuest && isPotentialTabSelected,
+                "commander_stats_tab",
                 true);
-            anyPageTargetActive |= ApplyHint(potentialClickPoint, potentialQuest && isPotentialTabSelected);
+            anyPageTargetActive |= ApplyHint(
+                potentialClickPoint, potentialQuest && isPotentialTabSelected, "commander_potential_action");
             anyPageTargetActive |= ApplyHint(commanderLevelUpClickPoint,
-                Matches(pageQuestId, CommanderLevelUpQuestIds) && !isPotentialTabSelected);
+                Matches(pageQuestId, CommanderLevelUpQuestIds) && !isPotentialTabSelected,
+                "commander_level_up");
             anyPageTargetActive |= ApplyHint(statHealthClickPoint,
-                Matches(pageQuestId, "quest_016_commander_health_level_reach") && !isPotentialTabSelected, true);
+                Matches(pageQuestId, "quest_016_commander_health_level_reach") && !isPotentialTabSelected,
+                "commander_health", true);
             anyPageTargetActive |= ApplyHint(statAttackClickPoint,
-                Matches(pageQuestId, "quest_017_commander_attack_level_reach") && !isPotentialTabSelected, true);
+                Matches(pageQuestId, "quest_017_commander_attack_level_reach") && !isPotentialTabSelected,
+                "commander_attack", true);
             anyPageTargetActive |= ApplyHint(statDefenseClickPoint,
-                Matches(pageQuestId, "quest_018_commander_defense_level_reach") && !isPotentialTabSelected, true);
+                Matches(pageQuestId, "quest_018_commander_defense_level_reach") && !isPotentialTabSelected,
+                "commander_defense", true);
             var commanderPowerQuest = Matches(pageQuestId, "quest_019_commander_power_reach");
             anyPageTargetActive |= ApplyHint(
                 commanderPowerQuest ? ResolveCommanderPowerGrowthTarget() : null,
                 commanderPowerQuest && !isPotentialTabSelected,
+                "commander_power",
                 true);
 
-            anyPageTargetActive |= ApplyHint(monsterLevelUpClickPoint, Matches(pageQuestId, MonsterLevelUpQuestIds));
+            anyPageTargetActive |= ApplyHint(
+                monsterLevelUpClickPoint, Matches(pageQuestId, MonsterLevelUpQuestIds), "monster_level_up");
 
             var breakthroughQuest = Matches(pageQuestId, "quest_006_monster_ascension");
             var breakthroughTabActive = monsterManagementView != null && monsterManagementView.IsBreakthroughTabActive;
             var breakthroughCardSelected = monsterManagementView != null &&
                                             monsterManagementView.HasQuestBreakthroughCardSelection;
             anyPageTargetActive |= ApplyHint(monsterManagementView?.QuestBreakthroughTabButton,
-                breakthroughQuest && !breakthroughTabActive, true);
+                breakthroughQuest && !breakthroughTabActive, "monster_breakthrough_tab", true);
             anyPageTargetActive |= ApplyHint(monsterManagementView?.QuestBreakthroughCandidateButton,
-                breakthroughQuest && breakthroughTabActive && !breakthroughCardSelected, true);
+                breakthroughQuest && breakthroughTabActive && !breakthroughCardSelected,
+                "monster_breakthrough_candidate", true);
             anyPageTargetActive |= ApplyHint(monsterBreakthroughClickPoint,
-                breakthroughQuest && breakthroughTabActive && breakthroughCardSelected);
+                breakthroughQuest && breakthroughTabActive && breakthroughCardSelected,
+                "monster_breakthrough_action");
 
             var formationQuest = Matches(pageQuestId, "quest_010_monster_formation");
             var formationCardSelected = formationView != null && formationView.HasQuestFormationCardSelection;
             anyPageTargetActive |= ApplyHint(formationView?.QuestFormationCandidateButton,
-                formationQuest && formationView != null && formationView.IsOpen && !formationCardSelected, true);
+                formationQuest && formationView != null && formationView.IsOpen && !formationCardSelected,
+                "formation_candidate", true);
             anyPageTargetActive |= ApplyHint(formationView?.QuestFormationActionButton,
-                formationQuest && formationView != null && formationView.IsOpen && formationCardSelected, true);
+                formationQuest && formationView != null && formationView.IsOpen && formationCardSelected,
+                "formation_action", true);
 
             var equipmentPageOpen = equipmentPageRoot != null && equipmentPageRoot.gameObject.activeInHierarchy;
             anyPageTargetActive |= ApplyHint(equipmentView?.QuestAutoEquipButton ?? equipmentEquipButton,
-                Matches(pageQuestId, "quest_007_equipment_equip") && equipmentPageOpen, true);
+                Matches(pageQuestId, "quest_007_equipment_equip") && equipmentPageOpen,
+                "equipment_equip", true);
 
             var slotUpgradeQuest = Matches(pageQuestId, "quest_008_equipment_enhance") ||
                                    Matches(pageQuestId, "quest_020_equipment_slot_upgrade_reach");
             var equipmentPartSelected = equipmentSlotUpgradeView != null && equipmentSlotUpgradeView.HasSelectedPart;
             anyPageTargetActive |= ApplyHint(equipmentSlotUpgradeView?.QuestFirstPartButton,
-                slotUpgradeQuest && !equipmentPartSelected, true);
+                slotUpgradeQuest && !equipmentPartSelected, "slot_part", true);
             anyPageTargetActive |= ApplyHint(equipmentSlotUpgradeView?.QuestUpgradeButton,
-                slotUpgradeQuest && equipmentPartSelected, true);
+                slotUpgradeQuest && equipmentPartSelected, "slot_upgrade", true);
 
             var dismantleQuest = Matches(pageQuestId, "quest_013_equipment_dismantle");
             var dismantleMode = equipmentView != null && equipmentView.IsDismantleMode;
             var dismantleStep = equipmentView != null ? equipmentView.QuestDismantleHintStep : 0;
             anyPageTargetActive |= ApplyHint(
                 equipmentView?.QuestDismantleModeTabButton ?? equipmentDismantleTabButton,
-                dismantleQuest && equipmentPageOpen && !dismantleMode, true);
+                dismantleQuest && equipmentPageOpen && !dismantleMode, "dismantle_tab", true);
             anyPageTargetActive |= ApplyHint(
                 equipmentView?.QuestDismantleAutoSelectButton ?? equipmentDismantleAutoSelectButton,
-                dismantleQuest && equipmentPageOpen && dismantleMode && dismantleStep <= 1, true);
+                dismantleQuest && equipmentPageOpen && dismantleMode && dismantleStep <= 1,
+                "dismantle_auto", true);
             anyPageTargetActive |= ApplyHint(
                 equipmentView?.QuestDismantleActionButton ?? equipmentDismantleButton,
-                dismantleQuest && equipmentPageOpen && dismantleMode && dismantleStep >= 2, true);
+                dismantleQuest && equipmentPageOpen && dismantleMode && dismantleStep >= 2,
+                "dismantle_action", true);
 
             // 성장 던전은 퀘스트 이동으로 패널만 열고, 패널 안 클릭 힌트/테두리는 표시하지 않는다.
             const bool dungeonActive = false;
@@ -272,11 +277,11 @@ namespace ProjectMT.Features.Quest
                 // 성장 던전 목록은 스크롤 패널이라, 지금 뷰포트 안에 실제로 보이는 슬롯에만 힌트를 띄운다.
                 var visible = dungeonActive && IsVisibleWithinScrollView(point as RectTransform);
                 var placeOnBottomRight = point != null && point.name == "EnterButton_GUIPro";
-                anyPageTargetActive |= ApplyHint(point, visible, placeOnBottomRight);
+                anyPageTargetActive |= ApplyHint(point, visible, "growth_dungeon_enter", placeOnBottomRight);
             }
 
             anyPageTargetActive |= ApplyHint(castleRaidButton,
-                Matches(pageQuestId, "quest_012_castle_raid_enter"), true);
+                Matches(pageQuestId, "quest_012_castle_raid_enter"), "castle_raid", true);
 
             HideHintsOutsideActiveTargets();
             HasVisibleHint = anyPageTargetActive;
@@ -315,19 +320,19 @@ namespace ProjectMT.Features.Quest
         }
 
         // clickPoint가 없거나 지금 화면상 비활성 상태(다른 탭·페이지가 닫힘 등)면 숨긴다.
-        // 반환값은 페이지가 열려 있고 해당 ClickPoint가 활성 대상인지이며, 실제 손가락 이미지의
-        // 깜박임 상태와 5회 종료 여부와는 무관하게 외부 트래커를 숨기는 데 사용한다.
-        private bool ApplyHint(Button button, bool shouldShow, bool placeOnBottomRight)
+        // 반환값은 페이지가 열려 있고 해당 ClickPoint가 활성 대상인지이며, 실제 손가락 표시 여부와는
+        // 무관하게 외부 트래커를 숨기는 데 사용한다.
+        private bool ApplyHint(Button button, bool shouldShow, string stepKey, bool placeOnBottomRight)
         {
-            return ApplyHint(button != null ? button.transform : null, shouldShow, placeOnBottomRight);
+            return ApplyHint(button != null ? button.transform : null, shouldShow, stepKey, placeOnBottomRight);
         }
 
-        private bool ApplyHint(Transform clickPoint, bool shouldShow)
+        private bool ApplyHint(Transform clickPoint, bool shouldShow, string stepKey)
         {
-            return ApplyHint(clickPoint, shouldShow, false);
+            return ApplyHint(clickPoint, shouldShow, stepKey, false);
         }
 
-        private bool ApplyHint(Transform clickPoint, bool shouldShow, bool placeOnBottomRight)
+        private bool ApplyHint(Transform clickPoint, bool shouldShow, string stepKey, bool placeOnBottomRight)
         {
             if (clickPoint == null)
             {
@@ -339,16 +344,24 @@ namespace ProjectMT.Features.Quest
             {
                 HideHint(clickPoint);
                 hintShownAt.Remove(clickPoint);
-                disabledHints.Remove(clickPoint);
+                activeHintIds.Remove(clickPoint);
                 return false;
             }
 
             activeHintTargets.Add(clickPoint);
-
-            if (disabledHints.Contains(clickPoint))
+            var hintId = BuildTutorialHintId(lastTrackedQuestId, stepKey);
+            if (!activeHintIds.TryGetValue(clickPoint, out var activeHintId) ||
+                !string.Equals(activeHintId, hintId, StringComparison.OrdinalIgnoreCase))
             {
-                HideHint(clickPoint);
-                return true;
+                hintShownAt.Remove(clickPoint);
+                activeHintIds.Remove(clickPoint);
+                if (!QuestRuntime.TryStartTutorialHintOnce(hintId))
+                {
+                    HideHint(clickPoint);
+                    return true;
+                }
+
+                activeHintIds[clickPoint] = hintId;
             }
 
             if (!hintShownAt.TryGetValue(clickPoint, out var shownAt))
@@ -360,8 +373,9 @@ namespace ProjectMT.Features.Quest
             var elapsed = Time.unscaledTime - shownAt;
             if (elapsed >= HintDisplayDuration)
             {
-                disabledHints.Add(clickPoint);
                 HideHint(clickPoint);
+                hintShownAt.Remove(clickPoint);
+                activeHintIds.Remove(clickPoint);
                 return true;
             }
 
@@ -755,8 +769,11 @@ namespace ProjectMT.Features.Quest
         {
             HideAllHints();
             hintShownAt.Clear();
-            disabledHints.Clear();
+            activeHintIds.Clear();
         }
+
+        private static string BuildTutorialHintId(string questId, string stepKey) =>
+            $"quest_tutorial:{questId}:page:{stepKey}";
 
         // ---------------------------------------------------------------
         // 스크롤 뷰포트 가시성 체크(성장 던전 목록 전용)
@@ -935,8 +952,8 @@ namespace ProjectMT.Features.Quest
             }
 
             // 뽑기 메뉴로 이동한 순간 해당 퀘스트의 상점 힌트를 즉시 종료한다.
-            disabledHints.Add(shopClickPoint);
             hintShownAt.Remove(shopClickPoint);
+            activeHintIds.Remove(shopClickPoint);
             HideHint(shopClickPoint);
         }
 

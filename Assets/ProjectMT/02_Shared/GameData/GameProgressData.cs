@@ -521,7 +521,7 @@ namespace ProjectMT.Shared.GameData
         internal int OfflineNextActiveStage { get; private set; }
         internal OfflineRewardReceiptData OfflineReceipt { get; private set; }
         internal IReadOnlyList<string> OfflineReceiptIds { get; private set; }
-        internal bool SuppressChangedNotification => HasMarkOfflineInactive; // Pause·Quit 저장은 파괴 중 UI를 갱신하지 않음
+        internal bool SuppressChangedNotification => HasMarkOfflineInactive || HasConsumeQuestTutorialHint;
         internal bool HasSetCommanderSkillAutoUse { get; private set; }
         internal bool ExpectedCommanderSkillAutoUse { get; private set; }
         internal bool NewCommanderSkillAutoUse { get; private set; }

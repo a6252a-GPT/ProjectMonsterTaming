@@ -39,6 +39,7 @@ namespace ProjectMT.Features.Commander
             public TMP_Text ResultValue;
             public TMP_Text LockStateText;
             public Image GradeBadge;
+            public Button ProtectButton;
             public TMP_Text Text;
             public List<TMP_Text> ExtraTexts; // 프리팹 복제 과정에서 남은 목업 문구("Unlocks at..." 등) 정리용
             public GameObject IconOn; // 자물쇠 켜짐 오브젝트(더 이상 직접 켜지 않음, 스프라이트만 빌려 씀)
@@ -379,6 +380,11 @@ namespace ProjectMT.Features.Commander
 
             var slot = CommanderPotentialRuntime.GetSlot(index);
             SetText(row.UpTextLevel, (index + 1).ToString("00"));
+            if (row.ProtectButton != null)
+            {
+                row.ProtectButton.interactable = slot.HasValue;
+            }
+
             if (slot.HasValue)
             {
                 var range = CommanderPotentialOptionTable.GetOption(slot.OptionType, slot.Grade);
@@ -594,6 +600,12 @@ namespace ProjectMT.Features.Commander
             var resultValueComponent = FindDeep(rowTransform, "ResultValue")?.GetComponent<TMP_Text>();
             var lockStateComponent = FindDeep(rowTransform, "LockStateText")?.GetComponent<TMP_Text>();
             var gradeBadgeImage = FindDeep(rowTransform, "GradeBadge")?.GetComponent<Image>();
+            var protectSurfaceTransform = FindDeep(rowTransform, "ProtectSurface");
+            var protectButton = protectSurfaceTransform != null ? EnsureButton(protectSurfaceTransform) : null;
+            if (lockStateComponent != null)
+            {
+                lockStateComponent.raycastTarget = false;
+            }
 
             // 행 안에 우리가 쓰는 텍스트(Text_Level, UpText_Level, Text) 말고 다른 TMP_Text가 남아있으면
             // 프리팹 복제 과정에서 남은 목업 문구(예: "Unlocks at Attack Speed Lv200")일 가능성이 커서
@@ -632,6 +644,11 @@ namespace ProjectMT.Features.Commander
                 EnsureButton(iconOffTransform).onClick.AddListener(() => ToggleSlotLock(index));
             }
 
+            if (protectButton != null)
+            {
+                protectButton.onClick.AddListener(() => ToggleSlotLock(index));
+            }
+
             potentialRows[index] = new PotentialRowRefs
             {
                 TextLevel = textLevelComponent,
@@ -640,6 +657,7 @@ namespace ProjectMT.Features.Commander
                 ResultValue = resultValueComponent,
                 LockStateText = lockStateComponent,
                 GradeBadge = gradeBadgeImage,
+                ProtectButton = protectButton,
                 ExtraTexts = extraTexts,
                 IconOn = iconOnTransform?.gameObject,
                 IconOff = iconOffTransform?.gameObject,

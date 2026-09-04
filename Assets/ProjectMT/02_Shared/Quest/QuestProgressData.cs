@@ -138,6 +138,7 @@ namespace ProjectMT.Shared.Quest
         // 반복 퀘스트 셔플백: 이번 라운드에 이미 나온 템플릿 목록. 후보 전체가 담기면 다음 선택 때
         // 비우고 새 라운드를 시작해 같은 템플릿이 먼저 두 번 나오지 않게 한다.
         [SerializeField] private List<QuestId> repeatCycleUsedTemplateIds = new List<QuestId>();
+        [SerializeField] private List<string> consumedTutorialHintIds = new List<string>(); // 계정별 1회 튜토리얼 손가락 소비 기록
         [SerializeField] private long lastDailyResetPeriod = -1L; // GrowthDungeonDailyKeyRules와 동일한 KST 05:00 기준 일자 ID(-1 = 아직 초기화 전)
         [SerializeField] private long lastWeeklyResetPeriod = -1L; // 월요일 KST 05:00 기준 주간 ID(-1 = 아직 초기화 전)
 
@@ -150,6 +151,7 @@ namespace ProjectMT.Shared.Quest
         public QuestId ActiveRepeatingTemplateId => activeRepeatingTemplateId;
         public QuestId LastRepeatingTemplateId => lastRepeatingTemplateId;
         public IReadOnlyList<QuestId> RepeatCycleUsedTemplateIds => repeatCycleUsedTemplateIds;
+        internal IReadOnlyList<string> ConsumedTutorialHintIds => consumedTutorialHintIds;
         public long LastDailyResetPeriod => Math.Max(-1L, lastDailyResetPeriod);
         public long LastWeeklyResetPeriod => Math.Max(-1L, lastWeeklyResetPeriod);
 
@@ -160,6 +162,7 @@ namespace ProjectMT.Shared.Quest
                 activeRepeatingTemplateId = activeRepeatingTemplateId,
                 lastRepeatingTemplateId = lastRepeatingTemplateId,
                 repeatCycleUsedTemplateIds = new List<QuestId>(repeatCycleUsedTemplateIds),
+                consumedTutorialHintIds = new List<string>(consumedTutorialHintIds),
                 lastDailyResetPeriod = lastDailyResetPeriod,
                 lastWeeklyResetPeriod = lastWeeklyResetPeriod
             };
@@ -220,6 +223,48 @@ namespace ProjectMT.Shared.Quest
             return entry;
         }
 
+        internal bool TryConsumeTutorialHint(string hintId)
+        {
+            var normalized = NormalizeTutorialHintId(hintId);
+            if (string.IsNullOrEmpty(normalized) || HasConsumedTutorialHint(normalized))
+            {
+                return false;
+            }
+
+            consumedTutorialHintIds.Add(normalized);
+            return true;
+        }
+
+        internal bool HasConsumedTutorialHint(string hintId)
+        {
+            var normalized = NormalizeTutorialHintId(hintId);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < consumedTutorialHintIds.Count; i++)
+            {
+                if (string.Equals(consumedTutorialHintIds[i], normalized, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        internal static string NormalizeTutorialHintId(string hintId)
+        {
+            if (string.IsNullOrWhiteSpace(hintId))
+            {
+                return string.Empty;
+            }
+
+            var normalized = hintId.Trim();
+            return normalized.Length <= 160 ? normalized : string.Empty;
+        }
+
         // 일일 퀘스트 초기화 기준일(KST 05:00 경계)이 실제로 넘어갔을 때만 통과시킨다.
         // GrowthDungeonDailyKeyRules.GetPeriodId와 같은 방식으로 계산된 기간 ID를 그대로 받아 비교한다.
         // 통과하면 넘겨받은 퀘스트 ID들의 진행도를 전부 0으로 되돌린다(미완료·완료·수령 모두 포함).
@@ -268,6 +313,19 @@ namespace ProjectMT.Shared.Quest
             lastWeeklyResetPeriod = Math.Max(-1L, lastWeeklyResetPeriod);
             entries ??= new List<QuestProgressEntryData>();
             repeatCycleUsedTemplateIds ??= new List<QuestId>();
+            consumedTutorialHintIds ??= new List<string>();
+            var uniqueHintIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (var i = consumedTutorialHintIds.Count - 1; i >= 0; i--)
+            {
+                var normalized = NormalizeTutorialHintId(consumedTutorialHintIds[i]);
+                if (string.IsNullOrEmpty(normalized) || !uniqueHintIds.Add(normalized))
+                {
+                    consumedTutorialHintIds.RemoveAt(i);
+                    continue;
+                }
+
+                consumedTutorialHintIds[i] = normalized;
+            }
             for (var i = entries.Count - 1; i >= 0; i--)
             {
                 if (entries[i] == null || !entries[i].QuestId.IsValid)
@@ -315,6 +373,7 @@ namespace ProjectMT.Shared.Quest
     public readonly struct QuestProgressView // UI 등에 전달할 읽기 전용 값
     {
         private readonly QuestProgressEntryView[] entries;
+        private readonly string[] consumedTutorialHintIds;
 
         public QuestProgressView(QuestProgressData data)
         {
@@ -324,6 +383,20 @@ namespace ProjectMT.Shared.Quest
             RepeatCycleUsedTemplateIds = data?.RepeatCycleUsedTemplateIds ?? Array.Empty<QuestId>();
             LastDailyResetPeriod = data?.LastDailyResetPeriod ?? -1L;
             LastWeeklyResetPeriod = data?.LastWeeklyResetPeriod ?? -1L;
+            var hintIds = data?.ConsumedTutorialHintIds;
+            if (hintIds == null || hintIds.Count == 0)
+            {
+                consumedTutorialHintIds = Array.Empty<string>();
+            }
+            else
+            {
+                consumedTutorialHintIds = new string[hintIds.Count];
+                for (var i = 0; i < hintIds.Count; i++)
+                {
+                    consumedTutorialHintIds[i] = hintIds[i];
+                }
+            }
+
             if (source == null || source.Count == 0)
             {
                 entries = Array.Empty<QuestProgressEntryView>();
@@ -349,6 +422,28 @@ namespace ProjectMT.Shared.Quest
         public IReadOnlyList<QuestId> RepeatCycleUsedTemplateIds { get; }
         public long LastDailyResetPeriod { get; }
         public long LastWeeklyResetPeriod { get; }
+        public IReadOnlyList<string> ConsumedTutorialHintIds =>
+            consumedTutorialHintIds ?? Array.Empty<string>();
+
+        public bool HasConsumedTutorialHint(string hintId)
+        {
+            var normalized = QuestProgressData.NormalizeTutorialHintId(hintId);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return false;
+            }
+
+            var list = ConsumedTutorialHintIds;
+            for (var i = 0; i < list.Count; i++)
+            {
+                if (string.Equals(list[i], normalized, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         public bool TryGet(QuestId id, out QuestProgressEntryView view)
         {

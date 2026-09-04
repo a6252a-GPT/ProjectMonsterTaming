@@ -40,6 +40,8 @@ namespace ProjectMT.Features.Quest
             new Dictionary<QuestConditionType, long>();
         private static Task pendingProgressFlushTask;
         private static long configurationVersion;
+        private static readonly HashSet<string> pendingTutorialHintIds =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         public static event Action Changed;
 
@@ -62,6 +64,7 @@ namespace ProjectMT.Features.Quest
                     configurationVersion++;
                     pendingProgressAmounts.Clear();
                     pendingProgressFlushTask = null;
+                    pendingTutorialHintIds.Clear();
                 }
             }
 

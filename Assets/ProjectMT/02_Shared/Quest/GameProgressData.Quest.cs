@@ -150,6 +150,17 @@ namespace ProjectMT.Shared.GameData
 
         partial void ApplyQuestProgress(GameProgressChange change, ref bool rejected)
         {
+            if (change.HasConsumeQuestTutorialHint)
+            {
+                quests ??= QuestProgressData.CreateDefault();
+                if (!quests.TryConsumeTutorialHint(change.QuestTutorialHintId))
+                {
+                    rejected = true;
+                }
+
+                return;
+            }
+
             if (change.HasSetQuestProgressBatch)
             {
                 quests ??= QuestProgressData.CreateDefault();
@@ -310,6 +321,8 @@ namespace ProjectMT.Shared.GameData
         internal IReadOnlyList<QuestId> QuestWeeklyResetQuestIds { get; private set; }
         internal bool HasResetQuestProgress { get; private set; }
         internal IReadOnlyList<QuestId> ResetQuestProgressQuestIds { get; private set; }
+        internal bool HasConsumeQuestTutorialHint { get; private set; }
+        internal string QuestTutorialHintId { get; private set; }
 
         public static GameProgressChange SetQuestProgress(
             QuestId questId,
@@ -425,6 +438,15 @@ namespace ProjectMT.Shared.GameData
             {
                 HasResetQuestProgress = true,
                 ResetQuestProgressQuestIds = questIds ?? Array.Empty<QuestId>()
+            };
+        }
+
+        public static GameProgressChange ConsumeQuestTutorialHint(string hintId)
+        {
+            return new GameProgressChange
+            {
+                HasConsumeQuestTutorialHint = true,
+                QuestTutorialHintId = hintId?.Trim() ?? string.Empty
             };
         }
     }

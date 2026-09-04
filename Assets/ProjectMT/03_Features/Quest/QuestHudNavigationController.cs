@@ -251,6 +251,15 @@ namespace ProjectMT.Features.Quest
 
             if (!clickHintSessionActive)
             {
+                var stepKey = completedAwaitingClaim ? "hud_reward" : "hud_move";
+                if (!QuestRuntime.TryStartTutorialHintOnce(BuildTutorialHintId(trackedQuestId, stepKey)))
+                {
+                    clickHintDisabled = true;
+                    clickImage.SetActive(false);
+                    QuestTutorialSpotlight.Hide(this);
+                    return;
+                }
+
                 clickHintShownAt = Time.unscaledTime;
                 clickHintSessionActive = true;
             }
@@ -275,6 +284,9 @@ namespace ProjectMT.Features.Quest
             clickHintSessionActive = false;
             clickHintDisabled = false;
         }
+
+        private static string BuildTutorialHintId(string questId, string stepKey) =>
+            $"quest_tutorial:{questId}:{stepKey}";
 
         private bool HasAnyPageHintVisible()
         {
@@ -303,15 +315,6 @@ namespace ProjectMT.Features.Quest
 
         private void HandleAnyPageOpenChanged(bool pageOpen)
         {
-            // 패널을 닫은 시점에 완료 보상 대기라면, 이전 패널 안에서 끝난 표시 세션과 무관하게
-            // HUD의 현재 "완료" 버튼 안내를 새로 시작한다.
-            if (!pageOpen && completedAwaitingClaim)
-            {
-                ResetClickHintSession();
-                RefreshTrackedDestination();
-                return;
-            }
-
             ApplyClickImageVisibility();
             ApplyQuestTextVisibility();
         }

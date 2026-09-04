@@ -60,6 +60,70 @@ namespace ProjectMT.Features.Quest
             return true;
         }
 
+        // 같은 계정의 같은 퀘스트·같은 안내 단계는 저장 성공 여부와 관계없이 현재 세션에서 한 번만 시작한다.
+        // 저장에 성공하면 게임을 다시 실행해도 다시 나타나지 않고, 새 게임 데이터 초기화 때만 다시 열린다.
+        public static bool TryStartTutorialHintOnce(string hintId)
+        {
+            var normalized = NormalizeTutorialHintId(hintId);
+            IGameProgressService targetProgress;
+            long targetConfigurationVersion;
+            lock (pendingProgressSync)
+            {
+                if (!IsReady || string.IsNullOrEmpty(normalized) ||
+                    progress.Quests.HasConsumedTutorialHint(normalized) ||
+                    !pendingTutorialHintIds.Add(normalized))
+                {
+                    return false;
+                }
+
+                targetProgress = progress;
+                targetConfigurationVersion = configurationVersion;
+            }
+
+            _ = PersistTutorialHintConsumptionAsync(
+                targetProgress,
+                targetConfigurationVersion,
+                normalized);
+            return true;
+        }
+
+        private static string NormalizeTutorialHintId(string hintId)
+        {
+            if (string.IsNullOrWhiteSpace(hintId))
+            {
+                return string.Empty;
+            }
+
+            var normalized = hintId.Trim();
+            return normalized.Length <= 160 ? normalized : string.Empty;
+        }
+
+        private static async Task PersistTutorialHintConsumptionAsync(
+            IGameProgressService targetProgress,
+            long targetConfigurationVersion,
+            string hintId)
+        {
+            var saved = false;
+            try
+            {
+                saved = await targetProgress.TryApplyAndSaveAsync(
+                    GameProgressChange.ConsumeQuestTutorialHint(hintId));
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[Quest] 튜토리얼 안내 소비 저장 실패: {exception.Message}");
+            }
+
+            lock (pendingProgressSync)
+            {
+                if (saved && ReferenceEquals(progress, targetProgress) &&
+                    configurationVersion == targetConfigurationVersion)
+                {
+                    pendingTutorialHintIds.Remove(hintId);
+                }
+            }
+        }
+
         // 화면에 표시할 "지금 목표 수치"를 돌려준다. 일반 퀘스트는 카탈로그 고정값 그대로,
         // 반복 템플릿은 지금까지 완료한 사이클 수만큼 반영된 값이다(definition.TargetValue는 1회차 기준값일 뿐).
         public static long ResolveTargetValue(QuestDefinition definition)

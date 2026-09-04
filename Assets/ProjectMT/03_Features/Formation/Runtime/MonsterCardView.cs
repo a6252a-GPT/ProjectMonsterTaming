@@ -380,6 +380,16 @@ namespace ProjectMT.Features.Formation
             }
         }
 
+        // 뽑기 결과처럼 카드 본문 밖에 이름/수량을 따로 표시하는 화면에서는
+        // 현재 PF_MonsterCard의 실제 참조를 사용해 카드 내부 문맥 배지를 숨긴다.
+        internal void HideContextBadgesForResult()
+        {
+            SetNameVisible(false);
+            levelBadge?.SetActive(false);
+            assignmentBadge?.SetActive(false);
+            breakthroughReadyBadge?.SetActive(false);
+        }
+
         internal static void GetRarityPalette(
             MonsterRarity rarity,
             out Color32 background,

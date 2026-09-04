@@ -5510,10 +5510,7 @@ MonoBehaviour:
   bakedDungeonLoader: {fileID: 3289255519940093335}
   commanderRoot: {fileID: 753868313211258006}
   commanderMove: {fileID: 8195734735657144785}
-  monsterCatalog: {fileID: 11400000, guid: fe8b78d3f8fdc474f867c3d64664a095, type: 2}
   combatWorld: {fileID: 5795275648492532623}
-  followerPrefab: {fileID: 6359954306265597437, guid: c16a53cef90a01d4290cd0dad4732347, type: 3}
-  followerVisualScale: 1
   timerText: {fileID: 3176291915506373625}
   growthHud: {fileID: 8671154660235142517}
   statusText: {fileID: 8824712017526694626}

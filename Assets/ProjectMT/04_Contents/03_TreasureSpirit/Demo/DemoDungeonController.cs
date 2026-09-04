@@ -1,13 +1,11 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using ProjectMT.Contents.Framework;
 using ProjectMT.Contents.TreasureSpirit;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Items;
 using ProjectMT.Shared.Reward;
-using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,10 +24,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         [Header("전투 / 유닛")]
         [SerializeField] private GameObject commanderRoot;
         [SerializeField] private PlayerCharacterController commanderMove;
-        [SerializeField] private MonsterCatalog monsterCatalog;
         [SerializeField] private CombatWorld combatWorld;
-        [SerializeField] private GameObject followerPrefab;
-        [SerializeField] private float followerVisualScale = 1f;
 
         [Header("HUD")]
         [SerializeField] private TMP_Text timerText;
@@ -63,7 +58,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private GameObject localResultOverlayInstance;
         private readonly DemoLifeHud lifeHud = new DemoLifeHud();
         private DemoJumpButton jumpButton;
-        private readonly List<GameObject> spawnedFollowers = new List<GameObject>();
 
         public bool IsRunning { get; private set; }
         public bool IsPaused { get; private set; }
@@ -164,7 +158,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
                 mapInstance.transform,
                 commanderRoot != null ? commanderRoot.transform : null);
 
-            SpawnFollowers();
             bakedDungeonLoader.SpawnRoomContents(difficultyMultiplier);
             bakedDungeonLoader.SpawnEndRoomPrison(this);
 
@@ -186,27 +179,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             BeginResultTextAutoHide();
         }
 
-        private void SpawnFollowers()
-        {
-            Transform commander = commanderMove != null
-                ? commanderMove.transform
-                : commanderRoot != null ? commanderRoot.transform : null;
-            if (commander == null)
-            {
-                Debug.LogError("[DemoDungeonController] 군단장이 없어 팔로워를 스폰할 수 없습니다.");
-                return;
-            }
-
-            DemoPartyFollowerSpawner.Spawn(
-                commander,
-                startData.Party,
-                monsterCatalog,
-                combatWorld,
-                followerPrefab,
-                spawnedFollowers,
-                followerVisualScale);
-        }
-
         public void SetGameplayPaused(bool paused)
         {
             IsPaused = paused && IsRunning;
@@ -221,7 +193,6 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
             StopAllCoroutines();
             UnbindLifeHud();
             commanderMove?.SetInputEnabled(false);
-            DemoPartyFollowerSpawner.Despawn(combatWorld, spawnedFollowers);
 
             if (keyState != null)
             {

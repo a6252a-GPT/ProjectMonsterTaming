@@ -219,7 +219,7 @@ namespace ProjectMT.Shared.Audio
             yield return Category("castle_raid", "군단의 역습", "CastleRaid", 0.83f, 0.67f, 0.32f);
             yield return Category("food_riot", "식량 대소동", "FoodRiot", 0.52f, 0.72f, 0.34f);
             yield return Category("treasure_spirit", "보물 정령", "TreasureSpirit", 0.86f, 0.70f, 0.28f);
-            yield return Category("fallen_commander", "타락한 군단장", "FallenCommander", 0.72f, 0.36f, 0.40f);
+            yield return Category("fallen_commander", "타락한 과거의 군단장", "FallenCommander", 0.72f, 0.36f, 0.40f);
             yield return Category("guardian_trial", "고대 수호수", "GuardianTrial", 0.34f, 0.66f, 0.54f);
         }
 

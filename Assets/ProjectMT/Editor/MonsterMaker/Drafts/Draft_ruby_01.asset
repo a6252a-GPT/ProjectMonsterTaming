@@ -113,7 +113,7 @@ MonoBehaviour:
     slots:
     - slotId: cast_start
       feedback:
-        sound: {fileID: 0}
+        sound: {fileID: 8300000, guid: dca277650ced24835bea6a2dae0c94ec, type: 3}
         soundVolume: 1
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 29059895490230244, guid: 8ee68e8c9890fac4a880dd4cd224ec1a, type: 3}
@@ -123,10 +123,10 @@ MonoBehaviour:
         scale: 0.2
       assignmentStateConfigured: 1
       vfxState: 1
-      sfxState: 0
+      sfxState: 1
     - slotId: seal_apply
       feedback:
-        sound: {fileID: 0}
+        sound: {fileID: 8300000, guid: 19db01a3083f240bb8b059338a631632, type: 3}
         soundVolume: 1
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 0}
@@ -136,7 +136,7 @@ MonoBehaviour:
         scale: 1
       assignmentStateConfigured: 1
       vfxState: 0
-      sfxState: 0
+      sfxState: 1
     - slotId: target_loop
       feedback:
         sound: {fileID: 0}
@@ -152,7 +152,7 @@ MonoBehaviour:
       sfxState: 0
     - slotId: target_end
       feedback:
-        sound: {fileID: 0}
+        sound: {fileID: 8300000, guid: 6ba7a01d1f86240568c23cd25c8412db, type: 3}
         soundVolume: 1
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 0}
@@ -162,7 +162,7 @@ MonoBehaviour:
         scale: 1
       assignmentStateConfigured: 1
       vfxState: 0
-      sfxState: 0
+      sfxState: 1
     attackBlockBindings: []
     inactiveSlots: []
     inactiveAttackBlockBindings: []
@@ -370,7 +370,7 @@ MonoBehaviour:
     state: 1
     prefab: {fileID: 3690170965034686076, guid: 758366369155bd14f9b9ca7beda39561, type: 3}
     sfxState: 0
-    sound: {fileID: 0}
+    sound: {fileID: 8300000, guid: 5f4db250b555e48f3b35076822a65fb9, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1
@@ -465,8 +465,8 @@ MonoBehaviour:
     motionId: 
     state: 1
     prefab: {fileID: 6257676230805260796, guid: 7aad0227880137145b96e8040e61df0e, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: f513af3f381ec48b7a2ea0b3dacdb0c7, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1

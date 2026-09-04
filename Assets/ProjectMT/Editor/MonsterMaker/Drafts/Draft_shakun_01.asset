@@ -126,7 +126,7 @@ MonoBehaviour:
       sfxState: 0
     - slotId: haste_apply
       feedback:
-        sound: {fileID: 0}
+        sound: {fileID: 8300000, guid: 83ae2c05823334d90839fab0ef78e1db, type: 3}
         soundVolume: 1
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 0}
@@ -136,10 +136,10 @@ MonoBehaviour:
         scale: 1
       assignmentStateConfigured: 1
       vfxState: 0
-      sfxState: 0
+      sfxState: 1
     - slotId: target_loop
       feedback:
-        sound: {fileID: 0}
+        sound: {fileID: 8300000, guid: 1aeca0e0ada044ecc826a15a86124afe, type: 3}
         soundVolume: 1
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 5672367718899253312, guid: 43d12d0fc036cd447afcc37db2dd289b, type: 3}
@@ -149,10 +149,10 @@ MonoBehaviour:
         scale: 1
       assignmentStateConfigured: 1
       vfxState: 1
-      sfxState: 0
+      sfxState: 1
     - slotId: target_end
       feedback:
-        sound: {fileID: 0}
+        sound: {fileID: 8300000, guid: 4980f96b94b2f4b4dba103fe9c355fa2, type: 3}
         soundVolume: 1
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 0}
@@ -162,7 +162,7 @@ MonoBehaviour:
         scale: 1
       assignmentStateConfigured: 1
       vfxState: 0
-      sfxState: 0
+      sfxState: 1
     attackBlockBindings: []
     inactiveSlots: []
     inactiveAttackBlockBindings: []
@@ -339,8 +339,8 @@ MonoBehaviour:
     motionId: attack02
     state: 0
     prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 8c0a9e3a46a4c7d44aa73bb9c66da0c2, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1
@@ -371,8 +371,8 @@ MonoBehaviour:
     motionId: 
     state: 0
     prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: b8a15153151b741cdb5b09ec223aa42d, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1

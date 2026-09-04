@@ -45,7 +45,7 @@ MonoBehaviour:
   activeSkillPlaybackSpeed: 1
   activeSkillCrossFadeDuration: 0.08
   activeSkillCommitNormalizedTime: 0.25
-  activeStepMotionModeConfigured: 0
+  activeStepMotionModeConfigured: 1
   useCustomActiveStepMotions: 0
   activeAttackStepTunings: []
   activeAttackPresentations: []
@@ -91,116 +91,8 @@ MonoBehaviour:
   moveClip: {fileID: 7400000, guid: 9949cfe85d758844da2f9d94933ecb6d, type: 3}
   movePlaybackSpeed: 1
   attacks:
-  - motionId: attack01
-    clip: {fileID: 7400000, guid: bad6df9d5aef9ef4780dfc8042f918fb, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 1
-    overrideBreathDuration: 0
-    breathDuration: 0.8
-    markers:
-    - normalizedTime: 0.5
-      powerRatio: 1
-      socketOverride: 
-  - motionId: attack02
-    clip: {fileID: 7400000, guid: 8e303ee159641e0499de84abfdc443b4, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 1
-    overrideBreathDuration: 0
-    breathDuration: 0.8
-    markers:
-    - normalizedTime: 0.5
-      powerRatio: 1
-      socketOverride: 
   - motionId: attack03
     clip: {fileID: 7400000, guid: 066887aa76046b943b80e0f547b58437, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 1
-    overrideBreathDuration: 0
-    breathDuration: 0.8
-    markers:
-    - normalizedTime: 0.5
-      powerRatio: 1
-      socketOverride: 
-  - motionId: attack04
-    clip: {fileID: 7400000, guid: 4e836f679dda78e4ea349c5f7821b275, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 1
-    overrideBreathDuration: 0
-    breathDuration: 0.8
-    markers:
-    - normalizedTime: 0.5
-      powerRatio: 1
-      socketOverride: 
-  - motionId: attack05
-    clip: {fileID: 7400000, guid: 1111d01b912c9134a943a1d48853974f, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 1
-    overrideBreathDuration: 0
-    breathDuration: 0.8
-    markers:
-    - normalizedTime: 0.5
-      powerRatio: 1
-      socketOverride: 
-  - motionId: attack06
-    clip: {fileID: 7400000, guid: a263a846ee42f314a8ea2abe39af27b5, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 1
-    overrideBreathDuration: 0
-    breathDuration: 0.8
-    markers:
-    - normalizedTime: 0.5
-      powerRatio: 1
-      socketOverride: 
-  - motionId: attack07
-    clip: {fileID: 7400000, guid: c5765bbc17d19c74d9001a3764bc91e7, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 1
-    overrideBreathDuration: 0
-    breathDuration: 0.8
-    markers:
-    - normalizedTime: 0.5
-      powerRatio: 1
-      socketOverride: 
-  - motionId: attack08
-    clip: {fileID: 7400000, guid: 70bfd5b5f5e44b94ebbd089d7c0a7dc0, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 1
-    overrideBreathDuration: 0
-    breathDuration: 0.8
-    markers:
-    - normalizedTime: 0.5
-      powerRatio: 1
-      socketOverride: 
-  - motionId: attack09
-    clip: {fileID: 7400000, guid: 02cfa42aa36ba4c438e9245a2616c168, type: 3}
-    playbackSpeed: 1
-    crossFadeDuration: 0.06
-    weight: 1
-    preventImmediateRepeat: 1
-    overrideBreathDuration: 0
-    breathDuration: 0.8
-    markers:
-    - normalizedTime: 0.5
-      powerRatio: 1
-      socketOverride: 
-  - motionId: attack10
-    clip: {fileID: 7400000, guid: 95884edc1eb9fea4d909b3e5022be306, type: 3}
     playbackSpeed: 1
     crossFadeDuration: 0.06
     weight: 1
@@ -236,7 +128,7 @@ MonoBehaviour:
     slotId: start
     motionId: attack02
     state: 0
-    prefab: {fileID: 0}
+    prefab: {fileID: 3017430761128806937, guid: b891c07d8bd68a2428e566e2dc18e5ca, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -253,8 +145,8 @@ MonoBehaviour:
     motionId: attack03
     state: 0
     prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: c9e179e95a744cc4d9af9c9315b96972, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1
@@ -380,7 +272,7 @@ MonoBehaviour:
     slotId: body
     motionId: attack01
     state: 0
-    prefab: {fileID: 0}
+    prefab: {fileID: 3017430761128806937, guid: b891c07d8bd68a2428e566e2dc18e5ca, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -411,19 +303,19 @@ MonoBehaviour:
   - attackId: BA_S_02
     slotId: body
     motionId: attack03
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 8648502179410783575, guid: 0b41012c8fcc3ea42afdd3e9dba11a47, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
     sfx: {fileID: 0}
-    lifetime: 1
+    lifetime: 3
     playbackOffset: 0
     playbackSpeed: 1
-    eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    eventTimingOffset: -0.29
+    localPosition: {x: 0, y: -0.2, z: 0.7951942}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 1.2
   - attackId: BA_S_02
     slotId: body
     motionId: attack04
@@ -507,8 +399,8 @@ MonoBehaviour:
   - attackId: BA_S_02
     slotId: body
     motionId: attack09
-    state: 0
-    prefab: {fileID: 0}
+    state: 1
+    prefab: {fileID: 1158288734898890, guid: 12a7f583a97aebf4d8bcfe20e997a208, type: 3}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
@@ -517,9 +409,9 @@ MonoBehaviour:
     playbackOffset: 0
     playbackSpeed: 1
     eventTimingOffset: 0
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: 0.26328802, z: 0.9565775}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    scale: 1
+    scale: 3.5
   - attackId: BA_S_02
     slotId: body
     motionId: attack10
@@ -539,10 +431,10 @@ MonoBehaviour:
   - attackId: BA_S_02
     slotId: repeated_hit
     motionId: 
-    state: 0
-    prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    state: 1
+    prefab: {fileID: 3017430761128806937, guid: b891c07d8bd68a2428e566e2dc18e5ca, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 5766de5714e5caa4bacd1ba77f6ccfb7, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1

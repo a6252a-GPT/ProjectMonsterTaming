@@ -45,7 +45,7 @@ MonoBehaviour:
   activeSkillPlaybackSpeed: 1
   activeSkillCrossFadeDuration: 0.08
   activeSkillCommitNormalizedTime: 0.25
-  activeStepMotionModeConfigured: 0
+  activeStepMotionModeConfigured: 1
   useCustomActiveStepMotions: 0
   activeAttackStepTunings: []
   activeAttackPresentations: []
@@ -111,8 +111,8 @@ MonoBehaviour:
     motionId: attack01
     state: 1
     prefab: {fileID: 1855373148246290, guid: 7c524a084c7385241a4ad4fb055e3903, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 1f585609e003d9b4aaef020b6d4e0f0e, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1
@@ -127,8 +127,8 @@ MonoBehaviour:
     motionId: 
     state: 1
     prefab: {fileID: 1444971686239000, guid: 2a08b3071ec108040959cc25cf08be4b, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: c239365e670a74c45b222d06eb88afea, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1

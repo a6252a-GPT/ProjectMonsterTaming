@@ -45,7 +45,7 @@ MonoBehaviour:
   activeSkillPlaybackSpeed: 1
   activeSkillCrossFadeDuration: 0.08
   activeSkillCommitNormalizedTime: 0.25
-  activeStepMotionModeConfigured: 0
+  activeStepMotionModeConfigured: 1
   useCustomActiveStepMotions: 0
   activeAttackStepTunings: []
   activeAttackPresentations: []
@@ -107,7 +107,71 @@ MonoBehaviour:
   deathSpeed: 1
   combatType: 1
   basicAttackProfile: {fileID: 11400000, guid: 4532259f592e84546ae7138d3fffd0ac, type: 2}
-  basicAttackVfxBindings: []
+  basicAttackVfxBindings:
+  - attackId: BA_R_03
+    slotId: launch
+    motionId: attack01
+    state: 0
+    prefab: {fileID: 3691405422543972881, guid: eb81e20f7128fba4fbabd6cfb572b9c4, type: 3}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 2
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
+  - attackId: BA_R_03
+    slotId: projectile
+    motionId: 
+    state: 1
+    prefab: {fileID: 3208004881086768686, guid: 995ff93c693bf4f429504a26bcf03e8f, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 146a35dec0416334b90416bef272efa6, type: 3}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 3
+    playbackOffset: 1
+    playbackSpeed: 0.01
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 0.5
+  - attackId: BA_R_03
+    slotId: contact
+    motionId: 
+    state: 1
+    prefab: {fileID: 3691405422543972881, guid: eb81e20f7128fba4fbabd6cfb572b9c4, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 223fc99097fa10745817e8e0785da2aa, type: 3}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 1.5
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 14
+  - attackId: BA_R_03
+    slotId: area_explosion
+    motionId: 
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
   meleeMode: 0
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5

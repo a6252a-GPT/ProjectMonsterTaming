@@ -45,7 +45,7 @@ MonoBehaviour:
   activeSkillPlaybackSpeed: 1
   activeSkillCrossFadeDuration: 0.08
   activeSkillCommitNormalizedTime: 0.25
-  activeStepMotionModeConfigured: 0
+  activeStepMotionModeConfigured: 1
   useCustomActiveStepMotions: 0
   activeAttackStepTunings: []
   activeAttackPresentations: []
@@ -110,7 +110,23 @@ MonoBehaviour:
     slotId: hit
     motionId: 
     state: 1
-    prefab: {fileID: 1188432315835894, guid: e76cd799ebba2c34fabe37837548d639, type: 3}
+    prefab: {fileID: 5434010266877595090, guid: a09a0e08205eaf84ea9a40f5993922f4, type: 3}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 3e8be1bd2915cab49b3e885553d95d30, type: 3}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 0.5
+  - attackId: BA_M_01
+    slotId: swing_trail
+    motionId: attack01
+    state: 0
+    prefab: {fileID: 0}
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1

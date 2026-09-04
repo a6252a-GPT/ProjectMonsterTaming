@@ -132,8 +132,8 @@ MonoBehaviour:
       motionId: step_01
       state: 0
       prefab: {fileID: 0}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: 886dd441091c1974ead974fbbefa1324, type: 3}
       soundVolume: 1
       sfx: {fileID: 0}
       lifetime: 1
@@ -148,8 +148,8 @@ MonoBehaviour:
       motionId: 
       state: 1
       prefab: {fileID: 8029135683767367861, guid: 9696f2590b6d17841bf3352896f9cdc9, type: 3}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: ad8c6e986bbde564eb86c6af7ceca3f8, type: 3}
       soundVolume: 1
       sfx: {fileID: 0}
       lifetime: 3
@@ -164,8 +164,8 @@ MonoBehaviour:
       motionId: 
       state: 0
       prefab: {fileID: 0}
-      sfxState: 0
-      sound: {fileID: 0}
+      sfxState: 1
+      sound: {fileID: 8300000, guid: bcf5bc04615df6b4b8facb0f91c309d9, type: 3}
       soundVolume: 1
       sfx: {fileID: 0}
       lifetime: 1
@@ -181,7 +181,7 @@ MonoBehaviour:
       state: 1
       prefab: {fileID: 7279340116567509425, guid: 685a03621b21a914ab769545bb10e4ec, type: 3}
       sfxState: 0
-      sound: {fileID: 0}
+      sound: {fileID: 8300000, guid: 00e7a6b68eea18f42af89940ad1021ad, type: 3}
       soundVolume: 1
       sfx: {fileID: 0}
       lifetime: 3
@@ -472,6 +472,18 @@ MonoBehaviour:
     - normalizedTime: 0.51
       powerRatio: 1
       socketOverride: 
+  - motionId: attack02
+    clip: {fileID: 0}
+    playbackSpeed: 1
+    crossFadeDuration: 0.06
+    weight: 1
+    preventImmediateRepeat: 0
+    overrideBreathDuration: 0
+    breathDuration: 0.8
+    markers:
+    - normalizedTime: 0.5
+      powerRatio: 1
+      socketOverride: 
   deathClip: {fileID: 1827226128182048838, guid: ed7f3a387b3a8e94bb6dfadaf6bf14fd, type: 3}
   deathSpeed: 1
   combatType: 1
@@ -498,8 +510,8 @@ MonoBehaviour:
     motionId: 
     state: 1
     prefab: {fileID: 2380771908747937155, guid: a9a5d256989c33341afd90368e8ed4ab, type: 3}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 06769cc81815440e98189d7523f477a6, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 3
@@ -514,8 +526,8 @@ MonoBehaviour:
     motionId: 
     state: 2
     prefab: {fileID: 0}
-    sfxState: 0
-    sound: {fileID: 0}
+    sfxState: 1
+    sound: {fileID: 8300000, guid: 06769cc81815440e98189d7523f477a6, type: 3}
     soundVolume: 1
     sfx: {fileID: 0}
     lifetime: 1
@@ -541,6 +553,22 @@ MonoBehaviour:
     localPosition: {x: 0, y: -0.138493, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 0.7
+  - attackId: BA_R_03
+    slotId: launch
+    motionId: attack02
+    state: 0
+    prefab: {fileID: 0}
+    sfxState: 0
+    sound: {fileID: 0}
+    soundVolume: 1
+    sfx: {fileID: 0}
+    lifetime: 1
+    playbackOffset: 0
+    playbackSpeed: 1
+    eventTimingOffset: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+    scale: 1
   meleeMode: 0
   meleeAreaCenter: 1
   meleeAreaRadius: 1.5

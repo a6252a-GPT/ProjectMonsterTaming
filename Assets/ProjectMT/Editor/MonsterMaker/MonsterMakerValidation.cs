@@ -880,6 +880,15 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     $"액티브 SFX 사용 상태이지만 AudioClip이 비어 있습니다: {label}",
                     draft);
             }
+            else if (slot.SfxState == MonsterBasicAttackSfxAssignmentState.Assigned &&
+                     !slot.Feedback.TryResolveSoundPlaybackRange(out _, out _))
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-ACTIVE-SFX-RANGE",
+                    $"액티브 SFX의 오프셋·컷 구간이 원본 길이를 벗어납니다: {label}",
+                    draft);
+            }
         }
 
         private static void ValidateMainBattleAI(
@@ -1227,6 +1236,24 @@ namespace ProjectMT.EditorTools.MonsterMaker
             ValidateFeedbackCue(draft.HitFeedback, "피격", report, draft);
             ValidateFeedbackCue(draft.DeathFeedback, "사망", report, draft);
             ValidateFeedbackCue(draft.SpecialFeedback, "특수", report, draft);
+            ValidateVoiceSfx(draft.BasicAttackVoiceSfx, "기본공격 자체", report, draft);
+            ValidateVoiceSfx(draft.ActiveSkillVoiceSfx, "액티브스킬 자체", report, draft);
+        }
+
+        private static void ValidateVoiceSfx(
+            MonsterMakerVoiceSfxDraft voice,
+            string role,
+            MonsterMakerValidationReport report,
+            UnityEngine.Object context)
+        {
+            if (voice != null && !voice.TryResolvePlaybackRange(out _, out _))
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-VOICE-SFX-RANGE",
+                    $"{role} SFX의 오프셋·컷 구간이 원본 길이를 벗어납니다.",
+                    context);
+            }
         }
 
         private static void ValidateFeedbackCue(
@@ -1241,6 +1268,14 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     MonsterMakerIssueSeverity.Error,
                     "MAKER-SFX-EMPTY",
                     $"{role}의 기존 SFX Cue에 재생 가능한 AudioClip이 없습니다: {feedback.Sfx.name}",
+                    context);
+            }
+            if (feedback != null && !feedback.TryResolveSoundPlaybackRange(out _, out _))
+            {
+                report.Add(
+                    MonsterMakerIssueSeverity.Error,
+                    "MAKER-SFX-RANGE",
+                    $"{role} SFX의 오프셋·컷 구간이 원본 길이를 벗어납니다.",
                     context);
             }
         }

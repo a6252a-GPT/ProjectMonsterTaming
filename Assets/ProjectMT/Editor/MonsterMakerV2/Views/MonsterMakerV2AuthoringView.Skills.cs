@@ -895,29 +895,13 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 MonsterBasicAttackSfxAssignmentState.Assigned)
             {
                 AddRelativeProperty(card, feedback.FindPropertyRelative("sound"), "원본 AudioClip");
-                AddRelativeProperty(card, feedback.FindPropertyRelative("soundVolume"), "SFX 볼륨");
+                AddVolumePercentProperty(card, feedback.FindPropertyRelative("soundVolume"), "SFX 볼륨");
                 var feedbackPath = feedback.propertyPath;
-                AddActionRow(
+                AddSfxActionRow(
                     card,
-                    ("SFX 미리듣기", () => PreviewEffectSound(feedbackPath),
-                        "draft-action-button"),
-                    ("SFX 정지", SfxEditorAudioPreview.StopAll,
-                        "draft-action-button"));
-                var generated = AddRelativeProperty(
-                    card,
-                    feedback.FindPropertyRelative("sfx"),
-                    "생성된 SFX Cue");
-                generated?.SetEnabled(false);
+                    () => openSfxAdjust?.Invoke(feedbackPath, contract.DisplayName),
+                    () => PreviewSfx(feedbackPath));
             }
-        }
-
-        private void PreviewEffectSound(string feedbackPath)
-        {
-            serializedDraft.UpdateIfRequiredOrScript();
-            var feedback = serializedDraft.FindProperty(feedbackPath);
-            var clip = feedback?.FindPropertyRelative("sound").objectReferenceValue as AudioClip;
-            var volume = feedback?.FindPropertyRelative("soundVolume").floatValue ?? 1f;
-            if (clip != null) SfxEditorAudioPreview.Play(clip, 0, false, volume);
         }
 
         private void CreateOrEditEffectVfxWrapper(

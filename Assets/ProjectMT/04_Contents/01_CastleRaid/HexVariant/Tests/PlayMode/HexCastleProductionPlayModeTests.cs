@@ -405,6 +405,10 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 var floatingNumbers = Object.FindFirstObjectByType<ProjectMT.Shared.Combat.FloatingNumberPresenter>();
                 Assert.That(floatingNumbers, Is.Not.Null);
                 Assert.That(floatingNumbers.PendingNumberCount, Is.GreaterThan(0));
+                Assert.That(wall.ApplyDamage(100000f, wall.transform.position), Is.True);
+                Assert.That(Object.FindObjectsByType<AudioSource>(FindObjectsSortMode.None).Any(source =>
+                    source.isPlaying && source.clip != null &&
+                    source.clip.name == "rock_smashable_hit_impact_01"), Is.True);
                 yield return new WaitForSecondsRealtime(0.10f);
                 Assert.That(floatingNumbers.ActiveNumberCount, Is.GreaterThan(0));
 
@@ -454,6 +458,9 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                     .GetComponentsInChildren<HexCastleCellRuntime>(true)
                     .Single(value => value.Coordinates == new HexCoordinates(0, 0));
                 palace.ApplyDamage(100000f, palace.transform.position);
+                Assert.That(Object.FindObjectsByType<AudioSource>(FindObjectsSortMode.None).Any(source =>
+                    source.isPlaying && source.clip != null &&
+                    source.clip.name == "rock_avalanche_landslide_debris_01"), Is.True);
                 yield return null;
                 Assert.That(exit.CompletedResult, Is.TypeOf<HexCastleRaidResult>());
                 Assert.That(((HexCastleRaidResult)exit.CompletedResult).PalaceDestroyed, Is.True);

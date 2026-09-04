@@ -636,6 +636,7 @@ MonoBehaviour:
   bgmVolumeParameter: BGMVolume
   sfxVolumeParameter: SFXVolume
   entryBgm: {fileID: 8300000, guid: 392dfd91820d7442a925a46fdeb7452e, type: 3}
+  castleRaidBgm: {fileID: 8300000, guid: a7bfdcb767a52e1449edb578774235df, type: 3}
   mainBattleBgms:
   - {fileID: 8300000, guid: 053ca73acc9f54d14b7d126b34e1664d, type: 3}
   - {fileID: 8300000, guid: d80bf6373810f4e4ab55568710d790e7, type: 3}

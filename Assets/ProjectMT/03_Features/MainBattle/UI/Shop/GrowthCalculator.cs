@@ -55,8 +55,36 @@ namespace ProjectMT.Features.MainBattle
         public LegionStatBonus CurrentBonus { get; private set; }
         public event Action<LegionStatBonus> BonusChanged;
 
+        public bool TryGetNextRateDelta(CommanderLegionStat stat, out float delta)
+        {
+            delta = 0f;
+            if (progress == null || !progress.IsLoaded || config == null)
+            {
+                return false;
+            }
+
+            var level = progress.View.CommanderLegionGrowth.GetLevel(stat);
+            if (level >= config.GetLegionGrowthMaxLevel(stat))
+            {
+                return false;
+            }
+
+            var current = config.GetLegionGrowthRate(stat, level);
+            var next = config.GetLegionGrowthRate(stat, level + 1);
+            delta = next - current;
+            return !Mathf.Approximately(delta, 0f);
+        }
+
         private void Awake()
         {
+            // 중첩 프리팹의 기존 참조가 비활성 장식 버튼을 가리켜도 실제 ButtonArea 전체를 클릭 대상으로 복구한다.
+            healthButton = ResolveRowButton("GrowthRow_Health", healthButton);
+            attackButton = ResolveRowButton("GrowthRow_Attack", attackButton);
+            defenseButton = ResolveRowButton("GrowthRow_Defense", defenseButton);
+            attackSpeedButton = ResolveRowButton("GrowthRow_AttackSpeed", attackSpeedButton);
+            moveSpeedButton = ResolveRowButton("GrowthRow_MoveSpeed", moveSpeedButton);
+            attackRangeButton = ResolveRowButton("GrowthRow_AttackRange", attackRangeButton);
+
             CacheRow(CommanderLegionStat.MaxHealth, "GrowthRow_Health", healthButton, healthLevelText);
             CacheRow(CommanderLegionStat.AttackPower, "GrowthRow_Attack", attackButton, attackLevelText);
             CacheRow(CommanderLegionStat.Defense, "GrowthRow_Defense", defenseButton, defenseLevelText);
@@ -297,8 +325,44 @@ namespace ProjectMT.Features.MainBattle
                 return;
             }
 
-            var visualRoot = button.transform.parent != null ? button.transform.parent : button.transform;
+            var visualRoot = button.name == "ButtonArea"
+                ? button.transform
+                : button.transform.parent != null ? button.transform.parent : button.transform;
             UIButtonClickPunch.EnsureOn(button.gameObject, visualRoot);
+        }
+
+        private Button ResolveRowButton(string rowName, Button fallback)
+        {
+            var row = FindDeep(transform, rowName);
+            var buttonArea = row?.Find("ButtonArea");
+            if (buttonArea == null)
+            {
+                return fallback;
+            }
+
+            buttonArea.gameObject.SetActive(true);
+            var hitArea = buttonArea.GetComponent<Image>();
+            if (hitArea == null)
+            {
+                hitArea = buttonArea.gameObject.AddComponent<Image>();
+                hitArea.color = Color.clear;
+            }
+
+            hitArea.raycastTarget = true;
+            var button = buttonArea.GetComponent<Button>();
+            if (button == null)
+            {
+                button = buttonArea.gameObject.AddComponent<Button>();
+                button.transition = Selectable.Transition.None;
+            }
+
+            button.targetGraphic = hitArea;
+            if (fallback != null && fallback != button)
+            {
+                fallback.gameObject.SetActive(false);
+            }
+
+            return button;
         }
 
         private static void EnsureFullRectHitArea(Button button)
@@ -324,3 +388,4 @@ namespace ProjectMT.Features.MainBattle
         }
     }
 }
+

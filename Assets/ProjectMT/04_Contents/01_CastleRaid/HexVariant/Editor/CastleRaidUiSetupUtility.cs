@@ -30,8 +30,8 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
         private const string DevUiScenePath = "Assets/ProjectMT/00_Scenes/DEV_UIManagement_02.unity";
         private const string StandardMediumPath =
             "Assets/ProjectMT/02_Shared/UI/Prefabs/Standard/PF_UIStandard_PopupMedium.prefab";
-        private const string StandardCompactDialogPath =
-            "Assets/ProjectMT/02_Shared/UI/Prefabs/Standard/PF_UIStandard_CompactDialog.prefab";
+        private const string ContentResultOverlayPath =
+            "Assets/ProjectMT/01_Core/Bootstrap/Prefabs/PF_ContentResultOverlay.prefab";
         private const string ItemCatalogPath =
             "Assets/ProjectMT/02_Shared/Items/Data/ItemCatalog.asset";
         private const string ItemDropVisualCatalogPath =
@@ -144,53 +144,69 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
                     throw new InvalidOperationException("군단의 역습 HUD Root가 RectTransform이 아닙니다.");
                 }
 
-                RemoveOwnedChild(root, "BattleTimerBadge");
                 RemoveOwnedChild(root, "FailureOverlay");
 
-                var statusPanel = FindChild(root, "StatusPanel") as RectTransform;
-                var statusText = statusPanel == null ? null : FindChild(statusPanel, "StatusText")?.GetComponent<TMP_Text>();
-                if (statusPanel == null || statusText == null)
+                var timerPanel = FindChild(root, "BattleTimerBadge") as RectTransform;
+                var timerText = timerPanel == null
+                    ? null
+                    : FindChild(timerPanel, "TimerText")?.GetComponent<TMP_Text>();
+                var timerAccent = timerPanel == null
+                    ? null
+                    : FindChild(timerPanel, "UrgencyAccent")?.GetComponent<UnityEngine.UI.Image>();
+                if (timerPanel == null)
                 {
-                    throw new InvalidOperationException("기존 HUD의 StatusPanel/StatusText를 찾지 못했습니다.");
-                }
+                    var statusPanel = FindChild(root, "StatusPanel") as RectTransform;
+                    var statusText = statusPanel == null
+                        ? null
+                        : FindChild(statusPanel, "StatusText")?.GetComponent<TMP_Text>();
+                    if (statusPanel == null || statusText == null)
+                    {
+                        throw new InvalidOperationException("기존 HUD의 StatusPanel/StatusText를 찾지 못했습니다.");
+                    }
 
-                statusText.rectTransform.anchoredPosition = new Vector2(-78f, 0f);
-                statusText.rectTransform.sizeDelta = new Vector2(510f, 38f);
-                var timerPanel = Panel(
-                    "BattleTimerBadge",
-                    statusPanel,
-                    new Vector2(286f, 0f),
-                    new Vector2(134f, 48f),
-                    new Color32(35, 43, 54, 255),
-                    CardBg);
-                var timerAccent = Image(
-                    "UrgencyAccent",
-                    timerPanel.rectTransform,
-                    new Vector2(-61f, 0f),
-                    new Vector2(5f, 38f),
-                    null,
-                    new Color32(198, 145, 55, 255),
-                    false);
-                Text(
-                    "Caption",
-                    timerPanel.rectTransform,
-                    "제한 시간",
-                    new Vector2(-18f, 12f),
-                    new Vector2(76f, 16f),
-                    10f,
-                    TextAlignmentOptions.Center,
-                    new Color32(184, 193, 204, 255),
-                    FontStyles.Bold);
-                var timerText = Text(
-                    "TimerText",
-                    timerPanel.rectTransform,
-                    "03:00",
-                    new Vector2(25f, -8f),
-                    new Vector2(82f, 25f),
-                    21f,
-                    TextAlignmentOptions.Center,
-                    Color.white,
-                    FontStyles.Bold);
+                    statusText.rectTransform.anchoredPosition = new Vector2(-78f, 0f);
+                    statusText.rectTransform.sizeDelta = new Vector2(510f, 38f);
+                    var createdTimerPanel = Panel(
+                        "BattleTimerBadge",
+                        statusPanel,
+                        new Vector2(286f, 0f),
+                        new Vector2(134f, 48f),
+                        new Color32(35, 43, 54, 255),
+                        CardBg);
+                    timerPanel = createdTimerPanel.rectTransform;
+                    timerAccent = Image(
+                        "UrgencyAccent",
+                        timerPanel,
+                        new Vector2(-61f, 0f),
+                        new Vector2(5f, 38f),
+                        null,
+                        new Color32(198, 145, 55, 255),
+                        false);
+                    Text(
+                        "Caption",
+                        timerPanel,
+                        "제한 시간",
+                        new Vector2(-18f, 12f),
+                        new Vector2(76f, 16f),
+                        10f,
+                        TextAlignmentOptions.Center,
+                        new Color32(184, 193, 204, 255),
+                        FontStyles.Bold);
+                    timerText = Text(
+                        "TimerText",
+                        timerPanel,
+                        "03:00",
+                        new Vector2(25f, -8f),
+                        new Vector2(82f, 25f),
+                        21f,
+                        TextAlignmentOptions.Center,
+                        Color.white,
+                        FontStyles.Bold);
+                }
+                else if (timerText == null || timerAccent == null)
+                {
+                    throw new InvalidOperationException("기존 BattleTimerBadge의 TimerText/UrgencyAccent 연결이 없습니다.");
+                }
 
                 var overlay = Image(
                     "FailureOverlay",
@@ -198,44 +214,153 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
                     Vector2.zero,
                     Vector2.zero,
                     null,
-                    new Color32(3, 5, 9, 204),
+                    new Color32(3, 5, 9, 255),
                     true);
                 Stretch(overlay.rectTransform);
-                var dialogPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(StandardCompactDialogPath);
-                if (dialogPrefab == null)
+                var resultOverlayPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ContentResultOverlayPath);
+                var sourceStage = resultOverlayPrefab == null
+                    ? null
+                    : FindChild(resultOverlayPrefab.transform, "ClearResultStage_920x900") as RectTransform;
+                var resultPresenter = resultOverlayPrefab == null
+                    ? null
+                    : resultOverlayPrefab.GetComponents<MonoBehaviour>()
+                        .FirstOrDefault(component =>
+                            component.GetType().Name == "ContentResultOverlayPresenter");
+                if (sourceStage == null || resultPresenter == null)
                 {
-                    throw new InvalidOperationException("표준 CompactDialog 프리팹을 찾지 못했습니다.");
+                    throw new InvalidOperationException("공용 클리어 결과창의 920x900 스테이지를 찾지 못했습니다.");
                 }
 
-                var dialog = (GameObject)PrefabUtility.InstantiatePrefab(dialogPrefab, overlay.rectTransform);
-                dialog.name = "FailureDialog_Standard";
-                var dialogRect = dialog.GetComponent<RectTransform>();
-                dialogRect.anchorMin = dialogRect.anchorMax = new Vector2(0.5f, 0.5f);
-                dialogRect.anchoredPosition = Vector2.zero;
-                dialogRect.localScale = Vector3.one;
-                var reasonText = FindChild(dialogRect, "Text_Title")?.GetComponent<TMP_Text>() ??
-                                 FindChild(dialogRect, "TitleText")?.GetComponent<TMP_Text>();
-                var detailText = FindChild(dialogRect, "MessageText")?.GetComponent<TMP_Text>();
-                var retryButton = FindChild(dialogRect, "RetryButton")?.GetComponent<Button>();
-                if (reasonText == null || detailText == null || retryButton == null)
+                var stageObject = UnityEngine.Object.Instantiate(
+                    sourceStage.gameObject,
+                    overlay.rectTransform,
+                    false);
+                stageObject.name = "FailureResultStage_920x900";
+                var stageRect = stageObject.GetComponent<RectTransform>();
+                stageRect.anchorMin = stageRect.anchorMax = new Vector2(0.5f, 0.5f);
+                stageRect.pivot = new Vector2(0.5f, 0.5f);
+                stageRect.anchoredPosition = Vector2.zero;
+                stageRect.sizeDelta = new Vector2(920f, 900f);
+                stageRect.localScale = Vector3.one;
+
+                var resultKicker = FindChild(stageRect, "ResultKicker")?.GetComponent<TMP_Text>();
+                var titleText = FindChild(stageRect, "TitleText")?.GetComponent<TMP_Text>();
+                var reasonText = FindChild(stageRect, "SummaryText")?.GetComponent<TMP_Text>();
+                var rewardHeader = FindChild(stageRect, "RewardHeader");
+                var rewardHeaderLabel = rewardHeader == null
+                    ? null
+                    : FindChild(rewardHeader, "Label")?.GetComponent<TMP_Text>();
+                var continueHint = FindChild(stageRect, "ContinueHint")?.GetComponent<TMP_Text>();
+                var retryButton = FindChild(stageRect, "ConfirmButton")?.GetComponent<Button>();
+                if (resultKicker == null || titleText == null || reasonText == null ||
+                    rewardHeaderLabel == null || continueHint == null || retryButton == null)
                 {
-                    throw new InvalidOperationException("표준 실패 Dialog의 텍스트/버튼 구성이 불완전합니다.");
+                    throw new InvalidOperationException("공용 결과 스테이지의 필수 UI 구성이 불완전합니다.");
                 }
 
-                reasonText.text = "공략 실패";
+                resultKicker.text = "군단의 역습 · 전투 결과";
+                resultKicker.font = font;
+                UnityEngine.Object.DestroyImmediate(titleText.gameObject);
+                titleText = Text(
+                    "TitleText",
+                    stageRect,
+                    "공략 실패",
+                    new Vector2(0f, 356f),
+                    new Vector2(520f, 84f),
+                    50f,
+                    TextAlignmentOptions.Center,
+                    new Color32(255, 222, 214, 255),
+                    FontStyles.Bold);
+                rewardHeaderLabel.text = "실패 원인";
+                rewardHeaderLabel.font = font;
+                rewardHeaderLabel.color = new Color32(221, 151, 132, 255);
+                continueHint.text = "같은 요새·같은 편성으로 비용 없이 재도전할 수 있습니다";
+                continueHint.font = font;
+
+                reasonText.text = "제한 시간 초과";
                 reasonText.font = font;
-                detailText.text = "같은 요새를 비용 없이 다시 공략할 수 있습니다.";
+                reasonText.fontSize = 30f;
+                reasonText.color = new Color32(255, 168, 146, 255);
+                reasonText.alignment = TextAlignmentOptions.Center;
+                reasonText.rectTransform.anchoredPosition = new Vector2(0f, 0f);
+                reasonText.rectTransform.sizeDelta = new Vector2(680f, 56f);
+                rewardHeader.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, 70f);
+
+                var detailText = Text(
+                    "FailureDetailText",
+                    stageRect,
+                    "현재 요새 공략에 실패했습니다.\n같은 성과 같은 편성으로 비용 없이 다시 도전할 수 있습니다.",
+                    new Vector2(0f, -86f),
+                    new Vector2(680f, 108f),
+                    20f,
+                    TextAlignmentOptions.Center,
+                    new Color32(214, 219, 226, 255),
+                    FontStyles.Normal,
+                    true);
                 detailText.font = font;
-                detailText.fontSize = 18f;
+
+                foreach (var hiddenName in new[]
+                         {
+                             "VictoryIllustration",
+                             "Confetti",
+                             "VictoryLight",
+                             "RewardSparkleLeft",
+                             "RewardSparkleRight",
+                             "RewardPackage",
+                             "ClearBadge",
+                             "PrimaryReward",
+                             "RewardPageText"
+                         })
+                {
+                    FindChild(stageRect, hiddenName)?.gameObject.SetActive(false);
+                }
+
+                var centerGlow = FindChild(stageRect, "CenterGlow")?.GetComponent<Graphic>();
+                if (centerGlow != null)
+                {
+                    centerGlow.color = new Color32(132, 34, 30, 65);
+                }
+
+                var titleRibbon = FindChild(stageRect, "VictoryRibbon")?.GetComponent<Graphic>();
+                if (titleRibbon != null)
+                {
+                    titleRibbon.color = new Color32(128, 65, 59, 255);
+                }
+
+                var resultSerialized = new SerializedObject(resultPresenter);
+                var emptyStarSprite = resultSerialized.FindProperty("emptyStarSprite")?.objectReferenceValue as Sprite;
+                if (emptyStarSprite == null)
+                {
+                    throw new InvalidOperationException("공용 결과창의 빈 별 Sprite 연결을 찾지 못했습니다.");
+                }
+
+                for (var starIndex = 1; starIndex <= 3; starIndex++)
+                {
+                    var starImage = FindChild(stageRect, $"Star_{starIndex}")?.GetComponent<UnityEngine.UI.Image>();
+                    if (starImage == null)
+                    {
+                        throw new InvalidOperationException($"공용 결과창의 Star_{starIndex}를 찾지 못했습니다.");
+                    }
+
+                    starImage.sprite = emptyStarSprite;
+                    starImage.color = Color.white;
+                    starImage.gameObject.SetActive(true);
+                }
+
                 retryButton.gameObject.SetActive(true);
                 retryButton.name = "FreeRetryButton";
-                retryButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(-124f, -132f);
+                var retryRect = retryButton.GetComponent<RectTransform>();
+                retryRect.anchoredPosition = new Vector2(-166f, -318f);
+                retryRect.sizeDelta = new Vector2(300f, 76f);
                 SetButtonLabel(retryButton, "무료 재도전");
+                FindChild(retryRect, "Check")?.gameObject.SetActive(false);
 
-                var leaveObject = UnityEngine.Object.Instantiate(retryButton.gameObject, dialogRect);
+                var leaveObject = UnityEngine.Object.Instantiate(retryButton.gameObject, stageRect);
                 leaveObject.name = "LeaveButton";
                 var leaveButton = leaveObject.GetComponent<Button>();
-                leaveButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(124f, -132f);
+                var leaveRect = leaveButton.GetComponent<RectTransform>();
+                leaveRect.anchoredPosition = new Vector2(166f, -318f);
+                leaveRect.sizeDelta = new Vector2(300f, 76f);
                 SetButtonLabel(leaveButton, "나가기");
                 var leaveGraphic = leaveButton.targetGraphic as UnityEngine.UI.Image;
                 if (leaveGraphic != null)
@@ -243,8 +368,8 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
                     leaveGraphic.color = new Color32(102, 57, 57, 255);
                 }
 
-                FindChild(dialogRect, "SavingVisual")?.gameObject.SetActive(false);
-                FindChild(dialogRect, "FailedVisual")?.gameObject.SetActive(true);
+                // 원본 리본보다 뒤에 있던 제목이 실패색 틴트에 가려지지 않도록 최상단에 둔다.
+                titleText.transform.SetAsLastSibling();
 
                 var itemCatalog = AssetDatabase.LoadAssetAtPath<ItemCatalog>(ItemCatalogPath);
                 var dropCatalog = AssetDatabase.LoadAssetAtPath<WorldItemDropVisualCatalog>(ItemDropVisualCatalogPath);
@@ -273,10 +398,9 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
                     equipmentBalance,
                     equipmentDropCatalog);
                 overlay.gameObject.SetActive(false);
-                PolishBattleHud(rootObject);
                 PrefabUtility.SaveAsPrefabAsset(rootObject, HudPrefabPath);
                 AssetDatabase.SaveAssets();
-                Debug.Log("[CastleRaidUiSetupUtility] 표준 실패 Dialog와 180초 HUD를 적용했습니다.");
+                Debug.Log("[CastleRaidUiSetupUtility] 공용 클리어 스타일 실패 결과창과 180초 HUD를 적용했습니다.");
             }
             finally
             {

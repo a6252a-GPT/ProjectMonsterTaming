@@ -84,3 +84,261 @@ MonoBehaviour:
     categoryId: commander_skill
   - cue: {fileID: 11400000, guid: b94313b5a3c13e14b96fa03658a28fc0, type: 2}
     categoryId: commander_skill
+  - cue: {fileID: 11400000, guid: b09dc8dc5d3b897449a75750b50aaac8, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 11400000, guid: eaa9f301e4ca60f4faf0390e8fe782ee, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 6323908151620661443, guid: c3db01a715234ce4c9f3ff36271f57a4, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 8536431879716955752, guid: c3db01a715234ce4c9f3ff36271f57a4, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -615181943131236084, guid: c3db01a715234ce4c9f3ff36271f57a4, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -4249005658744107987, guid: c3db01a715234ce4c9f3ff36271f57a4, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 3511852166862805642, guid: c3db01a715234ce4c9f3ff36271f57a4, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 3623865697826983932, guid: f73edcf771091da45999fe2e893d25f0, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -2196095914890272981, guid: f73edcf771091da45999fe2e893d25f0, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 2537087991690520392, guid: 1baa4726a0afdcf40bc80b4c9a256dbf, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 416070644265491577, guid: afc42641f6f9c694a97d7863797b5113, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -8148053824579773106, guid: 536b710ea7f6ac74ca8488dfb322c85a, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 8983028852121260359, guid: 536b710ea7f6ac74ca8488dfb322c85a, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 8430122021668032111, guid: 536b710ea7f6ac74ca8488dfb322c85a, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -5585553454477673424, guid: 8f36b8c02f0d03b4c8e349bfeb0e381d, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 1346048083574359959, guid: 8f36b8c02f0d03b4c8e349bfeb0e381d, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -1526725181632984569, guid: 176be143e78079744a179ba14d4a56d0, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 2201494219132744601, guid: 176be143e78079744a179ba14d4a56d0, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 7442027665148676645, guid: 176be143e78079744a179ba14d4a56d0, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 2877519203802891608, guid: 7902976be22a93d4eb2e61d55cd963d3, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -4510423195776779429, guid: 8a4808592bf48e64a916f34d79f15812, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 5090804861106299442, guid: d5cf967286c71bd40881c4647c237bdb, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 2785366864392707412, guid: c44ae7e88d9f4454398267b7eb3231e8, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -4084273230170439814, guid: c44ae7e88d9f4454398267b7eb3231e8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 3929088047820881568, guid: 16fba351ebd3c324e981bf1ef8ce012b, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -367621203904972842, guid: 16fba351ebd3c324e981bf1ef8ce012b, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 7313588154259479561, guid: 16fba351ebd3c324e981bf1ef8ce012b, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -8626571898986920002, guid: 16fba351ebd3c324e981bf1ef8ce012b, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -2010424076286037028, guid: 16fba351ebd3c324e981bf1ef8ce012b, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 3322305425068727487, guid: 98b27b48b7c04224c96052a6f79d57de, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -2830386753547673557, guid: 98b27b48b7c04224c96052a6f79d57de, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 3331934469914104088, guid: 6f3e6f25a3287b34e8200d56eff3f8b8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 6492986047154493582, guid: 6f3e6f25a3287b34e8200d56eff3f8b8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 2789203311462262133, guid: 6f3e6f25a3287b34e8200d56eff3f8b8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -3974837312318017188, guid: 6f3e6f25a3287b34e8200d56eff3f8b8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 7238809899657677377, guid: 6f3e6f25a3287b34e8200d56eff3f8b8, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -7392577149379026894, guid: bd0efd75eb6d1ef4ca18fc11319ef8fd, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -6269026405643419402, guid: bd0efd75eb6d1ef4ca18fc11319ef8fd, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -1303024059587530909, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 5672610714089064448, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 2651019640965354849, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 6236429859443953227, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -1521547169542619702, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -2972449752300850060, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 1196517926036356235, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -309632929420306268, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -6613155669290954062, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -6238201138999872910, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -766439047171679933, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 8253690894997562194, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -8314372970321198052, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 2603880794196946692, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -4948999973437596873, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 8040437822486525876, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 8962603888643010833, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 1180057907367612087, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -8920918816791915892, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -7660380070144851012, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -2649849757737136538, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -7805270780890420320, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -7202377611105316048, guid: 91ba6941f021b8a43be1191238b9eaf8, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -7220889668165953290, guid: 95be4738067552146af7cd8e4cd7033d, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 8967500169698752966, guid: 95be4738067552146af7cd8e4cd7033d, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 3710205638457680360, guid: 95be4738067552146af7cd8e4cd7033d, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -994150356707492553, guid: 95be4738067552146af7cd8e4cd7033d, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 7136106247075876411, guid: c04a510d868b167429619cc2e1b869c0, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 5135250008909037952, guid: 914c2f61d8f330e488dc51b3f90b7fb4, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 4648431782810828719, guid: 914c2f61d8f330e488dc51b3f90b7fb4, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 8353487444806414527, guid: e5453131452e8054db124be454c5bdc6, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -3926906117794293329, guid: e5453131452e8054db124be454c5bdc6, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -8167769223213516369, guid: cc69e8ed3011177429beb8ecda78f0bc, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 8126217569716617517, guid: cc69e8ed3011177429beb8ecda78f0bc, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 8808743889424434308, guid: 4c75467fb3a60f343939a7a2f575125b, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 9143518533695291107, guid: 4c75467fb3a60f343939a7a2f575125b, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -8314169153261585536, guid: 4c75467fb3a60f343939a7a2f575125b, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 4938784522460984277, guid: fba2d71b372378146b2d26d29e9fb02a, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 4815821235716943674, guid: fba2d71b372378146b2d26d29e9fb02a, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -6868384353506633415, guid: 4e7e2a06e998a454282b30990b156572, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 2851797408389682453, guid: 4e7e2a06e998a454282b30990b156572, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 1456543268993632882, guid: bb91b3a629683674a92ac1dd94e64ec1, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -5535035575973334767, guid: bb91b3a629683674a92ac1dd94e64ec1, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 255018804284406418, guid: bb91b3a629683674a92ac1dd94e64ec1, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 967982227564157756, guid: bb91b3a629683674a92ac1dd94e64ec1, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 7109385080264443854, guid: bb91b3a629683674a92ac1dd94e64ec1, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -6677697631577413511, guid: cc737904e17ec1a469ef81860f5d1170, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -5105725417247945207, guid: cc737904e17ec1a469ef81860f5d1170, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 7134078559015283039, guid: cc737904e17ec1a469ef81860f5d1170, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -8829893795575124543, guid: cc737904e17ec1a469ef81860f5d1170, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -2695618789730534845, guid: cc737904e17ec1a469ef81860f5d1170, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -3077704000673580840, guid: cc737904e17ec1a469ef81860f5d1170, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 1670080656629773933, guid: cc737904e17ec1a469ef81860f5d1170, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 3866788278430235539, guid: cc737904e17ec1a469ef81860f5d1170, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -396563211296521391, guid: 33478b2553ba0404ca7b06038d3fd1e0, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -62913263430178210, guid: 33478b2553ba0404ca7b06038d3fd1e0, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 9201901292424408736, guid: 33478b2553ba0404ca7b06038d3fd1e0, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 9004521625066587746, guid: 33478b2553ba0404ca7b06038d3fd1e0, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 6042532878176785367, guid: 33478b2553ba0404ca7b06038d3fd1e0, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 4027270827732705710, guid: 33478b2553ba0404ca7b06038d3fd1e0, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 5514411222843889970, guid: cea5d2d04657602468d1a5fec608aa8c, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -6522981518054927805, guid: a04fce61e5fdb624e9c0c4244f13c85f, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 2823768832237499724, guid: a04fce61e5fdb624e9c0c4244f13c85f, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 8219533219422596751, guid: 51ec4a4585b78bc4aab58a1f71d20425, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -4553014801248013439, guid: 21f7fe076edd6a8469b64788eacc3d55, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 103657019925157446, guid: b3583f1be633d524f94df61dca486689, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -5658234525250113957, guid: b3583f1be633d524f94df61dca486689, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 4841053042687420931, guid: b3583f1be633d524f94df61dca486689, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -2358025157476570079, guid: 02542499797c3ad47b71d65d60afa5da, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -8179102957306436753, guid: 2142eff58aa8a5f4b85479ee52c1ed5e, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -2839660261617151225, guid: 9b271a6137474e84c9c23f585c0c1263, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -6094362019466948848, guid: 5cf000ee86869a8479399205f45d59b0, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -5309762375303936533, guid: 5cf000ee86869a8479399205f45d59b0, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 8807380805141388478, guid: e7bfd9c1fc3f57d4694364976f6e05b6, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -3829857596604288338, guid: e7bfd9c1fc3f57d4694364976f6e05b6, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 108491172452952637, guid: e7bfd9c1fc3f57d4694364976f6e05b6, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -6706369818129008327, guid: e7bfd9c1fc3f57d4694364976f6e05b6, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -822298042749822982, guid: b5ceb95fdb35d4945988c0d854c4ea74, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 7337651965031425554, guid: b5ceb95fdb35d4945988c0d854c4ea74, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -5998169282969927032, guid: b5ceb95fdb35d4945988c0d854c4ea74, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 5474991965887999985, guid: b5ceb95fdb35d4945988c0d854c4ea74, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 6273152602231446990, guid: b5ceb95fdb35d4945988c0d854c4ea74, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 6806055151284839512, guid: ca3954178d3d07e4cb20c6d76a65f0c8, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -6822351343213373688, guid: ca3954178d3d07e4cb20c6d76a65f0c8, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -3346967861901322825, guid: d64b28008b1f2c040977192baec866d7, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: -2259793596236835815, guid: d64b28008b1f2c040977192baec866d7, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 1542875134993101409, guid: d64b28008b1f2c040977192baec866d7, type: 2}
+    categoryId: monster_active
+  - cue: {fileID: 7771376951995601200, guid: d64b28008b1f2c040977192baec866d7, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: -1852974034863541784, guid: d913399cb6217f644ae85a97acf731a8, type: 2}
+    categoryId: monster_basic
+  - cue: {fileID: 11400000, guid: 5d1f670e0e97f8c408d8a3a4f65bc18c, type: 2}
+    categoryId: castle_raid
+  - cue: {fileID: 11400000, guid: f56ceee7e45e6104baff990c3b5f3abb, type: 2}
+    categoryId: castle_raid

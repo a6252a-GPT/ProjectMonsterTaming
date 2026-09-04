@@ -327,36 +327,15 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     card,
                     row.Binding.FindPropertyRelative("sound"),
                     "원본 AudioClip");
-                AddRelativeProperty(
+                AddVolumePercentProperty(
                     card,
                     row.Binding.FindPropertyRelative("soundVolume"),
                     "SFX 볼륨");
                 var bindingPath = row.Binding.propertyPath;
-                AddActionRow(
+                AddSfxActionRow(
                     card,
-                    ("SFX 미리듣기",
-                        () => PreviewBasicAttackSound(bindingPath),
-                        "draft-action-button"),
-                    ("SFX 정지",
-                        SfxEditorAudioPreview.StopAll,
-                        "draft-action-button"));
-                var generated = AddRelativeProperty(
-                    card,
-                    row.Binding.FindPropertyRelative("sfx"),
-                    "생성된 SFX Cue");
-                generated?.SetEnabled(false);
-            }
-        }
-
-        private void PreviewBasicAttackSound(string bindingPath)
-        {
-            serializedDraft.UpdateIfRequiredOrScript();
-            var binding = serializedDraft.FindProperty(bindingPath);
-            var clip = binding?.FindPropertyRelative("sound").objectReferenceValue as AudioClip;
-            var volume = binding?.FindPropertyRelative("soundVolume").floatValue ?? 1f;
-            if (clip != null)
-            {
-                SfxEditorAudioPreview.Play(clip, 0, false, volume);
+                    () => openSfxAdjust?.Invoke(bindingPath, $"{contextLabel} · {row.Slot.DisplayName}"),
+                    () => PreviewSfx(bindingPath));
             }
         }
 

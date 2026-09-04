@@ -12,15 +12,14 @@ using UnityEngine.UI;
 namespace ProjectMT.Features.Quest
 {
     // 각 관리 페이지 안의 정확한 버튼 위치("ClickPoint")에 손가락 아이콘("ClickImage")을 붙여
-    // 1초마다 깜빡여 보여준다. QuestHudNavigationController의 트래커 힌트와 별개로, 지금 추적 중인
+    // 10초 동안 계속 표시하면서 크기가 부드럽게 커졌다 작아지게 한다. QuestHudNavigationController의
+    // 트래커 힌트와 별개로, 지금 추적 중인
     // 퀘스트와 연결된 페이지가 실제로 열려 있을 때만(activeInHierarchy) 표시된다.
     // QuestHudTrackerView.Awake()에서 자동으로 붙여준다.
     [DisallowMultipleComponent]
     public sealed class QuestClickPointHintController : MonoBehaviour
     {
-        private const float BlinkInterval = 1f;
-        private const int MaxBlinkFlashes = 5; // 켜졌다 꺼지는 한 사이클을 5회만 반복한다
-        private const float MaxBlinkDuration = MaxBlinkFlashes * 2f * BlinkInterval;
+        private const float HintDisplayDuration = 10f;
         private const float RefreshInterval = 0.2f; // 탭 전환·스크롤 등 페이지 내부 상태를 주기적으로 재확인
         private const float HighlightPadding = 8f;
         private const float HighlightLineThickness = 4f;
@@ -31,7 +30,8 @@ namespace ProjectMT.Features.Quest
 
         private static readonly string[] ShopQuestIds =
         {
-            "quest_002_monster_summon", "quest_009_monster_owned_count", "quest_021_monster_summon_repeat"
+            "quest_002_monster_summon", "quest_009_monster_owned_count", "quest_021_monster_summon_repeat",
+            "quest_024_monster_owned_count_repeat"
         };
 
         private static readonly string[] CommanderLevelUpQuestIds =
@@ -76,7 +76,9 @@ namespace ProjectMT.Features.Quest
         private Transform potentialTabButton;
         private Transform statsTabButton;
         private Transform castleRaidButton;
+        private readonly List<Transform> commanderPowerGrowthTargets = new List<Transform>();
         private readonly List<Transform> dungeonEnterClickPoints = new List<Transform>();
+        private bool shopHintTargetsButton;
 
         // ClickPoint별로 한 번 만든 힌트 인스턴스를 재사용한다(매번 Instantiate/Destroy하지 않음).
         private readonly Dictionary<Transform, GameObject> hintInstances = new Dictionary<Transform, GameObject>();
@@ -84,19 +86,20 @@ namespace ProjectMT.Features.Quest
         private readonly Dictionary<Transform, Sequence> hintFadeSequences = new Dictionary<Transform, Sequence>();
         private readonly Dictionary<Transform, bool> requestedHintVisibility = new Dictionary<Transform, bool>();
         private readonly HashSet<Transform> activeHintTargets = new HashSet<Transform>();
+        private RectTransform activeSpotlightTarget;
 
-        // ClickPoint별로 "표시가 시작된 시각"을 기록해 각자 독립적으로 5회 점멸 후 꺼지게 한다.
+        // ClickPoint별로 "표시가 시작된 시각"을 기록해 각자 독립적으로 10초 후 꺼지게 한다.
         private readonly Dictionary<Transform, float> hintShownAt = new Dictionary<Transform, float>();
         private readonly HashSet<Transform> disabledHints = new HashSet<Transform>();
 
-        // MonsterGachaButton은 몬스터 뽑기 하위 메뉴 진입 버튼이고, 실제 뽑기는 MonsterShop의
-        // OneButton(1회)/TwoButton(10회)에서 실행된다. 어느 흐름으로 진입해도 힌트를 종료한다.
+        // 상점이 열리면 몬스터 소환 페이지가 이미 선택되어 있으므로, 접힌 하위 메뉴 버튼이 아니라
+        // MonsterShop의 실제 OneButton(1회)을 우선 가리킨다. 실제 뽑기 버튼을 누르면 힌트를 종료한다.
         private Button monsterGachaButton;
         private readonly List<Button> monsterGachaActionButtons = new List<Button>();
         private string lastTrackedQuestId;
         private float tickTimer;
 
-        // 추적 퀘스트의 대상 페이지가 열려 있는 동안 true다(점멸 위상·5회 종료 여부와 무관).
+        // 추적 퀘스트의 대상 페이지가 열려 있는 동안 true다(10초 표시 종료 여부와 무관).
         // QuestHudNavigationController가 이 값을 보고 메인 화면 트래커 힌트를 숨긴다.
         public bool HasVisibleHint { get; private set; }
 
@@ -125,6 +128,7 @@ namespace ProjectMT.Features.Quest
             disabledHints.Clear();
             lastTrackedQuestId = null;
             HasVisibleHint = false;
+            QuestTutorialSpotlight.Hide(this);
         }
 
         private void ForceRefreshNow()
@@ -173,13 +177,17 @@ namespace ProjectMT.Features.Quest
             // 완료 후 보상 대기 상태는 패널 내부가 아니라 HUD의 "완료" 버튼으로 안내한다.
             // 이 프레임에 실제 대상이 된 힌트만 남겨 페이드 애니메이션을 중간에 끊지 않는다.
             activeHintTargets.Clear();
+            activeSpotlightTarget = null;
             // 반복 퀘스트는 전체 10개까지 버튼을 안내한다. 11번째 반복 퀘스트부터는 이동할
             // 패널만 열고, 패널 내부 손가락/노란 테두리 힌트는 만들지 않는다.
             var pageQuestId = completedAwaitingClaim || (isRepeatingQuest && !showRepeatingQuestClickHints)
                 ? null
                 : trackedQuestId;
             var anyPageTargetActive = false;
-            anyPageTargetActive |= ApplyHint(shopClickPoint, Matches(pageQuestId, ShopQuestIds));
+            anyPageTargetActive |= ApplyHint(
+                shopClickPoint,
+                Matches(pageQuestId, ShopQuestIds),
+                shopHintTargetsButton);
 
             var potentialQuest = Matches(pageQuestId, PotentialQuestIds);
             var growthStatsQuest = Matches(pageQuestId, CommanderLevelUpQuestIds) ||
@@ -188,8 +196,14 @@ namespace ProjectMT.Features.Quest
                                    Matches(pageQuestId, "quest_018_commander_defense_level_reach") ||
                                    Matches(pageQuestId, "quest_019_commander_power_reach");
             var isPotentialTabSelected = commanderGrowthView != null && commanderGrowthView.IsPotentialTabSelected;
-            anyPageTargetActive |= ApplyHint(potentialTabButton, potentialQuest && !isPotentialTabSelected, true);
-            anyPageTargetActive |= ApplyHint(statsTabButton, growthStatsQuest && isPotentialTabSelected, true);
+            anyPageTargetActive |= ApplyHint(
+                commanderGrowthView?.QuestPotentialTabButton?.transform ?? potentialTabButton,
+                potentialQuest && !isPotentialTabSelected,
+                true);
+            anyPageTargetActive |= ApplyHint(
+                commanderGrowthView?.QuestStatsTabButton?.transform ?? statsTabButton,
+                growthStatsQuest && isPotentialTabSelected,
+                true);
             anyPageTargetActive |= ApplyHint(potentialClickPoint, potentialQuest && isPotentialTabSelected);
             anyPageTargetActive |= ApplyHint(commanderLevelUpClickPoint,
                 Matches(pageQuestId, CommanderLevelUpQuestIds) && !isPotentialTabSelected);
@@ -199,6 +213,11 @@ namespace ProjectMT.Features.Quest
                 Matches(pageQuestId, "quest_017_commander_attack_level_reach") && !isPotentialTabSelected, true);
             anyPageTargetActive |= ApplyHint(statDefenseClickPoint,
                 Matches(pageQuestId, "quest_018_commander_defense_level_reach") && !isPotentialTabSelected, true);
+            var commanderPowerQuest = Matches(pageQuestId, "quest_019_commander_power_reach");
+            anyPageTargetActive |= ApplyHint(
+                commanderPowerQuest ? ResolveCommanderPowerGrowthTarget() : null,
+                commanderPowerQuest && !isPotentialTabSelected,
+                true);
 
             anyPageTargetActive |= ApplyHint(monsterLevelUpClickPoint, Matches(pageQuestId, MonsterLevelUpQuestIds));
 
@@ -221,7 +240,7 @@ namespace ProjectMT.Features.Quest
                 formationQuest && formationView != null && formationView.IsOpen && formationCardSelected, true);
 
             var equipmentPageOpen = equipmentPageRoot != null && equipmentPageRoot.gameObject.activeInHierarchy;
-            anyPageTargetActive |= ApplyHint(equipmentEquipButton,
+            anyPageTargetActive |= ApplyHint(equipmentView?.QuestAutoEquipButton ?? equipmentEquipButton,
                 Matches(pageQuestId, "quest_007_equipment_equip") && equipmentPageOpen, true);
 
             var slotUpgradeQuest = Matches(pageQuestId, "quest_008_equipment_enhance") ||
@@ -235,11 +254,14 @@ namespace ProjectMT.Features.Quest
             var dismantleQuest = Matches(pageQuestId, "quest_013_equipment_dismantle");
             var dismantleMode = equipmentView != null && equipmentView.IsDismantleMode;
             var dismantleStep = equipmentView != null ? equipmentView.QuestDismantleHintStep : 0;
-            anyPageTargetActive |= ApplyHint(equipmentDismantleTabButton,
+            anyPageTargetActive |= ApplyHint(
+                equipmentView?.QuestDismantleModeTabButton ?? equipmentDismantleTabButton,
                 dismantleQuest && equipmentPageOpen && !dismantleMode, true);
-            anyPageTargetActive |= ApplyHint(equipmentDismantleAutoSelectButton,
+            anyPageTargetActive |= ApplyHint(
+                equipmentView?.QuestDismantleAutoSelectButton ?? equipmentDismantleAutoSelectButton,
                 dismantleQuest && equipmentPageOpen && dismantleMode && dismantleStep <= 1, true);
-            anyPageTargetActive |= ApplyHint(equipmentDismantleButton,
+            anyPageTargetActive |= ApplyHint(
+                equipmentView?.QuestDismantleActionButton ?? equipmentDismantleButton,
                 dismantleQuest && equipmentPageOpen && dismantleMode && dismantleStep >= 2, true);
 
             // 성장 던전은 퀘스트 이동으로 패널만 열고, 패널 안 클릭 힌트/테두리는 표시하지 않는다.
@@ -258,6 +280,14 @@ namespace ProjectMT.Features.Quest
 
             HideHintsOutsideActiveTargets();
             HasVisibleHint = anyPageTargetActive;
+            if (activeSpotlightTarget != null)
+            {
+                QuestTutorialSpotlight.Show(this, activeSpotlightTarget);
+            }
+            else
+            {
+                QuestTutorialSpotlight.Hide(this);
+            }
         }
 
         private static bool Matches(string trackedQuestId, string questId)
@@ -328,12 +358,14 @@ namespace ProjectMT.Features.Quest
             }
 
             var elapsed = Time.unscaledTime - shownAt;
-            if (elapsed >= MaxBlinkDuration)
+            if (elapsed >= HintDisplayDuration)
             {
                 disabledHints.Add(clickPoint);
                 HideHint(clickPoint);
                 return true;
             }
+
+            activeSpotlightTarget = ResolveHighlightTarget(clickPoint);
 
             var instance = GetOrCreateHint(clickPoint, placeOnBottomRight);
             PositionHint(instance != null ? instance.transform as RectTransform : null,
@@ -348,8 +380,7 @@ namespace ProjectMT.Features.Quest
             }
             PositionHighlight(highlight != null ? highlight.transform as RectTransform : null, clickPoint);
             instance?.transform.SetAsLastSibling();
-            var blinkOn = Mathf.FloorToInt(elapsed / BlinkInterval) % 2 == 0;
-            ApplyFadedVisibility(clickPoint, instance, highlight, blinkOn);
+            ApplyFadedVisibility(clickPoint, instance, highlight, true);
             return true;
         }
 
@@ -396,6 +427,8 @@ namespace ProjectMT.Features.Quest
 
             // 페이지 Canvas의 마지막 자식으로 두고, 힌트는 어떤 클릭도 가로채지 않게 만든다.
             instance.transform.SetAsLastSibling();
+            QuestTutorialSpotlight.EnsureHintAboveOverlay(instance);
+            QuestTutorialFingerPulse.Ensure(instance)?.Rebase();
             var images = instance.GetComponentsInChildren<Image>(true);
             for (var i = 0; i < images.Length; i++)
             {
@@ -598,6 +631,8 @@ namespace ProjectMT.Features.Quest
             hintFadeSequences.Clear();
             requestedHintVisibility.Clear();
             activeHintTargets.Clear();
+            activeSpotlightTarget = null;
+            QuestTutorialSpotlight.Hide(this);
         }
 
         private void HideHint(Transform clickPoint)
@@ -789,23 +824,29 @@ namespace ProjectMT.Features.Quest
 
             // 장비 페이지는 같은 컨트롤러 타입이 다른 화면에도 있어, 퀘스트 힌트 대상은 반드시
             // CommanderEquipmentPage 아래의 정확한 버튼 이름으로 직접 찾는다.
-            equipmentEquipButton = FindButton(equipmentPageRoot, "EquipButton");
+            equipmentEquipButton = equipmentView?.QuestAutoEquipButton ?? FindButton(equipmentPageRoot, "EquipButton");
             equipmentDismantleTabButton = FindButton(equipmentPageRoot, "DismantleModeTabButton");
             equipmentDismantleAutoSelectButton = FindButton(equipmentPageRoot, "DismantleAutoSelectButton");
             equipmentDismantleButton = FindButton(equipmentPageRoot, "DismantleButton");
 
-            shopClickPoint = FindDeep(managementUi.ShopPageRoot?.transform, "ClickPoint");
-            monsterGachaButton = FindButton(managementUi.ShopPageRoot?.transform, "MonsterGachaButton");
-            if (monsterGachaButton != null)
-            {
-                monsterGachaButton.onClick.RemoveListener(HandleMonsterGachaClicked);
-                monsterGachaButton.onClick.AddListener(HandleMonsterGachaClicked);
-            }
-
+            var shopRoot = managementUi.ShopPageRoot?.transform;
+            var legacyShopClickPoint = FindDeep(shopRoot, "ClickPoint");
+            monsterGachaButton = FindButton(shopRoot, "MonsterGachaButton");
             monsterGachaActionButtons.Clear();
             var monsterShopRoot = FindDeep(managementUi.ShopPageRoot?.transform, "MonsterShop");
             AddMonsterGachaActionButtons(monsterShopRoot, "OneButton");
             AddMonsterGachaActionButtons(monsterShopRoot, "TwoButton");
+            var preferredGachaAction = monsterGachaActionButtons.Count > 0
+                ? monsterGachaActionButtons[0]
+                : null;
+            // 상점 레이아웃이 바뀌어도 손가락이 옛 패널 좌표나 이미 선택된 탭에 남지 않도록
+            // 실제 소환 동작 버튼을 기준으로 한다. 구형 UI만 기존 진입 버튼/ClickPoint로 폴백한다.
+            shopClickPoint = preferredGachaAction != null
+                ? preferredGachaAction.transform
+                : monsterGachaButton != null
+                    ? monsterGachaButton.transform
+                    : legacyShopClickPoint;
+            shopHintTargetsButton = preferredGachaAction != null || monsterGachaButton != null;
 
             var growthRoot = managementUi.CommanderGrowthPageRoot?.transform;
             commanderLevelUpClickPoint = FindClickPointUnder(growthRoot, "LevelUpButton");
@@ -814,6 +855,13 @@ namespace ProjectMT.Features.Quest
             statHealthClickPoint = FindDeep(FindDeep(growthRoot, "GrowthRow_Health"), "ButtonArea");
             statAttackClickPoint = FindDeep(FindDeep(growthRoot, "GrowthRow_Attack"), "ButtonArea");
             statDefenseClickPoint = FindDeep(FindDeep(growthRoot, "GrowthRow_Defense"), "ButtonArea");
+            commanderPowerGrowthTargets.Clear();
+            AddCommanderPowerGrowthTarget(growthRoot, "GrowthRow_Health");
+            AddCommanderPowerGrowthTarget(growthRoot, "GrowthRow_Attack");
+            AddCommanderPowerGrowthTarget(growthRoot, "GrowthRow_Defense");
+            AddCommanderPowerGrowthTarget(growthRoot, "GrowthRow_AttackSpeed");
+            AddCommanderPowerGrowthTarget(growthRoot, "GrowthRow_MoveSpeed");
+            AddCommanderPowerGrowthTarget(growthRoot, "GrowthRow_AttackRange");
             potentialClickPoint = FindClickPointUnder(growthRoot, "ButtonArea_2");
             potentialTabButton = commanderGrowthView != null
                 ? commanderGrowthView.QuestPotentialTabButton?.transform
@@ -842,6 +890,41 @@ namespace ProjectMT.Features.Quest
             castleRaidButton = hudMenu != null ? FindDeep(hudMenu.transform, "CastleRaidButton") : null;
 
             referencesResolved = true;
+        }
+
+        private void AddCommanderPowerGrowthTarget(Transform growthRoot, string rowName)
+        {
+            var target = FindDeep(FindDeep(growthRoot, rowName), "ButtonArea");
+            if (target != null)
+            {
+                commanderPowerGrowthTargets.Add(target);
+            }
+        }
+
+        private Transform ResolveCommanderPowerGrowthTarget()
+        {
+            // 전투력 퀘스트는 특정 능력치 하나가 아니라 전체 성장으로 달성한다. 현재 실제로 누를 수 있는
+            // 강화 버튼을 우선 안내하고, 모두 비활성이면 첫 번째 보이는 버튼을 안내해 화면 목적지는 유지한다.
+            for (var i = 0; i < commanderPowerGrowthTargets.Count; i++)
+            {
+                var target = commanderPowerGrowthTargets[i];
+                var button = target != null ? target.GetComponentInChildren<Button>(true) : null;
+                if (target != null && target.gameObject.activeInHierarchy && button != null && button.interactable)
+                {
+                    return target;
+                }
+            }
+
+            for (var i = 0; i < commanderPowerGrowthTargets.Count; i++)
+            {
+                var target = commanderPowerGrowthTargets[i];
+                if (target != null && target.gameObject.activeInHierarchy)
+                {
+                    return target;
+                }
+            }
+
+            return null;
         }
 
         private void HandleMonsterGachaClicked()

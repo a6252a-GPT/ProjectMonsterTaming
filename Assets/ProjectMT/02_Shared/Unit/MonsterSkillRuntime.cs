@@ -839,6 +839,9 @@ namespace ProjectMT.Shared.Unit
             {
                 BeginAssembledEffectFocusMotion();
             }
+            world.PlayMonsterSfx(
+                owner.RuntimeAssetSet?.FeedbackProfile?.ActiveSkillVoice,
+                owner.transform.position);
         }
 
         private bool CommitQueuedActiveFocus()

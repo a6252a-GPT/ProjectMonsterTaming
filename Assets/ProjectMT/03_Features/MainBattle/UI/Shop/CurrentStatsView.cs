@@ -1,3 +1,4 @@
+using ProjectMT.Shared.Commander;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -53,12 +54,12 @@ namespace ProjectMT.Features.MainBattle
         private void Refresh(LegionStatBonus bonus)
         {
             // 라벨까지 포함한 형식으로 표기 (예: "체력 : 0.10")
-            SetStatText(healthText, "체력", bonus.HealthRate);
-            SetStatText(attackText, "공격력", bonus.AttackRate);
-            SetStatText(defenseText, "방어력", bonus.DefenseRate);
-            SetStatText(attackRangeText, "사거리", bonus.AttackRangeRate);
-            SetStatText(attackSpeedText, "공격속도", bonus.AttackSpeedRate);
-            SetStatText(moveSpeedText, "이동속도", bonus.MoveSpeedRate);
+            SetStatText(healthText, "체력", bonus.HealthRate, CommanderLegionStat.MaxHealth);
+            SetStatText(attackText, "공격력", bonus.AttackRate, CommanderLegionStat.AttackPower);
+            SetStatText(defenseText, "방어력", bonus.DefenseRate, CommanderLegionStat.Defense);
+            SetStatText(attackRangeText, "사거리", bonus.AttackRangeRate, CommanderLegionStat.AttackRange);
+            SetStatText(attackSpeedText, "공격속도", bonus.AttackSpeedRate, CommanderLegionStat.AttackSpeed);
+            SetStatText(moveSpeedText, "이동속도", bonus.MoveSpeedRate, CommanderLegionStat.MoveSpeed);
 
             // 별도 전투력 텍스트가 연결된 구 UI만 임시 슬롯을 비운다.
             if (combatPowerText != null)
@@ -78,11 +79,28 @@ namespace ProjectMT.Features.MainBattle
             levelText.text = $"LV. {level} ({progressPercent:0}%)";
         }
 
-        private void SetStatText(TMP_Text text, string label, float value)
+        private void SetStatText(TMP_Text text, string label, float value, CommanderLegionStat stat)
         {
-            if (text != null)
+            if (text == null)
             {
-                text.text = valueOnly ? $"{value:0.00}" : $"{label} : {value:0.00}"; // 카드형은 값만 표시
+                return;
+            }
+
+            text.text = valueOnly ? $"{value:0.00}" : $"{label} : {value:0.00}"; // 카드형은 값만 표시
+            var deltaText = text.transform.parent?.Find("LevelUpDelta_Runtime")?.GetComponent<TMP_Text>();
+            if (deltaText == null)
+            {
+                return;
+            }
+
+            if (growthCalculator != null && growthCalculator.TryGetNextRateDelta(stat, out var delta))
+            {
+                deltaText.text = $"{delta:+0.##;-0.##;0}";
+                deltaText.color = new Color32(166, 196, 110, 255);
+            }
+            else
+            {
+                deltaText.text = string.Empty;
             }
         }
     }

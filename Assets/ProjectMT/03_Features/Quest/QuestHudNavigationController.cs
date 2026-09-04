@@ -8,24 +8,21 @@ using UnityEngine.UI;
 
 namespace ProjectMT.Features.Quest
 {
-    // 퀘스트 트래커의 "QuestMove" 버튼 + "ClickImage" 점멸 연출 전담.
+    // 퀘스트 트래커의 통합 행동 버튼 + "ClickImage" 크기 펄스 연출 전담.
     // 지금 추적 중인 메인 퀘스트(QuestHudTrackerView와 동일한 소스)를 진행할 수 있는 관리 화면으로
     // 바로 이동시켜 튜토리얼처럼 안내한다. QuestHudTrackerView.Awake()에서 자동으로 붙여준다.
     [DisallowMultipleComponent]
     public sealed class QuestHudNavigationController : MonoBehaviour
     {
-        private const float BlinkInterval = 1f;
-        private const int MaxBlinkFlashes = 5; // 켜졌다 꺼지는 한 사이클을 5회만 반복한다
-        private const float MaxBlinkDuration = MaxBlinkFlashes * 2f * BlinkInterval;
+        private const float HintDisplayDuration = 10f;
         private const float VisibilityPollInterval = 0.2f;
         private const QuestType TrackedType = QuestType.Main;
-
-        // 퀘스트 완료(보상 대기) 상태에서는 RewardButton 쪽을 가리키도록 ClickImage를 이 X값으로 옮긴다.
-        // 진행 중일 때는 처음 배치된 X값(에디터에서 잡아둔 위치)으로 되돌아간다.
-        private const float CompletedClickImageX = 230f;
+        // 손가락 이미지의 끝이 버튼 모서리에 닿도록 하는 시각 보정값이다. 절대 화면 좌표가 아니라
+        // 실제 버튼의 우하단을 기준으로 적용되므로 HUD 배치와 크기가 바뀌어도 버튼을 따라간다.
+        private static readonly Vector2 UnifiedActionHintOffset = new Vector2(17f, -34f);
 
         // questId -> 이동 동작. 대상 화면이 없는 퀘스트(원정대 클리어, 몬스터 처치 등 전투 중 자연 달성형)는
-        // 매핑에서 제외해 버튼 클릭이 아무 동작도 하지 않고 점멸도 뜨지 않게 한다.
+        // 매핑에서 제외해 버튼 클릭이 아무 동작도 하지 않고 손가락 힌트도 뜨지 않게 한다.
         private static readonly Dictionary<string, Action<QuestHudNavigationController>> DestinationByQuestId =
             new Dictionary<string, Action<QuestHudNavigationController>>(StringComparer.OrdinalIgnoreCase)
             {
@@ -63,12 +60,11 @@ namespace ProjectMT.Features.Quest
         private MainBattleManagementUiController managementUi;
         private HudQuickMenuController hudMenu;
         private QuestClickPointHintController pageHintController;
+        private QuestHudTrackerView trackerView;
 
         private string trackedQuestId;
         private bool hasDestination;
         private bool completedAwaitingClaim;
-        private float defaultClickImageX;
-        private bool defaultClickImageXCaptured;
         private float clickHintShownAt;
         private bool clickHintSessionActive;
         private bool clickHintDisabled;
@@ -100,16 +96,19 @@ namespace ProjectMT.Features.Quest
                 managementUi.AnyPageOpenChanged -= HandleAnyPageOpenChanged;
             }
             clickImage?.SetActive(false);
+            QuestTutorialSpotlight.Hide(this);
             if (questMoveButton != null)
             {
                 questMoveButton.onClick.RemoveListener(HandleMoveClicked);
             }
 
+            trackerView?.SetNavigationAvailable(false);
+
             ResetClickHintSession();
         }
 
         // 페이지 내부 클릭 힌트(QuestClickPointHintController)가 떠 있는지는 실시간으로 바뀌므로
-        // QuestRuntime 이벤트와 별개로 주기적으로 다시 반영해야 한다(점멸 위상도 여기서 갱신).
+        // QuestRuntime 이벤트와 별개로 페이지 힌트와 버튼 위치를 주기적으로 다시 반영한다.
         private void Update()
         {
             tickTimer += Time.unscaledDeltaTime;
@@ -119,6 +118,10 @@ namespace ProjectMT.Features.Quest
             }
 
             tickTimer = 0f;
+            if (hasDestination)
+            {
+                PositionClickImage(completedAwaitingClaim);
+            }
             ApplyClickImageVisibility();
             ApplyQuestTextVisibility();
         }
@@ -136,20 +139,14 @@ namespace ProjectMT.Features.Quest
                 clickImage = FindDeep(root, "ClickImage")?.gameObject;
             }
 
+            QuestTutorialFingerPulse.Ensure(clickImage);
+
             if (questText == null)
             {
                 questText = FindDeep(root, "QuestText")?.gameObject;
             }
 
-            if (clickImage != null && !defaultClickImageXCaptured)
-            {
-                var rect = clickImage.GetComponent<RectTransform>();
-                if (rect != null)
-                {
-                    defaultClickImageX = rect.anchoredPosition.x;
-                    defaultClickImageXCaptured = true;
-                }
-            }
+            trackerView ??= GetComponent<QuestHudTrackerView>();
 
             // MainBattleHUD 전체가 SetActive로 껐다 켜지는 경우가 있어(QuestHudTrackerView와 동일한 사유),
             // 리스너는 매번(OnEnable마다) Remove 후 Add로 다시 보장한다.
@@ -175,7 +172,7 @@ namespace ProjectMT.Features.Quest
                 QuestRuntime.TryGetTrackedQuest(TrackedType, out var definition, out var progressView))
             {
                 // 완료했지만 보상을 아직 안 받은 상태면 다음 할 일은 "이동"이 아니라 "보상 수령"이라
-                // 이동 매핑 여부와 상관없이 ClickImage를 RewardButton 쪽(X=230)으로 옮겨 계속 보여준다.
+                // 이동 매핑 여부와 상관없이 ClickImage를 실제 RewardButton 쪽으로 옮겨 계속 보여준다.
                 var completedAwaitingClaim = progressView.Completed && !progressView.RewardClaimed;
                 var nextTrackedQuestId = completedAwaitingClaim || DestinationByQuestId.ContainsKey(definition.QuestId.Value)
                     ? definition.QuestId.Value
@@ -203,12 +200,14 @@ namespace ProjectMT.Features.Quest
                 completedAwaitingClaim = false;
             }
 
+            trackerView?.SetNavigationAvailable(hasDestination && !completedAwaitingClaim);
+
             ApplyClickImageVisibility();
             ApplyQuestTextVisibility();
         }
 
         // 페이지 안 정확한 버튼 힌트(QuestClickPointHintController)가 표시되는 동안은 화면에 손가락 아이콘
-        // 두 개가 동시에 깜빡이면 헷갈리므로, 메인 화면 쪽(이 트래커) 힌트는 꺼둔다.
+        // 두 개가 동시에 보이면 헷갈리므로, 메인 화면 쪽(이 트래커) 힌트는 꺼둔다.
         private void ApplyClickImageVisibility()
         {
             if (clickImage == null)
@@ -219,6 +218,7 @@ namespace ProjectMT.Features.Quest
             if (!hasDestination)
             {
                 clickImage.SetActive(false);
+                QuestTutorialSpotlight.Hide(this);
                 return;
             }
 
@@ -229,18 +229,21 @@ namespace ProjectMT.Features.Quest
             if (managementUi != null && managementUi.IsAnyPageOpen && !completedAwaitingClaim)
             {
                 clickImage.SetActive(false);
+                QuestTutorialSpotlight.Hide(this);
                 return;
             }
 
-            if (pageHintController != null && pageHintController.HasVisibleHint)
+            if (HasAnyPageHintVisible())
             {
                 clickImage.SetActive(false);
+                QuestTutorialSpotlight.Hide(this);
                 return;
             }
 
             if (clickHintDisabled)
             {
                 clickImage.SetActive(false);
+                QuestTutorialSpotlight.Hide(this);
                 return;
             }
 
@@ -251,15 +254,17 @@ namespace ProjectMT.Features.Quest
             }
 
             var elapsed = Time.unscaledTime - clickHintShownAt;
-            if (elapsed >= MaxBlinkDuration)
+            if (elapsed >= HintDisplayDuration)
             {
                 clickHintDisabled = true;
                 clickImage.SetActive(false);
+                QuestTutorialSpotlight.Hide(this);
                 return;
             }
 
-            var blinkOn = Mathf.FloorToInt(elapsed / BlinkInterval) % 2 == 0;
-            clickImage.SetActive(blinkOn);
+            QuestTutorialSpotlight.Show(this, ResolveClickHintTarget());
+            QuestTutorialSpotlight.EnsureHintAboveOverlay(clickImage);
+            clickImage.SetActive(true);
         }
 
         private void ResetClickHintSession()
@@ -269,10 +274,35 @@ namespace ProjectMT.Features.Quest
             clickHintDisabled = false;
         }
 
+        private bool HasAnyPageHintVisible()
+        {
+            if (pageHintController != null && pageHintController.HasVisibleHint)
+            {
+                return true;
+            }
+
+            // 씬 재초기화·가산 로드처럼 동일 타입이 잠시 둘 이상 존재해도, 실제로 표시 중인
+            // 페이지 힌트가 하나라도 있으면 HUD 손가락을 숨겨 중복 안내를 막는다.
+            var controllers = FindObjectsByType<QuestClickPointHintController>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (var index = 0; index < controllers.Length; index++)
+            {
+                var controller = controllers[index];
+                if (controller != null && controller.HasVisibleHint)
+                {
+                    pageHintController = controller;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void HandleAnyPageOpenChanged(bool pageOpen)
         {
-            // 패널을 닫은 시점에 완료 보상 대기라면, 이전 패널 안에서 끝난 점멸 세션과 무관하게
-            // HUD의 "완료" 버튼(X=230) 안내를 새로 시작한다.
+            // 패널을 닫은 시점에 완료 보상 대기라면, 이전 패널 안에서 끝난 표시 세션과 무관하게
+            // HUD의 현재 "완료" 버튼 안내를 새로 시작한다.
             if (!pageOpen && completedAwaitingClaim)
             {
                 ResetClickHintSession();
@@ -295,26 +325,54 @@ namespace ProjectMT.Features.Quest
 
         private void PositionClickImage(bool completedAwaitingClaim)
         {
-            if (clickImage == null || !defaultClickImageXCaptured)
+            if (clickImage == null)
             {
+                QuestTutorialSpotlight.Hide(this);
                 return;
             }
 
             var rect = clickImage.GetComponent<RectTransform>();
-            if (rect == null)
+            var target = ResolveClickHintTarget();
+            if (rect == null || target == null || rect.parent is not RectTransform parent)
             {
                 return;
             }
 
-            var position = rect.anchoredPosition;
-            position.x = completedAwaitingClaim ? CompletedClickImageX : defaultClickImageX;
-            rect.anchoredPosition = position;
+            var canvas = parent.GetComponentInParent<Canvas>();
+            var camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                ? canvas.worldCamera
+                : null;
+            var corners = new Vector3[4];
+            target.GetWorldCorners(corners);
+            var screenPoint = RectTransformUtility.WorldToScreenPoint(camera, corners[3]);
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, screenPoint, camera, out var localPoint))
+            {
+                return;
+            }
+
+            var currentLocalPosition = rect.localPosition;
+            rect.localPosition = new Vector3(
+                localPoint.x + UnifiedActionHintOffset.x,
+                localPoint.y + UnifiedActionHintOffset.y,
+                currentLocalPosition.z);
+        }
+
+        private RectTransform ResolveClickHintTarget()
+        {
+            return trackerView?.QuestActionButton?.transform as RectTransform
+                   ?? questMoveButton?.transform as RectTransform;
         }
 
         private void HandleMoveClicked()
         {
             if (!hasDestination || string.IsNullOrEmpty(trackedQuestId))
             {
+                return;
+            }
+
+            if (completedAwaitingClaim)
+            {
+                trackerView?.RequestTrackedAction();
                 return;
             }
 
@@ -325,6 +383,11 @@ namespace ProjectMT.Features.Quest
                 // 외부 힌트와 페이지 내부 힌트가 잠깐 겹쳐 보일 수 있다.
                 ApplyClickImageVisibility();
             }
+        }
+
+        public void RequestTrackedNavigation()
+        {
+            HandleMoveClicked();
         }
 
         // ---------------------------------------------------------------

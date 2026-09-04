@@ -258,7 +258,7 @@ namespace ProjectMT.EditorTools.Audio
             var summary = new Label($"실제 재생 범위  {FormatVolume(range)}");
             summary.AddToClassList("sfx-volume-summary");
 
-            var minSlider = new Slider("최소 음량", 0f, 1f) { value = range.x, showInputField = true };
+            var minSlider = new Slider("최소 음량", 0f, 2f) { value = range.x, showInputField = true };
             minSlider.name = "sfx-volume-min";
             minSlider.AddToClassList("sfx-field");
             minSlider.RegisterValueChangedCallback(evt =>
@@ -268,7 +268,7 @@ namespace ProjectMT.EditorTools.Audio
             });
             section.Add(minSlider);
 
-            var maxSlider = new Slider("최대 음량", 0f, 1f) { value = range.y, showInputField = true };
+            var maxSlider = new Slider("최대 음량", 0f, 2f) { value = range.y, showInputField = true };
             maxSlider.name = "sfx-volume-max";
             maxSlider.AddToClassList("sfx-field");
             maxSlider.RegisterValueChangedCallback(evt =>
@@ -277,6 +277,12 @@ namespace ProjectMT.EditorTools.Audio
                 summary.text = $"실제 재생 범위  {FormatVolume(selectedCue.VolumeRange)}";
             });
             section.Add(maxSlider);
+
+            var boostHelp = new HelpBox(
+                "1.0은 100%입니다. 1.0 초과는 최대 2.0(200%)까지 증폭하며 원본에 따라 클리핑이 생길 수 있습니다.",
+                HelpBoxMessageType.Info);
+            boostHelp.AddToClassList("sfx-help");
+            section.Add(boostHelp);
 
             section.Add(summary);
             return section;

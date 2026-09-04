@@ -11,10 +11,55 @@ using UnityEngine.Serialization;
 namespace ProjectMT.EditorTools.MonsterMaker
 {
     [Serializable]
+    public sealed class MonsterMakerVoiceSfxDraft // 공격 효과음과 분리한 몬스터 자체 음성
+    {
+        [SerializeField] private AudioClip sound;
+        [SerializeField, Range(0f, 2f)] private float volume = 1f;
+        [SerializeField, Min(0f)] private float soundStartOffsetSeconds;
+        [SerializeField, Min(0f)] private float soundEndCutSeconds;
+        [SerializeField] private bool overrideSoundPitch;
+        [SerializeField, Range(0.5f, 2f)] private float soundPitch = 1f;
+
+        public AudioClip Sound => sound;
+        public float Volume => Mathf.Clamp(volume, 0f, 2f);
+        public float SoundStartOffsetSeconds => Mathf.Max(0f, soundStartOffsetSeconds);
+        public float SoundEndCutSeconds => Mathf.Max(0f, soundEndCutSeconds);
+        public bool OverrideSoundPitch => overrideSoundPitch;
+        public float SoundPitch => Mathf.Clamp(soundPitch, 0.5f, 2f);
+        public bool HasSound => sound != null;
+
+        public bool TryResolvePlaybackRange(out float startSeconds, out float durationSeconds)
+        {
+            startSeconds = 0f;
+            durationSeconds = 0f;
+            if (sound == null)
+            {
+                return true;
+            }
+            if (sound.length <= 0f ||
+                float.IsNaN(soundStartOffsetSeconds) || float.IsInfinity(soundStartOffsetSeconds) ||
+                float.IsNaN(soundEndCutSeconds) || float.IsInfinity(soundEndCutSeconds) ||
+                overrideSoundPitch && (float.IsNaN(soundPitch) || float.IsInfinity(soundPitch) ||
+                                       soundPitch < 0.5f || soundPitch > 2f))
+            {
+                return false;
+            }
+
+            startSeconds = Mathf.Max(0f, soundStartOffsetSeconds);
+            durationSeconds = sound.length - startSeconds - Mathf.Max(0f, soundEndCutSeconds);
+            return durationSeconds > 0.001f;
+        }
+    }
+
+    [Serializable]
     public sealed class MonsterMakerFeedbackDraft // 한 애니메이션 시점에 붙이는 선택 사운드·VFX 입력
     {
         [SerializeField] private AudioClip sound;
-        [SerializeField, Range(0f, 1f)] private float soundVolume = 1f;
+        [SerializeField, Range(0f, 2f)] private float soundVolume = 1f;
+        [SerializeField, Min(0f)] private float soundStartOffsetSeconds;
+        [SerializeField, Min(0f)] private float soundEndCutSeconds;
+        [SerializeField] private bool overrideSoundPitch;
+        [SerializeField, Range(0.5f, 2f)] private float soundPitch = 1f;
         [SerializeField, HideInInspector] private SfxCue sfx; // 기존 Draft 수동 Cue 호환
         [SerializeField] private GameObject vfxPrefab;
         [SerializeField, Min(0.01f)] private float vfxLifetime = 1f;
@@ -23,7 +68,11 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField, Min(0.01f)] private float scale = 1f;
 
         public AudioClip Sound => sound;
-        public float SoundVolume => Mathf.Clamp01(soundVolume);
+        public float SoundVolume => Mathf.Clamp(soundVolume, 0f, 2f);
+        public float SoundStartOffsetSeconds => Mathf.Max(0f, soundStartOffsetSeconds);
+        public float SoundEndCutSeconds => Mathf.Max(0f, soundEndCutSeconds);
+        public bool OverrideSoundPitch => overrideSoundPitch;
+        public float SoundPitch => Mathf.Clamp(soundPitch, 0.5f, 2f);
         public SfxCue Sfx => sfx;
         public GameObject VfxPrefab => vfxPrefab;
         public float VfxLifetime => Mathf.Max(0.01f, vfxLifetime);
@@ -32,6 +81,28 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public float Scale => Mathf.Max(0.01f, scale);
         public bool HasSound => sound != null || sfx != null;
         public bool HasAny => HasSound || vfxPrefab != null;
+
+        public bool TryResolveSoundPlaybackRange(out float startSeconds, out float durationSeconds)
+        {
+            startSeconds = 0f;
+            durationSeconds = 0f;
+            if (sound == null)
+            {
+                return true;
+            }
+            if (sound.length <= 0f ||
+                float.IsNaN(soundStartOffsetSeconds) || float.IsInfinity(soundStartOffsetSeconds) ||
+                float.IsNaN(soundEndCutSeconds) || float.IsInfinity(soundEndCutSeconds) ||
+                overrideSoundPitch && (float.IsNaN(soundPitch) || float.IsInfinity(soundPitch) ||
+                                       soundPitch < 0.5f || soundPitch > 2f))
+            {
+                return false;
+            }
+
+            startSeconds = Mathf.Max(0f, soundStartOffsetSeconds);
+            durationSeconds = sound.length - startSeconds - Mathf.Max(0f, soundEndCutSeconds);
+            return durationSeconds > 0.001f;
+        }
     }
 
     [Serializable]
@@ -775,6 +846,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
         [SerializeField] private MonsterMakerFeedbackDraft hitFeedback = new MonsterMakerFeedbackDraft();
         [SerializeField] private MonsterMakerFeedbackDraft deathFeedback = new MonsterMakerFeedbackDraft();
         [SerializeField] private MonsterMakerFeedbackDraft specialFeedback = new MonsterMakerFeedbackDraft();
+        [SerializeField] private MonsterMakerVoiceSfxDraft basicAttackVoiceSfx =
+            new MonsterMakerVoiceSfxDraft();
+        [SerializeField] private MonsterMakerVoiceSfxDraft activeSkillVoiceSfx =
+            new MonsterMakerVoiceSfxDraft();
 
         public string MonsterId => monsterId ?? string.Empty;
         public string DisplayName => displayName ?? string.Empty;
@@ -924,6 +999,10 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public MonsterMakerFeedbackDraft HitFeedback => hitFeedback;
         public MonsterMakerFeedbackDraft DeathFeedback => deathFeedback;
         public MonsterMakerFeedbackDraft SpecialFeedback => specialFeedback;
+        public MonsterMakerVoiceSfxDraft BasicAttackVoiceSfx =>
+            basicAttackVoiceSfx ??= new MonsterMakerVoiceSfxDraft();
+        public MonsterMakerVoiceSfxDraft ActiveSkillVoiceSfx =>
+            activeSkillVoiceSfx ??= new MonsterMakerVoiceSfxDraft();
 
         private void OnEnable()
         {

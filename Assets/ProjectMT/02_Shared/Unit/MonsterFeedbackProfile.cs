@@ -69,6 +69,8 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private MonsterFeedbackCue hitReceived;
         [SerializeField] private MonsterFeedbackCue death;
         [SerializeField] private MonsterFeedbackCue special;
+        [SerializeField] private SfxCue basicAttackVoice;
+        [SerializeField] private SfxCue activeSkillVoice;
         [SerializeField] private List<MonsterBasicAttackVfxBinding> basicAttackVfxBindings =
             new List<MonsterBasicAttackVfxBinding>();
 
@@ -78,6 +80,8 @@ namespace ProjectMT.Shared.Unit
         public MonsterFeedbackCue HitReceived => hitReceived;
         public MonsterFeedbackCue Death => death;
         public MonsterFeedbackCue Special => special;
+        public SfxCue BasicAttackVoice => basicAttackVoice;
+        public SfxCue ActiveSkillVoice => activeSkillVoice;
         public IReadOnlyList<MonsterBasicAttackVfxBinding> BasicAttackVfxBindings =>
             basicAttackVfxBindings ??
             (IReadOnlyList<MonsterBasicAttackVfxBinding>)Array.Empty<MonsterBasicAttackVfxBinding>();
@@ -91,6 +95,18 @@ namespace ProjectMT.Shared.Unit
                 if (cues[index] != null && !cues[index].TryValidate(out var cueError))
                 {
                     error = $"Monster Feedback is invalid. Role={roles[index]}, Detail={cueError}";
+                    return false;
+                }
+            }
+
+            var voiceCues = new[] { basicAttackVoice, activeSkillVoice };
+            var voiceRoles = new[] { "BasicAttackVoice", "ActiveSkillVoice" };
+            for (var index = 0; index < voiceCues.Length; index++)
+            {
+                if (voiceCues[index] != null && !voiceCues[index].HasPlayableClip)
+                {
+                    error = $"Monster Voice SFX has no playable AudioClip. Role={voiceRoles[index]}, " +
+                            $"Cue={voiceCues[index].name}";
                     return false;
                 }
             }
@@ -128,7 +144,9 @@ namespace ProjectMT.Shared.Unit
             MonsterFeedbackCue attackMarkerCue,
             MonsterFeedbackCue hitReceivedCue,
             MonsterFeedbackCue deathCue,
-            MonsterFeedbackCue specialCue)
+            MonsterFeedbackCue specialCue,
+            SfxCue basicAttackVoiceCue = null,
+            SfxCue activeSkillVoiceCue = null)
         {
             spawn = spawnCue;
             attackStart = attackStartCue;
@@ -136,6 +154,8 @@ namespace ProjectMT.Shared.Unit
             hitReceived = hitReceivedCue;
             death = deathCue;
             special = specialCue;
+            basicAttackVoice = basicAttackVoiceCue;
+            activeSkillVoice = activeSkillVoiceCue;
         }
 
         public void EditorSetBasicAttackVfxBindings(IEnumerable<MonsterBasicAttackVfxBinding> bindings)

@@ -1481,6 +1481,8 @@ internal static class SfxEditorAudioPreview
     private static readonly MethodInfo CompressionFormatMethod = FindMethod("GetSoundCompressionFormat");
     private static bool ownsListenerVolume;
     private static float previousListenerVolume = 1f;
+    private static double scheduledStopAt = -1d;
+    private static readonly List<OwnedPreviewClip> OwnedPreviewClips = new List<OwnedPreviewClip>();
 
     public static bool Play(AudioClip clip, int startSample, bool loop, float volume)
     {
@@ -1504,8 +1506,226 @@ internal static class SfxEditorAudioPreview
         }
     }
 
+    public static bool PlaySegment(
+        AudioClip clip,
+        float startOffsetSeconds,
+        float endCutSeconds,
+        float volume,
+        float pitch = 1f)
+    {
+        if (clip == null || clip.length <= 0f ||
+            float.IsNaN(startOffsetSeconds) || float.IsInfinity(startOffsetSeconds) ||
+            float.IsNaN(endCutSeconds) || float.IsInfinity(endCutSeconds))
+            return false;
+
+        var start = Mathf.Max(0f, startOffsetSeconds);
+        var cut = Mathf.Max(0f, endCutSeconds);
+        var duration = clip.length - start - cut;
+        if (duration <= 0.001f)
+            return false;
+
+        var startSample = Mathf.Clamp(
+            Mathf.RoundToInt(start * clip.frequency),
+            0,
+            Mathf.Max(0, clip.samples - 1));
+        var endSample = Mathf.Clamp(
+            Mathf.RoundToInt((clip.length - cut) * clip.frequency),
+            startSample + 1,
+            clip.samples);
+
+        var safeVolume = float.IsNaN(volume) || float.IsInfinity(volume)
+            ? 1f
+            : Mathf.Clamp(volume, 0f, 2f);
+        var safePitch = float.IsNaN(pitch) || float.IsInfinity(pitch)
+            ? 1f
+            : Mathf.Clamp(pitch, 0.5f, 2f);
+        if (startSample == 0 && endSample == clip.samples &&
+            Mathf.Approximately(safeVolume, 1f) && Mathf.Approximately(safePitch, 1f))
+        {
+            return PlayRawOverlapping(clip, 0, false);
+        }
+
+        return PlayProcessed(clip, startSample, endSample, volume, pitch);
+    }
+
+    public static bool PlayOverlapping(
+        AudioClip clip,
+        int startSample,
+        bool loop,
+        float volume,
+        float pitch = 1f)
+    {
+        if (clip == null || PlayMethod == null)
+            return false;
+
+        var safeVolume = float.IsNaN(volume) || float.IsInfinity(volume)
+            ? 1f
+            : Mathf.Clamp(volume, 0f, 2f);
+        var safePitch = float.IsNaN(pitch) || float.IsInfinity(pitch)
+            ? 1f
+            : Mathf.Clamp(pitch, 0.5f, 2f);
+        if (!loop && startSample <= 0 && Mathf.Approximately(safeVolume, 1f) &&
+            Mathf.Approximately(safePitch, 1f))
+        {
+            return PlayRawOverlapping(clip, 0, false);
+        }
+
+        if (loop)
+        {
+            try
+            {
+                Invoke(PlayMethod, clip, startSample, true);
+                return true;
+            }
+            catch (TargetInvocationException exception)
+            {
+                Debug.LogException(exception.InnerException ?? exception);
+                return false;
+            }
+        }
+
+        return PlayProcessed(
+            clip,
+            Mathf.Clamp(startSample, 0, Mathf.Max(0, clip.samples - 1)),
+            clip.samples,
+            volume,
+            pitch);
+    }
+
+    private static bool PlayRawOverlapping(AudioClip clip, int startSample, bool loop)
+    {
+        if (clip == null || PlayMethod == null)
+            return false;
+
+        try
+        {
+            SetVolume(1f);
+            Invoke(PlayMethod, clip, startSample, loop);
+            if (LoopMethod != null)
+                Invoke(LoopMethod, clip, startSample, loop);
+            return true;
+        }
+        catch (TargetInvocationException exception)
+        {
+            Debug.LogException(exception.InnerException ?? exception);
+            RestoreListenerVolume();
+            return false;
+        }
+    }
+
+    private static bool PlayProcessed(
+        AudioClip source,
+        int startSample,
+        int endSample,
+        float volume,
+        float pitch)
+    {
+        var processed = CreateProcessedClip(source, startSample, endSample, volume, pitch);
+        if (processed == null)
+        {
+            Debug.LogWarning(
+                $"SFX 피치·증폭 미리듣기를 만들 수 없습니다. AudioClip Import의 Load Type을 Decompress On Load로 확인하세요: {source.name}");
+            try
+            {
+                SetVolume(volume);
+                Invoke(PlayMethod, source, startSample, false);
+                return true;
+            }
+            catch (TargetInvocationException exception)
+            {
+                Debug.LogException(exception.InnerException ?? exception);
+                RestoreListenerVolume();
+                return false;
+            }
+        }
+
+        try
+        {
+            // 증폭과 감쇠는 임시 PCM Clip에 이미 반영했다. 에디터의 이전 미리듣기 볼륨이
+            // 0으로 남아 있어도 소리가 나도록 Listener는 이 재생 동안 100%로 고정한다.
+            SetVolume(1f);
+            Invoke(PlayMethod, processed, 0, false);
+            OwnedPreviewClips.Add(new OwnedPreviewClip(
+                processed,
+                EditorApplication.timeSinceStartup + processed.length + 0.25d));
+            EditorApplication.update -= CleanupOwnedPreviewClips;
+            EditorApplication.update += CleanupOwnedPreviewClips;
+            return true;
+        }
+        catch (TargetInvocationException exception)
+        {
+            Debug.LogException(exception.InnerException ?? exception);
+            UnityEngine.Object.DestroyImmediate(processed);
+            RestoreListenerVolume();
+            return false;
+        }
+    }
+
+    private static AudioClip CreateProcessedClip(
+        AudioClip source,
+        int startSample,
+        int endSample,
+        float volume,
+        float pitch)
+    {
+        if (source == null || source.channels <= 0 || source.frequency <= 0 || source.samples <= 0)
+            return null;
+
+        var start = Mathf.Clamp(startSample, 0, source.samples - 1);
+        var end = Mathf.Clamp(endSample, start + 1, source.samples);
+        var inputFrames = end - start;
+        var input = new float[inputFrames * source.channels];
+        try
+        {
+            if (source.loadState != AudioDataLoadState.Loaded && !source.LoadAudioData())
+                return null;
+            if (!source.GetData(input, start))
+                return null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+
+        var safePitch = float.IsNaN(pitch) || float.IsInfinity(pitch)
+            ? 1f
+            : Mathf.Clamp(pitch, 0.5f, 2f);
+        var safeVolume = float.IsNaN(volume) || float.IsInfinity(volume)
+            ? 1f
+            : Mathf.Clamp(volume, 0f, 2f);
+        var outputFrames = Mathf.Max(1, Mathf.CeilToInt(inputFrames / safePitch));
+        var output = new float[outputFrames * source.channels];
+        for (var frame = 0; frame < outputFrames; frame++)
+        {
+            var sourcePosition = Mathf.Min(inputFrames - 1f, frame * safePitch);
+            var leftFrame = Mathf.FloorToInt(sourcePosition);
+            var rightFrame = Mathf.Min(inputFrames - 1, leftFrame + 1);
+            var blend = sourcePosition - leftFrame;
+            for (var channel = 0; channel < source.channels; channel++)
+            {
+                var left = input[leftFrame * source.channels + channel];
+                var right = input[rightFrame * source.channels + channel];
+                output[frame * source.channels + channel] = Mathf.Lerp(left, right, blend) * safeVolume;
+            }
+        }
+
+        var result = AudioClip.Create(
+            $"__SFXPreview_{source.name}",
+            outputFrames,
+            source.channels,
+            source.frequency,
+            false);
+        result.hideFlags = HideFlags.HideAndDontSave;
+        if (result.SetData(output, 0))
+            return result;
+
+        UnityEngine.Object.DestroyImmediate(result);
+        return null;
+    }
+
     public static void StopAll()
     {
+        CancelScheduledStop();
         try
         {
             StopMethod?.Invoke(null, null);
@@ -1516,8 +1736,53 @@ internal static class SfxEditorAudioPreview
         }
         finally
         {
+            DestroyOwnedPreviewClips();
             RestoreListenerVolume();
         }
+    }
+
+    private static void CleanupOwnedPreviewClips()
+    {
+        var now = EditorApplication.timeSinceStartup;
+        for (var index = OwnedPreviewClips.Count - 1; index >= 0; index--)
+        {
+            var owned = OwnedPreviewClips[index];
+            var isPlaying = IsPlaying(owned.Clip);
+            if (owned.Clip != null && now < owned.EndsAt && isPlaying != false)
+                continue;
+
+            if (owned.Clip != null)
+                UnityEngine.Object.DestroyImmediate(owned.Clip);
+            OwnedPreviewClips.RemoveAt(index);
+        }
+
+        if (OwnedPreviewClips.Count == 0)
+            EditorApplication.update -= CleanupOwnedPreviewClips;
+    }
+
+    private static void DestroyOwnedPreviewClips()
+    {
+        EditorApplication.update -= CleanupOwnedPreviewClips;
+        for (var index = OwnedPreviewClips.Count - 1; index >= 0; index--)
+        {
+            if (OwnedPreviewClips[index].Clip != null)
+                UnityEngine.Object.DestroyImmediate(OwnedPreviewClips[index].Clip);
+        }
+        OwnedPreviewClips.Clear();
+    }
+
+    private static void StopScheduledSegment()
+    {
+        if (scheduledStopAt < 0d || EditorApplication.timeSinceStartup < scheduledStopAt)
+            return;
+
+        StopAll();
+    }
+
+    private static void CancelScheduledStop()
+    {
+        EditorApplication.update -= StopScheduledSegment;
+        scheduledStopAt = -1d;
     }
 
     public static void Pause()
@@ -1705,5 +1970,17 @@ internal static class SfxEditorAudioPreview
             return method;
         }
         return null;
+    }
+
+    private sealed class OwnedPreviewClip
+    {
+        public OwnedPreviewClip(AudioClip clip, double endsAt)
+        {
+            Clip = clip;
+            EndsAt = endsAt;
+        }
+
+        public AudioClip Clip { get; }
+        public double EndsAt { get; }
     }
 }

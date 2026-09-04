@@ -210,7 +210,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 SynchronizeActiveRuntime,
                 OpenPositionAdjust,
                 OpenVfxAdjust,
-                OpenFeedbackVfxAdjust);
+                OpenFeedbackVfxAdjust,
+                OpenSfxAdjust);
             CreatePreviewSurface();
             ConfigureCatalogList();
             ConfigureActions();

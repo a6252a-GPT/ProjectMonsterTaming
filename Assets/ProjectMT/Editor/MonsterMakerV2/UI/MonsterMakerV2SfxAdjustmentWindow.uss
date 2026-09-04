@@ -1,0 +1,96 @@
+.sfx-adjust-root {
+    flex-grow: 1;
+    min-width: 580px;
+    min-height: 520px;
+    padding: 8px;
+    background-color: rgb(25, 28, 34);
+    color: rgb(224, 228, 235);
+}
+.panel-card {
+    flex-shrink: 0;
+    padding: 9px;
+    margin-bottom: 6px;
+    background-color: rgb(31, 35, 42);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgb(57, 64, 75);
+    border-right-color: rgb(57, 64, 75);
+    border-top-color: rgb(57, 64, 75);
+    border-bottom-color: rgb(57, 64, 75);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+.adjust-header {
+    min-height: 50px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+.adjust-title-area { flex-grow: 1; min-width: 0; }
+.adjust-title { font-size: 16px; -unity-font-style: bold; color: rgb(239, 242, 247); }
+.adjust-caption { margin-top: 2px; font-size: 10px; color: rgb(153, 162, 176); }
+.version-badge {
+    margin-left: 8px;
+    padding-left: 9px;
+    padding-right: 9px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    background-color: rgb(45, 91, 130);
+    color: rgb(215, 237, 255);
+    -unity-font-style: bold;
+}
+.heading-row { min-height: 22px; flex-direction: row; align-items: center; justify-content: space-between; }
+.section-title { -unity-font-style: bold; color: rgb(232, 236, 242); }
+.caption, .status { font-size: 10px; color: rgb(153, 162, 176); }
+.clip-name { margin-top: 3px; font-size: 14px; -unity-font-style: bold; color: rgb(221, 235, 248); }
+.clip-info { margin-top: 1px; }
+.mini-button { width: 112px; height: 22px; background-color: rgb(54, 63, 76); }
+.volume-card { min-height: 92px; }
+.volume-controls { flex-direction: row; align-items: center; margin-top: 3px; }
+.volume-slider { flex-grow: 1; margin-right: 10px; }
+.volume-slider > .unity-base-field__label { width: 78px; min-width: 78px; }
+.volume-field { width: 158px; }
+.volume-field > .unity-base-field__label { width: 82px; min-width: 82px; }
+.volume-help { margin-top: 4px; }
+.range-card { min-height: 154px; }
+.range-slider { height: 22px; margin-top: 6px; }
+.range-caption-row { flex-direction: row; justify-content: space-between; margin-bottom: 4px; }
+.range-caption { width: 130px; font-size: 9px; color: rgb(126, 138, 154); }
+.range-caption--center { flex-grow: 1; -unity-text-align: middle-center; color: rgb(129, 184, 225); }
+.range-caption--right { -unity-text-align: middle-right; }
+.paired-fields { flex-direction: row; }
+.half-field { flex-grow: 1; flex-basis: 0; min-width: 0; margin-right: 10px; }
+.half-field--last { margin-right: 0; }
+.half-field > .unity-base-field__label { width: 104px; min-width: 104px; }
+.preview-row { flex-direction: row; margin-top: 6px; }
+.preview-button { flex-grow: 1; height: 26px; margin-right: 8px; }
+.stop-button { width: 100px; height: 26px; }
+.pitch-card { min-height: 106px; }
+.pitch-toggle { -unity-font-style: bold; }
+.pitch-toggle > .unity-base-field__label { min-width: 112px; }
+.pitch-controls { flex-direction: row; align-items: center; margin-top: 4px; }
+.pitch-slider { flex-grow: 1; margin-right: 10px; }
+.pitch-slider > .unity-base-field__label { width: 78px; min-width: 78px; }
+.pitch-field { width: 158px; }
+.pitch-field > .unity-base-field__label { width: 82px; min-width: 82px; }
+.pitch-help { margin-top: 4px; }
+.footer-row {
+    flex-grow: 1;
+    min-height: 30px;
+    padding-top: 4px;
+    flex-direction: row;
+    align-items: flex-end;
+}
+.footer-spacer { flex-grow: 1; }
+.footer-button { width: 100px; min-width: 100px; height: 26px; margin-left: 6px; }
+.footer-button--wide { width: 142px; min-width: 142px; margin-left: 0; }
+.secondary-button { background-color: rgb(54, 63, 76); color: rgb(221, 226, 235); }
+.primary-button { background-color: rgb(48, 100, 150); color: rgb(239, 246, 255); -unity-font-style: bold; }

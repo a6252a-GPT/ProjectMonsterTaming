@@ -27,6 +27,8 @@ namespace ProjectMT.Bootstrap
     [DisallowMultipleComponent]
     public sealed class AppRootHost : MonoBehaviour // 앱 전역 서비스 조립
     {
+        private static readonly SceneId CastleRaidSceneId = new SceneId("castle_raid_hex");
+
         [SerializeField] private ProjectConfig projectConfig; // 시작 설정 모음
         [SerializeField] private SceneLoader sceneLoader; // 정식 씬 전환 담당
         [SerializeField] private RewardAcquirePresenter rewardPresenter; // 저장 확정 보상 연출
@@ -549,6 +551,11 @@ namespace ProjectMT.Bootstrap
                 {
                     ShowPendingAttendance(); // 오프라인 정산이 없으면 출석부터 표시
                 }
+            }
+
+            if (sceneId == CastleRaidSceneId)
+            {
+                globalAudioController?.PlayCastleRaidBgm();
             }
         }
 

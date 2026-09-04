@@ -19,6 +19,8 @@ namespace ProjectMT.Shared.Audio
         [SerializeField, Range(0f, 1f)] private float spatialBlend; // 0은 UI, 1은 월드 사운드
         [SerializeField, Min(0f)] private float duplicateCooldown = 0.04f; // 같은 Cue 연속 재생 제한
         [SerializeField] private SfxPriority priority = SfxPriority.Normal; // Voice 부족 시 우선순위
+        [SerializeField, Min(0f)] private float startOffsetSeconds; // 원본 앞부분 건너뛰기
+        [SerializeField, Min(0f)] private float endCutSeconds; // 원본 뒷부분 자르기
 
         public IReadOnlyList<AudioClip> Clips => clips;
         public Vector2 VolumeRange => volumeRange;
@@ -26,6 +28,8 @@ namespace ProjectMT.Shared.Audio
         public float SpatialBlend => spatialBlend;
         public float DuplicateCooldown => duplicateCooldown;
         public SfxPriority Priority => priority;
+        public float StartOffsetSeconds => Mathf.Max(0f, startOffsetSeconds);
+        public float EndCutSeconds => Mathf.Max(0f, endCutSeconds);
         public AudioClip PrimaryClip
         {
             get
@@ -80,6 +84,25 @@ namespace ProjectMT.Shared.Audio
             return false;
         }
 
+        public bool TryResolvePlaybackRange(
+            AudioClip clip,
+            out float startSeconds,
+            out float durationSeconds)
+        {
+            startSeconds = 0f;
+            durationSeconds = 0f;
+            if (clip == null || clip.length <= 0f ||
+                float.IsNaN(startOffsetSeconds) || float.IsInfinity(startOffsetSeconds) ||
+                float.IsNaN(endCutSeconds) || float.IsInfinity(endCutSeconds))
+            {
+                return false;
+            }
+
+            startSeconds = Mathf.Max(0f, startOffsetSeconds);
+            durationSeconds = clip.length - startSeconds - Mathf.Max(0f, endCutSeconds);
+            return durationSeconds > 0.001f;
+        }
+
         public float SelectVolume()
         {
             return Random.Range(Mathf.Min(volumeRange.x, volumeRange.y), Mathf.Max(volumeRange.x, volumeRange.y));
@@ -97,7 +120,9 @@ namespace ProjectMT.Shared.Audio
             Vector2 pitch,
             float blend,
             float cooldown,
-            SfxPriority cuePriority)
+            SfxPriority cuePriority,
+            float playbackStartOffsetSeconds = 0f,
+            float playbackEndCutSeconds = 0f)
         {
             clips = sourceClips;
             volumeRange = volume;
@@ -105,6 +130,10 @@ namespace ProjectMT.Shared.Audio
             spatialBlend = Mathf.Clamp01(blend);
             duplicateCooldown = Mathf.Max(0f, cooldown);
             priority = cuePriority;
+            startOffsetSeconds = float.IsNaN(playbackStartOffsetSeconds) || float.IsInfinity(playbackStartOffsetSeconds)
+                ? 0f : Mathf.Max(0f, playbackStartOffsetSeconds);
+            endCutSeconds = float.IsNaN(playbackEndCutSeconds) || float.IsInfinity(playbackEndCutSeconds)
+                ? 0f : Mathf.Max(0f, playbackEndCutSeconds);
         }
 #endif
     }

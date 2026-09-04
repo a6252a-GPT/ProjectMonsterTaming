@@ -436,6 +436,112 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             return true;
         }
 
+        private void OpenSfxAdjust(string sourcePath, string label)
+        {
+            if (state?.WorkingDraft == null || state.SerializedDraft == null)
+            {
+                return;
+            }
+
+            state.SerializedDraft.ApplyModifiedProperties();
+            var source = state.SerializedDraft.FindProperty(sourcePath);
+            var clip = source?.FindPropertyRelative("sound").objectReferenceValue as AudioClip;
+            var startOffset = source?.FindPropertyRelative("soundStartOffsetSeconds");
+            var endCut = source?.FindPropertyRelative("soundEndCutSeconds");
+            var overridePitch = source?.FindPropertyRelative("overrideSoundPitch");
+            var pitch = source?.FindPropertyRelative("soundPitch");
+            if (source == null || clip == null)
+            {
+                ShowNotification(new GUIContent("먼저 원본 AudioClip을 배정하세요."));
+                return;
+            }
+            if (startOffset == null || endCut == null || overridePitch == null || pitch == null)
+            {
+                ShowNotification(new GUIContent("이 SFX는 아직 고급 보정을 지원하지 않습니다."));
+                return;
+            }
+
+            var volumeProperty = source.FindPropertyRelative("soundVolume") ??
+                                 source.FindPropertyRelative("volume");
+            var targetDraft = state.WorkingDraft;
+            MonsterMakerV2SfxAdjustmentWindow.Open(
+                this,
+                label,
+                clip,
+                volumeProperty?.floatValue ?? 1f,
+                startOffset.floatValue,
+                endCut.floatValue,
+                overridePitch.boolValue,
+                pitch.floatValue,
+                (nextVolume, nextStart, nextEndCut, nextOverridePitch, nextPitch) =>
+                    ApplySfxValues(
+                        targetDraft,
+                        sourcePath,
+                        label,
+                        nextVolume,
+                        nextStart,
+                        nextEndCut,
+                        nextOverridePitch,
+                        nextPitch));
+        }
+
+        private bool ApplySfxValues(
+            MonsterMakerDraft targetDraft,
+            string sourcePath,
+            string label,
+            float volume,
+            float startOffset,
+            float endCut,
+            bool overridePitch,
+            float pitch)
+        {
+            if (state?.WorkingDraft != targetDraft || state.SerializedDraft == null)
+            {
+                return false;
+            }
+
+            state.SerializedDraft.UpdateIfRequiredOrScript();
+            var source = state.SerializedDraft.FindProperty(sourcePath);
+            var clip = source?.FindPropertyRelative("sound").objectReferenceValue as AudioClip;
+            var volumeProperty = source?.FindPropertyRelative("soundVolume") ??
+                                 source?.FindPropertyRelative("volume");
+            var startProperty = source?.FindPropertyRelative("soundStartOffsetSeconds");
+            var endProperty = source?.FindPropertyRelative("soundEndCutSeconds");
+            var overrideProperty = source?.FindPropertyRelative("overrideSoundPitch");
+            var pitchProperty = source?.FindPropertyRelative("soundPitch");
+            if (source == null || clip == null || volumeProperty == null ||
+                startProperty == null || endProperty == null ||
+                overrideProperty == null || pitchProperty == null)
+            {
+                return false;
+            }
+
+            var safeStart = Mathf.Max(0f, startOffset);
+            var safeEndCut = Mathf.Max(0f, endCut);
+            if (float.IsNaN(safeStart) || float.IsInfinity(safeStart) ||
+                float.IsNaN(safeEndCut) || float.IsInfinity(safeEndCut) ||
+                clip.length - safeStart - safeEndCut <= 0.001f)
+            {
+                return false;
+            }
+
+            Undo.RecordObject(targetDraft, $"{label} SFX 보정");
+            volumeProperty.floatValue = float.IsNaN(volume) || float.IsInfinity(volume)
+                ? 1f
+                : Mathf.Clamp(volume, 0f, 2f);
+            startProperty.floatValue = safeStart;
+            endProperty.floatValue = safeEndCut;
+            overrideProperty.boolValue = overridePitch;
+            pitchProperty.floatValue = float.IsNaN(pitch) || float.IsInfinity(pitch)
+                ? 1f
+                : Mathf.Clamp(pitch, 0.5f, 2f);
+            state.SerializedDraft.ApplyModifiedPropertiesWithoutUndo();
+            state.MarkChanged();
+            CaptureRecovery();
+            UpdateDirtyUi();
+            return true;
+        }
+
         private void OpenVfxAdjust(
             MonsterBasicAttackVfxSlot slot,
             string bindingPath)

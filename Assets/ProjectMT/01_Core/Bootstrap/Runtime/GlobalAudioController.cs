@@ -27,6 +27,7 @@ namespace ProjectMT.Bootstrap
 
         [Header("BGM Routing")]
         [SerializeField] private AudioClip entryBgm;
+        [SerializeField] private AudioClip castleRaidBgm;
         [SerializeField] private AudioClip[] mainBattleBgms = Array.Empty<AudioClip>();
         [SerializeField] private ContentBgmBinding[] contentBgmBindings = Array.Empty<ContentBgmBinding>();
 
@@ -70,6 +71,11 @@ namespace ProjectMT.Bootstrap
         public void PlayMainBattleBgm()
         {
             PlayRandomBgm(mainBattleBgms);
+        }
+
+        public void PlayCastleRaidBgm()
+        {
+            PlayBgm(castleRaidBgm);
         }
 
         public bool ApplyHostedContentBgm(ContentId contentId)

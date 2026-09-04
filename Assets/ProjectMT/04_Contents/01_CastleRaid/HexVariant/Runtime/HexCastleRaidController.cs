@@ -80,6 +80,10 @@ namespace ProjectMT.Contents.CastleRaidHex
         [SerializeField] private SfxPool sfxPool;
         [SerializeField] private CombatFeedbackPlayer combatFeedback;
 
+        [Header("Destruction Audio")]
+        [SerializeField] private SfxCue structureDestroyedSfx;
+        [SerializeField] private SfxCue palaceDestroyedSfx;
+
         [Header("HUD")]
         [SerializeField] private TMP_Text deploymentText;
         [SerializeField] private TMP_Text statusText;
@@ -937,6 +941,7 @@ namespace ProjectMT.Contents.CastleRaidHex
                 return;
             }
 
+            sfxPool?.Play(palaceDestroyedSfx, destroyedCell.transform.position);
             resultSent = true;
             IsRunning = false;
             RestoreTimeScale();
@@ -984,6 +989,11 @@ namespace ProjectMT.Contents.CastleRaidHex
             if (cell == null || resultSent)
             {
                 return;
+            }
+
+            if (cell.Kind != HexCastleCellKind.Palace)
+            {
+                sfxPool?.Play(structureDestroyedSfx, cell.transform.position);
             }
 
             if (cell.BuildingRole == HexCastleBuildingRole.Church)

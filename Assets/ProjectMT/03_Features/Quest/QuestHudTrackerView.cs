@@ -26,7 +26,14 @@ namespace ProjectMT.Features.Quest
 
         private QuestId trackedQuestId;
         private bool canClaimTracked;
+        private bool canNavigateTracked;
         private bool isClaiming;
+
+        // 진행 중의 퀘스트 이동과 완료 후 보상 수령이 같은 카드 영역에서 동작한다.
+        public Button QuestActionButton => rewardButton;
+
+        // 기존 호출부 호환용. 이제 보상 전용 영역이 아니라 통합 액션 영역이다.
+        public Button QuestRewardButton => rewardButton;
 
         private void Awake()
         {
@@ -157,12 +164,21 @@ namespace ProjectMT.Features.Quest
             return default;
         }
 
-        // RewardButton 클릭 → 현재 추적 중인 퀘스트 보상 수령 → QuestRuntime.Changed가 갱신을 자동으로 트리거해
-        // 다음 퀘스트로 넘어간 화면이 곧바로 표시된다.
+        // 같은 HUD 카드 클릭으로 진행 중에는 퀘스트 이동을 요청하고, 완료 상태에서는 보상을 수령한다.
         private async void HandleClaimClicked()
         {
-            if (isClaiming || !canClaimTracked || !QuestRuntime.IsReady)
+            if (isClaiming || !QuestRuntime.IsReady)
             {
+                return;
+            }
+
+            if (!canClaimTracked)
+            {
+                if (canNavigateTracked)
+                {
+                    GetComponent<QuestHudNavigationController>()?.RequestTrackedNavigation();
+                }
+
                 return;
             }
 
@@ -204,7 +220,7 @@ namespace ProjectMT.Features.Quest
         {
             if (rewardButton != null)
             {
-                rewardButton.interactable = canClaimTracked && !isClaiming;
+                rewardButton.interactable = (canClaimTracked || canNavigateTracked) && !isClaiming;
             }
 
             if (claimHighlight != null)
@@ -213,6 +229,17 @@ namespace ProjectMT.Features.Quest
                 claimHighlight.blocksRaycasts = false;
                 claimHighlight.gameObject.SetActive(canClaimTracked && !isClaiming);
             }
+        }
+
+        public void SetNavigationAvailable(bool available)
+        {
+            canNavigateTracked = available;
+            UpdateClaimButtonState();
+        }
+
+        public void RequestTrackedAction()
+        {
+            HandleClaimClicked();
         }
 
         private void Apply(string mission, string description, string status)

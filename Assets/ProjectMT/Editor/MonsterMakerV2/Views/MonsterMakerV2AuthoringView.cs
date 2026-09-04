@@ -43,6 +43,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             openPositionAdjust;
         private readonly Action<MonsterBasicAttackVfxSlot, string> openVfxAdjust;
         private readonly Action<string, string, MonsterMakerPreviewAnchor> openFeedbackVfxAdjust;
+        private readonly Action<string, string> openSfxAdjust;
         private readonly Dictionary<string, PropertyField> fields =
             new Dictionary<string, PropertyField>(StringComparer.Ordinal);
         private readonly Dictionary<string, bool> foldoutStates =
@@ -65,7 +66,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             Action<string, string, MonsterMakerPreviewPositionValueMode, MonsterMakerPreviewAnchor>
                 openPositionAdjust,
             Action<MonsterBasicAttackVfxSlot, string> openVfxAdjust,
-            Action<string, string, MonsterMakerPreviewAnchor> openFeedbackVfxAdjust)
+            Action<string, string, MonsterMakerPreviewAnchor> openFeedbackVfxAdjust,
+            Action<string, string> openSfxAdjust)
         {
             this.root = root;
             bindingRoot = root.Q<VisualElement>("draft-scroll");
@@ -76,6 +78,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             this.openPositionAdjust = openPositionAdjust;
             this.openVfxAdjust = openVfxAdjust;
             this.openFeedbackVfxAdjust = openFeedbackVfxAdjust;
+            this.openSfxAdjust = openSfxAdjust;
             bindingRoot.RegisterCallback<SerializedPropertyChangeEvent>(OnPropertyChanged);
         }
 
@@ -134,6 +137,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             ClearSection("mainbattle");
             ClearSection("skills");
             ClearSection("combat");
+            ClearSection("voice-sfx");
             ClearSection("motions");
             ClearSection("castle");
             ClearSection("ascension");
@@ -145,6 +149,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             BuildMainBattle();
             BuildSkills();
             BuildCombat();
+            BuildVoiceSfx();
             BuildMotions();
             BuildCastle();
             BuildAscension();
@@ -738,6 +743,62 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             return field;
         }
 
+        private SliderInt AddVolumePercentProperty(
+            VisualElement container,
+            SerializedProperty property,
+            string label)
+        {
+            if (container == null)
+            {
+                return null;
+            }
+
+            if (property == null)
+            {
+                AddHelp(
+                    container,
+                    $"직렬화 속성을 찾을 수 없습니다: {label}",
+                    HelpBoxMessageType.Error);
+                return null;
+            }
+
+            var propertyPath = property.propertyPath;
+            var field = new SliderInt(label + " (%)", 0, 200)
+            {
+                showInputField = true,
+                value = Mathf.RoundToInt(Mathf.Clamp(property.floatValue, 0f, 2f) * 100f),
+                tooltip = "100%가 원본 음량이며 최대 200%까지 증폭할 수 있습니다."
+            };
+            field.AddToClassList("draft-property");
+            field.RegisterValueChangedCallback(evt =>
+            {
+                if (building || serializedDraft == null || draft == null)
+                {
+                    return;
+                }
+
+                serializedDraft.UpdateIfRequiredOrScript();
+                var current = serializedDraft.FindProperty(propertyPath);
+                if (current == null)
+                {
+                    return;
+                }
+
+                var normalized = Mathf.Clamp(evt.newValue, 0, 200) / 100f;
+                if (Mathf.Approximately(current.floatValue, normalized))
+                {
+                    return;
+                }
+
+                Undo.RecordObject(draft, "Monster Maker V2 · SFX 음량 변경");
+                current.floatValue = normalized;
+                serializedDraft.ApplyModifiedProperties();
+                changed?.Invoke();
+            });
+            container.Add(field);
+            return field;
+        }
+
         private void AddPropertyWithAction(
             VisualElement container,
             string propertyName,
@@ -788,6 +849,32 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                         : action.ClassName);
                 row.Add(button);
             }
+            container.Add(row);
+            return row;
+        }
+
+        private static VisualElement AddSfxActionRow(
+            VisualElement container,
+            Action adjust,
+            Action play)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("draft-action-row");
+
+            var adjustButton = new Button(adjust) { text = "SFX 조절", tooltip = "오프셋·컷·음량·피치를 조절합니다." };
+            adjustButton.AddToClassList("sfx-adjust-button");
+            row.Add(adjustButton);
+
+            var playButton = new Button(play) { text = "▶", tooltip = "현재 설정으로 미리듣기" };
+            playButton.AddToClassList("sfx-icon-button");
+            playButton.AddToClassList("sfx-play-button");
+            row.Add(playButton);
+
+            var stopButton = new Button(SfxEditorAudioPreview.StopAll) { text = "■", tooltip = "SFX 미리듣기 정지" };
+            stopButton.AddToClassList("sfx-icon-button");
+            stopButton.AddToClassList("sfx-stop-button");
+            row.Add(stopButton);
+
             container.Add(row);
             return row;
         }

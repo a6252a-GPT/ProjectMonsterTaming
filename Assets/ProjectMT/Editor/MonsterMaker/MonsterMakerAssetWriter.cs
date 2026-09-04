@@ -308,7 +308,9 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 null,
                 CreateFeedbackCue(draft.HitFeedback, generatedSfx, "HitReceived"),
                 CreateFeedbackCue(draft.DeathFeedback, generatedSfx, "Death"),
-                CreateFeedbackCue(draft.SpecialFeedback, generatedSfx, "Special"));
+                CreateFeedbackCue(draft.SpecialFeedback, generatedSfx, "Special"),
+                generatedSfx.Resolve(draft.BasicAttackVoiceSfx, "BasicAttackVoice"),
+                generatedSfx.Resolve(draft.ActiveSkillVoiceSfx, "ActiveSkillVoice"));
             feedback.EditorSetBasicAttackVfxBindings(
                 CompileBasicAttackPresentationBindings(draft, generatedSfx));
             var attackActive = generatesAttackActive
@@ -1691,7 +1693,31 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     return draft?.Sfx;
                 }
 
-                return Resolve(draft.Sound, roleId, draft.SoundVolume);
+                return Resolve(
+                    draft.Sound,
+                    roleId,
+                    draft.SoundVolume,
+                    draft.SoundStartOffsetSeconds,
+                    draft.SoundEndCutSeconds,
+                    draft.OverrideSoundPitch,
+                    draft.SoundPitch);
+            }
+
+            public SfxCue Resolve(MonsterMakerVoiceSfxDraft draft, string roleId)
+            {
+                if (draft == null || draft.Sound == null)
+                {
+                    return null;
+                }
+
+                return Resolve(
+                    draft.Sound,
+                    roleId,
+                    draft.Volume,
+                    draft.SoundStartOffsetSeconds,
+                    draft.SoundEndCutSeconds,
+                    draft.OverrideSoundPitch,
+                    draft.SoundPitch);
             }
 
             public SfxCue Resolve(AudioClip sound, string roleId)
@@ -1710,10 +1736,29 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     RegisterLegacyGeneratedCue(binding.Sfx);
                     return binding.Sfx;
                 }
-                return Resolve(binding.Sound, roleId, binding.SoundVolume);
+                return Resolve(
+                    binding.Sound,
+                    roleId,
+                    binding.SoundVolume,
+                    binding.SoundStartOffsetSeconds,
+                    binding.SoundEndCutSeconds,
+                    binding.OverrideSoundPitch,
+                    binding.SoundPitch);
             }
 
             public SfxCue Resolve(AudioClip sound, string roleId, float? volume)
+            {
+                return Resolve(sound, roleId, volume, 0f, 0f, false, 1f);
+            }
+
+            private SfxCue Resolve(
+                AudioClip sound,
+                string roleId,
+                float? volume,
+                float startOffset,
+                float endCut,
+                bool overridePitch,
+                float pitch)
             {
                 if (sound == null)
                 {
@@ -1734,12 +1779,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 cue.EditorConfigure(
                     new[] { sound },
                     volume.HasValue
-                        ? Vector2.one * Mathf.Clamp01(volume.Value)
+                        ? Vector2.one * Mathf.Clamp(volume.Value, 0f, 2f)
                         : DefaultVolume,
-                    DefaultPitch,
+                    overridePitch
+                        ? Vector2.one * Mathf.Clamp(pitch, 0.5f, 2f)
+                        : DefaultPitch,
                     DefaultSpatialBlend,
                     DefaultDuplicateCooldown,
-                    SfxPriority.Normal);
+                    SfxPriority.Normal,
+                    startOffset,
+                    endCut);
                 EditorUtility.SetDirty(cue);
                 EditorUtility.SetDirty(owner);
                 usedCues.Add(cue);

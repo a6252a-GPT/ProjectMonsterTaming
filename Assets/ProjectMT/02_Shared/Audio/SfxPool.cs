@@ -7,6 +7,7 @@ namespace ProjectMT.Shared.Audio
     [DisallowMultipleComponent]
     public sealed class SfxPool : MonoBehaviour // 활성 연출 영역이 소유하는 AudioSource Voice 풀
     {
+        private const float MaximumCueVolume = 2f;
         [SerializeField, Min(1)] private int maxVoices = 12; // 모바일 동시 재생 상한
         [SerializeField, Min(0)] private int prewarmVoices = 6; // 첫 재생 스파이크 완화
         [SerializeField] private AudioMixerGroup outputGroup; // 후속 설정 음량 연결점
@@ -35,6 +36,11 @@ namespace ProjectMT.Shared.Audio
                 return false;
             }
 
+            if (!cue.TryResolvePlaybackRange(clip, out var startSeconds, out var durationSeconds))
+            {
+                return false;
+            }
+
             var now = AudioSettings.dspTime;
             var cooldownKey = cue.GetInstanceID();
             if (nextAllowedTime.TryGetValue(cooldownKey, out var allowedAt) && now < allowedAt)
@@ -48,7 +54,9 @@ namespace ProjectMT.Shared.Audio
                 cue.SelectVolume(),
                 cue.SelectPitch(),
                 cue.SpatialBlend,
-                cue.Priority);
+                cue.Priority,
+                startSeconds,
+                durationSeconds);
             if (played && cue.DuplicateCooldown > 0f)
             {
                 nextAllowedTime[cooldownKey] = now + cue.DuplicateCooldown;
@@ -63,9 +71,21 @@ namespace ProjectMT.Shared.Audio
             float volume = 1f,
             float pitch = 1f,
             float spatialBlend = 0f,
-            SfxPriority priority = SfxPriority.Normal)
+            SfxPriority priority = SfxPriority.Normal,
+            float startOffsetSeconds = 0f,
+            float playbackDurationSeconds = 0f)
         {
             if (clip == null || !isActiveAndEnabled)
+            {
+                return false;
+            }
+
+            var start = Mathf.Clamp(startOffsetSeconds, 0f, clip.length);
+            var availableDuration = clip.length - start;
+            var duration = playbackDurationSeconds > 0f
+                ? Mathf.Min(playbackDurationSeconds, availableDuration)
+                : availableDuration;
+            if (duration <= 0.001f)
             {
                 return false;
             }
@@ -79,10 +99,15 @@ namespace ProjectMT.Shared.Audio
             }
 
             var source = voice.Source;
+            var resolvedVolume = float.IsNaN(volume) || float.IsInfinity(volume)
+                ? 1f
+                : Mathf.Clamp(volume, 0f, MaximumCueVolume);
             source.Stop();
             source.transform.position = position;
             source.clip = clip;
-            source.volume = Mathf.Clamp01(volume) * (outputGroup == null ? AudioRuntimeSettings.SfxVolume : 1f);
+            source.volume = Mathf.Min(1f, resolvedVolume) *
+                            (outputGroup == null ? AudioRuntimeSettings.SfxVolume : 1f);
+            voice.Gain.Gain = Mathf.Max(1f, resolvedVolume);
             source.pitch = Mathf.Clamp(pitch, -3f, 3f);
             if (Mathf.Abs(source.pitch) < 0.01f)
             {
@@ -91,11 +116,20 @@ namespace ProjectMT.Shared.Audio
 
             source.spatialBlend = Mathf.Clamp01(spatialBlend);
             source.outputAudioMixerGroup = outputGroup;
+            if (start > 0f)
+            {
+                source.time = start;
+            }
             source.Play();
 
+            var finishAt = now + duration / Mathf.Abs(source.pitch);
+            if (duration < availableDuration - 0.001f)
+            {
+                source.SetScheduledEndTime(finishAt);
+            }
             voice.Priority = priority;
             voice.Sequence = ++playSequence;
-            voice.FinishTime = now + clip.length / Mathf.Abs(source.pitch);
+            voice.FinishTime = finishAt;
             return true;
         }
 
@@ -111,6 +145,7 @@ namespace ProjectMT.Shared.Audio
 
                 source.Stop();
                 source.clip = null;
+                voices[i].Gain.Gain = 1f;
                 voices[i].FinishTime = 0d;
                 voices[i].Priority = SfxPriority.Low;
             }
@@ -177,7 +212,7 @@ namespace ProjectMT.Shared.Audio
             source.minDistance = 2f;
             source.maxDistance = 24f;
             source.outputAudioMixerGroup = outputGroup;
-            return new Voice(source);
+            return new Voice(source, voiceObject.AddComponent<SfxVoiceGain>());
         }
 
 #if UNITY_EDITOR
@@ -191,15 +226,44 @@ namespace ProjectMT.Shared.Audio
 
         private sealed class Voice
         {
-            public Voice(AudioSource source)
+            public Voice(AudioSource source, SfxVoiceGain gain)
             {
                 Source = source;
+                Gain = gain;
             }
 
             public AudioSource Source { get; }
+            public SfxVoiceGain Gain { get; }
             public SfxPriority Priority { get; set; }
             public double FinishTime { get; set; }
             public uint Sequence { get; set; }
+        }
+    }
+
+    internal sealed class SfxVoiceGain : MonoBehaviour // 100% 초과 Cue만 오디오 스레드에서 증폭
+    {
+        private volatile float gain = 1f;
+
+        public float Gain
+        {
+            get => gain;
+            set => gain = float.IsNaN(value) || float.IsInfinity(value)
+                ? 1f
+                : Mathf.Clamp(value, 1f, 2f);
+        }
+
+        private void OnAudioFilterRead(float[] data, int channels)
+        {
+            var multiplier = gain;
+            if (data == null || multiplier <= 1.0001f)
+            {
+                return;
+            }
+
+            for (var index = 0; index < data.Length; index++)
+            {
+                data[index] *= multiplier;
+            }
         }
     }
 }

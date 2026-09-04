@@ -5,6 +5,7 @@ using ProjectMT.Shared.Items;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
 {
@@ -22,7 +23,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
             "Assets/ProjectMT/03_Features/WorldDrops/Data/EquipmentDropChestVisualCatalog.asset";
 
         [Test]
-        public void ProductionHud_HasThreeMinuteClockAndStandardFailureDialog()
+        public void ProductionHud_HasThreeMinuteClockAndClearStyleFailureStage()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
             Assert.That(prefab, Is.Not.Null);
@@ -35,15 +36,37 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
             Assert.That(view.EquipmentDropVisualCatalog, Is.Not.Null);
 
             var timer = Find(prefab.transform, "TimerText")?.GetComponent<TMP_Text>();
-            var dialog = Find(prefab.transform, "FailureDialog_Standard");
-            var retry = Find(prefab.transform, "FreeRetryButton");
-            var leave = Find(prefab.transform, "LeaveButton");
+            var overlay = Find(prefab.transform, "FailureOverlay");
+            var stage = Find(prefab.transform, "FailureResultStage_920x900");
+            var retry = Find(prefab.transform, "FreeRetryButton")?.GetComponent<Button>();
+            var leave = Find(prefab.transform, "LeaveButton")?.GetComponent<Button>();
             Assert.That(timer, Is.Not.Null);
             Assert.That(timer.text, Is.EqualTo("03:00"));
-            Assert.That(dialog, Is.Not.Null);
+            Assert.That(overlay, Is.Not.Null);
+            Assert.That(stage, Is.Not.Null);
+            Assert.That(Find(prefab.transform, "FailureDialog_Standard"), Is.Null);
             Assert.That(retry, Is.Not.Null);
             Assert.That(leave, Is.Not.Null);
-            Assert.That(Find(prefab.transform, "FailureOverlay").gameObject.activeSelf, Is.False);
+            Assert.That(retry.GetComponent<RectTransform>().anchoredPosition.x, Is.EqualTo(-166f).Within(0.1f));
+            Assert.That(leave.GetComponent<RectTransform>().anchoredPosition.x, Is.EqualTo(166f).Within(0.1f));
+            Assert.That(Find(retry.transform, "Label")?.GetComponent<TMP_Text>()?.text,
+                Is.EqualTo("무료 재도전"));
+            Assert.That(Find(leave.transform, "Label")?.GetComponent<TMP_Text>()?.text,
+                Is.EqualTo("나가기"));
+            Assert.That(Find(stage, "ResultKicker")?.GetComponent<TMP_Text>()?.text,
+                Is.EqualTo("군단의 역습 · 전투 결과"));
+            Assert.That(Find(stage, "TitleText")?.GetComponent<TMP_Text>()?.text,
+                Is.EqualTo("공략 실패"));
+            Assert.That(Find(stage, "FailureDetailText")?.GetComponent<TMP_Text>(), Is.Not.Null);
+            Assert.That(Find(stage, "VictoryIllustration")?.gameObject.activeSelf, Is.False);
+            Assert.That(Find(stage, "RewardPackage")?.gameObject.activeSelf, Is.False);
+            var firstStar = Find(stage, "Star_1")?.GetComponent<Image>();
+            var secondStar = Find(stage, "Star_2")?.GetComponent<Image>();
+            var thirdStar = Find(stage, "Star_3")?.GetComponent<Image>();
+            Assert.That(firstStar?.sprite, Is.Not.Null);
+            Assert.That(secondStar?.sprite, Is.SameAs(firstStar.sprite));
+            Assert.That(thirdStar?.sprite, Is.SameAs(firstStar.sprite));
+            Assert.That(overlay.gameObject.activeSelf, Is.False);
         }
 
         [TestCase(ItemIds.Gold)]

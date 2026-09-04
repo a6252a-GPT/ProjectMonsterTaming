@@ -485,6 +485,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 // BeginClip은 이전 Preview 피드백을 비우면서 액티브 실행 플래그도 내린다.
                 // 효과 묶음을 예약하기 전에 다시 올려야 공용 시간축이 실제로 전진한다.
                 activeSkillPreviewRunning = true;
+                PlayVoiceSfx(draft.ActiveSkillVoiceSfx);
                 var executeAt = previewClock;
                 for (var groupIndex = 0; groupIndex < draft.ActiveEffectProfile.Groups.Count; groupIndex++)
                 {
@@ -765,6 +766,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 eventTime = previousCompleteTime;
             }
             pendingActiveEvents.Sort(PendingActivePreviewEvent.Compare);
+            PlayVoiceSfx(draft.ActiveSkillVoiceSfx);
             combatStatus = $"액티브 준비 · {draft.ActiveSkillName}";
             lastTickTime = EditorApplication.timeSinceStartup;
         }
@@ -834,6 +836,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 currentAttack,
                 null,
                 draft.AttackOriginPath);
+            PlayVoiceSfx(draft.BasicAttackVoiceSfx);
         }
 
         public void PlayRandomAttack()
@@ -2307,10 +2310,16 @@ namespace ProjectMT.EditorTools.MonsterMaker
             if (slot.SfxState == MonsterBasicAttackSfxAssignmentState.Assigned)
             {
                 if (feedback.Sound != null)
-                    SfxEditorAudioPreview.Play(feedback.Sound, 0, false, feedback.SoundVolume);
+                    SfxEditorAudioPreview.PlaySegment(
+                        feedback.Sound,
+                        feedback.SoundStartOffsetSeconds,
+                        feedback.SoundEndCutSeconds,
+                        feedback.SoundVolume,
+                        feedback.OverrideSoundPitch ? feedback.SoundPitch : 1f);
                 if (feedback.Sound == null && feedback.Sfx != null && feedback.Sfx.TrySelectClip(out var clip))
                 {
-                    SfxEditorAudioPreview.Play(clip, 0, false, feedback.Sfx.SelectVolume());
+                    SfxEditorAudioPreview.PlayOverlapping(
+                        clip, 0, false, feedback.Sfx.SelectVolume(), feedback.Sfx.SelectPitch());
                 }
             }
             if (slot.VfxState != MonsterBasicAttackVfxAssignmentState.Assigned ||
@@ -2959,10 +2968,19 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 return;
             }
 
-            PlaySound(feedback.Sound);
+            if (feedback.Sound != null)
+            {
+                SfxEditorAudioPreview.PlaySegment(
+                    feedback.Sound,
+                    feedback.SoundStartOffsetSeconds,
+                    feedback.SoundEndCutSeconds,
+                    feedback.SoundVolume,
+                    feedback.OverrideSoundPitch ? feedback.SoundPitch : 1f);
+            }
             if (feedback.Sound == null && feedback.Sfx != null && feedback.Sfx.TrySelectClip(out var clip))
             {
-                SfxEditorAudioPreview.Play(clip, 0, false, feedback.Sfx.SelectVolume());
+                SfxEditorAudioPreview.PlayOverlapping(
+                    clip, 0, false, feedback.Sfx.SelectVolume(), feedback.Sfx.SelectPitch());
             }
 
             if (feedback.VfxPrefab == null || stage.PreviewRoot == null)
@@ -3028,7 +3046,8 @@ namespace ProjectMT.EditorTools.MonsterMaker
 
             if (feedback.Sfx != null && feedback.Sfx.TrySelectClip(out var clip) && clip != null)
             {
-                SfxEditorAudioPreview.Play(clip, 0, false, feedback.Sfx.SelectVolume());
+                SfxEditorAudioPreview.PlayOverlapping(
+                    clip, 0, false, feedback.Sfx.SelectVolume(), feedback.Sfx.SelectPitch());
             }
             if (feedback.VfxPrefab == null || stage.PreviewRoot == null)
             {
@@ -3109,22 +3128,24 @@ namespace ProjectMT.EditorTools.MonsterMaker
                 {
                     if (binding.Sound != null)
                     {
-                        SfxEditorAudioPreview.Play(
+                        SfxEditorAudioPreview.PlayOverlapping(
                             binding.Sound,
                             0,
                             false,
-                            binding.SoundVolume);
+                            binding.SoundVolume,
+                            binding.OverrideSoundPitch ? binding.SoundPitch : 1f);
                         played = true;
                     }
                     else if (binding.Sfx != null &&
                              binding.Sfx.TrySelectClip(out var soundClip) &&
                              soundClip != null)
                     {
-                        SfxEditorAudioPreview.Play(
+                        SfxEditorAudioPreview.PlayOverlapping(
                             soundClip,
                             0,
                             false,
-                            binding.Sfx.SelectVolume());
+                            binding.Sfx.SelectVolume(),
+                            binding.Sfx.SelectPitch());
                         played = true;
                     }
                 }
@@ -3511,7 +3532,20 @@ namespace ProjectMT.EditorTools.MonsterMaker
         {
             if (sound != null)
             {
-                SfxEditorAudioPreview.Play(sound, 0, false, 1f);
+                SfxEditorAudioPreview.PlayOverlapping(sound, 0, false, 1f);
+            }
+        }
+
+        private static void PlayVoiceSfx(MonsterMakerVoiceSfxDraft voice)
+        {
+            if (voice?.Sound != null)
+            {
+                SfxEditorAudioPreview.PlaySegment(
+                    voice.Sound,
+                    voice.SoundStartOffsetSeconds,
+                    voice.SoundEndCutSeconds,
+                    voice.Volume,
+                    voice.OverrideSoundPitch ? voice.SoundPitch : 1f);
             }
         }
 
@@ -3661,11 +3695,12 @@ namespace ProjectMT.EditorTools.MonsterMaker
                     projectilePresentation.Sfx.TrySelectClip(out var projectileClip) &&
                     projectileClip != null)
                 {
-                    SfxEditorAudioPreview.Play(
+                    SfxEditorAudioPreview.PlayOverlapping(
                         projectileClip,
                         0,
                         false,
-                        projectilePresentation.Sfx.SelectVolume());
+                        projectilePresentation.Sfx.SelectVolume(),
+                        projectilePresentation.Sfx.SelectPitch());
                 }
             }
             combatStatus = "투사체 이동 중";

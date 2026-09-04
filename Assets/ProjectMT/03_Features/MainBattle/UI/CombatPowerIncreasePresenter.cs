@@ -7,14 +7,17 @@ namespace ProjectMT.Features.MainBattle
     [DisallowMultipleComponent]
     public sealed class CombatPowerIncreasePresenter : MonoBehaviour // 저장 확정 뒤 총전투력 상승 알림
     {
+        private const float CardRestingY = 320f;
+
         [SerializeField] private GameObject displayRoot;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private RectTransform card;
         [SerializeField] private TMP_Text deltaText;
         [SerializeField] private TMP_Text totalText;
-        [SerializeField, Min(0.05f)] private float revealSeconds = 0.22f;
-        [SerializeField, Min(0.1f)] private float holdSeconds = 1.15f;
-        [SerializeField, Min(0.05f)] private float fadeSeconds = 0.28f;
+        [SerializeField, Min(0.05f)] private float revealSeconds = 0.18f;
+        [SerializeField, Min(0.05f)] private float countSeconds = 0.21f;
+        [SerializeField, Min(0.1f)] private float holdSeconds = 0.9f;
+        [SerializeField, Min(0.05f)] private float fadeSeconds = 0.24f;
 
         private Coroutine routine;
         private Vector2 restingPosition;
@@ -37,15 +40,19 @@ namespace ProjectMT.Features.MainBattle
 
             if (deltaText != null)
             {
-                deltaText.text = $"전투력 +{delta:N0}";
+                deltaText.text = "+0";
             }
 
             if (totalText != null)
             {
-                totalText.text = $"총 전투력 {Mathf.RoundToInt(current):N0}";
+                var previousValue = Mathf.RoundToInt(previous);
+                totalText.text = $"{previousValue:N0} → {previousValue:N0}";
             }
 
-            routine = StartCoroutine(Play());
+            routine = StartCoroutine(Play(
+                Mathf.RoundToInt(previous),
+                Mathf.RoundToInt(current),
+                delta));
         }
 
         public void Hide()
@@ -65,14 +72,15 @@ namespace ProjectMT.Features.MainBattle
             displayRoot?.SetActive(false);
         }
 
-        private IEnumerator Play()
+        private IEnumerator Play(int previous, int current, int delta)
         {
             displayRoot.SetActive(true);
             transform.SetAsLastSibling();
             canvasGroup.alpha = 0f;
-            var startPosition = restingPosition + Vector2.up * 32f;
+            var startPosition = restingPosition + Vector2.up * 12f;
             card.anchoredPosition = startPosition;
-            card.localScale = new Vector3(0.82f, 0.82f, 1f);
+            var startScale = new Vector3(0.94f, 0.94f, 1f);
+            card.localScale = startScale;
             var elapsed = 0f;
             while (elapsed < revealSeconds)
             {
@@ -80,7 +88,7 @@ namespace ProjectMT.Features.MainBattle
                 var t = Mathf.Clamp01(elapsed / revealSeconds);
                 var eased = 1f - Mathf.Pow(1f - t, 3f);
                 canvasGroup.alpha = eased;
-                card.localScale = Vector3.LerpUnclamped(new Vector3(0.82f, 0.82f, 1f), Vector3.one, eased);
+                card.localScale = Vector3.LerpUnclamped(startScale, Vector3.one, eased);
                 card.anchoredPosition = Vector2.LerpUnclamped(startPosition, restingPosition, eased);
                 yield return null;
             }
@@ -88,6 +96,20 @@ namespace ProjectMT.Features.MainBattle
             card.anchoredPosition = restingPosition;
             card.localScale = Vector3.one;
 
+            elapsed = 0f;
+            while (elapsed < countSeconds)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                var t = Mathf.Clamp01(elapsed / countSeconds);
+                var eased = 1f - Mathf.Pow(1f - t, 3f);
+                SetNumbers(
+                    Mathf.RoundToInt(Mathf.Lerp(0f, delta, eased)),
+                    previous,
+                    Mathf.RoundToInt(Mathf.Lerp(previous, current, eased)));
+                yield return null;
+            }
+
+            SetNumbers(delta, previous, current);
             yield return new WaitForSecondsRealtime(holdSeconds);
             elapsed = 0f;
             while (elapsed < fadeSeconds)
@@ -112,9 +134,22 @@ namespace ProjectMT.Features.MainBattle
             card.anchorMin = new Vector2(0.5f, 0.5f);
             card.anchorMax = new Vector2(0.5f, 0.5f);
             card.pivot = new Vector2(0.5f, 0.5f);
-            card.anchoredPosition = Vector2.zero;
-            restingPosition = Vector2.zero;
+            card.anchoredPosition = new Vector2(0f, CardRestingY);
+            restingPosition = card.anchoredPosition;
             restingPositionCaptured = true;
+        }
+
+        private void SetNumbers(int delta, int previous, int current)
+        {
+            if (deltaText != null)
+            {
+                deltaText.text = $"+{Mathf.Max(0, delta):N0}";
+            }
+
+            if (totalText != null)
+            {
+                totalText.text = $"{Mathf.Max(0, previous):N0} → {Mathf.Max(0, current):N0}";
+            }
         }
 
 #if UNITY_EDITOR

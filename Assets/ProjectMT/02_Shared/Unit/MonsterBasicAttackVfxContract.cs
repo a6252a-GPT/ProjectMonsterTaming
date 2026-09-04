@@ -160,7 +160,11 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private GameObject prefab;
         [SerializeField] private MonsterBasicAttackSfxAssignmentState sfxState;
         [SerializeField] private AudioClip sound;
-        [SerializeField, Range(0f, 1f)] private float soundVolume = 1f;
+        [SerializeField, Range(0f, 2f)] private float soundVolume = 1f;
+        [SerializeField, Min(0f)] private float soundStartOffsetSeconds;
+        [SerializeField, Min(0f)] private float soundEndCutSeconds;
+        [SerializeField] private bool overrideSoundPitch;
+        [SerializeField, Range(0.5f, 2f)] private float soundPitch = 1f;
         [SerializeField, HideInInspector] private SfxCue sfx;
         [SerializeField, Min(0.01f)] private float lifetime = 1f;
         [SerializeField, Min(0f)] private float playbackOffset;
@@ -177,7 +181,11 @@ namespace ProjectMT.Shared.Unit
         public GameObject Prefab => prefab;
         public MonsterBasicAttackSfxAssignmentState SfxState => sfxState;
         public AudioClip Sound => sound;
-        public float SoundVolume => Mathf.Clamp01(soundVolume);
+        public float SoundVolume => Mathf.Clamp(soundVolume, 0f, 2f);
+        public float SoundStartOffsetSeconds => Mathf.Max(0f, soundStartOffsetSeconds);
+        public float SoundEndCutSeconds => Mathf.Max(0f, soundEndCutSeconds);
+        public bool OverrideSoundPitch => overrideSoundPitch;
+        public float SoundPitch => Mathf.Clamp(soundPitch, 0.5f, 2f);
         public SfxCue Sfx => sfx;
         public float Lifetime => Mathf.Max(0.01f, lifetime);
         public float PlaybackOffset => Mathf.Max(0f, playbackOffset);
@@ -206,7 +214,12 @@ namespace ProjectMT.Shared.Unit
                  float.IsNaN(playbackSpeed) || float.IsInfinity(playbackSpeed) || scale <= 0f) ||
                 sfxState == MonsterBasicAttackSfxAssignmentState.Assigned &&
                 sound == null && (sfx == null || !sfx.HasPlayableClip) ||
-                soundVolume < 0f || soundVolume > 1f ||
+                soundVolume < 0f || soundVolume > 2f ||
+                sound != null && (float.IsNaN(soundStartOffsetSeconds) || float.IsInfinity(soundStartOffsetSeconds) ||
+                                  float.IsNaN(soundEndCutSeconds) || float.IsInfinity(soundEndCutSeconds) ||
+                                  sound.length - Mathf.Max(0f, soundStartOffsetSeconds) - Mathf.Max(0f, soundEndCutSeconds) <= 0.001f) ||
+                overrideSoundPitch && (float.IsNaN(soundPitch) || float.IsInfinity(soundPitch) ||
+                                       soundPitch < 0.5f || soundPitch > 2f) ||
                 float.IsNaN(eventTimingOffset) || float.IsInfinity(eventTimingOffset))
             {
                 error = $"Basic Attack VFX binding is invalid. Attack={attackId}, Slot={slotId}";
@@ -232,7 +245,11 @@ namespace ProjectMT.Shared.Unit
                 MonsterBasicAttackSfxAssignmentState.Undecided,
             float sourceSoundVolume = 1f,
             float vfxEventTimingOffset = 0f,
-            float vfxPlaybackSpeed = 1f)
+            float vfxPlaybackSpeed = 1f,
+            float sourceSoundStartOffsetSeconds = 0f,
+            float sourceSoundEndCutSeconds = 0f,
+            bool useCustomSoundPitch = false,
+            float sourceSoundPitch = 1f)
         {
             EditorConfigureIdentity(basicAttackId, basicAttackSlotId, attackMotionId);
             state = assignmentState;
@@ -251,7 +268,11 @@ namespace ProjectMT.Shared.Unit
             scale = Mathf.Max(0.01f, scaleMultiplier);
             sfxState = sfxAssignmentState;
             sound = sourceSound;
-            soundVolume = Mathf.Clamp01(sourceSoundVolume);
+            soundVolume = Mathf.Clamp(sourceSoundVolume, 0f, 2f);
+            soundStartOffsetSeconds = Mathf.Max(0f, sourceSoundStartOffsetSeconds);
+            soundEndCutSeconds = Mathf.Max(0f, sourceSoundEndCutSeconds);
+            overrideSoundPitch = useCustomSoundPitch;
+            soundPitch = Mathf.Clamp(sourceSoundPitch, 0.5f, 2f);
             sfx = runtimeSfx;
         }
 
@@ -291,7 +312,11 @@ namespace ProjectMT.Shared.Unit
                 SfxState,
                 SoundVolume,
                 EventTimingOffset,
-                PlaybackSpeed);
+                PlaybackSpeed,
+                SoundStartOffsetSeconds,
+                SoundEndCutSeconds,
+                OverrideSoundPitch,
+                SoundPitch);
             return result;
         }
 #endif

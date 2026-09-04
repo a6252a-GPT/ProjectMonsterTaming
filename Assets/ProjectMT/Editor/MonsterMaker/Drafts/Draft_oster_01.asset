@@ -17,20 +17,20 @@ MonoBehaviour:
   rarity: 4
   portrait: {fileID: 21300000, guid: 5a3d629652e1a3d4eb8b9c79d014fedf, type: 3}
   skillLoadoutConfigured: 1
-  usePassiveSkill: 0
+  usePassiveSkill: 1
   useActiveSkill: 1
   skillUsageSchemaVersion: 1
-  rarityPassiveSkill: {fileID: 0}
+  rarityPassiveSkill: {fileID: 11400000, guid: 6df72759e2e16f54b8d81a45f1ee7574, type: 2}
   passiveTuning:
-    initialized: 0
-    runtimeKind: 0
-    primaryBase: 0
-    primaryPerLevelStep: 0
+    initialized: 1
+    runtimeKind: 3
+    primaryBase: 0.28
+    primaryPerLevelStep: 0.01
     secondaryBase: 0
     secondaryPerLevelStep: 0
-    triggerCount: 1
+    triggerCount: 4
     maxStacks: 1
-    duration: 0
+    duration: 0.2
     cooldown: 0
     threshold: 0
     radius: 0

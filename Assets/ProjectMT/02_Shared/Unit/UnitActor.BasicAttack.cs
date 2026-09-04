@@ -64,6 +64,9 @@ namespace ProjectMT.Shared.Unit
                         HandleAttackMarker,
                         breathDuration))
                 {
+                    world.PlayMonsterSfx(
+                        runtimeAssetSet.FeedbackProfile?.BasicAttackVoice,
+                        transform.position);
                     var startFeedback = animationDriver.CurrentAttackStartFeedback ??
                                         runtimeAssetSet.FeedbackProfile?.AttackStart;
                     world.PlayMonsterFeedback(

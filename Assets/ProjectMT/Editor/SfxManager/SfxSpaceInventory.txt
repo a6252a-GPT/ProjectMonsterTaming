@@ -58,11 +58,11 @@ CR-01	P0	castle_raid	군단의 역습	활성 포탑 7프로필 발사/명중/폭
 CR-02	P1	castle_raid	군단의 역습	전투 입장·스테이지 시작	MissingHook	Scene 직접 Audio 의존성 0개, 입장 SFX Hook 없음.	난이도 선택 확정 후 전장 로드/시작 중 1회 재생
 CR-03	P1	castle_raid	군단의 역습	포탑 설치·배치 불가	MissingHook	배치 Preview/확정에 공용 SFX 공간이 없다.	유효 설치/거부가 구분되고 연속 입력 Cooldown 적용
 CR-04	P1	castle_raid	군단의 역습	포탑 업그레이드·최대 레벨	MissingHook	공격 Cue 외 성장/조작 SFX가 없다.	자원 차감 성공 후 재생, 최대 단계 거부음 분리
-CR-05	P1	castle_raid	군단의 역습	성벽·성채 피격/위험 경고	MissingHook	건물 피격 사건에 Audio 연결이 없다.	일반 타격 스팸을 제한하고 임계 체력 경고를 구분
+CR-05	P1	castle_raid	군단의 역습	성벽·건물 피격·파괴/위험 경고	Partial	성벽·건물·포탑·문 파괴 확정 시 전용 3D Cue를 재생한다. 일반 피격과 임계 체력 경고는 아직 없다.	파괴 Cue는 실제 위치에서 1회 재생하고, 일반 타격 스팸 제한과 임계 체력 경고는 후속으로 구분
 CR-06	P1	castle_raid	군단의 역습	병영 생산·아군 출전	MissingHook	Barracks Spawn 사건에 SFX가 없다.	생산 완료와 전장 등장 타이밍 중 하나로 정책 확정
 CR-07	P1	castle_raid	군단의 역습	함정 발동·피해	MissingHook	함정/방어 오브젝트별 SFX Hook이 없다.	함정 종류와 공간 위치에 맞게 3D 재생
 CR-08	P1	castle_raid	군단의 역습	적 웨이브·성벽 돌파	MissingHook	적 Spawn/목표 도달 경고에 Audio 호출이 없다.	화면 밖 사건도 필요할 때만 경고하고 반복 제한
-CR-09	P0	castle_raid	군단의 역습	승리·패배	MissingHook	콘텐츠 결과 SFX 공간이 없다.	전투 종료 1회, 이후 UI 버튼음과 중복 없음
+CR-09	P0	castle_raid	군단의 역습	왕궁 파괴 승리·패배	Partial	왕궁 파괴 확정 시 전용 3D Cue를 재생한다. 패배 전용 Cue는 아직 없다.	왕궁 파괴 승리는 전투 종료 시 1회 재생하고, 패배음은 이후 UI 버튼음과 중복되지 않게 후속 연결
 CR-10	P1	castle_raid	군단의 역습	단계 보상 획득	EmptySlot	공용 `RewardAcquirePresenter`의 획득 Cue가 비어 있다.	인벤토리 실제 아이콘/보상 적용 뒤 획득음 재생
 FR-01	P1	food_riot	식량 대소동	콘텐츠 입장·시작	MissingHook	Runtime Prefab 직접 AudioClip/SfxCue 의존성 0개다.	카운트다운/조작 시작과 동기화
 FR-02	P1	food_riot	식량 대소동	식량 출현·줍기·배달	MissingHook	핵심 수집/운반 사건에 Audio Hook이 없다.	출현/줍기/납품을 구분하고 다량 수집 Cooldown 적용

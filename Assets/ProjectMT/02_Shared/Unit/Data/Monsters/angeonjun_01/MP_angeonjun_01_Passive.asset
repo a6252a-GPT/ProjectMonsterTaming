@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f0bc2c8d3774b74385d208cf1805b2a, type: 3}
+  m_Name: MP_angeonjun_01_Passive
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Unit.GenericMonsterPassiveSkill
+  skillId: passive_long_range_aim_angeonjun_01
+  displayName: "\uC7A5\uAC70\uB9AC \uC870\uC900"
+  description: "\uBA3C \uC801\uC744 \uACF5\uACA9\uD560 \uB54C \uCD94\uAC00 \uD53C\uD574\uB97C
+    \uC90D\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  presentationTier: 0
+  recipe:
+    trigger: 2
+    triggerCount: 1
+    internalCooldown: 0
+    conditions:
+    - type: 11
+      value: 4
+      count: 1
+      referenceId: 
+    target: 1
+    delivery: 0
+    shape: 0
+    effects:
+    - effectId: long_range_bonus
+      type: 0
+      valueSource: 1
+      magnitude: 0.22
+      magnitudeMode: 0
+      maximumMagnitude: 0.22
+      duration: 0
+      delay: 0
+      repeatInterval: 0
+      radius: 0
+      maxTargets: 1
+      repeatCount: 1
+      stackPolicy: 1
+  authoringEnabled: 1
+  runtimeKind: 5
+  primaryBase: 0.07
+  primaryPerLevelStep: 0.005
+  secondaryBase: 0
+  secondaryPerLevelStep: 0
+  triggerCount: 1
+  maxStacks: 1
+  duration: 0
+  cooldown: 0
+  threshold: 4
+  radius: 0
+  maxTargets: 1

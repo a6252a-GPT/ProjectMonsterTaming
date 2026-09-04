@@ -6141,6 +6141,8 @@ MonoBehaviour:
   poolScope: {fileID: 889458435}
   sfxPool: {fileID: 981619242}
   combatFeedback: {fileID: 525310177}
+  structureDestroyedSfx: {fileID: 11400000, guid: 5d1f670e0e97f8c408d8a3a4f65bc18c, type: 2}
+  palaceDestroyedSfx: {fileID: 11400000, guid: f56ceee7e45e6104baff990c3b5f3abb, type: 2}
   deploymentText: {fileID: 1910063167}
   statusText: {fileID: 1910063166}
   castleInfoText: {fileID: 1910063165}

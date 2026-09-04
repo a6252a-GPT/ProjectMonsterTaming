@@ -80,15 +80,19 @@
                         <ui:VisualElement name="content-combat" class="section-content" />
                     </ui:VisualElement>
                     <ui:VisualElement class="draft-section">
-                        <ui:Label text="8. 대기 · 이동 · 사망 Motion" class="section-title" />
+                        <ui:Label text="8. 몬스터 자체 SFX" class="section-title" />
+                        <ui:VisualElement name="content-voice-sfx" class="section-content" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="draft-section">
+                        <ui:Label text="9. 대기 · 이동 · 사망 Motion" class="section-title" />
                         <ui:VisualElement name="content-motions" class="section-content" />
                     </ui:VisualElement>
                     <ui:VisualElement class="draft-section">
-                        <ui:Label text="9. 군단의 역습 AI" class="section-title" />
+                        <ui:Label text="10. 군단의 역습 AI" class="section-title" />
                         <ui:VisualElement name="content-castle" class="section-content" />
                     </ui:VisualElement>
                     <ui:VisualElement class="draft-section">
-                        <ui:Label text="10. 돌파 옵션" class="section-title" />
+                        <ui:Label text="11. 돌파 옵션" class="section-title" />
                         <ui:VisualElement name="content-ascension" class="section-content" />
                     </ui:VisualElement>
                 </ui:ScrollView>
@@ -232,7 +236,7 @@
                                 <ui:Label text="3. 능력치, 타격 강도, 피격 체급과 메인 전투 역할을 정합니다." class="guide-step" />
                                 <ui:Label text="4. 기본공격 프리셋을 선택하거나 조립소에서 새 공격을 만듭니다." class="guide-step" />
                                 <ui:Label text="5. 공격 모션과 실제 타격/발사 시점을 맞춥니다." class="guide-step" />
-                                <ui:Label text="6. 대기·이동·사망 모션과 필요한 고급 예외 연출을 지정합니다." class="guide-step" />
+                                <ui:Label text="6. 몬스터 자체 음성과 대기·이동·사망 모션을 지정합니다." class="guide-step" />
                                 <ui:Label text="7. 미리보기 작업대에서 모션, 피해, 판정 범위를 확인합니다." class="guide-step" />
                                 <ui:Label text="8. 입력 검증 오류를 왼쪽 제작 데이터에서 수정합니다." class="guide-step" />
                                 <ui:Label text="9. 기존 식별자를 유지해 반영한 뒤 실제 전투에서 다시 확인합니다." class="guide-step" />

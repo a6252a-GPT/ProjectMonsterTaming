@@ -896,7 +896,12 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private static void PlayContractSfx(MonsterBasicAttackVfxBinding binding)
         {
             if (binding.Sound != null)
-                SfxEditorAudioPreview.Play(binding.Sound, 0, false, binding.SoundVolume);
+                SfxEditorAudioPreview.PlayOverlapping(
+                    binding.Sound,
+                    0,
+                    false,
+                    binding.SoundVolume,
+                    binding.OverrideSoundPitch ? binding.SoundPitch : 1f);
             else
                 PlaySfx(binding.Sfx);
         }
@@ -1030,13 +1035,12 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private static void PlaySfx(SfxCue cue)
         {
             if (cue == null || !cue.TrySelectClip(out var clip) || clip == null) return;
-            var audioUtil = typeof(AudioImporter).Assembly.GetType("UnityEditor.AudioUtil");
-            var method = audioUtil?.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-                .FirstOrDefault(candidate => candidate.Name == "PlayPreviewClip");
-            if (method == null) return;
-            var count = method.GetParameters().Length;
-            var arguments = count switch { 1 => new object[] { clip }, 2 => new object[] { clip, 0 }, _ => new object[] { clip, 0, false } };
-            try { method.Invoke(null, arguments); } catch { /* Unity 버전별 AudioUtil 차이는 미리보기만 생략합니다. */ }
+            SfxEditorAudioPreview.PlayOverlapping(
+                clip,
+                0,
+                false,
+                cue.SelectVolume(),
+                cue.SelectPitch());
         }
 
         private static void SetHideFlags(GameObject item)

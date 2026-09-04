@@ -13,1213 +13,1397 @@ MonoBehaviour:
   m_Name: SfxSpaceCatalog_ProjectMT
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxSpaceCatalog
   entries:
-  - id: "SYS-01"
+  - id: SYS-01
     priority: 0
-    categoryId: "ui"
-    area: "공통 UI"
-    eventName: "기본 버튼 선택·확인"
+    categoryId: ui
+    area: "\uACF5\uD1B5 UI"
+    eventName: "\uAE30\uBCF8 \uBC84\uD2BC \uC120\uD0DD\xB7\uD655\uC778"
     coverageState: 3
-    evidence: "`UIButtonClickPunch`는 시각 Punch만 처리하며 공용 UI SFX 호출 경로가 없다."
-    completionCriteria: "공용 UI Cue를 연결하고 대표 화면 3곳에서 중복 재생 없이 들림"
-    assignmentState: 0
+    evidence: "`UIButtonClickPunch`\uB294 \uC2DC\uAC01 Punch\uB9CC \uCC98\uB9AC\uD558\uBA70
+      \uACF5\uC6A9 UI SFX \uD638\uCD9C \uACBD\uB85C\uAC00 \uC5C6\uB2E4."
+    completionCriteria: "\uACF5\uC6A9 UI Cue\uB97C \uC5F0\uACB0\uD558\uACE0 \uB300\uD45C
+      \uD654\uBA74 3\uACF3\uC5D0\uC11C \uC911\uBCF5 \uC7AC\uC0DD \uC5C6\uC774 \uB4E4\uB9BC"
+    assignmentState: 2
     cue: {fileID: 0}
-    note: ""
-  - id: "SYS-02"
+    note: 
+  - id: SYS-02
     priority: 0
-    categoryId: "ui"
-    area: "공통 UI"
-    eventName: "취소·뒤로가기·패널 닫기"
+    categoryId: ui
+    area: "\uACF5\uD1B5 UI"
+    eventName: "\uCDE8\uC18C\xB7\uB4A4\uB85C\uAC00\uAE30\xB7\uD328\uB110 \uB2EB\uAE30"
     coverageState: 3
-    evidence: "`UIPanelPopAnimator`는 Tween만 처리한다. 패널 수명 이벤트에 Audio 호출이 없다."
-    completionCriteria: "뒤로가기와 닫기 버튼이 같은 공용 Cue 정책으로 재생됨"
+    evidence: "`UIPanelPopAnimator`\uB294 Tween\uB9CC \uCC98\uB9AC\uD55C\uB2E4. \uD328\uB110
+      \uC218\uBA85 \uC774\uBCA4\uD2B8\uC5D0 Audio \uD638\uCD9C\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uB4A4\uB85C\uAC00\uAE30\uC640 \uB2EB\uAE30 \uBC84\uD2BC\uC774
+      \uAC19\uC740 \uACF5\uC6A9 Cue \uC815\uCC45\uC73C\uB85C \uC7AC\uC0DD\uB428"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "SYS-03"
+    note: 
+  - id: SYS-03
     priority: 1
-    categoryId: "ui"
-    area: "공통 UI"
-    eventName: "패널 열기·팝업 등장"
+    categoryId: ui
+    area: "\uACF5\uD1B5 UI"
+    eventName: "\uD328\uB110 \uC5F4\uAE30\xB7\uD31D\uC5C5 \uB4F1\uC7A5"
     coverageState: 3
-    evidence: "공용 Panel 표시 애니메이터에 SFX 공간이 없다."
-    completionCriteria: "중첩 팝업에서도 1회만 재생되고 화면별 볼륨 편차가 없음"
+    evidence: "\uACF5\uC6A9 Panel \uD45C\uC2DC \uC560\uB2C8\uBA54\uC774\uD130\uC5D0
+      SFX \uACF5\uAC04\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uC911\uCCA9 \uD31D\uC5C5\uC5D0\uC11C\uB3C4 1\uD68C\uB9CC
+      \uC7AC\uC0DD\uB418\uACE0 \uD654\uBA74\uBCC4 \uBCFC\uB968 \uD3B8\uCC28\uAC00
+      \uC5C6\uC74C"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "SYS-04"
+    note: 
+  - id: SYS-04
     priority: 1
-    categoryId: "ui"
-    area: "공통 UI"
-    eventName: "탭·정렬·필터 전환"
+    categoryId: ui
+    area: "\uACF5\uD1B5 UI"
+    eventName: "\uD0ED\xB7\uC815\uB82C\xB7\uD544\uD130 \uC804\uD658"
     coverageState: 3
-    evidence: "UI 기능 코드 전역 검색에서 전환 SFX 호출을 찾지 못했다."
-    completionCriteria: "탭/정렬/필터 공용 Cue 또는 명시적 무음 정책 확정"
+    evidence: "UI \uAE30\uB2A5 \uCF54\uB4DC \uC804\uC5ED \uAC80\uC0C9\uC5D0\uC11C
+      \uC804\uD658 SFX \uD638\uCD9C\uC744 \uCC3E\uC9C0 \uBABB\uD588\uB2E4."
+    completionCriteria: "\uD0ED/\uC815\uB82C/\uD544\uD130 \uACF5\uC6A9 Cue \uB610\uB294
+      \uBA85\uC2DC\uC801 \uBB34\uC74C \uC815\uCC45 \uD655\uC815"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "SYS-05"
+    note: 
+  - id: SYS-05
     priority: 1
-    categoryId: "ui"
-    area: "공통 UI"
-    eventName: "토글·슬라이더 값 변경"
+    categoryId: ui
+    area: "\uACF5\uD1B5 UI"
+    eventName: "\uD1A0\uAE00\xB7\uC2AC\uB77C\uC774\uB354 \uAC12 \uBCC0\uACBD"
     coverageState: 3
-    evidence: "Settings 포함 조작 UI에 공용 변화음 경로가 없다."
-    completionCriteria: "토글과 슬라이더에 과밀하지 않은 변화음 적용·실기기 확인"
+    evidence: "Settings \uD3EC\uD568 \uC870\uC791 UI\uC5D0 \uACF5\uC6A9 \uBCC0\uD654\uC74C
+      \uACBD\uB85C\uAC00 \uC5C6\uB2E4."
+    completionCriteria: "\uD1A0\uAE00\uACFC \uC2AC\uB77C\uC774\uB354\uC5D0 \uACFC\uBC00\uD558\uC9C0
+      \uC54A\uC740 \uBCC0\uD654\uC74C \uC801\uC6A9\xB7\uC2E4\uAE30\uAE30 \uD655\uC778"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "SYS-06"
+    note: 
+  - id: SYS-06
     priority: 0
-    categoryId: "ui"
-    area: "공통 UI"
-    eventName: "비활성·잠금·재화 부족·잘못된 조작"
+    categoryId: ui
+    area: "\uACF5\uD1B5 UI"
+    eventName: "\uBE44\uD65C\uC131\xB7\uC7A0\uAE08\xB7\uC7AC\uD654 \uBD80\uC871\xB7\uC798\uBABB\uB41C
+      \uC870\uC791"
     coverageState: 3
-    evidence: "기능별 오류 표시는 있으나 공용 거부음 호출 경로가 없다."
-    completionCriteria: "동일 의미의 거부 사건이 한 Cue 정책으로 재생됨"
+    evidence: "\uAE30\uB2A5\uBCC4 \uC624\uB958 \uD45C\uC2DC\uB294 \uC788\uC73C\uB098
+      \uACF5\uC6A9 \uAC70\uBD80\uC74C \uD638\uCD9C \uACBD\uB85C\uAC00 \uC5C6\uB2E4."
+    completionCriteria: "\uB3D9\uC77C \uC758\uBBF8\uC758 \uAC70\uBD80 \uC0AC\uAC74\uC774
+      \uD55C Cue \uC815\uCC45\uC73C\uB85C \uC7AC\uC0DD\uB428"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "SYS-07"
+    note: 
+  - id: SYS-07
     priority: 1
-    categoryId: "ui"
-    area: "Title/계정"
-    eventName: "시작·계정 선택·로그인 성공/실패"
+    categoryId: ui
+    area: "Title/\uACC4\uC815"
+    eventName: "\uC2DC\uC791\xB7\uACC4\uC815 \uC120\uD0DD\xB7\uB85C\uADF8\uC778 \uC131\uACF5/\uC2E4\uD328"
     coverageState: 3
-    evidence: "`00_Entry` 직접 AudioClip/SfxCue 의존성 0개다."
-    completionCriteria: "성공/실패가 구분되고 중복 콜백에도 1회만 재생됨"
+    evidence: "`00_Entry` \uC9C1\uC811 AudioClip/SfxCue \uC758\uC874\uC131 0\uAC1C\uB2E4."
+    completionCriteria: "\uC131\uACF5/\uC2E4\uD328\uAC00 \uAD6C\uBD84\uB418\uACE0
+      \uC911\uBCF5 \uCF5C\uBC31\uC5D0\uB3C4 1\uD68C\uB9CC \uC7AC\uC0DD\uB428"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "SYS-08"
+    note: 
+  - id: SYS-08
     priority: 1
-    categoryId: "ui"
-    area: "로딩/저장"
-    eventName: "로딩 완료·저장 성공·저장 오류"
+    categoryId: ui
+    area: "\uB85C\uB529/\uC800\uC7A5"
+    eventName: "\uB85C\uB529 \uC644\uB8CC\xB7\uC800\uC7A5 \uC131\uACF5\xB7\uC800\uC7A5
+      \uC624\uB958"
     coverageState: 3
-    evidence: "전역 Audio Controller는 있으나 기능 이벤트 연결이 없다."
-    completionCriteria: "저장 실패 등 중요한 사건만 정책적으로 재생됨"
+    evidence: "\uC804\uC5ED Audio Controller\uB294 \uC788\uC73C\uB098 \uAE30\uB2A5
+      \uC774\uBCA4\uD2B8 \uC5F0\uACB0\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uC800\uC7A5 \uC2E4\uD328 \uB4F1 \uC911\uC694\uD55C \uC0AC\uAC74\uB9CC
+      \uC815\uCC45\uC801\uC73C\uB85C \uC7AC\uC0DD\uB428"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "SYS-09"
+    note: 
+  - id: SYS-09
     priority: 1
-    categoryId: "ui"
-    area: "설정"
-    eventName: "SFX 볼륨 미리듣기"
+    categoryId: ui
+    area: "\uC124\uC815"
+    eventName: "SFX \uBCFC\uB968 \uBBF8\uB9AC\uB4E3\uAE30"
     coverageState: 3
-    evidence: "SFX Mixer 볼륨 제어는 있으나 변경 후 확인용 Preview Cue가 없다."
-    completionCriteria: "슬라이더 조작 중 대표 Cue로 최종 체감 볼륨 확인 가능"
+    evidence: "SFX Mixer \uBCFC\uB968 \uC81C\uC5B4\uB294 \uC788\uC73C\uB098 \uBCC0\uACBD
+      \uD6C4 \uD655\uC778\uC6A9 Preview Cue\uAC00 \uC5C6\uB2E4."
+    completionCriteria: "\uC2AC\uB77C\uC774\uB354 \uC870\uC791 \uC911 \uB300\uD45C
+      Cue\uB85C \uCD5C\uC885 \uCCB4\uAC10 \uBCFC\uB968 \uD655\uC778 \uAC00\uB2A5"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "SYS-10"
+    note: 
+  - id: SYS-10
     priority: 2
-    categoryId: "ui"
-    area: "접근성/모바일"
-    eventName: "앱 Pause·복귀·오디오 포커스 복구 확인"
+    categoryId: ui
+    area: "\uC811\uADFC\uC131/\uBAA8\uBC14\uC77C"
+    eventName: "\uC571 Pause\xB7\uBCF5\uADC0\xB7\uC624\uB514\uC624 \uD3EC\uCEE4\uC2A4
+      \uBCF5\uAD6C \uD655\uC778"
     coverageState: 4
-    evidence: "SFX 개별 사건보다 모바일 수명·Mixer 복구 QA 범위다."
-    completionCriteria: "Android Pause/Resume 뒤 루프·중복·음소거 회귀 없음"
+    evidence: "SFX \uAC1C\uBCC4 \uC0AC\uAC74\uBCF4\uB2E4 \uBAA8\uBC14\uC77C \uC218\uBA85\xB7Mixer
+      \uBCF5\uAD6C QA \uBC94\uC704\uB2E4."
+    completionCriteria: "Android Pause/Resume \uB4A4 \uB8E8\uD504\xB7\uC911\uBCF5\xB7\uC74C\uC18C\uAC70
+      \uD68C\uADC0 \uC5C6\uC74C"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "COM-01"
+    note: 
+  - id: COM-01
     priority: 0
-    categoryId: "common"
-    area: "공용 전투"
-    eventName: "일반 피격 Hit"
+    categoryId: common
+    area: "\uACF5\uC6A9 \uC804\uD22C"
+    eventName: "\uC77C\uBC18 \uD53C\uACA9 Hit"
     coverageState: 2
-    evidence: "핵심 생산 Scene/콘텐츠 Prefab의 `CombatFeedbackPlayer.hitSfx`가 비어 있다. 전체 직렬화 검색은 7/27 배정이나 현행 핵심 생산본은 0이다."
-    completionCriteria: "근접·원거리·다단 피격에서 Cooldown 정책대로 재생됨"
+    evidence: "\uD575\uC2EC \uC0DD\uC0B0 Scene/\uCF58\uD150\uCE20 Prefab\uC758 `CombatFeedbackPlayer.hitSfx`\uAC00
+      \uBE44\uC5B4 \uC788\uB2E4. \uC804\uCCB4 \uC9C1\uB82C\uD654 \uAC80\uC0C9\uC740
+      7/27 \uBC30\uC815\uC774\uB098 \uD604\uD589 \uD575\uC2EC \uC0DD\uC0B0\uBCF8\uC740
+      0\uC774\uB2E4."
+    completionCriteria: "\uADFC\uC811\xB7\uC6D0\uAC70\uB9AC\xB7\uB2E4\uB2E8 \uD53C\uACA9\uC5D0\uC11C
+      Cooldown \uC815\uCC45\uB300\uB85C \uC7AC\uC0DD\uB428"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "COM-02"
+    note: 
+  - id: COM-02
     priority: 0
-    categoryId: "common"
-    area: "공용 전투"
-    eventName: "유닛 사망 Death"
+    categoryId: common
+    area: "\uACF5\uC6A9 \uC804\uD22C"
+    eventName: "\uC720\uB2DB \uC0AC\uB9DD Death"
     coverageState: 2
-    evidence: "`deathSfx` 직렬화 0/6, 생산 전투 피드백도 비어 있다."
-    completionCriteria: "사망 확정 시 1회, Pool 반환 뒤 잔재 없이 재생됨"
+    evidence: "`deathSfx` \uC9C1\uB82C\uD654 0/6, \uC0DD\uC0B0 \uC804\uD22C \uD53C\uB4DC\uBC31\uB3C4
+      \uBE44\uC5B4 \uC788\uB2E4."
+    completionCriteria: "\uC0AC\uB9DD \uD655\uC815 \uC2DC 1\uD68C, Pool \uBC18\uD658
+      \uB4A4 \uC794\uC7AC \uC5C6\uC774 \uC7AC\uC0DD\uB428"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "COM-03"
+    note: 
+  - id: COM-03
     priority: 0
-    categoryId: "common"
-    area: "공용 전투"
-    eventName: "약한 결정타 Weak Climax"
+    categoryId: common
+    area: "\uACF5\uC6A9 \uC804\uD22C"
+    eventName: "\uC57D\uD55C \uACB0\uC815\uD0C0 Weak Climax"
     coverageState: 2
-    evidence: "`weakClimaxSfx` 0/6이다."
-    completionCriteria: "약한 결정타 판정에서 Hit와 의도한 레이어링으로 재생됨"
+    evidence: "`weakClimaxSfx` 0/6\uC774\uB2E4."
+    completionCriteria: "\uC57D\uD55C \uACB0\uC815\uD0C0 \uD310\uC815\uC5D0\uC11C
+      Hit\uC640 \uC758\uB3C4\uD55C \uB808\uC774\uC5B4\uB9C1\uC73C\uB85C \uC7AC\uC0DD\uB428"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "COM-04"
+    note: 
+  - id: COM-04
     priority: 0
-    categoryId: "common"
-    area: "공용 전투"
-    eventName: "강한 결정타 Strong Climax"
+    categoryId: common
+    area: "\uACF5\uC6A9 \uC804\uD22C"
+    eventName: "\uAC15\uD55C \uACB0\uC815\uD0C0 Strong Climax"
     coverageState: 2
-    evidence: "`strongClimaxSfx` 0/6이다."
-    completionCriteria: "강한 결정타가 약한 결정타와 명확히 구분됨"
+    evidence: "`strongClimaxSfx` 0/6\uC774\uB2E4."
+    completionCriteria: "\uAC15\uD55C \uACB0\uC815\uD0C0\uAC00 \uC57D\uD55C \uACB0\uC815\uD0C0\uC640
+      \uBA85\uD655\uD788 \uAD6C\uBD84\uB428"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "COM-05"
+    note: 
+  - id: COM-05
     priority: 0
-    categoryId: "monster_basic"
-    area: "몬스터 기본공격"
-    eventName: "우선 제작 5종 무쿠크·샤탁·루미·아르·루의 발사/휘두름/Impact"
+    categoryId: monster_basic
+    area: "\uBAAC\uC2A4\uD130 \uAE30\uBCF8\uACF5\uACA9"
+    eventName: "\uC6B0\uC120 \uC81C\uC791 5\uC885 \uBB34\uCFE0\uD06C\xB7\uC0E4\uD0C1\xB7\uB8E8\uBBF8\xB7\uC544\uB974\xB7\uB8E8\uC758
+      \uBC1C\uC0AC/\uD718\uB450\uB984/Impact"
     coverageState: 2
-    evidence: "운영 기본공격 `sound` 전체 0/250이다. 과거 노션 일부 후보는 생산 연결이 아니다."
-    completionCriteria: "`BA_M_01`부터 5종의 실제 타격 시점·공간 위치·Cue가 Preview와 Runtime에서 일치"
+    evidence: "\uC6B4\uC601 \uAE30\uBCF8\uACF5\uACA9 `sound` \uC804\uCCB4 0/250\uC774\uB2E4.
+      \uACFC\uAC70 \uB178\uC158 \uC77C\uBD80 \uD6C4\uBCF4\uB294 \uC0DD\uC0B0 \uC5F0\uACB0\uC774
+      \uC544\uB2C8\uB2E4."
+    completionCriteria: "`BA_M_01`\uBD80\uD130 5\uC885\uC758 \uC2E4\uC81C \uD0C0\uACA9
+      \uC2DC\uC810\xB7\uACF5\uAC04 \uC704\uCE58\xB7Cue\uAC00 Preview\uC640 Runtime\uC5D0\uC11C
+      \uC77C\uCE58"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "COM-06"
+    note: 
+  - id: COM-06
     priority: 2
-    categoryId: "monster_basic"
-    area: "몬스터 기본공격"
-    eventName: "나머지 운영 몬스터의 기본공격 사건"
+    categoryId: monster_basic
+    area: "\uBAAC\uC2A4\uD130 \uAE30\uBCF8\uACF5\uACA9"
+    eventName: "\uB098\uBA38\uC9C0 \uC6B4\uC601 \uBAAC\uC2A4\uD130\uC758 \uAE30\uBCF8\uACF5\uACA9
+      \uC0AC\uAC74"
     coverageState: 2
-    evidence: "운영 44종 범위의 출시용 Sound 배정이 확인되지 않는다."
-    completionCriteria: "44종 전체 Profile별 필수 사건 배정·Preview·생산 Runtime 검증"
+    evidence: "\uC6B4\uC601 44\uC885 \uBC94\uC704\uC758 \uCD9C\uC2DC\uC6A9 Sound
+      \uBC30\uC815\uC774 \uD655\uC778\uB418\uC9C0 \uC54A\uB294\uB2E4."
+    completionCriteria: "44\uC885 \uC804\uCCB4 Profile\uBCC4 \uD544\uC218 \uC0AC\uAC74
+      \uBC30\uC815\xB7Preview\xB7\uC0DD\uC0B0 Runtime \uAC80\uC99D"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "COM-07"
+    note: 
+  - id: COM-07
     priority: 1
-    categoryId: "monster_active"
-    area: "공격형 액티브"
-    eventName: "Step별 발동·투사체·Impact·종료"
+    categoryId: monster_active
+    area: "\uACF5\uACA9\uD615 \uC561\uD2F0\uBE0C"
+    eventName: "Step\uBCC4 \uBC1C\uB3D9\xB7\uD22C\uC0AC\uCCB4\xB7Impact\xB7\uC885\uB8CC"
     coverageState: 2
-    evidence: "공격형 조립 계약에는 Sound 공간이 있으나 생산/초안 `sound`와 Runtime `sfx`가 모두 0이다."
-    completionCriteria: "Step 시간축과 공간 Anchor에 맞춰 재생되고 연타 시 Voice 제한 통과"
+    evidence: "\uACF5\uACA9\uD615 \uC870\uB9BD \uACC4\uC57D\uC5D0\uB294 Sound \uACF5\uAC04\uC774
+      \uC788\uC73C\uB098 \uC0DD\uC0B0/\uCD08\uC548 `sound`\uC640 Runtime `sfx`\uAC00
+      \uBAA8\uB450 0\uC774\uB2E4."
+    completionCriteria: "Step \uC2DC\uAC04\uCD95\uACFC \uACF5\uAC04 Anchor\uC5D0
+      \uB9DE\uCDB0 \uC7AC\uC0DD\uB418\uACE0 \uC5F0\uD0C0 \uC2DC Voice \uC81C\uD55C
+      \uD1B5\uACFC"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "COM-08"
+    note: 
+  - id: COM-08
     priority: 1
-    categoryId: "monster_active"
-    area: "효과형 액티브"
-    eventName: "시전자 발동·대상 적용·지속 시작/Loop/끝"
+    categoryId: monster_active
+    area: "\uD6A8\uACFC\uD615 \uC561\uD2F0\uBE0C"
+    eventName: "\uC2DC\uC804\uC790 \uBC1C\uB3D9\xB7\uB300\uC0C1 \uC801\uC6A9\xB7\uC9C0\uC18D
+      \uC2DC\uC791/Loop/\uB05D"
     coverageState: 2
-    evidence: "효과형 계약은 VFX/SFX 구조를 지원하지만 Draft/Runtime 배정은 0이다."
-    completionCriteria: "1회성/지속형 각각 시작·Loop 정지·끝이 정상 동작"
+    evidence: "\uD6A8\uACFC\uD615 \uACC4\uC57D\uC740 VFX/SFX \uAD6C\uC870\uB97C \uC9C0\uC6D0\uD558\uC9C0\uB9CC
+      Draft/Runtime \uBC30\uC815\uC740 0\uC774\uB2E4."
+    completionCriteria: "1\uD68C\uC131/\uC9C0\uC18D\uD615 \uAC01\uAC01 \uC2DC\uC791\xB7Loop
+      \uC815\uC9C0\xB7\uB05D\uC774 \uC815\uC0C1 \uB3D9\uC791"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "COM-09"
+    note: 
+  - id: COM-09
     priority: 1
-    categoryId: "monster_active"
-    area: "액티브 Focus"
-    eventName: "전설 Focus 시작"
+    categoryId: monster_active
+    area: "\uC561\uD2F0\uBE0C Focus"
+    eventName: "\uC804\uC124 Focus \uC2DC\uC791"
     coverageState: 2
-    evidence: "`MonsterActiveFocusPresentationConfig.legendaryStartSfx`가 비어 있다."
-    completionCriteria: "전설 Focus 시작에 1회, Queue 연속 발동에도 겹침 제어됨"
+    evidence: "`MonsterActiveFocusPresentationConfig.legendaryStartSfx`\uAC00 \uBE44\uC5B4
+      \uC788\uB2E4."
+    completionCriteria: "\uC804\uC124 Focus \uC2DC\uC791\uC5D0 1\uD68C, Queue \uC5F0\uC18D
+      \uBC1C\uB3D9\uC5D0\uB3C4 \uACB9\uCE68 \uC81C\uC5B4\uB428"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "COM-10"
+    note: 
+  - id: COM-10
     priority: 1
-    categoryId: "monster_active"
-    area: "액티브 Focus"
-    eventName: "신화 Focus 시작"
+    categoryId: monster_active
+    area: "\uC561\uD2F0\uBE0C Focus"
+    eventName: "\uC2E0\uD654 Focus \uC2DC\uC791"
     coverageState: 2
-    evidence: "`mythicStartSfx`가 비어 있다."
-    completionCriteria: "신화와 전설이 청각적으로 구분되고 연출 길이에 맞음"
+    evidence: "`mythicStartSfx`\uAC00 \uBE44\uC5B4 \uC788\uB2E4."
+    completionCriteria: "\uC2E0\uD654\uC640 \uC804\uC124\uC774 \uCCAD\uAC01\uC801\uC73C\uB85C
+      \uAD6C\uBD84\uB418\uACE0 \uC5F0\uCD9C \uAE38\uC774\uC5D0 \uB9DE\uC74C"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "COM-11"
+    note: 
+  - id: COM-11
     priority: 1
-    categoryId: "common"
-    area: "상태효과"
-    eventName: "버프·디버프 적용"
+    categoryId: common
+    area: "\uC0C1\uD0DC\uD6A8\uACFC"
+    eventName: "\uBC84\uD504\xB7\uB514\uBC84\uD504 \uC801\uC6A9"
     coverageState: 3
-    evidence: "상태효과 플로팅/VFX는 있으나 공용 상태 SFX Hook을 찾지 못했다."
-    completionCriteria: "중요한 상태만 화이트리스트로 연결해 난청·과밀 방지"
+    evidence: "\uC0C1\uD0DC\uD6A8\uACFC \uD50C\uB85C\uD305/VFX\uB294 \uC788\uC73C\uB098
+      \uACF5\uC6A9 \uC0C1\uD0DC SFX Hook\uC744 \uCC3E\uC9C0 \uBABB\uD588\uB2E4."
+    completionCriteria: "\uC911\uC694\uD55C \uC0C1\uD0DC\uB9CC \uD654\uC774\uD2B8\uB9AC\uC2A4\uD2B8\uB85C
+      \uC5F0\uACB0\uD574 \uB09C\uCCAD\xB7\uACFC\uBC00 \uBC29\uC9C0"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "COM-12"
+    note: 
+  - id: COM-12
     priority: 2
-    categoryId: "common"
-    area: "상태효과"
-    eventName: "지속 Tick·해제·면역/저항"
+    categoryId: common
+    area: "\uC0C1\uD0DC\uD6A8\uACFC"
+    eventName: "\uC9C0\uC18D Tick\xB7\uD574\uC81C\xB7\uBA74\uC5ED/\uC800\uD56D"
     coverageState: 3
-    evidence: "반복 Tick과 해제 사건에 Audio 정책이 없다."
-    completionCriteria: "Tick 주기 제한, 해제/저항 구분, 다수 대상 Voice 상한 검증"
+    evidence: "\uBC18\uBCF5 Tick\uACFC \uD574\uC81C \uC0AC\uAC74\uC5D0 Audio \uC815\uCC45\uC774
+      \uC5C6\uB2E4."
+    completionCriteria: "Tick \uC8FC\uAE30 \uC81C\uD55C, \uD574\uC81C/\uC800\uD56D
+      \uAD6C\uBD84, \uB2E4\uC218 \uB300\uC0C1 Voice \uC0C1\uD55C \uAC80\uC99D"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "COM-13"
+    note: 
+  - id: COM-13
     priority: 1
-    categoryId: "commander_skill"
-    area: "군단장 스킬"
-    eventName: "화염구·얼음 수정구 Casting/발동/Impact"
+    categoryId: commander_skill
+    area: "\uAD70\uB2E8\uC7A5 \uC2A4\uD0AC"
+    eventName: "\uD654\uC5FC\uAD6C\xB7\uC5BC\uC74C \uC218\uC815\uAD6C Casting/\uBC1C\uB3D9/Impact"
     coverageState: 1
-    evidence: "두 스킬 모두 Cast·Impact Cue는 정상이다. `castingSfx`는 0/2다."
-    completionCriteria: "필요한 경우 Casting 배정 후 3단계 시간축과 중단 처리 검증"
+    evidence: "\uB450 \uC2A4\uD0AC \uBAA8\uB450 Cast\xB7Impact Cue\uB294 \uC815\uC0C1\uC774\uB2E4.
+      `castingSfx`\uB294 0/2\uB2E4."
+    completionCriteria: "\uD544\uC694\uD55C \uACBD\uC6B0 Casting \uBC30\uC815 \uD6C4
+      3\uB2E8\uACC4 \uC2DC\uAC04\uCD95\uACFC \uC911\uB2E8 \uCC98\uB9AC \uAC80\uC99D"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "COM-14"
+    note: 
+  - id: COM-14
     priority: 1
-    categoryId: "commander_skill"
-    area: "군단장 스킬"
-    eventName: "천둥 창·수호의 깃발·심연의 족쇄 발동/Impact"
+    categoryId: commander_skill
+    area: "\uAD70\uB2E8\uC7A5 \uC2A4\uD0AC"
+    eventName: "\uCC9C\uB465 \uCC3D\xB7\uC218\uD638\uC758 \uAE43\uBC1C\xB7\uC2EC\uC5F0\uC758
+      \uC871\uC1C4 \uBC1C\uB3D9/Impact"
     coverageState: 2
-    evidence: "신규 3종의 Cast·Impact Cue가 비어 있다."
-    completionCriteria: "3종 각각 Casting/발동/Impact 중 필요한 사건을 승인 후 배정·재생 검증"
+    evidence: "\uC2E0\uADDC 3\uC885\uC758 Cast\xB7Impact Cue\uAC00 \uBE44\uC5B4 \uC788\uB2E4."
+    completionCriteria: "3\uC885 \uAC01\uAC01 Casting/\uBC1C\uB3D9/Impact \uC911
+      \uD544\uC694\uD55C \uC0AC\uAC74\uC744 \uC2B9\uC778 \uD6C4 \uBC30\uC815\xB7\uC7AC\uC0DD
+      \uAC80\uC99D"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "MB-01"
+    note: 
+  - id: MB-01
     priority: 0
-    categoryId: "main_battle"
-    area: "MainBattle"
-    eventName: "전투 시작·첫 웨이브 시작"
+    categoryId: main_battle
+    area: MainBattle
+    eventName: "\uC804\uD22C \uC2DC\uC791\xB7\uCCAB \uC6E8\uC774\uBE0C \uC2DC\uC791"
     coverageState: 3
-    evidence: "`01_MainBattle` 직접 Audio 의존성 0개이며 웨이브 시작 SFX Hook이 없다."
-    completionCriteria: "입장/전투 시작 중복 없이 한 번 재생됨"
+    evidence: "`01_MainBattle` \uC9C1\uC811 Audio \uC758\uC874\uC131 0\uAC1C\uC774\uBA70
+      \uC6E8\uC774\uBE0C \uC2DC\uC791 SFX Hook\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uC785\uC7A5/\uC804\uD22C \uC2DC\uC791 \uC911\uBCF5 \uC5C6\uC774
+      \uD55C \uBC88 \uC7AC\uC0DD\uB428"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "MB-02"
+    note: 
+  - id: MB-02
     priority: 1
-    categoryId: "main_battle"
-    area: "MainBattle"
-    eventName: "일반 웨이브 전환·증원 등장"
+    categoryId: main_battle
+    area: MainBattle
+    eventName: "\uC77C\uBC18 \uC6E8\uC774\uBE0C \uC804\uD658\xB7\uC99D\uC6D0 \uB4F1\uC7A5"
     coverageState: 3
-    evidence: "웨이브 이벤트는 있으나 SFX 호출이 없다."
-    completionCriteria: "웨이브 경고와 실제 Spawn 타이밍이 일치"
+    evidence: "\uC6E8\uC774\uBE0C \uC774\uBCA4\uD2B8\uB294 \uC788\uC73C\uB098 SFX
+      \uD638\uCD9C\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uC6E8\uC774\uBE0C \uACBD\uACE0\uC640 \uC2E4\uC81C Spawn
+      \uD0C0\uC774\uBC0D\uC774 \uC77C\uCE58"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "MB-03"
+    note: 
+  - id: MB-03
     priority: 1
-    categoryId: "main_battle"
-    area: "MainBattle"
-    eventName: "엘리트·보스 등장 경고"
+    categoryId: main_battle
+    area: MainBattle
+    eventName: "\uC5D8\uB9AC\uD2B8\xB7\uBCF4\uC2A4 \uB4F1\uC7A5 \uACBD\uACE0"
     coverageState: 3
-    evidence: "공용 Climax Cue와 별개로 등장 경고 공간이 없다."
-    completionCriteria: "UI 경고·Spawn·카메라 연출과 동기화"
+    evidence: "\uACF5\uC6A9 Climax Cue\uC640 \uBCC4\uAC1C\uB85C \uB4F1\uC7A5 \uACBD\uACE0
+      \uACF5\uAC04\uC774 \uC5C6\uB2E4."
+    completionCriteria: "UI \uACBD\uACE0\xB7Spawn\xB7\uCE74\uBA54\uB77C \uC5F0\uCD9C\uACFC
+      \uB3D9\uAE30\uD654"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "MB-04"
+    note: 
+  - id: MB-04
     priority: 1
-    categoryId: "main_battle"
-    area: "MainBattle HUD"
-    eventName: "파티 기력 만충·액티브 준비"
+    categoryId: main_battle
+    area: MainBattle HUD
+    eventName: "\uD30C\uD2F0 \uAE30\uB825 \uB9CC\uCDA9\xB7\uC561\uD2F0\uBE0C \uC900\uBE44"
     coverageState: 3
-    evidence: "HUD 발광은 있으나 준비음 호출이 없다."
-    completionCriteria: "80~90% 연출과 만충 사건을 혼동하지 않고 1회 재생"
+    evidence: "HUD \uBC1C\uAD11\uC740 \uC788\uC73C\uB098 \uC900\uBE44\uC74C \uD638\uCD9C\uC774
+      \uC5C6\uB2E4."
+    completionCriteria: "80~90% \uC5F0\uCD9C\uACFC \uB9CC\uCDA9 \uC0AC\uAC74\uC744
+      \uD63C\uB3D9\uD558\uC9C0 \uC54A\uACE0 1\uD68C \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "MB-05"
+    note: 
+  - id: MB-05
     priority: 1
-    categoryId: "main_battle"
-    area: "MainBattle 조작"
-    eventName: "몬스터 선택·드래그 시작·유효 배치"
+    categoryId: main_battle
+    area: "MainBattle \uC870\uC791"
+    eventName: "\uBAAC\uC2A4\uD130 \uC120\uD0DD\xB7\uB4DC\uB798\uADF8 \uC2DC\uC791\xB7\uC720\uD6A8
+      \uBC30\uCE58"
     coverageState: 3
-    evidence: "편성/배치 입력에 Audio 호출이 없다."
-    completionCriteria: "시작·성공·실패가 구분되고 반복 Drag에서 과밀하지 않음"
+    evidence: "\uD3B8\uC131/\uBC30\uCE58 \uC785\uB825\uC5D0 Audio \uD638\uCD9C\uC774
+      \uC5C6\uB2E4."
+    completionCriteria: "\uC2DC\uC791\xB7\uC131\uACF5\xB7\uC2E4\uD328\uAC00 \uAD6C\uBD84\uB418\uACE0
+      \uBC18\uBCF5 Drag\uC5D0\uC11C \uACFC\uBC00\uD558\uC9C0 \uC54A\uC74C"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "MB-06"
+    note: 
+  - id: MB-06
     priority: 1
-    categoryId: "main_battle"
-    area: "MainBattle 조작"
-    eventName: "예비대 교체·편성 적용"
+    categoryId: main_battle
+    area: "MainBattle \uC870\uC791"
+    eventName: "\uC608\uBE44\uB300 \uAD50\uCCB4\xB7\uD3B8\uC131 \uC801\uC6A9"
     coverageState: 3
-    evidence: "Runtime 편성 반영 사건에 SFX 경로가 없다."
-    completionCriteria: "실제 교체 완료 때만 재생됨"
+    evidence: "Runtime \uD3B8\uC131 \uBC18\uC601 \uC0AC\uAC74\uC5D0 SFX \uACBD\uB85C\uAC00
+      \uC5C6\uB2E4."
+    completionCriteria: "\uC2E4\uC81C \uAD50\uCCB4 \uC644\uB8CC \uB54C\uB9CC \uC7AC\uC0DD\uB428"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "MB-07"
+    note: 
+  - id: MB-07
     priority: 0
-    categoryId: "main_battle"
-    area: "MainBattle 결과"
-    eventName: "승리·보상 진입"
+    categoryId: main_battle
+    area: "MainBattle \uACB0\uACFC"
+    eventName: "\uC2B9\uB9AC\xB7\uBCF4\uC0C1 \uC9C4\uC785"
     coverageState: 3
-    evidence: "결과/보상 화면에 공용 결과 Cue가 없다."
-    completionCriteria: "승리 확정과 보상 표시가 자연스럽게 연결됨"
+    evidence: "\uACB0\uACFC/\uBCF4\uC0C1 \uD654\uBA74\uC5D0 \uACF5\uC6A9 \uACB0\uACFC
+      Cue\uAC00 \uC5C6\uB2E4."
+    completionCriteria: "\uC2B9\uB9AC \uD655\uC815\uACFC \uBCF4\uC0C1 \uD45C\uC2DC\uAC00
+      \uC790\uC5F0\uC2A4\uB7FD\uAC8C \uC5F0\uACB0\uB428"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "MB-08"
+    note: 
+  - id: MB-08
     priority: 0
-    categoryId: "main_battle"
-    area: "MainBattle 결과"
-    eventName: "패배·재도전"
+    categoryId: main_battle
+    area: "MainBattle \uACB0\uACFC"
+    eventName: "\uD328\uBC30\xB7\uC7AC\uB3C4\uC804"
     coverageState: 3
-    evidence: "패배/재시도 조작에 Audio 호출이 없다."
-    completionCriteria: "패배 연출과 재도전 버튼음을 분리해 재생"
+    evidence: "\uD328\uBC30/\uC7AC\uC2DC\uB3C4 \uC870\uC791\uC5D0 Audio \uD638\uCD9C\uC774
+      \uC5C6\uB2E4."
+    completionCriteria: "\uD328\uBC30 \uC5F0\uCD9C\uACFC \uC7AC\uB3C4\uC804 \uBC84\uD2BC\uC74C\uC744
+      \uBD84\uB9AC\uD574 \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "EXP-01"
+    note: 
+  - id: EXP-01
     priority: 1
-    categoryId: "expedition"
-    area: "원정대"
-    eventName: "단계 선택·출정·전투 시작"
+    categoryId: expedition
+    area: "\uC6D0\uC815\uB300"
+    eventName: "\uB2E8\uACC4 \uC120\uD0DD\xB7\uCD9C\uC815\xB7\uC804\uD22C \uC2DC\uC791"
     coverageState: 3
-    evidence: "Expedition 기능의 선택/입장 흐름에 SFX 호출이 없다."
-    completionCriteria: "출정 확정과 전장 조작 시작이 중복되지 않게 재생"
+    evidence: "Expedition \uAE30\uB2A5\uC758 \uC120\uD0DD/\uC785\uC7A5 \uD750\uB984\uC5D0
+      SFX \uD638\uCD9C\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uCD9C\uC815 \uD655\uC815\uACFC \uC804\uC7A5 \uC870\uC791
+      \uC2DC\uC791\uC774 \uC911\uBCF5\uB418\uC9C0 \uC54A\uAC8C \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "EXP-02"
+    note: 
+  - id: EXP-02
     priority: 1
-    categoryId: "expedition"
-    area: "원정대"
-    eventName: "웨이브 전환·새 적 역할 최초 등장"
+    categoryId: expedition
+    area: "\uC6D0\uC815\uB300"
+    eventName: "\uC6E8\uC774\uBE0C \uC804\uD658\xB7\uC0C8 \uC801 \uC5ED\uD560 \uCD5C\uCD08
+      \uB4F1\uC7A5"
     coverageState: 3
-    evidence: "웨이브와 역할별 적 등장에 경고 SFX Hook이 없다."
-    completionCriteria: "일반 웨이브와 암살자·마법사·군단장 첫 등장을 필요한 강도로 구분"
+    evidence: "\uC6E8\uC774\uBE0C\uC640 \uC5ED\uD560\uBCC4 \uC801 \uB4F1\uC7A5\uC5D0
+      \uACBD\uACE0 SFX Hook\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uC77C\uBC18 \uC6E8\uC774\uBE0C\uC640 \uC554\uC0B4\uC790\xB7\uB9C8\uBC95\uC0AC\xB7\uAD70\uB2E8\uC7A5
+      \uCCAB \uB4F1\uC7A5\uC744 \uD544\uC694\uD55C \uAC15\uB3C4\uB85C \uAD6C\uBD84"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "EXP-03"
+    note: 
+  - id: EXP-03
     priority: 0
-    categoryId: "expedition"
-    area: "원정대"
-    eventName: "아군·적 피격/사망/결정타"
+    categoryId: expedition
+    area: "\uC6D0\uC815\uB300"
+    eventName: "\uC544\uAD70\xB7\uC801 \uD53C\uACA9/\uC0AC\uB9DD/\uACB0\uC815\uD0C0"
     coverageState: 2
-    evidence: "공용 CombatFeedback 생산 Cue가 비어 있어 원정대 전투도 공용 누락의 영향을 받는다."
-    completionCriteria: "COM-01~04 배정 뒤 1~100단계 전투에서 Voice 상한 검증"
+    evidence: "\uACF5\uC6A9 CombatFeedback \uC0DD\uC0B0 Cue\uAC00 \uBE44\uC5B4 \uC788\uC5B4
+      \uC6D0\uC815\uB300 \uC804\uD22C\uB3C4 \uACF5\uC6A9 \uB204\uB77D\uC758 \uC601\uD5A5\uC744
+      \uBC1B\uB294\uB2E4."
+    completionCriteria: "COM-01~04 \uBC30\uC815 \uB4A4 1~100\uB2E8\uACC4 \uC804\uD22C\uC5D0\uC11C
+      Voice \uC0C1\uD55C \uAC80\uC99D"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "EXP-04"
+    note: 
+  - id: EXP-04
     priority: 1
-    categoryId: "expedition"
-    area: "원정대"
-    eventName: "단계 승리·패배·다음 단계 진입"
+    categoryId: expedition
+    area: "\uC6D0\uC815\uB300"
+    eventName: "\uB2E8\uACC4 \uC2B9\uB9AC\xB7\uD328\uBC30\xB7\uB2E4\uC74C \uB2E8\uACC4
+      \uC9C4\uC785"
     coverageState: 3
-    evidence: "결과 및 연속 진행 사건에 Audio 호출이 없다."
-    completionCriteria: "결과 확정과 다음 단계 시작이 각각 1회 재생"
+    evidence: "\uACB0\uACFC \uBC0F \uC5F0\uC18D \uC9C4\uD589 \uC0AC\uAC74\uC5D0 Audio
+      \uD638\uCD9C\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uACB0\uACFC \uD655\uC815\uACFC \uB2E4\uC74C \uB2E8\uACC4
+      \uC2DC\uC791\uC774 \uAC01\uAC01 1\uD68C \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "EXP-05"
+    note: 
+  - id: EXP-05
     priority: 1
-    categoryId: "expedition"
-    area: "원정대"
-    eventName: "Gold·Equipment·Key 보상 획득"
+    categoryId: expedition
+    area: "\uC6D0\uC815\uB300"
+    eventName: "Gold\xB7Equipment\xB7Key \uBCF4\uC0C1 \uD68D\uB4DD"
     coverageState: 2
-    evidence: "보상 데이터는 있으나 공용 `RewardAcquirePresenter.acquireSfx`가 비어 있다."
-    completionCriteria: "실제 지급 성공 뒤 보상 등급/종류 정책에 맞춰 재생"
+    evidence: "\uBCF4\uC0C1 \uB370\uC774\uD130\uB294 \uC788\uC73C\uB098 \uACF5\uC6A9
+      `RewardAcquirePresenter.acquireSfx`\uAC00 \uBE44\uC5B4 \uC788\uB2E4."
+    completionCriteria: "\uC2E4\uC81C \uC9C0\uAE09 \uC131\uACF5 \uB4A4 \uBCF4\uC0C1
+      \uB4F1\uAE09/\uC885\uB958 \uC815\uCC45\uC5D0 \uB9DE\uCDB0 \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FORM-01"
+    note: 
+  - id: FORM-01
     priority: 1
-    categoryId: "ui"
-    area: "편성"
-    eventName: "슬롯 선택·배치 교환·저장 적용·불가"
+    categoryId: ui
+    area: "\uD3B8\uC131"
+    eventName: "\uC2AC\uB86F \uC120\uD0DD\xB7\uBC30\uCE58 \uAD50\uD658\xB7\uC800\uC7A5
+      \uC801\uC6A9\xB7\uBD88\uAC00"
     coverageState: 3
-    evidence: "Formation 화면과 저장 흐름에 공용 조작 SFX Hook이 없다."
-    completionCriteria: "선택/교환/적용/거부가 데이터 성공 여부와 일치"
+    evidence: "Formation \uD654\uBA74\uACFC \uC800\uC7A5 \uD750\uB984\uC5D0 \uACF5\uC6A9
+      \uC870\uC791 SFX Hook\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uC120\uD0DD/\uAD50\uD658/\uC801\uC6A9/\uAC70\uBD80\uAC00
+      \uB370\uC774\uD130 \uC131\uACF5 \uC5EC\uBD80\uC640 \uC77C\uCE58"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TUT-01"
+    note: 
+  - id: TUT-01
     priority: 1
-    categoryId: "ui"
-    area: "튜토리얼/해금"
-    eventName: "단계 강조·완료·기능/콘텐츠 해금"
+    categoryId: ui
+    area: "\uD29C\uD1A0\uB9AC\uC5BC/\uD574\uAE08"
+    eventName: "\uB2E8\uACC4 \uAC15\uC870\xB7\uC644\uB8CC\xB7\uAE30\uB2A5/\uCF58\uD150\uCE20
+      \uD574\uAE08"
     coverageState: 3
-    evidence: "TutorialUnlock 흐름에 전용 SFX 공간이 없다."
-    completionCriteria: "강제 진행 단계와 실제 해금 확정에만 1회 재생"
+    evidence: "TutorialUnlock \uD750\uB984\uC5D0 \uC804\uC6A9 SFX \uACF5\uAC04\uC774
+      \uC5C6\uB2E4."
+    completionCriteria: "\uAC15\uC81C \uC9C4\uD589 \uB2E8\uACC4\uC640 \uC2E4\uC81C
+      \uD574\uAE08 \uD655\uC815\uC5D0\uB9CC 1\uD68C \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "ECO-01"
+    note: 
+  - id: ECO-01
     priority: 0
-    categoryId: "ui"
-    area: "공용 보상"
-    eventName: "아이템·재화 획득 Overlay"
+    categoryId: ui
+    area: "\uACF5\uC6A9 \uBCF4\uC0C1"
+    eventName: "\uC544\uC774\uD15C\xB7\uC7AC\uD654 \uD68D\uB4DD Overlay"
     coverageState: 2
-    evidence: "`RewardAcquirePresenter.acquireSfx` 0/1이다."
-    completionCriteria: "일반 획득 Overlay가 1회 재생되고 연속 획득 묶음 정책 통과"
+    evidence: "`RewardAcquirePresenter.acquireSfx` 0/1\uC774\uB2E4."
+    completionCriteria: "\uC77C\uBC18 \uD68D\uB4DD Overlay\uAC00 1\uD68C \uC7AC\uC0DD\uB418\uACE0
+      \uC5F0\uC18D \uD68D\uB4DD \uBB36\uC74C \uC815\uCC45 \uD1B5\uACFC"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "ECO-02"
+    note: 
+  - id: ECO-02
     priority: 0
-    categoryId: "ui"
-    area: "월드 드롭"
-    eventName: "아이템 출현·줍기"
+    categoryId: ui
+    area: "\uC6D4\uB4DC \uB4DC\uB86D"
+    eventName: "\uC544\uC774\uD15C \uCD9C\uD604\xB7\uC90D\uAE30"
     coverageState: 3
-    evidence: "월드 드롭 기능은 있으나 공용 출현/줍기 SFX 연결이 없다."
-    completionCriteria: "출현과 실제 획득을 구분하고 거리 감쇠 정책 확정"
+    evidence: "\uC6D4\uB4DC \uB4DC\uB86D \uAE30\uB2A5\uC740 \uC788\uC73C\uB098 \uACF5\uC6A9
+      \uCD9C\uD604/\uC90D\uAE30 SFX \uC5F0\uACB0\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uCD9C\uD604\uACFC \uC2E4\uC81C \uD68D\uB4DD\uC744 \uAD6C\uBD84\uD558\uACE0
+      \uAC70\uB9AC \uAC10\uC1E0 \uC815\uCC45 \uD655\uC815"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "ECO-03"
+    note: 
+  - id: ECO-03
     priority: 1
-    categoryId: "ui"
-    area: "오프라인 보상"
-    eventName: "보상 수령·광고 2배 적용"
+    categoryId: ui
+    area: "\uC624\uD504\uB77C\uC778 \uBCF4\uC0C1"
+    eventName: "\uBCF4\uC0C1 \uC218\uB839\xB7\uAD11\uACE0 2\uBC30 \uC801\uC6A9"
     coverageState: 3
-    evidence: "화면·보상 기능은 있으나 SFX 호출이 없다."
-    completionCriteria: "수령 확정/2배 성공 시점에 각각 1회 재생"
+    evidence: "\uD654\uBA74\xB7\uBCF4\uC0C1 \uAE30\uB2A5\uC740 \uC788\uC73C\uB098
+      SFX \uD638\uCD9C\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uC218\uB839 \uD655\uC815/2\uBC30 \uC131\uACF5 \uC2DC\uC810\uC5D0
+      \uAC01\uAC01 1\uD68C \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "ECO-04"
+    note: 
+  - id: ECO-04
     priority: 1
-    categoryId: "ui"
-    area: "출석"
-    eventName: "일일 보상 수령·누적 보상 수령"
+    categoryId: ui
+    area: "\uCD9C\uC11D"
+    eventName: "\uC77C\uC77C \uBCF4\uC0C1 \uC218\uB839\xB7\uB204\uC801 \uBCF4\uC0C1
+      \uC218\uB839"
     coverageState: 3
-    evidence: "Attendance 기능에 전용 SFX 경로가 없다."
-    completionCriteria: "실제 저장 성공 뒤 획득 Cue 재생"
+    evidence: "Attendance \uAE30\uB2A5\uC5D0 \uC804\uC6A9 SFX \uACBD\uB85C\uAC00
+      \uC5C6\uB2E4."
+    completionCriteria: "\uC2E4\uC81C \uC800\uC7A5 \uC131\uACF5 \uB4A4 \uD68D\uB4DD
+      Cue \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "ECO-05"
+    note: 
+  - id: ECO-05
     priority: 1
-    categoryId: "ui"
-    area: "우편"
-    eventName: "우편 열기·첨부 수령·일괄 수령"
+    categoryId: ui
+    area: "\uC6B0\uD3B8"
+    eventName: "\uC6B0\uD3B8 \uC5F4\uAE30\xB7\uCCA8\uBD80 \uC218\uB839\xB7\uC77C\uAD04
+      \uC218\uB839"
     coverageState: 3
-    evidence: "Mail/Mailbox 기능에 Audio 호출이 없다."
-    completionCriteria: "빈 첨부·일괄 수령을 구분하고 보상음 중복 없음"
+    evidence: "Mail/Mailbox \uAE30\uB2A5\uC5D0 Audio \uD638\uCD9C\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uBE48 \uCCA8\uBD80\xB7\uC77C\uAD04 \uC218\uB839\uC744 \uAD6C\uBD84\uD558\uACE0
+      \uBCF4\uC0C1\uC74C \uC911\uBCF5 \uC5C6\uC74C"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "ECO-06"
+    note: 
+  - id: ECO-06
     priority: 1
-    categoryId: "ui"
-    area: "퀘스트"
-    eventName: "진행 완료·보상 수령"
+    categoryId: ui
+    area: "\uD018\uC2A4\uD2B8"
+    eventName: "\uC9C4\uD589 \uC644\uB8CC\xB7\uBCF4\uC0C1 \uC218\uB839"
     coverageState: 3
-    evidence: "Quest/Daily Missions 이벤트에 SFX Hook이 없다."
-    completionCriteria: "완료 알림과 수령음을 분리해 재생"
+    evidence: "Quest/Daily Missions \uC774\uBCA4\uD2B8\uC5D0 SFX Hook\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uC644\uB8CC \uC54C\uB9BC\uACFC \uC218\uB839\uC74C\uC744
+      \uBD84\uB9AC\uD574 \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "ECO-07"
+    note: 
+  - id: ECO-07
     priority: 1
-    categoryId: "ui"
-    area: "상점"
-    eventName: "상품 선택·구매 성공·구매 불가"
+    categoryId: ui
+    area: "\uC0C1\uC810"
+    eventName: "\uC0C1\uD488 \uC120\uD0DD\xB7\uAD6C\uB9E4 \uC131\uACF5\xB7\uAD6C\uB9E4
+      \uBD88\uAC00"
     coverageState: 3
-    evidence: "Shop Presenter 계열은 표시 전용이며 공용 구매음이 없다."
-    completionCriteria: "저장/재화 차감 성공 뒤만 구매음 재생"
+    evidence: "Shop Presenter \uACC4\uC5F4\uC740 \uD45C\uC2DC \uC804\uC6A9\uC774\uBA70
+      \uACF5\uC6A9 \uAD6C\uB9E4\uC74C\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uC800\uC7A5/\uC7AC\uD654 \uCC28\uAC10 \uC131\uACF5 \uB4A4\uB9CC
+      \uAD6C\uB9E4\uC74C \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "ECO-08"
+    note: 
+  - id: ECO-08
     priority: 1
-    categoryId: "ui"
-    area: "몬스터 뽑기"
-    eventName: "1/10회 소환 시작·등급 공개·결과 확정"
+    categoryId: ui
+    area: "\uBAAC\uC2A4\uD130 \uBF51\uAE30"
+    eventName: "1/10\uD68C \uC18C\uD658 \uC2DC\uC791\xB7\uB4F1\uAE09 \uACF5\uAC1C\xB7\uACB0\uACFC
+      \uD655\uC815"
     coverageState: 3
-    evidence: "Summon 화면/로직에 출시용 SFX 호출을 찾지 못했다."
-    completionCriteria: "시작·Reveal·고등급 공개·결과의 단계별 Cue 동기화"
+    evidence: "Summon \uD654\uBA74/\uB85C\uC9C1\uC5D0 \uCD9C\uC2DC\uC6A9 SFX \uD638\uCD9C\uC744
+      \uCC3E\uC9C0 \uBABB\uD588\uB2E4."
+    completionCriteria: "\uC2DC\uC791\xB7Reveal\xB7\uACE0\uB4F1\uAE09 \uACF5\uAC1C\xB7\uACB0\uACFC\uC758
+      \uB2E8\uACC4\uBCC4 Cue \uB3D9\uAE30\uD654"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "ECO-09"
+    note: 
+  - id: ECO-09
     priority: 1
-    categoryId: "ui"
-    area: "군단장 스킬 소환"
-    eventName: "소환 시작·Reveal·결과"
+    categoryId: ui
+    area: "\uAD70\uB2E8\uC7A5 \uC2A4\uD0AC \uC18C\uD658"
+    eventName: "\uC18C\uD658 \uC2DC\uC791\xB7Reveal\xB7\uACB0\uACFC"
     coverageState: 3
-    evidence: "전용 소환 시스템은 있으나 Presentation SFX가 없다."
-    completionCriteria: "몬스터 뽑기와 공유/분리 정책을 확정하고 실제 소모 뒤 재생"
+    evidence: "\uC804\uC6A9 \uC18C\uD658 \uC2DC\uC2A4\uD15C\uC740 \uC788\uC73C\uB098
+      Presentation SFX\uAC00 \uC5C6\uB2E4."
+    completionCriteria: "\uBAAC\uC2A4\uD130 \uBF51\uAE30\uC640 \uACF5\uC720/\uBD84\uB9AC
+      \uC815\uCC45\uC744 \uD655\uC815\uD558\uACE0 \uC2E4\uC81C \uC18C\uBAA8 \uB4A4
+      \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "ECO-10"
+    note: 
+  - id: ECO-10
     priority: 1
-    categoryId: "ui"
-    area: "장비"
-    eventName: "장착·해제·강화 성공/실패·분해"
+    categoryId: ui
+    area: "\uC7A5\uBE44"
+    eventName: "\uC7A5\uCC29\xB7\uD574\uC81C\xB7\uAC15\uD654 \uC131\uACF5/\uC2E4\uD328\xB7\uBD84\uD574"
     coverageState: 3
-    evidence: "Equipment 기능 전역에 공용 SFX 경로가 없다."
-    completionCriteria: "데이터 변경 성공 후만 사건별 Cue 재생"
+    evidence: "Equipment \uAE30\uB2A5 \uC804\uC5ED\uC5D0 \uACF5\uC6A9 SFX \uACBD\uB85C\uAC00
+      \uC5C6\uB2E4."
+    completionCriteria: "\uB370\uC774\uD130 \uBCC0\uACBD \uC131\uACF5 \uD6C4\uB9CC
+      \uC0AC\uAC74\uBCC4 Cue \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "ECO-11"
+    note: 
+  - id: ECO-11
     priority: 1
-    categoryId: "ui"
-    area: "인벤토리"
-    eventName: "선택·사용·수량 변경·버리기"
+    categoryId: ui
+    area: "\uC778\uBCA4\uD1A0\uB9AC"
+    eventName: "\uC120\uD0DD\xB7\uC0AC\uC6A9\xB7\uC218\uB7C9 \uBCC0\uACBD\xB7\uBC84\uB9AC\uAE30"
     coverageState: 3
-    evidence: "Inventory 조작에 Audio 호출이 없다."
-    completionCriteria: "위험 조작은 확인/취소와 분리되고 실제 반영 후 재생"
+    evidence: "Inventory \uC870\uC791\uC5D0 Audio \uD638\uCD9C\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uC704\uD5D8 \uC870\uC791\uC740 \uD655\uC778/\uCDE8\uC18C\uC640
+      \uBD84\uB9AC\uB418\uACE0 \uC2E4\uC81C \uBC18\uC601 \uD6C4 \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "ECO-12"
+    note: 
+  - id: ECO-12
     priority: 1
-    categoryId: "ui"
-    area: "성장"
-    eventName: "몬스터/군단장 레벨업·돌파·잠재능력 적용"
+    categoryId: ui
+    area: "\uC131\uC7A5"
+    eventName: "\uBAAC\uC2A4\uD130/\uAD70\uB2E8\uC7A5 \uB808\uBCA8\uC5C5\xB7\uB3CC\uD30C\xB7\uC7A0\uC7AC\uB2A5\uB825
+      \uC801\uC6A9"
     coverageState: 3
-    evidence: "MonsterGrowth/Commander/Potential에 성장 SFX Hook이 없다."
-    completionCriteria: "작은 성장과 돌파급 성장을 강도로 구분"
+    evidence: "MonsterGrowth/Commander/Potential\uC5D0 \uC131\uC7A5 SFX Hook\uC774
+      \uC5C6\uB2E4."
+    completionCriteria: "\uC791\uC740 \uC131\uC7A5\uACFC \uB3CC\uD30C\uAE09 \uC131\uC7A5\uC744
+      \uAC15\uB3C4\uB85C \uAD6C\uBD84"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "ECO-13"
+    note: 
+  - id: ECO-13
     priority: 2
-    categoryId: "ui"
-    area: "도감"
-    eventName: "신규 등록·보상 수령"
+    categoryId: ui
+    area: "\uB3C4\uAC10"
+    eventName: "\uC2E0\uADDC \uB4F1\uB85D\xB7\uBCF4\uC0C1 \uC218\uB839"
     coverageState: 3
-    evidence: "Collection 이벤트에 전용 SFX가 없다."
-    completionCriteria: "신규 발견과 단순 목록 열기를 구분"
+    evidence: "Collection \uC774\uBCA4\uD2B8\uC5D0 \uC804\uC6A9 SFX\uAC00 \uC5C6\uB2E4."
+    completionCriteria: "\uC2E0\uADDC \uBC1C\uACAC\uACFC \uB2E8\uC21C \uBAA9\uB85D
+      \uC5F4\uAE30\uB97C \uAD6C\uBD84"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "ECO-14"
+    note: 
+  - id: ECO-14
     priority: 1
-    categoryId: "ui"
-    area: "광고"
-    eventName: "광고 성공 보상·실패/취소"
+    categoryId: ui
+    area: "\uAD11\uACE0"
+    eventName: "\uAD11\uACE0 \uC131\uACF5 \uBCF4\uC0C1\xB7\uC2E4\uD328/\uCDE8\uC18C"
     coverageState: 3
-    evidence: "광고 SDK 자체보다 결과 피드백 Audio 공간이 없다."
-    completionCriteria: "성공 콜백 1회, 실패/취소 무보상 정책과 일치"
+    evidence: "\uAD11\uACE0 SDK \uC790\uCCB4\uBCF4\uB2E4 \uACB0\uACFC \uD53C\uB4DC\uBC31
+      Audio \uACF5\uAC04\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uC131\uACF5 \uCF5C\uBC31 1\uD68C, \uC2E4\uD328/\uCDE8\uC18C
+      \uBB34\uBCF4\uC0C1 \uC815\uCC45\uACFC \uC77C\uCE58"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "CR-01"
+    note: 
+  - id: CR-01
     priority: 0
-    categoryId: "castle_raid"
-    area: "군단의 역습"
-    eventName: "활성 포탑 7프로필 발사/명중/폭발"
+    categoryId: castle_raid
+    area: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5"
+    eventName: "\uD65C\uC131 \uD3EC\uD0D1 7\uD504\uB85C\uD544 \uBC1C\uC0AC/\uBA85\uC911/\uD3ED\uBC1C"
     coverageState: 0
-    evidence: "Cannon Lv1~2, Ballista Lv1~2, Fireball Lv1~3이 요구 Cue를 충족한다. 5개 Cue 모두 실제 Vendor Clip을 해석한다. 미사용 Cannon Lv3 파일은 활성 Catalog에서 제외한다."
-    completionCriteria: "현재 7프로필 실전 발사·Hit/Explosion의 3D 위치와 Voice 상한 재검증"
+    evidence: "Cannon Lv1~2, Ballista Lv1~2, Fireball Lv1~3\uC774 \uC694\uAD6C Cue\uB97C
+      \uCDA9\uC871\uD55C\uB2E4. 5\uAC1C Cue \uBAA8\uB450 \uC2E4\uC81C Vendor Clip\uC744
+      \uD574\uC11D\uD55C\uB2E4. \uBBF8\uC0AC\uC6A9 Cannon Lv3 \uD30C\uC77C\uC740
+      \uD65C\uC131 Catalog\uC5D0\uC11C \uC81C\uC678\uD55C\uB2E4."
+    completionCriteria: "\uD604\uC7AC 7\uD504\uB85C\uD544 \uC2E4\uC804 \uBC1C\uC0AC\xB7Hit/Explosion\uC758
+      3D \uC704\uCE58\uC640 Voice \uC0C1\uD55C \uC7AC\uAC80\uC99D"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "CR-02"
+    note: 
+  - id: CR-02
     priority: 1
-    categoryId: "castle_raid"
-    area: "군단의 역습"
-    eventName: "전투 입장·스테이지 시작"
+    categoryId: castle_raid
+    area: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5"
+    eventName: "\uC804\uD22C \uC785\uC7A5\xB7\uC2A4\uD14C\uC774\uC9C0 \uC2DC\uC791"
     coverageState: 3
-    evidence: "Scene 직접 Audio 의존성 0개, 입장 SFX Hook 없음."
-    completionCriteria: "난이도 선택 확정 후 전장 로드/시작 중 1회 재생"
+    evidence: "Scene \uC9C1\uC811 Audio \uC758\uC874\uC131 0\uAC1C, \uC785\uC7A5
+      SFX Hook \uC5C6\uC74C."
+    completionCriteria: "\uB09C\uC774\uB3C4 \uC120\uD0DD \uD655\uC815 \uD6C4 \uC804\uC7A5
+      \uB85C\uB4DC/\uC2DC\uC791 \uC911 1\uD68C \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "CR-03"
+    note: 
+  - id: CR-03
     priority: 1
-    categoryId: "castle_raid"
-    area: "군단의 역습"
-    eventName: "포탑 설치·배치 불가"
+    categoryId: castle_raid
+    area: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5"
+    eventName: "\uD3EC\uD0D1 \uC124\uCE58\xB7\uBC30\uCE58 \uBD88\uAC00"
     coverageState: 3
-    evidence: "배치 Preview/확정에 공용 SFX 공간이 없다."
-    completionCriteria: "유효 설치/거부가 구분되고 연속 입력 Cooldown 적용"
+    evidence: "\uBC30\uCE58 Preview/\uD655\uC815\uC5D0 \uACF5\uC6A9 SFX \uACF5\uAC04\uC774
+      \uC5C6\uB2E4."
+    completionCriteria: "\uC720\uD6A8 \uC124\uCE58/\uAC70\uBD80\uAC00 \uAD6C\uBD84\uB418\uACE0
+      \uC5F0\uC18D \uC785\uB825 Cooldown \uC801\uC6A9"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "CR-04"
+    note: 
+  - id: CR-04
     priority: 1
-    categoryId: "castle_raid"
-    area: "군단의 역습"
-    eventName: "포탑 업그레이드·최대 레벨"
+    categoryId: castle_raid
+    area: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5"
+    eventName: "\uD3EC\uD0D1 \uC5C5\uADF8\uB808\uC774\uB4DC\xB7\uCD5C\uB300 \uB808\uBCA8"
     coverageState: 3
-    evidence: "공격 Cue 외 성장/조작 SFX가 없다."
-    completionCriteria: "자원 차감 성공 후 재생, 최대 단계 거부음 분리"
+    evidence: "\uACF5\uACA9 Cue \uC678 \uC131\uC7A5/\uC870\uC791 SFX\uAC00 \uC5C6\uB2E4."
+    completionCriteria: "\uC790\uC6D0 \uCC28\uAC10 \uC131\uACF5 \uD6C4 \uC7AC\uC0DD,
+      \uCD5C\uB300 \uB2E8\uACC4 \uAC70\uBD80\uC74C \uBD84\uB9AC"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "CR-05"
+    note: 
+  - id: CR-05
     priority: 1
-    categoryId: "castle_raid"
-    area: "군단의 역습"
-    eventName: "성벽·성채 피격/위험 경고"
+    categoryId: castle_raid
+    area: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5"
+    eventName: "\uC131\uBCBD\xB7\uC131\uCC44 \uD53C\uACA9/\uC704\uD5D8 \uACBD\uACE0"
     coverageState: 3
-    evidence: "건물 피격 사건에 Audio 연결이 없다."
-    completionCriteria: "일반 타격 스팸을 제한하고 임계 체력 경고를 구분"
+    evidence: "\uAC74\uBB3C \uD53C\uACA9 \uC0AC\uAC74\uC5D0 Audio \uC5F0\uACB0\uC774
+      \uC5C6\uB2E4."
+    completionCriteria: "\uC77C\uBC18 \uD0C0\uACA9 \uC2A4\uD338\uC744 \uC81C\uD55C\uD558\uACE0
+      \uC784\uACC4 \uCCB4\uB825 \uACBD\uACE0\uB97C \uAD6C\uBD84"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "CR-06"
+    note: 
+  - id: CR-06
     priority: 1
-    categoryId: "castle_raid"
-    area: "군단의 역습"
-    eventName: "병영 생산·아군 출전"
+    categoryId: castle_raid
+    area: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5"
+    eventName: "\uBCD1\uC601 \uC0DD\uC0B0\xB7\uC544\uAD70 \uCD9C\uC804"
     coverageState: 3
-    evidence: "Barracks Spawn 사건에 SFX가 없다."
-    completionCriteria: "생산 완료와 전장 등장 타이밍 중 하나로 정책 확정"
+    evidence: "Barracks Spawn \uC0AC\uAC74\uC5D0 SFX\uAC00 \uC5C6\uB2E4."
+    completionCriteria: "\uC0DD\uC0B0 \uC644\uB8CC\uC640 \uC804\uC7A5 \uB4F1\uC7A5
+      \uD0C0\uC774\uBC0D \uC911 \uD558\uB098\uB85C \uC815\uCC45 \uD655\uC815"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "CR-07"
+    note: 
+  - id: CR-07
     priority: 1
-    categoryId: "castle_raid"
-    area: "군단의 역습"
-    eventName: "함정 발동·피해"
+    categoryId: castle_raid
+    area: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5"
+    eventName: "\uD568\uC815 \uBC1C\uB3D9\xB7\uD53C\uD574"
     coverageState: 3
-    evidence: "함정/방어 오브젝트별 SFX Hook이 없다."
-    completionCriteria: "함정 종류와 공간 위치에 맞게 3D 재생"
+    evidence: "\uD568\uC815/\uBC29\uC5B4 \uC624\uBE0C\uC81D\uD2B8\uBCC4 SFX Hook\uC774
+      \uC5C6\uB2E4."
+    completionCriteria: "\uD568\uC815 \uC885\uB958\uC640 \uACF5\uAC04 \uC704\uCE58\uC5D0
+      \uB9DE\uAC8C 3D \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "CR-08"
+    note: 
+  - id: CR-08
     priority: 1
-    categoryId: "castle_raid"
-    area: "군단의 역습"
-    eventName: "적 웨이브·성벽 돌파"
+    categoryId: castle_raid
+    area: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5"
+    eventName: "\uC801 \uC6E8\uC774\uBE0C\xB7\uC131\uBCBD \uB3CC\uD30C"
     coverageState: 3
-    evidence: "적 Spawn/목표 도달 경고에 Audio 호출이 없다."
-    completionCriteria: "화면 밖 사건도 필요할 때만 경고하고 반복 제한"
+    evidence: "\uC801 Spawn/\uBAA9\uD45C \uB3C4\uB2EC \uACBD\uACE0\uC5D0 Audio \uD638\uCD9C\uC774
+      \uC5C6\uB2E4."
+    completionCriteria: "\uD654\uBA74 \uBC16 \uC0AC\uAC74\uB3C4 \uD544\uC694\uD560
+      \uB54C\uB9CC \uACBD\uACE0\uD558\uACE0 \uBC18\uBCF5 \uC81C\uD55C"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "CR-09"
+    note: 
+  - id: CR-09
     priority: 0
-    categoryId: "castle_raid"
-    area: "군단의 역습"
-    eventName: "승리·패배"
+    categoryId: castle_raid
+    area: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5"
+    eventName: "\uC2B9\uB9AC\xB7\uD328\uBC30"
     coverageState: 3
-    evidence: "콘텐츠 결과 SFX 공간이 없다."
-    completionCriteria: "전투 종료 1회, 이후 UI 버튼음과 중복 없음"
+    evidence: "\uCF58\uD150\uCE20 \uACB0\uACFC SFX \uACF5\uAC04\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uC804\uD22C \uC885\uB8CC 1\uD68C, \uC774\uD6C4 UI \uBC84\uD2BC\uC74C\uACFC
+      \uC911\uBCF5 \uC5C6\uC74C"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "CR-10"
+    note: 
+  - id: CR-10
     priority: 1
-    categoryId: "castle_raid"
-    area: "군단의 역습"
-    eventName: "단계 보상 획득"
+    categoryId: castle_raid
+    area: "\uAD70\uB2E8\uC758 \uC5ED\uC2B5"
+    eventName: "\uB2E8\uACC4 \uBCF4\uC0C1 \uD68D\uB4DD"
     coverageState: 2
-    evidence: "공용 `RewardAcquirePresenter`의 획득 Cue가 비어 있다."
-    completionCriteria: "인벤토리 실제 아이콘/보상 적용 뒤 획득음 재생"
+    evidence: "\uACF5\uC6A9 `RewardAcquirePresenter`\uC758 \uD68D\uB4DD Cue\uAC00
+      \uBE44\uC5B4 \uC788\uB2E4."
+    completionCriteria: "\uC778\uBCA4\uD1A0\uB9AC \uC2E4\uC81C \uC544\uC774\uCF58/\uBCF4\uC0C1
+      \uC801\uC6A9 \uB4A4 \uD68D\uB4DD\uC74C \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FR-01"
+    note: 
+  - id: FR-01
     priority: 1
-    categoryId: "food_riot"
-    area: "식량 대소동"
-    eventName: "콘텐츠 입장·시작"
+    categoryId: food_riot
+    area: "\uC2DD\uB7C9 \uB300\uC18C\uB3D9"
+    eventName: "\uCF58\uD150\uCE20 \uC785\uC7A5\xB7\uC2DC\uC791"
     coverageState: 3
-    evidence: "Runtime Prefab 직접 AudioClip/SfxCue 의존성 0개다."
-    completionCriteria: "카운트다운/조작 시작과 동기화"
+    evidence: "Runtime Prefab \uC9C1\uC811 AudioClip/SfxCue \uC758\uC874\uC131 0\uAC1C\uB2E4."
+    completionCriteria: "\uCE74\uC6B4\uD2B8\uB2E4\uC6B4/\uC870\uC791 \uC2DC\uC791\uACFC
+      \uB3D9\uAE30\uD654"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FR-02"
+    note: 
+  - id: FR-02
     priority: 1
-    categoryId: "food_riot"
-    area: "식량 대소동"
-    eventName: "식량 출현·줍기·배달"
+    categoryId: food_riot
+    area: "\uC2DD\uB7C9 \uB300\uC18C\uB3D9"
+    eventName: "\uC2DD\uB7C9 \uCD9C\uD604\xB7\uC90D\uAE30\xB7\uBC30\uB2EC"
     coverageState: 3
-    evidence: "핵심 수집/운반 사건에 Audio Hook이 없다."
-    completionCriteria: "출현/줍기/납품을 구분하고 다량 수집 Cooldown 적용"
+    evidence: "\uD575\uC2EC \uC218\uC9D1/\uC6B4\uBC18 \uC0AC\uAC74\uC5D0 Audio Hook\uC774
+      \uC5C6\uB2E4."
+    completionCriteria: "\uCD9C\uD604/\uC90D\uAE30/\uB0A9\uD488\uC744 \uAD6C\uBD84\uD558\uACE0
+      \uB2E4\uB7C9 \uC218\uC9D1 Cooldown \uC801\uC6A9"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FR-03"
+    note: 
+  - id: FR-03
     priority: 1
-    categoryId: "food_riot"
-    area: "식량 대소동"
-    eventName: "적 피격·처치·군단장 피격"
+    categoryId: food_riot
+    area: "\uC2DD\uB7C9 \uB300\uC18C\uB3D9"
+    eventName: "\uC801 \uD53C\uACA9\xB7\uCC98\uCE58\xB7\uAD70\uB2E8\uC7A5 \uD53C\uACA9"
     coverageState: 2
-    evidence: "공용 CombatFeedback 4종이 모두 비어 있다."
-    completionCriteria: "공용 전투 Cue 배정 뒤 콘텐츠 Prefab에서 실제 재생"
+    evidence: "\uACF5\uC6A9 CombatFeedback 4\uC885\uC774 \uBAA8\uB450 \uBE44\uC5B4
+      \uC788\uB2E4."
+    completionCriteria: "\uACF5\uC6A9 \uC804\uD22C Cue \uBC30\uC815 \uB4A4 \uCF58\uD150\uCE20
+      Prefab\uC5D0\uC11C \uC2E4\uC81C \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FR-04"
+    note: 
+  - id: FR-04
     priority: 1
-    categoryId: "food_riot"
-    area: "식량 대소동"
-    eventName: "제한시간 임박·목표 달성"
+    categoryId: food_riot
+    area: "\uC2DD\uB7C9 \uB300\uC18C\uB3D9"
+    eventName: "\uC81C\uD55C\uC2DC\uAC04 \uC784\uBC15\xB7\uBAA9\uD45C \uB2EC\uC131"
     coverageState: 3
-    evidence: "Timer/목표 사건에 SFX가 없다."
-    completionCriteria: "경고 반복 간격과 달성 1회 정책 확정"
+    evidence: "Timer/\uBAA9\uD45C \uC0AC\uAC74\uC5D0 SFX\uAC00 \uC5C6\uB2E4."
+    completionCriteria: "\uACBD\uACE0 \uBC18\uBCF5 \uAC04\uACA9\uACFC \uB2EC\uC131
+      1\uD68C \uC815\uCC45 \uD655\uC815"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FR-05"
+    note: 
+  - id: FR-05
     priority: 1
-    categoryId: "food_riot"
-    area: "식량 대소동"
-    eventName: "성공·실패·보상"
+    categoryId: food_riot
+    area: "\uC2DD\uB7C9 \uB300\uC18C\uB3D9"
+    eventName: "\uC131\uACF5\xB7\uC2E4\uD328\xB7\uBCF4\uC0C1"
     coverageState: 3
-    evidence: "결과 SFX 경로가 없다."
-    completionCriteria: "종료 상태별 Cue와 보상 획득 Cue가 중복되지 않음"
+    evidence: "\uACB0\uACFC SFX \uACBD\uB85C\uAC00 \uC5C6\uB2E4."
+    completionCriteria: "\uC885\uB8CC \uC0C1\uD0DC\uBCC4 Cue\uC640 \uBCF4\uC0C1 \uD68D\uB4DD
+      Cue\uAC00 \uC911\uBCF5\uB418\uC9C0 \uC54A\uC74C"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-01"
+    note: 
+  - id: TS-01
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "점프"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uC810\uD504"
     coverageState: 0
-    evidence: "`DemoDungeonAudio.jumpSfx` 배정 및 재생 호출 확인."
-    completionCriteria: "생산 경로에서 실제 동작·볼륨 확인"
+    evidence: "`DemoDungeonAudio.jumpSfx` \uBC30\uC815 \uBC0F \uC7AC\uC0DD \uD638\uCD9C
+      \uD655\uC778."
+    completionCriteria: "\uC0DD\uC0B0 \uACBD\uB85C\uC5D0\uC11C \uC2E4\uC81C \uB3D9\uC791\xB7\uBCFC\uB968
+      \uD655\uC778"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-02"
+    note: 
+  - id: TS-02
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "상자 열기"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uC0C1\uC790 \uC5F4\uAE30"
     coverageState: 0
-    evidence: "`chestOpenSfx` 배정 및 호출 확인."
-    completionCriteria: "상자당 1회 재생"
+    evidence: "`chestOpenSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uC0C1\uC790\uB2F9 1\uD68C \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-03"
+    note: 
+  - id: TS-03
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "퀴즈 UI 등장"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uD034\uC988 UI \uB4F1\uC7A5"
     coverageState: 0
-    evidence: "`quizUiSfx` 배정 및 호출 확인."
-    completionCriteria: "UI 표시와 동기화"
+    evidence: "`quizUiSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "UI \uD45C\uC2DC\uC640 \uB3D9\uAE30\uD654"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-04"
+    note: 
+  - id: TS-04
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "열쇠 획득"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uC5F4\uC1E0 \uD68D\uB4DD"
     coverageState: 0
-    evidence: "`keySfx` 배정 및 호출 확인."
-    completionCriteria: "획득 확정 시 1회 재생"
+    evidence: "`keySfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uD68D\uB4DD \uD655\uC815 \uC2DC 1\uD68C \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-05"
+    note: 
+  - id: TS-05
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "일반 수집"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uC77C\uBC18 \uC218\uC9D1"
     coverageState: 0
-    evidence: "`collectSfx` 배정 및 호출 확인."
-    completionCriteria: "연속 수집 시 과밀하지 않음"
+    evidence: "`collectSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uC5F0\uC18D \uC218\uC9D1 \uC2DC \uACFC\uBC00\uD558\uC9C0
+      \uC54A\uC74C"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-06"
+    note: 
+  - id: TS-06
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "일반 문"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uC77C\uBC18 \uBB38"
     coverageState: 0
-    evidence: "`doorSfx` 배정 및 호출 확인."
-    completionCriteria: "문 상태 변경과 동기화"
+    evidence: "`doorSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uBB38 \uC0C1\uD0DC \uBCC0\uACBD\uACFC \uB3D9\uAE30\uD654"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-07"
+    note: 
+  - id: TS-07
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "감옥 문"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uAC10\uC625 \uBB38"
     coverageState: 0
-    evidence: "`prisonDoorSfx` 배정 및 호출 확인."
-    completionCriteria: "일반 문과 구분됨"
+    evidence: "`prisonDoorSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uC77C\uBC18 \uBB38\uACFC \uAD6C\uBD84\uB428"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-08"
+    note: 
+  - id: TS-08
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "잠금 실패"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uC7A0\uAE08 \uC2E4\uD328"
     coverageState: 0
-    evidence: "`lockFailSfx` 배정 및 호출 확인."
-    completionCriteria: "실패 시에만 재생"
+    evidence: "`lockFailSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uC2E4\uD328 \uC2DC\uC5D0\uB9CC \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-09"
+    note: 
+  - id: TS-09
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "불 점화"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uBD88 \uC810\uD654"
     coverageState: 0
-    evidence: "`fireIgniteSfx` 배정 및 호출 확인."
-    completionCriteria: "Loop 시작 전에 1회 재생"
+    evidence: "`fireIgniteSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "Loop \uC2DC\uC791 \uC804\uC5D0 1\uD68C \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-10"
+    note: 
+  - id: TS-10
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "불 Loop"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uBD88 Loop"
     coverageState: 0
-    evidence: "`fireLoopSfx` 배정 및 호출 확인."
-    completionCriteria: "종료/비활성 시 Loop가 반드시 정지"
+    evidence: "`fireLoopSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uC885\uB8CC/\uBE44\uD65C\uC131 \uC2DC Loop\uAC00 \uBC18\uB4DC\uC2DC
+      \uC815\uC9C0"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-11"
+    note: 
+  - id: TS-11
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "가시 함정"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uAC00\uC2DC \uD568\uC815"
     coverageState: 0
-    evidence: "`spikeSfx` 배정 및 호출 확인."
-    completionCriteria: "반복 발동 Cooldown 확인"
+    evidence: "`spikeSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uBC18\uBCF5 \uBC1C\uB3D9 Cooldown \uD655\uC778"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-12"
+    note: 
+  - id: TS-12
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "톱날 Loop"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uD1B1\uB0A0 Loop"
     coverageState: 0
-    evidence: "`sawLoopSfx` 배정 및 호출 확인."
-    completionCriteria: "거리 감쇠와 비활성 정지 확인"
+    evidence: "`sawLoopSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uAC70\uB9AC \uAC10\uC1E0\uC640 \uBE44\uD65C\uC131 \uC815\uC9C0
+      \uD655\uC778"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-13"
+    note: 
+  - id: TS-13
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "화살 함정"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uD654\uC0B4 \uD568\uC815"
     coverageState: 0
-    evidence: "`arrowSfx` 배정 및 호출 확인."
-    completionCriteria: "발사/Impact 정책 확인"
+    evidence: "`arrowSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uBC1C\uC0AC/Impact \uC815\uCC45 \uD655\uC778"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-14"
+    note: 
+  - id: TS-14
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "미믹 등장·공격"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uBBF8\uBBF9 \uB4F1\uC7A5\xB7\uACF5\uACA9"
     coverageState: 0
-    evidence: "`mimicSfx` 배정 및 호출 확인."
-    completionCriteria: "등장 사건과 동기화"
+    evidence: "`mimicSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uB4F1\uC7A5 \uC0AC\uAC74\uACFC \uB3D9\uAE30\uD654"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-15"
+    note: 
+  - id: TS-15
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "추종자 공격"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uCD94\uC885\uC790 \uACF5\uACA9"
     coverageState: 0
-    evidence: "`followerAttackSfx` 배정 및 호출 확인."
-    completionCriteria: "다수 공격 Voice 제한 확인"
+    evidence: "`followerAttackSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uB2E4\uC218 \uACF5\uACA9 Voice \uC81C\uD55C \uD655\uC778"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-16"
+    note: 
+  - id: TS-16
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "경비 공격"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uACBD\uBE44 \uACF5\uACA9"
     coverageState: 0
-    evidence: "`guardAttackSfx` 배정 및 호출 확인."
-    completionCriteria: "다수 공격 Voice 제한 확인"
+    evidence: "`guardAttackSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uB2E4\uC218 \uACF5\uACA9 Voice \uC81C\uD55C \uD655\uC778"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-17"
+    note: 
+  - id: TS-17
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "클리어"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uD074\uB9AC\uC5B4"
     coverageState: 0
-    evidence: "`clearSfx` 배정 및 호출 확인."
-    completionCriteria: "결과 UI와 중복 없이 1회 재생"
+    evidence: "`clearSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uACB0\uACFC UI\uC640 \uC911\uBCF5 \uC5C6\uC774 1\uD68C
+      \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-18"
+    note: 
+  - id: TS-18
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "실패"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uC2E4\uD328"
     coverageState: 0
-    evidence: "`failSfx` 배정 및 호출 확인."
-    completionCriteria: "실패 확정 시 1회 재생"
+    evidence: "`failSfx` \uBC30\uC815 \uBC0F \uD638\uCD9C \uD655\uC778."
+    completionCriteria: "\uC2E4\uD328 \uD655\uC815 \uC2DC 1\uD68C \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "TS-19"
+    note: 
+  - id: TS-19
     priority: 1
-    categoryId: "treasure_spirit"
-    area: "보물 정령"
-    eventName: "공용 피격·사망·결정타"
+    categoryId: treasure_spirit
+    area: "\uBCF4\uBB3C \uC815\uB839"
+    eventName: "\uACF5\uC6A9 \uD53C\uACA9\xB7\uC0AC\uB9DD\xB7\uACB0\uC815\uD0C0"
     coverageState: 2
-    evidence: "전용 18사건은 정상이나 콘텐츠 Prefab의 공용 CombatFeedback 4종은 비어 있다."
-    completionCriteria: "COM-01~04 배정 후 보물 정령 전투에서도 재생 확인"
+    evidence: "\uC804\uC6A9 18\uC0AC\uAC74\uC740 \uC815\uC0C1\uC774\uB098 \uCF58\uD150\uCE20
+      Prefab\uC758 \uACF5\uC6A9 CombatFeedback 4\uC885\uC740 \uBE44\uC5B4 \uC788\uB2E4."
+    completionCriteria: "COM-01~04 \uBC30\uC815 \uD6C4 \uBCF4\uBB3C \uC815\uB839
+      \uC804\uD22C\uC5D0\uC11C\uB3C4 \uC7AC\uC0DD \uD655\uC778"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-01"
+    note: 
+  - id: FC-01
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "투사체 기본공격 시작/발동/Hit"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uD22C\uC0AC\uCCB4 \uAE30\uBCF8\uACF5\uACA9 \uC2DC\uC791/\uBC1C\uB3D9/Hit"
     coverageState: 1
-    evidence: "Start 비어 있음, Resolve·Hit 배정."
-    completionCriteria: "필요한 시작음 여부 확정 후 3단계 시간축 검증"
+    evidence: "Start \uBE44\uC5B4 \uC788\uC74C, Resolve\xB7Hit \uBC30\uC815."
+    completionCriteria: "\uD544\uC694\uD55C \uC2DC\uC791\uC74C \uC5EC\uBD80 \uD655\uC815
+      \uD6C4 3\uB2E8\uACC4 \uC2DC\uAC04\uCD95 \uAC80\uC99D"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-02"
+    note: 
+  - id: FC-02
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "근접공격 시작/발동/Hit"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uADFC\uC811\uACF5\uACA9 \uC2DC\uC791/\uBC1C\uB3D9/Hit"
     coverageState: 1
-    evidence: "Start 비어 있음, Resolve·Hit 배정."
-    completionCriteria: "공격 애니메이션과 발동/Hit 동기화"
+    evidence: "Start \uBE44\uC5B4 \uC788\uC74C, Resolve\xB7Hit \uBC30\uC815."
+    completionCriteria: "\uACF5\uACA9 \uC560\uB2C8\uBA54\uC774\uC158\uACFC \uBC1C\uB3D9/Hit
+      \uB3D9\uAE30\uD654"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-03"
+    note: 
+  - id: FC-03
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "표식 강타 시작/발동/Hit"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uD45C\uC2DD \uAC15\uD0C0 \uC2DC\uC791/\uBC1C\uB3D9/Hit"
     coverageState: 1
-    evidence: "Resolve만 배정, Start·Hit 비어 있음."
-    completionCriteria: "필요한 단계 승인·배정 후 실제 판정 동기화"
+    evidence: "Resolve\uB9CC \uBC30\uC815, Start\xB7Hit \uBE44\uC5B4 \uC788\uC74C."
+    completionCriteria: "\uD544\uC694\uD55C \uB2E8\uACC4 \uC2B9\uC778\xB7\uBC30\uC815
+      \uD6C4 \uC2E4\uC81C \uD310\uC815 \uB3D9\uAE30\uD654"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-04"
+    note: 
+  - id: FC-04
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "추적 표식 시작/발동/Hit"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uCD94\uC801 \uD45C\uC2DD \uC2DC\uC791/\uBC1C\uB3D9/Hit"
     coverageState: 1
-    evidence: "Resolve·Hit 배정, Start 비어 있음."
-    completionCriteria: "표식 생성과 피해 사건을 구분해 재생"
+    evidence: "Resolve\xB7Hit \uBC30\uC815, Start \uBE44\uC5B4 \uC788\uC74C."
+    completionCriteria: "\uD45C\uC2DD \uC0DD\uC131\uACFC \uD53C\uD574 \uC0AC\uAC74\uC744
+      \uAD6C\uBD84\uD574 \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-05"
+    note: 
+  - id: FC-05
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "블랙홀 시작/발동/Hit"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uBE14\uB799\uD640 \uC2DC\uC791/\uBC1C\uB3D9/Hit"
     coverageState: 1
-    evidence: "Resolve만 배정, Start·Hit 비어 있음."
-    completionCriteria: "생성·유지·피해·종료 사건 정책 확정"
+    evidence: "Resolve\uB9CC \uBC30\uC815, Start\xB7Hit \uBE44\uC5B4 \uC788\uC74C."
+    completionCriteria: "\uC0DD\uC131\xB7\uC720\uC9C0\xB7\uD53C\uD574\xB7\uC885\uB8CC
+      \uC0AC\uAC74 \uC815\uCC45 \uD655\uC815"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-06"
+    note: 
+  - id: FC-06
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "블랙홀 종료 효과"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uBE14\uB799\uD640 \uC885\uB8CC \uD6A8\uACFC"
     coverageState: 2
-    evidence: "`blackHoleEndEffects` Start·Resolve·Hit 모두 비어 있다."
-    completionCriteria: "종료 연출에 필요한 단계를 배정하고 Loop 잔류 없음"
+    evidence: "`blackHoleEndEffects` Start\xB7Resolve\xB7Hit \uBAA8\uB450 \uBE44\uC5B4
+      \uC788\uB2E4."
+    completionCriteria: "\uC885\uB8CC \uC5F0\uCD9C\uC5D0 \uD544\uC694\uD55C \uB2E8\uACC4\uB97C
+      \uBC30\uC815\uD558\uACE0 Loop \uC794\uB958 \uC5C6\uC74C"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-07"
+    note: 
+  - id: FC-07
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "선형 강타 시작/발동/Hit"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uC120\uD615 \uAC15\uD0C0 \uC2DC\uC791/\uBC1C\uB3D9/Hit"
     coverageState: 1
-    evidence: "Resolve만 배정, Start·Hit 비어 있음."
-    completionCriteria: "예고와 실제 타격을 청각적으로 구분"
+    evidence: "Resolve\uB9CC \uBC30\uC815, Start\xB7Hit \uBE44\uC5B4 \uC788\uC74C."
+    completionCriteria: "\uC608\uACE0\uC640 \uC2E4\uC81C \uD0C0\uACA9\uC744 \uCCAD\uAC01\uC801\uC73C\uB85C
+      \uAD6C\uBD84"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-08"
+    note: 
+  - id: FC-08
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "타락 고리 시작/발동/Hit"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uD0C0\uB77D \uACE0\uB9AC \uC2DC\uC791/\uBC1C\uB3D9/Hit"
     coverageState: 1
-    evidence: "Resolve만 배정, Start·Hit 비어 있음."
-    completionCriteria: "범위 생성·피해 시간축 검증"
+    evidence: "Resolve\uB9CC \uBC30\uC815, Start\xB7Hit \uBE44\uC5B4 \uC788\uC74C."
+    completionCriteria: "\uBC94\uC704 \uC0DD\uC131\xB7\uD53C\uD574 \uC2DC\uAC04\uCD95
+      \uAC80\uC99D"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-09"
+    note: 
+  - id: FC-09
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "최종 돌진 시작/발동/Hit"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uCD5C\uC885 \uB3CC\uC9C4 \uC2DC\uC791/\uBC1C\uB3D9/Hit"
     coverageState: 0
-    evidence: "Start·Resolve·Hit 모두 배정됐다."
-    completionCriteria: "실제 전투에서 3단계 동기화·볼륨 확인"
+    evidence: "Start\xB7Resolve\xB7Hit \uBAA8\uB450 \uBC30\uC815\uB410\uB2E4."
+    completionCriteria: "\uC2E4\uC81C \uC804\uD22C\uC5D0\uC11C 3\uB2E8\uACC4 \uB3D9\uAE30\uD654\xB7\uBCFC\uB968
+      \uD655\uC778"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-10"
+    note: 
+  - id: FC-10
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "시간초과 전멸 시작/발동/Hit"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uC2DC\uAC04\uCD08\uACFC \uC804\uBA78 \uC2DC\uC791/\uBC1C\uB3D9/Hit"
     coverageState: 1
-    evidence: "Start·Resolve 배정, Hit 비어 있음."
-    completionCriteria: "전멸 확정 사건과 결과음 중복 여부 확인"
+    evidence: "Start\xB7Resolve \uBC30\uC815, Hit \uBE44\uC5B4 \uC788\uC74C."
+    completionCriteria: "\uC804\uBA78 \uD655\uC815 \uC0AC\uAC74\uACFC \uACB0\uACFC\uC74C
+      \uC911\uBCF5 \uC5EC\uBD80 \uD655\uC778"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-11"
+    note: 
+  - id: FC-11
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "뒤틀린 전장 시작/발동/Hit"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uB4A4\uD2C0\uB9B0 \uC804\uC7A5 \uC2DC\uC791/\uBC1C\uB3D9/Hit"
     coverageState: 1
-    evidence: "Resolve만 배정, Start·Hit 비어 있음."
-    completionCriteria: "바닥 연출의 시작/유지 정책 확정"
+    evidence: "Resolve\uB9CC \uBC30\uC815, Start\xB7Hit \uBE44\uC5B4 \uC788\uC74C."
+    completionCriteria: "\uBC14\uB2E5 \uC5F0\uCD9C\uC758 \uC2DC\uC791/\uC720\uC9C0
+      \uC815\uCC45 \uD655\uC815"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-12"
+    note: 
+  - id: FC-12
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "낙하 탄막 시작/발동/Hit"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uB099\uD558 \uD0C4\uB9C9 \uC2DC\uC791/\uBC1C\uB3D9/Hit"
     coverageState: 0
-    evidence: "주 효과 Start·Resolve·Hit 모두 배정됐다."
-    completionCriteria: "다발 낙하 시 Voice 폭주 없이 재생"
+    evidence: "\uC8FC \uD6A8\uACFC Start\xB7Resolve\xB7Hit \uBAA8\uB450 \uBC30\uC815\uB410\uB2E4."
+    completionCriteria: "\uB2E4\uBC1C \uB099\uD558 \uC2DC Voice \uD3ED\uC8FC \uC5C6\uC774
+      \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-13"
+    note: 
+  - id: FC-13
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "낙하 탄막 개별 Impact 보조"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uB099\uD558 \uD0C4\uB9C9 \uAC1C\uBCC4 Impact \uBCF4\uC870"
     coverageState: 2
-    evidence: "`impactEffects` Start·Resolve·Hit가 모두 비어 있다."
-    completionCriteria: "주 효과와 개별 Impact의 역할을 정하고 필요할 때만 배정"
+    evidence: "`impactEffects` Start\xB7Resolve\xB7Hit\uAC00 \uBAA8\uB450 \uBE44\uC5B4
+      \uC788\uB2E4."
+    completionCriteria: "\uC8FC \uD6A8\uACFC\uC640 \uAC1C\uBCC4 Impact\uC758 \uC5ED\uD560\uC744
+      \uC815\uD558\uACE0 \uD544\uC694\uD560 \uB54C\uB9CC \uBC30\uC815"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-14"
+    note: 
+  - id: FC-14
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "3단계 Phase 전환"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "3\uB2E8\uACC4 Phase \uC804\uD658"
     coverageState: 2
-    evidence: "`transitionSound` 0/3이다."
-    completionCriteria: "Phase 전환 연출별 1회 재생"
+    evidence: "`transitionSound` 0/3\uC774\uB2E4."
+    completionCriteria: "Phase \uC804\uD658 \uC5F0\uCD9C\uBCC4 1\uD68C \uC7AC\uC0DD"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-15"
+    note: 
+  - id: FC-15
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "Break 시작·회복"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "Break \uC2DC\uC791\xB7\uD68C\uBCF5"
     coverageState: 3
-    evidence: "Break 상태 이벤트는 있으나 명시적 SFX 공간을 찾지 못했다."
-    completionCriteria: "Break/복귀가 공격음과 구분되도록 Hook·Cue 검증"
+    evidence: "Break \uC0C1\uD0DC \uC774\uBCA4\uD2B8\uB294 \uC788\uC73C\uB098 \uBA85\uC2DC\uC801
+      SFX \uACF5\uAC04\uC744 \uCC3E\uC9C0 \uBABB\uD588\uB2E4."
+    completionCriteria: "Break/\uBCF5\uADC0\uAC00 \uACF5\uACA9\uC74C\uACFC \uAD6C\uBD84\uB418\uB3C4\uB85D
+      Hook\xB7Cue \uAC80\uC99D"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-16"
+    note: 
+  - id: FC-16
     priority: 0
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "보스 피격·사망·결정타"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uBCF4\uC2A4 \uD53C\uACA9\xB7\uC0AC\uB9DD\xB7\uACB0\uC815\uD0C0"
     coverageState: 2
-    evidence: "Runtime Prefab의 공용 CombatFeedback 4종이 비어 있다."
-    completionCriteria: "COM-01~04 공용 배정 뒤 보스전 실전 확인"
+    evidence: "Runtime Prefab\uC758 \uACF5\uC6A9 CombatFeedback 4\uC885\uC774 \uBE44\uC5B4
+      \uC788\uB2E4."
+    completionCriteria: "COM-01~04 \uACF5\uC6A9 \uBC30\uC815 \uB4A4 \uBCF4\uC2A4\uC804
+      \uC2E4\uC804 \uD655\uC778"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-17"
+    note: 
+  - id: FC-17
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "군단장 사망·회피"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uAD70\uB2E8\uC7A5 \uC0AC\uB9DD\xB7\uD68C\uD53C"
     coverageState: 3
-    evidence: "전투 Controller 이벤트에는 명시적 SFX 공간이 없다."
-    completionCriteria: "사망/회피 판정과 1회 재생 보장"
+    evidence: "\uC804\uD22C Controller \uC774\uBCA4\uD2B8\uC5D0\uB294 \uBA85\uC2DC\uC801
+      SFX \uACF5\uAC04\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uC0AC\uB9DD/\uD68C\uD53C \uD310\uC815\uACFC 1\uD68C \uC7AC\uC0DD
+      \uBCF4\uC7A5"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "FC-18"
+    note: 
+  - id: FC-18
     priority: 1
-    categoryId: "fallen_commander"
-    area: "타락 군단장"
-    eventName: "승리·패배·나가기 확인"
+    categoryId: fallen_commander
+    area: "\uD0C0\uB77D \uAD70\uB2E8\uC7A5"
+    eventName: "\uC2B9\uB9AC\xB7\uD328\uBC30\xB7\uB098\uAC00\uAE30 \uD655\uC778"
     coverageState: 3
-    evidence: "결과·Exit Confirm에 SFX 호출이 없다."
-    completionCriteria: "상태별 결과음과 공용 버튼음 중복 없음"
+    evidence: "\uACB0\uACFC\xB7Exit Confirm\uC5D0 SFX \uD638\uCD9C\uC774 \uC5C6\uB2E4."
+    completionCriteria: "\uC0C1\uD0DC\uBCC4 \uACB0\uACFC\uC74C\uACFC \uACF5\uC6A9
+      \uBC84\uD2BC\uC74C \uC911\uBCF5 \uC5C6\uC74C"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "GT-01"
+    note: 
+  - id: GT-01
     priority: 1
-    categoryId: "guardian_trial"
-    area: "고대 수호수"
-    eventName: "콘텐츠 입장·전투 시작"
+    categoryId: guardian_trial
+    area: "\uACE0\uB300 \uC218\uD638\uC218"
+    eventName: "\uCF58\uD150\uCE20 \uC785\uC7A5\xB7\uC804\uD22C \uC2DC\uC791"
     coverageState: 3
-    evidence: "Runtime Prefab 직접 AudioClip/SfxCue 의존성 0개다."
-    completionCriteria: "입장·카운트다운·조작 시작 동기화"
+    evidence: "Runtime Prefab \uC9C1\uC811 AudioClip/SfxCue \uC758\uC874\uC131 0\uAC1C\uB2E4."
+    completionCriteria: "\uC785\uC7A5\xB7\uCE74\uC6B4\uD2B8\uB2E4\uC6B4\xB7\uC870\uC791
+      \uC2DC\uC791 \uB3D9\uAE30\uD654"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "GT-02"
+    note: 
+  - id: GT-02
     priority: 1
-    categoryId: "guardian_trial"
-    area: "고대 수호수"
-    eventName: "적 웨이브·강적 등장"
+    categoryId: guardian_trial
+    area: "\uACE0\uB300 \uC218\uD638\uC218"
+    eventName: "\uC801 \uC6E8\uC774\uBE0C\xB7\uAC15\uC801 \uB4F1\uC7A5"
     coverageState: 3
-    evidence: "웨이브/적 등장 SFX Hook이 없다."
-    completionCriteria: "Spawn과 경고 타이밍 일치"
+    evidence: "\uC6E8\uC774\uBE0C/\uC801 \uB4F1\uC7A5 SFX Hook\uC774 \uC5C6\uB2E4."
+    completionCriteria: "Spawn\uACFC \uACBD\uACE0 \uD0C0\uC774\uBC0D \uC77C\uCE58"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "GT-03"
+    note: 
+  - id: GT-03
     priority: 1
-    categoryId: "guardian_trial"
-    area: "고대 수호수"
-    eventName: "군단장·적 피격/사망"
+    categoryId: guardian_trial
+    area: "\uACE0\uB300 \uC218\uD638\uC218"
+    eventName: "\uAD70\uB2E8\uC7A5\xB7\uC801 \uD53C\uACA9/\uC0AC\uB9DD"
     coverageState: 2
-    evidence: "공용 CombatFeedback 생산 연결이 비어 있다."
-    completionCriteria: "COM-01~04 배정 뒤 콘텐츠 실전 확인"
+    evidence: "\uACF5\uC6A9 CombatFeedback \uC0DD\uC0B0 \uC5F0\uACB0\uC774 \uBE44\uC5B4
+      \uC788\uB2E4."
+    completionCriteria: "COM-01~04 \uBC30\uC815 \uB4A4 \uCF58\uD150\uCE20 \uC2E4\uC804
+      \uD655\uC778"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "GT-04"
+    note: 
+  - id: GT-04
     priority: 1
-    categoryId: "guardian_trial"
-    area: "고대 수호수"
-    eventName: "수호수 피해·위험·단계 상승"
+    categoryId: guardian_trial
+    area: "\uACE0\uB300 \uC218\uD638\uC218"
+    eventName: "\uC218\uD638\uC218 \uD53C\uD574\xB7\uC704\uD5D8\xB7\uB2E8\uACC4 \uC0C1\uC2B9"
     coverageState: 3
-    evidence: "목표 오브젝트/무한 단계 사건에 Audio 경로가 없다."
-    completionCriteria: "일반 피해 스팸을 제한하고 위험/단계 전환을 구분"
+    evidence: "\uBAA9\uD45C \uC624\uBE0C\uC81D\uD2B8/\uBB34\uD55C \uB2E8\uACC4 \uC0AC\uAC74\uC5D0
+      Audio \uACBD\uB85C\uAC00 \uC5C6\uB2E4."
+    completionCriteria: "\uC77C\uBC18 \uD53C\uD574 \uC2A4\uD338\uC744 \uC81C\uD55C\uD558\uACE0
+      \uC704\uD5D8/\uB2E8\uACC4 \uC804\uD658\uC744 \uAD6C\uBD84"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
-  - id: "GT-05"
+    note: 
+  - id: GT-05
     priority: 1
-    categoryId: "guardian_trial"
-    area: "고대 수호수"
-    eventName: "성공·실패·보상"
+    categoryId: guardian_trial
+    area: "\uACE0\uB300 \uC218\uD638\uC218"
+    eventName: "\uC131\uACF5\xB7\uC2E4\uD328\xB7\uBCF4\uC0C1"
     coverageState: 3
-    evidence: "결과 SFX 경로가 없다."
-    completionCriteria: "결과 확정·보상 적용·버튼 입력의 중복 재생 없음"
+    evidence: "\uACB0\uACFC SFX \uACBD\uB85C\uAC00 \uC5C6\uB2E4."
+    completionCriteria: "\uACB0\uACFC \uD655\uC815\xB7\uBCF4\uC0C1 \uC801\uC6A9\xB7\uBC84\uD2BC
+      \uC785\uB825\uC758 \uC911\uBCF5 \uC7AC\uC0DD \uC5C6\uC74C"
     assignmentState: 0
     cue: {fileID: 0}
-    note: ""
+    note: 

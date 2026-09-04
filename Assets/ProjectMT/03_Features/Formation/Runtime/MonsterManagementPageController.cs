@@ -147,6 +147,7 @@ namespace ProjectMT.Features.Formation
             ConfigureStageActions();
             breakthroughActionButton?.onClick.AddListener(HandleBreakthroughClicked);
             UIButtonClickPunch.EnsureOn(levelUpButton?.gameObject);
+            UIButtonClickSound.EnsureOn(levelUpButton?.gameObject);
             originalImageTexture = previewImage != null ? previewImage.texture : null;
             var previewMask = 1 << PreviewLayer;
             if (previewCamera != null)
@@ -420,6 +421,7 @@ namespace ProjectMT.Features.Formation
             RefreshRoster(progress.View.Monsters);
             RefreshSelectedDetails(progress.View);
             UIButtonClickPunch.ApplyToAllButtonsUnder(transform); // 새로 생성된 몬스터 카드 버튼도 포함
+            UIButtonClickSound.ApplyToAllButtonsUnder(transform);
         }
 
         private void UpdateTabState()

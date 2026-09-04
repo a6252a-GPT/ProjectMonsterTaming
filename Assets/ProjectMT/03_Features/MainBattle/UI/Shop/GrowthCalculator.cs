@@ -299,6 +299,7 @@ namespace ProjectMT.Features.MainBattle
 
             var visualRoot = button.transform.parent != null ? button.transform.parent : button.transform;
             UIButtonClickPunch.EnsureOn(button.gameObject, visualRoot);
+            UIButtonClickSound.EnsureOn(button.gameObject);
         }
 
         private static void EnsureFullRectHitArea(Button button)

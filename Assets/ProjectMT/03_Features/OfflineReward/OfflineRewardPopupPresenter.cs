@@ -188,6 +188,9 @@ namespace ProjectMT.Features.OfflineReward
             UIButtonClickPunch.EnsureOn(adButton?.gameObject);
             UIButtonClickPunch.EnsureOn(claimButton?.gameObject);
             UIButtonClickPunch.EnsureOn(closeButton?.gameObject);
+            UIButtonClickSound.EnsureOn(adButton?.gameObject);
+            UIButtonClickSound.EnsureOn(claimButton?.gameObject);
+            UIButtonClickSound.EnsureOn(closeButton?.gameObject);
 
             SetCombatDisplaySuppressed(true);
             var showNotice = presentation.AutoDismantledEquipmentCount > 0 &&

@@ -245,6 +245,8 @@ namespace ProjectMT.Features.Formation
                     // PageRoot가 막 활성화된 직후인 여기서 붙여야 클릭 연출이 확실히 동작한다.
                     UIButtonClickPunch.EnsureOn(formationButton?.gameObject);
                     UIButtonClickPunch.EnsureOn(positionFormationButton?.gameObject);
+                    UIButtonClickSound.EnsureOn(formationButton?.gameObject);
+                    UIButtonClickSound.EnsureOn(positionFormationButton?.gameObject);
                 }
                 else
                 {
@@ -432,6 +434,7 @@ namespace ProjectMT.Features.Formation
             if (pageRoot != null)
             {
                 UIButtonClickPunch.ApplyToAllButtonsUnder(pageRoot.transform); // 새로 생성된 몬스터 카드 버튼도 포함
+                UIButtonClickSound.ApplyToAllButtonsUnder(pageRoot.transform);
             }
         }
 

@@ -72,6 +72,7 @@ namespace ProjectMT.Features.MainBattle
         private MonsterRosterView ownedRoster;
         private IGameProgressService progressService;
         private bool claimInProgress;
+        private bool acknowledgeInProgress;
 
         public void Configure(MonsterRarityCatalog rarityCatalog, IGameProgressService progressService)
         {
@@ -211,32 +212,46 @@ namespace ProjectMT.Features.MainBattle
             }
         }
 
-        // 등급별 "보유 / 전체" 표시. 탭·필터와 무관하게 패널을 열 때 한 번만 계산한다.
+        // 등급별 고유 수집 수 표시. 현재 보유 여부가 아니라 최초 수집 기록을 기준으로 계산한다.
         private void RefreshCounts()
         {
             for (var i = 0; i < monstersByRarity.Count && i < rosterLists.Count; i++)
             {
                 var list = monstersByRarity[i];
-                var owned = 0;
+                var collected = 0;
                 for (var j = 0; j < list.Count; j++)
                 {
-                    if (list[j] != null && ownedRoster.Owns(list[j].MonsterId))
+                    if (list[j] != null && ownedRoster.HasCollected(list[j].MonsterId))
                     {
-                        owned++;
+                        collected++;
                     }
                 }
 
-                rosterLists[i]?.SetCountText($"보유 {owned}/{list.Count}");
+                rosterLists[i]?.SetCountText($"수집 {collected}/{list.Count}");
                 if (i < tabProgressLabels.Count && tabProgressLabels[i] != null)
                 {
-                    tabProgressLabels[i].text = $"{TabLabels[i]} {owned}/{list.Count}";
+                    tabProgressLabels[i].text = $"{TabLabels[i]} {collected}/{list.Count}";
                 }
 
                 if (i < tabRewardIndicators.Count && tabRewardIndicators[i] != null)
                 {
-                    tabRewardIndicators[i].SetActive(HasClaimableReward(list));
+                    tabRewardIndicators[i].SetActive(HasClaimableReward(list) || HasNewCollection(list));
                 }
             }
+        }
+
+        private bool HasNewCollection(IReadOnlyList<MonsterDefinition> monsters)
+        {
+            for (var index = 0; index < monsters.Count; index++)
+            {
+                var definition = monsters[index];
+                if (definition != null && ownedRoster.IsCollectionNew(definition.MonsterId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private bool HasClaimableReward(IReadOnlyList<MonsterDefinition> monsters)
@@ -314,6 +329,7 @@ namespace ProjectMT.Features.MainBattle
                     isOwned,
                     isOwned ? owned.AscensionLevel : 0,
                     isOwned && owned.CollectionFiveStarRewardClaimed,
+                    AcknowledgeCollectionNew,
                     ClaimFiveStarReward);
             }
 
@@ -345,6 +361,30 @@ namespace ProjectMT.Features.MainBattle
             }
 
             return filteredScratch;
+        }
+
+        private async void AcknowledgeCollectionNew(string monsterId)
+        {
+            if (acknowledgeInProgress || progressService == null || string.IsNullOrWhiteSpace(monsterId) ||
+                !ownedRoster.IsCollectionNew(monsterId))
+            {
+                return;
+            }
+
+            acknowledgeInProgress = true;
+            try
+            {
+                var applied = await progressService.TryApplyAndSaveAsync(
+                    GameProgressChange.AcknowledgeMonsterCollectionNew(monsterId));
+                if (!applied)
+                {
+                    HandleProgressChanged();
+                }
+            }
+            finally
+            {
+                acknowledgeInProgress = false;
+            }
         }
 
         private async void ClaimFiveStarReward(string monsterId)

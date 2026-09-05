@@ -119,6 +119,7 @@ namespace ProjectMT.Features.Formation
             bool isOwned,
             int ascensionLevel,
             bool fiveStarRewardClaimed,
+            Action<string> onSelected,
             Action<string> onClaimFiveStarReward)
         {
             if (definition == null)
@@ -128,7 +129,7 @@ namespace ProjectMT.Features.Formation
             }
 
             monsterId = definition.MonsterId;
-            selectedAction = null;
+            selectedAction = onSelected;
             if (portraitImage != null)
             {
                 portraitImage.sprite = definition.Portrait;

@@ -425,6 +425,8 @@ namespace ProjectMT.Shared.GameData
         internal IReadOnlyList<ItemAmount> ItemCosts { get; private set; }
         internal bool HasClaimMonsterCollectionFiveStarReward { get; private set; }
         internal string CollectionRewardMonsterId { get; private set; }
+        internal bool HasAcknowledgeMonsterCollectionNew { get; private set; }
+        internal string AcknowledgeCollectionMonsterId { get; private set; }
         internal bool HasGrowthDungeonClear { get; private set; }
         internal string GrowthDungeonContentId { get; private set; }
         internal int GrowthDungeonClearedStage { get; private set; }

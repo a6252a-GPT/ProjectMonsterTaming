@@ -358,6 +358,15 @@ namespace ProjectMT.Shared.GameData
             return LevelUpCommanderSkill(skillId, expectedLevel);
         }
 
+        public static GameProgressChange AcknowledgeMonsterCollectionNew(string monsterId)
+        {
+            return new GameProgressChange
+            {
+                HasAcknowledgeMonsterCollectionNew = true,
+                AcknowledgeCollectionMonsterId = monsterId?.Trim()
+            };
+        }
+
         public static GameProgressChange ClaimMonsterCollectionFiveStarReward(string monsterId)
         {
             return new GameProgressChange

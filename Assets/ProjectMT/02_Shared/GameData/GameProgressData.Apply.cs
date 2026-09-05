@@ -418,6 +418,13 @@ namespace ProjectMT.Shared.GameData
                 items = collectionRewardItems; // 수령 플래그와 다이아를 같은 저장 후보에서 확정
             }
 
+            if (change.HasAcknowledgeMonsterCollectionNew &&
+                (string.IsNullOrWhiteSpace(change.AcknowledgeCollectionMonsterId) ||
+                 !monsters.TryAcknowledgeCollectionNew(change.AcknowledgeCollectionMonsterId)))
+            {
+                return false;
+            }
+
             if (change.GachaPulls != null)
             {
                 if (change.GachaPulls.Count == 0)

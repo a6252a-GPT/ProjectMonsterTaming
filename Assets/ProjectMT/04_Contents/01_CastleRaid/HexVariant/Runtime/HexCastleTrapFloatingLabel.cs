@@ -10,6 +10,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         private const float HeightOffset = 1.35f;
         private const float RiseDistance = 0.8f;
 
+        private static GameObject visualPrefab;
         private TMP_Text label;
         private Camera facingCamera;
         private Vector3 startPosition;
@@ -23,31 +24,23 @@ namespace ProjectMT.Contents.CastleRaidHex
             Transform parent,
             Vector3 worldPosition,
             HexCastleTrapType trapType,
-            TMP_FontAsset font,
             Camera worldCamera)
         {
-            var root = new GameObject($"TrapFloating_{trapType}");
-            if (parent != null)
+            if (visualPrefab == null)
             {
-                root.transform.SetParent(parent, true);
+                visualPrefab = Resources.Load<GameObject>("PF_HexCastleTrapFloatingLabel");
+            }
+            if (visualPrefab == null)
+            {
+                throw new System.InvalidOperationException("Missing authored HexCastle trap label prefab.");
             }
 
+            var root = Instantiate(visualPrefab, parent, true);
+            root.name = $"TrapFloating_{trapType}";
             root.transform.position = worldPosition + Vector3.up * HeightOffset;
-            var text = root.AddComponent<TextMeshPro>();
-            text.font = font != null ? font : TMP_Settings.defaultFontAsset;
+            var text = root.GetComponent<TMP_Text>();
             text.text = ResolveDisplayText(trapType);
-            text.fontSize = 3.8f;
-            text.fontStyle = FontStyles.Bold;
-            text.alignment = TextAlignmentOptions.Center;
-            text.textWrappingMode = TextWrappingModes.NoWrap;
-            text.overflowMode = TextOverflowModes.Overflow;
-            text.raycastTarget = false;
-            text.sortingOrder = 190;
-            text.outlineColor = new Color32(28, 18, 12, 255);
-            text.outlineWidth = 0.18f;
-            text.rectTransform.sizeDelta = new Vector2(6f, 1.2f);
-
-            var view = root.AddComponent<HexCastleTrapFloatingLabel>();
+            var view = root.GetComponent<HexCastleTrapFloatingLabel>();
             view.Configure(text, trapType, worldCamera);
             return view;
         }

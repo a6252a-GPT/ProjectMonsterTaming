@@ -1,4 +1,5 @@
 using System;
+using ProjectMT.Shared.Audio;
 using System.Threading;
 using System.Threading.Tasks;
 using ProjectMT.Core.SceneFlow;
@@ -139,6 +140,7 @@ namespace ProjectMT.Contents.Framework
             if (runner.Open(run.Context))
             {
                 Phase = ContentFlowPhase.Playing;
+                SfxEvents.Play2D(SfxEvents.ContentStart);
                 NotifyHostedRunStarted(contentId);
                 return true;
             }
@@ -250,6 +252,7 @@ namespace ProjectMT.Contents.Framework
                 return null;
             }
 
+            if (Phase == ContentFlowPhase.Entering) SfxEvents.Play2D(SfxEvents.ContentStart);
             Phase = ContentFlowPhase.Playing;
             return new ContentSceneContext(activeRun.Definition, activeRun.Context);
         }
@@ -489,6 +492,7 @@ namespace ProjectMT.Contents.Framework
             }
 
             HideFinishFeedback();
+            PlayResultSound(run);
             if (run.PendingResultPresentation != null && resultView != null)
             {
                 try
@@ -529,6 +533,7 @@ namespace ProjectMT.Contents.Framework
             }
 
             HideFinishFeedback();
+            PlayResultSound(run);
             if (run.PendingResultPresentation != null && resultView != null)
             {
                 try
@@ -545,6 +550,15 @@ namespace ProjectMT.Contents.Framework
             {
                 FinishRun(run);
             }
+        }
+
+        private static void PlayResultSound(ActiveRun run)
+        {
+            if (run.ResultSoundPlayed || run.PendingResultPresentation == null) return;
+            run.ResultSoundPlayed = true;
+            var outcome = run.PendingResultPresentation.Outcome;
+            if (outcome == ContentOutcome.Complete) SfxEvents.Play2D(SfxEvents.ContentVictory);
+            else if (outcome == ContentOutcome.Fail) SfxEvents.Play2D(SfxEvents.ContentDefeat);
         }
 
         private void RetrySave(ActiveRun run)
@@ -655,6 +669,7 @@ namespace ProjectMT.Contents.Framework
             public ContentContext Context { get; set; }
             public GameProgressChange PendingChange { get; set; } // 저장 성공까지 보존할 동일 변경
             public RewardPresentationRequest PendingPresentation { get; set; } // 저장 성공 뒤 한 번 표시
+            public bool ResultSoundPlayed { get; set; }
             public ContentResultPresentation PendingResultPresentation { get; set; } // 저장 확정 뒤 닫힐 때까지 표시
             public int ExitAccepted; // 첫 결과 접수 표식
             public int SettlementInFlight; // 동시 저장 재시도 차단

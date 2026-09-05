@@ -5652,7 +5652,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8238581702332253286, guid: 415939bae1bb79640acc8795a568ca69, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 510
+      value: -350
       objectReference: {fileID: 0}
     - target: {fileID: 8238581702332253286, guid: 415939bae1bb79640acc8795a568ca69, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -5691,18 +5691,62 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7911206007420762217, guid: 415939bae1bb79640acc8795a568ca69, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8013684207818396317}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1962649257407646962, guid: 415939bae1bb79640acc8795a568ca69, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7977158761494957158}
   m_SourcePrefab: {fileID: 100100000, guid: 415939bae1bb79640acc8795a568ca69, type: 3}
 --- !u!224 &2516344695305824915 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 8238581702332253286, guid: 415939bae1bb79640acc8795a568ca69, type: 3}
   m_PrefabInstance: {fileID: 5818237592581730037}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2518336549580365812 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8236069953073492225, guid: 415939bae1bb79640acc8795a568ca69, type: 3}
+  m_PrefabInstance: {fileID: 5818237592581730037}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!224 &4428366305890424476 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 7911206007420762217, guid: 415939bae1bb79640acc8795a568ca69, type: 3}
   m_PrefabInstance: {fileID: 5818237592581730037}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &5440967762579022343 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1962649257407646962, guid: 415939bae1bb79640acc8795a568ca69, type: 3}
+  m_PrefabInstance: {fileID: 5818237592581730037}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7977158761494957158
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5440967762579022343}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2b894128bcc4c847b0d05168ebf59c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.GrowthDungeon.GrowthDungeonStageEntryPopupView
+  closeButton: {fileID: 2518336549580365812}
+  previousButton: {fileID: 3176949053616106659}
+  nextButton: {fileID: 6774973716252539340}
+  enterButton: {fileID: 6180017677912650755}
+  sweepButton: {fileID: 7020053285266878664}
+  stageLabel: {fileID: 9034022249637719653}
+  stageValue: {fileID: 567397773654864986}
+  rewardTitle: {fileID: 6949970992441860475}
+  rewardAmount: {fileID: 5069667834883669896}
+  keyCount: {fileID: 7660558052634144867}
+  highestStageText: {fileID: 8137773842974416963}
+  enterCostText: {fileID: 2018562555521874931}
+  sweepCostText: {fileID: 1489322316209790873}
 --- !u!224 &6071172846669566134 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 360195379336379971, guid: 415939bae1bb79640acc8795a568ca69, type: 3}

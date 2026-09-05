@@ -199,7 +199,6 @@ namespace ProjectMT.Features.Commander
 
             SetText(levelUpButtonText, isMaxLevel ? "MAX" : "레벨 업");
             SetActiveSafe(levelUpReadyBadge, canLevelUp);
-            NormalizeTopResourceLayout();
         }
 
         private void Subscribe()
@@ -288,7 +287,6 @@ namespace ProjectMT.Features.Commander
         // 능력치 탭이 기본, 잠재능력 탭을 누르면 능력치 쪽 콘텐츠를 숨기고 PotentialPanel을 보여준다.
         private void SelectGrowthTab(bool potential)
         {
-            NormalizeGrowthTabLayout(statsTabButton?.transform, potentialTabButton?.transform);
             SetActiveSafe(statsTabFocus, !potential);
             SetActiveSafe(potentialTabFocus, potential);
             SetActiveSafe(growthScrollView, !potential);
@@ -468,17 +466,16 @@ namespace ProjectMT.Features.Commander
         {
             var statsTabTransform = FindDeep(transform, "StatsTab");
             var potentialTabTransform = FindDeep(transform, "PotentialTab");
-            NormalizeGrowthTabLayout(statsTabTransform, potentialTabTransform);
 
             if (statsTabTransform != null)
             {
-                statsTabButton = EnsureButton(statsTabTransform);
+                statsTabButton = GetButton(statsTabTransform);
                 statsTabFocus = FindDeep(statsTabTransform, "Focus")?.gameObject;
             }
 
             if (potentialTabTransform != null)
             {
-                potentialTabButton = EnsureButton(potentialTabTransform);
+                potentialTabButton = GetButton(potentialTabTransform);
                 potentialTabFocus = FindDeep(potentialTabTransform, "Focus")?.gameObject;
             }
 
@@ -488,7 +485,6 @@ namespace ProjectMT.Features.Commander
             topGoldValueText = FindDeep(transform, "TopGoldValue")?.GetComponent<TMP_Text>();
             topTrainingValueText = FindDeep(transform, "TopTrainingValue")?.GetComponent<TMP_Text>();
             topPotentialValueText = FindDeep(transform, "TopPotentialValue")?.GetComponent<TMP_Text>();
-            NormalizeTopResourceLayout();
 
             // "잠재능력 강화석  N" 보유량 표시. 오브젝트 자체에 TMP_Text가 있을 수도, 자식에 있을 수도 있어 둘 다 시도한다.
             var potentialSummaryTransform = FindDeep(transform, "PotentialSummary");
@@ -520,7 +516,7 @@ namespace ProjectMT.Features.Commander
             var valueRerollButtonTransform = FindDeep(transform, "ButtonArea_1");
             if (valueRerollButtonTransform != null)
             {
-                EnsureButton(valueRerollButtonTransform).onClick.AddListener(TriggerPotentialValueReroll);
+                GetButton(valueRerollButtonTransform).onClick.AddListener(TriggerPotentialValueReroll);
             }
             else
             {
@@ -531,7 +527,7 @@ namespace ProjectMT.Features.Commander
             var rerollButtonTransform = FindDeep(transform, "ButtonArea_2");
             if (rerollButtonTransform != null)
             {
-                EnsureButton(rerollButtonTransform).onClick.AddListener(TriggerPotentialReroll);
+                GetButton(rerollButtonTransform).onClick.AddListener(TriggerPotentialReroll);
             }
             else
             {
@@ -555,32 +551,6 @@ namespace ProjectMT.Features.Commander
             }
         }
 
-        private static void ShiftPotentialRowContentLeft(Transform rowTransform)
-        {
-            const float offsetX = -14f;
-            var contentNames = new[]
-            {
-                "UpText_Level", "GradeBadge", "Text_Level", "Text", "ResultValue",
-                "ProtectSurface", "LockStateText", "IconOn", "IconOff"
-            };
-
-            for (var i = 0; i < contentNames.Length; i++)
-            {
-                ShiftAnchoredX(FindDeep(rowTransform, contentNames[i]) as RectTransform, offsetX);
-            }
-
-            var lockOverlay = FindDeep(rowTransform, "Lock");
-            ShiftAnchoredX(FindDeep(lockOverlay, "Icon") as RectTransform, offsetX);
-        }
-
-        private static void ShiftAnchoredX(RectTransform rect, float offsetX)
-        {
-            if (rect != null)
-            {
-                rect.anchoredPosition += new Vector2(offsetX, 0f);
-            }
-        }
-
         private void CachePotentialRow(int index, string rowName)
         {
             var rowTransform = FindDeep(transform, rowName);
@@ -590,7 +560,6 @@ namespace ProjectMT.Features.Commander
                 return;
             }
 
-            ShiftPotentialRowContentLeft(rowTransform);
 
             // "Text" 이름이 없으면 TMP 기본 이름("Text (TMP)")으로 복제된 행일 수 있으므로 대체 탐색한다.
             var textLevelComponent = FindDeep(rowTransform, "Text_Level")?.GetComponent<TMP_Text>();
@@ -601,11 +570,7 @@ namespace ProjectMT.Features.Commander
             var lockStateComponent = FindDeep(rowTransform, "LockStateText")?.GetComponent<TMP_Text>();
             var gradeBadgeImage = FindDeep(rowTransform, "GradeBadge")?.GetComponent<Image>();
             var protectSurfaceTransform = FindDeep(rowTransform, "ProtectSurface");
-            var protectButton = protectSurfaceTransform != null ? EnsureButton(protectSurfaceTransform) : null;
-            if (lockStateComponent != null)
-            {
-                lockStateComponent.raycastTarget = false;
-            }
+            var protectButton = protectSurfaceTransform != null ? GetButton(protectSurfaceTransform) : null;
 
             // 행 안에 우리가 쓰는 텍스트(Text_Level, UpText_Level, Text) 말고 다른 TMP_Text가 남아있으면
             // 프리팹 복제 과정에서 남은 목업 문구(예: "Unlocks at Attack Speed Lv200")일 가능성이 커서
@@ -635,13 +600,13 @@ namespace ProjectMT.Features.Commander
             // 클릭 판정은 그대로 두 오브젝트 모두에 걸어둔다(리스너 자체는 오브젝트가 꺼져 있어도 등록에 문제없다).
             if (iconOnTransform != null)
             {
-                EnsureButton(iconOnTransform).onClick.AddListener(() => ToggleSlotLock(index));
+                GetButton(iconOnTransform).onClick.AddListener(() => ToggleSlotLock(index));
                 iconOnTransform.gameObject.SetActive(false); // 더 이상 별도로 켜지 않는다.
             }
 
             if (iconOffTransform != null)
             {
-                EnsureButton(iconOffTransform).onClick.AddListener(() => ToggleSlotLock(index));
+                GetButton(iconOffTransform).onClick.AddListener(() => ToggleSlotLock(index));
             }
 
             if (protectButton != null)
@@ -681,140 +646,9 @@ namespace ProjectMT.Features.Commander
             }
         }
 
-        private void NormalizeTopResourceLayout()
+        private static Button GetButton(Transform target)
         {
-            var bar = FindDeep(transform, "TopResourceBar") as RectTransform;
-            if (bar == null)
-            {
-                return;
-            }
-
-            SetFixedRect(bar, bar.anchoredPosition, new Vector2(570f, 50f));
-            NormalizeResourceCell(bar, "TopGoldIcon", topGoldValueText, -190f);
-            NormalizeResourceCell(bar, "TopTrainingIcon", topTrainingValueText, 0f);
-            NormalizeResourceCell(bar, "TopPotentialIcon", topPotentialValueText, 190f);
-            NormalizeDivider(bar, "WalletDivider_1", -95f);
-            NormalizeDivider(bar, "WalletDivider_2", 95f);
-        }
-
-        private static void NormalizeResourceCell(
-            Transform bar,
-            string iconName,
-            TMP_Text valueText,
-            float centerX)
-        {
-            var icon = FindDeep(bar, iconName) as RectTransform;
-            if (icon == null || valueText == null)
-            {
-                return;
-            }
-
-            const float iconSize = 26f;
-            const float iconOffsetX = -52f;
-            const float valueOffsetX = 18f;
-            const float valueWidth = 100f;
-
-            SetFixedRect(icon, new Vector2(centerX + iconOffsetX, 0f), new Vector2(iconSize, iconSize));
-            SetFixedRect(
-                valueText.rectTransform,
-                new Vector2(centerX + valueOffsetX, 0f),
-                new Vector2(valueWidth, 32f));
-            valueText.enableWordWrapping = false;
-            valueText.enableAutoSizing = false;
-            valueText.alignment = TextAlignmentOptions.Center;
-            valueText.overflowMode = TextOverflowModes.Overflow;
-        }
-
-        private static void NormalizeDivider(Transform bar, string name, float x)
-        {
-            var divider = FindDeep(bar, name) as RectTransform;
-            SetFixedRect(divider, new Vector2(x, 0f), new Vector2(1f, 36f));
-        }
-
-        private static void NormalizeGrowthTabLayout(Transform statsTab, Transform potentialTab)
-        {
-            var menu = statsTab?.parent as RectTransform ?? potentialTab?.parent as RectTransform;
-            if (menu != null)
-            {
-                var layout = menu.GetComponent<HorizontalLayoutGroup>();
-                if (layout != null)
-                {
-                    layout.enabled = false;
-                }
-
-                SetFixedRect(menu, new Vector2(0f, 293f), new Vector2(570f, 50f));
-            }
-
-            NormalizeGrowthTab(statsTab, -144.5f);
-            NormalizeGrowthTab(potentialTab, 144.5f);
-        }
-
-        private static void NormalizeGrowthTab(Transform tab, float x)
-        {
-            if (tab == null)
-            {
-                return;
-            }
-
-            tab.gameObject.SetActive(true);
-            SetFixedRect(tab as RectTransform, new Vector2(x, 0f), new Vector2(281f, 50f));
-            var label = tab.GetComponentInChildren<TMP_Text>(true);
-            if (label != null)
-            {
-                var rect = label.rectTransform;
-                rect.anchorMin = Vector2.zero;
-                rect.anchorMax = Vector2.one;
-                rect.pivot = new Vector2(0.5f, 0.5f);
-                rect.anchoredPosition = Vector2.zero;
-                rect.sizeDelta = new Vector2(-16f, -16f);
-                rect.localScale = Vector3.one;
-                label.enableWordWrapping = false;
-                label.enableAutoSizing = false;
-                label.fontSize = 20f;
-                label.alignment = TextAlignmentOptions.Center;
-                label.overflowMode = TextOverflowModes.Ellipsis;
-            }
-        }
-
-        private static void SetFixedRect(RectTransform rect, Vector2 position, Vector2 size)
-        {
-            if (rect == null)
-            {
-                return;
-            }
-
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-            rect.localScale = Vector3.one;
-        }
-
-        private static Button EnsureButton(Transform target)
-        {
-            // 이미지로만 만들어둔 오브젝트는 Raycast Target이 꺼져있으면
-            // Button을 붙여도 클릭 판정을 받지 못한다. 켜져 있도록 강제한다.
-            var graphic = target.GetComponent<Graphic>();
-            if (graphic != null)
-            {
-                graphic.raycastTarget = true;
-            }
-
-            var button = target.GetComponent<Button>();
-            if (button == null)
-            {
-                button = target.gameObject.AddComponent<Button>();
-                button.transition = Selectable.Transition.None; // 목업 비주얼을 그대로 유지, 클릭 판정만 추가
-            }
-
-            button.interactable = true;
-            if (button.targetGraphic == null && graphic != null)
-            {
-                button.targetGraphic = graphic;
-            }
-
-            return button;
+            return target.GetComponent<Button>();
         }
 
         private static Transform FindDeep(Transform root, string childName)

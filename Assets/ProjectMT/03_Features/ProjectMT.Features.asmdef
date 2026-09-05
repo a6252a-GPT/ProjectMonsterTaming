@@ -7,7 +7,8 @@
     "ProjectMT.Contents.Framework",
     "Unity.InputSystem",
     "UnityEngine.UI",
-    "Unity.TextMeshPro"
+    "Unity.TextMeshPro",
+    "MoreMountains.Tools"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

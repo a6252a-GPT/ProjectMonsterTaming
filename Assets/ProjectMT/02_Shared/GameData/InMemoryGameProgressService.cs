@@ -23,6 +23,7 @@ namespace ProjectMT.Shared.GameData
         public Task<bool> TryApplyAndSaveAsync(GameProgressChange change)
         {
             var applied = current.TryApply(change, itemCatalog: itemCatalog);
+            ProjectMT.Shared.Audio.SfxProgressSounds.Notify(change, applied);
             if (applied && !change.SuppressChangedNotification)
             {
                 Changed?.Invoke();

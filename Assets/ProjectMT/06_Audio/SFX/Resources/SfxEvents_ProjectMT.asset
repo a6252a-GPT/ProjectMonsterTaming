@@ -1,0 +1,355 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab5a429a5fe7bdb4fb936a8a8d1e57f1, type: 3}
+  m_Name: SfxEvents_ProjectMT
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxEventCatalog
+  entries:
+  - id: SYS-01
+    state: 2
+    cue: {fileID: 11400001}
+  - id: SYS-03
+    state: 1
+    cue: {fileID: 11400002}
+  - id: SYS-02
+    state: 1
+    cue: {fileID: 11400003}
+  - id: COM-01
+    state: 2
+    cue: {fileID: 0}
+  - id: COM-02
+    state: 2
+    cue: {fileID: 0}
+  - id: COM-03
+    state: 2
+    cue: {fileID: 0}
+  - id: ECO-01
+    state: 2
+    cue: {fileID: 0}
+  - id: MB-01
+    state: 2
+    cue: {fileID: 0}
+  - id: MB-02
+    state: 2
+    cue: {fileID: 0}
+  - id: MB-03
+    state: 2
+    cue: {fileID: 0}
+  - id: MB-07
+    state: 2
+    cue: {fileID: 0}
+  - id: MB-08
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-Equip
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-Unequip
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-Upgrade
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-Dismantle
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-EquipmentLock
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-MonsterLevel
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-MonsterAscend
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-CommanderLevel
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-LegionUpgrade
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-Potential
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-PotentialLock
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-SkillEquip
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-SkillLevel
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-SkillSummon
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-Formation
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-Placement
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-Attendance
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-MailClaim
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-QuestClaim
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-CollectionClaim
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-OfflineClaim
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-ItemUse
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-ItemDiscard
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-DropCollect
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-QuestComplete
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-Rejected
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-Toggle
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-Slider
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-Dropdown
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-DropSpawn
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-ContentStart
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-SaveError
+    state: 2
+    cue: {fileID: 0}
+  - id: EVENT-GachaCharge
+    state: 2
+    cue: {fileID: 11400004}
+  - id: EVENT-GachaEnter
+    state: 2
+    cue: {fileID: 11400005}
+  - id: EVENT-GachaFlip
+    state: 2
+    cue: {fileID: 11400006}
+  - id: EVENT-GachaReveal
+    state: 2
+    cue: {fileID: 11400007}
+  - id: EVENT-GachaLegendary
+    state: 2
+    cue: {fileID: 11400008}
+  - id: EVENT-GachaMythic
+    state: 2
+    cue: {fileID: 11400009}
+  managed: 1
+--- !u!114 &11400001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: SYS-01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 6bc201a2770ebb94283ad9b6920a19ca, type: 3}
+  volumeRange: {x: 0.2, y: 0.2}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &11400002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: SYS-03
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 87a2d6d37f63f3f40ac22cbe1527bfaa, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &11400003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: SYS-02
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 53f69076a3fd7a14d8a20ae0798f62a7, type: 3}
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &11400004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-GachaCharge
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 10b29bfacebbe004da60e476580167da, type: 3}
+  volumeRange: {x: 0.18, y: 0.18}
+  pitchRange: {x: 0.98, y: 1.04}
+  spatialBlend: 0
+  duplicateCooldown: 0.06
+  priority: 2
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &11400005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-GachaEnter
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 7336cd5e6e4f74693ac6c4b607b671ef, type: 3}
+  volumeRange: {x: 0.24, y: 0.24}
+  pitchRange: {x: 0.98, y: 1.04}
+  spatialBlend: 0
+  duplicateCooldown: 0.06
+  priority: 2
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &11400006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-GachaFlip
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 3dd98ad6a6c658d44acebf6f87c6f292, type: 3}
+  volumeRange: {x: 0.28, y: 0.28}
+  pitchRange: {x: 0.98, y: 1.04}
+  spatialBlend: 0
+  duplicateCooldown: 0.06
+  priority: 2
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &11400007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-GachaReveal
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 090aa24382fa69042af76c0d09dcfca5, type: 3}
+  volumeRange: {x: 0.22, y: 0.22}
+  pitchRange: {x: 0.98, y: 1.04}
+  spatialBlend: 0
+  duplicateCooldown: 0.06
+  priority: 2
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &11400008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-GachaLegendary
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 57a8aea4209d7724e9d8be40122c1c68, type: 3}
+  volumeRange: {x: 0.34, y: 0.34}
+  pitchRange: {x: 0.98, y: 1.04}
+  spatialBlend: 0
+  duplicateCooldown: 0.06
+  priority: 2
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &11400009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-GachaMythic
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 0dea6dfa79f3417468b71a12352e01de, type: 3}
+  volumeRange: {x: 0.38, y: 0.38}
+  pitchRange: {x: 0.98, y: 1.04}
+  spatialBlend: 0
+  duplicateCooldown: 0.06
+  priority: 2
+  startOffsetSeconds: 0
+  endCutSeconds: 0

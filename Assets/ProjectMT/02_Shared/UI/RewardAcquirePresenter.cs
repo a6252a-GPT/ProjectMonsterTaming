@@ -49,7 +49,7 @@ namespace ProjectMT.Shared.UI
                 return;
             }
 
-            sfxPool?.Play(acquireSfx, transform.position);
+            SfxEvents.Play(SfxEvents.Reward, sfxPool, transform.position, acquireSfx);
             StartCoroutine(PlayItems(request, worldSpawnPosition));
         }
 

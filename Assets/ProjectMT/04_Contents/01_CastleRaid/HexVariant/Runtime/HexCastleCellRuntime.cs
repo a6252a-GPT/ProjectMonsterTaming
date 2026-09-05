@@ -218,6 +218,10 @@ namespace ProjectMT.Contents.CastleRaidHex
             isDestroyed = true;
             HideHealthBar();
             SetBlocked(false);
+            if (destroyedVisualRoot == null)
+            {
+                destroyedVisualRoot = HexCastleDestructionVisual.CreateFor(this);
+            }
             SetVisualState(true);
             Destroyed?.Invoke(this);
         }

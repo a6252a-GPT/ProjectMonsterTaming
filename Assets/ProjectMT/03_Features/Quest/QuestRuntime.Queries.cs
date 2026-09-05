@@ -87,6 +87,22 @@ namespace ProjectMT.Features.Quest
             return true;
         }
 
+        // 안내를 본 기능 창을 닫으면 현재 퀘스트/반복 회차의 안내만 종료한다.
+        public static bool IsTutorialDismissed(QuestId questId)
+        {
+            var key = TutorialDismissalKey(questId);
+            lock (pendingProgressSync)
+                return IsReady && (progress.Quests.HasConsumedTutorialHint(key) || pendingTutorialHintIds.Contains(key));
+        }
+
+        public static void DismissTutorial(QuestId questId)
+        {
+            if (!string.IsNullOrEmpty(questId.Value)) TryStartTutorialHintOnce(TutorialDismissalKey(questId));
+        }
+
+        private static string TutorialDismissalKey(QuestId questId) =>
+            $"quest_tutorial_closed:{questId.Value}:{GetProgress(questId).RepeatCycleCount}";
+
         private static string NormalizeTutorialHintId(string hintId)
         {
             if (string.IsNullOrWhiteSpace(hintId))

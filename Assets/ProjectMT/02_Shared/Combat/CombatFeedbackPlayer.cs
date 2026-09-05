@@ -149,7 +149,8 @@ namespace ProjectMT.Shared.Combat
             }
             floatingNumbers?.ShowDamage(target, report);
             worldHealthBars?.ShowDamage(target);
-            sfxPool?.Play(hitSfx, report.Request.HitPoint);
+            sfxPool?.Play(SfxEvents.ResolveShared(SfxEvents.Hit, hitSfx,
+                target?.RuntimeAssetSet?.FeedbackProfile?.HitReceived?.Sfx != null), report.Request.HitPoint);
             if (poolScope != null && hitVfxPrefab != null && hitVfxThisFrame < maxHitVfxPerFrame)
             {
                 hitVfxThisFrame++; // 과도한 동시 연출 제한
@@ -167,7 +168,8 @@ namespace ProjectMT.Shared.Combat
         public void PlayDeath(UnitActor target, DamageReport report)
         {
             target?.VisualFeedback?.PlayDeath();
-            sfxPool?.Play(deathSfx, report.Request.HitPoint);
+            sfxPool?.Play(SfxEvents.ResolveShared(SfxEvents.Death, deathSfx,
+                target?.RuntimeAssetSet?.FeedbackProfile?.Death?.Sfx != null), report.Request.HitPoint);
             var source = report.Request.Source;
             if (source != null && target != null && source.Team == UnitTeam.Player && target.Team == UnitTeam.Enemy)
             {
@@ -197,7 +199,7 @@ namespace ProjectMT.Shared.Combat
             var duration = isStrong ? 0.6f : 0.34f;
             var size = isStrong ? 0.8f : 0.38f;
             var impulse = isStrong ? 0.24f : 0.1f;
-            sfxPool?.Play(isStrong ? strongClimaxSfx : weakClimaxSfx, position);
+            SfxEvents.Play(isStrong ? SfxEvents.Strong : SfxEvents.Weak, sfxPool, position, isStrong ? strongClimaxSfx : weakClimaxSfx);
             if (poolScope != null && hitVfxPrefab != null)
             {
                 var instance = poolScope.Rent(hitVfxPrefab, position, Quaternion.identity);
@@ -219,7 +221,7 @@ namespace ProjectMT.Shared.Combat
                 ? 0
                 : mergeKey;
             floatingNumbers?.Queue(position, amount, style, resolvedMergeKey, sizeMultiplier); // 비 UnitActor 대상의 확정 피해 표시
-            sfxPool?.Play(hitSfx, position);
+            SfxEvents.Play(SfxEvents.Hit, sfxPool, position, hitSfx);
         }
 
         public void PlayFloatingNumber(Vector3 position, float amount, FloatingNumberStyle style, int mergeKey)

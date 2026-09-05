@@ -76,7 +76,6 @@ namespace ProjectMT.Features.Equipment
                 }
 
                 var commanderLevelText = slotTransform.Find("Text_Level")?.GetComponent<TMP_Text>();
-                EquipmentLevelIconResolver.NormalizeMainSlotLevel(commanderLevelText);
 
                 var icon = itemFrame.Find("Item")?.GetComponent<Image>();
                 var normalArea = itemFrame.Find("NormalArea");
@@ -104,7 +103,6 @@ namespace ProjectMT.Features.Equipment
                         pair.Key,
                         equipped.ItemLevel,
                         fallbackSprite ?? equipped.Definition.Icon);
-                    EquipmentLevelIconResolver.NormalizeMainSlotIcon(icon);
                     icon.color = Color.white; // 아이콘은 고유 색 그대로 유지
                     if (commanderLevelText != null)
                     {

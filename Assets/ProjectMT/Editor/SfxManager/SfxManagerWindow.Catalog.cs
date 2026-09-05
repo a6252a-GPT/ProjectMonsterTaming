@@ -207,9 +207,15 @@ namespace ProjectMT.EditorTools.Audio
                 return;
             }
 
+            if (!PublishRuntimeEvents(out error))
+            {
+                SetStatus($"저장 차단: {error}", false, true);
+                return;
+            }
+            EditorUtility.SetDirty(spaceCatalog);
             AssetDatabase.SaveAssets();
             RefreshAll();
-            SetStatus("SFX 공간 결정, Cue Catalog, 변경된 Cue를 저장했습니다.");
+            SetStatus("저장 완료: 공용 연결 항목은 게임에 적용됩니다. 그 외 항목은 배정 기록만 저장됩니다.");
         }
 
         private static string BuildCategoryFolder(SfxCatalogCategory category)

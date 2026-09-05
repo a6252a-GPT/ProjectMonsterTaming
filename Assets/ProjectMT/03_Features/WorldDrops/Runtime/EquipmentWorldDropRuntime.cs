@@ -98,6 +98,7 @@ namespace ProjectMT.Features.WorldDrops
             activePayloads.Add(view, payload);
             reservedInstanceIds.Add(payload.InstanceId);
             view.ActivateEquipment(this, request.Position, pickupTarget, worldCamera, ++spawnSequence);
+            ProjectMT.Shared.Audio.SfxEvents.Play2D(ProjectMT.Shared.Audio.SfxEvents.DropSpawn);
             return true;
         }
 

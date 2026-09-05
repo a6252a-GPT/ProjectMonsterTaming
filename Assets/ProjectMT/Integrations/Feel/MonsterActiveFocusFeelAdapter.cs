@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace ProjectMT.Integrations.Feel
 {
     [DisallowMultipleComponent]
-    public sealed class MonsterActiveFocusFeelAdapter : MonoBehaviour, IMonsterActiveFocusFeedback
+    public sealed class MonsterActiveFocusFeelAdapter : MonoBehaviour, IMonsterActiveFocusFeedback, IMonsterActiveCasterFeedback, IMonsterActiveStyleFeedback
     {
         [SerializeField] private MMF_Player entryPlayer;
         [SerializeField] private MMF_Player releasePlayer;
@@ -15,11 +15,31 @@ namespace ProjectMT.Integrations.Feel
         [SerializeField] private Image energySweep;
         [SerializeField] private Image releaseGlow;
 
+        private MonsterActiveFocusStyle selectedStyle;
+        public void SetStyle(MonsterActiveFocusStyle style) { selectedStyle = style; }
+        private Transform boundCaster;
+        private float boundRadius;
+        private MonsterActiveCasterFeel casterFeel;
+
+        public void BindCaster(Transform caster, float bodyRadius)
+        {
+            boundCaster = caster;
+            boundRadius = bodyRadius;
+        }
+
+        private bool UsesCasterAccent => MonsterActiveFocusPresentationConfig.Current == null ||
+                                        MonsterActiveFocusPresentationConfig.Current.CasterAccentEnabled;
+
         private bool entryInitialized;
         private bool releaseInitialized;
 
         private void Awake()
         {
+            if (casterFeel != null)
+            {
+                casterFeel.StopImmediate();
+                casterFeel = null;
+            }
             SetVisualsInvisible();
         }
 
@@ -31,6 +51,14 @@ namespace ProjectMT.Integrations.Feel
         public void PlayEnter(Color accentColor, bool isMythic)
         {
             StopImmediate();
+            if (UsesCasterAccent)
+            {
+                if (boundCaster != null)
+                {
+                    casterFeel = MonsterActiveCasterFeel.Create(boundCaster, boundRadius, accentColor, isMythic, selectedStyle);
+                }
+                return;
+            }
             ConfigureEntryColors(accentColor, isMythic);
             Play(entryPlayer, ref entryInitialized);
         }
@@ -39,14 +67,28 @@ namespace ProjectMT.Integrations.Feel
         {
             ResetPlayer(entryPlayer, ref entryInitialized);
             ResetPlayer(releasePlayer, ref releaseInitialized);
+            if (UsesCasterAccent)
+            {
+                return; // 시전자 펄스는 자체 곡선을 마친다
+            }
             ConfigureReleaseColors(accentColor, isMythic);
             Play(releasePlayer, ref releaseInitialized);
+        }
+
+        private void OnDestroy()
+        {
+            StopImmediate();
         }
 
         public void StopImmediate()
         {
             ResetPlayer(entryPlayer, ref entryInitialized);
             ResetPlayer(releasePlayer, ref releaseInitialized);
+            if (casterFeel != null)
+            {
+                casterFeel.StopImmediate();
+                casterFeel = null;
+            }
             SetVisualsInvisible();
         }
 
@@ -182,6 +224,11 @@ namespace ProjectMT.Integrations.Feel
             panelPulse = configuredPanelPulse;
             energySweep = configuredEnergySweep;
             releaseGlow = configuredReleaseGlow;
+            if (casterFeel != null)
+            {
+                casterFeel.StopImmediate();
+                casterFeel = null;
+            }
             SetVisualsInvisible();
         }
 #endif

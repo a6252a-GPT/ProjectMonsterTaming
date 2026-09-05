@@ -174,7 +174,7 @@ namespace ProjectMT.Features.Equipment
             var closeButtonTransform = FindDeepAny(transform, CloseButtonNameCandidates);
             if (closeButtonTransform != null)
             {
-                closeButton = EnsureButton(closeButtonTransform);
+                closeButton = GetButton(closeButtonTransform);
             }
 
             headerText = FindDeep(transform, "Header")?.GetComponent<TMP_Text>();
@@ -190,7 +190,7 @@ namespace ProjectMT.Features.Equipment
             var upgradeButtonTransform = FindDeep(transform, "UpgradeButton");
             if (upgradeButtonTransform != null)
             {
-                upgradeButton = EnsureButton(upgradeButtonTransform);
+                upgradeButton = GetButton(upgradeButtonTransform);
             }
 
             // 부위별 탭(선택 버튼) / 표시 오브젝트 / 레벨 텍스트 이름. 이름이 여러 벌 존재할 수 있어
@@ -417,7 +417,7 @@ namespace ProjectMT.Features.Equipment
             var box = FindDeepAny(transform, boxNames);
             if (box != null)
             {
-                var button = EnsureButton(box);
+                var button = GetButton(box);
                 selectButtons[part] = button;
                 button.onClick.AddListener(() => SelectPart(part));
             }
@@ -476,16 +476,9 @@ namespace ProjectMT.Features.Equipment
             }
         }
 
-        private static Button EnsureButton(Transform target)
+        private static Button GetButton(Transform target)
         {
-            var button = target.GetComponent<Button>();
-            if (button == null)
-            {
-                button = target.gameObject.AddComponent<Button>();
-                button.transition = Selectable.Transition.None; // 목업 비주얼을 그대로 유지, 클릭 판정만 추가
-            }
-
-            return button;
+            return target.GetComponent<Button>();
         }
 
         private static Transform FindDeep(Transform root, string childName)

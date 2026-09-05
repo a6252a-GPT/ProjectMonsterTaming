@@ -2,18 +2,15 @@ using System.Collections;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace ProjectMT.Features.MainBattle
 {
     [DisallowMultipleComponent]
     public sealed class MainBattleDragIndicatorPresenter : MonoBehaviour // 선택 유닛과 이동 목적지 표시
     {
-        private const int RingSegmentCount = 64;
         private const float GroundOffset = 0.04f;
         private const float ReleasePulseSeconds = 0.16f;
 
-        private static readonly Color SelectionColor = new Color(0.30f, 1f, 0.84f, 0.98f);
         private static readonly Color ValidColor = new Color(0.18f, 0.95f, 0.68f, 0.98f);
         private static readonly Color InvalidColor = new Color(1f, 0.22f, 0.18f, 0.98f);
 
@@ -23,7 +20,7 @@ namespace ProjectMT.Features.MainBattle
         private GameObject visualRoot;
         private LineRenderer selectionMarker;
         private LineRenderer destinationRing;
-        private Material lineMaterial;
+        [SerializeField] private MainBattleDragIndicatorView visualPrefab;
         private Coroutine releasePulse;
 
         public bool IsShowingSelection => selectionMarker != null && selectionMarker.enabled;
@@ -116,65 +113,13 @@ namespace ProjectMT.Features.MainBattle
 
         private void EnsureVisuals()
         {
-            if (visualRoot != null)
-            {
-                return;
-            }
-
-            visualRoot = new GameObject("MainBattleDragIndicators");
-            visualRoot.transform.SetParent(transform, false);
-            var shader = Shader.Find("Sprites/Default") ?? Shader.Find("UI/Default");
-            lineMaterial = new Material(shader)
-            {
-                name = "Runtime_MainBattleDragIndicator",
-                color = Color.white,
-                hideFlags = HideFlags.DontSave
-            };
-
-            selectionMarker = CreateLineRenderer("SelectedMonsterMarker", 0.055f);
-            selectionMarker.loop = true;
-            selectionMarker.useWorldSpace = false;
-            selectionMarker.positionCount = 4;
-            selectionMarker.SetPositions(new[]
-            {
-                new Vector3(0f, 0.32f, 0f),
-                new Vector3(0.22f, 0f, 0f),
-                new Vector3(0f, -0.32f, 0f),
-                new Vector3(-0.22f, 0f, 0f)
-            });
-            SetLineColor(selectionMarker, SelectionColor);
-
-            destinationRing = CreateLineRenderer("DragDestinationRing", 0.052f);
-            destinationRing.loop = true;
-            destinationRing.useWorldSpace = false;
-            destinationRing.positionCount = RingSegmentCount;
-            for (var index = 0; index < RingSegmentCount; index++)
-            {
-                var angle = index * Mathf.PI * 2f / RingSegmentCount;
-                destinationRing.SetPosition(index, new Vector3(
-                    Mathf.Cos(angle) * MainBattleFormationRules.UnitRadius,
-                    0f,
-                    Mathf.Sin(angle) * MainBattleFormationRules.UnitRadius));
-            }
-
-            selectionMarker.enabled = false;
-            destinationRing.enabled = false;
-        }
-
-        private LineRenderer CreateLineRenderer(string objectName, float width)
-        {
-            var lineObject = new GameObject(objectName, typeof(LineRenderer));
-            lineObject.transform.SetParent(visualRoot.transform, false);
-            var line = lineObject.GetComponent<LineRenderer>();
-            line.sharedMaterial = lineMaterial;
-            line.startWidth = width;
-            line.endWidth = width;
-            line.numCornerVertices = 2;
-            line.numCapVertices = 2;
-            line.shadowCastingMode = ShadowCastingMode.Off;
-            line.receiveShadows = false;
-            line.textureMode = LineTextureMode.Stretch;
-            return line;
+            if (visualRoot != null) return;
+            if (visualPrefab == null) throw new System.InvalidOperationException("The drag indicator prefab is required.");
+            var view = Instantiate(visualPrefab, transform, false);
+            visualRoot = view.gameObject;
+            visualRoot.name = "MainBattleDragIndicators";
+            selectionMarker = view.SelectionMarker;
+            destinationRing = view.DestinationRing;
         }
 
         private void UpdateSelectionMarker()
@@ -284,17 +229,6 @@ namespace ProjectMT.Features.MainBattle
         private void OnDestroy()
         {
             StopReleasePulse();
-            if (lineMaterial != null)
-            {
-                if (Application.isPlaying)
-                {
-                    Destroy(lineMaterial);
-                }
-                else
-                {
-                    DestroyImmediate(lineMaterial);
-                }
-            }
         }
     }
 }

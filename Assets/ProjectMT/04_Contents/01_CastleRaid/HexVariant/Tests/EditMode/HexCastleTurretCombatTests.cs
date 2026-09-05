@@ -161,27 +161,35 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
                 "회전축이 아니라 실제 총구 위치를 기준으로 근거리 표적에 수렴해야 합니다.");
         }
 
-        [Test]
-        public void Runtime_ReturnsPitchToPrefabBasisAfterTargetDisappears()
+        [TestCase(HexCastleTurretWeaponKind.Cannon)]
+        [TestCase(HexCastleTurretWeaponKind.Ballista)]
+        [TestCase(HexCastleTurretWeaponKind.Fireball)]
+        public void Runtime_KeepsHeadRotationOnYawAxisDuringAimAndRecoil(
+            HexCastleTurretWeaponKind weaponKind)
         {
             var world = CreateWorld(1f);
-            var structure = CreateCellRuntime(CreateTurretCell(new HexCoordinates(0, 0)));
-            var visual = CreateVisual(structure.ContentVisualRoot, HexCastleTurretWeaponKind.Cannon, 1);
-            var profile = CreateProfile(HexCastleTurretWeaponKind.Cannon, 1);
+            var structure = CreateCellRuntime(CreateTurretCell(new HexCoordinates(0, 0), weaponKind));
+            var visual = CreateVisual(structure.ContentVisualRoot, weaponKind, 1);
+            var profile = CreateProfile(weaponKind, 1);
             var target = CreateAssaultUnit();
-            target.transform.position = new HexCoordinates(0, 1).ToWorld(1f) - Vector3.up;
+            target.transform.position = new HexCoordinates(1, 0).ToWorld(1f) - Vector3.up * 0.5f;
             world.RegisterCell(structure);
             world.RegisterAssaultUnit(target);
             var turret = structure.gameObject.AddComponent<HexCastleTurretRuntime>();
             turret.Configure(world, structure, visual, profile);
+            var prefabYaw = visual.YawPivot.localRotation;
             var prefabPitch = visual.PitchPivot.localRotation;
 
-            turret.Tick(0.1f, 10f);
-            Assert.That(Quaternion.Angle(visual.PitchPivot.localRotation, prefabPitch), Is.GreaterThan(1f));
-            target.ApplyDamage(target.CurrentHealth, target.transform.position);
-            turret.Tick(1f, 11f);
+            for (var step = 0; step < 20; step++)
+            {
+                turret.Tick(0.05f, 10f + step * 0.05f);
+                Assert.That(Quaternion.Angle(visual.PitchPivot.localRotation, prefabPitch), Is.LessThan(0.01f));
+            }
 
-            Assert.That(Quaternion.Angle(visual.PitchPivot.localRotation, prefabPitch), Is.LessThan(0.01f));
+            var yawDelta = Quaternion.Inverse(prefabYaw) * visual.YawPivot.localRotation;
+            Assert.That(turret.ProjectilesFired, Is.GreaterThan(0));
+            Assert.That(Mathf.Abs(yawDelta.x), Is.LessThan(0.0001f));
+            Assert.That(Mathf.Abs(yawDelta.z), Is.LessThan(0.0001f));
         }
 
         [Test]

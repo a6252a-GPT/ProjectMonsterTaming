@@ -18,7 +18,6 @@ namespace ProjectMT.Contents.CastleRaidHex
         private Quaternion basePitchRotation;
         private Vector3 basePitchPosition;
         private float currentYaw;
-        private float currentPitch;
         private float cooldownRemaining;
         private int firedProjectileCount;
         private int pendingProjectileCount;
@@ -95,7 +94,6 @@ namespace ProjectMT.Contents.CastleRaidHex
             basePitchRotation = visual.PitchPivot.localRotation;
             basePitchPosition = visual.PitchPivot.localPosition;
             currentYaw = 0f;
-            currentPitch = 0f;
             var initialRatio = ResolveInitialCooldownRatio(gameObject.name);
             cooldownRemaining = attack.cooldown * initialRatio;
             firedProjectileCount = 0;
@@ -260,7 +258,6 @@ namespace ProjectMT.Contents.CastleRaidHex
         private void ApplyAimAndRecoil(HexCastleAssaultUnit target, float deltaTime, float currentTime)
         {
             var desiredYaw = currentYaw;
-            var desiredPitch = 0f; // 표적이 사라지면 꺾인 포신을 수평으로 복귀시킨다
             if (target != null)
             {
                 var targetPoint = target.transform.position + Vector3.up * attack.targetAimHeight;
@@ -268,26 +265,18 @@ namespace ProjectMT.Contents.CastleRaidHex
                 var yawDirection = visual.YawPivot.parent.InverseTransformDirection(
                     targetPoint - visual.Muzzle.position);
                 desiredYaw = Mathf.Atan2(yawDirection.x, yawDirection.z) * Mathf.Rad2Deg;
-
-                var pitchDirection = visual.PitchPivot.parent.InverseTransformDirection(
-                    targetPoint - visual.Muzzle.position);
-                var horizontal = Mathf.Sqrt(
-                    pitchDirection.x * pitchDirection.x + pitchDirection.z * pitchDirection.z);
-                desiredPitch = -Mathf.Atan2(pitchDirection.y, Mathf.Max(0.001f, horizontal)) * Mathf.Rad2Deg;
             }
 
             currentYaw = Mathf.MoveTowardsAngle(currentYaw, desiredYaw, attack.headTurnSpeed * deltaTime);
-            currentPitch = Mathf.MoveTowardsAngle(currentPitch, desiredPitch, attack.headTurnSpeed * deltaTime);
-            EvaluateRecoil(currentTime, out var recoilDistance, out var recoilTilt);
+            EvaluateRecoilDistance(currentTime, out var recoilDistance);
             visual.YawPivot.localRotation = baseYawRotation * Quaternion.Euler(0f, currentYaw, 0f);
-            visual.PitchPivot.localRotation = basePitchRotation * Quaternion.Euler(currentPitch - recoilTilt, 0f, 0f);
+            visual.PitchPivot.localRotation = basePitchRotation; // 포탑 머리는 원본 기준에서 Yaw 외 회전을 허용하지 않는다
             visual.PitchPivot.localPosition = basePitchPosition + Vector3.back * recoilDistance;
         }
 
-        private void EvaluateRecoil(float currentTime, out float distance, out float tilt)
+        private void EvaluateRecoilDistance(float currentTime, out float distance)
         {
             distance = 0f;
-            tilt = 0f;
             var elapsed = currentTime - recoilStartedAt;
             if (elapsed < 0f)
             {
@@ -298,7 +287,6 @@ namespace ProjectMT.Contents.CastleRaidHex
             {
                 var ratio = Mathf.SmoothStep(0f, 1f, elapsed / attack.recoilKickDuration);
                 distance = attack.recoilDistance * ratio;
-                tilt = attack.recoilTiltAngle * ratio;
                 return;
             }
 
@@ -310,10 +298,6 @@ namespace ProjectMT.Contents.CastleRaidHex
                     attack.recoilDistance,
                     -attack.recoilDistance * attack.recoilSettleDistanceRatio,
                     ratio);
-                tilt = Mathf.Lerp(
-                    attack.recoilTiltAngle,
-                    -attack.recoilTiltAngle * attack.recoilSettleTiltRatio,
-                    ratio);
                 return;
             }
 
@@ -323,10 +307,6 @@ namespace ProjectMT.Contents.CastleRaidHex
                 var ratio = Mathf.SmoothStep(0f, 1f, elapsed / attack.recoilSettleDuration);
                 distance = Mathf.Lerp(
                     -attack.recoilDistance * attack.recoilSettleDistanceRatio,
-                    0f,
-                    ratio);
-                tilt = Mathf.Lerp(
-                    -attack.recoilTiltAngle * attack.recoilSettleTiltRatio,
                     0f,
                     ratio);
             }
@@ -340,8 +320,11 @@ namespace ProjectMT.Contents.CastleRaidHex
             }
 
             var targetPoint = target.transform.position + Vector3.up * attack.targetAimHeight;
-            return Vector3.Angle(visual.Muzzle.forward, targetPoint - visual.Muzzle.position) <=
-                   attack.fireAngleTolerance;
+            var yawAxis = visual.YawPivot.parent != null ? visual.YawPivot.parent.up : Vector3.up;
+            var muzzleForward = Vector3.ProjectOnPlane(visual.Muzzle.forward, yawAxis);
+            var targetDirection = Vector3.ProjectOnPlane(targetPoint - visual.Muzzle.position, yawAxis);
+            return muzzleForward.sqrMagnitude > 0.000001f && targetDirection.sqrMagnitude > 0.000001f &&
+                   Vector3.Angle(muzzleForward, targetDirection) <= attack.fireAngleTolerance;
         }
 
         private void RestoreLoadedProjectilesWhenReady()
@@ -372,7 +355,6 @@ namespace ProjectMT.Contents.CastleRaidHex
             if (configured)
             {
                 currentYaw = 0f;
-                currentPitch = 0f;
                 visual.YawPivot.localRotation = baseYawRotation;
                 visual.PitchPivot.localRotation = basePitchRotation;
                 visual.PitchPivot.localPosition = basePitchPosition;

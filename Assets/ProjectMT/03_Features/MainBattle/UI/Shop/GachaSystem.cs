@@ -26,10 +26,6 @@ namespace ProjectMT.Features.MainBattle
     {
         // 한 줄에 몬스터 몇 개까지 적을지 (초과하면 줄바꿈 + 빈 줄 삽입)
         private const int ResultLineGroupSize = 3;
-        private static readonly Vector2 SummonButtonSize = new Vector2(644f, 116f);
-        private static readonly Vector2 OneDrawButtonPosition = new Vector2(-334f, -347f);
-        private static readonly Vector2 TenDrawButtonPosition = new Vector2(334f, -347f);
-
         // 이번 뽑기 묶음에서 한 몬스터가 몇 번 나왔는지, 그중 신규 획득이 있었는지 누적한다.
         private sealed class PullSummary
         {
@@ -72,6 +68,7 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private TMP_Text resultTitleText;
         [SerializeField] private Button resultCloseButton;
 
+        private GachaRevealSequence revealSequence;
         private IGameProgressService progress; // MainBattleSceneRoot.Initialize()에서 주입
         private MonsterCatalog monsterCatalog;
         private bool isDrawing; // 뽑기 진행 중 중복 클릭 방지
@@ -79,50 +76,18 @@ namespace ProjectMT.Features.MainBattle
 
         private void Awake()
         {
-            ApplySummonButtonLayout();
             oneDrawButton?.onClick.AddListener(HandleOneDrawClicked);
             tenDrawButton?.onClick.AddListener(HandleTenDrawClicked);
-            resultCloseButton?.onClick.AddListener(HideResults);
-        }
-
-        private void OnEnable()
-        {
-            ApplySummonButtonLayout();
+            resultCloseButton?.onClick.AddListener(HandleResultClose);
         }
 
         private void OnDestroy()
         {
             oneDrawButton?.onClick.RemoveListener(HandleOneDrawClicked);
             tenDrawButton?.onClick.RemoveListener(HandleTenDrawClicked);
-            resultCloseButton?.onClick.RemoveListener(HideResults);
+            resultCloseButton?.onClick.RemoveListener(HandleResultClose);
             UnsubscribeProgress();
             ClearResultItems();
-        }
-
-        private void ApplySummonButtonLayout()
-        {
-            ApplySummonButtonRect(oneDrawButton, OneDrawButtonPosition);
-            ApplySummonButtonRect(tenDrawButton, TenDrawButtonPosition);
-
-            var content = oneDrawButton != null ? oneDrawButton.transform.parent : null;
-            var legacyGrid = content != null ? content.GetComponent<GridLayoutGroup>() : null;
-            if (legacyGrid != null)
-            {
-                legacyGrid.enabled = false;
-            }
-        }
-
-        private static void ApplySummonButtonRect(Button button, Vector2 anchoredPosition)
-        {
-            if (button == null || button.transform is not RectTransform rect)
-            {
-                return;
-            }
-
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = SummonButtonSize;
         }
 
         // MainBattleSceneRoot가 씬 진입 시 호출. 저장 서비스·카탈로그 참조를 받아서 뽑기를 활성화한다.
@@ -242,7 +207,9 @@ namespace ProjectMT.Features.MainBattle
                 SetResult(resultOverlay != null
                     ? $"{BuildResultHeadline(drawCount, order, summaries)} · {paymentText}"
                     : $"{detailText}\n\n사용: {paymentText}");
-                ShowResults(drawCount, order, summaries);
+                if (this == null || !isActiveAndEnabled || progress == null) return;
+                await ShowResultsAsync(drawCount, plannedPulls);
+                if (this == null || progress == null || monsterCatalog == null) return;
                 LogOwnedRosterDebug(); // 보유 몬스터 이름·등급·돌파·재료를 콘솔에 출력
             }
             catch (Exception exception)
@@ -319,53 +286,67 @@ namespace ProjectMT.Features.MainBattle
             }
         }
 
-        private void ShowResults(
+        private Task ShowResultsAsync(
             int drawCount,
-            List<string> order,
-            Dictionary<string, PullSummary> summaries)
+            List<PlannedPull> plannedPulls)
         {
             if (resultOverlay == null || resultItemsRoot == null || resultItemPrefab == null || progress == null)
             {
-                return; // 구형 Prefab에서는 결과 문자열 표시를 그대로 사용
+                return Task.CompletedTask; // 구형 Prefab에서는 결과 문자열 표시를 그대로 사용
             }
 
             ClearResultItems();
             var roster = progress.View.Monsters;
-            var presentationOrder = new List<string>(order);
+            var presentationOrder = new List<int>(plannedPulls.Count);
+            for (var index = 0; index < plannedPulls.Count; index++) presentationOrder.Add(index);
             presentationOrder.Sort((left, right) =>
             {
-                var rarityOrder = summaries[right].Rarity.CompareTo(summaries[left].Rarity);
-                return rarityOrder != 0 ? rarityOrder : order.IndexOf(left).CompareTo(order.IndexOf(right));
+                var rarityOrder = plannedPulls[right].Rarity.CompareTo(plannedPulls[left].Rarity);
+                return rarityOrder != 0 ? rarityOrder : left.CompareTo(right);
             });
 
             for (var index = 0; index < presentationOrder.Count; index++)
             {
-                var monsterId = presentationOrder[index];
-                var summary = summaries[monsterId];
-                if (summary.Definition == null || !roster.TryGetOwnedMonster(monsterId, out var owned))
+                var pull = plannedPulls[presentationOrder[index]];
+                if (pull.Definition == null || !roster.TryGetOwnedMonster(pull.Definition.MonsterId, out var owned))
                 {
                     continue;
                 }
 
                 var item = Instantiate(resultItemPrefab, resultItemsRoot);
-                item.name = $"Result_{index + 1:00}_{monsterId}";
-                item.Bind(summary.Definition, owned, summary.Rarity, summary.Count, summary.IsNew);
+                item.name = $"Result_{index + 1:00}_{pull.Definition.MonsterId}";
+                item.Bind(pull.Definition, owned, pull.Rarity, 1, pull.WasNew);
                 spawnedResultItems.Add(item);
             }
-
             if (resultTitleText != null)
             {
-                var highestRarity = summaries[presentationOrder[0]].Rarity;
+                var highestRarity = plannedPulls[presentationOrder[0]].Rarity;
                 var drawLabel = drawCount == 1 ? "1회 소환 결과" : "10회 소환 결과";
                 resultTitleText.text = $"{drawLabel} · 최고 {RarityLabel(highestRarity)}";
             }
 
             UIPanelPopAnimator.RequestOpen(resultOverlay, UIPanelPopStyle.RewardPopup);
             LayoutRebuilder.ForceRebuildLayoutImmediate(resultItemsRoot);
+            if (revealSequence == null)
+                revealSequence = resultOverlay.GetComponent<GachaRevealSequence>();
+            if (revealSequence == null)
+                throw new System.InvalidOperationException("The result overlay needs its authored reveal sequence.");
+            return revealSequence.Play(spawnedResultItems, resultItemsRoot, resultTitleText, resultCloseButton, drawCount == 10);
+        }
+
+        private void HandleResultClose()
+        {
+            if (revealSequence != null && revealSequence.IsPlaying)
+            {
+                revealSequence.SkipCurrentCard();
+                return;
+            }
+            HideResults();
         }
 
         private void HideResults()
         {
+            revealSequence?.Finish();
             UIPanelPopAnimator.RequestClose(resultOverlay, ClearResultItems);
         }
 

@@ -35,6 +35,7 @@ namespace ProjectMT.Shared.UI
 
             if (button != null && !button.interactable)
             {
+                SfxEvents.Play2D(SfxEvents.Rejected);
                 return;
             }
 

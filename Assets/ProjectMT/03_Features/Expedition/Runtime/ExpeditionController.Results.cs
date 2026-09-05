@@ -1,4 +1,5 @@
 using System;
+using ProjectMT.Shared.Audio;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -129,6 +130,7 @@ namespace ProjectMT.Features.Expedition
 
             if (saved)
             {
+                SfxEvents.Play2D(SfxEvents.Victory);
                 try
                 {
                     rewardPresentation?.PlayConfirmed(RewardPresentationRequest.FromBundle(rewards, itemCatalog));
@@ -190,6 +192,7 @@ namespace ProjectMT.Features.Expedition
 
             running = false;
             settling = true;
+            SfxEvents.Play2D(SfxEvents.Defeat);
             CollectAllWorldDrops(); // 패배도 남은 드랍을 전부 획득 확정
             combatWorld.SetPaused(true);
             SetResult(resultFlash == null && currentMode == ExpeditionRunMode.Challenge

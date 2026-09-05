@@ -1,4 +1,5 @@
 using System;
+using ProjectMT.Shared.Audio;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -102,6 +103,7 @@ namespace ProjectMT.Features.Expedition
                 return;
             }
 
+            SfxEvents.Play2D(wave == 1 ? SfxEvents.BattleStart : SfxEvents.Wave);
             waveArrivalActive = true;
             arrivalWave = wave;
             arrivalTotalCount = Mathf.Max(0, profile.GetEnemyCount(currentStage, wave));
@@ -230,6 +232,7 @@ namespace ProjectMT.Features.Expedition
                 return;
             }
 
+            if (spawn.IsBoss) SfxEvents.Play2D(SfxEvents.Boss);
             ApplyEnemyAIProfile(actor, spawn.IsRanged);
             actor.SetCombatReady(false);
             actor.AnimationDriver?.PlayMove();

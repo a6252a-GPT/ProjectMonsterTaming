@@ -79,6 +79,7 @@ namespace ProjectMT.Shared.GameData
             {
                 if (!IsLoaded)
                 {
+                    ProjectMT.Shared.Audio.SfxProgressSounds.Notify(change, false);
                     return false;
                 }
 
@@ -93,10 +94,17 @@ namespace ProjectMT.Shared.GameData
                         commanderSkillBalanceConfig,
                         commanderSkillSummonConfig))
                 {
+                    ProjectMT.Shared.Audio.SfxProgressSounds.Notify(change, false);
                     return false;
                 }
 
-                await saveService.SaveAsync(candidate); // 저장 성공을 먼저 확인
+                try { await saveService.SaveAsync(candidate); } // 저장 성공을 먼저 확인
+                catch
+                {
+                    try { ProjectMT.Shared.Audio.SfxEvents.Play2D(ProjectMT.Shared.Audio.SfxEvents.SaveError); }
+                    catch (Exception soundError) { UnityEngine.Debug.LogException(soundError); }
+                    throw;
+                }
                 current = candidate; // 성공한 후보만 확정
                 notifyChanged = !change.SuppressChangedNotification;
             }
@@ -105,6 +113,7 @@ namespace ProjectMT.Shared.GameData
                 gate.Release();
             }
 
+            ProjectMT.Shared.Audio.SfxProgressSounds.Notify(change, true);
             if (notifyChanged)
             {
                 Changed?.Invoke();

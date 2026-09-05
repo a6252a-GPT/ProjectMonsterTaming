@@ -12,19 +12,19 @@ namespace ProjectMT.Shared.Audio
         private const float RescanInterval = 1.5f;
 
         [Header("클릭/팝업 효과음")]
-        [SerializeField] private AudioClip[] buttonClickClips = Array.Empty<AudioClip>();
-        [SerializeField] private AudioClip[] popupOpenClips = Array.Empty<AudioClip>();
-        [SerializeField] private AudioClip[] popupCloseClips = Array.Empty<AudioClip>();
+        [SerializeField, HideInInspector] private AudioClip[] buttonClickClips = Array.Empty<AudioClip>();
+        [SerializeField, HideInInspector] private AudioClip[] popupOpenClips = Array.Empty<AudioClip>();
+        [SerializeField, HideInInspector] private AudioClip[] popupCloseClips = Array.Empty<AudioClip>();
 
         [Header("음량")]
-        [SerializeField, Range(0f, 1f)] private float buttonClickVolume = 1f;
-        [SerializeField, Range(0f, 1f)] private float popupOpenVolume = 1f;
-        [SerializeField, Range(0f, 1f)] private float popupCloseVolume = 1f;
+        [SerializeField, HideInInspector, Range(0f, 1f)] private float buttonClickVolume = 1f;
+        [SerializeField, HideInInspector, Range(0f, 1f)] private float popupOpenVolume = 1f;
+        [SerializeField, HideInInspector, Range(0f, 1f)] private float popupCloseVolume = 1f;
 
         [Header("토글 체크 시 해당 소리 음소거")]
-        [SerializeField] private bool muteButtonClick;
-        [SerializeField] private bool mutePopupOpen;
-        [SerializeField] private bool mutePopupClose;
+        [SerializeField, HideInInspector] private bool muteButtonClick;
+        [SerializeField, HideInInspector] private bool mutePopupOpen;
+        [SerializeField, HideInInspector] private bool mutePopupClose;
 
         [Header("오디오소스")]
         [SerializeField] private AudioSource sfxSource;
@@ -82,30 +82,44 @@ namespace ProjectMT.Shared.Audio
         private void RescanButtons()
         {
             UIButtonClickSound.ApplyToAllButtonsInScene();
+            SfxControlSound.ApplyToScene();
         }
 
         public static void PlayButtonClick()
         {
+            if (SfxEvents.TryResolve(SfxEvents.Button, out _)) { SfxEvents.Play2D(SfxEvents.Button); return; }
             if (Instance != null && !Instance.muteButtonClick)
             {
-                Instance.PlayOneOf(Instance.buttonClickClips, Instance.buttonClickVolume);
+                Instance.PlayManagedOrLegacy(SfxEvents.Button, Instance.buttonClickClips, Instance.buttonClickVolume);
             }
         }
 
         public static void PlayPopupOpen()
         {
+            if (SfxEvents.TryResolve(SfxEvents.Open, out _)) { SfxEvents.Play2D(SfxEvents.Open); return; }
             if (Instance != null && !Instance.mutePopupOpen)
             {
-                Instance.PlayOneOf(Instance.popupOpenClips, Instance.popupOpenVolume);
+                Instance.PlayManagedOrLegacy(SfxEvents.Open, Instance.popupOpenClips, Instance.popupOpenVolume);
             }
         }
 
         public static void PlayPopupClose()
         {
+            if (SfxEvents.TryResolve(SfxEvents.Close, out _)) { SfxEvents.Play2D(SfxEvents.Close); return; }
             if (Instance != null && !Instance.mutePopupClose)
             {
-                Instance.PlayOneOf(Instance.popupCloseClips, Instance.popupCloseVolume);
+                Instance.PlayManagedOrLegacy(SfxEvents.Close, Instance.popupCloseClips, Instance.popupCloseVolume);
             }
+        }
+
+        private void PlayManagedOrLegacy(string eventId, AudioClip[] clips, float volume)
+        {
+            if (SfxEvents.TryResolve(eventId, out _))
+            {
+                SfxEvents.Play2D(eventId); // 기존 버튼 부착·팝업 호출·음소거는 유지
+                return;
+            }
+            PlayOneOf(clips, volume);
         }
 
         private void PlayOneOf(AudioClip[] clips, float volume)

@@ -10,6 +10,20 @@ namespace ProjectMT.Shared.Combat
 {
     public sealed partial class CombatWorld
     {
+        private MonsterActiveFocusStyle activeFocusStyle;
+        private bool activeFocusCommitPending;
+        private float ResolveFocusLead(MonsterActiveFocusStyle style) =>
+            UsesCasterAccent && MonsterActiveFocusStyles.Lead(style) > 0f
+                ? MonsterActiveFocusStyles.Lead(style) : activeFocusPreset.FocusLead;
+
+        private bool UsesCasterAccent => MonsterActiveFocusPresentationConfig.Current == null ||
+                                        MonsterActiveFocusPresentationConfig.Current.CasterAccentEnabled;
+        private float ActiveFocusMinimumVisibleDuration => UsesCasterAccent && activeFocusStyle == MonsterActiveFocusStyle.ClassicDim
+            ? activeFocusPreset.MinimumVisibleDuration
+            : MonsterActiveFocusPresentationConfig.Current != null
+            ? MonsterActiveFocusPresentationConfig.Current.ResolveMinimumVisibleDuration(activeFocusPreset)
+            : 0.8f;
+
         public bool ShouldDeferMonsterBasicAttack(UnitActor caster)
         {
             if (caster == null)
@@ -121,7 +135,7 @@ namespace ProjectMT.Shared.Combat
             }
 
             activeFocusElapsed += step;
-            var focusStart = Mathf.Max(0f, activeFocus.CommitDelay - activeFocusPreset.FocusLead);
+            var focusStart = Mathf.Max(0f, activeFocus.CommitDelay - ResolveFocusLead(activeFocusStyle));
             if (!activeFocusVisible && !activeFocusCommitted && activeFocusElapsed >= focusStart)
             {
                 ShowMonsterActiveFocusPresentation();
@@ -139,8 +153,14 @@ namespace ProjectMT.Shared.Combat
                     Debug.LogException(exception, activeFocus.Caster);
                 }
             }
-            if (!activeFocusCommitted &&
-                (commitSignalReached || activeFocusElapsed >= activeFocus.CommitDelay))
+            if (!activeFocusCommitted && (commitSignalReached || activeFocusElapsed >= activeFocus.CommitDelay))
+            {
+                activeFocusCommitPending = true;
+                if (!activeFocusVisible) ShowMonsterActiveFocusPresentation();
+            }
+            var anticipationFinished = !UsesCasterAccent ||
+                activeFocusElapsed - activeFocusSlowStartedAt >= MonsterActiveFocusStyles.Lead(activeFocusStyle);
+            if (!activeFocusCommitted && activeFocusCommitPending && anticipationFinished)
             {
                 if (!activeFocusVisible)
                 {
@@ -196,7 +216,7 @@ namespace ProjectMT.Shared.Combat
                     skillCompleted = true; // 완료 감시 오류가 Focus를 영구 점유하지 않게 한다.
                 }
 
-                var presentationFinishedAt = focusStart + activeFocusPreset.MinimumVisibleDuration;
+                var presentationFinishedAt = focusStart + ActiveFocusMinimumVisibleDuration;
                 if (skillCompleted && activeFocusElapsed >= presentationFinishedAt)
                 {
                     CompleteMonsterActiveFocus(false, false);
@@ -222,6 +242,8 @@ namespace ProjectMT.Shared.Combat
                 }
 
                 activeFocus = next;
+                activeFocusStyle = MonsterActiveFocusStyles.Current;
+                activeFocusCommitPending = false;
                 activeFocusElapsed = 0f;
                 activeFocusSlowStartedAt = -1f;
                 activeFocusCameraReleaseAt = -1f;
@@ -232,12 +254,12 @@ namespace ProjectMT.Shared.Combat
                 activeFocusPreset = config != null
                     ? config.ResolvePreset(next.Caster.Presentation.Rarity)
                     : default;
-                var focusStart = Mathf.Max(0f, next.CommitDelay - activeFocusPreset.FocusLead);
+                var focusStart = Mathf.Max(0f, next.CommitDelay - ResolveFocusLead(activeFocusStyle));
                 activeFocusResolvedDuration = Mathf.Max(
                     next.Duration,
                     focusStart + Mathf.Max(
-                        activeFocusPreset.MinimumVisibleDuration,
-                        next.Skill is MonsterAttackActiveSkill && next.ProgressSignal == null
+                        ActiveFocusMinimumVisibleDuration,
+                        !UsesCasterAccent && next.Skill is MonsterAttackActiveSkill && next.ProgressSignal == null
                             ? activeFocusPreset.OtherUnitSlowTotalDuration
                             : 0f));
                 TryArmMonsterActiveFocus();
@@ -269,7 +291,7 @@ namespace ProjectMT.Shared.Combat
                 return false;
             }
 
-            var focusStart = Mathf.Max(0f, activeFocus.CommitDelay - activeFocusPreset.FocusLead);
+            var focusStart = Mathf.Max(0f, activeFocus.CommitDelay - ResolveFocusLead(activeFocusStyle));
             if (focusStart <= 0f)
             {
                 ShowMonsterActiveFocusPresentation();
@@ -295,9 +317,13 @@ namespace ProjectMT.Shared.Combat
                 }
                 else
                 {
-                    activeFocusPresenter = host.GetComponent<MonsterActiveFocusPresenter>() ??
-                                           host.AddComponent<MonsterActiveFocusPresenter>();
+                    activeFocusPresenter = host.GetComponent<MonsterActiveFocusPresenter>();
                 }
+            }
+
+            if (activeFocusPresenter == null)
+            {
+                return;
             }
 
             var target = activeFocus.TargetResolver?.Invoke();
@@ -307,8 +333,12 @@ namespace ProjectMT.Shared.Combat
                 target,
                 activeFocus.Skill,
                 activeFocusPreset,
-                camera);
-            activeFocusCamera?.BeginMonsterActiveFocus(activeFocus.Caster, target, activeFocusPreset);
+                camera,
+                activeFocusStyle);
+            if (!UsesCasterAccent)
+            {
+                activeFocusCamera?.BeginMonsterActiveFocus(activeFocus.Caster, target, activeFocusPreset);
+            }
             activeFocusSlowStartedAt = activeFocusElapsed;
             var startSfx = MonsterActiveFocusPresentationConfig.Current?.ResolveStartSfx(
                 activeFocus.Caster.Presentation.Rarity);
@@ -378,7 +408,7 @@ namespace ProjectMT.Shared.Combat
                 activeFocusCameraReleaseAt = float.PositiveInfinity;
                 return;
             }
-            if (float.IsPositiveInfinity(activeFocusCameraReleaseAt))
+            if (UsesCasterAccent || float.IsPositiveInfinity(activeFocusCameraReleaseAt))
             {
                 return;
             }
@@ -422,8 +452,8 @@ namespace ProjectMT.Shared.Combat
                 return;
             }
 
-            var focusStart = Mathf.Max(0f, activeFocus.CommitDelay - activeFocusPreset.FocusLead);
-            var presentationFinishedAt = focusStart + activeFocusPreset.MinimumVisibleDuration;
+            var focusStart = Mathf.Max(0f, activeFocus.CommitDelay - ResolveFocusLead(activeFocusStyle));
+            var presentationFinishedAt = focusStart + ActiveFocusMinimumVisibleDuration;
             if (activeFocusElapsed < presentationFinishedAt)
             {
                 return;
@@ -470,6 +500,14 @@ namespace ProjectMT.Shared.Combat
 
         public float GetMonsterActiveFocusTimeScale(UnitActor source)
         {
+            if (UsesCasterAccent)
+            {
+                return activeFocus != null && source != null && source != activeFocus.Caster &&
+                       activeFocusVisible && !activeFocusCommitted &&
+                       MonsterActiveFocusStyles.Slows(activeFocusStyle) &&
+                       activeFocusElapsed - activeFocusSlowStartedAt < MonsterActiveFocusStyles.Lead(activeFocusStyle)
+                    ? 0.10f : 1f;
+            }
             if (activeFocus == null || source == null || source == activeFocus.Caster)
             {
                 return 1f;

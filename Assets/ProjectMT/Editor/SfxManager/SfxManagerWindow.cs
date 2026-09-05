@@ -48,7 +48,7 @@ namespace ProjectMT.EditorTools.Audio
         {
             var window = GetWindow<SfxManagerWindow>();
             window.titleContent = new GUIContent("SFX Manager");
-            window.minSize = MinimumWindowSize;
+            window.minSize = window.expertLibrary ? MinimumWindowSize : new Vector2(740f, 520f);
             window.Show();
             window.Focus();
         }
@@ -58,16 +58,19 @@ namespace ProjectMT.EditorTools.Audio
             titleContent = new GUIContent("SFX Manager");
             minSize = MinimumWindowSize;
             Undo.undoRedoPerformed += OnUndoRedo;
+            EditorApplication.playModeStateChanged += HandleCommonPlayMode;
         }
 
         private void OnDisable()
         {
             Undo.undoRedoPerformed -= OnUndoRedo;
+            EditorApplication.playModeStateChanged -= HandleCommonPlayMode;
             StopPreview();
         }
 
         private void OnUndoRedo()
         {
+            if (!expertLibrary) { BuildCommonWindow(); return; }
             EnsureCatalogAndSynchronize(false);
             EnsureSpaceCatalogAndSynchronize(false);
             RefreshAll();
@@ -76,6 +79,7 @@ namespace ProjectMT.EditorTools.Audio
 
         private void OnProjectChange()
         {
+            if (!expertLibrary) return;
             if (projectRefreshQueued)
             {
                 return;
@@ -87,6 +91,7 @@ namespace ProjectMT.EditorTools.Audio
 
         public void CreateGUI()
         {
+            if (!expertLibrary) { BuildCommonWindow(); return; }
             rootVisualElement.Clear();
             var style = AssetDatabase.LoadAssetAtPath<StyleSheet>(StylePath);
             if (style != null)
@@ -106,7 +111,7 @@ namespace ProjectMT.EditorTools.Audio
         private void BuildWindow()
         {
             rootVisualElement.Add(BuildHeader());
-            rootVisualElement.Add(BuildModeSwitch());
+            rootVisualElement.Add(new Button(() => { expertLibrary = false; BuildCommonWindow(); }) { text = "← 공용 효과음으로 돌아가기" });
             rootVisualElement.Add(BuildToolbar());
 
             var body = new VisualElement { name = "sfx-manager-body" };
@@ -133,7 +138,7 @@ namespace ProjectMT.EditorTools.Audio
             var title = new Label("SFX Manager");
             title.AddToClassList("sfx-title");
             var subtitle = new Label(workspaceMode == SfxWorkspaceMode.Spaces
-                ? "110개 게임 사건을 영역별로 훑고, 기존 공간을 지키면서 사운드 결정을 기록합니다."
+                ? "공용 효과음을 배정하고 저장하면 게임에 적용됩니다. Maker·콘텐츠 전용 소리는 별도 관리합니다."
                 : "기존 Cue를 그대로 모아 원본 사운드·볼륨·공간감·재생 제한을 관리합니다.");
             subtitle.AddToClassList("sfx-subtitle");
             titleArea.Add(eyebrow);

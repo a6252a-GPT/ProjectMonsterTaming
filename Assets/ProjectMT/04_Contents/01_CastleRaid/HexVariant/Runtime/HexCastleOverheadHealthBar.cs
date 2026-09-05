@@ -11,14 +11,11 @@ namespace ProjectMT.Contents.CastleRaidHex
         public static readonly Color FriendlyColor = new Color(0.12f, 0.82f, 0.24f, 1f);
         public static readonly Color HostileColor = new Color(0.92f, 0.1f, 0.08f, 1f);
 
-        private const float CanvasScale = 0.025f;
-        private const float BarWidth = 42f;
-        private const float BarHeight = 6f;
-        private const float FillWidth = 40f;
-        private const float FillHeight = 4f;
         private const float TopPadding = 0.2f;
 
-        private static Sprite roundedSprite;
+        private static GameObject visualPrefab;
+        private Vector3 authoredWorldScale;
+        private Vector2 authoredFillSize;
         private GameObject visualRoot;
         private RectTransform visualRect;
         private RectTransform fillRect;
@@ -164,7 +161,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             fillRatio = maximumHealth <= 0f
                 ? 0f
                 : Mathf.Clamp01(currentHealth / maximumHealth);
-            fillRect.sizeDelta = new Vector2(FillWidth * fillRatio, FillHeight);
+            fillRect.sizeDelta = new Vector2(authoredFillSize.x * fillRatio, authoredFillSize.y);
             heightOffset = ResolveHeightOffset();
             if (!alive || fillRatio <= 0f)
             {
@@ -185,59 +182,22 @@ namespace ProjectMT.Contents.CastleRaidHex
                 return;
             }
 
-            visualRoot = new GameObject(
-                "HexCastleHealthBar",
-                typeof(RectTransform),
-                typeof(Canvas),
-                typeof(CanvasScaler));
-            visualRoot.transform.SetParent(transform, false);
+            if (visualPrefab == null)
+            {
+                visualPrefab = Resources.Load<GameObject>("PF_HexCastleHealthBar");
+            }
+            if (visualPrefab == null)
+            {
+                throw new System.InvalidOperationException("Missing authored HexCastle health bar prefab.");
+            }
+
+            visualRoot = Instantiate(visualPrefab, transform, false);
+            visualRoot.name = "HexCastleHealthBar";
             visualRect = visualRoot.GetComponent<RectTransform>();
-            visualRect.sizeDelta = new Vector2(BarWidth, BarHeight);
-            visualRect.pivot = new Vector2(0.5f, 0.5f);
-
-            var canvas = visualRoot.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.WorldSpace;
-            canvas.overrideSorting = true;
-            canvas.sortingOrder = 200;
-
-            var canvasScaler = visualRoot.GetComponent<CanvasScaler>();
-            canvasScaler.dynamicPixelsPerUnit = 10f;
-            canvasScaler.referencePixelsPerUnit = 100f;
-
-            var background = CreateImage("Background", visualRect, new Color(0f, 0f, 0f, 0.88f), out _);
-            background.anchorMin = Vector2.zero;
-            background.anchorMax = Vector2.one;
-            background.offsetMin = Vector2.zero;
-            background.offsetMax = Vector2.zero;
-
-            fillRect = CreateImage("Fill", visualRect, HostileColor, out fillImage);
-            fillRect.anchorMin = new Vector2(0f, 0.5f);
-            fillRect.anchorMax = new Vector2(0f, 0.5f);
-            fillRect.pivot = new Vector2(0f, 0.5f);
-            fillRect.anchoredPosition = new Vector2(1f, 0f);
-            fillRect.sizeDelta = new Vector2(FillWidth, FillHeight);
-            visualRoot.SetActive(false);
-        }
-
-        private static RectTransform CreateImage(
-            string objectName,
-            Transform parent,
-            Color color,
-            out Image image)
-        {
-            var imageObject = new GameObject(
-                objectName,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Image));
-            imageObject.transform.SetParent(parent, false);
-            var rect = imageObject.GetComponent<RectTransform>();
-            image = imageObject.GetComponent<Image>();
-            image.color = color;
-            image.raycastTarget = false;
-            image.sprite = GetRoundedSprite();
-            image.type = Image.Type.Sliced;
-            return rect;
+            fillRect = visualRect.Find("Fill") as RectTransform;
+            fillImage = fillRect.GetComponent<Image>();
+            authoredWorldScale = visualRect.localScale;
+            authoredFillSize = fillRect.sizeDelta;
         }
 
         private float ResolveHeightOffset()
@@ -249,55 +209,9 @@ namespace ProjectMT.Contents.CastleRaidHex
         {
             var parentScale = transform.lossyScale;
             visualRect.localScale = new Vector3(
-                CanvasScale / Mathf.Max(0.0001f, Mathf.Abs(parentScale.x)),
-                CanvasScale / Mathf.Max(0.0001f, Mathf.Abs(parentScale.y)),
-                CanvasScale / Mathf.Max(0.0001f, Mathf.Abs(parentScale.z)));
-        }
-
-        private static Sprite GetRoundedSprite()
-        {
-            if (roundedSprite != null)
-            {
-                return roundedSprite;
-            }
-
-            const int size = 16;
-            const float radius = 4f;
-            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
-            {
-                name = "HexCastleHealthBar_Rounded",
-                hideFlags = HideFlags.HideAndDontSave,
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
-            };
-            for (var y = 0; y < size; y++)
-            {
-                for (var x = 0; x < size; x++)
-                {
-                    var pixelX = x + 0.5f;
-                    var pixelY = y + 0.5f;
-                    var centerX = Mathf.Clamp(pixelX, radius, size - radius);
-                    var centerY = Mathf.Clamp(pixelY, radius, size - radius);
-                    var deltaX = pixelX - centerX;
-                    var deltaY = pixelY - centerY;
-                    texture.SetPixel(x, y, deltaX * deltaX + deltaY * deltaY <= radius * radius
-                        ? Color.white
-                        : Color.clear);
-                }
-            }
-
-            texture.Apply(false, true);
-            roundedSprite = Sprite.Create(
-                texture,
-                new Rect(0f, 0f, size, size),
-                new Vector2(0.5f, 0.5f),
-                100f,
-                0,
-                SpriteMeshType.FullRect,
-                new Vector4(radius, radius, radius, radius));
-            roundedSprite.name = "HexCastleHealthBar_Rounded";
-            roundedSprite.hideFlags = HideFlags.HideAndDontSave;
-            return roundedSprite;
+                authoredWorldScale.x / Mathf.Max(0.0001f, Mathf.Abs(parentScale.x)),
+                authoredWorldScale.y / Mathf.Max(0.0001f, Mathf.Abs(parentScale.y)),
+                authoredWorldScale.z / Mathf.Max(0.0001f, Mathf.Abs(parentScale.z)));
         }
     }
 }

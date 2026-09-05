@@ -14,7 +14,6 @@ namespace ProjectMT.Features.Quest
     [DisallowMultipleComponent]
     public sealed class QuestHudNavigationController : MonoBehaviour
     {
-        private const float HintDisplayDuration = 10f;
         private const float VisibilityPollInterval = 0.2f;
         private const QuestType TrackedType = QuestType.Main;
         // 손가락 이미지의 끝이 버튼 모서리에 닿도록 하는 시각 보정값이다. 절대 화면 좌표가 아니라
@@ -66,10 +65,11 @@ namespace ProjectMT.Features.Quest
         private string trackedQuestId;
         private bool hasDestination;
         private bool completedAwaitingClaim;
-        private float clickHintShownAt;
-        private bool clickHintSessionActive;
-        private bool clickHintDisabled;
         private float tickTimer;
+        private string tutorialShopQuestId;
+        private Transform tutorialShopResult;
+        private bool tutorialShopSawResults;
+        private bool tutorialShopGoalComplete;
 
         private void Awake()
         {
@@ -91,6 +91,7 @@ namespace ProjectMT.Features.Quest
 
         private void OnDisable()
         {
+            tutorialShopQuestId = null;
             QuestRuntime.Changed -= RefreshTrackedDestination;
             if (managementUi != null)
             {
@@ -119,6 +120,7 @@ namespace ProjectMT.Features.Quest
             }
 
             tickTimer = 0f;
+            RefreshTutorialShopTransition();
             if (hasDestination)
             {
                 PositionClickImage(completedAwaitingClaim);
@@ -140,7 +142,6 @@ namespace ProjectMT.Features.Quest
                 clickImage = FindDeep(root, "ClickImage")?.gameObject;
             }
 
-            QuestTutorialFingerPulse.Ensure(clickImage);
 
             if (questText == null)
             {
@@ -217,7 +218,7 @@ namespace ProjectMT.Features.Quest
                 return;
             }
 
-            if (!hasDestination)
+            if (!hasDestination || QuestRuntime.IsTutorialDismissed(new QuestId(trackedQuestId)))
             {
                 clickImage.SetActive(false);
                 QuestTutorialSpotlight.Hide(this);
@@ -226,9 +227,8 @@ namespace ProjectMT.Features.Quest
 
             // 페이지 열림 이벤트 직후에는 내부 힌트 컨트롤러의 다음 갱신을 기다리지 않고
             // 메인 트래커 힌트를 즉시 끈다.
-            // 진행 중에는 열린 패널의 내부 힌트만 보여준다. 다만 퀘스트가 방금 완료된 경우에는
-            // 보상 수령 위치를 바로 알 수 있도록 패널이 열려 있어도 HUD의 완료 힌트를 허용한다.
-            if (managementUi != null && managementUi.IsAnyPageOpen && !completedAwaitingClaim)
+            // 창이 닫혀 실제 보상을 누를 수 있을 때 HUD 안내를 재개한다.
+            if (managementUi != null && managementUi.IsAnyPageOpen)
             {
                 clickImage.SetActive(false);
                 QuestTutorialSpotlight.Hide(this);
@@ -242,47 +242,22 @@ namespace ProjectMT.Features.Quest
                 return;
             }
 
-            if (clickHintDisabled)
+            if (!QuestTutorialInteraction.CanInteract(ResolveClickHintTarget()))
             {
                 clickImage.SetActive(false);
                 QuestTutorialSpotlight.Hide(this);
                 return;
             }
 
-            if (!clickHintSessionActive)
-            {
-                var stepKey = completedAwaitingClaim ? "hud_reward" : "hud_move";
-                if (!QuestRuntime.TryStartTutorialHintOnce(BuildTutorialHintId(trackedQuestId, stepKey)))
-                {
-                    clickHintDisabled = true;
-                    clickImage.SetActive(false);
-                    QuestTutorialSpotlight.Hide(this);
-                    return;
-                }
-
-                clickHintShownAt = Time.unscaledTime;
-                clickHintSessionActive = true;
-            }
-
-            var elapsed = Time.unscaledTime - clickHintShownAt;
-            if (elapsed >= HintDisplayDuration)
-            {
-                clickHintDisabled = true;
-                clickImage.SetActive(false);
-                QuestTutorialSpotlight.Hide(this);
-                return;
-            }
-
-            QuestTutorialSpotlight.Show(this, ResolveClickHintTarget());
-            QuestTutorialSpotlight.EnsureHintAboveOverlay(clickImage);
+            QuestTutorialSpotlight.Show(this, ResolveClickHintTarget(),
+                completedAwaitingClaim ? "완료한 퀘스트의 보상을 받아주세요" : "퀘스트를 누르면 목표 화면으로 이동해요");
             clickImage.SetActive(true);
         }
 
         private void ResetClickHintSession()
         {
-            clickHintShownAt = 0f;
-            clickHintSessionActive = false;
-            clickHintDisabled = false;
+            clickImage?.SetActive(false);
+            QuestTutorialSpotlight.Hide(this);
         }
 
         private static string BuildTutorialHintId(string questId, string stepKey) =>
@@ -315,6 +290,11 @@ namespace ProjectMT.Features.Quest
 
         private void HandleAnyPageOpenChanged(bool pageOpen)
         {
+            if (!pageOpen)
+            {
+                tutorialShopQuestId = null;
+                pageHintController?.DismissShownTutorial();
+            }
             ApplyClickImageVisibility();
             ApplyQuestTextVisibility();
         }
@@ -364,8 +344,12 @@ namespace ProjectMT.Features.Quest
 
         private RectTransform ResolveClickHintTarget()
         {
-            return trackerView?.QuestActionButton?.transform as RectTransform
-                   ?? questMoveButton?.transform as RectTransform;
+            var action = trackerView?.QuestActionButton?.transform as RectTransform;
+            var move = questMoveButton?.transform as RectTransform;
+            // 최신 HUD에서 이동 영역이 보상 영역 위에 겹치는 경우 실제 누를 수 있는 영역을 따른다.
+            if (action != null && QuestTutorialInteraction.CanInteract(action)) return action;
+            if (move != null && QuestTutorialInteraction.CanInteract(move)) return move;
+            return action ?? move;
         }
 
         private void HandleMoveClicked()
@@ -405,6 +389,29 @@ namespace ProjectMT.Features.Quest
         {
             managementUi?.OpenShopPage();
             shopCategoryMenu?.ShowMonsterShop();
+            tutorialShopQuestId = trackedQuestId;
+            tutorialShopResult = FindDeep(managementUi?.ShopPageRoot?.transform, "GachaResultOverlay");
+            tutorialShopSawResults = false;
+            tutorialShopGoalComplete = false;
+        }
+
+        private void RefreshTutorialShopTransition()
+        {
+            if (string.IsNullOrEmpty(tutorialShopQuestId)) return;
+            if (managementUi == null || managementUi.ShopPageRoot == null || !managementUi.ShopPageRoot.activeInHierarchy)
+            {
+                tutorialShopQuestId = null;
+                return;
+            }
+            if (!QuestRuntime.IsReady) return;
+            tutorialShopGoalComplete |= QuestRuntime.GetProgress(new QuestId(tutorialShopQuestId)).Completed;
+            if (QuestRuntime.TryGetTrackedQuest(TrackedType, out var definition, out var progress))
+                tutorialShopGoalComplete |= definition.QuestId.Value == tutorialShopQuestId && progress.Completed;
+            var resultsVisible = tutorialShopResult != null && tutorialShopResult.gameObject.activeInHierarchy;
+            tutorialShopSawResults |= resultsVisible;
+            if (!tutorialShopGoalComplete || !tutorialShopSawResults || resultsVisible) return;
+            tutorialShopQuestId = null;
+            managementUi.CloseAllPages(); // 결과 닫힘 완료 후 상점 닫힘 애니메이션 시작
         }
 
         private void OpenMonsterManagement() => managementUi?.OpenMonsterManagementPage();

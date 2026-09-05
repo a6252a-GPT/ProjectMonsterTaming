@@ -7,8 +7,6 @@ namespace ProjectMT.Features.MainBattle
     [DisallowMultipleComponent]
     public sealed class CombatPowerIncreasePresenter : MonoBehaviour // 저장 확정 뒤 총전투력 상승 알림
     {
-        private const float CardRestingY = 320f;
-
         [SerializeField] private GameObject displayRoot;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private RectTransform card;
@@ -36,7 +34,7 @@ namespace ProjectMT.Features.MainBattle
                 StopCoroutine(routine);
             }
 
-            CenterCard();
+            CaptureRestingPosition();
 
             if (deltaText != null)
             {
@@ -124,17 +122,13 @@ namespace ProjectMT.Features.MainBattle
             displayRoot.SetActive(false);
         }
 
-        private void CenterCard()
+        private void CaptureRestingPosition()
         {
-            if (card == null)
+            if (card == null || restingPositionCaptured)
             {
                 return;
             }
 
-            card.anchorMin = new Vector2(0.5f, 0.5f);
-            card.anchorMax = new Vector2(0.5f, 0.5f);
-            card.pivot = new Vector2(0.5f, 0.5f);
-            card.anchoredPosition = new Vector2(0f, CardRestingY);
             restingPosition = card.anchoredPosition;
             restingPositionCaptured = true;
         }

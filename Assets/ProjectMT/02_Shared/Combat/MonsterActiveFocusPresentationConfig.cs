@@ -132,7 +132,14 @@ namespace ProjectMT.Shared.Combat
         [SerializeField] private SfxCue mythicStartSfx;
         [SerializeField] private GameObject legendaryHaloPrefab;
         [SerializeField] private GameObject mythicHaloPrefab;
+        [SerializeField] private bool casterAccentEnabled = true; // 해제하면 기존 시네마틱 설정으로 비교할 수 있다
+        [SerializeField, Range(0.5f, 1.5f)] private float casterAccentVisibleDuration = 0.8f;
         private static MonsterActiveFocusPresentationConfig cached;
+
+        public bool CasterAccentEnabled => casterAccentEnabled;
+        public float ResolveMinimumVisibleDuration(MonsterActiveFocusPreset preset) => casterAccentEnabled
+            ? Mathf.Clamp(casterAccentVisibleDuration, 0.5f, 1.5f)
+            : preset.MinimumVisibleDuration;
 
         public TMP_FontAsset OwnerFont => ownerFont;
         public TMP_FontAsset SkillFont => skillFont != null ? skillFont : ownerFont;

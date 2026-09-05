@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using ProjectMT.Shared.Unit;
 using System.Threading.Tasks;
 using ProjectMT.Shared.Combat;
 using TMPro;
@@ -45,6 +47,7 @@ namespace ProjectMT.Shared.Debugging
             acquireAllItemsButton?.onClick.AddListener(HandleAcquireAllItemsClicked);
             sendRandomMailButton?.onClick.AddListener(HandleSendRandomMailClicked);
             basicAttackAreaButton?.onClick.AddListener(HandleBasicAttackAreaClicked);
+            BuildFocusComparison();
             SetPanelOpen(false);
             ResetConfirmation();
             RefreshBasicAttackAreaLabel();
@@ -63,6 +66,7 @@ namespace ProjectMT.Shared.Debugging
 
         private void Update()
         {
+            if (repeatFocusPreview && Time.unscaledTime >= nextFocusPreview) TryPreviewFocus();
             if (!isBusy && confirmUntil > 0f && Time.unscaledTime > confirmUntil)
             {
                 ResetConfirmation(); // 확인 유효시간 종료
@@ -100,6 +104,118 @@ namespace ProjectMT.Shared.Debugging
             {
                 sendRandomMailButton.interactable = randomMailSendAction != null;
             }
+        }
+
+
+        private readonly Button[] focusStyleButtons = new Button[7];
+        private TMP_Text focusCasterLabel;
+        private TMP_Text focusRepeatLabel;
+        private UnitActor focusPreviewCaster;
+        private bool repeatFocusPreview;
+        private float nextFocusPreview;
+
+        private void BuildFocusComparison()
+        {
+            if (panelRoot == null || basicAttackAreaButton == null) return;
+            var root = new GameObject("ActiveFocusComparison", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            root.transform.SetParent(panelRoot.transform, false);
+            root.GetComponent<Image>().color = new Color(0.035f, 0.055f, 0.085f, 0.97f);
+            var rect = root.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            rect.anchoredPosition = new Vector2(-12f, 0f);
+            rect.sizeDelta = new Vector2(330f, 498f);
+            var heading = Instantiate(basicAttackAreaLabel, rect);
+            heading.name = "FocusComparisonTitle";
+            heading.rectTransform.anchorMin = heading.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+            heading.rectTransform.pivot = new Vector2(0.5f, 1f);
+            heading.rectTransform.anchoredPosition = new Vector2(0f, -10f);
+            heading.rectTransform.sizeDelta = new Vector2(302f, 28f);
+            heading.text = "액티브 연출 비교";
+            heading.color = new Color(1f, 0.85f, 0.4f);
+            for (var i = 0; i < focusStyleButtons.Length; i++)
+            {
+                var index = i;
+                focusStyleButtons[i] = CreateFocusButton(rect, "FocusStyle" + i, -44f - i * 42f,
+                    () => { MonsterActiveFocusStyles.Current = (MonsterActiveFocusStyle)index; RefreshFocusComparison(); });
+            }
+            var select = CreateFocusButton(rect, "FocusCaster", -344f, SelectNextFocusCaster);
+            focusCasterLabel = select.GetComponentInChildren<TMP_Text>();
+            var preview = CreateFocusButton(rect, "FocusPreview", -386f, () =>
+            {
+                TryPreviewFocus(); SetPanelOpen(false);
+            });
+            preview.GetComponentInChildren<TMP_Text>().text = "선택 몬스터 스킬 발동";
+            var repeat = CreateFocusButton(rect, "FocusRepeat", -428f, () =>
+            {
+                repeatFocusPreview = !repeatFocusPreview;
+                nextFocusPreview = 0f;
+                RefreshFocusComparison();
+                if (repeatFocusPreview) SetPanelOpen(false);
+            });
+            focusRepeatLabel = repeat.GetComponentInChildren<TMP_Text>();
+            RefreshFocusComparison();
+        }
+
+        private Button CreateFocusButton(Transform parent, string name, float y, UnityEngine.Events.UnityAction action)
+        {
+            var button = Instantiate(basicAttackAreaButton, parent);
+            button.name = name;
+            button.onClick = new Button.ButtonClickedEvent();
+            button.onClick.AddListener(action);
+            button.interactable = true;
+            button.image.color = new Color(0.08f, 0.13f, 0.20f);
+            var rect = (RectTransform)button.transform;
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = new Vector2(0f, y);
+            rect.sizeDelta = new Vector2(302f, 36f);
+            var label = button.GetComponentInChildren<TMP_Text>();
+            if (label != null) label.fontSize = 19f;
+            return button;
+        }
+
+        private UnitActor[] FocusCandidates() => FindObjectsByType<UnitActor>(FindObjectsSortMode.None)
+            .Where(unit => unit.Team == UnitTeam.Player && unit.IsAlive && unit.IsCombatReady &&
+                unit.SkillRuntime.ActiveSkill != null)
+            .OrderBy(unit => unit.ActiveFocusPartySlotIndex).ToArray();
+
+        private void SelectNextFocusCaster()
+        {
+            var candidates = FocusCandidates();
+            if (candidates.Length == 0) { focusPreviewCaster = null; RefreshFocusComparison(); return; }
+            var index = Array.IndexOf(candidates, focusPreviewCaster);
+            focusPreviewCaster = candidates[(index + 1) % candidates.Length];
+            RefreshFocusComparison();
+        }
+
+        private bool TryPreviewFocus()
+        {
+            if (focusPreviewCaster == null || !focusPreviewCaster.IsAlive ||
+                !focusPreviewCaster.gameObject.activeInHierarchy) focusPreviewCaster = FocusCandidates().FirstOrDefault();
+            if (focusPreviewCaster == null) { SetStatus("전투 중인 몬스터가 없습니다"); return false; }
+            if (focusPreviewCaster.SkillRuntime.IsExecuting || focusPreviewCaster.SkillRuntime.IsActiveFocusQueued)
+                return false;
+            focusPreviewCaster.SkillRuntime.GrantActiveEnergy(focusPreviewCaster.SkillRuntime.EnergyCapacity);
+            nextFocusPreview = Time.unscaledTime + 3f;
+            RefreshFocusComparison();
+            return true;
+        }
+
+        private void RefreshFocusComparison()
+        {
+            for (var i = 0; i < focusStyleButtons.Length; i++)
+            {
+                var button = focusStyleButtons[i];
+                if (button == null) continue;
+                var selected = (int)MonsterActiveFocusStyles.Current == i;
+                button.GetComponentInChildren<TMP_Text>().text =
+                    (selected ? "● " : "") + MonsterActiveFocusStyles.Labels[i];
+                button.image.color = selected ? new Color(0.32f, 0.23f, 0.055f) : new Color(0.08f, 0.13f, 0.20f);
+            }
+            if (focusCasterLabel != null)
+                focusCasterLabel.text = "대상: " + (focusPreviewCaster != null ? focusPreviewCaster.DisplayName : "첫 번째 몬스터") + " ›";
+            if (focusRepeatLabel != null) focusRepeatLabel.text = repeatFocusPreview ? "반복 발동: ON · 누르면 종료" : "반복 발동: OFF";
         }
 
         private void TogglePanel()

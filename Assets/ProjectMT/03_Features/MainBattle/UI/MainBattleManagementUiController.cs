@@ -550,8 +550,12 @@ namespace ProjectMT.Features.MainBattle
 
             if (monsterCollectionController == null)
             {
-                monsterCollectionController = collectionPanel.GetComponent<MonsterCollectionPanelController>()
-                    ?? collectionPanel.gameObject.AddComponent<MonsterCollectionPanelController>();
+                monsterCollectionController = collectionPanel.GetComponent<MonsterCollectionPanelController>();
+                if (monsterCollectionController == null)
+                {
+                    Debug.LogError("The collection source prefab requires its collection panel controller.", collectionPanel);
+                    return;
+                }
             }
 
             monsterCollectionController.Configure(monsterRarityCatalog, monsterCollectionProgress);

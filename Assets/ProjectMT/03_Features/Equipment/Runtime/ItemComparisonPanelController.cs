@@ -504,7 +504,6 @@ namespace ProjectMT.Features.Equipment
             {
                 // 장착 중인 장비에 같은 종류의 추가옵션이 없음 - 화살표 자리에 "NEW" 표시
                 arrow?.gameObject.SetActive(false);
-                AlignNewBadgeWithArrow(rowIndex);
                 newBadge?.SetActive(true);
                 return;
             }
@@ -525,27 +524,6 @@ namespace ProjectMT.Features.Equipment
             var euler = arrow.localEulerAngles;
             euler.z = clickedOption.Value > matched.Value ? 0f : 180f; // 더 낮으면 180도 뒤집어 아래로 표시
             arrow.localEulerAngles = euler;
-        }
-
-        private void AlignNewBadgeWithArrow(int rowIndex)
-        {
-            if (rowIndex < 0 || rowIndex >= compareOptionArrowIcons.Count ||
-                rowIndex >= compareOptionNewBadges.Count)
-            {
-                return;
-            }
-
-            var arrow = compareOptionArrowIcons[rowIndex];
-            var badge = compareOptionNewBadges[rowIndex]?.transform as RectTransform;
-            if (arrow == null || badge == null)
-            {
-                return;
-            }
-
-            badge.anchorMin = arrow.anchorMin;
-            badge.anchorMax = arrow.anchorMax;
-            badge.pivot = arrow.pivot;
-            badge.anchoredPosition = arrow.anchoredPosition;
         }
 
         // 장착 중인 장비 -> 클릭한 장비로 바꿨을 때의 전투력 변화를 "+120" 형식으로 표시한다.
@@ -585,7 +563,7 @@ namespace ProjectMT.Features.Equipment
             closeButtonRoot = FindDeep(transform, "CloseTouchArea_80x80") as RectTransform;
             if (closeButtonRoot != null)
             {
-                closeButton = EnsureButton(closeButtonRoot);
+                closeButton = GetAuthoredButton(closeButtonRoot);
                 closeButton.onClick.RemoveListener(Hide);
                 closeButton.onClick.AddListener(Hide);
             }
@@ -648,16 +626,11 @@ namespace ProjectMT.Features.Equipment
                 bonusOptionValueTexts.Add(row?.Find("StatText_2")?.GetComponent<TMP_Text>());
             }
 
-            // 기존 Group_Buttons(Button_02_Green)는 더 이상 쓰지 않고 SelectGroup_Buttons(Button_02_Brown)로 대체됐다.
-            var legacyButtonGroup = FindDeep(root, "Group_Buttons");
-            legacyButtonGroup?.gameObject.SetActive(false);
-
             popup1EquipButtonRoot = FindDeep(root, "SelectGroup_Buttons");
             if (popup1EquipButtonRoot != null)
             {
                 var actionRoot = FindDeep(popup1EquipButtonRoot, "Button_02_Brown") ?? popup1EquipButtonRoot;
-                actionRoot.gameObject.SetActive(true);
-                popup1EquipButton = EnsureButton(actionRoot);
+                popup1EquipButton = GetAuthoredButton(actionRoot);
                 popup1EquipButton.onClick.RemoveListener(HandleEquipButtonClicked);
                 popup1EquipButton.onClick.AddListener(HandleEquipButtonClicked);
                 popup1EquipButtonText = FindDeep(actionRoot, "Text (TMP)")?.GetComponent<TMP_Text>()
@@ -725,11 +698,8 @@ namespace ProjectMT.Features.Equipment
             popup2EquipButtonRoot = FindDeep(root, "Group_Buttons");
             if (popup2EquipButtonRoot != null)
             {
-                var dismantleButton = FindDeep(popup2EquipButtonRoot, "Button_02_Red");
-                dismantleButton?.gameObject.SetActive(false);
                 var actionRoot = FindDeep(popup2EquipButtonRoot, "Button_02_Brown") ?? popup2EquipButtonRoot;
-                actionRoot.gameObject.SetActive(true);
-                popup2EquipButton = EnsureButton(actionRoot);
+                popup2EquipButton = GetAuthoredButton(actionRoot);
                 popup2EquipButton.onClick.RemoveListener(HandleEquipButtonClicked);
                 popup2EquipButton.onClick.AddListener(HandleEquipButtonClicked);
                 popup2EquipButtonText = actionRoot.GetComponentInChildren<TMP_Text>(true);
@@ -744,32 +714,17 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            dimmedButton = EnsureButton(dimmed);
+            dimmedButton = GetAuthoredButton(dimmed);
             dimmedButton.onClick.RemoveListener(Hide);
             dimmedButton.onClick.AddListener(Hide);
         }
 
-        private static Button EnsureButton(Transform target)
+        private static Button GetAuthoredButton(Transform target)
         {
             var button = target.GetComponent<Button>();
-            if (button == null)
+            if (button == null || button.targetGraphic == null || !button.targetGraphic.raycastTarget)
             {
-                button = target.gameObject.AddComponent<Button>();
-                button.transition = Selectable.Transition.None;
-            }
-
-            var hitArea = target.GetComponent<Graphic>();
-            if (hitArea == null)
-            {
-                var image = target.gameObject.AddComponent<Image>();
-                image.color = Color.clear;
-                hitArea = image;
-            }
-
-            hitArea.raycastTarget = true;
-            if (button.targetGraphic == null)
-            {
-                button.targetGraphic = hitArea;
+                throw new InvalidOperationException("Item comparison needs an authored input target: " + target.name);
             }
 
             return button;

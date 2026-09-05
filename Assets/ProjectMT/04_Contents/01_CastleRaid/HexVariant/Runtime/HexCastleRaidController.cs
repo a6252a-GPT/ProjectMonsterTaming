@@ -641,7 +641,6 @@ namespace ProjectMT.Contents.CastleRaidHex
                 stageInstance != null ? stageInstance.transform : transform,
                 unit.transform.position,
                 trap.TrapType,
-                statusText != null ? statusText.font : TMP_Settings.defaultFontAsset,
                 deploymentCamera);
         }
 

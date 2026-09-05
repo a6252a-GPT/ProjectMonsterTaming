@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace ProjectMT.Features.Quest
 {
-    // 튜토리얼 손가락의 위치·클릭 판정은 건드리지 않고 크기만 부드럽게 반복해 시선을 유도한다.
+    // 원본 손가락은 세 번 움직인 뒤 제자리에 남아 안내한다.
     [DisallowMultipleComponent]
     public sealed class QuestTutorialFingerPulse : MonoBehaviour
     {
@@ -12,17 +12,9 @@ namespace ProjectMT.Features.Quest
 
         private Vector3 baseScale;
         private bool initialized;
+        private float startedAt;
 
-        public static QuestTutorialFingerPulse Ensure(GameObject target)
-        {
-            if (target == null)
-            {
-                return null;
-            }
-
-            var pulse = target.GetComponent<QuestTutorialFingerPulse>();
-            return pulse != null ? pulse : target.AddComponent<QuestTutorialFingerPulse>();
-        }
+        private void OnEnable() { startedAt = Time.unscaledTime; }
 
         private void Awake()
         {
@@ -36,7 +28,9 @@ namespace ProjectMT.Features.Quest
                 Rebase();
             }
 
-            var phase = Mathf.Sin(Time.unscaledTime * Mathf.PI * 2f / CycleSeconds);
+            var elapsed = Time.unscaledTime - startedAt;
+            if (elapsed >= CycleSeconds * 3f) { transform.localScale = baseScale; return; }
+            var phase = Mathf.Sin(elapsed * Mathf.PI * 2f / CycleSeconds);
             var factor = Mathf.Lerp(MinimumScale, MaximumScale, (phase + 1f) * 0.5f);
             transform.localScale = new Vector3(
                 baseScale.x * factor,

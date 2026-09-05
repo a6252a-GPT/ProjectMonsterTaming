@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 namespace ProjectMT.Features.MainBattle
 {
-    // 도감 탭 전환·공격 타입 필터·등급별 목록 표시 담당. CollectionPanel에 런타임으로 부착된다.
+    // 도감 탭 전환·공격 타입 필터·등급별 목록 표시 담당. CollectionPanel 원본에 정식으로 부착된다.
     [DisallowMultipleComponent]
     public sealed class MonsterCollectionPanelController : MonoBehaviour
     {

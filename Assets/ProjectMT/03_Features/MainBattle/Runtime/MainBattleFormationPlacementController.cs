@@ -12,7 +12,7 @@ namespace ProjectMT.Features.MainBattle
     [DisallowMultipleComponent]
     public sealed class MainBattleFormationPlacementController : MonoBehaviour // 본부대 시작 위치 편집
     {
-        private const float WorldVisualHeight = 0.2f;
+        private const float WorldVisualHeight = 0.30f;
 
         private sealed class SlotVisual
         {
@@ -21,6 +21,7 @@ namespace ProjectMT.Features.MainBattle
             public LineRenderer Ring;
             public RectTransform BuffBadge;
             public Image BuffBadgeBackground;
+            public Image BuffBadgeAccent;
             public TMP_Text BuffLabel;
             public float BuffBadgeHeight;
             public MainBattleFormationLine Line;
@@ -41,11 +42,15 @@ namespace ProjectMT.Features.MainBattle
         private Transform uiRoot;
         private GameObject normalHudRoot;
         private GameObject globalDebugPanel;
-        private TMP_FontAsset uiFont;
+        [SerializeField] private MainBattleFormationPlacementHudView hudPrefab;
+        [SerializeField] private MainBattlePlacementBuffBadgeView buffBadgePrefab;
 
         private Vector3 commanderStartPosition;
         private Vector3 mapCenter;
         private Vector2[] workingOffsets;
+        private Vector2[] initialOffsets;
+        private SlotVisual selectedVisual;
+        private LineRenderer selectedHex;
         private bool normalHudWasActive;
         private bool globalDebugPanelWasActive;
         private bool saving;
@@ -56,14 +61,16 @@ namespace ProjectMT.Features.MainBattle
         private Button saveButton;
         private Button resetButton;
         private TMP_Text statusLabel;
+        private TMP_Text unsavedLabel;
         private Rect lastSafeArea;
         private int lastScreenWidth;
         private int lastScreenHeight;
 
         private GameObject worldVisualRoot;
-        private Material worldFillMaterial;
-        private Material lineMaterial;
-        private Mesh areaMesh;
+        [SerializeField] private MainBattlePlacementWorldView worldPrefab;
+        private MainBattlePlacementWorldView worldView;
+        private Vector3[] selectedHexOffsets;
+        private Vector3[] ringOffsets;
 
         public bool IsActive { get; private set; }
         public event Action Completed;
@@ -90,7 +97,6 @@ namespace ProjectMT.Features.MainBattle
             commander = commanderRoot ?? throw new ArgumentNullException(nameof(commanderRoot));
             uiRoot = runtimeUiRoot ?? throw new ArgumentNullException(nameof(runtimeUiRoot));
             normalHudRoot = hudRoot ?? throw new ArgumentNullException(nameof(hudRoot));
-            uiFont = normalHudRoot.GetComponentInChildren<TMP_Text>(true)?.font;
 
             commanderStartPosition = commander.position;
             var anchorPosition = formationAnchor.position;
@@ -110,6 +116,9 @@ namespace ProjectMT.Features.MainBattle
             {
                 workingOffsets = MainBattleFormationRules.CreateDefaultOffsets();
             }
+
+            initialOffsets = (Vector2[])workingOffsets.Clone();
+            selectedVisual = null;
 
             if (!expedition.BeginFormationPlacement())
             {
@@ -138,6 +147,7 @@ namespace ProjectMT.Features.MainBattle
             IsActive = true;
             saving = false;
             SetStatus("몬스터를 드래그해 빈 육각 칸에 배치하세요");
+            RefreshUnsavedState();
             drag.ConfigurePlacement(
                 worldCamera,
                 ground,
@@ -163,6 +173,8 @@ namespace ProjectMT.Features.MainBattle
             saving = false;
             enabled = false;
             slotVisuals.Clear();
+            selectedVisual = null;
+            initialOffsets = null;
             DestroyRuntimeVisuals();
             if (normalHudRoot != null)
             {
@@ -195,7 +207,6 @@ namespace ProjectMT.Features.MainBattle
             uiRoot = null;
             normalHudRoot = null;
             globalDebugPanel = null;
-            uiFont = null;
             workingOffsets = null;
         }
 
@@ -266,6 +277,9 @@ namespace ProjectMT.Features.MainBattle
 
             visual.PreviewOverride = true;
             visual.PreviewPosition = worldPosition;
+            selectedVisual = visual;
+            UpdateSelectedHex(worldPosition, valid);
+            RefreshBadgeEmphasis();
             SetRingColor(visual.Ring, valid ? ValidColor : InvalidColor);
             if (valid)
             {
@@ -291,6 +305,9 @@ namespace ProjectMT.Features.MainBattle
 
             visual.PreviewOverride = false;
             UpdateSlotBuffVisual(visual, workingOffsets[visual.SlotIndex], true);
+            UpdateSelectedHex(OffsetToWorld(workingOffsets[visual.SlotIndex]), true);
+            RefreshBadgeEmphasis();
+            RefreshUnsavedState();
         }
 
         private void HandleResetClicked()
@@ -313,6 +330,10 @@ namespace ProjectMT.Features.MainBattle
             }
 
             SetStatus("기본 위치로 초기화했습니다");
+            selectedVisual = null;
+            if (selectedHex != null) selectedHex.gameObject.SetActive(false);
+            RefreshBadgeEmphasis();
+            RefreshUnsavedState();
         }
 
         private async void HandleSaveClicked()
@@ -325,6 +346,7 @@ namespace ProjectMT.Features.MainBattle
 
             saving = true;
             SetStatus("저장 중...");
+            RefreshUnsavedState();
             var saved = false;
             try
             {
@@ -345,6 +367,7 @@ namespace ProjectMT.Features.MainBattle
             {
                 saving = false;
                 SetStatus("저장하지 못했습니다 · 다시 시도해 주세요");
+                RefreshUnsavedState();
                 return;
             }
 
@@ -386,49 +409,13 @@ namespace ProjectMT.Features.MainBattle
 
         private void BuildWorldVisuals()
         {
-            worldVisualRoot = new GameObject("MainBattleFormationPlacementWorldVisuals");
-            worldVisualRoot.transform.SetParent(transform, false);
-
-            var shader = Shader.Find("Sprites/Default");
-            if (shader == null)
-            {
-                shader = Shader.Find("UI/Default");
-            }
-
-            worldFillMaterial = new Material(shader)
-            {
-                name = "Runtime_MainBattlePlacementArea",
-                color = new Color(0.16f, 0.88f, 0.72f, 0.10f),
-                hideFlags = HideFlags.DontSave
-            };
-            lineMaterial = new Material(shader)
-            {
-                name = "Runtime_MainBattlePlacementLines",
-                color = Color.white,
-                hideFlags = HideFlags.DontSave
-            };
-
-            var corners = GetAreaWorldCorners(WorldVisualHeight);
-            areaMesh = new Mesh
-            {
-                name = "Runtime_MainBattlePlacementAreaMesh",
-                hideFlags = HideFlags.DontSave,
-                vertices = corners,
-                triangles = new[] { 0, 1, 2, 0, 2, 3 },
-                uv = new[] { Vector2.zero, Vector2.up, Vector2.one, Vector2.right }
-            };
-            areaMesh.RecalculateBounds();
-
-            var fill = new GameObject("PlacementAreaFill", typeof(MeshFilter), typeof(MeshRenderer));
-            fill.transform.SetParent(worldVisualRoot.transform, false);
-            fill.GetComponent<MeshFilter>().sharedMesh = areaMesh;
-            fill.GetComponent<MeshRenderer>().sharedMaterial = worldFillMaterial;
-
-            var outline = CreateLineRenderer("PlacementAreaOutline", 0.08f);
-            outline.loop = true;
-            outline.positionCount = corners.Length;
-            outline.SetPositions(corners);
-            SetRingColor(outline, new Color(0.24f, 1f, 0.82f, 0.95f));
+            if (worldPrefab == null) throw new InvalidOperationException("The placement world prefab is required.");
+            worldView = Instantiate(worldPrefab, transform, false);
+            worldVisualRoot = worldView.gameObject;
+            worldVisualRoot.name = "MainBattleFormationPlacementWorldVisuals";
+            selectedHex = worldView.SelectedHex;
+            selectedHexOffsets = ReadLinePositions(worldPrefab.SelectedHex);
+            ringOffsets = ReadLinePositions(worldView.RingTemplate);
             BuildHexGuide();
         }
 
@@ -437,55 +424,75 @@ namespace ProjectMT.Features.MainBattle
             var offsets = MainBattleFormationRules.CopyHexOffsets();
             for (var hexIndex = 0; hexIndex < offsets.Length; hexIndex++)
             {
-                var line = CreateLineRenderer($"PlacementHex_{hexIndex + 1:000}", 0.036f);
-                line.loop = true;
-                line.useWorldSpace = true;
-                line.positionCount = 6;
+                var line = InstantiateLine($"PlacementHex_{hexIndex + 1:000}", worldView.HexTemplate);
                 var center = OffsetToWorld(offsets[hexIndex]);
-                for (var corner = 0; corner < 6; corner++)
+                for (var corner = 0; corner < line.positionCount; corner++)
                 {
-                    var angle = (30f + corner * 60f) * Mathf.Deg2Rad;
-                    var point = center + new Vector3(
-                        Mathf.Cos(angle) * MainBattleFormationRules.HexVisualRadius,
-                        0f,
-                        Mathf.Sin(angle) * MainBattleFormationRules.HexVisualRadius);
+                    var point = center + worldView.HexTemplate.GetPosition(corner);
                     line.SetPosition(corner, ProjectToGroundSurface(point, WorldVisualHeight));
                 }
 
-                SetRingColor(line, GetLineColor(MainBattleFormationRules.GetLine(offsets[hexIndex]), 0.54f));
+                SetRingColor(line, GetLineColor(MainBattleFormationRules.GetLine(offsets[hexIndex]), 0.68f));
             }
+        }
+
+        private void UpdateSelectedHex(Vector3 position, bool valid)
+        {
+            if (selectedHex == null) return;
+            selectedHex.gameObject.SetActive(true);
+            var center = OffsetToWorld(MainBattleFormationRules.SnapToHex(WorldToOffset(position)));
+            for (var corner = 0; corner < selectedHexOffsets.Length; corner++)
+            {
+                var point = center + selectedHexOffsets[corner];
+                selectedHex.SetPosition(corner, ProjectToGroundSurface(point, WorldVisualHeight + 0.015f));
+            }
+            SetRingColor(selectedHex, valid ? new Color32(242, 220, 157, 255) : InvalidColor);
+        }
+
+        private void RefreshBadgeEmphasis()
+        {
+            foreach (var visual in slotVisuals)
+            {
+                var selected = visual == selectedVisual;
+                visual.BuffBadgeBackground.color = selected ? new Color32(46, 43, 39, 250) : PanelColor;
+                visual.BuffLabel.color = selectedVisual == null || selected ? IvoryColor : new Color32(190, 186, 176, 255);
+            }
+        }
+
+        private void RefreshUnsavedState()
+        {
+            if (unsavedLabel == null) return;
+            var changed = false;
+            if (initialOffsets != null && workingOffsets != null)
+            {
+                for (var i = 0; i < workingOffsets.Length; i++)
+                {
+                    if ((workingOffsets[i] - initialOffsets[i]).sqrMagnitude <= 0.0001f) continue;
+                    changed = true;
+                    break;
+                }
+            }
+            unsavedLabel.text = changed && !saving ? "저장하지 않은 변경사항" : string.Empty;
         }
 
         private LineRenderer CreateRing(string objectName)
         {
-            const int segmentCount = 64;
-            var ring = CreateLineRenderer(objectName, 0.065f);
-            ring.loop = true;
-            ring.positionCount = segmentCount;
-            ring.useWorldSpace = true;
-            for (var index = 0; index < segmentCount; index++)
-            {
-                ring.SetPosition(index, Vector3.zero);
-            }
-
-            SetRingColor(ring, NeutralColor);
-            return ring;
+            return InstantiateLine(objectName, worldView.RingTemplate);
         }
 
-        private LineRenderer CreateLineRenderer(string objectName, float width)
+        private LineRenderer InstantiateLine(string objectName, LineRenderer template)
         {
-            var lineObject = new GameObject(objectName, typeof(LineRenderer));
-            lineObject.transform.SetParent(worldVisualRoot.transform, false);
-            var line = lineObject.GetComponent<LineRenderer>();
-            line.sharedMaterial = lineMaterial;
-            line.startWidth = width;
-            line.endWidth = width;
-            line.numCornerVertices = 2;
-            line.numCapVertices = 2;
-            line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            line.receiveShadows = false;
-            line.textureMode = LineTextureMode.Stretch;
+            var line = Instantiate(template, worldVisualRoot.transform, false);
+            line.name = objectName;
+            line.gameObject.SetActive(true);
             return line;
+        }
+
+        private static Vector3[] ReadLinePositions(LineRenderer line)
+        {
+            var positions = new Vector3[line.positionCount];
+            line.GetPositions(positions);
+            return positions;
         }
 
         private void UpdateRingPositions()
@@ -501,11 +508,7 @@ namespace ProjectMT.Features.MainBattle
                 var position = visual.PreviewOverride ? visual.PreviewPosition : visual.Unit.transform.position;
                 for (var segment = 0; segment < visual.Ring.positionCount; segment++)
                 {
-                    var angle = segment * Mathf.PI * 2f / visual.Ring.positionCount;
-                    var point = position + new Vector3(
-                        Mathf.Cos(angle) * MainBattleFormationRules.UnitRadius,
-                        0f,
-                        Mathf.Sin(angle) * MainBattleFormationRules.UnitRadius);
+                    var point = position + ringOffsets[segment];
                     visual.Ring.SetPosition(segment, ProjectToGroundSurface(point, WorldVisualHeight));
                 }
             }
@@ -513,30 +516,16 @@ namespace ProjectMT.Features.MainBattle
 
         private void CreateBuffBadge(SlotVisual visual)
         {
-            var badgeObject = new GameObject(
-                $"PlacementBuffBadge_{visual.SlotIndex + 1:00}",
-                typeof(RectTransform),
-                typeof(Canvas));
-            badgeObject.transform.SetParent(worldVisualRoot.transform, false);
-            var badgeRect = badgeObject.GetComponent<RectTransform>();
-            badgeRect.sizeDelta = new Vector2(250f, 100f);
-            badgeRect.localScale = Vector3.one * 0.0062f;
-            var canvas = badgeObject.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.WorldSpace;
+            if (buffBadgePrefab == null) throw new InvalidOperationException("The placement buff badge prefab is required.");
+            var badge = Instantiate(buffBadgePrefab, worldVisualRoot.transform, false);
+            badge.name = $"PlacementBuffBadge_{visual.SlotIndex + 1:00}";
+            var canvas = badge.GetComponent<Canvas>();
             canvas.worldCamera = worldCamera;
-            canvas.overrideSorting = true;
-            canvas.sortingOrder = 1200 + visual.SlotIndex;
-
-            var background = CreateImage("Background", badgeRect, new Color(0.015f, 0.025f, 0.04f, 0.95f));
-            Stretch(background.rectTransform);
-            var label = CreateText("BuffName", badgeRect, string.Empty, 29f, FontStyles.Bold);
-            Stretch(label.rectTransform, 8f);
-            label.textWrappingMode = TextWrappingModes.Normal;
-            label.lineSpacing = -8f;
-
-            visual.BuffBadge = badgeRect;
-            visual.BuffBadgeBackground = background;
-            visual.BuffLabel = label;
+            canvas.sortingOrder += visual.SlotIndex;
+            visual.BuffBadge = (RectTransform)badge.transform;
+            visual.BuffBadgeBackground = badge.Background;
+            visual.BuffBadgeAccent = badge.Accent;
+            visual.BuffLabel = badge.Label;
         }
 
         private void UpdateBuffBadgePositions()
@@ -569,15 +558,13 @@ namespace ProjectMT.Features.MainBattle
             var color = GetLineColor(visual.Line, 0.96f);
             if (visual.BuffBadgeBackground != null)
             {
-                visual.BuffBadgeBackground.color = Color.Lerp(
-                    new Color(0.015f, 0.025f, 0.04f, 0.96f),
-                    color,
-                    0.24f);
+                visual.BuffBadgeBackground.color = PanelColor;
             }
 
+            if (visual.BuffBadgeAccent != null) visual.BuffBadgeAccent.color = color;
             if (visual.BuffLabel != null)
             {
-                visual.BuffLabel.text = GetLineBuffLabel(visual.Line);
+                visual.BuffLabel.text = $"<color=#{ColorUtility.ToHtmlStringRGB(color)}>{GetLineBuffLabel(visual.Line).Replace("\n", "</color>\n").Replace("+20%", "<color=#F2DCA0>+20%</color>")}";
             }
 
             if (updateRing)
@@ -625,45 +612,17 @@ namespace ProjectMT.Features.MainBattle
 
         private void BuildPlacementUi()
         {
-            placementCanvasRoot = new GameObject(
-                "MainBattleFormationPlacementCanvas",
-                typeof(RectTransform),
-                typeof(Canvas),
-                typeof(CanvasScaler),
-                typeof(GraphicRaycaster));
-            placementCanvasRoot.transform.SetParent(uiRoot, false);
-            var canvas = placementCanvasRoot.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.overrideSorting = true;
-            canvas.sortingOrder = 1000;
-            var scaler = placementCanvasRoot.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 0.5f;
-
-            var dimObject = CreateUiObject("OutsideDim", placementCanvasRoot.transform);
-            Stretch(dimObject.GetComponent<RectTransform>());
-            dimGraphic = dimObject.AddComponent<MainBattlePlacementDimGraphic>();
-            dimGraphic.color = new Color(0f, 0f, 0f, 0.62f);
-            dimGraphic.raycastTarget = false;
-
-            safeAreaRoot = CreateUiObject("SafeArea", placementCanvasRoot.transform).GetComponent<RectTransform>();
-            Stretch(safeAreaRoot);
-
-            var titleBackdrop = CreateImage("TitleBackdrop", safeAreaRoot, new Color(0.03f, 0.08f, 0.10f, 0.88f));
-            SetRect(titleBackdrop.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(380f, 82f));
-            var title = CreateText("Title", titleBackdrop.transform, "육각 배치 모드", 38f, FontStyles.Bold);
-            Stretch(title.rectTransform);
-
-            statusLabel = CreateText("Status", safeAreaRoot, string.Empty, 23f, FontStyles.Normal);
-            SetRect(statusLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -105f), new Vector2(760f, 44f));
-
-            saveButton = CreateButton("SaveAndExitButton", safeAreaRoot, "저장하고 나가기", new Color(0.12f, 0.56f, 0.50f, 0.98f));
-            SetRect(saveButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(-180f, 72f), new Vector2(320f, 76f));
+            if (hudPrefab == null) throw new InvalidOperationException("The formation placement HUD prefab is required.");
+            var view = Instantiate(hudPrefab, uiRoot, false);
+            placementCanvasRoot = view.gameObject;
+            placementCanvasRoot.name = "MainBattleFormationPlacementCanvas";
+            safeAreaRoot = view.SafeArea;
+            dimGraphic = view.Dim;
+            saveButton = view.SaveButton;
+            resetButton = view.ResetButton;
+            statusLabel = view.StatusLabel;
+            unsavedLabel = view.UnsavedLabel;
             saveButton.onClick.AddListener(HandleSaveClicked);
-
-            resetButton = CreateButton("ResetButton", safeAreaRoot, "초기화", new Color(0.22f, 0.27f, 0.31f, 0.98f));
-            SetRect(resetButton.GetComponent<RectTransform>(), new Vector2(0.5f, 0f), new Vector2(180f, 72f), new Vector2(240f, 76f));
             resetButton.onClick.AddListener(HandleResetClicked);
             RefreshSafeArea();
         }
@@ -849,95 +808,18 @@ namespace ProjectMT.Features.MainBattle
                 Destroy(worldVisualRoot);
             }
 
-            if (areaMesh != null)
-            {
-                Destroy(areaMesh);
-            }
-
-            if (worldFillMaterial != null)
-            {
-                Destroy(worldFillMaterial);
-            }
-
-            if (lineMaterial != null)
-            {
-                Destroy(lineMaterial);
-            }
-
             placementCanvasRoot = null;
             safeAreaRoot = null;
             dimGraphic = null;
             saveButton = null;
             resetButton = null;
             statusLabel = null;
+            unsavedLabel = null;
+            selectedHex = null;
             worldVisualRoot = null;
-            areaMesh = null;
-            worldFillMaterial = null;
-            lineMaterial = null;
-        }
-
-        private static GameObject CreateUiObject(string objectName, Transform parent)
-        {
-            var result = new GameObject(objectName, typeof(RectTransform));
-            result.transform.SetParent(parent, false);
-            return result;
-        }
-
-        private Image CreateImage(string objectName, Transform parent, Color color)
-        {
-            var result = CreateUiObject(objectName, parent);
-            var image = result.AddComponent<Image>();
-            image.color = color;
-            image.raycastTarget = false;
-            return image;
-        }
-
-        private TMP_Text CreateText(string objectName, Transform parent, string value, float size, FontStyles style)
-        {
-            var result = CreateUiObject(objectName, parent);
-            var text = result.AddComponent<TextMeshProUGUI>();
-            text.text = value;
-            text.font = uiFont;
-            text.fontSize = size;
-            text.fontStyle = style;
-            text.alignment = TextAlignmentOptions.Center;
-            text.color = Color.white;
-            text.raycastTarget = false;
-            text.textWrappingMode = TextWrappingModes.NoWrap;
-            return text;
-        }
-
-        private Button CreateButton(string objectName, Transform parent, string label, Color color)
-        {
-            var image = CreateImage(objectName, parent, color);
-            image.raycastTarget = true;
-            var button = image.gameObject.AddComponent<Button>();
-            button.targetGraphic = image;
-            var colors = button.colors;
-            colors.highlightedColor = Color.Lerp(color, Color.white, 0.16f);
-            colors.pressedColor = Color.Lerp(color, Color.black, 0.18f);
-            colors.disabledColor = new Color(color.r, color.g, color.b, 0.42f);
-            button.colors = colors;
-            var text = CreateText("Label", image.transform, label, 29f, FontStyles.Bold);
-            Stretch(text.rectTransform, 12f);
-            return button;
-        }
-
-        private static void Stretch(RectTransform rect, float padding = 0f)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = new Vector2(padding, padding);
-            rect.offsetMax = new Vector2(-padding, -padding);
-        }
-
-        private static void SetRect(RectTransform rect, Vector2 anchor, Vector2 position, Vector2 size)
-        {
-            rect.anchorMin = anchor;
-            rect.anchorMax = anchor;
-            rect.pivot = anchor;
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
+            worldView = null;
+            selectedHexOffsets = null;
+            ringOffsets = null;
         }
 
         private static void SetRingColor(LineRenderer line, Color color)
@@ -952,102 +834,17 @@ namespace ProjectMT.Features.MainBattle
         private static readonly Color NeutralColor = new Color(0.35f, 0.88f, 1f, 0.78f);
         private static readonly Color ValidColor = new Color(0.25f, 1f, 0.42f, 0.98f);
         private static readonly Color InvalidColor = new Color(1f, 0.22f, 0.18f, 0.98f);
-        private static readonly Color FrontLineColor = new Color(0.22f, 0.64f, 1f, 1f);
-        private static readonly Color MiddleLineColor = new Color(1f, 0.48f, 0.18f, 1f);
-        private static readonly Color RearLineColor = new Color(0.34f, 0.88f, 0.5f, 1f);
+        private static readonly Color FrontLineColor = new Color32(133, 186, 224, 255);
+        private static readonly Color MiddleLineColor = new Color32(232, 172, 115, 255);
+        private static readonly Color RearLineColor = new Color32(155, 205, 167, 255);
+
+        private static readonly Color PanelColor = new Color32(35, 39, 43, 245);
+        private static readonly Color BorderColor = new Color32(82, 87, 88, 255);
+        private static readonly Color IvoryColor = new Color32(241, 232, 209, 255);
 
         private void OnDestroy()
         {
             Shutdown();
-        }
-    }
-
-    internal sealed class MainBattlePlacementDimGraphic : MaskableGraphic // 화면 전체에서 배치영역만 뚫린 딤
-    {
-        private readonly Vector2[] hole = new Vector2[4];
-        private bool hasHole;
-
-        public void SetHole(IReadOnlyList<Vector2> points)
-        {
-            hasHole = points != null && points.Count == hole.Length;
-            if (hasHole)
-            {
-                var rect = rectTransform.rect;
-                var outer = new[]
-                {
-                    new Vector2(rect.xMin, rect.yMin),
-                    new Vector2(rect.xMax, rect.yMin),
-                    new Vector2(rect.xMax, rect.yMax),
-                    new Vector2(rect.xMin, rect.yMax)
-                };
-                var used = new bool[points.Count];
-                for (var outerIndex = 0; outerIndex < outer.Length; outerIndex++)
-                {
-                    var nearest = -1;
-                    var nearestDistance = float.PositiveInfinity;
-                    for (var pointIndex = 0; pointIndex < points.Count; pointIndex++)
-                    {
-                        if (used[pointIndex])
-                        {
-                            continue;
-                        }
-
-                        var distance = (points[pointIndex] - outer[outerIndex]).sqrMagnitude;
-                        if (distance < nearestDistance)
-                        {
-                            nearest = pointIndex;
-                            nearestDistance = distance;
-                        }
-                    }
-
-                    hole[outerIndex] = points[nearest];
-                    used[nearest] = true;
-                }
-            }
-
-            SetVerticesDirty();
-        }
-
-        protected override void OnPopulateMesh(VertexHelper vertexHelper)
-        {
-            vertexHelper.Clear();
-            var rect = rectTransform.rect;
-            var outer = new[]
-            {
-                new Vector2(rect.xMin, rect.yMin),
-                new Vector2(rect.xMax, rect.yMin),
-                new Vector2(rect.xMax, rect.yMax),
-                new Vector2(rect.xMin, rect.yMax)
-            };
-
-            if (!hasHole)
-            {
-                AddQuad(vertexHelper, outer[0], outer[1], outer[2], outer[3], color);
-                return;
-            }
-
-            for (var index = 0; index < outer.Length; index++)
-            {
-                var next = (index + 1) % outer.Length;
-                AddQuad(vertexHelper, outer[index], outer[next], hole[next], hole[index], color);
-            }
-        }
-
-        private static void AddQuad(
-            VertexHelper helper,
-            Vector2 first,
-            Vector2 second,
-            Vector2 third,
-            Vector2 fourth,
-            Color32 color)
-        {
-            var start = helper.currentVertCount;
-            helper.AddVert(first, color, Vector2.zero);
-            helper.AddVert(second, color, Vector2.right);
-            helper.AddVert(third, color, Vector2.one);
-            helper.AddVert(fourth, color, Vector2.up);
-            helper.AddTriangle(start, start + 1, start + 2);
-            helper.AddTriangle(start, start + 2, start + 3);
         }
     }
 }

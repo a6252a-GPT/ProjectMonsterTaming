@@ -15,7 +15,6 @@ namespace ProjectMT.Features.Inventory
     {
         private const string GradeFrameTemplateRootName = "ItemGradeFrameTemplates";
         private const string FrameVariantPrefix = ItemGradeFramePalette.FrameVariantPrefix;
-        private const string QuantityHitAreaName = "HitArea_48";
 
         private static readonly Dictionary<ItemGrade, string> FrameVariantSuffixByGrade =
             new Dictionary<ItemGrade, string>
@@ -196,10 +195,6 @@ namespace ProjectMT.Features.Inventory
             filterButtons[3]?.onClick.AddListener(HandleFilterOtherOne);
             filterButtons[4]?.onClick.AddListener(HandleFilterOtherTwo);
             filterButtons[5]?.onClick.AddListener(HandleFilterOtherThree);
-            EnsureSliderHitArea(quantitySlider);
-            EnsureFullRectHitArea(discardPairButton);
-            EnsureFullRectHitArea(discardSoloButton);
-            EnsureFullRectHitArea(useButton);
             quantitySlider?.onValueChanged.AddListener(HandleQuantityChanged);
             discardPairButton?.onClick.AddListener(DiscardSelected);
             discardSoloButton?.onClick.AddListener(DiscardSelected);
@@ -523,8 +518,6 @@ namespace ProjectMT.Features.Inventory
                 {
                     continue;
                 }
-
-                EnsureFullRectHitArea(button);
                 var label = button.GetComponentInChildren<TMP_Text>(true);
                 if (label != null)
                 {
@@ -535,55 +528,6 @@ namespace ProjectMT.Features.Inventory
                 var icon = button.transform.Find("Icon");
                 icon?.gameObject.SetActive(false); // 필터는 아이콘 대신 텍스트 사용
             }
-        }
-
-        private static void EnsureFullRectHitArea(Button button)
-        {
-            if (button == null)
-            {
-                return;
-            }
-
-            var hitArea = button.GetComponent<Graphic>();
-            if (hitArea == null)
-            {
-                var image = button.gameObject.AddComponent<Image>();
-                image.color = Color.clear;
-                hitArea = image;
-            }
-
-            hitArea.raycastTarget = true;
-            if (button.targetGraphic == null)
-            {
-                button.targetGraphic = hitArea;
-            }
-        }
-
-        private static void EnsureSliderHitArea(Slider slider)
-        {
-            if (slider == null)
-            {
-                return;
-            }
-
-            var hitArea = slider.transform.Find(QuantityHitAreaName) as RectTransform;
-            if (hitArea == null)
-            {
-                var hitAreaObject = new GameObject(QuantityHitAreaName, typeof(RectTransform), typeof(Image));
-                hitArea = (RectTransform)hitAreaObject.transform;
-                hitArea.SetParent(slider.transform, false);
-                hitArea.SetAsFirstSibling();
-            }
-
-            hitArea.anchorMin = Vector2.zero;
-            hitArea.anchorMax = Vector2.one;
-            hitArea.pivot = new Vector2(0.5f, 0.5f);
-            hitArea.offsetMin = new Vector2(0f, -12f);
-            hitArea.offsetMax = new Vector2(0f, 12f); // 24px Slider를 최소 48px 터치 영역으로 확장
-
-            var image = hitArea.GetComponent<Image>() ?? hitArea.gameObject.AddComponent<Image>();
-            image.color = Color.clear;
-            image.raycastTarget = true;
         }
 
         private void UpdateFilterVisuals()

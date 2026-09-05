@@ -53,6 +53,9 @@ namespace ProjectMT.Shared.Combat
         private bool releasing;
         private bool showing;
         private bool layoutCached;
+        private bool casterAccentEnabled;
+        private MonsterActiveFocusStyle focusStyle;
+        private float minimumVisibleDuration;
 
         public bool IsShowing => showing;
         public string CurrentSkillName => skillName != null ? skillName.text : string.Empty;
@@ -62,7 +65,7 @@ namespace ProjectMT.Shared.Combat
 
         private void Awake()
         {
-            EnsureView();
+            ApplyFonts();
             CacheLayout();
             EnsureFocusFeedback();
             HideImmediate();
@@ -83,9 +86,10 @@ namespace ProjectMT.Shared.Combat
             UnitActor focusTarget,
             MonsterActiveSkill activeSkill,
             MonsterActiveFocusPreset focusPreset,
-            Camera camera)
+            Camera camera,
+            MonsterActiveFocusStyle? style = null)
         {
-            EnsureView();
+            ApplyFonts();
             CacheLayout();
             EnsureFocusFeedback();
             caster = focusCaster;
@@ -121,18 +125,24 @@ namespace ProjectMT.Shared.Combat
             var rarity = focusCaster != null ? focusCaster.Presentation.Rarity : MonsterRarity.Legendary;
             currentIsMythic = rarity == MonsterRarity.Mythic;
             var config = MonsterActiveFocusPresentationConfig.Current;
-            bannerBackground.sprite = null;
-            bannerBackground.preserveAspect = false;
-            bannerBackground.material = null;
-            bannerBackground.color = Color.clear;
+            casterAccentEnabled = config == null || config.CasterAccentEnabled;
+            focusStyle = style ?? MonsterActiveFocusStyles.Current;
+            minimumVisibleDuration = casterAccentEnabled && focusStyle == MonsterActiveFocusStyle.ClassicDim
+                ? preset.MinimumVisibleDuration : config != null
+                ? config.ResolveMinimumVisibleDuration(preset) : 0.8f;
             skillStrip.material = config?.CutInEdgeFadeMaterialTemplate;
             rarityLabel.text = rarity == MonsterRarity.Mythic ? "MYTHIC ACTIVE" : "LEGENDARY ACTIVE";
-            ApplySelectedCompactRibbonStyle();
             rarityLabel.color = WithAlpha(preset.AccentColor, 1f);
             skillStrip.color = new Color(0.018f, 0.020f, 0.018f, currentIsMythic ? 0.80f : 0.76f);
-            portraitStageRect.SetAsLastSibling();
             PrepareDimMaterial();
             UpdateSpotlight();
+            dimOverlay.enabled = !casterAccentEnabled || MonsterActiveFocusStyles.Dim(focusStyle) > 0f;
+            if (focusFeedback is IMonsterActiveCasterFeedback casterFeedback)
+            {
+                casterFeedback.BindCaster(focusCaster != null ? focusCaster.transform : null,
+                    focusCaster != null ? focusCaster.BodyRadius : 0.45f);
+            }
+            if (focusFeedback is IMonsterActiveStyleFeedback styleFeedback) styleFeedback.SetStyle(focusStyle);
             focusFeedback?.PlayEnter(preset.AccentColor, currentIsMythic);
         }
 
@@ -159,10 +169,13 @@ namespace ProjectMT.Shared.Combat
 
             var step = Mathf.Max(0f, unscaledDeltaTime);
             elapsed += step;
+            if (casterAccentEnabled && focusStyle != MonsterActiveFocusStyle.ClassicDim)
+                dimOverlay.enabled = !releaseRequested && elapsed < MonsterActiveFocusStyles.Lead(focusStyle) &&
+                                     MonsterActiveFocusStyles.Dim(focusStyle) > 0f;
             UpdateSpotlight();
             var releaseStart = Mathf.Max(
                 releaseRequestedAt,
-                preset.MinimumVisibleDuration - preset.FadeOut);
+                minimumVisibleDuration - preset.FadeOut);
             if (releaseRequested && elapsed >= releaseStart)
             {
                 if (!releasing)
@@ -196,7 +209,7 @@ namespace ProjectMT.Shared.Combat
             var stripEnter = Mathf.Clamp01(
                 (elapsed - 0.025f) / Mathf.Max(0.05f, preset.FadeIn - 0.025f));
             stripEnter = 1f - Mathf.Pow(1f - stripEnter, 3f);
-            overlayGroup.alpha = enter;
+            overlayGroup.alpha = casterAccentEnabled && focusStyle != MonsterActiveFocusStyle.ClassicDim ? 1f : enter;
             bannerGroup.alpha = easedEnter;
             bannerRect.anchoredPosition = Vector2.Lerp(
                 bannerRestPosition + Vector2.left * 160f,
@@ -221,6 +234,7 @@ namespace ProjectMT.Shared.Combat
             }
 
             releaseRequested = true;
+            if (casterAccentEnabled && focusStyle != MonsterActiveFocusStyle.ClassicDim) dimOverlay.enabled = false;
             releaseRequestedAt = elapsed;
         }
 
@@ -292,10 +306,6 @@ namespace ProjectMT.Shared.Combat
                 : transform;
             focusFeedbackInstance = Instantiate(prefab, host, false);
             focusFeedbackInstance.name = prefab.name;
-            if (focusFeedbackInstance.transform is RectTransform feedbackRect)
-            {
-                SetStretchRect(feedbackRect);
-            }
             if (bannerRect != null && bannerRect.parent == host)
             {
                 focusFeedbackInstance.transform.SetSiblingIndex(bannerRect.GetSiblingIndex());
@@ -332,11 +342,11 @@ namespace ProjectMT.Shared.Combat
             {
                 runtimeDimMaterial.SetColor(
                     DimColorId,
-                    new Color(0.012f, 0.02f, 0.045f, preset.DimAlpha));
+                    new Color(0.012f, 0.02f, 0.045f, casterAccentEnabled && focusStyle != MonsterActiveFocusStyle.ClassicDim ? MonsterActiveFocusStyles.Dim(focusStyle) : preset.DimAlpha));
             }
             else
             {
-                dimOverlay.color = new Color(0.012f, 0.02f, 0.045f, preset.DimAlpha);
+                dimOverlay.color = new Color(0.012f, 0.02f, 0.045f, casterAccentEnabled && focusStyle != MonsterActiveFocusStyle.ClassicDim ? MonsterActiveFocusStyles.Dim(focusStyle) : preset.DimAlpha);
             }
         }
 
@@ -349,7 +359,7 @@ namespace ProjectMT.Shared.Combat
 
             var casterPoint = ResolveViewportPoint(caster.transform.position + Vector3.up * 0.65f);
             runtimeDimMaterial.SetVector(CasterCenterId, casterPoint);
-            var casterEnterScale = preset.ResolveCasterSpotlightScale(elapsed);
+            var casterEnterScale = casterAccentEnabled && focusStyle != MonsterActiveFocusStyle.ClassicDim ? 1.0f : preset.ResolveCasterSpotlightScale(elapsed);
             runtimeDimMaterial.SetVector(
                 CasterRadiusId,
                 ResolveSpotlightRadius(caster, casterPoint.z, casterEnterScale));
@@ -373,125 +383,6 @@ namespace ProjectMT.Shared.Combat
                 Mathf.Clamp(0.16f * body * depthScale * multiplier, 0.10f, 0.28f));
         }
 
-        private void EnsureView()
-        {
-            if (overlayGroup != null && bannerGroup != null && bannerRect != null &&
-                bannerBackground != null && accent != null && accentGlass != null &&
-                energyEdge != null && lightShard != null && portraitStageRect != null &&
-                portrait != null && portraitFallback != null && skillStrip != null &&
-                rarityLabel != null && skillName != null && ownerName != null)
-            {
-                ApplyFonts();
-                return;
-            }
-
-            var canvasObject = new GameObject(
-                "MonsterActiveFocusCanvas",
-                typeof(RectTransform),
-                typeof(Canvas),
-                typeof(CanvasScaler),
-                typeof(GraphicRaycaster));
-            canvasObject.transform.SetParent(transform, false);
-            var canvas = canvasObject.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = CanvasSortingOrder;
-            var scaler = canvasObject.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 0.5f;
-            canvasObject.GetComponent<GraphicRaycaster>().enabled = false;
-
-            dimOverlay = CreateImage("FocusDim", canvasObject.transform, Color.white);
-            dimOverlay.rectTransform.anchorMin = Vector2.zero;
-            dimOverlay.rectTransform.anchorMax = Vector2.one;
-            dimOverlay.rectTransform.offsetMin = Vector2.zero;
-            dimOverlay.rectTransform.offsetMax = Vector2.zero;
-            dimOverlay.raycastTarget = false;
-            overlayGroup = dimOverlay.gameObject.AddComponent<CanvasGroup>();
-
-            bannerBackground = CreateImage(
-                "ActiveSkillCutIn",
-                canvasObject.transform,
-                new Color(0.01f, 0.015f, 0.035f, 0.025f));
-            bannerRect = bannerBackground.rectTransform;
-            bannerRect.anchorMin = new Vector2(0f, 0.5f);
-            bannerRect.anchorMax = new Vector2(0f, 0.5f);
-            bannerRect.pivot = new Vector2(0f, 0.5f);
-            bannerRect.anchoredPosition = new Vector2(0f, -140f);
-            bannerRect.sizeDelta = new Vector2(520f, 220f);
-            bannerGroup = bannerBackground.gameObject.AddComponent<CanvasGroup>();
-            bannerBackground.raycastTarget = false;
-            bannerBackground.material = null;
-
-            accent = CreateImage("GradeGeometry", bannerRect, new Color32(0xE7, 0xD3, 0x4A, 0x3D));
-            SetCenterRect(accent.rectTransform, Vector2.zero, Vector2.zero);
-            accent.gameObject.SetActive(false);
-
-            accentGlass = CreateImage(
-                "UpperGlass",
-                bannerRect,
-                new Color32(0xE7, 0xD3, 0x4A, 0x1F));
-            SetCenterRect(accentGlass.rectTransform, Vector2.zero, Vector2.zero);
-
-            energyEdge = CreateImage(
-                "EnergyEdge",
-                bannerRect,
-                new Color32(0xE7, 0xD3, 0x4A, 0x7A));
-            SetCenterRect(energyEdge.rectTransform, Vector2.zero, Vector2.zero);
-            energyEdge.gameObject.SetActive(false);
-
-            lightShard = CreateImage(
-                "LightShard",
-                bannerRect,
-                new Color32(0xE7, 0xD3, 0x4A, 0x33));
-            SetCenterRect(lightShard.rectTransform, Vector2.zero, Vector2.zero);
-
-            var portraitStageObject = new GameObject("PortraitStage", typeof(RectTransform));
-            portraitStageObject.transform.SetParent(bannerRect, false);
-            portraitStageRect = portraitStageObject.GetComponent<RectTransform>();
-            SetLeftRect(portraitStageRect, new Vector2(217f, 34f), new Vector2(180f, 180f));
-
-            portrait = CreateImage("Portrait", portraitStageRect, Color.white);
-            portrait.preserveAspect = true;
-            SetStretchRect(portrait.rectTransform);
-            portrait.raycastTarget = false;
-
-            portraitFallback = CreateText(
-                "PortraitFallback",
-                portraitStageRect,
-                116f,
-                FontStyles.Bold,
-                new Color(0.75f, 0.88f, 1f, 0.9f));
-            SetStretchRect(portraitFallback.rectTransform);
-            portraitFallback.alignment = TextAlignmentOptions.Center;
-
-            skillStrip = CreateImage(
-                "SkillNameStrip",
-                bannerRect,
-                new Color(0.012f, 0.018f, 0.045f, 0.94f));
-            SetLeftRect(skillStrip.rectTransform, Vector2.zero, new Vector2(470f, 96f));
-            skillStrip.material = MonsterActiveFocusPresentationConfig.Current?.CutInEdgeFadeMaterialTemplate;
-
-            rarityLabel = CreateText(
-                "Rarity",
-                skillStrip.transform,
-                13f,
-                FontStyles.Bold,
-                new Color32(0xE7, 0xD3, 0x4A, 0xFF));
-            SetLeftRect(rarityLabel.rectTransform, new Vector2(42f, 30f), new Vector2(175f, 18f));
-            skillName = CreateText("SkillName", skillStrip.transform, 30f, FontStyles.Bold, Color.white);
-            SetLeftRect(skillName.rectTransform, new Vector2(42f, 1f), new Vector2(175f, 38f));
-            ownerName = CreateText(
-                "OwnerName",
-                skillStrip.transform,
-                15f,
-                FontStyles.Normal,
-                new Color(0.78f, 0.84f, 0.93f, 0.78f));
-            SetLeftRect(ownerName.rectTransform, new Vector2(42f, -29f), new Vector2(175f, 18f));
-            portraitStageRect.SetAsLastSibling();
-            ApplyFonts();
-        }
-
         private void ApplyFonts()
         {
             var config = MonsterActiveFocusPresentationConfig.Current;
@@ -513,79 +404,6 @@ namespace ProjectMT.Shared.Combat
         {
             color.a = alpha;
             return color;
-        }
-
-        private void ApplySelectedCompactRibbonStyle()
-        {
-            accent.gameObject.SetActive(false);
-            accentGlass.gameObject.SetActive(false);
-            energyEdge.gameObject.SetActive(false);
-            lightShard.gameObject.SetActive(false);
-            rarityLabel.gameObject.SetActive(true);
-            SetLeftRect(rarityLabel.rectTransform, new Vector2(42f, 30f), new Vector2(175f, 18f));
-            SetLeftRect(skillName.rectTransform, new Vector2(42f, 1f), new Vector2(175f, 38f));
-            SetLeftRect(ownerName.rectTransform, new Vector2(42f, -29f), new Vector2(175f, 18f));
-        }
-
-        private static Image CreateImage(string objectName, Transform parent, Color color)
-        {
-            var gameObject = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            gameObject.transform.SetParent(parent, false);
-            var image = gameObject.GetComponent<Image>();
-            image.color = color;
-            return image;
-        }
-
-        private static TMP_Text CreateText(
-            string objectName,
-            Transform parent,
-            float size,
-            FontStyles style,
-            Color color)
-        {
-            var gameObject = new GameObject(
-                objectName,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(TextMeshProUGUI));
-            gameObject.transform.SetParent(parent, false);
-            var text = gameObject.GetComponent<TextMeshProUGUI>();
-            text.fontSize = size;
-            text.fontStyle = style;
-            text.color = color;
-            text.alignment = TextAlignmentOptions.MidlineLeft;
-            text.enableAutoSizing = true;
-            text.fontSizeMin = 13f;
-            text.fontSizeMax = size;
-            text.raycastTarget = false;
-            text.overflowMode = TextOverflowModes.Ellipsis;
-            return text;
-        }
-
-        private static void SetLeftRect(RectTransform rect, Vector2 position, Vector2 size)
-        {
-            rect.anchorMin = new Vector2(0f, 0.5f);
-            rect.anchorMax = new Vector2(0f, 0.5f);
-            rect.pivot = new Vector2(0f, 0.5f);
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-        }
-
-        private static void SetCenterRect(RectTransform rect, Vector2 position, Vector2 size)
-        {
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-        }
-
-        private static void SetStretchRect(RectTransform rect)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
         }
 
 #if UNITY_EDITOR

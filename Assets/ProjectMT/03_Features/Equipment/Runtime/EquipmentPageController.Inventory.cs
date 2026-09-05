@@ -74,8 +74,8 @@ namespace ProjectMT.Features.Equipment
                 LockObject = FindDeep(slotRoot, "Lock")?.gameObject
             };
 
-            view.EquippedLabelText = CreateEquippedLabel(slotRoot);
-            view.UpgradeArrow = CreateUpgradeArrow(slotRoot);
+            view.EquippedLabelText = FindDeep(slotRoot, "EquippedLabel")?.GetComponent<TMP_Text>();
+            view.UpgradeArrow = FindDeep(slotRoot, "UpgradeArrow")?.GetComponent<Image>();
             view.ClickButton = EnsureButton(slotRoot);
             if (resetClickListeners)
             {
@@ -84,9 +84,8 @@ namespace ProjectMT.Features.Equipment
 
             var capturedView = view;
             view.ClickButton.onClick.AddListener(() => HandleSlotClicked(capturedView));
-            EquipmentLevelIconResolver.NormalizeMainSlotLevel(view.TextLevel?.GetComponent<TMP_Text>());
 
-            var holdTrigger = PointerHoldTrigger.EnsureOn(slotRoot.gameObject);
+            var holdTrigger = slotRoot.GetComponent<PointerHoldTrigger>();
             holdTrigger?.Configure(() => HandleSlotHoldStart(capturedView), null);
 
             slots.Add(view);
@@ -149,92 +148,9 @@ namespace ProjectMT.Features.Equipment
             inventoryScrollRect.verticalNormalizedPosition = 1f;
         }
 
-        private TMP_Text CreateEquippedLabel(Transform slotRoot)
-        {
-            var text = FindDeep(slotRoot, "EquippedLabel")?.GetComponent<TMP_Text>();
-            if (text == null)
-            {
-                var labelObject = new GameObject("EquippedLabel", typeof(RectTransform));
-                labelObject.transform.SetParent(slotRoot, false);
-                text = labelObject.AddComponent<TextMeshProUGUI>();
-            }
-
-            var rect = text.rectTransform;
-            rect.anchorMin = new Vector2(0f, 1f);
-            rect.anchorMax = Vector2.one;
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.offsetMin = new Vector2(8f, -28f);
-            rect.offsetMax = new Vector2(-48f, -6f); // 하단 레벨과 우상단 추천 화살표의 영역을 비운다.
-            if (equippedLabelFont != null)
-            {
-                text.font = equippedLabelFont;
-            }
-
-            text.fontSize = 18f;
-            text.enableAutoSizing = true;
-            text.fontSizeMin = 12f;
-            text.fontSizeMax = 18f;
-            text.fontStyle = FontStyles.Bold;
-            text.alignment = TextAlignmentOptions.Center;
-            text.color = Color.white;
-            text.outlineWidth = 0.2f;
-            text.outlineColor = Color.black;
-            text.raycastTarget = false;
-            text.text = string.Empty;
-            return text;
-        }
-
-        private Image CreateUpgradeArrow(Transform slotRoot)
-        {
-            var existing = FindDeep(slotRoot, "UpgradeArrow")?.GetComponent<Image>();
-            if (existing != null)
-            {
-                existing.sprite = upgradeArrowSprite;
-                return existing;
-            }
-
-            var arrowObject = new GameObject("UpgradeArrow", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            arrowObject.transform.SetParent(slotRoot, false);
-            var rect = arrowObject.GetComponent<RectTransform>();
-            rect.anchorMin = Vector2.one;
-            rect.anchorMax = Vector2.one;
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = new Vector2(-24f, -24f);
-            rect.sizeDelta = new Vector2(48f, 48f);
-
-            var image = arrowObject.GetComponent<Image>();
-            image.sprite = upgradeArrowSprite;
-            image.color = new Color32(50, 220, 105, 255);
-            image.preserveAspect = true;
-            image.raycastTarget = false;
-            arrowObject.SetActive(false);
-            return image;
-        }
-
         private static Button EnsureButton(Transform target)
         {
-            var button = target.GetComponent<Button>();
-            if (button == null)
-            {
-                button = target.gameObject.AddComponent<Button>();
-                button.transition = Selectable.Transition.None; // 목업 비주얼을 그대로 유지, 클릭 판정만 추가
-            }
-
-            var hitArea = target.GetComponent<Graphic>();
-            if (hitArea == null)
-            {
-                var image = target.gameObject.AddComponent<Image>();
-                image.color = Color.clear;
-                hitArea = image;
-            }
-
-            hitArea.raycastTarget = true;
-            if (button.targetGraphic == null)
-            {
-                button.targetGraphic = hitArea;
-            }
-
-            return button;
+            return target.GetComponent<Button>();
         }
 
         private void HandleSlotClicked(SlotView view)
@@ -323,8 +239,12 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            itemComparisonPanel = panelRoot.GetComponent<ItemComparisonPanelController>()
-                ?? panelRoot.gameObject.AddComponent<ItemComparisonPanelController>();
+            itemComparisonPanel = panelRoot.GetComponent<ItemComparisonPanelController>();
+            if (itemComparisonPanel == null)
+            {
+                return;
+            }
+
             itemComparisonPanel.Configure(combatInputSaved);
         }
 
@@ -409,7 +329,6 @@ namespace ProjectMT.Features.Equipment
                     item.Part,
                     item.ItemLevel,
                     partSprite ?? item.Definition.Icon);
-                EquipmentLevelIconResolver.NormalizeMainSlotIcon(view.ItemIcon);
 
                 view.ItemIcon.color = currentMode == EquipmentPageMode.Dismantle && (item.IsEquipped || item.IsLocked)
                     ? new Color32(125, 125, 125, 255)

@@ -12,20 +12,17 @@ using UnityEngine.UI;
 namespace ProjectMT.Features.Quest
 {
     // 각 관리 페이지 안의 정확한 버튼 위치("ClickPoint")에 손가락 아이콘("ClickImage")을 붙여
-    // 10초 동안 계속 표시하면서 크기가 부드럽게 커졌다 작아지게 한다. QuestHudNavigationController의
+    // 미완료 목표의 실제 버튼을 안내한다. QuestHudNavigationController의
     // 트래커 힌트와 별개로, 지금 추적 중인
     // 퀘스트와 연결된 페이지가 실제로 열려 있을 때만(activeInHierarchy) 표시된다.
-    // QuestHudTrackerView.Awake()에서 자동으로 붙여준다.
+    // 정식 HUD 카드 프리팹에 부착되어 있다.
     [DisallowMultipleComponent]
     public sealed class QuestClickPointHintController : MonoBehaviour
     {
-        private const float HintDisplayDuration = 10f;
         private const float RefreshInterval = 0.2f; // 탭 전환·스크롤 등 페이지 내부 상태를 주기적으로 재확인
         private const float HighlightPadding = 8f;
-        private const float HighlightLineThickness = 4f;
         private const float HintFadeDuration = 0.32f;
         private const QuestType TrackedType = QuestType.Main;
-        private static readonly Color HighlightColor = new Color(1f, 0.87f, 0.08f, 0.96f);
 
         private static readonly string[] ShopQuestIds =
         {
@@ -86,6 +83,12 @@ namespace ProjectMT.Features.Quest
         private readonly Dictionary<Transform, bool> requestedHintVisibility = new Dictionary<Transform, bool>();
         private readonly HashSet<Transform> activeHintTargets = new HashSet<Transform>();
         private RectTransform activeSpotlightTarget;
+        private string activeStepKey;
+        private Transform resultOverlay;
+        private Button resultCloseButton;
+        private string statusMessage;
+        private string shownTutorialQuestId;
+        private bool tutorialPageWasOpen;
 
         // ClickPoint별로 "표시가 시작된 시각"을 기록해 각자 독립적으로 10초 후 꺼지게 한다.
         private readonly Dictionary<Transform, float> hintShownAt = new Dictionary<Transform, float>();
@@ -130,6 +133,15 @@ namespace ProjectMT.Features.Quest
             QuestTutorialSpotlight.Hide(this);
         }
 
+        internal void DismissShownTutorial()
+        {
+            if (string.IsNullOrEmpty(shownTutorialQuestId)) return;
+            QuestRuntime.DismissTutorial(new QuestId(shownTutorialQuestId));
+            shownTutorialQuestId = null;
+            HideAllHints();
+            HasVisibleHint = false;
+        }
+
         private void ForceRefreshNow()
         {
             tickTimer = RefreshInterval;
@@ -150,6 +162,9 @@ namespace ProjectMT.Features.Quest
         private void Refresh()
         {
             EnsureReferencesResolved();
+            var pageOpen = managementUi != null && managementUi.IsAnyPageOpen;
+            if (tutorialPageWasOpen && !pageOpen) DismissShownTutorial();
+            tutorialPageWasOpen = pageOpen;
 
             var trackedQuestId = (string)null;
             var completedAwaitingClaim = false;
@@ -162,19 +177,34 @@ namespace ProjectMT.Features.Quest
 
             if (!string.Equals(lastTrackedQuestId, trackedQuestId, StringComparison.OrdinalIgnoreCase))
             {
+                shownTutorialQuestId = null;
                 ResetHintSessions();
                 lastTrackedQuestId = trackedQuestId;
+            }
+
+            if (QuestRuntime.IsTutorialDismissed(new QuestId(trackedQuestId)))
+            {
+                HideAllHints();
+                HasVisibleHint = false;
+                return;
             }
 
             // 완료 후 보상 대기 상태는 패널 내부가 아니라 HUD의 "완료" 버튼으로 안내한다.
             // 이 프레임에 실제 대상이 된 힌트만 남겨 페이드 애니메이션을 중간에 끊지 않는다.
             activeHintTargets.Clear();
             activeSpotlightTarget = null;
+            activeStepKey = null;
+            statusMessage = null;
             var pageQuestId = completedAwaitingClaim ? null : trackedQuestId;
             var anyPageTargetActive = false;
+            var showingResults = resultOverlay != null && resultOverlay.gameObject.activeInHierarchy;
+            var revealing = showingResults && resultOverlay.GetComponent<GachaRevealSequence>() is { IsPlaying: true };
+            anyPageTargetActive |= ApplyHint(resultCloseButton,
+                Matches(trackedQuestId, ShopQuestIds) && showingResults && !revealing,
+                "shop_result", true);
             anyPageTargetActive |= ApplyHint(
                 shopClickPoint,
-                Matches(pageQuestId, ShopQuestIds),
+                Matches(pageQuestId, ShopQuestIds) && !showingResults,
                 "shop_gacha",
                 shopHintTargetsButton);
 
@@ -196,7 +226,8 @@ namespace ProjectMT.Features.Quest
                 "commander_stats_tab",
                 true);
             anyPageTargetActive |= ApplyHint(
-                potentialClickPoint, potentialQuest && isPotentialTabSelected, "commander_potential_action");
+                potentialClickPoint, potentialQuest && isPotentialTabSelected,
+                "commander_potential_action");
             anyPageTargetActive |= ApplyHint(commanderLevelUpClickPoint,
                 Matches(pageQuestId, CommanderLevelUpQuestIds) && !isPotentialTabSelected,
                 "commander_level_up");
@@ -238,13 +269,15 @@ namespace ProjectMT.Features.Quest
                 formationQuest && formationView != null && formationView.IsOpen && !formationCardSelected,
                 "formation_candidate", true);
             anyPageTargetActive |= ApplyHint(formationView?.QuestFormationActionButton,
-                formationQuest && formationView != null && formationView.IsOpen && formationCardSelected,
+                formationQuest && formationView != null && formationView.IsOpen &&
+                (formationCardSelected || formationView.QuestFormationCandidateButton == null),
                 "formation_action", true);
 
             var equipmentPageOpen = equipmentPageRoot != null && equipmentPageRoot.gameObject.activeInHierarchy;
-            anyPageTargetActive |= ApplyHint(equipmentView?.QuestAutoEquipButton ?? equipmentEquipButton,
+            var equipDetailButton = equipmentView?.QuestEquipDetailButton;
+            anyPageTargetActive |= ApplyHint(equipDetailButton ?? equipmentView?.QuestEquipCandidateButton,
                 Matches(pageQuestId, "quest_007_equipment_equip") && equipmentPageOpen,
-                "equipment_equip", true);
+                equipDetailButton != null ? "equipment_equip" : "equipment_candidate", true);
 
             var slotUpgradeQuest = Matches(pageQuestId, "quest_008_equipment_enhance") ||
                                    Matches(pageQuestId, "quest_020_equipment_slot_upgrade_reach");
@@ -269,8 +302,8 @@ namespace ProjectMT.Features.Quest
                 dismantleQuest && equipmentPageOpen && dismantleMode && dismantleStep >= 2,
                 "dismantle_action", true);
 
-            // 성장 던전은 퀘스트 이동으로 패널만 열고, 패널 안 클릭 힌트/테두리는 표시하지 않는다.
-            const bool dungeonActive = false;
+            // 보이는 입장 버튼 하나만 안내하며 다른 콘텐츠 선택을 막지 않는다.
+            var dungeonActive = Matches(pageQuestId, "quest_011_growth_dungeon_enter");
             for (var i = 0; i < dungeonEnterClickPoints.Count; i++)
             {
                 var point = dungeonEnterClickPoints[i];
@@ -283,11 +316,22 @@ namespace ProjectMT.Features.Quest
             anyPageTargetActive |= ApplyHint(castleRaidButton,
                 Matches(pageQuestId, "quest_012_castle_raid_enter"), "castle_raid", true);
 
+            if (completedAwaitingClaim && !showingResults && managementUi != null && managementUi.IsAnyPageOpen)
+            {
+                foreach (var button in managementUi.GetComponentsInChildren<Button>())
+                {
+                    if (button.name.IndexOf("Close", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                    if (ApplyHint(button, true, "page_close", true)) { anyPageTargetActive = true; break; }
+                }
+            }
+
             HideHintsOutsideActiveTargets();
             HasVisibleHint = anyPageTargetActive;
             if (activeSpotlightTarget != null)
             {
-                QuestTutorialSpotlight.Show(this, activeSpotlightTarget);
+                if (pageOpen) shownTutorialQuestId = trackedQuestId;
+                QuestTutorialSpotlight.Show(this, activeSpotlightTarget,
+                    statusMessage ?? QuestTutorialInteraction.Message(activeStepKey), statusMessage == null);
             }
             else
             {
@@ -339,7 +383,9 @@ namespace ProjectMT.Features.Quest
                 return false;
             }
 
-            var isActive = shouldShow && clickPoint.gameObject.activeInHierarchy;
+            var resolvedTarget = ResolveHighlightTarget(clickPoint);
+            var isActive = shouldShow && activeSpotlightTarget == null &&
+                IsVisibleWithinScrollView(resolvedTarget) && QuestTutorialInteraction.IsVisible(resolvedTarget);
             if (!isActive)
             {
                 HideHint(clickPoint);
@@ -349,44 +395,28 @@ namespace ProjectMT.Features.Quest
             }
 
             activeHintTargets.Add(clickPoint);
-            var hintId = BuildTutorialHintId(lastTrackedQuestId, stepKey);
-            if (!activeHintIds.TryGetValue(clickPoint, out var activeHintId) ||
-                !string.Equals(activeHintId, hintId, StringComparison.OrdinalIgnoreCase))
-            {
-                hintShownAt.Remove(clickPoint);
-                activeHintIds.Remove(clickPoint);
-                if (!QuestRuntime.TryStartTutorialHintOnce(hintId))
-                {
-                    HideHint(clickPoint);
-                    return true;
-                }
-
-                activeHintIds[clickPoint] = hintId;
-            }
-
-            if (!hintShownAt.TryGetValue(clickPoint, out var shownAt))
-            {
-                shownAt = Time.unscaledTime;
-                hintShownAt[clickPoint] = shownAt;
-            }
-
-            var elapsed = Time.unscaledTime - shownAt;
-            if (elapsed >= HintDisplayDuration)
+            activeSpotlightTarget = resolvedTarget;
+            activeStepKey = stepKey;
+            var potentialAtGoal = Matches(lastTrackedQuestId, "quest_022_commander_potential_unlock_count") && CommanderPotentialRuntime.IsMaxStage;
+            var potentialBlocked = stepKey == "commander_potential_action" &&
+                (potentialAtGoal || CommanderPotentialRuntime.StoneBalance <= 0 || !CommanderPotentialRuntime.HasRerollableSlot());
+            if (!QuestTutorialInteraction.CanInteract(resolvedTarget) || potentialBlocked)
             {
                 HideHint(clickPoint);
-                hintShownAt.Remove(clickPoint);
-                activeHintIds.Remove(clickPoint);
+                statusMessage = stepKey == "shop_gacha" ? "소환권과 재화가 준비되면 계속할 수 있어요" :
+                    potentialAtGoal ? "이미 최대 각성 단계예요" :
+                    stepKey == "commander_potential_action" ? "강화석과 잠재능력 보호 상태를 확인해주세요" :
+                    stepKey == "formation_action" ? "현재 편성 인원과 선택 상태를 확인해주세요" :
+                    "필요 재료와 현재 성장 단계를 확인해주세요";
                 return true;
             }
 
-            activeSpotlightTarget = ResolveHighlightTarget(clickPoint);
-
             var instance = GetOrCreateHint(clickPoint, placeOnBottomRight);
             PositionHint(instance != null ? instance.transform as RectTransform : null,
-                clickPoint as RectTransform,
-                placeOnBottomRight);
+                resolvedTarget,
+                true);
             // 상점 몬스터 뽑기 퀘스트는 손가락만 표시하고 노란 테두리는 사용하지 않는다.
-            var showHighlight = clickPoint != shopClickPoint;
+            var showHighlight = false; // 공통 강조선 하나만 사용
             var highlight = showHighlight ? GetOrCreateHighlight(clickPoint) : null;
             if (!showHighlight)
             {
@@ -421,7 +451,7 @@ namespace ProjectMT.Features.Quest
             }
 
             // 버튼 내부에 넣으면 행·마스크·버튼 배경의 뒤로 밀릴 수 있으므로, 같은 페이지 Canvas의
-            // 최상단 자식으로 복제한다. ClickImage 자체에는 Canvas를 붙이지 않는다.
+            // 최상단 자식으로 복제한다. 원본 ClickImage의 Canvas 정렬 설정을 상속한다.
             var instance = Instantiate(template, visualParent);
             instance.name = "ClickImage";
             if (instance.transform is RectTransform rect)
@@ -441,14 +471,7 @@ namespace ProjectMT.Features.Quest
 
             // 페이지 Canvas의 마지막 자식으로 두고, 힌트는 어떤 클릭도 가로채지 않게 만든다.
             instance.transform.SetAsLastSibling();
-            QuestTutorialSpotlight.EnsureHintAboveOverlay(instance);
-            QuestTutorialFingerPulse.Ensure(instance)?.Rebase();
-            var images = instance.GetComponentsInChildren<Image>(true);
-            for (var i = 0; i < images.Length; i++)
-            {
-                images[i].raycastTarget = false;
-            }
-
+            instance.GetComponent<QuestTutorialFingerPulse>()?.Rebase();
             hintInstances[clickPoint] = instance;
             return instance;
         }
@@ -495,7 +518,7 @@ namespace ProjectMT.Features.Quest
                 return new Vector2(-18f, -34f);
             }
 
-            return new Vector2(-18f, 18f);
+            return new Vector2(-18f, -34f);
         }
 
         private GameObject GetOrCreateHighlight(Transform clickPoint)
@@ -520,43 +543,19 @@ namespace ProjectMT.Features.Quest
                 return null;
             }
 
-            var frame = new GameObject("QuestButtonHighlight", typeof(RectTransform));
-            frame.transform.SetParent(visualParent, false);
-            var rect = frame.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = rect.anchorMin;
-            rect.pivot = new Vector2(0.5f, 0.5f);
+            var prefab = Resources.Load<GameObject>("UI/PF_QuestButtonHighlight");
+            if (prefab == null)
+            {
+                Debug.LogError("Quest button highlight prefab is missing.", this);
+                return null;
+            }
 
-            CreateHighlightLine("Top", rect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -HighlightLineThickness * 0.5f), new Vector2(0f, HighlightLineThickness));
-            CreateHighlightLine("Bottom", rect, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, HighlightLineThickness * 0.5f), new Vector2(0f, HighlightLineThickness));
-            CreateHighlightLine("Left", rect, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(HighlightLineThickness * 0.5f, 0f), new Vector2(HighlightLineThickness, 0f));
-            CreateHighlightLine("Right", rect, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(-HighlightLineThickness * 0.5f, 0f), new Vector2(HighlightLineThickness, 0f));
+            var frame = Instantiate(prefab, visualParent);
+            frame.name = "QuestButtonHighlight";
 
             frame.transform.SetAsLastSibling();
             highlightInstances[clickPoint] = frame;
             return frame;
-        }
-
-        private static void CreateHighlightLine(
-            string name,
-            RectTransform parent,
-            Vector2 anchorMin,
-            Vector2 anchorMax,
-            Vector2 anchoredPosition,
-            Vector2 sizeDelta)
-        {
-            var line = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            line.transform.SetParent(parent, false);
-            var rect = line.GetComponent<RectTransform>();
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMax;
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = sizeDelta;
-
-            var image = line.GetComponent<Image>();
-            image.color = HighlightColor;
-            image.raycastTarget = false;
         }
 
         private static RectTransform ResolveHighlightTarget(Transform clickPoint)
@@ -847,6 +846,8 @@ namespace ProjectMT.Features.Quest
             equipmentDismantleButton = FindButton(equipmentPageRoot, "DismantleButton");
 
             var shopRoot = managementUi.ShopPageRoot?.transform;
+            resultOverlay = FindDeep(shopRoot, "GachaResultOverlay");
+            resultCloseButton = FindButton(shopRoot, "ResultCloseButton");
             var legacyShopClickPoint = FindDeep(shopRoot, "ClickPoint");
             monsterGachaButton = FindButton(shopRoot, "MonsterGachaButton");
             monsterGachaActionButtons.Clear();
@@ -888,10 +889,9 @@ namespace ProjectMT.Features.Quest
                 : FindDeep(growthRoot, "StatsTab");
 
             var monsterRoot = managementUi.MonsterManagementPageRoot?.transform;
-            // 구형 씬처럼 ClickPoint가 따로 직렬화되어 있지 않아도 현재 버튼 아래에 같은 좌표를
-            // 런타임 생성한다. 최신 몬스터 관리 프리팹을 다시 저장하지 않고 튜토리얼 위치를 보존한다.
-            monsterLevelUpClickPoint = FindOrCreateClickPointUnder(monsterRoot, "LevelUpActionButton");
-            monsterBreakthroughClickPoint = FindOrCreateClickPointUnder(monsterRoot, "BreakthroughActionButton");
+            // 몬스터 관리 원본에 저장된 버튼별 안내 기준점을 사용한다.
+            monsterLevelUpClickPoint = FindClickPointUnder(monsterRoot, "LevelUpActionButton");
+            monsterBreakthroughClickPoint = FindClickPointUnder(monsterRoot, "BreakthroughActionButton");
 
             var dungeonRoot = managementUi.GrowthDungeonPageRoot?.transform;
             var enterButtons = FindAllDeep(dungeonRoot, "EnterButton_GUIPro");
@@ -946,15 +946,7 @@ namespace ProjectMT.Features.Quest
 
         private void HandleMonsterGachaClicked()
         {
-            if (!Matches(lastTrackedQuestId, ShopQuestIds) || shopClickPoint == null)
-            {
-                return;
-            }
-
-            // 뽑기 메뉴로 이동한 순간 해당 퀘스트의 상점 힌트를 즉시 종료한다.
-            hintShownAt.Remove(shopClickPoint);
-            activeHintIds.Remove(shopClickPoint);
-            HideHint(shopClickPoint);
+            ForceRefreshNow(); // 성공·결과창 상태로 전환 여부를 판단
         }
 
         private void AddMonsterGachaActionButtons(Transform root, string buttonName)
@@ -999,31 +991,6 @@ namespace ProjectMT.Features.Quest
         {
             var parent = FindDeep(root, parentName);
             return parent != null ? FindDeep(parent, "ClickPoint") : null;
-        }
-
-        private static Transform FindOrCreateClickPointUnder(Transform root, string parentName)
-        {
-            var parent = FindDeep(root, parentName);
-            if (parent == null)
-            {
-                return null;
-            }
-
-            var existing = FindDeep(parent, "ClickPoint");
-            if (existing != null)
-            {
-                return existing;
-            }
-
-            var clickPointObject = new GameObject("ClickPoint", typeof(RectTransform));
-            var clickPoint = (RectTransform)clickPointObject.transform;
-            clickPoint.SetParent(parent, false);
-            clickPoint.anchorMin = new Vector2(1f, 0f);
-            clickPoint.anchorMax = new Vector2(1f, 0f);
-            clickPoint.anchoredPosition = new Vector2(40f, -60f);
-            clickPoint.sizeDelta = new Vector2(80f, 100f);
-            clickPoint.pivot = new Vector2(1f, 0f);
-            return clickPoint;
         }
 
         private static Transform FindDeep(Transform root, string objectName)

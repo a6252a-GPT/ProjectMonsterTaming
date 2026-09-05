@@ -11,8 +11,6 @@ namespace ProjectMT.Features.Formation
     public sealed class MonsterCardView : MonoBehaviour // 보유 목록·편성 슬롯 공용 카드
     {
         private const float NotOwnedCardAlpha = 100f / 255f; // 도감 미보유 카드 흐림 표시(배경·테두리·몬스터 공통)
-        private const float DefaultAscensionStarY = -116f;
-        private const float CollectionAscensionStarY = -108f;
 
         [SerializeField] private Button button;
         [SerializeField] private Image portraitImage;
@@ -102,7 +100,6 @@ namespace ProjectMT.Features.Formation
             var rarity = MonsterRarity.Common;
             rarityCatalog?.TryGetRarity(definition.MonsterId, out rarity);
             ApplyRarity(rarity);
-            ApplyCollectionStarLayout(false);
             ApplyAscension(owned.AscensionLevel);
             ApplyAssignment(assignment);
             breakthroughReadyBadge?.SetActive(
@@ -145,7 +142,6 @@ namespace ProjectMT.Features.Formation
             SetText(levelLabel, string.Empty);
             levelBadge?.SetActive(false);
             ApplyRarity(rarity);
-            ApplyCollectionStarLayout(true);
             ApplyAscension(isOwned ? ascensionLevel : 0);
             ApplyCollectionReward(
                 isOwned,
@@ -208,7 +204,6 @@ namespace ProjectMT.Features.Formation
             SetText(levelLabel, string.Empty);
             levelBadge?.SetActive(false);
             ApplyRarity(MonsterRarity.Common);
-            ApplyCollectionStarLayout(false);
             ApplyAscension(0);
             assignmentBadge?.SetActive(false);
             breakthroughReadyBadge?.SetActive(false);
@@ -236,37 +231,31 @@ namespace ProjectMT.Features.Formation
 
             if (rarityAura != null)
             {
-                GetRarityAuraStyle(rarity, out var auraScale, out var auraAlpha);
+                GetRarityAuraStyle(rarity, out var auraAlpha);
                 Color auraColor = highlight;
                 auraColor.a = auraAlpha;
                 rarityAura.color = auraColor;
-                rarityAura.rectTransform.localScale = new Vector3(auraScale, auraScale, 1f);
                 rarityAura.gameObject.SetActive(hasPortrait);
             }
         }
 
         private static void GetRarityAuraStyle(
             MonsterRarity rarity,
-            out float scale,
             out float alpha)
         {
             switch (rarity)
             {
                 case MonsterRarity.Rare:
-                    scale = 1f;
                     alpha = 0.66f;
                     return;
                 case MonsterRarity.Epic:
-                    scale = 1f;
                     alpha = 0.74f;
                     return;
                 case MonsterRarity.Legendary:
                 case MonsterRarity.Mythic:
-                    scale = 1f;
                     alpha = 0.82f;
                     return;
                 default:
-                    scale = 1f;
                     alpha = 0.58f;
                     return;
             }
@@ -312,24 +301,6 @@ namespace ProjectMT.Features.Formation
                     case "InnerBorder": image.color = isReserve ? new Color32(0xC6, 0x79, 0xEF, 0xFF) : new Color32(0x21, 0x91, 0xDE, 0xFF); break;
                     case "Border": image.color = isReserve ? new Color32(0x00, 0x00, 0x00, 0xFF) : new Color32(0x00, 0x04, 0x08, 0xFF); break;
                 }
-            }
-        }
-
-        // 도감에서는 별 아래에 고정 보상 띠가 들어가므로 별만 살짝 올려 서로 겹치지 않게 한다.
-        private void ApplyCollectionStarLayout(bool isCollection)
-        {
-            var targetY = isCollection ? CollectionAscensionStarY : DefaultAscensionStarY;
-            foreach (var star in ascensionStars)
-            {
-                if (star == null)
-                {
-                    continue;
-                }
-
-                var rect = star.rectTransform;
-                var position = rect.anchoredPosition;
-                position.y = targetY;
-                rect.anchoredPosition = position;
             }
         }
 

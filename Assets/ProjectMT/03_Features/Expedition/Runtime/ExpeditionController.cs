@@ -105,8 +105,7 @@ namespace ProjectMT.Features.Expedition
         private int reinforcementWarningWave;
         private float reinforcementWarningRemaining;
         private float reinforcementNoticeRemaining;
-        private bool ownsRuntimeReinforcementWarning;
-        private ExpeditionResultFlashPresenter resultFlash;
+        [SerializeField] private ExpeditionResultFlashPresenter resultFlash;
 
         public bool IsRunning => running;
         public bool IsSettling => settling;
@@ -144,8 +143,7 @@ namespace ProjectMT.Features.Expedition
             this.itemCatalog = itemCatalog;
             bossIntro ??= FindFirstObjectByType<ExpeditionBossIntroPresenter>(FindObjectsInactive.Include);
             mainBattleAIProfiles ??= MainBattleAIProfileCatalog.LoadDefault();
-            EnsureReinforcementWarningText();
-            resultFlash = ExpeditionResultFlashPresenter.ResolveOrCreate(resultText);
+            resultFlash?.HideImmediate();
             equipmentBalanceConfig = equipmentBalance ?? EquipmentBalanceConfig.RuntimeDefault;
             equipmentRandom = new System.Random();
             playerFormationAnchor = formationAnchor ?? playerFormationAnchor;
@@ -258,9 +256,8 @@ namespace ProjectMT.Features.Expedition
             activeRunParty = null;
             worldItemDrops = null;
             equipmentWorldDrops = null;
-            resultFlash = null;
             formationFrameConfigured = false;
-            ReleaseRuntimeReinforcementWarningText();
+            ShowReinforcementWarning(false);
             InvalidateHudCache();
         }
 

@@ -86,8 +86,6 @@ namespace ProjectMT.Features.Equipment
         private readonly Dictionary<string, Color> frameVariantSwatchColors = new Dictionary<string, Color>();
         private Transform frameVariantTemplateStorage;
 
-        [SerializeField] private TMP_FontAsset equippedLabelFont;
-        [SerializeField] private Sprite upgradeArrowSprite;
 
         private TMP_Text capacityText;
         private TMP_Text sortLabelText;

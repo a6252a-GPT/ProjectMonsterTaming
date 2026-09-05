@@ -170,7 +170,7 @@ namespace ProjectMT.Shared.Audio
     }
 
     [CreateAssetMenu(menuName = "ProjectMT/Audio/SFX Space Catalog", fileName = "SfxSpaceCatalog")]
-    public sealed class SfxSpaceCatalog : ScriptableObject // 110개 사건의 결정 상태를 보존하는 Editor 기준 자산
+    public sealed class SfxSpaceCatalog : ScriptableObject // 사용자가 남긴 공간과 결정 상태를 보존하는 Editor 기준 자산
     {
         [SerializeField] private List<SfxSpaceEntry> entries = new List<SfxSpaceEntry>();
 
@@ -179,7 +179,7 @@ namespace ProjectMT.Shared.Audio
         public bool TryValidate(out string error)
         {
             error = string.Empty;
-            if (entries == null || entries.Count == 0)
+            if (entries == null)
             {
                 error = "SFX 공간이 없습니다.";
                 return false;
@@ -213,7 +213,7 @@ namespace ProjectMT.Shared.Audio
         }
 
 #if UNITY_EDITOR
-        public bool EditorSynchronize(IEnumerable<SfxSpaceDefinition> definitions)
+        public bool EditorSynchronize(IEnumerable<SfxSpaceDefinition> definitions, bool seedMissing = false)
         {
             entries ??= new List<SfxSpaceEntry>();
             var definitionList = definitions?
@@ -237,7 +237,7 @@ namespace ProjectMT.Shared.Audio
                     ordered.Add(existing);
                     existingById.Remove(definition.Id);
                 }
-                else
+                else if (seedMissing)
                 {
                     ordered.Add(new SfxSpaceEntry(definition));
                     changed = true;
@@ -257,6 +257,14 @@ namespace ProjectMT.Shared.Audio
 
             entries = ordered;
             return changed;
+        }
+
+        public bool EditorDeleteEntry(string spaceId)
+        {
+            var entry = EditorFindEntry(spaceId);
+            if (entry == null) return false;
+            entries.Remove(entry);
+            return true;
         }
 
         public SfxSpaceEntry EditorFindEntry(string spaceId)

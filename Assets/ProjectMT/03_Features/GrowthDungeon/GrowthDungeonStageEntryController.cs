@@ -43,7 +43,6 @@ namespace ProjectMT.Features.GrowthDungeon
     [DisallowMultipleComponent]
     public sealed class GrowthDungeonStageEntryController : MonoBehaviour // 성장 던전 입장 팝업 조율
     {
-        private const float PopupHorizontalGap = 40f;
 
         private sealed class DungeonBinding
         {
@@ -256,13 +255,9 @@ namespace ProjectMT.Features.GrowthDungeon
             if (!popupCache.TryGetValue(binding.ContentId.Value, out currentPopup) || currentPopup == null)
             {
                 var popupParent = transform.parent != null ? transform.parent : transform;
-                var popupObject = Instantiate(binding.PopupPrefab, popupParent); // 캔버스 기준 좌표를 한 번만 적용
+                var popupObject = Instantiate(binding.PopupPrefab, popupParent); // 정식 프리팹의 좌우 배치 사용
                 popupObject.name = binding.PopupPrefab.name;
                 currentPopup = popupObject.GetComponent<GrowthDungeonStageEntryPopupView>();
-                if (currentPopup == null)
-                {
-                    currentPopup = popupObject.AddComponent<GrowthDungeonStageEntryPopupView>();
-                }
 
                 currentPopup.Initialize(
                     SelectPreviousStage,
@@ -273,7 +268,6 @@ namespace ProjectMT.Features.GrowthDungeon
                 popupCache[binding.ContentId.Value] = currentPopup;
             }
 
-            AlignPopupLeftOfPage(currentPopup.transform as RectTransform);
             UIPanelPopAnimator.RequestOpen(currentPopup.gameObject, UIPanelPopStyle.Standard);
             currentPopup.transform.SetAsLastSibling();
             RefreshPopup();
@@ -475,19 +469,6 @@ namespace ProjectMT.Features.GrowthDungeon
             currentBinding = null;
         }
 
-        private void AlignPopupLeftOfPage(RectTransform popupRect)
-        {
-            var pageRect = transform as RectTransform;
-            if (popupRect == null || pageRect == null || popupRect.parent != pageRect.parent)
-            {
-                return;
-            }
-
-            var popupX = pageRect.anchoredPosition.x -
-                (pageRect.rect.width + popupRect.rect.width) * 0.5f - PopupHorizontalGap;
-            popupRect.anchoredPosition = new Vector2(popupX, pageRect.anchoredPosition.y); // 인벤토리와 같은 좌우 2열
-        }
-
         private static void SetButtonText(Button button, string value)
         {
             var text = button == null ? null : button.GetComponentInChildren<TMP_Text>(true);
@@ -528,155 +509,4 @@ namespace ProjectMT.Features.GrowthDungeon
 #endif
     }
 
-    [DisallowMultipleComponent]
-    public sealed class GrowthDungeonStageEntryPopupView : MonoBehaviour // 기존 팝업 시각 참조 어댑터
-    {
-        private Button closeButton;
-        private Button previousButton;
-        private Button nextButton;
-        private Button enterButton;
-        private Button sweepButton;
-        private TMP_Text stageLabel;
-        private TMP_Text stageValue;
-        private TMP_Text rewardTitle;
-        private TMP_Text rewardAmount;
-        private TMP_Text keyCount;
-        private TMP_Text highestStageText;
-        private TMP_Text enterCostText;
-        private TMP_Text sweepCostText;
-        private bool initialized;
-
-        public void Initialize(
-            Action previous,
-            Action next,
-            Action enter,
-            Action sweep,
-            Action close)
-        {
-            ResolveReferences();
-            if (initialized)
-            {
-                return;
-            }
-
-            previousButton?.onClick.AddListener(() => previous?.Invoke());
-            nextButton?.onClick.AddListener(() => next?.Invoke());
-            enterButton?.onClick.AddListener(() => enter?.Invoke());
-            sweepButton?.onClick.AddListener(() => sweep?.Invoke());
-            closeButton?.onClick.AddListener(() => close?.Invoke());
-            initialized = true;
-        }
-
-        public void Render(
-            string displayName,
-            GrowthDungeonEntryState state,
-            int selectedStage,
-            bool runtimeAvailable,
-            bool busy)
-        {
-            ResolveReferences();
-            var mode = runtimeAvailable
-                ? GrowthDungeonEntryRules.ResolveMode(state, selectedStage)
-                : ContentRunMode.Challenge;
-            var isChallenge = mode == ContentRunMode.Challenge;
-            SetText(stageLabel, runtimeAvailable
-                ? (isChallenge ? "도전 단계" : "파밍 단계")
-                : "준비 중");
-            SetText(stageValue, Mathf.Max(1, selectedStage).ToString("00"));
-            SetText(highestStageText, $"최고 클리어  {Mathf.Max(0, state.HighestClearedStage)}단계");
-            SetText(rewardTitle, runtimeAvailable
-                ? (isChallenge ? "도전 클리어 보상  <color=#E0BC7A>200%</color>" : "파밍 보상  <color=#E0BC7A>100%</color>")
-                : displayName);
-            SetText(rewardAmount, runtimeAvailable ? "클리어 결과에 따라 획득" : "콘텐츠 준비 중");
-            SetText(
-                keyCount,
-                $"{Math.Min(state.KeyQuantity, GrowthDungeonDailyKeyRules.MaximumQuantity)} / " +
-                GrowthDungeonDailyKeyRules.MaximumQuantity);
-
-            if (previousButton != null)
-            {
-                previousButton.interactable = runtimeAvailable && !busy && selectedStage > 1;
-            }
-
-            if (nextButton != null)
-            {
-                nextButton.interactable = runtimeAvailable && !busy &&
-                    selectedStage < state.MaximumSelectableStage;
-            }
-
-            if (enterButton != null)
-            {
-                enterButton.interactable = !busy &&
-                    GrowthDungeonEntryRules.CanEnter(state, selectedStage, runtimeAvailable);
-                SetButtonText(
-                    enterButton,
-                    runtimeAvailable
-                        ? (isChallenge ? "도전 입장" : "파밍 입장")
-                        : "준비 중");
-            }
-            SetText(enterCostText, runtimeAvailable
-                ? (isChallenge ? "열쇠 미소모" : "열쇠 1개 사용")
-                : string.Empty);
-
-            if (sweepButton != null)
-            {
-                sweepButton.interactable = runtimeAvailable && !busy && state.CanSweep;
-                SetButtonText(
-                    sweepButton,
-                    runtimeAvailable && state.HighestClearedStage > 0
-                        ? $"{state.HighestClearedStage}단계 소탕"
-                        : "소탕 불가");
-            }
-            SetText(sweepCostText, runtimeAvailable && state.HighestClearedStage > 0
-                ? "열쇠 1개 사용"
-                : string.Empty);
-        }
-
-        private void ResolveReferences()
-        {
-            closeButton ??= transform.Find("CloseTouchArea_80x80")?.GetComponent<Button>();
-            previousButton ??= FindComponent<Button>("ApprovedVisualRoot/StageSelection/PreviousStageButton",
-                "ContentRoot/MainContent/StageSelectorRoot/PreviousStageButton");
-            nextButton ??= FindComponent<Button>("ApprovedVisualRoot/StageSelection/NextStageButton",
-                "ContentRoot/MainContent/StageSelectorRoot/NextStageButton");
-            enterButton ??= FindComponent<Button>("ApprovedVisualRoot/EnterButton", "FooterActionRoot/EnterButton");
-            sweepButton ??= FindComponent<Button>("ApprovedVisualRoot/SweepButton", "FooterActionRoot/SweepButton");
-            stageLabel ??= FindComponent<TMP_Text>("ApprovedVisualRoot/StageSelection/StageLabel",
-                "ContentRoot/MainContent/StageSelectorRoot/StageLabel");
-            stageValue ??= FindComponent<TMP_Text>("ApprovedVisualRoot/StageSelection/StageValue",
-                "ContentRoot/MainContent/StageSelectorRoot/StageValue");
-            rewardTitle ??= FindComponent<TMP_Text>("ApprovedVisualRoot/RewardAndKey/RewardTitle",
-                "ContentRoot/MainContent/ClearRewardRoot/RewardTitle");
-            rewardAmount ??= FindComponent<TMP_Text>("ApprovedVisualRoot/RewardAndKey/RewardAmount",
-                "ContentRoot/MainContent/ClearRewardRoot/RewardAmount");
-            keyCount ??= FindComponent<TMP_Text>("ApprovedVisualRoot/RewardAndKey/KeyCount",
-                "ContentRoot/MainContent/DungeonKeyRoot/KeyCount");
-            highestStageText ??= transform.Find("ApprovedVisualRoot/StageSelection/HighestStageText")?.GetComponent<TMP_Text>();
-            enterCostText ??= transform.Find("ApprovedVisualRoot/EnterCostText")?.GetComponent<TMP_Text>();
-            sweepCostText ??= transform.Find("ApprovedVisualRoot/SweepCostText")?.GetComponent<TMP_Text>();
-        }
-
-        private T FindComponent<T>(string preferredPath, string fallbackPath) where T : Component
-        {
-            return transform.Find(preferredPath)?.GetComponent<T>() ??
-                transform.Find(fallbackPath)?.GetComponent<T>();
-        }
-
-        private static void SetButtonText(Button button, string value)
-        {
-            var text = button == null ? null : button.GetComponentInChildren<TMP_Text>(true);
-            if (text != null)
-            {
-                text.text = value;
-            }
-        }
-
-        private static void SetText(TMP_Text target, string value)
-        {
-            if (target != null)
-            {
-                target.text = value ?? string.Empty;
-            }
-        }
-    }
 }

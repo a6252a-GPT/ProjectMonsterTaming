@@ -511,7 +511,8 @@ namespace ProjectMT.Features.MainBattle
             dragIndicator = expedition.GetComponent<MainBattleDragIndicatorPresenter>();
             if (dragIndicator == null)
             {
-                dragIndicator = expedition.gameObject.AddComponent<MainBattleDragIndicatorPresenter>();
+                Debug.LogError("MainBattleRuntimeRoot requires an authored drag indicator presenter.", this);
+                return;
             }
 
             dragIndicator.Configure(worldCamera);
@@ -565,7 +566,7 @@ namespace ProjectMT.Features.MainBattle
             placementController = expedition.GetComponent<MainBattleFormationPlacementController>();
             if (placementController == null)
             {
-                placementController = expedition.gameObject.AddComponent<MainBattleFormationPlacementController>();
+                throw new InvalidOperationException("MainBattle needs its authored formation placement controller.");
             }
 
             placementController.Completed += HandlePlacementCompleted;

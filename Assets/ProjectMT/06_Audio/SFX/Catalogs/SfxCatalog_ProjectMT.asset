@@ -342,3 +342,17 @@ MonoBehaviour:
     categoryId: castle_raid
   - cue: {fileID: 11400000, guid: f56ceee7e45e6104baff990c3b5f3abb, type: 2}
     categoryId: castle_raid
+  - cue: {fileID: 11400000, guid: 903a8ef3c49d52e4ebfdd1af6ea9bc2c, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 11400000, guid: 7b2fc43597458614bab820bc0bddaa7a, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 11400000, guid: 40af1af71efeaeb41934a114603cd1c4, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 11400000, guid: b26875523cb824c43aa6535930e05795, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 11400000, guid: c3959fdc6f102e54c8bf323337e11a50, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 11400000, guid: 49451d97096c54c4fb95c14a71797274, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 1304871107967155395, guid: 2142eff58aa8a5f4b85479ee52c1ed5e, type: 2}
+    categoryId: monster_basic

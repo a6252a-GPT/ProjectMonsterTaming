@@ -77,13 +77,6 @@ namespace ProjectMT.Features.MainBattle
 
         private void Awake()
         {
-            // 중첩 프리팹의 기존 참조가 비활성 장식 버튼을 가리켜도 실제 ButtonArea 전체를 클릭 대상으로 복구한다.
-            healthButton = ResolveRowButton("GrowthRow_Health", healthButton);
-            attackButton = ResolveRowButton("GrowthRow_Attack", attackButton);
-            defenseButton = ResolveRowButton("GrowthRow_Defense", defenseButton);
-            attackSpeedButton = ResolveRowButton("GrowthRow_AttackSpeed", attackSpeedButton);
-            moveSpeedButton = ResolveRowButton("GrowthRow_MoveSpeed", moveSpeedButton);
-            attackRangeButton = ResolveRowButton("GrowthRow_AttackRange", attackRangeButton);
 
             CacheRow(CommanderLegionStat.MaxHealth, "GrowthRow_Health", healthButton, healthLevelText);
             CacheRow(CommanderLegionStat.AttackPower, "GrowthRow_Attack", attackButton, attackLevelText);
@@ -91,13 +84,6 @@ namespace ProjectMT.Features.MainBattle
             CacheRow(CommanderLegionStat.AttackSpeed, "GrowthRow_AttackSpeed", attackSpeedButton, attackSpeedLevelText);
             CacheRow(CommanderLegionStat.MoveSpeed, "GrowthRow_MoveSpeed", moveSpeedButton, moveSpeedLevelText);
             CacheRow(CommanderLegionStat.AttackRange, "GrowthRow_AttackRange", attackRangeButton, attackRangeLevelText);
-
-            EnsureFullRectHitArea(healthButton);
-            EnsureFullRectHitArea(attackButton);
-            EnsureFullRectHitArea(defenseButton);
-            EnsureFullRectHitArea(attackSpeedButton);
-            EnsureFullRectHitArea(moveSpeedButton);
-            EnsureFullRectHitArea(attackRangeButton);
 
             // 버튼(Button_02_Red)과 배경(Button_02_Gray)이 형제로 분리돼 있어, 부모(ButtonArea)를
             // 시각적 대상으로 지정해 펀치 애니메이션 때 둘이 함께 움직이게 한다.
@@ -332,61 +318,5 @@ namespace ProjectMT.Features.MainBattle
             UIButtonClickSound.EnsureOn(button.gameObject);
         }
 
-        private Button ResolveRowButton(string rowName, Button fallback)
-        {
-            var row = FindDeep(transform, rowName);
-            var buttonArea = row?.Find("ButtonArea");
-            if (buttonArea == null)
-            {
-                return fallback;
-            }
-
-            buttonArea.gameObject.SetActive(true);
-            var hitArea = buttonArea.GetComponent<Image>();
-            if (hitArea == null)
-            {
-                hitArea = buttonArea.gameObject.AddComponent<Image>();
-                hitArea.color = Color.clear;
-            }
-
-            hitArea.raycastTarget = true;
-            var button = buttonArea.GetComponent<Button>();
-            if (button == null)
-            {
-                button = buttonArea.gameObject.AddComponent<Button>();
-                button.transition = Selectable.Transition.None;
-            }
-
-            button.targetGraphic = hitArea;
-            if (fallback != null && fallback != button)
-            {
-                fallback.gameObject.SetActive(false);
-            }
-
-            return button;
-        }
-
-        private static void EnsureFullRectHitArea(Button button)
-        {
-            if (button == null)
-            {
-                return;
-            }
-
-            var hitArea = button.GetComponent<Graphic>();
-            if (hitArea == null)
-            {
-                var image = button.gameObject.AddComponent<Image>();
-                image.color = Color.clear;
-                hitArea = image;
-            }
-
-            hitArea.raycastTarget = true;
-            if (button.targetGraphic == null)
-            {
-                button.targetGraphic = hitArea;
-            }
-        }
     }
 }
-

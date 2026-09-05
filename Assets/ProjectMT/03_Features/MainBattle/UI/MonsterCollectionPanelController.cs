@@ -329,6 +329,7 @@ namespace ProjectMT.Features.MainBattle
                     isOwned,
                     isOwned ? owned.AscensionLevel : 0,
                     isOwned && owned.CollectionFiveStarRewardClaimed,
+                    definition != null && ownedRoster.IsCollectionNew(definition.MonsterId),
                     AcknowledgeCollectionNew,
                     ClaimFiveStarReward);
             }

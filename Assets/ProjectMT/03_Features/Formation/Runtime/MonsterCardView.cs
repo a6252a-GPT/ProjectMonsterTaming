@@ -21,6 +21,7 @@ namespace ProjectMT.Features.Formation
         [SerializeField] private TMP_Text assignmentLabel;
         [SerializeField] private GameObject breakthroughReadyBadge;
         [SerializeField] private GameObject selectionFrame;
+        [SerializeField] private GameObject collectionNewBadge;
 
         [Header("Rarity & Ascension")]
         [SerializeField] private MonsterRarityCatalog rarityCatalog;
@@ -85,6 +86,7 @@ namespace ProjectMT.Features.Formation
             selectedAction = onSelected;
             collectionRewardAction = null;
             collectionRewardRoot?.SetActive(false);
+            collectionNewBadge?.SetActive(false);
             if (portraitImage != null)
             {
                 portraitImage.sprite = definition.Portrait;
@@ -119,6 +121,7 @@ namespace ProjectMT.Features.Formation
             bool isOwned,
             int ascensionLevel,
             bool fiveStarRewardClaimed,
+            bool isCollectionNew,
             Action<string> onSelected,
             Action<string> onClaimFiveStarReward)
         {
@@ -152,6 +155,7 @@ namespace ProjectMT.Features.Formation
             assignmentBadge?.SetActive(false);
             breakthroughReadyBadge?.SetActive(false);
             selectionFrame?.SetActive(false);
+            collectionNewBadge?.SetActive(isCollectionNew);
             ApplyOwnershipAlpha(isOwned);
             if (button != null)
             {
@@ -194,6 +198,7 @@ namespace ProjectMT.Features.Formation
             selectedAction = null;
             collectionRewardAction = null;
             collectionRewardRoot?.SetActive(false);
+            collectionNewBadge?.SetActive(false);
             if (portraitImage != null)
             {
                 portraitImage.sprite = null;

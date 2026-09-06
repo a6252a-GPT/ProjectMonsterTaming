@@ -118,12 +118,8 @@ namespace ProjectMT.Features.CommanderSkill.Editor
         {
             foreach (var rule in balance.SkillRules)
             {
-                var goldGrowth = rule.BaseGoldCost == 100L && Mathf.Approximately(rule.GoldCostGrowthMultiplier, 1.06f)
-                    ? 1.03f : rule.GoldCostGrowthMultiplier;
                 var ratio = rule.CopyRatioCurve() ?? AnimationCurve.Linear(1f, 1f, rule.MaxLevel, 1.5f);
                 var control = rule.CopyControlCurve() ?? AnimationCurve.Linear(1f, 1f, rule.MaxLevel, 1.25f);
-                rule.EditorConfigure(rule.SkillId, rule.MaxLevel, rule.RequiredDuplicateCount, rule.CopyDamageCurve(),
-                    rule.BaseGoldCost, goldGrowth);
                 rule.SetSupportCurves(ratio, control);
             }
             EditorUtility.SetDirty(balance);

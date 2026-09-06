@@ -7,6 +7,8 @@ namespace ProjectMT.Features.Equipment
 {
     public sealed partial class EquipmentPageController
     {
+        [SerializeField] private Vector2 equipInventoryPosition = new Vector2(10f, -55f);
+        [SerializeField] private Vector2 dismantleInventoryPosition = new Vector2(10f, -75f);
         private RectTransform dismantlePreviewContent;
         private GameObject dismantlePreviewTemplate;
         private GameObject dismantleGradeOptions;

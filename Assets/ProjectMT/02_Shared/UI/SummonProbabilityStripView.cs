@@ -24,26 +24,24 @@ namespace ProjectMT.Shared.UI
         }
 
         [SerializeField] private RectTransform cellTemplate;
-        private readonly List<RectTransform> cells = new List<RectTransform>();
+        [SerializeField] private RectTransform[] cells = System.Array.Empty<RectTransform>();
+        [SerializeField] private Color backgroundColor = new Color(0.1f, 0.09f, 0.12f);
+        [SerializeField, Range(0f, 1f)] private float rarityTint = 0.2f;
 
         public void Show(IReadOnlyList<Entry> entries)
         {
-            if (cellTemplate == null) return;
-            if (cells.Count == 0) cells.Add(cellTemplate);
+            if (cells == null || cells.Length == 0)
+                throw new System.InvalidOperationException("Probability strip requires authored cells.");
             var count = entries?.Count ?? 0;
-            while (cells.Count < count)
-            {
-                var cell = Instantiate(cellTemplate, cellTemplate.parent);
-                cell.name = $"ProbabilityCell_{cells.Count}";
-                cells.Add(cell);
-            }
-            for (var index = 0; index < cells.Count; index++)
+            if (count > cells.Length)
+                throw new System.InvalidOperationException("Probability entries exceed authored cell capacity.");
+            for (var index = 0; index < cells.Length; index++)
             {
                 var cell = cells[index];
                 cell.gameObject.SetActive(index < count);
                 if (index >= count) continue;
                 var entry = entries[index];
-                cell.GetComponent<Image>().color = Color.Lerp(new Color(0.1f, 0.09f, 0.12f), entry.Color, 0.2f);
+                cell.GetComponent<Image>().color = Color.Lerp(backgroundColor, entry.Color, rarityTint);
                 cell.Find("Accent").GetComponent<Image>().color = entry.Color;
                 var label = cell.Find("Name").GetComponent<TMP_Text>();
                 label.text = entry.Label;

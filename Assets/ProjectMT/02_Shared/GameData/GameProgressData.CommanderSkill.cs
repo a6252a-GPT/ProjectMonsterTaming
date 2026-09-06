@@ -8,19 +8,20 @@ namespace ProjectMT.Shared.GameData
         internal CommanderSkillSummonReceipt CommanderSkillSummonReceipt { get; private set; }
         internal bool NeedsCommanderAwakeningMigration => commanderSkills != null && commanderSkills.NeedsAwakeningMigration;
 
-        internal bool TryMigrateCommanderAwakening(CommanderSkillBalanceConfig balance)
+        internal bool TryMigrateCommanderAwakening(CommanderSkillBalanceConfig balance, ItemCatalog itemCatalog)
         {
             var next = commanderSkills.Clone();
-            if (!next.TryMigrateAwakening(balance, out var gold) || !TryGrantCommanderConversionGold(gold)) return false;
+            if (!next.TryMigrateAwakening(balance, out var stones) || !TryGrantCommanderConversionStones(stones, itemCatalog)) return false;
             commanderSkills = next;
             return true;
         }
 
-        private bool TryGrantCommanderConversionGold(long gold)
+        private bool TryGrantCommanderConversionStones(long stones, ItemCatalog itemCatalog)
         {
-            if (gold < 0) return false;
-            if (gold == 0) return true;
-            if (!ItemInventoryTransactions.TryGrantCoreBalance(items, ItemIds.Gold, gold, out var granted)) return false;
+            if (stones < 0) return false;
+            if (stones == 0) return true;
+            if (!ItemInventoryTransactions.TryGrant(items,
+                new[] { new ItemAmount(ItemIds.CommanderSkillUpgradeStone, stones) }, itemCatalog, out var granted)) return false;
             items = granted;
             return true;
         }

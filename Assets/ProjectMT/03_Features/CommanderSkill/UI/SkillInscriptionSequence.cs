@@ -77,7 +77,7 @@ namespace ProjectMT.Features.CommanderSkill
                 massSeal.gameObject.SetActive(true);
                 massSeal.Tier = highest;
                 var accent = CommanderSkillSummonResultItemView.ResolveAccent((CommanderSkillRarity)highest);
-                if (heading != null) heading.text = "300개의 마력 · 응축 중";
+                if (heading != null) heading.text = "30개의 마력 · 응축 중";
                 float charge = 0;
                 bool sounded = false;
                 while (charge < 3.7f)
@@ -92,7 +92,7 @@ namespace ProjectMT.Features.CommanderSkill
                     yield return null;
                 }
                 massSeal.gameObject.SetActive(false);
-                if (heading != null) heading.text = "300회 소환 · 전체 결과 각인";
+                if (heading != null) heading.text = "30회 소환 · 전체 결과 각인";
                 float reveal = 0;
                 while (reveal < 1.2f)
                 {

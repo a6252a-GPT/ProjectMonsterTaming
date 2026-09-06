@@ -206,6 +206,7 @@ namespace ProjectMT.Shared.GameData
         [SerializeField] private MainBattleFormationData mainBattleFormation = MainBattleFormationData.CreateDefault(); // 본부대 시작 위치
         [SerializeField] private int ascensionCurrency; // v10 이하 잔액의 동결 백업
         [SerializeField] private GachaPityData gachaPity = GachaPityData.CreateDefault(); // 뽑기 천장 누적 카운터
+        [SerializeField] private GachaPityData soulMonsterPity = GachaPityData.CreateDefault();
         [SerializeField] private EquipmentSaveData equipment = EquipmentSaveData.CreateDefault(); // 08.10 안건준 추가 - 장비 보유·장착 저장
         [SerializeField] private ItemInventoryData items = ItemInventoryData.CreateDefault(); // 일반 아이템 보유 수량
         [SerializeField] private GrowthDungeonProgressData growthDungeons = GrowthDungeonProgressData.CreateDefault(); // 성장 던전 단계·열쇠 기준일
@@ -253,6 +254,7 @@ namespace ProjectMT.Shared.GameData
             ? (items ?? ItemInventoryData.CreateDefault()).GetQuantity(ItemIds.AscensionStone)
             : Math.Max(0, ascensionCurrency);
         public GachaPityView GachaPity => new GachaPityView(gachaPity);
+        public GachaPityView SoulMonsterPity => new GachaPityView(soulMonsterPity);
         public EquipmentSaveDataView Equipment => (equipment ?? EquipmentSaveData.CreateDefault()).CreateView(); // 08.10 안건준 추가
         public ItemInventoryView Items
         {
@@ -307,6 +309,7 @@ namespace ProjectMT.Shared.GameData
                 mainBattleFormation = mainBattleFormation?.Clone() ?? MainBattleFormationData.CreateDefault(),
                 ascensionCurrency = ascensionCurrency,
                 gachaPity = gachaPity?.Clone() ?? GachaPityData.CreateDefault(),
+                soulMonsterPity = soulMonsterPity?.Clone() ?? GachaPityData.CreateDefault(),
                 equipment = equipment?.Clone() ?? EquipmentSaveData.CreateDefault(), // 08.10 안건준 추가
                 items = items?.Clone() ?? ItemInventoryData.CreateDefault(),
                 growthDungeons = growthDungeons?.Clone() ?? GrowthDungeonProgressData.CreateDefault(),
@@ -362,6 +365,7 @@ namespace ProjectMT.Shared.GameData
             MainBattleFormation = data.MainBattleFormation;
             AscensionCurrency = data.AscensionCurrency;
             GachaPity = data.GachaPity;
+            SoulMonsterPity = data.SoulMonsterPity;
             Equipment = data.Equipment; // 08.10 안건준 추가
             Items = data.Items;
             GrowthDungeons = data.GrowthDungeons;
@@ -395,6 +399,7 @@ namespace ProjectMT.Shared.GameData
         public MainBattleFormationView MainBattleFormation { get; }
         public long AscensionCurrency { get; } // 돌파석 보유량
         public GachaPityView GachaPity { get; } // 뽑기 천장 누적 카운터
+        public GachaPityView SoulMonsterPity { get; }
         public EquipmentSaveDataView Equipment { get; } // 08.10 안건준 추가 - 장비 보유·장착 상태
         public ItemInventoryView Items { get; } // 일반 아이템 보유 수량
         public GrowthDungeonProgressView GrowthDungeons { get; } // 성장 던전 단계·열쇠 기준일

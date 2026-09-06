@@ -339,15 +339,25 @@ namespace ProjectMT.Shared.GameData
         }
 
         // 뽑기 한 번의 결과를 반영한다: 천장 카운터 갱신 + (신규 획득 / 중복 재료 / 전용 재화) 중 하나.
-        private bool TryApplyGachaPull(string monsterId, MonsterRarity rarity)
+        private bool TryApplyGachaPull(string monsterId, MonsterRarity rarity,
+            ProjectMT.Shared.Gacha.MonsterGachaChannel channel = ProjectMT.Shared.Gacha.MonsterGachaChannel.Normal)
         {
             if (string.IsNullOrEmpty(monsterId))
             {
                 return false;
             }
 
-            gachaPity ??= GachaPityData.CreateDefault();
-            gachaPity.RegisterPull(rarity);
+            if (ProjectMT.Shared.Gacha.MonsterSoulRules.GetOverflowReward(rarity) <= 0) return false;
+            if (channel == ProjectMT.Shared.Gacha.MonsterGachaChannel.Soul)
+            {
+                soulMonsterPity ??= GachaPityData.CreateDefault();
+                soulMonsterPity.RegisterPull(rarity);
+            }
+            else
+            {
+                gachaPity ??= GachaPityData.CreateDefault();
+                gachaPity.RegisterPull(rarity);
+            }
 
             if (!monsters.TryGetOwned(monsterId, out var existingOwned))
             {
@@ -364,7 +374,7 @@ namespace ProjectMT.Shared.GameData
             if (!ItemInventoryTransactions.TryGrantCoreBalance(
                     items,
                     ItemIds.AscensionStone,
-                    1L,
+                    ProjectMT.Shared.Gacha.MonsterSoulRules.GetOverflowReward(rarity),
                     out var ascensionItems))
             {
                 return false;

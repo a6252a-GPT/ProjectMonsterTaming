@@ -517,9 +517,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             if (draft.RegisterInCatalog)
             {
                 AddBoundField(catalog, "maxLevel", "최대 레벨");
-                catalog.Add(Help("별각성은 공통 비용 1/2/4/8/16개를 사용합니다. 골드 강화는 중복을 소비하지 않습니다."));
-                AddBoundField(catalog, "baseGoldCost", "강화 시작 골드");
-                AddBoundField(catalog, "goldCostGrowthMultiplier", "레벨당 골드 증가율");
+                catalog.Add(Help("별각성은 중복 2/5/10/20/40개를 사용합니다. 레벨 강화는 스킬 강화석만 소비하며, 필요량은 1 + 현재 레벨 / 50(내림), Lv.1→200 총 499개입니다. 최대 각성 초과 중복은 등급별 1/2/3/4/6개로 환원합니다."));
                 AddBoundField(catalog, "maxLevelEffectMultiplier", "최대 레벨 효과 배율");
                 AddBoundField(catalog, "includeInSummonPool", "소환 풀 포함", true);
                 if (draft.IncludeInSummonPool)

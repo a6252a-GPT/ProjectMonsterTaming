@@ -19,10 +19,12 @@ namespace ProjectMT.Features.MainBattle
         [Header("하위 뽑기 버튼")]
         [SerializeField] private Button monsterGachaButton; // 몬스터 뽑기 버튼
         [SerializeField] private Button commanderSkillGachaButton; // 군단장 스킬 뽑기 버튼
+        [SerializeField] private Button soulGachaButton;
 
         [Header("상점 화면 (하나만 켜짐)")]
         [SerializeField] private GameObject monsterShop; // 몬스터 → 이 화면 켜기
         [SerializeField] private GameObject skillShop; // 스킬 → 이 화면 켜기
+        [SerializeField] private GameObject soulShop;
         [SerializeField] private GameObject diamondShop;
         [SerializeField] private GameObject contentShop;
         [SerializeField] private GameObject packageShop;
@@ -33,6 +35,7 @@ namespace ProjectMT.Features.MainBattle
             gachaButton?.onClick.AddListener(ToggleGachaSubMenu);
             monsterGachaButton?.onClick.AddListener(ShowMonsterShop);
             commanderSkillGachaButton?.onClick.AddListener(ShowSkillShop);
+            soulGachaButton?.onClick.AddListener(ShowSoulShop);
         }
 
         private void Start()
@@ -51,6 +54,7 @@ namespace ProjectMT.Features.MainBattle
             gachaButton?.onClick.RemoveListener(ToggleGachaSubMenu);
             monsterGachaButton?.onClick.RemoveListener(ShowMonsterShop);
             commanderSkillGachaButton?.onClick.RemoveListener(ShowSkillShop);
+            soulGachaButton?.onClick.RemoveListener(ShowSoulShop);
         }
 
         private void ToggleGachaSubMenu()
@@ -100,10 +104,13 @@ namespace ProjectMT.Features.MainBattle
             ShowOnly(skillShop);
         }
 
+        private void ShowSoulShop() => ShowOnly(soulShop);
+
         private void ShowOnly(GameObject show) // 인스펙터에 넣은 상점 중 하나만 활성화
         {
             SetActive(monsterShop, show);
             SetActive(skillShop, show);
+            SetActive(soulShop, show);
             SetActive(diamondShop, show);
             SetActive(contentShop, show);
             SetActive(packageShop, show);

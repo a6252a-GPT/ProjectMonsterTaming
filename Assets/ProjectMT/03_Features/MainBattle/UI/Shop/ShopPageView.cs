@@ -17,6 +17,7 @@ namespace ProjectMT.Features.MainBattle
         private const int ContentPage = 3;
         private const int PackagePage = 4;
         private const int MonthlyPage = 5;
+        private const int SoulPage = 6;
 
         [Header("메인 탭: 소환 / 다이아 / 콘텐츠 / 패키지")]
         [SerializeField] private Button[] mainTabButtons = Array.Empty<Button>();
@@ -114,6 +115,7 @@ namespace ProjectMT.Features.MainBattle
             AddListener(mainTabButtons, 3, ShowPackagePage);
             AddListener(summonSubTabButtons, 0, ShowMonsterPage);
             AddListener(summonSubTabButtons, 1, ShowSkillPage);
+            AddListener(summonSubTabButtons, 2, ShowSoulPage);
             AddListener(packageSubTabButtons, 0, ShowPackagePage);
             AddListener(packageSubTabButtons, 1, ShowMonthlyPage);
         }
@@ -126,6 +128,7 @@ namespace ProjectMT.Features.MainBattle
             RemoveListener(mainTabButtons, 3, ShowPackagePage);
             RemoveListener(summonSubTabButtons, 0, ShowMonsterPage);
             RemoveListener(summonSubTabButtons, 1, ShowSkillPage);
+            RemoveListener(summonSubTabButtons, 2, ShowSoulPage);
             RemoveListener(packageSubTabButtons, 0, ShowPackagePage);
             RemoveListener(packageSubTabButtons, 1, ShowMonthlyPage);
         }
@@ -211,6 +214,11 @@ namespace ProjectMT.Features.MainBattle
             ShowPage(SkillPage, mainTabIndex: 0, summonSubTabIndex: 1, packageSubTabIndex: -1);
         }
 
+        private void ShowSoulPage()
+        {
+            ShowPage(SoulPage, mainTabIndex: 0, summonSubTabIndex: 2, packageSubTabIndex: -1);
+        }
+
         private void ShowDiamondPage()
         {
             ShowPage(DiamondPage, mainTabIndex: 1, summonSubTabIndex: -1, packageSubTabIndex: -1);
@@ -264,8 +272,8 @@ namespace ProjectMT.Features.MainBattle
             if (ascensionCurrencyValueText != null)
             {
                 ascensionCurrencyValueText.text = progress == null
-                    ? "돌파석  —"
-                    : $"돌파석  {progress.View.AscensionCurrency:N0}";
+                    ? "영혼석  —"
+                    : $"영혼석  {progress.View.AscensionCurrency:N0}";
             }
         }
 

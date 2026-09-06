@@ -16,6 +16,7 @@ namespace ProjectMT.Shared.GameData
 {
     public sealed partial class GameProgressChange
     {
+        internal MonsterGachaChannel GachaChannel { get; private set; }
         public static GameProgressChange LevelUpMonster(string monsterId, int expectedLevel)
         {
             return new GameProgressChange
@@ -50,7 +51,8 @@ namespace ProjectMT.Shared.GameData
 
         public static GameProgressChange RecordGachaPulls(
             IReadOnlyList<GachaPullRecord> pulls,
-            IReadOnlyList<ItemAmount> itemCosts)
+            IReadOnlyList<ItemAmount> itemCosts,
+            MonsterGachaChannel channel = MonsterGachaChannel.Normal)
         {
             var pullCopy = new List<GachaPullRecord>(pulls?.Count ?? 0);
             if (pulls != null)
@@ -70,9 +72,22 @@ namespace ProjectMT.Shared.GameData
                 }
             }
 
+            if (channel == MonsterGachaChannel.Soul)
+            {
+                costCopy.Clear();
+                if (pullCopy.Count != GachaCostConfig.SingleDrawCount && pullCopy.Count != GachaCostConfig.TenDrawCount)
+                    pullCopy.Clear();
+                else
+                    costCopy.Add(new ItemAmount(ItemIds.MonsterSoulStone,
+                        pullCopy.Count == GachaCostConfig.TenDrawCount ? MonsterSoulRules.TenCost : MonsterSoulRules.SingleCost));
+            }
+            else if (channel != MonsterGachaChannel.Normal)
+                pullCopy.Clear();
+
             return new GameProgressChange
             {
                 GachaPulls = pullCopy,
+                GachaChannel = channel,
                 ItemCosts = costCopy
             };
         }

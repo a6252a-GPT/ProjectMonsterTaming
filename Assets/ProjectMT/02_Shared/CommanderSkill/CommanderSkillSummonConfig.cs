@@ -398,8 +398,7 @@ namespace ProjectMT.Shared.CommanderSkill
             {
                 new CommanderSkillSummonOffer(1, 1),
                 new CommanderSkillSummonOffer(10, 10),
-                new CommanderSkillSummonOffer(30, 30),
-                new CommanderSkillSummonOffer(300, 300)
+                new CommanderSkillSummonOffer(30, 30)
             };
         }
 

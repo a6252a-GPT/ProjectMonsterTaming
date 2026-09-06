@@ -18,6 +18,7 @@ namespace ProjectMT.Features.CommanderSkill
         [SerializeField] private CanvasGroup inscriptionFront;
         [SerializeField] private SkillInscriptionGraphic inscription;
         private Color accentColor;
+        private float originalQuantityPlateWidth = -1f;
         public CommanderSkillRarity Rarity { get; private set; }
         public bool IsInscribed { get; private set; } = true;
         public void SetInscription(float progress, float clock)
@@ -82,6 +83,8 @@ namespace ProjectMT.Features.CommanderSkill
 
             if (quantityText != null)
             {
+                if (originalQuantityPlateWidth > 0f && quantityText.transform.parent is RectTransform plate)
+                    plate.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, originalQuantityPlateWidth);
                 quantityText.text = $"×{Mathf.Max(1, quantity):N0}";
                 quantityText.transform.parent.gameObject.SetActive(quantity > 1);
             }
@@ -95,14 +98,21 @@ namespace ProjectMT.Features.CommanderSkill
             return ResolveRarityAccent(rarity);
         }
 
-        public void ShowConvertedGold(long gold)
+        public void ShowConvertedUpgradeStones(long convertedUpgradeStones)
         {
-            if (gold <= 0) return;
+            if (convertedUpgradeStones <= 0) return;
             newBadge?.SetActive(false);
             if (categoryText != null) categoryText.text = "최대각성 전환";
             if (quantityText != null)
             {
-                quantityText.text = $"+{gold:N0} 골드";
+                quantityText.text = $"+{convertedUpgradeStones:N0} 강화석";
+                if (quantityText.transform.parent is RectTransform plate && transform is RectTransform card)
+                {
+                    if (originalQuantityPlateWidth < 0f) originalQuantityPlateWidth = plate.rect.width;
+                    var width = quantityText.GetPreferredValues(quantityText.text).x + 16f;
+                    plate.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,
+                        Mathf.Min(Mathf.Max(originalQuantityPlateWidth, width), Mathf.Max(1f, card.rect.width - 16f)));
+                }
                 quantityText.transform.parent.gameObject.SetActive(true);
             }
         }

@@ -65,7 +65,7 @@ namespace ProjectMT.Shared.GameData
                 if (hasCommanderSkillConfig && loaded.NeedsCommanderAwakeningMigration)
                 {
                     if (!commanderSkillBalanceConfig.TryValidate(out var error) ||
-                        !loaded.TryMigrateCommanderAwakening(commanderSkillBalanceConfig))
+                        !loaded.TryMigrateCommanderAwakening(commanderSkillBalanceConfig, itemCatalog))
                         throw new InvalidOperationException("군단장 각성 저장 이관 실패: " + error);
                     await saveService.SaveAsync(loaded);
                 }

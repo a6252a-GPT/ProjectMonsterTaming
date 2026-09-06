@@ -857,7 +857,8 @@ namespace ProjectMT.Features.Inventory
                 lockRoot = lockObject;
                 levelRoot = levelObject;
                 gradeFrameTemplates = frameTemplates;
-                emptyFrame = normalRoot != null && normalRoot.childCount > 0
+                emptyFrame = FindDescendant(normalRoot, "ItemEmptyFrame")?.gameObject;
+                if (emptyFrame == null) emptyFrame = normalRoot != null && normalRoot.childCount > 0
                     ? normalRoot.GetChild(0).gameObject
                     : null;
                 emptyFrameImages = emptyFrame != null
@@ -870,6 +871,9 @@ namespace ProjectMT.Features.Inventory
                 }
 
                 currentFrame = emptyFrame;
+                if (normalArea != null)
+                    foreach (Transform child in normalArea)
+                        if (child.gameObject.activeSelf && child.gameObject != emptyFrame) { currentFrame = child.gameObject; break; }
                 CacheFrameColors();
             }
 
@@ -1027,7 +1031,7 @@ namespace ProjectMT.Features.Inventory
                     emptyFrame.SetActive(true);
                 }
 
-                SetFrameDimmed(true);
+                SetFrameDimmed(emptyFrame != null && emptyFrame.name != "ItemEmptyFrame");
             }
 
             private void CacheFrameColors()

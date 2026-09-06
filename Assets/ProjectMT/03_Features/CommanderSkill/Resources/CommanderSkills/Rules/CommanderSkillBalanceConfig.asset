@@ -16,8 +16,7 @@ MonoBehaviour:
   - skillId: CS_TrackingBlade
     maxLevel: 200
     requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.03
+    overflowUpgradeStoneAmount: 1
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -57,8 +56,7 @@ MonoBehaviour:
   - skillId: CS_DoomSpear
     maxLevel: 200
     requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.03
+    overflowUpgradeStoneAmount: 1
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -98,8 +96,7 @@ MonoBehaviour:
   - skillId: CS_AbyssChain
     maxLevel: 200
     requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.03
+    overflowUpgradeStoneAmount: 1
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -139,8 +136,7 @@ MonoBehaviour:
   - skillId: CS_PhantomCharge
     maxLevel: 200
     requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.03
+    overflowUpgradeStoneAmount: 2
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -180,8 +176,7 @@ MonoBehaviour:
   - skillId: CS_ConquerorSigil
     maxLevel: 200
     requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.03
+    overflowUpgradeStoneAmount: 2
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -221,8 +216,7 @@ MonoBehaviour:
   - skillId: CS_PhantomBarrage
     maxLevel: 200
     requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.03
+    overflowUpgradeStoneAmount: 2
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -262,8 +256,7 @@ MonoBehaviour:
   - skillId: CS_DeathSentence
     maxLevel: 200
     requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.03
+    overflowUpgradeStoneAmount: 3
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -303,8 +296,7 @@ MonoBehaviour:
   - skillId: CS_RuptureMarch
     maxLevel: 200
     requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.03
+    overflowUpgradeStoneAmount: 3
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -344,8 +336,7 @@ MonoBehaviour:
   - skillId: CS_HeartOfBattlefield
     maxLevel: 200
     requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.03
+    overflowUpgradeStoneAmount: 4
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -385,8 +376,7 @@ MonoBehaviour:
   - skillId: CS_MarchOfDead
     maxLevel: 200
     requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.03
+    overflowUpgradeStoneAmount: 4
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -426,8 +416,7 @@ MonoBehaviour:
   - skillId: CS_WarGodBrand
     maxLevel: 200
     requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.03
+    overflowUpgradeStoneAmount: 6
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -467,8 +456,7 @@ MonoBehaviour:
   - skillId: CS_ApocalypseWar
     maxLevel: 200
     requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.03
+    overflowUpgradeStoneAmount: 6
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -505,5 +493,4 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-  awakeningDuplicateCosts: 0100000002000000040000000800000010000000
-  maxAwakeningDuplicateGold: 1000
+  awakeningDuplicateCosts: 02000000050000000a0000001400000028000000

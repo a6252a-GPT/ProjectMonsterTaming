@@ -500,7 +500,7 @@ namespace ProjectMT.Features.CommanderSkill
             RefreshSlots(view);
             RefreshCards(view);
             RefreshFilters();
-            RefreshDetail(view, progressView.Gold);
+            progressView.Items.TryGetQuantity(ProjectMT.Shared.Items.ItemIds.CommanderSkillUpgradeStone, out var stones); RefreshDetail(view, stones);
             RefreshGrowthPresentation(view);
         }
 
@@ -667,7 +667,7 @@ namespace ProjectMT.Features.CommanderSkill
             }
         }
 
-        private void RefreshDetail(CommanderSkillProgressView view, long gold)
+        private void RefreshDetail(CommanderSkillProgressView view, long convertedUpgradeStones)
         {
             var hasOwned = TryGetOwnedSkill(selectedSkillId, out var owned);
             CommanderSkillDefinition definition = null;
@@ -708,7 +708,7 @@ namespace ProjectMT.Features.CommanderSkill
 
             if (detailMaterialText != null)
             {
-                detailMaterialText.text = BuildLevelUpCostText(gold, hasOwned, owned);
+                detailMaterialText.text = BuildLevelUpCostText(convertedUpgradeStones, hasOwned, owned);
             }
 
             if (selectedSlotText != null)
@@ -725,8 +725,8 @@ namespace ProjectMT.Features.CommanderSkill
                 ? owned.AwakeningLevel >= catalog.BalanceConfig.MaxAwakening ? "최대 각성" :
                     "별각성" : "별각성";
             var hasLevelUpCost = hasOwned && TryGetGrowthRule(owned.SkillId, out var levelRule) &&
-                                 levelRule.TryGetNextLevelGoldCost(owned.Level, out levelUpCost);
-            var canLevelUp = hasLevelUpCost && gold >= levelUpCost && !requestInFlight;
+                                 levelRule.TryGetNextLevelStoneCost(owned.Level, out levelUpCost);
+            var canLevelUp = hasLevelUpCost && convertedUpgradeStones >= levelUpCost && !requestInFlight;
             if (levelUpButton != null)
             {
                 levelUpButton.interactable = canLevelUp;
@@ -946,7 +946,7 @@ namespace ProjectMT.Features.CommanderSkill
         }
 
         private string BuildLevelUpCostText(
-            long gold,
+            long convertedUpgradeStones,
             bool hasOwned,
             OwnedCommanderSkillView owned)
         {
@@ -955,12 +955,12 @@ namespace ProjectMT.Features.CommanderSkill
                 return string.Empty;
             }
 
-            if (!rule.TryGetNextLevelGoldCost(owned.Level, out var cost))
+            if (!rule.TryGetNextLevelStoneCost(owned.Level, out var cost))
             {
                 return "최대 레벨";
             }
 
-            return gold >= cost
+            return convertedUpgradeStones >= cost
                 ? $"{cost:N0}"
                 : $"<color=#D77C73>{cost:N0} 부족</color>";
         }

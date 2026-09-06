@@ -114,7 +114,7 @@ namespace ProjectMT.EditorTools.CommanderSkill
                 summon.EditorConfigure(
                     ItemIds.CommanderSkillSummonTicket,
                     new[] { CreateLevel(0, catalog), CreateLevel(30, catalog), CreateLevel(100, catalog) },
-                    new[] { CreateOffer(10), CreateOffer(30), CreateOffer(300) },
+                    new[] { CreateOffer(1), CreateOffer(10), CreateOffer(30) },
                     30);
                 EditorUtility.SetDirty(summon);
             }
@@ -310,7 +310,7 @@ namespace ProjectMT.EditorTools.CommanderSkill
                     "광고 10회\n<color=#8996A6>SDK 준비 중</color>", new Color32(72, 76, 86, 255), out _);
                 ad.interactable = false;
                 var positions = new[] { -164f, 164f, 492f };
-                var counts = new[] { 10, 30, 300 };
+                var counts = new[] { 1, 10, 30 };
                 for (var index = 0; index < counts.Length; index++)
                 {
                     offerButtons[index] = CreateOfferButton(root.transform, $"Summon{counts[index]}",

@@ -174,7 +174,7 @@ namespace ProjectMT.Shared.GameData
                 {
                     return false;
                 }
-                try { if (!TryGrantCommanderConversionGold(receipt.ConvertedGold)) return false; }
+                try { if (!TryGrantCommanderConversionStones(receipt.ConvertedUpgradeStones, itemCatalog)) return false; }
                 catch (OverflowException) { return false; }
                 CommanderSkillSummonReceipt = receipt;
             }
@@ -184,8 +184,8 @@ namespace ProjectMT.Shared.GameData
                 var balance = commanderSkillBalanceConfig ?? CommanderSkillBalanceConfig.RuntimeDefault;
                 var next = (commanderSkills ?? CommanderSkillProgressData.CreateDefault()).Clone();
                 if (!next.TryAwaken(change.CommanderSkillToAwakenId, change.ExpectedCommanderSkillStar,
-                    change.ExpectedCommanderSkillDuplicates, balance, out var convertedGold) ||
-                    !TryGrantCommanderConversionGold(convertedGold)) return false;
+                    change.ExpectedCommanderSkillDuplicates, balance, out var convertedUpgradeStones) ||
+                    !TryGrantCommanderConversionStones(convertedUpgradeStones, itemCatalog)) return false;
                 commanderSkills = next;
             }
 
@@ -194,7 +194,7 @@ namespace ProjectMT.Shared.GameData
                 commanderSkills ??= CommanderSkillProgressData.CreateDefault();
                 var balance = commanderSkillBalanceConfig ?? CommanderSkillBalanceConfig.RuntimeDefault;
                 if (!balance.TryGetRule(change.CommanderSkillToLevelUpId, out var rule) ||
-                    !rule.TryGetNextLevelGoldCost(change.ExpectedCommanderSkillLevel, out var goldCost))
+                    !rule.TryGetNextLevelStoneCost(change.ExpectedCommanderSkillLevel, out var stoneCost))
                 {
                     return false;
                 }
@@ -202,7 +202,7 @@ namespace ProjectMT.Shared.GameData
                 var nextCommanderSkills = commanderSkills.Clone(balance, commanderSkillSummonConfig);
                 if (!ItemInventoryTransactions.TrySpend(
                         items,
-                        new[] { new ItemAmount(ItemIds.Gold, goldCost) },
+                        new[] { new ItemAmount(ItemIds.CommanderSkillUpgradeStone, stoneCost) },
                         itemCatalog,
                         out var spentSkillUpgradeItems) ||
                     !nextCommanderSkills.TryLevelUp(
@@ -448,7 +448,7 @@ namespace ProjectMT.Shared.GameData
                 for (var index = 0; index < change.GachaPulls.Count; index++)
                 {
                     var pull = change.GachaPulls[index];
-                    if (!TryApplyGachaPull(pull.MonsterId, pull.Rarity))
+                    if (!TryApplyGachaPull(pull.MonsterId, pull.Rarity, change.GachaChannel))
                     {
                         return false;
                     }
@@ -568,11 +568,9 @@ namespace ProjectMT.Shared.GameData
                     return false; // 요청 시점과 처리 시점 사이에 레벨이 달라짐(중복 클릭 등)
                 }
 
-                var goldCost = EquipmentSlotUpgradeCostRules.GetNextGoldCost(currentLevel);
                 var stoneCost = EquipmentSlotUpgradeCostRules.GetNextStoneCost(currentLevel);
                 var costs = new[]
                 {
-                    new ItemAmount(ItemIds.Gold, goldCost),
                     new ItemAmount(ItemIds.EquipmentSlotUpgradeStone, stoneCost)
                 };
 

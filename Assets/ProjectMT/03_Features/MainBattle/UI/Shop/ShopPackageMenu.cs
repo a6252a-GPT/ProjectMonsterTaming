@@ -23,6 +23,7 @@ namespace ProjectMT.Features.MainBattle
         [Header("상점 화면 (하나만 켜짐)")]
         [SerializeField] private GameObject monsterShop;
         [SerializeField] private GameObject skillShop;
+        [SerializeField] private GameObject soulShop;
         [SerializeField] private GameObject diamondShop;
         [SerializeField] private GameObject contentShop;
         [SerializeField] private GameObject packageShop; // 일반 → 이 화면 켜기
@@ -103,6 +104,7 @@ namespace ProjectMT.Features.MainBattle
         {
             SetActive(monsterShop, show);
             SetActive(skillShop, show);
+            SetActive(soulShop, show);
             SetActive(diamondShop, show);
             SetActive(contentShop, show);
             SetActive(packageShop, show);

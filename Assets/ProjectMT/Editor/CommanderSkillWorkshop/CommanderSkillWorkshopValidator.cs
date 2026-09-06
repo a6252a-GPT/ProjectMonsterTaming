@@ -101,13 +101,10 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 
             if (draft.RegisterInCatalog)
             {
-                if (draft.MaxLevel < 1 || draft.RequiredDuplicateCount < 1 ||
-                    draft.BaseGoldCost < 1L ||
-                    !IsFinitePositive(draft.GoldCostGrowthMultiplier) ||
-                    draft.GoldCostGrowthMultiplier < 1f ||
+                if (draft.MaxLevel < 1 || draft.MaxLevel > 200 || draft.RequiredDuplicateCount < 1 ||
                     !IsFinitePositive(draft.MaxLevelEffectMultiplier))
                 {
-                    result.Errors.Add("카탈로그 레벨·각성 예약값·골드 성장값은 모두 1 이상의 유효한 값이어야 합니다.");
+                    result.Errors.Add("카탈로그 레벨은 1~200, 각성 예약값·효과 배율은 양의 유효한 값이어야 합니다.");
                 }
             }
             if (draft.IncludeInSummonPool && !draft.RegisterInCatalog)

@@ -8,6 +8,7 @@ namespace ProjectMT.Shared.Items
         public const string Gold = "currency_gold";
         public const string Diamond = "currency_diamond";
         public const string AscensionStone = "currency_ascension_stone";
+        public const string MonsterSoulStone = AscensionStone; // 기존 잔액을 1:1로 유지하는 저장 ID
 
         public const string EquipmentSlotUpgradeStone = "material_equipment_slot_upgrade_stone";
         public const string CommanderSkillUpgradeStone = "material_commander_skill_upgrade_stone";
@@ -108,7 +109,7 @@ namespace ProjectMT.Shared.Items
                 case Diamond:
                     return "다이아";
                 case AscensionStone:
-                    return "돌파석";
+                    return "몬스터 영혼석";
                 case EquipmentSlotUpgradeStone:
                     return "장비 슬롯 강화석";
                 case CommanderSkillUpgradeStone:

@@ -22,6 +22,7 @@ namespace ProjectMT.Bootstrap
 
         private Action guestLogin;
         private Action googleLogin;
+        private Action continueSession;
         private bool bound;
         private Coroutine popupRoutine;
 
@@ -31,10 +32,11 @@ namespace ProjectMT.Bootstrap
             PrepareVideo();
         }
 
-        public void Configure(Action onGuestLogin, Action onGoogleLogin)
+        public void Configure(Action onGuestLogin, Action onGoogleLogin, Action onContinueSession = null)
         {
             guestLogin = onGuestLogin;
             googleLogin = onGoogleLogin;
+            continueSession = onContinueSession;
             Bind();
             PrepareVideo();
         }
@@ -75,6 +77,7 @@ namespace ProjectMT.Bootstrap
         {
             guestLogin = null;
             googleLogin = null;
+            continueSession = null;
             if (popupRoutine != null)
             {
                 StopCoroutine(popupRoutine);
@@ -101,6 +104,12 @@ namespace ProjectMT.Bootstrap
 
         private void HandleScreenTouch()
         {
+            if (continueSession != null)
+            {
+                continueSession.Invoke();
+                return;
+            }
+
             if (loginDock != null && loginDock.activeSelf)
             {
                 HideAccountPopup(true); // 팝업 바깥 영역 터치로 닫기

@@ -671,6 +671,7 @@ GameObject:
   - component: {fileID: 1104575297}
   - component: {fileID: 1104575298}
   - component: {fileID: 1104575299}
+  - component: {fileID: 1104575300}
   m_Layer: 0
   m_Name: TitleCamera
   m_TagString: Untagged
@@ -788,6 +789,14 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!81 &1104575300
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1104575296}
+  m_Enabled: 1
 --- !u!1001 &1127131571
 PrefabInstance:
   m_ObjectHideFlags: 0

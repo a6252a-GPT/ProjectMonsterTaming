@@ -100,5 +100,3 @@ MonoBehaviour:
     ticketCost: 10
   - drawCount: 30
     ticketCost: 30
-  - drawCount: 300
-    ticketCost: 300

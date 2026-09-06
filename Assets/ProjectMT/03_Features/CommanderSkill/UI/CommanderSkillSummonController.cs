@@ -21,7 +21,7 @@ namespace ProjectMT.Features.CommanderSkill
             public CommanderSkillDefinition Definition;
             public int Count;
             public bool IsNew;
-            public long ConvertedGold;
+            public long ConvertedUpgradeStones;
         }
 
         [Header("메인 정보")]
@@ -36,7 +36,7 @@ namespace ProjectMT.Features.CommanderSkill
         [SerializeField] private Button advertisementButton;
         [SerializeField] private Button[] offerButtons = Array.Empty<Button>();
         [SerializeField] private TMP_Text[] offerTexts = Array.Empty<TMP_Text>();
-        [SerializeField] private int[] offerDrawCounts = { 1, 10, 30, 300 };
+        [SerializeField] private int[] offerDrawCounts = { 1, 10, 30 };
 
         [Header("소환 레벨 정보")]
         [SerializeField] private Button levelInfoButton;
@@ -59,6 +59,13 @@ namespace ProjectMT.Features.CommanderSkill
 
         [SerializeField] private SkillInscriptionSequence inscriptionSequence;
         [SerializeField] private ScrollRect resultScroll;
+
+        [Header("결과 카드 배치")]
+        [SerializeField, Min(1)] private int resultColumns = 5;
+        [SerializeField] private Vector2 resultCardSize = new Vector2(196f, 250f);
+        [SerializeField] private Vector2 compactResultCardSize = new Vector2(188f, 216f);
+        [SerializeField] private Vector2 resultCardSpacing = new Vector2(16f, 14f);
+        [SerializeField, Min(0.1f)] private float singleResultScale = 1.5f;
 
         private readonly List<CommanderSkillSummonResultItemView> spawnedResults =
             new List<CommanderSkillSummonResultItemView>();
@@ -345,13 +352,13 @@ namespace ProjectMT.Features.CommanderSkill
 
             ClearResults();
             var hint = resultOverlay.GetComponentsInChildren<TMP_Text>(true).FirstOrDefault(t => t.name == "CloseHint");
-            if (hint != null) hint.text = drawCount == 300 ? "화면을 터치하면 전체 결과가 바로 공개됩니다" : "화면을 터치하면 한 장씩 바로 각인됩니다";
+            if (hint != null) hint.text = drawCount == 30 ? "화면을 터치하면 전체 결과가 바로 공개됩니다" : "화면을 터치하면 한 장씩 바로 각인됩니다";
             var summaries = new Dictionary<string, ResultSummary>(StringComparer.Ordinal);
             for (var index = 0; index < resultIds.Count; index++)
             {
                 var skillId = resultIds[index];
                 var converted = receipt != null && receipt.Results[index].Kind == CommanderSkillSummonResultKind.Converted;
-                var resultKey = skillId + (converted ? "|gold" : "");
+                var resultKey = skillId + (converted ? "|upgradeStones" : "");
                 if (!summaries.TryGetValue(resultKey, out var summary))
                 {
                     if (!catalog.TryGet(skillId, out var definition))
@@ -369,7 +376,7 @@ namespace ProjectMT.Features.CommanderSkill
                 }
 
                 summary.Count++;
-                if (converted) summary.ConvertedGold += receipt.Results[index].ConvertedGold;
+                if (converted) summary.ConvertedUpgradeStones += receipt.Results[index].ConvertedUpgradeStones;
             }
 
             var ordered = summaries.Values
@@ -378,7 +385,7 @@ namespace ProjectMT.Features.CommanderSkill
                 .ThenBy(summary => summary.Definition.DisplayName, StringComparer.Ordinal)
                 .ToArray();
             var display = new List<ResultSummary>();
-            if (drawCount == 1 || drawCount == 10 || drawCount == 30)
+            if (drawCount == 1 || drawCount == 10)
             {
                 var first = new HashSet<string>(StringComparer.Ordinal);
                 for (var index = 0; index < resultIds.Count; index++)
@@ -388,28 +395,16 @@ namespace ProjectMT.Features.CommanderSkill
                         display.Add(new ResultSummary { Definition = definition, Count = 1,
                             IsNew = receipt == null ? first.Add(id) && (ownedBefore == null || !ownedBefore.Contains(id)) :
                                 receipt.Results[index].Kind == CommanderSkillSummonResultKind.New,
-                            ConvertedGold = receipt?.Results[index].ConvertedGold ?? 0L });
+                            ConvertedUpgradeStones = receipt?.Results[index].ConvertedUpgradeStones ?? 0L });
                 }
             }
             else display.AddRange(ordered);
             if (resultSummaryText != null)
                 resultSummaryText.text = $"획득 종류 {ordered.Select(s => s.Definition.SkillId).Distinct().Count():N0}개 · 중복은 별각성 재료" +
-                    (receipt != null && receipt.ConvertedGold > 0 ? $" · 최대각성 전환 +{receipt.ConvertedGold:N0} 골드" : "");
+                    (receipt != null && receipt.ConvertedUpgradeStones > 0 ? $" · 최대각성 전환 +{receipt.ConvertedUpgradeStones:N0} 강화석" : "");
             resultOverlay.transform.SetAsLastSibling();
             UIPanelPopAnimator.RequestOpen(resultOverlay, UIPanelPopStyle.RewardPopup);
-            if (drawCount == 30)
-            {
-                Action<int> showBatch = null;
-                showBatch = batch =>
-                {
-                    if (this == null || !isActiveAndEnabled || !resultOverlay.activeInHierarchy) return;
-                    if (batch >= 3) { DisplayResults(ordered, "30회 소환 · 최종 집계", false); return; }
-                    DisplayResults(display.Skip(batch * 10).Take(10).ToArray(), $"30회 소환 · {batch + 1} / 3 묶음", true,
-                        false, () => showBatch(batch + 1));
-                };
-                showBatch(0);
-            }
-            else DisplayResults(display, $"군단장 스킬 소환 · {drawCount:N0}회", true, drawCount == 300);
+            DisplayResults(display, $"군단장 스킬 소환 · {drawCount:N0}회", true, drawCount == 30);
         }
 
         private void DisplayResults(IReadOnlyList<ResultSummary> display, string title, bool animate,
@@ -419,10 +414,9 @@ namespace ProjectMT.Features.CommanderSkill
             var grid = resultItemsRoot.GetComponent<GridLayoutGroup>();
             if (grid != null)
             {
-                grid.constraintCount = display.Count > 5 ? 5 : Mathf.Max(1, display.Count);
-                grid.cellSize = display.Count == 1 ? new Vector2(196f, 250f) :
-                    display.Count > 5 ? new Vector2(188f, 216f) : new Vector2(196f, 250f);
-                grid.spacing = new Vector2(16f, 14f);
+                grid.constraintCount = Mathf.Clamp(display.Count, 1, Mathf.Max(1, resultColumns));
+                grid.cellSize = display.Count > resultColumns ? compactResultCardSize : resultCardSize;
+                grid.spacing = resultCardSpacing;
                 grid.childAlignment = display.Count > 10 ? TextAnchor.UpperCenter : TextAnchor.MiddleCenter;
                 if (resultScroll != null)
                 {
@@ -440,11 +434,11 @@ namespace ProjectMT.Features.CommanderSkill
                 var item = Instantiate(resultItemPrefab, resultItemsRoot);
                 item.name = $"SkillResult_{index + 1:00}_{display[index].Definition.SkillId}";
                 item.Bind(display[index].Definition, display[index].Count, display[index].IsNew);
-                item.ShowConvertedGold(display[index].ConvertedGold);
+                item.ShowConvertedUpgradeStones(display[index].ConvertedUpgradeStones);
                 if (display.Count == 1)
                 {
-                    ((RectTransform)item.transform).sizeDelta = new Vector2(196f, 250f);
-                    item.transform.localScale = Vector3.one * 1.5f;
+                    ((RectTransform)item.transform).sizeDelta = resultCardSize;
+                    item.transform.localScale = Vector3.one * singleResultScale;
                 }
                 spawnedResults.Add(item);
             }
@@ -570,19 +564,14 @@ namespace ProjectMT.Features.CommanderSkill
                     var total = summonConfig?.GetTotalWeight(level) ?? 0;
                     if (total > 0 && catalog != null)
                     {
+                        var weights = new int[5];
                         foreach (var entry in summonConfig.GetPool(level))
-                        {
-                            if (entry == null || entry.Weight <= 0 || !catalog.TryGet(entry.SkillId, out var definition))
-                                continue;
-                            var color = definition.Category switch
-                            {
-                                CommanderSkillCategory.Buff => new Color32(130, 213, 171, 255),
-                                CommanderSkillCategory.Debuff => new Color32(193, 137, 234, 255),
-                                _ => new Color32(243, 190, 94, 255)
-                            };
-                            entries.Add(new SummonProbabilityStripView.Entry(
-                                definition.DisplayName, entry.Weight * 100f / total, color, definition.Icon));
-                        }
+                            if (entry != null && entry.Weight > 0 && catalog.TryGet(entry.SkillId, out var definition))
+                                weights[(int)definition.Rarity] += entry.Weight;
+                        var labels = new[] { "일반", "희귀", "영웅", "전설", "신화" };
+                        for (var index = 0; index < weights.Length; index++)
+                            entries.Add(new SummonProbabilityStripView.Entry(labels[index], weights[index] * 100f / total,
+                                CommanderSkillSummonResultItemView.ResolveAccent((CommanderSkillRarity)index)));
                     }
                     strip.Show(entries);
                     currentRateSummaryText.enabled = entries.Count == 0;

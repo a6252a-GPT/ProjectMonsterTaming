@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4e5f6a7b8c940d1e2f3a4b5c6d7e8f9, type: 3}
+  m_Name: SoulGachaProbability
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Gacha.GachaProbability
+  rarityRates:
+  - rarity: 0
+    dropRatePercent: 25
+    ceilingPulls: 0
+    rareGuaranteeInterval: 0
+  - rarity: 1
+    dropRatePercent: 30
+    ceilingPulls: 0
+    rareGuaranteeInterval: 10
+  - rarity: 2
+    dropRatePercent: 25
+    ceilingPulls: 30
+    rareGuaranteeInterval: 0
+  - rarity: 3
+    dropRatePercent: 15
+    ceilingPulls: 100
+    rareGuaranteeInterval: 0
+  - rarity: 4
+    dropRatePercent: 5
+    ceilingPulls: 300
+    rareGuaranteeInterval: 0

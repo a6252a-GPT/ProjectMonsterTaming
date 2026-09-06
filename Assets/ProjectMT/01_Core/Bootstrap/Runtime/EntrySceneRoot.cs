@@ -29,6 +29,7 @@ namespace ProjectMT.Bootstrap
 
         public SceneId SceneId => sceneId;
         public bool IsInitialized { get; private set; }
+        private bool enteringMainBattle;
 
         public void Initialize(ISceneContext context)
         {
@@ -51,16 +52,9 @@ namespace ProjectMT.Bootstrap
             IsInitialized = true;
             titleScreen.Configure(
                 () => LoginAsGuest(entryContext),
-                () => titleScreen.ShowStatus("Google 로그인은 추후 인증 계약 연결 후 제공됩니다."));
-            if (AccountSessionStore.IsLoggedIn)
-            {
-                titleScreen.ShowLoading("저장 데이터를 불러오는 중입니다...");
-                StartCoroutine(LoadMainBattleNextFrame(entryContext));
-            }
-            else
-            {
-                titleScreen.ShowTitle();
-            }
+                () => titleScreen.ShowStatus("Google 로그인은 추후 인증 계약 연결 후 제공됩니다."),
+                AccountSessionStore.IsLoggedIn ? () => ContinueSession(entryContext) : (Action)null);
+            titleScreen.ShowTitle(); // 저장된 세션도 매 실행마다 화면 터치를 기다림
         }
 
         public void Shutdown()
@@ -68,15 +62,29 @@ namespace ProjectMT.Bootstrap
             StopAllCoroutines(); // 예약된 이동 취소
             titleScreen?.Shutdown();
             IsInitialized = false;
+            enteringMainBattle = false;
         }
 
-        private void LoginAsGuest(EntrySceneContext context)
+        private void ContinueSession(EntrySceneContext context)
         {
-            if (!IsInitialized)
+            if (!IsInitialized || enteringMainBattle)
             {
                 return;
             }
 
+            enteringMainBattle = true;
+            titleScreen.ShowLoading("저장 데이터를 불러오는 중입니다...");
+            StartCoroutine(LoadMainBattleNextFrame(context));
+        }
+
+        private void LoginAsGuest(EntrySceneContext context)
+        {
+            if (!IsInitialized || enteringMainBattle)
+            {
+                return;
+            }
+
+            enteringMainBattle = true;
             AccountSessionStore.LoginAsGuest();
             titleScreen.ShowLoading("게스트 데이터를 준비하는 중입니다...");
             StartCoroutine(LoadMainBattleNextFrame(context));

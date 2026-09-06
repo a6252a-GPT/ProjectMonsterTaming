@@ -82,15 +82,15 @@ namespace ProjectMT.Shared.CommanderSkill
             duplicateCount = duplicateCount == int.MaxValue ? int.MaxValue : duplicateCount + 1;
         }
 
-        internal bool TryAwaken(int expectedStar, int expectedDuplicates, CommanderSkillBalanceConfig balance, out long gold)
+        internal bool TryAwaken(int expectedStar, int expectedDuplicates, CommanderSkillBalanceConfig balance, out long convertedUpgradeStones)
         {
-            gold = 0L;
+            convertedUpgradeStones = 0L;
             if (awakeningLevel != expectedStar || duplicateCount != expectedDuplicates ||
                 !balance.TryGetAwakeningCost(awakeningLevel, out var cost) || duplicateCount < cost) return false;
             var remainder = duplicateCount - cost;
             if (awakeningLevel + 1 == balance.MaxAwakening)
             {
-                try { gold = checked((long)remainder * balance.MaxAwakeningDuplicateGold); }
+                try { convertedUpgradeStones = checked((long)remainder * balance.GetOverflowUpgradeStoneAmount(SkillId)); }
                 catch (OverflowException) { return false; }
                 remainder = 0;
             }
@@ -99,12 +99,12 @@ namespace ProjectMT.Shared.CommanderSkill
             return true;
         }
 
-        internal bool TryMigrateAwakening(CommanderSkillBalanceConfig balance, out long gold)
+        internal bool TryMigrateAwakening(CommanderSkillBalanceConfig balance, out long convertedUpgradeStones)
         {
-            gold = 0L;
+            convertedUpgradeStones = 0L;
             if (awakeningLevel >= balance.MaxAwakening)
             {
-                try { gold = checked((long)duplicateCount * balance.MaxAwakeningDuplicateGold); }
+                try { convertedUpgradeStones = checked((long)duplicateCount * balance.GetOverflowUpgradeStoneAmount(SkillId)); }
                 catch (OverflowException) { return false; }
                 if (awakeningLevel > balance.MaxAwakening)
                     Debug.LogWarning($"{SkillId}: 예약 각성 {awakeningLevel}을 최대 {balance.MaxAwakening}으로 이관합니다.");
@@ -285,7 +285,7 @@ namespace ProjectMT.Shared.CommanderSkill
                 }
                 else if (owned.AwakeningLevel >= balance.MaxAwakening)
                 {
-                    results.Add(new CommanderSkillSummonResult(skillId, CommanderSkillSummonResultKind.Converted, balance.MaxAwakeningDuplicateGold));
+                    results.Add(new CommanderSkillSummonResult(skillId, CommanderSkillSummonResultKind.Converted, balance.GetOverflowUpgradeStoneAmount(skillId)));
                 }
                 else
                 {
@@ -301,25 +301,25 @@ namespace ProjectMT.Shared.CommanderSkill
         }
 
         internal bool TryAwaken(string id, int expectedStar, int expectedDuplicates,
-            CommanderSkillBalanceConfig balance, out long gold)
+            CommanderSkillBalanceConfig balance, out long convertedUpgradeStones)
         {
-            gold = 0L;
+            convertedUpgradeStones = 0L;
             if (balance == null || !balance.TryGetRule(id, out _) || CommanderSkillIds.IsRetired(id)) return false;
             var owned = ownedSkills.Find(value => value != null && value.SkillId == id);
-            return owned != null && owned.TryAwaken(expectedStar, expectedDuplicates, balance, out gold);
+            return owned != null && owned.TryAwaken(expectedStar, expectedDuplicates, balance, out convertedUpgradeStones);
         }
 
         internal bool NeedsAwakeningMigration => !awakeningMigrationCompleted;
-        internal bool TryMigrateAwakening(CommanderSkillBalanceConfig balance, out long gold)
+        internal bool TryMigrateAwakening(CommanderSkillBalanceConfig balance, out long convertedUpgradeStones)
         {
-            gold = 0L;
+            convertedUpgradeStones = 0L;
             if (awakeningMigrationCompleted) return true;
             foreach (var owned in ownedSkills)
             {
                 if (owned == null || CommanderSkillIds.IsRetired(owned.SkillId) ||
                     !balance.TryGetRule(owned.SkillId, out _)) continue;
                 if (!owned.TryMigrateAwakening(balance, out var converted)) return false;
-                try { gold = checked(gold + converted); }
+                try { convertedUpgradeStones = checked(convertedUpgradeStones + converted); }
                 catch (OverflowException) { return false; }
             }
             awakeningMigrationCompleted = true;

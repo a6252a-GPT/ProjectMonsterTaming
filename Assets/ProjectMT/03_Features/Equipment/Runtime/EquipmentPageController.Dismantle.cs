@@ -355,7 +355,7 @@ namespace ProjectMT.Features.Equipment
             if (inventoryScrollRect != null)
             {
                 var inventoryRect = (RectTransform)inventoryScrollRect.transform;
-                inventoryRect.anchoredPosition = new Vector2(10f, isDismantleMode ? -75f : -55f);
+                inventoryRect.anchoredPosition = isDismantleMode ? dismantleInventoryPosition : equipInventoryPosition;
             }
             var gridTopLine = FindDeep(transform, "GridTopLine") as RectTransform;
             if (gridTopLine != null) gridTopLine.gameObject.SetActive(!isDismantleMode);
@@ -379,11 +379,6 @@ namespace ProjectMT.Features.Equipment
             if (dismantleAutoSelectButtonRoot != null)
             {
                 dismantleAutoSelectButtonRoot.gameObject.SetActive(isDismantleMode);
-            }
-
-            if (dismantleAutoSelectButtonText != null)
-            {
-                dismantleAutoSelectButtonText.text = "조건에 맞게 선택";
             }
 
             if (dismantleAutoSelectButton != null)

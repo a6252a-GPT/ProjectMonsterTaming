@@ -230,7 +230,8 @@ namespace ProjectMT.Features.MainBattle
             fallenCommanderButton?.onClick.RemoveListener(OpenFallenCommander);
             foodRiotSweepButton?.onClick.RemoveListener(SweepFoodRiot);
             towerSweepButton?.onClick.RemoveListener(SweepGuardiansTower);
-            ResolveGachaSystem()?.Shutdown();
+            foreach (var system in FindObjectsByType<GachaSystem>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                if (system.gameObject.scene == gameObject.scene) system.Shutdown();
             ResolveShopPageView()?.Shutdown();
             hudProgressView?.Shutdown();
             commanderSkillHud?.Shutdown();
@@ -355,6 +356,9 @@ namespace ProjectMT.Features.MainBattle
         private void ConfigureGachaSystem()
         {
             ResolveGachaSystem()?.Configure(context.Progress, context.MonsterCatalog);
+            foreach (var system in FindObjectsByType<GachaSystem>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                if (system != gachaSystem && system.gameObject.scene == gameObject.scene)
+                    system.Configure(context.Progress, context.MonsterCatalog);
         }
 
         private GachaSystem ResolveGachaSystem()

@@ -9,11 +9,11 @@ namespace ProjectMT.Shared.CommanderSkill
 
     public readonly struct CommanderSkillSummonResult
     {
-        public CommanderSkillSummonResult(string id, CommanderSkillSummonResultKind kind, long gold)
-        { SkillId = id; Kind = kind; ConvertedGold = gold; }
+        public CommanderSkillSummonResult(string id, CommanderSkillSummonResultKind kind, long convertedUpgradeStones)
+        { SkillId = id; Kind = kind; ConvertedUpgradeStones = convertedUpgradeStones; }
         public string SkillId { get; }
         public CommanderSkillSummonResultKind Kind { get; }
-        public long ConvertedGold { get; }
+        public long ConvertedUpgradeStones { get; }
     }
 
     public sealed class CommanderSkillSummonReceipt
@@ -21,12 +21,12 @@ namespace ProjectMT.Shared.CommanderSkill
         internal CommanderSkillSummonReceipt(IEnumerable<CommanderSkillSummonResult> results)
             => Results = System.Array.AsReadOnly(results.ToArray());
         public IReadOnlyList<CommanderSkillSummonResult> Results { get; }
-        public long ConvertedGold
+        public long ConvertedUpgradeStones
         {
             get
             {
                 var total = 0L;
-                foreach (var result in Results) total = checked(total + result.ConvertedGold);
+                foreach (var result in Results) total = checked(total + result.ConvertedUpgradeStones);
                 return total;
             }
         }

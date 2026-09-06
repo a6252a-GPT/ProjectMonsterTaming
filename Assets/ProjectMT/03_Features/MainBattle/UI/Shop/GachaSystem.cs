@@ -47,6 +47,7 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private MonsterRarityCatalog rarityCatalog; // 몬스터 ↔ 등급 매칭표
         [SerializeField] private GachaProbability probability; // 등급별 확률·천장 설정
         [SerializeField] private GachaCostConfig costConfig; // 소환권 우선·다이아 비용
+        [SerializeField] private MonsterGachaChannel channel;
 
         [Header("뽑기 버튼")]
         [SerializeField] private Button oneDrawButton; // OneButton - 1회 뽑기
@@ -68,6 +69,8 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private TMP_Text resultTitleText;
         [SerializeField] private Button resultCloseButton;
 
+        private GachaSummonVideoOverlay summonVideo;
+        private int presentationVersion;
         private GachaRevealSequence revealSequence;
         private IGameProgressService progress; // MainBattleSceneRoot.Initialize()에서 주입
         private MonsterCatalog monsterCatalog;
@@ -81,8 +84,15 @@ namespace ProjectMT.Features.MainBattle
             resultCloseButton?.onClick.AddListener(HandleResultClose);
         }
 
+        private void OnDisable()
+        {
+            presentationVersion++;
+            summonVideo?.Cancel();
+        }
+
         private void OnDestroy()
         {
+            if (summonVideo != null) Destroy(summonVideo.gameObject);
             oneDrawButton?.onClick.RemoveListener(HandleOneDrawClicked);
             tenDrawButton?.onClick.RemoveListener(HandleTenDrawClicked);
             resultCloseButton?.onClick.RemoveListener(HandleResultClose);
@@ -93,6 +103,8 @@ namespace ProjectMT.Features.MainBattle
         // MainBattleSceneRoot가 씬 진입 시 호출. 저장 서비스·카탈로그 참조를 받아서 뽑기를 활성화한다.
         public void Configure(IGameProgressService progressService, MonsterCatalog catalog)
         {
+            presentationVersion++;
+            summonVideo?.Cancel();
             UnsubscribeProgress();
             progress = progressService;
             monsterCatalog = catalog;
@@ -109,6 +121,8 @@ namespace ProjectMT.Features.MainBattle
         // MainBattleSceneRoot.Shutdown()에서 호출. 씬 종료 후 잘못된 참조로 접근하지 않도록 정리.
         public void Shutdown()
         {
+            presentationVersion++;
+            summonVideo?.Cancel();
             UnsubscribeProgress();
             monsterCatalog = null;
             HideResults();
@@ -144,6 +158,7 @@ namespace ProjectMT.Features.MainBattle
                 return;
             }
 
+            var drawVersion = presentationVersion;
             isDrawing = true;
             try
             {
@@ -169,7 +184,7 @@ namespace ProjectMT.Features.MainBattle
                 try
                 {
                     saved = await progress.TryApplyAndSaveAsync(
-                        GameProgressChange.RecordGachaPulls(records, payment.CreateItemCosts()));
+                        GameProgressChange.RecordGachaPulls(records, payment.CreateItemCosts(), channel));
                 }
                 catch (Exception exception)
                 {
@@ -208,6 +223,9 @@ namespace ProjectMT.Features.MainBattle
                     ? $"{BuildResultHeadline(drawCount, order, summaries)} · {paymentText}"
                     : $"{detailText}\n\n사용: {paymentText}");
                 if (this == null || !isActiveAndEnabled || progress == null) return;
+                if (drawVersion != presentationVersion) return;
+                if (!await PlaySummonVideoAsync(drawCount)) return;
+                if (this == null || !isActiveAndEnabled || progress == null || drawVersion != presentationVersion) return;
                 await ShowResultsAsync(drawCount, plannedPulls);
                 if (this == null || progress == null || monsterCatalog == null) return;
                 LogOwnedRosterDebug(); // 보유 몬스터 이름·등급·돌파·재료를 콘솔에 출력
@@ -284,6 +302,21 @@ namespace ProjectMT.Features.MainBattle
                 summary.Count++;
                 summary.IsNew |= pull.WasNew;
             }
+        }
+
+        private Task<bool> PlaySummonVideoAsync(int drawCount)
+        {
+            if (summonVideo == null)
+            {
+                var prefab = Resources.Load<GachaSummonVideoOverlay>("GachaVideo/PF_GachaSummonVideo");
+                if (prefab == null)
+                {
+                    Debug.LogWarning("[GachaSystem] 소환 영상 Prefab이 없어 카드 공개로 진행합니다.");
+                    return Task.FromResult(true);
+                }
+                summonVideo = Instantiate(prefab);
+            }
+            return summonVideo.PlayAsync(drawCount);
         }
 
         private Task ShowResultsAsync(
@@ -486,7 +519,7 @@ namespace ProjectMT.Features.MainBattle
 
         private GachaPityState BuildPityState()
         {
-            var pity = progress.View.GachaPity;
+            var pity = channel == MonsterGachaChannel.Soul ? progress.View.SoulMonsterPity : progress.View.GachaPity;
             return new GachaPityState(
                 pity.PullsSinceRareOrBetter,
                 pity.PullsSinceEpicOrBetter,
@@ -511,6 +544,12 @@ namespace ProjectMT.Features.MainBattle
             }
 
             var items = progress.View.Items;
+            if (channel == MonsterGachaChannel.Soul)
+            {
+                items.TryGetQuantity(ItemIds.MonsterSoulStone, out var souls);
+                payment = costConfig.CreateSoulPaymentPlan(drawCount, souls);
+                return payment.IsValid;
+            }
             items.TryGetQuantity(ItemIds.MonsterSummonTicket, out var tickets);
             items.TryGetQuantity(ItemIds.Diamond, out var diamonds);
             payment = costConfig.CreatePaymentPlan(drawCount, tickets, diamonds);
@@ -587,12 +626,18 @@ namespace ProjectMT.Features.MainBattle
             }
 
             var prefix = payment.CanAfford ? "결제 예정" : "재화 부족";
+            if (payment.IsSoulPayment)
+            {
+                target.text = $"영혼석 {payment.AvailableSouls:N0}개 보유 · {prefix}: {payment.SoulCost:N0}";
+                return;
+            }
             target.text = $"소환권 {payment.AvailableTickets:N0}장 보유 · {prefix}: " +
                           BuildPaymentSummary(payment);
         }
 
         private static string BuildPaymentSummary(GachaPaymentPlan payment)
         {
+            if (payment.IsSoulPayment) return $"영혼석 {payment.SoulCost:N0}";
             if (payment.TicketsUsed > 0 && payment.DiamondCost > 0L)
             {
                 return $"소환권 {payment.TicketsUsed:N0}장 + 다이아 {payment.DiamondCost:N0}";
@@ -612,6 +657,9 @@ namespace ProjectMT.Features.MainBattle
             {
                 return "소환 비용 정보를 불러올 수 없습니다";
             }
+
+            if (payment.IsSoulPayment)
+                return $"영혼석 부족 · 필요 {payment.SoulCost:N0} · 보유 {payment.AvailableSouls:N0}";
 
             return $"재화 부족 · 필요 {BuildPaymentSummary(payment)} · " +
                    $"보유 다이아 {payment.AvailableDiamonds:N0}";
@@ -677,7 +725,7 @@ namespace ProjectMT.Features.MainBattle
                 return "천장 정보를 불러오는 중입니다";
             }
 
-            var pity = progress.View.GachaPity;
+            var pity = channel == MonsterGachaChannel.Soul ? progress.View.SoulMonsterPity : progress.View.GachaPity;
             return $"희귀 보정 {pity.PullsSinceRareOrBetter}/{GetRareGuarantee()}   " +
                    $"영웅 {pity.PullsSinceEpicOrBetter}/{GetCeiling(MonsterRarity.Epic)}\n" +
                    $"전설 {pity.PullsSinceLegendaryOrBetter}/{GetCeiling(MonsterRarity.Legendary)}   " +

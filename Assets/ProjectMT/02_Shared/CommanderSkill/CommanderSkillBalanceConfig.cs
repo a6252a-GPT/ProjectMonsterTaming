@@ -7,15 +7,11 @@ namespace ProjectMT.Shared.CommanderSkill
     [Serializable]
     public sealed class CommanderSkillGrowthRule // 스킬별 레벨 성장 원본
     {
-        private const long DefaultBaseGoldCost = 100L;
-        private const float DefaultGoldCostGrowthMultiplier = 1.03f;
-        private const long GoldCostRoundingUnit = 10L;
 
         [SerializeField] private string skillId;
         [SerializeField, Min(1)] private int maxLevel = 200;
         [SerializeField, Min(1)] private int requiredDuplicateCount = 1;
-        [SerializeField, Min(1)] private long baseGoldCost = DefaultBaseGoldCost;
-        [SerializeField, Min(1f)] private float goldCostGrowthMultiplier = DefaultGoldCostGrowthMultiplier;
+        [SerializeField, Min(1)] private int overflowUpgradeStoneAmount = 1;
         [SerializeField] private AnimationCurve damageMultiplierByLevel =
             AnimationCurve.Linear(1f, 1f, 200f, 4.98f);
         [SerializeField] private AnimationCurve ratioMultiplierByLevel;
@@ -24,10 +20,22 @@ namespace ProjectMT.Shared.CommanderSkill
         public string SkillId => skillId?.Trim() ?? string.Empty;
         public int MaxLevel => Mathf.Max(1, maxLevel);
         public int RequiredDuplicateCount => Mathf.Max(1, requiredDuplicateCount);
-        public long BaseGoldCost => baseGoldCost > 0L ? baseGoldCost : DefaultBaseGoldCost;
-        public float GoldCostGrowthMultiplier => goldCostGrowthMultiplier >= 1f
-            ? goldCostGrowthMultiplier
-            : DefaultGoldCostGrowthMultiplier;
+        public int OverflowUpgradeStoneAmount => Mathf.Max(1, overflowUpgradeStoneAmount);
+
+        public bool TryGetNextLevelStoneCost(int currentLevel, out long cost)
+        {
+            cost = 0;
+            if (currentLevel < 1 || currentLevel >= MaxLevel) return false;
+            cost = 1L + currentLevel / 50;
+            return true;
+        }
+
+#if UNITY_EDITOR
+        public void EditorConfigureOverflowStoneAmount(int amount)
+        {
+            overflowUpgradeStoneAmount = Mathf.Max(1, amount);
+        }
+#endif
 
         public CommanderSkillGrowthRule()
         {
@@ -43,33 +51,6 @@ namespace ProjectMT.Shared.CommanderSkill
             maxLevel = Mathf.Max(1, levelCap);
             requiredDuplicateCount = Mathf.Max(1, duplicateCost);
             damageMultiplierByLevel = damageCurve ?? AnimationCurve.Linear(1f, 1f, maxLevel, 1f);
-        }
-
-        public bool TryGetNextLevelGoldCost(int currentLevel, out long cost)
-        {
-            cost = 0L;
-            if (currentLevel < 1 || currentLevel >= MaxLevel)
-            {
-                return false;
-            }
-
-            var rawCost = BaseGoldCost * Math.Pow(GoldCostGrowthMultiplier, currentLevel - 1);
-            if (double.IsNaN(rawCost) || rawCost <= 0d)
-            {
-                return false;
-            }
-
-            if (double.IsInfinity(rawCost) || rawCost >= long.MaxValue)
-            {
-                return false;
-            }
-
-            var rounded = Math.Round(
-                rawCost / GoldCostRoundingUnit,
-                MidpointRounding.AwayFromZero) * GoldCostRoundingUnit;
-            if (rounded >= long.MaxValue || double.IsInfinity(rounded)) return false;
-            cost = Math.Max(GoldCostRoundingUnit, (long)rounded);
-            return true;
         }
 
         public float GetDamageMultiplier(int level)
@@ -116,21 +97,12 @@ namespace ProjectMT.Shared.CommanderSkill
                 return false;
             }
 
-            if (maxLevel < 1 || requiredDuplicateCount < 1 || baseGoldCost < 0L ||
-                (goldCostGrowthMultiplier != 0f && goldCostGrowthMultiplier < 1f) ||
-                float.IsNaN(goldCostGrowthMultiplier) ||
-                float.IsInfinity(goldCostGrowthMultiplier))
+            if (maxLevel < 1 || maxLevel > 200 || requiredDuplicateCount < 1 || overflowUpgradeStoneAmount <= 0)
             {
-                error = $"{SkillId}: level cap, duplicate reserve, or gold cost is invalid.";
+                error = $"{SkillId}: level cap, duplicate reserve, or overflow stones are invalid.";
                 return false;
             }
 
-            if (MaxLevel > 1 && (!TryGetNextLevelGoldCost(1, out _) ||
-                !TryGetNextLevelGoldCost(MaxLevel - 1, out _)))
-            {
-                error = $"{SkillId}: gold cost curve is invalid.";
-                return false;
-            }
 
             if (damageMultiplierByLevel == null || damageMultiplierByLevel.length == 0 ||
                 damageMultiplierByLevel.keys[0].time > 1f ||
@@ -165,15 +137,11 @@ namespace ProjectMT.Shared.CommanderSkill
             string id,
             int levelCap,
             int duplicateCost,
-            AnimationCurve damageCurve,
-            long goldBaseCost = DefaultBaseGoldCost,
-            float goldGrowthMultiplier = DefaultGoldCostGrowthMultiplier)
+            AnimationCurve damageCurve)
         {
             skillId = id?.Trim() ?? string.Empty;
             maxLevel = Mathf.Max(1, levelCap);
             requiredDuplicateCount = Mathf.Max(1, duplicateCost);
-            baseGoldCost = Math.Max(1L, goldBaseCost);
-            goldCostGrowthMultiplier = Mathf.Max(1f, goldGrowthMultiplier);
             damageMultiplierByLevel = damageCurve ?? AnimationCurve.Linear(1f, 1f, maxLevel, 1f);
         }
 #endif
@@ -193,11 +161,11 @@ namespace ProjectMT.Shared.CommanderSkill
         private static CommanderSkillBalanceConfig runtimeDefault;
 
         [SerializeField] private CommanderSkillGrowthRule[] skillRules = Array.Empty<CommanderSkillGrowthRule>();
-        [SerializeField] private int[] awakeningDuplicateCosts = { 1, 2, 4, 8, 16 };
-        [SerializeField] private long maxAwakeningDuplicateGold = 1000L;
+        [SerializeField] private int[] awakeningDuplicateCosts = { 2, 5, 10, 20, 40 };
 
         public int MaxAwakening => 5;
-        public long MaxAwakeningDuplicateGold => maxAwakeningDuplicateGold;
+        public long GetOverflowUpgradeStoneAmount(string skillId) =>
+            TryGetRule(skillId, out var rule) ? rule.OverflowUpgradeStoneAmount : 0;
         public bool TryGetAwakeningCost(int currentStar, out int cost)
         {
             cost = 0;
@@ -239,10 +207,10 @@ namespace ProjectMT.Shared.CommanderSkill
 
         public bool TryValidate(out string error)
         {
-            if (maxAwakeningDuplicateGold <= 0 || awakeningDuplicateCosts == null ||
+            if (awakeningDuplicateCosts == null ||
                 awakeningDuplicateCosts.Length != MaxAwakening || Array.Exists(awakeningDuplicateCosts, value => value <= 0))
             {
-                error = "Awakening costs or duplicate conversion gold are invalid.";
+                error = "Awakening costs are invalid.";
                 return false;
             }
             if (skillRules == null || skillRules.Length == 0)

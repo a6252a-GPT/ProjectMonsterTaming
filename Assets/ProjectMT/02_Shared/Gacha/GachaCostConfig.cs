@@ -19,6 +19,14 @@ namespace ProjectMT.Shared.Gacha
         public long TenDrawDiamondCost => Math.Max(1L, tenDrawDiamondCost);
         public long MixedPaymentDiamondCostPerDraw => Math.Max(1L, mixedPaymentDiamondCostPerDraw);
 
+        public GachaPaymentPlan CreateSoulPaymentPlan(int drawCount, long availableSouls)
+        {
+            var valid = drawCount == SingleDrawCount || drawCount == TenDrawCount;
+            return new GachaPaymentPlan(drawCount, 0, 0L, 0L, 0L, valid,
+                drawCount == TenDrawCount ? MonsterSoulRules.TenCost : MonsterSoulRules.SingleCost,
+                availableSouls);
+        }
+
         public GachaPaymentPlan CreatePaymentPlan(
             int drawCount,
             long availableTickets,
@@ -76,7 +84,9 @@ namespace ProjectMT.Shared.Gacha
             long diamondCost,
             long availableTickets,
             long availableDiamonds,
-            bool isValid)
+            bool isValid,
+            long soulCost = 0L,
+            long availableSouls = 0L)
         {
             DrawCount = drawCount;
             TicketsUsed = Math.Max(0, ticketsUsed);
@@ -84,6 +94,8 @@ namespace ProjectMT.Shared.Gacha
             AvailableTickets = Math.Max(0L, availableTickets);
             AvailableDiamonds = Math.Max(0L, availableDiamonds);
             IsValid = isValid;
+            SoulCost = Math.Max(0L, soulCost);
+            AvailableSouls = Math.Max(0L, availableSouls);
         }
 
         public int DrawCount { get; }
@@ -92,11 +104,19 @@ namespace ProjectMT.Shared.Gacha
         public long AvailableTickets { get; }
         public long AvailableDiamonds { get; }
         public bool IsValid { get; }
-        public bool CanAfford => IsValid && AvailableDiamonds >= DiamondCost;
+        public long SoulCost { get; }
+        public long AvailableSouls { get; }
+        public bool IsSoulPayment => SoulCost > 0;
+        public bool CanAfford => IsValid && AvailableDiamonds >= DiamondCost && AvailableSouls >= SoulCost;
 
         public IReadOnlyList<ItemAmount> CreateItemCosts()
         {
             var costs = new List<ItemAmount>(2);
+            if (IsSoulPayment)
+            {
+                costs.Add(new ItemAmount(ItemIds.MonsterSoulStone, SoulCost));
+                return costs;
+            }
             if (TicketsUsed > 0)
             {
                 costs.Add(new ItemAmount(ItemIds.MonsterSummonTicket, TicketsUsed));

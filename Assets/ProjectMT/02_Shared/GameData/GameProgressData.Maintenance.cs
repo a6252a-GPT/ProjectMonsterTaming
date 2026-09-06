@@ -62,6 +62,8 @@ namespace ProjectMT.Shared.GameData
             ascensionCurrency = Math.Max(0, ascensionCurrency);
             gachaPity ??= GachaPityData.CreateDefault();
             gachaPity.Repair();
+            soulMonsterPity ??= GachaPityData.CreateDefault();
+            soulMonsterPity.Repair();
             equipment ??= EquipmentSaveData.CreateDefault(); // 08.10 안건준 추가
             equipment.Repair();
             items ??= ItemInventoryData.CreateDefault();

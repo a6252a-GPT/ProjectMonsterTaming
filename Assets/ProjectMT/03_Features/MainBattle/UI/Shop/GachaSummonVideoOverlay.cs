@@ -60,7 +60,9 @@ namespace ProjectMT.Features.MainBattle
                 ownsAudioPause = true;
                 AudioListener.pause = true; // 전투·배경 소리는 영상 종료까지 일시 정지
                 videoAudio.ignoreListenerPause = true;
-                videoAudio.volume = AudioRuntimeSettings.SfxVolume;
+                videoAudio.clip = Resources.Load<AudioClip>(count == 10 ? "GachaVideo/Summon_Ten" : "GachaVideo/Summon_Single");
+                ApplyVolume();
+
                 AudioRuntimeSettings.Changed += ApplyVolume;
                 target = new RenderTexture((int)clip.width, (int)clip.height, 0, RenderTextureFormat.ARGB32);
                 target.Create();
@@ -68,15 +70,16 @@ namespace ProjectMT.Features.MainBattle
                 display.enabled = false;
                 player.playOnAwake = false;
                 player.isLooping = false;
+                player.skipOnDrop = true;
                 player.timeUpdateMode = VideoTimeUpdateMode.UnscaledGameTime;
                 player.renderMode = VideoRenderMode.RenderTexture;
                 player.targetTexture = target;
                 player.clip = clip;
                 player.sendFrameReadyEvents = true;
-                player.audioOutputMode = VideoAudioOutputMode.AudioSource;
-                player.controlledAudioTrackCount = 1;
-                player.EnableAudioTrack(0, true);
-                player.SetTargetAudioSource(0, videoAudio);
+                player.audioOutputMode = VideoAudioOutputMode.None;
+
+
+                ApplyVolume();
                 skipButton.interactable = true;
                 player.Prepare();
                 watchdog = StartCoroutine(WatchPlayback(clip.length));
@@ -89,10 +92,17 @@ namespace ProjectMT.Features.MainBattle
             return task;
         }
 
-        private void ApplyVolume() => videoAudio.volume = AudioRuntimeSettings.SfxVolume;
+        private void ApplyVolume()
+        {
+            if (videoAudio != null) videoAudio.volume = AudioRuntimeSettings.SfxVolume;
+        }
         private void OnFrame(VideoPlayer source, long frame)
         {
-            if (IsPlaying) display.enabled = true;
+            if (IsPlaying && !display.enabled)
+            {
+                display.enabled = true;
+                if (videoAudio != null && videoAudio.clip != null) videoAudio.Play();
+            }
         }
         private void OnEnded(VideoPlayer source) => finishRequested = true;
         private void OnError(VideoPlayer source, string message)
@@ -139,7 +149,7 @@ namespace ProjectMT.Features.MainBattle
         {
             var pending = completion;
             completion = null;
-            if (watchdog != null) StopCoroutine(watchdog);
+            if (this != null && watchdog != null) StopCoroutine(watchdog);
             watchdog = null;
             if (player != null)
             {
@@ -147,7 +157,7 @@ namespace ProjectMT.Features.MainBattle
                 player.targetTexture = null;
                 player.clip = null;
             }
-            if (videoAudio != null) videoAudio.Stop();
+            if (videoAudio != null) { videoAudio.Stop(); videoAudio.clip = null; }
             if (display != null) { display.texture = null; display.enabled = false; }
             if (target != null) { target.Release(); Destroy(target); target = null; }
             AudioRuntimeSettings.Changed -= ApplyVolume;
@@ -156,7 +166,7 @@ namespace ProjectMT.Features.MainBattle
                 ownsAudioPause = false;
                 AudioListener.pause = previousAudioPause;
             }
-            if (gameObject.activeSelf) gameObject.SetActive(false);
+            if (this != null && gameObject.activeSelf) gameObject.SetActive(false);
             pending?.TrySetResult(showCards);
         }
 

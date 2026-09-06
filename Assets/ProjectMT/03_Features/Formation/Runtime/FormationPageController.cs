@@ -773,6 +773,7 @@ namespace ProjectMT.Features.Formation
             if (tabColorsCaptured && button.targetGraphic != null)
             {
                 button.targetGraphic.color = selected ? mainTabActiveColor : reserveTabInactiveColor;
+                button.GetComponent<UIStateVisual>()?.SetSelected(selected);
             }
 
             var innerBorder = button.transform.Find("InnerBorder1");

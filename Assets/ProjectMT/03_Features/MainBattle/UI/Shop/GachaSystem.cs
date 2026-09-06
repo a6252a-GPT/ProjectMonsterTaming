@@ -87,7 +87,7 @@ namespace ProjectMT.Features.MainBattle
         private void OnDisable()
         {
             presentationVersion++;
-            summonVideo?.Cancel();
+            if (summonVideo != null) summonVideo.Cancel();
         }
 
         private void OnDestroy()
@@ -104,7 +104,7 @@ namespace ProjectMT.Features.MainBattle
         public void Configure(IGameProgressService progressService, MonsterCatalog catalog)
         {
             presentationVersion++;
-            summonVideo?.Cancel();
+            if (summonVideo != null) summonVideo.Cancel();
             UnsubscribeProgress();
             progress = progressService;
             monsterCatalog = catalog;
@@ -122,7 +122,7 @@ namespace ProjectMT.Features.MainBattle
         public void Shutdown()
         {
             presentationVersion++;
-            summonVideo?.Cancel();
+            if (summonVideo != null) summonVideo.Cancel();
             UnsubscribeProgress();
             monsterCatalog = null;
             HideResults();

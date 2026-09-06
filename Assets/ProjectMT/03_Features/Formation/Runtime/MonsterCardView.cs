@@ -328,7 +328,7 @@ namespace ProjectMT.Features.Formation
 
             if (!reachedFiveStar)
             {
-                SetText(collectionRewardLabel, "5성  500");
+                SetText(collectionRewardLabel, "500");
                 SetColor(collectionRewardBackground, new Color32(0x22, 0x23, 0x27, 0xEE));
                 SetColor(collectionRewardLabel, new Color32(0xA5, 0xA8, 0xAF, 0xFF));
                 SetColor(collectionRewardIcon, new Color(1f, 1f, 1f, 0.48f));
@@ -337,14 +337,14 @@ namespace ProjectMT.Features.Formation
 
             if (rewardClaimed)
             {
-                SetText(collectionRewardLabel, "수령 완료");
+                SetText(collectionRewardLabel, "완료");
                 SetColor(collectionRewardBackground, new Color32(0x30, 0x31, 0x35, 0xF2));
                 SetColor(collectionRewardLabel, new Color32(0xB8, 0xBA, 0xC0, 0xFF));
                 SetColor(collectionRewardIcon, new Color(1f, 1f, 1f, 0.58f));
                 return;
             }
 
-            SetText(collectionRewardLabel, "500 받기");
+            SetText(collectionRewardLabel, "500");
             SetColor(collectionRewardBackground, new Color32(0x72, 0x4C, 0x16, 0xFF));
             SetColor(collectionRewardLabel, new Color32(0xFF, 0xEC, 0xB0, 0xFF));
             SetColor(collectionRewardIcon, Color.white);

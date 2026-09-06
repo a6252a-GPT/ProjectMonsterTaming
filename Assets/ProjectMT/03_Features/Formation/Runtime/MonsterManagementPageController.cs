@@ -432,6 +432,8 @@ namespace ProjectMT.Features.Formation
             var activeLight = new Color32(0x73, 0x9A, 0xA5, 0xFF);
 
             growthContent?.SetActive(!showingBreakthrough);
+            growthTabBackground?.GetComponentInParent<UIStateVisual>()?.SetSelected(!showingBreakthrough);
+            breakthroughTabBackground?.GetComponentInParent<UIStateVisual>()?.SetSelected(showingBreakthrough);
             breakthroughContent?.SetActive(showingBreakthrough);
             SetColor(growthTabBackground, showingBreakthrough ? inactiveBackground : activeBackground);
             SetColor(growthTabInnerBorder, showingBreakthrough ? inactiveLight : activeLight);

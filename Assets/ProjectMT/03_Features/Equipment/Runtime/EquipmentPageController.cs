@@ -58,6 +58,7 @@ namespace ProjectMT.Features.Equipment
         }
 
         [SerializeField] private EquipmentCatalog catalog;
+        [SerializeField] private TMP_Text[] equipmentStatSummaryValues = Array.Empty<TMP_Text>();
 
         private readonly List<SlotView> slots = new List<SlotView>();
         private readonly Dictionary<EquipmentPart, Transform> commanderSlots = new Dictionary<EquipmentPart, Transform>();

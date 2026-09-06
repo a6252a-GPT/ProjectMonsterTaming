@@ -137,6 +137,15 @@ namespace ProjectMT.Features.Equipment
         private void RefreshCommanderStats()
         {
             var stats = EquipmentLegionBonusCalculator.CalculateTotal();
+            var summaryTypes = new[] { EquipmentStatType.AttackPower, EquipmentStatType.MaxHealth,
+                EquipmentStatType.Defense, EquipmentStatType.AttackSpeed, EquipmentStatType.MoveSpeed,
+                EquipmentStatType.CriticalRate };
+            for (var index = 0; index < equipmentStatSummaryValues.Length && index < summaryTypes.Length; index++)
+            {
+                if (equipmentStatSummaryValues[index] != null)
+                    equipmentStatSummaryValues[index].text = FormatStatValue(summaryTypes[index], stats.GetValue(summaryTypes[index]));
+            }
+
 
             if (statGrid != null)
             {

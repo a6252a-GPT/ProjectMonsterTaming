@@ -391,7 +391,7 @@ namespace ProjectMT.Features.Commander
                 SetTextFit(row.Text,
                     $"{statName}\n<color=#9E96A1>범위 {range.MinValue:0.0} ~ {range.MaxValue:0.0}%</color>", 12f, 20f);
                 SetText(row.ResultValue, $"+{slot.Value:0.0}%");
-                SetText(row.LockStateText, slot.Locked ? "보호 ON" : "보호 OFF");
+                SetText(row.LockStateText, slot.Locked ? "잠금" : "미잠금");
                 ApplyPotentialGradeVisual(row, slot.Grade);
                 SetActiveSafe(row.Lock, false);
             }

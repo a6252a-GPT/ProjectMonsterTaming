@@ -22,7 +22,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
         private const string CastleRaidScenePath =
             "Assets/ProjectMT/00_Scenes/03_CastleRaidHex.unity";
         private const string DevUiScenePath =
-            "Assets/ProjectMT/00_Scenes/DEV_UIManagement_02.unity";
+            "Assets/ProjectMT/00_Scenes/DEV_UIManagement.unity";
         private const string StandardMediumPath =
             "Assets/ProjectMT/02_Shared/UI/Prefabs/Standard/PF_UIStandard_PopupMedium.prefab";
         private const string DiamondItemDefinitionPath =

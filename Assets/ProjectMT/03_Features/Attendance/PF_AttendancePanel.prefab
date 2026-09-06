@@ -108,6 +108,7 @@ GameObject:
   - component: {fileID: 8752647328432238740}
   - component: {fileID: 7768628885032635214}
   - component: {fileID: 6355849874279462219}
+  - component: {fileID: 4486092835153572880}
   m_Layer: 0
   m_Name: ClaimButton
   m_TagString: Untagged
@@ -133,8 +134,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 380, y: 58}
-  m_SizeDelta: {x: 300, y: 62}
+  m_AnchoredPosition: {x: 380, y: 60}
+  m_SizeDelta: {x: 300, y: 64}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8752647328432238740
 CanvasRenderer:
@@ -218,6 +219,25 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4486092835153572880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 369994467817109820}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 759b2da85e973894b9b68c76b970668e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIStateVisual
+  stateIndicator: {fileID: 0}
+  interactableSource: {fileID: 6355849874279462219}
+  manualState: 1
+  targets:
+  - Graphic: {fileID: 6028618252690178345}
+    Active: {r: 0.65882355, g: 0.5411765, b: 0.3137255, a: 1}
+    Inactive: {r: 0.34117648, g: 0.32941177, b: 0.3529412, a: 1}
 --- !u!1 &600114807978272621
 GameObject:
   m_ObjectHideFlags: 0
@@ -1224,7 +1244,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: -24, y: -15.36}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &273539090710247637
 CanvasRenderer:
@@ -1256,15 +1276,15 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\uC624\uB298 \uBCF4\uC0C1 \uBC1B\uAE30"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 3718a141c8028064eb11791445f163c4, type: 2}
-  m_sharedMaterial: {fileID: 2334897706883836998, guid: 3718a141c8028064eb11791445f163c4, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 0ef90f6610383f14eaee22fcc0d1a225, type: 2}
+  m_sharedMaterial: {fileID: -6795594386361213347, guid: 0ef90f6610383f14eaee22fcc0d1a225, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColor: {r: 0.9490196, g: 0.92156863, b: 0.8666667, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -5816,6 +5836,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 592390807204599237}
     m_Modifications:
+    - target: {fileID: 346777977931086305, guid: 2816504f258864baa9e5686c055c9172, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1378939255104725748, guid: 2816504f258864baa9e5686c055c9172, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1378939255104725748, guid: 2816504f258864baa9e5686c055c9172, type: 3}
       propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
       value: 1801810542
@@ -5904,6 +5932,30 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7014647139106669279, guid: 2816504f258864baa9e5686c055c9172, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7181406853183289617, guid: 2816504f258864baa9e5686c055c9172, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 975b535817bd44c8ca93ce39cd343e3a, type: 3}
+    - target: {fileID: 7181406853183289617, guid: 2816504f258864baa9e5686c055c9172, type: 3}
+      propertyPath: m_Color.b
+      value: 0.3137255
+      objectReference: {fileID: 0}
+    - target: {fileID: 7181406853183289617, guid: 2816504f258864baa9e5686c055c9172, type: 3}
+      propertyPath: m_Color.g
+      value: 0.5411765
+      objectReference: {fileID: 0}
+    - target: {fileID: 7181406853183289617, guid: 2816504f258864baa9e5686c055c9172, type: 3}
+      propertyPath: m_Color.r
+      value: 0.65882355
+      objectReference: {fileID: 0}
+    - target: {fileID: 7181406853183289617, guid: 2816504f258864baa9e5686c055c9172, type: 3}
+      propertyPath: m_PixelsPerUnitMultiplier
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 7765488801804226672, guid: 2816504f258864baa9e5686c055c9172, type: 3}
       propertyPath: m_Name
       value: GUIPro_ButtonArt
@@ -5913,6 +5965,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2816504f258864baa9e5686c055c9172, type: 3}
+--- !u!114 &6028618252690178345 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7181406853183289617, guid: 2816504f258864baa9e5686c055c9172, type: 3}
+  m_PrefabInstance: {fileID: 3458921915404744760}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!224 &7493669416243682345 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6340597162168722449, guid: 2816504f258864baa9e5686c055c9172, type: 3}

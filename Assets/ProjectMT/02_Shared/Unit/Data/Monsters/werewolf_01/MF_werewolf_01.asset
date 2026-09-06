@@ -19,6 +19,8 @@ MonoBehaviour:
   spatialBlend: 1
   duplicateCooldown: 0.05
   priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
 --- !u!114 &-2259793596236835815
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -38,6 +40,8 @@ MonoBehaviour:
   spatialBlend: 1
   duplicateCooldown: 0.05
   priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -92,6 +96,8 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  basicAttackVoice: {fileID: 0}
+  activeSkillVoice: {fileID: 0}
   basicAttackVfxBindings:
   - attackId: BA_M_02
     slotId: sweep_plane
@@ -101,6 +107,10 @@ MonoBehaviour:
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
+    soundStartOffsetSeconds: 0
+    soundEndCutSeconds: 0
+    overrideSoundPitch: 0
+    soundPitch: 1
     sfx: {fileID: 0}
     lifetime: 2
     playbackOffset: 1.2
@@ -117,6 +127,10 @@ MonoBehaviour:
     sfxState: 1
     sound: {fileID: 8300000, guid: cb3d122d82ee042d28ea3f49c110d1d2, type: 3}
     soundVolume: 1
+    soundStartOffsetSeconds: 0
+    soundEndCutSeconds: 0
+    overrideSoundPitch: 0
+    soundPitch: 1
     sfx: {fileID: 7771376951995601200}
     lifetime: 1
     playbackOffset: 0
@@ -144,6 +158,8 @@ MonoBehaviour:
   spatialBlend: 1
   duplicateCooldown: 0.05
   priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
 --- !u!114 &7771376951995601200
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -163,3 +179,5 @@ MonoBehaviour:
   spatialBlend: 1
   duplicateCooldown: 0.05
   priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0

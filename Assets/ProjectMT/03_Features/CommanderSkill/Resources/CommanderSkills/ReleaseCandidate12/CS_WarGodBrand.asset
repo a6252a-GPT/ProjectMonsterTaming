@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-7089072235642596711
+--- !u!114 &-1763693325755069744
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -10,34 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cf75b510fb724ae45b92af230ebebcb7, type: 3}
-  m_Name: __Effect_exposure
+  m_Name: __Effect_01
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderUnitEffectDefinition
   effectId: CS_WarGodBrand_exposure
   effectType: 15
   valueSource: 0
   magnitude: 0.15
   duration: 10
-  scope: 0
-  radius: 0.1
-  maxTargets: 1
-  stackPolicy: 0
---- !u!114 &-1375826893447270192
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf75b510fb724ae45b92af230ebebcb7, type: 3}
-  m_Name: __Effect_trigger_attack_down
-  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderUnitEffectDefinition
-  effectId: CS_WarGodBrand_trigger_attack_down
-  effectType: 9
-  valueSource: 0
-  magnitude: 0.1
-  duration: 2
   scope: 0
   radius: 0.1
   maxTargets: 1
@@ -63,12 +42,12 @@ MonoBehaviour:
     10% \uB0AE\uCDA5\uB2C8\uB2E4."
   icon: {fileID: -4787899302299581909, guid: 233ff8c61c9602a4aa9adfc4fccc0845, type: 3}
   rarity: 4
-  castTime: 0
-  cooldown: 18
+  castTime: 0.8
+  cooldown: 22
   targeting: {fileID: 2821938889569462159}
   effects:
-  - {fileID: -7089072235642596711}
-  - {fileID: 4776352402592303501}
+  - {fileID: -1763693325755069744}
+  - {fileID: 7810238257954984074}
   pattern:
     type: 0
     repeatCount: 1
@@ -158,23 +137,44 @@ MonoBehaviour:
   castingVfxScale: 1
   castingSfx: {fileID: 0}
   castVfxPrefab: {fileID: 8550957183290902016, guid: 1e687c5764973a44a870c86be3141c48, type: 3}
-  castVfxLifetime: 0.65
+  castVfxLifetime: 0.3
   castVfxLocalOffset: {x: 0, y: 0, z: 0}
   castVfxLocalEuler: {x: 0, y: 0, z: 0}
-  castVfxScale: 1
-  castSfx: {fileID: 11400000, guid: 1306efe48e423b44480c4333a269e927, type: 2}
+  castVfxScale: 3
+  castSfx: {fileID: 11400000, guid: 3a17c4a045b28b2419d298c1bcd6fb2a, type: 2}
   impactVfxPrefab: {fileID: 1212407868296110750, guid: bb0e76885de86cc4b9bb3d425c4b4b20, type: 3}
-  impactVfxLifetime: 1.1
-  impactVfxLocalOffset: {x: 0, y: -0.36, z: 0}
+  impactVfxLifetime: 0.5
+  impactVfxLocalOffset: {x: 0, y: 0.08, z: 0}
   impactVfxLocalEuler: {x: 0, y: 0, z: 0}
   impactVfxScale: 1
-  impactSfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
+  impactSfx: {fileID: 11400000, guid: 8b945ca2627b88943828631b33f922ee, type: 2}
   persistentVfxPrefab: {fileID: 0}
   persistentVfxLocalOffset: {x: 0, y: 0.08, z: 0}
   persistentVfxLocalEuler: {x: 0, y: 0, z: 0}
   persistentVfxScale: 1
   persistentVfxAnchor: 4
   category: 2
+--- !u!114 &528345562115175966
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf75b510fb724ae45b92af230ebebcb7, type: 3}
+  m_Name: __MarkTrigger_02_01
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderUnitEffectDefinition
+  effectId: CS_WarGodBrand_trigger_attack_down
+  effectType: 9
+  valueSource: 0
+  magnitude: 0.1
+  duration: 2
+  scope: 0
+  radius: 0.1
+  maxTargets: 1
+  stackPolicy: 0
 --- !u!114 &2821938889569462159
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -190,7 +190,7 @@ MonoBehaviour:
   targetTeam: 0
   selection: 3
   range: 20
---- !u!114 &4776352402592303501
+--- !u!114 &7810238257954984074
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -200,7 +200,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 21d2e7c74566c9443a158ed29dcaa5c9, type: 3}
-  m_Name: __Effect_SupportMark
+  m_Name: __Effect_02
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderMarkEffectDefinition
   effectId: CS_WarGodBrand_support_mark
   markId: WarGodBrandSupport
@@ -221,38 +221,38 @@ MonoBehaviour:
   countCommanderMarkTrigger: 0
   recordHitCount: 0
   effectsOnTrigger:
-  - {fileID: -1375826893447270192}
+  - {fileID: 528345562115175966}
   onApply:
-    vfxPrefab: {fileID: 8897071228384316925, guid: e432d4f1310f4704c81a01bf480843cc, type: 3}
-    lifetime: 1
+    vfxPrefab: {fileID: 7712950434614526886, guid: 86ca5fac446b14d46b266ebfdfc039bb, type: 3}
+    lifetime: 0.35
     localOffset: {x: 0, y: 0, z: 0}
     localEuler: {x: 0, y: 0, z: 0}
-    scale: 2
+    scale: 1
     sfx: {fileID: 0}
     anchor: 1
   loop:
-    vfxPrefab: {fileID: 8897071228384316925, guid: e432d4f1310f4704c81a01bf480843cc, type: 3}
+    vfxPrefab: {fileID: 1437307349224094921, guid: 0bc4ffb5addbdce429c9a5534504257f, type: 3}
     lifetime: 10
-    localOffset: {x: 0, y: 0, z: 0}
+    localOffset: {x: 0, y: 0.9, z: 0}
     localEuler: {x: 0, y: 0, z: 0}
-    scale: 1.4
+    scale: 1
     sfx: {fileID: 0}
     anchor: 1
   onStack:
-    vfxPrefab: {fileID: 8897071228384316925, guid: e432d4f1310f4704c81a01bf480843cc, type: 3}
-    lifetime: 0.45
+    vfxPrefab: {fileID: 7712950434614526886, guid: 86ca5fac446b14d46b266ebfdfc039bb, type: 3}
+    lifetime: 0.35
     localOffset: {x: 0, y: 0, z: 0}
     localEuler: {x: 0, y: 0, z: 0}
-    scale: 1.8
+    scale: 1
     sfx: {fileID: 0}
     anchor: 1
   onTrigger:
-    vfxPrefab: {fileID: 4497473641098484015, guid: b2e4dc7e90fe6054884f2daf9aba3555, type: 3}
-    lifetime: 1.5
+    vfxPrefab: {fileID: 1212407868296110750, guid: bb0e76885de86cc4b9bb3d425c4b4b20, type: 3}
+    lifetime: 0.35
     localOffset: {x: 0, y: 0, z: 0}
     localEuler: {x: 0, y: 0, z: 0}
-    scale: 2
-    sfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
+    scale: 1
+    sfx: {fileID: 11400000, guid: 2cb85dd2781900343b8c913589989bf6, type: 2}
     anchor: 1
   onRemove:
     vfxPrefab: {fileID: 0}

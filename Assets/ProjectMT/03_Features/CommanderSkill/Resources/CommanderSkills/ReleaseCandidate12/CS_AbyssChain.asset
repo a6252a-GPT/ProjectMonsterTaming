@@ -15,7 +15,7 @@ MonoBehaviour:
   targetTeam: 0
   selection: 0
   range: 20
---- !u!114 &-2950722562003027956
+--- !u!114 &-549900698080480185
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -25,7 +25,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cf75b510fb724ae45b92af230ebebcb7, type: 3}
-  m_Name: __Effect_defense_down
+  m_Name: __Effect_02
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderUnitEffectDefinition
   effectId: CS_AbyssChain_defense_down
   effectType: 10
@@ -56,12 +56,12 @@ MonoBehaviour:
     20%, \uBC29\uC5B4\uB825\uC774 15% \uAC10\uC18C\uD569\uB2C8\uB2E4."
   icon: {fileID: 2553364779179987480, guid: 233ff8c61c9602a4aa9adfc4fccc0845, type: 3}
   rarity: 0
-  castTime: 0
-  cooldown: 6
+  castTime: 0.55
+  cooldown: 9
   targeting: {fileID: -8235947504382074459}
   effects:
-  - {fileID: 2653349974353006444}
-  - {fileID: -2950722562003027956}
+  - {fileID: 8057356786122674954}
+  - {fileID: -549900698080480185}
   pattern:
     type: 5
     repeatCount: 1
@@ -139,24 +139,24 @@ MonoBehaviour:
   castingVfxScale: 1
   castingSfx: {fileID: 0}
   castVfxPrefab: {fileID: 8550957183290902016, guid: 1e687c5764973a44a870c86be3141c48, type: 3}
-  castVfxLifetime: 0.65
+  castVfxLifetime: 0.3
   castVfxLocalOffset: {x: 0, y: 0, z: 0}
   castVfxLocalEuler: {x: 0, y: 0, z: 0}
-  castVfxScale: 1
-  castSfx: {fileID: 11400000, guid: 1306efe48e423b44480c4333a269e927, type: 2}
+  castVfxScale: 0.3
+  castSfx: {fileID: 11400000, guid: d02996cd2ef6b1043a498cc7d2845be0, type: 2}
   impactVfxPrefab: {fileID: 4751675602544774601, guid: 8b0150976aae6b3468d7dfe6c9b5403a, type: 3}
-  impactVfxLifetime: 1.1
-  impactVfxLocalOffset: {x: 0, y: -0.36, z: 0}
+  impactVfxLifetime: 2
+  impactVfxLocalOffset: {x: 0, y: 0.08, z: 0}
   impactVfxLocalEuler: {x: 0, y: 0, z: 0}
   impactVfxScale: 1
-  impactSfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
+  impactSfx: {fileID: 11400000, guid: a67b0d165b9432648942fc157fea8642, type: 2}
   persistentVfxPrefab: {fileID: 0}
   persistentVfxLocalOffset: {x: 0, y: 0.08, z: 0}
   persistentVfxLocalEuler: {x: 0, y: 0, z: 0}
   persistentVfxScale: 1
   persistentVfxAnchor: 4
   category: 2
---- !u!114 &2653349974353006444
+--- !u!114 &8057356786122674954
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -166,7 +166,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cf75b510fb724ae45b92af230ebebcb7, type: 3}
-  m_Name: __Effect_slow
+  m_Name: __Effect_01
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderUnitEffectDefinition
   effectId: CS_AbyssChain_slow
   effectType: 13

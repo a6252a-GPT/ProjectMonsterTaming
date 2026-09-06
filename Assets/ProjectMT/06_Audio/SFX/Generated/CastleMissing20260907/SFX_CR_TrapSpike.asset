@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: SFX_CR_TrapSpike
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 3989bec02c4896c43b5bc67a0ed70e6f, type: 3}
+  - {fileID: 8300000, guid: 764081a4e504af64faad9ee8c259bedd, type: 3}
+  volumeRange: {x: 0.5, y: 0.5}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.15
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0

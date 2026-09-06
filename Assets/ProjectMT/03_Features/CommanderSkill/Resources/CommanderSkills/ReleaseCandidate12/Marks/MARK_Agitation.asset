@@ -62,7 +62,7 @@ MonoBehaviour:
     localOffset: {x: 0, y: 0.08, z: 0}
     localEuler: {x: 0, y: 0, z: 0}
     scale: 1
-    sfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
+    sfx: {fileID: 11400000, guid: 628c74f3f4c2e9846bdc16992c51e05d, type: 2}
     anchor: 2
   onRemove:
     vfxPrefab: {fileID: 0}

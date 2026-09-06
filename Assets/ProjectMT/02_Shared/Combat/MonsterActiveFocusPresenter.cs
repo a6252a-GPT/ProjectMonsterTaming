@@ -127,7 +127,9 @@ namespace ProjectMT.Shared.Combat
             var config = MonsterActiveFocusPresentationConfig.Current;
             casterAccentEnabled = config == null || config.CasterAccentEnabled;
             focusStyle = style ?? MonsterActiveFocusStyles.Current;
-            minimumVisibleDuration = casterAccentEnabled && focusStyle == MonsterActiveFocusStyle.ClassicDim
+            minimumVisibleDuration = casterAccentEnabled && focusStyle == MonsterActiveFocusStyle.Spotlight
+                ? MonsterActiveFocusStyles.VisibleDuration(focusStyle, 0.8f)
+                : casterAccentEnabled && focusStyle == MonsterActiveFocusStyle.ClassicDim
                 ? preset.MinimumVisibleDuration : config != null
                 ? config.ResolveMinimumVisibleDuration(preset) : 0.8f;
             skillStrip.material = config?.CutInEdgeFadeMaterialTemplate;

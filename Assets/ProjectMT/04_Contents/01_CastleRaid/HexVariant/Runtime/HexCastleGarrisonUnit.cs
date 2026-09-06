@@ -347,6 +347,15 @@ namespace ProjectMT.Contents.CastleRaidHex
             responseDelayRemaining = ResolveResponseDelay(candidate);
         }
 
+        private ProjectMT.Shared.Audio.SfxPool attackAudioPool;
+        private ProjectMT.Shared.Audio.SfxCue attackSfx;
+
+        public void ConfigureAttackAudio(ProjectMT.Shared.Audio.SfxPool pool, ProjectMT.Shared.Audio.SfxCue cue)
+        {
+            attackAudioPool = pool;
+            attackSfx = cue;
+        }
+
         private void TickCombat(float deltaTime)
         {
             var targetCoordinates = ResolveCoordinates(target.transform.position);
@@ -358,6 +367,7 @@ namespace ProjectMT.Contents.CastleRaidHex
                 if (attackCooldown <= 0f)
                 {
                     attackCooldown = attackInterval;
+                    attackAudioPool?.Play(attackSfx, transform.position);
                     target.ApplyDamage(
                         attackDamage,
                         target.transform.position,

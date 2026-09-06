@@ -192,10 +192,27 @@ namespace ProjectMT.Features.CommanderSkill.Editor
 
         public static float CastTimeFor(string skillId) => skillId switch
         {
-            "CS_DoomSpear" => 0.25f,
-            "CS_DeathSentence" => 0.20f,
-            "CS_ApocalypseWar" => 0.35f,
-            _ => 0f
+            "CS_TrackingBlade" => 0.45f,
+            "CS_DoomSpear" => 0.80f,
+            "CS_AbyssChain" => 0.55f,
+            "CS_PhantomCharge" => 0.65f,
+            "CS_ConquerorSigil" => 0.75f,
+            "CS_PhantomBarrage" => 0.70f,
+            "CS_DeathSentence" => 0.80f,
+            "CS_RuptureMarch" => 0.70f,
+            "CS_HeartOfBattlefield" => 0.75f,
+            "CS_MarchOfDead" => 0.90f,
+            "CS_WarGodBrand" => 0.80f,
+            "CS_ApocalypseWar" => 1.20f,
+            _ => throw new ArgumentOutOfRangeException(nameof(skillId), skillId, "승인된 군단장 스킬 ID가 아닙니다.")
+        };
+
+        public static float ProjectileSpeedFor(string skillId) => skillId switch
+        {
+            "CS_TrackingBlade" => 10.5f,
+            "CS_DoomSpear" => 8f,
+            "CS_PhantomBarrage" => 9f,
+            _ => 16f
         };
 
         public static string DescriptionFor(string skillId) => skillId switch

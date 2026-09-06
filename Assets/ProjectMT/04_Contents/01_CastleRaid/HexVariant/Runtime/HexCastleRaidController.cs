@@ -84,6 +84,18 @@ namespace ProjectMT.Contents.CastleRaidHex
         [SerializeField] private SfxCue structureDestroyedSfx;
         [SerializeField] private SfxCue palaceDestroyedSfx;
 
+        [Header("Deployment And Trap Audio")]
+        [SerializeField] private SfxCue deploymentSfx; // 배치 성공 때만 재생
+        [SerializeField] private SfxCue snareTriggeredSfx;
+        [SerializeField] private SfxCue spikeTriggeredSfx;
+        [SerializeField] private SfxCue mineTriggeredSfx;
+        [SerializeField] private GameObject mineExplosionVfx;
+
+        [Header("Combat Audio")]
+        [SerializeField] private SfxCue attackSfx;
+        [SerializeField] private SfxCue wallHitSfx;
+        [SerializeField] private SfxCue buildingHitSfx;
+
         [Header("HUD")]
         [SerializeField] private TMP_Text deploymentText;
         [SerializeField] private TMP_Text statusText;
@@ -300,6 +312,7 @@ namespace ProjectMT.Contents.CastleRaidHex
                 stageInstance.transform.position,
                 snapshot);
             unit.transform.position += ResolveDeploymentOffset(coordinates);
+            unit.ConfigureAttackAudio(sfxPool, attackSfx);
             unit.Damaged -= HandleUnitDamaged;
             unit.Damaged += HandleUnitDamaged;
             unit.Died -= HandleUnitDied;
@@ -309,6 +322,7 @@ namespace ProjectMT.Contents.CastleRaidHex
 
             remainingDeployments[deployedIndex]--;
             deployedCount++;
+            sfxPool?.Play(deploymentSfx, unit.transform.position);
             if (!battleStarted)
             {
                 battleStarted = true;
@@ -381,6 +395,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             if (trapWorld != null)
             {
                 trapWorld.TrapTriggered -= HandleTrapTriggered;
+                trapWorld.TrapDetonated -= HandleTrapDetonated;
                 trapWorld.Shutdown();
             }
             assaultWorld?.Shutdown();
@@ -593,6 +608,8 @@ namespace ProjectMT.Contents.CastleRaidHex
             }
             trapWorld.TrapTriggered -= HandleTrapTriggered;
             trapWorld.TrapTriggered += HandleTrapTriggered;
+            trapWorld.TrapDetonated -= HandleTrapDetonated;
+            trapWorld.TrapDetonated += HandleTrapDetonated;
             trapWorld.Bind(assaultWorld);
 
             barracksRuntimes.Clear();
@@ -642,6 +659,27 @@ namespace ProjectMT.Contents.CastleRaidHex
                 unit.transform.position,
                 trap.TrapType,
                 deploymentCamera);
+            var cue = trap.TrapType switch
+            {
+                HexCastleTrapType.Snare => snareTriggeredSfx,
+                HexCastleTrapType.SpikePlate => spikeTriggeredSfx,
+                _ => null
+            };
+            sfxPool?.Play(cue, trap.transform.position); // 같은 Cue 동시 대상은 풀에서 제한
+        }
+
+        private void HandleTrapDetonated(HexCastleTrapRuntime trap)
+        {
+            if (trap != null && trap.TrapType == HexCastleTrapType.BlastMine)
+            {
+                sfxPool?.Play(mineTriggeredSfx, trap.transform.position); // 지연 피해·폭발 VFX와 같은 시점
+                var instance = combatWorld?.RentObject(mineExplosionVfx, trap.transform.position, Quaternion.identity);
+                if (instance != null)
+                {
+                    var lifetime = instance.GetComponent<HexCastleTurretVfxLifetime>() ?? instance.AddComponent<HexCastleTurretVfxLifetime>();
+                    lifetime.Play(combatWorld, 1.7f, 0.55f);
+                }
+            }
         }
 
         private void SpawnInitialGarrison(HexCastleDifficultyProfile difficultyProfile)
@@ -980,7 +1018,8 @@ namespace ProjectMT.Contents.CastleRaidHex
                 report.AppliedDamage,
                 FloatingNumberStyle.EnemyDamage,
                 cell.GetInstanceID(),
-                assaultWorld?.ConsumePassiveDamageFeedback(cell.GetInstanceID()) ?? DamageFeedbackFlags.None);
+                assaultWorld?.ConsumePassiveDamageFeedback(cell.GetInstanceID()) ?? DamageFeedbackFlags.None,
+                cell.Kind == HexCastleCellKind.Wall ? wallHitSfx : buildingHitSfx);
         }
 
         private void HandleCellDestroyed(HexCastleCellRuntime cell)
@@ -1042,6 +1081,7 @@ namespace ProjectMT.Contents.CastleRaidHex
 
             unit.Damaged -= HandleGarrisonDamaged;
             unit.Damaged += HandleGarrisonDamaged;
+            unit.ConfigureAttackAudio(sfxPool, attackSfx);
         }
 
         private void HandleGarrisonDamaged(HexCastleGarrisonUnit unit, DamageReport report)

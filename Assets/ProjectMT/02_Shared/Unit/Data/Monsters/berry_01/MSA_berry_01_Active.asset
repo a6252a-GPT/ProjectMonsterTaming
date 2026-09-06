@@ -60,7 +60,7 @@ MonoBehaviour:
         sfx: {fileID: 8430122021668032111, guid: 536b710ea7f6ac74ca8488dfb322c85a, type: 2}
         vfxPrefab: {fileID: 366189514204278032, guid: f08eb3200cf1ce549bb1ec8831578ad6, type: 3}
         vfxLifetime: 4
-        localPosition: {x: 0, y: 0, z: 0}
+        localPosition: {x: 0, y: 0.08, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
         scale: 1
       useDuration: 0

@@ -43,11 +43,11 @@ MonoBehaviour:
   loop:
     vfxPrefab: {fileID: 5695007781735229972, guid: b5cc8757c1f36f64fb0e648f0c447690, type: 3}
     lifetime: 5
-    localOffset: {x: 0, y: 0.12, z: 0}
+    localOffset: {x: 0, y: 0.9, z: 0}
     localEuler: {x: 0, y: 0, z: 0}
     scale: 1
     sfx: {fileID: 0}
-    anchor: 2
+    anchor: 1
   onStack:
     vfxPrefab: {fileID: 7712950434614526886, guid: 86ca5fac446b14d46b266ebfdfc039bb, type: 3}
     lifetime: 0.3
@@ -58,11 +58,11 @@ MonoBehaviour:
     anchor: 1
   onTrigger:
     vfxPrefab: {fileID: 841189143588533398, guid: 04555d3d8273038499e38f87c7171dc6, type: 3}
-    lifetime: 1.1
+    lifetime: 0.5
     localOffset: {x: 0, y: 0.08, z: 0}
     localEuler: {x: 0, y: 0, z: 0}
-    scale: 1
-    sfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
+    scale: 0.3
+    sfx: {fileID: 11400000, guid: 54f88c749ea03fe4092d1cabc561d1b9, type: 2}
     anchor: 2
   onRemove:
     vfxPrefab: {fileID: 0}

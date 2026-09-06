@@ -138,14 +138,14 @@ namespace ProjectMT.Bootstrap
             {
                 if (bgmSource != null)
                 {
-                    bgmSource.volume = AudioRuntimeSettings.BgmVolume;
+                    bgmSource.volume = AudioRuntimeSettings.BgmOutputGain;
                 }
 
                 return;
             }
 
-            audioMixer.SetFloat(bgmVolumeParameter, AudioRuntimeSettings.ToDecibels(AudioRuntimeSettings.BgmVolume));
-            audioMixer.SetFloat(sfxVolumeParameter, AudioRuntimeSettings.ToDecibels(AudioRuntimeSettings.SfxVolume));
+            audioMixer.SetFloat(bgmVolumeParameter, AudioRuntimeSettings.ToDecibels(AudioRuntimeSettings.BgmOutputGain));
+            audioMixer.SetFloat(sfxVolumeParameter, AudioRuntimeSettings.ToDecibels(AudioRuntimeSettings.SfxOutputGain));
         }
 
 #if UNITY_EDITOR

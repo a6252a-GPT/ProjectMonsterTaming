@@ -58,8 +58,8 @@ MonoBehaviour:
     \uD53C\uD574\uB97C \uC90D\uB2C8\uB2E4."
   icon: {fileID: -1912268900785408154, guid: 233ff8c61c9602a4aa9adfc4fccc0845, type: 3}
   rarity: 0
-  castTime: 0
-  cooldown: 6.5
+  castTime: 0.45
+  cooldown: 8
   targeting: {fileID: -9221425703388292532}
   effects:
   - {fileID: -4999969357359269326}
@@ -140,25 +140,25 @@ MonoBehaviour:
   castingVfxLocalEuler: {x: 0, y: 0, z: 0}
   castingVfxScale: 1
   castingSfx: {fileID: 0}
-  castVfxPrefab: {fileID: 8550957183290902016, guid: 1e687c5764973a44a870c86be3141c48, type: 3}
-  castVfxLifetime: 0.65
+  castVfxPrefab: {fileID: 3760655309535098238, guid: c7e6a06c698229347a73d560be1a5e20, type: 3}
+  castVfxLifetime: 0.3
   castVfxLocalOffset: {x: 0, y: 0, z: 0}
   castVfxLocalEuler: {x: 0, y: 0, z: 0}
   castVfxScale: 1
-  castSfx: {fileID: 11400000, guid: 1306efe48e423b44480c4333a269e927, type: 2}
-  impactVfxPrefab: {fileID: 724582208408214271, guid: 32bdbbed5bff84044b8260dce28681ca, type: 3}
-  impactVfxLifetime: 1.1
-  impactVfxLocalOffset: {x: 0, y: -0.36, z: 0}
+  castSfx: {fileID: 11400000, guid: 275c3390b03483045a6f5eec19ad1703, type: 2}
+  impactVfxPrefab: {fileID: 7365827536696481703, guid: 2fa940ca47e160a44a81f8a34c375b00, type: 3}
+  impactVfxLifetime: 0.4
+  impactVfxLocalOffset: {x: 0, y: -0.6203418, z: 0}
   impactVfxLocalEuler: {x: 0, y: 0, z: 0}
-  impactVfxScale: 1
-  impactSfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
+  impactVfxScale: 3
+  impactSfx: {fileID: 11400000, guid: 47d323258b338c645a24cc1ce182d9a5, type: 2}
   persistentVfxPrefab: {fileID: 0}
   persistentVfxLocalOffset: {x: 0, y: 0.08, z: 0}
   persistentVfxLocalEuler: {x: 0, y: 0, z: 0}
   persistentVfxScale: 1
   persistentVfxAnchor: 4
   deliveryModule: 1
-  projectilePrefab: {fileID: 996951632486080566, guid: 4625ebde3dd39e146bf2bedff3e1622d, type: 3}
-  projectileSpeed: 16
+  projectilePrefab: {fileID: 177132419787075076, guid: 85aa8e79adcdaef4280d0aad327c595c, type: 3}
+  projectileSpeed: 10.5
   trajectory: 0
   arcHeight: 0

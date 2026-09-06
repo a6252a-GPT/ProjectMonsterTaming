@@ -44,22 +44,18 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private TMP_Text diamondValueText;
         [SerializeField] private TMP_Text ascensionCurrencyValueText;
 
-        [Header("테스트 다이아 지급")]
+        [Header("다이아 지급")]
         [SerializeField] private Button[] diamondTestGrantButtons = Array.Empty<Button>();
 
         private IGameProgressService progress;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static readonly long[] DiamondTestGrantAmounts = { 10L, 50L, 200L, 400L, 800L, 1000L };
         private UnityAction[] diamondTestGrantActions = Array.Empty<UnityAction>();
         private bool diamondGrantPending;
-#endif
 
         private void Awake()
         {
             AddListeners();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             AddDiamondTestGrantListeners();
-#endif
         }
 
         private void OnEnable()
@@ -75,9 +71,7 @@ namespace ProjectMT.Features.MainBattle
         private void OnDestroy()
         {
             RemoveListeners();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             RemoveDiamondTestGrantListeners();
-#endif
             UnsubscribeProgress();
         }
 
@@ -97,9 +91,7 @@ namespace ProjectMT.Features.MainBattle
             }
 
             RefreshCurrency();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             RefreshDiamondTestGrantButtons();
-#endif
         }
 
         public void Shutdown()
@@ -133,7 +125,6 @@ namespace ProjectMT.Features.MainBattle
             RemoveListener(packageSubTabButtons, 1, ShowMonthlyPage);
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void AddDiamondTestGrantListeners()
         {
             var count = Mathf.Min(diamondTestGrantButtons?.Length ?? 0, DiamondTestGrantAmounts.Length);
@@ -176,7 +167,7 @@ namespace ProjectMT.Features.MainBattle
                     GameProgressChange.GrantItems(new ItemAmount(ItemIds.Diamond, amount)));
                 if (!granted)
                 {
-                    Debug.LogWarning($"Test diamond grant was rejected. Amount={amount}", this);
+                    Debug.LogWarning($"Diamond grant was rejected. Amount={amount}", this);
                 }
             }
             catch (Exception exception)
@@ -202,8 +193,6 @@ namespace ProjectMT.Features.MainBattle
                 }
             }
         }
-#endif
-
         private void ShowMonsterPage()
         {
             ShowPage(MonsterPage, mainTabIndex: 0, summonSubTabIndex: 0, packageSubTabIndex: -1);

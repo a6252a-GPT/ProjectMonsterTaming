@@ -15,6 +15,7 @@ namespace ProjectMT.Features.CommanderSkill
     public sealed class CommanderSkillRuntime : MonoBehaviour // 쿨타임·자동사용·투사체 수명 관리
     {
         private const float AutoScanInterval = 0.1f;
+        private const float PostActivationRecoverySeconds = 0.65f;
         private const string CommanderSkillVoiceResourcePath =
             "Audio/CommanderVoice/SFX_CommanderSkillVoice";
         private readonly float[] cooldownRemaining = new float[CommanderSkillSlotRules.SlotCount];
@@ -35,10 +36,12 @@ namespace ProjectMT.Features.CommanderSkill
         private CommanderSkillEffectRunner effectRunner;
         private readonly List<ICommanderSkillExecutor> executors = new List<ICommanderSkillExecutor>(3);
         private Transform castOrigin;
+        private Transform castVisualOrigin;
         private Func<bool> isInputBlocked;
         private Func<float> externalDamageMultiplier;
         private CommanderSkillProgressView progressView;
         private float autoScanRemaining;
+        private float skillRecoveryRemaining;
         private int castingSlot = -1;
         private CommanderSkillDefinition castingDefinition;
         private float castingRemaining;
@@ -55,6 +58,7 @@ namespace ProjectMT.Features.CommanderSkill
         public bool IsPaused => world == null || world.IsPaused || (isInputBlocked?.Invoke() ?? false);
         public bool IsConfigured => configured;
         public bool IsCasting => castingSlot >= 0 && castingDefinition != null;
+        public bool IsSkillSequenceLocked => IsCasting || skillRecoveryRemaining > 0f || HasBlockingPattern();
         public int CastingSlot => IsCasting ? castingSlot : -1;
         public float CastingRemaining => IsCasting ? Mathf.Max(0f, castingRemaining) : 0f;
         public float CastingDuration => IsCasting ? Mathf.Max(0f, castingDuration) : 0f;
@@ -81,6 +85,7 @@ namespace ProjectMT.Features.CommanderSkill
             catalog = skillCatalog;
             world = combatWorld;
             castOrigin = origin;
+            castVisualOrigin = origin != null ? origin.GetComponentInChildren<Animator>(true)?.transform : null;
             isInputBlocked = inputBlocked;
             externalDamageMultiplier = damageMultiplier;
             pullGround = safePullGround;
@@ -135,6 +140,7 @@ namespace ProjectMT.Features.CommanderSkill
             effectRunner = null;
             executors.Clear();
             castOrigin = null;
+            castVisualOrigin = null;
             isInputBlocked = null;
             externalDamageMultiplier = null;
             pullGround = null;
@@ -144,6 +150,7 @@ namespace ProjectMT.Features.CommanderSkill
             pullClock = 0f;
             configured = false;
             autoScanRemaining = 0f;
+            skillRecoveryRemaining = 0f;
             ClearPendingCast();
             for (var index = 0; index < cooldownRemaining.Length; index++)
             {
@@ -156,7 +163,7 @@ namespace ProjectMT.Features.CommanderSkill
         {
             if (!configured || IsPaused || combat == null || !combat.IsReady ||
                 slotIndex < 0 || slotIndex >= CommanderSkillSlotRules.SlotCount ||
-                IsCasting ||
+                IsSkillSequenceLocked ||
                 !progressView.IsSlotUnlocked(slotIndex) || cooldownRemaining[slotIndex] > 0f ||
                 !catalog.TryGet(progressView.GetEquippedSkillId(slotIndex), out var definition))
             {
@@ -186,7 +193,7 @@ namespace ProjectMT.Features.CommanderSkill
                 castingRemaining = definition.CastTime;
                 castingMultiplier = multiplier;
                 castAnimationPresenter?.Play(definition.SkillId);
-                PlayCastingFeedback(definition, castOrigin.position, castOrigin.rotation);
+                PlayCastingFeedback(definition, ResolveCastPointPosition(), castOrigin.rotation);
                 PlayCommanderSkillVoice();
                 return true;
             }
@@ -414,6 +421,7 @@ namespace ProjectMT.Features.CommanderSkill
             TickPatterns(deltaTime);
             TickMarks(deltaTime);
             TickGlobalModifiers(deltaTime);
+            skillRecoveryRemaining = Mathf.Max(0f, skillRecoveryRemaining - deltaTime);
             var cooldownRecovery = ResolveCooldownRecoveryMultiplier();
             for (var index = 0; index < cooldownRemaining.Length; index++)
             {
@@ -693,6 +701,13 @@ namespace ProjectMT.Features.CommanderSkill
             for (var index = activeMarks.Count - 1; index >= 0; index--) RemoveMark(activeMarks[index], playRemove);
         }
 
+        private Vector3 ResolveCastPointPosition()
+        {
+            if (castVisualOrigin != null)
+                return castVisualOrigin.TransformPoint(new Vector3(0f, 1.15f, 0.65f)); // 모델 앞 고정 발사점
+            return castOrigin.position + Vector3.up * 1.15f;
+        }
+
         private bool ExecutePatternHit(ActivePattern state)
         {
             var definition = state.Definition;
@@ -711,15 +726,17 @@ namespace ProjectMT.Features.CommanderSkill
                 var offset = UnityEngine.Random.insideUnitCircle * definition.Pattern.RandomRadius;
                 destination += new Vector3(offset.x, 0f, offset.y);
             }
+            var feedbackPosition = ResolveCastPointPosition();
             var direction = destination - start;
-            var rotation = direction.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(direction.normalized, Vector3.up) : Quaternion.identity;
+            var feedbackDirection = destination - feedbackPosition;
+            var rotation = feedbackDirection.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(feedbackDirection.normalized, Vector3.up) : Quaternion.identity;
             var origin = definition.Pattern.Type == CommanderSkillPatternType.PersistentArea
                 ? CombatDamageOrigin.CommanderPeriodic
                 : CombatDamageOrigin.CommanderSkill;
             if (definition is CommanderAttackSkillDefinition attack &&
                 attack.DeliveryModule == MonsterBasicAttackDeliveryModule.Projectile)
             {
-                var projectileObject = feedback.Rent(attack.ProjectilePrefab, start, rotation);
+                var projectileObject = feedback.Rent(attack.ProjectilePrefab, feedbackPosition, rotation);
                 var projectile = projectileObject == null ? null : projectileObject.GetComponent<CommanderSkillProjectile>();
                 if (projectile == null) { feedback.Return(projectileObject); return false; }
                 activeProjectiles.Add(projectileObject);
@@ -731,7 +748,7 @@ namespace ProjectMT.Features.CommanderSkill
                 var applied = ResolveImpact(definition, new CommanderSkillImpactContext(start, target, destination, direction, origin), state.Multiplier.ForHit(state.Executed));
                 if (definition.Category != CommanderSkillCategory.Attack && applied == 0 && state.Executed == 0) return false;
             }
-            if (!persistent || state.Executed == 0) PlayCastFeedback(definition, start, rotation);
+            if (!persistent || state.Executed == 0) PlayCastFeedback(definition, feedbackPosition, rotation);
             state.LastPosition = destination;
             if (target != null) state.HitIds.Add(target.GetInstanceID());
             return true;
@@ -908,7 +925,22 @@ namespace ProjectMT.Features.CommanderSkill
 
             cooldownDuration[slotIndex] = multiplier.Resolve(AP.Cooldown, definition.Cooldown);
             cooldownRemaining[slotIndex] = cooldownDuration[slotIndex];
+            skillRecoveryRemaining = PostActivationRecoverySeconds;
             return true;
+        }
+
+        private bool HasBlockingPattern()
+        {
+            for (var index = 0; index < activePatterns.Count; index++)
+            {
+                var pattern = activePatterns[index]?.Definition?.Pattern;
+                if (pattern != null && pattern.Type != CommanderSkillPatternType.PersistentArea)
+                {
+                    return true; // 연타·연쇄·포격 시퀀스가 끝난 뒤 다음 스킬을 허용한다.
+                }
+            }
+
+            return false;
         }
 
         private bool TickPendingCast(float deltaTime)

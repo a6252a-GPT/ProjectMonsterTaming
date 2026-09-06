@@ -36,8 +36,8 @@ MonoBehaviour:
     \uC8FC\uBCC0\uC5D0 \uCD94\uAC00 \uD3ED\uBC1C\uC744 \uC77C\uC73C\uD0B5\uB2C8\uB2E4."
   icon: {fileID: -6236578694040669561, guid: 233ff8c61c9602a4aa9adfc4fccc0845, type: 3}
   rarity: 1
-  castTime: 0
-  cooldown: 9
+  castTime: 0.7
+  cooldown: 13
   targeting: {fileID: -435762757034870218}
   effects:
   - {fileID: 6275668715029917637}
@@ -118,28 +118,28 @@ MonoBehaviour:
   castingVfxLocalEuler: {x: 0, y: 0, z: 0}
   castingVfxScale: 1
   castingSfx: {fileID: 0}
-  castVfxPrefab: {fileID: 8550957183290902016, guid: 1e687c5764973a44a870c86be3141c48, type: 3}
-  castVfxLifetime: 0.65
+  castVfxPrefab: {fileID: 7728069082375908099, guid: 9f118fe21a941f54086fa2585305a0d5, type: 3}
+  castVfxLifetime: 0.3
   castVfxLocalOffset: {x: 0, y: 0, z: 0}
   castVfxLocalEuler: {x: 0, y: 0, z: 0}
-  castVfxScale: 1
-  castSfx: {fileID: 11400000, guid: 1306efe48e423b44480c4333a269e927, type: 2}
-  impactVfxPrefab: {fileID: 6723572984881174042, guid: 7fd618deba6543244acd46d02e5bdd62, type: 3}
-  impactVfxLifetime: 1.1
-  impactVfxLocalOffset: {x: 0, y: -0.36, z: 0}
+  castVfxScale: 1.5
+  castSfx: {fileID: 11400000, guid: 70dd40f8887738f4c9120a433665e5d8, type: 2}
+  impactVfxPrefab: {fileID: 3698609263764517201, guid: 3943b600ffd18a646b9297f1a041e22a, type: 3}
+  impactVfxLifetime: 0.5
+  impactVfxLocalOffset: {x: 0, y: 0.08, z: 0}
   impactVfxLocalEuler: {x: 0, y: 0, z: 0}
   impactVfxScale: 1
-  impactSfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
+  impactSfx: {fileID: 11400000, guid: 732e4f51856e4ca45b31a8907bb4cd75, type: 2}
   persistentVfxPrefab: {fileID: 0}
   persistentVfxLocalOffset: {x: 0, y: 0.08, z: 0}
   persistentVfxLocalEuler: {x: 0, y: 0, z: 0}
   persistentVfxScale: 1
   persistentVfxAnchor: 4
-  deliveryModule: 2
-  projectilePrefab: {fileID: 6078696380654765444, guid: fc4726aa82a56d5489c27b13c1bf33bc, type: 3}
-  projectileSpeed: 16
-  trajectory: 0
-  arcHeight: 0
+  deliveryModule: 1
+  projectilePrefab: {fileID: 4085735795923676373, guid: 73a7a14ba195c3d4fabe90e42184bded, type: 3}
+  projectileSpeed: 9
+  trajectory: 1
+  arcHeight: 3
 --- !u!114 &6275668715029917637
 MonoBehaviour:
   m_ObjectHideFlags: 1

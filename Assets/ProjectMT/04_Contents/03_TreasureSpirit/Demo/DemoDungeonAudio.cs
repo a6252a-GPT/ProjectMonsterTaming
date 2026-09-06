@@ -513,7 +513,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
         private float Mix(float volume, bool useBgmScale)
         {
             float channel = useBgmScale
-                ? (bgmGroup == null ? AudioRuntimeSettings.BgmVolume : 1f)
+                ? (bgmGroup == null ? AudioRuntimeSettings.BgmOutputGain : 1f)
                 : SfxChannelScale();
             float master = useBgmScale ? MasterVolume : MasterVolume * SfxVolumeScale;
             return volume * master * channel;
@@ -526,7 +526,7 @@ namespace ProjectMT.Contents.TreasureSpirit.Demo
 
         private float SfxChannelScale()
         {
-            return sfxGroup == null ? AudioRuntimeSettings.SfxVolume : 1f;
+            return sfxGroup == null ? AudioRuntimeSettings.SfxOutputGain : 1f;
         }
 
         private readonly struct Bed

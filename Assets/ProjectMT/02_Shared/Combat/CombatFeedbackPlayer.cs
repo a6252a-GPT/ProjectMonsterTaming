@@ -216,12 +216,20 @@ namespace ProjectMT.Shared.Combat
             int mergeKey,
             DamageFeedbackFlags feedbackFlags = DamageFeedbackFlags.None)
         {
+            PlayDamage(position, amount, style, mergeKey, feedbackFlags, null);
+        }
+
+        public void PlayDamage(
+            Vector3 position, float amount, FloatingNumberStyle style, int mergeKey,
+            DamageFeedbackFlags feedbackFlags, SfxCue damageSfx)
+        {
             var sizeMultiplier = (feedbackFlags & DamageFeedbackFlags.PassiveEnhancedNumber) != 0 ? 1.2f : 1f;
             var resolvedMergeKey = (feedbackFlags & DamageFeedbackFlags.SeparateFloatingNumber) != 0
                 ? 0
                 : mergeKey;
             floatingNumbers?.Queue(position, amount, style, resolvedMergeKey, sizeMultiplier); // 비 UnitActor 대상의 확정 피해 표시
-            SfxEvents.Play(SfxEvents.Hit, sfxPool, position, hitSfx);
+            if (damageSfx != null) sfxPool?.Play(damageSfx, position); // 건물 전용음은 공통 피격음과 중복하지 않음
+            else SfxEvents.Play(SfxEvents.Hit, sfxPool, position, hitSfx);
         }
 
         public void PlayFloatingNumber(Vector3 position, float amount, FloatingNumberStyle style, int mergeKey)

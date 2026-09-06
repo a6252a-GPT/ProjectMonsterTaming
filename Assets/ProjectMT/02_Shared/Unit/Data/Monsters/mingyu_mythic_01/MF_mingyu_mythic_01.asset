@@ -54,6 +54,8 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  basicAttackVoice: {fileID: 0}
+  activeSkillVoice: {fileID: 0}
   basicAttackVfxBindings:
   - attackId: BA_M_03
     slotId: thrust_path
@@ -63,6 +65,10 @@ MonoBehaviour:
     sfxState: 2
     sound: {fileID: 0}
     soundVolume: 1
+    soundStartOffsetSeconds: 0
+    soundEndCutSeconds: 0
+    overrideSoundPitch: 0
+    soundPitch: 1
     sfx: {fileID: 0}
     lifetime: 1
     playbackOffset: 0
@@ -79,6 +85,10 @@ MonoBehaviour:
     sfxState: 1
     sound: {fileID: 8300000, guid: d6b1644f59ed644d6a3191ab058ca02b, type: 3}
     soundVolume: 1
+    soundStartOffsetSeconds: 0
+    soundEndCutSeconds: 0
+    overrideSoundPitch: 0
+    soundPitch: 1
     sfx: {fileID: 4938784522460984277}
     lifetime: 1
     playbackOffset: 0
@@ -106,6 +116,8 @@ MonoBehaviour:
   spatialBlend: 1
   duplicateCooldown: 0.05
   priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
 --- !u!114 &4938784522460984277
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -125,3 +137,5 @@ MonoBehaviour:
   spatialBlend: 1
   duplicateCooldown: 0.05
   priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0

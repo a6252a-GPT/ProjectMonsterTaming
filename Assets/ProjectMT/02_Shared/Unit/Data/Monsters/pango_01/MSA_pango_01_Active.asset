@@ -441,6 +441,10 @@ MonoBehaviour:
       sfxState: 1
       sound: {fileID: 8300000, guid: 51bc3841e3c18014880f1beb1ea4780a, type: 3}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: 7134078559015283039, guid: cc737904e17ec1a469ef81860f5d1170, type: 2}
       lifetime: 1
       playbackOffset: 0
@@ -457,6 +461,10 @@ MonoBehaviour:
       sfxState: 1
       sound: {fileID: 8300000, guid: 7981ead5aa6dbac46b9d0d2ed00ef8cd, type: 3}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: -5105725417247945207, guid: cc737904e17ec1a469ef81860f5d1170, type: 2}
       lifetime: 3
       playbackOffset: 0
@@ -473,12 +481,16 @@ MonoBehaviour:
       sfxState: 1
       sound: {fileID: 8300000, guid: 85184127afbfdfe4a93dbed41626065f, type: 3}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: -6677697631577413511, guid: cc737904e17ec1a469ef81860f5d1170, type: 2}
       lifetime: 3
       playbackOffset: 0.9
       playbackSpeed: 1
       eventTimingOffset: 0
-      localPosition: {x: 0, y: -0.35426807, z: 0}
+      localPosition: {x: 0, y: -0.2742681, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 0.25
     - attackId: active_step_01
@@ -489,6 +501,10 @@ MonoBehaviour:
       sfxState: 0
       sound: {fileID: 8300000, guid: fec37f77e6148e64babb1b6827c44d9b, type: 3}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: 0}
       lifetime: 1
       playbackOffset: 0
@@ -505,6 +521,10 @@ MonoBehaviour:
       sfxState: 0
       sound: {fileID: 8300000, guid: a583eb0d6cc72174dac94a7544b08697, type: 3}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: 0}
       lifetime: 1
       playbackOffset: 0
@@ -566,6 +586,10 @@ MonoBehaviour:
       sfxState: 2
       sound: {fileID: 0}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: 0}
       lifetime: 1
       playbackOffset: 0
@@ -582,6 +606,10 @@ MonoBehaviour:
       sfxState: 1
       sound: {fileID: 8300000, guid: a583eb0d6cc72174dac94a7544b08697, type: 3}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: -8829893795575124543, guid: cc737904e17ec1a469ef81860f5d1170, type: 2}
       lifetime: 1
       playbackOffset: 0
@@ -598,6 +626,10 @@ MonoBehaviour:
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: 0}
       lifetime: 1
       playbackOffset: 0
@@ -614,12 +646,16 @@ MonoBehaviour:
       sfxState: 2
       sound: {fileID: 0}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: 0}
       lifetime: 2
       playbackOffset: 0
       playbackSpeed: 1
       eventTimingOffset: 0
-      localPosition: {x: 0, y: -0.35260034, z: 0.44999993}
+      localPosition: {x: 0, y: -0.27260035, z: 0.44999993}
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 0.7
     - attackId: active_step_02
@@ -630,12 +666,16 @@ MonoBehaviour:
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: 0}
       lifetime: 0.8
       playbackOffset: 0
       playbackSpeed: 1
       eventTimingOffset: 0
-      localPosition: {x: 0, y: 0, z: 0}
+      localPosition: {x: 0, y: 0.08, z: 0}
       localEulerAngles: {x: 0, y: 0, z: 0}
       scale: 0.45
   - stepId: step_03
@@ -691,6 +731,10 @@ MonoBehaviour:
       sfxState: 2
       sound: {fileID: 0}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: 0}
       lifetime: 1
       playbackOffset: 0
@@ -707,6 +751,10 @@ MonoBehaviour:
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: 0}
       lifetime: 1
       playbackOffset: 0
@@ -723,6 +771,10 @@ MonoBehaviour:
       sfxState: 0
       sound: {fileID: 0}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: 0}
       lifetime: 1
       playbackOffset: 0
@@ -739,6 +791,10 @@ MonoBehaviour:
       sfxState: 1
       sound: {fileID: 8300000, guid: 13a90d5fc7d80974596a6b777bb193d1, type: 3}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: -2695618789730534845, guid: cc737904e17ec1a469ef81860f5d1170, type: 2}
       lifetime: 0.85
       playbackOffset: 0
@@ -755,6 +811,10 @@ MonoBehaviour:
       sfxState: 1
       sound: {fileID: 8300000, guid: b24a2b2dd005fe64090abd0d6a7aa6eb, type: 3}
       soundVolume: 1
+      soundStartOffsetSeconds: 0
+      soundEndCutSeconds: 0
+      overrideSoundPitch: 0
+      soundPitch: 1
       sfx: {fileID: -3077704000673580840, guid: cc737904e17ec1a469ef81860f5d1170, type: 2}
       lifetime: 0.8
       playbackOffset: 0

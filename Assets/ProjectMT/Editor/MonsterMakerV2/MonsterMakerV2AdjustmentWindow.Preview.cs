@@ -51,8 +51,14 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private Vector2 positionDragAxisGui;
         private float positionDragUnitsPerPixel;
         private string errorMessage;
+        private GameObject externalPreviewModelPrefab;
+        private float externalPreviewModelHeight = 2f;
+        private Vector3 externalAttackOriginLocalPosition;
+        private Vector3 externalHitCenterLocalPosition;
+        private bool externalLifetimeEditable = true;
 
         private bool IsVfxMode => previewVfxPrefab != null && applyVfx != null;
+        private bool IsExternalPreview => externalPreviewModelPrefab != null;
 
         private void DrawPreviewGUI()
         {
@@ -66,7 +72,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 GUI.Label(
                     rect,
                     string.IsNullOrWhiteSpace(errorMessage)
-                        ? "몬스터 모델 Preview를 준비하지 못했습니다."
+                        ? "3D 모델 Preview를 준비하지 못했습니다."
                         : errorMessage,
                     EditorStyles.centeredGreyMiniLabel);
                 return;
@@ -440,7 +446,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private void BuildPreview()
         {
             CleanupPreview();
-            if (!CanOpen(draft))
+            if (!IsExternalPreview && !CanOpen(draft))
             {
                 errorMessage = "3D 모델 프리팹을 먼저 지정하세요.";
                 return;
@@ -470,15 +476,30 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 }
 
                 previewRoot = new GameObject("[Monster Maker V2 Adjustment Preview]");
-                previewVisual = Instantiate(draft.VendorPrefab, previewRoot.transform).transform;
+                var modelPrefab = IsExternalPreview ? externalPreviewModelPrefab : draft.VendorPrefab;
+                previewVisual = Instantiate(modelPrefab, previewRoot.transform).transform;
                 previewVisual.name = "Visual";
-                previewVisual.localPosition = draft.VisualLocalPosition + Vector3.up * draft.GroundOffset;
-                previewVisual.localRotation = Quaternion.Euler(0f, draft.FacingYawOffset, 0f);
-                previewVisual.localScale = draft.VisualScale;
-                attackOrigin = EnsureTransformPath(previewRoot.transform, draft.AttackOriginPath);
-                attackOrigin.localPosition = draft.AttackOriginLocalPosition;
-                hitCenter = EnsureTransformPath(previewRoot.transform, draft.HitCenterPath);
-                hitCenter.localPosition = draft.HitCenterLocalPosition;
+                if (IsExternalPreview)
+                {
+                    previewVisual.localPosition = Vector3.zero;
+                    previewVisual.localRotation = Quaternion.identity;
+                    previewVisual.localScale = Vector3.one;
+                    GroundAndFit(previewVisual.gameObject, externalPreviewModelHeight);
+                    attackOrigin = EnsureTransformPath(previewRoot.transform, "__AttackOrigin");
+                    attackOrigin.localPosition = externalAttackOriginLocalPosition;
+                    hitCenter = EnsureTransformPath(previewRoot.transform, "__HitCenter");
+                    hitCenter.localPosition = externalHitCenterLocalPosition;
+                }
+                else
+                {
+                    previewVisual.localPosition = draft.VisualLocalPosition + Vector3.up * draft.GroundOffset;
+                    previewVisual.localRotation = Quaternion.Euler(0f, draft.FacingYawOffset, 0f);
+                    previewVisual.localScale = draft.VisualScale;
+                    attackOrigin = EnsureTransformPath(previewRoot.transform, draft.AttackOriginPath);
+                    attackOrigin.localPosition = draft.AttackOriginLocalPosition;
+                    hitCenter = EnsureTransformPath(previewRoot.transform, draft.HitCenterPath);
+                    hitCenter.localPosition = draft.HitCenterLocalPosition;
+                }
                 valueAnchor = ResolveValueAnchor();
                 PrepareModelOnlyPreview(previewRoot);
                 // Vendor VFX의 과장된 Renderer Bounds가 카메라를 밀어내지 않도록 모델만으로 구도를 고정한다.
@@ -512,7 +533,8 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             var horizontalHalfAngle = Mathf.Atan(Mathf.Tan(verticalHalfAngle) * Mathf.Max(0.2f, camera.aspect));
             var limitingAngle = Mathf.Min(verticalHalfAngle, horizontalHalfAngle);
             var distance = radius / Mathf.Max(0.05f, Mathf.Sin(limitingAngle));
-            distance *= 1.3f * cameraDistanceScale / Mathf.Clamp(draft.PreviewScale, 0.15f, 8f);
+            var previewScale = IsExternalPreview ? 1f : draft.PreviewScale;
+            distance *= 1.3f * cameraDistanceScale / Mathf.Clamp(previewScale, 0.15f, 8f);
             var direction = Quaternion.Euler(cameraPitch, cameraYaw, 0f) * Vector3.forward;
             camera.transform.position = center - direction.normalized * distance;
             camera.transform.rotation = Quaternion.LookRotation(center - camera.transform.position, Vector3.up);
@@ -526,7 +548,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 handleValue = Vector3.zero;
                 return false;
             }
-            handleValue = binding.ValueMode == MonsterMakerPreviewPositionValueMode.VisualLocal
+            handleValue = !IsExternalPreview && binding.ValueMode == MonsterMakerPreviewPositionValueMode.VisualLocal
                 ? currentPosition + Vector3.up * draft.GroundOffset
                 : currentPosition;
             return true;
@@ -534,7 +556,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
 
         private Vector3 ConvertHandleValueToStoredValue(Vector3 handleValue)
         {
-            return binding.ValueMode == MonsterMakerPreviewPositionValueMode.VisualLocal
+            return !IsExternalPreview && binding.ValueMode == MonsterMakerPreviewPositionValueMode.VisualLocal
                 ? handleValue - Vector3.up * draft.GroundOffset
                 : handleValue;
         }
@@ -550,7 +572,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                     previewVfx.gameObject,
                     previewVfxPrefab.transform.localScale *
                     currentScale *
-                    Mathf.Max(0.01f, draft.VfxScale));
+                    (IsExternalPreview ? 1f : Mathf.Max(0.01f, draft.VfxScale)));
             }
             else if (binding.ValueMode == MonsterMakerPreviewPositionValueMode.VisualLocal && previewVisual != null)
             {
@@ -660,6 +682,19 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 }
             }
             return bounds;
+        }
+
+        private static void GroundAndFit(GameObject instance, float desiredHeight)
+        {
+            var renderers = instance.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0) return;
+            var bounds = renderers[0].bounds;
+            for (var index = 1; index < renderers.Length; index++) bounds.Encapsulate(renderers[index].bounds);
+            if (bounds.size.y > 0.001f) instance.transform.localScale *= desiredHeight / bounds.size.y;
+            renderers = instance.GetComponentsInChildren<Renderer>(true);
+            bounds = renderers[0].bounds;
+            for (var index = 1; index < renderers.Length; index++) bounds.Encapsulate(renderers[index].bounds);
+            instance.transform.position += Vector3.down * bounds.min.y;
         }
 
         private void MarkPreviewDirty()

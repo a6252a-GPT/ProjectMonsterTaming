@@ -18,7 +18,9 @@ namespace ProjectMT.Shared.Combat
 
         private bool UsesCasterAccent => MonsterActiveFocusPresentationConfig.Current == null ||
                                         MonsterActiveFocusPresentationConfig.Current.CasterAccentEnabled;
-        private float ActiveFocusMinimumVisibleDuration => UsesCasterAccent && activeFocusStyle == MonsterActiveFocusStyle.ClassicDim
+        private float ActiveFocusMinimumVisibleDuration => UsesCasterAccent && activeFocusStyle == MonsterActiveFocusStyle.Spotlight
+            ? MonsterActiveFocusStyles.VisibleDuration(activeFocusStyle, 0.8f)
+            : UsesCasterAccent && activeFocusStyle == MonsterActiveFocusStyle.ClassicDim
             ? activeFocusPreset.MinimumVisibleDuration
             : MonsterActiveFocusPresentationConfig.Current != null
             ? MonsterActiveFocusPresentationConfig.Current.ResolveMinimumVisibleDuration(activeFocusPreset)
@@ -506,7 +508,7 @@ namespace ProjectMT.Shared.Combat
                        activeFocusVisible && !activeFocusCommitted &&
                        MonsterActiveFocusStyles.Slows(activeFocusStyle) &&
                        activeFocusElapsed - activeFocusSlowStartedAt < MonsterActiveFocusStyles.Lead(activeFocusStyle)
-                    ? 0.10f : 1f;
+                    ? MonsterActiveFocusStyles.SlowScale(activeFocusStyle) : 1f;
             }
             if (activeFocus == null || source == null || source == activeFocus.Caster)
             {

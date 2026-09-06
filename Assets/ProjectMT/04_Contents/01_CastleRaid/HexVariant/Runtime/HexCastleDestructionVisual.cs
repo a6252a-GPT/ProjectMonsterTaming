@@ -11,6 +11,8 @@ namespace ProjectMT.Contents.CastleRaidHex
 
         [SerializeField] private Transform[] fragments;
         [SerializeField] private ParticleSystem dust;
+        [SerializeField] private bool normalizeDustScale; // 기존 잔해 크기와 연기 높이 분리
+        [SerializeField, Min(0.01f)] private float dustFootprintScale = 0.35f;
         [SerializeField, Min(0.1f)] private float collapseDuration = 0.85f;
         [SerializeField, Min(0f)] private float debrisDuration = 4f;
         [SerializeField, Min(0.1f)] private float sinkDuration = 0.7f;
@@ -79,7 +81,16 @@ namespace ProjectMT.Contents.CastleRaidHex
                 if (oldest != null) oldest.gameObject.SetActive(false);
                 else activeEffects.RemoveFirst();
             }
-            if (dust != null) dust.Play(true);
+            if (dust != null)
+            {
+                if (normalizeDustScale)
+                {
+                    var scale = transform.lossyScale;
+                    var size = Mathf.Clamp(Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z)) * dustFootprintScale, 0.3f, 1.6f);
+                    dust.transform.localScale = new Vector3(size / Mathf.Max(.001f, Mathf.Abs(scale.x)), size / Mathf.Max(.001f, Mathf.Abs(scale.y)), size / Mathf.Max(.001f, Mathf.Abs(scale.z)));
+                }
+                dust.Play(true);
+            }
         }
 
         private void OnDisable()

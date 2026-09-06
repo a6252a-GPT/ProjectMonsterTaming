@@ -5,6 +5,10 @@ namespace ProjectMT.Shared.Audio
 {
     public static class AudioRuntimeSettings // 전역 AudioSource·Mixer 공통 음량 기준
     {
+        public const float BaseBgmGain = 0.4f; // 사용자 슬라이더와 독립적인 기본 믹스
+        public const float BaseSfxGain = 0.85f;
+        public static float BgmOutputGain => BgmVolume * BaseBgmGain;
+        public static float SfxOutputGain => SfxVolume * BaseSfxGain;
         public static float BgmVolume { get; private set; } = 1f;
         public static float SfxVolume { get; private set; } = 1f;
         public static bool VibrationEnabled { get; private set; } = true;

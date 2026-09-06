@@ -291,7 +291,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 0.129539, g: 0.2924842, b: 0.38679248, a: 1}
-      maxColor: {r: 0.754717, g: 0.754717, b: 0.754717, a: 1}
+      maxColor: {r: 1, g: 1, b: 1, a: 1}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -4925,7 +4925,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 91fe2eeccc9dcc946aad6cbfe9f09974, type: 2}
+  - {fileID: 2100000, guid: d748bb93f04021c4f84643ec1b0d3806, type: 2}
   - {fileID: 2100000, guid: ce99c98105a6bec429f442cd72ac7ac5, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
@@ -5391,7 +5391,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.12, y: 0.12, z: 0.12}
+  m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7470193863803303766}
@@ -5688,7 +5688,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 0.129539, g: 0.2924842, b: 0.38679248, a: 1}
-      maxColor: {r: 0.754717, g: 0.754717, b: 0.754717, a: 1}
+      maxColor: {r: 1, g: 1, b: 1, a: 1}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -10322,7 +10322,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 91fe2eeccc9dcc946aad6cbfe9f09974, type: 2}
+  - {fileID: 2100000, guid: d748bb93f04021c4f84643ec1b0d3806, type: 2}
   - {fileID: 2100000, guid: ce99c98105a6bec429f442cd72ac7ac5, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0

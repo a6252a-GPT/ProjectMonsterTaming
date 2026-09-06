@@ -59,8 +59,8 @@ MonoBehaviour:
     \uCD94\uAC00 \uD3ED\uBC1C\uC744 \uC77C\uC73C\uD0B5\uB2C8\uB2E4."
   icon: {fileID: -6919055608764949113, guid: 233ff8c61c9602a4aa9adfc4fccc0845, type: 3}
   rarity: 0
-  castTime: 0.25
-  cooldown: 7
+  castTime: 0.8
+  cooldown: 10
   targeting: {fileID: -7105495279645525436}
   effects:
   - {fileID: -2485575550032420557}
@@ -139,20 +139,20 @@ MonoBehaviour:
   castingVfxLifetime: 0.3
   castingVfxLocalOffset: {x: 0, y: 0, z: 0}
   castingVfxLocalEuler: {x: 0, y: 0, z: 0}
-  castingVfxScale: 1
-  castingSfx: {fileID: 0}
+  castingVfxScale: 4
+  castingSfx: {fileID: 11400000, guid: e7a3cc6f26ba3ef42bd7ef74f07dd3e9, type: 2}
   castVfxPrefab: {fileID: 8097030639909613100, guid: 61ea3b932207d9d47b147c7cde734207, type: 3}
   castVfxLifetime: 0.65
   castVfxLocalOffset: {x: 0, y: 0, z: 0}
   castVfxLocalEuler: {x: 0, y: 0, z: 0}
-  castVfxScale: 1
-  castSfx: {fileID: 11400000, guid: 1306efe48e423b44480c4333a269e927, type: 2}
+  castVfxScale: 4
+  castSfx: {fileID: 11400000, guid: edbbf09852e6be24abe8bd71c1874b4a, type: 2}
   impactVfxPrefab: {fileID: 7024117885906176349, guid: a0ac5e22d71033245a6fbffd25143540, type: 3}
-  impactVfxLifetime: 1.1
-  impactVfxLocalOffset: {x: 0, y: -0.36, z: 0}
+  impactVfxLifetime: 1
+  impactVfxLocalOffset: {x: 0, y: -0.28000003, z: 0}
   impactVfxLocalEuler: {x: 0, y: 0, z: 0}
   impactVfxScale: 1
-  impactSfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
+  impactSfx: {fileID: 11400000, guid: 6e920017a9edd18418db3ef14820f084, type: 2}
   persistentVfxPrefab: {fileID: 0}
   persistentVfxLocalOffset: {x: 0, y: 0.08, z: 0}
   persistentVfxLocalEuler: {x: 0, y: 0, z: 0}
@@ -160,6 +160,6 @@ MonoBehaviour:
   persistentVfxAnchor: 4
   deliveryModule: 1
   projectilePrefab: {fileID: 4484297252875178804, guid: eb80ef478b8d8304b90de3dd5581c401, type: 3}
-  projectileSpeed: 16
+  projectileSpeed: 8
   trajectory: 1
   arcHeight: 4

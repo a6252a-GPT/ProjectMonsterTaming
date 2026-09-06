@@ -16,14 +16,20 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 {
     internal sealed class CommanderSkillWorkshopPreview : IDisposable // 군단장 모델·판정·VFX 실재생 Stage
     {
-        private const string CommanderVisualPath =
+        internal const string CommanderVisualPath =
             "Assets/ProjectMT/05_Art/Characters/Commander/PF_CommanderVisual.prefab";
-        private const string TargetVisualPath =
+        internal const string TargetVisualPath =
             "Assets/ProjectMT/03_Features/Expedition/Prefabs/PF_Enemy_Knight_T1.prefab";
+        internal static readonly Vector3 CastAnchorLocalPosition = new Vector3(0f, 1.15f, 0.25f);
+        internal static readonly Vector3 ImpactAnchorLocalPosition = new Vector3(0f, 0.45f, 0f);
 
         private readonly PrefabPreviewStage stage = new PrefabPreviewStage();
         private CommanderSkillWorkshopDraft draft;
         private GameObject commander;
+        private Animator commanderAnimator;
+        private int commanderAnimationStateHash;
+        private float commanderAnimationDuration;
+        private bool commanderAnimationPlaying;
         private GameObject target;
         private GameObject castingVfx;
         private GameObject castVfx;
@@ -116,6 +122,8 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 DisableRuntimeBehaviours(instance);
                 GroundAndFit(instance, 2.05f);
                 instance.transform.rotation = Quaternion.identity;
+                commanderAnimator = instance.GetComponentInChildren<Animator>(true);
+                PrepareCommanderAnimator();
             });
             if (commander == null)
             {
@@ -157,6 +165,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             }
 
             ResetPlaybackObjects();
+            StartCommanderAnimation();
             activationTime = Mathf.Max(0f, draft.CastTime);
             var travel = draft.Category == CommanderSkillCategory.Attack &&
                          draft.DeliveryModule == MonsterBasicAttackDeliveryModule.Projectile
@@ -272,6 +281,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 if (elapsed >= markLifetime) Stop();
                 return;
             }
+            TickCommanderAnimation(elapsed);
             if (!activated && elapsed >= activationTime)
             {
                 Activate(elapsed);
@@ -722,6 +732,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 
         private void ResetPlaybackObjects()
         {
+            ResetCommanderAnimation();
             markPreview = false;
             if (markVfx != null)
             {
@@ -855,6 +866,83 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             }
         }
 
+        private void PrepareCommanderAnimator()
+        {
+            if (commanderAnimator == null || commanderAnimator.runtimeAnimatorController == null) return;
+            commanderAnimator.applyRootMotion = false;
+            commanderAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            commanderAnimator.updateMode = AnimatorUpdateMode.Normal;
+            commanderAnimator.enabled = false;
+            ResetCommanderAnimation();
+        }
+
+        private void StartCommanderAnimation()
+        {
+            commanderAnimationPlaying = false;
+            commanderAnimationDuration = 0f;
+            if (commanderAnimator == null || commanderAnimator.runtimeAnimatorController == null || draft == null)
+                return;
+            var attackNumber = CommanderSkillCastAnimationRules.ResolveAttackNumber(draft.SkillId);
+            commanderAnimationStateHash = Animator.StringToHash(
+                CommanderSkillCastAnimationRules.StateName(attackNumber));
+            if (!commanderAnimator.HasState(0, commanderAnimationStateHash)) return;
+            commanderAnimationDuration = ResolveCommanderAnimationDuration(attackNumber);
+            commanderAnimationPlaying = true;
+            SampleCommanderAnimation(0f);
+        }
+
+        private void TickCommanderAnimation(float elapsed)
+        {
+            if (!commanderAnimationPlaying) return;
+            if (elapsed >= commanderAnimationDuration)
+            {
+                commanderAnimationPlaying = false;
+                ResetCommanderAnimation();
+                return;
+            }
+            SampleCommanderAnimation(elapsed);
+        }
+
+        private void SampleCommanderAnimation(float elapsed)
+        {
+            if (commanderAnimator == null) return;
+            var normalized = commanderAnimationDuration <= 0.001f
+                ? 0f
+                : Mathf.Clamp01(elapsed / commanderAnimationDuration);
+            commanderAnimator.enabled = true;
+            commanderAnimator.speed = 0f;
+            commanderAnimator.Play(commanderAnimationStateHash, 0, normalized);
+            commanderAnimator.Update(0f);
+            commanderAnimator.enabled = false;
+        }
+
+        private void ResetCommanderAnimation()
+        {
+            commanderAnimationPlaying = false;
+            if (commanderAnimator == null || commanderAnimator.runtimeAnimatorController == null) return;
+            var idleHash = Animator.StringToHash("Base Layer.WorldIdle");
+            if (!commanderAnimator.HasState(0, idleHash)) return;
+            commanderAnimator.enabled = true;
+            commanderAnimator.speed = 0f;
+            commanderAnimator.Play(idleHash, 0, 0f);
+            commanderAnimator.Update(0f);
+            commanderAnimator.enabled = false;
+        }
+
+        private float ResolveCommanderAnimationDuration(int attackNumber)
+        {
+            var expectedName = CommanderSkillCastAnimationRules.ClipName(attackNumber);
+            var clips = commanderAnimator.runtimeAnimatorController.animationClips;
+            for (var index = 0; index < clips.Length; index++)
+            {
+                var clip = clips[index];
+                if (clip != null && (clip.name == expectedName || clip.name == expectedName + "_inplace"))
+                    return Mathf.Max(0.1f,
+                        clip.length / CommanderSkillCastAnimationRules.StatePlaybackSpeed);
+            }
+            return 1f;
+        }
+
         private static void GroundAndFit(GameObject instance, float desiredHeight)
         {
             var renderers = instance.GetComponentsInChildren<Renderer>(true);
@@ -917,7 +1005,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             catch { /* Unity 버전별 AudioUtil 차이는 시각 프리뷰를 막지 않는다. */ }
         }
 
-        private Vector3 CastPosition => new Vector3(0f, 1.15f, 0.25f);
+        private Vector3 CastPosition => CastAnchorLocalPosition;
         private Vector3 ImpactPosition => new Vector3(0f, 0.45f, targetDistance);
 
         private void ClearStage()
@@ -933,6 +1021,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             DestroyPlayableGraphs(projectile);
             stage.ClearPrefab();
             commander = target = castingVfx = castVfx = impactVfx = projectile = impactPulse = null;
+            commanderAnimator = null;
             DestroyMaterial(ref targetRingMaterial);
             DestroyMaterial(ref rangeMaterial);
             DestroyMaterial(ref impactMaterial);
@@ -961,6 +1050,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             DestroyMaterial(ref rangeMaterial);
             DestroyMaterial(ref impactMaterial);
             commander = target = castingVfx = castVfx = impactVfx = projectile = impactPulse = null;
+            commanderAnimator = null;
         }
 
         private static void DestroyPlayableGraphs(GameObject root)
@@ -1018,6 +1108,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 .Append(source.ProjectileSpeed.GetHashCode()).Append('|')
                 .Append((int)source.Trajectory).Append('|')
                 .Append(source.ArcHeight.GetHashCode()).Append('|');
+            builder.Append(source.SkillId).Append('|');
             builder.Append((int)source.PatternType).Append('|')
                 .Append(source.RepeatCount).Append('|').Append(source.RepeatInterval.GetHashCode()).Append('|')
                 .Append(source.PatternDuration.GetHashCode()).Append('|').Append(source.TickInterval.GetHashCode()).Append('|')

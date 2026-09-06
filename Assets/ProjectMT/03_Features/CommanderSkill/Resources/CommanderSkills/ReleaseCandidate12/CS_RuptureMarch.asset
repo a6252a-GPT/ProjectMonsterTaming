@@ -59,13 +59,13 @@ MonoBehaviour:
     \uD3ED\uBC1C\uC744 \uC720\uB3C4\uD569\uB2C8\uB2E4."
   icon: {fileID: -8090756407807390787, guid: 233ff8c61c9602a4aa9adfc4fccc0845, type: 3}
   rarity: 2
-  castTime: 0
-  cooldown: 11
+  castTime: 0.7
+  cooldown: 15
   targeting: {fileID: -4813100895700525781}
   effects:
   - {fileID: -397114061300380505}
   - {fileID: 11400000, guid: e12115bb01a68414f90537560f7245ce, type: 2}
-  - {fileID: 454405033712172366}
+  - {fileID: 2976413110444411372}
   pattern:
     type: 3
     repeatCount: 5
@@ -143,17 +143,17 @@ MonoBehaviour:
   castingVfxScale: 1
   castingSfx: {fileID: 0}
   castVfxPrefab: {fileID: 8550957183290902016, guid: 1e687c5764973a44a870c86be3141c48, type: 3}
-  castVfxLifetime: 0.65
+  castVfxLifetime: 0.3
   castVfxLocalOffset: {x: 0, y: 0, z: 0}
   castVfxLocalEuler: {x: 0, y: 0, z: 0}
-  castVfxScale: 1
-  castSfx: {fileID: 11400000, guid: 1306efe48e423b44480c4333a269e927, type: 2}
+  castVfxScale: 0.3
+  castSfx: {fileID: 11400000, guid: cccabbeab955f6946bf15dcef43d7a5f, type: 2}
   impactVfxPrefab: {fileID: 286328527759119533, guid: 3c12490e6dd67004c800e06922f2c3a1, type: 3}
-  impactVfxLifetime: 0.7
-  impactVfxLocalOffset: {x: 0, y: -0.36, z: 0}
+  impactVfxLifetime: 1
+  impactVfxLocalOffset: {x: 0, y: -0.28000003, z: 0}
   impactVfxLocalEuler: {x: 0, y: 0, z: 0}
   impactVfxScale: 1
-  impactSfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
+  impactSfx: {fileID: 11400000, guid: 98187d00bfbd94b49abb2d395e625523, type: 2}
   persistentVfxPrefab: {fileID: 0}
   persistentVfxLocalOffset: {x: 0, y: 0.08, z: 0}
   persistentVfxLocalEuler: {x: 0, y: 0, z: 0}
@@ -164,9 +164,9 @@ MonoBehaviour:
   projectileSpeed: 16
   trajectory: 0
   arcHeight: 0
---- !u!114 &454405033712172366
+--- !u!114 &2976413110444411372
 MonoBehaviour:
-  m_ObjectHideFlags: 0
+  m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
@@ -174,7 +174,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6486737a8c0324248a474767f643b881, type: 3}
-  m_Name: __Effect_WeakPull
+  m_Name: __Effect_02
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderPullEffectDefinition
   effectId: CS_RuptureMarch_pull
   center: 0

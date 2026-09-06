@@ -554,7 +554,14 @@ namespace ProjectMT.Features.MainBattle
                 spatialController = expedition.gameObject.AddComponent<MainBattleSpatialController>();
             }
 
-            spatialController.Configure(expedition, ground, commander, playerFormationAnchor, enemySpawnAnchor);
+            var castAnimation = commander.GetComponent<CommanderSkillCastAnimationPresenter>();
+            spatialController.Configure(
+                expedition,
+                ground,
+                commander,
+                playerFormationAnchor,
+                enemySpawnAnchor,
+                () => commanderSkillRuntime?.IsCasting == true || castAnimation?.IsPlaying == true);
         }
 
         private void ConfigureFormationPlacement()

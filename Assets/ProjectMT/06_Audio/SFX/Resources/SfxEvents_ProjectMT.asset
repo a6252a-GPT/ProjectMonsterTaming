@@ -1,5 +1,383 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-8946369133240616207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-Potential
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: bbdba4263c138b9478789057d9fe5f79, type: 3}
+  volumeRange: {x: 0.4, y: 0.4}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.12
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-8293650763590726237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-Equip
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: d1be8ba69a2e12147bd6209d3901ea3b, type: 3}
+  volumeRange: {x: 0.43, y: 0.43}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.1
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-8023254792049197180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-MonsterAscend
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 843fa4c4ea74857448bd48e63204356a, type: 3}
+  volumeRange: {x: 0.62, y: 0.62}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.3
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-7701455510474834106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-OfflineClaim
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 2540a9ce36b861f45b1d38da4ec98508, type: 3}
+  volumeRange: {x: 0.47, y: 0.47}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.3
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-6743683467971079434
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-QuestClaim
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: e15df9607549beb4d8330b8d09b63e5c, type: 3}
+  volumeRange: {x: 0.48, y: 0.48}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.2
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-5764225829913042373
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: MB-03
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: f33c25faf47712149a1a3e6f0892689d, type: 3}
+  volumeRange: {x: 0.58, y: 0.58}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 1
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-5699518937175254623
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-Formation
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 24dbefb53d0629647b5d17abbb0a7b80, type: 3}
+  volumeRange: {x: 0.37, y: 0.37}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.1
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-4363287804772485211
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-ContentStart
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 575d25f26dbf8c94eacc1111a2855a3d, type: 3}
+  volumeRange: {x: 0.48, y: 0.48}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.8
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-3541110315365221001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-Attendance
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 4d22a87be3b97034d9e6db77c39faa71, type: 3}
+  volumeRange: {x: 0.46, y: 0.46}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.2
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-3516553076703074263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-SaveError
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: a426cff312782734fbd230400ae18046, type: 3}
+  volumeRange: {x: 0.39, y: 0.39}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.8
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-3106001923903716225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-PotentialLock
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: dd53d9fa98b675f42af3e860cc929865, type: 3}
+  volumeRange: {x: 0.33, y: 0.33}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.1
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-2780080160408328295
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-MonsterLevel
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 343d4c2dd63f94f4883fd45bcf242f3a, type: 3}
+  volumeRange: {x: 0.47, y: 0.47}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.12
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-2108334176793991818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-DropSpawn
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 319cba4b471fea947badf8ee4d207d28, type: 3}
+  volumeRange: {x: 0.29, y: 0.29}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.12
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-1534093388175258761
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: COM-02
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: a9cb63a6748eba84e9e695e41094373c, type: 3}
+  volumeRange: {x: 0.38, y: 0.38}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.16
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-859016383011589099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-DropCollect
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: ea5eb55609c2b214da341f30d9877317, type: 3}
+  volumeRange: {x: 0.35, y: 0.35}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.12
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-648358678492574476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-SkillEquip
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: f102177e2ac5bbc4ea3f638b1c5bfcb6, type: 3}
+  volumeRange: {x: 0.42, y: 0.42}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.12
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-520828613308249061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-Toggle
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 4ed4a8ca70bb779459f20758144ed925, type: 3}
+  volumeRange: {x: 0.28, y: 0.28}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.08
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &-394473352948942288
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-Rejected
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 286575b778b7b9347be54ae86642ceb1, type: 3}
+  volumeRange: {x: 0.3, y: 0.3}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.18
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24,127 +402,127 @@ MonoBehaviour:
     cue: {fileID: 11400003}
   - id: COM-01
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 6224105879077832274}
   - id: COM-02
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -1534093388175258761}
   - id: COM-03
-    state: 2
-    cue: {fileID: 0}
+    state: 1
+    cue: {fileID: 955932308486535853}
   - id: ECO-01
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 1688139464284546451}
   - id: MB-01
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 8748574633564631513}
   - id: MB-02
-    state: 2
-    cue: {fileID: 0}
+    state: 1
+    cue: {fileID: 7672168953706649400}
   - id: MB-03
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -5764225829913042373}
   - id: MB-07
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 4226308032525093659}
   - id: MB-08
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 3280962361124658774}
   - id: EVENT-Equip
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -8293650763590726237}
   - id: EVENT-Unequip
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 4781287651181559910}
   - id: EVENT-Upgrade
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 1702066582238861012}
   - id: EVENT-Dismantle
     state: 2
     cue: {fileID: 9003037811188406439}
   - id: EVENT-EquipmentLock
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 2997594422968803559}
   - id: EVENT-MonsterLevel
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -2780080160408328295}
   - id: EVENT-MonsterAscend
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -8023254792049197180}
   - id: EVENT-CommanderLevel
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 8874686328427779936}
   - id: EVENT-LegionUpgrade
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 7444944643512924553}
   - id: EVENT-Potential
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -8946369133240616207}
   - id: EVENT-PotentialLock
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -3106001923903716225}
   - id: EVENT-SkillEquip
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -648358678492574476}
   - id: EVENT-SkillLevel
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 1713407377699059359}
   - id: EVENT-SkillSummon
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 4082749395189449779}
   - id: EVENT-Formation
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -5699518937175254623}
   - id: EVENT-Placement
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 2312693143133820363}
   - id: EVENT-Attendance
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -3541110315365221001}
   - id: EVENT-MailClaim
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 9010011454366102969}
   - id: EVENT-QuestClaim
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -6743683467971079434}
   - id: EVENT-CollectionClaim
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 8009469982238378617}
   - id: EVENT-OfflineClaim
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -7701455510474834106}
   - id: EVENT-ItemUse
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 2123943495501239305}
   - id: EVENT-ItemDiscard
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 636232497201392864}
   - id: EVENT-DropCollect
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -859016383011589099}
   - id: EVENT-QuestComplete
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 6218159381547293388}
   - id: EVENT-Rejected
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -394473352948942288}
   - id: EVENT-Toggle
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -520828613308249061}
   - id: EVENT-Slider
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 3331520229368732438}
   - id: EVENT-Dropdown
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 5099417672866203658}
   - id: EVENT-DropSpawn
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -2108334176793991818}
   - id: EVENT-ContentStart
-    state: 2
-    cue: {fileID: 0}
+    state: 1
+    cue: {fileID: -4363287804772485211}
   - id: EVENT-SaveError
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: -3516553076703074263}
   - id: EVENT-GachaCharge
     state: 2
     cue: {fileID: 11400004}
@@ -353,6 +731,449 @@ MonoBehaviour:
   priority: 2
   startOffsetSeconds: 0
   endCutSeconds: 0
+--- !u!114 &636232497201392864
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-ItemDiscard
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: c99ef703d397cbe4fafb6a80b9210c97, type: 3}
+  volumeRange: {x: 0.34, y: 0.34}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.12
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &955932308486535853
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: COM-03
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: e7610260066f3544996a3eb8f6d6fbdb, type: 3}
+  volumeRange: {x: 0.52, y: 0.52}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.5
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &1688139464284546451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: ECO-01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 0e50654de3380ee489f5bfb52c46dc57, type: 3}
+  volumeRange: {x: 0.42, y: 0.42}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.2
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &1702066582238861012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-Upgrade
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 1b5bcf864b0ade64e950fff66b4d75d8, type: 3}
+  volumeRange: {x: 0.52, y: 0.52}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.12
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &1713407377699059359
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-SkillLevel
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 43a9f30f0ebf33448bfac5c6e7f6af40, type: 3}
+  volumeRange: {x: 0.49, y: 0.49}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.12
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &2123943495501239305
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-ItemUse
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 566802c0fcbcebc438bb8f415678b05c, type: 3}
+  volumeRange: {x: 0.42, y: 0.42}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.1
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &2312693143133820363
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-Placement
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: b291d67ac30d28540a26f073aebf13de, type: 3}
+  volumeRange: {x: 0.4, y: 0.4}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.12
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &2997594422968803559
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-EquipmentLock
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: c5324c4e1b016114dbe97faade5e6407, type: 3}
+  volumeRange: {x: 0.34, y: 0.34}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.1
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &3280962361124658774
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: MB-08
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 068cd7ebc35c3674aa0a6b89649e6697, type: 3}
+  volumeRange: {x: 0.5, y: 0.5}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 1
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &3331520229368732438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-Slider
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 6bccae9c53853d64094d285104a46e78, type: 3}
+  volumeRange: {x: 0.21, y: 0.21}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.07
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &4082749395189449779
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-SkillSummon
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 2dabcd32072c60c45810298dab802eee, type: 3}
+  volumeRange: {x: 0.56, y: 0.56}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.3
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &4226308032525093659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: MB-07
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 85070c04d6acf144ab7ba99dc24bcbb7, type: 3}
+  volumeRange: {x: 0.6, y: 0.6}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 1
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &4781287651181559910
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-Unequip
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 03e6d760a86223a4eab5cb1a6abc72a0, type: 3}
+  volumeRange: {x: 0.38, y: 0.38}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.1
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &5099417672866203658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-Dropdown
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 1df24f177535eae49ac3912a08907e3c, type: 3}
+  volumeRange: {x: 0.31, y: 0.31}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.09
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &6218159381547293388
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-QuestComplete
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 844b1ad919a1dd04bacde3d71eb09e11, type: 3}
+  volumeRange: {x: 0.44, y: 0.44}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.3
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &6224105879077832274
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: COM-01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 9ba12e6d49cca5747a1d18d43daa9bc4, type: 3}
+  - {fileID: 8300000, guid: 9bcadf387ed9c034fb3edbd787f7f221, type: 3}
+  - {fileID: 8300000, guid: 03a55b92cae6635438a43d7fd1c1f48e, type: 3}
+  volumeRange: {x: 0.48, y: 0.48}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.045
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &7444944643512924553
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-LegionUpgrade
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: c0aab932b6d04aa428c70630e0af7789, type: 3}
+  volumeRange: {x: 0.49, y: 0.49}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.15
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &7672168953706649400
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: MB-02
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 93dfcafa4962676458b815e2ade0b8ac, type: 3}
+  volumeRange: {x: 0.36, y: 0.36}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.8
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &8009469982238378617
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-CollectionClaim
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 51cdca0fcdd1b8b46b1ead7013ae8cde, type: 3}
+  volumeRange: {x: 0.48, y: 0.48}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.2
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &8748574633564631513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: MB-01
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: b690e6b5198994d41a191d9e0f34da8b, type: 3}
+  volumeRange: {x: 0.5, y: 0.5}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.8
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &8874686328427779936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-CommanderLevel
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: 224e48dd461409d4eaee4b721c306fb9, type: 3}
+  volumeRange: {x: 0.49, y: 0.49}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.15
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
 --- !u!114 &9003037811188406439
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -365,11 +1186,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
   m_Name: EVENT-Dismantle
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
-  clips: []
-  volumeRange: {x: 1, y: 1}
+  clips:
+  - {fileID: 8300000, guid: 379b647f83780d8488d6c09ef0fb71b0, type: 3}
+  volumeRange: {x: 0.45, y: 0.45}
   pitchRange: {x: 1, y: 1}
   spatialBlend: 0
-  duplicateCooldown: 0.08
+  duplicateCooldown: 0.15
+  priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &9010011454366102969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-MailClaim
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips:
+  - {fileID: 8300000, guid: ac82e3ca0a420c44fa57315f420332dd, type: 3}
+  volumeRange: {x: 0.42, y: 0.42}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.2
   priority: 1
   startOffsetSeconds: 0
   endCutSeconds: 0

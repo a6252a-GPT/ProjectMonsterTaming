@@ -44,9 +44,9 @@ MonoBehaviour:
     recoilSettleTiltRatio: 0.3
     recoilSettleDuration: 0.16
     projectilePrefab: {fileID: 6406995630296995695, guid: 4fe45e3034c46bf47a26bfb40dfb743a, type: 3}
-    impactVfxPrefab: {fileID: 872150934463783652, guid: 08660d290c1845349b96b100639c7d28, type: 3}
-    impactVfxLifetime: 2
-    impactVfxScale: 1
+    impactVfxPrefab: {fileID: 3156208361006783988, guid: eaa82a4752438fd4ba1946c532fee75e, type: 3}
+    impactVfxLifetime: 1.7
+    impactVfxScale: 0.47
     fireSfx: {fileID: 11400000, guid: bd145491fc71d9b4782ea20efb3d4c99, type: 2}
-    hitSfx: {fileID: 0}
+    hitSfx: {fileID: 11400000, guid: ae1cd4ee27dd5054daa0400ad7dada86, type: 2}
     explosionSfx: {fileID: 0}

@@ -351,6 +351,7 @@ namespace ProjectMT.Contents.CastleRaidHex
         public int ArmedTrapCount => trapsByCell.Values.Count(value => value != null && value.IsArmed);
 
         public event Action<HexCastleAssaultUnit, HexCastleTrapRuntime> TrapTriggered;
+        public event Action<HexCastleTrapRuntime> TrapDetonated; // 지뢰의 실제 폭발 연출 시점
 
         internal void Configure(
             HexCastleLayout layout,
@@ -555,6 +556,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             var balance = trap.Balance;
             pendingBlastTriggers.TryGetValue(trap, out var triggeringUnit);
             pendingBlastTriggers.Remove(trap);
+            TrapDetonated?.Invoke(trap);
             foreach (var target in registeredUnits
                          .Where(value => value != null && value.IsAlive &&
                                          value.CurrentCoordinates.DistanceTo(trap.Coordinates) <=

@@ -8,7 +8,7 @@ using UnityEngine;
 namespace ProjectMT.Features.MainBattle
 {
     [DisallowMultipleComponent]
-    public sealed class MainBattleSpatialController : MonoBehaviour // 메인전투 실시간 간격·군단장 추종
+    public sealed class MainBattleSpatialController : MonoBehaviour // 메인전투 실시간 간격·군단장 자동전투 이동
     {
         [Header("Soft Separation")]
         [SerializeField, Min(0f)] private float playerPairDistance = 0.85f;
@@ -19,11 +19,10 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField, Min(0f)] private float edgePadding = 0.35f;
         [SerializeField, Min(0.001f)] private float maxSolverDeltaTime = 0.05f;
 
-        [Header("Commander Follow")]
-        [SerializeField, Min(0f)] private float commanderFollowDistance = 3f;
-        [SerializeField, Min(0f)] private float commanderFollowStartDistance = 4f;
-        [SerializeField, Min(0f)] private float commanderFollowSpeed = 2.4f;
-        [SerializeField, Min(0f)] private float commanderRearSwitchMargin = 0.75f;
+        [Header("Commander Auto Combat")]
+        [SerializeField, Min(0f)] private float commanderPreferredCombatRange = 8f;
+        [SerializeField, Min(0f)] private float commanderRetreatCombatRange = 6f;
+        [SerializeField, Min(0f)] private float commanderMoveSpeed = 2.4f;
 
         [Header("Commander Facing")]
         [SerializeField, Min(0.01f)] private float commanderTurnSmoothTime = 0.28f;
@@ -42,8 +41,8 @@ namespace ProjectMT.Features.MainBattle
         private Quaternion commanderFacingOffset;
         private Vector3 battleForward;
         private bool commanderFootIkOriginalEnabled;
-        private UnitActor commanderRearUnit;
-        private bool commanderFollowing;
+        private UnitActor commanderCombatTarget;
+        private Func<bool> commanderActionLocked;
         private float commanderYawVelocity;
         private int observedRunSequence;
         private bool configured;
@@ -53,7 +52,8 @@ namespace ProjectMT.Features.MainBattle
             Collider groundCollider,
             Transform commanderRoot,
             Transform playerFormationAnchor,
-            Transform enemySpawnAnchor)
+            Transform enemySpawnAnchor,
+            Func<bool> isCommanderActionLocked = null)
         {
             Shutdown();
             ApplyCombatTuning(CombatImpactTuning.ActiveConfig);
@@ -87,6 +87,7 @@ namespace ProjectMT.Features.MainBattle
             }
 
             battleForward.Normalize();
+            commanderActionLocked = isCommanderActionLocked;
             commanderFootIk = commander.GetComponentInChildren<MainBattleCommanderFootIkLock>(true);
             commanderFootIkOriginalEnabled = commanderFootIk != null && commanderFootIk.enabled;
             observedRunSequence = expedition.RunSequence;
@@ -117,8 +118,8 @@ namespace ProjectMT.Features.MainBattle
             commander = null;
             commanderFootIk = null;
             commanderFacingOffset = Quaternion.identity;
-            commanderRearUnit = null;
-            commanderFollowing = false;
+            commanderCombatTarget = null;
+            commanderActionLocked = null;
             commanderYawVelocity = 0f;
             observedRunSequence = 0;
             configured = false;
@@ -259,51 +260,90 @@ namespace ProjectMT.Features.MainBattle
 
         private void UpdateCommander(float deltaTime)
         {
-            commanderRearUnit = ResolveCommanderRearUnit();
-            if (commanderRearUnit == null)
+            commanderCombatTarget = ResolveCommanderCombatTarget();
+            if (commanderCombatTarget == null || (commanderActionLocked?.Invoke() ?? false))
             {
-                commanderFollowing = false;
                 commanderYawVelocity = 0f;
                 SetCommanderMoving(false);
                 return;
             }
 
-            var targetPosition = commanderRearUnit.transform.position;
+            var targetPosition = commanderCombatTarget.transform.position;
             targetPosition.y = commander.position.y;
             var distance = PlanarDistance(commander.position, targetPosition);
-            if (!commanderFollowing)
+            var targetBodyRadius = commanderCombatTarget.BodyRadius;
+            var preferredRange = Mathf.Max(
+                commanderRetreatCombatRange + 0.25f,
+                commanderPreferredCombatRange) + targetBodyRadius;
+            var retreatRange = Mathf.Min(
+                commanderRetreatCombatRange,
+                preferredRange - targetBodyRadius - 0.25f) + targetBodyRadius;
+
+            if (distance > preferredRange)
             {
-                if (distance <= Mathf.Max(commanderFollowDistance, commanderFollowStartDistance))
+                MoveCommander(targetPosition - commander.position, deltaTime);
+                return;
+            }
+
+            if (distance < retreatRange)
+            {
+                MoveCommander(commander.position - targetPosition, deltaTime);
+                return;
+            }
+
+            SmoothTurnCommander(targetPosition - commander.position, deltaTime);
+            SetCommanderMoving(false);
+        }
+
+        private UnitActor ResolveCommanderCombatTarget()
+        {
+            if (IsValidCommanderTarget(commanderCombatTarget))
+            {
+                return commanderCombatTarget; // 몬스터와 같이 살아 있는 현재 타깃을 유지
+            }
+
+            UnitActor nearest = null;
+            var nearestDistanceSquared = float.PositiveInfinity;
+            for (var index = 0; index < units.Count; index++)
+            {
+                var unit = units[index];
+                if (!IsValidCommanderTarget(unit))
                 {
-                    SetCommanderMoving(false);
-                    return;
+                    continue;
                 }
 
-                commanderFollowing = true;
+                var delta = unit.transform.position - commander.position;
+                delta.y = 0f;
+                if (delta.sqrMagnitude < nearestDistanceSquared)
+                {
+                    nearest = unit;
+                    nearestDistanceSquared = delta.sqrMagnitude;
+                }
             }
 
-            if (distance <= commanderFollowDistance)
-            {
-                commanderFollowing = false;
-                commanderYawVelocity = 0f;
-                SetCommanderMoving(false);
-                return;
-            }
+            return nearest;
+        }
 
-            var requestedMove = Mathf.Min(
-                commanderFollowSpeed * deltaTime,
-                distance - commanderFollowDistance);
-            var direction = targetPosition - commander.position;
+        private static bool IsValidCommanderTarget(UnitActor unit)
+        {
+            return unit != null && unit.IsAlive && unit.IsCombatReady && unit.Team == UnitTeam.Enemy;
+        }
+
+        private void MoveCommander(Vector3 direction, float deltaTime)
+        {
             direction.y = 0f;
-            if (requestedMove <= 0f || direction.sqrMagnitude <= 0.0001f)
+            if (commanderMoveSpeed <= 0f || direction.sqrMagnitude <= 0.0001f)
             {
-                commanderFollowing = false;
-                commanderYawVelocity = 0f;
                 SetCommanderMoving(false);
                 return;
             }
 
-            var nextPosition = ClampToGround(commander.position + direction.normalized * requestedMove);
+            var destination = commander.position + direction.normalized;
+            var nextPosition = Vector3.MoveTowards(
+                commander.position,
+                destination,
+                commanderMoveSpeed * deltaTime); // UnitActor와 같은 등속 접근
+            nextPosition = ClampToGround(nextPosition);
             nextPosition.y = commander.position.y;
             var moveDirection = nextPosition - commander.position;
             moveDirection.y = 0f;
@@ -315,44 +355,6 @@ namespace ProjectMT.Features.MainBattle
             }
 
             SetCommanderMoving(moved);
-        }
-
-        private UnitActor ResolveCommanderRearUnit()
-        {
-            UnitActor candidate = null;
-            var candidateProgress = float.PositiveInfinity;
-            var trackedProgress = float.PositiveInfinity;
-            var trackedValid = false;
-            for (var index = 0; index < units.Count; index++)
-            {
-                var unit = units[index];
-                if (unit == null || !unit.IsAlive || unit.Team != UnitTeam.Player)
-                {
-                    continue;
-                }
-
-                var progress = Vector3.Dot(unit.transform.position - commanderStartPosition, battleForward);
-                if (unit == commanderRearUnit)
-                {
-                    trackedProgress = progress;
-                    trackedValid = true;
-                }
-
-                if (progress < candidateProgress)
-                {
-                    candidate = unit;
-                    candidateProgress = progress;
-                }
-            }
-
-            if (!trackedValid || candidate == null || candidate == commanderRearUnit)
-            {
-                return candidate;
-            }
-
-            return candidateProgress + commanderRearSwitchMargin < trackedProgress
-                ? candidate
-                : commanderRearUnit; // 근소한 앞뒤 교차에는 추종 대상을 유지
         }
 
         private void SmoothTurnCommander(Vector3 direction, float deltaTime)
@@ -384,8 +386,7 @@ namespace ProjectMT.Features.MainBattle
                 commander.rotation = commanderStartRotation;
             }
 
-            commanderRearUnit = null;
-            commanderFollowing = false;
+            commanderCombatTarget = null;
             commanderYawVelocity = 0f;
             SetCommanderMoving(false);
         }

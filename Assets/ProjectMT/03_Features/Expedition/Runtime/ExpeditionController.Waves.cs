@@ -133,7 +133,7 @@ namespace ProjectMT.Features.Expedition
             }
 
             SpawnNextArrivalEnemy(); // 첫 기는 경고 종료와 동시에 보이게 함
-            arrivalSpawnTimer = profile.EnemySpawnIntervalSeconds;
+            arrivalSpawnTimer = profile.ResolveArrivalSpawnInterval(arrivalWave);
         }
 
         private void TickWaveArrival(float deltaTime)
@@ -147,8 +147,8 @@ namespace ProjectMT.Features.Expedition
             while (arrivalNextSpawnIndex < arrivalTotalCount && arrivalSpawnTimer <= 0f)
             {
                 SpawnNextArrivalEnemy();
-                arrivalSpawnTimer += profile.EnemySpawnIntervalSeconds;
-                if (profile.EnemySpawnIntervalSeconds <= 0f)
+                arrivalSpawnTimer += profile.ResolveArrivalSpawnInterval(arrivalWave);
+                if (profile.ResolveArrivalSpawnInterval(arrivalWave) <= 0f)
                 {
                     arrivalSpawnTimer = 0f;
                 }
@@ -241,7 +241,7 @@ namespace ProjectMT.Features.Expedition
                 actor,
                 entryPosition,
                 readyPosition,
-                profile.EnemyMarchDurationSeconds,
+                profile.ResolveArrivalMarchDuration(arrivalWave),
                 spawn.IsBoss,
                 spawn.IsNinja,
                 spawn.NinjaOrdinal));

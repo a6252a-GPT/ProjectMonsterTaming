@@ -104,7 +104,7 @@ namespace ProjectMT.Features.MainBattle
 
         private void ApplyVolume()
         {
-            if (videoAudio != null) videoAudio.volume = AudioRuntimeSettings.SfxVolume;
+            if (videoAudio != null) videoAudio.volume = videoAudio.outputAudioMixerGroup == null ? AudioRuntimeSettings.SfxOutputGain : 1f;
         }
         private void OnFrame(VideoPlayer source, long frame)
         {

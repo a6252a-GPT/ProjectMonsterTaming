@@ -136,7 +136,7 @@ namespace ProjectMT.Shared.Audio
             }
 
             EnsureSfxSource();
-            sfxSource.PlayOneShot(clip, volume * AudioRuntimeSettings.SfxVolume);
+            sfxSource.PlayOneShot(clip, volume * (sfxSource.outputAudioMixerGroup == null ? AudioRuntimeSettings.SfxOutputGain : 1f));
         }
 
         private void EnsureSfxSource()

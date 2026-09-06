@@ -938,6 +938,15 @@ namespace ProjectMT.Contents.CastleRaidHex
             }
         }
 
+        private ProjectMT.Shared.Audio.SfxPool attackAudioPool;
+        private ProjectMT.Shared.Audio.SfxCue attackSfx;
+
+        public void ConfigureAttackAudio(ProjectMT.Shared.Audio.SfxPool pool, ProjectMT.Shared.Audio.SfxCue cue)
+        {
+            attackAudioPool = pool;
+            attackSfx = cue;
+        }
+
         private void ApplyPendingAttack(float powerRatio)
         {
             var damage = attackDamage * attackDamageMultiplier * Mathf.Max(0f, powerRatio);
@@ -958,6 +967,7 @@ namespace ProjectMT.Contents.CastleRaidHex
                 damage = passiveRuntime.ResolveOutgoingDamage(damage, pendingTarget);
                 damage *= assaultWorld?.ResolvePassiveDamageMultiplier(pendingTarget) ?? 1f;
                 var wasAlive = pendingTarget.IsAlive;
+                if (wasAlive && damage > 0f) attackAudioPool?.Play(attackSfx, transform.position); // 실제 공격 Marker에서만 재생
                 if (pendingTarget.Structure != null)
                 {
                     pendingTarget.Structure.ApplyDamage(damage, pendingAttackPosition);
@@ -984,6 +994,7 @@ namespace ProjectMT.Contents.CastleRaidHex
             }
 
             var legacyWasAlive = HasAliveTarget(pendingLegacyAttackCoordinates);
+            if (legacyWasAlive && damage > 0f) attackAudioPool?.Play(attackSfx, transform.position);
             ApplyLegacyTargetDamage(pendingLegacyAttackCoordinates, pendingAttackPosition, damage);
             if (legacyWasAlive && !HasAliveTarget(pendingLegacyAttackCoordinates))
             {

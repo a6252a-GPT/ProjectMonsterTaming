@@ -34,7 +34,14 @@ namespace ProjectMT.EditorTools.Audio
             catch (Exception e) { rootVisualElement.Add(new HelpBox(e.Message, HelpBoxMessageType.Warning)); return; }
             var bar = new Toolbar();
             var categories = new[] { "전체" }.Concat(SfxEvents.Definitions.Select(d => d.Category).Distinct()).ToList();
+            var categoryLabel = new Label("분류");
+            categoryLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+            categoryLabel.style.marginLeft = 4;
+            categoryLabel.style.marginRight = 4;
+            bar.Add(categoryLabel);
             var category = new PopupField<string>(categories, categories.Contains(commonCategory) ? commonCategory : "전체");
+            category.tooltip = "표시할 공용 효과음 분류를 선택합니다.";
+            category.style.minWidth = 120;
             category.RegisterValueChangedCallback(e => { commonCategory = e.newValue; RefreshCommonCards(); }); bar.Add(category);
             var search = new ToolbarSearchField(); search.SetValueWithoutNotify(commonSearch); search.style.flexGrow = 1;
             search.RegisterValueChangedCallback(e => { commonSearch = e.newValue; RefreshCommonCards(); }); bar.Add(search);
@@ -65,15 +72,35 @@ namespace ProjectMT.EditorTools.Audio
                     (definition.Name + " " + definition.Description + " " + definition.Category).IndexOf(commonSearch, StringComparison.OrdinalIgnoreCase) < 0) continue;
                 commonCards.Add(BuildCommonCard(definition, entry)); count++;
             }
-            commonSummary.text = $"표시 {count}개 / 전체 {commonCatalog.Entries.Count}개  ·  빈 칸과 삭제한 칸은 소리가 나지 않습니다. 변경 후 저장하세요.";
+            var categorySummary = commonCategory == "전체" ? "전체 분류" : commonCategory;
+            commonSummary.text = $"{categorySummary} · 표시 {count}개 / 전체 {commonCatalog.Entries.Count}개  ·  빈 칸과 삭제한 칸은 소리가 나지 않습니다. 변경 후 저장하세요.";
         }
         private VisualElement BuildCommonCard(SfxEventDefinition definition, SfxEventCatalog.Entry entry)
         {
+            var categoryColor = CommonCategoryColor(definition.Category);
             var card = new VisualElement(); card.style.paddingLeft = 12; card.style.paddingRight = 12;
             card.style.paddingTop = 10; card.style.paddingBottom = 10; card.style.marginBottom = 8;
             card.style.backgroundColor = new Color(0.19f, 0.20f, 0.22f);
+            card.style.borderLeftWidth = 4;
+            card.style.borderLeftColor = categoryColor;
             var header = new VisualElement(); header.style.flexDirection = FlexDirection.Row;
-            var name = new Label(definition.Category + "  /  " + definition.Name); name.style.flexGrow = 1;
+            header.style.alignItems = Align.Center;
+            var categoryTag = new Label(definition.Category);
+            categoryTag.style.backgroundColor = categoryColor;
+            categoryTag.style.color = Color.white;
+            categoryTag.style.unityFontStyleAndWeight = FontStyle.Bold;
+            categoryTag.style.fontSize = 11;
+            categoryTag.style.paddingLeft = 8;
+            categoryTag.style.paddingRight = 8;
+            categoryTag.style.paddingTop = 3;
+            categoryTag.style.paddingBottom = 3;
+            categoryTag.style.marginRight = 8;
+            categoryTag.style.borderTopLeftRadius = 8;
+            categoryTag.style.borderTopRightRadius = 8;
+            categoryTag.style.borderBottomLeftRadius = 8;
+            categoryTag.style.borderBottomRightRadius = 8;
+            header.Add(categoryTag);
+            var name = new Label(definition.Name); name.style.flexGrow = 1;
             name.style.unityFontStyleAndWeight = FontStyle.Bold; header.Add(name);
             var state = new Label();
             void UpdateState() => state.text = entry.state == SfxSpaceAssignmentState.Disabled ? "꺼짐" : entry.cue == null || !entry.cue.HasPlayableClip ? "비어 있음" : "사용 중";
@@ -122,6 +149,18 @@ namespace ProjectMT.EditorTools.Audio
             }); card.Add(advanced);
             return card;
         }
+        private static Color CommonCategoryColor(string category) => category switch
+        {
+            "UI" => new Color(0.18f, 0.60f, 0.58f),
+            "전투" => new Color(0.78f, 0.36f, 0.25f),
+            "장비" => new Color(0.28f, 0.48f, 0.78f),
+            "성장" => new Color(0.56f, 0.38f, 0.76f),
+            "편성" => new Color(0.22f, 0.58f, 0.76f),
+            "보상" => new Color(0.76f, 0.57f, 0.18f),
+            "아이템" => new Color(0.34f, 0.62f, 0.31f),
+            "뽑기" => new Color(0.75f, 0.34f, 0.57f),
+            _ => new Color(0.40f, 0.45f, 0.50f)
+        };
         private static string CommonPropertyLabel(string value) => value switch
         { "clips" => "랜덤 재생 파일", "pitchRange" => "높낮이 범위", "startOffsetSeconds" => "앞부분 자르기 (초)",
           "endCutSeconds" => "뒷부분 자르기 (초)", _ => "같은 소리 최소 간격 (초)" };

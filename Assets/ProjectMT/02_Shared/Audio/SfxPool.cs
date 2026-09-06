@@ -106,7 +106,7 @@ namespace ProjectMT.Shared.Audio
             source.transform.position = position;
             source.clip = clip;
             source.volume = Mathf.Min(1f, resolvedVolume) *
-                            (outputGroup == null ? AudioRuntimeSettings.SfxVolume : 1f);
+                            (outputGroup == null ? AudioRuntimeSettings.SfxOutputGain : 1f);
             voice.Gain.Gain = Mathf.Max(1f, resolvedVolume);
             source.pitch = Mathf.Clamp(pitch, -3f, 3f);
             if (Mathf.Abs(source.pitch) < 0.01f)

@@ -77,6 +77,8 @@ namespace ProjectMT.Features.Expedition
         public float EnemyEntryDistance => Mathf.Max(0.5f, enemyEntryDistance);
         public float EnemySpawnIntervalSeconds => Mathf.Max(0f, enemySpawnIntervalSeconds);
         public float EnemyMarchDurationSeconds => Mathf.Max(0.1f, enemyMarchDurationSeconds);
+        public float ResolveArrivalSpawnInterval(int wave) => EnemySpawnIntervalSeconds / (wave > 1 ? 1.5f : 1f);
+        public float ResolveArrivalMarchDuration(int wave) => EnemyMarchDurationSeconds / (wave > 1 ? 1.5f : 1f);
         public float EnemyFormationSpread => Mathf.Clamp(enemyFormationSpread, 1f, 2f);
         public float ReinforcementWarningSeconds => Mathf.Max(0f, reinforcementWarningSeconds);
         public float ReinforcementMinimumDelaySeconds => Mathf.Max(0f, reinforcementMinimumDelaySeconds);

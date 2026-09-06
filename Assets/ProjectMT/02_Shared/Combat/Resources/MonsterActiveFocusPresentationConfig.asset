@@ -56,7 +56,9 @@ MonoBehaviour:
     cameraMaxOffset: 1.6
     cameraFovDelta: -2.5
     accentColor: {r: 0.8392157, g: 0.21568628, b: 0.20784314, a: 1}
-  legendaryStartSfx: {fileID: 0}
-  mythicStartSfx: {fileID: 0}
+  legendaryStartSfx: {fileID: 11400000, guid: 18f39b4cf05047b4097d9b7d93b9f2e9, type: 2}
+  mythicStartSfx: {fileID: 11400000, guid: 18f39b4cf05047b4097d9b7d93b9f2e9, type: 2}
   legendaryHaloPrefab: {fileID: 0}
   mythicHaloPrefab: {fileID: 0}
+  casterAccentEnabled: 1
+  casterAccentVisibleDuration: 0.8

@@ -61,7 +61,7 @@ MonoBehaviour:
         sfx: {fileID: 0}
         vfxPrefab: {fileID: 4422401415294509074, guid: 0281c5a1eb35bb649aecb17502c54c51, type: 3}
         vfxLifetime: 2
-        localPosition: {x: 0, y: 0, z: 0}
+        localPosition: {x: 0, y: 0.08, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
         scale: 1
       useDuration: 0
@@ -76,7 +76,7 @@ MonoBehaviour:
         sfx: {fileID: -6822351343213373688, guid: ca3954178d3d07e4cb20c6d76a65f0c8, type: 2}
         vfxPrefab: {fileID: 8591360377701344120, guid: 129810e649138224787e8b0a932264c2, type: 3}
         vfxLifetime: 2
-        localPosition: {x: 0, y: 0, z: 0}
+        localPosition: {x: 0, y: 0.08, z: 0}
         localEulerAngles: {x: 0, y: 0, z: 0}
         scale: 1
       useDuration: 0

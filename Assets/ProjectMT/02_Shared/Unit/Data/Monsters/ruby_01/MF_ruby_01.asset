@@ -19,6 +19,8 @@ MonoBehaviour:
   spatialBlend: 1
   duplicateCooldown: 0.05
   priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
 --- !u!114 &-3829857596604288338
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -38,6 +40,8 @@ MonoBehaviour:
   spatialBlend: 1
   duplicateCooldown: 0.05
   priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -92,6 +96,8 @@ MonoBehaviour:
     localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     scale: 1
+  basicAttackVoice: {fileID: 0}
+  activeSkillVoice: {fileID: 0}
   basicAttackVfxBindings:
   - attackId: BA_M_05
     slotId: dash_exit
@@ -101,6 +107,10 @@ MonoBehaviour:
     sfxState: 0
     sound: {fileID: 8300000, guid: 5f4db250b555e48f3b35076822a65fb9, type: 3}
     soundVolume: 1
+    soundStartOffsetSeconds: 0
+    soundEndCutSeconds: 0
+    overrideSoundPitch: 0
+    soundPitch: 1
     sfx: {fileID: 0}
     lifetime: 1
     playbackOffset: 0
@@ -117,6 +127,10 @@ MonoBehaviour:
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
+    soundStartOffsetSeconds: 0
+    soundEndCutSeconds: 0
+    overrideSoundPitch: 0
+    soundPitch: 1
     sfx: {fileID: 0}
     lifetime: 1
     playbackOffset: 0
@@ -133,6 +147,10 @@ MonoBehaviour:
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
+    soundStartOffsetSeconds: 0
+    soundEndCutSeconds: 0
+    overrideSoundPitch: 0
+    soundPitch: 1
     sfx: {fileID: 0}
     lifetime: 1
     playbackOffset: 0
@@ -149,6 +167,10 @@ MonoBehaviour:
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
+    soundStartOffsetSeconds: 0
+    soundEndCutSeconds: 0
+    overrideSoundPitch: 0
+    soundPitch: 1
     sfx: {fileID: 0}
     lifetime: 1
     playbackOffset: 0
@@ -165,6 +187,10 @@ MonoBehaviour:
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
+    soundStartOffsetSeconds: 0
+    soundEndCutSeconds: 0
+    overrideSoundPitch: 0
+    soundPitch: 1
     sfx: {fileID: 0}
     lifetime: 1
     playbackOffset: 0
@@ -181,6 +207,10 @@ MonoBehaviour:
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
+    soundStartOffsetSeconds: 0
+    soundEndCutSeconds: 0
+    overrideSoundPitch: 0
+    soundPitch: 1
     sfx: {fileID: 0}
     lifetime: 1
     playbackOffset: 0
@@ -197,6 +227,10 @@ MonoBehaviour:
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
+    soundStartOffsetSeconds: 0
+    soundEndCutSeconds: 0
+    overrideSoundPitch: 0
+    soundPitch: 1
     sfx: {fileID: 0}
     lifetime: 1
     playbackOffset: 0
@@ -213,6 +247,10 @@ MonoBehaviour:
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
+    soundStartOffsetSeconds: 0
+    soundEndCutSeconds: 0
+    overrideSoundPitch: 0
+    soundPitch: 1
     sfx: {fileID: 0}
     lifetime: 1
     playbackOffset: 0
@@ -229,6 +267,10 @@ MonoBehaviour:
     sfxState: 0
     sound: {fileID: 0}
     soundVolume: 1
+    soundStartOffsetSeconds: 0
+    soundEndCutSeconds: 0
+    overrideSoundPitch: 0
+    soundPitch: 1
     sfx: {fileID: 0}
     lifetime: 1
     playbackOffset: 0
@@ -245,6 +287,10 @@ MonoBehaviour:
     sfxState: 1
     sound: {fileID: 8300000, guid: f513af3f381ec48b7a2ea0b3dacdb0c7, type: 3}
     soundVolume: 1
+    soundStartOffsetSeconds: 0
+    soundEndCutSeconds: 0
+    overrideSoundPitch: 0
+    soundPitch: 1
     sfx: {fileID: 8807380805141388478}
     lifetime: 1
     playbackOffset: 0
@@ -272,6 +318,8 @@ MonoBehaviour:
   spatialBlend: 1
   duplicateCooldown: 0.05
   priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0
 --- !u!114 &8807380805141388478
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -291,3 +339,5 @@ MonoBehaviour:
   spatialBlend: 1
   duplicateCooldown: 0.05
   priority: 1
+  startOffsetSeconds: 0
+  endCutSeconds: 0

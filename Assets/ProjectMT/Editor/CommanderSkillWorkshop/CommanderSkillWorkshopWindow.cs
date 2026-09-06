@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectMT.EditorTools.MonsterMaker;
+using ProjectMT.EditorTools.MonsterMakerV2;
 using ProjectMT.Features.CommanderSkill;
 using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Unit;
@@ -459,10 +461,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             AddBoundField(castingFeedback, "castingVfxPrefab", "VFX Prefab", true);
             if (draft.CastingVfxPrefab != null)
             {
-                AddBoundField(castingFeedback, "castingVfxLifetime", "재생 수명 (초)");
-                AddBoundField(castingFeedback, "castingVfxLocalOffset", "위치 보정");
-                AddBoundField(castingFeedback, "castingVfxLocalEuler", "회전 보정");
-                AddBoundField(castingFeedback, "castingVfxScale", "크기 배율");
+                AddVfxAdjustmentButton(castingFeedback, CommanderVfxSlot.Casting);
             }
             AddBoundField(castingFeedback, "castingSound", "사운드 (AudioClip)");
             feedback.Add(castingFeedback);
@@ -473,10 +472,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             AddBoundField(castFeedback, "castVfxPrefab", "VFX Prefab", true);
             if (draft.CastVfxPrefab != null)
             {
-                AddBoundField(castFeedback, "castVfxLifetime", "재생 수명 (초)");
-                AddBoundField(castFeedback, "castVfxLocalOffset", "위치 보정");
-                AddBoundField(castFeedback, "castVfxLocalEuler", "회전 보정");
-                AddBoundField(castFeedback, "castVfxScale", "크기 배율");
+                AddVfxAdjustmentButton(castFeedback, CommanderVfxSlot.Cast);
             }
             AddBoundField(castFeedback, "castSound", "사운드 (AudioClip)");
             feedback.Add(castFeedback);
@@ -487,10 +483,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             AddBoundField(impactFeedback, "impactVfxPrefab", "VFX Prefab", true);
             if (draft.ImpactVfxPrefab != null)
             {
-                AddBoundField(impactFeedback, "impactVfxLifetime", "재생 수명 (초)");
-                AddBoundField(impactFeedback, "impactVfxLocalOffset", "위치 보정");
-                AddBoundField(impactFeedback, "impactVfxLocalEuler", "회전 보정");
-                AddBoundField(impactFeedback, "impactVfxScale", "크기 배율");
+                AddVfxAdjustmentButton(impactFeedback, CommanderVfxSlot.Impact);
             }
             AddBoundField(impactFeedback, "impactSound", "사운드 (AudioClip)");
             feedback.Add(impactFeedback);
@@ -502,10 +495,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 persistentFeedback.Add(CardHeader("PersistentArea 지속 연출"));
                 persistentFeedback.Add(Help("PersistentArea 시작 시 1회 생성되고 Pattern 종료 또는 Shutdown 시 반환됩니다."));
                 AddBoundField(persistentFeedback, "persistentVfxPrefab", "VFX Prefab", true);
-                AddBoundField(persistentFeedback, "persistentVfxLocalOffset", "위치 보정");
-                AddBoundField(persistentFeedback, "persistentVfxLocalEuler", "회전 보정");
-                AddBoundField(persistentFeedback, "persistentVfxScale", "크기 배율");
                 AddBoundField(persistentFeedback, "persistentVfxAnchor", "Anchor");
+                if (draft.PersistentVfxPrefab != null)
+                    AddVfxAdjustmentButton(persistentFeedback, CommanderVfxSlot.Persistent);
                 feedback.Add(persistentFeedback);
             }
             assemblerScroll.Add(feedback);
@@ -968,14 +960,12 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         {
             var slot = effect.FindPropertyRelative(propertyName);
             var foldout = new Foldout { text = $"Mark Feedback · {label}", value = false };
-            AddBoundField(foldout, slot.FindPropertyRelative("vfxPrefab"), "VFX Prefab");
+            AddBoundField(foldout, slot.FindPropertyRelative("vfxPrefab"), "VFX Prefab", true);
             AddBoundField(foldout, slot.FindPropertyRelative("sound"), "SFX");
-            AddBoundField(foldout, slot.FindPropertyRelative("lifetime"), "Lifetime");
-            AddBoundField(foldout, slot.FindPropertyRelative("localOffset"), "Offset");
-            AddBoundField(foldout, slot.FindPropertyRelative("localEuler"), "Rotation");
-            AddBoundField(foldout, slot.FindPropertyRelative("scale"), "Scale");
             AddBoundField(foldout, slot.FindPropertyRelative("anchor"), "Anchor");
             var slotPath = slot.propertyPath;
+            if (slot.FindPropertyRelative("vfxPrefab").objectReferenceValue != null)
+                AddMarkVfxAdjustmentButton(foldout, slotPath, label);
             foldout.Add(new Button(() =>
             {
                 draftSerialized.ApplyModifiedProperties();
@@ -991,6 +981,204 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             preview.SetSource(draft);
             preview.PlayMarkFeedback(slot);
             previewCanvas?.MarkDirtyRepaint();
+        }
+
+        private void AddVfxAdjustmentButton(VisualElement parent, CommanderVfxSlot slot)
+        {
+            var button = new Button(() => OpenVfxAdjustment(slot))
+            {
+                text = "⊕ 3D에서 위치 · 회전 · 크기 조절"
+            };
+            button.AddToClassList("action-button");
+            button.AddToClassList("action-button--assign");
+            parent.Add(button);
+        }
+
+        private void AddMarkVfxAdjustmentButton(VisualElement parent, string slotPath, string label)
+        {
+            var button = new Button(() => OpenMarkVfxAdjustment(slotPath, label))
+            {
+                text = "⊕ 3D에서 위치 · 회전 · 크기 조절"
+            };
+            button.AddToClassList("action-button");
+            button.AddToClassList("action-button--assign");
+            parent.Add(button);
+        }
+
+        private void OpenMarkVfxAdjustment(string slotPath, string label)
+        {
+            EnsurePreviewForEditorState();
+            if (preview?.IsPlaying == true)
+            {
+                ShowNotification(new GUIContent("VFX 조절 전에 스킬 Preview를 정지하세요."));
+                return;
+            }
+
+            draftSerialized.ApplyModifiedProperties();
+            var slot = draftSerialized.FindProperty(slotPath);
+            var prefab = slot?.FindPropertyRelative("vfxPrefab").objectReferenceValue as GameObject;
+            if (slot == null || prefab == null)
+            {
+                ShowNotification(new GUIContent("먼저 VFX Prefab을 배정하세요."));
+                return;
+            }
+
+            var anchor = (CommanderMarkFeedbackAnchor)slot.FindPropertyRelative("anchor").intValue;
+            var fields = ResolveAnchoredVfxFields("Mark " + label, slotPath, anchor, true);
+            var modelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(fields.ModelPath);
+            if (modelPrefab == null)
+            {
+                ShowNotification(new GUIContent("VFX 보정에 사용할 3D 모델을 찾지 못했습니다."));
+                return;
+            }
+
+            MonsterMakerV2AdjustmentWindow.OpenVfxForModel(
+                this,
+                "군단장 VFX 보정",
+                fields.Label,
+                modelPrefab,
+                fields.ModelHeight,
+                fields.Anchor,
+                fields.AttackOrigin,
+                fields.HitCenter,
+                prefab,
+                draftSerialized.FindProperty(fields.Offset).vector3Value,
+                draftSerialized.FindProperty(fields.Euler).vector3Value,
+                draftSerialized.FindProperty(fields.Scale).floatValue,
+                draftSerialized.FindProperty(fields.Lifetime).floatValue,
+                true,
+                (position, euler, scale, lifetime) =>
+                    ApplyVfxAdjustment(fields, position, euler, scale, lifetime));
+        }
+
+        private void OpenVfxAdjustment(CommanderVfxSlot slot)
+        {
+            EnsurePreviewForEditorState();
+            if (preview?.IsPlaying == true)
+            {
+                ShowNotification(new GUIContent("VFX 조절 전에 스킬 Preview를 정지하세요."));
+                return;
+            }
+
+            draftSerialized.ApplyModifiedProperties();
+            var fields = ResolveVfxFields(slot);
+            var prefab = draftSerialized.FindProperty(fields.Prefab)?.objectReferenceValue as GameObject;
+            if (prefab == null)
+            {
+                ShowNotification(new GUIContent("먼저 VFX Prefab을 배정하세요."));
+                return;
+            }
+
+            var modelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(fields.ModelPath);
+            if (modelPrefab == null)
+            {
+                ShowNotification(new GUIContent("VFX 보정에 사용할 3D 모델을 찾지 못했습니다."));
+                return;
+            }
+
+            MonsterMakerV2AdjustmentWindow.OpenVfxForModel(
+                this,
+                "군단장 VFX 보정",
+                fields.Label,
+                modelPrefab,
+                fields.ModelHeight,
+                fields.Anchor,
+                fields.AttackOrigin,
+                fields.HitCenter,
+                prefab,
+                draftSerialized.FindProperty(fields.Offset).vector3Value,
+                draftSerialized.FindProperty(fields.Euler).vector3Value,
+                draftSerialized.FindProperty(fields.Scale).floatValue,
+                fields.Lifetime == null
+                    ? Mathf.Max(0.05f, draft.PatternDuration)
+                    : draftSerialized.FindProperty(fields.Lifetime).floatValue,
+                fields.Lifetime != null,
+                (position, euler, scale, lifetime) =>
+                    ApplyVfxAdjustment(fields, position, euler, scale, lifetime));
+        }
+
+        private bool ApplyVfxAdjustment(
+            CommanderVfxFields fields,
+            Vector3 position,
+            Vector3 euler,
+            float scale,
+            float lifetime)
+        {
+            if (draft == null || preview?.IsPlaying == true) return false;
+            draftSerialized.UpdateIfRequiredOrScript();
+            Undo.RecordObject(draft, fields.Label + " VFX 보정");
+            draftSerialized.FindProperty(fields.Offset).vector3Value = position;
+            draftSerialized.FindProperty(fields.Euler).vector3Value = euler;
+            draftSerialized.FindProperty(fields.Scale).floatValue = Mathf.Max(0.01f, scale);
+            if (fields.Lifetime != null)
+                draftSerialized.FindProperty(fields.Lifetime).floatValue = Mathf.Max(0.01f, lifetime);
+            draftSerialized.ApplyModifiedPropertiesWithoutUndo();
+            MarkDirty();
+            return true;
+        }
+
+        private CommanderVfxFields ResolveVfxFields(CommanderVfxSlot slot)
+        {
+            switch (slot)
+            {
+                case CommanderVfxSlot.Casting:
+                    return new CommanderVfxFields(
+                        "캐스팅 시작", "castingVfxPrefab", "castingVfxLocalOffset",
+                        "castingVfxLocalEuler", "castingVfxScale", "castingVfxLifetime",
+                        CommanderSkillWorkshopPreview.CommanderVisualPath, 2.05f,
+                        MonsterMakerPreviewAnchor.AttackOrigin,
+                        CommanderSkillWorkshopPreview.CastAnchorLocalPosition,
+                        CommanderSkillWorkshopPreview.ImpactAnchorLocalPosition);
+                case CommanderVfxSlot.Cast:
+                    return new CommanderVfxFields(
+                        "발동 · 발사", "castVfxPrefab", "castVfxLocalOffset",
+                        "castVfxLocalEuler", "castVfxScale", "castVfxLifetime",
+                        CommanderSkillWorkshopPreview.CommanderVisualPath, 2.05f,
+                        MonsterMakerPreviewAnchor.AttackOrigin,
+                        CommanderSkillWorkshopPreview.CastAnchorLocalPosition,
+                        CommanderSkillWorkshopPreview.ImpactAnchorLocalPosition);
+                case CommanderVfxSlot.Impact:
+                    return new CommanderVfxFields(
+                        "적중 · 효과 적용", "impactVfxPrefab", "impactVfxLocalOffset",
+                        "impactVfxLocalEuler", "impactVfxScale", "impactVfxLifetime",
+                        CommanderSkillWorkshopPreview.TargetVisualPath, 1.7f,
+                        MonsterMakerPreviewAnchor.HitCenter,
+                        Vector3.zero,
+                        Vector3.up * CommanderSkillWorkshopPreview.ImpactAnchorLocalPosition.y);
+                default:
+                    return ResolveAnchoredVfxFields(
+                        "PersistentArea 지속",
+                        "persistentVfx",
+                        draft.PersistentVfxAnchor,
+                        false);
+            }
+        }
+
+        private static CommanderVfxFields ResolveAnchoredVfxFields(
+            string label,
+            string prefix,
+            CommanderMarkFeedbackAnchor anchor,
+            bool hasLifetime)
+        {
+            var caster = anchor == CommanderMarkFeedbackAnchor.CasterRoot;
+            var targetCenter = anchor == CommanderMarkFeedbackAnchor.TargetCenter ||
+                               anchor == CommanderMarkFeedbackAnchor.WorldPosition;
+            var nested = prefix.Contains(".Array.") || prefix.EndsWith("Feedback", StringComparison.Ordinal);
+            var separator = nested ? "." : string.Empty;
+            return new CommanderVfxFields(
+                label,
+                prefix + separator + (nested ? "vfxPrefab" : "Prefab"),
+                prefix + separator + (nested ? "localOffset" : "LocalOffset"),
+                prefix + separator + (nested ? "localEuler" : "LocalEuler"),
+                prefix + separator + (nested ? "scale" : "Scale"),
+                hasLifetime ? prefix + separator + (nested ? "lifetime" : "Lifetime") : null,
+                caster
+                    ? CommanderSkillWorkshopPreview.CommanderVisualPath
+                    : CommanderSkillWorkshopPreview.TargetVisualPath,
+                caster ? 2.05f : 1.7f,
+                targetCenter ? MonsterMakerPreviewAnchor.HitCenter : MonsterMakerPreviewAnchor.Root,
+                Vector3.zero,
+                Vector3.up * CommanderSkillWorkshopPreview.ImpactAnchorLocalPosition.y);
         }
 
         private void AddEffect()
@@ -1382,6 +1570,55 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 SerializedPropertyType.Vector4 => "v4:" + property.vector4Value,
                 _ => property.propertyPath + ":" + property.boxedValue
             };
+        }
+
+        private enum CommanderVfxSlot
+        {
+            Casting,
+            Cast,
+            Impact,
+            Persistent
+        }
+
+        private readonly struct CommanderVfxFields
+        {
+            public CommanderVfxFields(
+                string label,
+                string prefab,
+                string offset,
+                string euler,
+                string scale,
+                string lifetime,
+                string modelPath,
+                float modelHeight,
+                MonsterMakerPreviewAnchor anchor,
+                Vector3 attackOrigin,
+                Vector3 hitCenter)
+            {
+                Label = label;
+                Prefab = prefab;
+                Offset = offset;
+                Euler = euler;
+                Scale = scale;
+                Lifetime = lifetime;
+                ModelPath = modelPath;
+                ModelHeight = modelHeight;
+                Anchor = anchor;
+                AttackOrigin = attackOrigin;
+                HitCenter = hitCenter;
+            }
+
+            public string Label { get; }
+            public string Prefab { get; }
+            public string Offset { get; }
+            public string Euler { get; }
+            public string Scale { get; }
+            public string Lifetime { get; }
+            public string ModelPath { get; }
+            public float ModelHeight { get; }
+            public MonsterMakerPreviewAnchor Anchor { get; }
+            public Vector3 AttackOrigin { get; }
+            public Vector3 HitCenter { get; }
         }
 
         private void AddEnumPopup<TEnum>(

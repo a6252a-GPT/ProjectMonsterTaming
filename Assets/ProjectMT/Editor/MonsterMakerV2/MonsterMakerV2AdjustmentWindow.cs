@@ -41,6 +41,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
         private FloatField vfxSpeedField;
         private Button playPauseButton;
         private IMGUIContainer previewIMGUI;
+        private HelpBox adjustmentHelp;
 
         internal static bool CanOpen(MonsterMakerDraft source)
         {
@@ -97,6 +98,51 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 lifetime,
                 playbackOffset,
                 playbackSpeed,
+                onApply);
+            PlaceAndShow(window, owner, VfxWindowSize);
+        }
+
+        internal static void OpenVfxForModel(
+            EditorWindow owner,
+            string windowTitle,
+            string label,
+            GameObject modelPrefab,
+            float modelHeight,
+            MonsterMakerPreviewAnchor anchor,
+            Vector3 attackOriginLocalPosition,
+            Vector3 hitCenterLocalPosition,
+            GameObject vfxPrefab,
+            Vector3 position,
+            Vector3 euler,
+            float scale,
+            float lifetime,
+            bool lifetimeEditable,
+            Func<Vector3, Vector3, float, float, bool> onApply)
+        {
+            if (modelPrefab == null || vfxPrefab == null || onApply == null)
+            {
+                return;
+            }
+
+            var window = CreateInstance<MonsterMakerV2AdjustmentWindow>();
+            window.titleContent = new GUIContent(windowTitle + " · " + label);
+            window.minSize = VfxWindowSize;
+            window.InitializeModelVfx(
+                modelPrefab,
+                modelHeight,
+                new MonsterMakerPreviewPositionBinding(
+                    "externalVfxLocalOffset",
+                    label,
+                    MonsterMakerPreviewPositionValueMode.AnchorOffset,
+                    anchor),
+                attackOriginLocalPosition,
+                hitCenterLocalPosition,
+                vfxPrefab,
+                position,
+                euler,
+                scale,
+                lifetime,
+                lifetimeEditable,
                 onApply);
             PlaceAndShow(window, owner, VfxWindowSize);
         }
@@ -165,6 +211,46 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             SetVfxPreviewPlaying(true);
         }
 
+        private void InitializeModelVfx(
+            GameObject modelPrefab,
+            float modelHeight,
+            MonsterMakerPreviewPositionBinding positionBinding,
+            Vector3 attackOriginLocalPosition,
+            Vector3 hitCenterLocalPosition,
+            GameObject vfxPrefab,
+            Vector3 position,
+            Vector3 euler,
+            float scale,
+            float lifetime,
+            bool lifetimeEditable,
+            Func<Vector3, Vector3, float, float, bool> onApply)
+        {
+            externalPreviewModelPrefab = modelPrefab;
+            externalPreviewModelHeight = Mathf.Max(0.1f, modelHeight);
+            externalAttackOriginLocalPosition = attackOriginLocalPosition;
+            externalHitCenterLocalPosition = hitCenterLocalPosition;
+            externalLifetimeEditable = lifetimeEditable;
+            binding = positionBinding;
+            previewVfxPrefab = vfxPrefab;
+            currentPosition = position;
+            currentEuler = euler;
+            currentScale = Mathf.Max(0.01f, scale);
+            currentLifetime = Mathf.Max(0.01f, lifetime);
+            currentPlaybackOffset = 0f;
+            currentPlaybackSpeed = 1f;
+            initialPosition = currentPosition;
+            initialEuler = currentEuler;
+            initialScale = currentScale;
+            initialLifetime = currentLifetime;
+            initialPlaybackOffset = currentPlaybackOffset;
+            initialPlaybackSpeed = currentPlaybackSpeed;
+            applyVfx = (nextPosition, nextEuler, nextScale, nextLifetime, _, _) =>
+                onApply(nextPosition, nextEuler, nextScale, nextLifetime);
+            BuildPreview();
+            RestartVfxPreview();
+            SetVfxPreviewPlaying(true);
+        }
+
         public void CreateGUI()
         {
             var layout = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(LayoutPath);
@@ -176,7 +262,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
             }
 
             layout.CloneTree(rootVisualElement);
-            var adjustmentHelp = rootVisualElement.Q<HelpBox>(className: "adjust-help");
+            adjustmentHelp = rootVisualElement.Q<HelpBox>(className: "adjust-help");
             if (adjustmentHelp != null)
                 adjustmentHelp.style.display = MonsterMakerV2HelpPreferences.ShowContextHelp
                     ? DisplayStyle.Flex
@@ -317,8 +403,16 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 if (captionLabel != null)
                 {
                     captionLabel.text = IsVfxMode
-                        ? "위치·회전·크기·수명·재생 시작점과 속도를 한 번에 확인합니다."
+                        ? IsExternalPreview
+                            ? "연결된 모델을 기준으로 위치·회전·크기를 맞추고 실제 VFX를 재생합니다."
+                            : "위치·회전·크기·수명·재생 시작점과 속도를 한 번에 확인합니다."
                         : "노란 핸들과 정확한 숫자 입력을 함께 사용할 수 있습니다.";
+                }
+                if (adjustmentHelp != null && IsExternalPreview)
+                {
+                    adjustmentHelp.text = externalLifetimeEditable
+                        ? "위치·회전·크기·유지 시간은 제작소와 실제 전투에 같은 값이 적용됩니다. 내부 시작과 배속은 이 창의 재생 확인에만 사용됩니다."
+                        : "위치·회전·크기는 제작소와 실제 전투에 같은 값이 적용됩니다. 유지 시간은 스킬 패턴이 결정하며, 내부 시작과 배속은 이 창의 재생 확인에만 사용됩니다.";
                 }
                 if (positionControls != null)
                     positionControls.style.display = IsVfxMode ? DisplayStyle.None : DisplayStyle.Flex;
@@ -330,6 +424,7 @@ namespace ProjectMT.EditorTools.MonsterMakerV2
                 vfxScaleField?.SetValueWithoutNotify(currentScale);
                 vfxLifetimeField?.SetValueWithoutNotify(currentLifetime);
                 vfxOffsetField?.SetValueWithoutNotify(currentPlaybackOffset);
+                vfxLifetimeField?.SetEnabled(!IsExternalPreview || externalLifetimeEditable);
             }
             finally
             {

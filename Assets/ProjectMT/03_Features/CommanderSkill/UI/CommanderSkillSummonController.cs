@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -75,6 +75,7 @@ namespace ProjectMT.Features.CommanderSkill
         private CommanderSkillSummonConfig summonConfig;
         private bool listenersBound;
         private bool isSummoning;
+        private ProjectMT.Features.MainBattle.GachaSummonVideoOverlay summonVideo;
         private int lifetimeVersion;
         private int inspectedLevel = 1;
 
@@ -95,6 +96,7 @@ namespace ProjectMT.Features.CommanderSkill
         private void OnDisable()
         {
             lifetimeVersion++;
+            if (summonVideo != null) summonVideo.Cancel();
             isSummoning = false;
             inscriptionSequence?.Finish();
             UnsubscribeProgress();
@@ -105,6 +107,7 @@ namespace ProjectMT.Features.CommanderSkill
         private void OnDestroy()
         {
             Shutdown();
+            if (summonVideo != null) Destroy(summonVideo.gameObject);
             UnbindListeners();
             ClearResults();
         }
@@ -113,6 +116,7 @@ namespace ProjectMT.Features.CommanderSkill
         {
             inscriptionSequence?.Finish();
             lifetimeVersion++;
+            if (summonVideo != null) summonVideo.Cancel();
             isSummoning = false;
             UnsubscribeProgress();
             progress = progressService;
@@ -128,6 +132,7 @@ namespace ProjectMT.Features.CommanderSkill
         {
             inscriptionSequence?.Finish();
             lifetimeVersion++;
+            if (summonVideo != null) summonVideo.Cancel();
             isSummoning = false;
             UnsubscribeProgress();
             progress = null;
@@ -295,6 +300,7 @@ namespace ProjectMT.Features.CommanderSkill
                     return;
                 }
 
+                if (!await PlaySummonVideoAsync() || !IsCurrentRequest(requestVersion)) return;
                 ShowCommittedResults(drawCount, resultIds, ownedBefore, receipt);
                 SetStatus($"{drawCount:N0}회 스킬 소환이 완료되었습니다");
             }
@@ -317,6 +323,18 @@ namespace ProjectMT.Features.CommanderSkill
             }
         }
 
+        private Task<bool> PlaySummonVideoAsync()
+        {
+            if (summonVideo == null)
+            {
+                var prefab = Resources.Load<ProjectMT.Features.MainBattle.GachaSummonVideoOverlay>("GachaVideo/PF_GachaSummonVideo");
+                if (prefab == null) return Task.FromResult(true);
+                summonVideo = Instantiate(prefab);
+            }
+            return summonVideo.PlayAsync(
+                Resources.Load<UnityEngine.Video.VideoClip>("GachaVideo/Summon_Skill"),
+                Resources.Load<AudioClip>("GachaVideo/Summon_Skill"));
+        }
         private bool TryPlanResults(int expectedCount, int drawCount, out List<string> resultIds)
         {
             resultIds = new List<string>(Mathf.Max(0, drawCount));

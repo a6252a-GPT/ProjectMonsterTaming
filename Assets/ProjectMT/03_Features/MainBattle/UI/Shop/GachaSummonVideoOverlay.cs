@@ -42,8 +42,13 @@ namespace ProjectMT.Features.MainBattle
 
         public Task<bool> PlayAsync(int count)
         {
+            return PlayAsync(count == 10 ? tenClip : singleClip,
+                Resources.Load<AudioClip>(count == 10 ? "GachaVideo/Summon_Ten" : "GachaVideo/Summon_Single"));
+        }
+
+        public Task<bool> PlayAsync(VideoClip clip, AudioClip audioClip)
+        {
             Cancel();
-            var clip = count == 10 ? tenClip : singleClip;
             if (clip == null || player == null || display == null || skipButton == null || videoAudio == null || overlayGroup == null || videoGroup == null)
                 return Task.FromResult(true); // 영상 문제로 이미 저장된 결과를 숨기지 않음
 
@@ -60,7 +65,7 @@ namespace ProjectMT.Features.MainBattle
                 ownsAudioPause = true;
                 AudioListener.pause = true; // 전투·배경 소리는 영상 종료까지 일시 정지
                 videoAudio.ignoreListenerPause = true;
-                videoAudio.clip = Resources.Load<AudioClip>(count == 10 ? "GachaVideo/Summon_Ten" : "GachaVideo/Summon_Single");
+                videoAudio.clip = audioClip;
                 ApplyVolume();
 
                 AudioRuntimeSettings.Changed += ApplyVolume;

@@ -8,11 +8,11 @@ namespace ProjectMT.Shared.UI
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform), typeof(CanvasGroup))]
-    public sealed class RewardAcquireView : MonoBehaviour // 보상 한 줄의 HUD 방향 이동·페이드
+    public sealed class RewardAcquireView : MonoBehaviour // 보상 아이콘만 메뉴 방향으로 이동·축소·페이드
     {
         [SerializeField] private Image itemIcon; // ItemDefinition 또는 장비 부위의 실제 아이콘
-        [SerializeField] private TMP_Text labelText; // 이름과 수량 표시
-        [SerializeField] private TMP_Text equipmentLevelText; // 장비만 아이콘 하단 중앙에 표시
+        [SerializeField] private TMP_Text labelText; // 구 프리팹 호환 참조, 표시하지 않음
+        [SerializeField] private TMP_Text equipmentLevelText; // 구 장비 레벨 참조, 표시하지 않음
 
         private RectTransform rectTransform; // UI 이동 대상
         private CanvasGroup canvasGroup; // 입력 없이 투명도만 제어
@@ -37,11 +37,11 @@ namespace ProjectMT.Shared.UI
             }
 
             var ratio = Mathf.Clamp01((Time.unscaledTime - startedAt) / duration);
-            var eased = 1f - Mathf.Pow(1f - ratio, 3f); // 초반 빠르고 도착 때 감속
-            var arc = Mathf.Sin(ratio * Mathf.PI) * 72f;
+            var eased = 1f - Mathf.Pow(1f - ratio, 2f); // 초반 빠르고 도착 때 감속
+            var arc = Mathf.Sin(ratio * Mathf.PI) * 20f;
             rectTransform.anchoredPosition = Vector2.LerpUnclamped(startPosition, targetPosition, eased) + Vector2.up * arc;
-            rectTransform.localScale = Vector3.one * (1f + Mathf.Sin(ratio * Mathf.PI) * 0.14f);
-            canvasGroup.alpha = ratio < 0.76f ? 1f : 1f - (ratio - 0.76f) / 0.24f;
+            rectTransform.localScale = Vector3.one * Mathf.Lerp(1f, 0.55f, Mathf.Clamp01((ratio - 0.65f) / 0.35f));
+            canvasGroup.alpha = Mathf.Clamp01(ratio / 0.08f) * (ratio < 0.82f ? 1f : (1f - ratio) / 0.18f);
             if (ratio >= 1f)
             {
                 ReturnToPool();
@@ -119,18 +119,13 @@ namespace ProjectMT.Shared.UI
 
             if (labelText != null)
             {
-                var labelRect = labelText.rectTransform;
-                var offsetMin = labelRect.offsetMin;
-                offsetMin.x = icon != null ? 82f : 18f;
-                labelRect.offsetMin = offsetMin;
+                labelText.text = string.Empty;
+                labelText.gameObject.SetActive(false);
             }
-
-            labelText.text = label ?? string.Empty;
-            labelText.color = color;
             if (equipmentLevelText != null)
             {
-                equipmentLevelText.text = equipmentLevel > 0 ? $"Lv.{equipmentLevel}" : string.Empty;
-                equipmentLevelText.gameObject.SetActive(equipmentLevel > 0);
+                equipmentLevelText.text = string.Empty;
+                equipmentLevelText.gameObject.SetActive(false);
             }
             rectTransform.anchoredPosition = startPosition;
             rectTransform.localScale = Vector3.one;

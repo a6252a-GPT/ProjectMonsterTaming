@@ -76,6 +76,11 @@ namespace ProjectMT.Contents.FallenCommander
         private bool isCommanderStunned;
         private int lastLoggedBossHealthPercent;
         private SfxCue commanderDamageVoice;
+        private GameObject phaseVideoObject;
+        private ProjectMT.Shared.UI.ISkippableVideoOverlay phaseVideo;
+        private bool isPhaseVideoActive;
+        private float phaseVideoPreviousTimeScale;
+        private int phaseVideoVersion;
 
         private float RemainingBreakGauge =>
             breakRuntime.RemainingGauge(bossConfig.MaxBreakGauge);
@@ -156,6 +161,7 @@ namespace ProjectMT.Contents.FallenCommander
         // 진행 중인 전투 상태와 이벤트·연출·입력 연결을 안전하게 정리한다.
         public void Shutdown()
         {
+            CancelPhaseVideo();
             battleFlow.Reset();
             hasTriggeredFinalCharge = false;
             isFinalChargePending = false;
@@ -229,6 +235,12 @@ namespace ProjectMT.Contents.FallenCommander
                 return;
             }
 
+            if (isPhaseVideoActive)
+            {
+                if (phaseVideoObject != null && phaseVideo.IsScreenCovered)
+                    TryApplyPendingPhaseBossPresentation(force: true);
+                return;
+            }
             delayedDamageQueue.Tick(Time.deltaTime);
             if (!IsRunning)
             {
@@ -678,11 +690,79 @@ namespace ProjectMT.Contents.FallenCommander
             stateMachine?.BeginPhaseTransition(
                 phaseRuntime.CurrentPhase,
                 phaseRuntime.TransitionRemainingTime);
-            PlayPhaseTransitionSound(phaseData);
+            if (!TryPlayPhaseVideo(phaseData.Phase))
+                PlayPhaseTransitionSound(phaseData);
             Debug.Log($"보스 {((int)phaseRuntime.CurrentPhase)} 페이즈 진입", this);
             return true;
         }
 
+        private bool TryPlayPhaseVideo(FallenCommanderBossPhase phase)
+        {
+            var resource = phase == FallenCommanderBossPhase.Phase2 ? "FallenCommanderVideo/Lucy_Phase1To2"
+                : phase == FallenCommanderBossPhase.Phase3 ? "FallenCommanderVideo/Lucy_Phase2To3" : null;
+            if (resource == null) return false;
+            var clip = Resources.Load<UnityEngine.Video.VideoClip>(resource);
+            var prefab = Resources.Load<GameObject>("GachaVideo/PF_GachaSummonVideo");
+            if (clip == null || prefab == null) return false;
+            if (phaseVideoObject == null)
+            {
+                phaseVideoObject = Instantiate(prefab);
+                phaseVideo = phaseVideoObject.GetComponent<ProjectMT.Shared.UI.ISkippableVideoOverlay>();
+            }
+            if (phaseVideo == null) return false;
+            PlayPhaseVideo(clip, Resources.Load<AudioClip>(resource));
+            return true;
+        }
+
+        private async void PlayPhaseVideo(UnityEngine.Video.VideoClip clip, AudioClip audioClip)
+        {
+            var version = ++phaseVideoVersion;
+            phaseVideoPreviousTimeScale = Time.timeScale;
+            isPhaseVideoActive = true;
+            Time.timeScale = 0f;
+            try
+            {
+                var completed = await phaseVideo.PlayAsync(clip, audioClip);
+                if (this == null || version != phaseVideoVersion || !completed || !IsRunning) return;
+                TryApplyPendingPhaseBossPresentation(force: true);
+                if (phaseRuntime.TickTransition(phaseRuntime.TransitionRemainingTime, out var signatureAttack))
+                    stateMachine?.CompletePhaseTransition(signatureAttack);
+                ApplyCurrentPhaseBossScale();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception, this);
+            }
+            finally
+            {
+                if (version == phaseVideoVersion)
+                {
+                    ReleasePhaseVideoPause();
+                    if (this != null && IsRunning) PublishHudState();
+                }
+            }
+        }
+
+        private void ReleasePhaseVideoPause()
+        {
+            if (!isPhaseVideoActive) return;
+            isPhaseVideoActive = false;
+            Time.timeScale = phaseVideoPreviousTimeScale;
+        }
+
+        private void CancelPhaseVideo()
+        {
+            phaseVideoVersion++;
+            if (phaseVideoObject != null) phaseVideo?.Cancel();
+            ReleasePhaseVideoPause();
+        }
+
+        private void OnDisable() => CancelPhaseVideo();
+        private void OnDestroy()
+        {
+            CancelPhaseVideo();
+            if (phaseVideoObject != null) Destroy(phaseVideoObject);
+        }
         // 전투 준비시간 안에 1페이즈 문구를 표시하고 사운드는 전투 시작 시점에 예약한다.
         private void PresentInitialPhase()
         {
@@ -1290,7 +1370,7 @@ namespace ProjectMT.Contents.FallenCommander
                     battleFlow.RemainingTime > 0f &&
                     battleFlow.RemainingTime <= timeoutWarningStartSeconds,
                 timeoutWarningStartSeconds,
-                phaseRuntime.IsTransitionActive || phaseRuntime.IntroNoticeRemainingTime > 0f,
+                !isPhaseVideoActive && (phaseRuntime.IsTransitionActive || phaseRuntime.IntroNoticeRemainingTime > 0f),
                 (int)phaseRuntime.CurrentPhase,
                 phaseRuntime.TransitionMessage,
                 TimeoutWipe?.WarningMessage,
@@ -1352,6 +1432,7 @@ namespace ProjectMT.Contents.FallenCommander
         // DEV 버튼에서 지정한 페이즈 체력으로 보스를 초기화하고 정상 전환 절차를 실행한다.
         private void ExecuteDebugPhaseJump(int phaseNumber)
         {
+            if (isPhaseVideoActive) return;
             if (!IsRunning ||
                 battleFlow.IsStartDelayActive ||
                 timeoutWipePattern.IsActive ||
@@ -1405,7 +1486,8 @@ namespace ProjectMT.Contents.FallenCommander
             stateMachine?.BeginPhaseTransition(
                 targetPhase,
                 phaseRuntime.TransitionRemainingTime);
-            PlayPhaseTransitionSound(targetPhaseData);
+            if (!TryPlayPhaseVideo(targetPhaseData.Phase))
+                PlayPhaseTransitionSound(targetPhaseData);
             PublishHudState();
         }
 

@@ -85,6 +85,7 @@ namespace ProjectMT.Bootstrap
             }
             if (titleVideo != null)
             {
+                titleVideo.prepareCompleted -= HandlePrepared;
                 titleVideo.Stop();
             }
         }
@@ -188,9 +189,10 @@ namespace ProjectMT.Bootstrap
             }
 
             titleVideo.isLooping = true;
-            titleVideo.playOnAwake = true;
+            titleVideo.playOnAwake = false;
             titleVideo.audioOutputMode = VideoAudioOutputMode.None; // 타이틀 영상 내 음원은 사용하지 않음
-            titleVideo.skipOnDrop = true;
+            titleVideo.skipOnDrop = false; // Windows VideoPlayer 초기 프레임 정지 회피(UUM-142660)
+            titleVideo.timeUpdateMode = VideoTimeUpdateMode.UnscaledGameTime;
         }
 
         private void PlayVideo()
@@ -206,9 +208,10 @@ namespace ProjectMT.Bootstrap
                 return;
             }
 
-            titleVideo.Prepare();
+
             titleVideo.prepareCompleted -= HandlePrepared;
             titleVideo.prepareCompleted += HandlePrepared;
+            titleVideo.Prepare();
         }
 
         private static void HandlePrepared(VideoPlayer player)

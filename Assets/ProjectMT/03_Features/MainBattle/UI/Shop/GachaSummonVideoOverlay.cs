@@ -8,7 +8,7 @@ using UnityEngine.Video;
 namespace ProjectMT.Features.MainBattle
 {
     [DisallowMultipleComponent]
-    public sealed class GachaSummonVideoOverlay : MonoBehaviour // 저장된 소환 결과 앞에 재생하는 영상
+    public sealed class GachaSummonVideoOverlay : MonoBehaviour, ProjectMT.Shared.UI.ISkippableVideoOverlay // 저장된 소환 결과 앞에 재생하는 영상
     {
         [SerializeField] private VideoClip singleClip;
         [SerializeField] private VideoClip tenClip;
@@ -19,6 +19,8 @@ namespace ProjectMT.Features.MainBattle
         [SerializeField] private CanvasGroup overlayGroup;
         [SerializeField] private CanvasGroup videoGroup;
         private bool finishRequested;
+        private double lastFrameProgressAt;
+        private long lastPresentedFrame = -1;
         private TaskCompletionSource<bool> completion;
         private RenderTexture target;
         private Coroutine watchdog;
@@ -27,6 +29,7 @@ namespace ProjectMT.Features.MainBattle
         private bool bound;
 
         public bool IsPlaying => completion != null;
+        public bool IsScreenCovered => overlayGroup != null && overlayGroup.alpha >= 0.999f;
 
         private void Awake() => Bind();
 
@@ -54,6 +57,8 @@ namespace ProjectMT.Features.MainBattle
 
             gameObject.SetActive(true);
             finishRequested = false;
+            lastPresentedFrame = -1;
+            lastFrameProgressAt = Time.realtimeSinceStartupAsDouble;
             overlayGroup.alpha = 0f;
             videoGroup.alpha = 0f;
             Bind();
@@ -75,7 +80,7 @@ namespace ProjectMT.Features.MainBattle
                 display.enabled = false;
                 player.playOnAwake = false;
                 player.isLooping = false;
-                player.skipOnDrop = true;
+                player.skipOnDrop = false; // Unity 6000.3.14~16 Windows: 프레임 보정 시 첫 프레임 정지(UUM-142660)
                 player.timeUpdateMode = VideoTimeUpdateMode.UnscaledGameTime;
                 player.renderMode = VideoRenderMode.RenderTexture;
                 player.targetTexture = target;
@@ -87,7 +92,7 @@ namespace ProjectMT.Features.MainBattle
                 ApplyVolume();
                 skipButton.interactable = true;
                 player.Prepare();
-                watchdog = StartCoroutine(WatchPlayback(clip.length));
+                watchdog = StartCoroutine(WatchPlayback());
                 }
             catch (System.Exception exception)
             {
@@ -103,7 +108,13 @@ namespace ProjectMT.Features.MainBattle
         }
         private void OnFrame(VideoPlayer source, long frame)
         {
-            if (IsPlaying && !display.enabled)
+            if (!IsPlaying) return;
+            if (frame != lastPresentedFrame)
+            {
+                lastPresentedFrame = frame;
+                lastFrameProgressAt = Time.realtimeSinceStartupAsDouble;
+            }
+            if (!display.enabled)
             {
                 display.enabled = true;
                 if (videoAudio != null && videoAudio.clip != null) videoAudio.Play();
@@ -125,27 +136,40 @@ namespace ProjectMT.Features.MainBattle
             }
             group.alpha = to;
         }
-        private IEnumerator WatchPlayback(double duration)
+        private IEnumerator WatchPlayback()
         {
             yield return Fade(overlayGroup, 0f, 1f, 0.18f);
-            var deadline = Time.realtimeSinceStartupAsDouble + 10d;
+            var deadline = Time.realtimeSinceStartupAsDouble + 15d;
             while (!finishRequested && !player.isPrepared && Time.realtimeSinceStartupAsDouble < deadline)
                 yield return null;
-            if (!player.isPrepared) finishRequested = true;
+            if (!finishRequested && !player.isPrepared)
+            {
+                Debug.LogWarning("[GachaSummonVideo] 영상 준비 시간 초과");
+                finishRequested = true;
+            }
             if (!finishRequested)
             {
+                lastFrameProgressAt = Time.realtimeSinceStartupAsDouble;
                 player.Play();
-                deadline = Time.realtimeSinceStartupAsDouble + duration + 5d;
-                while (!finishRequested && !display.enabled && Time.realtimeSinceStartupAsDouble < deadline)
+                while (!finishRequested && !display.enabled && !PlaybackStalled())
                     yield return null;
                 if (!finishRequested) yield return Fade(videoGroup, 0f, 1f, 0.12f);
-                while (!finishRequested && Time.realtimeSinceStartupAsDouble < deadline)
+                // 정상 종료는 loopPointReached만 사용한다. 로딩/지연 시간을 영상 길이에서 차감하지 않는다.
+                while (!finishRequested && !PlaybackStalled())
                     yield return null;
             }
             yield return Fade(videoGroup, videoGroup.alpha, 0f, 0.1f);
             yield return Fade(overlayGroup, 1f, 0f, 0.12f);
             watchdog = null;
-            Complete(true); // 정상 종료·스킵·디코더 실패 모두 저장된 카드 공개로 복귀
+            Complete(true);
+        }
+
+        private bool PlaybackStalled()
+        {
+            if (Time.realtimeSinceStartupAsDouble - lastFrameProgressAt < 15d) return false;
+            Debug.LogWarning($"[GachaSummonVideo] 15초 동안 프레임 진행 없음: {lastPresentedFrame}");
+            finishRequested = true;
+            return true;
         }
         public void Skip() => finishRequested = true;
         public void Cancel() => Complete(false);

@@ -29,8 +29,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderAttackSkillDefinition
   skillId: CS_PhantomBarrage
   displayName: "\uC720\uB839 \uD3EC\uACA9"
-  description: "SkillMaker V2 \uCD9C\uC2DC \uD6C4\uBCF4 12\uC885 \uB370\uC774\uD130
-    \uC870\uD569 \uC2A4\uD0AC."
+  description: "\uC801\uC774 \uBC00\uC9D1\uD55C \uC9C0\uC5ED\uC5D0 \uC720\uB839\uD0C4
+    7\uBC1C\uC744 \uD37C\uBD93\uC2B5\uB2C8\uB2E4. \uCCAB \uD3EC\uD0C4\uC740 \uC911\uC2EC\uC5D0
+    \uB5A8\uC5B4\uC9C0\uACE0 \uB098\uBA38\uC9C0\uB294 \uBC18\uACBD 4m\uC5D0 \uBB34\uC791\uC704\uB85C
+    \uB5A8\uC5B4\uC9D1\uB2C8\uB2E4. Agitation\uC774 3\uC2A4\uD0DD \uC313\uC774\uBA74
+    \uC8FC\uBCC0\uC5D0 \uCD94\uAC00 \uD3ED\uBC1C\uC744 \uC77C\uC73C\uD0B5\uB2C8\uB2E4."
   icon: {fileID: -6236578694040669561, guid: 233ff8c61c9602a4aa9adfc4fccc0845, type: 3}
   rarity: 1
   castTime: 0
@@ -46,28 +49,89 @@ MonoBehaviour:
     duration: 1
     tickInterval: 1
     randomRadius: 4
+    firstBarrageHitAtTarget: 1
     chainCount: 1
     chainRadius: 4
+  autoUseCondition: 0
+  awakeningStages:
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: 
+      parameter: 2
+      operation: 0
+      value: 1
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.9
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: 
+      parameter: 2
+      operation: 0
+      value: 1
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.9
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: 
+      parameter: 2
+      operation: 0
+      value: 1
+    - targetEffectId: Agitation_mark
+      parameter: 10
+      operation: 0
+      value: -1
+  autoHealthThreshold: 0.85
   castingVfxPrefab: {fileID: 0}
-  castingVfxLifetime: 1
+  castingVfxLifetime: 0.3
   castingVfxLocalOffset: {x: 0, y: 0, z: 0}
   castingVfxLocalEuler: {x: 0, y: 0, z: 0}
   castingVfxScale: 1
   castingSfx: {fileID: 0}
-  castVfxPrefab: {fileID: 4497473641098484015, guid: b2e4dc7e90fe6054884f2daf9aba3555, type: 3}
-  castVfxLifetime: 1
+  castVfxPrefab: {fileID: 8550957183290902016, guid: 1e687c5764973a44a870c86be3141c48, type: 3}
+  castVfxLifetime: 0.65
   castVfxLocalOffset: {x: 0, y: 0, z: 0}
   castVfxLocalEuler: {x: 0, y: 0, z: 0}
   castVfxScale: 1
   castSfx: {fileID: 11400000, guid: 1306efe48e423b44480c4333a269e927, type: 2}
-  impactVfxPrefab: {fileID: 28645335478572135, guid: 1b3378dd7b3b66a41a5d026c18ff9b2d, type: 3}
-  impactVfxLifetime: 1.5
-  impactVfxLocalOffset: {x: 0, y: 0, z: 0}
+  impactVfxPrefab: {fileID: 6723572984881174042, guid: 7fd618deba6543244acd46d02e5bdd62, type: 3}
+  impactVfxLifetime: 1.1
+  impactVfxLocalOffset: {x: 0, y: -0.36, z: 0}
   impactVfxLocalEuler: {x: 0, y: 0, z: 0}
   impactVfxScale: 1
   impactSfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
   persistentVfxPrefab: {fileID: 0}
-  persistentVfxLocalOffset: {x: 0, y: 0, z: 0}
+  persistentVfxLocalOffset: {x: 0, y: 0.08, z: 0}
   persistentVfxLocalEuler: {x: 0, y: 0, z: 0}
   persistentVfxScale: 1
   persistentVfxAnchor: 4

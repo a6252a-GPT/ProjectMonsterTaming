@@ -37,11 +37,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderAttackSkillDefinition
   skillId: CS_DeathSentence
   displayName: "\uC0AC\uD615 \uC120\uACE0"
-  description: "SkillMaker V2 \uCD9C\uC2DC \uD6C4\uBCF4 12\uC885 \uB370\uC774\uD130
-    \uC870\uD569 \uC2A4\uD0AC."
+  description: "\uAC00\uC7A5 \uAC15\uD55C \uC801\uC744 \uACF5\uACA9\uD558\uACE0 5\uCD08
+    \uB3D9\uC548 \uC0AC\uD615 \uC120\uACE0\uB97C \uB0B4\uB9BD\uB2C8\uB2E4. \uC120\uACE0
+    \uC911 \uBC1B\uC740 \uD0C0\uACA9 \uC218\uB97C \uAE30\uB85D\uD574 \uB9CC\uB8CC\uB420
+    \uB54C \uAE30\uB85D\uB7C9\uC5D0 \uBE44\uB840\uD55C \uCD94\uAC00 \uD53C\uD574\uB97C
+    \uC90D\uB2C8\uB2E4."
   icon: {fileID: 2527881940165241355, guid: 233ff8c61c9602a4aa9adfc4fccc0845, type: 3}
   rarity: 2
-  castTime: 0
+  castTime: 0.2
   cooldown: 12
   targeting: {fileID: 8262469129036694124}
   effects:
@@ -54,28 +57,85 @@ MonoBehaviour:
     duration: 1
     tickInterval: 1
     randomRadius: 0
+    firstBarrageHitAtTarget: 0
     chainCount: 1
     chainRadius: 4
-  castingVfxPrefab: {fileID: 0}
-  castingVfxLifetime: 1
+  autoUseCondition: 0
+  awakeningStages:
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: DeathSentence_mark/DeathSentence_recorded_hit_damage
+      parameter: 12
+      operation: 0
+      value: 5
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.9
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: DeathSentence_mark/DeathSentence_recorded_hit_damage
+      parameter: 12
+      operation: 0
+      value: 5
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.9
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: DeathSentence_mark/DeathSentence_recorded_hit_damage
+      parameter: 12
+      operation: 0
+      value: 10
+  autoHealthThreshold: 0.85
+  castingVfxPrefab: {fileID: 8097030639909613100, guid: 61ea3b932207d9d47b147c7cde734207, type: 3}
+  castingVfxLifetime: 0.3
   castingVfxLocalOffset: {x: 0, y: 0, z: 0}
   castingVfxLocalEuler: {x: 0, y: 0, z: 0}
   castingVfxScale: 1
   castingSfx: {fileID: 0}
-  castVfxPrefab: {fileID: 4497473641098484015, guid: b2e4dc7e90fe6054884f2daf9aba3555, type: 3}
-  castVfxLifetime: 1
+  castVfxPrefab: {fileID: 8550957183290902016, guid: 1e687c5764973a44a870c86be3141c48, type: 3}
+  castVfxLifetime: 0.65
   castVfxLocalOffset: {x: 0, y: 0, z: 0}
   castVfxLocalEuler: {x: 0, y: 0, z: 0}
   castVfxScale: 1
   castSfx: {fileID: 11400000, guid: 1306efe48e423b44480c4333a269e927, type: 2}
-  impactVfxPrefab: {fileID: 4497473641098484015, guid: b2e4dc7e90fe6054884f2daf9aba3555, type: 3}
-  impactVfxLifetime: 1.5
-  impactVfxLocalOffset: {x: 0, y: 0, z: 0}
+  impactVfxPrefab: {fileID: 1212407868296110750, guid: bb0e76885de86cc4b9bb3d425c4b4b20, type: 3}
+  impactVfxLifetime: 1.1
+  impactVfxLocalOffset: {x: 0, y: -0.36, z: 0}
   impactVfxLocalEuler: {x: 0, y: 0, z: 0}
   impactVfxScale: 1
   impactSfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
   persistentVfxPrefab: {fileID: 0}
-  persistentVfxLocalOffset: {x: 0, y: 0, z: 0}
+  persistentVfxLocalOffset: {x: 0, y: 0.08, z: 0}
   persistentVfxLocalEuler: {x: 0, y: 0, z: 0}
   persistentVfxScale: 1
   persistentVfxAnchor: 4

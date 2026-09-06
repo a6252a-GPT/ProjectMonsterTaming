@@ -21,6 +21,7 @@ namespace ProjectMT.Features.CommanderSkill
             public CommanderSkillDefinition Definition;
             public int Count;
             public bool IsNew;
+            public long ConvertedGold;
         }
 
         [Header("메인 정보")]
@@ -255,13 +256,20 @@ namespace ProjectMT.Features.CommanderSkill
                 }
 
                 bool saved;
+                CommanderSkillSummonReceipt receipt = null;
                 try
                 {
-                    saved = await progressService.TryApplyAndSaveAsync(
+                    if (progressService is not ICommanderSkillSummonService summonService)
+                    {
+                        SetStatus("확정 소환 결과를 지원하는 진행 서비스가 필요합니다.");
+                        return;
+                    }
+                    receipt = await summonService.TrySummonCommanderSkillsAsync(
                         GameProgressChange.RecordPaidCommanderSkillSummons(
                             expectedCount,
                             drawCount,
                             resultIds));
+                    saved = receipt != null;
                 }
                 catch (Exception exception)
                 {
@@ -280,7 +288,7 @@ namespace ProjectMT.Features.CommanderSkill
                     return;
                 }
 
-                ShowResults(drawCount, resultIds, ownedBefore);
+                ShowCommittedResults(drawCount, resultIds, ownedBefore, receipt);
                 SetStatus($"{drawCount:N0}회 스킬 소환이 완료되었습니다");
             }
             catch (Exception exception)
@@ -325,6 +333,10 @@ namespace ProjectMT.Features.CommanderSkill
         }
 
         private void ShowResults(int drawCount, IReadOnlyList<string> resultIds, ISet<string> ownedBefore)
+            => ShowCommittedResults(drawCount, resultIds, ownedBefore, null);
+
+        private void ShowCommittedResults(int drawCount, IReadOnlyList<string> resultIds, ISet<string> ownedBefore,
+            CommanderSkillSummonReceipt receipt)
         {
             if (resultOverlay == null || resultItemsRoot == null || resultItemPrefab == null)
             {
@@ -338,7 +350,9 @@ namespace ProjectMT.Features.CommanderSkill
             for (var index = 0; index < resultIds.Count; index++)
             {
                 var skillId = resultIds[index];
-                if (!summaries.TryGetValue(skillId, out var summary))
+                var converted = receipt != null && receipt.Results[index].Kind == CommanderSkillSummonResultKind.Converted;
+                var resultKey = skillId + (converted ? "|gold" : "");
+                if (!summaries.TryGetValue(resultKey, out var summary))
                 {
                     if (!catalog.TryGet(skillId, out var definition))
                     {
@@ -348,12 +362,14 @@ namespace ProjectMT.Features.CommanderSkill
                     summary = new ResultSummary
                     {
                         Definition = definition,
-                        IsNew = ownedBefore == null || !ownedBefore.Contains(skillId)
+                        IsNew = receipt == null ? ownedBefore == null || !ownedBefore.Contains(skillId) :
+                            receipt.Results[index].Kind == CommanderSkillSummonResultKind.New
                     };
-                    summaries.Add(skillId, summary);
+                    summaries.Add(resultKey, summary);
                 }
 
                 summary.Count++;
+                if (converted) summary.ConvertedGold += receipt.Results[index].ConvertedGold;
             }
 
             var ordered = summaries.Values
@@ -365,14 +381,20 @@ namespace ProjectMT.Features.CommanderSkill
             if (drawCount == 1 || drawCount == 10 || drawCount == 30)
             {
                 var first = new HashSet<string>(StringComparer.Ordinal);
-                foreach (var id in resultIds)
+                for (var index = 0; index < resultIds.Count; index++)
+                {
+                    var id = resultIds[index];
                     if (catalog.TryGet(id, out var definition))
                         display.Add(new ResultSummary { Definition = definition, Count = 1,
-                            IsNew = first.Add(id) && (ownedBefore == null || !ownedBefore.Contains(id)) });
+                            IsNew = receipt == null ? first.Add(id) && (ownedBefore == null || !ownedBefore.Contains(id)) :
+                                receipt.Results[index].Kind == CommanderSkillSummonResultKind.New,
+                            ConvertedGold = receipt?.Results[index].ConvertedGold ?? 0L });
+                }
             }
             else display.AddRange(ordered);
             if (resultSummaryText != null)
-                resultSummaryText.text = $"획득 종류 {ordered.Length:N0}개  ·  중복은 스킬 레벨업 재료로 저장됩니다";
+                resultSummaryText.text = $"획득 종류 {ordered.Select(s => s.Definition.SkillId).Distinct().Count():N0}개 · 중복은 별각성 재료" +
+                    (receipt != null && receipt.ConvertedGold > 0 ? $" · 최대각성 전환 +{receipt.ConvertedGold:N0} 골드" : "");
             resultOverlay.transform.SetAsLastSibling();
             UIPanelPopAnimator.RequestOpen(resultOverlay, UIPanelPopStyle.RewardPopup);
             if (drawCount == 30)
@@ -418,6 +440,7 @@ namespace ProjectMT.Features.CommanderSkill
                 var item = Instantiate(resultItemPrefab, resultItemsRoot);
                 item.name = $"SkillResult_{index + 1:00}_{display[index].Definition.SkillId}";
                 item.Bind(display[index].Definition, display[index].Count, display[index].IsNew);
+                item.ShowConvertedGold(display[index].ConvertedGold);
                 if (display.Count == 1)
                 {
                     ((RectTransform)item.transform).sizeDelta = new Vector2(196f, 250f);

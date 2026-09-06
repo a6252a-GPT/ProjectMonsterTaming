@@ -13,7 +13,7 @@ namespace ProjectMT.Features.CommanderSkill
         private Vector3 targetPosition;
         private float elapsed;
         private float duration;
-        private float damageMultiplier = 1f;
+        private CommanderSkillGrowthSnapshot damageMultiplier = 1f;
         private bool running;
         private bool followTarget = true;
 
@@ -22,7 +22,7 @@ namespace ProjectMT.Features.CommanderSkill
             CommanderAttackSkillDefinition skill,
             UnitActor targetUnit,
             Vector3 destination,
-            float skillDamageMultiplier,
+            CommanderSkillGrowthSnapshot skillDamageMultiplier,
             bool homingTarget = true)
         {
             owner = runtime;
@@ -32,7 +32,7 @@ namespace ProjectMT.Features.CommanderSkill
             targetPosition = destination;
             elapsed = 0f;
             duration = Mathf.Max(0.08f, Vector3.Distance(startPosition, targetPosition) / skill.ProjectileSpeed);
-            damageMultiplier = Mathf.Max(0f, skillDamageMultiplier);
+            damageMultiplier = skillDamageMultiplier;
             followTarget = homingTarget;
             running = owner != null && definition != null;
         }

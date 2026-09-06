@@ -52,8 +52,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderAttackSkillDefinition
   skillId: CS_TrackingBlade
   displayName: "\uCD94\uC801\uC758 \uAC80\uC778"
-  description: "SkillMaker V2 \uCD9C\uC2DC \uD6C4\uBCF4 12\uC885 \uB370\uC774\uD130
-    \uC870\uD569 \uC2A4\uD0AC."
+  description: "\uAC00\uC7A5 \uAC00\uAE4C\uC6B4 \uC801\uC744 \uCD94\uC801\uD558\uB294
+    \uB9C8\uB825\uAC80 6\uC790\uB8E8\uB97C \uBC1C\uC0AC\uD569\uB2C8\uB2E4. \uD0C0\uACA9\uB9C8\uB2E4
+    Pursuit\uB97C \uC313\uACE0, 5\uD68C \uD53C\uACA9\uB418\uBA74 \uCD94\uAC00 \uB2E8\uC77C
+    \uD53C\uD574\uB97C \uC90D\uB2C8\uB2E4."
   icon: {fileID: -1912268900785408154, guid: 233ff8c61c9602a4aa9adfc4fccc0845, type: 3}
   rarity: 0
   castTime: 0
@@ -69,33 +71,94 @@ MonoBehaviour:
     duration: 1
     tickInterval: 1
     randomRadius: 0
+    firstBarrageHitAtTarget: 0
     chainCount: 1
     chainRadius: 4
+  autoUseCondition: 0
+  awakeningStages:
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: 
+      parameter: 2
+      operation: 0
+      value: 1
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.9
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: 
+      parameter: 2
+      operation: 0
+      value: 1
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.9
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: 
+      parameter: 2
+      operation: 0
+      value: 1
+    - targetEffectId: Pursuit_mark
+      parameter: 9
+      operation: 0
+      value: -1
+  autoHealthThreshold: 0.85
   castingVfxPrefab: {fileID: 0}
-  castingVfxLifetime: 1
+  castingVfxLifetime: 0.3
   castingVfxLocalOffset: {x: 0, y: 0, z: 0}
   castingVfxLocalEuler: {x: 0, y: 0, z: 0}
   castingVfxScale: 1
   castingSfx: {fileID: 0}
-  castVfxPrefab: {fileID: 4497473641098484015, guid: b2e4dc7e90fe6054884f2daf9aba3555, type: 3}
-  castVfxLifetime: 1
+  castVfxPrefab: {fileID: 8550957183290902016, guid: 1e687c5764973a44a870c86be3141c48, type: 3}
+  castVfxLifetime: 0.65
   castVfxLocalOffset: {x: 0, y: 0, z: 0}
   castVfxLocalEuler: {x: 0, y: 0, z: 0}
   castVfxScale: 1
   castSfx: {fileID: 11400000, guid: 1306efe48e423b44480c4333a269e927, type: 2}
-  impactVfxPrefab: {fileID: 28645335478572135, guid: 1b3378dd7b3b66a41a5d026c18ff9b2d, type: 3}
-  impactVfxLifetime: 1.5
-  impactVfxLocalOffset: {x: 0, y: 0, z: 0}
+  impactVfxPrefab: {fileID: 724582208408214271, guid: 32bdbbed5bff84044b8260dce28681ca, type: 3}
+  impactVfxLifetime: 1.1
+  impactVfxLocalOffset: {x: 0, y: -0.36, z: 0}
   impactVfxLocalEuler: {x: 0, y: 0, z: 0}
   impactVfxScale: 1
   impactSfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
   persistentVfxPrefab: {fileID: 0}
-  persistentVfxLocalOffset: {x: 0, y: 0, z: 0}
+  persistentVfxLocalOffset: {x: 0, y: 0.08, z: 0}
   persistentVfxLocalEuler: {x: 0, y: 0, z: 0}
   persistentVfxScale: 1
   persistentVfxAnchor: 4
   deliveryModule: 1
-  projectilePrefab: {fileID: 6078696380654765444, guid: fc4726aa82a56d5489c27b13c1bf33bc, type: 3}
+  projectilePrefab: {fileID: 996951632486080566, guid: 4625ebde3dd39e146bf2bedff3e1622d, type: 3}
   projectileSpeed: 16
   trajectory: 0
   arcHeight: 0

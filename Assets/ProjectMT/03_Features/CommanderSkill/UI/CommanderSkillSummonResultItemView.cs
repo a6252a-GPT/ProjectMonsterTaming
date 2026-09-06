@@ -92,6 +92,23 @@ namespace ProjectMT.Features.CommanderSkill
 
         internal static Color ResolveAccent(CommanderSkillRarity rarity)
         {
+            return ResolveRarityAccent(rarity);
+        }
+
+        public void ShowConvertedGold(long gold)
+        {
+            if (gold <= 0) return;
+            newBadge?.SetActive(false);
+            if (categoryText != null) categoryText.text = "최대각성 전환";
+            if (quantityText != null)
+            {
+                quantityText.text = $"+{gold:N0} 골드";
+                quantityText.transform.parent.gameObject.SetActive(true);
+            }
+        }
+
+        private static Color ResolveRarityAccent(CommanderSkillRarity rarity)
+        {
             return rarity switch
             {
                 CommanderSkillRarity.Rare => new Color32(91, 178, 246, 255),

@@ -7,11 +7,12 @@ using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using AP = ProjectMT.Features.CommanderSkill.CommanderSkillAwakeningParameter;
 
 namespace ProjectMT.Features.CommanderSkill
 {
     [DisallowMultipleComponent]
-    public sealed class CommanderSkillPageController : MonoBehaviour // 장착 슬롯·보유 목록·상세 관리창
+    public sealed partial class CommanderSkillPageController : MonoBehaviour // 장착 슬롯·보유 목록·상세 관리창
     {
         private enum SkillFilter
         {
@@ -33,6 +34,7 @@ namespace ProjectMT.Features.CommanderSkill
             public Image Icon;
             public TMP_Text LevelText;
             public TMP_Text NumberText;
+            public Image[] Stars;
             public GameObject LockRoot;
             public GameObject FocusRoot;
             public SkillFrameView Frame;
@@ -51,6 +53,9 @@ namespace ProjectMT.Features.CommanderSkill
             public GameObject FocusRoot;
             public SkillFrameView Frame;
             public string SkillId;
+            public Image[] Stars;
+            public Image CardBorder;
+            public TMP_Text EquippedText;
             public Image Background;
         }
 
@@ -78,6 +83,8 @@ namespace ProjectMT.Features.CommanderSkill
         private TMP_Text selectedSlotText;
         private TMP_Text feedbackText;
         private Button levelUpButton;
+        private Button awakenButton;
+        private TMP_Text awakenButtonText;
         private TMP_Text levelUpButtonText;
         private Button equipButton;
         private TMP_Text equipButtonText;
@@ -181,6 +188,7 @@ namespace ProjectMT.Features.CommanderSkill
 
             closeButton?.onClick.AddListener(Close);
             levelUpButton?.onClick.AddListener(HandleLevelUpClicked);
+            awakenButton?.onClick.AddListener(HandleAwakenClicked);
             equipButton?.onClick.AddListener(HandleEquipClicked);
             for (var index = 0; index < slots.Length; index++)
             {
@@ -217,6 +225,8 @@ namespace ProjectMT.Features.CommanderSkill
             selectedSlotText = FindDeep(transform, "SelectedSlotLabel")?.GetComponent<TMP_Text>();
             feedbackText = FindDeep(transform, "SkillPageFeedback")?.GetComponent<TMP_Text>();
             levelUpButton = FindDeep(transform, "SkillLevelUpButton")?.GetComponent<Button>();
+            awakenButton = FindDeep(transform, "SkillAwakenButton")?.GetComponent<Button>();
+            awakenButtonText = awakenButton?.GetComponentInChildren<TMP_Text>(true);
             levelUpButtonText = levelUpButton?.GetComponentInChildren<TMP_Text>(true);
             equipButton = FindDeep(transform, "SkillEquipButton")?.GetComponent<Button>();
             equipButtonText = equipButton?.GetComponentInChildren<TMP_Text>(true);
@@ -236,7 +246,8 @@ namespace ProjectMT.Features.CommanderSkill
                         NumberText = FindDeep(root, "SlotNumber")?.GetComponent<TMP_Text>(),
                         LockRoot = FindDeep(root, "SlotLock")?.gameObject,
                         FocusRoot = FindDeep(root, "SlotFocus")?.gameObject,
-                        Frame = CacheSkillFrame(root)
+                        Frame = CacheSkillFrame(root),
+                        Stars = CacheStars(root)
                     };
             }
 
@@ -257,7 +268,7 @@ namespace ProjectMT.Features.CommanderSkill
                 var filter = FindDeep(transform, filterNames[index]);
                 filterButtons[index] = filter?.GetComponent<Button>();
                 filterLabels[index] = filter?.GetComponentInChildren<TMP_Text>(true);
-                filterBackgrounds[index] = filter?.GetComponent<Image>();
+                filterBackgrounds[index] = FindDeep(filter, "Bg")?.GetComponent<Image>() ?? filter?.GetComponent<Image>();
                 filterBorders[index] = FindDeep(filter, "InnerBorder1")?.GetComponent<Image>();
             }
         }
@@ -297,6 +308,8 @@ namespace ProjectMT.Features.CommanderSkill
             currentFilter = filter;
             feedbackMessage = string.Empty;
             RefreshAll();
+            var scroll = GetComponentInChildren<ScrollRect>();
+            if (scroll != null) { Canvas.ForceUpdateCanvases(); scroll.StopMovement(); scroll.verticalNormalizedPosition = 1f; }
         }
 
         private async void HandleEquipClicked()
@@ -400,10 +413,28 @@ namespace ProjectMT.Features.CommanderSkill
 
         private void HandleProgressChanged()
         {
-            if (this != null && isActiveAndEnabled)
+            if (this != null && isActiveAndEnabled) RefreshAll();
+        }
+
+        private async void HandleAwakenClicked()
+        {
+            var service = progress;
+            if (requestInFlight || service == null || !TryGetOwnedSkill(selectedSkillId, out var owned)) return;
+            var version = lifetimeVersion;
+            requestInFlight = true;
+            RefreshAll();
+            try
             {
-                RefreshAll();
+                var saved = await service.TryApplyAndSaveAsync(GameProgressChange.AwakenCommanderSkill(
+                    owned.SkillId, owned.AwakeningLevel, owned.DuplicateCount));
+                if (IsCurrentRequest(version)) feedbackMessage = saved ? $"{owned.AwakeningLevel + 1}성으로 각성했습니다." : "각성 조건이 바뀌었습니다. 다시 확인해 주세요.";
             }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                if (IsCurrentRequest(version)) feedbackMessage = "각성 저장에 실패했습니다. 중복은 소비되지 않았습니다.";
+            }
+            finally { if (IsCurrentRequest(version)) { requestInFlight = false; RefreshAll(); } }
         }
 
         private bool IsCurrentRequest(int requestVersion)
@@ -470,6 +501,7 @@ namespace ProjectMT.Features.CommanderSkill
             RefreshCards(view);
             RefreshFilters();
             RefreshDetail(view, progressView.Gold);
+            RefreshGrowthPresentation(view);
         }
 
         private void RefreshSlots(CommanderSkillProgressView view)
@@ -487,11 +519,14 @@ namespace ProjectMT.Features.CommanderSkill
                 var hasDefinition = catalog.TryGet(skillId, out var definition);
                 slot.Button.interactable = unlocked && !requestInFlight;
                 slot.LockRoot?.SetActive(!unlocked);
+                if (slot.LevelText != null) { var plate = slot.LevelText.transform.parent.Find("LevelBackground"); if (plate != null) plate.gameObject.SetActive(hasDefinition); }
                 slot.FocusRoot?.SetActive(index == selectedSlotIndex);
+                RefreshStars(slot.Stars, TryGetOwnedSkill(skillId, out var starOwned), starOwned.AwakeningLevel);
                 RefreshSkillFrame(slot.Frame, hasDefinition ? definition : null);
                 if (slot.NumberText != null)
                 {
                     slot.NumberText.text = $"{index + 1}번";
+                    slot.NumberText.color = hasDefinition ? new Color32(193,181,158,255) : new Color32(120,113,103,255);
                 }
 
                 if (slot.Icon != null)
@@ -545,23 +580,27 @@ namespace ProjectMT.Features.CommanderSkill
                 card.NameText.text = definition.DisplayName;
                 if (card.CategoryText != null)
                 {
-                    card.CategoryText.text = GetCategoryLabel(definition.Category);
+                    card.CategoryText.text = BuildRarityCategory(definition, false);
                 }
 
                 if (card.StatsText != null)
                 {
-                    card.StatsText.text = BuildCardStats(definition, owned.Level);
+                    card.StatsText.text = BuildAwakeningAvailability(owned);
+                    card.StatsText.color = owned.AwakeningLevel >= 5 ? new Color32(166,154,126,255) : new Color32(220,194,132,255);
                 }
 
                 card.LevelText.text = $"Lv.{owned.Level}";
                 card.EquippedRoot?.SetActive(FindEquippedSlot(view, owned.SkillId) >= 0);
                 card.FocusRoot?.SetActive(owned.SkillId == selectedSkillId);
                 RefreshSkillFrame(card.Frame, definition);
+                RefreshStars(card.Stars, true, owned.AwakeningLevel);
+                if (card.CardBorder != null) { Color color = RarityColor(definition.Rarity); color.a = owned.SkillId == selectedSkillId ? 1f : .7f; card.CardBorder.color = color; }
+                if (card.EquippedText != null) card.EquippedText.text = $"{FindEquippedSlot(view, owned.SkillId) + 1}번 장착";
                 if (card.Background != null)
                 {
                     card.Background.color = owned.SkillId == selectedSkillId
-                        ? new Color32(55, 48, 43, 255)
-                        : new Color32(48, 43, 51, 255);
+                        ? new Color32(56, 54, 47, 255)
+                        : new Color32(44, 41, 43, 255);
                 }
             }
 
@@ -573,7 +612,7 @@ namespace ProjectMT.Features.CommanderSkill
 
             if (ownedCountText != null)
             {
-                ownedCountText.text = $"{visibleCount} / {view.OwnedSkills.Count}";
+                ownedCountText.text = $"{visibleCount}종";
             }
         }
 
@@ -606,7 +645,10 @@ namespace ProjectMT.Features.CommanderSkill
                 EquippedRoot = FindDeep(root, "EquippedBadge")?.gameObject,
                 FocusRoot = FindDeep(root, "CardFocus")?.gameObject,
                 Frame = CacheSkillFrame(root),
-                Background = FindDeep(root, "CardBackground")?.GetComponent<Image>()
+                Background = FindDeep(root, "CardBackground")?.GetComponent<Image>(),
+                CardBorder = FindDeep(root, "CardBorder")?.GetComponent<Image>(),
+                EquippedText = FindDeep(root, "EquippedBadge")?.GetComponentInChildren<TMP_Text>(true),
+                Stars = CacheStars(root)
             };
         }
 
@@ -617,27 +659,11 @@ namespace ProjectMT.Features.CommanderSkill
 
         private void RefreshFilters()
         {
-            for (var index = 0; index < filterButtons.Length; index++)
+            for (var i = 0; i < filterButtons.Length; i++)
             {
-                var selected = index == (int)currentFilter;
-                if (filterLabels[index] != null)
-                {
-                    filterLabels[index].color = selected ? SelectedColor : NormalColor;
-                }
-
-                if (filterBackgrounds[index] != null)
-                {
-                    filterBackgrounds[index].color = selected
-                        ? new Color32(69, 65, 60, 255)
-                        : new Color32(37, 35, 37, 255);
-                }
-
-                if (filterBorders[index] != null)
-                {
-                    filterBorders[index].color = selected
-                        ? new Color32(130, 118, 106, 255)
-                        : new Color32(85, 80, 75, 255);
-                }
+                var selected = i == (int)currentFilter;
+                if (filterLabels[i] != null) filterLabels[i].color = selected ? new Color32(234,212,161,255) : new Color32(199,190,175,255);
+                if (filterBackgrounds[i] != null) { filterBackgrounds[i].sprite = selected ? filterSelectedSprite : filterNormalSprite; filterBackgrounds[i].color = Color.white; }
             }
         }
 
@@ -660,23 +686,23 @@ namespace ProjectMT.Features.CommanderSkill
 
             if (detailCategoryText != null)
             {
-                detailCategoryText.text = hasDefinition ? GetCategoryLabel(definition.Category) : string.Empty;
+                detailCategoryText.text = hasDefinition ? BuildRarityCategory(definition) : string.Empty;
             }
 
             if (detailStatsText != null)
             {
-                detailStatsText.text = hasDefinition ? BuildDetailStats(definition, owned.Level) : string.Empty;
+                detailStatsText.text = hasDefinition ? "쿨타임" : string.Empty;
             }
 
             if (detailDescriptionText != null)
             {
-                detailDescriptionText.text = hasDefinition ? definition.Description : string.Empty;
+                detailDescriptionText.text = hasDefinition ? BuildPresentationDescription(definition, owned.Level) : string.Empty;
             }
 
             if (detailLevelText != null)
             {
                 detailLevelText.text = hasOwned && TryGetGrowthRule(owned.SkillId, out var growthRule)
-                    ? $"Lv.{owned.Level} / {growthRule.MaxLevel}"
+                    ? $"Lv.{owned.Level}"
                     : string.Empty;
             }
 
@@ -691,6 +717,13 @@ namespace ProjectMT.Features.CommanderSkill
             }
 
             var levelUpCost = 0L;
+            var awakeningCost = 0;
+            var canAwaken = hasOwned && catalog.BalanceConfig.TryGetAwakeningCost(owned.AwakeningLevel, out awakeningCost)
+                && owned.DuplicateCount >= awakeningCost && !requestInFlight;
+            if (awakenButton != null) { awakenButton.interactable = canAwaken; RefreshActionButton(awakenButton, null, false); }
+            if (awakenButtonText != null) awakenButtonText.text = hasOwned
+                ? owned.AwakeningLevel >= catalog.BalanceConfig.MaxAwakening ? "최대 각성" :
+                    "별각성" : "별각성";
             var hasLevelUpCost = hasOwned && TryGetGrowthRule(owned.SkillId, out var levelRule) &&
                                  levelRule.TryGetNextLevelGoldCost(owned.Level, out levelUpCost);
             var canLevelUp = hasLevelUpCost && gold >= levelUpCost && !requestInFlight;
@@ -705,7 +738,7 @@ namespace ProjectMT.Features.CommanderSkill
                 levelUpButtonText.text = hasOwned && TryGetGrowthRule(owned.SkillId, out var capRule) &&
                                          owned.Level >= capRule.MaxLevel
                     ? "최대 레벨"
-                    : hasLevelUpCost ? $"강화  {levelUpCost:N0} 골드" : "강화 불가";
+                    : hasLevelUpCost ? "강화" : "강화 불가";
             }
 
             var slotUnlocked = view.IsSlotUnlocked(selectedSlotIndex);
@@ -734,74 +767,42 @@ namespace ProjectMT.Features.CommanderSkill
             return new SkillFrameView
             {
                 Background = FindDeep(normal, "Bg")?.GetComponent<Image>(),
-                Border = FindDeep(normal, "InnerBorder1")?.GetComponent<Image>()
+                Border = FindDeep(root, "VisibleRarityBorder")?.GetComponent<Image>() ?? FindDeep(normal, "InnerBorder1")?.GetComponent<Image>()
             };
         }
 
         private static void RefreshSkillFrame(SkillFrameView frame, CommanderSkillDefinition definition)
         {
-            var background = new Color32(57, 54, 56, 255);
-            var border = new Color32(102, 96, 91, 255);
-            if (definition != null)
-            {
-                if (definition.Category == CommanderSkillCategory.Buff)
-                {
-                    background = new Color32(80, 110, 62, 255);
-                    border = new Color32(127, 153, 82, 255);
-                }
-                else if (definition.Category == CommanderSkillCategory.Debuff)
-                {
-                    background = new Color32(101, 68, 119, 255);
-                    border = new Color32(142, 89, 165, 255);
-                }
-                else if (definition is CommanderAttackSkillDefinition attack && attack.AreaDamageEffect != null)
-                {
-                    (background, border) = attack.AreaDamageEffect.DamageKind switch
-                    {
-                        CommanderSkillDamageKind.Fire => (new Color32(163, 41, 42, 255), new Color32(214, 55, 49, 255)),
-                        CommanderSkillDamageKind.Ice => (new Color32(49, 93, 153, 255), new Color32(66, 120, 183, 255)),
-                        CommanderSkillDamageKind.Arcane => (new Color32(98, 71, 119, 255), new Color32(145, 96, 167, 255)),
-                        _ => (background, border)
-                    };
-                }
-            }
-
+            var background = new Color32(48, 45, 48, 255);
+            var border = definition != null ? RarityColor(definition.Rarity) : new Color32(73, 69, 67, 255);
             if (frame?.Background != null) frame.Background.color = background;
             if (frame?.Border != null) frame.Border.color = border;
         }
 
         private static void RefreshActionButton(Button button, Image border, bool primary)
         {
-            if (button.targetGraphic != null)
-            {
-                button.targetGraphic.color = primary
-                    ? new Color32(115, 44, 44, 255)
-                    : new Color32(68, 64, 61, 255);
-            }
-            if (border != null)
-            {
-                border.color = primary
-                    ? new Color32(167, 103, 90, 255)
-                    : new Color32(143, 131, 118, 255);
-            }
+            var group = button.GetComponent<CanvasGroup>();
+            if (group != null) group.alpha = button.interactable ? 1f : .65f;
         }
 
         private string BuildCardStats(CommanderSkillDefinition definition, int level)
         {
+            var growth = GetSupportGrowth(definition.SkillId, level);
+            var cooldown = growth.Resolve(AP.Cooldown, definition.Cooldown);
             if (definition is CommanderAttackSkillDefinition attack && attack.AreaDamageEffect != null)
             {
                 var damage = attack.AreaDamageEffect.BaseDamage * attack.AreaDamageEffect.PerHitMultiplier * GetEffectMultiplier(definition.SkillId, level);
-                return $"피해 {damage:0.#}  ·  {definition.Cooldown:0.#}초";
+                return $"피해 {damage:0.#}  ·  {cooldown:0.#}초";
             }
 
             if (definition is CommanderEffectSkillDefinition)
             {
-                var multiplier = GetEffectMultiplier(definition.SkillId, level);
+                var multiplier = GetSupportGrowth(definition.SkillId, level);
                 for (var index = 0; index < definition.Effects.Count; index++)
                 {
                     if (definition.Effects[index] is CommanderUnitEffectDefinition effect)
                     {
-                        return $"{BuildEffectSummary(effect, multiplier)}  ·  {definition.Cooldown:0.#}초";
+                        return $"{BuildEffectSummary(effect, multiplier)}  ·  {cooldown:0.#}초";
                     }
                 }
             }
@@ -811,23 +812,26 @@ namespace ProjectMT.Features.CommanderSkill
 
         private string BuildDetailStats(CommanderSkillDefinition definition, int level)
         {
+            var growth = GetSupportGrowth(definition.SkillId, level);
+            var cooldown = growth.Resolve(AP.Cooldown, definition.Cooldown);
+            var range = growth.Resolve(AP.TargetRange, definition.TargetRange);
             if (definition is CommanderAttackSkillDefinition attack && attack.AreaDamageEffect != null)
             {
                 var damage = attack.AreaDamageEffect.BaseDamage * attack.AreaDamageEffect.PerHitMultiplier * GetEffectMultiplier(definition.SkillId, level);
                 var shape = attack.AreaDamageEffect.Shape switch
                 {
                     MonsterBasicAttackShape.Fan => $"부채꼴 {attack.AreaDamageEffect.Angle:0.#}도",
-                    MonsterBasicAttackShape.Line => $"직선 폭 {attack.AreaDamageEffect.LineWidth:0.#}m",
-                    MonsterBasicAttackShape.Circle => $"원형 반경 {attack.AreaDamageEffect.Radius:0.#}m",
+                    MonsterBasicAttackShape.Line => $"직선 폭 {growth.Resolve(AP.LineWidth, attack.AreaDamageEffect.LineWidth, attack.AreaDamageEffect.EffectId):0.#}m",
+                    MonsterBasicAttackShape.Circle => $"원형 반경 {growth.Resolve(AP.AreaRadius, attack.AreaDamageEffect.Radius, attack.AreaDamageEffect.EffectId):0.#}m",
                     _ => "단일 대상"
                 };
-                return $"캐스팅 {definition.CastTime:0.#}초  ·  피해 {damage:0.#}  ·  쿨타임 {definition.Cooldown:0.#}초  ·  {shape}";
+                return $"캐스팅 {definition.CastTime:0.#}초 · 피해 {damage:0.#} · 쿨타임 {cooldown:0.#}초 · {shape}";
             }
 
             if (definition is CommanderEffectSkillDefinition)
             {
                 var summaries = new List<string>();
-                var multiplier = GetEffectMultiplier(definition.SkillId, level);
+                var multiplier = GetSupportGrowth(definition.SkillId, level);
                 for (var index = 0; index < definition.Effects.Count; index++)
                 {
                     if (definition.Effects[index] is CommanderUnitEffectDefinition effect)
@@ -837,13 +841,13 @@ namespace ProjectMT.Features.CommanderSkill
                 }
 
                 var effectText = summaries.Count > 0 ? string.Join("  ·  ", summaries) : "효과 없음";
-                return $"캐스팅 {definition.CastTime:0.#}초  ·  쿨타임 {definition.Cooldown:0.#}초  ·  대상 거리 {definition.TargetRange:0.#}m\n{effectText}";
+                return $"캐스팅 {definition.CastTime:0.#}초 · 쿨타임 {cooldown:0.#}초 · 대상 거리 {range:0.#}m\n{effectText}";
             }
 
             return $"캐스팅 {definition.CastTime:0.#}초  ·  쿨타임 {definition.Cooldown:0.#}초  ·  대상 거리 {definition.TargetRange:0.#}m";
         }
 
-        private static string BuildEffectSummary(CommanderUnitEffectDefinition effect, float multiplier)
+        private static string BuildEffectSummary(CommanderUnitEffectDefinition effect, CommanderSkillGrowthSnapshot multiplier)
         {
             var label = effect.EffectType switch
             {
@@ -871,10 +875,10 @@ namespace ProjectMT.Features.CommanderSkill
             }
             if (effect.EffectType == CommanderSkillUnitEffectType.Stun)
             {
-                return $"{label} {effect.Duration:0.#}초";
+                return $"{label} {CommanderSkillValueResolver.Duration(effect, multiplier):0.#}초";
             }
 
-            var value = effect.Magnitude * Mathf.Max(0f, multiplier);
+            var value = CommanderSkillValueResolver.Magnitude(effect, multiplier);
             var source = effect.ValueSource switch
             {
                 CommanderSkillEffectValueSource.TargetMaxHealthRatio => "최대 체력",
@@ -895,7 +899,7 @@ namespace ProjectMT.Features.CommanderSkill
                                  CommanderSkillUnitEffectType.Slow or CommanderSkillUnitEffectType.Mark;
             var amount = percentage ? $"{value * 100f:0.#}%" : value.ToString("0.#");
             var duration = CommanderUnitEffectDefinition.RequiresDuration(effect.EffectType)
-                ? $" / {effect.Duration:0.#}초"
+                ? $" / {CommanderSkillValueResolver.Duration(effect, multiplier):0.#}초"
                 : string.Empty;
             return string.IsNullOrEmpty(source)
                 ? $"{label} {amount}{duration}"
@@ -905,6 +909,40 @@ namespace ProjectMT.Features.CommanderSkill
         private float GetEffectMultiplier(string skillId, int level)
         {
             return TryGetGrowthRule(skillId, out var rule) ? rule.GetDamageMultiplier(level) : 1f;
+        }
+
+        private CommanderSkillGrowthSnapshot GetSupportGrowth(string skillId, int level)
+        {
+            var growth = TryGetGrowthRule(skillId, out var rule) ? CommanderSkillGrowthSnapshot.FromRule(rule, level) : (CommanderSkillGrowthSnapshot)1f;
+            return catalog != null && catalog.TryGet(skillId, out var definition) && TryGetOwnedSkill(skillId, out var owned)
+                ? growth.WithAwakening(definition.CaptureAwakening(owned.AwakeningLevel)) : growth;
+        }
+
+        private static string BuildAwakeningSummary(CommanderSkillDefinition definition, int star)
+        {
+            if (star >= 5) return "최대 각성 · 이후 중복은 골드로 전환됩니다.";
+            if (definition.AwakeningStages.Count <= star) return "각성 특성 데이터 미설정";
+            var previous = star > 0 ? definition.AwakeningStages[star - 1].CopyModifiers() : Array.Empty<CommanderSkillAwakeningModifier>();
+            var changes = new HashSet<string>();
+            foreach (var modifier in definition.AwakeningStages[star].CopyModifiers())
+            {
+                var unchanged = false;
+                foreach (var old in previous)
+                    if (old.Parameter == modifier.Parameter && old.TargetEffectId == modifier.TargetEffectId &&
+                        old.Operation == modifier.Operation && old.Value == modifier.Value) { unchanged = true; break; }
+                if (unchanged) continue;
+                var label = modifier.Parameter switch
+                {
+                    AP.Cooldown => "기본 쿨타임", AP.TargetRange => "사거리", AP.RepeatCount => "반복",
+                    AP.ChainCount => "연쇄 대상", AP.ChainRadius => "연쇄 반경", AP.AreaRadius => "효과 반경",
+                    AP.LineWidth => "직선 폭", AP.MaxTargets => "최대 대상", AP.Duration => "지속시간",
+                    AP.MarkRequiredHits => "각인 필요 피격", AP.MarkRequiredStacks => "각인 필요 스택",
+                    AP.MarkTriggerCooldown => "각인 내부 쿨타임", _ => "기록 상한"
+                };
+                changes.Add(label + (modifier.Operation == CommanderSkillAwakeningOperation.Add
+                    ? $" {modifier.Value:+0;-0;0}" : $" ×{modifier.Value:0.##}"));
+            }
+            return $"{star + 1}성: {string.Join(" · ", changes)}";
         }
 
         private string BuildLevelUpCostText(
@@ -923,8 +961,8 @@ namespace ProjectMT.Features.CommanderSkill
             }
 
             return gold >= cost
-                ? $"보유 골드 {gold:N0} / 필요 {cost:N0}"
-                : $"골드 부족  {gold:N0} / {cost:N0}";
+                ? $"{cost:N0}"
+                : $"<color=#D77C73>{cost:N0} 부족</color>";
         }
 
         private bool TryGetGrowthRule(string skillId, out CommanderSkillGrowthRule rule)

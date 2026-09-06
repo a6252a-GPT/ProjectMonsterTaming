@@ -6,14 +6,19 @@ namespace ProjectMT.Shared.CommanderSkill
 {
     public static class CommanderSkillIds // 저장·콘텐츠에서 공유하는 고정 ID
     {
+        public const string Starter = "CS_TrackingBlade";
         public const string Fireball = "commander_skill_fireball";
         public const string IceCrystalOrb = "commander_skill_ice_crystal_orb";
+
+        public static bool IsRetired(string id) => id == Fireball || id == IceCrystalOrb ||
+            id == "commander_skill_thunder_lance" || id == "commander_skill_guardian_banner" ||
+            id == "commander_skill_abyssal_shackles";
     }
 
     public static class CommanderSkillSlotRules // HUD와 저장이 공유하는 슬롯 규칙
     {
         public const int SlotCount = 6;
-        public const int InitialUnlockedCount = 2;
+        public const int InitialUnlockedCount = SlotCount;
     }
 
     public static class CommanderSkillLevelRules // 구 호출부용 기본 밸런스 호환 경계
@@ -25,7 +30,7 @@ namespace ProjectMT.Shared.CommanderSkill
         public static float GetDamageMultiplier(int level)
         {
             return CommanderSkillBalanceConfig.RuntimeDefault.TryGetRule(
-                    CommanderSkillIds.Fireball,
+                    CommanderSkillIds.Starter,
                     out var rule)
                 ? rule.GetDamageMultiplier(level)
                 : 1f + (Mathf.Clamp(level, 1, MaxLevel) - 1) * DamagePerLevel;
@@ -67,7 +72,7 @@ namespace ProjectMT.Shared.CommanderSkill
         internal void Repair(CommanderSkillGrowthRule rule = null)
         {
             skillId = skillId?.Trim() ?? string.Empty;
-            level = Mathf.Clamp(level, 1, rule?.MaxLevel ?? CommanderSkillLevelRules.MaxLevel);
+            level = rule == null ? Mathf.Max(1, level) : Mathf.Clamp(level, 1, rule.MaxLevel);
             awakeningLevel = Mathf.Max(0, awakeningLevel);
             duplicateCount = Mathf.Max(0, duplicateCount);
         }
@@ -75,6 +80,38 @@ namespace ProjectMT.Shared.CommanderSkill
         internal void AddDuplicate()
         {
             duplicateCount = duplicateCount == int.MaxValue ? int.MaxValue : duplicateCount + 1;
+        }
+
+        internal bool TryAwaken(int expectedStar, int expectedDuplicates, CommanderSkillBalanceConfig balance, out long gold)
+        {
+            gold = 0L;
+            if (awakeningLevel != expectedStar || duplicateCount != expectedDuplicates ||
+                !balance.TryGetAwakeningCost(awakeningLevel, out var cost) || duplicateCount < cost) return false;
+            var remainder = duplicateCount - cost;
+            if (awakeningLevel + 1 == balance.MaxAwakening)
+            {
+                try { gold = checked((long)remainder * balance.MaxAwakeningDuplicateGold); }
+                catch (OverflowException) { return false; }
+                remainder = 0;
+            }
+            duplicateCount = remainder;
+            awakeningLevel++;
+            return true;
+        }
+
+        internal bool TryMigrateAwakening(CommanderSkillBalanceConfig balance, out long gold)
+        {
+            gold = 0L;
+            if (awakeningLevel >= balance.MaxAwakening)
+            {
+                try { gold = checked((long)duplicateCount * balance.MaxAwakeningDuplicateGold); }
+                catch (OverflowException) { return false; }
+                if (awakeningLevel > balance.MaxAwakening)
+                    Debug.LogWarning($"{SkillId}: 예약 각성 {awakeningLevel}을 최대 {balance.MaxAwakening}으로 이관합니다.");
+                awakeningLevel = balance.MaxAwakening;
+                duplicateCount = 0;
+            }
+            return true;
         }
 
         internal bool TryLevelUp(
@@ -101,6 +138,7 @@ namespace ProjectMT.Shared.CommanderSkill
         [SerializeField] private bool autoUseEnabled = true;
         [SerializeField] private int summonLevel = 1;
         [SerializeField] private int summonCount;
+        [SerializeField] private bool awakeningMigrationCompleted;
 
         internal bool IsAutoUseEnabled => autoUseEnabled;
         internal int SummonLevel => summonLevel;
@@ -122,7 +160,8 @@ namespace ProjectMT.Shared.CommanderSkill
                 unlockedSlots = CopyUnlocked(unlockedSlots),
                 autoUseEnabled = autoUseEnabled,
                 summonLevel = summonLevel,
-                summonCount = summonCount
+                summonCount = summonCount,
+                awakeningMigrationCompleted = awakeningMigrationCompleted
             };
 
             if (ownedSkills != null)
@@ -136,7 +175,6 @@ namespace ProjectMT.Shared.CommanderSkill
                 }
             }
 
-            clone.Repair(balanceConfig, summonConfig);
             return clone;
         }
 
@@ -197,25 +235,15 @@ namespace ProjectMT.Shared.CommanderSkill
             return true;
         }
 
-        internal bool TryRecordSummon(
-            int expectedSummonCount,
-            string skillId,
-            CommanderSkillBalanceConfig balanceConfig = null,
-            CommanderSkillSummonConfig summonConfig = null)
-        {
-            return TryRecordSummons(
-                expectedSummonCount,
-                new[] { skillId },
-                balanceConfig,
-                summonConfig);
-        }
-
         internal bool TryRecordSummons(
             int expectedSummonCount,
             IReadOnlyList<string> skillIds,
-            CommanderSkillBalanceConfig balanceConfig = null,
-            CommanderSkillSummonConfig summonConfig = null)
+            CommanderSkillBalanceConfig balanceConfig,
+            CommanderSkillSummonConfig summonConfig,
+            out CommanderSkillSummonReceipt receipt)
         {
+            receipt = null;
+            var results = new List<CommanderSkillSummonResult>();
             var balance = balanceConfig ?? CommanderSkillBalanceConfig.RuntimeDefault;
             var summon = summonConfig ?? CommanderSkillSummonConfig.RuntimeDefault;
             if (summonCount != expectedSummonCount || skillIds == null || skillIds.Count == 0 ||
@@ -253,15 +281,48 @@ namespace ProjectMT.Shared.CommanderSkill
                 if (owned == null)
                 {
                     ownedSkills.Add(new OwnedCommanderSkillData(skillId));
+                    results.Add(new CommanderSkillSummonResult(skillId, CommanderSkillSummonResultKind.New, 0L));
+                }
+                else if (owned.AwakeningLevel >= balance.MaxAwakening)
+                {
+                    results.Add(new CommanderSkillSummonResult(skillId, CommanderSkillSummonResultKind.Converted, balance.MaxAwakeningDuplicateGold));
                 }
                 else
                 {
                     owned.AddDuplicate();
+                    results.Add(new CommanderSkillSummonResult(skillId, CommanderSkillSummonResultKind.Duplicate, 0L));
                 }
             }
 
             summonCount = simulatedCount;
             summonLevel = summon.GetSummonLevel(summonCount);
+            receipt = new CommanderSkillSummonReceipt(results);
+            return true;
+        }
+
+        internal bool TryAwaken(string id, int expectedStar, int expectedDuplicates,
+            CommanderSkillBalanceConfig balance, out long gold)
+        {
+            gold = 0L;
+            if (balance == null || !balance.TryGetRule(id, out _) || CommanderSkillIds.IsRetired(id)) return false;
+            var owned = ownedSkills.Find(value => value != null && value.SkillId == id);
+            return owned != null && owned.TryAwaken(expectedStar, expectedDuplicates, balance, out gold);
+        }
+
+        internal bool NeedsAwakeningMigration => !awakeningMigrationCompleted;
+        internal bool TryMigrateAwakening(CommanderSkillBalanceConfig balance, out long gold)
+        {
+            gold = 0L;
+            if (awakeningMigrationCompleted) return true;
+            foreach (var owned in ownedSkills)
+            {
+                if (owned == null || CommanderSkillIds.IsRetired(owned.SkillId) ||
+                    !balance.TryGetRule(owned.SkillId, out _)) continue;
+                if (!owned.TryMigrateAwakening(balance, out var converted)) return false;
+                try { gold = checked(gold + converted); }
+                catch (OverflowException) { return false; }
+            }
+            awakeningMigrationCompleted = true;
             return true;
         }
 
@@ -300,7 +361,8 @@ namespace ProjectMT.Shared.CommanderSkill
             for (var index = ownedSkills.Count - 1; index >= 0; index--)
             {
                 var owned = ownedSkills[index];
-                balance.TryGetRule(owned?.SkillId, out var rule);
+                CommanderSkillGrowthRule rule = null;
+                balanceConfig?.TryGetRule(owned?.SkillId, out rule);
                 owned?.Repair(rule);
                 if (owned == null || string.IsNullOrWhiteSpace(owned.SkillId) || !uniqueIds.Add(owned.SkillId))
                 {
@@ -308,10 +370,8 @@ namespace ProjectMT.Shared.CommanderSkill
                 }
             }
 
-            EnsureOwned(CommanderSkillIds.Fireball);
-            EnsureOwned(CommanderSkillIds.IceCrystalOrb);
-            uniqueIds.Add(CommanderSkillIds.Fireball);
-            uniqueIds.Add(CommanderSkillIds.IceCrystalOrb);
+            EnsureOwned(CommanderSkillIds.Starter);
+            uniqueIds.Add(CommanderSkillIds.Starter);
             equippedSkillIds = CopyEquipped(equippedSkillIds);
             unlockedSlots = CopyUnlocked(unlockedSlots);
             for (var index = 0; index < CommanderSkillSlotRules.InitialUnlockedCount; index++)
@@ -320,17 +380,23 @@ namespace ProjectMT.Shared.CommanderSkill
             }
 
             var equippedIds = new HashSet<string>(StringComparer.Ordinal);
+            var replacedRetiredSlot = false;
             for (var index = 0; index < equippedSkillIds.Length; index++)
             {
                 var id = equippedSkillIds[index]?.Trim() ?? string.Empty;
-                equippedSkillIds[index] = unlockedSlots[index] && uniqueIds.Contains(id) &&
-                                          balance.TryGetRule(id, out _) && equippedIds.Add(id)
+                replacedRetiredSlot |= CommanderSkillIds.IsRetired(id);
+                equippedSkillIds[index] = !CommanderSkillIds.IsRetired(id) && unlockedSlots[index] && uniqueIds.Contains(id) &&
+                                          (balanceConfig == null || balanceConfig.TryGetRule(id, out _)) && equippedIds.Add(id)
                     ? id
                     : string.Empty;
             }
 
+            if (replacedRetiredSlot && string.IsNullOrEmpty(equippedSkillIds[0]) &&
+                !equippedIds.Contains(CommanderSkillIds.Starter) && balance.TryGetRule(CommanderSkillIds.Starter, out _))
+                equippedSkillIds[0] = CommanderSkillIds.Starter;
+
             summonCount = Mathf.Max(0, summonCount);
-            summonLevel = summon.GetSummonLevel(summonCount);
+            summonLevel = summonConfig == null ? Mathf.Max(1, summonLevel) : summonConfig.GetSummonLevel(summonCount);
         }
 
         internal CommanderSkillProgressView CreateView()
@@ -368,8 +434,7 @@ namespace ProjectMT.Shared.CommanderSkill
         {
             return new List<OwnedCommanderSkillData>
             {
-                new OwnedCommanderSkillData(CommanderSkillIds.Fireball),
-                new OwnedCommanderSkillData(CommanderSkillIds.IceCrystalOrb)
+                new OwnedCommanderSkillData(CommanderSkillIds.Starter)
             };
         }
 
@@ -377,8 +442,8 @@ namespace ProjectMT.Shared.CommanderSkill
         {
             return new[]
             {
-                CommanderSkillIds.Fireball,
-                CommanderSkillIds.IceCrystalOrb,
+                CommanderSkillIds.Starter,
+                string.Empty,
                 string.Empty,
                 string.Empty,
                 string.Empty,
@@ -388,7 +453,13 @@ namespace ProjectMT.Shared.CommanderSkill
 
         private static bool[] CreateInitialUnlockedSlots()
         {
-            return new[] { true, true, false, false, false, false };
+            var slots = new bool[CommanderSkillSlotRules.SlotCount];
+            for (var index = 0; index < CommanderSkillSlotRules.InitialUnlockedCount; index++)
+            {
+                slots[index] = true;
+            }
+
+            return slots;
         }
 
         private static string[] CopyEquipped(IReadOnlyList<string> source)

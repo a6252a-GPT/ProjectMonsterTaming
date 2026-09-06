@@ -153,6 +153,7 @@ namespace ProjectMT.Shared.Unit
         public UnitActor Target { get; private set; }
         public bool IsAlive => health != null && health.IsAlive;
         public bool IsManuallyHeld => isManuallyHeld;
+        public bool CanMove => canMove;
         public MonsterRuntimeAssetSet RuntimeAssetSet => runtimeAssetSet;
         public MonsterAnimationDriver AnimationDriver => animationDriver;
         public bool IsHitStopped => localHitStopRemaining > 0f;

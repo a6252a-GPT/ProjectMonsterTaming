@@ -5,6 +5,7 @@ using UnityEngine;
 namespace ProjectMT.Features.CommanderSkill
 {
     public enum CommanderSkillRarity { Common, Rare, Epic, Legendary, Mythic }
+    public enum CommanderSkillAutoUseCondition { Always, AllyHealthBelow }
 
     public enum CommanderSkillCategory
     {
@@ -28,6 +29,9 @@ namespace ProjectMT.Features.CommanderSkill
         [SerializeField] private CommanderSkillTargetingDefinition targeting;
         [SerializeField] private CommanderSkillEffectDefinition[] effects = Array.Empty<CommanderSkillEffectDefinition>();
         [SerializeField] private CommanderSkillPatternConfig pattern = new CommanderSkillPatternConfig();
+        [SerializeField] private CommanderSkillAutoUseCondition autoUseCondition;
+        [SerializeField] private CommanderSkillAwakeningStage[] awakeningStages = Array.Empty<CommanderSkillAwakeningStage>();
+        [SerializeField, Range(0.01f, 1f)] private float autoHealthThreshold = 0.85f;
 
         [Header("Feedback")]
         [SerializeField] private GameObject castingVfxPrefab;
@@ -63,6 +67,12 @@ namespace ProjectMT.Features.CommanderSkill
         public float Cooldown => Mathf.Max(0.1f, cooldown);
         public CommanderSkillTargetingDefinition Targeting => targeting;
         public float TargetRange => targeting == null ? 0f : targeting.Range;
+        public CommanderSkillAutoUseCondition AutoUseCondition => autoUseCondition;
+        public float AutoHealthThreshold => autoHealthThreshold;
+        public System.Collections.Generic.IReadOnlyList<CommanderSkillAwakeningStage> AwakeningStages =>
+            awakeningStages ?? Array.Empty<CommanderSkillAwakeningStage>();
+        public CommanderSkillAwakeningSnapshot CaptureAwakening(int star) => new CommanderSkillAwakeningSnapshot(
+            star > 0 && star <= AwakeningStages.Count ? AwakeningStages[star - 1] : null);
         public System.Collections.Generic.IReadOnlyList<CommanderSkillEffectDefinition> Effects =>
             effects ?? Array.Empty<CommanderSkillEffectDefinition>();
         public CommanderSkillPatternConfig Pattern => pattern ??= new CommanderSkillPatternConfig();
@@ -178,11 +188,24 @@ namespace ProjectMT.Features.CommanderSkill
                 }
             }
 
-            error = string.Empty;
-            return true;
+            if (!Enum.IsDefined(typeof(CommanderSkillAutoUseCondition), autoUseCondition) ||
+                !IsFinite(autoHealthThreshold) || autoHealthThreshold <= 0f || autoHealthThreshold > 1f ||
+                (autoUseCondition == CommanderSkillAutoUseCondition.AllyHealthBelow &&
+                    targeting.TargetTeam != CommanderSkillTargetTeam.Ally))
+            { error = $"{SkillId}: AUTO 조건이 잘못되었습니다."; return false; }
+            return CommanderSkillAwakeningValidation.TryValidate(this, out error);
         }
 
 #if UNITY_EDITOR
+        public void EditorConfigureAutoUse(CommanderSkillAutoUseCondition condition, float threshold)
+        {
+            autoUseCondition = condition;
+            autoHealthThreshold = threshold;
+        }
+
+        public void EditorConfigureAwakening(CommanderSkillAwakeningStage[] stages) =>
+            awakeningStages = stages ?? Array.Empty<CommanderSkillAwakeningStage>();
+
         protected void EditorConfigureCommon(
             string id,
             string title,

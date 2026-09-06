@@ -389,8 +389,7 @@ namespace ProjectMT.Shared.CommanderSkill
         {
             return new CommanderSkillSummonLevelRule(
                 threshold,
-                new CommanderSkillSummonPoolEntry(CommanderSkillIds.Fireball, 100),
-                new CommanderSkillSummonPoolEntry(CommanderSkillIds.IceCrystalOrb, 100));
+                new CommanderSkillSummonPoolEntry(CommanderSkillIds.Starter, 100));
         }
 
         private static CommanderSkillSummonOffer[] CreateDefaultOffers()

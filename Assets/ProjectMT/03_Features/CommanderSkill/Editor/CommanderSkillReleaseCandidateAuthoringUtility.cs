@@ -17,7 +17,7 @@ namespace ProjectMT.Features.CommanderSkill.Editor
         private const string BalancePath = "Assets/ProjectMT/03_Features/CommanderSkill/Resources/CommanderSkills/Rules/CommanderSkillBalanceConfig.asset";
         private const float BaseDamage = 20f;
 
-        [MenuItem("Tools/ProjectMT/Commander Skill/Build Release Candidate 12")]
+        [MenuItem("Tools/ProjectMT/Commander Skill/Create Missing Release Candidates")]
         public static void Build()
         {
             // 모든 필수 의존성을 먼저 검증한다. 실패 시 기존 ReleaseCandidate 자산은 건드리지 않는다.
@@ -148,6 +148,16 @@ namespace ProjectMT.Features.CommanderSkill.Editor
             params CommanderSkillEffectDefinition[] extraEffects)
         {
             var path = $"{Root}/{spec.Id}.asset";
+            var existing = AssetDatabase.LoadMainAssetAtPath(path);
+            if (existing != null)
+            {
+                foreach (var extra in extraEffects)
+                    if (extra != null && !AssetDatabase.Contains(extra)) UnityEngine.Object.DestroyImmediate(extra);
+                if (existing is CommanderSkillDefinition definition) return definition;
+                throw new InvalidOperationException($"{path}: 기존 자산 타입이 스킬이 아닙니다. 덮어쓰지 않습니다.");
+            }
+            if (CommanderSkillSupportAuthoring.IsSupportId(spec.Id))
+                return CreateSupportSkill(spec, icon, castSfx, impactSfx, castVfx, impactVfx, extraEffects);
             var skill = AssetDatabase.LoadAssetAtPath<CommanderAttackSkillDefinition>(path);
             var created = skill == null;
             if (created)
@@ -168,8 +178,9 @@ namespace ProjectMT.Features.CommanderSkill.Editor
                 if (extra == null) continue;
                 effects.Add(MergeGeneratedExtra(skill, extra));
             }
-            skill.EditorConfigure(spec.Id, spec.Name, "SkillMaker V2 출시 후보 12종 데이터 조합 스킬.",
-                skill.Icon != null ? skill.Icon : icon, 0f, spec.Cooldown, targeting, effects.ToArray(), spec.Delivery,
+            skill.EditorConfigure(spec.Id, spec.Name, CommanderSkillApprovedConcept.DescriptionFor(spec.Id),
+                skill.Icon != null ? skill.Icon : icon, CommanderSkillApprovedConcept.CastTimeFor(spec.Id),
+                spec.Cooldown, targeting, effects.ToArray(), spec.Delivery,
                 skill.ProjectilePrefab != null ? skill.ProjectilePrefab : projectile, 16f, spec.Trajectory, spec.ArcHeight,
                 skill.CastVfxPrefab != null ? skill.CastVfxPrefab : castVfx,
                 created ? 1f : skill.CastVfxLifetime, skill.CastSfx != null ? skill.CastSfx : castSfx,
@@ -177,7 +188,8 @@ namespace ProjectMT.Features.CommanderSkill.Editor
                 created ? 1.5f : skill.ImpactVfxLifetime, skill.ImpactSfx != null ? skill.ImpactSfx : impactSfx);
             var pattern = new CommanderSkillPatternConfig();
             pattern.EditorConfigure(spec.Pattern, spec.Repeat, spec.Interval, spec.Duration, spec.Tick,
-                spec.RandomRadius, spec.ChainCount, spec.ChainRadius);
+                spec.RandomRadius, spec.ChainCount, spec.ChainRadius,
+                CommanderSkillApprovedConcept.GuaranteesFirstBarrageHit(spec.Id));
             skill.EditorConfigureV2(spec.Rarity, pattern);
             if (created)
                 skill.EditorConfigureFeedbackTransforms(Vector3.zero, Vector3.zero, 1f, Vector3.zero, Vector3.zero, 1f);
@@ -195,8 +207,51 @@ namespace ProjectMT.Features.CommanderSkill.Editor
             float cooldown, MonsterBasicAttackShape shape, float multiplier, float radius, int maxTargets,
             GameObject markVfx, GameObject triggerVfx, SfxCue triggerSfx, float scale = 1f)
         {
+            return CreateDamageMarkCore(id, duration, triggerType, hits, requiredStacks, maxStacks, consume,
+                cooldown, shape, multiplier, radius, maxTargets, markVfx, triggerVfx, triggerSfx, scale);
+        }
+
+        private static CommanderSkillDefinition CreateSupportSkill(SkillSpec spec, Sprite icon, SfxCue castSfx,
+            SfxCue impactSfx, GameObject castVfx, GameObject impactVfx, CommanderSkillEffectDefinition[] extras)
+        {
+            var seed = ScriptableObject.CreateInstance<CommanderEffectSkillDefinition>();
+            var owned = new List<ScriptableObject>();
+            try
+            {
+                seed.name = spec.Id;
+                seed.EditorConfigure(spec.Id, spec.Name, CommanderSkillApprovedConcept.DescriptionFor(spec.Id), icon,
+                    CommanderSkillCategory.Buff, CommanderSkillApprovedConcept.CastTimeFor(spec.Id),
+                    spec.Cooldown, null, extras,
+                    castVfx, 1f, castSfx, impactVfx, 1.5f, impactSfx);
+                seed.EditorConfigureV2(spec.Rarity, new CommanderSkillPatternConfig());
+                if (spec.Pattern == CommanderSkillPatternType.PersistentArea)
+                    seed.EditorConfigurePersistentFeedback(impactVfx, Vector3.zero, Vector3.zero, 1f, CommanderMarkFeedbackAnchor.WorldPosition);
+                var result = CommanderSkillSupportAuthoring.Create(seed, owned);
+                AssetDatabase.CreateAsset(result, $"{Root}/{spec.Id}.asset");
+                foreach (var value in owned.Where(value => value != result)) AssetDatabase.AddObjectToAsset(value, result);
+                AssetDatabase.SaveAssetIfDirty(result);
+                return result;
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(seed);
+                foreach (var value in owned)
+                    if (value != null && !AssetDatabase.Contains(value)) UnityEngine.Object.DestroyImmediate(value);
+                foreach (var value in extras)
+                    if (value != null && !AssetDatabase.Contains(value)) UnityEngine.Object.DestroyImmediate(value);
+            }
+        }
+
+        private static CommanderMarkEffectDefinition CreateDamageMarkCore(string id, float duration,
+            CommanderMarkTriggerType triggerType, int hits, int requiredStacks, int maxStacks, bool consume,
+            float cooldown, MonsterBasicAttackShape shape, float multiplier, float radius, int maxTargets,
+            GameObject markVfx, GameObject triggerVfx, SfxCue triggerSfx, float scale = 1f)
+        {
             var path = $"{MarkRoot}/MARK_{id}.asset";
             var mark = AssetDatabase.LoadAssetAtPath<CommanderMarkEffectDefinition>(path);
+            if (mark != null) return mark;
+            if (AssetDatabase.LoadMainAssetAtPath(path) != null)
+                throw new InvalidOperationException($"{path}: 기존 자산 타입이 Mark가 아닙니다.");
             var created = mark == null;
             if (created)
             {
@@ -220,6 +275,9 @@ namespace ProjectMT.Features.CommanderSkill.Editor
         {
             var path = $"{MarkRoot}/MARK_{id}.asset";
             var mark = AssetDatabase.LoadAssetAtPath<CommanderMarkEffectDefinition>(path);
+            if (mark != null) return mark;
+            if (AssetDatabase.LoadMainAssetAtPath(path) != null)
+                throw new InvalidOperationException($"{path}: 기존 자산 타입이 Mark가 아닙니다.");
             var created = mark == null;
             if (created)
             {
@@ -242,6 +300,9 @@ namespace ProjectMT.Features.CommanderSkill.Editor
         {
             var path = $"{MarkRoot}/MARK_{id}.asset";
             var mark = AssetDatabase.LoadAssetAtPath<CommanderMarkEffectDefinition>(path);
+            if (mark != null) return mark;
+            if (AssetDatabase.LoadMainAssetAtPath(path) != null)
+                throw new InvalidOperationException($"{path}: 기존 자산 타입이 Mark가 아닙니다.");
             var created = mark == null;
             if (created)
             {
@@ -296,16 +357,19 @@ namespace ProjectMT.Features.CommanderSkill.Editor
         private static void Register(IReadOnlyList<CommanderSkillDefinition> created,
             CommanderSkillCatalog catalog, CommanderSkillBalanceConfig balance)
         {
-            var ids = new HashSet<string>(created.Select(skill => skill.SkillId), StringComparer.Ordinal);
-            var definitions = catalog.Skills.Where(skill => skill != null && !ids.Contains(skill.SkillId)).ToList();
-            definitions.AddRange(created);
-            var rules = balance.SkillRules.Where(rule => rule != null && !ids.Contains(rule.SkillId)).ToList();
+            var existingIds = new HashSet<string>(catalog.Skills.Where(skill => skill != null).Select(skill => skill.SkillId), StringComparer.Ordinal);
+            var additions = created.Where(skill => !existingIds.Contains(skill.SkillId)).ToArray();
+            var definitions = catalog.Skills.ToList();
+            definitions.AddRange(additions);
+            var rules = balance.SkillRules.ToList();
             foreach (var skill in created)
             {
+                if (rules.Any(rule => rule != null && rule.SkillId == skill.SkillId)) continue;
                 var rule = new CommanderSkillGrowthRule();
                 rule.EditorConfigure(skill.SkillId, 200, 1, AnimationCurve.Linear(1f, 1f, 200f, 4.98f));
                 rules.Add(rule);
             }
+            if (additions.Length == 0 && rules.Count == balance.SkillRules.Count) return;
             balance.EditorConfigure(rules.ToArray());
             var summon = catalog.SummonConfig;
             var levels = new CommanderSkillSummonLevelRule[summon.Levels.Count];
@@ -313,15 +377,16 @@ namespace ProjectMT.Features.CommanderSkill.Editor
             {
                 var sourceLevel = summon.Levels[levelIndex];
                 var entries = sourceLevel.Pool
-                    .Where(entry => entry != null && !ids.Contains(entry.SkillId))
+                    .Where(entry => entry != null)
                     .Select(entry =>
                     {
                         var clone = new CommanderSkillSummonPoolEntry();
                         clone.EditorConfigure(entry.SkillId, entry.Weight);
                         return clone;
                     }).ToList();
-                foreach (var skill in created)
+                foreach (var skill in additions)
                 {
+                    if (entries.Any(entry => entry.SkillId == skill.SkillId)) continue;
                     var entry = new CommanderSkillSummonPoolEntry();
                     entry.EditorConfigure(skill.SkillId, 100);
                     entries.Add(entry);

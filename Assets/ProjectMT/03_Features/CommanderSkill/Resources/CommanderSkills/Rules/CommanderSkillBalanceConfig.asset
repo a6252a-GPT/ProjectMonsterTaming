@@ -13,156 +13,11 @@ MonoBehaviour:
   m_Name: CommanderSkillBalanceConfig
   m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.CommanderSkill.CommanderSkillBalanceConfig
   skillRules:
-  - skillId: commander_skill_thunder_lance
-    maxLevel: 200
-    requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
-    damageMultiplierByLevel:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0.02
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 200
-        value: 4.98
-        inSlope: 0.02
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-  - skillId: commander_skill_guardian_banner
-    maxLevel: 200
-    requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
-    damageMultiplierByLevel:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0.02
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 200
-        value: 4.98
-        inSlope: 0.02
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-  - skillId: commander_skill_abyssal_shackles
-    maxLevel: 200
-    requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
-    damageMultiplierByLevel:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0.02
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 200
-        value: 4.98
-        inSlope: 0.02
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-  - skillId: commander_skill_ice_crystal_orb
-    maxLevel: 200
-    requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
-    damageMultiplierByLevel:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0.02
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 200
-        value: 4.98
-        inSlope: 0.02
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-  - skillId: commander_skill_fireball
-    maxLevel: 200
-    requiredDuplicateCount: 1
-    baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
-    damageMultiplierByLevel:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 1
-        value: 1
-        inSlope: 0
-        outSlope: 0.02
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      - serializedVersion: 3
-        time: 200
-        value: 4.98
-        inSlope: 0.02
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
   - skillId: CS_TrackingBlade
     maxLevel: 200
     requiredDuplicateCount: 1
     baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
+    goldCostGrowthMultiplier: 1.03
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -184,6 +39,18 @@ MonoBehaviour:
         weightedMode: 0
         inWeight: 0
         outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    ratioMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    controlDurationByLevel:
+      serializedVersion: 2
+      m_Curve: []
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -191,7 +58,7 @@ MonoBehaviour:
     maxLevel: 200
     requiredDuplicateCount: 1
     baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
+    goldCostGrowthMultiplier: 1.03
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -213,6 +80,18 @@ MonoBehaviour:
         weightedMode: 0
         inWeight: 0
         outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    ratioMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    controlDurationByLevel:
+      serializedVersion: 2
+      m_Curve: []
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -220,7 +99,7 @@ MonoBehaviour:
     maxLevel: 200
     requiredDuplicateCount: 1
     baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
+    goldCostGrowthMultiplier: 1.03
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -242,6 +121,18 @@ MonoBehaviour:
         weightedMode: 0
         inWeight: 0
         outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    ratioMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    controlDurationByLevel:
+      serializedVersion: 2
+      m_Curve: []
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -249,7 +140,7 @@ MonoBehaviour:
     maxLevel: 200
     requiredDuplicateCount: 1
     baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
+    goldCostGrowthMultiplier: 1.03
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -271,6 +162,18 @@ MonoBehaviour:
         weightedMode: 0
         inWeight: 0
         outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    ratioMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    controlDurationByLevel:
+      serializedVersion: 2
+      m_Curve: []
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -278,7 +181,7 @@ MonoBehaviour:
     maxLevel: 200
     requiredDuplicateCount: 1
     baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
+    goldCostGrowthMultiplier: 1.03
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -300,6 +203,18 @@ MonoBehaviour:
         weightedMode: 0
         inWeight: 0
         outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    ratioMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    controlDurationByLevel:
+      serializedVersion: 2
+      m_Curve: []
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -307,7 +222,7 @@ MonoBehaviour:
     maxLevel: 200
     requiredDuplicateCount: 1
     baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
+    goldCostGrowthMultiplier: 1.03
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -329,6 +244,18 @@ MonoBehaviour:
         weightedMode: 0
         inWeight: 0
         outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    ratioMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    controlDurationByLevel:
+      serializedVersion: 2
+      m_Curve: []
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -336,7 +263,7 @@ MonoBehaviour:
     maxLevel: 200
     requiredDuplicateCount: 1
     baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
+    goldCostGrowthMultiplier: 1.03
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -358,6 +285,18 @@ MonoBehaviour:
         weightedMode: 0
         inWeight: 0
         outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    ratioMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    controlDurationByLevel:
+      serializedVersion: 2
+      m_Curve: []
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -365,7 +304,7 @@ MonoBehaviour:
     maxLevel: 200
     requiredDuplicateCount: 1
     baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
+    goldCostGrowthMultiplier: 1.03
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -387,6 +326,18 @@ MonoBehaviour:
         weightedMode: 0
         inWeight: 0
         outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    ratioMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    controlDurationByLevel:
+      serializedVersion: 2
+      m_Curve: []
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -394,7 +345,7 @@ MonoBehaviour:
     maxLevel: 200
     requiredDuplicateCount: 1
     baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
+    goldCostGrowthMultiplier: 1.03
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -416,6 +367,18 @@ MonoBehaviour:
         weightedMode: 0
         inWeight: 0
         outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    ratioMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    controlDurationByLevel:
+      serializedVersion: 2
+      m_Curve: []
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -423,7 +386,7 @@ MonoBehaviour:
     maxLevel: 200
     requiredDuplicateCount: 1
     baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
+    goldCostGrowthMultiplier: 1.03
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -445,6 +408,18 @@ MonoBehaviour:
         weightedMode: 0
         inWeight: 0
         outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    ratioMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    controlDurationByLevel:
+      serializedVersion: 2
+      m_Curve: []
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -452,7 +427,7 @@ MonoBehaviour:
     maxLevel: 200
     requiredDuplicateCount: 1
     baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
+    goldCostGrowthMultiplier: 1.03
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -474,6 +449,18 @@ MonoBehaviour:
         weightedMode: 0
         inWeight: 0
         outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    ratioMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    controlDurationByLevel:
+      serializedVersion: 2
+      m_Curve: []
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -481,7 +468,7 @@ MonoBehaviour:
     maxLevel: 200
     requiredDuplicateCount: 1
     baseGoldCost: 100
-    goldCostGrowthMultiplier: 1.06
+    goldCostGrowthMultiplier: 1.03
     damageMultiplierByLevel:
       serializedVersion: 2
       m_Curve:
@@ -506,3 +493,17 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+    ratioMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    controlDurationByLevel:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  awakeningDuplicateCosts: 0100000002000000040000000800000010000000
+  maxAwakeningDuplicateGold: 1000

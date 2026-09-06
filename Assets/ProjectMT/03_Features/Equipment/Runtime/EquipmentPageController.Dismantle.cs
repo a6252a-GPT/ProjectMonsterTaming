@@ -20,7 +20,7 @@ namespace ProjectMT.Features.Equipment
             {
                 dismantleGradeButton = EnsureButton(dismantleGradeButtonRoot);
                 dismantleGradeButtonText = dismantleGradeButtonRoot.GetComponentInChildren<TMP_Text>(true);
-                dismantleGradeButton.onClick.AddListener(CycleDismantleGradeThreshold);
+                dismantleGradeButton.onClick.AddListener(OpenDismantleGradeOptions);
             }
 
             if (dismantleAutoSelectButtonRoot != null)
@@ -85,9 +85,15 @@ namespace ProjectMT.Features.Equipment
                 return;
             }
 
-            dismantleGradeThreshold = (EquipmentGrade)(((int)dismantleGradeThreshold + 1) % 5);
+            SelectDismantleGrade((EquipmentGrade)(((int)dismantleGradeThreshold + 1) % 5));
+        }
+
+        private void SelectDismantleGrade(EquipmentGrade grade)
+        {
+            if (requestInFlight) return;
+            dismantleGradeThreshold = grade;
             questDismantleHintStep = Mathf.Max(questDismantleHintStep, 1);
-            ClearDismantleSelection();
+            CloseDismantleConfirmation();
             RefreshSelection();
         }
 
@@ -106,14 +112,6 @@ namespace ProjectMT.Features.Equipment
         {
             if (requestInFlight)
             {
-                return;
-            }
-
-            if (dismantleSelection.Count > 0)
-            {
-                ClearDismantleSelection();
-                questDismantleHintStep = Mathf.Min(questDismantleHintStep, 1);
-                RefreshSelection();
                 return;
             }
 
@@ -231,6 +229,7 @@ namespace ProjectMT.Features.Equipment
 
         private void CloseDismantleConfirmation()
         {
+            if (dismantleGradeOptions != null) dismantleGradeOptions.SetActive(false);
             if (dismantleConfirmRoot != null)
             {
                 dismantleConfirmRoot.SetActive(false);
@@ -266,24 +265,28 @@ namespace ProjectMT.Features.Equipment
             var stoneAmount = CalculateSelectedDismantleReward();
             if (dismantleSummaryCountText != null)
             {
-                dismantleSummaryCountText.text = $"선택 장비 {dismantleSelection.Count}개";
+                dismantleSummaryCountText.text = $"{dismantleSelection.Count}개 선택";
             }
 
             if (dismantleSummaryRewardText != null)
             {
-                dismantleSummaryRewardText.text = $"획득 강화석 {stoneAmount:N0}개";
+                dismantleSummaryRewardText.text = $"{stoneAmount:N0}개";
             }
 
             if (dismantleBottomSummaryText != null)
             {
-                dismantleBottomSummaryText.text = $"선택 {dismantleSelection.Count}개 / 강화석 {stoneAmount:N0}개";
+                dismantleBottomSummaryText.text = dismantleSelection.Count > 0 ? string.Empty : "보유 목록에서 장비를 선택하세요";
             }
 
             var selectedItems = dismantleSelection
                 .Select(instanceId => EquipmentInventoryRuntime.TryGetItem(instanceId, out var item) ? item : default)
                 .Where(item => !string.IsNullOrEmpty(item.InstanceId))
-                .Take(dismantlePreviewSlots.Count)
+                .OrderBy(item => item.Part)
+                .ThenByDescending(item => item.Grade)
+                .ThenByDescending(item => item.ItemLevel)
+                .ThenBy(item => item.InstanceId, StringComparer.Ordinal)
                 .ToList();
+            EnsureDismantlePreviewCount(selectedItems.Count);
             for (var index = 0; index < dismantlePreviewSlots.Count; index++)
             {
                 var preview = dismantlePreviewSlots[index];
@@ -301,6 +304,14 @@ namespace ProjectMT.Features.Equipment
                 }
 
                 var item = selectedItems[index];
+                if (preview.InventoryView != null)
+                {
+                    BindSlot(preview.InventoryView, item);
+                    preview.InventoryView.CheckObject?.SetActive(false);
+                    preview.InventoryView.FocusObject?.SetActive(false);
+                    preview.InventoryView.ClickButton.interactable = !requestInFlight;
+                    continue;
+                }
                 if (preview.Icon != null)
                 {
                     partIconSprites.TryGetValue(item.Part, out var fallbackSprite);
@@ -322,6 +333,8 @@ namespace ProjectMT.Features.Equipment
                     preview.LevelText.gameObject.SetActive(true);
                 }
             }
+            if (dismantlePreviewContent != null)
+                LayoutRebuilder.ForceRebuildLayoutImmediate(dismantlePreviewContent);
         }
 
         // 분해 미리보기 배경색. 인벤토리 프레임에서 뽑은 실제 색을 우선 쓰고, 없으면 팔레트 근사값을 쓴다.
@@ -339,6 +352,15 @@ namespace ProjectMT.Features.Equipment
         private void RefreshDismantleControls()
         {
             var isDismantleMode = currentMode == EquipmentPageMode.Dismantle;
+            if (inventoryScrollRect != null)
+            {
+                var inventoryRect = (RectTransform)inventoryScrollRect.transform;
+                inventoryRect.anchoredPosition = new Vector2(10f, isDismantleMode ? -75f : -55f);
+            }
+            var gridTopLine = FindDeep(transform, "GridTopLine") as RectTransform;
+            if (gridTopLine != null) gridTopLine.gameObject.SetActive(!isDismantleMode);
+            if (sortLabelText != null) sortLabelText.gameObject.SetActive(!isDismantleMode);
+            if (dismantleBulkCaption != null) dismantleBulkCaption.SetActive(isDismantleMode);
             if (dismantleGradeButtonRoot != null)
             {
                 dismantleGradeButtonRoot.gameObject.SetActive(isDismantleMode);
@@ -346,7 +368,7 @@ namespace ProjectMT.Features.Equipment
 
             if (dismantleGradeButtonText != null)
             {
-                dismantleGradeButtonText.text = $"{EquipmentGradeInfo.GetDisplayName(dismantleGradeThreshold)} 이하";
+                dismantleGradeButtonText.text = $"{EquipmentGradeInfo.GetDisplayName(dismantleGradeThreshold)} 이하 ▼";
             }
 
             if (dismantleGradeButton != null)
@@ -361,7 +383,7 @@ namespace ProjectMT.Features.Equipment
 
             if (dismantleAutoSelectButtonText != null)
             {
-                dismantleAutoSelectButtonText.text = dismantleSelection.Count > 0 ? "선택 해제" : "이하 전체 선택";
+                dismantleAutoSelectButtonText.text = "조건에 맞게 선택";
             }
 
             if (dismantleAutoSelectButton != null)
@@ -383,7 +405,7 @@ namespace ProjectMT.Features.Equipment
             {
                 dismantleButtonText.text = requestInFlight
                     ? "처리 중"
-                    : "분해";
+                    : dismantleSelection.Count > 0 ? $"{dismantleSelection.Count}개 분해" : "분해";
             }
 
             if (dismantleClearButton != null)
@@ -402,7 +424,7 @@ namespace ProjectMT.Features.Equipment
                     ? progress.View.Equipment.OfflineAutoDismantlePolicy
                     : OfflineAutoDismantlePolicy.Common;
                 offlineAutoDismantleOpenButtonText.text =
-                    $"방치 설정\n{OfflineAutoDismantlePolicyInfo.GetDisplayName(policy)}";
+                    $"{OfflineAutoDismantlePolicyInfo.GetDisplayName(policy)}  ›";
             }
 
             if (offlineAutoDismantleOpenButton != null)

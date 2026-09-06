@@ -13,22 +13,17 @@ MonoBehaviour:
   m_Name: CommanderSkillCatalog
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderSkillCatalog
   skills:
-  - {fileID: 11400000, guid: 71f35b4074a68e540bbcdb225900dfa3, type: 2}
-  - {fileID: 11400000, guid: 3d23bd0594a4e744d9985e1644ebbf61, type: 2}
-  - {fileID: 11400000, guid: bd214de5b2b0f3e4689a816c37cbc4b4, type: 2}
-  - {fileID: 11400000, guid: 58f3d57a7dbdae24fbbe8eb9a4f5baa2, type: 2}
-  - {fileID: 11400000, guid: 60460b2850345fe4c85a143011113407, type: 2}
   - {fileID: 11400000, guid: d799f11bac75e884eb98d2c0c5c20e61, type: 2}
   - {fileID: 11400000, guid: 9b90ee590bf8dfd44b84e546a410dcb2, type: 2}
-  - {fileID: 11400000, guid: 12b9e5a2f7f25fc4f9eb3995a01387db, type: 2}
+  - {fileID: 11400000, guid: 026c08ce624cb3a42998467e7d133bac, type: 2}
   - {fileID: 11400000, guid: df5b49366d49b434bb7bcfc8ad093e7c, type: 2}
-  - {fileID: 11400000, guid: 33bc2200814f5c349a75c3f780b45c33, type: 2}
+  - {fileID: 11400000, guid: 37106a872d3be7b4db2274002c4a5db2, type: 2}
   - {fileID: 11400000, guid: 0aaf27c9b1c146340bc93d18039c2a62, type: 2}
   - {fileID: 11400000, guid: 3e17ed2d2b1d85640bab5477a2bd09ea, type: 2}
   - {fileID: 11400000, guid: 41719ae5e5353514cbba04c1b075a1db, type: 2}
-  - {fileID: 11400000, guid: f14875642ea6f3644b3308ff2639de10, type: 2}
+  - {fileID: 11400000, guid: c906774be47f21546a2f5336a7ddee0f, type: 2}
   - {fileID: 11400000, guid: 89253b61fd6984746a7b08556dce5032, type: 2}
-  - {fileID: 11400000, guid: 535adf67f0d46cd45a9e3c7f78f8f847, type: 2}
+  - {fileID: 11400000, guid: 06475d350e3bbf74a8453450e1230b11, type: 2}
   - {fileID: 11400000, guid: 54c39f1ddbee95040a581c0f308c2b96, type: 2}
   balanceConfig: {fileID: 11400000, guid: 2407a88cd75a1594a8691043327768f7, type: 2}
   summonConfig: {fileID: 11400000, guid: 49e65f2766cbb2949a2ba93cc3ebaddb, type: 2}

@@ -8,7 +8,7 @@ namespace ProjectMT.Shared.CommanderSkill
     public sealed class CommanderSkillGrowthRule // 스킬별 레벨 성장 원본
     {
         private const long DefaultBaseGoldCost = 100L;
-        private const float DefaultGoldCostGrowthMultiplier = 1.06f;
+        private const float DefaultGoldCostGrowthMultiplier = 1.03f;
         private const long GoldCostRoundingUnit = 10L;
 
         [SerializeField] private string skillId;
@@ -18,6 +18,8 @@ namespace ProjectMT.Shared.CommanderSkill
         [SerializeField, Min(1f)] private float goldCostGrowthMultiplier = DefaultGoldCostGrowthMultiplier;
         [SerializeField] private AnimationCurve damageMultiplierByLevel =
             AnimationCurve.Linear(1f, 1f, 200f, 4.98f);
+        [SerializeField] private AnimationCurve ratioMultiplierByLevel;
+        [SerializeField] private AnimationCurve controlDurationByLevel;
 
         public string SkillId => skillId?.Trim() ?? string.Empty;
         public int MaxLevel => Mathf.Max(1, maxLevel);
@@ -59,13 +61,13 @@ namespace ProjectMT.Shared.CommanderSkill
 
             if (double.IsInfinity(rawCost) || rawCost >= long.MaxValue)
             {
-                cost = long.MaxValue;
-                return true;
+                return false;
             }
 
             var rounded = Math.Round(
                 rawCost / GoldCostRoundingUnit,
                 MidpointRounding.AwayFromZero) * GoldCostRoundingUnit;
+            if (rounded >= long.MaxValue || double.IsInfinity(rounded)) return false;
             cost = Math.Max(GoldCostRoundingUnit, (long)rounded);
             return true;
         }
@@ -80,6 +82,30 @@ namespace ProjectMT.Shared.CommanderSkill
 
             var value = damageMultiplierByLevel.Evaluate(clampedLevel);
             return float.IsNaN(value) || float.IsInfinity(value) ? 1f : Mathf.Max(0f, value);
+        }
+
+        public float GetRatioMultiplier(int level) => Evaluate(ratioMultiplierByLevel, level, 1.5f);
+        public float GetControlDurationMultiplier(int level) => Evaluate(controlDurationByLevel, level, 1.25f);
+        public AnimationCurve CopyDamageCurve() => CopyCurve(damageMultiplierByLevel);
+        public AnimationCurve CopyRatioCurve() => CopyCurve(ratioMultiplierByLevel);
+        public AnimationCurve CopyControlCurve() => CopyCurve(controlDurationByLevel);
+
+        public static AnimationCurve CopyCurve(AnimationCurve curve) => curve == null ? null :
+            new AnimationCurve(curve.keys) { preWrapMode = curve.preWrapMode, postWrapMode = curve.postWrapMode };
+
+        private float Evaluate(AnimationCurve curve, int level, float maximum)
+        {
+            var clamped = Mathf.Clamp(level, 1, MaxLevel);
+            var value = curve == null || curve.length == 0
+                ? Mathf.Lerp(1f, maximum, MaxLevel <= 1 ? 0f : (clamped - 1f) / (MaxLevel - 1f))
+                : curve.Evaluate(clamped);
+            return float.IsNaN(value) || float.IsInfinity(value) ? 1f : Mathf.Max(0f, value);
+        }
+
+        public void SetSupportCurves(AnimationCurve ratio, AnimationCurve control)
+        {
+            ratioMultiplierByLevel = CopyCurve(ratio);
+            controlDurationByLevel = CopyCurve(control);
         }
 
         internal bool TryValidate(out string error)
@@ -99,7 +125,8 @@ namespace ProjectMT.Shared.CommanderSkill
                 return false;
             }
 
-            if (!TryGetNextLevelGoldCost(1, out _) && MaxLevel > 1)
+            if (MaxLevel > 1 && (!TryGetNextLevelGoldCost(1, out _) ||
+                !TryGetNextLevelGoldCost(MaxLevel - 1, out _)))
             {
                 error = $"{SkillId}: gold cost curve is invalid.";
                 return false;
@@ -115,6 +142,12 @@ namespace ProjectMT.Shared.CommanderSkill
 
             for (var level = 1; level <= maxLevel; level++)
             {
+                if (!ValidSupportCurve(ratioMultiplierByLevel, level) ||
+                    !ValidSupportCurve(controlDurationByLevel, level))
+                {
+                    error = $"{SkillId}: support multiplier curve is invalid at level {level}.";
+                    return false;
+                }
                 var multiplier = damageMultiplierByLevel.Evaluate(level);
                 if (multiplier <= 0f || float.IsNaN(multiplier) || float.IsInfinity(multiplier))
                 {
@@ -144,6 +177,14 @@ namespace ProjectMT.Shared.CommanderSkill
             damageMultiplierByLevel = damageCurve ?? AnimationCurve.Linear(1f, 1f, maxLevel, 1f);
         }
 #endif
+
+        private bool ValidSupportCurve(AnimationCurve curve, int level)
+        {
+            if (curve == null || curve.length == 0) return true; // 기존 데이터는 명시적 이관 전 fallback 허용
+            if (curve.keys[0].time > 1f || curve.keys[curve.length - 1].time < maxLevel) return false;
+            var value = curve.Evaluate(level);
+            return value > 0f && !float.IsNaN(value) && !float.IsInfinity(value);
+        }
     }
 
     [CreateAssetMenu(menuName = "ProjectMT/Commander Skill/Balance Config", fileName = "CommanderSkillBalanceConfig")]
@@ -152,6 +193,19 @@ namespace ProjectMT.Shared.CommanderSkill
         private static CommanderSkillBalanceConfig runtimeDefault;
 
         [SerializeField] private CommanderSkillGrowthRule[] skillRules = Array.Empty<CommanderSkillGrowthRule>();
+        [SerializeField] private int[] awakeningDuplicateCosts = { 1, 2, 4, 8, 16 };
+        [SerializeField] private long maxAwakeningDuplicateGold = 1000L;
+
+        public int MaxAwakening => 5;
+        public long MaxAwakeningDuplicateGold => maxAwakeningDuplicateGold;
+        public bool TryGetAwakeningCost(int currentStar, out int cost)
+        {
+            cost = 0;
+            if (currentStar < 0 || currentStar >= MaxAwakening ||
+                awakeningDuplicateCosts == null || awakeningDuplicateCosts.Length != MaxAwakening) return false;
+            cost = awakeningDuplicateCosts[currentStar];
+            return cost > 0;
+        }
 
         private Dictionary<string, CommanderSkillGrowthRule> lookup;
 
@@ -168,8 +222,7 @@ namespace ProjectMT.Shared.CommanderSkill
                 runtimeDefault.hideFlags = HideFlags.HideAndDontSave;
                 runtimeDefault.skillRules = new[]
                 {
-                    CreateDefaultRule(CommanderSkillIds.Fireball),
-                    CreateDefaultRule(CommanderSkillIds.IceCrystalOrb)
+                    CreateDefaultRule(CommanderSkillIds.Starter)
                 };
                 return runtimeDefault;
             }
@@ -186,6 +239,12 @@ namespace ProjectMT.Shared.CommanderSkill
 
         public bool TryValidate(out string error)
         {
+            if (maxAwakeningDuplicateGold <= 0 || awakeningDuplicateCosts == null ||
+                awakeningDuplicateCosts.Length != MaxAwakening || Array.Exists(awakeningDuplicateCosts, value => value <= 0))
+            {
+                error = "Awakening costs or duplicate conversion gold are invalid.";
+                return false;
+            }
             if (skillRules == null || skillRules.Length == 0)
             {
                 error = "At least one skill growth rule is required.";

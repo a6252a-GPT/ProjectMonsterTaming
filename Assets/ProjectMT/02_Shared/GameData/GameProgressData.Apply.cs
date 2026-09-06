@@ -170,10 +170,23 @@ namespace ProjectMT.Shared.GameData
                         change.ExpectedCommanderSkillSummonCount,
                         summonedSkillIds,
                         commanderSkillBalanceConfig,
-                        summonConfig))
+                        summonConfig, out var receipt))
                 {
                     return false;
                 }
+                try { if (!TryGrantCommanderConversionGold(receipt.ConvertedGold)) return false; }
+                catch (OverflowException) { return false; }
+                CommanderSkillSummonReceipt = receipt;
+            }
+
+            if (change.HasAwakenCommanderSkill)
+            {
+                var balance = commanderSkillBalanceConfig ?? CommanderSkillBalanceConfig.RuntimeDefault;
+                var next = (commanderSkills ?? CommanderSkillProgressData.CreateDefault()).Clone();
+                if (!next.TryAwaken(change.CommanderSkillToAwakenId, change.ExpectedCommanderSkillStar,
+                    change.ExpectedCommanderSkillDuplicates, balance, out var convertedGold) ||
+                    !TryGrantCommanderConversionGold(convertedGold)) return false;
+                commanderSkills = next;
             }
 
             if (change.HasLevelUpCommanderSkill)

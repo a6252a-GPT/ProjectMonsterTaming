@@ -331,12 +331,19 @@ namespace ProjectMT.Features.MainBattle
                 commanderSkillRuntime = gameObject.AddComponent<CommanderSkillRuntime>(); // 신규 신 참조를 요구하지 않는 런타임 소유
             }
 
+            var castAnimation = commander.GetComponent<CommanderSkillCastAnimationPresenter>();
+            if (castAnimation == null)
+                castAnimation = commander.gameObject.AddComponent<CommanderSkillCastAnimationPresenter>();
+            castAnimation.Configure(commander.GetComponentInChildren<Animator>(true));
+
             commanderSkillRuntime.Configure(
                 context.Progress,
                 catalog,
                 combatWorld,
                 commander,
-                () => managementUi != null && managementUi.IsAnyPageOpen);
+                () => managementUi != null && managementUi.IsAnyPageOpen,
+                safePullGround: transform.Find("01_MainGameplayRoot/00_WorldRoot/Ground")?.GetComponent<Collider>(),
+                animationPresenter: castAnimation);
             commanderSkillHud.Configure(context.Progress, catalog, commanderSkillRuntime);
             commanderSkillPage = GetComponentInChildren<CommanderSkillPageController>(true);
             commanderSkillPage?.Configure(context.Progress, catalog);

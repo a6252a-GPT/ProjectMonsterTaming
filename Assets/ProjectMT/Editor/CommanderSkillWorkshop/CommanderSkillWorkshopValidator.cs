@@ -52,7 +52,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             var pattern = new CommanderSkillPatternConfig();
             pattern.EditorConfigure(draft.PatternType, draft.RepeatCount, draft.RepeatInterval,
                 draft.PatternDuration, draft.TickInterval, draft.RandomRadius,
-                draft.ChainCount, draft.ChainRadius);
+                draft.ChainCount, draft.ChainRadius, draft.FirstBarrageHitAtTarget);
             if (!pattern.TryValidate(out var patternError)) result.Errors.Add($"공격 패턴 값이 유효하지 않습니다: {patternError}");
 
             if (draft.Category == CommanderSkillCategory.Attack)
@@ -77,6 +77,8 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             {
                 result.Warnings.Add("대상 적용 VFX/SFX가 비어 있습니다. 자산 선택 전이면 그대로 저장할 수 있습니다.");
             }
+            if (draft.PatternType == CommanderSkillPatternType.PersistentArea && draft.PersistentVfxPrefab == null)
+                result.Warnings.Add("PersistentArea 패턴이지만 지속 VFX가 비어 있습니다.");
             if (!IsFiniteVector(draft.CastingVfxLocalOffset) ||
                 !IsFiniteVector(draft.CastingVfxLocalEuler) ||
                 !IsFiniteVector(draft.CastVfxLocalOffset) || !IsFiniteVector(draft.CastVfxLocalEuler) ||
@@ -244,6 +246,17 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                     for (var triggerIndex = 0; triggerIndex < effect.TriggerEffects.Count; triggerIndex++)
                         ValidateTriggerEffect(effect.TriggerEffects[triggerIndex], index, triggerIndex,
                             triggerIds, result);
+                    continue;
+                }
+                if (effect.Kind == CommanderSkillWorkshopEffectKind.Pull)
+                {
+                    if (draft.Category != CommanderSkillCategory.Attack || !IsFinitePositive(effect.PullDistance) ||
+                        effect.PullDistance > 0.75f || !IsFinitePositive(effect.PullDuration) ||
+                        effect.PullDuration < 0.05f || effect.PullDuration > 0.2f ||
+                        !IsFiniteNonNegative(effect.PullStopDistance) ||
+                        effect.PullStopDistance < (effect.PullCenter == CommanderSkillPullCenter.CastOrigin ? 2f : 0.5f) ||
+                        effect.PullMaxTargets < 1 || effect.PullMaxTargets > 6)
+                        result.Errors.Add($"당김 효과 {index + 1}의 공격형/거리/시간/여유거리/대상 제한을 확인하세요.");
                     continue;
                 }
                 if (effect.Kind == CommanderSkillWorkshopEffectKind.AreaDamage)

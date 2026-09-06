@@ -1,5 +1,6 @@
 using ProjectMT.Shared.Unit;
 using UnityEngine;
+using AP = ProjectMT.Features.CommanderSkill.CommanderSkillAwakeningParameter;
 
 namespace ProjectMT.Features.CommanderSkill
 {
@@ -10,7 +11,7 @@ namespace ProjectMT.Features.CommanderSkill
             ICommanderSkillCombatGateway combat,
             ICommanderSkillFeedbackGateway feedback,
             Transform castOrigin,
-            float effectMultiplier)
+            CommanderSkillGrowthSnapshot effectMultiplier)
         {
             Owner = owner;
             Combat = combat;
@@ -23,7 +24,7 @@ namespace ProjectMT.Features.CommanderSkill
         public ICommanderSkillCombatGateway Combat { get; }
         public ICommanderSkillFeedbackGateway Feedback { get; }
         public Transform CastOrigin { get; }
-        public float EffectMultiplier { get; }
+        public CommanderSkillGrowthSnapshot EffectMultiplier { get; }
     }
 
     internal readonly struct CommanderSkillImpactContext // 기본공격과 같은 시전자→대상→판정 좌표 계약
@@ -108,7 +109,7 @@ namespace ProjectMT.Features.CommanderSkill
             CommanderSkillDefinition definition,
             CommanderSkillEffectDefinition effect,
             CommanderSkillImpactContext impact,
-            float multiplier);
+            CommanderSkillGrowthSnapshot multiplier);
     }
 
     internal sealed class CommanderAreaDamageEffectHandler : ICommanderSkillEffectHandler
@@ -129,7 +130,7 @@ namespace ProjectMT.Features.CommanderSkill
             CommanderSkillDefinition definition,
             CommanderSkillEffectDefinition effect,
             CommanderSkillImpactContext impact,
-            float multiplier)
+            CommanderSkillGrowthSnapshot multiplier)
         {
             if (combat == null || definition == null || effect is not CommanderAreaDamageEffectDefinition damage)
             {
@@ -146,13 +147,13 @@ namespace ProjectMT.Features.CommanderSkill
                     impact.PrimaryTarget,
                     impact.Position,
                     impact.Forward,
-                    definition.TargetRange,
-                    damage.Radius,
+                    multiplier.Resolve(AP.TargetRange, definition.TargetRange),
+                    multiplier.Resolve(AP.AreaRadius, damage.Radius, damage.EffectId),
                     damage.ForwardOffset,
                     damage.Angle,
-                    damage.LineWidth,
-                    damage.MaxTargets,
-                    damage.BaseDamage * damage.PerHitMultiplier * Mathf.Max(0f, multiplier),
+                    multiplier.Resolve(AP.LineWidth, damage.LineWidth, damage.EffectId),
+                    multiplier.ResolveCount(AP.MaxTargets, damage.MaxTargets, damage.EffectId),
+                    damage.BaseDamage * damage.PerHitMultiplier * multiplier.DamageMultiplier,
                     impact.DamageOrigin));
         }
     }
@@ -175,7 +176,7 @@ namespace ProjectMT.Features.CommanderSkill
             CommanderSkillDefinition definition,
             CommanderSkillEffectDefinition effect,
             CommanderSkillImpactContext impact,
-            float multiplier)
+            CommanderSkillGrowthSnapshot multiplier)
         {
             if (combat == null || definition?.Targeting == null ||
                 effect is not CommanderUnitEffectDefinition unitEffect)
@@ -200,12 +201,23 @@ namespace ProjectMT.Features.CommanderSkill
         public CommanderMarkEffectHandler(CommanderSkillRuntime runtime) { owner = runtime; }
         public bool Supports(CommanderSkillEffectDefinition effect) => effect is CommanderMarkEffectDefinition;
         public int Apply(CommanderSkillDefinition definition, CommanderSkillEffectDefinition effect,
-            CommanderSkillImpactContext impact, float multiplier)
+            CommanderSkillImpactContext impact, CommanderSkillGrowthSnapshot multiplier)
         {
             return effect is CommanderMarkEffectDefinition mark
                 ? owner.ApplyCommanderMark(definition, mark, impact, multiplier)
                 : 0;
         }
+    }
+
+    internal sealed class CommanderPullEffectHandler : ICommanderSkillEffectHandler
+    {
+        private readonly CommanderSkillRuntime owner;
+        public CommanderPullEffectHandler(CommanderSkillRuntime runtime) => owner = runtime;
+        public bool Supports(CommanderSkillEffectDefinition effect) => effect is CommanderPullEffectDefinition;
+        public int Apply(CommanderSkillDefinition definition, CommanderSkillEffectDefinition effect,
+            CommanderSkillImpactContext impact, CommanderSkillGrowthSnapshot multiplier) =>
+            effect is CommanderPullEffectDefinition pull && definition.Category == CommanderSkillCategory.Attack
+                ? owner.ApplyPull(pull, impact, multiplier) : 0;
     }
 
     internal sealed class CommanderRecordedHitDamageEffectHandler : ICommanderSkillEffectHandler
@@ -215,7 +227,7 @@ namespace ProjectMT.Features.CommanderSkill
         public bool Supports(CommanderSkillEffectDefinition effect) => effect is CommanderRecordedHitDamageEffectDefinition;
 
         public int Apply(CommanderSkillDefinition definition, CommanderSkillEffectDefinition effect,
-            CommanderSkillImpactContext impact, float multiplier)
+            CommanderSkillImpactContext impact, CommanderSkillGrowthSnapshot multiplier)
         {
             if (combat == null || definition == null || impact.PrimaryTarget == null ||
                 effect is not CommanderRecordedHitDamageEffectDefinition recorded ||
@@ -235,7 +247,9 @@ namespace ProjectMT.Features.CommanderSkill
                 90f,
                 0.05f,
                 1,
-                sourceDamage.BaseDamage * recorded.ResolveMultiplier(impact.RecordedHitCount) * Mathf.Max(0f, multiplier),
+                sourceDamage.BaseDamage * (recorded.BaseMultiplier + Mathf.Min(impact.RecordedHitCount,
+                    multiplier.ResolveCount(AP.RecordedHitCountCap, recorded.MaximumRecordedHits, recorded.EffectId)) *
+                    recorded.MultiplierPerRecordedHit) * multiplier.DamageMultiplier,
                 ProjectMT.Shared.Combat.CombatDamageOrigin.CommanderMarkTrigger));
         }
     }
@@ -254,14 +268,14 @@ namespace ProjectMT.Features.CommanderSkill
         public int Apply(
             CommanderSkillDefinition definition,
             CommanderSkillImpactContext impact,
-            float multiplier)
+            CommanderSkillGrowthSnapshot multiplier)
         {
             return Apply(definition, definition?.Effects, impact, multiplier);
         }
 
         public int Apply(CommanderSkillDefinition definition,
             System.Collections.Generic.IReadOnlyList<CommanderSkillEffectDefinition> effects,
-            CommanderSkillImpactContext impact, float multiplier)
+            CommanderSkillImpactContext impact, CommanderSkillGrowthSnapshot multiplier)
         {
             if (definition == null || effects == null)
             {

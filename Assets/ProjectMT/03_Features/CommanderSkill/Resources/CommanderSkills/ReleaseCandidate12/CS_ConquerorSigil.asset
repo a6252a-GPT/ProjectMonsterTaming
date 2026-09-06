@@ -1,5 +1,47 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-6307533610989050070
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf75b510fb724ae45b92af230ebebcb7, type: 3}
+  m_Name: __Effect_attack_up
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderUnitEffectDefinition
+  effectId: CS_ConquerorSigil_attack_up
+  effectType: 2
+  valueSource: 0
+  magnitude: 0.1
+  duration: 1.2
+  scope: 1
+  radius: 4.5
+  maxTargets: 5
+  stackPolicy: 0
+--- !u!114 &-4387591859387970868
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf75b510fb724ae45b92af230ebebcb7, type: 3}
+  m_Name: __Effect_protection
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderUnitEffectDefinition
+  effectId: CS_ConquerorSigil_protection
+  effectType: 5
+  valueSource: 0
+  magnitude: 0.1
+  duration: 1.2
+  scope: 1
+  radius: 4.5
+  maxTargets: 5
+  stackPolicy: 0
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9,21 +51,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 923dbd30d2c94444b82d1df9c7617154, type: 3}
+  m_Script: {fileID: 11500000, guid: 0b11f561d345c1c44b6db208cc91cbeb, type: 3}
   m_Name: CS_ConquerorSigil
-  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderAttackSkillDefinition
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderEffectSkillDefinition
   skillId: CS_ConquerorSigil
   displayName: "\uC815\uBCF5\uC790\uC758 \uBB38\uC7A5"
-  description: "SkillMaker V2 \uCD9C\uC2DC \uD6C4\uBCF4 12\uC885 \uB370\uC774\uD130
-    \uC870\uD569 \uC2A4\uD0AC."
+  description: "\uC544\uAD70\uC774 \uAC00\uC7A5 \uBC00\uC9D1\uD55C \uACF3\uC5D0 6\uCD08
+    \uB3D9\uC548 \uC815\uBCF5\uC758 \uBB38\uC7A5\uC744 \uC124\uCE58\uD569\uB2C8\uB2E4.
+    \uBC94\uC704 \uC548 \uC544\uAD70 \uCD5C\uB300 5\uBA85\uC758 \uACF5\uACA9\uB825\uC744
+    10% \uB192\uC774\uACE0 \uBC1B\uB294 \uD53C\uD574\uB97C 10% \uC904\uC774\uB294
+    \uD6A8\uACFC\uB97C \uB9E4\uCD08 \uAC31\uC2E0\uD569\uB2C8\uB2E4."
   icon: {fileID: 3890797160721565038, guid: 233ff8c61c9602a4aa9adfc4fccc0845, type: 3}
   rarity: 1
   castTime: 0
   cooldown: 10
-  targeting: {fileID: 6475303552905060515}
+  targeting: {fileID: 1395312336717181146}
   effects:
-  - {fileID: 9032805452698230541}
-  - {fileID: 11400000, guid: 25bb75e4ef37b104691133bcc056ef82, type: 2}
+  - {fileID: -6307533610989050070}
+  - {fileID: -4387591859387970868}
   pattern:
     type: 4
     repeatCount: 1
@@ -31,37 +76,98 @@ MonoBehaviour:
     duration: 6
     tickInterval: 1
     randomRadius: 0
-    chainCount: 1
-    chainRadius: 4
+    firstBarrageHitAtTarget: 0
+    chainCount: 4
+    chainRadius: 4.5
+  autoUseCondition: 0
+  awakeningStages:
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: 
+      parameter: 8
+      operation: 1
+      value: 1.2
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.9
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: 
+      parameter: 8
+      operation: 1
+      value: 1.2
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.9
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: 
+      parameter: 8
+      operation: 1
+      value: 1.2
+    - targetEffectId: CS_ConquerorSigil_attack_up
+      parameter: 5
+      operation: 1
+      value: 1.2
+    - targetEffectId: CS_ConquerorSigil_protection
+      parameter: 5
+      operation: 1
+      value: 1.2
+  autoHealthThreshold: 0.85
   castingVfxPrefab: {fileID: 0}
-  castingVfxLifetime: 1
+  castingVfxLifetime: 0.3
   castingVfxLocalOffset: {x: 0, y: 0, z: 0}
   castingVfxLocalEuler: {x: 0, y: 0, z: 0}
   castingVfxScale: 1
   castingSfx: {fileID: 0}
-  castVfxPrefab: {fileID: 8196777374369871632, guid: eeebfc4d69883704f9a86d98c10c6a72, type: 3}
-  castVfxLifetime: 1
+  castVfxPrefab: {fileID: 3154509558664331850, guid: ac1e7b8d22976cb43b7df4e25d777ede, type: 3}
+  castVfxLifetime: 0.65
   castVfxLocalOffset: {x: 0, y: 0, z: 0}
   castVfxLocalEuler: {x: 0, y: 0, z: 0}
   castVfxScale: 1
   castSfx: {fileID: 11400000, guid: 1306efe48e423b44480c4333a269e927, type: 2}
-  impactVfxPrefab: {fileID: 8196777374369871632, guid: eeebfc4d69883704f9a86d98c10c6a72, type: 3}
-  impactVfxLifetime: 1.5
-  impactVfxLocalOffset: {x: 0, y: 0, z: 0}
+  impactVfxPrefab: {fileID: 6091624816048603830, guid: df292831befd1094f97fc4e7108f0262, type: 3}
+  impactVfxLifetime: 1.1
+  impactVfxLocalOffset: {x: 0, y: -0.36, z: 0}
   impactVfxLocalEuler: {x: 0, y: 0, z: 0}
   impactVfxScale: 1
   impactSfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
-  persistentVfxPrefab: {fileID: 8196777374369871632, guid: eeebfc4d69883704f9a86d98c10c6a72, type: 3}
-  persistentVfxLocalOffset: {x: 0, y: 0, z: 0}
+  persistentVfxPrefab: {fileID: 9052395172470162439, guid: 71bb08f1f70286d4c89335c2b72789bf, type: 3}
+  persistentVfxLocalOffset: {x: 0, y: 0.08, z: 0}
   persistentVfxLocalEuler: {x: 0, y: 0, z: 0}
   persistentVfxScale: 1
   persistentVfxAnchor: 4
-  deliveryModule: 2
-  projectilePrefab: {fileID: 6078696380654765444, guid: fc4726aa82a56d5489c27b13c1bf33bc, type: 3}
-  projectileSpeed: 16
-  trajectory: 0
-  arcHeight: 0
---- !u!114 &6475303552905060515
+  category: 1
+--- !u!114 &1395312336717181146
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -73,29 +179,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9166a73beb0fe31418013f86c73085f8, type: 3}
   m_Name: __Targeting
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderSkillTargetingDefinition
-  targetTeam: 0
+  targetTeam: 1
   selection: 5
   range: 20
---- !u!114 &9032805452698230541
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 553a329334129284aa003ad4e3c0c765, type: 3}
-  m_Name: __Damage
-  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderAreaDamageEffectDefinition
-  effectId: CS_ConquerorSigil_damage
-  damageKind: 3
-  baseDamage: 20
-  perHitMultiplier: 0.3
-  shape: 3
-  center: 1
-  radius: 4.5
-  forwardOffset: 0
-  angle: 90
-  lineWidth: 0.05
-  maxTargets: 10

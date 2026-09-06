@@ -7,6 +7,7 @@ using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
+using AP = ProjectMT.Features.CommanderSkill.CommanderSkillAwakeningParameter;
 
 namespace ProjectMT.Features.CommanderSkill
 {
@@ -42,9 +43,14 @@ namespace ProjectMT.Features.CommanderSkill
         private CommanderSkillDefinition castingDefinition;
         private float castingRemaining;
         private float castingDuration;
-        private float castingMultiplier;
+        private CommanderSkillGrowthSnapshot castingMultiplier;
+        private long castSequence;
+        private float pullClock;
+        private Collider pullGround;
+        private readonly Dictionary<UnitActor, float> pullReadyTimes = new Dictionary<UnitActor, float>();
         private bool configured;
         private SfxCue commanderSkillVoice;
+        private CommanderSkillCastAnimationPresenter castAnimationPresenter;
 
         public bool IsPaused => world == null || world.IsPaused || (isInputBlocked?.Invoke() ?? false);
         public bool IsConfigured => configured;
@@ -59,7 +65,9 @@ namespace ProjectMT.Features.CommanderSkill
             CombatWorld combatWorld,
             Transform origin,
             Func<bool> inputBlocked = null,
-            Func<float> damageMultiplier = null)
+            Func<float> damageMultiplier = null,
+            Collider safePullGround = null,
+            CommanderSkillCastAnimationPresenter animationPresenter = null)
         {
             Shutdown();
             var catalogError = skillCatalog == null ? "Catalog asset is missing." : string.Empty;
@@ -75,6 +83,8 @@ namespace ProjectMT.Features.CommanderSkill
             castOrigin = origin;
             isInputBlocked = inputBlocked;
             externalDamageMultiplier = damageMultiplier;
+            pullGround = safePullGround;
+            castAnimationPresenter = animationPresenter;
             commanderSkillVoice = Resources.Load<SfxCue>(CommanderSkillVoiceResourcePath);
             var gateway = world == null ? null : new CommanderSkillCombatGateway(world);
             combat = gateway;
@@ -86,7 +96,8 @@ namespace ProjectMT.Features.CommanderSkill
                     new CommanderAreaDamageEffectHandler(gateway),
                     new CommanderUnitEffectHandler(gateway),
                     new CommanderMarkEffectHandler(this),
-                    new CommanderRecordedHitDamageEffectHandler(gateway));
+                    new CommanderRecordedHitDamageEffectHandler(gateway),
+                    new CommanderPullEffectHandler(this));
             executors.Clear();
             activePatterns.Clear();
             ClearMarks(false);
@@ -126,6 +137,11 @@ namespace ProjectMT.Features.CommanderSkill
             castOrigin = null;
             isInputBlocked = null;
             externalDamageMultiplier = null;
+            pullGround = null;
+            castAnimationPresenter?.Stop();
+            castAnimationPresenter = null;
+            pullReadyTimes.Clear();
+            pullClock = 0f;
             configured = false;
             autoScanRemaining = 0f;
             ClearPendingCast();
@@ -153,14 +169,15 @@ namespace ProjectMT.Features.CommanderSkill
                 return false;
             }
 
+            var multiplier = GetEffectMultiplier(definition.SkillId, GetOwnedSkillLevel(definition.SkillId)) *
+                             Mathf.Max(0f, externalDamageMultiplier?.Invoke() ?? 1f);
+            multiplier = multiplier.WithCast(new CommanderSkillCastState(++castSequence, castOrigin.position));
             if (definition.CastTime > 0f &&
-                combat.FindTarget(castOrigin.position, definition.Targeting) == null)
+                FindSkillTarget(definition, multiplier) == null)
             {
                 return false; // 대상 없는 빈 캐스팅을 시작하지 않음. 발동 때도 대상은 다시 검증한다.
             }
 
-            var multiplier = GetEffectMultiplier(definition.SkillId, GetOwnedSkillLevel(definition.SkillId)) *
-                             Mathf.Max(0f, externalDamageMultiplier?.Invoke() ?? 1f);
             if (definition.CastTime > 0f)
             {
                 castingSlot = slotIndex;
@@ -168,6 +185,7 @@ namespace ProjectMT.Features.CommanderSkill
                 castingDuration = definition.CastTime;
                 castingRemaining = definition.CastTime;
                 castingMultiplier = multiplier;
+                castAnimationPresenter?.Play(definition.SkillId);
                 PlayCastingFeedback(definition, castOrigin.position, castOrigin.rotation);
                 PlayCommanderSkillVoice();
                 return true;
@@ -176,6 +194,7 @@ namespace ProjectMT.Features.CommanderSkill
             var activated = TryActivate(slotIndex, definition, executor, multiplier);
             if (activated)
             {
+                castAnimationPresenter?.Play(definition.SkillId);
                 PlayCommanderSkillVoice();
             }
 
@@ -199,7 +218,7 @@ namespace ProjectMT.Features.CommanderSkill
         internal int ResolveImpact(
             CommanderSkillDefinition definition,
             CommanderSkillImpactContext impact,
-            float effectMultiplier)
+            CommanderSkillGrowthSnapshot effectMultiplier)
         {
             if (!configured || definition == null)
             {
@@ -219,17 +238,17 @@ namespace ProjectMT.Features.CommanderSkill
             return appliedCount;
         }
 
-        internal bool TryStartPattern(CommanderSkillDefinition definition, float multiplier)
+        internal bool TryStartPattern(CommanderSkillDefinition definition, CommanderSkillGrowthSnapshot multiplier)
         {
             if (!configured || definition == null || castOrigin == null || combat == null) return false;
-            var target = combat.FindTarget(castOrigin.position, definition.Targeting);
+            var target = FindSkillTarget(definition, multiplier);
             if (target == null) return false;
             var config = definition.Pattern;
             var total = config.Type switch
             {
-                CommanderSkillPatternType.PersistentArea => Mathf.Max(1, Mathf.CeilToInt(config.Duration / config.TickInterval)),
-                CommanderSkillPatternType.Chain => config.ChainCount,
-                CommanderSkillPatternType.Burst or CommanderSkillPatternType.Barrage or CommanderSkillPatternType.Pulse => config.RepeatCount,
+                CommanderSkillPatternType.PersistentArea => Mathf.Max(1, Mathf.CeilToInt(multiplier.Resolve(AP.Duration, config.Duration) / config.TickInterval)),
+                CommanderSkillPatternType.Chain => multiplier.ResolveCount(AP.ChainCount, config.ChainCount),
+                CommanderSkillPatternType.Burst or CommanderSkillPatternType.Barrage or CommanderSkillPatternType.Pulse => multiplier.ResolveCount(AP.RepeatCount, config.RepeatCount),
                 _ => 1
             };
             var interval = config.Type switch
@@ -239,7 +258,7 @@ namespace ProjectMT.Features.CommanderSkill
             };
             var state = new ActivePattern(definition, multiplier, target, total, interval);
             if (!ExecutePatternHit(state)) return false;
-            ApplyGlobalModifiers(definition);
+            ApplyGlobalModifiers(definition, multiplier);
             state.Executed++;
             if (definition.Pattern.Type == CommanderSkillPatternType.PersistentArea)
                 StartPersistentPatternFeedback(state);
@@ -249,7 +268,44 @@ namespace ProjectMT.Features.CommanderSkill
         }
 
         internal int ApplyCommanderMark(CommanderSkillDefinition source, CommanderMarkEffectDefinition mark,
-            CommanderSkillImpactContext impact, float multiplier)
+            CommanderSkillImpactContext impact, CommanderSkillGrowthSnapshot multiplier)
+        {
+            return ApplyCommanderMarkCore(source, mark, impact, multiplier);
+        }
+
+        internal int ApplyPull(CommanderPullEffectDefinition effect, CommanderSkillImpactContext impact,
+            CommanderSkillGrowthSnapshot growth)
+        {
+            if (growth.Cast == null || growth.HitIndex != 0 || pullGround == null || combat == null ||
+                impact.DamageOrigin == CombatDamageOrigin.CommanderMarkTrigger) return 0;
+            var stale = new List<UnitActor>();
+            foreach (var entry in pullReadyTimes)
+                if (entry.Key == null || !entry.Key.IsAlive || !entry.Key.gameObject.activeInHierarchy || entry.Value <= pullClock)
+                    stale.Add(entry.Key);
+            foreach (var target in stale) pullReadyTimes.Remove(target);
+            var targets = new List<UnitActor>();
+            combat.CollectLastDamageTargets(targets);
+            var center = effect.Center == CommanderSkillPullCenter.CastOrigin ? growth.Cast.Origin : impact.Position;
+            var count = 0;
+            foreach (var target in targets)
+            {
+                if (count >= effect.MaxTargets) break;
+                if (target == null || growth.Cast.PulledTargets.Contains(target.GetInstanceID()) ||
+                    pullReadyTimes.ContainsKey(target)) continue;
+                var start = target.transform.position;
+                var distance = CommanderSkillPullSafety.ResolveDistance(start, center, effect.Distance, effect.StopDistance);
+                var direction = center - start; direction.y = 0f;
+                if (distance <= 0f || !CommanderSkillPullSafety.IsSafe(pullGround, target, start + direction.normalized * distance)) continue;
+                if (!target.TryApplyActivePull(center, distance, effect.Duration)) continue;
+                growth.Cast.PulledTargets.Add(target.GetInstanceID());
+                pullReadyTimes[target] = pullClock + 1f;
+                count++;
+            }
+            return count;
+        }
+
+        private int ApplyCommanderMarkCore(CommanderSkillDefinition source, CommanderMarkEffectDefinition mark,
+            CommanderSkillImpactContext impact, CommanderSkillGrowthSnapshot multiplier)
         {
             if (mark == null || combat == null) return 0;
             patternTargets.Clear();
@@ -259,9 +315,9 @@ namespace ProjectMT.Features.CommanderSkill
                 patternTargets.Add(impact.PrimaryTarget);
             }
             else if (mark.Scope == CommanderSkillEffectScope.ImpactTargets) combat.CollectLastDamageTargets(patternTargets);
-            else combat.CollectTargets(impact.Position, source.Targeting, mark.Radius, patternTargets);
+            else combat.CollectTargets(impact.Position, source.Targeting, multiplier.Resolve(AP.AreaRadius, mark.Radius, mark.EffectId), patternTargets);
             var applied = 0;
-            for (var index = 0; index < patternTargets.Count && applied < mark.MaxTargets; index++)
+            for (var index = 0; index < patternTargets.Count && applied < multiplier.ResolveCount(AP.MaxTargets, mark.MaxTargets, mark.EffectId); index++)
             {
                 var target = patternTargets[index];
                 if (target?.Health == null || !target.IsAlive) continue;
@@ -269,11 +325,13 @@ namespace ProjectMT.Features.CommanderSkill
                 if (existing != null)
                 {
                     existing.Source = source;
+                    existing.Definition = mark;
                     existing.Multiplier = multiplier;
                     existing.Stacks = Mathf.Min(mark.MaxStacks, existing.Stacks + 1);
-                    if (mark.RefreshDurationOnApply) existing.Remaining = mark.Duration;
+                    if (mark.RefreshDurationOnApply) existing.Remaining = multiplier.Resolve(AP.Duration, mark.Duration, mark.EffectId);
                     PlayMarkFeedback(mark.OnStack, target, impact.Position, false);
-                    if (mark.TriggerType == CommanderMarkTriggerType.StackReached && existing.Stacks >= mark.RequiredStacks)
+                    if (mark.TriggerType == CommanderMarkTriggerType.StackReached &&
+                        existing.Stacks >= multiplier.ResolveCount(AP.MarkRequiredStacks, mark.RequiredStacks, mark.EffectId))
                         TriggerMark(existing);
                 }
                 else
@@ -286,7 +344,8 @@ namespace ProjectMT.Features.CommanderSkill
                     active.LoopVfx = PlayMarkFeedback(mark.Loop, target, impact.Position, true);
                     activeMarks.Add(active);
                     PlayMarkFeedback(mark.OnApply, target, impact.Position, false);
-                    if (mark.TriggerType == CommanderMarkTriggerType.StackReached && mark.RequiredStacks <= 1)
+                    if (mark.TriggerType == CommanderMarkTriggerType.StackReached &&
+                        multiplier.ResolveCount(AP.MarkRequiredStacks, mark.RequiredStacks, mark.EffectId) <= 1)
                         TriggerMark(active);
                 }
                 applied++;
@@ -351,6 +410,7 @@ namespace ProjectMT.Features.CommanderSkill
             }
 
             var deltaTime = Time.deltaTime;
+            pullClock += deltaTime;
             TickPatterns(deltaTime);
             TickMarks(deltaTime);
             TickGlobalModifiers(deltaTime);
@@ -386,7 +446,32 @@ namespace ProjectMT.Features.CommanderSkill
                 progressView,
                 cooldownRemaining,
                 catalog,
-                TryCastSlot);
+                TryAutoCastSlot);
+        }
+
+        private bool TryAutoCastSlot(int slot)
+        {
+            if (!catalog.TryGet(progressView.GetEquippedSkillId(slot), out var definition)) return false;
+            if (definition.AutoUseCondition == CommanderSkillAutoUseCondition.AllyHealthBelow)
+            {
+                var target = FindSkillTarget(definition,
+                    GetEffectMultiplier(definition.SkillId, GetOwnedSkillLevel(definition.SkillId)));
+                if (target?.Health == null || target.Health.MaxHealth <= 0f ||
+                    target.Health.CurrentHealth / target.Health.MaxHealth >= definition.AutoHealthThreshold) return false;
+            }
+            return TryCastSlot(slot);
+        }
+
+        private UnitActor FindSkillTarget(CommanderSkillDefinition definition, CommanderSkillGrowthSnapshot growth = default)
+        {
+            var radius = 0f;
+            if (definition.Category != CommanderSkillCategory.Attack)
+                foreach (var effect in definition.Effects)
+                    if (effect is CommanderUnitEffectDefinition unit && unit.Scope == CommanderSkillEffectScope.Area)
+                        radius = Mathf.Max(radius, growth.Resolve(AP.AreaRadius, unit.Radius, unit.EffectId));
+            return combat is CommanderSkillCombatGateway gateway
+                ? gateway.FindTarget(castOrigin.position, definition.Targeting, growth.Resolve(AP.TargetRange, definition.TargetRange), radius)
+                : combat.FindTarget(castOrigin.position, definition.Targeting);
         }
 
         private void RefreshProgress()
@@ -447,7 +532,7 @@ namespace ProjectMT.Features.CommanderSkill
                 mark.RecordedHits++;
                 mark.RecordedDamage += report.AppliedDamage;
             }
-            if (mark.Definition.TriggerType == CommanderMarkTriggerType.HitCount && mark.Hits >= ResolveRequiredHits(mark.Definition))
+            if (mark.Definition.TriggerType == CommanderMarkTriggerType.HitCount && mark.Hits >= ResolveRequiredHits(mark))
                 TriggerMark(mark);
         }
 
@@ -464,7 +549,7 @@ namespace ProjectMT.Features.CommanderSkill
             mark.IsTriggering = true;
             try
             {
-                mark.Cooldown = mark.Definition.TriggerCooldown;
+                mark.Cooldown = mark.Multiplier.Resolve(AP.MarkTriggerCooldown, mark.Definition.TriggerCooldown, mark.Definition.EffectId);
                 var target = mark.Target;
                 var position = mark.Target.transform.position + Vector3.up * 0.45f;
                 PlayMarkFeedback(mark.Definition.OnTrigger, mark.Target, position, false);
@@ -472,7 +557,7 @@ namespace ProjectMT.Features.CommanderSkill
                     new CommanderSkillImpactContext(castOrigin.position, mark.Target, position,
                         position - castOrigin.position, CombatDamageOrigin.CommanderMarkTrigger,
                         mark.RecordedHits, mark.RecordedDamage),
-                    mark.Multiplier * ResolveMarkTriggerDamageMultiplier());
+                    mark.Multiplier.ForTrigger(mark.Definition.EffectId) * ResolveMarkTriggerDamageMultiplier());
                 if (mark.Definition.ConsumeOnTrigger) RemoveMark(mark, true);
                 else { mark.Hits = 0; mark.Stacks = 0; }
                 if (broadcastMarkTriggered) NotifyMarkTriggered(mark, target);
@@ -495,7 +580,7 @@ namespace ProjectMT.Features.CommanderSkill
             markTriggeredBuffer.Clear();
         }
 
-        private void ApplyGlobalModifiers(CommanderSkillDefinition source)
+        private void ApplyGlobalModifiers(CommanderSkillDefinition source, CommanderSkillGrowthSnapshot growth)
         {
             if (source?.Effects == null) return;
             for (var effectIndex = 0; effectIndex < source.Effects.Count; effectIndex++)
@@ -505,8 +590,9 @@ namespace ProjectMT.Features.CommanderSkill
                 for (var index = 0; index < activeModifiers.Count; index++)
                     if (activeModifiers[index].Source == source && activeModifiers[index].Definition == definition)
                     { existing = activeModifiers[index]; break; }
-                if (existing != null) existing.Remaining = definition.Duration;
-                else activeModifiers.Add(new ActiveGlobalModifier(source, definition));
+                if (existing != null) existing.Remaining = growth.Resolve(AP.Duration, definition.Duration, definition.EffectId);
+                else activeModifiers.Add(new ActiveGlobalModifier(source, definition)
+                    { Remaining = growth.Resolve(AP.Duration, definition.Duration, definition.EffectId) });
             }
         }
 
@@ -519,12 +605,13 @@ namespace ProjectMT.Features.CommanderSkill
             }
         }
 
-        private int ResolveRequiredHits(CommanderMarkEffectDefinition mark)
+        private int ResolveRequiredHits(ActiveMark mark)
         {
             var multiplier = 1f;
             for (var index = 0; index < activeModifiers.Count; index++)
                 multiplier *= activeModifiers[index].Definition.MarkRequiredHitsMultiplier;
-            return Mathf.Max(1, Mathf.CeilToInt(mark.RequiredHits * multiplier));
+            return Mathf.Max(1, Mathf.CeilToInt(mark.Multiplier.Resolve(AP.MarkRequiredHits,
+                mark.Definition.RequiredHits, mark.Definition.EffectId) * multiplier));
         }
 
         private float ResolveMarkTriggerDamageMultiplier()
@@ -618,7 +705,8 @@ namespace ProjectMT.Features.CommanderSkill
             var destination = state.FixedPosition;
             if (definition.Pattern.Type is not CommanderSkillPatternType.PersistentArea)
                 destination = target.transform.position + Vector3.up * 0.45f;
-            if (definition.Pattern.Type == CommanderSkillPatternType.Barrage)
+            if (definition.Pattern.Type == CommanderSkillPatternType.Barrage &&
+                !(state.Executed == 0 && definition.Pattern.FirstBarrageHitAtTarget))
             {
                 var offset = UnityEngine.Random.insideUnitCircle * definition.Pattern.RandomRadius;
                 destination += new Vector3(offset.x, 0f, offset.y);
@@ -635,12 +723,13 @@ namespace ProjectMT.Features.CommanderSkill
                 var projectile = projectileObject == null ? null : projectileObject.GetComponent<CommanderSkillProjectile>();
                 if (projectile == null) { feedback.Return(projectileObject); return false; }
                 activeProjectiles.Add(projectileObject);
-                projectile.Launch(this, attack, target, destination, state.Multiplier,
+                projectile.Launch(this, attack, target, destination, state.Multiplier.ForHit(state.Executed),
                     definition.Pattern.Type != CommanderSkillPatternType.Barrage);
             }
             else
             {
-                ResolveImpact(definition, new CommanderSkillImpactContext(start, target, destination, direction, origin), state.Multiplier);
+                var applied = ResolveImpact(definition, new CommanderSkillImpactContext(start, target, destination, direction, origin), state.Multiplier.ForHit(state.Executed));
+                if (definition.Category != CommanderSkillCategory.Attack && applied == 0 && state.Executed == 0) return false;
             }
             if (!persistent || state.Executed == 0) PlayCastFeedback(definition, start, rotation);
             state.LastPosition = destination;
@@ -653,7 +742,7 @@ namespace ProjectMT.Features.CommanderSkill
             if (state.Definition.Pattern.Type == CommanderSkillPatternType.Chain && state.Executed > 0)
             {
                 combat.CollectTargets(state.LastPosition, state.Definition.Targeting,
-                    state.Definition.Pattern.ChainRadius, patternTargets);
+                    state.Multiplier.Resolve(AP.ChainRadius, state.Definition.Pattern.ChainRadius), patternTargets);
                 for (var index = 0; index < patternTargets.Count; index++)
                 {
                     var candidate = patternTargets[index];
@@ -663,22 +752,22 @@ namespace ProjectMT.Features.CommanderSkill
                 return null;
             }
             if (state.Target == null || !state.Target.IsAlive)
-                state.Target = combat.FindTarget(castOrigin.position, state.Definition.Targeting);
+                state.Target = FindSkillTarget(state.Definition, state.Multiplier);
             return state.Target;
         }
 
         private sealed class ActivePattern
         {
-            public ActivePattern(CommanderSkillDefinition definition, float multiplier, UnitActor target, int total, float interval)
+            public ActivePattern(CommanderSkillDefinition definition, CommanderSkillGrowthSnapshot multiplier, UnitActor target, int total, float interval)
             {
                 Definition = definition; Multiplier = multiplier; Target = target; Total = total; Interval = interval;
                 Remaining = interval; FixedPosition = target.transform.position + Vector3.up * 0.45f;
                 LifetimeRemaining = definition.Pattern.Type == CommanderSkillPatternType.PersistentArea
-                    ? definition.Pattern.Duration
+                    ? multiplier.Resolve(AP.Duration, definition.Pattern.Duration)
                     : 0f;
             }
             public readonly CommanderSkillDefinition Definition;
-            public readonly float Multiplier;
+            public readonly CommanderSkillGrowthSnapshot Multiplier;
             public readonly int Total;
             public readonly float Interval;
             public readonly Vector3 FixedPosition;
@@ -734,12 +823,13 @@ namespace ProjectMT.Features.CommanderSkill
 
         private sealed class ActiveMark
         {
-            public ActiveMark(CommanderSkillDefinition source, CommanderMarkEffectDefinition definition, UnitActor target, float multiplier)
-            { Source = source; Definition = definition; Target = target; Multiplier = multiplier; Remaining = definition.Duration; Stacks = 1; }
+            public ActiveMark(CommanderSkillDefinition source, CommanderMarkEffectDefinition definition, UnitActor target, CommanderSkillGrowthSnapshot multiplier)
+            { Source = source; Definition = definition; Target = target; Multiplier = multiplier;
+                Remaining = multiplier.Resolve(AP.Duration, definition.Duration, definition.EffectId); Stacks = 1; }
             public CommanderSkillDefinition Source;
-            public readonly CommanderMarkEffectDefinition Definition;
+            public CommanderMarkEffectDefinition Definition;
             public readonly UnitActor Target;
-            public float Multiplier;
+            public CommanderSkillGrowthSnapshot Multiplier;
             public Action<DamageReport> Damaged;
             public Action<DamageReport> Died;
             public GameObject LoopVfx;
@@ -775,11 +865,15 @@ namespace ProjectMT.Features.CommanderSkill
             return 1;
         }
 
-        private float GetEffectMultiplier(string skillId, int level)
+        private CommanderSkillGrowthSnapshot GetEffectMultiplier(string skillId, int level)
         {
-            return catalog != null && catalog.BalanceConfig.TryGetRule(skillId, out var rule)
-                ? rule.GetDamageMultiplier(level)
-                : 1f;
+            var growth = catalog != null && catalog.BalanceConfig.TryGetRule(skillId, out var rule)
+                ? CommanderSkillGrowthSnapshot.FromRule(rule, level)
+                : (CommanderSkillGrowthSnapshot)1f;
+            if (catalog == null || !catalog.TryGet(skillId, out var definition)) return growth;
+            foreach (var owned in progressView.OwnedSkills)
+                if (owned.SkillId == skillId) return growth.WithAwakening(definition.CaptureAwakening(owned.AwakeningLevel));
+            return growth;
         }
 
         private ICommanderSkillExecutor FindExecutor(CommanderSkillDefinition definition)
@@ -799,7 +893,7 @@ namespace ProjectMT.Features.CommanderSkill
             int slotIndex,
             CommanderSkillDefinition definition,
             ICommanderSkillExecutor executor,
-            float multiplier)
+            CommanderSkillGrowthSnapshot multiplier)
         {
             var context = new CommanderSkillExecutionContext(
                 this,
@@ -812,8 +906,8 @@ namespace ProjectMT.Features.CommanderSkill
                 return false; // 대상·전달 실패 시 쿨타임과 피드백을 시작하지 않음
             }
 
-            cooldownDuration[slotIndex] = definition.Cooldown;
-            cooldownRemaining[slotIndex] = definition.Cooldown;
+            cooldownDuration[slotIndex] = multiplier.Resolve(AP.Cooldown, definition.Cooldown);
+            cooldownRemaining[slotIndex] = cooldownDuration[slotIndex];
             return true;
         }
 

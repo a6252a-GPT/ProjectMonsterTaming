@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ProjectMT.Features.CommanderSkill;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.CommanderSkill;
@@ -9,7 +10,7 @@ using UnityEngine;
 
 namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 {
-    internal enum CommanderSkillWorkshopEffectKind { UnitEffect, CommanderMark, RecordedHitDamage, GlobalModifier, AreaDamage }
+    internal enum CommanderSkillWorkshopEffectKind { UnitEffect, CommanderMark, RecordedHitDamage, GlobalModifier, AreaDamage, Pull }
 
     [Serializable]
     internal sealed class CommanderMarkFeedbackDraft
@@ -101,6 +102,16 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 
         public string EffectId => effectId?.Trim() ?? string.Empty;
         public CommanderSkillWorkshopEffectKind Kind => kind;
+        [SerializeField] private CommanderSkillPullCenter pullCenter;
+        [SerializeField] private float pullDistance = 0.6f;
+        [SerializeField] private float pullDuration = 0.2f;
+        [SerializeField] private float pullStopDistance = 2f;
+        [SerializeField] private int pullMaxTargets = 4;
+        public CommanderSkillPullCenter PullCenter => pullCenter;
+        public float PullDistance => pullDistance;
+        public float PullDuration => pullDuration;
+        public float PullStopDistance => pullStopDistance;
+        public int PullMaxTargets => pullMaxTargets;
         public CommanderSkillDamageKind DamageKind => damageKind;
         public float BaseDamage => baseDamage;
         public float PerHitMultiplier => perHitMultiplier;
@@ -169,6 +180,16 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         }
 
         public static CommanderSkillWorkshopEffectDraft FromDefinition(CommanderUnitEffectDefinition source)
+        {
+            return FromUnitDefinition(source);
+        }
+
+        public static CommanderSkillWorkshopEffectDraft FromDefinition(CommanderPullEffectDefinition source) =>
+            new CommanderSkillWorkshopEffectDraft { kind = CommanderSkillWorkshopEffectKind.Pull, effectId = source.EffectId,
+                pullCenter = source.Center, pullDistance = source.Distance, pullDuration = source.Duration,
+                pullStopDistance = source.StopDistance, pullMaxTargets = source.MaxTargets };
+
+        private static CommanderSkillWorkshopEffectDraft FromUnitDefinition(CommanderUnitEffectDefinition source)
         {
             return new CommanderSkillWorkshopEffectDraft
             {
@@ -283,6 +304,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 
         [Header("Cast Flow")]
         [SerializeField, Min(0f)] private float castTime = 0.5f;
+        [SerializeField] private CommanderSkillAutoUseCondition autoUseCondition;
+        [SerializeField] private float autoHealthThreshold = 0.85f;
+        [SerializeField] private CommanderSkillAwakeningStage[] awakeningStages = Array.Empty<CommanderSkillAwakeningStage>();
         [SerializeField, Min(0.1f)] private float cooldown = 8f;
 
         [Header("Target")]
@@ -316,6 +340,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         [SerializeField, Min(0.01f)] private float patternDuration = 1f;
         [SerializeField, Min(0.01f)] private float tickInterval = 1f;
         [SerializeField, Min(0f)] private float randomRadius;
+        [SerializeField] private bool firstBarrageHitAtTarget;
         [SerializeField, Min(1)] private int chainCount = 1;
         [SerializeField, Min(0.1f)] private float chainRadius = 4f;
 
@@ -356,8 +381,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         [SerializeField, Min(1)] private int maxLevel = 200;
         [SerializeField, Min(1)] private int requiredDuplicateCount = 1;
         [SerializeField, Min(1)] private long baseGoldCost = 100L;
-        [SerializeField, Min(1f)] private float goldCostGrowthMultiplier = 1.06f;
+        [SerializeField, Min(1f)] private float goldCostGrowthMultiplier = 1.03f;
         [SerializeField, Min(0.01f)] private float maxLevelEffectMultiplier = 4.98f;
+        [SerializeField, HideInInspector] private string loadedGrowthJson;
 
         [Header("Summon")]
         [SerializeField] private bool includeInSummonPool = true;
@@ -371,6 +397,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         public CommanderSkillCategory Category => category;
         public CommanderSkillRarity Rarity => rarity;
         public float CastTime => castTime;
+        public CommanderSkillAutoUseCondition AutoUseCondition => autoUseCondition;
+        public float AutoHealthThreshold => autoHealthThreshold;
+        public CommanderSkillAwakeningStage[] AwakeningStages => awakeningStages;
         public float Cooldown => cooldown;
         public CommanderSkillTargetTeam TargetTeam => targetTeam;
         public CommanderSkillTargetSelection TargetSelection => targetSelection;
@@ -396,6 +425,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         public float PatternDuration => patternDuration;
         public float TickInterval => tickInterval;
         public float RandomRadius => randomRadius;
+        public bool FirstBarrageHitAtTarget => firstBarrageHitAtTarget;
         public int ChainCount => chainCount;
         public float ChainRadius => chainRadius;
         public IReadOnlyList<CommanderSkillWorkshopEffectDraft> Effects => effects;
@@ -437,6 +467,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 
         public void ResetDraft(CommanderSkillCategory nextCategory)
         {
+            loadedGrowthJson = string.Empty;
             skillId = string.Empty;
             displayName = nextCategory == CommanderSkillCategory.Attack
                 ? "새 군단장 공격 스킬"
@@ -448,6 +479,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             category = nextCategory;
             rarity = CommanderSkillRarity.Common;
             castTime = 0.5f;
+            autoUseCondition = CommanderSkillAutoUseCondition.Always;
+            autoHealthThreshold = 0.85f;
+            awakeningStages = Array.Empty<CommanderSkillAwakeningStage>();
             cooldown = 8f;
             targetTeam = nextCategory == CommanderSkillCategory.Buff
                 ? CommanderSkillTargetTeam.Ally
@@ -475,6 +509,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             patternDuration = 1f;
             tickInterval = 1f;
             randomRadius = 0f;
+            firstBarrageHitAtTarget = false;
             chainCount = 1;
             chainRadius = 4f;
             effects.Clear();
@@ -512,7 +547,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             maxLevel = 200;
             requiredDuplicateCount = 1;
             baseGoldCost = 100L;
-            goldCostGrowthMultiplier = 1.06f;
+            goldCostGrowthMultiplier = 1.03f;
             maxLevelEffectMultiplier = 4.98f;
             includeInSummonPool = true;
             minimumSummonLevel = 1;
@@ -556,6 +591,10 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             category = source.Category;
             rarity = source.Rarity;
             castTime = source.CastTime;
+            autoUseCondition = source.AutoUseCondition;
+            autoHealthThreshold = source.AutoHealthThreshold;
+            awakeningStages = source.AwakeningStages.Select(stage =>
+                stage == null ? null : new CommanderSkillAwakeningStage(stage.CopyModifiers())).ToArray();
             cooldown = source.Cooldown;
             targetTeam = source.Targeting.TargetTeam;
             targetSelection = source.Targeting.Selection;
@@ -566,6 +605,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             patternDuration = source.Pattern.Duration;
             tickInterval = source.Pattern.TickInterval;
             randomRadius = source.Pattern.RandomRadius;
+            firstBarrageHitAtTarget = source.Pattern.FirstBarrageHitAtTarget;
             chainCount = source.Pattern.ChainCount;
             chainRadius = source.Pattern.ChainRadius;
             castingVfxPrefab = source.CastingVfxPrefab;
@@ -619,7 +659,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 }
                 for (var index = 0; index < source.Effects.Count; index++)
                 {
-                    if (source.Effects[index] is CommanderUnitEffectDefinition unitEffect)
+                    if (source.Effects[index] is CommanderPullEffectDefinition pullEffect)
+                        effects.Add(CommanderSkillWorkshopEffectDraft.FromDefinition(pullEffect));
+                    else if (source.Effects[index] is CommanderUnitEffectDefinition unitEffect)
                         effects.Add(CommanderSkillWorkshopEffectDraft.FromDefinition(unitEffect));
                     else if (source.Effects[index] is CommanderMarkEffectDefinition markEffect)
                     {
@@ -665,6 +707,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 
         public void LoadGrowth(CommanderSkillGrowthRule rule, bool registered)
         {
+            loadedGrowthJson = rule == null ? string.Empty : JsonUtility.ToJson(rule);
             registerInCatalog = registered;
             if (rule == null)
             {
@@ -675,6 +718,20 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             baseGoldCost = rule.BaseGoldCost;
             goldCostGrowthMultiplier = rule.GoldCostGrowthMultiplier;
             maxLevelEffectMultiplier = rule.GetDamageMultiplier(rule.MaxLevel);
+        }
+
+        public CommanderSkillGrowthRule BuildGrowthRule()
+        {
+            var previous = string.IsNullOrEmpty(loadedGrowthJson) ? null :
+                JsonUtility.FromJson<CommanderSkillGrowthRule>(loadedGrowthJson);
+            var curve = previous != null && previous.MaxLevel == MaxLevel &&
+                Mathf.Approximately(previous.GetDamageMultiplier(MaxLevel), MaxLevelEffectMultiplier)
+                ? previous.CopyDamageCurve()
+                : AnimationCurve.Linear(1f, 1f, MaxLevel, MaxLevelEffectMultiplier);
+            var rule = new CommanderSkillGrowthRule();
+            rule.EditorConfigure(SkillId, MaxLevel, RequiredDuplicateCount, curve, BaseGoldCost, GoldCostGrowthMultiplier);
+            rule.SetSupportCurves(previous?.CopyRatioCurve(), previous?.CopyControlCurve());
+            return rule;
         }
 
         public void LoadSummon(CommanderSkillSummonConfig config, bool registered)

@@ -86,7 +86,7 @@ namespace ProjectMT.Features.Formation
             selectedAction = onSelected;
             collectionRewardAction = null;
             collectionRewardRoot?.SetActive(false);
-            collectionNewBadge?.SetActive(false);
+            SetCollectionNewBadgeActive(false);
             if (portraitImage != null)
             {
                 portraitImage.sprite = definition.Portrait;
@@ -155,7 +155,7 @@ namespace ProjectMT.Features.Formation
             assignmentBadge?.SetActive(false);
             breakthroughReadyBadge?.SetActive(false);
             selectionFrame?.SetActive(false);
-            collectionNewBadge?.SetActive(isCollectionNew);
+            SetCollectionNewBadgeActive(isCollectionNew);
             ApplyOwnershipAlpha(isOwned);
             if (button != null)
             {
@@ -198,7 +198,7 @@ namespace ProjectMT.Features.Formation
             selectedAction = null;
             collectionRewardAction = null;
             collectionRewardRoot?.SetActive(false);
-            collectionNewBadge?.SetActive(false);
+            SetCollectionNewBadgeActive(false);
             if (portraitImage != null)
             {
                 portraitImage.sprite = null;
@@ -354,6 +354,16 @@ namespace ProjectMT.Features.Formation
             if (nameLabel != null)
             {
                 nameLabel.gameObject.SetActive(visible);
+            }
+        }
+
+        private void SetCollectionNewBadgeActive(bool active)
+        {
+            // UnityEngine.Object의 미할당 참조는 C# null 조건 연산자(?.)로 안전하게 걸러지지 않는다.
+            // 도감 전용 배지가 없는 공용 편성 카드는 정상 구성이므로 Unity null 비교를 사용한다.
+            if (collectionNewBadge != null)
+            {
+                collectionNewBadge.SetActive(active);
             }
         }
 

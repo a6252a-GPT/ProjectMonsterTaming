@@ -17,7 +17,7 @@ namespace ProjectMT.Shared.GameData
         Task SaveCurrentAsync();
     }
 
-    public sealed partial class GameDataService : IGameProgressService // 사용자 진행 단일 관리자
+    public sealed partial class GameDataService : IGameProgressService, ICommanderSkillSummonService // 사용자 진행 단일 관리자
     {
         private readonly SaveService saveService; // 저장 직렬화 담당
         private readonly CommanderGrowthConfig commanderGrowthConfig; // 군단장 경험치 곡선
@@ -25,6 +25,7 @@ namespace ProjectMT.Shared.GameData
         private readonly EquipmentBalanceConfig equipmentBalanceConfig; // 잠재능력 수치 범위
         private readonly CommanderSkillBalanceConfig commanderSkillBalanceConfig; // 스킬 성장 SO
         private readonly CommanderSkillSummonConfig commanderSkillSummonConfig; // 스킬 전용 소환 SO
+        private readonly bool hasCommanderSkillConfig;
         private readonly SemaphoreSlim gate = new SemaphoreSlim(1, 1); // 동시 변경 직렬화
         private GameProgressData current = GameProgressData.CreateDefault(); // 현재 확정 데이터
 
@@ -41,6 +42,7 @@ namespace ProjectMT.Shared.GameData
             itemCatalog = catalog;
             equipmentBalanceConfig = equipmentConfig ?? EquipmentBalanceConfig.RuntimeDefault;
             commanderSkillBalanceConfig = skillBalanceConfig ?? CommanderSkillBalanceConfig.RuntimeDefault;
+            hasCommanderSkillConfig = skillBalanceConfig != null;
             commanderSkillSummonConfig = skillSummonConfig ?? CommanderSkillSummonConfig.RuntimeDefault;
         }
 
@@ -55,11 +57,19 @@ namespace ProjectMT.Shared.GameData
             await gate.WaitAsync();
             try
             {
-                current = await saveService.LoadAsync();
-                current.Repair(
+                var loaded = await saveService.LoadAsync();
+                loaded.Repair(
                     commanderGrowthConfig,
                     commanderSkillBalanceConfig,
                     commanderSkillSummonConfig); // 손상 가능한 범위값 보정
+                if (hasCommanderSkillConfig && loaded.NeedsCommanderAwakeningMigration)
+                {
+                    if (!commanderSkillBalanceConfig.TryValidate(out var error) ||
+                        !loaded.TryMigrateCommanderAwakening(commanderSkillBalanceConfig))
+                        throw new InvalidOperationException("군단장 각성 저장 이관 실패: " + error);
+                    await saveService.SaveAsync(loaded);
+                }
+                current = loaded;
                 IsLoaded = true;
             }
             finally
@@ -72,15 +82,25 @@ namespace ProjectMT.Shared.GameData
         }
 
         public async Task<bool> TryApplyAndSaveAsync(GameProgressChange change)
+            => (await ApplyAndSaveCoreAsync(change)).Success;
+
+        public async Task<CommanderSkillSummonReceipt> TrySummonCommanderSkillsAsync(GameProgressChange change)
+        {
+            if (change == null || !change.HasRecordCommanderSkillSummon) return null;
+            return (await ApplyAndSaveCoreAsync(change)).Receipt;
+        }
+
+        private async Task<(bool Success, CommanderSkillSummonReceipt Receipt)> ApplyAndSaveCoreAsync(GameProgressChange change)
         {
             var notifyChanged = false;
+            CommanderSkillSummonReceipt receipt = null;
             await gate.WaitAsync();
             try
             {
                 if (!IsLoaded)
                 {
                     ProjectMT.Shared.Audio.SfxProgressSounds.Notify(change, false);
-                    return false;
+                    return (false, null);
                 }
 
                 var candidate = current.Clone(
@@ -95,7 +115,7 @@ namespace ProjectMT.Shared.GameData
                         commanderSkillSummonConfig))
                 {
                     ProjectMT.Shared.Audio.SfxProgressSounds.Notify(change, false);
-                    return false;
+                    return (false, null);
                 }
 
                 try { await saveService.SaveAsync(candidate); } // 저장 성공을 먼저 확인
@@ -106,6 +126,7 @@ namespace ProjectMT.Shared.GameData
                     throw;
                 }
                 current = candidate; // 성공한 후보만 확정
+                receipt = candidate.CommanderSkillSummonReceipt;
                 notifyChanged = !change.SuppressChangedNotification;
             }
             finally
@@ -119,7 +140,7 @@ namespace ProjectMT.Shared.GameData
                 Changed?.Invoke();
             }
 
-            return true;
+            return (true, receipt);
         }
 
         public async Task SaveCurrentAsync()

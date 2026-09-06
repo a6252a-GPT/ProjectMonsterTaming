@@ -93,10 +93,10 @@
 }
 
 .commander-preview-canvas {
-    flex-grow: 0;
-    height: 250px;
-    min-height: 250px;
-    max-height: 250px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    height: 380px;
+    min-height: 300px;
     border-width: 1px;
     border-color: rgb(22, 25, 30);
     border-radius: 4px;

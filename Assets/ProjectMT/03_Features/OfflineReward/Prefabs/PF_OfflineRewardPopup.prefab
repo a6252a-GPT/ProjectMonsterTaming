@@ -5760,7 +5760,7 @@ GameObject:
   - component: {fileID: 7705309674025047309}
   - component: {fileID: 3045635081665550586}
   m_Layer: 0
-  m_Name: AutoDismantleConfirmButton
+  m_Name: InventoryBlockedConfirmButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9194,7 +9194,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uBC29\uCE58 \uBCF4\uC0C1"
+  m_text: "\uC7A5\uBE44 \uBCF4\uAD00\uD568 \uBD80\uC871"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3718a141c8028064eb11791445f163c4, type: 2}
   m_sharedMaterial: {fileID: 2334897706883836998, guid: 3718a141c8028064eb11791445f163c4, type: 2}
@@ -10888,7 +10888,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8860150839779555376}
   m_Layer: 0
-  m_Name: AutoDismantleNotice
+  m_Name: InventoryBlockedNotice
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -12162,7 +12162,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uBCF4\uC0C1 \uBC1B\uAE30"
+  m_text: "\uD655\uC778"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3718a141c8028064eb11791445f163c4, type: 2}
   m_sharedMaterial: {fileID: 2334897706883836998, guid: 3718a141c8028064eb11791445f163c4, type: 2}
@@ -13232,7 +13232,7 @@ GameObject:
   - component: {fileID: 996196802778192215}
   - component: {fileID: 1440525404059112809}
   m_Layer: 0
-  m_Name: AutoDismantleNoticeText
+  m_Name: InventoryBlockedNoticeText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13658,9 +13658,9 @@ MonoBehaviour:
   adVideoOverlay: {fileID: 0}
   displayRootOverride: {fileID: 0}
   mainPopupRoot: {fileID: 8981827946626641371}
-  autoDismantleNoticeRoot: {fileID: 7056668677230728302}
-  autoDismantleNoticeText: {fileID: 1440525404059112809}
-  autoDismantleNoticeConfirmButton: {fileID: 3045635081665550586}
+  inventoryBlockedNoticeRoot: {fileID: 7056668677230728302}
+  inventoryBlockedNoticeText: {fileID: 1440525404059112809}
+  inventoryBlockedNoticeConfirmButton: {fileID: 3045635081665550586}
 --- !u!1 &8510534710195245427
 GameObject:
   m_ObjectHideFlags: 0

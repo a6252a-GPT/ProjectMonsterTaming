@@ -11,7 +11,7 @@ using UnityEngine.UI;
 namespace ProjectMT.Features.Inventory
 {
     [DisallowMultipleComponent]
-    public sealed class ItemInventoryPageController : MonoBehaviour // 일반 아이템 목록·상세·사용 연결
+    public sealed partial class ItemInventoryPageController : MonoBehaviour // 일반 아이템 목록·상세·사용 연결
     {
         private const string GradeFrameTemplateRootName = "ItemGradeFrameTemplates";
         private const string FrameVariantPrefix = ItemGradeFramePalette.FrameVariantPrefix;
@@ -61,14 +61,15 @@ namespace ProjectMT.Features.Inventory
         [Header("상세 정보")]
         [SerializeField] private GameObject detailItemVisual;
         [SerializeField] private Image detailItemIcon;
+        [SerializeField] private GameObject[] detailGradeFrames = Array.Empty<GameObject>();
         [SerializeField] private TMP_Text rarityText;
         [SerializeField] private TMP_Text ownedCountText;
         [SerializeField] private TMP_Text itemNameText;
         [SerializeField] private TMP_Text itemTypeText;
         [SerializeField] private TMP_Text primaryEffectLabel;
         [SerializeField] private TMP_Text primaryEffectValue;
-        [SerializeField] private TMP_Text optionOneText;
-        [SerializeField] private TMP_Text optionTwoText;
+        [UnityEngine.Serialization.FormerlySerializedAs("optionOneText")]
+        [SerializeField] private TMP_Text usageConditionsText;
         [SerializeField] private TMP_Text descriptionText;
 
         [Header("아이템 행동")]
@@ -122,6 +123,7 @@ namespace ProjectMT.Features.Inventory
                 progress.Changed += HandleProgressChanged;
             }
 
+            ResetInventoryPresentation();
             currentFilter = null;
             selectedItemId = null;
             Refresh();
@@ -150,6 +152,7 @@ namespace ProjectMT.Features.Inventory
             UIPanelPopAnimator.RequestOpen(gameObject);
             inventoryPanel?.SetActive(true);
             Refresh();
+            UpdateSortCaption();
             if (changed)
             {
                 OpenStateChanged?.Invoke(true);
@@ -189,6 +192,7 @@ namespace ProjectMT.Features.Inventory
             inventoryCloseButton.onClick.AddListener(Close);
             detailCloseButton.onClick.AddListener(CloseDetail);
             ConfigureFilterButtons();
+            ConfigureSortDropdown();
             filterButtons[0]?.onClick.AddListener(HandleFilterAll);
             filterButtons[1]?.onClick.AddListener(HandleFilterConsumable);
             filterButtons[2]?.onClick.AddListener(HandleFilterCurrency);
@@ -278,6 +282,7 @@ namespace ProjectMT.Features.Inventory
             visibleEntries = currentFilter.HasValue
                 ? ItemInventoryProjection.Build(progress.View.Items, catalog, currentFilter)
                 : allEntries;
+            visibleEntries = SortVisibleEntries(visibleEntries);
             if (capacityText != null)
             {
                 capacityText.text = $"{allEntries.Count:N0} / {slots.Count:N0}";
@@ -288,6 +293,7 @@ namespace ProjectMT.Features.Inventory
                 if (index < visibleEntries.Count)
                 {
                     slots[index].Bind(visibleEntries[index], ResolveIcon(visibleEntries[index].Definition));
+                    slots[index].SetNew(presentationState.IsNew(visibleEntries[index].Definition.ItemId));
                 }
                 else
                 {
@@ -314,6 +320,8 @@ namespace ProjectMT.Features.Inventory
                 return;
             }
 
+            presentationState.MarkViewed(visibleEntries[index].Definition.ItemId);
+            slots[index].SetNew(false);
             ShowDetail(index, true);
         }
 
@@ -330,6 +338,7 @@ namespace ProjectMT.Features.Inventory
             selectedItemId = definition.ItemId;
             detailPanel.SetActive(true);
             detailItemVisual?.SetActive(true);
+            ApplyDetailGrade(definition.Grade);
             if (detailItemIcon != null)
             {
                 detailItemIcon.sprite = ResolveIcon(definition);
@@ -337,17 +346,22 @@ namespace ProjectMT.Features.Inventory
             }
 
             rarityText.text = $"{GetGradeDisplayName(definition.Grade)} 아이템";
-            ownedCountText.text = $"보유 {entry.Quantity:N0}";
+            ownedCountText.text = definition.Category == ItemCategory.Currency
+                ? $"보유 {entry.Quantity:N0}"
+                : $"보유 {entry.Quantity:N0}개";
             itemNameText.text = definition.DisplayName;
-            itemTypeText.text = GetCategoryLabel(definition.Category);
+            var categoryLabel = definition.Category == ItemCategory.Consumable ? "소비" : GetCategoryLabel(definition.Category);
+            var useState = entry.ShowQuantityGauge ? "여러 개 사용 가능" : definition.IsUsable ? "사용 가능" : "보관";
+            itemTypeText.text = $"{categoryLabel} · {useState}";
             primaryEffectLabel.text = definition.IsUsable ? "사용 효과" : "주요 용도";
-            primaryEffectValue.text = definition.IsUsable ? "사용 시 즉시 적용" : GetCategoryPurpose(definition.Category);
-            optionOneText.text = definition.AllowMultiUse
+            primaryEffectValue.text = GetPrimaryEffectSummary(definition);
+            var useCondition = entry.ShowQuantityGauge
                 ? "여러 개 한 번에 사용 가능"
                 : definition.IsUsable
                     ? "1개씩 사용 가능"
                     : "전용 콘텐츠에서 사용";
-            optionTwoText.text = definition.IsDiscardable ? "버리기 가능" : "버리기 불가";
+            var discardCondition = definition.IsDiscardable ? "버리기 가능" : "버리기 불가";
+            usageConditionsText.text = $"{useCondition}  ·  {discardCondition}";
             descriptionText.text = string.IsNullOrWhiteSpace(definition.Description)
                 ? "아이템 설명이 아직 등록되지 않았습니다."
                 : definition.Description;
@@ -390,6 +404,42 @@ namespace ProjectMT.Features.Inventory
             }
 
             UpdateQuantityText(entry);
+        }
+
+        private void ApplyDetailGrade(ItemGrade grade)
+        {
+            var frameName = ItemGradeFramePalette.GetFrameName(grade);
+            foreach (var frame in detailGradeFrames)
+            {
+                if (frame != null) frame.SetActive(frame.name == frameName);
+            }
+
+            rarityText.color = Color.Lerp(ItemGradeFramePalette.GetColor(grade), new Color32(239, 232, 214, 255), 0.4f);
+        }
+
+        private string GetPrimaryEffectSummary(ItemDefinition definition)
+        {
+            if (!definition.IsUsable)
+            {
+                return GetCategoryPurpose(definition.Category);
+            }
+
+            if (!definition.UseEffect.TryCreateResult(1L, out var result, out _) || result == null)
+            {
+                return "사용 시 즉시 적용";
+            }
+
+            var rewards = result.Rewards; // 실제 효과의 1개당 보상을 표시한다.
+            var summaries = new List<string>();
+            if (rewards.Gold > 0L) summaries.Add($"골드 +{rewards.Gold:N0}");
+            if (rewards.CommanderExperience > 0L) summaries.Add($"경험치 +{rewards.CommanderExperience:N0}");
+            foreach (var reward in rewards.Items)
+            {
+                var label = catalog != null && catalog.TryGet(reward.ItemId, out var item) ? item.DisplayName : "아이템";
+                summaries.Add($"{label} +{reward.Amount:N0}");
+            }
+
+            return summaries.Count == 0 ? "사용 시 즉시 적용" : string.Join(" · ", summaries);
         }
 
         private async void UseSelected()
@@ -554,6 +604,7 @@ namespace ProjectMT.Features.Inventory
 
         private void HandleProgressChanged()
         {
+            if (progress != null) presentationState.Observe(progress.View.Items);
             if (this == null || !isActiveAndEnabled)
             {
                 return;
@@ -609,6 +660,7 @@ namespace ProjectMT.Features.Inventory
 
         private void RemoveUiListeners()
         {
+            sortDropdown?.onValueChanged.RemoveListener(HandleSortChanged);
             inventoryCloseButton?.onClick.RemoveListener(Close);
             detailCloseButton?.onClick.RemoveListener(CloseDetail);
             if (filterButtons != null && filterButtons.Length == FilterCategories.Length)
@@ -765,6 +817,7 @@ namespace ProjectMT.Features.Inventory
             private readonly Image icon;
             private readonly TMP_Text quantity;
             private readonly GameObject selection;
+            private readonly GameObject newBadge;
             private readonly Transform normalArea;
             private readonly GameObject addOne;
             private readonly GameObject addTwo;
@@ -797,6 +850,7 @@ namespace ProjectMT.Features.Inventory
                 icon = itemIcon;
                 quantity = quantityText;
                 selection = selectionRoot;
+                newBadge = FindDescendant(slotRoot.transform, "NewBadge")?.gameObject;
                 normalArea = normalRoot;
                 addOne = addOneRoot;
                 addTwo = addTwoRoot;
@@ -864,12 +918,15 @@ namespace ProjectMT.Features.Inventory
                 lockRoot?.SetActive(false);
                 levelRoot?.SetActive(false);
                 selection.SetActive(false);
+                SetNew(false);
                 ShowEmptyFrame();
                 icon.sprite = null;
                 icon.enabled = false;
                 quantity.text = string.Empty;
                 quantity.gameObject.SetActive(false);
             }
+
+            public void SetNew(bool isNew) => newBadge?.SetActive(isNew);
 
             public void SetSelected(bool selected)
             {

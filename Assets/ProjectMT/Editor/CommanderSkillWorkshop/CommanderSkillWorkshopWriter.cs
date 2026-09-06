@@ -259,8 +259,10 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             var pattern = new CommanderSkillPatternConfig();
             pattern.EditorConfigure(draft.PatternType, draft.RepeatCount, draft.RepeatInterval,
                 draft.PatternDuration, draft.TickInterval, draft.RandomRadius,
-                draft.ChainCount, draft.ChainRadius);
+                draft.ChainCount, draft.ChainRadius, draft.FirstBarrageHitAtTarget);
             definition.EditorConfigureV2(draft.Rarity, pattern);
+            definition.EditorConfigureAutoUse(draft.AutoUseCondition, draft.AutoHealthThreshold);
+            definition.EditorConfigureAwakening(draft.AwakeningStages);
             definition.EditorConfigureFeedbackTransforms(
                 draft.CastVfxLocalOffset,
                 draft.CastVfxLocalEuler,
@@ -361,6 +363,15 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                     source.MarkTriggerDamageMultiplier, source.CooldownRecoveryMultiplier);
                 EditorUtility.SetDirty(modifier);
                 return modifier;
+            }
+            if (source.Kind == CommanderSkillWorkshopEffectKind.Pull)
+            {
+                var pull = GetOrCreateSubAsset<CommanderPullEffectDefinition>(path,
+                    $"{EffectPrefix}{index + 1:00}", owner, keep);
+                pull.EditorConfigure(source.EffectId, source.PullCenter, source.PullDistance, source.PullDuration,
+                    source.PullStopDistance, source.PullMaxTargets);
+                EditorUtility.SetDirty(pull);
+                return pull;
             }
             var unit = GetOrCreateSubAsset<CommanderUnitEffectDefinition>(path,
                 $"{EffectPrefix}{index + 1:00}", owner, keep);
@@ -569,22 +580,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                     .ToList();
                 if (draft.RegisterInCatalog)
                 {
-                    var curve = AnimationCurve.Linear(
-                        1f,
-                        1f,
-                        draft.MaxLevel,
-                        draft.MaxLevelEffectMultiplier);
-                    curve.preWrapMode = WrapMode.ClampForever;
-                    curve.postWrapMode = WrapMode.ClampForever;
-                    var newRule = new CommanderSkillGrowthRule();
-                    newRule.EditorConfigure(
-                        draft.SkillId,
-                        draft.MaxLevel,
-                        draft.RequiredDuplicateCount,
-                        curve,
-                        draft.BaseGoldCost,
-                        draft.GoldCostGrowthMultiplier);
-                    rules.Add(newRule);
+                    rules.Add(draft.BuildGrowthRule());
                 }
 
                 balance.EditorConfigure(rules.ToArray());

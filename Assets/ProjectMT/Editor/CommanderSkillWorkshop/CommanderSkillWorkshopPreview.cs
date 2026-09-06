@@ -9,6 +9,8 @@ using ProjectMT.Shared.Unit;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Playables;
+using ProjectMT.Shared.CommanderSkill;
+using AP = ProjectMT.Features.CommanderSkill.CommanderSkillAwakeningParameter;
 
 namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 {
@@ -63,6 +65,16 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         }
 
         public bool IsPlaying => playing;
+        public int PreviewLevel { get; private set; } = 1;
+        public int PreviewStar { get; private set; }
+        private CommanderSkillGrowthSnapshot Growth { get; set; } = 1f;
+        private float PersistentDuration => Growth.Resolve(AP.Duration, draft.PatternDuration);
+        public void SetProgress(int level, int star)
+        {
+            PreviewLevel = Mathf.Clamp(level, 1, draft?.MaxLevel ?? 200);
+            PreviewStar = Mathf.Clamp(star, 0, 5);
+            Refresh();
+        }
         public bool Looping => looping;
         public int EnvironmentIndex => stage.EnvironmentIndex;
         public string PhaseLabel { get; private set; } = "대기";
@@ -90,6 +102,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             }
 
             var commanderPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CommanderVisualPath);
+            Growth = CommanderSkillGrowthSnapshot.FromRule(draft.BuildGrowthRule(), PreviewLevel).WithAwakening(
+                new CommanderSkillAwakeningSnapshot(PreviewStar > 0 && PreviewStar <= draft.AwakeningStages.Length
+                    ? draft.AwakeningStages[PreviewStar - 1] : null));
             if (commanderPrefab == null)
             {
                 PhaseLabel = "군단장 모델 없음";
@@ -108,7 +123,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 return;
             }
 
-            targetDistance = Mathf.Max(0.1f, draft.TargetRange);
+            targetDistance = Mathf.Max(0.1f, Growth.Resolve(AP.TargetRange, draft.TargetRange));
             target = CreateTarget(new Vector3(0f, 0f, targetDistance));
             rangeMaterial = CreateLineMaterial(
                 draft.Category == CommanderSkillCategory.Buff
@@ -150,20 +165,20 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             impactTime = activationTime + travel;
             patternImpactCount = draft.PatternType switch
             {
-                CommanderSkillPatternType.PersistentArea => Mathf.Max(1, Mathf.CeilToInt(draft.PatternDuration / draft.TickInterval)),
-                CommanderSkillPatternType.Chain => Mathf.Max(1, draft.ChainCount),
-                CommanderSkillPatternType.Burst or CommanderSkillPatternType.Barrage or CommanderSkillPatternType.Pulse => Mathf.Max(1, draft.RepeatCount),
+                CommanderSkillPatternType.PersistentArea => Mathf.Max(1, Mathf.CeilToInt(PersistentDuration / draft.TickInterval)),
+                CommanderSkillPatternType.Chain => Mathf.Max(1, Growth.ResolveCount(AP.ChainCount, draft.ChainCount)),
+                CommanderSkillPatternType.Burst or CommanderSkillPatternType.Barrage or CommanderSkillPatternType.Pulse => Mathf.Max(1, Growth.ResolveCount(AP.RepeatCount, draft.RepeatCount)),
                 _ => 1
             };
             patternImpactInterval = draft.PatternType == CommanderSkillPatternType.PersistentArea
                 ? draft.TickInterval : draft.RepeatInterval;
             playbackEndTime = Mathf.Max(
-                activationTime + Mathf.Max(0.05f, draft.Cooldown),
+                activationTime + Mathf.Max(0.05f, Growth.Resolve(AP.Cooldown, draft.Cooldown)),
                 impactTime + Mathf.Max(0f, patternImpactCount - 1) * patternImpactInterval + Mathf.Max(0.45f, draft.ImpactVfxLifetime),
                 Mathf.Max(0f, draft.CastingVfxLifetime));
             playbackStartedAt = EditorApplication.timeSinceStartup;
             if (draft.PatternType == CommanderSkillPatternType.PersistentArea)
-                playbackEndTime = Mathf.Max(playbackEndTime, activationTime + draft.PatternDuration);
+                playbackEndTime = Mathf.Max(playbackEndTime, activationTime + PersistentDuration);
             lastTickAt = playbackStartedAt;
             playing = true;
             PhaseLabel = activationTime > 0f ? "캐스팅" : "발동";
@@ -280,7 +295,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 draft.ImpactVfxLifetime, deltaTime, ref impactVfxAge);
             UpdateImpactPulse(elapsed - lastImpactAt);
             TickVfx(persistentVfx, activated ? elapsed - activationTime : -1f,
-                draft.PatternDuration, deltaTime, ref persistentVfxAge);
+                PersistentDuration, deltaTime, ref persistentVfxAge);
 
             if (elapsed < activationTime)
             {
@@ -582,7 +597,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                         CreateRing(
                             $"효과 범위 {index + 1:00}",
                             ImpactPosition + Vector3.up * (0.04f + index * 0.012f),
-                            Mathf.Max(0.1f, effect.Radius),
+                            Mathf.Max(0.1f, Growth.Resolve(AP.AreaRadius, effect.Radius, effect.EffectId)),
                             rangeMaterial);
                     }
                 }
@@ -595,10 +610,11 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                     CreateRing("단일 판정", ImpactPosition + Vector3.up * 0.04f, 0.62f, rangeMaterial);
                     break;
                 case MonsterBasicAttackShape.Fan:
-                    CreateFan(Mathf.Max(0.1f, draft.TargetRange), draft.Angle);
+                    CreateFan(Mathf.Max(0.1f, Growth.Resolve(AP.TargetRange, draft.TargetRange)), draft.Angle);
                     break;
                 case MonsterBasicAttackShape.Line:
-                    CreateRectangle(Mathf.Max(0.1f, draft.TargetRange), draft.LineWidth);
+                    CreateRectangle(Mathf.Max(0.1f, Growth.Resolve(AP.TargetRange, draft.TargetRange)),
+                        Growth.Resolve(AP.LineWidth, draft.LineWidth, draft.SkillId + "_damage"));
                     break;
                 default:
                     var center = draft.Center switch
@@ -609,7 +625,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                         _ => ImpactPosition
                     };
                     CreateRing("원형 판정", center + Vector3.up * 0.04f,
-                        Mathf.Max(0.1f, draft.Radius), rangeMaterial);
+                        Mathf.Max(0.1f, Growth.Resolve(AP.AreaRadius, draft.Radius, draft.SkillId + "_damage")), rangeMaterial);
                     break;
             }
         }
@@ -1005,7 +1021,8 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             builder.Append((int)source.PatternType).Append('|')
                 .Append(source.RepeatCount).Append('|').Append(source.RepeatInterval.GetHashCode()).Append('|')
                 .Append(source.PatternDuration.GetHashCode()).Append('|').Append(source.TickInterval.GetHashCode()).Append('|')
-                .Append(source.RandomRadius.GetHashCode()).Append('|').Append(source.ChainCount).Append('|')
+                .Append(source.RandomRadius.GetHashCode()).Append('|').Append(source.FirstBarrageHitAtTarget).Append('|')
+                .Append(source.ChainCount).Append('|')
                 .Append(source.ChainRadius.GetHashCode()).Append('|');
             AppendFeedback(
                 builder,
@@ -1047,6 +1064,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                         .Append(effect.Radius.GetHashCode()).Append('|');
                 }
             }
+            foreach (var stage in source.AwakeningStages) builder.Append(JsonUtility.ToJson(stage));
             return builder.ToString();
         }
 

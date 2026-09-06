@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
+using AP = ProjectMT.Features.CommanderSkill.CommanderSkillAwakeningParameter;
 
 namespace ProjectMT.Features.CommanderSkill
 {
@@ -95,14 +96,14 @@ namespace ProjectMT.Features.CommanderSkill
             CommanderSkillTargetTeam targetTeam,
             UnitActor primaryTarget,
             Vector3 center,
-            float multiplier)
+            CommanderSkillGrowthSnapshot multiplier)
         {
             SkillId = skillId ?? string.Empty;
             Effect = effect;
             TargetTeam = targetTeam;
             PrimaryTarget = primaryTarget;
             Center = center;
-            Multiplier = Mathf.Max(0f, multiplier);
+            Multiplier = multiplier;
         }
 
         public string SkillId { get; }
@@ -110,7 +111,7 @@ namespace ProjectMT.Features.CommanderSkill
         public CommanderSkillTargetTeam TargetTeam { get; }
         public UnitActor PrimaryTarget { get; }
         public Vector3 Center { get; }
-        public float Multiplier { get; }
+        public CommanderSkillGrowthSnapshot Multiplier { get; }
     }
 
     public interface ICommanderSkillCombatGateway // 타기팅·피해 적용 경계
@@ -159,6 +160,9 @@ namespace ProjectMT.Features.CommanderSkill
         }
 
         public UnitActor FindTarget(Vector3 origin, CommanderSkillTargetingDefinition targeting)
+            => FindTarget(origin, targeting, targeting == null ? 0f : targeting.Range, 0f);
+
+        public UnitActor FindTarget(Vector3 origin, CommanderSkillTargetingDefinition targeting, float range, float crowdRadius)
         {
             if (world == null || targeting == null)
             {
@@ -169,7 +173,7 @@ namespace ProjectMT.Features.CommanderSkill
                 ? UnitTeam.Player
                 : UnitTeam.Enemy;
             var collectCount = targeting.Selection == CommanderSkillTargetSelection.Nearest ? 1 : 64;
-            world.CollectUnits(team, origin, targeting.Range, collectCount, targets);
+            world.CollectUnits(team, origin, range, collectCount, targets);
             if (targets.Count == 0 || targeting.Selection == CommanderSkillTargetSelection.Nearest)
             {
                 return targets.Count > 0 ? targets[0] : null;
@@ -199,7 +203,7 @@ namespace ProjectMT.Features.CommanderSkill
                 {
                     CommanderSkillTargetSelection.Strongest => candidate.Health.MaxHealth,
                     CommanderSkillTargetSelection.HighestHealth => ratio,
-                    CommanderSkillTargetSelection.MostCrowded => CountNearby(candidate, team, targeting.Range),
+                    CommanderSkillTargetSelection.MostCrowded => CountNearby(candidate, team, crowdRadius > 0f ? crowdRadius : Mathf.Min(5f, targeting.Range)),
                     _ => ratio
                 };
                 var better = targeting.Selection == CommanderSkillTargetSelection.LowestHealth
@@ -234,7 +238,7 @@ namespace ProjectMT.Features.CommanderSkill
         private int CountNearby(UnitActor candidate, UnitTeam team, float searchRadius)
         {
             nearbyTargets.Clear();
-            world.CollectUnits(team, candidate.transform.position, Mathf.Min(5f, searchRadius), 64, nearbyTargets);
+            world.CollectUnits(team, candidate.transform.position, searchRadius, 64, nearbyTargets);
             return nearbyTargets.Count;
         }
 
@@ -261,25 +265,29 @@ namespace ProjectMT.Features.CommanderSkill
             {
                 ResolveDamageTargets(request, damageTargets);
                 var hitCount = 0;
+                var appliedTargets = new List<UnitActor>(damageTargets.Count);
                 for (var index = 0; index < damageTargets.Count; index++)
                 {
                     var target = damageTargets[index];
-                    if (target?.Health != null && target.Health.ApplyDamage(
+                    if (target?.Health == null || !target.IsAlive || !target.IsCombatReady) continue;
+                    var incomingDamage = target.SkillRuntime.ResolveIncomingDamage(request.Damage, out _);
+                    if (target.Health.ApplyDamage(
                             new DamageRequest(
                                 null,
-                                request.Damage,
+                                incomingDamage,
                                 target.transform.position + Vector3.up * 0.35f,
                                 false,
                                 DamageFeedbackFlags.None,
                                 request.Origin)))
                     {
                         hitCount++;
+                        appliedTargets.Add(target);
                     }
                 }
 
                 // Damaged callbacks may run nested area damage. Restore this impact snapshot afterwards.
                 lastDamageTargets.Clear();
-                lastDamageTargets.AddRange(damageTargets);
+                lastDamageTargets.AddRange(appliedTargets);
                 return hitCount;
             }
             finally
@@ -309,7 +317,8 @@ namespace ProjectMT.Features.CommanderSkill
             }
             else if (request.Effect.Scope == CommanderSkillEffectScope.ImpactTargets)
             {
-                for (var index = 0; index < lastDamageTargets.Count && targets.Count < request.Effect.MaxTargets; index++)
+                for (var index = 0; index < lastDamageTargets.Count && targets.Count <
+                    request.Multiplier.ResolveCount(AP.MaxTargets, request.Effect.MaxTargets, request.Effect.EffectId); index++)
                 {
                     var target = lastDamageTargets[index];
                     if (target != null && target.IsAlive && target.Team == team)
@@ -323,8 +332,8 @@ namespace ProjectMT.Features.CommanderSkill
                 world.CollectUnits(
                     team,
                     request.Center,
-                    request.Effect.Radius,
-                    request.Effect.MaxTargets,
+                    request.Multiplier.Resolve(AP.AreaRadius, request.Effect.Radius, request.Effect.EffectId),
+                    request.Multiplier.ResolveCount(AP.MaxTargets, request.Effect.MaxTargets, request.Effect.EffectId),
                     targets);
             }
 
@@ -413,7 +422,7 @@ namespace ProjectMT.Features.CommanderSkill
             }
 
             var effect = request.Effect;
-            var amount = ResolveEffectAmount(effect, target) * request.Multiplier;
+            var amount = ResolveEffectAmount(effect, target, request.Multiplier);
             var runtimeId = $"commander_{request.SkillId}_{effect.EffectId}";
             switch (effect.EffectType)
             {
@@ -431,41 +440,41 @@ namespace ProjectMT.Features.CommanderSkill
                     }
                     return healed > 0f;
                 case CommanderSkillUnitEffectType.Shield:
-                    target.SkillRuntime.GrantShield(amount, effect.Duration);
+                    target.SkillRuntime.GrantShield(amount, CommanderSkillValueResolver.Duration(effect, request.Multiplier));
                     return true;
                 case CommanderSkillUnitEffectType.AttackBuff:
-                    ApplyStatEffect(target, runtimeId, effect,
+                    ApplyStatEffect(target, runtimeId, effect, request.Multiplier,
                         new MonsterStatModifier(0f, amount, 0f, 0f, 0f, 0f));
                     return true;
                 case CommanderSkillUnitEffectType.DefenseBuff:
-                    ApplyStatEffect(target, runtimeId, effect,
+                    ApplyStatEffect(target, runtimeId, effect, request.Multiplier,
                         new MonsterStatModifier(0f, 0f, amount, 0f, 0f, 0f));
                     return true;
                 case CommanderSkillUnitEffectType.AttackSpeedBuff:
-                    ApplyStatEffect(target, runtimeId, effect,
+                    ApplyStatEffect(target, runtimeId, effect, request.Multiplier,
                         new MonsterStatModifier(0f, 0f, 0f, amount, 0f, 0f));
                     return true;
                 case CommanderSkillUnitEffectType.AttackDebuff:
-                    ApplyStatEffect(target, runtimeId, effect,
+                    ApplyStatEffect(target, runtimeId, effect, request.Multiplier,
                         new MonsterStatModifier(0f, -Mathf.Min(amount, 0.95f), 0f, 0f, 0f, 0f));
                     return true;
                 case CommanderSkillUnitEffectType.DefenseDebuff:
-                    ApplyStatEffect(target, runtimeId, effect,
+                    ApplyStatEffect(target, runtimeId, effect, request.Multiplier,
                         new MonsterStatModifier(0f, 0f, -Mathf.Min(amount, 0.95f), 0f, 0f, 0f));
                     return true;
                 case CommanderSkillUnitEffectType.AttackSpeedDebuff:
-                    ApplyStatEffect(target, runtimeId, effect,
+                    ApplyStatEffect(target, runtimeId, effect, request.Multiplier,
                         new MonsterStatModifier(0f, 0f, 0f, -Mathf.Min(amount, 0.95f), 0f, 0f));
                     return true;
                 case CommanderSkillUnitEffectType.MoveSpeedDebuff:
-                    ApplyStatEffect(target, runtimeId, effect,
+                    ApplyStatEffect(target, runtimeId, effect, request.Multiplier,
                         new MonsterStatModifier(0f, 0f, 0f, 0f, -Mathf.Min(amount, 0.95f), 0f));
                     return true;
                 case CommanderSkillUnitEffectType.DamageReduction:
-                    target.SkillRuntime.ApplyDamageReduction(Mathf.Clamp(amount, 0f, 0.95f), effect.Duration);
+                    target.SkillRuntime.ApplyDamageReduction(Mathf.Clamp(amount, 0f, 0.95f), CommanderSkillValueResolver.Duration(effect, request.Multiplier));
                     return true;
                 case CommanderSkillUnitEffectType.DamageReflect:
-                    target.SkillRuntime.ApplyDamageReflect(Mathf.Clamp01(amount), effect.Duration);
+                    target.SkillRuntime.ApplyDamageReflect(Mathf.Clamp01(amount), CommanderSkillValueResolver.Duration(effect, request.Multiplier));
                     return true;
                 case CommanderSkillUnitEffectType.Cleanse:
                     return target.TryCleanseOneDebuff();
@@ -473,12 +482,12 @@ namespace ProjectMT.Features.CommanderSkill
                     target.SkillRuntime.GrantActiveEnergy(amount);
                     return true;
                 case CommanderSkillUnitEffectType.Slow:
-                    target.ApplyActiveSlow(Mathf.Clamp(amount, 0f, 0.95f), effect.Duration);
+                    target.ApplyActiveSlow(Mathf.Clamp(amount, 0f, 0.95f), CommanderSkillValueResolver.Duration(effect, request.Multiplier));
                     return true;
                 case CommanderSkillUnitEffectType.Stun:
-                    return target.TryApplyActiveStun(effect.Duration);
+                    return target.TryApplyActiveStun(CommanderSkillValueResolver.Duration(effect, request.Multiplier));
                 case CommanderSkillUnitEffectType.Mark:
-                    target.SkillRuntime.ApplyExposure(Mathf.Clamp(amount, 0f, 0.95f), effect.Duration);
+                    target.SkillRuntime.ApplyExposure(Mathf.Clamp(amount, 0f, 0.95f), CommanderSkillValueResolver.Duration(effect, request.Multiplier));
                     return true;
                 case CommanderSkillUnitEffectType.EnergyDrain:
                     target.SkillRuntime.DrainActiveEnergy(amount);
@@ -488,17 +497,17 @@ namespace ProjectMT.Features.CommanderSkill
             }
         }
 
-        private static float ResolveEffectAmount(CommanderUnitEffectDefinition effect, UnitActor target)
+        private static float ResolveEffectAmount(CommanderUnitEffectDefinition effect, UnitActor target, CommanderSkillGrowthSnapshot growth)
         {
             return effect.ValueSource switch
             {
                 CommanderSkillEffectValueSource.TargetMaxHealthRatio =>
-                    target.Health.MaxHealth * effect.Magnitude,
+                    target.Health.MaxHealth * CommanderSkillValueResolver.Magnitude(effect, growth),
                 CommanderSkillEffectValueSource.TargetMissingHealthRatio =>
-                    Mathf.Max(0f, target.Health.MaxHealth - target.Health.CurrentHealth) * effect.Magnitude,
+                    Mathf.Max(0f, target.Health.MaxHealth - target.Health.CurrentHealth) * CommanderSkillValueResolver.Magnitude(effect, growth),
                 CommanderSkillEffectValueSource.TargetEnergyCapacityRatio =>
-                    target.SkillRuntime.EnergyCapacity * effect.Magnitude,
-                _ => effect.Magnitude
+                    target.SkillRuntime.EnergyCapacity * CommanderSkillValueResolver.Magnitude(effect, growth),
+                _ => CommanderSkillValueResolver.Magnitude(effect, growth)
             };
         }
 
@@ -506,9 +515,10 @@ namespace ProjectMT.Features.CommanderSkill
             UnitActor target,
             string runtimeId,
             CommanderUnitEffectDefinition effect,
+            CommanderSkillGrowthSnapshot growth,
             MonsterStatModifier modifier)
         {
-            target.ApplyMonsterBuff(runtimeId, modifier, effect.Duration, effect.StackPolicy);
+            target.ApplyMonsterBuff(runtimeId, modifier, CommanderSkillValueResolver.Duration(effect, growth), effect.StackPolicy);
         }
 
         public void PlaySfx(ProjectMT.Shared.Audio.SfxCue cue, Vector3 position)

@@ -264,9 +264,9 @@ namespace ProjectMT.EditorTools.CommanderSkill
                 var grimoire = CreateImage(stage.transform, "SummonGrimoire", Require<Sprite>(GrimoirePath), Color.white);
                 SetSize(grimoire.rectTransform, new Vector2(-95f, 0f), new Vector2(505f, 505f));
                 grimoire.preserveAspect = true;
-                CreateOrbitSkill(stage.transform, catalog, CommanderSkillIds.Fireball,
+                CreateOrbitSkill(stage.transform, catalog, CommanderSkillIds.Starter,
                     new Vector2(-390f, 72f), Ember);
-                CreateOrbitSkill(stage.transform, catalog, CommanderSkillIds.IceCrystalOrb,
+                CreateOrbitSkill(stage.transform, catalog, "CS_DoomSpear",
                     new Vector2(225f, 120f), Ice);
 
                 var infoCard = CreatePanel(stage.transform, "SummonLevelCard", new Color32(20, 29, 41, 250));
@@ -583,13 +583,13 @@ namespace ProjectMT.EditorTools.CommanderSkill
                 Object.DestroyImmediate(resultRoot.GetChild(index).gameObject);
             }
 
-            if (catalog.TryGet(CommanderSkillIds.Fireball, out var fire))
+            if (catalog.TryGet(CommanderSkillIds.Starter, out var fire))
             {
                 var item = (GameObject)PrefabUtility.InstantiatePrefab(resultPrefab.gameObject, resultRoot);
                 item.GetComponent<CommanderSkillSummonResultItemView>().Bind(fire, 16, false);
             }
 
-            if (catalog.TryGet(CommanderSkillIds.IceCrystalOrb, out var ice))
+            if (catalog.TryGet("CS_DoomSpear", out var ice))
             {
                 var item = (GameObject)PrefabUtility.InstantiatePrefab(resultPrefab.gameObject, resultRoot);
                 item.GetComponent<CommanderSkillSummonResultItemView>().Bind(ice, 14, false);

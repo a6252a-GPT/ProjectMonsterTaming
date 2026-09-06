@@ -26,6 +26,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         private bool dirty;
         private bool showHelp = true;
         private bool suppressCallbacks;
+        private int assemblerBindingVersion;
         private bool rebuildQueued;
         private bool sessionRestored;
         private string searchText = string.Empty;
@@ -325,6 +326,16 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             toolbar.Add(environment);
             panel.Add(toolbar);
 
+            var growthToolbar = new VisualElement { style = { flexDirection = FlexDirection.Row } };
+            var previewLevel = new IntegerField("확인 레벨") { value = preview?.PreviewLevel ?? 1, isDelayed = true };
+            var previewStar = new IntegerField("확인 별") { value = preview?.PreviewStar ?? 0, isDelayed = true };
+            previewLevel.style.flexGrow = 1;
+            previewStar.style.flexGrow = 1;
+            previewLevel.RegisterValueChangedCallback(evt => preview?.SetProgress(evt.newValue, preview.PreviewStar));
+            previewStar.RegisterValueChangedCallback(evt => preview?.SetProgress(preview.PreviewLevel, evt.newValue));
+            growthToolbar.Add(previewLevel);
+            growthToolbar.Add(previewStar);
+            panel.Add(growthToolbar);
             previewCanvas = new IMGUIContainer(DrawPreview);
             previewCanvas.AddToClassList("commander-preview-canvas");
             panel.Add(previewCanvas);
@@ -389,6 +400,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         private void RebuildAssembler()
         {
             if (assemblerScroll == null || draft == null) return;
+            assemblerBindingVersion++;
             suppressCallbacks = true;
             draftSerialized.Update();
             assemblerScroll.Clear();
@@ -403,6 +415,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 
             var flow = Section("2. 공통 실행 흐름", "모든 군단장 스킬은 캐스팅 완료 뒤 발동하고, 발동 성공 뒤 쿨타임을 시작합니다.");
             AddBoundField(flow, "castTime", "캐스팅 시간 (초)");
+            AddBoundField(flow, "autoUseCondition", "AUTO 조건", true);
+            if (draft.AutoUseCondition == CommanderSkillAutoUseCondition.AllyHealthBelow)
+                AddBoundField(flow, "autoHealthThreshold", "아군 체력 비율 미만");
             AddBoundField(flow, "cooldown", "쿨타임 (초)");
             assemblerScroll.Add(flow);
 
@@ -480,16 +495,19 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             AddBoundField(impactFeedback, "impactSound", "사운드 (AudioClip)");
             feedback.Add(impactFeedback);
 
-            var persistentFeedback = new VisualElement();
-            persistentFeedback.AddToClassList("sub-card");
-            persistentFeedback.Add(CardHeader("PersistentArea 지속 연출"));
-            persistentFeedback.Add(Help("PersistentArea 시작 시 1회 생성되고 Pattern 종료 또는 Shutdown 시 반환됩니다."));
-            AddBoundField(persistentFeedback, "persistentVfxPrefab", "VFX Prefab", true);
-            AddBoundField(persistentFeedback, "persistentVfxLocalOffset", "위치 보정");
-            AddBoundField(persistentFeedback, "persistentVfxLocalEuler", "회전 보정");
-            AddBoundField(persistentFeedback, "persistentVfxScale", "크기 배율");
-            AddBoundField(persistentFeedback, "persistentVfxAnchor", "Anchor");
-            feedback.Add(persistentFeedback);
+            if (draft.PatternType == CommanderSkillPatternType.PersistentArea)
+            {
+                var persistentFeedback = new VisualElement();
+                persistentFeedback.AddToClassList("sub-card");
+                persistentFeedback.Add(CardHeader("PersistentArea 지속 연출"));
+                persistentFeedback.Add(Help("PersistentArea 시작 시 1회 생성되고 Pattern 종료 또는 Shutdown 시 반환됩니다."));
+                AddBoundField(persistentFeedback, "persistentVfxPrefab", "VFX Prefab", true);
+                AddBoundField(persistentFeedback, "persistentVfxLocalOffset", "위치 보정");
+                AddBoundField(persistentFeedback, "persistentVfxLocalEuler", "회전 보정");
+                AddBoundField(persistentFeedback, "persistentVfxScale", "크기 배율");
+                AddBoundField(persistentFeedback, "persistentVfxAnchor", "Anchor");
+                feedback.Add(persistentFeedback);
+            }
             assemblerScroll.Add(feedback);
 
             var catalog = new Foldout { text = "6. Catalog · 성장 · 소환 연결", value = true };
@@ -499,7 +517,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             if (draft.RegisterInCatalog)
             {
                 AddBoundField(catalog, "maxLevel", "최대 레벨");
-                AddBoundField(catalog, "requiredDuplicateCount", "각성용 중복 기준 (예약)");
+                catalog.Add(Help("별각성은 공통 비용 1/2/4/8/16개를 사용합니다. 골드 강화는 중복을 소비하지 않습니다."));
                 AddBoundField(catalog, "baseGoldCost", "강화 시작 골드");
                 AddBoundField(catalog, "goldCostGrowthMultiplier", "레벨당 골드 증가율");
                 AddBoundField(catalog, "maxLevelEffectMultiplier", "최대 레벨 효과 배율");
@@ -511,6 +529,11 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 }
             }
             assemblerScroll.Add(catalog);
+            var awakening = new Foldout { text = "7. 별각성 · 단계별 누적 설정", value = false };
+            awakening.AddToClassList("section-card");
+            awakening.Add(Help("1~5성 각각의 누적 결과를 입력합니다. 이전 별의 배율을 다시 곱하지 않습니다. 대상은 Effect ID, Trigger는 각인ID/효과ID입니다."));
+            AddBoundField(awakening, "awakeningStages", "각성 5단계");
+            assemblerScroll.Add(awakening);
 
             suppressCallbacks = false;
             RefreshState();
@@ -615,13 +638,17 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         private void BuildPatternAssembler()
         {
             var pattern = Section("5. 공격 패턴", "Single을 기본으로 반복·장판·연쇄 실행을 데이터로 조립합니다.");
-            AddBoundField(pattern, "patternType", "패턴");
+            AddBoundField(pattern, "patternType", "패턴", true);
             if (draft.PatternType is CommanderSkillPatternType.Burst or CommanderSkillPatternType.Barrage or CommanderSkillPatternType.Pulse)
             {
                 AddBoundField(pattern, "repeatCount", "반복 횟수");
                 AddBoundField(pattern, "repeatInterval", "반복 간격 (초)");
             }
-            if (draft.PatternType == CommanderSkillPatternType.Barrage) AddBoundField(pattern, "randomRadius", "분산 반경 (m)");
+            if (draft.PatternType == CommanderSkillPatternType.Barrage)
+            {
+                AddBoundField(pattern, "randomRadius", "분산 반경 (m)");
+                AddBoundField(pattern, "firstBarrageHitAtTarget", "첫 포격은 중심 확정");
+            }
             if (draft.PatternType == CommanderSkillPatternType.PersistentArea)
             {
                 AddBoundField(pattern, "patternDuration", "지속 시간 (초)");
@@ -692,7 +719,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             var kind = (CommanderSkillWorkshopEffectKind)element.FindPropertyRelative("kind").intValue;
             if (kind == CommanderSkillWorkshopEffectKind.CommanderMark)
             {
-                AddBoundField(card, element.FindPropertyRelative("sharedMarkDefinition"), "공용 Mark Definition");
+                AddBoundField(card, element.FindPropertyRelative("sharedMarkDefinition"), "공용 Mark Definition", true);
                 if (element.FindPropertyRelative("sharedMarkDefinition").objectReferenceValue != null)
                 {
                     card.Add(new HelpBox("공용 Mark 자산을 그대로 참조합니다. 값을 바꾸려면 공용 자산에서 편집하거나 참조를 비우세요.", HelpBoxMessageType.Info));
@@ -721,7 +748,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 AddBoundField(card, element.FindPropertyRelative("scope"), "적용 범위");
                 AddBoundField(card, element.FindPropertyRelative("radius"), "적용/발동 반경 (m)");
                 AddBoundField(card, element.FindPropertyRelative("maxTargets"), "최대 대상 수");
-                AddBoundField(card, element.FindPropertyRelative("markTrigger"), "발동 조건");
+                AddBoundField(card, element.FindPropertyRelative("markTrigger"), "발동 조건", true);
                 var trigger = (CommanderMarkTriggerType)element.FindPropertyRelative("markTrigger").intValue;
                 if (trigger == CommanderMarkTriggerType.HitCount) AddBoundField(card, element.FindPropertyRelative("requiredHits"), "필요 피격 수");
                 if (trigger == CommanderMarkTriggerType.StackReached) AddBoundField(card, element.FindPropertyRelative("requiredStacks"), "필요 스택");
@@ -742,6 +769,17 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 AddMarkFeedbackFoldout(card, element, "onStack", "OnStack");
                 AddMarkFeedbackFoldout(card, element, "onTrigger", "OnTrigger");
                 AddMarkFeedbackFoldout(card, element, "onRemove", "OnRemove");
+                parent.Add(card);
+                return;
+            }
+            if (kind == CommanderSkillWorkshopEffectKind.Pull)
+            {
+                card.Add(Help("첫 타격의 실제 피해 대상만 1회 당깁니다. 레벨·별로 거리/시간이 늘어나지 않습니다. 안전 구역을 모르는 콘텐츠에서는 미적용됩니다."));
+                AddBoundField(card, element.FindPropertyRelative("pullCenter"), "당김 중심");
+                AddBoundField(card, element.FindPropertyRelative("pullDistance"), "최대 거리 (m)");
+                AddBoundField(card, element.FindPropertyRelative("pullDuration"), "이동 시간 (초)");
+                AddBoundField(card, element.FindPropertyRelative("pullStopDistance"), "중심 여유거리 (m)");
+                AddBoundField(card, element.FindPropertyRelative("pullMaxTargets"), "최대 대상");
                 parent.Add(card);
                 return;
             }
@@ -1162,6 +1200,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         private void NewDraft(CommanderSkillCategory category)
         {
             if (!ResolveUnsavedChanges()) return;
+            assemblerBindingVersion++;
             loaded = null;
             draft.ResetDraft(category);
             draftSerialized.Update();
@@ -1176,6 +1215,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         private void LoadAsset(CommanderSkillDefinition asset)
         {
             if (asset == null || asset == loaded || !ResolveUnsavedChanges()) return;
+            assemblerBindingVersion++;
             loaded = asset;
             draft.Load(asset);
             LoadRegistrationSettings(asset);
@@ -1203,6 +1243,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             }
 
             loaded = result.Asset;
+            assemblerBindingVersion++;
             draft.Load(loaded);
             LoadRegistrationSettings(loaded);
             draftSerialized.Update();
@@ -1294,13 +1335,14 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         {
             if (property == null) return;
             var path = property.propertyPath;
+            var bindingVersion = assemblerBindingVersion;
             var lastValue = SerializedValueSignature(property);
             var field = new PropertyField(property.Copy(), label);
             field.AddToClassList("editor-field");
             field.Bind(draftSerialized);
             field.RegisterCallback<SerializedPropertyChangeEvent>(_ =>
             {
-                if (suppressCallbacks) return;
+                if (suppressCallbacks || bindingVersion != assemblerBindingVersion) return;
                 draftSerialized.ApplyModifiedProperties();
                 var liveProperty = draftSerialized.FindProperty(path);
                 var nextValue = SerializedValueSignature(liveProperty);
@@ -1329,6 +1371,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 
             return property.propertyType switch
             {
+                SerializedPropertyType.Generic => property.contentHash.ToString(),
                 SerializedPropertyType.Integer => $"i:{property.longValue}",
                 SerializedPropertyType.Boolean => $"b:{property.boolValue}",
                 SerializedPropertyType.Float => $"f:{property.doubleValue:R}",
@@ -1388,9 +1431,10 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             var popup = new PopupField<string>(label, choices, selectedIndex);
             popup.AddToClassList("editor-field");
             var path = property.propertyPath;
+            var bindingVersion = assemblerBindingVersion;
             popup.RegisterValueChangedCallback(evt =>
             {
-                if (suppressCallbacks) return;
+                if (suppressCallbacks || bindingVersion != assemblerBindingVersion) return;
                 var nextIndex = choices.IndexOf(evt.newValue);
                 if (nextIndex < 0) return;
                 draftSerialized.Update();
@@ -1486,6 +1530,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 
         public override void DiscardChanges()
         {
+            assemblerBindingVersion++;
             if (loaded != null)
             {
                 draft.Load(loaded);

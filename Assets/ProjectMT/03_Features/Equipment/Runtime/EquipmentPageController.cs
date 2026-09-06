@@ -54,6 +54,7 @@ namespace ProjectMT.Features.Equipment
             public Image Frame;
             public Image Icon;
             public TMP_Text LevelText;
+            public SlotView InventoryView;
         }
 
         [SerializeField] private EquipmentCatalog catalog;
@@ -167,6 +168,7 @@ namespace ProjectMT.Features.Equipment
             BuildFilterButtons();
             BuildSortButton();
             BuildInventorySlots();
+            BuildDismantlePreviewList();
             BuildEquipButton();
             BuildDismantleControls();
             BuildLockButton();
@@ -251,10 +253,10 @@ namespace ProjectMT.Features.Equipment
             offlineAutoDismantleSettingsPanel =
                 FindDeep(equipmentPageRoot, "PF_OfflineAutoDismantleSettingsPopup")
                     ?.GetComponent<OfflineAutoDismantleSettingsPanelController>();
-            dismantleConfirmRoot = FindDeep(transform, "DismantleConfirmRoot")?.gameObject;
-            dismantleConfirmSummaryText = FindDeep(transform, "DismantleConfirmSummary")?.GetComponent<TMP_Text>();
-            dismantleConfirmCancelButton = FindDeep(transform, "DismantleConfirmCancelButton")?.GetComponent<Button>();
-            dismantleConfirmAcceptButton = FindDeep(transform, "DismantleConfirmAcceptButton")?.GetComponent<Button>();
+            dismantleConfirmRoot = FindDeep(equipmentPageRoot, "DismantleConfirmRoot")?.gameObject;
+            dismantleConfirmSummaryText = FindDeep(equipmentPageRoot, "DismantleConfirmSummary")?.GetComponent<TMP_Text>();
+            dismantleConfirmCancelButton = FindDeep(equipmentPageRoot, "DismantleConfirmCancelButton")?.GetComponent<Button>();
+            dismantleConfirmAcceptButton = FindDeep(equipmentPageRoot, "DismantleConfirmAcceptButton")?.GetComponent<Button>();
 
             dismantlePreviewSlots.Clear();
             for (var index = 1; index <= 8; index++)

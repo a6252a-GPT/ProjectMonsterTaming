@@ -14,8 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderAttackSkillDefinition
   skillId: CS_PhantomCharge
   displayName: "\uAD70\uC138\uC758 \uB3CC\uC9C4"
-  description: "SkillMaker V2 \uCD9C\uC2DC \uD6C4\uBCF4 12\uC885 \uB370\uC774\uD130
-    \uC870\uD569 \uC2A4\uD0AC."
+  description: "\uC801\uC774 \uAC00\uC7A5 \uBC00\uC9D1\uD55C \uC804\uC5F4\uC744 \uC720\uB839
+    \uAD70\uC138\uAC00 3\uD68C \uAD00\uD1B5\uD569\uB2C8\uB2E4. \uCCAB \uB3CC\uC9C4\uC5D0
+    \uB9DE\uC740 \uC801 \uCD5C\uB300 4\uBA85\uC744 \uAD70\uB2E8\uC7A5 \uCABD\uC73C\uB85C
+    \uC870\uAE08 \uB04C\uC5B4\uC624\uBA70, Collapse\uAC00 3\uD68C \uC313\uC774\uBA74
+    0.45\uCD08 \uB3D9\uC548 \uAE30\uC808\uC2DC\uD0B5\uB2C8\uB2E4."
   icon: {fileID: 1024665381041859922, guid: 233ff8c61c9602a4aa9adfc4fccc0845, type: 3}
   rarity: 1
   castTime: 0
@@ -24,6 +27,7 @@ MonoBehaviour:
   effects:
   - {fileID: 2863745301370601799}
   - {fileID: 11400000, guid: 4b83151af65a8164caaa87635875ea2f, type: 2}
+  - {fileID: 856629804871040826}
   pattern:
     type: 1
     repeatCount: 3
@@ -31,28 +35,89 @@ MonoBehaviour:
     duration: 1
     tickInterval: 1
     randomRadius: 0
+    firstBarrageHitAtTarget: 0
     chainCount: 1
     chainRadius: 4
+  autoUseCondition: 0
+  awakeningStages:
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.97
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: CS_PhantomCharge_damage
+      parameter: 6
+      operation: 1
+      value: 1.15
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.9
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: CS_PhantomCharge_damage
+      parameter: 6
+      operation: 1
+      value: 1.15
+  - modifiers:
+    - targetEffectId: 
+      parameter: 0
+      operation: 1
+      value: 0.9
+    - targetEffectId: 
+      parameter: 1
+      operation: 1
+      value: 1.1
+    - targetEffectId: CS_PhantomCharge_damage
+      parameter: 6
+      operation: 1
+      value: 1.15
+    - targetEffectId: 
+      parameter: 2
+      operation: 0
+      value: 1
+  autoHealthThreshold: 0.85
   castingVfxPrefab: {fileID: 0}
-  castingVfxLifetime: 1
+  castingVfxLifetime: 0.3
   castingVfxLocalOffset: {x: 0, y: 0, z: 0}
   castingVfxLocalEuler: {x: 0, y: 0, z: 0}
   castingVfxScale: 1
   castingSfx: {fileID: 0}
-  castVfxPrefab: {fileID: 4497473641098484015, guid: b2e4dc7e90fe6054884f2daf9aba3555, type: 3}
-  castVfxLifetime: 1
+  castVfxPrefab: {fileID: 1668091376664060580, guid: 2a07b51076413d142bfc8a6bfb15600f, type: 3}
+  castVfxLifetime: 0.8
   castVfxLocalOffset: {x: 0, y: 0, z: 0}
   castVfxLocalEuler: {x: 0, y: 0, z: 0}
   castVfxScale: 1
   castSfx: {fileID: 11400000, guid: 1306efe48e423b44480c4333a269e927, type: 2}
-  impactVfxPrefab: {fileID: 28645335478572135, guid: 1b3378dd7b3b66a41a5d026c18ff9b2d, type: 3}
-  impactVfxLifetime: 1.5
-  impactVfxLocalOffset: {x: 0, y: 0, z: 0}
+  impactVfxPrefab: {fileID: 6723572984881174042, guid: 7fd618deba6543244acd46d02e5bdd62, type: 3}
+  impactVfxLifetime: 1.1
+  impactVfxLocalOffset: {x: 0, y: -0.36, z: 0}
   impactVfxLocalEuler: {x: 0, y: 0, z: 0}
-  impactVfxScale: 1
+  impactVfxScale: 0.6
   impactSfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
   persistentVfxPrefab: {fileID: 0}
-  persistentVfxLocalOffset: {x: 0, y: 0, z: 0}
+  persistentVfxLocalOffset: {x: 0, y: 0.08, z: 0}
   persistentVfxLocalEuler: {x: 0, y: 0, z: 0}
   persistentVfxScale: 1
   persistentVfxAnchor: 4
@@ -61,6 +126,24 @@ MonoBehaviour:
   projectileSpeed: 16
   trajectory: 0
   arcHeight: 0
+--- !u!114 &856629804871040826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6486737a8c0324248a474767f643b881, type: 3}
+  m_Name: __Effect_WeakPull
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderPullEffectDefinition
+  effectId: CS_PhantomCharge_pull
+  center: 1
+  distance: 0.6
+  duration: 0.2
+  stopDistance: 2
+  maxTargets: 4
 --- !u!114 &2281678628595596528
 MonoBehaviour:
   m_ObjectHideFlags: 1

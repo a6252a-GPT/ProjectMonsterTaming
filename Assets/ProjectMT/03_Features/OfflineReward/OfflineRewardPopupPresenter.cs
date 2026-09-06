@@ -52,9 +52,9 @@ namespace ProjectMT.Features.OfflineReward
         [SerializeField] private RewardedAdVideoOverlaySelector adVideoOverlay; // 영상별로 나뉜 AdVideoOverlay 중 하나를 골라 재생
         [SerializeField] private GameObject displayRootOverride;
         [SerializeField] private GameObject mainPopupRoot;
-        [SerializeField] private GameObject autoDismantleNoticeRoot;
-        [SerializeField] private TMP_Text autoDismantleNoticeText;
-        [SerializeField] private Button autoDismantleNoticeConfirmButton;
+        [SerializeField] private GameObject inventoryBlockedNoticeRoot;
+        [SerializeField] private TMP_Text inventoryBlockedNoticeText;
+        [SerializeField] private Button inventoryBlockedNoticeConfirmButton;
 
         private readonly List<OfflineRewardItemSlotView> rewardSlots = new List<OfflineRewardItemSlotView>();
         private readonly Dictionary<string, GameObject> frameVariantTemplates = new Dictionary<string, GameObject>();
@@ -129,8 +129,8 @@ namespace ProjectMT.Features.OfflineReward
             claimButton?.onClick.AddListener(HandleClaimClicked);
             closeButton?.onClick.RemoveListener(HandleClaimClicked);
             closeButton?.onClick.AddListener(HandleClaimClicked);
-            autoDismantleNoticeConfirmButton?.onClick.RemoveListener(HandleNoticeConfirmed);
-            autoDismantleNoticeConfirmButton?.onClick.AddListener(HandleNoticeConfirmed);
+            inventoryBlockedNoticeConfirmButton?.onClick.RemoveListener(HandleInventoryBlockedConfirmed);
+            inventoryBlockedNoticeConfirmButton?.onClick.AddListener(HandleInventoryBlockedConfirmed);
 
             DisplayRoot.SetActive(false);
         }
@@ -193,18 +193,8 @@ namespace ProjectMT.Features.OfflineReward
             UIButtonClickSound.EnsureOn(closeButton?.gameObject);
 
             SetCombatDisplaySuppressed(true);
-            var showNotice = presentation.AutoDismantledEquipmentCount > 0 &&
-                             autoDismantleNoticeRoot != null;
-            mainPopupRoot?.SetActive(!showNotice);
-            autoDismantleNoticeRoot?.SetActive(showNotice);
-            if (showNotice)
-            {
-                Set(
-                    autoDismantleNoticeText,
-                    "인벤토리가 가득 차 낮은 등급 장비가 자동 분해되었습니다.\n" +
-                    $"분해 {presentation.AutoDismantledEquipmentCount:N0}개 · " +
-                    $"장비 슬롯 강화석 +{presentation.AutoDismantleUpgradeStone:N0}");
-            }
+            mainPopupRoot?.SetActive(true);
+            inventoryBlockedNoticeRoot?.SetActive(false); // 정상 자동분해는 본창 요약으로 바로 표시
             SetActionButtonsLocked(false); // 새 영수증을 띄울 때마다 그냥받기·2배받기 모두 밝게 초기화
             RefreshAdRewardAvailability();
             if (closeButton != null)
@@ -224,8 +214,8 @@ namespace ProjectMT.Features.OfflineReward
             UIPanelPopAnimator.RequestOpen(DisplayRoot, UIPanelPopStyle.RewardPopup);
             MobileSafeAreaCanvasFitter.Ensure(DisplayRoot);
             mainPopupRoot?.SetActive(false);
-            autoDismantleNoticeRoot?.SetActive(true);
-            Set(autoDismantleNoticeText,
+            inventoryBlockedNoticeRoot?.SetActive(true);
+            Set(inventoryBlockedNoticeText,
                 "장비 보관함에 공간이 부족합니다.\n" +
                 "보관함을 정리하면 같은 방치 보상을 다시 정산합니다.\n" +
                 "보호 장비와 보상은 유지됩니다.");
@@ -236,27 +226,25 @@ namespace ProjectMT.Features.OfflineReward
         {
             if (inventoryBlockedNotice)
             {
-                HandleNoticeConfirmed();
+                HandleInventoryBlockedConfirmed();
                 return;
             }
 
             HandleClaimClicked();
         }
 
-        private void HandleNoticeConfirmed()
+        private void HandleInventoryBlockedConfirmed()
         {
-            if (inventoryBlockedNotice)
+            if (!inventoryBlockedNotice)
             {
-                inventoryBlockedNotice = false;
-                var closed = inventoryBlockedClosed;
-                inventoryBlockedClosed = null;
-                SetCombatDisplaySuppressed(false);
-                UIPanelPopAnimator.RequestClose(DisplayRoot, () => closed?.Invoke());
                 return;
             }
 
-            autoDismantleNoticeRoot?.SetActive(false);
-            mainPopupRoot?.SetActive(true);
+            inventoryBlockedNotice = false;
+            var closed = inventoryBlockedClosed;
+            inventoryBlockedClosed = null;
+            SetCombatDisplaySuppressed(false);
+            UIPanelPopAnimator.RequestClose(DisplayRoot, () => closed?.Invoke());
         }
 
         private void Bind(OfflineRewardPresentation presentation)
@@ -847,9 +835,9 @@ namespace ProjectMT.Features.OfflineReward
             Button claim,
             Button close,
             GameObject popupRoot,
-            GameObject dismantleNotice,
-            TMP_Text dismantleNoticeText,
-            Button dismantleNoticeConfirm)
+            GameObject inventoryBlockedRoot,
+            TMP_Text inventoryBlockedText,
+            Button inventoryBlockedConfirm)
         {
             timeText = offlineTime;
             stageText = basisStage;
@@ -877,9 +865,9 @@ namespace ProjectMT.Features.OfflineReward
             claimButton = claim;
             closeButton = close;
             mainPopupRoot = popupRoot;
-            autoDismantleNoticeRoot = dismantleNotice;
-            autoDismantleNoticeText = dismantleNoticeText;
-            autoDismantleNoticeConfirmButton = dismantleNoticeConfirm;
+            inventoryBlockedNoticeRoot = inventoryBlockedRoot;
+            inventoryBlockedNoticeText = inventoryBlockedText;
+            inventoryBlockedNoticeConfirmButton = inventoryBlockedConfirm;
         }
 #endif
     }

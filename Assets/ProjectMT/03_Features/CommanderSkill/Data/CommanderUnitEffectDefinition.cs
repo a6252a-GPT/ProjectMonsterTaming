@@ -27,7 +27,8 @@ namespace ProjectMT.Features.CommanderSkill
     public enum CommanderSkillEffectScope
     {
         PrimaryTarget,
-        Area
+        Area,
+        ImpactTargets
     }
 
     public enum CommanderSkillEffectValueSource

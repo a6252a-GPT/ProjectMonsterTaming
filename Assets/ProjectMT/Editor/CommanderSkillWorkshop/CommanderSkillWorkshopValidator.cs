@@ -49,6 +49,12 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 result.Errors.Add("대상 탐색 거리는 1m 이상이어야 합니다.");
             }
 
+            var pattern = new CommanderSkillPatternConfig();
+            pattern.EditorConfigure(draft.PatternType, draft.RepeatCount, draft.RepeatInterval,
+                draft.PatternDuration, draft.TickInterval, draft.RandomRadius,
+                draft.ChainCount, draft.ChainRadius);
+            if (!pattern.TryValidate(out var patternError)) result.Errors.Add($"공격 패턴 값이 유효하지 않습니다: {patternError}");
+
             if (draft.Category == CommanderSkillCategory.Attack)
             {
                 ValidateAttack(draft, result);
@@ -76,7 +82,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 !IsFiniteVector(draft.CastVfxLocalOffset) || !IsFiniteVector(draft.CastVfxLocalEuler) ||
                 !IsFiniteVector(draft.ImpactVfxLocalOffset) || !IsFiniteVector(draft.ImpactVfxLocalEuler) ||
                 !IsFinitePositive(draft.CastingVfxScale) || !IsFinitePositive(draft.CastVfxScale) ||
-                !IsFinitePositive(draft.ImpactVfxScale))
+                !IsFinitePositive(draft.ImpactVfxScale) ||
+                !IsFiniteVector(draft.PersistentVfxLocalOffset) || !IsFiniteVector(draft.PersistentVfxLocalEuler) ||
+                !IsFinitePositive(draft.PersistentVfxScale))
             {
                 result.Errors.Add("VFX 위치·회전·크기 값이 유효하지 않습니다.");
             }
@@ -121,14 +129,18 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 result.Errors.Add("공격형은 적 진영을 대상으로 해야 합니다.");
             }
             if (draft.DeliveryModule is not MonsterBasicAttackDeliveryModule.Direct and
-                not MonsterBasicAttackDeliveryModule.Projectile)
+                not MonsterBasicAttackDeliveryModule.Projectile and
+                not MonsterBasicAttackDeliveryModule.TravelingArea)
             {
-                result.Errors.Add("1차 군단장 공격 전달은 즉시 판정 또는 투사체만 지원합니다.");
+                result.Errors.Add("군단장 공격 전달 방식이 유효하지 않습니다.");
             }
             if (!IsFiniteNonNegative(draft.BaseDamage) || draft.BaseDamage <= 0f)
             {
                 result.Errors.Add("공격 피해는 0보다 커야 합니다.");
             }
+            if (!IsFiniteNonNegative(draft.PerHitMultiplier)) result.Errors.Add("타격 배율은 0 이상의 유한한 값이어야 합니다.");
+
+            ValidateEffects(draft, result, false);
             if (!Enum.IsDefined(typeof(MonsterBasicAttackShape), draft.Shape))
             {
                 result.Errors.Add("공격 판정 모양이 유효하지 않습니다.");
@@ -184,16 +196,14 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 return;
             }
 
-            var expectedTeam = draft.Category == CommanderSkillCategory.Buff
-                ? CommanderSkillTargetTeam.Ally
-                : CommanderSkillTargetTeam.Enemy;
-            if (draft.TargetTeam != expectedTeam)
-            {
-                result.Errors.Add("효과 분류와 대상 진영이 일치하지 않습니다.");
-            }
+            ValidateEffects(draft, result, true);
+        }
+
+        private static void ValidateEffects(CommanderSkillWorkshopDraft draft, CommanderSkillWorkshopValidation result, bool requireAny)
+        {
             if (draft.Effects == null || draft.Effects.Count == 0 || draft.Effects.Count > 8)
             {
-                result.Errors.Add("효과 카드는 1~8개여야 합니다.");
+                if (requireAny) result.Errors.Add("효과 카드는 1~8개여야 합니다.");
                 return;
             }
 
@@ -210,9 +220,53 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 {
                     result.Errors.Add($"효과 {index + 1}의 ID가 비었거나 중복되었습니다.");
                 }
-                if (!CommanderUnitEffectDefinition.IsCompatible(draft.Category, effect.EffectType))
+                if (effect.Kind == CommanderSkillWorkshopEffectKind.CommanderMark)
                 {
-                    result.Errors.Add($"효과 {index + 1}은 {draft.Category} 분류에서 사용할 수 없습니다.");
+                    if (effect.SharedMarkDefinition != null)
+                    {
+                        if (!effect.SharedMarkDefinition.TryValidate(out var sharedError))
+                            result.Errors.Add($"공용 각인 {index + 1}이 유효하지 않습니다: {sharedError}");
+                        continue;
+                    }
+                    if (!UsesSafeId(effect.MarkId)) result.Errors.Add($"각인 {index + 1}의 Mark ID가 유효하지 않습니다.");
+                    if (!IsFinitePositive(effect.Duration) || effect.RequiredHits < 1 || effect.RequiredStacks < 1 ||
+                        effect.MarkMaxStacks < effect.RequiredStacks || !IsFiniteNonNegative(effect.TriggerCooldown) ||
+                        !IsFiniteNonNegative(effect.TriggerDamage) || !IsFiniteNonNegative(effect.TriggerPerHitMultiplier))
+                        result.Errors.Add($"각인 {index + 1}의 지속·조건·발동 피해 값이 유효하지 않습니다.");
+                    ValidateFeedback(effect.OnApply, index, "OnApply", result);
+                    ValidateFeedback(effect.Loop, index, "Loop", result);
+                    ValidateFeedback(effect.OnStack, index, "OnStack", result);
+                    ValidateFeedback(effect.OnTrigger, index, "OnTrigger", result);
+                    ValidateFeedback(effect.OnRemove, index, "OnRemove", result);
+                    if (effect.TriggerEffects.Count > 8)
+                        result.Errors.Add($"각인 {index + 1}의 Trigger Effect는 최대 8개입니다.");
+                    var triggerIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    for (var triggerIndex = 0; triggerIndex < effect.TriggerEffects.Count; triggerIndex++)
+                        ValidateTriggerEffect(effect.TriggerEffects[triggerIndex], index, triggerIndex,
+                            triggerIds, result);
+                    continue;
+                }
+                if (effect.Kind == CommanderSkillWorkshopEffectKind.AreaDamage)
+                {
+                    if (!IsFiniteNonNegative(effect.BaseDamage) || !IsFiniteNonNegative(effect.PerHitMultiplier) ||
+                        !IsFinitePositive(effect.Radius) || effect.MaxTargets < 1)
+                        result.Errors.Add($"피해 효과 {index + 1}의 피해·범위 값이 유효하지 않습니다.");
+                    continue;
+                }
+                if (effect.Kind == CommanderSkillWorkshopEffectKind.RecordedHitDamage)
+                {
+                    if (!IsFiniteNonNegative(effect.RecordedBaseMultiplier) ||
+                        !IsFiniteNonNegative(effect.RecordedMultiplierPerHit) || effect.MaximumRecordedHits < 0)
+                        result.Errors.Add($"기록 피해 {index + 1}의 배율 또는 최대 기록 수가 유효하지 않습니다.");
+                    continue;
+                }
+                if (effect.Kind == CommanderSkillWorkshopEffectKind.GlobalModifier)
+                {
+                    if (!IsFinitePositive(effect.Duration) || !IsFinitePositive(effect.MarkRequiredHitsMultiplier) ||
+                        !IsFinitePositive(effect.MarkTriggerDamageMultiplier) ||
+                        !IsFinitePositive(effect.CooldownRecoveryMultiplier))
+                        result.Errors.Add($"전역 Modifier {index + 1}의 지속시간 또는 배율이 유효하지 않습니다.");
+                    continue;
                 }
                 if (!CommanderUnitEffectDefinition.IsValueSourceCompatible(
                         effect.EffectType,
@@ -247,6 +301,52 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             }
         }
 
+        private static void ValidateTriggerEffect(CommanderSkillWorkshopEffectDraft effect, int markIndex,
+            int triggerIndex, HashSet<string> ids, CommanderSkillWorkshopValidation result)
+        {
+            var label = $"각인 {markIndex + 1} Trigger {triggerIndex + 1}";
+            if (effect == null) { result.Errors.Add($"{label}이 비어 있습니다."); return; }
+            if (!UsesSafeId(effect.EffectId) || !ids.Add(effect.EffectId))
+                result.Errors.Add($"{label}의 ID가 비었거나 중복되었습니다.");
+            if (effect.Kind == CommanderSkillWorkshopEffectKind.AreaDamage)
+            {
+                if (!IsFiniteNonNegative(effect.BaseDamage) || !IsFiniteNonNegative(effect.PerHitMultiplier) ||
+                    !IsFinitePositive(effect.Radius) || effect.MaxTargets < 1)
+                    result.Errors.Add($"{label}의 피해·범위 값이 유효하지 않습니다.");
+                return;
+            }
+            if (effect.Kind == CommanderSkillWorkshopEffectKind.RecordedHitDamage)
+            {
+                if (!IsFiniteNonNegative(effect.RecordedBaseMultiplier) ||
+                    !IsFiniteNonNegative(effect.RecordedMultiplierPerHit) || effect.MaximumRecordedHits < 0)
+                    result.Errors.Add($"{label}의 기록 피해 값이 유효하지 않습니다.");
+                return;
+            }
+            if (effect.Kind != CommanderSkillWorkshopEffectKind.UnitEffect)
+            {
+                result.Errors.Add($"{label}에는 Damage, UnitEffect, RecordedHitDamage만 사용할 수 있습니다.");
+                return;
+            }
+            if (!CommanderUnitEffectDefinition.IsValueSourceCompatible(effect.EffectType, effect.ValueSource) ||
+                !IsFiniteNonNegative(effect.Magnitude) ||
+                (effect.EffectType is not CommanderSkillUnitEffectType.Cleanse and
+                 not CommanderSkillUnitEffectType.Stun && effect.Magnitude <= 0f))
+                result.Errors.Add($"{label}의 상태 효과 값이 유효하지 않습니다.");
+            if (CommanderUnitEffectDefinition.RequiresDuration(effect.EffectType) &&
+                !IsFinitePositive(effect.Duration))
+                result.Errors.Add($"{label}은 0초보다 긴 지속 시간이 필요합니다.");
+        }
+
+        private static void ValidateFeedback(CommanderMarkFeedbackDraft feedback, int index, string slot,
+            CommanderSkillWorkshopValidation result)
+        {
+            if (feedback == null) return;
+            if (feedback.VfxPrefab == null && feedback.Sound == null && feedback.SfxSource == null) return;
+            if (!IsFinitePositive(feedback.Lifetime) || !IsFinitePositive(feedback.Scale) ||
+                !IsFiniteVector(feedback.LocalOffset) || !IsFiniteVector(feedback.LocalEuler))
+                result.Errors.Add($"각인 {index + 1}의 {slot} 피드백 값이 유효하지 않습니다.");
+        }
+
         private static bool UsesSafeId(string value)
         {
             if (string.IsNullOrWhiteSpace(value) || value.Length > 64)
@@ -257,6 +357,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             {
                 var character = value[index];
                 if (!(character is >= 'a' and <= 'z') &&
+                    !(character is >= 'A' and <= 'Z') &&
                     !(character is >= '0' and <= '9') && character != '_')
                 {
                     return false;

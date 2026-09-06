@@ -3,7 +3,6 @@ using System.Linq;
 using NUnit.Framework;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace ProjectMT.Contents.CastleRaidHex.Tests
 {
@@ -26,7 +25,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
         }
 
         [Test]
-        public void OpenCell_HasNoHealthColliderOrObstacle()
+        public void OpenCell_HasNoHealthOrCollider()
         {
             var cell = new HexCastleCell(new HexCoordinates(1, 0), HexCastleCellKind.Ground);
             var runtime = CreateRuntime(cell);
@@ -35,7 +34,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
             Assert.That(runtime.IsDamageable, Is.False);
             Assert.That(runtime.Health, Is.Null);
             Assert.That(runtime.FootprintCollider, Is.Null);
-            Assert.That(runtime.NavigationObstacle, Is.Null);
         }
 
         [Test]
@@ -107,7 +105,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
             Assert.That(first.IsDestroyed, Is.True);
             Assert.That(first.IsBlocked, Is.False);
             Assert.That(first.FootprintCollider.enabled, Is.False);
-            Assert.That(first.NavigationObstacle.enabled, Is.False);
             Assert.That(first.TileVisualRoot.gameObject.activeSelf, Is.True);
             Assert.That(first.ContentVisualRoot.gameObject.activeSelf, Is.False);
             Assert.That(second.IsDestroyed, Is.False);
@@ -155,10 +152,8 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
             Assert.That(runtime.GetComponents<HexCastleCellRuntime>().Length, Is.EqualTo(1));
             Assert.That(runtime.GetComponents<HealthComponent>().Length, Is.EqualTo(1));
             Assert.That(runtime.GetComponents<Collider>().Length, Is.EqualTo(1));
-            Assert.That(runtime.GetComponents<NavMeshObstacle>().Length, Is.EqualTo(1));
             Assert.That(runtime.ContentVisualRoot.GetComponentsInChildren<HealthComponent>(true), Is.Empty);
             Assert.That(runtime.ContentVisualRoot.GetComponentsInChildren<Collider>(true), Is.Empty);
-            Assert.That(runtime.ContentVisualRoot.GetComponentsInChildren<NavMeshObstacle>(true), Is.Empty);
         }
 
         [TestCase(2, 54, 6)]
@@ -862,14 +857,13 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
             var content = CreateChild("ContentVisualRoot", root.transform);
             if (!cell.InitialBlocked)
             {
-                runtime.Configure(cell, null, null, null, tile, content);
+                runtime.Configure(cell, null, null, tile, content);
                 return runtime;
             }
 
             var health = root.AddComponent<HealthComponent>();
             var collider = root.AddComponent<BoxCollider>();
-            var obstacle = root.AddComponent<NavMeshObstacle>();
-            runtime.Configure(cell, health, collider, obstacle, tile, content);
+            runtime.Configure(cell, health, collider, tile, content);
             return runtime;
         }
 

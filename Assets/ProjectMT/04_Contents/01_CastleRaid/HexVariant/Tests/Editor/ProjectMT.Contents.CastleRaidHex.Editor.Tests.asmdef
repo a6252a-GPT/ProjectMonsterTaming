@@ -8,8 +8,7 @@
     "ProjectMT.Core",
     "ProjectMT.Features",
     "ProjectMT.Shared",
-    "Unity.TextMeshPro",
-    "Unity.AI.Navigation"
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [
     "Editor"

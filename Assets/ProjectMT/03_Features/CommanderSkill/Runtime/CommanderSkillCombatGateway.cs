@@ -48,7 +48,8 @@ namespace ProjectMT.Features.CommanderSkill
             float angle,
             float lineWidth,
             int maxTargets,
-            float damage)
+            float damage,
+            CombatDamageOrigin origin = CombatDamageOrigin.CommanderSkill)
         {
             SkillId = skillId ?? string.Empty;
             DamageKind = damageKind;
@@ -65,6 +66,7 @@ namespace ProjectMT.Features.CommanderSkill
             LineWidth = Mathf.Max(0.05f, lineWidth);
             MaxTargets = Mathf.Max(1, maxTargets);
             Damage = Mathf.Max(0f, damage);
+            Origin = origin;
         }
 
         public string SkillId { get; }
@@ -82,6 +84,7 @@ namespace ProjectMT.Features.CommanderSkill
         public float Angle { get; }
         public float LineWidth { get; }
         public int MaxTargets { get; }
+        public CombatDamageOrigin Origin { get; }
     }
 
     public readonly struct CommanderSkillUnitEffectRequest // 효과형 액티브 값을 UnitActor 공용 API로 전달
@@ -114,6 +117,8 @@ namespace ProjectMT.Features.CommanderSkill
     {
         bool IsReady { get; }
         UnitActor FindTarget(Vector3 origin, CommanderSkillTargetingDefinition targeting);
+        void CollectTargets(Vector3 origin, CommanderSkillTargetingDefinition targeting, float range, List<UnitActor> results);
+        void CollectLastDamageTargets(List<UnitActor> results);
         int ApplyAreaDamage(CommanderSkillDamageRequest request);
         int ApplyUnitEffect(CommanderSkillUnitEffectRequest request);
     }
@@ -129,6 +134,10 @@ namespace ProjectMT.Features.CommanderSkill
     {
         private readonly CombatWorld world;
         private readonly List<UnitActor> targets = new List<UnitActor>(64);
+        private readonly List<UnitActor> nearbyTargets = new List<UnitActor>(64);
+        private List<UnitActor> lastDamageTargets = new List<UnitActor>(64);
+        private readonly Stack<List<UnitActor>> impactTargetScopes = new Stack<List<UnitActor>>(4);
+        private readonly Stack<List<UnitActor>> damageTargetBuffers = new Stack<List<UnitActor>>(4);
 
         public CommanderSkillCombatGateway(CombatWorld combatWorld)
         {
@@ -136,6 +145,18 @@ namespace ProjectMT.Features.CommanderSkill
         }
 
         public bool IsReady => world != null && !world.IsPaused;
+
+        internal void BeginImpact()
+        {
+            impactTargetScopes.Push(lastDamageTargets);
+            lastDamageTargets = RentDamageTargetBuffer();
+        }
+
+        internal void EndImpact()
+        {
+            ReturnDamageTargetBuffer(lastDamageTargets);
+            lastDamageTargets = impactTargetScopes.Pop();
+        }
 
         public UnitActor FindTarget(Vector3 origin, CommanderSkillTargetingDefinition targeting)
         {
@@ -154,8 +175,15 @@ namespace ProjectMT.Features.CommanderSkill
                 return targets.Count > 0 ? targets[0] : null;
             }
 
+            if (targeting.Selection == CommanderSkillTargetSelection.Random)
+            {
+                return targets[Random.Range(0, targets.Count)];
+            }
+
             UnitActor selected = null;
-            var lowestRatio = float.MaxValue;
+            var bestValue = targeting.Selection == CommanderSkillTargetSelection.LowestHealth
+                ? float.MaxValue
+                : float.MinValue;
             for (var index = 0; index < targets.Count; index++)
             {
                 var candidate = targets[index];
@@ -167,14 +195,47 @@ namespace ProjectMT.Features.CommanderSkill
                 var ratio = candidate.Health.MaxHealth > 0f
                     ? candidate.Health.CurrentHealth / candidate.Health.MaxHealth
                     : 1f;
-                if (ratio < lowestRatio)
+                var value = targeting.Selection switch
+                {
+                    CommanderSkillTargetSelection.Strongest => candidate.Health.MaxHealth,
+                    CommanderSkillTargetSelection.HighestHealth => ratio,
+                    CommanderSkillTargetSelection.MostCrowded => CountNearby(candidate, team, targeting.Range),
+                    _ => ratio
+                };
+                var better = targeting.Selection == CommanderSkillTargetSelection.LowestHealth
+                    ? value < bestValue
+                    : value > bestValue;
+                if (better)
                 {
                     selected = candidate;
-                    lowestRatio = ratio;
+                    bestValue = value;
                 }
             }
 
             return selected;
+        }
+
+        public void CollectTargets(Vector3 origin, CommanderSkillTargetingDefinition targeting, float range, List<UnitActor> results)
+        {
+            results?.Clear();
+            if (world == null || targeting == null || results == null) return;
+            var team = targeting.TargetTeam == CommanderSkillTargetTeam.Ally ? UnitTeam.Player : UnitTeam.Enemy;
+            world.CollectUnits(team, origin, Mathf.Max(0.1f, range), 64, results);
+        }
+
+        public void CollectLastDamageTargets(List<UnitActor> results)
+        {
+            results?.Clear();
+            if (results == null) return;
+            for (var index = 0; index < lastDamageTargets.Count; index++)
+                if (lastDamageTargets[index] != null) results.Add(lastDamageTargets[index]);
+        }
+
+        private int CountNearby(UnitActor candidate, UnitTeam team, float searchRadius)
+        {
+            nearbyTargets.Clear();
+            world.CollectUnits(team, candidate.transform.position, Mathf.Min(5f, searchRadius), 64, nearbyTargets);
+            return nearbyTargets.Count;
         }
 
         public GameObject Rent(GameObject prefab, Vector3 position, Quaternion rotation)
@@ -191,25 +252,40 @@ namespace ProjectMT.Features.CommanderSkill
         {
             if (world == null || request.Damage <= 0f)
             {
+                lastDamageTargets.Clear();
                 return 0;
             }
 
-            ResolveDamageTargets(request);
-            var hitCount = 0;
-            for (var index = 0; index < targets.Count; index++)
+            var damageTargets = RentDamageTargetBuffer();
+            try
             {
-                var target = targets[index];
-                if (target?.Health != null && target.Health.ApplyDamage(
-                        new DamageRequest(
-                            null,
-                            request.Damage,
-                            target.transform.position + Vector3.up * 0.35f)))
+                ResolveDamageTargets(request, damageTargets);
+                var hitCount = 0;
+                for (var index = 0; index < damageTargets.Count; index++)
                 {
-                    hitCount++;
+                    var target = damageTargets[index];
+                    if (target?.Health != null && target.Health.ApplyDamage(
+                            new DamageRequest(
+                                null,
+                                request.Damage,
+                                target.transform.position + Vector3.up * 0.35f,
+                                false,
+                                DamageFeedbackFlags.None,
+                                request.Origin)))
+                    {
+                        hitCount++;
+                    }
                 }
-            }
 
-            return hitCount;
+                // Damaged callbacks may run nested area damage. Restore this impact snapshot afterwards.
+                lastDamageTargets.Clear();
+                lastDamageTargets.AddRange(damageTargets);
+                return hitCount;
+            }
+            finally
+            {
+                ReturnDamageTargetBuffer(damageTargets);
+            }
         }
 
         public int ApplyUnitEffect(CommanderSkillUnitEffectRequest request)
@@ -229,6 +305,17 @@ namespace ProjectMT.Features.CommanderSkill
                     request.PrimaryTarget.Team == team)
                 {
                     targets.Add(request.PrimaryTarget);
+                }
+            }
+            else if (request.Effect.Scope == CommanderSkillEffectScope.ImpactTargets)
+            {
+                for (var index = 0; index < lastDamageTargets.Count && targets.Count < request.Effect.MaxTargets; index++)
+                {
+                    var target = lastDamageTargets[index];
+                    if (target != null && target.IsAlive && target.Team == team)
+                    {
+                        targets.Add(target);
+                    }
                 }
             }
             else
@@ -252,16 +339,16 @@ namespace ProjectMT.Features.CommanderSkill
             return appliedCount;
         }
 
-        private void ResolveDamageTargets(CommanderSkillDamageRequest request)
+        private void ResolveDamageTargets(CommanderSkillDamageRequest request, List<UnitActor> results)
         {
             switch (request.Shape)
             {
                 case MonsterBasicAttackShape.Single:
-                    targets.Clear();
+                    results.Clear();
                     if (request.PrimaryTarget != null && request.PrimaryTarget.IsAlive &&
                         request.PrimaryTarget.Team == UnitTeam.Enemy)
                     {
-                        targets.Add(request.PrimaryTarget);
+                        results.Add(request.PrimaryTarget);
                     }
                     break;
                 case MonsterBasicAttackShape.Fan:
@@ -272,7 +359,7 @@ namespace ProjectMT.Features.CommanderSkill
                         request.Range,
                         request.Angle,
                         request.MaxTargets,
-                        targets);
+                        results);
                     break;
                 case MonsterBasicAttackShape.Line:
                     world.CollectUnitsInLine(
@@ -282,7 +369,7 @@ namespace ProjectMT.Features.CommanderSkill
                         request.Range,
                         request.LineWidth,
                         request.MaxTargets,
-                        targets);
+                        results);
                     break;
                 default:
                     var center = request.CenterMode switch
@@ -297,9 +384,25 @@ namespace ProjectMT.Features.CommanderSkill
                         center,
                         request.Radius,
                         request.MaxTargets,
-                        targets);
+                        results);
                     break;
             }
+        }
+
+        private List<UnitActor> RentDamageTargetBuffer()
+        {
+            var buffer = damageTargetBuffers.Count > 0
+                ? damageTargetBuffers.Pop()
+                : new List<UnitActor>(64);
+            buffer.Clear();
+            return buffer;
+        }
+
+        private void ReturnDamageTargetBuffer(List<UnitActor> buffer)
+        {
+            if (buffer == null) return;
+            buffer.Clear();
+            damageTargetBuffers.Push(buffer);
         }
 
         private bool ApplyUnitEffectToTarget(CommanderSkillUnitEffectRequest request, UnitActor target)

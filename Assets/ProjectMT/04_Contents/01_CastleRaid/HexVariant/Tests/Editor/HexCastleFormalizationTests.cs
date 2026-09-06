@@ -109,6 +109,9 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
                 var controllerData = new SerializedObject(controller);
                 var inputData = new SerializedObject(inputSurface);
                 var rootData = new SerializedObject(sceneRoot);
+                var localEventSystems = roots.SelectMany(value =>
+                    value.GetComponentsInChildren<EventSystem>(true)).ToArray();
+                Assert.That(localEventSystems, Is.Empty, "정식 씬은 AppRoot 전역 EventSystem만 사용해야 합니다.");
 
                 AssertReference(rootData, "controller");
                 AssertReference(controllerData, "themeRules");

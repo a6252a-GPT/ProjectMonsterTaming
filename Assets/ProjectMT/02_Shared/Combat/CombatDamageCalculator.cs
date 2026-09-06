@@ -63,7 +63,20 @@ namespace ProjectMT.Shared.Combat
         }
     }
 
-    public static class CombatPowerCalculator // 최종 Snapshot의 안내용 전투력 계산
+    public static class CombatPowerGrowthWeights // 전투 시뮬레이션이 아닌 종합 성장 지표용 가치 계수
+    {
+        public const float MoveSpeed = 0.30f;
+        public const float AttackRange = 0.25f;
+        public const float SkillDamage = 0.50f;
+        public const float DefensePenetration = 0.50f;
+        public const float SkillCooldownReduction = 0.40f;
+        public const float BossDamage = 0.30f;
+        public const float NormalMonsterDamage = 0.30f;
+        public const float UnlockedAbility = 0.07f;
+        public const int MaxCountedAbilities = 2;
+    }
+
+    public static class CombatPowerCalculator // 최종 Snapshot의 종합 성장 지표 계산
     {
         public static float Calculate(UnitStatsSnapshot stats, CombatStatConfig config)
         {
@@ -76,6 +89,42 @@ namespace ProjectMT.Shared.Combat
             var effectiveHealth = CalculateEffectiveHealth(stats, config);
             var power = Mathf.Sqrt(expectedDps * effectiveHealth) * config.CombatPowerDisplayScale;
             return IsFinitePositive(power) ? power : 0f;
+        }
+
+        public static float Calculate(
+            UnitStatsSnapshot stats,
+            CombatPowerGrowthSnapshot growth,
+            int unlockedAbilityCount,
+            CombatStatConfig config)
+        {
+            var corePower = Calculate(stats, config);
+            if (!IsFinitePositive(corePower))
+            {
+                return 0f;
+            }
+
+            var multiplier = CalculateGrowthMultiplier(stats, growth, unlockedAbilityCount);
+            var power = corePower * multiplier;
+            return IsFinitePositive(power) ? power : 0f;
+        }
+
+        public static float CalculateGrowthMultiplier(
+            UnitStatsSnapshot stats,
+            CombatPowerGrowthSnapshot growth,
+            int unlockedAbilityCount)
+        {
+            var bonus =
+                growth.MoveSpeedGrowthRate * CombatPowerGrowthWeights.MoveSpeed +
+                growth.AttackRangeGrowthRate * CombatPowerGrowthWeights.AttackRange +
+                SafeRate(stats.skillDamageRate) * CombatPowerGrowthWeights.SkillDamage +
+                SafeRate(stats.defensePenetrationRate) * CombatPowerGrowthWeights.DefensePenetration +
+                SafeRate(stats.skillCooldownReductionRate) * CombatPowerGrowthWeights.SkillCooldownReduction +
+                SafeRate(stats.bossDamageRate) * CombatPowerGrowthWeights.BossDamage +
+                SafeRate(stats.normalMonsterDamageRate) * CombatPowerGrowthWeights.NormalMonsterDamage +
+                Mathf.Clamp(unlockedAbilityCount, 0, CombatPowerGrowthWeights.MaxCountedAbilities) *
+                CombatPowerGrowthWeights.UnlockedAbility;
+
+            return IsFiniteNonNegative(bonus) ? 1f + bonus : 1f;
         }
 
         public static float CalculateExpectedDps(UnitStatsSnapshot stats, CombatStatConfig config)
@@ -110,6 +159,12 @@ namespace ProjectMT.Shared.Combat
                                   Mathf.Max(0.01f, 1f - reduction);
             return IsFinitePositive(effectiveHealth) ? effectiveHealth : 0f;
         }
+
+        private static float SafeRate(float value) =>
+            IsFiniteNonNegative(value) ? value : 0f;
+
+        private static bool IsFiniteNonNegative(float value) =>
+            value >= 0f && !float.IsNaN(value) && !float.IsInfinity(value);
 
         private static bool IsFinitePositive(float value) =>
             value > 0f && !float.IsNaN(value) && !float.IsInfinity(value);

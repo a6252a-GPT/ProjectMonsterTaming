@@ -122,7 +122,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
         }
 
         [Test]
-        public void EditorAssembly_DoesNotReferenceSquareCastleRaidOrSquareToolAssembly()
+        public void EditorAssembly_DoesNotReferenceLegacyOrNavigationAssemblies()
         {
             var references = typeof(HexCastleAuthoringWindow).Assembly.GetReferencedAssemblies()
                 .Select(reference => reference.Name)
@@ -130,6 +130,8 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
 
             Assert.That(references, Does.Not.Contain("ProjectMT.Contents.CastleRaid"));
             Assert.That(references, Does.Not.Contain("ProjectMT.Tools.CastleBake.Editor"));
+            Assert.That(references, Does.Not.Contain("Unity.AI.Navigation"));
+            Assert.That(references, Does.Not.Contain("UnityEngine.AIModule"));
         }
 
         [Test]
@@ -209,8 +211,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor.Tests
                 Assert.That(blocked.Length, Is.GreaterThan(10));
                 Assert.That(blocked.All(value =>
                     value.Health != null && value.Health.transform == value.transform &&
-                    value.FootprintCollider != null && value.FootprintCollider.transform == value.transform &&
-                    value.NavigationObstacle != null && value.NavigationObstacle.transform == value.transform),
+                    value.FootprintCollider != null && value.FootprintCollider.transform == value.transform),
                     Is.True);
                 Assert.That(root.GetComponentsInChildren<Transform>(true)
                     .All(value => value.gameObject.hideFlags == HideFlags.None), Is.True);

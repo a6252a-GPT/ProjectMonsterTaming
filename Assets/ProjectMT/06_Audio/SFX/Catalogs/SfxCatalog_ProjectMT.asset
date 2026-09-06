@@ -356,3 +356,21 @@ MonoBehaviour:
     categoryId: unassigned
   - cue: {fileID: 1304871107967155395, guid: 2142eff58aa8a5f4b85479ee52c1ed5e, type: 2}
     categoryId: monster_basic
+  - cue: {fileID: 11400004, guid: e204b80b04f849de9d06b51c91645fd3, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 11400005, guid: e204b80b04f849de9d06b51c91645fd3, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 11400006, guid: e204b80b04f849de9d06b51c91645fd3, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 11400008, guid: e204b80b04f849de9d06b51c91645fd3, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 11400009, guid: e204b80b04f849de9d06b51c91645fd3, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 11400007, guid: e204b80b04f849de9d06b51c91645fd3, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 11400001, guid: e204b80b04f849de9d06b51c91645fd3, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 11400003, guid: e204b80b04f849de9d06b51c91645fd3, type: 2}
+    categoryId: unassigned
+  - cue: {fileID: 11400002, guid: e204b80b04f849de9d06b51c91645fd3, type: 2}
+    categoryId: unassigned

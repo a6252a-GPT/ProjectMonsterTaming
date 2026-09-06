@@ -27,6 +27,30 @@ MonoBehaviour:
       weight: 100
     - skillId: commander_skill_fireball
       weight: 100
+    - skillId: CS_TrackingBlade
+      weight: 100
+    - skillId: CS_DoomSpear
+      weight: 100
+    - skillId: CS_AbyssChain
+      weight: 100
+    - skillId: CS_PhantomCharge
+      weight: 100
+    - skillId: CS_ConquerorSigil
+      weight: 100
+    - skillId: CS_PhantomBarrage
+      weight: 100
+    - skillId: CS_DeathSentence
+      weight: 100
+    - skillId: CS_RuptureMarch
+      weight: 100
+    - skillId: CS_HeartOfBattlefield
+      weight: 100
+    - skillId: CS_MarchOfDead
+      weight: 100
+    - skillId: CS_WarGodBrand
+      weight: 100
+    - skillId: CS_ApocalypseWar
+      weight: 100
   - requiredAccumulatedCount: 30
     pool:
     - skillId: commander_skill_thunder_lance
@@ -38,6 +62,30 @@ MonoBehaviour:
     - skillId: commander_skill_ice_crystal_orb
       weight: 100
     - skillId: commander_skill_fireball
+      weight: 100
+    - skillId: CS_TrackingBlade
+      weight: 100
+    - skillId: CS_DoomSpear
+      weight: 100
+    - skillId: CS_AbyssChain
+      weight: 100
+    - skillId: CS_PhantomCharge
+      weight: 100
+    - skillId: CS_ConquerorSigil
+      weight: 100
+    - skillId: CS_PhantomBarrage
+      weight: 100
+    - skillId: CS_DeathSentence
+      weight: 100
+    - skillId: CS_RuptureMarch
+      weight: 100
+    - skillId: CS_HeartOfBattlefield
+      weight: 100
+    - skillId: CS_MarchOfDead
+      weight: 100
+    - skillId: CS_WarGodBrand
+      weight: 100
+    - skillId: CS_ApocalypseWar
       weight: 100
   - requiredAccumulatedCount: 100
     pool:
@@ -51,7 +99,33 @@ MonoBehaviour:
       weight: 100
     - skillId: commander_skill_fireball
       weight: 100
+    - skillId: CS_TrackingBlade
+      weight: 100
+    - skillId: CS_DoomSpear
+      weight: 100
+    - skillId: CS_AbyssChain
+      weight: 100
+    - skillId: CS_PhantomCharge
+      weight: 100
+    - skillId: CS_ConquerorSigil
+      weight: 100
+    - skillId: CS_PhantomBarrage
+      weight: 100
+    - skillId: CS_DeathSentence
+      weight: 100
+    - skillId: CS_RuptureMarch
+      weight: 100
+    - skillId: CS_HeartOfBattlefield
+      weight: 100
+    - skillId: CS_MarchOfDead
+      weight: 100
+    - skillId: CS_WarGodBrand
+      weight: 100
+    - skillId: CS_ApocalypseWar
+      weight: 100
   offers:
+  - drawCount: 1
+    ticketCost: 1
   - drawCount: 10
     ticketCost: 10
   - drawCount: 30

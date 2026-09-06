@@ -32,19 +32,28 @@ namespace ProjectMT.Features.CommanderSkill
             Vector3 castOrigin,
             UnitActor primaryTarget,
             Vector3 position,
-            Vector3 forward)
+            Vector3 forward,
+            ProjectMT.Shared.Combat.CombatDamageOrigin damageOrigin = ProjectMT.Shared.Combat.CombatDamageOrigin.CommanderSkill,
+            int recordedHitCount = 0,
+            float recordedDamage = 0f)
         {
             CastOrigin = castOrigin;
             PrimaryTarget = primaryTarget;
             Position = position;
             forward.y = 0f;
             Forward = forward.sqrMagnitude > 0.0001f ? forward.normalized : Vector3.forward;
+            DamageOrigin = damageOrigin;
+            RecordedHitCount = Mathf.Max(0, recordedHitCount);
+            RecordedDamage = Mathf.Max(0f, recordedDamage);
         }
 
         public Vector3 CastOrigin { get; }
         public UnitActor PrimaryTarget { get; }
         public Vector3 Position { get; }
         public Vector3 Forward { get; }
+        public ProjectMT.Shared.Combat.CombatDamageOrigin DamageOrigin { get; }
+        public int RecordedHitCount { get; }
+        public float RecordedDamage { get; }
     }
 
     internal interface ICommanderSkillExecutor // 분류별 실행기 등록 경계
@@ -68,48 +77,7 @@ namespace ProjectMT.Features.CommanderSkill
             {
                 return false;
             }
-
-            var target = context.Combat.FindTarget(context.CastOrigin.position, attack.Targeting);
-            if (target == null)
-            {
-                return false;
-            }
-
-            var start = context.CastOrigin.position + Vector3.up * 1.15f;
-            var destination = target.transform.position + Vector3.up * 0.45f;
-            var direction = destination - start;
-            var rotation = direction.sqrMagnitude > 0.0001f
-                ? Quaternion.LookRotation(direction.normalized, Vector3.up)
-                : Quaternion.identity;
-
-            if (attack.DeliveryModule == MonsterBasicAttackDeliveryModule.Direct)
-            {
-                context.Owner.PlayCastFeedback(attack, start, rotation);
-                context.Owner.ResolveImpact(
-                    attack,
-                    new CommanderSkillImpactContext(start, target, destination, direction),
-                    context.EffectMultiplier);
-                return true;
-            }
-
-            var projectileObject = context.Feedback.Rent(attack.ProjectilePrefab, start, rotation);
-            var projectile = projectileObject == null
-                ? null
-                : projectileObject.GetComponent<CommanderSkillProjectile>();
-            if (projectile == null)
-            {
-                context.Feedback.Return(projectileObject);
-                return false;
-            }
-
-            projectile.Launch(
-                context.Owner,
-                attack,
-                target,
-                destination,
-                context.EffectMultiplier);
-            context.Owner.PlayCastFeedback(attack, start, rotation);
-            return true;
+            return context.Owner.TryStartPattern(attack, context.EffectMultiplier);
         }
     }
 
@@ -129,24 +97,7 @@ namespace ProjectMT.Features.CommanderSkill
                 return false;
             }
 
-            var target = context.Combat.FindTarget(context.CastOrigin.position, effectSkill.Targeting);
-            if (target == null)
-            {
-                return false;
-            }
-
-            var start = context.CastOrigin.position + Vector3.up * 1.15f;
-            var destination = target.transform.position + Vector3.up * 0.45f;
-            var direction = destination - start;
-            var rotation = direction.sqrMagnitude > 0.0001f
-                ? Quaternion.LookRotation(direction.normalized, Vector3.up)
-                : Quaternion.identity;
-            context.Owner.PlayCastFeedback(effectSkill, start, rotation);
-            context.Owner.ResolveImpact(
-                effectSkill,
-                new CommanderSkillImpactContext(start, target, destination, direction),
-                context.EffectMultiplier);
-            return true;
+            return context.Owner.TryStartPattern(effectSkill, context.EffectMultiplier);
         }
     }
 
@@ -201,7 +152,8 @@ namespace ProjectMT.Features.CommanderSkill
                     damage.Angle,
                     damage.LineWidth,
                     damage.MaxTargets,
-                    damage.BaseDamage * Mathf.Max(0f, multiplier)));
+                    damage.BaseDamage * damage.PerHitMultiplier * Mathf.Max(0f, multiplier),
+                    impact.DamageOrigin));
         }
     }
 
@@ -242,12 +194,60 @@ namespace ProjectMT.Features.CommanderSkill
         }
     }
 
+    internal sealed class CommanderMarkEffectHandler : ICommanderSkillEffectHandler
+    {
+        private readonly CommanderSkillRuntime owner;
+        public CommanderMarkEffectHandler(CommanderSkillRuntime runtime) { owner = runtime; }
+        public bool Supports(CommanderSkillEffectDefinition effect) => effect is CommanderMarkEffectDefinition;
+        public int Apply(CommanderSkillDefinition definition, CommanderSkillEffectDefinition effect,
+            CommanderSkillImpactContext impact, float multiplier)
+        {
+            return effect is CommanderMarkEffectDefinition mark
+                ? owner.ApplyCommanderMark(definition, mark, impact, multiplier)
+                : 0;
+        }
+    }
+
+    internal sealed class CommanderRecordedHitDamageEffectHandler : ICommanderSkillEffectHandler
+    {
+        private readonly ICommanderSkillCombatGateway combat;
+        public CommanderRecordedHitDamageEffectHandler(ICommanderSkillCombatGateway combatGateway) { combat = combatGateway; }
+        public bool Supports(CommanderSkillEffectDefinition effect) => effect is CommanderRecordedHitDamageEffectDefinition;
+
+        public int Apply(CommanderSkillDefinition definition, CommanderSkillEffectDefinition effect,
+            CommanderSkillImpactContext impact, float multiplier)
+        {
+            if (combat == null || definition == null || impact.PrimaryTarget == null ||
+                effect is not CommanderRecordedHitDamageEffectDefinition recorded ||
+                !definition.TryGetEffect<CommanderAreaDamageEffectDefinition>(out var sourceDamage)) return 0;
+            return combat.ApplyAreaDamage(new CommanderSkillDamageRequest(
+                definition.SkillId,
+                sourceDamage.DamageKind,
+                MonsterBasicAttackShape.Single,
+                MonsterBasicAttackCenter.PrimaryTarget,
+                impact.CastOrigin,
+                impact.PrimaryTarget,
+                impact.Position,
+                impact.Forward,
+                definition.TargetRange,
+                0.1f,
+                0f,
+                90f,
+                0.05f,
+                1,
+                sourceDamage.BaseDamage * recorded.ResolveMultiplier(impact.RecordedHitCount) * Mathf.Max(0f, multiplier),
+                ProjectMT.Shared.Combat.CombatDamageOrigin.CommanderMarkTrigger));
+        }
+    }
+
     internal sealed class CommanderSkillEffectRunner // 등록된 Handler로 효과 SO 실행
     {
+        private readonly CommanderSkillCombatGateway combat;
         private readonly ICommanderSkillEffectHandler[] handlers;
 
-        public CommanderSkillEffectRunner(params ICommanderSkillEffectHandler[] effectHandlers)
+        public CommanderSkillEffectRunner(CommanderSkillCombatGateway combatGateway, params ICommanderSkillEffectHandler[] effectHandlers)
         {
+            combat = combatGateway;
             handlers = effectHandlers ?? System.Array.Empty<ICommanderSkillEffectHandler>();
         }
 
@@ -256,30 +256,41 @@ namespace ProjectMT.Features.CommanderSkill
             CommanderSkillImpactContext impact,
             float multiplier)
         {
-            if (definition == null)
+            return Apply(definition, definition?.Effects, impact, multiplier);
+        }
+
+        public int Apply(CommanderSkillDefinition definition,
+            System.Collections.Generic.IReadOnlyList<CommanderSkillEffectDefinition> effects,
+            CommanderSkillImpactContext impact, float multiplier)
+        {
+            if (definition == null || effects == null)
             {
                 return 0;
             }
 
-            var appliedCount = 0;
-            var effects = definition.Effects;
-            for (var index = 0; index < effects.Count; index++)
+            combat.BeginImpact();
+            try
             {
-                var effect = effects[index];
-                for (var handlerIndex = 0; handlerIndex < handlers.Length; handlerIndex++)
+                var appliedCount = 0;
+                for (var index = 0; index < effects.Count; index++)
                 {
-                    var handler = handlers[handlerIndex];
-                    if (handler == null || !handler.Supports(effect))
+                    var effect = effects[index];
+                    for (var handlerIndex = 0; handlerIndex < handlers.Length; handlerIndex++)
                     {
-                        continue;
+                        var handler = handlers[handlerIndex];
+                        if (handler == null || !handler.Supports(effect))
+                        {
+                            continue;
+                        }
+
+                        appliedCount += handler.Apply(definition, effect, impact, multiplier);
+                        break;
                     }
-
-                    appliedCount += handler.Apply(definition, effect, impact, multiplier);
-                    break;
                 }
-            }
 
-            return appliedCount;
+                return appliedCount;
+            }
+            finally { combat.EndImpact(); }
         }
     }
 }

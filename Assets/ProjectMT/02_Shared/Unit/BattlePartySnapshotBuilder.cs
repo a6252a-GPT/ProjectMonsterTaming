@@ -86,9 +86,10 @@ namespace ProjectMT.Shared.Unit
                     continue;
                 }
 
+                var stats = ResolveStats(definition, owned.Level, owned.AscensionLevel, legionModifiers);
                 destination.Add(new BattleUnitSnapshot(
                     monsterId,
-                    ResolveStats(definition, owned.Level, owned.AscensionLevel, legionModifiers),
+                    stats,
                     definition.VisualTint,
                     definition.RuntimeAssetKey,
                     definition.RuntimeAssetSet,
@@ -102,7 +103,8 @@ namespace ProjectMT.Shared.Unit
                         monsterId,
                         slotOffset + index,
                         owned.Level,
-                        owned.AscensionLevel)));
+                        owned.AscensionLevel),
+                    ResolveCombatPowerGrowth(definition, stats)));
             }
         }
 
@@ -182,6 +184,31 @@ namespace ProjectMT.Shared.Unit
 
             AppendAscensionModifiers(ascensionModifier, modifiers);
             return StatResolver.Resolve(baseStats, modifiers, statConfig);
+        }
+
+        private static CombatPowerGrowthSnapshot ResolveCombatPowerGrowth(
+            MonsterDefinition definition,
+            UnitStatsSnapshot resolvedStats)
+        {
+            if (definition == null)
+            {
+                return default;
+            }
+
+            return new CombatPowerGrowthSnapshot(
+                CalculateGrowthRate(definition.MoveSpeed, resolvedStats.moveSpeed),
+                CalculateGrowthRate(definition.AttackRange, resolvedStats.attackRange));
+        }
+
+        private static float CalculateGrowthRate(float baseValue, float resolvedValue)
+        {
+            if (baseValue <= 0.0001f || resolvedValue <= baseValue)
+            {
+                return 0f;
+            }
+
+            var rate = resolvedValue / baseValue - 1f;
+            return float.IsNaN(rate) || float.IsInfinity(rate) ? 0f : Mathf.Max(0f, rate);
         }
 
         private static void AppendAscensionModifiers(

@@ -3,7 +3,6 @@ using System.Linq;
 using ProjectMT.Shared.Unit;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.AI;
 using Object = UnityEngine.Object;
 
 namespace ProjectMT.Contents.CastleRaidHex.Editor
@@ -319,7 +318,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             if (root.transform.localScale != Vector3.one ||
                 root.GetComponentInChildren<HealthComponent>(true) != null ||
                 root.GetComponentInChildren<Collider>(true) != null ||
-                root.GetComponentInChildren<NavMeshObstacle>(true) != null ||
                 root.GetComponentInChildren<HexCastleCellRuntime>(true) != null)
             {
                 throw new InvalidOperationException($"{root.name}에 Scale 1 또는 순수 Visual 계약 위반이 있습니다.");

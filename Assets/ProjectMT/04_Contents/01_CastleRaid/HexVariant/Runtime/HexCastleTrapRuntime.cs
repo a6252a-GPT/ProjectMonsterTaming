@@ -612,10 +612,6 @@ namespace ProjectMT.Contents.CastleRaidHex
             {
                 Object.DestroyImmediate(collider);
             }
-            foreach (var obstacle in instance.GetComponentsInChildren<UnityEngine.AI.NavMeshObstacle>(true))
-            {
-                Object.DestroyImmediate(obstacle);
-            }
             foreach (var renderer in instance.GetComponentsInChildren<Renderer>(true))
             {
                 renderer.sharedMaterials = Enumerable.Repeat(

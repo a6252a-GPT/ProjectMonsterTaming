@@ -306,6 +306,17 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
         }
 
         [Test]
+        public void RuntimeAssembly_DoesNotReferenceNavigationAssemblies()
+        {
+            var references = typeof(HexCoordinates).Assembly.GetReferencedAssemblies()
+                .Select(reference => reference.Name)
+                .ToArray();
+
+            Assert.That(references, Does.Not.Contain("Unity.AI.Navigation"));
+            Assert.That(references, Does.Not.Contain("UnityEngine.AIModule"));
+        }
+
+        [Test]
         public void PerspectiveCamera_AutoFitDistanceGrowsWithTwoThreeAndFourWallBoards()
         {
             var cameraObject = new GameObject("HexPerspectiveCameraFitTest");
@@ -600,7 +611,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
             var content = new GameObject("ContentVisualRoot").transform;
             content.SetParent(cellObject.transform, false);
             var runtime = cellObject.AddComponent<HexCastleCellRuntime>();
-            runtime.Configure(cell, null, null, null, tile, content);
+            runtime.Configure(cell, null, null, tile, content);
             return runtime;
         }
 

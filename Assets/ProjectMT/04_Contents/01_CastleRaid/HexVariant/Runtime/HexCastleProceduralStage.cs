@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
-using UnityEngine.AI;
 using Object = UnityEngine.Object;
 
 namespace ProjectMT.Contents.CastleRaidHex
@@ -261,7 +260,6 @@ namespace ProjectMT.Contents.CastleRaidHex
 
             HealthComponent health = null;
             Collider footprintCollider = null;
-            NavMeshObstacle obstacle = null;
             if (cell.InitialBlocked)
             {
                 health = cellRoot.gameObject.AddComponent<HealthComponent>();
@@ -276,13 +274,6 @@ namespace ProjectMT.Contents.CastleRaidHex
                 meshCollider.sharedMesh = footprintMesh;
                 meshCollider.convex = true;
                 footprintCollider = meshCollider;
-                obstacle = cellRoot.gameObject.AddComponent<NavMeshObstacle>();
-                obstacle.shape = NavMeshObstacleShape.Capsule;
-                obstacle.center = Vector3.up * height * 0.5f;
-                obstacle.radius = HexSpatialContract.CellInRadius * 0.92f;
-                obstacle.height = height;
-                obstacle.carving = true;
-                obstacle.carveOnlyStationary = true;
             }
 
             var runtime = cellRoot.gameObject.AddComponent<HexCastleCellRuntime>();
@@ -290,7 +281,6 @@ namespace ProjectMT.Contents.CastleRaidHex
                 cell,
                 health,
                 footprintCollider,
-                obstacle,
                 tileVisualRoot,
                 contentVisualRoot);
 

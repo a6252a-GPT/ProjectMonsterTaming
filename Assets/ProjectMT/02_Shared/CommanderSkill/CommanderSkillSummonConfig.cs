@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ProjectMT.Shared.Items;
 using UnityEngine;
@@ -397,6 +397,7 @@ namespace ProjectMT.Shared.CommanderSkill
         {
             return new[]
             {
+                new CommanderSkillSummonOffer(1, 1),
                 new CommanderSkillSummonOffer(10, 10),
                 new CommanderSkillSummonOffer(30, 30),
                 new CommanderSkillSummonOffer(300, 300)

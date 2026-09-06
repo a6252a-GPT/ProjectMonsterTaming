@@ -39,12 +39,19 @@ MonoBehaviour:
     \uC138\uC6CC \uCD5C\uB300 \uCCB4\uB825 \uBE44\uB840 \uBCF4\uD638\uB9C9\uACFC
     \uBC29\uC5B4\uB825 \uC99D\uAC00\uB97C \uBD80\uC5EC\uD55C\uB2E4."
   icon: {fileID: 21300000, guid: 6643eb6bb48115b49b516abb5ae56367, type: 3}
+  rarity: 2
   castTime: 0.8
   cooldown: 14
   targeting: {fileID: 7393857499581010510}
   effects:
   - {fileID: -3856623474859372049}
   - {fileID: 7611088661042797840}
+  castingVfxPrefab: {fileID: 0}
+  castingVfxLifetime: 1
+  castingVfxLocalOffset: {x: 0, y: 0, z: 0}
+  castingVfxLocalEuler: {x: 0, y: 0, z: 0}
+  castingVfxScale: 1
+  castingSfx: {fileID: 0}
   castVfxPrefab: {fileID: 0}
   castVfxLifetime: 1
   castVfxLocalOffset: {x: 0, y: 0, z: 0}

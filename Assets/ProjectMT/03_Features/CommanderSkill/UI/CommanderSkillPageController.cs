@@ -59,7 +59,7 @@ namespace ProjectMT.Features.CommanderSkill
         private static readonly Color DisabledColor = new Color32(154, 147, 138, 255);
 
         private readonly SlotView[] slots = new SlotView[CommanderSkillSlotRules.SlotCount];
-        private readonly List<SkillCardView> cards = new List<SkillCardView>(12);
+        private readonly List<SkillCardView> cards = new List<SkillCardView>(16);
         private readonly Button[] filterButtons = new Button[4];
         private readonly TMP_Text[] filterLabels = new TMP_Text[4];
         private readonly Image[] filterBackgrounds = new Image[4];
@@ -190,8 +190,7 @@ namespace ProjectMT.Features.CommanderSkill
 
             for (var index = 0; index < cards.Count; index++)
             {
-                var cardIndex = index;
-                cards[index].Button?.onClick.AddListener(() => SelectCard(cardIndex));
+                BindCardListener(cards[index], index);
             }
 
             for (var index = 0; index < filterButtons.Length; index++)
@@ -249,20 +248,7 @@ namespace ProjectMT.Features.CommanderSkill
                     continue;
                 }
 
-                cards.Add(new SkillCardView
-                {
-                    Root = root.gameObject,
-                    Button = root.GetComponent<Button>(),
-                    Icon = FindDeep(root, "SkillIcon")?.GetComponent<Image>(),
-                    NameText = FindDeep(root, "SkillName")?.GetComponent<TMP_Text>(),
-                    CategoryText = FindDeep(root, "SkillCategory")?.GetComponent<TMP_Text>(),
-                    StatsText = FindDeep(root, "SkillCardStats")?.GetComponent<TMP_Text>(),
-                    LevelText = FindDeep(root, "SkillLevel")?.GetComponent<TMP_Text>(),
-                    EquippedRoot = FindDeep(root, "EquippedBadge")?.gameObject,
-                    FocusRoot = FindDeep(root, "CardFocus")?.gameObject,
-                    Frame = CacheSkillFrame(root),
-                    Background = FindDeep(root, "CardBackground")?.GetComponent<Image>()
-                });
+                cards.Add(CreateCardView(root));
             }
 
             var filterNames = new[] { "Filter_All", "Filter_Attack", "Filter_Buff", "Filter_Debuff" };
@@ -526,13 +512,28 @@ namespace ProjectMT.Features.CommanderSkill
 
         private void RefreshCards(CommanderSkillProgressView view)
         {
+            var requiredCount = 0;
+            for (var ownedIndex = 0; ownedIndex < view.OwnedSkills.Count; ownedIndex++)
+            {
+                var owned = view.OwnedSkills[ownedIndex];
+                if (catalog.TryGet(owned.SkillId, out var definition) && MatchesFilter(definition.Category))
+                {
+                    requiredCount++;
+                }
+            }
+            EnsureCardCapacity(requiredCount);
+
             var visibleCount = 0;
-            for (var ownedIndex = 0; ownedIndex < view.OwnedSkills.Count && visibleCount < cards.Count; ownedIndex++)
+            for (var ownedIndex = 0; ownedIndex < view.OwnedSkills.Count; ownedIndex++)
             {
                 var owned = view.OwnedSkills[ownedIndex];
                 if (!catalog.TryGet(owned.SkillId, out var definition) || !MatchesFilter(definition.Category))
                 {
                     continue;
+                }
+                if (visibleCount >= cards.Count)
+                {
+                    break; // 프리팹 템플릿이 없는 수명 테스트/비정상 뷰에서도 안전하게 종료
                 }
 
                 var card = cards[visibleCount++];
@@ -574,6 +575,44 @@ namespace ProjectMT.Features.CommanderSkill
             {
                 ownedCountText.text = $"{visibleCount} / {view.OwnedSkills.Count}";
             }
+        }
+
+        private void EnsureCardCapacity(int requiredCount)
+        {
+            if (cards.Count == 0) return;
+            var template = cards[0].Root;
+            var parent = template.transform.parent;
+            while (cards.Count < requiredCount)
+            {
+                var clone = Instantiate(template, parent);
+                clone.name = $"OwnedSkillCard_{cards.Count + 1}";
+                var card = CreateCardView(clone.transform);
+                cards.Add(card);
+                if (listenersBound) BindCardListener(card, cards.Count - 1);
+            }
+        }
+
+        private static SkillCardView CreateCardView(Transform root)
+        {
+            return new SkillCardView
+            {
+                Root = root.gameObject,
+                Button = root.GetComponent<Button>(),
+                Icon = FindDeep(root, "SkillIcon")?.GetComponent<Image>(),
+                NameText = FindDeep(root, "SkillName")?.GetComponent<TMP_Text>(),
+                CategoryText = FindDeep(root, "SkillCategory")?.GetComponent<TMP_Text>(),
+                StatsText = FindDeep(root, "SkillCardStats")?.GetComponent<TMP_Text>(),
+                LevelText = FindDeep(root, "SkillLevel")?.GetComponent<TMP_Text>(),
+                EquippedRoot = FindDeep(root, "EquippedBadge")?.gameObject,
+                FocusRoot = FindDeep(root, "CardFocus")?.gameObject,
+                Frame = CacheSkillFrame(root),
+                Background = FindDeep(root, "CardBackground")?.GetComponent<Image>()
+            };
+        }
+
+        private void BindCardListener(SkillCardView card, int cardIndex)
+        {
+            card?.Button?.onClick.AddListener(() => SelectCard(cardIndex));
         }
 
         private void RefreshFilters()
@@ -751,7 +790,7 @@ namespace ProjectMT.Features.CommanderSkill
         {
             if (definition is CommanderAttackSkillDefinition attack && attack.AreaDamageEffect != null)
             {
-                var damage = attack.AreaDamageEffect.BaseDamage * GetEffectMultiplier(definition.SkillId, level);
+                var damage = attack.AreaDamageEffect.BaseDamage * attack.AreaDamageEffect.PerHitMultiplier * GetEffectMultiplier(definition.SkillId, level);
                 return $"피해 {damage:0.#}  ·  {definition.Cooldown:0.#}초";
             }
 
@@ -774,7 +813,7 @@ namespace ProjectMT.Features.CommanderSkill
         {
             if (definition is CommanderAttackSkillDefinition attack && attack.AreaDamageEffect != null)
             {
-                var damage = attack.AreaDamageEffect.BaseDamage * GetEffectMultiplier(definition.SkillId, level);
+                var damage = attack.AreaDamageEffect.BaseDamage * attack.AreaDamageEffect.PerHitMultiplier * GetEffectMultiplier(definition.SkillId, level);
                 var shape = attack.AreaDamageEffect.Shape switch
                 {
                     MonsterBasicAttackShape.Fan => $"부채꼴 {attack.AreaDamageEffect.Angle:0.#}도",

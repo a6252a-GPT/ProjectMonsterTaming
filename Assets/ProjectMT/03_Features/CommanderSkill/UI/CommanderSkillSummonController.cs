@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -35,7 +35,7 @@ namespace ProjectMT.Features.CommanderSkill
         [SerializeField] private Button advertisementButton;
         [SerializeField] private Button[] offerButtons = Array.Empty<Button>();
         [SerializeField] private TMP_Text[] offerTexts = Array.Empty<TMP_Text>();
-        [SerializeField] private int[] offerDrawCounts = { 10, 30, 300 };
+        [SerializeField] private int[] offerDrawCounts = { 1, 10, 30, 300 };
 
         [Header("소환 레벨 정보")]
         [SerializeField] private Button levelInfoButton;
@@ -55,6 +55,9 @@ namespace ProjectMT.Features.CommanderSkill
         [SerializeField] private TMP_Text resultTitleText;
         [SerializeField] private TMP_Text resultSummaryText;
         [SerializeField] private Button resultCloseButton;
+
+        [SerializeField] private SkillInscriptionSequence inscriptionSequence;
+        [SerializeField] private ScrollRect resultScroll;
 
         private readonly List<CommanderSkillSummonResultItemView> spawnedResults =
             new List<CommanderSkillSummonResultItemView>();
@@ -85,6 +88,7 @@ namespace ProjectMT.Features.CommanderSkill
         {
             lifetimeVersion++;
             isSummoning = false;
+            inscriptionSequence?.Finish();
             UnsubscribeProgress();
             HideResults();
             HideLevelInfo();
@@ -99,6 +103,7 @@ namespace ProjectMT.Features.CommanderSkill
 
         public void Configure(IGameProgressService progressService, CommanderSkillCatalog skillCatalog)
         {
+            inscriptionSequence?.Finish();
             lifetimeVersion++;
             isSummoning = false;
             UnsubscribeProgress();
@@ -113,6 +118,7 @@ namespace ProjectMT.Features.CommanderSkill
 
         public void Shutdown()
         {
+            inscriptionSequence?.Finish();
             lifetimeVersion++;
             isSummoning = false;
             UnsubscribeProgress();
@@ -326,6 +332,8 @@ namespace ProjectMT.Features.CommanderSkill
             }
 
             ClearResults();
+            var hint = resultOverlay.GetComponentsInChildren<TMP_Text>(true).FirstOrDefault(t => t.name == "CloseHint");
+            if (hint != null) hint.text = drawCount == 300 ? "화면을 터치하면 전체 결과가 바로 공개됩니다" : "화면을 터치하면 한 장씩 바로 각인됩니다";
             var summaries = new Dictionary<string, ResultSummary>(StringComparer.Ordinal);
             for (var index = 0; index < resultIds.Count; index++)
             {
@@ -349,42 +357,102 @@ namespace ProjectMT.Features.CommanderSkill
             }
 
             var ordered = summaries.Values
-                .OrderByDescending(summary => summary.Count)
+                .OrderByDescending(summary => summary.Definition.Rarity)
+                .ThenByDescending(summary => summary.Count)
                 .ThenBy(summary => summary.Definition.DisplayName, StringComparer.Ordinal)
                 .ToArray();
-            for (var index = 0; index < ordered.Length; index++)
+            var display = new List<ResultSummary>();
+            if (drawCount == 1 || drawCount == 10 || drawCount == 30)
+            {
+                var first = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var id in resultIds)
+                    if (catalog.TryGet(id, out var definition))
+                        display.Add(new ResultSummary { Definition = definition, Count = 1,
+                            IsNew = first.Add(id) && (ownedBefore == null || !ownedBefore.Contains(id)) });
+            }
+            else display.AddRange(ordered);
+            if (resultSummaryText != null)
+                resultSummaryText.text = $"획득 종류 {ordered.Length:N0}개  ·  중복은 스킬 레벨업 재료로 저장됩니다";
+            resultOverlay.transform.SetAsLastSibling();
+            UIPanelPopAnimator.RequestOpen(resultOverlay, UIPanelPopStyle.RewardPopup);
+            if (drawCount == 30)
+            {
+                Action<int> showBatch = null;
+                showBatch = batch =>
+                {
+                    if (this == null || !isActiveAndEnabled || !resultOverlay.activeInHierarchy) return;
+                    if (batch >= 3) { DisplayResults(ordered, "30회 소환 · 최종 집계", false); return; }
+                    DisplayResults(display.Skip(batch * 10).Take(10).ToArray(), $"30회 소환 · {batch + 1} / 3 묶음", true,
+                        false, () => showBatch(batch + 1));
+                };
+                showBatch(0);
+            }
+            else DisplayResults(display, $"군단장 스킬 소환 · {drawCount:N0}회", true, drawCount == 300);
+        }
+
+        private void DisplayResults(IReadOnlyList<ResultSummary> display, string title, bool animate,
+            bool mass = false, Action onComplete = null)
+        {
+            ClearResults();
+            var grid = resultItemsRoot.GetComponent<GridLayoutGroup>();
+            if (grid != null)
+            {
+                grid.constraintCount = display.Count > 5 ? 5 : Mathf.Max(1, display.Count);
+                grid.cellSize = display.Count == 1 ? new Vector2(196f, 250f) :
+                    display.Count > 5 ? new Vector2(188f, 216f) : new Vector2(196f, 250f);
+                grid.spacing = new Vector2(16f, 14f);
+                grid.childAlignment = display.Count > 10 ? TextAnchor.UpperCenter : TextAnchor.MiddleCenter;
+                if (resultScroll != null)
+                {
+                    var rows = Mathf.CeilToInt(display.Count / (float)grid.constraintCount);
+                    var height = Mathf.Max(resultScroll.viewport.rect.height, rows * grid.cellSize.y + Mathf.Max(0, rows - 1) * grid.spacing.y);
+                    resultItemsRoot.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
+                    resultScroll.StopMovement();
+                    resultItemsRoot.anchoredPosition = Vector2.zero;
+                    resultScroll.vertical = display.Count > 10;
+                    if (resultScroll.verticalScrollbar != null) resultScroll.verticalScrollbar.gameObject.SetActive(display.Count > 10);
+                }
+            }
+            for (var index = 0; index < display.Count; index++)
             {
                 var item = Instantiate(resultItemPrefab, resultItemsRoot);
-                item.name = $"SkillResult_{index + 1:00}_{ordered[index].Definition.SkillId}";
-                item.Bind(ordered[index].Definition, ordered[index].Count, ordered[index].IsNew);
+                item.name = $"SkillResult_{index + 1:00}_{display[index].Definition.SkillId}";
+                item.Bind(display[index].Definition, display[index].Count, display[index].IsNew);
+                if (display.Count == 1)
+                {
+                    ((RectTransform)item.transform).sizeDelta = new Vector2(196f, 250f);
+                    item.transform.localScale = Vector3.one * 1.5f;
+                }
                 spawnedResults.Add(item);
             }
-
-            if (resultTitleText != null)
-            {
-                resultTitleText.text = $"군단장 스킬 소환 결과 · {drawCount:N0}회";
-            }
-
-            if (resultSummaryText != null)
-            {
-                resultSummaryText.text = $"획득 종류 {ordered.Length:N0}개  ·  중복은 스킬 레벨업 재료로 저장됩니다";
-            }
-
-            UIPanelPopAnimator.RequestOpen(resultOverlay, UIPanelPopStyle.RewardPopup);
+            if (resultTitleText != null) resultTitleText.text = title;
             LayoutRebuilder.ForceRebuildLayoutImmediate(resultItemsRoot);
+            Action completed = () =>
+            {
+                var hint = resultOverlay.GetComponentsInChildren<TMP_Text>(true).FirstOrDefault(t => t.name == "CloseHint");
+                if (hint != null) hint.text = display.Count > 10 ? "위아래로 밀어 전체 결과를 확인하세요" : "결과를 확인한 뒤 닫아 주세요";
+                onComplete?.Invoke();
+            };
+            if (animate) inscriptionSequence?.Play(spawnedResults, resultTitleText, resultCloseButton, mass, completed);
+            else completed();
         }
 
         private void HideResults()
         {
+            if (inscriptionSequence != null && inscriptionSequence.IsPlaying && isActiveAndEnabled && !isSummoning)
+            { inscriptionSequence.SkipCurrent(); return; }
+            inscriptionSequence?.Finish();
             UIPanelPopAnimator.RequestClose(resultOverlay, ClearResults);
         }
 
         private void ClearResults()
         {
+            inscriptionSequence?.Finish();
             for (var index = spawnedResults.Count - 1; index >= 0; index--)
             {
                 if (spawnedResults[index] != null)
                 {
+                    spawnedResults[index].gameObject.SetActive(false);
                     Destroy(spawnedResults[index].gameObject);
                 }
             }

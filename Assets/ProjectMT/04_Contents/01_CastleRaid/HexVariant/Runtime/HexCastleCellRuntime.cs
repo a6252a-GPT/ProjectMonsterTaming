@@ -2,7 +2,6 @@ using System;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace ProjectMT.Contents.CastleRaidHex
 {
@@ -30,7 +29,6 @@ namespace ProjectMT.Contents.CastleRaidHex
         [SerializeField, Min(0f)] private float maxHealth;
         [SerializeField] private HealthComponent health;
         [SerializeField] private Collider footprintCollider;
-        [SerializeField] private NavMeshObstacle navigationObstacle;
         [SerializeField] private Transform tileVisualRoot;
         [SerializeField] private Transform contentVisualRoot;
         [SerializeField] private Transform destroyedVisualRoot;
@@ -65,7 +63,6 @@ namespace ProjectMT.Contents.CastleRaidHex
         public bool IsDestroyed => isDestroyed;
         public HealthComponent Health => health;
         public Collider FootprintCollider => footprintCollider;
-        public NavMeshObstacle NavigationObstacle => navigationObstacle;
         public Transform TileVisualRoot => tileVisualRoot;
         public Transform ContentVisualRoot => contentVisualRoot;
         public Transform DestroyedVisualRoot => destroyedVisualRoot;
@@ -78,7 +75,6 @@ namespace ProjectMT.Contents.CastleRaidHex
             HexCastleCell cell,
             HealthComponent targetHealth,
             Collider targetCollider,
-            NavMeshObstacle targetObstacle,
             Transform targetTileVisualRoot,
             Transform targetContentVisualRoot,
             Transform targetDestroyedVisualRoot = null)
@@ -110,7 +106,6 @@ namespace ProjectMT.Contents.CastleRaidHex
             maxHealth = Mathf.Max(0f, cell.MaxHealth);
             health = targetHealth;
             footprintCollider = targetCollider;
-            navigationObstacle = targetObstacle;
             tileVisualRoot = targetTileVisualRoot;
             contentVisualRoot = targetContentVisualRoot;
             destroyedVisualRoot = targetDestroyedVisualRoot;
@@ -246,11 +241,6 @@ namespace ProjectMT.Contents.CastleRaidHex
                 footprintCollider.enabled = value;
             }
 
-            if (navigationObstacle != null)
-            {
-                navigationObstacle.carving = value;
-                navigationObstacle.enabled = value;
-            }
         }
 
         private void SetVisualState(bool destroyed)
@@ -284,9 +274,8 @@ namespace ProjectMT.Contents.CastleRaidHex
 
             if (!initialBlocked)
             {
-                if (maxHealth > 0f || health != null || footprintCollider != null || navigationObstacle != null ||
-                    GetComponents<HealthComponent>().Length != 0 || GetComponents<Collider>().Length != 0 ||
-                    GetComponents<NavMeshObstacle>().Length != 0)
+                if (maxHealth > 0f || health != null || footprintCollider != null ||
+                    GetComponents<HealthComponent>().Length != 0 || GetComponents<Collider>().Length != 0)
                 {
                     throw new InvalidOperationException($"열린 Cell {Coordinates}에 체력·충돌·길막이 있습니다.");
                 }
@@ -294,21 +283,19 @@ namespace ProjectMT.Contents.CastleRaidHex
                 return;
             }
 
-            if (maxHealth <= 0f || health == null || footprintCollider == null || navigationObstacle == null)
+            if (maxHealth <= 0f || health == null || footprintCollider == null)
             {
                 throw new InvalidOperationException($"차단 Cell {Coordinates}의 체력·충돌·길막 구성이 불완전합니다.");
             }
 
-            if (health.transform != transform || footprintCollider.transform != transform ||
-                navigationObstacle.transform != transform)
+            if (health.transform != transform || footprintCollider.transform != transform)
             {
                 throw new InvalidOperationException($"Cell {Coordinates}의 판정 Component는 같은 Cell Root에 있어야 합니다.");
             }
 
             if (GetComponents<HexCastleCellRuntime>().Length != 1 ||
                 GetComponents<HealthComponent>().Length != 1 ||
-                GetComponents<Collider>().Length != 1 ||
-                GetComponents<NavMeshObstacle>().Length != 1)
+                GetComponents<Collider>().Length != 1)
             {
                 throw new InvalidOperationException($"Cell {Coordinates}은 판정·체력·충돌·길막을 각각 하나만 소유해야 합니다.");
             }
@@ -323,7 +310,6 @@ namespace ProjectMT.Contents.CastleRaidHex
 
             if (visualRoot.GetComponentInChildren<HealthComponent>(true) != null ||
                 visualRoot.GetComponentInChildren<Collider>(true) != null ||
-                visualRoot.GetComponentInChildren<NavMeshObstacle>(true) != null ||
                 visualRoot.GetComponentInChildren<HexCastleCellRuntime>(true) != null)
             {
                 throw new InvalidOperationException($"Visual Root {visualRoot.name} 안에 게임플레이 Component가 있습니다.");

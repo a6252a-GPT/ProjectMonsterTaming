@@ -3,7 +3,6 @@
   "rootNamespace": "ProjectMT.Contents.CastleRaidHex",
   "references": [
     "Unity.InputSystem",
-    "Unity.AI.Navigation",
     "Unity.RenderPipelines.Universal.Runtime",
     "UnityEngine.UI",
     "Unity.TextMeshPro",

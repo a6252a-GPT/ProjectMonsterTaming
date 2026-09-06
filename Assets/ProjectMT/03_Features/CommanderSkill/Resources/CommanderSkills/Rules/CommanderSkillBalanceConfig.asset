@@ -158,3 +158,351 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+  - skillId: CS_TrackingBlade
+    maxLevel: 200
+    requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
+    damageMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0.02
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 200
+        value: 4.98
+        inSlope: 0.02
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - skillId: CS_DoomSpear
+    maxLevel: 200
+    requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
+    damageMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0.02
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 200
+        value: 4.98
+        inSlope: 0.02
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - skillId: CS_AbyssChain
+    maxLevel: 200
+    requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
+    damageMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0.02
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 200
+        value: 4.98
+        inSlope: 0.02
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - skillId: CS_PhantomCharge
+    maxLevel: 200
+    requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
+    damageMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0.02
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 200
+        value: 4.98
+        inSlope: 0.02
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - skillId: CS_ConquerorSigil
+    maxLevel: 200
+    requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
+    damageMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0.02
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 200
+        value: 4.98
+        inSlope: 0.02
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - skillId: CS_PhantomBarrage
+    maxLevel: 200
+    requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
+    damageMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0.02
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 200
+        value: 4.98
+        inSlope: 0.02
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - skillId: CS_DeathSentence
+    maxLevel: 200
+    requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
+    damageMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0.02
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 200
+        value: 4.98
+        inSlope: 0.02
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - skillId: CS_RuptureMarch
+    maxLevel: 200
+    requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
+    damageMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0.02
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 200
+        value: 4.98
+        inSlope: 0.02
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - skillId: CS_HeartOfBattlefield
+    maxLevel: 200
+    requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
+    damageMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0.02
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 200
+        value: 4.98
+        inSlope: 0.02
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - skillId: CS_MarchOfDead
+    maxLevel: 200
+    requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
+    damageMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0.02
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 200
+        value: 4.98
+        inSlope: 0.02
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - skillId: CS_WarGodBrand
+    maxLevel: 200
+    requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
+    damageMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0.02
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 200
+        value: 4.98
+        inSlope: 0.02
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  - skillId: CS_ApocalypseWar
+    maxLevel: 200
+    requiredDuplicateCount: 1
+    baseGoldCost: 100
+    goldCostGrowthMultiplier: 1.06
+    damageMultiplierByLevel:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0.02
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 200
+        value: 4.98
+        inSlope: 0.02
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4

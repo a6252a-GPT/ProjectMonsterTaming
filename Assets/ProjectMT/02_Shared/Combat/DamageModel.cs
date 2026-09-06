@@ -3,6 +3,8 @@ using UnityEngine;
 
 namespace ProjectMT.Shared.Combat
 {
+    public enum CombatDamageOrigin { BasicAttack, MonsterSkill, CommanderSkill, CommanderPeriodic, CommanderMarkTrigger }
+
     [System.Flags]
     public enum DamageFeedbackFlags
     {
@@ -15,12 +17,12 @@ namespace ProjectMT.Shared.Combat
     public readonly struct DamageRequest // 피해 적용 전 요청값
     {
         public DamageRequest(UnitActor source, float amount, Vector3 hitPoint)
-            : this(source, amount, hitPoint, false)
+            : this(source, amount, hitPoint, false, DamageFeedbackFlags.None, CombatDamageOrigin.BasicAttack)
         {
         }
 
         public DamageRequest(UnitActor source, float amount, Vector3 hitPoint, bool isCritical)
-            : this(source, amount, hitPoint, isCritical, DamageFeedbackFlags.None)
+            : this(source, amount, hitPoint, isCritical, DamageFeedbackFlags.None, CombatDamageOrigin.BasicAttack)
         {
         }
 
@@ -30,12 +32,19 @@ namespace ProjectMT.Shared.Combat
             Vector3 hitPoint,
             bool isCritical,
             DamageFeedbackFlags feedbackFlags)
+            : this(source, amount, hitPoint, isCritical, feedbackFlags, CombatDamageOrigin.BasicAttack)
+        {
+        }
+
+        public DamageRequest(UnitActor source, float amount, Vector3 hitPoint, bool isCritical,
+            DamageFeedbackFlags feedbackFlags, CombatDamageOrigin origin)
         {
             Source = source;
             Amount = amount;
             HitPoint = hitPoint;
             IsCritical = isCritical;
             FeedbackFlags = feedbackFlags;
+            Origin = origin;
         }
 
         public UnitActor Source { get; } // 공격 주체
@@ -43,6 +52,7 @@ namespace ProjectMT.Shared.Combat
         public Vector3 HitPoint { get; } // 연출 발생 위치
         public bool IsCritical { get; } // 치명타 피드백 구분
         public DamageFeedbackFlags FeedbackFlags { get; } // 이번 피해만의 피드백 소유권
+        public CombatDamageOrigin Origin { get; } // 각인 트리거 재귀 방지용 피해 출처
     }
 
     public readonly struct DamageReport // 피해 적용 후 확정값

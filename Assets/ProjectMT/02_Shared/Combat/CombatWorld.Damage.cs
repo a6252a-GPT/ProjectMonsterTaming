@@ -161,7 +161,8 @@ namespace ProjectMT.Shared.Combat
             {
                 var hitPoint = target.Position + Vector3.up * 0.4f;
                 health.ApplyDamage(
-                    new DamageRequest(source, resolvedAmount, hitPoint, false, feedbackFlags),
+                    new DamageRequest(source, resolvedAmount, hitPoint, false, feedbackFlags,
+                        applyOutgoingPassive ? CombatDamageOrigin.BasicAttack : CombatDamageOrigin.MonsterSkill),
                     out appliedDamage);
             }
             else

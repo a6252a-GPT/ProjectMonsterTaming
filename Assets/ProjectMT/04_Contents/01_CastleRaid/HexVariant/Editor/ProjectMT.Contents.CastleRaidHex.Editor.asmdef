@@ -7,7 +7,6 @@
     "ProjectMT.Shared",
     "ProjectMT.Contents.Framework",
     "ProjectMT.Features",
-    "Unity.AI.Navigation",
     "Unity.InputSystem",
     "UnityEngine.UI",
     "Unity.TextMeshPro"

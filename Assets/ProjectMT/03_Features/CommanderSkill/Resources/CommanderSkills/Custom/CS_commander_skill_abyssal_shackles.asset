@@ -54,12 +54,19 @@ MonoBehaviour:
     \uC774\uB3D9\uC18D\uB3C4\uC640 \uBC29\uC5B4\uB825\uC744 \uC77C\uC815 \uC2DC\uAC04
     \uB0AE\uCD98\uB2E4."
   icon: {fileID: 21300000, guid: 285eec49d1866f5458dbbd08214d614a, type: 3}
+  rarity: 4
   castTime: 0.75
   cooldown: 12
   targeting: {fileID: -2166307619817867620}
   effects:
   - {fileID: -8021581860210628793}
   - {fileID: 1724473586434618723}
+  castingVfxPrefab: {fileID: 0}
+  castingVfxLifetime: 1
+  castingVfxLocalOffset: {x: 0, y: 0, z: 0}
+  castingVfxLocalEuler: {x: 0, y: 0, z: 0}
+  castingVfxScale: 1
+  castingSfx: {fileID: 0}
   castVfxPrefab: {fileID: 0}
   castVfxLifetime: 1
   castVfxLocalOffset: {x: 0, y: 0, z: 0}

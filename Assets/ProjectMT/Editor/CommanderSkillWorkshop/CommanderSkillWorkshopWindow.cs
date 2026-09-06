@@ -398,6 +398,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             AddBoundField(identity, "displayName", "표시 이름");
             AddBoundField(identity, "description", "설명");
             AddBoundField(identity, "icon", "아이콘");
+            AddBoundField(identity, "rarity", "등급");
             assemblerScroll.Add(identity);
 
             var flow = Section("2. 공통 실행 흐름", "모든 군단장 스킬은 캐스팅 완료 뒤 발동하고, 발동 성공 뒤 쿨타임을 시작합니다.");
@@ -413,18 +414,23 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 target,
                 "targetSelection",
                 "우선 대상",
-                new[] { CommanderSkillTargetSelection.Nearest, CommanderSkillTargetSelection.LowestHealth },
-                new[] { "가장 가까운 대상", "체력 비율이 가장 낮은 대상" });
+                new[] { CommanderSkillTargetSelection.Nearest, CommanderSkillTargetSelection.LowestHealth,
+                    CommanderSkillTargetSelection.HighestHealth, CommanderSkillTargetSelection.Strongest,
+                    CommanderSkillTargetSelection.Random, CommanderSkillTargetSelection.MostCrowded },
+                new[] { "가장 가까운 대상", "체력 비율이 가장 낮은 대상", "체력 비율이 가장 높은 대상",
+                    "최대 체력이 가장 높은 대상", "무작위 대상", "주변 적이 가장 많은 대상" });
             AddBoundField(target, "targetRange", "탐색 거리 (m)");
             assemblerScroll.Add(target);
 
             if (draft.Category == CommanderSkillCategory.Attack)
             {
                 BuildAttackAssembler();
+                BuildAttackAdditionalEffects();
             }
             else
             {
                 BuildEffectAssembler();
+                BuildPatternAssembler();
             }
 
             var feedback = new Foldout { text = "5. VFX / SFX 실제 연출", value = true };
@@ -473,6 +479,17 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             }
             AddBoundField(impactFeedback, "impactSound", "사운드 (AudioClip)");
             feedback.Add(impactFeedback);
+
+            var persistentFeedback = new VisualElement();
+            persistentFeedback.AddToClassList("sub-card");
+            persistentFeedback.Add(CardHeader("PersistentArea 지속 연출"));
+            persistentFeedback.Add(Help("PersistentArea 시작 시 1회 생성되고 Pattern 종료 또는 Shutdown 시 반환됩니다."));
+            AddBoundField(persistentFeedback, "persistentVfxPrefab", "VFX Prefab", true);
+            AddBoundField(persistentFeedback, "persistentVfxLocalOffset", "위치 보정");
+            AddBoundField(persistentFeedback, "persistentVfxLocalEuler", "회전 보정");
+            AddBoundField(persistentFeedback, "persistentVfxScale", "크기 배율");
+            AddBoundField(persistentFeedback, "persistentVfxAnchor", "Anchor");
+            feedback.Add(persistentFeedback);
             assemblerScroll.Add(feedback);
 
             var catalog = new Foldout { text = "6. Catalog · 성장 · 소환 연결", value = true };
@@ -506,8 +523,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 attack,
                 "deliveryModule",
                 "전달 방식",
-                new[] { MonsterBasicAttackDeliveryModule.Direct, MonsterBasicAttackDeliveryModule.Projectile },
-                new[] { "즉시 판정", "투사체" },
+                new[] { MonsterBasicAttackDeliveryModule.Direct, MonsterBasicAttackDeliveryModule.Projectile,
+                    MonsterBasicAttackDeliveryModule.TravelingArea },
+                new[] { "즉시 판정", "투사체", "지점 판정" },
                 true);
             AddEnumPopup(
                 attack,
@@ -522,6 +540,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 },
                 new[] { "물리", "화염", "냉기", "비전" });
             AddBoundField(attack, "baseDamage", "기본 피해");
+            AddBoundField(attack, "perHitMultiplier", "타격당 피해 배율");
             AddEnumPopup(
                 attack,
                 "shape",
@@ -590,6 +609,43 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 attack.Add(projectile);
             }
             assemblerScroll.Add(attack);
+            BuildPatternAssembler();
+        }
+
+        private void BuildPatternAssembler()
+        {
+            var pattern = Section("5. 공격 패턴", "Single을 기본으로 반복·장판·연쇄 실행을 데이터로 조립합니다.");
+            AddBoundField(pattern, "patternType", "패턴");
+            if (draft.PatternType is CommanderSkillPatternType.Burst or CommanderSkillPatternType.Barrage or CommanderSkillPatternType.Pulse)
+            {
+                AddBoundField(pattern, "repeatCount", "반복 횟수");
+                AddBoundField(pattern, "repeatInterval", "반복 간격 (초)");
+            }
+            if (draft.PatternType == CommanderSkillPatternType.Barrage) AddBoundField(pattern, "randomRadius", "분산 반경 (m)");
+            if (draft.PatternType == CommanderSkillPatternType.PersistentArea)
+            {
+                AddBoundField(pattern, "patternDuration", "지속 시간 (초)");
+                AddBoundField(pattern, "tickInterval", "틱 간격 (초)");
+            }
+            if (draft.PatternType == CommanderSkillPatternType.Chain)
+            {
+                AddBoundField(pattern, "chainCount", "연쇄 횟수");
+                AddBoundField(pattern, "chainRadius", "연쇄 반경 (m)");
+                AddBoundField(pattern, "repeatInterval", "연쇄 간격 (초)");
+            }
+            assemblerScroll.Add(pattern);
+        }
+
+        private void BuildAttackAdditionalEffects()
+        {
+            var section = Section("6. 추가 효과", "피해와 함께 상태 효과를 순서대로 적용합니다.");
+            var effectsProperty = draftSerialized.FindProperty("effects");
+            for (var index = 0; index < effectsProperty.arraySize; index++) BuildEffectCard(section, effectsProperty, index);
+            var add = new Button(AddEffect) { text = "+ 상태 효과 추가" };
+            add.AddToClassList("add-button");
+            add.SetEnabled(effectsProperty.arraySize < 8);
+            section.Add(add);
+            assemblerScroll.Add(section);
         }
 
         private void BuildEffectAssembler()
@@ -627,11 +683,91 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             var up = SmallButton("↑", () => MoveEffect(index, index - 1), index > 0);
             var down = SmallButton("↓", () => MoveEffect(index, index + 1), index < effectsProperty.arraySize - 1);
             var duplicate = SmallButton("복제", () => DuplicateEffect(index), true);
-            var remove = SmallButton("삭제", () => RemoveEffect(index), effectsProperty.arraySize > 1, true);
+            var remove = SmallButton("삭제", () => RemoveEffect(index), draft.Category == CommanderSkillCategory.Attack || effectsProperty.arraySize > 1, true);
             card.Add(CardHeader($"효과 {index + 1:00}", up, down, duplicate, remove));
 
             var element = effectsProperty.GetArrayElementAtIndex(index);
             AddBoundField(card, element.FindPropertyRelative("effectId"), "효과 ID");
+            AddBoundField(card, element.FindPropertyRelative("kind"), "효과 블록", true);
+            var kind = (CommanderSkillWorkshopEffectKind)element.FindPropertyRelative("kind").intValue;
+            if (kind == CommanderSkillWorkshopEffectKind.CommanderMark)
+            {
+                AddBoundField(card, element.FindPropertyRelative("sharedMarkDefinition"), "공용 Mark Definition");
+                if (element.FindPropertyRelative("sharedMarkDefinition").objectReferenceValue != null)
+                {
+                    card.Add(new HelpBox("공용 Mark 자산을 그대로 참조합니다. 값을 바꾸려면 공용 자산에서 편집하거나 참조를 비우세요.", HelpBoxMessageType.Info));
+                    var sharedPath = element.FindPropertyRelative("sharedMarkDefinition").propertyPath;
+                    foreach (var slotName in new[] { "Apply", "Loop", "Stack", "Trigger", "Remove" })
+                    {
+                        var selectedSlot = slotName;
+                        card.Add(new Button(() =>
+                        {
+                            draftSerialized.ApplyModifiedProperties();
+                            var shared = draftSerialized.FindProperty(sharedPath).objectReferenceValue as CommanderMarkEffectDefinition;
+                            if (shared == null) return;
+                            var slot = selectedSlot switch
+                            {
+                                "Apply" => shared.OnApply, "Loop" => shared.Loop, "Stack" => shared.OnStack,
+                                "Trigger" => shared.OnTrigger, _ => shared.OnRemove
+                            };
+                            PreviewMarkSlot(CommanderMarkFeedbackDraft.FromDefinition(slot));
+                        }) { text = $"{selectedSlot} 미리보기" });
+                    }
+                    parent.Add(card);
+                    return;
+                }
+                AddBoundField(card, element.FindPropertyRelative("markId"), "Mark ID");
+                AddBoundField(card, element.FindPropertyRelative("duration"), "지속 시간 (초)");
+                AddBoundField(card, element.FindPropertyRelative("scope"), "적용 범위");
+                AddBoundField(card, element.FindPropertyRelative("radius"), "적용/발동 반경 (m)");
+                AddBoundField(card, element.FindPropertyRelative("maxTargets"), "최대 대상 수");
+                AddBoundField(card, element.FindPropertyRelative("markTrigger"), "발동 조건");
+                var trigger = (CommanderMarkTriggerType)element.FindPropertyRelative("markTrigger").intValue;
+                if (trigger == CommanderMarkTriggerType.HitCount) AddBoundField(card, element.FindPropertyRelative("requiredHits"), "필요 피격 수");
+                if (trigger == CommanderMarkTriggerType.StackReached) AddBoundField(card, element.FindPropertyRelative("requiredStacks"), "필요 스택");
+                AddBoundField(card, element.FindPropertyRelative("markMaxStacks"), "최대 스택");
+                AddBoundField(card, element.FindPropertyRelative("consumeOnTrigger"), "발동 후 소모");
+                AddBoundField(card, element.FindPropertyRelative("refreshDurationOnApply"), "재적용 시 시간 갱신");
+                AddBoundField(card, element.FindPropertyRelative("triggerCooldown"), "발동 내부 쿨타임");
+                AddBoundField(card, element.FindPropertyRelative("recordHitCount"), "피격 수 기록");
+                var originFilter = new Foldout { text = "고급 · Trigger Count Source", value = false };
+                AddBoundField(originFilter, element.FindPropertyRelative("countBasicAttack"), "Basic Attack");
+                AddBoundField(originFilter, element.FindPropertyRelative("countMonsterSkill"), "Monster Skill");
+                AddBoundField(originFilter, element.FindPropertyRelative("countCommanderSkill"), "Commander Skill");
+                AddBoundField(originFilter, element.FindPropertyRelative("countCommanderMarkTrigger"), "Commander Mark Trigger");
+                card.Add(originFilter);
+                BuildTriggerEffects(card, element, index);
+                AddMarkFeedbackFoldout(card, element, "onApply", "OnApply");
+                AddMarkFeedbackFoldout(card, element, "loop", "Loop");
+                AddMarkFeedbackFoldout(card, element, "onStack", "OnStack");
+                AddMarkFeedbackFoldout(card, element, "onTrigger", "OnTrigger");
+                AddMarkFeedbackFoldout(card, element, "onRemove", "OnRemove");
+                parent.Add(card);
+                return;
+            }
+            if (kind == CommanderSkillWorkshopEffectKind.RecordedHitDamage)
+            {
+                AddBoundField(card, element.FindPropertyRelative("recordedBaseMultiplier"), "기본 배율");
+                AddBoundField(card, element.FindPropertyRelative("recordedMultiplierPerHit"), "기록 1회당 배율");
+                AddBoundField(card, element.FindPropertyRelative("maximumRecordedHits"), "최대 기록 수");
+                parent.Add(card);
+                return;
+            }
+            if (kind == CommanderSkillWorkshopEffectKind.AreaDamage)
+            {
+                BuildDamageFields(card, element);
+                parent.Add(card);
+                return;
+            }
+            if (kind == CommanderSkillWorkshopEffectKind.GlobalModifier)
+            {
+                AddBoundField(card, element.FindPropertyRelative("duration"), "지속 시간 (초)");
+                AddBoundField(card, element.FindPropertyRelative("markRequiredHitsMultiplier"), "Mark 필요 Hit 배율");
+                AddBoundField(card, element.FindPropertyRelative("markTriggerDamageMultiplier"), "Mark 발동 피해 배율");
+                AddBoundField(card, element.FindPropertyRelative("cooldownRecoveryMultiplier"), "쿨타임 회복 배율");
+                parent.Add(card);
+                return;
+            }
             var options = EffectTypeOptions(draft.Category);
             AddEnumPopup(
                 card,
@@ -668,8 +804,8 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 card,
                 element.FindPropertyRelative("scope"),
                 "적용 범위",
-                new[] { CommanderSkillEffectScope.PrimaryTarget, CommanderSkillEffectScope.Area },
-                new[] { "주 대상 1기", "주 대상 주변" },
+                new[] { CommanderSkillEffectScope.PrimaryTarget, CommanderSkillEffectScope.Area, CommanderSkillEffectScope.ImpactTargets },
+                new[] { "주 대상 1기", "주 대상 주변", "실제 피격 대상" },
                 true);
             var scope = (CommanderSkillEffectScope)element.FindPropertyRelative("scope").intValue;
             if (scope == CommanderSkillEffectScope.Area)
@@ -687,6 +823,138 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 new[] { "지속시간 갱신", "더 강할 때 교체" });
             card.Add(advanced);
             parent.Add(card);
+        }
+
+        private void BuildTriggerEffects(VisualElement card, SerializedProperty mark, int markIndex)
+        {
+            var foldout = new Foldout { text = "Trigger Effects", value = true };
+            var effects = mark.FindPropertyRelative("triggerEffects");
+            for (var index = 0; index < effects.arraySize; index++)
+                BuildTriggerEffectCard(foldout, effects, markIndex, index);
+            var add = new Button(() => AddTriggerEffect(markIndex)) { text = "+ Trigger Effect 추가" };
+            add.SetEnabled(effects.arraySize < 8);
+            add.AddToClassList("add-button");
+            foldout.Add(add);
+            card.Add(foldout);
+        }
+
+        private void BuildTriggerEffectCard(VisualElement parent, SerializedProperty effects,
+            int markIndex, int triggerIndex)
+        {
+            var element = effects.GetArrayElementAtIndex(triggerIndex);
+            var card = new VisualElement();
+            card.AddToClassList("sub-card");
+            card.Add(CardHeader($"Trigger {triggerIndex + 1:00}",
+                SmallButton("삭제", () => RemoveTriggerEffect(markIndex, triggerIndex), true, true)));
+            AddBoundField(card, element.FindPropertyRelative("effectId"), "효과 ID");
+            AddEnumPopup(card, element.FindPropertyRelative("kind"), "효과 블록",
+                new[] { CommanderSkillWorkshopEffectKind.AreaDamage, CommanderSkillWorkshopEffectKind.UnitEffect,
+                    CommanderSkillWorkshopEffectKind.RecordedHitDamage },
+                new[] { "Area Damage", "Unit Effect", "Recorded Hit Damage" }, true);
+            var kind = (CommanderSkillWorkshopEffectKind)element.FindPropertyRelative("kind").intValue;
+            if (kind == CommanderSkillWorkshopEffectKind.AreaDamage)
+                BuildDamageFields(card, element);
+            else if (kind == CommanderSkillWorkshopEffectKind.RecordedHitDamage)
+            {
+                AddBoundField(card, element.FindPropertyRelative("recordedBaseMultiplier"), "기본 배율");
+                AddBoundField(card, element.FindPropertyRelative("recordedMultiplierPerHit"), "기록 1회당 배율");
+                AddBoundField(card, element.FindPropertyRelative("maximumRecordedHits"), "최대 기록 수");
+            }
+            else
+            {
+                AddBoundField(card, element.FindPropertyRelative("effectType"), "효과 종류", true);
+                AddBoundField(card, element.FindPropertyRelative("valueSource"), "수치 기준");
+                AddBoundField(card, element.FindPropertyRelative("magnitude"), "효과 수치");
+                AddBoundField(card, element.FindPropertyRelative("duration"), "지속 시간 (초)");
+                AddEnumPopup(card, element.FindPropertyRelative("scope"), "적용 범위",
+                    new[] { CommanderSkillEffectScope.PrimaryTarget, CommanderSkillEffectScope.Area,
+                        CommanderSkillEffectScope.ImpactTargets },
+                    new[] { "주 대상 1기", "주 대상 주변", "실제 피격 대상" });
+                if ((CommanderSkillEffectScope)element.FindPropertyRelative("scope").intValue == CommanderSkillEffectScope.Area)
+                {
+                    AddBoundField(card, element.FindPropertyRelative("radius"), "적용 반경 (m)");
+                    AddBoundField(card, element.FindPropertyRelative("maxTargets"), "최대 대상 수");
+                }
+            }
+            parent.Add(card);
+        }
+
+        private void BuildDamageFields(VisualElement card, SerializedProperty element)
+        {
+            AddBoundField(card, element.FindPropertyRelative("damageKind"), "피해 종류");
+            AddBoundField(card, element.FindPropertyRelative("baseDamage"), "기본 피해");
+            AddBoundField(card, element.FindPropertyRelative("perHitMultiplier"), "타격 배율");
+            AddBoundField(card, element.FindPropertyRelative("damageShape"), "판정 Shape", true);
+            AddBoundField(card, element.FindPropertyRelative("damageCenter"), "판정 중심");
+            AddBoundField(card, element.FindPropertyRelative("radius"), "반경 (m)");
+            AddBoundField(card, element.FindPropertyRelative("forwardOffset"), "전방 Offset");
+            AddBoundField(card, element.FindPropertyRelative("angle"), "부채꼴 각도");
+            AddBoundField(card, element.FindPropertyRelative("lineWidth"), "선 폭");
+            AddBoundField(card, element.FindPropertyRelative("maxTargets"), "최대 대상 수");
+        }
+
+        private void AddTriggerEffect(int markIndex)
+        {
+            draftSerialized.Update();
+            var triggers = draftSerialized.FindProperty("effects").GetArrayElementAtIndex(markIndex)
+                .FindPropertyRelative("triggerEffects");
+            var index = triggers.arraySize;
+            triggers.arraySize++;
+            InitializeTriggerEffect(triggers.GetArrayElementAtIndex(index), triggers, index);
+            ApplyStructuralChange();
+        }
+
+        private void RemoveTriggerEffect(int markIndex, int triggerIndex)
+        {
+            draftSerialized.Update();
+            var triggers = draftSerialized.FindProperty("effects").GetArrayElementAtIndex(markIndex)
+                .FindPropertyRelative("triggerEffects");
+            if (triggerIndex < 0 || triggerIndex >= triggers.arraySize) return;
+            triggers.DeleteArrayElementAtIndex(triggerIndex);
+            ApplyStructuralChange();
+        }
+
+        private void InitializeTriggerEffect(SerializedProperty element, SerializedProperty triggers, int index)
+        {
+            element.FindPropertyRelative("effectId").stringValue = CreateUniqueEffectId(triggers, $"trigger_{index + 1:00}");
+            element.FindPropertyRelative("kind").intValue = (int)CommanderSkillWorkshopEffectKind.AreaDamage;
+            element.FindPropertyRelative("damageKind").intValue = (int)draft.DamageKind;
+            element.FindPropertyRelative("baseDamage").floatValue = draft.BaseDamage;
+            element.FindPropertyRelative("perHitMultiplier").floatValue = 1f;
+            element.FindPropertyRelative("damageShape").intValue = (int)MonsterBasicAttackShape.Circle;
+            element.FindPropertyRelative("damageCenter").intValue = (int)MonsterBasicAttackCenter.PrimaryTarget;
+            element.FindPropertyRelative("radius").floatValue = 2f;
+            element.FindPropertyRelative("maxTargets").intValue = 8;
+        }
+
+        private void AddMarkFeedbackFoldout(VisualElement card, SerializedProperty effect,
+            string propertyName, string label)
+        {
+            var slot = effect.FindPropertyRelative(propertyName);
+            var foldout = new Foldout { text = $"Mark Feedback · {label}", value = false };
+            AddBoundField(foldout, slot.FindPropertyRelative("vfxPrefab"), "VFX Prefab");
+            AddBoundField(foldout, slot.FindPropertyRelative("sound"), "SFX");
+            AddBoundField(foldout, slot.FindPropertyRelative("lifetime"), "Lifetime");
+            AddBoundField(foldout, slot.FindPropertyRelative("localOffset"), "Offset");
+            AddBoundField(foldout, slot.FindPropertyRelative("localEuler"), "Rotation");
+            AddBoundField(foldout, slot.FindPropertyRelative("scale"), "Scale");
+            AddBoundField(foldout, slot.FindPropertyRelative("anchor"), "Anchor");
+            var slotPath = slot.propertyPath;
+            foldout.Add(new Button(() =>
+            {
+                draftSerialized.ApplyModifiedProperties();
+                PreviewMarkSlot(draftSerialized.FindProperty(slotPath).boxedValue as CommanderMarkFeedbackDraft);
+            }) { text = "미리보기" });
+            card.Add(foldout);
+        }
+
+        private void PreviewMarkSlot(CommanderMarkFeedbackDraft slot)
+        {
+            EnsurePreviewForEditorState();
+            if (preview == null) return;
+            preview.SetSource(draft);
+            preview.PlayMarkFeedback(slot);
+            previewCanvas?.MarkDirtyRepaint();
         }
 
         private void AddEffect()
@@ -713,7 +981,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         {
             draftSerialized.Update();
             var effects = draftSerialized.FindProperty("effects");
-            if (effects.arraySize <= 1) return;
+            if (effects.arraySize <= (draft.Category == CommanderSkillCategory.Attack ? 0 : 1)) return;
             effects.DeleteArrayElementAtIndex(index);
             ApplyStructuralChange();
         }
@@ -732,6 +1000,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             var debuff = draft.Category == CommanderSkillCategory.Debuff;
             element.FindPropertyRelative("effectId").stringValue =
                 CreateUniqueEffectId(draftSerialized.FindProperty("effects"), $"effect_{index + 1:00}");
+            element.FindPropertyRelative("kind").intValue = (int)CommanderSkillWorkshopEffectKind.UnitEffect;
             element.FindPropertyRelative("effectType").intValue = (int)(debuff
                 ? CommanderSkillUnitEffectType.Slow
                 : CommanderSkillUnitEffectType.Heal);
@@ -845,7 +1114,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 var delivery = draft.DeliveryModule == MonsterBasicAttackDeliveryModule.Projectile
                     ? "투사체"
                     : "즉시 판정";
-                return $"{CategoryLabel(draft.Category)} · {delivery} · {ShapeLabel(draft.Shape)} · " +
+                return $"{CategoryLabel(draft.Category)} · {delivery} · {draft.PatternType} · {ShapeLabel(draft.Shape)} · " +
                        $"피해 {draft.BaseDamage:0.##} · 최대 {Mathf.Max(1, draft.MaxTargets)}기";
             }
 
@@ -1396,6 +1665,14 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         private static (CommanderSkillUnitEffectType[] Values, string[] Labels) EffectTypeOptions(
             CommanderSkillCategory category)
         {
+            if (category == CommanderSkillCategory.Attack)
+            {
+                return (
+                    (CommanderSkillUnitEffectType[])Enum.GetValues(typeof(CommanderSkillUnitEffectType)),
+                    new[] { "회복", "보호막", "공격력 증가", "방어력 증가", "공격속도 증가", "받는 피해 감소",
+                        "피해 반사", "약화 정화", "기력 회복", "공격력 감소", "방어력 감소", "공격속도 감소",
+                        "이동속도 감소", "감속", "기절", "기존 노출 표식", "기력 감소" });
+            }
             if (category == CommanderSkillCategory.Debuff)
             {
                 return (
@@ -1483,6 +1760,12 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 return "빈 효과";
             }
 
+            if (effect.Kind == CommanderSkillWorkshopEffectKind.CommanderMark)
+                return $"Mark {effect.MarkId} / {effect.MarkTrigger} / {effect.Duration:0.##}초";
+            if (effect.Kind == CommanderSkillWorkshopEffectKind.RecordedHitDamage)
+                return $"기록 피해 {effect.RecordedBaseMultiplier:0.##} + Hit×{effect.RecordedMultiplierPerHit:0.##} (최대 {effect.MaximumRecordedHits})";
+            if (effect.Kind == CommanderSkillWorkshopEffectKind.GlobalModifier)
+                return $"전역 Modifier {effect.Duration:0.##}초 / Hit {effect.MarkRequiredHitsMultiplier:0.##} / 피해 {effect.MarkTriggerDamageMultiplier:0.##} / 쿨 {effect.CooldownRecoveryMultiplier:0.##}";
             var magnitude = CommanderUnitEffectDefinition.UsesRatioMagnitude(
                 effect.EffectType,
                 effect.ValueSource)

@@ -45,9 +45,10 @@ namespace ProjectMT.Features.CommanderSkill
             }
 
             if (deliveryModule is not MonsterBasicAttackDeliveryModule.Direct and
-                not MonsterBasicAttackDeliveryModule.Projectile)
+                not MonsterBasicAttackDeliveryModule.Projectile and
+                not MonsterBasicAttackDeliveryModule.TravelingArea)
             {
-                error = $"{SkillId}: commander attack supports direct or projectile delivery only.";
+                error = $"{SkillId}: commander attack delivery is invalid.";
                 return false;
             }
 
@@ -133,6 +134,32 @@ namespace ProjectMT.Features.CommanderSkill
             float impactLifetime,
             SfxCue impactCue)
         {
+            EditorConfigure(id, title, body, skillIcon, castTimeSeconds, cooldownSeconds, targetingRule,
+                new CommanderSkillEffectDefinition[] { damageEffect }, delivery, projectile, speed, path,
+                pathArcHeight, castVfx, castLifetime, castCue, impactVfx, impactLifetime, impactCue);
+        }
+
+        public void EditorConfigure(
+            string id,
+            string title,
+            string body,
+            Sprite skillIcon,
+            float castTimeSeconds,
+            float cooldownSeconds,
+            CommanderSkillTargetingDefinition targetingRule,
+            CommanderSkillEffectDefinition[] effectRules,
+            MonsterBasicAttackDeliveryModule delivery,
+            GameObject projectile,
+            float speed,
+            CommanderSkillTrajectory path,
+            float pathArcHeight,
+            GameObject castVfx,
+            float castLifetime,
+            SfxCue castCue,
+            GameObject impactVfx,
+            float impactLifetime,
+            SfxCue impactCue)
+        {
             EditorConfigureCommon(
                 id,
                 title,
@@ -141,7 +168,7 @@ namespace ProjectMT.Features.CommanderSkill
                 castTimeSeconds,
                 cooldownSeconds,
                 targetingRule,
-                new CommanderSkillEffectDefinition[] { damageEffect },
+                effectRules,
                 castVfx,
                 castLifetime,
                 castCue,

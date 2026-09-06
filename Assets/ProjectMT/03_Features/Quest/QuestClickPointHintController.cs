@@ -412,9 +412,12 @@ namespace ProjectMT.Features.Quest
             }
 
             var instance = GetOrCreateHint(clickPoint, placeOnBottomRight);
+            // 전용 ClickPoint가 있는 단계는 그 점을 그대로 사용하고, 실제 버튼을 넘긴 단계만
+            // 버튼 우하단을 사용한다. 강조 외곽은 위에서 구한 실제 버튼 전체를 계속 따른다.
+            var hintTarget = placeOnBottomRight ? resolvedTarget : clickPoint as RectTransform ?? resolvedTarget;
             PositionHint(instance != null ? instance.transform as RectTransform : null,
-                resolvedTarget,
-                true);
+                hintTarget,
+                placeOnBottomRight);
             // 상점 몬스터 뽑기 퀘스트는 손가락만 표시하고 노란 테두리는 사용하지 않는다.
             var showHighlight = false; // 공통 강조선 하나만 사용
             var highlight = showHighlight ? GetOrCreateHighlight(clickPoint) : null;

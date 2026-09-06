@@ -4,14 +4,62 @@ using ProjectMT.Features.CommanderSkill;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Unit;
+using UnityEditor;
 using UnityEngine;
 
 namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 {
+    internal enum CommanderSkillWorkshopEffectKind { UnitEffect, CommanderMark, RecordedHitDamage, GlobalModifier, AreaDamage }
+
+    [Serializable]
+    internal sealed class CommanderMarkFeedbackDraft
+    {
+        [SerializeField] private GameObject vfxPrefab;
+        [SerializeField, Min(0.05f)] private float lifetime = 1f;
+        [SerializeField] private Vector3 localOffset;
+        [SerializeField] private Vector3 localEuler;
+        [SerializeField, Min(0.01f)] private float scale = 1f;
+        [SerializeField] private AudioClip sound;
+        [SerializeField, HideInInspector] private SfxCue sfxSource;
+        [SerializeField] private CommanderMarkFeedbackAnchor anchor = CommanderMarkFeedbackAnchor.TargetCenter;
+        public GameObject VfxPrefab => vfxPrefab;
+        public float Lifetime => lifetime;
+        public Vector3 LocalOffset => localOffset;
+        public Vector3 LocalEuler => localEuler;
+        public float Scale => scale;
+        public AudioClip Sound => sound;
+        public SfxCue SfxSource => sfxSource;
+        public CommanderMarkFeedbackAnchor Anchor => anchor;
+
+        public static CommanderMarkFeedbackDraft FromDefinition(CommanderMarkFeedbackSlot source)
+        {
+            return new CommanderMarkFeedbackDraft
+            {
+                vfxPrefab = source?.VfxPrefab,
+                lifetime = source?.Lifetime ?? 1f,
+                localOffset = source?.LocalOffset ?? Vector3.zero,
+                localEuler = source?.LocalEuler ?? Vector3.zero,
+                scale = source?.Scale ?? 1f,
+                sound = source?.Sfx?.PrimaryClip,
+                sfxSource = source?.Sfx,
+                anchor = source?.Anchor ?? CommanderMarkFeedbackAnchor.TargetCenter
+            };
+        }
+    }
+
     [Serializable]
     internal sealed class CommanderSkillWorkshopEffectDraft // 효과형 스킬을 조립하는 한 효과 카드
     {
         [SerializeField] private string effectId = "effect_01";
+        [SerializeField] private CommanderSkillWorkshopEffectKind kind;
+        [SerializeField] private CommanderSkillDamageKind damageKind = CommanderSkillDamageKind.Physical;
+        [SerializeField, Min(0f)] private float baseDamage = 10f;
+        [SerializeField, Min(0f)] private float perHitMultiplier = 1f;
+        [SerializeField] private MonsterBasicAttackShape damageShape = MonsterBasicAttackShape.Circle;
+        [SerializeField] private MonsterBasicAttackCenter damageCenter = MonsterBasicAttackCenter.PrimaryTarget;
+        [SerializeField, Min(0f)] private float forwardOffset;
+        [SerializeField, Range(5f, 180f)] private float angle = 90f;
+        [SerializeField, Min(0.05f)] private float lineWidth = 1f;
         [SerializeField] private CommanderSkillUnitEffectType effectType = CommanderSkillUnitEffectType.Heal;
         [SerializeField] private CommanderSkillEffectValueSource valueSource =
             CommanderSkillEffectValueSource.TargetMissingHealthRatio;
@@ -21,8 +69,46 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         [SerializeField, Min(0.1f)] private float radius = 5f;
         [SerializeField, Min(1)] private int maxTargets = 8;
         [SerializeField] private MonsterBuffStackPolicy stackPolicy = MonsterBuffStackPolicy.RefreshDuration;
+        [SerializeField] private string markId = "mark_01";
+        [SerializeField] private CommanderMarkTriggerType markTrigger = CommanderMarkTriggerType.HitCount;
+        [SerializeField, Min(1)] private int requiredHits = 1;
+        [SerializeField, Min(1)] private int requiredStacks = 1;
+        [SerializeField, Min(1)] private int markMaxStacks = 1;
+        [SerializeField] private bool consumeOnTrigger = true;
+        [SerializeField] private bool refreshDurationOnApply = true;
+        [SerializeField, Min(0f)] private float triggerCooldown;
+        [SerializeField, Min(0f)] private float triggerDamage;
+        [SerializeField, Min(0f)] private float triggerPerHitMultiplier = 1f;
+        [SerializeField] private bool recordHitCount;
+        [SerializeField] private bool countBasicAttack = true;
+        [SerializeField] private bool countMonsterSkill = true;
+        [SerializeField] private bool countCommanderSkill = true;
+        [SerializeField] private bool countCommanderMarkTrigger;
+        [SerializeField] private List<CommanderSkillWorkshopEffectDraft> triggerEffects =
+            new List<CommanderSkillWorkshopEffectDraft>();
+        [SerializeField, Min(0f)] private float recordedBaseMultiplier = 0.4f;
+        [SerializeField, Min(0f)] private float recordedMultiplierPerHit = 0.12f;
+        [SerializeField, Min(0)] private int maximumRecordedHits = 20;
+        [SerializeField, Min(0.01f)] private float markRequiredHitsMultiplier = 1f;
+        [SerializeField, Min(0.01f)] private float markTriggerDamageMultiplier = 1f;
+        [SerializeField, Min(0.01f)] private float cooldownRecoveryMultiplier = 1f;
+        [SerializeField] private CommanderMarkEffectDefinition sharedMarkDefinition;
+        [SerializeField] private CommanderMarkFeedbackDraft onApply = new CommanderMarkFeedbackDraft();
+        [SerializeField] private CommanderMarkFeedbackDraft loop = new CommanderMarkFeedbackDraft();
+        [SerializeField] private CommanderMarkFeedbackDraft onStack = new CommanderMarkFeedbackDraft();
+        [SerializeField] private CommanderMarkFeedbackDraft onTrigger = new CommanderMarkFeedbackDraft();
+        [SerializeField] private CommanderMarkFeedbackDraft onRemove = new CommanderMarkFeedbackDraft();
 
         public string EffectId => effectId?.Trim() ?? string.Empty;
+        public CommanderSkillWorkshopEffectKind Kind => kind;
+        public CommanderSkillDamageKind DamageKind => damageKind;
+        public float BaseDamage => baseDamage;
+        public float PerHitMultiplier => perHitMultiplier;
+        public MonsterBasicAttackShape DamageShape => damageShape;
+        public MonsterBasicAttackCenter DamageCenter => damageCenter;
+        public float ForwardOffset => forwardOffset;
+        public float Angle => angle;
+        public float LineWidth => lineWidth;
         public CommanderSkillUnitEffectType EffectType => effectType;
         public CommanderSkillEffectValueSource ValueSource => valueSource;
         public float Magnitude => magnitude;
@@ -31,6 +117,39 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         public float Radius => radius;
         public int MaxTargets => maxTargets;
         public MonsterBuffStackPolicy StackPolicy => stackPolicy;
+        public string MarkId => markId?.Trim() ?? string.Empty;
+        public CommanderMarkTriggerType MarkTrigger => markTrigger;
+        public int RequiredHits => requiredHits;
+        public int RequiredStacks => requiredStacks;
+        public int MarkMaxStacks => markMaxStacks;
+        public bool ConsumeOnTrigger => consumeOnTrigger;
+        public bool RefreshDurationOnApply => refreshDurationOnApply;
+        public float TriggerCooldown => triggerCooldown;
+        public float TriggerDamage => triggerDamage;
+        public float TriggerPerHitMultiplier => triggerPerHitMultiplier;
+        public bool RecordHitCount => recordHitCount;
+        public bool CountBasicAttack => countBasicAttack;
+        public bool CountMonsterSkill => countMonsterSkill;
+        public bool CountCommanderSkill => countCommanderSkill;
+        public bool CountCommanderMarkTrigger => countCommanderMarkTrigger;
+        public IReadOnlyList<CommanderSkillWorkshopEffectDraft> TriggerEffects => triggerEffects;
+        public float RecordedBaseMultiplier => recordedBaseMultiplier;
+        public float RecordedMultiplierPerHit => recordedMultiplierPerHit;
+        public int MaximumRecordedHits => maximumRecordedHits;
+        public float MarkRequiredHitsMultiplier => markRequiredHitsMultiplier;
+        public float MarkTriggerDamageMultiplier => markTriggerDamageMultiplier;
+        public float CooldownRecoveryMultiplier => cooldownRecoveryMultiplier;
+        public CommanderMarkEffectDefinition SharedMarkDefinition => sharedMarkDefinition;
+        public CommanderMarkFeedbackDraft OnApply => onApply;
+        public CommanderMarkFeedbackDraft Loop => loop;
+        public CommanderMarkFeedbackDraft OnStack => onStack;
+        public CommanderMarkFeedbackDraft OnTrigger => onTrigger;
+        public CommanderMarkFeedbackDraft OnRemove => onRemove;
+
+        public void UseSharedMark(CommanderMarkEffectDefinition definition)
+        {
+            sharedMarkDefinition = definition;
+        }
 
         public static CommanderSkillWorkshopEffectDraft CreateDefault(CommanderSkillCategory category, int index)
         {
@@ -64,6 +183,92 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 stackPolicy = source.StackPolicy
             };
         }
+
+        public static CommanderSkillWorkshopEffectDraft FromDefinition(CommanderAreaDamageEffectDefinition source)
+        {
+            return new CommanderSkillWorkshopEffectDraft
+            {
+                kind = CommanderSkillWorkshopEffectKind.AreaDamage,
+                effectId = source.EffectId,
+                damageKind = source.DamageKind,
+                baseDamage = source.BaseDamage,
+                perHitMultiplier = source.PerHitMultiplier,
+                damageShape = source.Shape,
+                damageCenter = source.Center,
+                radius = source.Radius,
+                forwardOffset = source.ForwardOffset,
+                angle = source.Angle,
+                lineWidth = source.LineWidth,
+                maxTargets = source.MaxTargets
+            };
+        }
+
+        public static CommanderSkillWorkshopEffectDraft FromDefinition(CommanderMarkEffectDefinition source)
+        {
+            var result = new CommanderSkillWorkshopEffectDraft
+            {
+                kind = CommanderSkillWorkshopEffectKind.CommanderMark,
+                effectId = source.EffectId,
+                markId = source.MarkId,
+                duration = source.Duration,
+                scope = source.Scope,
+                radius = source.Radius,
+                maxTargets = source.MaxTargets,
+                markTrigger = source.TriggerType,
+                requiredHits = source.RequiredHits,
+                requiredStacks = source.RequiredStacks,
+                markMaxStacks = source.MaxStacks,
+                consumeOnTrigger = source.ConsumeOnTrigger,
+                refreshDurationOnApply = source.RefreshDurationOnApply,
+                triggerCooldown = source.TriggerCooldown,
+                recordHitCount = source.RecordHitCount,
+                countBasicAttack = source.CountBasicAttack,
+                countMonsterSkill = source.CountMonsterSkill,
+                countCommanderSkill = source.CountCommanderSkill,
+                countCommanderMarkTrigger = source.CountCommanderMarkTrigger,
+                onApply = CommanderMarkFeedbackDraft.FromDefinition(source.OnApply),
+                loop = CommanderMarkFeedbackDraft.FromDefinition(source.Loop),
+                onStack = CommanderMarkFeedbackDraft.FromDefinition(source.OnStack),
+                onTrigger = CommanderMarkFeedbackDraft.FromDefinition(source.OnTrigger),
+                onRemove = CommanderMarkFeedbackDraft.FromDefinition(source.OnRemove)
+            };
+            for (var index = 0; index < source.EffectsOnTrigger.Count; index++)
+            {
+                var trigger = source.EffectsOnTrigger[index];
+                if (trigger is CommanderAreaDamageEffectDefinition damage)
+                    result.triggerEffects.Add(FromDefinition(damage));
+                else if (trigger is CommanderUnitEffectDefinition unit)
+                    result.triggerEffects.Add(FromDefinition(unit));
+                else if (trigger is CommanderRecordedHitDamageEffectDefinition recorded)
+                    result.triggerEffects.Add(FromDefinition(recorded));
+            }
+            return result;
+        }
+
+        public static CommanderSkillWorkshopEffectDraft FromDefinition(CommanderRecordedHitDamageEffectDefinition source)
+        {
+            return new CommanderSkillWorkshopEffectDraft
+            {
+                kind = CommanderSkillWorkshopEffectKind.RecordedHitDamage,
+                effectId = source.EffectId,
+                recordedBaseMultiplier = source.BaseMultiplier,
+                recordedMultiplierPerHit = source.MultiplierPerRecordedHit,
+                maximumRecordedHits = source.MaximumRecordedHits
+            };
+        }
+
+        public static CommanderSkillWorkshopEffectDraft FromDefinition(CommanderGlobalModifierEffectDefinition source)
+        {
+            return new CommanderSkillWorkshopEffectDraft
+            {
+                kind = CommanderSkillWorkshopEffectKind.GlobalModifier,
+                effectId = source.EffectId,
+                duration = source.Duration,
+                markRequiredHitsMultiplier = source.MarkRequiredHitsMultiplier,
+                markTriggerDamageMultiplier = source.MarkTriggerDamageMultiplier,
+                cooldownRecoveryMultiplier = source.CooldownRecoveryMultiplier
+            };
+        }
     }
 
     internal sealed class CommanderSkillWorkshopDraft : ScriptableObject // 실제 자산 저장 전 격리된 편집 모델
@@ -74,6 +279,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         [SerializeField, TextArea(2, 5)] private string description;
         [SerializeField] private Sprite icon;
         [SerializeField] private CommanderSkillCategory category = CommanderSkillCategory.Attack;
+        [SerializeField] private CommanderSkillRarity rarity;
 
         [Header("Cast Flow")]
         [SerializeField, Min(0f)] private float castTime = 0.5f;
@@ -90,6 +296,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             MonsterBasicAttackDeliveryModule.Direct;
         [SerializeField] private CommanderSkillDamageKind damageKind = CommanderSkillDamageKind.Physical;
         [SerializeField, Min(0f)] private float baseDamage = 20f;
+        [SerializeField, Min(0f)] private float perHitMultiplier = 1f;
         [SerializeField] private MonsterBasicAttackShape shape = MonsterBasicAttackShape.Circle;
         [SerializeField] private MonsterBasicAttackCenter center = MonsterBasicAttackCenter.PrimaryTarget;
         [SerializeField, Min(0.1f)] private float radius = 2f;
@@ -101,6 +308,16 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         [SerializeField, Min(1f)] private float projectileSpeed = 16f;
         [SerializeField] private CommanderSkillTrajectory trajectory;
         [SerializeField, Min(0f)] private float arcHeight = 3f;
+
+        [Header("Pattern")]
+        [SerializeField] private CommanderSkillPatternType patternType;
+        [SerializeField, Min(1)] private int repeatCount = 1;
+        [SerializeField, Min(0f)] private float repeatInterval;
+        [SerializeField, Min(0.01f)] private float patternDuration = 1f;
+        [SerializeField, Min(0.01f)] private float tickInterval = 1f;
+        [SerializeField, Min(0f)] private float randomRadius;
+        [SerializeField, Min(1)] private int chainCount = 1;
+        [SerializeField, Min(0.1f)] private float chainRadius = 4f;
 
         [Header("Effect Modules")]
         [SerializeField] private List<CommanderSkillWorkshopEffectDraft> effects =
@@ -128,6 +345,11 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         [SerializeField, Min(0.01f)] private float impactVfxScale = 1f;
         [SerializeField] private AudioClip impactSound;
         [SerializeField, HideInInspector] private SfxCue impactSfxSource;
+        [SerializeField] private GameObject persistentVfxPrefab;
+        [SerializeField] private Vector3 persistentVfxLocalOffset;
+        [SerializeField] private Vector3 persistentVfxLocalEuler;
+        [SerializeField, Min(0.01f)] private float persistentVfxScale = 1f;
+        [SerializeField] private CommanderMarkFeedbackAnchor persistentVfxAnchor = CommanderMarkFeedbackAnchor.WorldPosition;
 
         [Header("Catalog")]
         [SerializeField] private bool registerInCatalog = true;
@@ -147,6 +369,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         public string Description => description?.Trim() ?? string.Empty;
         public Sprite Icon => icon;
         public CommanderSkillCategory Category => category;
+        public CommanderSkillRarity Rarity => rarity;
         public float CastTime => castTime;
         public float Cooldown => cooldown;
         public CommanderSkillTargetTeam TargetTeam => targetTeam;
@@ -155,6 +378,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         public MonsterBasicAttackDeliveryModule DeliveryModule => deliveryModule;
         public CommanderSkillDamageKind DamageKind => damageKind;
         public float BaseDamage => baseDamage;
+        public float PerHitMultiplier => perHitMultiplier;
         public MonsterBasicAttackShape Shape => shape;
         public MonsterBasicAttackCenter Center => center;
         public float Radius => radius;
@@ -166,6 +390,14 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         public float ProjectileSpeed => projectileSpeed;
         public CommanderSkillTrajectory Trajectory => trajectory;
         public float ArcHeight => arcHeight;
+        public CommanderSkillPatternType PatternType => patternType;
+        public int RepeatCount => repeatCount;
+        public float RepeatInterval => repeatInterval;
+        public float PatternDuration => patternDuration;
+        public float TickInterval => tickInterval;
+        public float RandomRadius => randomRadius;
+        public int ChainCount => chainCount;
+        public float ChainRadius => chainRadius;
         public IReadOnlyList<CommanderSkillWorkshopEffectDraft> Effects => effects;
         public GameObject CastingVfxPrefab => castingVfxPrefab;
         public float CastingVfxLifetime => castingVfxLifetime;
@@ -188,6 +420,11 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         public float ImpactVfxScale => impactVfxScale;
         public AudioClip ImpactSound => impactSound;
         public SfxCue ImpactSfxSource => impactSfxSource;
+        public GameObject PersistentVfxPrefab => persistentVfxPrefab;
+        public Vector3 PersistentVfxLocalOffset => persistentVfxLocalOffset;
+        public Vector3 PersistentVfxLocalEuler => persistentVfxLocalEuler;
+        public float PersistentVfxScale => persistentVfxScale;
+        public CommanderMarkFeedbackAnchor PersistentVfxAnchor => persistentVfxAnchor;
         public bool RegisterInCatalog => registerInCatalog;
         public int MaxLevel => maxLevel;
         public int RequiredDuplicateCount => requiredDuplicateCount;
@@ -209,6 +446,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             description = string.Empty;
             icon = null;
             category = nextCategory;
+            rarity = CommanderSkillRarity.Common;
             castTime = 0.5f;
             cooldown = 8f;
             targetTeam = nextCategory == CommanderSkillCategory.Buff
@@ -219,6 +457,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             deliveryModule = MonsterBasicAttackDeliveryModule.Direct;
             damageKind = CommanderSkillDamageKind.Physical;
             baseDamage = 20f;
+            perHitMultiplier = 1f;
             shape = MonsterBasicAttackShape.Circle;
             center = MonsterBasicAttackCenter.PrimaryTarget;
             radius = 2f;
@@ -230,6 +469,14 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             projectileSpeed = 16f;
             trajectory = CommanderSkillTrajectory.Straight;
             arcHeight = 3f;
+            patternType = CommanderSkillPatternType.Single;
+            repeatCount = 1;
+            repeatInterval = 0f;
+            patternDuration = 1f;
+            tickInterval = 1f;
+            randomRadius = 0f;
+            chainCount = 1;
+            chainRadius = 4f;
             effects.Clear();
             if (nextCategory != CommanderSkillCategory.Attack)
             {
@@ -256,6 +503,11 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             impactVfxScale = 1f;
             impactSound = null;
             impactSfxSource = null;
+            persistentVfxPrefab = null;
+            persistentVfxLocalOffset = Vector3.zero;
+            persistentVfxLocalEuler = Vector3.zero;
+            persistentVfxScale = 1f;
+            persistentVfxAnchor = CommanderMarkFeedbackAnchor.WorldPosition;
             registerInCatalog = true;
             maxLevel = 200;
             requiredDuplicateCount = 1;
@@ -302,11 +554,20 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             description = source.Description;
             icon = source.Icon;
             category = source.Category;
+            rarity = source.Rarity;
             castTime = source.CastTime;
             cooldown = source.Cooldown;
             targetTeam = source.Targeting.TargetTeam;
             targetSelection = source.Targeting.Selection;
             targetRange = source.Targeting.Range;
+            patternType = source.Pattern.Type;
+            repeatCount = source.Pattern.RepeatCount;
+            repeatInterval = source.Pattern.RepeatInterval;
+            patternDuration = source.Pattern.Duration;
+            tickInterval = source.Pattern.TickInterval;
+            randomRadius = source.Pattern.RandomRadius;
+            chainCount = source.Pattern.ChainCount;
+            chainRadius = source.Pattern.ChainRadius;
             castingVfxPrefab = source.CastingVfxPrefab;
             castingVfxLifetime = source.CastingVfxLifetime;
             castingVfxLocalOffset = source.CastingVfxLocalOffset;
@@ -328,6 +589,11 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             impactVfxScale = source.ImpactVfxScale;
             impactSfxSource = source.ImpactSfx;
             impactSound = source.ImpactSfx == null ? null : source.ImpactSfx.PrimaryClip;
+            persistentVfxPrefab = source.PersistentVfxPrefab;
+            persistentVfxLocalOffset = source.PersistentVfxLocalOffset;
+            persistentVfxLocalEuler = source.PersistentVfxLocalEuler;
+            persistentVfxScale = source.PersistentVfxScale;
+            persistentVfxAnchor = source.PersistentVfxAnchor;
             effects.Clear();
 
             if (source is CommanderAttackSkillDefinition attack)
@@ -342,6 +608,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 {
                     damageKind = damage.DamageKind;
                     baseDamage = damage.BaseDamage;
+                    perHitMultiplier = damage.PerHitMultiplier;
                     shape = damage.Shape;
                     center = damage.Center;
                     radius = damage.Radius;
@@ -349,6 +616,23 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                     angle = damage.Angle;
                     lineWidth = damage.LineWidth;
                     maxTargets = damage.MaxTargets;
+                }
+                for (var index = 0; index < source.Effects.Count; index++)
+                {
+                    if (source.Effects[index] is CommanderUnitEffectDefinition unitEffect)
+                        effects.Add(CommanderSkillWorkshopEffectDraft.FromDefinition(unitEffect));
+                    else if (source.Effects[index] is CommanderMarkEffectDefinition markEffect)
+                    {
+                        var draftEffect = CommanderSkillWorkshopEffectDraft.FromDefinition(markEffect);
+                        if (!string.Equals(AssetDatabase.GetAssetPath(markEffect), AssetDatabase.GetAssetPath(source),
+                                StringComparison.OrdinalIgnoreCase))
+                            draftEffect.UseSharedMark(markEffect);
+                        effects.Add(draftEffect);
+                    }
+                    else if (source.Effects[index] is CommanderRecordedHitDamageEffectDefinition recorded)
+                        effects.Add(CommanderSkillWorkshopEffectDraft.FromDefinition(recorded));
+                    else if (source.Effects[index] is CommanderGlobalModifierEffectDefinition modifier)
+                        effects.Add(CommanderSkillWorkshopEffectDraft.FromDefinition(modifier));
                 }
             }
             else
@@ -358,6 +642,22 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                     if (source.Effects[index] is CommanderUnitEffectDefinition effect)
                     {
                         effects.Add(CommanderSkillWorkshopEffectDraft.FromDefinition(effect));
+                    }
+                    else if (source.Effects[index] is CommanderMarkEffectDefinition mark)
+                    {
+                        var draftEffect = CommanderSkillWorkshopEffectDraft.FromDefinition(mark);
+                        if (!string.Equals(AssetDatabase.GetAssetPath(mark), AssetDatabase.GetAssetPath(source),
+                                StringComparison.OrdinalIgnoreCase))
+                            draftEffect.UseSharedMark(mark);
+                        effects.Add(draftEffect);
+                    }
+                    else if (source.Effects[index] is CommanderRecordedHitDamageEffectDefinition recorded)
+                    {
+                        effects.Add(CommanderSkillWorkshopEffectDraft.FromDefinition(recorded));
+                    }
+                    else if (source.Effects[index] is CommanderGlobalModifierEffectDefinition modifier)
+                    {
+                        effects.Add(CommanderSkillWorkshopEffectDraft.FromDefinition(modifier));
                     }
                 }
             }

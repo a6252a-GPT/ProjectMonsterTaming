@@ -3,7 +3,6 @@ using System.Linq;
 using NUnit.Framework;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace ProjectMT.Contents.CastleRaidHex.Tests
 {
@@ -257,6 +256,37 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
 
             Assert.That(unit.CurrentTarget.IsValid, Is.True);
             Assert.That(unit.CurrentTarget.Structure.DefenseLayer, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AssaultUnit_InvalidatedTargetContinuesCurrentPathUntilStrategicRefresh()
+        {
+            var cells = CreateTwoLayerBoard();
+            var worldObject = new GameObject("HexAssaultWorld");
+            owned.Add(worldObject);
+            var world = worldObject.AddComponent<HexCastleAssaultWorld>();
+            world.Configure(cells, 1f, 2, null);
+            var unit = CreateAssaultUnit(
+                world,
+                cells,
+                HexCoordinates.Directions[0] * 7,
+                "kimhyeona_01");
+            unit.RefreshStrategicDecision();
+            var outerWall = unit.CurrentTarget.Structure;
+            var positionBeforeInvalidation = unit.transform.position;
+
+            Assert.That(outerWall.ApplyDamage(outerWall.MaxHealth, outerWall.transform.position), Is.True);
+            Assert.That(unit.CurrentTarget.IsValid, Is.False);
+            Assert.That(unit.NeedsStrategicDecision, Is.True);
+
+            var tickDynamicRuntime = typeof(HexCastleAssaultUnit).GetMethod(
+                "TickDynamicRuntime",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.That(tickDynamicRuntime, Is.Not.Null);
+            tickDynamicRuntime.Invoke(unit, new object[] { 0.1f });
+
+            Assert.That(unit.transform.position, Is.Not.EqualTo(positionBeforeInvalidation),
+                "재탐색을 기다리는 동안에도 기존의 유효한 이동 구간은 계속 따라가야 합니다.");
         }
 
         [Test]
@@ -689,14 +719,13 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
             var content = CreateChild("ContentVisualRoot", root.transform);
             if (!cell.InitialBlocked)
             {
-                runtime.Configure(cell, null, null, null, tile, content);
+                runtime.Configure(cell, null, null, tile, content);
                 return runtime;
             }
 
             var health = root.AddComponent<HealthComponent>();
             var collider = root.AddComponent<BoxCollider>();
-            var obstacle = root.AddComponent<NavMeshObstacle>();
-            runtime.Configure(cell, health, collider, obstacle, tile, content);
+            runtime.Configure(cell, health, collider, tile, content);
             return runtime;
         }
 

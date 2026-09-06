@@ -1,0 +1,97 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21d2e7c74566c9443a158ed29dcaa5c9, type: 3}
+  m_Name: MARK_Ruin
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderMarkEffectDefinition
+  effectId: Ruin_mark
+  markId: Ruin
+  duration: 5
+  scope: 2
+  radius: 0.1
+  maxTargets: 64
+  triggerType: 1
+  requiredHits: 1
+  requiredStacks: 4
+  maxStacks: 4
+  consumeOnTrigger: 1
+  refreshDurationOnApply: 1
+  triggerCooldown: 0
+  countBasicAttack: 1
+  countMonsterSkill: 1
+  countCommanderSkill: 1
+  countCommanderMarkTrigger: 0
+  recordHitCount: 0
+  effectsOnTrigger:
+  - {fileID: 3454985409664629171}
+  onApply:
+    vfxPrefab: {fileID: 8897071228384316925, guid: e432d4f1310f4704c81a01bf480843cc, type: 3}
+    lifetime: 1
+    localOffset: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+    scale: 1
+    sfx: {fileID: 0}
+    anchor: 1
+  loop:
+    vfxPrefab: {fileID: 8897071228384316925, guid: e432d4f1310f4704c81a01bf480843cc, type: 3}
+    lifetime: 5
+    localOffset: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+    scale: 0.7
+    sfx: {fileID: 0}
+    anchor: 1
+  onStack:
+    vfxPrefab: {fileID: 8897071228384316925, guid: e432d4f1310f4704c81a01bf480843cc, type: 3}
+    lifetime: 0.45
+    localOffset: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+    scale: 0.9
+    sfx: {fileID: 0}
+    anchor: 1
+  onTrigger:
+    vfxPrefab: {fileID: 28645335478572135, guid: 1b3378dd7b3b66a41a5d026c18ff9b2d, type: 3}
+    lifetime: 1.5
+    localOffset: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+    scale: 1
+    sfx: {fileID: 11400000, guid: 6db5d28819bb79542bd0aecbf1282369, type: 2}
+    anchor: 1
+  onRemove:
+    vfxPrefab: {fileID: 0}
+    lifetime: 0.5
+    localOffset: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+    scale: 1
+    sfx: {fileID: 0}
+    anchor: 1
+--- !u!114 &3454985409664629171
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 553a329334129284aa003ad4e3c0c765, type: 3}
+  m_Name: __Trigger_Damage
+  m_EditorClassIdentifier: ProjectMT.Features::ProjectMT.Features.CommanderSkill.CommanderAreaDamageEffectDefinition
+  effectId: Ruin_trigger_damage
+  damageKind: 3
+  baseDamage: 20
+  perHitMultiplier: 0.85
+  shape: 3
+  center: 1
+  radius: 3.5
+  forwardOffset: 0
+  angle: 90
+  lineWidth: 0.05
+  maxTargets: 10

@@ -11,7 +11,11 @@ namespace ProjectMT.Features.CommanderSkill
     public enum CommanderSkillTargetSelection
     {
         Nearest,
-        LowestHealth
+        LowestHealth,
+        HighestHealth,
+        Strongest,
+        Random,
+        MostCrowded
     }
 
     [CreateAssetMenu(menuName = "ProjectMT/Commander Skill/Rules/Targeting", fileName = "CSTargeting_NearestEnemy")]

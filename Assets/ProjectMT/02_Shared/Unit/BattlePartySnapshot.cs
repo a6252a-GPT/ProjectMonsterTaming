@@ -87,6 +87,25 @@ namespace ProjectMT.Shared.Unit
     }
 
     [Serializable]
+    public struct CombatPowerGrowthSnapshot // 고유 기본값과 분리해 전투력에 반영할 성장률
+    {
+        [SerializeField] private float moveSpeedGrowthRate;
+        [SerializeField] private float attackRangeGrowthRate;
+
+        public CombatPowerGrowthSnapshot(float moveSpeedGrowthRate, float attackRangeGrowthRate)
+        {
+            this.moveSpeedGrowthRate = SanitizeRate(moveSpeedGrowthRate);
+            this.attackRangeGrowthRate = SanitizeRate(attackRangeGrowthRate);
+        }
+
+        public float MoveSpeedGrowthRate => SanitizeRate(moveSpeedGrowthRate);
+        public float AttackRangeGrowthRate => SanitizeRate(attackRangeGrowthRate);
+
+        private static float SanitizeRate(float value) =>
+            float.IsNaN(value) || float.IsInfinity(value) ? 0f : Mathf.Max(0f, value);
+    }
+
+    [Serializable]
     public struct UnitStatsSnapshot // 해석이 끝난 전투 능력치
     {
         public float maxHealth;
@@ -131,6 +150,7 @@ namespace ProjectMT.Shared.Unit
         [SerializeField] private MonsterActiveSkill activeSkill; // 등급 카탈로그의 고유 액티브
         [SerializeField, Min(1)] private int level = 1; // 패시브 단계 계산에 사용하는 실제 몬스터 레벨
         [SerializeField] private MonsterBattlePresentationSnapshot presentation; // 전투 연출 고정 정보
+        [SerializeField] private CombatPowerGrowthSnapshot combatPowerGrowth; // 고유 기본값 대비 종합 성장률
 
         public BattleUnitSnapshot(
             string unitId,
@@ -143,7 +163,8 @@ namespace ProjectMT.Shared.Unit
             MonsterPassiveSkill passiveSkill = null,
             MonsterActiveSkill activeSkill = null,
             int level = 1,
-            MonsterBattlePresentationSnapshot presentation = default)
+            MonsterBattlePresentationSnapshot presentation = default,
+            CombatPowerGrowthSnapshot combatPowerGrowth = default)
         {
             this.unitId = unitId;
             this.stats = stats;
@@ -156,6 +177,7 @@ namespace ProjectMT.Shared.Unit
             this.activeSkill = activeSkill;
             this.level = Mathf.Max(1, level);
             this.presentation = presentation;
+            this.combatPowerGrowth = combatPowerGrowth;
         }
 
         public string UnitId => unitId;
@@ -169,6 +191,37 @@ namespace ProjectMT.Shared.Unit
         public MonsterActiveSkill ActiveSkill => activeSkill;
         public int Level => Mathf.Max(1, level);
         public MonsterBattlePresentationSnapshot Presentation => presentation;
+        public CombatPowerGrowthSnapshot CombatPowerGrowth => combatPowerGrowth;
+
+        public float EstimatePower(CombatStatConfig config)
+        {
+            var abilityCount = 0;
+            var abilities = UnlockedAbilityIds;
+            for (var index = 0; index < abilities.Length; index++)
+            {
+                if (string.IsNullOrWhiteSpace(abilities[index]))
+                {
+                    continue;
+                }
+
+                var duplicate = false;
+                for (var previous = 0; previous < index; previous++)
+                {
+                    if (string.Equals(abilities[index], abilities[previous], StringComparison.OrdinalIgnoreCase))
+                    {
+                        duplicate = true;
+                        break;
+                    }
+                }
+
+                if (!duplicate)
+                {
+                    abilityCount++;
+                }
+            }
+
+            return CombatPowerCalculator.Calculate(stats, combatPowerGrowth, abilityCount, config);
+        }
     }
 
     [Serializable]
@@ -210,7 +263,7 @@ namespace ProjectMT.Shared.Unit
             {
                 if (unit != null)
                 {
-                    totalPower += unit.Stats.EstimatePower(combatStatConfig);
+                    totalPower += unit.EstimatePower(combatStatConfig);
                 }
             }
         }

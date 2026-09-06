@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace ProjectMT.Contents.CastleRaidHex
 {
@@ -532,10 +531,6 @@ namespace ProjectMT.Contents.CastleRaidHex
                 collider.enabled = false;
             }
 
-            foreach (var agent in visual.GetComponentsInChildren<NavMeshAgent>(true))
-            {
-                agent.enabled = false;
-            }
         }
 
         private static void DestroyCreatedRoot(GameObject root)

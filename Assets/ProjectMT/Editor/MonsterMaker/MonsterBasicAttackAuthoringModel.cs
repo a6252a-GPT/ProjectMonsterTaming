@@ -98,7 +98,7 @@ namespace ProjectMT.EditorTools.MonsterMaker
         public MonsterBasicAttackVfxEndPolicy endPolicy = MonsterBasicAttackVfxEndPolicy.Timed;
         public float defaultLifetime = 1f;
         public BasicAttackWorkshopVfxRole editorRole = BasicAttackWorkshopVfxRole.Custom;
-        public bool showAdvanced;
+        public bool showAdvanced = false;
 
         public static BasicAttackWorkshopVfxSlot From(MonsterBasicAttackVfxSlot source)
         {

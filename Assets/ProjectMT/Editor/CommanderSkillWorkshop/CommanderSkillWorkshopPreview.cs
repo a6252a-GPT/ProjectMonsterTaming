@@ -26,6 +26,12 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         private GameObject castingVfx;
         private GameObject castVfx;
         private GameObject impactVfx;
+        private GameObject persistentVfx;
+        private GameObject markVfx;
+        private bool markPreview;
+        private float markLifetime;
+        private float markVfxAge = -1f;
+        private float persistentVfxAge = -1f;
         private GameObject projectile;
         private GameObject impactPulse;
         private Material targetRingMaterial;
@@ -45,6 +51,10 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         private bool looping = true;
         private bool activated;
         private bool impacted;
+        private int patternImpactCount;
+        private int patternImpactIndex;
+        private float patternImpactInterval;
+        private float lastImpactAt;
 
         public CommanderSkillWorkshopPreview()
         {
@@ -138,11 +148,22 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 ? targetDistance / Mathf.Max(1f, draft.ProjectileSpeed)
                 : 0f;
             impactTime = activationTime + travel;
+            patternImpactCount = draft.PatternType switch
+            {
+                CommanderSkillPatternType.PersistentArea => Mathf.Max(1, Mathf.CeilToInt(draft.PatternDuration / draft.TickInterval)),
+                CommanderSkillPatternType.Chain => Mathf.Max(1, draft.ChainCount),
+                CommanderSkillPatternType.Burst or CommanderSkillPatternType.Barrage or CommanderSkillPatternType.Pulse => Mathf.Max(1, draft.RepeatCount),
+                _ => 1
+            };
+            patternImpactInterval = draft.PatternType == CommanderSkillPatternType.PersistentArea
+                ? draft.TickInterval : draft.RepeatInterval;
             playbackEndTime = Mathf.Max(
                 activationTime + Mathf.Max(0.05f, draft.Cooldown),
-                impactTime + Mathf.Max(0.45f, draft.ImpactVfxLifetime),
+                impactTime + Mathf.Max(0f, patternImpactCount - 1) * patternImpactInterval + Mathf.Max(0.45f, draft.ImpactVfxLifetime),
                 Mathf.Max(0f, draft.CastingVfxLifetime));
             playbackStartedAt = EditorApplication.timeSinceStartup;
+            if (draft.PatternType == CommanderSkillPatternType.PersistentArea)
+                playbackEndTime = Mathf.Max(playbackEndTime, activationTime + draft.PatternDuration);
             lastTickAt = playbackStartedAt;
             playing = true;
             PhaseLabel = activationTime > 0f ? "캐스팅" : "발동";
@@ -166,6 +187,23 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             {
                 PhaseLabel = "대기 · 재생을 누르세요";
             }
+        }
+
+        public void PlayMarkFeedback(CommanderMarkFeedbackDraft slot)
+        {
+            Stop();
+            if (slot == null || draft == null) return;
+            if (commander == null || target == null) Refresh();
+            if (commander == null || target == null) return;
+            markVfx = CreateAnchoredVfx(slot.VfxPrefab, "Mark VFX", slot.Anchor,
+                slot.LocalOffset, slot.LocalEuler, slot.Scale);
+            markLifetime = Mathf.Max(0.05f, slot.Lifetime);
+            markPreview = true;
+            playing = true;
+            playbackStartedAt = lastTickAt = EditorApplication.timeSinceStartup;
+            TickVfx(markVfx, 0f, markLifetime, 0f, ref markVfxAge);
+            PlaySfx(slot.Sound);
+            PhaseLabel = "Mark 슬롯 미리보기";
         }
 
         public void SetLooping(bool value)
@@ -213,16 +251,24 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             var elapsed = (float)(now - playbackStartedAt);
             var deltaTime = Mathf.Clamp((float)(now - lastTickAt), 0f, 0.1f);
             lastTickAt = now;
+            if (markPreview)
+            {
+                TickVfx(markVfx, elapsed, markLifetime, deltaTime, ref markVfxAge);
+                if (elapsed >= markLifetime) Stop();
+                return;
+            }
             if (!activated && elapsed >= activationTime)
             {
                 Activate(elapsed);
             }
-            if (activated && !impacted)
+            if (activated && patternImpactIndex < patternImpactCount)
             {
-                UpdateProjectile(elapsed);
-                if (elapsed >= impactTime)
+                if (!impacted) UpdateProjectile(elapsed);
+                var nextImpact = impactTime + patternImpactIndex * patternImpactInterval;
+                if (elapsed >= nextImpact)
                 {
                     Impact(elapsed);
+                    patternImpactIndex++;
                 }
             }
 
@@ -232,7 +278,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 draft.CastVfxLifetime, deltaTime, ref castVfxAge);
             TickVfx(impactVfx, impacted ? elapsed - impactTime : -1f,
                 draft.ImpactVfxLifetime, deltaTime, ref impactVfxAge);
-            UpdateImpactPulse(elapsed - impactTime);
+            UpdateImpactPulse(elapsed - lastImpactAt);
+            TickVfx(persistentVfx, activated ? elapsed - activationTime : -1f,
+                draft.PatternDuration, deltaTime, ref persistentVfxAge);
 
             if (elapsed < activationTime)
             {
@@ -244,7 +292,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             }
             else if (elapsed < activationTime + draft.Cooldown)
             {
-                PhaseLabel = $"쿨타임 · {Mathf.Max(0f, activationTime + draft.Cooldown - elapsed):0.0}초";
+                PhaseLabel = patternImpactIndex < patternImpactCount
+                    ? $"{draft.PatternType} · {patternImpactIndex}/{patternImpactCount}"
+                    : $"쿨타임 · {Mathf.Max(0f, activationTime + draft.Cooldown - elapsed):0.0}초";
             }
             else
             {
@@ -285,15 +335,12 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 RestartVfx(projectile);
                 UpdateProjectile(elapsed);
             }
-            else if (impactTime <= activationTime)
-            {
-                Impact(elapsed);
-            }
         }
 
         private void Impact(float elapsed)
         {
             impacted = true;
+            lastImpactAt = elapsed;
             if (projectile != null)
             {
                 StopVfx(projectile);
@@ -310,7 +357,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 impactPulse.SetActive(true);
             }
             PlaySfx(draft.ImpactSound);
-            UpdateImpactPulse(elapsed - impactTime);
+            UpdateImpactPulse(0f);
         }
 
         private void BeginCastingFeedback()
@@ -347,6 +394,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 
         private void CreateFeedbackObjects()
         {
+            if (draft.PatternType == CommanderSkillPatternType.PersistentArea)
+                persistentVfx = CreateAnchoredVfx(draft.PersistentVfxPrefab, "지속 VFX", draft.PersistentVfxAnchor,
+                    draft.PersistentVfxLocalOffset, draft.PersistentVfxLocalEuler, draft.PersistentVfxScale);
             castingVfx = CreateVfx(
                 draft.CastingVfxPrefab,
                 "캐스팅 시작 VFX",
@@ -371,6 +421,27 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 draft.ImpactVfxLocalOffset,
                 draft.ImpactVfxLocalEuler,
                 draft.ImpactVfxScale);
+        }
+
+        private GameObject CreateAnchoredVfx(GameObject prefab, string label, CommanderMarkFeedbackAnchor anchor,
+            Vector3 offset, Vector3 euler, float scale)
+        {
+            var parent = anchor switch
+            {
+                CommanderMarkFeedbackAnchor.CasterRoot => commander.transform,
+                CommanderMarkFeedbackAnchor.TargetRoot or CommanderMarkFeedbackAnchor.TargetCenter or
+                    CommanderMarkFeedbackAnchor.TargetFeet => target.transform,
+                _ => null
+            };
+            var position = anchor switch
+            {
+                CommanderMarkFeedbackAnchor.CasterRoot => commander.transform.position,
+                CommanderMarkFeedbackAnchor.TargetRoot or CommanderMarkFeedbackAnchor.TargetFeet => target.transform.position,
+                CommanderMarkFeedbackAnchor.TargetCenter => target.transform.position + Vector3.up * 0.45f,
+                _ => ImpactPosition
+            };
+            return CreateVfx(prefab, label, position + (parent == null ? offset : parent.TransformVector(offset)),
+                parent == null ? Quaternion.identity : parent.rotation, Vector3.zero, euler, scale);
         }
 
         private GameObject CreateVfx(
@@ -635,8 +706,20 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 
         private void ResetPlaybackObjects()
         {
+            markPreview = false;
+            if (markVfx != null)
+            {
+                StopVfx(markVfx);
+                DestroyPlayableGraphs(markVfx);
+                stage.RemoveAuxiliary(markVfx);
+                markVfx = null;
+            }
+            markVfxAge = -1f;
+            ResetVfx(persistentVfx, ref persistentVfxAge);
             activated = false;
             impacted = false;
+            patternImpactIndex = 0;
+            lastImpactAt = -10f;
             ResetVfx(castingVfx, ref castingVfxAge);
             ResetVfx(castVfx, ref castVfxAge);
             ResetVfx(impactVfx, ref impactVfxAge);
@@ -823,6 +906,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 
         private void ClearStage()
         {
+            DestroyPlayableGraphs(persistentVfx);
+            DestroyPlayableGraphs(markVfx);
+            persistentVfx = markVfx = null;
             DestroyPlayableGraphs(commander);
             DestroyPlayableGraphs(target);
             DestroyPlayableGraphs(castingVfx);
@@ -844,6 +930,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
 
         public void Dispose()
         {
+            Stop();
+            DestroyPlayableGraphs(persistentVfx);
+            persistentVfx = null;
             playing = false;
             DestroyPlayableGraphs(commander);
             DestroyPlayableGraphs(target);
@@ -894,6 +983,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             }
 
             var builder = new StringBuilder(512);
+            AppendFeedback(builder, source.PersistentVfxPrefab, source.PatternDuration,
+                source.PersistentVfxLocalOffset, source.PersistentVfxLocalEuler, source.PersistentVfxScale, null);
+            builder.Append((int)source.PersistentVfxAnchor).Append('|');
             builder.Append((int)source.Category).Append('|')
                 .Append(source.CastTime.GetHashCode()).Append('|')
                 .Append(source.Cooldown.GetHashCode()).Append('|')
@@ -910,6 +1002,11 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 .Append(source.ProjectileSpeed.GetHashCode()).Append('|')
                 .Append((int)source.Trajectory).Append('|')
                 .Append(source.ArcHeight.GetHashCode()).Append('|');
+            builder.Append((int)source.PatternType).Append('|')
+                .Append(source.RepeatCount).Append('|').Append(source.RepeatInterval.GetHashCode()).Append('|')
+                .Append(source.PatternDuration.GetHashCode()).Append('|').Append(source.TickInterval.GetHashCode()).Append('|')
+                .Append(source.RandomRadius.GetHashCode()).Append('|').Append(source.ChainCount).Append('|')
+                .Append(source.ChainRadius.GetHashCode()).Append('|');
             AppendFeedback(
                 builder,
                 source.CastingVfxPrefab,

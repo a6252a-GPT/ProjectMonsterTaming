@@ -5,7 +5,6 @@ using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Pooling;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace ProjectMT.Contents.CastleRaidHex.Tests
 {
@@ -250,14 +249,13 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
             var content = CreateChild("ContentVisualRoot", root.transform);
             if (!cell.InitialBlocked)
             {
-                runtime.Configure(cell, null, null, null, tile, content);
+                runtime.Configure(cell, null, null, tile, content);
                 return runtime;
             }
 
             var health = root.AddComponent<HealthComponent>();
             var collider = root.AddComponent<BoxCollider>();
-            var obstacle = root.AddComponent<NavMeshObstacle>();
-            runtime.Configure(cell, health, collider, obstacle, tile, content);
+            runtime.Configure(cell, health, collider, tile, content);
             return runtime;
         }
 

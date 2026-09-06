@@ -4,7 +4,6 @@ using System.Linq;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace ProjectMT.Contents.CastleRaidHex
 {
@@ -608,12 +607,6 @@ namespace ProjectMT.Contents.CastleRaidHex
                 actor.enabled = false;
             }
 
-            var agent = GetComponent<NavMeshAgent>();
-            if (agent != null)
-            {
-                agent.enabled = false; // 전략은 Hex Cell, 이동은 짧은 Cell Waypoint로 실행한다
-            }
-
             visualFeedback?.SetTint(unit.VisualTint);
             if (animationDriver != null && !animationDriver.Initialize(unit.RuntimeAssetSet))
             {
@@ -648,13 +641,6 @@ namespace ProjectMT.Contents.CastleRaidHex
                 return;
             }
 
-            if (!currentTarget.IsValid)
-            {
-                RequestStrategicDecision(true);
-                animationDriver?.PlayIdle();
-                return;
-            }
-
             if (movementPath != null && pathIndex < movementPath.Count - 1)
             {
                 var nextCoordinates = movementPath[pathIndex + 1];
@@ -676,6 +662,13 @@ namespace ProjectMT.Contents.CastleRaidHex
                 CurrentCoordinates = nextCoordinates;
                 EnteredCell?.Invoke(this, nextCoordinates);
                 UpdateDefenseProgress(nextCoordinates);
+                return;
+            }
+
+            if (!currentTarget.IsValid)
+            {
+                RequestStrategicDecision(true);
+                animationDriver?.PlayIdle();
                 return;
             }
 

@@ -99,7 +99,6 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 Assert.That(trapRoot.GetComponentsInChildren<HexCastleTrapRuntime>(true).Length,
                     Is.EqualTo(initialProfile.TotalTrapCount));
                 Assert.That(trapRoot.GetComponentsInChildren<Collider>(true), Is.Empty);
-                Assert.That(trapRoot.GetComponentsInChildren<UnityEngine.AI.NavMeshObstacle>(true), Is.Empty);
                 var trapLayout = new HexCastleGenerationPipeline().GenerateFoundationForDifficulty(
                     controller.CurrentSeed,
                     controller.CurrentDifficultyLevel,
@@ -725,7 +724,6 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                     new HexCastleCell(coordinates, HexCastleCellKind.Ground, initialBlocked: false),
                     null,
                     null,
-                    null,
                     tile,
                     content);
 
@@ -790,12 +788,11 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                     {
                         var health = cellRoot.AddComponent<HealthComponent>();
                         var collider = cellRoot.AddComponent<BoxCollider>();
-                        var obstacle = cellRoot.AddComponent<UnityEngine.AI.NavMeshObstacle>();
-                        runtime.Configure(cell, health, collider, obstacle, tile, content);
+                        runtime.Configure(cell, health, collider, tile, content);
                     }
                     else
                     {
-                        runtime.Configure(cell, null, null, null, tile, content);
+                        runtime.Configure(cell, null, null, tile, content);
                     }
                     cells.Add(coordinates, runtime);
                 }

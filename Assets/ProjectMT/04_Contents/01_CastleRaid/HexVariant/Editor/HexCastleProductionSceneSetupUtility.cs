@@ -12,8 +12,6 @@ using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
@@ -180,11 +178,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             RenderSettings.ambientEquatorColor = new Color(0.32f, 0.38f, 0.42f);
             RenderSettings.ambientGroundColor = new Color(0.18f, 0.20f, 0.19f);
             RenderSettings.ambientIntensity = 0.82f;
-
-            var eventSystemObject = CreateChild("04_EventSystem", root.transform);
-            eventSystemObject.AddComponent<EventSystem>();
-            var inputModule = eventSystemObject.AddComponent<InputSystemUIInputModule>();
-            inputModule.AssignDefaultActions();
 
             var hudPrefab = LoadRequired<GameObject>(HudPrefabPath);
             var hud = PrefabUtility.InstantiatePrefab(hudPrefab, scene) as GameObject ??

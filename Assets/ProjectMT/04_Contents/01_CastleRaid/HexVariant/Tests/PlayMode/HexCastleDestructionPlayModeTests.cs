@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using ProjectMT.Shared.Unit;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.TestTools;
 
 namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
@@ -32,7 +31,6 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
                 Assert.That(cells[i].ApplyDamage(1000f, cells[i].transform.position), Is.True);
                 Assert.That(cells[i].IsBlocked, Is.False);
                 Assert.That(cells[i].FootprintCollider.enabled, Is.False);
-                Assert.That(cells[i].NavigationObstacle.enabled, Is.False);
                 Assert.That(cells[i].ContentVisualRoot.gameObject.activeSelf, Is.False);
                 var rubble = cells[i].DestroyedVisualRoot;
                 Assert.That(rubble.gameObject.activeSelf, Is.True);
@@ -99,10 +97,9 @@ namespace ProjectMT.Contents.CastleRaidHex.PlayMode.Tests
             }
             var health = root.AddComponent<HealthComponent>();
             var collider = root.AddComponent<BoxCollider>();
-            var obstacle = root.AddComponent<NavMeshObstacle>();
             var cell = root.AddComponent<HexCastleCellRuntime>();
             cell.Configure(new HexCastleCell(new HexCoordinates(0, 0), kind, hitPoints: 100f, initialBlocked: true),
-                health, collider, obstacle, tile, visual);
+                health, collider, tile, visual);
             return cell;
         }
     }

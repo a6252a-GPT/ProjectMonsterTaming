@@ -60,7 +60,7 @@ MonoBehaviour:
     cue: {fileID: 0}
   - id: EVENT-Dismantle
     state: 2
-    cue: {fileID: 0}
+    cue: {fileID: 9003037811188406439}
   - id: EVENT-EquipmentLock
     state: 2
     cue: {fileID: 0}
@@ -351,5 +351,25 @@ MonoBehaviour:
   spatialBlend: 0
   duplicateCooldown: 0.06
   priority: 2
+  startOffsetSeconds: 0
+  endCutSeconds: 0
+--- !u!114 &9003037811188406439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfa8b2ad2759102459620f160b68f21e, type: 3}
+  m_Name: EVENT-Dismantle
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.Audio.SfxCue
+  clips: []
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 1, y: 1}
+  spatialBlend: 0
+  duplicateCooldown: 0.08
+  priority: 1
   startOffsetSeconds: 0
   endCutSeconds: 0

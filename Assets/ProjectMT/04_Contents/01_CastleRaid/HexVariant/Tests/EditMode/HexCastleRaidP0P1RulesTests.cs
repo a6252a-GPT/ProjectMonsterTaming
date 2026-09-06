@@ -173,7 +173,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Tests
                     new HexCastleCell(coordinates, HexCastleCellKind.Ground, initialBlocked: false),
                     null,
                     null,
-                    null,
                     tile,
                     content);
 

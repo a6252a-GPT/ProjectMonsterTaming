@@ -1,9 +1,11 @@
-using System;
+﻿using System;
 using ProjectMT.Shared.Audio;
 using UnityEngine;
 
 namespace ProjectMT.Features.CommanderSkill
 {
+    public enum CommanderSkillRarity { Common, Rare, Epic, Legendary, Mythic }
+
     public enum CommanderSkillCategory
     {
         Attack,
@@ -18,12 +20,14 @@ namespace ProjectMT.Features.CommanderSkill
         [SerializeField] private string displayName;
         [TextArea(2, 5)] [SerializeField] private string description;
         [SerializeField] private Sprite icon;
+        [SerializeField] private CommanderSkillRarity rarity;
 
         [Header("Cast")]
         [SerializeField, Min(0f)] private float castTime;
         [SerializeField, Min(0.1f)] private float cooldown = 5f;
         [SerializeField] private CommanderSkillTargetingDefinition targeting;
         [SerializeField] private CommanderSkillEffectDefinition[] effects = Array.Empty<CommanderSkillEffectDefinition>();
+        [SerializeField] private CommanderSkillPatternConfig pattern = new CommanderSkillPatternConfig();
 
         [Header("Feedback")]
         [SerializeField] private GameObject castingVfxPrefab;
@@ -44,17 +48,24 @@ namespace ProjectMT.Features.CommanderSkill
         [SerializeField] private Vector3 impactVfxLocalEuler;
         [SerializeField, Min(0.01f)] private float impactVfxScale = 1f;
         [SerializeField] private SfxCue impactSfx;
+        [SerializeField] private GameObject persistentVfxPrefab;
+        [SerializeField] private Vector3 persistentVfxLocalOffset;
+        [SerializeField] private Vector3 persistentVfxLocalEuler;
+        [SerializeField, Min(0.01f)] private float persistentVfxScale = 1f;
+        [SerializeField] private CommanderMarkFeedbackAnchor persistentVfxAnchor = CommanderMarkFeedbackAnchor.WorldPosition;
 
         public string SkillId => skillId?.Trim() ?? string.Empty;
         public string DisplayName => displayName ?? string.Empty;
         public string Description => description ?? string.Empty;
         public Sprite Icon => icon;
+        public CommanderSkillRarity Rarity => rarity;
         public float CastTime => Mathf.Max(0f, castTime);
         public float Cooldown => Mathf.Max(0.1f, cooldown);
         public CommanderSkillTargetingDefinition Targeting => targeting;
         public float TargetRange => targeting == null ? 0f : targeting.Range;
         public System.Collections.Generic.IReadOnlyList<CommanderSkillEffectDefinition> Effects =>
             effects ?? Array.Empty<CommanderSkillEffectDefinition>();
+        public CommanderSkillPatternConfig Pattern => pattern ??= new CommanderSkillPatternConfig();
         public GameObject CastingVfxPrefab => castingVfxPrefab;
         public float CastingVfxLifetime => Mathf.Max(0.05f, castingVfxLifetime);
         public Vector3 CastingVfxLocalOffset => castingVfxLocalOffset;
@@ -73,6 +84,11 @@ namespace ProjectMT.Features.CommanderSkill
         public Vector3 ImpactVfxLocalEuler => impactVfxLocalEuler;
         public float ImpactVfxScale => Mathf.Max(0.01f, impactVfxScale);
         public SfxCue ImpactSfx => impactSfx;
+        public GameObject PersistentVfxPrefab => persistentVfxPrefab;
+        public Vector3 PersistentVfxLocalOffset => persistentVfxLocalOffset;
+        public Vector3 PersistentVfxLocalEuler => persistentVfxLocalEuler;
+        public float PersistentVfxScale => Mathf.Max(0.01f, persistentVfxScale);
+        public CommanderMarkFeedbackAnchor PersistentVfxAnchor => persistentVfxAnchor;
         public abstract CommanderSkillCategory Category { get; }
 
         public bool TryGetEffect<TEffect>(out TEffect effect)
@@ -114,9 +130,10 @@ namespace ProjectMT.Features.CommanderSkill
 
             if (!IsFinite(castingVfxLocalOffset) || !IsFinite(castingVfxLocalEuler) ||
                 !IsFinite(castVfxLocalOffset) || !IsFinite(castVfxLocalEuler) ||
-                !IsFinite(impactVfxLocalOffset) || !IsFinite(impactVfxLocalEuler) ||
-                !IsFinitePositive(castingVfxScale) || !IsFinitePositive(castVfxScale) ||
-                !IsFinitePositive(impactVfxScale))
+                 !IsFinite(impactVfxLocalOffset) || !IsFinite(impactVfxLocalEuler) ||
+                 !IsFinite(persistentVfxLocalOffset) || !IsFinite(persistentVfxLocalEuler) ||
+                 !IsFinitePositive(castingVfxScale) || !IsFinitePositive(castVfxScale) ||
+                 !IsFinitePositive(impactVfxScale) || !IsFinitePositive(persistentVfxScale))
             {
                 error = $"{SkillId}: VFX transform values are invalid.";
                 return false;
@@ -131,6 +148,12 @@ namespace ProjectMT.Features.CommanderSkill
             if (!targeting.TryValidate(out error))
             {
                 error = $"{SkillId}: targeting is invalid. {error}";
+                return false;
+            }
+
+            if (!Pattern.TryValidate(out error))
+            {
+                error = $"{SkillId}: pattern is invalid. {error}";
                 return false;
             }
 
@@ -254,6 +277,22 @@ namespace ProjectMT.Features.CommanderSkill
             castingVfxLocalOffset = castingOffset;
             castingVfxLocalEuler = castingEuler;
             castingVfxScale = Mathf.Max(0.01f, castingScale);
+        }
+
+        public void EditorConfigureV2(CommanderSkillRarity skillRarity, CommanderSkillPatternConfig patternConfig)
+        {
+            rarity = skillRarity;
+            pattern = patternConfig ?? new CommanderSkillPatternConfig();
+        }
+
+        public void EditorConfigurePersistentFeedback(GameObject prefab, Vector3 offset, Vector3 euler,
+            float scale, CommanderMarkFeedbackAnchor anchor)
+        {
+            persistentVfxPrefab = prefab;
+            persistentVfxLocalOffset = offset;
+            persistentVfxLocalEuler = euler;
+            persistentVfxScale = Mathf.Max(0.01f, scale);
+            persistentVfxAnchor = anchor;
         }
 #endif
 

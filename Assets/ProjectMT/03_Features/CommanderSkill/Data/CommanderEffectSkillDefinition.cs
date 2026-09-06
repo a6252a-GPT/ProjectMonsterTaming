@@ -25,25 +25,6 @@ namespace ProjectMT.Features.CommanderSkill
                 return false;
             }
 
-            if ((category == CommanderSkillCategory.Buff &&
-                 Targeting.TargetTeam != CommanderSkillTargetTeam.Ally) ||
-                (category == CommanderSkillCategory.Debuff &&
-                 Targeting.TargetTeam != CommanderSkillTargetTeam.Enemy))
-            {
-                error = $"{SkillId}: target team does not match the effect category.";
-                return false;
-            }
-
-            for (var index = 0; index < Effects.Count; index++)
-            {
-                if (Effects[index] is not CommanderUnitEffectDefinition unitEffect ||
-                    !CommanderUnitEffectDefinition.IsCompatible(category, unitEffect.EffectType))
-                {
-                    error = $"{SkillId}: effect {index} is not compatible with {category}.";
-                    return false;
-                }
-            }
-
             error = string.Empty;
             return true;
         }
@@ -65,6 +46,17 @@ namespace ProjectMT.Features.CommanderSkill
             GameObject impactVfx,
             float impactLifetime,
             SfxCue impactCue)
+        {
+            EditorConfigure(id, title, body, skillIcon, skillCategory, castTimeSeconds, cooldownSeconds,
+                targetingRule, (CommanderSkillEffectDefinition[])effectRules, castVfx, castLifetime,
+                castCue, impactVfx, impactLifetime, impactCue);
+        }
+
+        public void EditorConfigure(
+            string id, string title, string body, Sprite skillIcon, CommanderSkillCategory skillCategory,
+            float castTimeSeconds, float cooldownSeconds, CommanderSkillTargetingDefinition targetingRule,
+            CommanderSkillEffectDefinition[] effectRules, GameObject castVfx, float castLifetime,
+            SfxCue castCue, GameObject impactVfx, float impactLifetime, SfxCue impactCue)
         {
             category = skillCategory;
             EditorConfigureCommon(

@@ -8,7 +8,6 @@ using ProjectMT.Shared.Unit;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
@@ -454,7 +453,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             var visualGameplayComponentCount = visualRoots.Sum(value =>
                 value.GetComponentsInChildren<HealthComponent>(true).Length +
                 value.GetComponentsInChildren<Collider>(true).Length +
-                value.GetComponentsInChildren<NavMeshObstacle>(true).Length +
                 value.GetComponentsInChildren<HexCastleCellRuntime>(true).Length +
                 value.GetComponentsInChildren<HexCastleTurretVisual>(true).Length +
                 value.GetComponentsInChildren<HexCastleTurretRuntime>(true).Length);
@@ -473,7 +471,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
                 blockedCells = blocked.Length,
                 blockedWithRootHealth = blocked.Count(value => value.Health != null && value.Health.transform == value.transform),
                 blockedWithRootCollider = blocked.Count(value => value.FootprintCollider != null && value.FootprintCollider.transform == value.transform),
-                blockedWithRootObstacle = blocked.Count(value => value.NavigationObstacle != null && value.NavigationObstacle.transform == value.transform),
                 wallCells = wallCells.Length,
                 towerCells = towerCells.Length,
                 gateCells = gateCells.Length,
@@ -833,7 +830,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
 
             HealthComponent health = null;
             Collider footprintCollider = null;
-            NavMeshObstacle obstacle = null;
             if (cell.InitialBlocked)
             {
                 health = cellRoot.gameObject.AddComponent<HealthComponent>();
@@ -848,13 +844,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
                 meshCollider.sharedMesh = footprintMesh;
                 meshCollider.convex = true;
                 footprintCollider = meshCollider;
-                obstacle = cellRoot.gameObject.AddComponent<NavMeshObstacle>();
-                obstacle.shape = NavMeshObstacleShape.Capsule;
-                obstacle.center = Vector3.up * height * 0.5f;
-                obstacle.radius = HexSpatialContract.CellInRadius * 0.92f;
-                obstacle.height = height;
-                obstacle.carving = true;
-                obstacle.carveOnlyStationary = true;
             }
 
             var runtime = cellRoot.gameObject.AddComponent<HexCastleCellRuntime>();
@@ -862,7 +851,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
                 cell,
                 health,
                 footprintCollider,
-                obstacle,
                 tileVisualRoot,
                 contentVisualRoot);
 
@@ -1301,7 +1289,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             if (prefab.transform.localScale != Vector3.one ||
                 prefab.GetComponentInChildren<HealthComponent>(true) != null ||
                 prefab.GetComponentInChildren<Collider>(true) != null ||
-                prefab.GetComponentInChildren<NavMeshObstacle>(true) != null ||
                 prefab.GetComponentInChildren<HexCastleCellRuntime>(true) != null)
             {
                 throw new InvalidOperationException($"{prefab.name}은 Scale 1 순수 Visual Prefab이 아닙니다.");
@@ -1325,7 +1312,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
             if (prefab.transform.localScale != Vector3.one ||
                 prefab.GetComponentInChildren<HealthComponent>(true) != null ||
                 prefab.GetComponentInChildren<Collider>(true) != null ||
-                prefab.GetComponentInChildren<NavMeshObstacle>(true) != null ||
                 prefab.GetComponentInChildren<HexCastleCellRuntime>(true) != null ||
                 model == null || muzzle == null || muzzleVfx == null || loadedProjectiles == null ||
                 model.GetComponentsInChildren<Renderer>(true).Length == 0)

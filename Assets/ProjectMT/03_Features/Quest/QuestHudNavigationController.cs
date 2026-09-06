@@ -242,14 +242,14 @@ namespace ProjectMT.Features.Quest
                 return;
             }
 
-            if (!QuestTutorialInteraction.CanInteract(ResolveClickHintTarget()))
+            if (!QuestTutorialInteraction.CanInteract(ResolveClickInteractionTarget()))
             {
                 clickImage.SetActive(false);
                 QuestTutorialSpotlight.Hide(this);
                 return;
             }
 
-            QuestTutorialSpotlight.Show(this, ResolveClickHintTarget(),
+            QuestTutorialSpotlight.Show(this, ResolveClickVisualTarget(),
                 completedAwaitingClaim ? "완료한 퀘스트의 보상을 받아주세요" : "퀘스트를 누르면 목표 화면으로 이동해요");
             clickImage.SetActive(true);
         }
@@ -317,7 +317,7 @@ namespace ProjectMT.Features.Quest
             }
 
             var rect = clickImage.GetComponent<RectTransform>();
-            var target = ResolveClickHintTarget();
+            var target = ResolveClickVisualTarget();
             if (rect == null || target == null || rect.parent is not RectTransform parent)
             {
                 return;
@@ -342,11 +342,19 @@ namespace ProjectMT.Features.Quest
                 currentLocalPosition.z);
         }
 
-        private RectTransform ResolveClickHintTarget()
+        private RectTransform ResolveClickVisualTarget()
+        {
+            // QuestMove는 카드 위에 겹친 실제 입력 영역이라 카드보다 좁을 수 있다.
+            // 테두리와 손가락은 사용자가 보는 전체 퀘스트 카드 외곽을 기준으로 둔다.
+            return trackerView?.QuestActionButton?.transform as RectTransform
+                   ?? questMoveButton?.transform as RectTransform;
+        }
+
+        private RectTransform ResolveClickInteractionTarget()
         {
             var action = trackerView?.QuestActionButton?.transform as RectTransform;
             var move = questMoveButton?.transform as RectTransform;
-            // 최신 HUD에서 이동 영역이 보상 영역 위에 겹치는 경우 실제 누를 수 있는 영역을 따른다.
+            // 가시성 검사는 실제로 Raycast를 받는 겹침 영역을 기준으로 한다.
             if (action != null && QuestTutorialInteraction.CanInteract(action)) return action;
             if (move != null && QuestTutorialInteraction.CanInteract(move)) return move;
             return action ?? move;

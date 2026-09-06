@@ -15,13 +15,15 @@ namespace ProjectMT.Features.CommanderSkill
         private float duration;
         private float damageMultiplier = 1f;
         private bool running;
+        private bool followTarget = true;
 
         public void Launch(
             CommanderSkillRuntime runtime,
             CommanderAttackSkillDefinition skill,
             UnitActor targetUnit,
             Vector3 destination,
-            float skillDamageMultiplier)
+            float skillDamageMultiplier,
+            bool homingTarget = true)
         {
             owner = runtime;
             definition = skill;
@@ -30,7 +32,8 @@ namespace ProjectMT.Features.CommanderSkill
             targetPosition = destination;
             elapsed = 0f;
             duration = Mathf.Max(0.08f, Vector3.Distance(startPosition, targetPosition) / skill.ProjectileSpeed);
-            damageMultiplier = Mathf.Max(1f, skillDamageMultiplier);
+            damageMultiplier = Mathf.Max(0f, skillDamageMultiplier);
+            followTarget = homingTarget;
             running = owner != null && definition != null;
         }
 
@@ -47,7 +50,7 @@ namespace ProjectMT.Features.CommanderSkill
                 return;
             }
 
-            if (target != null && target.IsAlive)
+            if (followTarget && target != null && target.IsAlive)
             {
                 targetPosition = target.transform.position + Vector3.up * 0.45f;
             }
@@ -91,6 +94,7 @@ namespace ProjectMT.Features.CommanderSkill
             definition = null;
             target = null;
             damageMultiplier = 1f;
+            followTarget = true;
         }
     }
 }

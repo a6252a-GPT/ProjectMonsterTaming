@@ -4,6 +4,7 @@ using System.Linq;
 using ProjectMT.Features.CommanderSkill;
 using ProjectMT.Shared.Audio;
 using ProjectMT.Shared.CommanderSkill;
+using ProjectMT.Shared.Unit;
 using UnityEditor;
 using UnityEngine;
 
@@ -44,6 +45,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
         private const string CastingSfxName = GeneratedSfxPrefix + "Casting";
         private const string ActivationSfxName = GeneratedSfxPrefix + "Activation";
         private const string ImpactSfxName = GeneratedSfxPrefix + "Impact";
+        private const string MarkSfxPrefix = GeneratedSfxPrefix + "Mark_";
         private static readonly Vector2 DefaultSfxVolume = new Vector2(0.9f, 1f);
         private static readonly Vector2 DefaultSfxPitch = new Vector2(0.98f, 1.02f);
 
@@ -57,7 +59,10 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             }
 
             EnsureFolder(SkillRoot);
-            var path = $"{SkillRoot}/CS_{draft.SkillId}.asset";
+            var fileName = draft.SkillId.StartsWith("CS_", StringComparison.Ordinal)
+                ? draft.SkillId
+                : $"CS_{draft.SkillId}";
+            var path = $"{SkillRoot}/{fileName}.asset";
             if (AssetDatabase.LoadMainAssetAtPath(path) != null)
             {
                 return new CommanderSkillWorkshopWriteResult(
@@ -189,6 +194,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                     $"{draft.SkillId}_damage",
                     draft.DamageKind,
                     draft.BaseDamage,
+                    draft.PerHitMultiplier,
                     draft.Shape,
                     draft.Center,
                     draft.Radius,
@@ -197,6 +203,12 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                     draft.LineWidth,
                     draft.MaxTargets);
                 EditorUtility.SetDirty(damage);
+                var attackEffects = new CommanderSkillEffectDefinition[draft.Effects.Count + 1];
+                attackEffects[0] = damage;
+                for (var index = 0; index < draft.Effects.Count; index++)
+                {
+                    attackEffects[index + 1] = BuildDraftEffect(draft, draft.Effects[index], index, path, definition, keep);
+                }
                 attack.EditorConfigure(
                     draft.SkillId,
                     draft.DisplayName,
@@ -205,7 +217,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                     draft.CastTime,
                     draft.Cooldown,
                     targeting,
-                    damage,
+                    attackEffects,
                     draft.DeliveryModule,
                     draft.ProjectilePrefab,
                     draft.ProjectileSpeed,
@@ -220,27 +232,10 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             }
             else if (definition is CommanderEffectSkillDefinition effectSkill)
             {
-                var effects = new CommanderUnitEffectDefinition[draft.Effects.Count];
+                var effects = new CommanderSkillEffectDefinition[draft.Effects.Count];
                 for (var index = 0; index < draft.Effects.Count; index++)
                 {
-                    var source = draft.Effects[index];
-                    var effect = GetOrCreateSubAsset<CommanderUnitEffectDefinition>(
-                        path,
-                        $"{EffectPrefix}{index + 1:00}",
-                        definition,
-                        keep);
-                    effect.EditorConfigure(
-                        source.EffectId,
-                        source.EffectType,
-                        source.ValueSource,
-                        source.Magnitude,
-                        source.Duration,
-                        source.Scope,
-                        source.Radius,
-                        source.MaxTargets,
-                        source.StackPolicy);
-                    EditorUtility.SetDirty(effect);
-                    effects[index] = effect;
+                    effects[index] = BuildDraftEffect(draft, draft.Effects[index], index, path, definition, keep);
                 }
                 effectSkill.EditorConfigure(
                     draft.SkillId,
@@ -261,6 +256,11 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             }
 
             EditorUtility.SetDirty(definition);
+            var pattern = new CommanderSkillPatternConfig();
+            pattern.EditorConfigure(draft.PatternType, draft.RepeatCount, draft.RepeatInterval,
+                draft.PatternDuration, draft.TickInterval, draft.RandomRadius,
+                draft.ChainCount, draft.ChainRadius);
+            definition.EditorConfigureV2(draft.Rarity, pattern);
             definition.EditorConfigureFeedbackTransforms(
                 draft.CastVfxLocalOffset,
                 draft.CastVfxLocalEuler,
@@ -275,6 +275,9 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 draft.CastingVfxLocalOffset,
                 draft.CastingVfxLocalEuler,
                 draft.CastingVfxScale);
+            definition.EditorConfigurePersistentFeedback(draft.PersistentVfxPrefab,
+                draft.PersistentVfxLocalOffset, draft.PersistentVfxLocalEuler,
+                draft.PersistentVfxScale, draft.PersistentVfxAnchor);
             if (!definition.TryValidate(out var error))
             {
                 throw new InvalidOperationException($"런타임 정의 검증 실패: {error}");
@@ -290,6 +293,132 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
                 }
                 UnityEngine.Object.DestroyImmediate(local, true);
             }
+        }
+
+        private static CommanderSkillEffectDefinition BuildDraftEffect(CommanderSkillWorkshopDraft draft,
+            CommanderSkillWorkshopEffectDraft source, int index, string path,
+            CommanderSkillDefinition owner, HashSet<UnityEngine.Object> keep)
+        {
+            if (source.Kind == CommanderSkillWorkshopEffectKind.CommanderMark)
+            {
+                if (source.SharedMarkDefinition != null) return source.SharedMarkDefinition;
+                var triggerEffects = new List<CommanderSkillEffectDefinition>();
+                for (var triggerIndex = 0; triggerIndex < source.TriggerEffects.Count; triggerIndex++)
+                {
+                    triggerEffects.Add(BuildTriggerEffect(draft, source.TriggerEffects[triggerIndex], index,
+                        triggerIndex, path, owner, keep));
+                }
+                if (triggerEffects.Count == 0 && source.TriggerDamage > 0f)
+                {
+                    var legacyTrigger = GetOrCreateSubAsset<CommanderAreaDamageEffectDefinition>(path,
+                        $"__MarkTrigger_{index + 1:00}_01", owner, keep);
+                    legacyTrigger.EditorConfigure($"{source.EffectId}_trigger_damage", draft.DamageKind,
+                        source.TriggerDamage, source.TriggerPerHitMultiplier, MonsterBasicAttackShape.Circle,
+                        MonsterBasicAttackCenter.PrimaryTarget, source.Radius, 0f, 90f, 1f, source.MaxTargets);
+                    EditorUtility.SetDirty(legacyTrigger);
+                    triggerEffects.Add(legacyTrigger);
+                }
+                var mark = GetOrCreateSubAsset<CommanderMarkEffectDefinition>(path,
+                    $"{EffectPrefix}{index + 1:00}", owner, keep);
+                mark.EditorConfigure(source.EffectId, source.MarkId, source.Duration, source.Scope,
+                    source.Radius, source.MaxTargets, source.MarkTrigger, source.RequiredHits,
+                    source.RequiredStacks, source.MarkMaxStacks, source.ConsumeOnTrigger,
+                    source.RefreshDurationOnApply, source.TriggerCooldown,
+                    triggerEffects.ToArray());
+                mark.EditorConfigureRecording(source.RecordHitCount);
+                mark.EditorConfigureDamageOriginFilter(source.CountBasicAttack, source.CountMonsterSkill,
+                    source.CountCommanderSkill, source.CountCommanderMarkTrigger);
+                mark.EditorConfigureFeedback(
+                    BuildMarkFeedback(source.OnApply, "OnApply", index, path, owner, keep),
+                    BuildMarkFeedback(source.Loop, "Loop", index, path, owner, keep),
+                    BuildMarkFeedback(source.OnStack, "OnStack", index, path, owner, keep),
+                    BuildMarkFeedback(source.OnTrigger, "OnTrigger", index, path, owner, keep),
+                    BuildMarkFeedback(source.OnRemove, "OnRemove", index, path, owner, keep));
+                EditorUtility.SetDirty(mark);
+                return mark;
+            }
+            if (source.Kind == CommanderSkillWorkshopEffectKind.AreaDamage)
+            {
+                var damage = GetOrCreateSubAsset<CommanderAreaDamageEffectDefinition>(path,
+                    $"{EffectPrefix}{index + 1:00}", owner, keep);
+                ConfigureDamageEffect(damage, source);
+                return damage;
+            }
+            if (source.Kind == CommanderSkillWorkshopEffectKind.RecordedHitDamage)
+            {
+                var recorded = GetOrCreateSubAsset<CommanderRecordedHitDamageEffectDefinition>(path,
+                    $"{EffectPrefix}{index + 1:00}", owner, keep);
+                recorded.EditorConfigure(source.EffectId, source.RecordedBaseMultiplier,
+                    source.RecordedMultiplierPerHit, source.MaximumRecordedHits);
+                EditorUtility.SetDirty(recorded);
+                return recorded;
+            }
+            if (source.Kind == CommanderSkillWorkshopEffectKind.GlobalModifier)
+            {
+                var modifier = GetOrCreateSubAsset<CommanderGlobalModifierEffectDefinition>(path,
+                    $"{EffectPrefix}{index + 1:00}", owner, keep);
+                modifier.EditorConfigure(source.EffectId, source.Duration, source.MarkRequiredHitsMultiplier,
+                    source.MarkTriggerDamageMultiplier, source.CooldownRecoveryMultiplier);
+                EditorUtility.SetDirty(modifier);
+                return modifier;
+            }
+            var unit = GetOrCreateSubAsset<CommanderUnitEffectDefinition>(path,
+                $"{EffectPrefix}{index + 1:00}", owner, keep);
+            unit.EditorConfigure(source.EffectId, source.EffectType, source.ValueSource, source.Magnitude,
+                source.Duration, source.Scope, source.Radius, source.MaxTargets, source.StackPolicy);
+            EditorUtility.SetDirty(unit);
+            return unit;
+        }
+
+        private static CommanderSkillEffectDefinition BuildTriggerEffect(CommanderSkillWorkshopDraft draft,
+            CommanderSkillWorkshopEffectDraft source, int markIndex, int triggerIndex, string path,
+            CommanderSkillDefinition owner, HashSet<UnityEngine.Object> keep)
+        {
+            var objectName = $"__MarkTrigger_{markIndex + 1:00}_{triggerIndex + 1:00}";
+            if (source.Kind == CommanderSkillWorkshopEffectKind.AreaDamage)
+            {
+                var damage = GetOrCreateSubAsset<CommanderAreaDamageEffectDefinition>(path, objectName, owner, keep);
+                ConfigureDamageEffect(damage, source);
+                return damage;
+            }
+            if (source.Kind == CommanderSkillWorkshopEffectKind.RecordedHitDamage)
+            {
+                var recorded = GetOrCreateSubAsset<CommanderRecordedHitDamageEffectDefinition>(path,
+                    objectName, owner, keep);
+                recorded.EditorConfigure(source.EffectId, source.RecordedBaseMultiplier,
+                    source.RecordedMultiplierPerHit, source.MaximumRecordedHits);
+                EditorUtility.SetDirty(recorded);
+                return recorded;
+            }
+            if (source.Kind != CommanderSkillWorkshopEffectKind.UnitEffect)
+                throw new InvalidOperationException($"Mark Trigger는 {source.Kind} 효과를 지원하지 않습니다.");
+            var unit = GetOrCreateSubAsset<CommanderUnitEffectDefinition>(path, objectName, owner, keep);
+            unit.EditorConfigure(source.EffectId, source.EffectType, source.ValueSource, source.Magnitude,
+                source.Duration, source.Scope, source.Radius, source.MaxTargets, source.StackPolicy);
+            EditorUtility.SetDirty(unit);
+            return unit;
+        }
+
+        private static void ConfigureDamageEffect(CommanderAreaDamageEffectDefinition damage,
+            CommanderSkillWorkshopEffectDraft source)
+        {
+            damage.EditorConfigure(source.EffectId, source.DamageKind, source.BaseDamage,
+                source.PerHitMultiplier, source.DamageShape, source.DamageCenter, source.Radius,
+                source.ForwardOffset, source.Angle, source.LineWidth, source.MaxTargets);
+            EditorUtility.SetDirty(damage);
+        }
+
+        private static CommanderMarkFeedbackSlot BuildMarkFeedback(CommanderMarkFeedbackDraft source,
+            string slotName, int effectIndex, string path, CommanderSkillDefinition owner,
+            HashSet<UnityEngine.Object> keep)
+        {
+            source ??= new CommanderMarkFeedbackDraft();
+            var cue = ResolveSfx(path, $"{MarkSfxPrefix}{effectIndex + 1:00}_{slotName}", owner, keep,
+                source.Sound, source.SfxSource);
+            var slot = new CommanderMarkFeedbackSlot();
+            slot.EditorConfigure(source.VfxPrefab, source.Lifetime, source.LocalOffset, source.LocalEuler,
+                source.Scale, cue, source.Anchor);
+            return slot;
         }
 
         private static T GetOrCreateSubAsset<T>(
@@ -318,6 +447,7 @@ namespace ProjectMT.EditorTools.CommanderSkillWorkshop
             return asset != null &&
                    (asset.name == TargetingName || asset.name == DamageName ||
                     asset.name.StartsWith(EffectPrefix, StringComparison.Ordinal) ||
+                    asset.name.StartsWith("__MarkTrigger_", StringComparison.Ordinal) ||
                     asset.name.StartsWith(GeneratedSfxPrefix, StringComparison.Ordinal));
         }
 

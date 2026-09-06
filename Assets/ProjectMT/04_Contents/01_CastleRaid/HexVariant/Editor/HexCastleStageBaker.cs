@@ -2,11 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Unity.AI.Navigation;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
@@ -55,8 +53,7 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
                 EditorUtility.SetDirty(catalog);
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-                Debug.Log(
-                    $"[Hex Formal Theme Bake] {layouts.Length}개 Stage Prefab + 영구 NavMeshData 생성 완료");
+                Debug.Log($"[Hex Formal Theme Bake] {layouts.Length}개 Stage Prefab 생성 완료");
             }
             finally
             {
@@ -120,22 +117,9 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
                 EnsureFolder(stageAssetFolder);
                 PersistTransientResources(root, stageAssetFolder);
 
-                var board = root.transform.Find("00_BoardSurface") ??
-                            throw new InvalidOperationException($"{layout.StageId} Board Surface가 없습니다.");
-                var boardFilter = board.GetComponent<MeshFilter>() ??
-                                  throw new InvalidOperationException($"{layout.StageId} Board Mesh가 없습니다.");
-                var boardCollider = board.gameObject.AddComponent<MeshCollider>();
-                boardCollider.sharedMesh = boardFilter.sharedMesh;
-
-                var surface = root.AddComponent<NavMeshSurface>();
-                surface.collectObjects = CollectObjects.Children;
-                surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
-                BuildAndSaveNavigation(root, surface, boardCollider,
-                    $"{stageAssetFolder}/NAV_CRHex_{layout.DefenseLayerCount}W_{layout.Seed}.asset");
-
                 var bounds = ResolveBounds(root);
                 var bakedStage = root.AddComponent<HexCastleBakedStage>();
-                bakedStage.EditorConfigure(layout, surface, bounds);
+                bakedStage.EditorConfigure(layout, bounds);
                 var prefabPath = $"{PrefabFolder}/{root.name}.prefab";
                 var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
                 if (prefab == null)
@@ -144,7 +128,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
                 }
 
                 catalog.Upsert(layout.StageId, layout, prefab);
-                surface.RemoveData();
             }
             finally
             {
@@ -237,50 +220,6 @@ namespace ProjectMT.Contents.CastleRaidHex.Editor
                 if (changed)
                 {
                     renderer.sharedMaterials = rendererMaterials;
-                }
-            }
-        }
-
-        private static void BuildAndSaveNavigation(
-            GameObject root,
-            NavMeshSurface surface,
-            Collider boardCollider,
-            string assetPath)
-        {
-            var colliders = root.GetComponentsInChildren<Collider>(true);
-            var colliderStates = colliders.ToDictionary(value => value, value => value.enabled);
-            var obstacles = root.GetComponentsInChildren<NavMeshObstacle>(true);
-            var obstacleStates = obstacles.ToDictionary(value => value, value => value.enabled);
-            try
-            {
-                foreach (var collider in colliders)
-                {
-                    collider.enabled = collider == boardCollider;
-                }
-                foreach (var obstacle in obstacles)
-                {
-                    obstacle.enabled = false;
-                }
-
-                surface.BuildNavMesh();
-                var data = surface.navMeshData ??
-                           throw new InvalidOperationException("NavMeshData 생성에 실패했습니다.");
-                if (AssetDatabase.LoadMainAssetAtPath(assetPath) != null)
-                {
-                    AssetDatabase.DeleteAsset(assetPath);
-                }
-                AssetDatabase.CreateAsset(data, assetPath);
-                surface.navMeshData = data;
-            }
-            finally
-            {
-                foreach (var pair in colliderStates)
-                {
-                    if (pair.Key != null) pair.Key.enabled = pair.Value;
-                }
-                foreach (var pair in obstacleStates)
-                {
-                    if (pair.Key != null) pair.Key.enabled = pair.Value;
                 }
             }
         }

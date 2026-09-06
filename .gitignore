@@ -145,6 +145,11 @@ InitTestScene*.unity*
 # Local Codex backups, diagnostics, and temporary outputs.
 /_Temp/
 
+# Local archives, tooling, and retained Castle Raid UI captures.
+/ProjectMT 개인파일/Captures/CastleRaid_StageUI/
+/LegacyArchives/
+/tools/
+
 # Hera QA screenshots are local verification outputs and should not be committed.
 /artifacts/hera_*.png
 

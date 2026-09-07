@@ -21,6 +21,7 @@ namespace ProjectMT.Features.CommanderSkill
         private readonly float[] cooldownRemaining = new float[CommanderSkillSlotRules.SlotCount];
         private readonly float[] cooldownDuration = new float[CommanderSkillSlotRules.SlotCount];
         private readonly List<ActivePattern> activePatterns = new List<ActivePattern>(8);
+        private readonly List<ActivePattern> patternTickBuffer = new List<ActivePattern>(8);
         private readonly List<UnitActor> patternTargets = new List<UnitActor>(64);
         private readonly List<ActiveMark> activeMarks = new List<ActiveMark>(16);
         private readonly List<ActiveMark> markTickBuffer = new List<ActiveMark>(16);
@@ -54,6 +55,9 @@ namespace ProjectMT.Features.CommanderSkill
         private bool configured;
         private SfxCue commanderSkillVoice;
         private CommanderSkillCastAnimationPresenter castAnimationPresenter;
+        private UnitActor skillFacingTarget;
+        private Vector3 skillFacingPosition;
+        private bool hasSkillFacingPosition;
 
         public bool IsPaused => world == null || world.IsPaused || (isInputBlocked?.Invoke() ?? false);
         public bool IsConfigured => configured;
@@ -62,6 +66,18 @@ namespace ProjectMT.Features.CommanderSkill
         public int CastingSlot => IsCasting ? castingSlot : -1;
         public float CastingRemaining => IsCasting ? Mathf.Max(0f, castingRemaining) : 0f;
         public float CastingDuration => IsCasting ? Mathf.Max(0f, castingDuration) : 0f;
+
+        public bool TryGetSkillFacingPosition(out Vector3 position)
+        {
+            if (skillFacingTarget != null)
+            {
+                skillFacingPosition = skillFacingTarget.transform.position;
+                hasSkillFacingPosition = true;
+            }
+
+            position = skillFacingPosition;
+            return hasSkillFacingPosition;
+        }
 
         public void Configure(
             IGameProgressService progressService,
@@ -148,6 +164,9 @@ namespace ProjectMT.Features.CommanderSkill
             castAnimationPresenter = null;
             pullReadyTimes.Clear();
             pullClock = 0f;
+            skillFacingTarget = null;
+            skillFacingPosition = Vector3.zero;
+            hasSkillFacingPosition = false;
             configured = false;
             autoScanRemaining = 0f;
             skillRecoveryRemaining = 0f;
@@ -179,14 +198,17 @@ namespace ProjectMT.Features.CommanderSkill
             var multiplier = GetEffectMultiplier(definition.SkillId, GetOwnedSkillLevel(definition.SkillId)) *
                              Mathf.Max(0f, externalDamageMultiplier?.Invoke() ?? 1f);
             multiplier = multiplier.WithCast(new CommanderSkillCastState(++castSequence, castOrigin.position));
-            if (definition.CastTime > 0f &&
-                FindSkillTarget(definition, multiplier) == null)
+            var castTarget = definition.CastTime > 0f
+                ? FindSkillTarget(definition, multiplier)
+                : null;
+            if (definition.CastTime > 0f && castTarget == null)
             {
                 return false; // 대상 없는 빈 캐스팅을 시작하지 않음. 발동 때도 대상은 다시 검증한다.
             }
 
             if (definition.CastTime > 0f)
             {
+                TrackSkillFacingTarget(castTarget);
                 castingSlot = slotIndex;
                 castingDefinition = definition;
                 castingDuration = definition.CastTime;
@@ -250,6 +272,7 @@ namespace ProjectMT.Features.CommanderSkill
             if (!configured || definition == null || castOrigin == null || combat == null) return false;
             var target = FindSkillTarget(definition, multiplier);
             if (target == null) return false;
+            TrackSkillFacingTarget(target);
             var config = definition.Pattern;
             var total = config.Type switch
             {
@@ -489,9 +512,12 @@ namespace ProjectMT.Features.CommanderSkill
 
         private void TickPatterns(float deltaTime)
         {
-            for (var index = activePatterns.Count - 1; index >= 0; index--)
+            patternTickBuffer.Clear();
+            patternTickBuffer.AddRange(activePatterns);
+            for (var index = patternTickBuffer.Count - 1; index >= 0; index--)
             {
-                var state = activePatterns[index];
+                var state = patternTickBuffer[index];
+                if (!activePatterns.Contains(state)) continue;
                 var elapsed = Mathf.Max(0f, deltaTime);
                 state.Remaining -= elapsed;
                 if (state.Definition.Pattern.Type == CommanderSkillPatternType.PersistentArea)
@@ -507,10 +533,11 @@ namespace ProjectMT.Features.CommanderSkill
                     : state.Executed >= state.Total;
                 if (complete)
                 {
-                    ReturnPersistentPatternFeedback(state);
-                    activePatterns.RemoveAt(index);
+                    if (activePatterns.Remove(state))
+                        ReturnPersistentPatternFeedback(state);
                 }
             }
+            patternTickBuffer.Clear();
         }
 
         private void TickMarks(float deltaTime)
@@ -764,13 +791,32 @@ namespace ProjectMT.Features.CommanderSkill
                 {
                     var candidate = patternTargets[index];
                     if (candidate != null && candidate.IsAlive && !state.HitIds.Contains(candidate.GetInstanceID()))
-                        return state.Target = candidate;
+                    {
+                        state.Target = candidate;
+                        TrackSkillFacingTarget(candidate);
+                        return candidate;
+                    }
                 }
                 return null;
             }
             if (state.Target == null || !state.Target.IsAlive)
+            {
                 state.Target = FindSkillTarget(state.Definition, state.Multiplier);
+                TrackSkillFacingTarget(state.Target);
+            }
             return state.Target;
+        }
+
+        private void TrackSkillFacingTarget(UnitActor target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            skillFacingTarget = target;
+            skillFacingPosition = target.transform.position;
+            hasSkillFacingPosition = true;
         }
 
         private sealed class ActivePattern

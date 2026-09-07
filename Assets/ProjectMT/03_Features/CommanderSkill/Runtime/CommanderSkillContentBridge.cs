@@ -2,6 +2,7 @@ using System;
 using ProjectMT.Shared.CommanderSkill;
 using ProjectMT.Shared.Combat;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.Input;
 using UnityEngine;
 
 namespace ProjectMT.Features.CommanderSkill
@@ -14,6 +15,7 @@ namespace ProjectMT.Features.CommanderSkill
 
         private CommanderSkillRuntime runtime;
         private IGameProgressService activeProgress;
+        private CommanderMoveController commanderMove;
 
         public CommanderSkillRuntime Runtime => runtime;
         public CommanderSkillHudView Hud => hud;
@@ -42,12 +44,18 @@ namespace ProjectMT.Features.CommanderSkill
 
             activeProgress = progress ?? new InMemoryGameProgressService();
             runtime.Configure(activeProgress, catalog, world, castOrigin, isInputBlocked, damageMultiplier);
+            commanderMove = castOrigin.GetComponent<CommanderMoveController>();
+            commanderMove?.ConfigureSkillMotion(
+                () => runtime?.IsSkillSequenceLocked == true,
+                ResolveSkillFacingPosition);
             hud.gameObject.SetActive(true);
             hud.Configure(activeProgress, catalog, runtime);
         }
 
         public void Shutdown()
         {
+            commanderMove?.ClearSkillMotion();
+            commanderMove = null;
             hud?.Shutdown();
             runtime?.Shutdown();
             activeProgress = null;
@@ -60,6 +68,13 @@ namespace ProjectMT.Features.CommanderSkill
         private void OnDestroy()
         {
             Shutdown();
+        }
+
+        private Vector3? ResolveSkillFacingPosition()
+        {
+            return runtime != null && runtime.TryGetSkillFacingPosition(out var position)
+                ? position
+                : (Vector3?)null;
         }
 
 #if UNITY_EDITOR

@@ -136,10 +136,18 @@ namespace ProjectMT.Integrations.Feel
             {
                 if (feedback != null)
                 {
-                    feedback.Active = budgetGranted &&
+                    // 실전 기본공격은 전역 Time.timeScale을 건드리지 않는다. 공격속도 버프처럼
+                    // 여러 명중이 몰릴 때 FEEL Freeze/Timescale 코루틴이 겹치거나 중단되면
+                    // Player에서 0배속이 복구되지 않을 수 있으므로 프리셋에 남아 있어도 항상 차단한다.
+                    feedback.Active = !IsTimeScaleGlobalFeedback(feedback) && budgetGranted &&
                                       (includeSharedCombatFeedback || !IsSharedCombatGlobalFeedback(feedback));
                 }
             }
+        }
+
+        private static bool IsTimeScaleGlobalFeedback(MMF_Feedback feedback)
+        {
+            return feedback is MMF_FreezeFrame || feedback is MMF_TimescaleModifier;
         }
 
         private static bool IsSharedCombatGlobalFeedback(MMF_Feedback feedback)

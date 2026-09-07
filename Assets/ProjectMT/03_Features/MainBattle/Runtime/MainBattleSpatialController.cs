@@ -43,6 +43,7 @@ namespace ProjectMT.Features.MainBattle
         private bool commanderFootIkOriginalEnabled;
         private UnitActor commanderCombatTarget;
         private Func<bool> commanderActionLocked;
+        private Func<Vector3?> commanderSkillFacingPosition;
         private float commanderYawVelocity;
         private int observedRunSequence;
         private bool configured;
@@ -53,7 +54,8 @@ namespace ProjectMT.Features.MainBattle
             Transform commanderRoot,
             Transform playerFormationAnchor,
             Transform enemySpawnAnchor,
-            Func<bool> isCommanderActionLocked = null)
+            Func<bool> isCommanderActionLocked = null,
+            Func<Vector3?> skillFacingPosition = null)
         {
             Shutdown();
             ApplyCombatTuning(CombatImpactTuning.ActiveConfig);
@@ -88,6 +90,7 @@ namespace ProjectMT.Features.MainBattle
 
             battleForward.Normalize();
             commanderActionLocked = isCommanderActionLocked;
+            commanderSkillFacingPosition = skillFacingPosition;
             commanderFootIk = commander.GetComponentInChildren<MainBattleCommanderFootIkLock>(true);
             commanderFootIkOriginalEnabled = commanderFootIk != null && commanderFootIk.enabled;
             observedRunSequence = expedition.RunSequence;
@@ -120,6 +123,7 @@ namespace ProjectMT.Features.MainBattle
             commanderFacingOffset = Quaternion.identity;
             commanderCombatTarget = null;
             commanderActionLocked = null;
+            commanderSkillFacingPosition = null;
             commanderYawVelocity = 0f;
             observedRunSequence = 0;
             configured = false;
@@ -261,7 +265,28 @@ namespace ProjectMT.Features.MainBattle
         private void UpdateCommander(float deltaTime)
         {
             commanderCombatTarget = ResolveCommanderCombatTarget();
-            if (commanderCombatTarget == null || (commanderActionLocked?.Invoke() ?? false))
+            if (commanderActionLocked?.Invoke() ?? false)
+            {
+                var facingPosition = commanderSkillFacingPosition?.Invoke();
+                if (!facingPosition.HasValue && commanderCombatTarget != null)
+                {
+                    facingPosition = commanderCombatTarget.transform.position;
+                }
+
+                if (facingPosition.HasValue)
+                {
+                    SmoothTurnCommander(facingPosition.Value - commander.position, deltaTime);
+                }
+                else
+                {
+                    commanderYawVelocity = 0f;
+                }
+
+                SetCommanderMoving(false);
+                return; // 스킬 캐스팅·시전 애니메이션 중에는 위치를 고정하고 방향만 보정
+            }
+
+            if (commanderCombatTarget == null)
             {
                 commanderYawVelocity = 0f;
                 SetCommanderMoving(false);

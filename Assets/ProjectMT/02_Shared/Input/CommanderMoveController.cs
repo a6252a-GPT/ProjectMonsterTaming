@@ -29,10 +29,13 @@ namespace ProjectMT.Shared.Input
         private Vector3 center; // 현재 콘텐츠 이동 중심
         private bool inputEnabled; // 플레이 중 입력 허용
         private Coroutine evadeRoutine; // 진행 중인 회피 이동
+        private Func<bool> skillMotionLocked;
+        private Func<Vector3?> skillFacingPosition;
 
         public MoveCommand CurrentCommand { get; private set; }
         public Vector3 InitialPosition { get; private set; } // 08.07 안건준 추가 - 처음 활성화된 위치(리스폰 기준점)
         public bool IsInputEnabled => inputEnabled && isActiveAndEnabled && controlled != null;
+        public bool IsSkillMotionLocked => skillMotionLocked?.Invoke() ?? false;
         public bool IsEvading { get; private set; }
         public event Action<bool> EvadeStarted; // true: 전방, false: 후방
 
@@ -55,6 +58,19 @@ namespace ProjectMT.Shared.Input
                 return;
             }
 
+            if (IsSkillMotionLocked)
+            {
+                StopEvade();
+                CurrentCommand = new MoveCommand(Vector2.zero);
+                var facingPosition = skillFacingPosition?.Invoke();
+                if (facingPosition.HasValue)
+                {
+                    RotateTowards(facingPosition.Value - controlled.position);
+                }
+
+                return; // 캐스팅·시전 애니메이션 중 일반 이동과 회피는 막고 회전만 허용
+            }
+
             var direction = ReadDirection();
             CurrentCommand = new MoveCommand(direction);
             if (IsEvading)
@@ -70,11 +86,22 @@ namespace ProjectMT.Shared.Input
 
             if (movement.sqrMagnitude > 0.001f)
             {
-                controlled.rotation = Quaternion.Slerp(
-                    controlled.rotation,
-                    Quaternion.LookRotation(movement.normalized, Vector3.up),
-                    14f * Time.deltaTime);
+                RotateTowards(movement);
             }
+        }
+
+        public void ConfigureSkillMotion(
+            Func<bool> isMotionLocked,
+            Func<Vector3?> facingPosition)
+        {
+            skillMotionLocked = isMotionLocked;
+            skillFacingPosition = facingPosition;
+        }
+
+        public void ClearSkillMotion()
+        {
+            skillMotionLocked = null;
+            skillFacingPosition = null;
         }
 
         public void SetInputEnabled(bool enabled)
@@ -94,7 +121,7 @@ namespace ProjectMT.Shared.Input
 
         public bool TryEvade()
         {
-            if (!IsInputEnabled || IsEvading)
+            if (!IsInputEnabled || IsEvading || IsSkillMotionLocked)
             {
                 return false;
             }
@@ -169,6 +196,20 @@ namespace ProjectMT.Shared.Input
             var backward = -controlled.forward;
             backward.y = 0f;
             return backward.sqrMagnitude > 0.001f ? backward.normalized : Vector3.back;
+        }
+
+        private void RotateTowards(Vector3 direction)
+        {
+            direction.y = 0f;
+            if (controlled == null || direction.sqrMagnitude <= 0.001f)
+            {
+                return;
+            }
+
+            controlled.rotation = Quaternion.Slerp(
+                controlled.rotation,
+                Quaternion.LookRotation(direction.normalized, Vector3.up),
+                14f * Time.deltaTime);
         }
 
         private Vector3 ResolveWorldMovement(Vector2 direction)

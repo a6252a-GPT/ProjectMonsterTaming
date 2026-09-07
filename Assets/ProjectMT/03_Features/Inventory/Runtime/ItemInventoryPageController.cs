@@ -96,6 +96,7 @@ namespace ProjectMT.Features.Inventory
         private bool actionPending;
         private Vector2 pairedUsePosition;
         private Vector2 soloActionPosition;
+        private ScrollRect slotScrollRect;
 
         public event Action<bool> OpenStateChanged;
 
@@ -151,6 +152,7 @@ namespace ProjectMT.Features.Inventory
             var changed = !gameObject.activeSelf;
             UIPanelPopAnimator.RequestOpen(gameObject);
             inventoryPanel?.SetActive(true);
+            RestoreSlotViewportLayout();
             Refresh();
             UpdateSortCaption();
             if (changed)
@@ -191,6 +193,7 @@ namespace ProjectMT.Features.Inventory
 
             inventoryCloseButton.onClick.AddListener(Close);
             detailCloseButton.onClick.AddListener(CloseDetail);
+            slotScrollRect = slotContent.GetComponentInParent<ScrollRect>(true);
             ConfigureFilterButtons();
             ConfigureSortDropdown();
             filterButtons[0]?.onClick.AddListener(HandleFilterAll);
@@ -225,6 +228,27 @@ namespace ProjectMT.Features.Inventory
             }
 
             CloseDetail();
+        }
+
+        private void RestoreSlotViewportLayout()
+        {
+            if (slotScrollRect == null || slotScrollRect.viewport == null || slotContent == null)
+            {
+                return;
+            }
+
+            // 비활성 상태로 들어온 중첩 UI에서 Viewport stretch 값이 소실되면 슬롯은 존재해도
+            // 전부 패널 아래에 배치된다. 열 때 원래 스크롤 계약(전체 stretch + 상단 시작)을 복구한다.
+            var viewport = slotScrollRect.viewport;
+            viewport.anchorMin = Vector2.zero;
+            viewport.anchorMax = Vector2.one;
+            viewport.offsetMin = Vector2.zero;
+            viewport.offsetMax = Vector2.zero;
+
+            slotScrollRect.StopMovement();
+            slotContent.anchoredPosition = new Vector2(slotContent.anchoredPosition.x, 0f);
+            slotScrollRect.verticalNormalizedPosition = 1f;
+            Canvas.ForceUpdateCanvases();
         }
 
         private void BuildSlotBindings()

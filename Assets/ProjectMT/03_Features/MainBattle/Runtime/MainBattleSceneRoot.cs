@@ -561,7 +561,11 @@ namespace ProjectMT.Features.MainBattle
                 commander,
                 playerFormationAnchor,
                 enemySpawnAnchor,
-                () => commanderSkillRuntime?.IsCasting == true || castAnimation?.IsPlaying == true);
+                () => commanderSkillRuntime?.IsSkillSequenceLocked == true || castAnimation?.IsPlaying == true,
+                () => commanderSkillRuntime != null &&
+                      commanderSkillRuntime.TryGetSkillFacingPosition(out var position)
+                    ? position
+                    : (Vector3?)null);
         }
 
         private void ConfigureFormationPlacement()

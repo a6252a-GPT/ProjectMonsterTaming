@@ -431,7 +431,11 @@ namespace ProjectMT.Features.Expedition
                 return;
             }
 
-            var flank = actor.gameObject.AddComponent<NinjaFlankController>();
+            var flank = actor.GetComponent<NinjaFlankController>();
+            if (flank == null)
+            {
+                flank = actor.gameObject.AddComponent<NinjaFlankController>();
+            }
             flank.Configure(actor, rearTarget, formationForward, Mathf.Max(0, ninjaOrdinal));
         }
 

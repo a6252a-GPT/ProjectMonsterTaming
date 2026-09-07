@@ -23,6 +23,8 @@ namespace ProjectMT.Features.Expedition
         {
             actor = owner;
             target = rearTarget;
+            approachingRear = false;
+            enabled = true;
             battleForward = forward.sqrMagnitude < 0.0001f ? Vector3.forward : forward.normalized;
             battleRight = Vector3.Cross(Vector3.up, battleForward).normalized;
             sideSign = ninjaOrdinal % 2 == 0 ? -1f : 1f; // 2기는 좌우, 3기는 2+1, 4기는 2+2
@@ -35,7 +37,7 @@ namespace ProjectMT.Features.Expedition
         {
             if (actor == null || !actor.IsAlive)
             {
-                Destroy(this);
+                enabled = false;
                 return;
             }
 
@@ -81,7 +83,15 @@ namespace ProjectMT.Features.Expedition
             }
 
             actor.AnimationDriver?.PlayIdle(true);
-            Destroy(this);
+            enabled = false;
+        }
+
+        private void OnDisable()
+        {
+            actor = null;
+            target = null;
+            approachingRear = false;
+            enabled = false; // 풀 재활성화만으로 이전 이동을 실행하지 않는다
         }
     }
 }

@@ -95,7 +95,7 @@ namespace ProjectMT.Features.Quest
         private readonly Dictionary<Transform, string> activeHintIds = new Dictionary<Transform, string>();
 
         // 상점이 열리면 몬스터 소환 페이지가 이미 선택되어 있으므로, 접힌 하위 메뉴 버튼이 아니라
-        // MonsterShop의 실제 OneButton(1회)을 우선 가리킨다. 실제 뽑기 버튼을 누르면 힌트를 종료한다.
+        // 초반은 1회, 중반 반복 퀘스트는 10회 소환 버튼을 가리킨다.
         private Button monsterGachaButton;
         private readonly List<Button> monsterGachaActionButtons = new List<Button>();
         private string lastTrackedQuestId;
@@ -203,7 +203,7 @@ namespace ProjectMT.Features.Quest
                 Matches(trackedQuestId, ShopQuestIds) && showingResults && !revealing,
                 "shop_result", true);
             anyPageTargetActive |= ApplyHint(
-                shopClickPoint,
+                ResolveMonsterGachaHintTarget(pageQuestId),
                 Matches(pageQuestId, ShopQuestIds) && !showingResults,
                 "shop_gacha",
                 shopHintTargetsButton);
@@ -945,6 +945,20 @@ namespace ProjectMT.Features.Quest
             }
 
             return null;
+        }
+
+        private Transform ResolveMonsterGachaHintTarget(string questId)
+        {
+            var buttonName = Matches(questId, "quest_021_monster_summon_repeat") ||
+                             Matches(questId, "quest_024_monster_owned_count_repeat")
+                ? "TwoButton" : "OneButton";
+            for (var index = 0; index < monsterGachaActionButtons.Count; index++)
+            {
+                var button = monsterGachaActionButtons[index];
+                if (button != null && button.name == buttonName && button.gameObject.activeInHierarchy)
+                    return button.transform;
+            }
+            return shopClickPoint;
         }
 
         private void HandleMonsterGachaClicked()

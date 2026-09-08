@@ -54,7 +54,6 @@ namespace ProjectMT.Shared.Unit
         }
 
         // 몬스터 기본 능력치 하나에 돌파 배율을 곱해서 돌려주는 편의 함수.
-        // (전투 스탯 계산 파이프라인에 실제로 연결하는 작업은 별도 요청 시 진행)
         public static float ApplyStatMultiplier(float baseStat, int ascensionLevel)
         {
             return baseStat * GetStatMultiplier(ascensionLevel);

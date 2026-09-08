@@ -10,16 +10,20 @@ namespace ProjectMT.Shared.Input
         [SerializeField] private RectTransform handle; // 손가락 표시 손잡이
         [SerializeField, Min(10f)] private float movementRange = 70f; // 최대 이동 반경
 
+        private int? activePointerId;
+
         public Vector2 Value { get; private set; }
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (activePointerId.HasValue) return;
+            activePointerId = eventData.pointerId;
             OnDrag(eventData);
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (background == null)
+            if (activePointerId != eventData.pointerId || background == null)
             {
                 return;
             }
@@ -44,6 +48,7 @@ namespace ProjectMT.Shared.Input
 
         public void OnPointerUp(PointerEventData eventData)
         {
+            if (activePointerId != eventData.pointerId) return;
             ResetValue();
         }
 
@@ -54,6 +59,7 @@ namespace ProjectMT.Shared.Input
 
         private void ResetValue()
         {
+            activePointerId = null;
             Value = Vector2.zero; // 손을 떼면 즉시 정지
             if (handle != null)
             {

@@ -503,17 +503,18 @@ namespace ProjectMT.Features.Formation
             SetOutlineColor(rarityBadgeOutline, rarityBorder);
             RefreshSkillSummary(selectedMonsterId);
 
-            var currentMultiplier = MonsterLevelRules.GetStatMultiplier(owned.Level);
+            var ascensionMultiplier = MonsterAscension.GetStatMultiplier(owned.AscensionLevel);
+            var currentMultiplier = MonsterLevelRules.GetStatMultiplier(owned.Level) * ascensionMultiplier;
             var hasNextLevel = MonsterLevelRules.TryGetNextLevelCost(owned.Level, out var cost);
             var nextMultiplier = hasNextLevel
-                ? MonsterLevelRules.GetStatMultiplier(owned.Level + 1)
+                ? MonsterLevelRules.GetStatMultiplier(owned.Level + 1) * ascensionMultiplier
                 : currentMultiplier;
             SetStatComparison(healthStatLabel, definition.MaxHealth, currentMultiplier, nextMultiplier, "0.##");
-            SetStatComparison(attackSpeedStatLabel, definition.AttackSpeed, currentMultiplier, nextMultiplier, "0.##");
+            SetStatComparison(attackSpeedStatLabel, definition.AttackSpeed, ascensionMultiplier, ascensionMultiplier, "0.##");
             SetStatComparison(attackStatLabel, definition.AttackPower, currentMultiplier, nextMultiplier, "0.##");
             SetStatComparison(criticalStatLabel, "0%", "0%");
             SetStatComparison(defenseStatLabel, definition.Defense, currentMultiplier, nextMultiplier, "0.##");
-            SetStatComparison(moveSpeedStatLabel, definition.MoveSpeed, currentMultiplier, nextMultiplier, "0.##");
+            SetStatComparison(moveSpeedStatLabel, definition.MoveSpeed, ascensionMultiplier, ascensionMultiplier, "0.##");
 
             SetText(nextLevelLabel, hasNextLevel ? $"Lv. {owned.Level} → Lv. {owned.Level + 1}" : "최대 레벨");
             SetText(goldCostLabel, hasNextLevel

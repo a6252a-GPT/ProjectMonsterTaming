@@ -43,7 +43,12 @@ namespace ProjectMT.Features.CommanderSkill
             }
 
             activeProgress = progress ?? new InMemoryGameProgressService();
-            runtime.Configure(activeProgress, catalog, world, castOrigin, isInputBlocked, damageMultiplier);
+            var castAnimation = castOrigin.GetComponent<CommanderSkillCastAnimationPresenter>();
+            if (castAnimation == null)
+                castAnimation = castOrigin.gameObject.AddComponent<CommanderSkillCastAnimationPresenter>();
+            castAnimation.Configure(castOrigin.GetComponentInChildren<Animator>(true)); // 성장 콘텐츠도 군단장 시전 모션을 연결
+            runtime.Configure(activeProgress, catalog, world, castOrigin, isInputBlocked, damageMultiplier,
+                animationPresenter: castAnimation);
             commanderMove = castOrigin.GetComponent<CommanderMoveController>();
             commanderMove?.ConfigureSkillMotion(
                 () => runtime?.IsSkillSequenceLocked == true,

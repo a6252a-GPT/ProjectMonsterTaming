@@ -6,6 +6,11 @@ namespace ProjectMT.Shared.Unit
 {
     public sealed partial class UnitActor
     {
+        private const float CombatHitReactionRecoverySeconds = 0.5f;
+        private float combatHitReactionRecoveryRemaining;
+        public bool CanReceiveCombatHitReaction => Team != UnitTeam.Enemy ||
+            (combatHitReactionRecoveryRemaining <= 0f && !IsKnockedBack && !IsHitStaggered);
+
         public void ApplyLocalHitStop(float duration)
         {
             duration = Mathf.Clamp(duration, 0f, 0.06f);
@@ -24,12 +29,15 @@ namespace ProjectMT.Shared.Unit
             float duration,
             float postKnockbackStagger = 0f)
         {
-            return TryBeginCombatKnockback(
+            if (!CanReceiveCombatHitReaction) return false;
+            var applied = TryBeginCombatKnockback(
                 worldDirection,
                 distance,
                 duration,
                 postKnockbackStagger,
                 allowPlayerTarget: false);
+            if (applied) combatHitReactionRecoveryRemaining = CombatHitReactionRecoverySeconds;
+            return applied;
         }
 
         private bool TryBeginCombatKnockback(
@@ -118,11 +126,12 @@ namespace ProjectMT.Shared.Unit
         public bool TryApplyCombatStagger(float duration)
         {
             duration = Mathf.Clamp(duration, 0f, 0.5f);
-            if (Team == UnitTeam.Player || !IsAlive || IsBoss || !combatReady || isManuallyHeld || duration <= 0f)
+            if (!CanReceiveCombatHitReaction || Team == UnitTeam.Player || !IsAlive || IsBoss || !combatReady || isManuallyHeld || duration <= 0f)
             {
                 return false;
             }
 
+            combatHitReactionRecoveryRemaining = CombatHitReactionRecoverySeconds;
             if (IsKnockedBack)
             {
                 combatPostKnockbackStaggerDuration = Mathf.Max(combatPostKnockbackStaggerDuration, duration);
@@ -208,6 +217,7 @@ namespace ProjectMT.Shared.Unit
         {
             CompleteCombatKnockback();
             combatStaggerRemaining = 0f;
+            combatHitReactionRecoveryRemaining = 0f;
         }
 
         private void SetLocalAnimationPaused(bool paused)
@@ -273,8 +283,11 @@ namespace ProjectMT.Shared.Unit
         private void HandleDamaged(DamageReport report)
         {
             monsterSkillRuntime.NotifyDamaged(report);
+            var allowHitReaction = CanReceiveCombatHitReaction;
             feedback?.PlayHit(this, report);
-            if (!report.Killed && runtimeAssetSet == null)
+            if (!report.Killed && allowHitReaction && Team == UnitTeam.Enemy)
+                combatHitReactionRecoveryRemaining = CombatHitReactionRecoverySeconds;
+            if (!report.Killed && allowHitReaction && runtimeAssetSet == null)
             {
                 combatAnimation?.PlayHit();
             }

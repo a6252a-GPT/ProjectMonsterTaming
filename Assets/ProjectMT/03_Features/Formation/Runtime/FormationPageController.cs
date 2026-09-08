@@ -620,16 +620,17 @@ namespace ProjectMT.Features.Formation
                 return;
             }
 
-            var multiplier = MonsterLevelRules.GetStatMultiplier(owned.Level);
+            var ascensionMultiplier = MonsterAscension.GetStatMultiplier(owned.AscensionLevel);
+            var multiplier = MonsterLevelRules.GetStatMultiplier(owned.Level) * ascensionMultiplier;
             SetText(selectedNameLabel, definition.DisplayName);
             SetText(selectedLevelLabel, $"Lv. {owned.Level}  ·  {(definition.Ranged ? "원거리" : "근거리")}");
             SetText(selectedStatsLabel,
                 $"체력  {definition.MaxHealth * multiplier:0.##}\n" +
                 $"공격력  {definition.AttackPower * multiplier:0.##}\n" +
                 $"방어력  {definition.Defense * multiplier:0.##}\n" +
-                $"공격속도  {definition.AttackSpeed * multiplier:0.##}\n" +
-                $"이동속도  {definition.MoveSpeed * multiplier:0.##}\n" +
-                $"사거리  {definition.AttackRange * multiplier:0.##}");
+                $"공격속도  {definition.AttackSpeed * ascensionMultiplier:0.##}\n" +
+                $"이동속도  {definition.MoveSpeed * ascensionMultiplier:0.##}\n" +
+                $"사거리  {definition.AttackRange * ascensionMultiplier:0.##}");
             SetText(currencyLabel, $"보유 골드 {view.Gold:N0}");
 
             var hasLevelCost = MonsterLevelRules.TryGetNextLevelCost(owned.Level, out var cost);

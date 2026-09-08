@@ -102,7 +102,8 @@ namespace ProjectMT.Shared.Combat
                 : Vector3.zero;
 
             var visualOnlyTargetReaction = target != null && target.Team == UnitTeam.Player;
-            if (!visualOnlyTargetReaction)
+            var allowTargetHitReaction = target == null || target.CanReceiveCombatHitReaction;
+            if (!visualOnlyTargetReaction && allowTargetHitReaction)
             {
                 target?.ApplyLocalHitStop(preset.TargetHitStop);
             }
@@ -134,10 +135,10 @@ namespace ProjectMT.Shared.Combat
             {
                 target?.VisualFeedback?.PlayImpact(
                     direction,
-                    actualKnockbackApplied ? 0f : preset.RecoilDistance * recoilScale,
+                    actualKnockbackApplied || (target != null && target.IsKnockedBack) ? 0f : preset.RecoilDistance * recoilScale,
                     preset.RecoilHeight * recoilScale,
                     preset.RecoilDuration,
-                    visualOnlyTargetReaction ? 0f : preset.TargetHitStop,
+                    visualOnlyTargetReaction || !allowTargetHitReaction ? 0f : preset.TargetHitStop,
                     report.Killed);
             }
             if (!ranged)

@@ -140,9 +140,9 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
-      healthPercent: 100
-      damagePercent: 100
-      defensePercent: 100
+      healthPercent: 20
+      damagePercent: 10
+      defensePercent: 10
       spawnPool:
       - appearance: 0
         percentage: 50
@@ -169,9 +169,9 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
-      healthPercent: 100
-      damagePercent: 100
-      defensePercent: 100
+      healthPercent: 20
+      damagePercent: 10
+      defensePercent: 10
       spawnPool:
       - appearance: 0
         percentage: 50
@@ -198,9 +198,9 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
-      healthPercent: 100
-      damagePercent: 100
-      defensePercent: 100
+      healthPercent: 20
+      damagePercent: 10
+      defensePercent: 10
       spawnPool:
       - appearance: 0
         percentage: 50
@@ -227,9 +227,9 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
-      healthPercent: 100
-      damagePercent: 100
-      defensePercent: 100
+      healthPercent: 20
+      damagePercent: 10
+      defensePercent: 10
       spawnPool:
       - appearance: 0
         percentage: 50
@@ -256,9 +256,9 @@ MonoBehaviour:
       extraEnemyEveryStages: 0
       spawnDelaySeconds: 0
       formationForwardOffset: 0
-      healthPercent: 100
-      damagePercent: 100
-      defensePercent: 100
+      healthPercent: 20
+      damagePercent: 10
+      defensePercent: 10
       spawnPool:
       - appearance: 0
         percentage: 50

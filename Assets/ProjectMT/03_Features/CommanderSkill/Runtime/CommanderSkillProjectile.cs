@@ -84,7 +84,8 @@ namespace ProjectMT.Features.CommanderSkill
                     targetPosition,
                     targetPosition - startPosition),
                 damageMultiplier);
-            owner.ReturnProjectile(gameObject);
+            // 마지막 적의 피격으로 콘텐츠가 종료되면 OnDisable에서 owner가 먼저 해제된다.
+            if (owner != null) owner.ReturnProjectile(gameObject);
         }
 
         private void OnDisable()

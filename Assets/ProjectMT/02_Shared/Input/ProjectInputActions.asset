@@ -126,7 +126,7 @@ MonoBehaviour:
     m_Bindings:
     - m_Name: 
       m_Id: 2bf053a8-c054-49b7-880f-8b1ea5c90853
-      m_Path: <Pointer>/position
+      m_Path: <Mouse>/position
       m_Interactions: 
       m_Processors: 
       m_Groups: 
@@ -134,7 +134,7 @@ MonoBehaviour:
       m_Flags: 0
     - m_Name: 
       m_Id: 72b869a0-4f56-4449-b549-445f10ea8609
-      m_Path: <Pointer>/press
+      m_Path: <Mouse>/press
       m_Interactions: 
       m_Processors: 
       m_Groups: 
@@ -211,6 +211,38 @@ MonoBehaviour:
       m_Processors: 
       m_Groups: 
       m_Action: Cancel
+      m_Flags: 0
+    - m_Name:
+      m_Id: 5d194a64-290b-4d40-9030-b322c16290dd
+      m_Path: <Pen>/position
+      m_Interactions:
+      m_Processors:
+      m_Groups:
+      m_Action: Point
+      m_Flags: 0
+    - m_Name:
+      m_Id: b9d788fa-9cef-4625-aea1-8b33aca25b6a
+      m_Path: <Touchscreen>/touch*/position
+      m_Interactions:
+      m_Processors:
+      m_Groups:
+      m_Action: Point
+      m_Flags: 0
+    - m_Name:
+      m_Id: 34c5329c-5d12-4bf6-80c4-6935698617dc
+      m_Path: <Pen>/press
+      m_Interactions:
+      m_Processors:
+      m_Groups:
+      m_Action: Click
+      m_Flags: 0
+    - m_Name:
+      m_Id: 68ae3c3a-6889-4202-b45c-063c59c7c168
+      m_Path: <Touchscreen>/touch*/press
+      m_Interactions:
+      m_Processors:
+      m_Groups:
+      m_Action: Click
       m_Flags: 0
   m_ControlSchemes: []
   m_IsProjectWide: 1

@@ -148,7 +148,8 @@ namespace ProjectMT.Shared.Unit
             int ascensionLevel,
             IReadOnlyList<StatModifier> legionModifiers)
         {
-            var levelMultiplier = MonsterLevelRules.GetStatMultiplier(level);
+            var ascensionMultiplier = MonsterAscension.GetStatMultiplier(ascensionLevel);
+            var levelMultiplier = MonsterLevelRules.GetStatMultiplier(level) * ascensionMultiplier;
             var ascensionModifier = definition.RuntimeAssetSet?.AscensionProfile != null
                 ? definition.RuntimeAssetSet.AscensionProfile.ResolveStatModifier(ascensionLevel)
                 : default;
@@ -164,9 +165,9 @@ namespace ProjectMT.Shared.Unit
                 maxHealth = definition.MaxHealth * levelMultiplier,
                 damage = definition.AttackPower * levelMultiplier,
                 defense = definition.Defense * levelMultiplier,
-                moveSpeed = definition.MoveSpeed,
-                attackRange = definition.AttackRange,
-                attackInterval = 1f / Mathf.Max(0.01f, definition.AttackSpeed),
+                moveSpeed = definition.MoveSpeed * ascensionMultiplier,
+                attackRange = definition.AttackRange * ascensionMultiplier,
+                attackInterval = 1f / Mathf.Max(0.01f, definition.AttackSpeed * ascensionMultiplier),
                 projectileSpeed = definition.Ranged ? projectileSpeed : 0f,
                 ranged = definition.Ranged,
                 criticalRate = statConfig.BaseCriticalRate,

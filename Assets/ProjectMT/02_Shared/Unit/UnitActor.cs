@@ -291,6 +291,8 @@ namespace ProjectMT.Shared.Unit
                 return;
             }
 
+            combatHitReactionRecoveryRemaining = Mathf.Max(
+                0f, combatHitReactionRecoveryRemaining - Mathf.Max(0f, deltaTime)); // 경직 종료 후 행동 가능한 시간만 계산
             TickMonsterBuffs(deltaTime);
 
             if (!combatReady)

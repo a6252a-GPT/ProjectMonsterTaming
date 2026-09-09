@@ -229,6 +229,7 @@ GameObject:
   - component: {fileID: 104869327436343068}
   - component: {fileID: 1594502353275595792}
   - component: {fileID: 2109256117497005168}
+  - component: {fileID: 5643359335325084968}
   m_Layer: 0
   m_Name: ResetButton
   m_TagString: Untagged
@@ -314,7 +315,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -339,6 +340,23 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5643359335325084968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1734703525574542487}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1594502353275595792}
+  - {fileID: 4986553832376753189}
+  - {fileID: 5683870671676721763}
+  disabledTint: {r: 0.65, g: 0.65, b: 0.65, a: 0.65}
 --- !u!1 &2189088677164967043
 GameObject:
   m_ObjectHideFlags: 0
@@ -1167,6 +1185,7 @@ GameObject:
   - component: {fileID: 6723723140781201603}
   - component: {fileID: 61631004304903870}
   - component: {fileID: 4675755789009246082}
+  - component: {fileID: 8683896043768668424}
   m_Layer: 0
   m_Name: SaveAndExitButton
   m_TagString: Untagged
@@ -1252,7 +1271,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -1277,6 +1296,23 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8683896043768668424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5936086473716979607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 61631004304903870}
+  - {fileID: 7891184290411571591}
+  - {fileID: 7483402968958844232}
+  disabledTint: {r: 0.65, g: 0.65, b: 0.65, a: 0.65}
 --- !u!1 &6055188679043391094
 GameObject:
   m_ObjectHideFlags: 0

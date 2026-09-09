@@ -331,6 +331,7 @@ namespace ProjectMT.Features.Mailbox
             for (var index = 0; index < filterButtons?.Length; index++)
             {
                 var selected = index == (int)activeFilter;
+                filterButtons[index]?.GetComponent<UIStateVisual>()?.SetSelected(selected);
                 var focus = FindDescendant(filterButtons[index]?.transform, "Focus");
                 focus?.gameObject.SetActive(selected);
                 var label = filterButtons[index]?.GetComponentInChildren<TMP_Text>(true);

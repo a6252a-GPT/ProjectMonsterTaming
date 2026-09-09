@@ -92,6 +92,8 @@ namespace ProjectMT.Features.Equipment
         private void RefreshModeTabVisuals()
         {
             var equipSelected = currentMode == EquipmentPageMode.Equip;
+            equipModeTabButton?.GetComponent<UIStateVisual>()?.SetSelected(equipSelected);
+            dismantleModeTabButton?.GetComponent<UIStateVisual>()?.SetSelected(!equipSelected);
             if (equipModeTabImage != null)
             {
                 equipModeTabImage.color = equipSelected
@@ -176,6 +178,7 @@ namespace ProjectMT.Features.Equipment
 
         private static void SetFilterVisual(Transform tab, bool selected)
         {
+            tab?.GetComponent<UIStateVisual>()?.SetSelected(selected);
             var focus = tab != null ? tab.Find("Focus") : null;
             if (focus != null)
             {

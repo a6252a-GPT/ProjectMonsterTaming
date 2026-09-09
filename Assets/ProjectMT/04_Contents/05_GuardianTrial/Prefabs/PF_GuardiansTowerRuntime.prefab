@@ -4514,6 +4514,7 @@ GameObject:
   - component: {fileID: 3658994874072352166}
   - component: {fileID: 4299862811874453310}
   - component: {fileID: 1485207249199648991}
+  - component: {fileID: 8983635499877592023}
   m_Layer: 0
   m_Name: ExitButton
   m_TagString: Untagged
@@ -4625,6 +4626,23 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8983635499877592023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1725238584475239489}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2788580718343377911}
+  - {fileID: 7022214457934464384}
+  - {fileID: 3169946117757543436}
+  disabledTint: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &1742115360334232690
 GameObject:
   m_ObjectHideFlags: 0
@@ -6132,6 +6150,7 @@ MonoBehaviour:
   viewPrefab: {fileID: 8499758350300660423, guid: 19e92ec9ed3e46e469b519dcf120ab42, type: 3}
   worldCamera: {fileID: 0}
   visibleSeconds: 1.35
+  fadeSeconds: 0.35
   maxActiveBars: 24
 --- !u!1 &3059506651306545953
 GameObject:

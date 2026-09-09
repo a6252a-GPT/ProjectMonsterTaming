@@ -664,6 +664,7 @@ namespace ProjectMT.Features.CommanderSkill
                 var selected = i == (int)currentFilter;
                 if (filterLabels[i] != null) filterLabels[i].color = selected ? new Color32(234,212,161,255) : new Color32(199,190,175,255);
                 if (filterBackgrounds[i] != null) { filterBackgrounds[i].sprite = selected ? filterSelectedSprite : filterNormalSprite; filterBackgrounds[i].color = Color.white; }
+                filterButtons[i]?.GetComponent<UIStateVisual>()?.SetSelected(selected);
             }
         }
 

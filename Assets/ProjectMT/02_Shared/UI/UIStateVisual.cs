@@ -16,6 +16,7 @@ namespace ProjectMT.Shared.UI
         }
 
         [SerializeField] private GameObject stateIndicator;
+        [SerializeField] private GameObject[] selectedPages = Array.Empty<GameObject>();
         [SerializeField] private Selectable interactableSource;
         [SerializeField] private bool manualState;
         [SerializeField] private Target[] targets = Array.Empty<Target>();
@@ -31,7 +32,8 @@ namespace ProjectMT.Shared.UI
 
         private void Refresh()
         {
-            var active = stateIndicator != null ? stateIndicator.activeSelf
+            var active = selectedPages.Length > 0 ? IsAnyPageSelected()
+                : stateIndicator != null ? stateIndicator.activeSelf
                 : interactableSource != null ? interactableSource.IsInteractable() : manualState;
             foreach (var target in targets)
             {
@@ -39,6 +41,13 @@ namespace ProjectMT.Shared.UI
                 var color = active ? target.Active : target.Inactive;
                 if (target.Graphic.color != color) target.Graphic.color = color; // 색상만 담당하며 입력과 배치는 원래 컨트롤러가 유지한다.
             }
+        }
+
+        private bool IsAnyPageSelected()
+        {
+            foreach (var page in selectedPages)
+                if (page != null && page.activeSelf) return true;
+            return false;
         }
     }
 }

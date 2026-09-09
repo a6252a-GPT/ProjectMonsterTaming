@@ -236,6 +236,7 @@ GameObject:
   - component: {fileID: 6435127905094289990}
   - component: {fileID: 4161338640486923101}
   - component: {fileID: 641672930308509185}
+  - component: {fileID: 5782726925800425068}
   m_Layer: 0
   m_Name: TabMinimapButton
   m_TagString: Untagged
@@ -322,6 +323,24 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &5782726925800425068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 464871426405335677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7760864220688932882}
+  - {fileID: 5204787461374096170}
+  - {fileID: 2427117183940772901}
+  - {fileID: 3559778422944802758}
+  disabledTint: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &551995864267284324
 GameObject:
   m_ObjectHideFlags: 0
@@ -3284,6 +3303,7 @@ GameObject:
   - component: {fileID: 5654847463360102395}
   - component: {fileID: 4086142746508080457}
   - component: {fileID: 2678880498723659751}
+  - component: {fileID: 2320242039320150131}
   m_Layer: 0
   m_Name: JumpButton
   m_TagString: Untagged
@@ -3391,6 +3411,27 @@ MonoBehaviour:
   tabCanvasGroup: {fileID: 641672930308509185}
   authoredMapButton: {fileID: 4161338640486923101}
   authoredPresentation: 1
+--- !u!114 &2320242039320150131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3163125665377077141}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3338643154686692163}
+  - {fileID: 9023073541084799131}
+  - {fileID: 6643704755504909580}
+  - {fileID: 1490805732104086769}
+  - {fileID: 6206118871005793801}
+  - {fileID: 6786178220495453765}
+  - {fileID: 8364603241645872950}
+  disabledTint: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &3270959884449088363
 GameObject:
   m_ObjectHideFlags: 0
@@ -5832,6 +5873,7 @@ GameObject:
   - component: {fileID: 8844228473793514671}
   - component: {fileID: 1991845388265188165}
   - component: {fileID: 6715952084908088107}
+  - component: {fileID: 927550797278692345}
   m_Layer: 0
   m_Name: ExitButton
   m_TagString: Untagged
@@ -5943,6 +5985,23 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &927550797278692345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6709697620664482233}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1689502213268103682}
+  - {fileID: 6704423595755091660}
+  - {fileID: 1903846257772075709}
+  disabledTint: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &6723880716113637903
 GameObject:
   m_ObjectHideFlags: 0

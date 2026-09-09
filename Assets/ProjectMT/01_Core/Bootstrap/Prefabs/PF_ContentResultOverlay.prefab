@@ -776,6 +776,7 @@ GameObject:
   - component: {fileID: 7501604405536006958}
   - component: {fileID: 6419416072318491777}
   - component: {fileID: 8405197260073226907}
+  - component: {fileID: 283330129667422922}
   m_Layer: 0
   m_Name: ConfirmButton
   m_TagString: Untagged
@@ -863,7 +864,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9098039, g: 1, b: 1, a: 1}
@@ -888,6 +889,25 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &283330129667422922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1787489354933541515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 6419416072318491777}
+  - {fileID: 3562133387335140379}
+  - {fileID: 8289024590521530314}
+  - {fileID: 2676193973514678245}
+  - {fileID: 4287210413781061428}
+  disabledTint: {r: 0.46666667, g: 0.46666667, b: 0.46666667, a: 0.6}
 --- !u!1 &2238012561098674614
 GameObject:
   m_ObjectHideFlags: 0

@@ -469,6 +469,7 @@ GameObject:
   m_Component:
   - component: {fileID: 860795070781156446}
   - component: {fileID: 774772187533883739}
+  - component: {fileID: 3036704051528493743}
   m_Layer: 0
   m_Name: PositionFormationButton_GUIPro
   m_TagString: Untagged
@@ -517,7 +518,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -542,6 +543,23 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3036704051528493743
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 696996591989839117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2994384864698551116}
+  - {fileID: 6004177136423519620}
+  - {fileID: 7123354615137276390}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &738944800074506274
 GameObject:
   m_ObjectHideFlags: 0
@@ -2833,6 +2851,7 @@ GameObject:
   - component: {fileID: 2543458342655862958}
   - component: {fileID: 1951981188246934587}
   - component: {fileID: 4023135428140570327}
+  - component: {fileID: 8689636162044858216}
   m_Layer: 0
   m_Name: OpenFormationButton
   m_TagString: Untagged
@@ -2917,7 +2936,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.08, g: 1.08, b: 1.08, a: 1}
@@ -2942,6 +2961,22 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8689636162044858216
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7793180600582506700}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1951981188246934587}
+  - {fileID: 165280294730927761}
+  disabledTint: {r: 0.45, g: 0.45, b: 0.45, a: 0.65}
 --- !u!1 &7905172194340916321
 GameObject:
   m_ObjectHideFlags: 0
@@ -4214,6 +4249,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8280734898873214571, guid: 51798d8f9524f44eb9b09b7e63e4ed2e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8978058819526801825}
+    - targetCorrespondingSourceObject: {fileID: 8280734898873214571, guid: 51798d8f9524f44eb9b09b7e63e4ed2e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5265538114588597377}
     - targetCorrespondingSourceObject: {fileID: 2807449274941522386, guid: 51798d8f9524f44eb9b09b7e63e4ed2e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7885665295876137666}
@@ -4245,6 +4283,17 @@ MonoBehaviour:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1478311523515359201 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4564550395746547399, guid: 51798d8f9524f44eb9b09b7e63e4ed2e, type: 3}
+  m_PrefabInstance: {fileID: 3160557277265045798}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -4284,7 +4333,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.92, g: 0.96, b: 1, a: 1}
@@ -4331,6 +4380,24 @@ MonoBehaviour:
   - Graphic: {fileID: 2436990020627168713}
     Active: {r: 0.9490196, g: 0.92156863, b: 0.8666667, a: 1}
     Inactive: {r: 0.8, g: 0.7764706, b: 0.7372549, a: 1}
+--- !u!114 &5265538114588597377
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6428776993355730765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1194376243522943310}
+  - {fileID: 1478311523515359201}
+  - {fileID: 7091291053590771143}
+  - {fileID: 2436990020627168713}
+  disabledTint: {r: 0.5, g: 0.5, b: 0.5, a: 0.7}
 --- !u!224 &7281555299466885932 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5679542629243458058, guid: 51798d8f9524f44eb9b09b7e63e4ed2e, type: 3}
@@ -5012,7 +5079,21 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 822276191347273967, guid: 7c5b522136e654593a2167afd291f57e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1202635333068886867}
+    - targetCorrespondingSourceObject: {fileID: 822276191347273967, guid: 7c5b522136e654593a2167afd291f57e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7460977879429467495}
   m_SourcePrefab: {fileID: 100100000, guid: 7c5b522136e654593a2167afd291f57e, type: 3}
+--- !u!114 &1318229937998541322 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5105623149581443139, guid: 7c5b522136e654593a2167afd291f57e, type: 3}
+  m_PrefabInstance: {fileID: 6093821167966097993}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &1611173241908778149 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4813665849904088812, guid: 7c5b522136e654593a2167afd291f57e, type: 3}
@@ -5059,7 +5140,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -5084,6 +5165,23 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &7460977879429467495
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6915512275245982374}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1611173241908778149}
+  - {fileID: 1318229937998541322}
+  - {fileID: 2818869467195936802}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!224 &7188317491504469703 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3986691433665512590, guid: 7c5b522136e654593a2167afd291f57e, type: 3}
@@ -5533,6 +5631,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4112720960120376265, guid: 93a1a0021d040409a906289fe6740ade, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5865553008206359851}
+    - targetCorrespondingSourceObject: {fileID: 4112720960120376265, guid: 93a1a0021d040409a906289fe6740ade, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6600984621017702224}
     - targetCorrespondingSourceObject: {fileID: 7858312225701932144, guid: 93a1a0021d040409a906289fe6740ade, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1220403661797079553}
@@ -5555,6 +5656,17 @@ MonoBehaviour:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &3359113656475783084 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8403944566378765157, guid: 93a1a0021d040409a906289fe6740ade, type: 3}
+  m_PrefabInstance: {fileID: 6502414030952699081}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -5608,7 +5720,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.92, g: 0.96, b: 1, a: 1}
@@ -5655,6 +5767,24 @@ MonoBehaviour:
   - Graphic: {fileID: 2001869748815506820}
     Active: {r: 0.9490196, g: 0.92156863, b: 0.8666667, a: 1}
     Inactive: {r: 0.8, g: 0.7764706, b: 0.7372549, a: 1}
+--- !u!114 &6600984621017702224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7146762841561030400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3065467764664789251}
+  - {fileID: 3359113656475783084}
+  - {fileID: 251380773579367524}
+  - {fileID: 2001869748815506820}
+  disabledTint: {r: 0.5, g: 0.5, b: 0.5, a: 0.7}
 --- !u!1001 &7379703823171130664
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8407761985702044922}
   - component: {fileID: 9063174398021175291}
   - component: {fileID: 2677465712057831114}
+  - component: {fileID: 3392582474638587123}
   m_Layer: 0
   m_Name: SkipButton
   m_TagString: Untagged
@@ -99,7 +100,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.2, g: 1.16, b: 1.08, a: 1}
@@ -124,6 +125,25 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3392582474638587123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 363034645758151335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 9063174398021175291}
+  - {fileID: 7872265297337568002}
+  - {fileID: 8405374675660747834}
+  - {fileID: 5358692481975494009}
+  - {fileID: 3484710340101839195}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &509676242338332160
 GameObject:
   m_ObjectHideFlags: 0

@@ -615,6 +615,7 @@ namespace ProjectMT.Features.Inventory
                 }
 
                 var selected = FilterCategories[index] == currentFilter;
+                button.GetComponent<UIStateVisual>()?.SetSelected(selected);
                 button.interactable = true;
                 var focus = button.transform.Find("Focus");
                 focus?.gameObject.SetActive(selected);

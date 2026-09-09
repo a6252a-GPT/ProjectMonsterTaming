@@ -369,6 +369,7 @@ GameObject:
   - component: {fileID: 7287681490232645554}
   - component: {fileID: 8620892861343036828}
   - component: {fileID: 4183483837791310998}
+  - component: {fileID: 5478822746861887233}
   m_Layer: 0
   m_Name: GachaShopButton
   m_TagString: Untagged
@@ -453,7 +454,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1, g: 0.82, b: 0.44, a: 1}
@@ -490,6 +491,7 @@ GameObject:
   - component: {fileID: 2954604267677349598}
   - component: {fileID: 1346172025293209305}
   - component: {fileID: 3558739007735220913}
+  - component: {fileID: 4999347338087380682}
   m_Layer: 0
   m_Name: Move SpeedButton
   m_TagString: Untagged
@@ -575,7 +577,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -749,6 +751,7 @@ GameObject:
   - component: {fileID: 1970162618897113868}
   - component: {fileID: 6642777727382789246}
   - component: {fileID: 5373895535924229657}
+  - component: {fileID: 2434061576146229081}
   m_Layer: 0
   m_Name: FourButton
   m_TagString: Untagged
@@ -833,7 +836,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -1180,6 +1183,7 @@ GameObject:
   - component: {fileID: 9210348557298237555}
   - component: {fileID: 1049336564437379672}
   - component: {fileID: 5180405962987251665}
+  - component: {fileID: 1552292370082149197}
   m_Layer: 0
   m_Name: OneButton
   m_TagString: Untagged
@@ -1264,7 +1268,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -1409,6 +1413,7 @@ GameObject:
   - component: {fileID: 2003782805130278446}
   - component: {fileID: 4299180923711254571}
   - component: {fileID: 5457475648950346863}
+  - component: {fileID: 3868051975830500570}
   m_Layer: 0
   m_Name: CommanderSkillGachaButton
   m_TagString: Untagged
@@ -1493,7 +1498,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -1930,6 +1935,7 @@ GameObject:
   - component: {fileID: 4245399360160276536}
   - component: {fileID: 5662600751587757563}
   - component: {fileID: 5781365581224965250}
+  - component: {fileID: 8325444158830769993}
   m_Layer: 0
   m_Name: TwoButton
   m_TagString: Untagged
@@ -2014,7 +2020,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -2188,6 +2194,7 @@ GameObject:
   - component: {fileID: 6353278085550181250}
   - component: {fileID: 2034299625079256425}
   - component: {fileID: 1486594907266828604}
+  - component: {fileID: 5940220297091063198}
   m_Layer: 0
   m_Name: TwoButton
   m_TagString: Untagged
@@ -2272,7 +2279,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -3151,6 +3158,7 @@ GameObject:
   - component: {fileID: 128877485007775670}
   - component: {fileID: 4015043095092127909}
   - component: {fileID: 8013041836313990111}
+  - component: {fileID: 5513399003454829766}
   m_Layer: 0
   m_Name: ThreeButton
   m_TagString: Untagged
@@ -3235,7 +3243,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -3902,6 +3910,7 @@ GameObject:
   - component: {fileID: 3957994536094781214}
   - component: {fileID: 7313783723385533097}
   - component: {fileID: 478045444375822649}
+  - component: {fileID: 4809744207492490378}
   m_Layer: 0
   m_Name: FiveButton
   m_TagString: Untagged
@@ -3986,7 +3995,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -5345,6 +5354,7 @@ GameObject:
   - component: {fileID: 2146410540326958883}
   - component: {fileID: 2515742494195377245}
   - component: {fileID: 7056593920341001081}
+  - component: {fileID: 8881945020610703881}
   m_Layer: 0
   m_Name: FiveButton
   m_TagString: Untagged
@@ -5429,7 +5439,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -5466,6 +5476,7 @@ GameObject:
   - component: {fileID: 6707560623622789207}
   - component: {fileID: 3028043156802454930}
   - component: {fileID: 6408271738012157915}
+  - component: {fileID: 556282275797165012}
   m_Layer: 0
   m_Name: SixButton
   m_TagString: Untagged
@@ -5550,7 +5561,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -5587,6 +5598,7 @@ GameObject:
   - component: {fileID: 5443295805387446031}
   - component: {fileID: 2737488932270019117}
   - component: {fileID: 59442330315425542}
+  - component: {fileID: 7190994060347018256}
   m_Layer: 0
   m_Name: ThreeButton
   m_TagString: Untagged
@@ -5671,7 +5683,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -5988,8 +6000,10 @@ MonoBehaviour:
   expandedCategoryHeight: 280
   monsterGachaButton: {fileID: 5131091321006984470}
   commanderSkillGachaButton: {fileID: 5457475648950346863}
+  soulGachaButton: {fileID: 0}
   monsterShop: {fileID: 745901553038447082}
   skillShop: {fileID: 8954263740445438371}
+  soulShop: {fileID: 0}
   diamondShop: {fileID: 209348105880378867}
   contentShop: {fileID: 1773815095773184582}
   packageShop: {fileID: 1468442571213370737}
@@ -6016,6 +6030,7 @@ MonoBehaviour:
   monthlySubscriptionShopButton: {fileID: 5429804344659921330}
   monsterShop: {fileID: 745901553038447082}
   skillShop: {fileID: 8954263740445438371}
+  soulShop: {fileID: 0}
   diamondShop: {fileID: 209348105880378867}
   contentShop: {fileID: 1773815095773184582}
   packageShop: {fileID: 1468442571213370737}
@@ -6036,6 +6051,7 @@ MonoBehaviour:
   contentButton: {fileID: 7567873247886292647}
   monsterShop: {fileID: 745901553038447082}
   skillShop: {fileID: 8954263740445438371}
+  soulShop: {fileID: 0}
   diamondShop: {fileID: 209348105880378867}
   contentShop: {fileID: 1773815095773184582}
   packageShop: {fileID: 1468442571213370737}
@@ -8523,6 +8539,7 @@ GameObject:
   - component: {fileID: 6518551827282293618}
   - component: {fileID: 811085863447482097}
   - component: {fileID: 5429804344659921330}
+  - component: {fileID: 2301497461204907638}
   m_Layer: 0
   m_Name: MonthlySubscriptionShopButton
   m_TagString: Untagged
@@ -8607,7 +8624,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -9307,6 +9324,7 @@ GameObject:
   - component: {fileID: 2098857715553676596}
   - component: {fileID: 1082440643647024072}
   - component: {fileID: 6891052460554234622}
+  - component: {fileID: 4176667476229490941}
   m_Layer: 0
   m_Name: ModeButton
   m_TagString: Untagged
@@ -9391,7 +9409,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1, g: 0.82, b: 0.44, a: 1}
@@ -9428,6 +9446,7 @@ GameObject:
   - component: {fileID: 5986143877046186910}
   - component: {fileID: 5200483180100568829}
   - component: {fileID: 7629298436911907680}
+  - component: {fileID: 179696828130091019}
   m_Layer: 0
   m_Name: EightButton
   m_TagString: Untagged
@@ -9512,7 +9531,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -9624,6 +9643,7 @@ GameObject:
   - component: {fileID: 2933285995822823927}
   - component: {fileID: 3125550700692175681}
   - component: {fileID: 7714371100303721779}
+  - component: {fileID: 3356405006459632837}
   m_Layer: 0
   m_Name: ThreeButton
   m_TagString: Untagged
@@ -9708,7 +9728,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -10019,6 +10039,7 @@ GameObject:
   - component: {fileID: 4401842107149213331}
   - component: {fileID: 3709041623411727085}
   - component: {fileID: 747624516873340816}
+  - component: {fileID: 8739232082953696228}
   m_Layer: 0
   m_Name: ContentButton
   m_TagString: Untagged
@@ -10103,7 +10124,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -10140,6 +10161,7 @@ GameObject:
   - component: {fileID: 5881481617709899148}
   - component: {fileID: 5403364452879334409}
   - component: {fileID: 6750305559810108384}
+  - component: {fileID: 8841266731601476249}
   m_Layer: 0
   m_Name: FourButton
   m_TagString: Untagged
@@ -10224,7 +10246,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -11409,6 +11431,7 @@ GameObject:
   - component: {fileID: 5761615807184541923}
   - component: {fileID: 7802039112457636141}
   - component: {fileID: 4059415249728250560}
+  - component: {fileID: 4348653788017123652}
   m_Layer: 0
   m_Name: OneButton
   m_TagString: Untagged
@@ -11493,7 +11516,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -12421,6 +12444,7 @@ GameObject:
   - component: {fileID: 2638676234953839530}
   - component: {fileID: 1168920475643793448}
   - component: {fileID: 7968256483078360182}
+  - component: {fileID: 2818457831550275930}
   m_Layer: 0
   m_Name: SevenButton
   m_TagString: Untagged
@@ -12505,7 +12529,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -12816,6 +12840,7 @@ GameObject:
   - component: {fileID: 8855305651617194528}
   - component: {fileID: 5682075574528695878}
   - component: {fileID: 1613435247846413761}
+  - component: {fileID: 8346912815497269651}
   m_Layer: 0
   m_Name: Attack SpeedButton
   m_TagString: Untagged
@@ -12901,7 +12926,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -13201,6 +13226,7 @@ GameObject:
   - component: {fileID: 1039409697695411004}
   - component: {fileID: 2975594330752120158}
   - component: {fileID: 2589153754095429653}
+  - component: {fileID: 8748238769637868880}
   m_Layer: 0
   m_Name: SevenButton
   m_TagString: Untagged
@@ -13285,7 +13311,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -13596,6 +13622,7 @@ GameObject:
   - component: {fileID: 2810833737994252951}
   - component: {fileID: 2821599787154806156}
   - component: {fileID: 2605473858150915763}
+  - component: {fileID: 7023364172300237689}
   m_Layer: 0
   m_Name: BuyGemsButton
   m_TagString: Untagged
@@ -13680,7 +13707,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -13717,6 +13744,7 @@ GameObject:
   - component: {fileID: 6851572621995283560}
   - component: {fileID: 8260580816537452662}
   - component: {fileID: 765376497365032369}
+  - component: {fileID: 694528455465817095}
   m_Layer: 0
   m_Name: FourButton
   m_TagString: Untagged
@@ -13801,7 +13829,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -14191,6 +14219,7 @@ GameObject:
   - component: {fileID: 738156983337893721}
   - component: {fileID: 8392342165872461525}
   - component: {fileID: 5131091321006984470}
+  - component: {fileID: 7986831659607954843}
   m_Layer: 0
   m_Name: MonsterGachaButton
   m_TagString: Untagged
@@ -14275,7 +14304,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -14994,6 +15023,7 @@ GameObject:
   - component: {fileID: 1205015304074861468}
   - component: {fileID: 1583423076232276155}
   - component: {fileID: 6557903647745551384}
+  - component: {fileID: 5903548095808113745}
   m_Layer: 0
   m_Name: AttackRangeButton
   m_TagString: Untagged
@@ -15079,7 +15109,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -15116,6 +15146,7 @@ GameObject:
   - component: {fileID: 8928191760639427032}
   - component: {fileID: 900667670266199166}
   - component: {fileID: 2574705106668294217}
+  - component: {fileID: 3389786179395149462}
   m_Layer: 0
   m_Name: OneButton
   m_TagString: Untagged
@@ -15200,7 +15231,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -16017,6 +16048,7 @@ GameObject:
   - component: {fileID: 6239395141881071623}
   - component: {fileID: 7026189972436919911}
   - component: {fileID: 6283427605647248460}
+  - component: {fileID: 3224592982857409718}
   m_Layer: 0
   m_Name: OneButton
   m_TagString: Untagged
@@ -16101,7 +16133,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -16138,6 +16170,7 @@ GameObject:
   - component: {fileID: 2191895943653941752}
   - component: {fileID: 2065469600244577303}
   - component: {fileID: 4554239161085054300}
+  - component: {fileID: 6043543438222676780}
   m_Layer: 0
   m_Name: SixButton
   m_TagString: Untagged
@@ -16222,7 +16255,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -16259,6 +16292,7 @@ GameObject:
   - component: {fileID: 8015833059511997624}
   - component: {fileID: 4869107103465135581}
   - component: {fileID: 7732176303588623076}
+  - component: {fileID: 7913722591102549090}
   m_Layer: 0
   m_Name: FiveButton
   m_TagString: Untagged
@@ -16343,7 +16377,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -16380,6 +16414,7 @@ GameObject:
   - component: {fileID: 4428186181986852004}
   - component: {fileID: 4968100447613184812}
   - component: {fileID: 7567873247886292647}
+  - component: {fileID: 2261938235789445829}
   m_Layer: 0
   m_Name: ContentButton
   m_TagString: Untagged
@@ -16464,7 +16499,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -16501,6 +16536,7 @@ GameObject:
   - component: {fileID: 1244562289650013177}
   - component: {fileID: 4751515285540616866}
   - component: {fileID: 9084468402720421761}
+  - component: {fileID: 811001369141616840}
   m_Layer: 0
   m_Name: Close Button
   m_TagString: Untagged
@@ -16585,7 +16621,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -16622,6 +16658,7 @@ GameObject:
   - component: {fileID: 6033358410181635729}
   - component: {fileID: 4993637601165439274}
   - component: {fileID: 6889618183631905592}
+  - component: {fileID: 3549226241698286322}
   m_Layer: 0
   m_Name: GachaButton
   m_TagString: Untagged
@@ -16706,7 +16743,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -16880,6 +16917,7 @@ GameObject:
   - component: {fileID: 6848260542382057490}
   - component: {fileID: 6472975886060054579}
   - component: {fileID: 8690743412416696111}
+  - component: {fileID: 7478331168288474097}
   m_Layer: 0
   m_Name: TwoButton
   m_TagString: Untagged
@@ -16964,7 +17002,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -17001,6 +17039,7 @@ GameObject:
   - component: {fileID: 2435471514532177147}
   - component: {fileID: 5558125745568513296}
   - component: {fileID: 2079221956389092358}
+  - component: {fileID: 6186556980830401559}
   m_Layer: 0
   m_Name: StandardPackageButton
   m_TagString: Untagged
@@ -17085,7 +17124,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -17561,6 +17600,7 @@ GameObject:
   - component: {fileID: 374812568529220356}
   - component: {fileID: 4214179416931167145}
   - component: {fileID: 291548559869201224}
+  - component: {fileID: 8325320456755828148}
   m_Layer: 0
   m_Name: GrowthButton
   m_TagString: Untagged
@@ -17645,7 +17685,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1, g: 0.82, b: 0.44, a: 1}
@@ -17718,6 +17758,7 @@ GameObject:
   - component: {fileID: 2755952115662551304}
   - component: {fileID: 5923832979351134998}
   - component: {fileID: 2614575204371672819}
+  - component: {fileID: 7895020620077116732}
   m_Layer: 0
   m_Name: ThreeButton
   m_TagString: Untagged
@@ -17802,7 +17843,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -17917,6 +17958,7 @@ GameObject:
   - component: {fileID: 7575516973404550863}
   - component: {fileID: 7999675820352981938}
   - component: {fileID: 2488804181682034343}
+  - component: {fileID: 8620145978953711802}
   m_Layer: 0
   m_Name: AttackButton
   m_TagString: Untagged
@@ -18002,7 +18044,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -18426,6 +18468,7 @@ GameObject:
   - component: {fileID: 5017098760492468494}
   - component: {fileID: 5839047777693282645}
   - component: {fileID: 2311367705781301531}
+  - component: {fileID: 4401728329848988491}
   m_Layer: 0
   m_Name: FiveButton
   m_TagString: Untagged
@@ -18510,7 +18553,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -18994,6 +19037,7 @@ GameObject:
   - component: {fileID: 3820677598156920332}
   - component: {fileID: 6308984796195768503}
   - component: {fileID: 9023076114041684406}
+  - component: {fileID: 3567789876709885472}
   m_Layer: 0
   m_Name: EightButton
   m_TagString: Untagged
@@ -19078,7 +19122,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -19547,6 +19591,7 @@ GameObject:
   - component: {fileID: 8101239858428768536}
   - component: {fileID: 9071142613244645042}
   - component: {fileID: 5348251683510001663}
+  - component: {fileID: 4790449441891512634}
   m_Layer: 0
   m_Name: EightButton
   m_TagString: Untagged
@@ -19631,7 +19676,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -20647,6 +20692,7 @@ GameObject:
   - component: {fileID: 301401362275220124}
   - component: {fileID: 8716122199724359996}
   - component: {fileID: 2268872074332406024}
+  - component: {fileID: 8103469762204872412}
   m_Layer: 0
   m_Name: HealthButton
   m_TagString: Untagged
@@ -20732,7 +20778,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -20769,6 +20815,7 @@ GameObject:
   - component: {fileID: 5304730497840112660}
   - component: {fileID: 1120827730513054590}
   - component: {fileID: 6018843415253922834}
+  - component: {fileID: 894616164896179446}
   m_Layer: 0
   m_Name: FoodRiotButton
   m_TagString: Untagged
@@ -20853,7 +20900,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1, g: 0.82, b: 0.44, a: 1}
@@ -21362,6 +21409,7 @@ GameObject:
   - component: {fileID: 5987821905588199593}
   - component: {fileID: 422681468055596333}
   - component: {fileID: 6861368819556544432}
+  - component: {fileID: 249366737748338730}
   m_Layer: 0
   m_Name: SevenButton
   m_TagString: Untagged
@@ -21446,7 +21494,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -21591,6 +21639,7 @@ GameObject:
   - component: {fileID: 1697746171793502205}
   - component: {fileID: 1058810280325441747}
   - component: {fileID: 8712652387088494536}
+  - component: {fileID: 938167754225478476}
   m_Layer: 0
   m_Name: FourButton
   m_TagString: Untagged
@@ -21675,7 +21724,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -21712,6 +21761,7 @@ GameObject:
   - component: {fileID: 7152184940961191178}
   - component: {fileID: 8575651964877497097}
   - component: {fileID: 6168442650335273428}
+  - component: {fileID: 1398757992698855600}
   m_Layer: 0
   m_Name: TwoButton
   m_TagString: Untagged
@@ -21796,7 +21846,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -22123,6 +22173,7 @@ GameObject:
   - component: {fileID: 7844335511739113851}
   - component: {fileID: 559067615596533553}
   - component: {fileID: 4663446195991492623}
+  - component: {fileID: 2805647608241179710}
   m_Layer: 0
   m_Name: CastleRaidButton
   m_TagString: Untagged
@@ -22207,7 +22258,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1, g: 0.82, b: 0.44, a: 1}
@@ -22244,6 +22295,7 @@ GameObject:
   - component: {fileID: 2872248870107263662}
   - component: {fileID: 6318529998602815424}
   - component: {fileID: 4683318127169466486}
+  - component: {fileID: 2799163212643543543}
   m_Layer: 0
   m_Name: SevenButton
   m_TagString: Untagged
@@ -22328,7 +22380,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -22655,6 +22707,7 @@ GameObject:
   - component: {fileID: 5166601685986979155}
   - component: {fileID: 3085184717569414320}
   - component: {fileID: 5330510843818746247}
+  - component: {fileID: 5711949333293237524}
   m_Layer: 0
   m_Name: OneButton
   m_TagString: Untagged
@@ -22739,7 +22792,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -23400,6 +23453,7 @@ GameObject:
   - component: {fileID: 9095875396126152187}
   - component: {fileID: 454235666623302930}
   - component: {fileID: 516686451472269764}
+  - component: {fileID: 1253789383233385191}
   m_Layer: 0
   m_Name: SixButton
   m_TagString: Untagged
@@ -23484,7 +23538,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -23658,6 +23712,7 @@ GameObject:
   - component: {fileID: 9088153701607338641}
   - component: {fileID: 989091912066189869}
   - component: {fileID: 444338559677436350}
+  - component: {fileID: 6474689654849368395}
   m_Layer: 0
   m_Name: EightButton
   m_TagString: Untagged
@@ -23742,7 +23797,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -24069,6 +24124,7 @@ GameObject:
   - component: {fileID: 2647411256938116622}
   - component: {fileID: 9133290603701605920}
   - component: {fileID: 4542495731977381092}
+  - component: {fileID: 1554032443710728424}
   m_Layer: 0
   m_Name: TwoButton
   m_TagString: Untagged
@@ -24153,7 +24209,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -24280,6 +24336,7 @@ GameObject:
   - component: {fileID: 3489588830554572647}
   - component: {fileID: 2078707106462505206}
   - component: {fileID: 5504130511774856221}
+  - component: {fileID: 6976073517096761556}
   m_Layer: 0
   m_Name: DefenseButton
   m_TagString: Untagged
@@ -24365,7 +24422,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -24528,6 +24585,7 @@ GameObject:
   - component: {fileID: 8454221539060156488}
   - component: {fileID: 1037984926966305982}
   - component: {fileID: 5213342287327179579}
+  - component: {fileID: 135595384869437363}
   m_Layer: 0
   m_Name: SixButton
   m_TagString: Untagged
@@ -24612,7 +24670,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -25190,6 +25248,7 @@ GameObject:
   - component: {fileID: 5078323331377825445}
   - component: {fileID: 9092228514680597781}
   - component: {fileID: 6514074123087411617}
+  - component: {fileID: 6871456328780103237}
   m_Layer: 0
   m_Name: OneButton
   m_TagString: Untagged
@@ -25274,7 +25333,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -25311,6 +25370,7 @@ GameObject:
   - component: {fileID: 2289614830376598442}
   - component: {fileID: 497438289044644221}
   - component: {fileID: 2954373854008551615}
+  - component: {fileID: 8320826411655078165}
   m_Layer: 0
   m_Name: TwoButton
   m_TagString: Untagged
@@ -25395,7 +25455,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -26132,8 +26192,1078 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5735756492875307119, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4176667476229490941}
+    - targetCorrespondingSourceObject: {fileID: 2547193878512334926, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 894616164896179446}
+    - targetCorrespondingSourceObject: {fileID: 5392530889128209187, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8325320456755828148}
+    - targetCorrespondingSourceObject: {fileID: 7633708609541442405, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5478822746861887233}
+    - targetCorrespondingSourceObject: {fileID: 446483421785019161, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2805647608241179710}
+    - targetCorrespondingSourceObject: {fileID: 1405137636884416175, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8620145978953711802}
+    - targetCorrespondingSourceObject: {fileID: 1151127805198625198, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8103469762204872412}
+    - targetCorrespondingSourceObject: {fileID: 9024212890975062766, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6976073517096761556}
+    - targetCorrespondingSourceObject: {fileID: 4546616553987972390, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8346912815497269651}
+    - targetCorrespondingSourceObject: {fileID: 8402219317107313750, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4999347338087380682}
+    - targetCorrespondingSourceObject: {fileID: 3168914983801906877, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5903548095808113745}
+    - targetCorrespondingSourceObject: {fileID: 93076981751562054, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3549226241698286322}
+    - targetCorrespondingSourceObject: {fileID: 4638874217348398339, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7986831659607954843}
+    - targetCorrespondingSourceObject: {fileID: 3392289895696277705, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3868051975830500570}
+    - targetCorrespondingSourceObject: {fileID: 3325563078698146730, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7023364172300237689}
+    - targetCorrespondingSourceObject: {fileID: 8894864616137738657, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2261938235789445829}
+    - targetCorrespondingSourceObject: {fileID: 3103516096951799978, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8739232082953696228}
+    - targetCorrespondingSourceObject: {fileID: 7106729931588916320, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6186556980830401559}
+    - targetCorrespondingSourceObject: {fileID: 2116403736981323263, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2301497461204907638}
+    - targetCorrespondingSourceObject: {fileID: 5170620244541923433, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5711949333293237524}
+    - targetCorrespondingSourceObject: {fileID: 3641029396001319639, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5940220297091063198}
+    - targetCorrespondingSourceObject: {fileID: 3407116319658695908, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6871456328780103237}
+    - targetCorrespondingSourceObject: {fileID: 6527583600232197300, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8320826411655078165}
+    - targetCorrespondingSourceObject: {fileID: 4450816485376083030, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1552292370082149197}
+    - targetCorrespondingSourceObject: {fileID: 7017303047448920505, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1554032443710728424}
+    - targetCorrespondingSourceObject: {fileID: 6705408242758593635, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7190994060347018256}
+    - targetCorrespondingSourceObject: {fileID: 1590745850710484231, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 694528455465817095}
+    - targetCorrespondingSourceObject: {fileID: 2809692483539347084, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7913722591102549090}
+    - targetCorrespondingSourceObject: {fileID: 281195763005972803, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 556282275797165012}
+    - targetCorrespondingSourceObject: {fileID: 5315189116554429648, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2818457831550275930}
+    - targetCorrespondingSourceObject: {fileID: 85099814614375145, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4790449441891512634}
+    - targetCorrespondingSourceObject: {fileID: 9212638101069358638, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4348653788017123652}
+    - targetCorrespondingSourceObject: {fileID: 266105211565164835, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7478331168288474097}
+    - targetCorrespondingSourceObject: {fileID: 5793484719868774533, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3356405006459632837}
+    - targetCorrespondingSourceObject: {fileID: 2149158653783219468, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2434061576146229081}
+    - targetCorrespondingSourceObject: {fileID: 2858018676166416484, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8881945020610703881}
+    - targetCorrespondingSourceObject: {fileID: 5023410412509372792, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1253789383233385191}
+    - targetCorrespondingSourceObject: {fileID: 6754340083251580275, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8748238769637868880}
+    - targetCorrespondingSourceObject: {fileID: 3184472005162812063, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3567789876709885472}
+    - targetCorrespondingSourceObject: {fileID: 9117004315969181829, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3224592982857409718}
+    - targetCorrespondingSourceObject: {fileID: 3994487429760919376, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1398757992698855600}
+    - targetCorrespondingSourceObject: {fileID: 7685476248660358618, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7895020620077116732}
+    - targetCorrespondingSourceObject: {fileID: 3787496858939627101, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8841266731601476249}
+    - targetCorrespondingSourceObject: {fileID: 5402599296036731939, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4401728329848988491}
+    - targetCorrespondingSourceObject: {fileID: 7500198975075058304, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6043543438222676780}
+    - targetCorrespondingSourceObject: {fileID: 7483703649420980204, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2799163212643543543}
+    - targetCorrespondingSourceObject: {fileID: 5255920335457454422, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6474689654849368395}
+    - targetCorrespondingSourceObject: {fileID: 995949208839856141, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3389786179395149462}
+    - targetCorrespondingSourceObject: {fileID: 6754003239060773344, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8325444158830769993}
+    - targetCorrespondingSourceObject: {fileID: 4851795214461086619, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5513399003454829766}
+    - targetCorrespondingSourceObject: {fileID: 2162234217560481013, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 938167754225478476}
+    - targetCorrespondingSourceObject: {fileID: 8128289665980562601, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4809744207492490378}
+    - targetCorrespondingSourceObject: {fileID: 5482241945896880891, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 135595384869437363}
+    - targetCorrespondingSourceObject: {fileID: 6907628104388449781, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 249366737748338730}
+    - targetCorrespondingSourceObject: {fileID: 7192690554339351644, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 179696828130091019}
+    - targetCorrespondingSourceObject: {fileID: 5894994428023072861, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 811001369141616840}
   m_SourcePrefab: {fileID: 100100000, guid: 0ca57f97952f34e43b1e9c8d5e2a62de, type: 3}
+--- !u!114 &5478822746861887233
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 106844527310736104}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8620892861343036828}
+  - {fileID: 5069911401654757533}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &4999347338087380682
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 109265664723131941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1346172025293209305}
+  - {fileID: 1735850697881277772}
+  - {fileID: 5268152838762335334}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &2434061576146229081
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 147115462618842292}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 6642777727382789246}
+  - {fileID: 2540378900932636789}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &1552292370082149197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 243120703875515953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1049336564437379672}
+  - {fileID: 209087453012983080}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &3868051975830500570
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 577441071725278307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4299180923711254571}
+  - {fileID: 578687035095844075}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &8325444158830769993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 700151527100313989}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5662600751587757563}
+  - {fileID: 3763231526709018093}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &5940220297091063198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 740915808004935123}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2034299625079256425}
+  - {fileID: 5417518200828997679}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &5513399003454829766
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1127782386760238312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4015043095092127909}
+  - {fileID: 6551425770325066252}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &4809744207492490378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1566822856308791910}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7313783723385533097}
+  - {fileID: 3977972924480787415}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &8881945020610703881
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2119915200844000413}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2515742494195377245}
+  - {fileID: 6540812641643826377}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &556282275797165012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2126681369375555033}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3028043156802454930}
+  - {fileID: 6400781154270911047}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &7190994060347018256
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2202879304126113505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2737488932270019117}
+  - {fileID: 4103374469250704943}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &2301497461204907638
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3459325524535454124}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 811085863447482097}
+  - {fileID: 4700285123239804715}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &4176667476229490941
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3719303006602627899}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1082440643647024072}
+  - {fileID: 8865924668412132474}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &179696828130091019
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3745050006335878522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5200483180100568829}
+  - {fileID: 593755846387281303}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &3356405006459632837
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3769832277540608314}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3125550700692175681}
+  - {fileID: 5642868023211117292}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &8739232082953696228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3867250384936172369}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3709041623411727085}
+  - {fileID: 4544986955911449105}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &8841266731601476249
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3886378904919828278}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5403364452879334409}
+  - {fileID: 2098473753676064704}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &4348653788017123652
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4249429810346912056}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7802039112457636141}
+  - {fileID: 9219650047164510727}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &2818457831550275930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4845957658464128561}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1168920475643793448}
+  - {fileID: 8198678071863288081}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &8346912815497269651
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5191052852684998376}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5682075574528695878}
+  - {fileID: 658267894328204419}
+  - {fileID: 4148132699835216056}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &8748238769637868880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5345402132119709000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2975594330752120158}
+  - {fileID: 4619447574681522325}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &7023364172300237689
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5530723490179281449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2821599787154806156}
+  - {fileID: 836693373145922806}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &694528455465817095
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5540859490282812864}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8260580816537452662}
+  - {fileID: 6577499888683228065}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &7986831659607954843
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5623490223118190436}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8392342165872461525}
+  - {fileID: 3804053495470554383}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &5903548095808113745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5872627477323842870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1583423076232276155}
+  - {fileID: 8346595908582846848}
+  - {fileID: 8769048470043160312}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &3389786179395149462
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5881716238191093059}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 900667670266199166}
+  - {fileID: 3018964024240561195}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &3224592982857409718
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6192629333303284198}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7026189972436919911}
+  - {fileID: 4102535786854617958}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &6043543438222676780
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6263591968319579358}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2065469600244577303}
+  - {fileID: 657020817538576237}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &7913722591102549090
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6266296531691832947}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4869107103465135581}
+  - {fileID: 1326255203431298920}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &2261938235789445829
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6266389022068981619}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4968100447613184812}
+  - {fileID: 2499691767623264147}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &811001369141616840
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6435456833845354304}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4751515285540616866}
+  - {fileID: 2969274888335575315}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &3549226241698286322
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6498972132227093062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4993637601165439274}
+  - {fileID: 3489343086599311253}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &7478331168288474097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6507989125066920492}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 6472975886060054579}
+  - {fileID: 8666289351586975386}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &6186556980830401559
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6558619498094113974}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5558125745568513296}
+  - {fileID: 8771321479082053463}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &8325320456755828148
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6834161358380911291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4214179416931167145}
+  - {fileID: 7442906184949245640}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &7895020620077116732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6917192120708919821}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5923832979351134998}
+  - {fileID: 5420547805480355616}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &8620145978953711802
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6927319596236864053}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7999675820352981938}
+  - {fileID: 1406858821218688828}
+  - {fileID: 143618703855922059}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &4401728329848988491
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7067887389008246393}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5839047777693282645}
+  - {fileID: 1108211995820034588}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &3567789876709885472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7177929069931255394}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 6308984796195768503}
+  - {fileID: 376700197509470118}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &4790449441891512634
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7322596726905157743}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 9071142613244645042}
+  - {fileID: 6417206431670259382}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &8103469762204872412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7801831083646479524}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8716122199724359996}
+  - {fileID: 7792369719399761650}
+  - {fileID: 6377567443142472269}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &894616164896179446
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7874213805130955325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1120827730513054590}
+  - {fileID: 2478785543523072526}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &249366737748338730
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8053543077646644061}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 422681468055596333}
+  - {fileID: 1465298802545462201}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &938167754225478476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8207927188404963616}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1058810280325441747}
+  - {fileID: 2345236499506104821}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &1398757992698855600
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8224097220784994250}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8575651964877497097}
+  - {fileID: 3095761294482746474}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &2805647608241179710
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8316259508026047706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 559067615596533553}
+  - {fileID: 633125184690218290}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &2799163212643543543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8335628545076025733}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 6318529998602815424}
+  - {fileID: 9213310991954468857}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &5711949333293237524
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8437035011438186721}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3085184717569414320}
+  - {fileID: 6712503476747862668}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &1253789383233385191
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8628083467788488257}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 454235666623302930}
+  - {fileID: 7385248510210389311}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &6474689654849368395
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8721811049913928682}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 989091912066189869}
+  - {fileID: 399016301496246031}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &1554032443710728424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8744255574905157388}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 9133290603701605920}
+  - {fileID: 9137895764715829795}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &6976073517096761556
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8898521485682192136}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2078707106462505206}
+  - {fileID: 9162088046229469337}
+  - {fileID: 7890582045181621869}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &135595384869437363
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8935728248533042726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1037984926966305982}
+  - {fileID: 4642215210984109200}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &6871456328780103237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9006004357415328401}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 9092228514680597781}
+  - {fileID: 6916430607843910748}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+--- !u!114 &8320826411655078165
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9008608736914359512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 497438289044644221}
+  - {fileID: 7480622324388061146}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1001 &5578257995208955661
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -551,6 +551,7 @@ GameObject:
   - component: {fileID: 1059658715}
   - component: {fileID: 1059658714}
   - component: {fileID: 1059658713}
+  - component: {fileID: 1059658716}
   m_Layer: 0
   m_Name: SkipButton
   m_TagString: Untagged
@@ -597,7 +598,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -660,6 +661,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1059658711}
   m_CullTransparentMesh: 1
+--- !u!114 &1059658716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1059658711}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1059658714}
+  - {fileID: 1743086890}
+  - {fileID: 1147860627}
+  disabledTint: {r: 0.39215687, g: 0.39215687, b: 0.39215687, a: 1}
 --- !u!1 &1104575296
 GameObject:
   m_ObjectHideFlags: 0
@@ -809,6 +827,10 @@ PrefabInstance:
       propertyPath: m_fontSize
       value: 29
       objectReference: {fileID: 0}
+    - target: {fileID: 1969306305321569625, guid: c5441b45a49d0c242baeb0a757dbda78, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292733938
+      objectReference: {fileID: 0}
     - target: {fileID: 2218347051248628871, guid: c5441b45a49d0c242baeb0a757dbda78, type: 3}
       propertyPath: m_Name
       value: PF_TitleScreen
@@ -896,6 +918,10 @@ PrefabInstance:
     - target: {fileID: 5214500075555839179, guid: c5441b45a49d0c242baeb0a757dbda78, type: 3}
       propertyPath: m_fontSize
       value: 29
+      objectReference: {fileID: 0}
+    - target: {fileID: 5214500075555839179, guid: c5441b45a49d0c242baeb0a757dbda78, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292733938
       objectReference: {fileID: 0}
     - target: {fileID: 5964787227774421158, guid: c5441b45a49d0c242baeb0a757dbda78, type: 3}
       propertyPath: m_fontColor32.rgba
@@ -1533,6 +1559,7 @@ GameObject:
   - component: {fileID: 1309761506}
   - component: {fileID: 1309761505}
   - component: {fileID: 1309761504}
+  - component: {fileID: 1309761507}
   m_Layer: 0
   m_Name: SkipButton
   m_TagString: Untagged
@@ -1579,7 +1606,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -1642,6 +1669,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1309761502}
   m_CullTransparentMesh: 1
+--- !u!114 &1309761507
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1309761502}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1309761505}
+  - {fileID: 537658908}
+  - {fileID: 1296537885}
+  disabledTint: {r: 0.39215687, g: 0.39215687, b: 0.39215687, a: 1}
 --- !u!1 &1339637057
 GameObject:
   m_ObjectHideFlags: 0
@@ -1730,6 +1774,7 @@ GameObject:
   - component: {fileID: 1516693517}
   - component: {fileID: 1516693516}
   - component: {fileID: 1516693515}
+  - component: {fileID: 1516693518}
   m_Layer: 0
   m_Name: SkipButton
   m_TagString: Untagged
@@ -1776,7 +1821,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -1839,6 +1884,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1516693513}
   m_CullTransparentMesh: 1
+--- !u!114 &1516693518
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1516693513}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1516693516}
+  - {fileID: 1339637059}
+  - {fileID: 1738319121}
+  disabledTint: {r: 0.39215687, g: 0.39215687, b: 0.39215687, a: 1}
 --- !u!1 &1605366160
 GameObject:
   m_ObjectHideFlags: 0

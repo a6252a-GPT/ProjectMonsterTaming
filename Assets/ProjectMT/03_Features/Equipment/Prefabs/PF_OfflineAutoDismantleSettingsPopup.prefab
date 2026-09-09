@@ -884,6 +884,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3583792835885523644}
   - component: {fileID: 2967840918092541200}
+  - component: {fileID: 6515811211484993525}
   m_Layer: 0
   m_Name: PolicyButton_Rare
   m_TagString: Untagged
@@ -934,7 +935,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -959,6 +960,25 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6515811211484993525
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4014309750990109649}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4136131728153658716}
+  - {fileID: 1374103848932614888}
+  - {fileID: 2519716937492983955}
+  - {fileID: 2977163629261275650}
+  - {fileID: 4135867256223226565}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &4645679207253287450
 GameObject:
   m_ObjectHideFlags: 0
@@ -969,6 +989,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6902792526374822529}
   - component: {fileID: 7643002727060490710}
+  - component: {fileID: 590321879867528972}
   m_Layer: 0
   m_Name: PolicyButton_Common
   m_TagString: Untagged
@@ -1019,7 +1040,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -1044,6 +1065,25 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &590321879867528972
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4645679207253287450}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4716196890321035853}
+  - {fileID: 4705555481826497055}
+  - {fileID: 3016998916562556632}
+  - {fileID: 1216814363070647393}
+  - {fileID: 7701078739869426146}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &5095078767355041278
 GameObject:
   m_ObjectHideFlags: 0
@@ -1982,6 +2022,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1176143993669282950}
   - component: {fileID: 1206003421281756569}
+  - component: {fileID: 5572673675093831423}
   m_Layer: 0
   m_Name: PolicyButton_Epic
   m_TagString: Untagged
@@ -2032,7 +2073,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -2057,6 +2098,25 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5572673675093831423
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7218418959572847132}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2107866457979278764}
+  - {fileID: 945650876602406284}
+  - {fileID: 3782934018763916470}
+  - {fileID: 2937804115760026814}
+  - {fileID: 8461727686470586145}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &7519817779551182633
 GameObject:
   m_ObjectHideFlags: 0
@@ -2414,6 +2474,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4651333036627100464}
   - component: {fileID: 8937622838307286429}
+  - component: {fileID: 5839316439088137045}
   m_Layer: 0
   m_Name: PolicyButton_Off
   m_TagString: Untagged
@@ -2464,7 +2525,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -2489,6 +2550,25 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5839316439088137045
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8217170881180516928}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3178613492767603787}
+  - {fileID: 6756218817715250511}
+  - {fileID: 3575204607973888022}
+  - {fileID: 9042102836437457571}
+  - {fileID: 651837645433282236}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &8442874822046976127
 GameObject:
   m_ObjectHideFlags: 0

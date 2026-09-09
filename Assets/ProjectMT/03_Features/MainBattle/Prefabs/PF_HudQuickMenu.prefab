@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 7071912694683163596}
   - component: {fileID: 1156100753307772843}
   - component: {fileID: 1587503769885814598}
+  - component: {fileID: 2789284799736440801}
   m_Layer: 0
   m_Name: EquipmentSlotUpgradeButton
   m_TagString: Untagged
@@ -263,6 +264,29 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &2789284799736440801
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 17445599938222457}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4001964932528516151}
+  - {fileID: 4775109026738459394}
+  - {fileID: 5993329753141027942}
+  - {fileID: 1164308515394937749}
+  - {fileID: 6785025602340508793}
+  - {fileID: 730881871059264344}
+  - {fileID: 9000462420366244265}
+  - {fileID: 1801619857935670348}
+  - {fileID: 7917680914039544440}
+  disabledTint: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &37684553564256464
 GameObject:
   m_ObjectHideFlags: 0
@@ -575,6 +599,7 @@ GameObject:
   - component: {fileID: 4727709044826841754}
   - component: {fileID: 6319516834231439071}
   - component: {fileID: 4096561694666937947}
+  - component: {fileID: 4531463857210068665}
   m_Layer: 5
   m_Name: HudV7_ClaimArea
   m_TagString: Untagged
@@ -683,6 +708,22 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4531463857210068665
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 431847674551318939}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8630366320423324249}
+  - {fileID: 8901941580309037141}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &452768949811779380
 GameObject:
   m_ObjectHideFlags: 0
@@ -695,6 +736,7 @@ GameObject:
   - component: {fileID: 5646487306972960386}
   - component: {fileID: 5065218599430145743}
   - component: {fileID: 7790904756001215903}
+  - component: {fileID: 3445393545837653641}
   m_Layer: 5
   m_Name: QuestMove
   m_TagString: Untagged
@@ -778,7 +820,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -803,6 +845,21 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3445393545837653641
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 452768949811779380}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4575709427995115024}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &458987546208653958
 GameObject:
   m_ObjectHideFlags: 0
@@ -1367,6 +1424,7 @@ GameObject:
   - component: {fileID: 7651523615492646557}
   - component: {fileID: 7222258625857707089}
   - component: {fileID: 7630981825559471461}
+  - component: {fileID: 4803842975173022097}
   m_Layer: 0
   m_Name: ModeButton
   m_TagString: Untagged
@@ -1477,6 +1535,23 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4803842975173022097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1221826408845779610}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7222258625857707089}
+  - {fileID: 8447918146692449249}
+  - {fileID: 3423060086578688813}
+  disabledTint: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &1318785342817807159
 GameObject:
   m_ObjectHideFlags: 0
@@ -2821,6 +2896,7 @@ GameObject:
   - component: {fileID: 8702764581079343592}
   - component: {fileID: 8729480715953983613}
   - component: {fileID: 5231059736669771444}
+  - component: {fileID: 5148945728875606877}
   m_Layer: 0
   m_Name: InventoryButton
   m_TagString: Untagged
@@ -2935,6 +3011,29 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &5148945728875606877
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3350893728986820854}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1035267686643086917}
+  - {fileID: 638065813746864270}
+  - {fileID: 3486715765479759290}
+  - {fileID: 8295432594231556378}
+  - {fileID: 1547871403141486284}
+  - {fileID: 8515038416998549915}
+  - {fileID: 5457136829970572759}
+  - {fileID: 8892141046940552073}
+  - {fileID: 7737138615596994262}
+  disabledTint: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &3355043308647708007
 GameObject:
   m_ObjectHideFlags: 0
@@ -6980,6 +7079,18 @@ PrefabInstance:
       propertyPath: m_RaycastTarget
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -7442,6 +7553,18 @@ PrefabInstance:
     - target: {fileID: 5510679176479262611, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_RaycastTarget
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
@@ -8052,6 +8175,22 @@ PrefabInstance:
       propertyPath: m_RaycastTarget
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: graphics.Array.size
+      value: 9
+      objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -8506,6 +8645,22 @@ PrefabInstance:
     - target: {fileID: 5510679176479262611, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_RaycastTarget
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: graphics.Array.size
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
@@ -8970,6 +9125,18 @@ PrefabInstance:
     - target: {fileID: 5510679176479262611, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_RaycastTarget
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
@@ -9438,6 +9605,22 @@ PrefabInstance:
     - target: {fileID: 5510679176479262611, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_RaycastTarget
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: graphics.Array.size
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
@@ -11026,6 +11209,22 @@ PrefabInstance:
       propertyPath: m_RaycastTarget
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: graphics.Array.size
+      value: 9
+      objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -11480,6 +11679,22 @@ PrefabInstance:
     - target: {fileID: 5510679176479262611, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_RaycastTarget
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: graphics.Array.size
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
@@ -12213,6 +12428,18 @@ PrefabInstance:
       propertyPath: m_RaycastTarget
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -12671,6 +12898,18 @@ PrefabInstance:
     - target: {fileID: 5510679176479262611, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_RaycastTarget
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
@@ -13135,6 +13374,18 @@ PrefabInstance:
       propertyPath: m_RaycastTarget
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -13594,6 +13845,22 @@ PrefabInstance:
       propertyPath: m_RaycastTarget
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: graphics.Array.size
+      value: 9
+      objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -14026,6 +14293,22 @@ PrefabInstance:
       propertyPath: m_RaycastTarget
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: 'graphics.Array.data[9]'
+      value: 
+      objectReference: {fileID: 2375812597692303886}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -14500,6 +14783,22 @@ PrefabInstance:
       propertyPath: m_RaycastTarget
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: graphics.Array.size
+      value: 9
+      objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -14931,6 +15230,18 @@ PrefabInstance:
     - target: {fileID: 5510679176479262611, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_RaycastTarget
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite
@@ -15680,6 +15991,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 6652408945342293569, guid: 9e251262de1ebc343a0b0f8163535df8, type: 3}
   m_PrefabInstance: {fileID: 8098428063446924743}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8630366320423324249 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 551230378210047902, guid: 9e251262de1ebc343a0b0f8163535df8, type: 3}
+  m_PrefabInstance: {fileID: 8098428063446924743}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!1001 &8835111090196351046
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -15927,6 +16249,22 @@ PrefabInstance:
     - target: {fileID: 5510679176479262611, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_RaycastTarget
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: disabledTint.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5788976044798659441, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
+      propertyPath: graphics.Array.size
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 6694155753468750369, guid: b84b5170087627341bb6e25ae51d489e, type: 3}
       propertyPath: m_Sprite

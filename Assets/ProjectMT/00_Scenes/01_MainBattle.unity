@@ -1655,6 +1655,7 @@ GameObject:
   - component: {fileID: 559004536}
   - component: {fileID: 559004535}
   - component: {fileID: 559004538}
+  - component: {fileID: 559004539}
   m_Layer: 0
   m_Name: FoodRiotButton
   m_TagString: Untagged
@@ -1701,7 +1702,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.86, g: 0.94, b: 1, a: 1}
@@ -1779,6 +1780,22 @@ MonoBehaviour:
   m_EffectColor: {r: 0.2509804, g: 0.5803922, b: 0.7764706, a: 0.92156863}
   m_EffectDistance: {x: 1, y: -1}
   m_UseGraphicAlpha: 1
+--- !u!114 &559004539
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 559004533}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 559004536}
+  - {fileID: 391533958}
+  disabledTint: {r: 0.4, g: 0.45, b: 0.5, a: 0.65}
 --- !u!1 &582384434
 GameObject:
   m_ObjectHideFlags: 0
@@ -45541,6 +45558,7 @@ GameObject:
   - component: {fileID: 690589383}
   - component: {fileID: 690589382}
   - component: {fileID: 690589385}
+  - component: {fileID: 690589386}
   m_Layer: 0
   m_Name: CastleRaidButton
   m_TagString: Untagged
@@ -45587,7 +45605,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.86, g: 0.94, b: 1, a: 1}
@@ -45665,6 +45683,22 @@ MonoBehaviour:
   m_EffectColor: {r: 0.2509804, g: 0.5803922, b: 0.7764706, a: 0.92156863}
   m_EffectDistance: {x: 1, y: -1}
   m_UseGraphicAlpha: 1
+--- !u!114 &690589386
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 690589380}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 690589383}
+  - {fileID: 621598960}
+  disabledTint: {r: 0.4, g: 0.45, b: 0.5, a: 0.65}
 --- !u!1 &761992374
 GameObject:
   m_ObjectHideFlags: 0

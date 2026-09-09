@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ProjectMT.Features.Formation;
 using ProjectMT.Shared.GameData;
+using ProjectMT.Shared.UI;
 using ProjectMT.Shared.Unit;
 using TMPro;
 using UnityEngine;
@@ -277,6 +278,7 @@ namespace ProjectMT.Features.MainBattle
             for (var i = 0; i < rosterLists.Count; i++)
             {
                 tabFocusIndicators[i]?.SetActive(i == index);
+                tabButtons[i]?.GetComponent<UIStateVisual>()?.SetSelected(i == index);
                 rosterLists[i]?.gameObject.SetActive(i == index);
             }
 
@@ -295,6 +297,7 @@ namespace ProjectMT.Features.MainBattle
             for (var i = 0; i < attackFilterFocusIndicators.Count; i++)
             {
                 attackFilterFocusIndicators[i]?.SetActive(i == (int)selectedAttackFilter);
+                attackFilterButtons[i]?.GetComponent<UIStateVisual>()?.SetSelected(i == (int)selectedAttackFilter);
             }
         }
 

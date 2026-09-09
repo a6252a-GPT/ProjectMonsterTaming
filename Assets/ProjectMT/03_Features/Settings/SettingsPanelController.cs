@@ -425,6 +425,7 @@ namespace ProjectMT.Features.Settings
                 }
 
                 var selected = i == selectedIndex;
+                button.GetComponent<UIStateVisual>()?.SetSelected(selected);
                 var normal = button.transform.Find("Normal_01");
                 var alternate = button.transform.Find("Normal_02");
                 var focus = button.transform.Find("Focus");

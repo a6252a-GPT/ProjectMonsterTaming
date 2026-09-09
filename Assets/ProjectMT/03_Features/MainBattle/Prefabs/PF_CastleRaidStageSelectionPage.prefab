@@ -586,6 +586,7 @@ GameObject:
   - component: {fileID: 9151443496982698850}
   - component: {fileID: 186339306674506830}
   - component: {fileID: 5355058529517228607}
+  - component: {fileID: 9134171790250433078}
   m_Layer: 0
   m_Name: StageButton_021
   m_TagString: Untagged
@@ -680,7 +681,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -705,6 +706,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &9134171790250433078
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 61590194768415590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 186339306674506830}
+  - {fileID: 5526247445870471723}
+  - {fileID: 9076156905995094518}
+  - {fileID: 1874044924975350568}
+  - {fileID: 4464491130915109570}
+  - {fileID: 3813622180151317392}
+  - {fileID: 7774075177271646859}
+  - {fileID: 2045103441142780128}
+  - {fileID: 2627494511440991487}
+  - {fileID: 5483180843433135841}
+  - {fileID: 972304783092765570}
+  - {fileID: 7142651813847698733}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &65202282142825164
 GameObject:
   m_ObjectHideFlags: 0
@@ -1366,6 +1393,7 @@ GameObject:
   - component: {fileID: 3958677226872197827}
   - component: {fileID: 278347173014509807}
   - component: {fileID: 5033479407151571944}
+  - component: {fileID: 5609527030809664194}
   m_Layer: 0
   m_Name: StageButton_047
   m_TagString: Untagged
@@ -1460,7 +1488,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -1485,6 +1513,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5609527030809664194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100705329905910935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 278347173014509807}
+  - {fileID: 470677947811008638}
+  - {fileID: 760045770879950946}
+  - {fileID: 6120677677334455860}
+  - {fileID: 206977754050888357}
+  - {fileID: 5080248536138757555}
+  - {fileID: 5645827858158443614}
+  - {fileID: 5710946639274163595}
+  - {fileID: 5977332977712580512}
+  - {fileID: 98224338820823981}
+  - {fileID: 5702381137888445260}
+  - {fileID: 3328395098321217308}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &109312713726306142
 GameObject:
   m_ObjectHideFlags: 0
@@ -2433,6 +2487,7 @@ GameObject:
   - component: {fileID: 2915905932207430739}
   - component: {fileID: 3336540806573174725}
   - component: {fileID: 108180873536609929}
+  - component: {fileID: 1671551732330425394}
   m_Layer: 0
   m_Name: StageButton_073
   m_TagString: Untagged
@@ -2527,7 +2582,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -2552,6 +2607,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1671551732330425394
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 141478716698033326}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3336540806573174725}
+  - {fileID: 7801577263206801375}
+  - {fileID: 1878137437337641591}
+  - {fileID: 2635818094721901344}
+  - {fileID: 4163598526855307618}
+  - {fileID: 1734335221871417757}
+  - {fileID: 8578773806968666316}
+  - {fileID: 2662437877253235309}
+  - {fileID: 7441920384231044186}
+  - {fileID: 8593055220343594082}
+  - {fileID: 3333324392871188531}
+  - {fileID: 2590942061252710036}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &141484406914912099
 GameObject:
   m_ObjectHideFlags: 0
@@ -2675,6 +2756,7 @@ GameObject:
   - component: {fileID: 3297369617237593871}
   - component: {fileID: 5770355303460394696}
   - component: {fileID: 5987101017077726589}
+  - component: {fileID: 4359487209771742489}
   m_Layer: 0
   m_Name: StageButton_045
   m_TagString: Untagged
@@ -2769,7 +2851,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -2794,6 +2876,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4359487209771742489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 152634221091925352}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5770355303460394696}
+  - {fileID: 5415324685954601992}
+  - {fileID: 2162705853738853772}
+  - {fileID: 3652745461398191191}
+  - {fileID: 646308027373633566}
+  - {fileID: 4897633601580391117}
+  - {fileID: 8480594644891209334}
+  - {fileID: 3088358855086103550}
+  - {fileID: 3667383407419742417}
+  - {fileID: 5867074424805362811}
+  - {fileID: 2183755649876314917}
+  - {fileID: 494836034654697874}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &158815439382938143
 GameObject:
   m_ObjectHideFlags: 0
@@ -3230,6 +3338,7 @@ GameObject:
   - component: {fileID: 7735484321525942386}
   - component: {fileID: 6276612709432328197}
   - component: {fileID: 4514740669222232265}
+  - component: {fileID: 9217846402578068898}
   m_Layer: 0
   m_Name: StageButton_093
   m_TagString: Untagged
@@ -3324,7 +3433,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -3349,6 +3458,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &9217846402578068898
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 196677634227818415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 6276612709432328197}
+  - {fileID: 4201956310429385092}
+  - {fileID: 1283919862520934898}
+  - {fileID: 2675065090325461804}
+  - {fileID: 3304000249547285630}
+  - {fileID: 5022690131924748132}
+  - {fileID: 1994927062253374058}
+  - {fileID: 2308499571396779000}
+  - {fileID: 6399010923087466088}
+  - {fileID: 5967666099279039019}
+  - {fileID: 2569960424341947341}
+  - {fileID: 9216180065832192664}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &206025193816177069
 GameObject:
   m_ObjectHideFlags: 0
@@ -3361,6 +3496,7 @@ GameObject:
   - component: {fileID: 8273946718452565394}
   - component: {fileID: 875244873320064583}
   - component: {fileID: 5817332484344774082}
+  - component: {fileID: 6149920175783643193}
   m_Layer: 0
   m_Name: StageButton_065
   m_TagString: Untagged
@@ -3455,7 +3591,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -3480,6 +3616,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6149920175783643193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 206025193816177069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 875244873320064583}
+  - {fileID: 7010219814397675035}
+  - {fileID: 4138293830294891180}
+  - {fileID: 5219825162157974987}
+  - {fileID: 8605083938971353376}
+  - {fileID: 449552055680287056}
+  - {fileID: 1767225297478409894}
+  - {fileID: 7619605734302124887}
+  - {fileID: 1396829189243067993}
+  - {fileID: 4691457113598136783}
+  - {fileID: 685663078309381556}
+  - {fileID: 8580218572646221972}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &210755160405320406
 GameObject:
   m_ObjectHideFlags: 0
@@ -4428,6 +4590,7 @@ GameObject:
   - component: {fileID: 4855317485714645271}
   - component: {fileID: 8602116514800887455}
   - component: {fileID: 2483949646120551755}
+  - component: {fileID: 704186864687847490}
   m_Layer: 0
   m_Name: StageButton_013
   m_TagString: Untagged
@@ -4522,7 +4685,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -4547,6 +4710,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &704186864687847490
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 298635291909284462}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8602116514800887455}
+  - {fileID: 1791649628110943935}
+  - {fileID: 2309351129109747146}
+  - {fileID: 1506376155534337557}
+  - {fileID: 7211591896332159422}
+  - {fileID: 8220350560582308637}
+  - {fileID: 8672276576405207099}
+  - {fileID: 7929500073261335800}
+  - {fileID: 477994393676354683}
+  - {fileID: 7972435600571927665}
+  - {fileID: 3357649388861523479}
+  - {fileID: 3753199024070147901}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &305686061075898012
 GameObject:
   m_ObjectHideFlags: 0
@@ -8556,6 +8745,7 @@ GameObject:
   - component: {fileID: 2154065466493260454}
   - component: {fileID: 6029673693187184104}
   - component: {fileID: 4221710377734120366}
+  - component: {fileID: 1684768235534510913}
   m_Layer: 0
   m_Name: StageButton_029
   m_TagString: Untagged
@@ -8650,7 +8840,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -8675,6 +8865,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1684768235534510913
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 667663792609491593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 6029673693187184104}
+  - {fileID: 2870206752782364379}
+  - {fileID: 3387829386633135312}
+  - {fileID: 9199066199661922973}
+  - {fileID: 8712928967335685597}
+  - {fileID: 8204090602695133886}
+  - {fileID: 2038986901286376436}
+  - {fileID: 6449186386729293497}
+  - {fileID: 127636033904271249}
+  - {fileID: 402839511367997823}
+  - {fileID: 6080833841666030664}
+  - {fileID: 8470247130539872894}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &669251640964785885
 GameObject:
   m_ObjectHideFlags: 0
@@ -9897,6 +10113,7 @@ GameObject:
   - component: {fileID: 3074615494788306760}
   - component: {fileID: 5426108715171657101}
   - component: {fileID: 4898058468063348633}
+  - component: {fileID: 8032117318754080985}
   m_Layer: 0
   m_Name: StageButton_054
   m_TagString: Untagged
@@ -9991,7 +10208,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -10016,6 +10233,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8032117318754080985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 787700222193468931}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5426108715171657101}
+  - {fileID: 947018510568349546}
+  - {fileID: 1820072991795949127}
+  - {fileID: 1304245768295718210}
+  - {fileID: 4046724596595355322}
+  - {fileID: 6041789245439415591}
+  - {fileID: 2287099918535145900}
+  - {fileID: 8175717316693096698}
+  - {fileID: 387251651643865613}
+  - {fileID: 5479883420057519201}
+  - {fileID: 6811981816042356594}
+  - {fileID: 4079347237792405166}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &793686858172229795
 GameObject:
   m_ObjectHideFlags: 0
@@ -10328,6 +10571,7 @@ GameObject:
   - component: {fileID: 8670170610631188591}
   - component: {fileID: 2591715717900164828}
   - component: {fileID: 2959567658352674063}
+  - component: {fileID: 4087255192900459717}
   m_Layer: 0
   m_Name: StageButton_064
   m_TagString: Untagged
@@ -10422,7 +10666,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -10447,6 +10691,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4087255192900459717
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 802074941820917505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2591715717900164828}
+  - {fileID: 990851905002878094}
+  - {fileID: 3695310484603348244}
+  - {fileID: 98877876730317422}
+  - {fileID: 7033900921199809701}
+  - {fileID: 2750920733819255164}
+  - {fileID: 4896652283266898145}
+  - {fileID: 7659293944945268811}
+  - {fileID: 5341259065786162965}
+  - {fileID: 2825708077167526766}
+  - {fileID: 1352877923998140136}
+  - {fileID: 4695821042295523395}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &809817420311660525
 GameObject:
   m_ObjectHideFlags: 0
@@ -12993,6 +13263,7 @@ GameObject:
   - component: {fileID: 837038509654902788}
   - component: {fileID: 8260007272024310107}
   - component: {fileID: 6831935737959110446}
+  - component: {fileID: 9013889999365630187}
   m_Layer: 0
   m_Name: StageButton_058
   m_TagString: Untagged
@@ -13087,7 +13358,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -13112,6 +13383,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &9013889999365630187
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 986830231573645206}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8260007272024310107}
+  - {fileID: 2045553075934651007}
+  - {fileID: 4050853401122290247}
+  - {fileID: 6450737431062472641}
+  - {fileID: 4906395420968463919}
+  - {fileID: 7690828916006818221}
+  - {fileID: 3810525590272427147}
+  - {fileID: 2810389139633746962}
+  - {fileID: 7410581450830902013}
+  - {fileID: 5472952494040959531}
+  - {fileID: 8210700499364901694}
+  - {fileID: 1372116667377835808}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &987021775448358359
 GameObject:
   m_ObjectHideFlags: 0
@@ -13561,6 +13858,7 @@ GameObject:
   - component: {fileID: 9109352392610249566}
   - component: {fileID: 2564440801764466313}
   - component: {fileID: 6173992710074750408}
+  - component: {fileID: 4232330286087634746}
   m_Layer: 0
   m_Name: StageButton_004
   m_TagString: Untagged
@@ -13655,7 +13953,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -13680,6 +13978,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4232330286087634746
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1029619914548756240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2564440801764466313}
+  - {fileID: 7068882657030201109}
+  - {fileID: 8565587063745775972}
+  - {fileID: 6279748659127827334}
+  - {fileID: 6440203824359812260}
+  - {fileID: 8709758066801576326}
+  - {fileID: 5992894861102607782}
+  - {fileID: 5366536932334978919}
+  - {fileID: 1537997802872984420}
+  - {fileID: 8472756624385209934}
+  - {fileID: 2307833813919490260}
+  - {fileID: 4094191198179043398}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &1033309305254408750
 GameObject:
   m_ObjectHideFlags: 0
@@ -14191,6 +14515,7 @@ GameObject:
   - component: {fileID: 6300311295201377536}
   - component: {fileID: 8744673542443500002}
   - component: {fileID: 4631456732340480937}
+  - component: {fileID: 5974406600012563616}
   m_Layer: 0
   m_Name: StageButton_060
   m_TagString: Untagged
@@ -14285,7 +14610,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -14310,6 +14635,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5974406600012563616
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1052668964287030256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8744673542443500002}
+  - {fileID: 4856088545048371698}
+  - {fileID: 8281940757542368595}
+  - {fileID: 2575895194026289275}
+  - {fileID: 788538861196105951}
+  - {fileID: 1494649621237717005}
+  - {fileID: 1142873241653570613}
+  - {fileID: 977952512073313842}
+  - {fileID: 8678648988200872753}
+  - {fileID: 3208048659437094641}
+  - {fileID: 957861475243771484}
+  - {fileID: 385719988118659897}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &1057292986810742298
 GameObject:
   m_ObjectHideFlags: 0
@@ -14322,6 +14673,7 @@ GameObject:
   - component: {fileID: 7652322351863043224}
   - component: {fileID: 7671616306069735728}
   - component: {fileID: 1601083595526100871}
+  - component: {fileID: 3033381930770787441}
   m_Layer: 0
   m_Name: StageButton_002
   m_TagString: Untagged
@@ -14416,7 +14768,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -14441,6 +14793,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3033381930770787441
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1057292986810742298}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7671616306069735728}
+  - {fileID: 7206801318431062217}
+  - {fileID: 6996111817867313826}
+  - {fileID: 8302402033998199846}
+  - {fileID: 2661047001382725070}
+  - {fileID: 5188334098793551834}
+  - {fileID: 8615208205104941660}
+  - {fileID: 5513006584517957249}
+  - {fileID: 4621342090834385228}
+  - {fileID: 728791474970784442}
+  - {fileID: 4948812794343663912}
+  - {fileID: 3214674112234908308}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &1063715006714955479
 GameObject:
   m_ObjectHideFlags: 0
@@ -15014,6 +15392,7 @@ GameObject:
   - component: {fileID: 6954205913227870932}
   - component: {fileID: 1416046777505053161}
   - component: {fileID: 6097233336626289103}
+  - component: {fileID: 223960812807567273}
   m_Layer: 0
   m_Name: StageButton_089
   m_TagString: Untagged
@@ -15108,7 +15487,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -15133,6 +15512,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &223960812807567273
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1074083300129335269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1416046777505053161}
+  - {fileID: 7304961917165259446}
+  - {fileID: 7104322138713771407}
+  - {fileID: 8116767846180779052}
+  - {fileID: 8263834052258385452}
+  - {fileID: 8449434451533106164}
+  - {fileID: 4598607811235939164}
+  - {fileID: 6987231364253753440}
+  - {fileID: 5399603934712093447}
+  - {fileID: 643323845206240345}
+  - {fileID: 2892679945286846824}
+  - {fileID: 3200207018925091947}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &1088757579254237474
 GameObject:
   m_ObjectHideFlags: 0
@@ -15494,6 +15899,7 @@ GameObject:
   - component: {fileID: 7225346125571104951}
   - component: {fileID: 4878998651245902202}
   - component: {fileID: 1414826971032850425}
+  - component: {fileID: 6525284541394159194}
   m_Layer: 0
   m_Name: StageButton_030
   m_TagString: Untagged
@@ -15588,7 +15994,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -15613,6 +16019,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6525284541394159194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1098362301882004289}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4878998651245902202}
+  - {fileID: 1660096818405675512}
+  - {fileID: 6298381731738272591}
+  - {fileID: 8151022988759089290}
+  - {fileID: 6215375328018397173}
+  - {fileID: 7294964082561957378}
+  - {fileID: 2688070583830271480}
+  - {fileID: 6358673403316752580}
+  - {fileID: 3081576408096216858}
+  - {fileID: 9124345594182691412}
+  - {fileID: 2235370553655357524}
+  - {fileID: 3419634879317997281}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &1100486484518046141
 GameObject:
   m_ObjectHideFlags: 0
@@ -21725,6 +22157,7 @@ GameObject:
   - component: {fileID: 4255995488223225090}
   - component: {fileID: 9111515640851480966}
   - component: {fileID: 7736449688958046620}
+  - component: {fileID: 4432624993767710221}
   m_Layer: 0
   m_Name: StageButton_036
   m_TagString: Untagged
@@ -21819,7 +22252,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -21844,6 +22277,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4432624993767710221
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1520527121812062328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 9111515640851480966}
+  - {fileID: 5504907202405939593}
+  - {fileID: 5865307530289887935}
+  - {fileID: 8566336034994972016}
+  - {fileID: 9128435636445691305}
+  - {fileID: 7423207829979051}
+  - {fileID: 1397105251947254517}
+  - {fileID: 3223913193336156355}
+  - {fileID: 4836483063047819728}
+  - {fileID: 4099751624738000274}
+  - {fileID: 247120686648159727}
+  - {fileID: 7020904059566461690}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &1525964314338658969
 GameObject:
   m_ObjectHideFlags: 0
@@ -25587,6 +26046,7 @@ GameObject:
   - component: {fileID: 3131636327886504159}
   - component: {fileID: 7916854481357908263}
   - component: {fileID: 2182517515405886387}
+  - component: {fileID: 696217593609042844}
   m_Layer: 0
   m_Name: StageButton_046
   m_TagString: Untagged
@@ -25681,7 +26141,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -25706,6 +26166,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &696217593609042844
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1842494803290820170}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7916854481357908263}
+  - {fileID: 1218313329015721231}
+  - {fileID: 6299751266996785313}
+  - {fileID: 9178456840581490087}
+  - {fileID: 2387849163131905706}
+  - {fileID: 6160297693965748664}
+  - {fileID: 1463135673538200457}
+  - {fileID: 62772971825155330}
+  - {fileID: 1918597992521882232}
+  - {fileID: 7426074073019464106}
+  - {fileID: 4293127033919567823}
+  - {fileID: 1377570994670266610}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &1861361002705004025
 GameObject:
   m_ObjectHideFlags: 0
@@ -27170,6 +27656,7 @@ GameObject:
   - component: {fileID: 419676214422420839}
   - component: {fileID: 1192037569949798912}
   - component: {fileID: 4174162399648167881}
+  - component: {fileID: 871087858483108217}
   m_Layer: 0
   m_Name: StageButton_066
   m_TagString: Untagged
@@ -27264,7 +27751,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -27289,6 +27776,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &871087858483108217
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2025663047463457380}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1192037569949798912}
+  - {fileID: 2245750755042733905}
+  - {fileID: 8964041574132674669}
+  - {fileID: 6179413135998540117}
+  - {fileID: 1975629225877902520}
+  - {fileID: 2057755786586777009}
+  - {fileID: 3206491368724239476}
+  - {fileID: 3446856066510862179}
+  - {fileID: 5231093977530152544}
+  - {fileID: 6264432070223251283}
+  - {fileID: 2728357758397433737}
+  - {fileID: 8438146083916297525}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &2029390256781465606
 GameObject:
   m_ObjectHideFlags: 0
@@ -32497,6 +33010,7 @@ GameObject:
   - component: {fileID: 6178782021505607397}
   - component: {fileID: 8999844579954155788}
   - component: {fileID: 8933225599036305038}
+  - component: {fileID: 4375877346210886259}
   m_Layer: 0
   m_Name: StageButton_059
   m_TagString: Untagged
@@ -32591,7 +33105,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -32616,6 +33130,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4375877346210886259
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2338745297374897871}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8999844579954155788}
+  - {fileID: 6672015683576294467}
+  - {fileID: 4418468039503414393}
+  - {fileID: 6422957147417162775}
+  - {fileID: 81993800787950163}
+  - {fileID: 289740222886108425}
+  - {fileID: 1305176200892999217}
+  - {fileID: 8124958132696814432}
+  - {fileID: 8920127450724931133}
+  - {fileID: 705928255258104286}
+  - {fileID: 7123332418049040822}
+  - {fileID: 7876038145096337448}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &2340859903186163989
 GameObject:
   m_ObjectHideFlags: 0
@@ -32628,6 +33168,7 @@ GameObject:
   - component: {fileID: 7540911262300588966}
   - component: {fileID: 5117278188114027631}
   - component: {fileID: 1623864149934407899}
+  - component: {fileID: 8759196065260813023}
   m_Layer: 0
   m_Name: StageButton_095
   m_TagString: Untagged
@@ -32722,7 +33263,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -32747,6 +33288,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8759196065260813023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2340859903186163989}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5117278188114027631}
+  - {fileID: 945131313687533297}
+  - {fileID: 698038091615131409}
+  - {fileID: 3206414786517087112}
+  - {fileID: 2931327127150500069}
+  - {fileID: 9099819709540987453}
+  - {fileID: 1943887913355941394}
+  - {fileID: 7967779859391923995}
+  - {fileID: 3860333137839675317}
+  - {fileID: 5861999849778684332}
+  - {fileID: 342516271899467791}
+  - {fileID: 2556447238573244712}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &2341338701687946675
 GameObject:
   m_ObjectHideFlags: 0
@@ -33121,6 +33688,7 @@ GameObject:
   - component: {fileID: 2761792391037761178}
   - component: {fileID: 3690638850421843366}
   - component: {fileID: 3571724652561939051}
+  - component: {fileID: 1299756282007350927}
   m_Layer: 0
   m_Name: StageButton_069
   m_TagString: Untagged
@@ -33215,7 +33783,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -33240,6 +33808,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1299756282007350927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2368125772375200229}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3690638850421843366}
+  - {fileID: 123548213039157359}
+  - {fileID: 3051217682201916108}
+  - {fileID: 2776497086319364295}
+  - {fileID: 4369341823452609929}
+  - {fileID: 5361614221211782244}
+  - {fileID: 1866606200734927815}
+  - {fileID: 7406125447930928137}
+  - {fileID: 256259825454384105}
+  - {fileID: 6664366155214787268}
+  - {fileID: 5519961230930368781}
+  - {fileID: 3791875253708295088}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &2369233923965780441
 GameObject:
   m_ObjectHideFlags: 0
@@ -33327,6 +33921,7 @@ GameObject:
   - component: {fileID: 2498802696234316814}
   - component: {fileID: 736847584622380998}
   - component: {fileID: 2979166274067675920}
+  - component: {fileID: 3792840504300539753}
   m_Layer: 0
   m_Name: StageButton_094
   m_TagString: Untagged
@@ -33421,7 +34016,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -33446,6 +34041,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3792840504300539753
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2371129686119968086}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 736847584622380998}
+  - {fileID: 6830433064585829554}
+  - {fileID: 2539081891817721900}
+  - {fileID: 7039648541757762210}
+  - {fileID: 1940518867790572840}
+  - {fileID: 4990433926192629422}
+  - {fileID: 6992395540866415345}
+  - {fileID: 1153186164866276075}
+  - {fileID: 6125115417716249099}
+  - {fileID: 7363557596573964810}
+  - {fileID: 9108012086543933716}
+  - {fileID: 9080285246317979002}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &2392939818865350587
 GameObject:
   m_ObjectHideFlags: 0
@@ -33820,6 +34441,7 @@ GameObject:
   - component: {fileID: 6633550791541851149}
   - component: {fileID: 591887914795838385}
   - component: {fileID: 590253090069086313}
+  - component: {fileID: 204627522424464850}
   m_Layer: 0
   m_Name: StageButton_083
   m_TagString: Untagged
@@ -33914,7 +34536,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -33939,6 +34561,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &204627522424464850
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2404487730035774411}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 591887914795838385}
+  - {fileID: 3401377688230134015}
+  - {fileID: 2261955366797308110}
+  - {fileID: 2878463282777925248}
+  - {fileID: 2709883225214779675}
+  - {fileID: 3364645017565090267}
+  - {fileID: 1330902270556908790}
+  - {fileID: 647797637899471834}
+  - {fileID: 4168109786894871077}
+  - {fileID: 937769724270641969}
+  - {fileID: 3093199775789272579}
+  - {fileID: 400309057241072884}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &2418287900637306322
 GameObject:
   m_ObjectHideFlags: 0
@@ -36262,6 +36910,7 @@ GameObject:
   - component: {fileID: 8727199651962071388}
   - component: {fileID: 8836667894799076596}
   - component: {fileID: 2556378424596373464}
+  - component: {fileID: 2006520783551271366}
   m_Layer: 0
   m_Name: StageButton_039
   m_TagString: Untagged
@@ -36356,7 +37005,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -36381,6 +37030,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2006520783551271366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2553010587218970775}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8836667894799076596}
+  - {fileID: 1513172644378908241}
+  - {fileID: 3333377080357485624}
+  - {fileID: 7320120608260148980}
+  - {fileID: 7221824849998996607}
+  - {fileID: 6677963406917010756}
+  - {fileID: 2702607738913207010}
+  - {fileID: 997565990016115787}
+  - {fileID: 5749828143272298867}
+  - {fileID: 6334537945806388754}
+  - {fileID: 2895611159156957221}
+  - {fileID: 6247073042303486456}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &2559323037320856379
 GameObject:
   m_ObjectHideFlags: 0
@@ -36892,6 +37567,7 @@ GameObject:
   - component: {fileID: 7208041989597993962}
   - component: {fileID: 6201947957132811581}
   - component: {fileID: 6966912126614925214}
+  - component: {fileID: 7377599454670888827}
   m_Layer: 0
   m_Name: StageButton_028
   m_TagString: Untagged
@@ -36986,7 +37662,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -37011,6 +37687,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &7377599454670888827
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2604560031668136590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 6201947957132811581}
+  - {fileID: 5321370014695226758}
+  - {fileID: 7724276106780953031}
+  - {fileID: 7562857257962746780}
+  - {fileID: 8412025429192299378}
+  - {fileID: 6745499370318418181}
+  - {fileID: 8236292465393259866}
+  - {fileID: 940319983539649911}
+  - {fileID: 2962859244012471487}
+  - {fileID: 1102270332922217915}
+  - {fileID: 2920962262117644179}
+  - {fileID: 5699879122021967470}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &2610188140217494701
 GameObject:
   m_ObjectHideFlags: 0
@@ -38584,6 +39286,7 @@ GameObject:
   - component: {fileID: 8069682312267397766}
   - component: {fileID: 8914907712673875229}
   - component: {fileID: 6810564192633326096}
+  - component: {fileID: 7527228809847759634}
   m_Layer: 0
   m_Name: StageButton_018
   m_TagString: Untagged
@@ -38678,7 +39381,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -38703,6 +39406,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &7527228809847759634
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2749306518080879404}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8914907712673875229}
+  - {fileID: 2575522744567062223}
+  - {fileID: 7435879448537101535}
+  - {fileID: 6986745608311390518}
+  - {fileID: 1175415435116507830}
+  - {fileID: 397456717201142823}
+  - {fileID: 297064950797437124}
+  - {fileID: 6655203565019953733}
+  - {fileID: 4777513887994220421}
+  - {fileID: 4639622130748021112}
+  - {fileID: 7638018629852294841}
+  - {fileID: 2290141132058368024}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &2750264595411647880
 GameObject:
   m_ObjectHideFlags: 0
@@ -39152,6 +39881,7 @@ GameObject:
   - component: {fileID: 2242938109987956865}
   - component: {fileID: 8400627967812219100}
   - component: {fileID: 5490367774050442689}
+  - component: {fileID: 1930457284051659396}
   m_Layer: 0
   m_Name: StageButton_025
   m_TagString: Untagged
@@ -39246,7 +39976,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -39271,6 +40001,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1930457284051659396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2772864455067000673}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8400627967812219100}
+  - {fileID: 1894552959308649901}
+  - {fileID: 485945943259997992}
+  - {fileID: 4057541777809956173}
+  - {fileID: 3362450525993740372}
+  - {fileID: 8683826087607889908}
+  - {fileID: 1749871397648839860}
+  - {fileID: 1627038660605257572}
+  - {fileID: 7484548044578442355}
+  - {fileID: 5342460327215120895}
+  - {fileID: 6845982737287721985}
+  - {fileID: 8117214042758475508}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &2785692272961344434
 GameObject:
   m_ObjectHideFlags: 0
@@ -39433,6 +40189,7 @@ GameObject:
   - component: {fileID: 573542375136606546}
   - component: {fileID: 7577778444858723751}
   - component: {fileID: 7078478610788485111}
+  - component: {fileID: 2791236780979280131}
   m_Layer: 0
   m_Name: StageButton_011
   m_TagString: Untagged
@@ -39527,7 +40284,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -39552,6 +40309,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2791236780979280131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2795171984626088317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7577778444858723751}
+  - {fileID: 1284108557029947117}
+  - {fileID: 7882856612986460709}
+  - {fileID: 4653694588079208587}
+  - {fileID: 1398574289004506689}
+  - {fileID: 4636066595937781058}
+  - {fileID: 6128355054936955371}
+  - {fileID: 9100092286431959334}
+  - {fileID: 8652191803896079150}
+  - {fileID: 5006173340151495744}
+  - {fileID: 7406128665476594992}
+  - {fileID: 38985588341767956}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &2798276940156021708
 GameObject:
   m_ObjectHideFlags: 0
@@ -40089,6 +40872,7 @@ GameObject:
   - component: {fileID: 6185026598080215748}
   - component: {fileID: 6162494565713010260}
   - component: {fileID: 5130571620936293964}
+  - component: {fileID: 7759593707719158775}
   m_Layer: 0
   m_Name: StageButton_016
   m_TagString: Untagged
@@ -40183,7 +40967,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -40208,6 +40992,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &7759593707719158775
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2824445552693760484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 6162494565713010260}
+  - {fileID: 8391957881242098102}
+  - {fileID: 6026673258868033873}
+  - {fileID: 5024506950609692770}
+  - {fileID: 6670781612298479152}
+  - {fileID: 5825984130640323252}
+  - {fileID: 4133650694668417053}
+  - {fileID: 474460148838535519}
+  - {fileID: 8059785369763376273}
+  - {fileID: 1178070631144750997}
+  - {fileID: 6926443752582705369}
+  - {fileID: 5631770655760767110}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &2824931128144302837
 GameObject:
   m_ObjectHideFlags: 0
@@ -41456,6 +42266,7 @@ GameObject:
   - component: {fileID: 1490757993848654958}
   - component: {fileID: 7441430280946245676}
   - component: {fileID: 1289286249423849069}
+  - component: {fileID: 8167470084315243382}
   m_Layer: 0
   m_Name: StageButton_071
   m_TagString: Untagged
@@ -41550,7 +42361,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -41575,6 +42386,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8167470084315243382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2889010416934557584}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7441430280946245676}
+  - {fileID: 2351348447900038783}
+  - {fileID: 871819390754814842}
+  - {fileID: 508258521681618636}
+  - {fileID: 6270898005398325296}
+  - {fileID: 1045431926081556313}
+  - {fileID: 2427891451076455069}
+  - {fileID: 2271390577865219236}
+  - {fileID: 5208083333466524694}
+  - {fileID: 4435696870665372649}
+  - {fileID: 5697267439043064021}
+  - {fileID: 1404348762374822166}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &2890364315814530110
 GameObject:
   m_ObjectHideFlags: 0
@@ -43795,6 +44632,7 @@ GameObject:
   - component: {fileID: 4596065406773371184}
   - component: {fileID: 5208306807089733663}
   - component: {fileID: 5111435041292482394}
+  - component: {fileID: 6306193932236076725}
   m_Layer: 0
   m_Name: StageButton_008
   m_TagString: Untagged
@@ -43889,7 +44727,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -43914,6 +44752,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6306193932236076725
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3045254893428785140}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5208306807089733663}
+  - {fileID: 167653930685756732}
+  - {fileID: 4382070085591253208}
+  - {fileID: 6603958467053636608}
+  - {fileID: 3654201300983705708}
+  - {fileID: 1169934307142120289}
+  - {fileID: 7994519857621974934}
+  - {fileID: 2179349751996301595}
+  - {fileID: 7312487872003432673}
+  - {fileID: 684230353558924157}
+  - {fileID: 7069740339030549179}
+  - {fileID: 7636899547002032256}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &3057477682775348352
 GameObject:
   m_ObjectHideFlags: 0
@@ -45100,6 +45964,7 @@ GameObject:
   - component: {fileID: 1229637194138949420}
   - component: {fileID: 6579678681080164080}
   - component: {fileID: 5521278831059501200}
+  - component: {fileID: 267526096762163753}
   m_Layer: 0
   m_Name: StageButton_075
   m_TagString: Untagged
@@ -45194,7 +46059,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -45219,6 +46084,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &267526096762163753
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3157167415280031000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 6579678681080164080}
+  - {fileID: 6292311908681556406}
+  - {fileID: 5367912616003828984}
+  - {fileID: 1131578249089925610}
+  - {fileID: 8056752078200743595}
+  - {fileID: 1637908589407758997}
+  - {fileID: 4635618989809906066}
+  - {fileID: 4841850577805712688}
+  - {fileID: 5703336122574038823}
+  - {fileID: 1537395715673756047}
+  - {fileID: 2694591820214870140}
+  - {fileID: 3149488677866821547}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &3163881899045461284
 GameObject:
   m_ObjectHideFlags: 0
@@ -46248,6 +47139,7 @@ GameObject:
   - component: {fileID: 5530434553398313796}
   - component: {fileID: 5850068482214887496}
   - component: {fileID: 7947533434377335138}
+  - component: {fileID: 1992145056923301682}
   m_Layer: 0
   m_Name: StageButton_088
   m_TagString: Untagged
@@ -46342,7 +47234,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -46367,6 +47259,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1992145056923301682
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3232587969614692464}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5850068482214887496}
+  - {fileID: 5388353803707264561}
+  - {fileID: 6907958173190393590}
+  - {fileID: 6334275653663361392}
+  - {fileID: 4640089983423692336}
+  - {fileID: 2281124307072596218}
+  - {fileID: 3094805464555936251}
+  - {fileID: 5009706170578238916}
+  - {fileID: 2864057101854426270}
+  - {fileID: 6769063984874994433}
+  - {fileID: 6621650380767487184}
+  - {fileID: 8799050940207129516}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &3235463387792841060
 GameObject:
   m_ObjectHideFlags: 0
@@ -48238,6 +49156,7 @@ GameObject:
   - component: {fileID: 8862790702428203097}
   - component: {fileID: 6608623248300709065}
   - component: {fileID: 2017854803681325945}
+  - component: {fileID: 4456232041048364713}
   m_Layer: 0
   m_Name: StageButton_019
   m_TagString: Untagged
@@ -48332,7 +49251,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -48357,6 +49276,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4456232041048364713
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3388822119303200993}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 6608623248300709065}
+  - {fileID: 1446869903751254167}
+  - {fileID: 1449394432931977844}
+  - {fileID: 4461783743267850224}
+  - {fileID: 3161923702615956985}
+  - {fileID: 3292592829810935947}
+  - {fileID: 9136409965187347137}
+  - {fileID: 8592567394123634847}
+  - {fileID: 6880712922699513246}
+  - {fileID: 3294416508754390807}
+  - {fileID: 2617289073909245449}
+  - {fileID: 9135729262719723628}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &3391792785442377597
 GameObject:
   m_ObjectHideFlags: 0
@@ -48731,6 +49676,7 @@ GameObject:
   - component: {fileID: 3439931565072475772}
   - component: {fileID: 1126754776950400984}
   - component: {fileID: 3664856579169800197}
+  - component: {fileID: 4858442660187173818}
   m_Layer: 0
   m_Name: StageButton_086
   m_TagString: Untagged
@@ -48825,7 +49771,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -48850,6 +49796,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4858442660187173818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3413616615374147906}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1126754776950400984}
+  - {fileID: 813949248655398158}
+  - {fileID: 4784751337846839373}
+  - {fileID: 4214826876694902922}
+  - {fileID: 76192287417403443}
+  - {fileID: 798356623768927843}
+  - {fileID: 6242914036100044759}
+  - {fileID: 4221692831594198819}
+  - {fileID: 3293962889205682634}
+  - {fileID: 7418757672343096451}
+  - {fileID: 6484329149674917908}
+  - {fileID: 6946416348295297049}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &3419361621814296221
 GameObject:
   m_ObjectHideFlags: 0
@@ -49873,6 +50845,7 @@ GameObject:
   - component: {fileID: 385790610208231079}
   - component: {fileID: 781647471548997011}
   - component: {fileID: 4043586523965117591}
+  - component: {fileID: 1363666166727529884}
   m_Layer: 0
   m_Name: StageButton_035
   m_TagString: Untagged
@@ -49967,7 +50940,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -49992,6 +50965,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1363666166727529884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3501729838944483568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 781647471548997011}
+  - {fileID: 5243190922543319684}
+  - {fileID: 1994744993688572416}
+  - {fileID: 7846636068496144744}
+  - {fileID: 6634982053802900377}
+  - {fileID: 7706242595580027987}
+  - {fileID: 4195962283584784144}
+  - {fileID: 9096810157206270455}
+  - {fileID: 6002750973080150908}
+  - {fileID: 1317759060820154618}
+  - {fileID: 5490881235022127433}
+  - {fileID: 700327081663459366}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &3514672209406276337
 GameObject:
   m_ObjectHideFlags: 0
@@ -50366,6 +51365,7 @@ GameObject:
   - component: {fileID: 1812572252798742701}
   - component: {fileID: 199161309599022535}
   - component: {fileID: 4774533050981799294}
+  - component: {fileID: 1704621963072831608}
   m_Layer: 0
   m_Name: StageButton_037
   m_TagString: Untagged
@@ -50460,7 +51460,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -50485,6 +51485,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1704621963072831608
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3549327241527680129}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 199161309599022535}
+  - {fileID: 6789459481742072023}
+  - {fileID: 3086718037745998979}
+  - {fileID: 3558861608783233362}
+  - {fileID: 8315506645007320947}
+  - {fileID: 1252532434026729803}
+  - {fileID: 2347215204769346212}
+  - {fileID: 43541355252954498}
+  - {fileID: 1544191923505192278}
+  - {fileID: 1939449821650248300}
+  - {fileID: 8414414221212700707}
+  - {fileID: 5628426563372355214}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &3555037669743167670
 GameObject:
   m_ObjectHideFlags: 0
@@ -51521,6 +52547,7 @@ GameObject:
   - component: {fileID: 6369887286746613494}
   - component: {fileID: 8890030040160167034}
   - component: {fileID: 3590668582409586295}
+  - component: {fileID: 7306352952051226930}
   m_Layer: 0
   m_Name: StageButton_078
   m_TagString: Untagged
@@ -51615,7 +52642,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -51640,6 +52667,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &7306352952051226930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3687865824128106417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8890030040160167034}
+  - {fileID: 6908739260371632916}
+  - {fileID: 2145153227285599733}
+  - {fileID: 4276065578312340034}
+  - {fileID: 4935183744888886118}
+  - {fileID: 4763989163533013911}
+  - {fileID: 8225904984466046387}
+  - {fileID: 4993861072183661259}
+  - {fileID: 6159932505213121965}
+  - {fileID: 6816479986881936953}
+  - {fileID: 2017587762111595503}
+  - {fileID: 8378540824381258450}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &3690305050295515236
 GameObject:
   m_ObjectHideFlags: 0
@@ -53029,6 +54082,7 @@ GameObject:
   - component: {fileID: 4635058534635789746}
   - component: {fileID: 3391683672094462908}
   - component: {fileID: 3020972815252330503}
+  - component: {fileID: 3856400682148948763}
   m_Layer: 0
   m_Name: StageButton_091
   m_TagString: Untagged
@@ -53123,7 +54177,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -53148,6 +54202,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3856400682148948763
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3790990838447194671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3391683672094462908}
+  - {fileID: 8631902964627241246}
+  - {fileID: 6473897838770230853}
+  - {fileID: 2810148985780098652}
+  - {fileID: 8847642440561290575}
+  - {fileID: 3766710271188763198}
+  - {fileID: 3640791270368281962}
+  - {fileID: 527773741101100160}
+  - {fileID: 4876265918605126104}
+  - {fileID: 4299689204423431371}
+  - {fileID: 2239522212751987576}
+  - {fileID: 5273882300572007660}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &3795785273686917181
 GameObject:
   m_ObjectHideFlags: 0
@@ -53460,6 +54540,7 @@ GameObject:
   - component: {fileID: 1046211653539511398}
   - component: {fileID: 7386853411918334404}
   - component: {fileID: 5833461531642946479}
+  - component: {fileID: 200357794160547958}
   m_Layer: 0
   m_Name: StageButton_050
   m_TagString: Untagged
@@ -53554,7 +54635,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -53579,6 +54660,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &200357794160547958
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3868994316131796287}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7386853411918334404}
+  - {fileID: 9073109259917790437}
+  - {fileID: 1399981030515630605}
+  - {fileID: 7357000042814033197}
+  - {fileID: 8661034489637198431}
+  - {fileID: 3553404841888175211}
+  - {fileID: 8123950467425263181}
+  - {fileID: 6702117660950583199}
+  - {fileID: 7828980043763506733}
+  - {fileID: 3146318027575553017}
+  - {fileID: 9116070975365696338}
+  - {fileID: 7704410300635058257}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &3871806089205621545
 GameObject:
   m_ObjectHideFlags: 0
@@ -53989,6 +55096,7 @@ GameObject:
   - component: {fileID: 5081859062469351893}
   - component: {fileID: 1323021548066001730}
   - component: {fileID: 8054013592427118060}
+  - component: {fileID: 4836034354566926892}
   m_Layer: 0
   m_Name: StageButton_099
   m_TagString: Untagged
@@ -54083,7 +55191,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -54108,6 +55216,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4836034354566926892
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3911768253350803055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1323021548066001730}
+  - {fileID: 7213313703548697930}
+  - {fileID: 6697312182529044423}
+  - {fileID: 5730191091027725369}
+  - {fileID: 8565133148688834418}
+  - {fileID: 6086355687807408896}
+  - {fileID: 3801092548369910775}
+  - {fileID: 7742508961614378454}
+  - {fileID: 3754610075267490464}
+  - {fileID: 647946756752255958}
+  - {fileID: 876409577339928001}
+  - {fileID: 1319503208985850228}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &3912275042883372511
 GameObject:
   m_ObjectHideFlags: 0
@@ -54919,6 +56053,7 @@ GameObject:
   - component: {fileID: 5842777762403373318}
   - component: {fileID: 4791101021516580080}
   - component: {fileID: 6544734819898779929}
+  - component: {fileID: 7291911806403704994}
   m_Layer: 0
   m_Name: StageButton_005
   m_TagString: Untagged
@@ -55013,7 +56148,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -55038,6 +56173,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &7291911806403704994
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3949416373796820952}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4791101021516580080}
+  - {fileID: 4675542967654603926}
+  - {fileID: 5431105518171849261}
+  - {fileID: 8130621911025019523}
+  - {fileID: 3363468457598456097}
+  - {fileID: 7640411229825269572}
+  - {fileID: 159793512748008794}
+  - {fileID: 8294708822493396317}
+  - {fileID: 7200976042655354464}
+  - {fileID: 150143468420159302}
+  - {fileID: 6090922505673496250}
+  - {fileID: 8933188105971668571}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &3957699744760366301
 GameObject:
   m_ObjectHideFlags: 0
@@ -55562,6 +56723,7 @@ GameObject:
   - component: {fileID: 5453504094084151089}
   - component: {fileID: 8685707797625648261}
   - component: {fileID: 2461617446352742605}
+  - component: {fileID: 1814826145341929445}
   m_Layer: 0
   m_Name: StageButton_053
   m_TagString: Untagged
@@ -55656,7 +56818,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -55681,6 +56843,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1814826145341929445
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3983627321304984917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8685707797625648261}
+  - {fileID: 3823781609329832447}
+  - {fileID: 7857013050669028959}
+  - {fileID: 1563350965298504971}
+  - {fileID: 3382121298145910610}
+  - {fileID: 2595845449161279362}
+  - {fileID: 7015633942410528500}
+  - {fileID: 4035163129494449875}
+  - {fileID: 2187088711142983530}
+  - {fileID: 4797685697685015708}
+  - {fileID: 7366428090611883636}
+  - {fileID: 7326722990222576046}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &3996137575458539377
 GameObject:
   m_ObjectHideFlags: 0
@@ -56117,6 +57305,7 @@ GameObject:
   - component: {fileID: 6493441221232168571}
   - component: {fileID: 92533676048390769}
   - component: {fileID: 7655821433696695778}
+  - component: {fileID: 9045215919884747080}
   m_Layer: 0
   m_Name: StageButton_032
   m_TagString: Untagged
@@ -56211,7 +57400,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -56236,6 +57425,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &9045215919884747080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4011789431143393698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 92533676048390769}
+  - {fileID: 7034986062501935071}
+  - {fileID: 2832325233235517031}
+  - {fileID: 3193504850076793069}
+  - {fileID: 8174355616328967473}
+  - {fileID: 3385661385302851456}
+  - {fileID: 6258279418494723635}
+  - {fileID: 2041948232614532333}
+  - {fileID: 2936407261319408452}
+  - {fileID: 5160065016656406025}
+  - {fileID: 7329844865468952982}
+  - {fileID: 372634103620786360}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &4012226620121518840
 GameObject:
   m_ObjectHideFlags: 0
@@ -56747,6 +57962,7 @@ GameObject:
   - component: {fileID: 2455259259075946953}
   - component: {fileID: 5844965791521597918}
   - component: {fileID: 7744018674248061171}
+  - component: {fileID: 2621523088255077495}
   m_Layer: 0
   m_Name: StageButton_051
   m_TagString: Untagged
@@ -56841,7 +58057,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -56866,6 +58082,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2621523088255077495
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4029577231609099599}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5844965791521597918}
+  - {fileID: 3083739497713821431}
+  - {fileID: 4542086272919581846}
+  - {fileID: 8089657725680493340}
+  - {fileID: 162368035141333356}
+  - {fileID: 6099997102313924585}
+  - {fileID: 5062981950511141586}
+  - {fileID: 5213861033062670239}
+  - {fileID: 5735707415515910950}
+  - {fileID: 1835181466736008495}
+  - {fileID: 3047692046652288065}
+  - {fileID: 3003331364861414086}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &4049063096830640043
 GameObject:
   m_ObjectHideFlags: 0
@@ -58075,6 +59317,7 @@ GameObject:
   - component: {fileID: 3053130362497607129}
   - component: {fileID: 3890542058217842704}
   - component: {fileID: 5649262668160523663}
+  - component: {fileID: 7062829933095300647}
   m_Layer: 0
   m_Name: StageButton_024
   m_TagString: Untagged
@@ -58169,7 +59412,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -58194,6 +59437,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &7062829933095300647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4076631800712578324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3890542058217842704}
+  - {fileID: 35585845945009742}
+  - {fileID: 5196774897725381558}
+  - {fileID: 5221287693914267047}
+  - {fileID: 9181912061035257068}
+  - {fileID: 78099515659498326}
+  - {fileID: 2511556591328355933}
+  - {fileID: 2044409011702925222}
+  - {fileID: 8941842922756294882}
+  - {fileID: 4069718941873519820}
+  - {fileID: 6088087091451650665}
+  - {fileID: 5018487752215211768}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &4077942659531024255
 GameObject:
   m_ObjectHideFlags: 0
@@ -59018,6 +60287,7 @@ GameObject:
   - component: {fileID: 2896614100304471541}
   - component: {fileID: 9060229322292715958}
   - component: {fileID: 8962389203030342026}
+  - component: {fileID: 8804000623078032405}
   m_Layer: 0
   m_Name: StageButton_038
   m_TagString: Untagged
@@ -59112,7 +60382,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -59137,6 +60407,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8804000623078032405
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4139338212343636174}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 9060229322292715958}
+  - {fileID: 9063098688504932021}
+  - {fileID: 5418849423906626565}
+  - {fileID: 5313690154398043396}
+  - {fileID: 2465999548014942007}
+  - {fileID: 881941554187458111}
+  - {fileID: 6433983562593168870}
+  - {fileID: 3381271566508589327}
+  - {fileID: 1510804379426921911}
+  - {fileID: 618668027049656914}
+  - {fileID: 2241548632777723946}
+  - {fileID: 3991231910728083088}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &4144002967682049171
 GameObject:
   m_ObjectHideFlags: 0
@@ -61026,6 +62322,7 @@ GameObject:
   - component: {fileID: 4176000787932010420}
   - component: {fileID: 8264887611460355587}
   - component: {fileID: 6190045667687290178}
+  - component: {fileID: 5411313012323322307}
   m_Layer: 0
   m_Name: StageButton_076
   m_TagString: Untagged
@@ -61120,7 +62417,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -61145,6 +62442,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5411313012323322307
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4263441957902865800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8264887611460355587}
+  - {fileID: 5044892646390043328}
+  - {fileID: 8999302370908477304}
+  - {fileID: 8804654126828498328}
+  - {fileID: 3444304312039627032}
+  - {fileID: 7890478824966151167}
+  - {fileID: 1880661232808811898}
+  - {fileID: 8620924861571097655}
+  - {fileID: 1902137827983710358}
+  - {fileID: 3091256163950634657}
+  - {fileID: 5804341071318393842}
+  - {fileID: 4497006752742054165}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &4264543500951933375
 GameObject:
   m_ObjectHideFlags: 0
@@ -61232,6 +62555,7 @@ GameObject:
   - component: {fileID: 7869359423656119030}
   - component: {fileID: 3574222800891620009}
   - component: {fileID: 787777480658712096}
+  - component: {fileID: 6015283675806316900}
   m_Layer: 0
   m_Name: StageButton_017
   m_TagString: Untagged
@@ -61326,7 +62650,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -61351,6 +62675,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6015283675806316900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4275348157909161693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3574222800891620009}
+  - {fileID: 1661393435997542605}
+  - {fileID: 8359921298321873286}
+  - {fileID: 7956639308899279387}
+  - {fileID: 8538190346710943058}
+  - {fileID: 5973878766612776231}
+  - {fileID: 5186994256758929139}
+  - {fileID: 2678585953972842469}
+  - {fileID: 4456490850222241748}
+  - {fileID: 4247202130162231169}
+  - {fileID: 5693407380816517272}
+  - {fileID: 8313677236358715491}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &4280208745789153112
 GameObject:
   m_ObjectHideFlags: 0
@@ -63055,6 +64405,7 @@ GameObject:
   - component: {fileID: 5157962127751211313}
   - component: {fileID: 2201110324819951511}
   - component: {fileID: 5709144258073252419}
+  - component: {fileID: 2571419447816892238}
   m_Layer: 0
   m_Name: StageButton_072
   m_TagString: Untagged
@@ -63149,7 +64500,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -63174,6 +64525,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2571419447816892238
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4460875054290862890}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2201110324819951511}
+  - {fileID: 5065574234183624824}
+  - {fileID: 5264965943848919315}
+  - {fileID: 6185413247721581634}
+  - {fileID: 3146045235979102654}
+  - {fileID: 3190985601930896010}
+  - {fileID: 855600656368665497}
+  - {fileID: 1526512872806679827}
+  - {fileID: 726557812062334893}
+  - {fileID: 5634955209305680520}
+  - {fileID: 5522974932397898663}
+  - {fileID: 2098159561281273986}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &4462656422409729963
 GameObject:
   m_ObjectHideFlags: 0
@@ -63411,6 +64788,7 @@ GameObject:
   - component: {fileID: 8635140608162835367}
   - component: {fileID: 3488855034926595473}
   - component: {fileID: 2541284329700697854}
+  - component: {fileID: 6892003724645992849}
   m_Layer: 0
   m_Name: StageButton_055
   m_TagString: Untagged
@@ -63505,7 +64883,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -63530,6 +64908,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6892003724645992849
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4493664226375777673}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3488855034926595473}
+  - {fileID: 6249525398270609906}
+  - {fileID: 1279049113938059821}
+  - {fileID: 1045125566514484990}
+  - {fileID: 7627015541103904173}
+  - {fileID: 6993181743605249803}
+  - {fileID: 706015069487704215}
+  - {fileID: 8845015178473237898}
+  - {fileID: 7959065933322971924}
+  - {fileID: 2326845670982656067}
+  - {fileID: 1681200972551594316}
+  - {fileID: 8752057493768691684}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &4496129778625267523
 GameObject:
   m_ObjectHideFlags: 0
@@ -64420,6 +65824,7 @@ GameObject:
   - component: {fileID: 1019760757739284957}
   - component: {fileID: 7778611874271798542}
   - component: {fileID: 5934818104496557576}
+  - component: {fileID: 1644880572261128376}
   m_Layer: 0
   m_Name: StageButton_049
   m_TagString: Untagged
@@ -64514,7 +65919,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -64539,6 +65944,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1644880572261128376
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4556784166962750933}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7778611874271798542}
+  - {fileID: 7670808211119110696}
+  - {fileID: 8631888939052556367}
+  - {fileID: 6722602396032262251}
+  - {fileID: 3685064343842592982}
+  - {fileID: 8751980382743713822}
+  - {fileID: 6157767171243893393}
+  - {fileID: 7858733716265952014}
+  - {fileID: 6116838950384754317}
+  - {fileID: 252115378777921420}
+  - {fileID: 8997782817130024830}
+  - {fileID: 3174142560223929410}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &4559001389644026584
 GameObject:
   m_ObjectHideFlags: 0
@@ -65213,6 +66644,7 @@ GameObject:
   - component: {fileID: 7154531140427581524}
   - component: {fileID: 7075889006155293304}
   - component: {fileID: 757288898800860561}
+  - component: {fileID: 3984984889460935744}
   m_Layer: 0
   m_Name: StageButton_043
   m_TagString: Untagged
@@ -65307,7 +66739,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -65332,6 +66764,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3984984889460935744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4607671822171888357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7075889006155293304}
+  - {fileID: 5685865100413144238}
+  - {fileID: 471989477877983418}
+  - {fileID: 1134125252045804059}
+  - {fileID: 3552004637461793017}
+  - {fileID: 3287791373664292954}
+  - {fileID: 1607576139083309375}
+  - {fileID: 3809830341968490917}
+  - {fileID: 2015549531511213316}
+  - {fileID: 5501238194231340227}
+  - {fileID: 8801539021053142819}
+  - {fileID: 7231075807162015889}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &4622270033836442182
 GameObject:
   m_ObjectHideFlags: 0
@@ -66704,6 +68162,7 @@ GameObject:
   - component: {fileID: 1332567926926985144}
   - component: {fileID: 2490677416105644075}
   - component: {fileID: 1033245205835900799}
+  - component: {fileID: 7231960129050691524}
   m_Layer: 0
   m_Name: StageButton_062
   m_TagString: Untagged
@@ -66798,7 +68257,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -66823,6 +68282,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &7231960129050691524
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4718620609254635185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2490677416105644075}
+  - {fileID: 7546156979308390098}
+  - {fileID: 5660305833249179637}
+  - {fileID: 484473418745739577}
+  - {fileID: 5544884253716025920}
+  - {fileID: 5791853850177926764}
+  - {fileID: 1060342675763328861}
+  - {fileID: 497542069699485300}
+  - {fileID: 5855416948509629613}
+  - {fileID: 7935704475465728197}
+  - {fileID: 7488612056299254734}
+  - {fileID: 1058850973320669859}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &4727755750993653051
 GameObject:
   m_ObjectHideFlags: 0
@@ -67700,6 +69185,7 @@ GameObject:
   - component: {fileID: 4280391684172339256}
   - component: {fileID: 5589491998542334442}
   - component: {fileID: 4280957410507778648}
+  - component: {fileID: 4286810755798383781}
   m_Layer: 0
   m_Name: StageButton_020
   m_TagString: Untagged
@@ -67794,7 +69280,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -67819,6 +69305,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4286810755798383781
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4811521691514984466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5589491998542334442}
+  - {fileID: 280752931419395247}
+  - {fileID: 9165228286088737596}
+  - {fileID: 5284004897678434198}
+  - {fileID: 194573971564085456}
+  - {fileID: 2544629545012537582}
+  - {fileID: 3954903994879427002}
+  - {fileID: 5293199849271417043}
+  - {fileID: 6451874729887728714}
+  - {fileID: 5373700849099424257}
+  - {fileID: 8705009386779397760}
+  - {fileID: 1156516043926393440}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &4842027371526794180
 GameObject:
   m_ObjectHideFlags: 0
@@ -72825,6 +74337,7 @@ GameObject:
   - component: {fileID: 876379107653698818}
   - component: {fileID: 4398646797889723159}
   - component: {fileID: 7528040119580974402}
+  - component: {fileID: 9083980773741631889}
   m_Layer: 0
   m_Name: StageButton_022
   m_TagString: Untagged
@@ -72919,7 +74432,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -72944,6 +74457,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &9083980773741631889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5298715388183141034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4398646797889723159}
+  - {fileID: 3069401224831026428}
+  - {fileID: 8979751408828800834}
+  - {fileID: 5773921347952231920}
+  - {fileID: 3832724314761181658}
+  - {fileID: 2039186028313693200}
+  - {fileID: 6751105837473832261}
+  - {fileID: 1464614260136094111}
+  - {fileID: 8467713445973758617}
+  - {fileID: 1703821089181560880}
+  - {fileID: 155415931848990446}
+  - {fileID: 7262907256141676915}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &5301460945531185357
 GameObject:
   m_ObjectHideFlags: 0
@@ -73181,6 +74720,7 @@ GameObject:
   - component: {fileID: 1894145275631933481}
   - component: {fileID: 2071632175966547955}
   - component: {fileID: 2413932972186013942}
+  - component: {fileID: 1962095211931745928}
   m_Layer: 0
   m_Name: StageButton_023
   m_TagString: Untagged
@@ -73275,7 +74815,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -73300,6 +74840,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1962095211931745928
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334731855659843265}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2071632175966547955}
+  - {fileID: 7582720245577231668}
+  - {fileID: 6753491600042086639}
+  - {fileID: 4811889764245039544}
+  - {fileID: 3542786683269289375}
+  - {fileID: 7132424949356740268}
+  - {fileID: 7409428775991087691}
+  - {fileID: 2046211248308366022}
+  - {fileID: 2713243832897460766}
+  - {fileID: 9214162726502905112}
+  - {fileID: 4779442079580076688}
+  - {fileID: 696696230379505802}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &5337736404925089721
 GameObject:
   m_ObjectHideFlags: 0
@@ -73948,6 +75514,7 @@ GameObject:
   - component: {fileID: 5595838996500435331}
   - component: {fileID: 1334059499199373424}
   - component: {fileID: 5866621631234936109}
+  - component: {fileID: 19749469913240143}
   m_Layer: 0
   m_Name: StageButton_027
   m_TagString: Untagged
@@ -74042,7 +75609,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -74067,6 +75634,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &19749469913240143
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5366697829806063072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1334059499199373424}
+  - {fileID: 1657106648326705572}
+  - {fileID: 8412142364904678569}
+  - {fileID: 2192808693200700558}
+  - {fileID: 5560483604560339962}
+  - {fileID: 5784433693958392603}
+  - {fileID: 7723134723001924488}
+  - {fileID: 393871047508107754}
+  - {fileID: 6727585162109156801}
+  - {fileID: 7908543557478617280}
+  - {fileID: 6704645255368891862}
+  - {fileID: 7955774877120594486}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &5377316333740895001
 GameObject:
   m_ObjectHideFlags: 0
@@ -74441,6 +76034,7 @@ GameObject:
   - component: {fileID: 7564973705798521967}
   - component: {fileID: 8809833761472400689}
   - component: {fileID: 2542264184106642981}
+  - component: {fileID: 9211867683558634195}
   m_Layer: 0
   m_Name: EnterButton
   m_TagString: Untagged
@@ -74528,7 +76122,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -74553,6 +76147,25 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &9211867683558634195
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5425300070139608364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8809833761472400689}
+  - {fileID: 3591932700194324124}
+  - {fileID: 7258477938928986965}
+  - {fileID: 2293623401020704291}
+  - {fileID: 265668594425854779}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &5438145508413160026
 GameObject:
   m_ObjectHideFlags: 0
@@ -75700,6 +77313,7 @@ GameObject:
   - component: {fileID: 8570392066992381279}
   - component: {fileID: 6356293988260659527}
   - component: {fileID: 9010822572620396408}
+  - component: {fileID: 5003032488135094061}
   m_Layer: 0
   m_Name: StageButton_092
   m_TagString: Untagged
@@ -75794,7 +77408,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -75819,6 +77433,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5003032488135094061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5541743120354451877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 6356293988260659527}
+  - {fileID: 2827379844401882045}
+  - {fileID: 1797258308771937921}
+  - {fileID: 8973324083713305773}
+  - {fileID: 6847885446245866257}
+  - {fileID: 3634144459744311530}
+  - {fileID: 2877726322831532829}
+  - {fileID: 2824636545115348665}
+  - {fileID: 6420045794894398510}
+  - {fileID: 1459092581406833360}
+  - {fileID: 558249767227578571}
+  - {fileID: 8074282837092414924}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &5547586900567837532
 GameObject:
   m_ObjectHideFlags: 0
@@ -76255,6 +77895,7 @@ GameObject:
   - component: {fileID: 2074355209230981944}
   - component: {fileID: 3451031859571732742}
   - component: {fileID: 8283601143277940324}
+  - component: {fileID: 461548999179363305}
   m_Layer: 0
   m_Name: StageButton_080
   m_TagString: Untagged
@@ -76349,7 +77990,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -76374,6 +78015,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &461548999179363305
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5576768363741770560}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3451031859571732742}
+  - {fileID: 1991344287087465319}
+  - {fileID: 9174063216988483121}
+  - {fileID: 5207685814757046952}
+  - {fileID: 8674849271489572521}
+  - {fileID: 9029413250141971357}
+  - {fileID: 2489742043914580279}
+  - {fileID: 3688396328366583337}
+  - {fileID: 3784439291949149612}
+  - {fileID: 1569888945224331091}
+  - {fileID: 4426789666083630441}
+  - {fileID: 7786661629063927804}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &5584092643642543197
 GameObject:
   m_ObjectHideFlags: 0
@@ -78969,6 +80636,7 @@ GameObject:
   - component: {fileID: 3291035143680017121}
   - component: {fileID: 7574344218003072206}
   - component: {fileID: 4981591350007734399}
+  - component: {fileID: 340096450267982697}
   m_Layer: 0
   m_Name: StageButton_090
   m_TagString: Untagged
@@ -79063,7 +80731,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -79088,6 +80756,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &340096450267982697
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5759170295358556170}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7574344218003072206}
+  - {fileID: 9015014304293068540}
+  - {fileID: 3747797265417574064}
+  - {fileID: 221373558962478041}
+  - {fileID: 4926825735635166255}
+  - {fileID: 592414530366465884}
+  - {fileID: 7303153906720498015}
+  - {fileID: 5877906823033182621}
+  - {fileID: 7304020428074514137}
+  - {fileID: 1024944606649036668}
+  - {fileID: 7719925636061710835}
+  - {fileID: 823661517945353572}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &5762273884708482122
 GameObject:
   m_ObjectHideFlags: 0
@@ -79100,6 +80794,7 @@ GameObject:
   - component: {fileID: 1759679238031745226}
   - component: {fileID: 988701864282224968}
   - component: {fileID: 3816697030277218974}
+  - component: {fileID: 6416505172711187690}
   m_Layer: 0
   m_Name: StageButton_100
   m_TagString: Untagged
@@ -79194,7 +80889,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -79219,6 +80914,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6416505172711187690
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5762273884708482122}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 988701864282224968}
+  - {fileID: 2409109484334981736}
+  - {fileID: 5306097532454890601}
+  - {fileID: 6350544490327233455}
+  - {fileID: 1986414090528129683}
+  - {fileID: 3550135546598819517}
+  - {fileID: 9027703478593252232}
+  - {fileID: 7978142474510243003}
+  - {fileID: 8631307274327720986}
+  - {fileID: 5414421753601295079}
+  - {fileID: 2050981757690320416}
+  - {fileID: 5525416493721084689}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &5770102555527591299
 GameObject:
   m_ObjectHideFlags: 0
@@ -81491,6 +83212,7 @@ GameObject:
   - component: {fileID: 6752176848400071791}
   - component: {fileID: 5994480248382752016}
   - component: {fileID: 6977992524029584523}
+  - component: {fileID: 8993260439938801983}
   m_Layer: 0
   m_Name: StageButton_033
   m_TagString: Untagged
@@ -81585,7 +83307,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -81610,6 +83332,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8993260439938801983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5924421565423111734}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5994480248382752016}
+  - {fileID: 5565214024422918451}
+  - {fileID: 2177204599479401439}
+  - {fileID: 3672015921595243088}
+  - {fileID: 7701092315108545476}
+  - {fileID: 6887875955525006966}
+  - {fileID: 3902346796941972627}
+  - {fileID: 7093773519832120873}
+  - {fileID: 4646408422231258787}
+  - {fileID: 4135280722546663050}
+  - {fileID: 31887313450496739}
+  - {fileID: 6777844015340402591}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &5931289190005894752
 GameObject:
   m_ObjectHideFlags: 0
@@ -81697,6 +83445,7 @@ GameObject:
   - component: {fileID: 1880715794857025432}
   - component: {fileID: 5689462267516179985}
   - component: {fileID: 2138281389800962090}
+  - component: {fileID: 6230982436383443180}
   m_Layer: 0
   m_Name: StageButton_009
   m_TagString: Untagged
@@ -81791,7 +83540,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -81816,6 +83565,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6230982436383443180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5935114906015988428}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5689462267516179985}
+  - {fileID: 6559729923728785099}
+  - {fileID: 9164405017389398114}
+  - {fileID: 8310039882800956270}
+  - {fileID: 7515168660479597330}
+  - {fileID: 1295463070317155689}
+  - {fileID: 625065924937771698}
+  - {fileID: 7361097475399392972}
+  - {fileID: 1951067906411191844}
+  - {fileID: 577347570190528639}
+  - {fileID: 1268210799613526902}
+  - {fileID: 5278842820187132217}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &5939907695635757479
 GameObject:
   m_ObjectHideFlags: 0
@@ -82040,6 +83815,7 @@ GameObject:
   - component: {fileID: 4676615357859876328}
   - component: {fileID: 1153368782436735463}
   - component: {fileID: 675174034693164923}
+  - component: {fileID: 66194943241203521}
   m_Layer: 0
   m_Name: StageButton_087
   m_TagString: Untagged
@@ -82134,7 +83910,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -82159,6 +83935,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &66194943241203521
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5947898662452100339}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1153368782436735463}
+  - {fileID: 916936914350006583}
+  - {fileID: 9166901833910062060}
+  - {fileID: 4374548509167061328}
+  - {fileID: 7409865554171426507}
+  - {fileID: 6824960632150532390}
+  - {fileID: 7364537067139336882}
+  - {fileID: 2764114397606027565}
+  - {fileID: 2687186996614892267}
+  - {fileID: 6308389109160456492}
+  - {fileID: 5419936462159643369}
+  - {fileID: 7490965185767963075}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &5949939008653127864
 GameObject:
   m_ObjectHideFlags: 0
@@ -83081,6 +84883,7 @@ GameObject:
   - component: {fileID: 1426689143109324635}
   - component: {fileID: 7227350333983664754}
   - component: {fileID: 6606698117517472278}
+  - component: {fileID: 4912514769429158726}
   m_Layer: 0
   m_Name: StageButton_081
   m_TagString: Untagged
@@ -83175,7 +84978,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -83200,6 +85003,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4912514769429158726
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6055783875688154946}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7227350333983664754}
+  - {fileID: 7364335816090792116}
+  - {fileID: 8483010313403385765}
+  - {fileID: 4263903462604448762}
+  - {fileID: 7144962113832944007}
+  - {fileID: 2802996626998489295}
+  - {fileID: 8285916827807524131}
+  - {fileID: 6596237393670969226}
+  - {fileID: 5325669184810617094}
+  - {fileID: 4093532827508650146}
+  - {fileID: 8239837778208634113}
+  - {fileID: 6529611439963582921}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &6065113234663820910
 GameObject:
   m_ObjectHideFlags: 0
@@ -86930,6 +88759,7 @@ GameObject:
   - component: {fileID: 3081534387555796798}
   - component: {fileID: 8573060205879528663}
   - component: {fileID: 7310032232462474226}
+  - component: {fileID: 4827168535676855921}
   m_Layer: 0
   m_Name: StageButton_014
   m_TagString: Untagged
@@ -87024,7 +88854,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -87049,6 +88879,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4827168535676855921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6393513234715722607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8573060205879528663}
+  - {fileID: 958973651041414494}
+  - {fileID: 9180568233187615990}
+  - {fileID: 4136274280112887923}
+  - {fileID: 6451325460798790574}
+  - {fileID: 22345043576633806}
+  - {fileID: 6851705456603035976}
+  - {fileID: 9062548269268032641}
+  - {fileID: 5605575222348010125}
+  - {fileID: 5413715944997876990}
+  - {fileID: 7859137847943062861}
+  - {fileID: 2130758053778432127}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &6399907349563842257
 GameObject:
   m_ObjectHideFlags: 0
@@ -87834,6 +89690,7 @@ GameObject:
   - component: {fileID: 2295033779973153112}
   - component: {fileID: 479637380473611994}
   - component: {fileID: 6332886085455809874}
+  - component: {fileID: 7092213542381427704}
   m_Layer: 0
   m_Name: StageButton_074
   m_TagString: Untagged
@@ -87928,7 +89785,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -87953,6 +89810,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &7092213542381427704
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6478634382395288942}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 479637380473611994}
+  - {fileID: 4735079345572187738}
+  - {fileID: 7919256600346613053}
+  - {fileID: 5888653815184230437}
+  - {fileID: 3084629836624303757}
+  - {fileID: 5156607555995282189}
+  - {fileID: 1588378930620830306}
+  - {fileID: 4054610842651953174}
+  - {fileID: 8499287361711655902}
+  - {fileID: 2699004599468759388}
+  - {fileID: 5629467051945698624}
+  - {fileID: 2264024236840946926}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &6482130392225832663
 GameObject:
   m_ObjectHideFlags: 0
@@ -89100,6 +90983,7 @@ GameObject:
   - component: {fileID: 463853270719605373}
   - component: {fileID: 8976108552762815978}
   - component: {fileID: 2437372833351465256}
+  - component: {fileID: 188428258104575386}
   m_Layer: 0
   m_Name: StageButton_034
   m_TagString: Untagged
@@ -89194,7 +91078,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -89219,6 +91103,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &188428258104575386
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6531653575351743284}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8976108552762815978}
+  - {fileID: 947732624027426331}
+  - {fileID: 4769282298488177595}
+  - {fileID: 7046696705191020854}
+  - {fileID: 2003408605626134939}
+  - {fileID: 3563054752901245105}
+  - {fileID: 8568088881965600215}
+  - {fileID: 6736465396860743151}
+  - {fileID: 7272429699949434263}
+  - {fileID: 1729216832138108172}
+  - {fileID: 5552476756128734944}
+  - {fileID: 7893201925606136161}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &6540907642517968959
 GameObject:
   m_ObjectHideFlags: 0
@@ -91116,6 +93026,7 @@ GameObject:
   - component: {fileID: 2743594901370072063}
   - component: {fileID: 2626875759291880903}
   - component: {fileID: 7685939707899186248}
+  - component: {fileID: 5531253675528634792}
   m_Layer: 0
   m_Name: StageButton_061
   m_TagString: Untagged
@@ -91210,7 +93121,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -91235,6 +93146,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5531253675528634792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6709469803023115303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2626875759291880903}
+  - {fileID: 7978778528364930662}
+  - {fileID: 4714356331755735785}
+  - {fileID: 3345336775784428546}
+  - {fileID: 1206162261224903509}
+  - {fileID: 7626396075686283848}
+  - {fileID: 6898065500386387059}
+  - {fileID: 746393296128039679}
+  - {fileID: 6021099179169755617}
+  - {fileID: 8789312514988252677}
+  - {fileID: 20881168046504637}
+  - {fileID: 361708524608796830}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &6726601907020974421
 GameObject:
   m_ObjectHideFlags: 0
@@ -95166,6 +97103,7 @@ GameObject:
   - component: {fileID: 92967479093448548}
   - component: {fileID: 7014504905281618904}
   - component: {fileID: 5861966825597758181}
+  - component: {fileID: 4504246497908426930}
   m_Layer: 0
   m_Name: StageButton_026
   m_TagString: Untagged
@@ -95260,7 +97198,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -95285,6 +97223,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4504246497908426930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6989784360469335301}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7014504905281618904}
+  - {fileID: 7150378762050917114}
+  - {fileID: 2050305526833299952}
+  - {fileID: 5177780131529622368}
+  - {fileID: 1848603392394319974}
+  - {fileID: 2362623092155266170}
+  - {fileID: 1923032793894810906}
+  - {fileID: 1999882432800195093}
+  - {fileID: 7498906745275291095}
+  - {fileID: 4405603834517602973}
+  - {fileID: 6244495706863551021}
+  - {fileID: 5438159211797439825}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &6993144551215567822
 GameObject:
   m_ObjectHideFlags: 0
@@ -95297,6 +97261,7 @@ GameObject:
   - component: {fileID: 1175615043873393024}
   - component: {fileID: 7723487845271124241}
   - component: {fileID: 5789302128531114463}
+  - component: {fileID: 8036182710807931566}
   m_Layer: 0
   m_Name: StageButton_048
   m_TagString: Untagged
@@ -95391,7 +97356,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -95416,6 +97381,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8036182710807931566
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6993144551215567822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7723487845271124241}
+  - {fileID: 6340389401251315009}
+  - {fileID: 243464382194508525}
+  - {fileID: 7181396285057333135}
+  - {fileID: 6524271604848101739}
+  - {fileID: 3021299327514221669}
+  - {fileID: 1333183280015351380}
+  - {fileID: 2771899007593957078}
+  - {fileID: 2357530440792706110}
+  - {fileID: 6882927128638576336}
+  - {fileID: 5075818245081882753}
+  - {fileID: 2869799576670394572}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &6997610411882547082
 GameObject:
   m_ObjectHideFlags: 0
@@ -96240,6 +98231,7 @@ GameObject:
   - component: {fileID: 5914184413416226911}
   - component: {fileID: 5375198736418272646}
   - component: {fileID: 6392772467870601857}
+  - component: {fileID: 6193534592541549235}
   m_Layer: 0
   m_Name: StageButton_042
   m_TagString: Untagged
@@ -96334,7 +98326,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -96359,6 +98351,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6193534592541549235
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7068278752891803304}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5375198736418272646}
+  - {fileID: 1694677184831950794}
+  - {fileID: 2372461295591175858}
+  - {fileID: 2352842986291655053}
+  - {fileID: 2178043339442681828}
+  - {fileID: 7841129160486424430}
+  - {fileID: 5618099020483531932}
+  - {fileID: 3846873400171143416}
+  - {fileID: 3178993698779226072}
+  - {fileID: 9020052259176470372}
+  - {fileID: 6703674118647600488}
+  - {fileID: 1392308756853266636}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7077058617078316315
 GameObject:
   m_ObjectHideFlags: 0
@@ -97144,6 +99162,7 @@ GameObject:
   - component: {fileID: 806452745977836311}
   - component: {fileID: 4108425732024518664}
   - component: {fileID: 1482889871871241461}
+  - component: {fileID: 5811401815914051871}
   m_Layer: 0
   m_Name: StageButton_031
   m_TagString: Untagged
@@ -97238,7 +99257,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -97263,6 +99282,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5811401815914051871
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7109266647889605063}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4108425732024518664}
+  - {fileID: 445389720499703572}
+  - {fileID: 8536370152988846470}
+  - {fileID: 3824936881189785506}
+  - {fileID: 4666137232996586275}
+  - {fileID: 1159167401363131964}
+  - {fileID: 6375437018680025298}
+  - {fileID: 6006163046713774933}
+  - {fileID: 3214306484495904759}
+  - {fileID: 5851934696680412345}
+  - {fileID: 7093659802489236238}
+  - {fileID: 8450600561828332274}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7115882022496891220
 GameObject:
   m_ObjectHideFlags: 0
@@ -97704,6 +99749,7 @@ GameObject:
   - component: {fileID: 55252891185138679}
   - component: {fileID: 7007856224117681935}
   - component: {fileID: 7569495117719501201}
+  - component: {fileID: 6215463585721111923}
   m_Layer: 0
   m_Name: StageButton_098
   m_TagString: Untagged
@@ -97798,7 +99844,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -97823,6 +99869,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6215463585721111923
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141278704990831562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7007856224117681935}
+  - {fileID: 5512522929458022674}
+  - {fileID: 5228541673142974184}
+  - {fileID: 3667306185517224410}
+  - {fileID: 5964143465825864339}
+  - {fileID: 3746478341220343665}
+  - {fileID: 891290314082890636}
+  - {fileID: 8009807708294165795}
+  - {fileID: 8337533098270453852}
+  - {fileID: 5421830190478209658}
+  - {fileID: 5823215499547178664}
+  - {fileID: 6038814695690800985}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7143485932479388404
 GameObject:
   m_ObjectHideFlags: 0
@@ -100007,6 +102079,7 @@ GameObject:
   - component: {fileID: 3791498423486098560}
   - component: {fileID: 444470555503694757}
   - component: {fileID: 4750324990698065016}
+  - component: {fileID: 2307864900255853262}
   m_Layer: 0
   m_Name: StageButton_068
   m_TagString: Untagged
@@ -100101,7 +102174,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -100126,6 +102199,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2307864900255853262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7260045365264973359}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 444470555503694757}
+  - {fileID: 204690221528184082}
+  - {fileID: 8172305649797307579}
+  - {fileID: 4944844476337411030}
+  - {fileID: 543753349451502653}
+  - {fileID: 4569683871059834502}
+  - {fileID: 5675156544740345455}
+  - {fileID: 6403890303380677365}
+  - {fileID: 6513611885523129913}
+  - {fileID: 3525268297695481218}
+  - {fileID: 3604564717563478861}
+  - {fileID: 530252810362212450}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7262980129549714796
 GameObject:
   m_ObjectHideFlags: 0
@@ -100288,6 +102387,7 @@ GameObject:
   - component: {fileID: 5569160934672770078}
   - component: {fileID: 6630204325361344847}
   - component: {fileID: 2427691390592234377}
+  - component: {fileID: 5785777600331257418}
   m_Layer: 0
   m_Name: StageButton_084
   m_TagString: Untagged
@@ -100382,7 +102482,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -100407,6 +102507,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5785777600331257418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7268320235311973598}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 6630204325361344847}
+  - {fileID: 787486777528653520}
+  - {fileID: 4783039119823786309}
+  - {fileID: 6177946951207253507}
+  - {fileID: 2573430726566465684}
+  - {fileID: 2123448925650207847}
+  - {fileID: 3313352449095926021}
+  - {fileID: 3156428577762572543}
+  - {fileID: 5568238677396912224}
+  - {fileID: 4920535934109605677}
+  - {fileID: 3791514816376614962}
+  - {fileID: 7174644993335620593}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7270411618793146518
 GameObject:
   m_ObjectHideFlags: 0
@@ -100719,6 +102845,7 @@ GameObject:
   - component: {fileID: 1423990694329034744}
   - component: {fileID: 3948115423109316920}
   - component: {fileID: 2691771587391306443}
+  - component: {fileID: 623134684907126255}
   m_Layer: 0
   m_Name: StageButton_015
   m_TagString: Untagged
@@ -100813,7 +102940,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -100838,6 +102965,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &623134684907126255
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7312624086696577300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3948115423109316920}
+  - {fileID: 278135256522722025}
+  - {fileID: 2034441065924749656}
+  - {fileID: 9205686849635895313}
+  - {fileID: 4987516624986021385}
+  - {fileID: 3206496166746446828}
+  - {fileID: 7579420261551886996}
+  - {fileID: 7800169213824633677}
+  - {fileID: 7589875102463944626}
+  - {fileID: 423076892772369140}
+  - {fileID: 385932829577096456}
+  - {fileID: 1087431031380528957}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7313515573108552339
 GameObject:
   m_ObjectHideFlags: 0
@@ -101649,6 +103802,7 @@ GameObject:
   - component: {fileID: 7552133141904548501}
   - component: {fileID: 2169181729259581574}
   - component: {fileID: 2671338930610005735}
+  - component: {fileID: 1663674936868180705}
   m_Layer: 0
   m_Name: StageButton_056
   m_TagString: Untagged
@@ -101743,7 +103897,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -101768,6 +103922,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1663674936868180705
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7411753435538751263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2169181729259581574}
+  - {fileID: 1914024422902589144}
+  - {fileID: 7876165081313110069}
+  - {fileID: 2756641036697050419}
+  - {fileID: 4025539730350407924}
+  - {fileID: 4160061815169728665}
+  - {fileID: 2629488643438707948}
+  - {fileID: 225531132371642492}
+  - {fileID: 692036132122348062}
+  - {fileID: 8718191972988361117}
+  - {fileID: 3839520817937571256}
+  - {fileID: 232621901514311623}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7426597709608242294
 GameObject:
   m_ObjectHideFlags: 0
@@ -102367,6 +104547,7 @@ GameObject:
   - component: {fileID: 2647076339075594389}
   - component: {fileID: 2465558399186893342}
   - component: {fileID: 5374585582586028363}
+  - component: {fileID: 608410519677953123}
   m_Layer: 0
   m_Name: StageButton_044
   m_TagString: Untagged
@@ -102461,7 +104642,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -102486,6 +104667,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &608410519677953123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7473522924681673518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2465558399186893342}
+  - {fileID: 7615101211610530970}
+  - {fileID: 889852562569069857}
+  - {fileID: 3660754421955841847}
+  - {fileID: 782421481894958853}
+  - {fileID: 2840876365259389824}
+  - {fileID: 6950375481900092435}
+  - {fileID: 4810384465214434664}
+  - {fileID: 4435241375111287677}
+  - {fileID: 2880433833426233548}
+  - {fileID: 5318221436027756586}
+  - {fileID: 2022998176175900810}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7475242527171896438
 GameObject:
   m_ObjectHideFlags: 0
@@ -102648,6 +104855,7 @@ GameObject:
   - component: {fileID: 7857110927204385483}
   - component: {fileID: 1896456784090889548}
   - component: {fileID: 1057334351580983609}
+  - component: {fileID: 7092044250673739087}
   m_Layer: 0
   m_Name: StageButton_063
   m_TagString: Untagged
@@ -102742,7 +104950,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -102767,6 +104975,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &7092044250673739087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7481089339428412267}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1896456784090889548}
+  - {fileID: 309572438969933608}
+  - {fileID: 2751677809786097551}
+  - {fileID: 3896826239396590713}
+  - {fileID: 5193657253425921436}
+  - {fileID: 5846905063360668821}
+  - {fileID: 5913781388917673083}
+  - {fileID: 923005039446460338}
+  - {fileID: 1082305699854733436}
+  - {fileID: 5512492046417350212}
+  - {fileID: 359246746100557354}
+  - {fileID: 7092945678942364542}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7481980741566226593
 GameObject:
   m_ObjectHideFlags: 0
@@ -105167,6 +107401,7 @@ GameObject:
   - component: {fileID: 5987384905785394106}
   - component: {fileID: 7175766821813849221}
   - component: {fileID: 4464907010728546130}
+  - component: {fileID: 1977607814766686217}
   m_Layer: 0
   m_Name: StageButton_077
   m_TagString: Untagged
@@ -105261,7 +107496,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -105286,6 +107521,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1977607814766686217
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7658062742599182047}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7175766821813849221}
+  - {fileID: 2891740508539816391}
+  - {fileID: 5598526402772923610}
+  - {fileID: 7730129542356146012}
+  - {fileID: 5498644432767934851}
+  - {fileID: 6200597994419499821}
+  - {fileID: 7987927488595023264}
+  - {fileID: 6988689225763097228}
+  - {fileID: 3416082665681268063}
+  - {fileID: 6213876886959717474}
+  - {fileID: 7389993183311990569}
+  - {fileID: 6652989425033754860}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7658790399762233118
 GameObject:
   m_ObjectHideFlags: 0
@@ -105373,6 +107634,7 @@ GameObject:
   - component: {fileID: 3958623959520045534}
   - component: {fileID: 7817341530994717645}
   - component: {fileID: 1883333580307513194}
+  - component: {fileID: 127019627285639026}
   m_Layer: 0
   m_Name: StageButton_041
   m_TagString: Untagged
@@ -105467,7 +107729,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -105492,6 +107754,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &127019627285639026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7678521605672262922}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7817341530994717645}
+  - {fileID: 1199922192159540474}
+  - {fileID: 7564815251663644973}
+  - {fileID: 3528933862862783504}
+  - {fileID: 1670528007456652112}
+  - {fileID: 6351612165817934355}
+  - {fileID: 5063849186682218923}
+  - {fileID: 2401054793065089020}
+  - {fileID: 4043822411922546819}
+  - {fileID: 8500927426981052729}
+  - {fileID: 5289305109230687748}
+  - {fileID: 1272015084492959179}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7679591833938774496
 GameObject:
   m_ObjectHideFlags: 0
@@ -105504,6 +107792,7 @@ GameObject:
   - component: {fileID: 717328521825454314}
   - component: {fileID: 713597414185677193}
   - component: {fileID: 7728564329398754069}
+  - component: {fileID: 6979834691816711838}
   m_Layer: 0
   m_Name: StageButton_096
   m_TagString: Untagged
@@ -105598,7 +107887,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -105623,6 +107912,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6979834691816711838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7679591833938774496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 713597414185677193}
+  - {fileID: 1563226431141877506}
+  - {fileID: 1786307124296590492}
+  - {fileID: 5142542969732889867}
+  - {fileID: 269378031108351227}
+  - {fileID: 1923005555562394885}
+  - {fileID: 8007920736422819705}
+  - {fileID: 331532957615708680}
+  - {fileID: 2089655534619536507}
+  - {fileID: 5234921594348200195}
+  - {fileID: 5405015970129780657}
+  - {fileID: 1774499212602972906}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7690075315090962504
 GameObject:
   m_ObjectHideFlags: 0
@@ -106558,6 +108873,7 @@ GameObject:
   - component: {fileID: 4820247388956336239}
   - component: {fileID: 3141423050120628598}
   - component: {fileID: 6485206211840015303}
+  - component: {fileID: 6999640776175832}
   m_Layer: 0
   m_Name: StageButton_040
   m_TagString: Untagged
@@ -106652,7 +108968,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -106677,6 +108993,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6999640776175832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7748590064572586165}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3141423050120628598}
+  - {fileID: 7257043201176184093}
+  - {fileID: 526057019911755458}
+  - {fileID: 7106457764372511443}
+  - {fileID: 4487217241207908992}
+  - {fileID: 736523829425543059}
+  - {fileID: 6249853024985188484}
+  - {fileID: 7358928183048884265}
+  - {fileID: 2755190411786023512}
+  - {fileID: 6614654523696331154}
+  - {fileID: 1000355995043843005}
+  - {fileID: 1968289607080733060}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7749297353849359369
 GameObject:
   m_ObjectHideFlags: 0
@@ -108363,6 +110705,7 @@ GameObject:
   - component: {fileID: 3998297226151885417}
   - component: {fileID: 2142148226249489671}
   - component: {fileID: 38725860864312253}
+  - component: {fileID: 6244208036903677502}
   m_Layer: 0
   m_Name: StageButton_007
   m_TagString: Untagged
@@ -108457,7 +110800,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -108482,6 +110825,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6244208036903677502
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7888818738727772242}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 2142148226249489671}
+  - {fileID: 1693138750719656699}
+  - {fileID: 6719867183828345439}
+  - {fileID: 4832383275304604044}
+  - {fileID: 8844064852175671154}
+  - {fileID: 8115865004932284550}
+  - {fileID: 4421478273702627427}
+  - {fileID: 7744351677394205}
+  - {fileID: 4175870550184929785}
+  - {fileID: 6459292532171582128}
+  - {fileID: 5732663238306880636}
+  - {fileID: 5173347267236743212}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7898972009472099098
 GameObject:
   m_ObjectHideFlags: 0
@@ -109205,6 +111574,7 @@ GameObject:
   - component: {fileID: 3623048394206279630}
   - component: {fileID: 1992477992785617326}
   - component: {fileID: 700137155817962871}
+  - component: {fileID: 1506759335296789420}
   m_Layer: 0
   m_Name: StageButton_057
   m_TagString: Untagged
@@ -109299,7 +111669,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -109324,6 +111694,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1506759335296789420
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7981135661393639902}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1992477992785617326}
+  - {fileID: 1604533297500946970}
+  - {fileID: 4034828923899989198}
+  - {fileID: 3755918800096297090}
+  - {fileID: 6551891912019727456}
+  - {fileID: 908274531876680895}
+  - {fileID: 6301027447693841829}
+  - {fileID: 5029265298768990299}
+  - {fileID: 846487222947742821}
+  - {fileID: 976346169573065566}
+  - {fileID: 5624789244912839913}
+  - {fileID: 3678808015482093559}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7985201500526634640
 GameObject:
   m_ObjectHideFlags: 0
@@ -109610,6 +112006,7 @@ GameObject:
   - component: {fileID: 2728818563025395978}
   - component: {fileID: 3962308446637840324}
   - component: {fileID: 3197028829554938616}
+  - component: {fileID: 907151079750165292}
   m_Layer: 0
   m_Name: StageButton_085
   m_TagString: Untagged
@@ -109704,7 +112101,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -109729,6 +112126,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &907151079750165292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7993152045877024608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 3962308446637840324}
+  - {fileID: 5522636827883654181}
+  - {fileID: 5785849980259157659}
+  - {fileID: 6664410880273394093}
+  - {fileID: 8753698516724962139}
+  - {fileID: 803228405561725940}
+  - {fileID: 4021639473281463048}
+  - {fileID: 8048348328482154978}
+  - {fileID: 7156713916595648286}
+  - {fileID: 7697913962814440041}
+  - {fileID: 5988702562389443210}
+  - {fileID: 8802680868461971169}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &7993595497039253249
 GameObject:
   m_ObjectHideFlags: 0
@@ -110390,6 +112813,7 @@ GameObject:
   - component: {fileID: 4048702564549951609}
   - component: {fileID: 5667322046650216028}
   - component: {fileID: 3294366907614333368}
+  - component: {fileID: 2470249700197255262}
   m_Layer: 0
   m_Name: StageButton_070
   m_TagString: Untagged
@@ -110484,7 +112908,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -110509,6 +112933,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2470249700197255262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8049879969507137074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5667322046650216028}
+  - {fileID: 4166460418298924956}
+  - {fileID: 8366433867032412592}
+  - {fileID: 282468421242674554}
+  - {fileID: 6136548535734546814}
+  - {fileID: 3945185810237919257}
+  - {fileID: 4793016249426405410}
+  - {fileID: 3360362472814892946}
+  - {fileID: 8925889602476968837}
+  - {fileID: 4010437906181525576}
+  - {fileID: 5255404790439650013}
+  - {fileID: 5391642032182670955}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &8055126213565843681
 GameObject:
   m_ObjectHideFlags: 0
@@ -110596,6 +113046,7 @@ GameObject:
   - component: {fileID: 6356429619973996809}
   - component: {fileID: 9026916774615337570}
   - component: {fileID: 4266058356113690910}
+  - component: {fileID: 268310858072241931}
   m_Layer: 0
   m_Name: StageButton_079
   m_TagString: Untagged
@@ -110690,7 +113141,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -110715,6 +113166,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &268310858072241931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8057779378031103927}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 9026916774615337570}
+  - {fileID: 2325123975509135127}
+  - {fileID: 5115996284264052908}
+  - {fileID: 5700223781620931289}
+  - {fileID: 7458808111839669466}
+  - {fileID: 9210450007398964146}
+  - {fileID: 1004550129842648782}
+  - {fileID: 4620261518368365196}
+  - {fileID: 4516649246999220177}
+  - {fileID: 2591422732174907527}
+  - {fileID: 4088027611516229783}
+  - {fileID: 7147489958788032054}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &8066166601640321256
 GameObject:
   m_ObjectHideFlags: 0
@@ -111483,6 +113960,7 @@ GameObject:
   - component: {fileID: 4172289159551676147}
   - component: {fileID: 597698497052338460}
   - component: {fileID: 5289868014307549382}
+  - component: {fileID: 198230533215974995}
   m_Layer: 0
   m_Name: StageButton_006
   m_TagString: Untagged
@@ -111577,7 +114055,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -111602,6 +114080,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &198230533215974995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8146587996844177716}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 597698497052338460}
+  - {fileID: 3643619565425454687}
+  - {fileID: 1949801957414589511}
+  - {fileID: 3345322956252224148}
+  - {fileID: 8792993382402934808}
+  - {fileID: 565493493462501898}
+  - {fileID: 6336605149169705721}
+  - {fileID: 3718710163854364400}
+  - {fileID: 1693220370756235254}
+  - {fileID: 4293247677030667064}
+  - {fileID: 8010358445753949326}
+  - {fileID: 6709964998574832891}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &8150151143759438090
 GameObject:
   m_ObjectHideFlags: 0
@@ -114598,6 +117102,7 @@ GameObject:
   - component: {fileID: 8486444390089206237}
   - component: {fileID: 8094681003996873544}
   - component: {fileID: 1083341762552499434}
+  - component: {fileID: 5034035563490938992}
   m_Layer: 0
   m_Name: StageButton_001
   m_TagString: Untagged
@@ -114692,7 +117197,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -114717,6 +117222,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5034035563490938992
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8383913610399512013}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8094681003996873544}
+  - {fileID: 1671554240427542715}
+  - {fileID: 2040475559219353765}
+  - {fileID: 9967180594069699}
+  - {fileID: 634093125875799297}
+  - {fileID: 1159537685969396012}
+  - {fileID: 148854266160339800}
+  - {fileID: 17782282564765893}
+  - {fileID: 2018894546080807781}
+  - {fileID: 102358869508863961}
+  - {fileID: 8472929196176651266}
+  - {fileID: 710600401260834210}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &8388815734098178851
 GameObject:
   m_ObjectHideFlags: 0
@@ -114954,6 +117485,7 @@ GameObject:
   - component: {fileID: 7219637399933559495}
   - component: {fileID: 4683042504321250762}
   - component: {fileID: 7255025783721438666}
+  - component: {fileID: 7709465198364705282}
   m_Layer: 0
   m_Name: StageButton_097
   m_TagString: Untagged
@@ -115048,7 +117580,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -115073,6 +117605,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &7709465198364705282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8394580259251073645}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4683042504321250762}
+  - {fileID: 2119029340412272265}
+  - {fileID: 4072984277971578151}
+  - {fileID: 6573560466488578590}
+  - {fileID: 784027431413810137}
+  - {fileID: 1146594147304403863}
+  - {fileID: 1766262663124505587}
+  - {fileID: 5960052194914230745}
+  - {fileID: 2857176737824539507}
+  - {fileID: 4262850435730148965}
+  - {fileID: 2206569239202898397}
+  - {fileID: 5718388872055688904}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &8402383703685404994
 GameObject:
   m_ObjectHideFlags: 0
@@ -116158,6 +118716,7 @@ GameObject:
   - component: {fileID: 4172010365509458017}
   - component: {fileID: 4689015696117855776}
   - component: {fileID: 4002794333379374589}
+  - component: {fileID: 3848838834757949569}
   m_Layer: 0
   m_Name: StageButton_010
   m_TagString: Untagged
@@ -116252,7 +118811,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -116277,6 +118836,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3848838834757949569
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8506862850474392866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4689015696117855776}
+  - {fileID: 4447634639547619221}
+  - {fileID: 2707476499246184399}
+  - {fileID: 6597453958754709034}
+  - {fileID: 2570877089016742573}
+  - {fileID: 6984554805033301425}
+  - {fileID: 5860227184795842088}
+  - {fileID: 566114928101185717}
+  - {fileID: 94916244405451210}
+  - {fileID: 3190143330827908255}
+  - {fileID: 2658913297163380369}
+  - {fileID: 4264164043993352994}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &8529562093788199922
 GameObject:
   m_ObjectHideFlags: 0
@@ -118859,6 +121444,7 @@ GameObject:
   - component: {fileID: 5959122299974411485}
   - component: {fileID: 5451285972224650700}
   - component: {fileID: 7858136327028610986}
+  - component: {fileID: 3873174461259983951}
   m_Layer: 0
   m_Name: StageButton_012
   m_TagString: Untagged
@@ -118953,7 +121539,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -118978,6 +121564,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3873174461259983951
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8680143356646077200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5451285972224650700}
+  - {fileID: 7876077340183515674}
+  - {fileID: 8873406352227119493}
+  - {fileID: 8142683492975780449}
+  - {fileID: 1839143607103433703}
+  - {fileID: 86310932339120331}
+  - {fileID: 8281959228040509147}
+  - {fileID: 7307168580184193655}
+  - {fileID: 3948771968850507925}
+  - {fileID: 3337278054801717310}
+  - {fileID: 8837643723101487011}
+  - {fileID: 1928465053639773930}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &8682498661078518914
 GameObject:
   m_ObjectHideFlags: 0
@@ -121762,6 +124374,7 @@ GameObject:
   - component: {fileID: 7282524375678021489}
   - component: {fileID: 1126179014051429611}
   - component: {fileID: 6247092390742183470}
+  - component: {fileID: 6340646540040084713}
   m_Layer: 0
   m_Name: StageButton_067
   m_TagString: Untagged
@@ -121856,7 +124469,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -121881,6 +124494,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6340646540040084713
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8924813668030121472}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1126179014051429611}
+  - {fileID: 5442136823270737429}
+  - {fileID: 3131358163067484238}
+  - {fileID: 2955410664373528890}
+  - {fileID: 5656407669603954853}
+  - {fileID: 2745133891923287087}
+  - {fileID: 3561720099982874701}
+  - {fileID: 587195190085547599}
+  - {fileID: 3860468695719280868}
+  - {fileID: 933196678033664488}
+  - {fileID: 2786667335645293202}
+  - {fileID: 8378021715222574903}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &8932260818598996132
 GameObject:
   m_ObjectHideFlags: 0
@@ -122516,6 +125155,7 @@ GameObject:
   - component: {fileID: 9094223086438889705}
   - component: {fileID: 706339926785032090}
   - component: {fileID: 2129522996298705225}
+  - component: {fileID: 140202151296710753}
   m_Layer: 0
   m_Name: StageButton_082
   m_TagString: Untagged
@@ -122610,7 +125250,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -122635,6 +125275,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &140202151296710753
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8958708112608290873}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 706339926785032090}
+  - {fileID: 1902222143477300505}
+  - {fileID: 2025660573441670824}
+  - {fileID: 2173489002137706142}
+  - {fileID: 5535548610976487077}
+  - {fileID: 5668819669306300905}
+  - {fileID: 3744106732339995010}
+  - {fileID: 7423279349132925925}
+  - {fileID: 1690602106718644487}
+  - {fileID: 2954517872087817100}
+  - {fileID: 623316704978773093}
+  - {fileID: 8971290417575779789}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &8967768112720937187
 GameObject:
   m_ObjectHideFlags: 0
@@ -124956,6 +127622,7 @@ GameObject:
   - component: {fileID: 5394949129426274237}
   - component: {fileID: 5938271553284910317}
   - component: {fileID: 5662789331974020837}
+  - component: {fileID: 5021871700328665442}
   m_Layer: 0
   m_Name: StageButton_003
   m_TagString: Untagged
@@ -125050,7 +127717,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -125075,6 +127742,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5021871700328665442
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9126639243445016166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5938271553284910317}
+  - {fileID: 7086531128762105577}
+  - {fileID: 7352064155686804745}
+  - {fileID: 5119036811184637691}
+  - {fileID: 8680189851003152172}
+  - {fileID: 5500028990341114905}
+  - {fileID: 1142357980093241422}
+  - {fileID: 2765198782147602327}
+  - {fileID: 2841531842773077584}
+  - {fileID: 6570017677204195909}
+  - {fileID: 4881493317273078365}
+  - {fileID: 7681343156687570325}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &9129761110685212555
 GameObject:
   m_ObjectHideFlags: 0
@@ -125749,6 +128442,7 @@ GameObject:
   - component: {fileID: 4465267699356782317}
   - component: {fileID: 4510313632441435293}
   - component: {fileID: 2069451807689131688}
+  - component: {fileID: 4689538658046090988}
   m_Layer: 0
   m_Name: StageButton_052
   m_TagString: Untagged
@@ -125843,7 +128537,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.12, g: 1.12, b: 1.12, a: 1}
@@ -125868,6 +128562,32 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4689538658046090988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9183307148337197689}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4510313632441435293}
+  - {fileID: 4860004966303508048}
+  - {fileID: 4744697961723241241}
+  - {fileID: 7420269245761622648}
+  - {fileID: 8538597586684723853}
+  - {fileID: 4915016370242994496}
+  - {fileID: 5552295709197234805}
+  - {fileID: 8303707783395133491}
+  - {fileID: 1048881428296890694}
+  - {fileID: 6029841829886910215}
+  - {fileID: 8888746425707451220}
+  - {fileID: 5039324995754070460}
+  disabledTint: {r: 0.42, g: 0.42, b: 0.42, a: 0.82}
 --- !u!1 &9190746214258166759
 GameObject:
   m_ObjectHideFlags: 0

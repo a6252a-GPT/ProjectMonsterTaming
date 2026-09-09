@@ -109,6 +109,7 @@ GameObject:
   - component: {fileID: 7768628885032635214}
   - component: {fileID: 6355849874279462219}
   - component: {fileID: 4486092835153572880}
+  - component: {fileID: 7430289875103159883}
   m_Layer: 0
   m_Name: ClaimButton
   m_TagString: Untagged
@@ -194,7 +195,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1.08, g: 1.08, b: 1.08, a: 1}
@@ -238,6 +239,25 @@ MonoBehaviour:
   - Graphic: {fileID: 6028618252690178345}
     Active: {r: 0.65882355, g: 0.5411765, b: 0.3137255, a: 1}
     Inactive: {r: 0.34117648, g: 0.32941177, b: 0.3529412, a: 1}
+--- !u!114 &7430289875103159883
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 369994467817109820}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 6028618252690178345}
+  - {fileID: 3805699585960165849}
+  - {fileID: 5861865165765130983}
+  - {fileID: 2531716600870509260}
+  - {fileID: 5209106755005481685}
+  disabledTint: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &600114807978272621
 GameObject:
   m_ObjectHideFlags: 0
@@ -5965,6 +5985,39 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2816504f258864baa9e5686c055c9172, type: 3}
+--- !u!114 &2531716600870509260 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1378939255104725748, guid: 2816504f258864baa9e5686c055c9172, type: 3}
+  m_PrefabInstance: {fileID: 3458921915404744760}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &3805699585960165849 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 346777977931086305, guid: 2816504f258864baa9e5686c055c9172, type: 3}
+  m_PrefabInstance: {fileID: 3458921915404744760}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &5861865165765130983 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7014647139106669279, guid: 2816504f258864baa9e5686c055c9172, type: 3}
+  m_PrefabInstance: {fileID: 3458921915404744760}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &6028618252690178345 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7181406853183289617, guid: 2816504f258864baa9e5686c055c9172, type: 3}

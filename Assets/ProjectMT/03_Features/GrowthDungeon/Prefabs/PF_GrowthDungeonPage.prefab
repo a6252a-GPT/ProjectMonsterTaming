@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7580737027957439239}
   - component: {fileID: 2137591068780031592}
+  - component: {fileID: 5093857079793858306}
   m_Layer: 0
   m_Name: SweepButton_GUIPro
   m_TagString: Untagged
@@ -59,7 +60,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -84,6 +85,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5093857079793858306
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 49913006710184511}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 4481075144511885290}
+  - {fileID: 3370780158455511396}
+  - {fileID: 1160278721714407125}
+  - {fileID: 764157112745334355}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &122739645314430565
 GameObject:
   m_ObjectHideFlags: 0
@@ -231,6 +250,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4606174552993776420}
   - component: {fileID: 7414676203000316062}
+  - component: {fileID: 3122029168267728573}
   m_Layer: 0
   m_Name: EnterButton_GUIPro
   m_TagString: Untagged
@@ -280,7 +300,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -305,6 +325,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3122029168267728573
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 126772291575058618}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5480372155535639357}
+  - {fileID: 1419590736673098518}
+  - {fileID: 727981175572181913}
+  - {fileID: 1864988621616849967}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &147956432307728735
 GameObject:
   m_ObjectHideFlags: 0
@@ -1610,6 +1648,7 @@ GameObject:
   m_Component:
   - component: {fileID: 859227455994329924}
   - component: {fileID: 6842224248478101022}
+  - component: {fileID: 6809291957689286624}
   m_Layer: 0
   m_Name: GrowthTab_ACTIVE_DESIGN
   m_TagString: Untagged
@@ -1659,7 +1698,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.92, g: 0.96, b: 1, a: 1}
@@ -1684,6 +1723,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6809291957689286624
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1786563906556859551}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8349882284356133040}
+  - {fileID: 7507580843878881544}
+  - {fileID: 3912267908803933917}
+  - {fileID: 4824842537437001002}
+  disabledTint: {r: 0.5, g: 0.5, b: 0.5, a: 0.7}
 --- !u!1 &2085451706855749368
 GameObject:
   m_ObjectHideFlags: 0
@@ -1850,6 +1907,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3316548152173647064}
   - component: {fileID: 5889954035894364611}
+  - component: {fileID: 6759460055889194081}
   m_Layer: 0
   m_Name: EnterButton_GUIPro
   m_TagString: Untagged
@@ -1899,7 +1957,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -1924,6 +1982,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6759460055889194081
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2285169137200201359}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 7509215600709871873}
+  - {fileID: 2448439480176013795}
+  - {fileID: 8455946332269017560}
+  - {fileID: 1445171729338492744}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &2401454396563848354
 GameObject:
   m_ObjectHideFlags: 0
@@ -3330,6 +3406,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8326147949690044777}
   - component: {fileID: 1445497294973280399}
+  - component: {fileID: 9183314844703856761}
   m_Layer: 0
   m_Name: SweepButton_GUIPro
   m_TagString: Untagged
@@ -3379,7 +3456,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -3404,6 +3481,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &9183314844703856761
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3759674660518902859}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 1310699733096846531}
+  - {fileID: 7937816138145920158}
+  - {fileID: 2566428572380632975}
+  - {fileID: 3137147390319335432}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &3789910339348462258
 GameObject:
   m_ObjectHideFlags: 0
@@ -4498,6 +4593,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6303220348404239421}
   - component: {fileID: 7542965265843686281}
+  - component: {fileID: 356764846190356396}
   m_Layer: 0
   m_Name: EnterButton_GUIPro
   m_TagString: Untagged
@@ -4547,7 +4643,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -4572,6 +4668,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &356764846190356396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4527032415809897374}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 315778274634385251}
+  - {fileID: 2823013917168650059}
+  - {fileID: 1190364837489526369}
+  - {fileID: 7896612736160052146}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &4782638237537305738
 GameObject:
   m_ObjectHideFlags: 0
@@ -5722,6 +5836,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5229419408279301024}
   - component: {fileID: 8868556331733369980}
+  - component: {fileID: 5760155381062699202}
   m_Layer: 0
   m_Name: SweepButton_GUIPro
   m_TagString: Untagged
@@ -5771,7 +5886,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -5796,6 +5911,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5760155381062699202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5439938181542137438}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 494389788226654732}
+  - {fileID: 4571615911035691600}
+  - {fileID: 6495698939731103386}
+  - {fileID: 6682216905605895316}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &5464221331727527936
 GameObject:
   m_ObjectHideFlags: 0
@@ -5956,6 +6089,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4754013588280124795}
   - component: {fileID: 7507399150104449662}
+  - component: {fileID: 8896411300642363738}
   m_Layer: 0
   m_Name: ChallengeTab_INACTIVE_DESIGN
   m_TagString: Untagged
@@ -6005,7 +6139,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.92, g: 0.96, b: 1, a: 1}
@@ -6030,6 +6164,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8896411300642363738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5639242125423753490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8594235951144799790}
+  - {fileID: 1569567444958378657}
+  - {fileID: 5974465857805677198}
+  - {fileID: 3715812693476138721}
+  disabledTint: {r: 0.5, g: 0.5, b: 0.5, a: 0.7}
 --- !u!1 &5641888794463588909
 GameObject:
   m_ObjectHideFlags: 0
@@ -6607,6 +6759,7 @@ GameObject:
   m_Component:
   - component: {fileID: 536909546814080592}
   - component: {fileID: 3654442710369828068}
+  - component: {fileID: 577850252366582581}
   m_Layer: 0
   m_Name: EnterButton_GUIPro
   m_TagString: Untagged
@@ -6656,7 +6809,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -6681,6 +6834,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &577850252366582581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6559176659005824973}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 5539491997631064925}
+  - {fileID: 1422401508078281271}
+  - {fileID: 9035630876806734820}
+  - {fileID: 7315038226326915591}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1 &6586197762843852513
 GameObject:
   m_ObjectHideFlags: 0
@@ -10139,6 +10310,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2973205857745087924}
   - component: {fileID: 8346465444515285788}
+  - component: {fileID: 4001218531996868439}
   m_Layer: 0
   m_Name: SweepButton_GUIPro
   m_TagString: Untagged
@@ -10188,7 +10360,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -10213,6 +10385,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4001218531996868439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9219986492155623041}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53786c4e8165a434fb2fa01c57626a68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectMT.Shared::ProjectMT.Shared.UI.UIButtonColorFeedback
+  graphics:
+  - {fileID: 8492233943550937468}
+  - {fileID: 4183458953228561221}
+  - {fileID: 7543601333299478103}
+  - {fileID: 7321876720189563835}
+  disabledTint: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
 --- !u!1001 &8266745974569453130
 PrefabInstance:
   m_ObjectHideFlags: 0
